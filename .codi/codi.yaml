@@ -1,0 +1,8 @@
+name: codi
+version: "1"
+agents:
+  - claude-code
+  - cursor
+  - codex
+  - windsurf
+  - cline

@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "code": "E_FLAG_LOCKED",
+      "flag": "security_scan",
+      "message": "Flag \"security_scan\" is locked and cannot be overridden."
+    }
+  ]
+}

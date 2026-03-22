@@ -1,0 +1,4 @@
+security_scan:
+  mode: enforced
+  value: true
+  locked: true

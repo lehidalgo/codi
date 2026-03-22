@@ -1,0 +1,6 @@
+max_file_lines:
+  mode: enabled
+  value: 700
+security_scan:
+  mode: enabled
+  value: true

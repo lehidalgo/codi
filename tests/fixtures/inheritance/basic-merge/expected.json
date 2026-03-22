@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "name": "test-project",
+    "version": "1",
+    "agents": ["claude-code", "cursor"]
+  },
+  "rules": [
+    {
+      "name": "security",
+      "description": "Security best practices",
+      "content": "Follow security best practices.",
+      "priority": "high",
+      "alwaysApply": true,
+      "managedBy": "codi"
+    }
+  ],
+  "skills": [],
+  "commands": [],
+  "agents": [],
+  "context": [],
+  "flags": {
+    "max_file_lines": {
+      "value": 500,
+      "mode": "enabled",
+      "locked": false
+    },
+    "security_scan": {
+      "value": true,
+      "mode": "enabled",
+      "locked": false
+    },
+    "type_checking": {
+      "value": "strict",
+      "mode": "enforced",
+      "locked": false
+    }
+  },
+  "mcp": {
+    "servers": {}
+  }
+}

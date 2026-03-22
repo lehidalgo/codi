@@ -1,0 +1,124 @@
+import { describe, it, expect } from 'vitest';
+import {
+  FLAG_CATALOG,
+  buildFlagSchema,
+  getDefaultFlags,
+} from '../../../src/core/flags/flag-catalog.js';
+
+describe('FLAG_CATALOG', () => {
+  it('has exactly 8 entries', () => {
+    expect(Object.keys(FLAG_CATALOG)).toHaveLength(8);
+  });
+
+  it('contains all expected flag names', () => {
+    const expected = [
+      'auto_commit',
+      'test_before_commit',
+      'security_scan',
+      'type_checking',
+      'max_file_lines',
+      'require_tests',
+      'allow_shell_commands',
+      'allow_file_deletion',
+    ];
+    expect(Object.keys(FLAG_CATALOG).sort()).toEqual(expected.sort());
+  });
+
+  it('every spec has required fields', () => {
+    for (const [_name, spec] of Object.entries(FLAG_CATALOG)) {
+      expect(spec).toHaveProperty('type');
+      expect(spec).toHaveProperty('default');
+      expect(spec).toHaveProperty('description');
+      expect(['boolean', 'number', 'enum', 'string[]']).toContain(spec.type);
+    }
+  });
+
+  it('enum specs have values array', () => {
+    for (const [_name, spec] of Object.entries(FLAG_CATALOG)) {
+      if (spec.type === 'enum') {
+        expect(spec.values).toBeDefined();
+        expect(spec.values!.length).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe('buildFlagSchema', () => {
+  const schema = buildFlagSchema(FLAG_CATALOG);
+
+  it('rejects unknown flag names', () => {
+    const result = schema.safeParse({ unknown_flag: true });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts valid boolean flag', () => {
+    const result = schema.safeParse({ auto_commit: true });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects non-boolean for boolean flag', () => {
+    const result = schema.safeParse({ auto_commit: 'yes' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts valid number flag', () => {
+    const result = schema.safeParse({ max_file_lines: 500 });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects negative number for number flag', () => {
+    const result = schema.safeParse({ max_file_lines: -1 });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts valid enum value', () => {
+    const result = schema.safeParse({ type_checking: 'strict' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid enum value', () => {
+    const result = schema.safeParse({ type_checking: 'invalid' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts empty object (all optional)', () => {
+    const result = schema.safeParse({});
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('getDefaultFlags', () => {
+  const defaults = getDefaultFlags();
+
+  it('returns all 8 flags', () => {
+    expect(Object.keys(defaults)).toHaveLength(8);
+  });
+
+  it('auto_commit defaults to false', () => {
+    expect(defaults['auto_commit']!.value).toBe(false);
+  });
+
+  it('test_before_commit defaults to true', () => {
+    expect(defaults['test_before_commit']!.value).toBe(true);
+  });
+
+  it('type_checking defaults to strict', () => {
+    expect(defaults['type_checking']!.value).toBe('strict');
+  });
+
+  it('max_file_lines defaults to 700', () => {
+    expect(defaults['max_file_lines']!.value).toBe(700);
+  });
+
+  it('all defaults have source "default"', () => {
+    for (const flag of Object.values(defaults)) {
+      expect(flag.source).toBe('default');
+    }
+  });
+
+  it('no defaults are locked', () => {
+    for (const flag of Object.values(defaults)) {
+      expect(flag.locked).toBe(false);
+    }
+  });
+});

@@ -1,0 +1,24 @@
+auto_commit:
+  mode: enabled
+  value: false
+test_before_commit:
+  mode: enabled
+  value: true
+security_scan:
+  mode: enabled
+  value: true
+type_checking:
+  mode: enabled
+  value: strict
+max_file_lines:
+  mode: enabled
+  value: 700
+require_tests:
+  mode: enabled
+  value: false
+allow_shell_commands:
+  mode: enabled
+  value: true
+allow_file_deletion:
+  mode: enabled
+  value: true

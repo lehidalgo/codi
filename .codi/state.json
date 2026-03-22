@@ -1,0 +1,511 @@
+{
+  "version": "1",
+  "lastGenerated": "2026-03-21T00:27:17.125Z",
+  "agents": {
+    "claude-code": [
+      {
+        "path": "CLAUDE.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".claude/rules/code-quality.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "423655aacc9808617cec9598a4dab2348fac3cf45002630f93267137f98e59bd",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".claude/rules/security.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8dd010c06662e528f7fd0b9e18b1e4d36cb7c8e8709ca2a667188cecf9161880",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".claude/rules/testing-standards.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "4a76a5156fad4962875bfedb1f56a17f639f6060f2b684b219534def8b9ed250",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".cursorrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".cursor/rules/code-quality.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "9c22122cf48746cb52ea44127d9d5793e13d8ece530826e7b41cfb31d25754d9",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".cursor/rules/security.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8d58817c7647929cedc57e28a3e850791aa0bb8fdcd2d1fbb558d5df4dad2bbf",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".cursor/rules/testing-standards.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "a6f69f828c33b3397f0235458e54df888a7f4b576db7e967c71cddc5a35f2e33",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": "AGENTS.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".windsurfrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      },
+      {
+        "path": ".clinerules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.123Z"
+      }
+    ],
+    "cursor": [
+      {
+        "path": "CLAUDE.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".claude/rules/code-quality.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "423655aacc9808617cec9598a4dab2348fac3cf45002630f93267137f98e59bd",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".claude/rules/security.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8dd010c06662e528f7fd0b9e18b1e4d36cb7c8e8709ca2a667188cecf9161880",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".claude/rules/testing-standards.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "4a76a5156fad4962875bfedb1f56a17f639f6060f2b684b219534def8b9ed250",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursorrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursor/rules/code-quality.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "9c22122cf48746cb52ea44127d9d5793e13d8ece530826e7b41cfb31d25754d9",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursor/rules/security.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8d58817c7647929cedc57e28a3e850791aa0bb8fdcd2d1fbb558d5df4dad2bbf",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursor/rules/testing-standards.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "a6f69f828c33b3397f0235458e54df888a7f4b576db7e967c71cddc5a35f2e33",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": "AGENTS.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".windsurfrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".clinerules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      }
+    ],
+    "codex": [
+      {
+        "path": "CLAUDE.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".claude/rules/code-quality.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "423655aacc9808617cec9598a4dab2348fac3cf45002630f93267137f98e59bd",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".claude/rules/security.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8dd010c06662e528f7fd0b9e18b1e4d36cb7c8e8709ca2a667188cecf9161880",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".claude/rules/testing-standards.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "4a76a5156fad4962875bfedb1f56a17f639f6060f2b684b219534def8b9ed250",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursorrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursor/rules/code-quality.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "9c22122cf48746cb52ea44127d9d5793e13d8ece530826e7b41cfb31d25754d9",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursor/rules/security.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8d58817c7647929cedc57e28a3e850791aa0bb8fdcd2d1fbb558d5df4dad2bbf",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".cursor/rules/testing-standards.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "a6f69f828c33b3397f0235458e54df888a7f4b576db7e967c71cddc5a35f2e33",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": "AGENTS.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".windsurfrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      },
+      {
+        "path": ".clinerules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.124Z"
+      }
+    ],
+    "windsurf": [
+      {
+        "path": "CLAUDE.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".claude/rules/code-quality.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "423655aacc9808617cec9598a4dab2348fac3cf45002630f93267137f98e59bd",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".claude/rules/security.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8dd010c06662e528f7fd0b9e18b1e4d36cb7c8e8709ca2a667188cecf9161880",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".claude/rules/testing-standards.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "4a76a5156fad4962875bfedb1f56a17f639f6060f2b684b219534def8b9ed250",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursorrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursor/rules/code-quality.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "9c22122cf48746cb52ea44127d9d5793e13d8ece530826e7b41cfb31d25754d9",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursor/rules/security.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8d58817c7647929cedc57e28a3e850791aa0bb8fdcd2d1fbb558d5df4dad2bbf",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursor/rules/testing-standards.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "a6f69f828c33b3397f0235458e54df888a7f4b576db7e967c71cddc5a35f2e33",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": "AGENTS.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".windsurfrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".clinerules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      }
+    ],
+    "cline": [
+      {
+        "path": "CLAUDE.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".claude/rules/code-quality.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "423655aacc9808617cec9598a4dab2348fac3cf45002630f93267137f98e59bd",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".claude/rules/security.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8dd010c06662e528f7fd0b9e18b1e4d36cb7c8e8709ca2a667188cecf9161880",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".claude/rules/testing-standards.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "4a76a5156fad4962875bfedb1f56a17f639f6060f2b684b219534def8b9ed250",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursorrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursor/rules/code-quality.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "9c22122cf48746cb52ea44127d9d5793e13d8ece530826e7b41cfb31d25754d9",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursor/rules/security.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "8d58817c7647929cedc57e28a3e850791aa0bb8fdcd2d1fbb558d5df4dad2bbf",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".cursor/rules/testing-standards.mdc",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "a6f69f828c33b3397f0235458e54df888a7f4b576db7e967c71cddc5a35f2e33",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": "AGENTS.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".windsurfrules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      },
+      {
+        "path": ".clinerules",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-21T00:27:17.125Z"
+      }
+    ]
+  }
+}

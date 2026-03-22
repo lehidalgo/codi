@@ -1,0 +1,45 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { codexAdapter } from '../../../src/adapters/codex.js';
+import { createMockConfig } from './mock-config.js';
+
+describe('codex adapter', () => {
+  const tmpDir = join(tmpdir(), 'codi-test-codex-' + Date.now());
+
+  beforeEach(async () => {
+    await mkdir(tmpDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('has correct id and name', () => {
+    expect(codexAdapter.id).toBe('codex');
+    expect(codexAdapter.name).toBe('Codex');
+  });
+
+  it('detects when AGENTS.md exists', async () => {
+    await writeFile(join(tmpDir, 'AGENTS.md'), '# Agents');
+    expect(await codexAdapter.detect(tmpDir)).toBe(true);
+  });
+
+  it('does not detect in empty directory', async () => {
+    expect(await codexAdapter.detect(tmpDir)).toBe(false);
+  });
+
+  it('generates AGENTS.md with rules and flag instructions', async () => {
+    const config = createMockConfig();
+    const files = await codexAdapter.generate(config, {});
+
+    expect(files).toHaveLength(1);
+    expect(files[0]!.path).toBe('AGENTS.md');
+    expect(files[0]!.content).toContain('Do NOT execute shell commands.');
+    expect(files[0]!.content).toContain('Keep files under 500 lines.');
+    expect(files[0]!.content).toContain('Code Style');
+    expect(files[0]!.content).toContain('Testing');
+    expect(files[0]!.hash).toBeTruthy();
+  });
+});
