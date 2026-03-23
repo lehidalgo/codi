@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+#### Interactive Init Wizard
+- `codi init` now runs an interactive wizard by default: select agents, rules, flag preset, version pinning
+- 3 flag presets: `minimal` (permissive), `balanced` (recommended), `strict` (enforced)
+- `--preset <name>` flag for non-interactive preset selection
+- Rules from templates are created during init when selected in wizard
+- Version pinning (`codi.requiredVersion`) configured during init
+- Wizard auto-skips in non-interactive environments (`--json`, `--quiet`, `--agents`)
+
 #### Skills
 - `codi add skill <name>` with 3 built-in templates (`mcp`, `code-review`, `documentation`)
 - Skill parsing from `.codi/skills/` directory

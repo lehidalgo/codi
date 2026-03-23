@@ -5,19 +5,24 @@ import { stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { registerAllAdapters } from '../adapters/index.js';
 import { detectAdapters, getAllAdapters } from '../core/generator/adapter-registry.js';
-import { getDefaultFlags } from '../core/flags/flag-catalog.js';
+import { getPreset } from '../core/flags/flag-presets.js';
+import type { PresetName } from '../core/flags/flag-presets.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
+import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
+import { runInitWizard } from './init-wizard.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { VERSION } from '../index.js';
 
 interface InitOptions extends GlobalOptions {
   force?: boolean;
   agents?: string[];
+  preset?: string;
 }
 
 interface InitData {
@@ -25,6 +30,8 @@ interface InitData {
   agents: string[];
   stack: string[];
   generated: boolean;
+  preset: string;
+  rules: string[];
 }
 
 const STACK_INDICATORS: Record<string, string> = {
@@ -47,6 +54,10 @@ async function detectStack(projectRoot: string): Promise<string[]> {
   return detected;
 }
 
+function isInteractive(options: InitOptions): boolean {
+  return !options.json && !options.quiet && !options.agents;
+}
+
 export async function initHandler(
   projectRoot: string,
   options: InitOptions,
@@ -60,7 +71,7 @@ export async function initHandler(
       return createCommandResult({
         success: false,
         command: 'init',
-        data: { codiDir, agents: [], stack: [], generated: false },
+        data: { codiDir, agents: [], stack: [], generated: false, preset: 'balanced', rules: [] },
         errors: [{
           code: 'E_CONFIG_INVALID',
           message: `.codi/ directory already exists. Use --force to reinitialize.`,
@@ -81,33 +92,62 @@ export async function initHandler(
   registerAllAdapters();
 
   let agentIds: string[];
-  if (options.agents && options.agents.length > 0) {
-    const knownIds = new Set(getAllAdapters().map((a) => a.id));
-    const unknownAgents = options.agents.filter((id) => !knownIds.has(id));
-    if (unknownAgents.length > 0) {
+  let presetName: PresetName = (options.preset as PresetName) ?? 'balanced';
+  let ruleTemplates: string[] = [];
+
+  if (isInteractive(options)) {
+    const detectedAdapters = await detectAdapters(projectRoot);
+    const detectedAgentIds = detectedAdapters.map((a) => a.id);
+    const allAgentIds = getAllAdapters().map((a) => a.id);
+
+    const wizardResult = await runInitWizard(stack, detectedAgentIds, allAgentIds);
+    if (!wizardResult) {
       return createCommandResult({
         success: false,
         command: 'init',
-        data: { codiDir, agents: [], stack, generated: false },
-        errors: [{
-          code: 'E_CONFIG_INVALID',
-          message: `Unknown agent(s): ${unknownAgents.join(', ')}. Known: ${[...knownIds].join(', ')}`,
-          hint: `Available agents: ${[...knownIds].join(', ')}`,
-          severity: 'error',
-          context: { unknownAgents },
-        }],
+        data: { codiDir, agents: [], stack, generated: false, preset: 'balanced', rules: [] },
+        errors: [{ code: 'E_CONFIG_INVALID', message: 'Setup cancelled.', hint: '', severity: 'error', context: {} }],
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
     }
-    agentIds = options.agents;
-    log.info(`Using specified agents: ${agentIds.join(', ')}`);
+
+    agentIds = wizardResult.agents;
+    presetName = wizardResult.preset;
+    ruleTemplates = wizardResult.rules;
+
+    await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin);
   } else {
-    const detectedAdapters = await detectAdapters(projectRoot);
-    agentIds = detectedAdapters.map((a) => a.id);
-    log.info(`Detected agents: ${agentIds.length > 0 ? agentIds.join(', ') : 'none'}`);
+    if (options.agents && options.agents.length > 0) {
+      const knownIds = new Set(getAllAdapters().map((a) => a.id));
+      const unknownAgents = options.agents.filter((id) => !knownIds.has(id));
+      if (unknownAgents.length > 0) {
+        return createCommandResult({
+          success: false,
+          command: 'init',
+          data: { codiDir, agents: [], stack, generated: false, preset: presetName, rules: [] },
+          errors: [{
+            code: 'E_CONFIG_INVALID',
+            message: `Unknown agent(s): ${unknownAgents.join(', ')}. Known: ${[...knownIds].join(', ')}`,
+            hint: `Available agents: ${[...knownIds].join(', ')}`,
+            severity: 'error',
+            context: { unknownAgents },
+          }],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
+      agentIds = options.agents;
+    } else {
+      const detectedAdapters = await detectAdapters(projectRoot);
+      agentIds = detectedAdapters.map((a) => a.id);
+    }
+
+    log.info(`Using agents: ${agentIds.join(', ')}`);
+    await createCodiStructure(codiDir, agentIds, presetName, false);
   }
 
-  await createCodiStructure(codiDir, agentIds);
+  for (const template of ruleTemplates) {
+    await createRule({ name: template, codiDir, template });
+  }
 
   let generated = false;
   const configResult = await resolveConfig(projectRoot);
@@ -122,12 +162,17 @@ export async function initHandler(
   return createCommandResult({
     success: true,
     command: 'init',
-    data: { codiDir, agents: agentIds, stack, generated },
+    data: { codiDir, agents: agentIds, stack, generated, preset: presetName, rules: ruleTemplates },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
 
-async function createCodiStructure(codiDir: string, agents: string[]): Promise<void> {
+async function createCodiStructure(
+  codiDir: string,
+  agents: string[],
+  preset: PresetName,
+  versionPin: boolean,
+): Promise<void> {
   const dirs = [
     codiDir,
     path.join(codiDir, 'rules', 'generated', 'common'),
@@ -139,21 +184,26 @@ async function createCodiStructure(codiDir: string, agents: string[]): Promise<v
     await fs.mkdir(dir, { recursive: true });
   }
 
-  const manifest = {
+  const manifest: Record<string, unknown> = {
     name: path.basename(path.dirname(codiDir)),
-    version: '1' as const,
+    version: '1',
     agents,
   };
+  if (versionPin) {
+    manifest['codi'] = { requiredVersion: `>=${VERSION}` };
+  }
   await fs.writeFile(
     path.join(codiDir, 'codi.yaml'),
     stringifyYaml(manifest),
     'utf-8',
   );
 
-  const defaultFlags = getDefaultFlags();
+  const presetFlags = getPreset(preset);
   const flagsObj: Record<string, unknown> = {};
-  for (const [key, flag] of Object.entries(defaultFlags)) {
-    flagsObj[key] = { mode: flag.mode, value: flag.value };
+  for (const [key, def] of Object.entries(presetFlags)) {
+    const entry: Record<string, unknown> = { mode: def.mode, value: def.value };
+    if (def.locked) entry['locked'] = true;
+    flagsObj[key] = entry;
   }
   await fs.writeFile(
     path.join(codiDir, 'flags.yaml'),
@@ -167,7 +217,8 @@ export function registerInitCommand(program: Command): void {
     .command('init')
     .description('Initialize a new .codi/ configuration directory')
     .option('--force', 'Reinitialize even if .codi/ exists')
-    .option('--agents <agents...>', 'Specify agent IDs instead of auto-detecting (claude-code, cursor, codex, windsurf, cline)')
+    .option('--agents <agents...>', 'Specify agent IDs (skips wizard)')
+    .option('--preset <preset>', 'Flag preset: minimal, balanced, strict (default: balanced)')
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: InitOptions = { ...globalOptions, ...cmdOptions };
