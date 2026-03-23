@@ -592,6 +592,8 @@ managed_by: user
 | `scope` | string[] | No | Glob patterns to restrict scope |
 | `language` | string | No | Language-specific rule |
 
+For a complete guide on writing, modifying, and contributing rules, see **[docs/writing-rules.md](docs/writing-rules.md)**.
+
 #### Built-in Rule Templates
 
 Create rules from templates with `codi add rule <name> --template <template>`:
@@ -642,6 +644,7 @@ Create skills with `codi add skill <name> --template <template>`:
 | `mcp` | MCP server tool usage guidelines |
 | `code-review` | Code review workflow and checklist |
 | `documentation` | Documentation generation standards |
+| `rule-management` | Guides AI agents to help create and manage codi rules |
 
 ## 7-Level Config Inheritance
 
