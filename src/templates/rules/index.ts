@@ -1,0 +1,9 @@
+export { template as security } from './security.js';
+export { template as codeStyle } from './code-style.js';
+export { template as testing } from './testing.js';
+export { template as architecture } from './architecture.js';
+export { template as gitWorkflow } from './git-workflow.js';
+export { template as errorHandling } from './error-handling.js';
+export { template as performance } from './performance.js';
+export { template as documentation } from './documentation.js';
+export { template as apiDesign } from './api-design.js';
