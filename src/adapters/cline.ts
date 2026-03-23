@@ -60,13 +60,30 @@ export const clineAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`# ${rule.name}\n\n${rule.content}`);
     }
+    for (const skill of config.skills) {
+      sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
+    }
 
     const content = sections.join('\n\n');
-    return [{
+    const files: GeneratedFile[] = [{
       path: '.clinerules',
       content,
       sources: ['codi.yaml'],
       hash: hashContent(content),
     }];
+
+    // Generate .cline/skills/{name}/SKILL.md
+    for (const skill of config.skills) {
+      const dirName = skill.name.toLowerCase().replace(/\s+/g, '-');
+      const skillContent = `---\nname: ${skill.name}\ndescription: ${skill.description}\n---\n\n${skill.content}`;
+      files.push({
+        path: `.cline/skills/${dirName}/SKILL.md`,
+        content: skillContent,
+        sources: ['codi.yaml'],
+        hash: hashContent(skillContent),
+      });
+    }
+
+    return files;
   },
 };

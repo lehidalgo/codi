@@ -97,6 +97,18 @@ export const cursorAdapter: AgentAdapter = {
       });
     }
 
+    // Generate .cursor/skills/{name}/SKILL.md
+    for (const skill of config.skills) {
+      const dirName = skill.name.toLowerCase().replace(/\s+/g, '-');
+      const skillContent = `---\nname: ${skill.name}\ndescription: ${skill.description}\n---\n\n${skill.content}`;
+      files.push({
+        path: `.cursor/skills/${dirName}/SKILL.md`,
+        content: skillContent,
+        sources: ['codi.yaml'],
+        hash: hashContent(skillContent),
+      });
+    }
+
     return files;
   },
 };

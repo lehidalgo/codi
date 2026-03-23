@@ -58,6 +58,9 @@ export const codexAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`## ${rule.name}\n\n${rule.content}`);
     }
+    for (const skill of config.skills) {
+      sections.push(`## Skill: ${skill.name}\n\n${skill.content}`);
+    }
 
     const content = sections.join('\n\n');
     return [{

@@ -53,7 +53,10 @@ function collectGeneratedFiles(stateAgents: Record<string, Array<{ path: string 
 const AGENT_SUBDIRS = [
   '.claude/rules',
   '.claude/commands',
+  '.claude/skills',
   '.cursor/rules',
+  '.cursor/skills',
+  '.cline/skills',
 ];
 const AGENT_FILES = ['.claude/mcp.json'];
 const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline'];
