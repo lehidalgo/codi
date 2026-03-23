@@ -3,6 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import matter from 'gray-matter';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import os from 'node:os';
 import { resolveCodiDir } from '../utils/paths.js';
 import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
 import { getPreset } from '../core/flags/flag-presets.js';
@@ -21,8 +24,11 @@ import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 
+const execFileAsync = promisify(execFile);
+
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
+  from?: string;
   rules?: boolean;
   skills?: boolean;
   agents?: boolean;
@@ -40,6 +46,7 @@ interface UpdateData {
   skillsSkipped: string[];
   agentsUpdated: string[];
   agentsSkipped: string[];
+  sourceUpdated: string[];
   regenerated: boolean;
 }
 
@@ -206,6 +213,74 @@ async function refreshManagedAgents(
   return { updated, skipped };
 }
 
+async function pullFromSource(
+  repo: string,
+  codiDir: string,
+  dryRun: boolean,
+  log: Logger,
+): Promise<string[]> {
+  const updated: string[] = [];
+  const tmpDir = path.join(os.tmpdir(), `codi-pull-${Date.now()}`);
+
+  try {
+    const repoUrl = `https://github.com/${repo}.git`;
+    await execFileAsync('git', ['clone', '--depth', '1', repoUrl, tmpDir]);
+  } catch {
+    log.warn(`Failed to clone source repo: ${repo}`);
+    return updated;
+  }
+
+  const sourcePaths = ['rules/custom', 'skills', 'agents'];
+
+  for (const syncPath of sourcePaths) {
+    const sourceDir = path.join(tmpDir, '.codi', syncPath);
+    const localDir = path.join(codiDir, syncPath);
+
+    let entries: string[];
+    try {
+      entries = await fs.readdir(sourceDir);
+    } catch {
+      continue;
+    }
+
+    await fs.mkdir(localDir, { recursive: true });
+
+    for (const entry of entries) {
+      if (!entry.endsWith('.md')) continue;
+      const sourceFile = path.join(sourceDir, entry);
+      const localFile = path.join(localDir, entry);
+
+      const sourceContent = await fs.readFile(sourceFile, 'utf8');
+      const parsed = matter(sourceContent);
+      const managedBy = parsed.data['managed_by'] as string | undefined;
+
+      // Only pull managed_by: codi artifacts
+      if (managedBy !== 'codi') continue;
+
+      // Check if local file exists and is user-managed
+      try {
+        const localContent = await fs.readFile(localFile, 'utf8');
+        const localParsed = matter(localContent);
+        if (localParsed.data['managed_by'] === 'user') {
+          log.info(`Skipping ${entry} (local is managed_by: user)`);
+          continue;
+        }
+      } catch {
+        // Local file doesn't exist — will be created
+      }
+
+      if (!dryRun) {
+        await fs.writeFile(localFile, sourceContent, 'utf-8');
+      }
+      updated.push(`${syncPath}/${entry}`);
+      log.info(`${dryRun ? 'Would pull' : 'Pulled'}: ${syncPath}/${entry}`);
+    }
+  }
+
+  await fs.rm(tmpDir, { recursive: true, force: true });
+  return updated;
+}
+
 export async function updateHandler(
   projectRoot: string,
   options: UpdateOptions,
@@ -222,7 +297,7 @@ export async function updateHandler(
     return createCommandResult({
       success: false,
       command: 'update',
-      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], regenerated: false },
+      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], sourceUpdated: [], regenerated: false },
       errors: [{
         code: 'E_CONFIG_NOT_FOUND',
         message: 'No .codi/flags.yaml found. Run `codi init` first.',
@@ -244,7 +319,7 @@ export async function updateHandler(
       return createCommandResult({
         success: false,
         command: 'update',
-        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], regenerated: false },
+        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], sourceUpdated: [], regenerated: false },
         errors: [{
           code: 'E_CONFIG_INVALID',
           message: `Invalid preset "${presetName}". Available: ${validPresets.join(', ')}`,
@@ -305,6 +380,11 @@ export async function updateHandler(
     agentsSkipped = result.skipped;
   }
 
+  let sourceUpdated: string[] = [];
+  if (options.from) {
+    sourceUpdated = await pullFromSource(options.from, codiDir, options.dryRun ?? false, log);
+  }
+
   let regenerated = false;
   if (options.regenerate && !options.dryRun) {
     registerAllAdapters();
@@ -334,7 +414,7 @@ export async function updateHandler(
   return createCommandResult({
     success: true,
     command: 'update',
-    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, regenerated },
+    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, sourceUpdated, regenerated },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
@@ -344,6 +424,7 @@ export function registerUpdateCommand(program: Command): void {
     .command('update')
     .description('Update flags, rules, skills, and agents to latest versions')
     .option('--preset <preset>', 'Reset flags to preset: minimal, balanced, strict')
+    .option('--from <repo>', 'Pull centralized artifacts from a GitHub repo (e.g., org/team-config)')
     .option('--rules', 'Refresh template-managed rules to latest versions')
     .option('--skills', 'Refresh template-managed skills to latest versions')
     .option('--agents', 'Refresh template-managed agents to latest versions')

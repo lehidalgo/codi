@@ -82,32 +82,9 @@ Flags map to hook checks:
 
 Adapts the generated hook script to the detected runner (husky config, pre-commit YAML, lefthook YAML, or raw `.git/hooks/pre-commit`).
 
-## Sync System
+## Remote Config Pull (`codi update --from`)
 
-### Workflow
-
-```mermaid
-sequenceDiagram
-    participant L as Local .codi/
-    participant G as Git (shallow clone)
-    participant R as Team Repo
-
-    L->>G: Clone team repo (shallow)
-    G->>G: Detect changes via hash comparison
-    G->>G: Copy modified .md files
-    G->>G: Create feature branch
-    G->>G: Commit changes
-    G->>R: Push branch
-    R->>R: Create PR via gh CLI
-```
-
-### Limitations
-
-- Only `.md` files are synced
-- GitHub-only (requires `gh` CLI authenticated)
-- No merge strategy — overwrites target files
-- Shallow clone — no history preserved
-- Non-idempotent: running twice creates duplicate PRs
+`codi update --from <repo>` pulls centralized artifacts (rules, skills, agents) from a team GitHub repository. This is strictly one-way: codi reads from the remote repo but never writes to it. Only artifacts marked `managed_by: codi` are updated; user-custom artifacts (`managed_by: user`) are never overwritten.
 
 ## Adapter Architecture
 

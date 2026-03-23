@@ -43,13 +43,13 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP) and Phase 2 (Go
 ## What's Complete
 
 ### Phase 1: MVP
-- 10 CLI commands: init, generate, validate, status, add, verify, doctor, sync, update, clean
+- 10 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean
 - 5 agent adapters: Claude Code, Cursor, Codex, Windsurf, Cline
 - Config engine with 4-level inheritance (repo, lang, agent, user)
 - 8 behavioral flags with typed defaults
 - Zod validation, hash-based state tracking, drift detection
 - Token-based verification system
-- Team sync via PR with `gh` CLI
+- Remote config pull via `codi update --from <repo>`
 - Version enforcement with `requiredVersion`
 - Pre-commit hook auto-installation
 - Migration from existing CLAUDE.md and AGENTS.md
