@@ -27,7 +27,7 @@ export const claudeCodeAdapter: AgentAdapter = {
   paths: {
     configRoot: '.claude',
     rules: '.claude/rules',
-    skills: null,
+    skills: '.claude/skills',
     commands: '.claude/commands',
     instructionFile: 'CLAUDE.md',
     mcpConfig: '.claude/mcp.json',
@@ -54,13 +54,10 @@ export const claudeCodeAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
-    // Build CLAUDE.md (permissions + skills only — rules auto-load from .claude/rules/)
+    // Build CLAUDE.md (permissions only — rules and skills auto-load from .claude/)
     const sections: string[] = [];
     if (flagText) {
       sections.push('## Permissions\n\n' + flagText);
-    }
-    for (const skill of config.skills) {
-      sections.push(`## Skill: ${skill.name}\n\n${skill.content}`);
     }
     const mainContent = sections.join('\n\n');
     files.push({
@@ -79,6 +76,18 @@ export const claudeCodeAdapter: AgentAdapter = {
         content: ruleContent,
         sources: ['codi.yaml'],
         hash: hashContent(ruleContent),
+      });
+    }
+
+    // Generate .claude/skills/{name}/SKILL.md
+    for (const skill of config.skills) {
+      const dirName = skill.name.toLowerCase().replace(/\s+/g, '-');
+      const skillContent = `---\nname: ${skill.name}\ndescription: ${skill.description}\n---\n\n${skill.content}`;
+      files.push({
+        path: `.claude/skills/${dirName}/SKILL.md`,
+        content: skillContent,
+        sources: ['codi.yaml'],
+        hash: hashContent(skillContent),
       });
     }
 
