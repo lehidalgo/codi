@@ -9,6 +9,8 @@ import { registerAddCommand } from './cli/add.js';
 import { registerVerifyCommand } from './cli/verify.js';
 import { registerDoctorCommand } from './cli/doctor.js';
 import { registerSyncCommand } from './cli/sync.js';
+import { registerUpdateCommand } from './cli/update.js';
+import { registerCleanCommand } from './cli/clean.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -28,5 +30,7 @@ registerAddCommand(program);
 registerVerifyCommand(program);
 registerDoctorCommand(program);
 registerSyncCommand(program);
+registerUpdateCommand(program);
+registerCleanCommand(program);
 
 program.parse();

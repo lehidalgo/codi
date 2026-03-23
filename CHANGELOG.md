@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+#### Lifecycle Commands
+- `codi update` — add missing flags from catalog or reset to a preset (`--preset minimal|balanced|strict`)
+- `codi update --regenerate` — update flags and regenerate in one step
+- `codi clean` — remove all generated files (CLAUDE.md, .cursorrules, etc.) and agent rule dirs
+- `codi clean --all` — full uninstall including `.codi/` directory
+- Both commands support `--dry-run` for preview
+
 #### Interactive Init Wizard
 - `codi init` now runs an interactive wizard by default: select agents, rules, flag preset, version pinning
 - 3 flag presets: `minimal` (permissive), `balanced` (recommended), `strict` (enforced)
