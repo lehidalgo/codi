@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig, NormalizedRule } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -46,7 +47,7 @@ export const cursorAdapter: AgentAdapter = {
 
   capabilities: {
     rules: true,
-    skills: false,
+    skills: true,
     commands: false,
     mcp: false,
     frontmatter: true,
@@ -98,16 +99,7 @@ export const cursorAdapter: AgentAdapter = {
     }
 
     // Generate .cursor/skills/{name}/SKILL.md
-    for (const skill of config.skills) {
-      const dirName = skill.name.toLowerCase().replace(/\s+/g, '-');
-      const skillContent = `---\nname: ${skill.name}\ndescription: ${skill.description}\n---\n\n${skill.content}`;
-      files.push({
-        path: `.cursor/skills/${dirName}/SKILL.md`,
-        content: skillContent,
-        sources: ['codi.yaml'],
-        hash: hashContent(skillContent),
-      });
-    }
+    files.push(...generateSkillFiles(config.skills, '.cursor/skills'));
 
     return files;
   },

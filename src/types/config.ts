@@ -40,6 +40,9 @@ export interface NormalizedSkill {
   content: string;
   compatibility?: string[];
   tools?: string[];
+  disableModelInvocation?: boolean;
+  argumentHint?: string;
+  allowedTools?: string[];
 }
 
 export interface NormalizedCommand {

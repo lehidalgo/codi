@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -27,7 +28,7 @@ export const windsurfAdapter: AgentAdapter = {
   paths: {
     configRoot: '.',
     rules: '.',
-    skills: null,
+    skills: '.windsurf/skills',
     commands: null,
     instructionFile: '.windsurfrules',
     mcpConfig: null,
@@ -35,7 +36,7 @@ export const windsurfAdapter: AgentAdapter = {
 
   capabilities: {
     rules: true,
-    skills: false,
+    skills: true,
     commands: false,
     mcp: false,
     frontmatter: false,
@@ -63,11 +64,16 @@ export const windsurfAdapter: AgentAdapter = {
     }
 
     const content = sections.join('\n\n');
-    return [{
+    const files: GeneratedFile[] = [{
       path: '.windsurfrules',
       content,
       sources: ['codi.yaml'],
       hash: hashContent(content),
     }];
+
+    // Generate .windsurf/skills/{name}/SKILL.md
+    files.push(...generateSkillFiles(config.skills, '.windsurf/skills'));
+
+    return files;
   },
 };
