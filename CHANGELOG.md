@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `codi clean --all` — full uninstall including `.codi/` directory
 - Both commands support `--dry-run` for preview
 
+#### Reference-Based Generation
+- CLAUDE.md and .cursorrules now reference rules instead of inlining them
+- Rules live in `.claude/rules/` and `.cursor/rules/` with full content
+- Central config files are lightweight indexes (flags + rule list + verification)
+
+#### Production-Grade Rule Templates
+- Rewrote 4 existing templates (security, code-style, testing, architecture) with actionable, detailed content
+- Added 5 new templates: git-workflow, error-handling, performance, documentation, api-design
+- 9 total rule templates covering all major development concerns
+
 #### Interactive Init Wizard
 - `codi init` now runs an interactive wizard by default: select agents, rules, flag preset, version pinning
 - 3 flag presets: `minimal` (permissive), `balanced` (recommended), `strict` (enforced)

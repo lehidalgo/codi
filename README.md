@@ -583,10 +583,15 @@ Create rules from templates with `codi add rule <name> --template <template>`:
 
 | Template | Description |
 |----------|-------------|
-| `security` | OWASP guidelines, secrets management, input validation |
-| `code-style` | Naming conventions, small functions, self-documenting code |
-| `testing` | 80% coverage, descriptive names, arrange-act-assert |
-| `architecture` | Established patterns, composition over inheritance |
+| `security` | Secret management, input validation, auth, dependency auditing, OWASP |
+| `code-style` | Naming conventions, function size limits, file organization, error handling |
+| `testing` | TDD workflow (RED/GREEN/REFACTOR), 80% coverage, AAA pattern, mocking guidelines |
+| `architecture` | Module design, dependency direction, SOLID principles, avoid over-engineering |
+| `git-workflow` | Conventional commits, atomic commits, branch strategy, safety rules |
+| `error-handling` | Typed errors, actionable messages, logging, resilience, cleanup |
+| `performance` | N+1 prevention, async patterns, caching strategy, pagination |
+| `documentation` | API docs, README maintenance, ADRs, code comments |
+| `api-design` | REST conventions, versioning, error format, pagination, rate limiting |
 
 ### Skills
 

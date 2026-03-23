@@ -65,13 +65,16 @@ export const cursorAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
-    // Build combined .cursorrules file
+    // Build .cursorrules (reference-based — rules live in .cursor/rules/)
     const sections: string[] = [];
     if (flagText) {
       sections.push(flagText);
     }
-    for (const rule of config.rules) {
-      sections.push(`# ${rule.name}\n\n${rule.content}`);
+    if (config.rules.length > 0) {
+      const ruleList = config.rules
+        .map((r) => `- ${r.name}`)
+        .join('\n');
+      sections.push(`# Rules\n\nRules are defined in \`.cursor/rules/\`:\n${ruleList}`);
     }
     const mainContent = sections.join('\n\n');
     files.push({

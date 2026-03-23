@@ -1,0 +1,39 @@
+---
+name: error-handling
+description: Error handling and resilience patterns
+priority: high
+alwaysApply: true
+managed_by: user
+---
+
+# Error Handling
+
+## Core Principles
+- Never silently swallow errors — every error must be handled or propagated
+- Use typed errors with error codes for programmatic handling
+- Return Result types for recoverable operations
+- Throw/raise only for programmer errors (bugs), not expected failures
+
+## Error Messages
+- Write actionable error messages: what happened, why, and how to fix it
+- Include relevant context: operation, input, expected vs actual
+- Never expose internal details (stack traces, SQL) to end users
+- Log full details server-side, return sanitized messages to clients
+
+## Logging
+- Log errors with structured context (who, what, where, when)
+- Use appropriate severity levels: debug, info, warn, error, fatal
+- Include correlation IDs for request tracing
+- Do not log sensitive data (passwords, tokens, PII)
+
+## Resilience
+- Implement timeouts for all external calls
+- Use retries with exponential backoff for transient failures
+- Provide fallback behavior where appropriate
+- Fail fast on configuration errors at startup, not at runtime
+
+## Cleanup
+- Always release resources in finally blocks or equivalent
+- Close database connections, file handles, and network sockets
+- Roll back partial operations on failure
+- Leave the system in a consistent state after errors
