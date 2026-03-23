@@ -54,16 +54,22 @@ npm install -g codi-cli
 ### Initialize
 
 ```bash
-# Auto-detect agents and tech stack
+# Interactive wizard — walks you through setup
 codi init
-
-# Or specify agents explicitly
-codi init --agents claude-code cursor codex
 ```
 
-Codi auto-detects your tech stack (Node, Python, Go, Rust) and which agents are already configured in your project. It creates the `.codi/` directory with a manifest and default flags.
+The wizard will ask you to:
+1. **Select agents** — auto-detected from your project
+2. **Choose rules** — pick from built-in templates (security, code-style, testing, architecture)
+3. **Pick a preset** — `minimal`, `balanced` (recommended), or `strict`
+4. **Enable version pinning** — locks your team to a minimum codi version
 
-### Add Rules
+```bash
+# Or skip the wizard with explicit options
+codi init --agents claude-code cursor --preset balanced
+```
+
+### Add More Rules Later
 
 ```bash
 # Add a rule from a built-in template
@@ -96,13 +102,97 @@ codi verify
 codi verify --check "token: codi-abc123, rules: security, code-style"
 ```
 
+## What Gets Generated
+
+After running `codi generate`, each agent gets a config file tailored to its format. Here's what the output looks like:
+
+**CLAUDE.md** (for Claude Code):
+```markdown
+## Permissions
+
+Keep files under 700 lines.
+Do NOT use force push (--force) on git operations.
+All changes require pull request review before merging.
+
+## security
+
+# Security Rules
+
+- Never expose secrets, API keys, or credentials in code
+- Use environment variables for sensitive configuration
+...
+```
+
+**.cursorrules** (for Cursor):
+```
+# Rules
+
+## security
+
+- Never expose secrets, API keys, or credentials in code
+- Use environment variables for sensitive configuration
+...
+```
+
+Each adapter formats the same rules and flags for its agent's conventions. Individual rule files are also created in `.claude/rules/` and `.cursor/rules/` for agents that support per-rule files.
+
+## Daily Workflow
+
+```bash
+# 1. Edit your rules
+vim .codi/rules/custom/security.md
+
+# 2. Regenerate agent configs
+codi generate
+
+# 3. Check nothing drifted
+codi status
+
+# 4. Commit both config and generated files
+git add .codi/ CLAUDE.md .cursorrules AGENTS.md .windsurfrules .clinerules
+git commit -m "update codi rules"
+```
+
+## Git & Version Control
+
+| What | Commit? | Why |
+|------|---------|-----|
+| `.codi/codi.yaml` | Yes | Your project manifest — source of truth |
+| `.codi/flags.yaml` | Yes | Flag configuration |
+| `.codi/rules/custom/` | Yes | Your rules |
+| `.codi/skills/` | Yes | Your skills |
+| `.codi/state.json` | Yes | Enables drift detection for your team |
+| Generated files (`CLAUDE.md`, `.cursorrules`, etc.) | Yes | Agents need these files in the repo to read them |
+| `~/.codi/user.yaml` | No | Personal preferences, never committed |
+| `~/.codi/org.yaml` | No | Shared via org tooling, not per-repo |
+
+## Migration
+
+Already using AI agents with manual config files? Codi can adopt your existing setup.
+
+```bash
+# 1. Initialize — codi auto-detects existing agent config files
+codi init
+
+# 2. Move your existing rules into .codi/rules/custom/ as Markdown files
+# Each rule needs YAML frontmatter (name, description, priority)
+
+# 3. Regenerate — now all agents get the same rules
+codi generate
+
+# 4. Verify the output matches your expectations
+codi status
+```
+
+Your existing `CLAUDE.md`, `.cursorrules`, etc. will be overwritten by codi's generated versions. Back them up first if needed.
+
 ## CLI Reference
 
 ### Commands
 
 | Command | Description | Key Options |
 |---------|-------------|-------------|
-| `codi init` | Initialize `.codi/` configuration | `--force`, `--agents <ids...>` |
+| `codi init` | Initialize `.codi/` configuration | `--force`, `--agents <ids...>`, `--preset <name>` |
 | `codi generate` | Generate agent config files | `--agent <ids...>`, `--dry-run`, `--force` |
 | `codi validate` | Validate `.codi/` configuration | — |
 | `codi status` | Show drift status of generated files | — |
@@ -139,6 +229,16 @@ Creates the `.codi/` directory structure with:
 **Stack auto-detection** looks for `package.json` (Node), `pyproject.toml` (Python), `go.mod` (Go), `Cargo.toml` (Rust).
 
 **Agent auto-detection** checks for existing config files (`CLAUDE.md`, `.cursorrules`, etc.) in the project root.
+
+**Interactive wizard** runs by default. Skipped when `--agents`, `--json`, or `--quiet` is provided.
+
+**Presets** control the flag strictness level via `--preset`:
+
+| Preset | Philosophy |
+|--------|-----------|
+| `minimal` | Permissive — security off, no test requirements, all actions allowed |
+| `balanced` | Recommended — security on, type-checking strict, no force-push |
+| `strict` | Enforced — security locked, tests required, shell/delete restricted |
 
 After creating the structure, Codi automatically runs generation to produce the initial config files.
 
@@ -666,7 +766,7 @@ src/
 | TypeScript | Strict mode, ESM, full type safety |
 | Commander.js | CLI framework |
 | Zod | Schema validation |
-| Vitest | Test runner (365 tests) |
+| Vitest | Test runner (373 tests) |
 | tsup | Bundler (ESM, Node 20 target) |
 | gray-matter | YAML frontmatter parsing |
 

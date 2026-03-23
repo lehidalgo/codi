@@ -29,7 +29,7 @@ describe('buildVerificationData', () => {
     const data = buildVerificationData(config);
     expect(data.activeFlags).toContain('Do NOT execute shell commands.');
     expect(data.activeFlags).toContain('Do NOT delete files.');
-    expect(data.activeFlags).toContain('Keep files under 500 lines.');
+    expect(data.activeFlags).toContain('Keep source code files under 500 lines. Documentation files have no line limit.');
     expect(data.activeFlags).toContain('Write tests for all new code.');
   });
 

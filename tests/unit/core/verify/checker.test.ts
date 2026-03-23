@@ -5,7 +5,7 @@ import type { VerificationData } from '../../../../src/core/verify/token.js';
 const expected: VerificationData = {
   token: 'codi-a3f8b2',
   ruleNames: ['code-quality', 'security', 'testing-standards'],
-  activeFlags: ['Keep files under 700 lines.'],
+  activeFlags: ['Keep source code files under 700 lines. Documentation files have no line limit.'],
 };
 
 describe('checkAgentResponse', () => {
@@ -13,14 +13,14 @@ describe('checkAgentResponse', () => {
     const response = `
 Verification token: codi-a3f8b2
 Rules loaded: code-quality, security, testing-standards
-Flags active: Keep files under 700 lines.
+Flags active: Keep source code files under 700 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
     expect(result.receivedToken).toBe('codi-a3f8b2');
     expect(result.rulesFound).toEqual(['code-quality', 'security', 'testing-standards']);
     expect(result.rulesMissing).toEqual([]);
-    expect(result.flagsFound).toEqual(['Keep files under 700 lines.']);
+    expect(result.flagsFound).toEqual(['Keep source code files under 700 lines. Documentation files have no line limit.']);
     expect(result.flagsMissing).toEqual([]);
   });
 
@@ -42,7 +42,7 @@ Flags active: Keep files under 700 lines.
     const response = `
 Verification token: codi-a3f8b2
 Rules loaded: code-quality
-Flags active: Keep files under 700 lines.
+Flags active: Keep source code files under 700 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.rulesFound).toEqual(['code-quality']);
@@ -65,23 +65,23 @@ Rules loaded:
 - security
 - testing-standards
 Flags active:
-- Keep files under 700 lines.
+- Keep source code files under 700 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.rulesFound).toEqual(['code-quality', 'security', 'testing-standards']);
-    expect(result.flagsFound).toEqual(['Keep files under 700 lines.']);
+    expect(result.flagsFound).toEqual(['Keep source code files under 700 lines. Documentation files have no line limit.']);
   });
 
   it('handles fuzzy matching with backticks and formatting', () => {
     const response = `
 Verification token: \`codi-a3f8b2\`
 Rules loaded: \`code-quality\`, \`security\`, \`testing-standards\`
-Flags active: "Keep files under 700 lines."
+Flags active: "Keep source code files under 700 lines. Documentation files have no line limit."
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
     expect(result.rulesFound).toEqual(['code-quality', 'security', 'testing-standards']);
-    expect(result.flagsFound).toEqual(['Keep files under 700 lines.']);
+    expect(result.flagsFound).toEqual(['Keep source code files under 700 lines. Documentation files have no line limit.']);
   });
 
   it('detects missing flags', () => {
@@ -91,6 +91,6 @@ Rules loaded: code-quality, security, testing-standards
 Flags active: none
 `;
     const result = checkAgentResponse(response, expected);
-    expect(result.flagsMissing).toEqual(['Keep files under 700 lines.']);
+    expect(result.flagsMissing).toEqual(['Keep source code files under 700 lines. Documentation files have no line limit.']);
   });
 });
