@@ -1,4 +1,4 @@
-# Writing & Customizing Rules
+# Writing & Customizing Artifacts
 
 This guide covers everything about creating, modifying, and contributing rules in Codi.
 
@@ -181,7 +181,7 @@ Want to improve a built-in rule template? Here's how:
 
 ### Where Templates Live
 
-All 9 templates are defined in `src/core/scaffolder/template-loader.ts` as inline strings. Each template follows this structure:
+Templates are individual TypeScript modules in `src/templates/rules/`, `src/templates/skills/`, and `src/templates/agents/`. Each template follows this structure:
 
 ```typescript
 'template-name': `---
@@ -202,7 +202,7 @@ managed_by: codi
 ### Contributing Process
 
 1. **Fork** the [codi repository](https://github.com/lehidalgo/codi)
-2. **Edit** the template in `src/core/scaffolder/template-loader.ts`
+2. **Edit** the relevant template module in `src/templates/rules/`, `src/templates/skills/`, or `src/templates/agents/`
 3. **Test** your changes:
    ```bash
    npm run build
@@ -259,3 +259,47 @@ Add all at once:
 ```bash
 codi add rule --all
 ```
+
+## Writing & Customizing Skills
+
+Same lifecycle as rules. Skills live in `.codi/skills/` as Markdown:
+
+```markdown
+---
+name: my-skill
+description: What this skill does
+compatibility: [claude-code, cursor]
+tools: []
+managed_by: user
+---
+
+# Instructions...
+```
+
+- `managed_by: codi` — template-managed, updated by `codi update --skills`
+- `managed_by: user` — custom, never overwritten
+- Add from template: `codi add skill <name> --template <template>`
+- Add all: `codi add skill --all`
+- Available templates: mcp, code-review, documentation, rule-management
+
+## Writing & Customizing Agents
+
+Agents (subagents) are specialized worker roles. They live in `.codi/agents/`:
+
+```markdown
+---
+name: my-agent
+description: What this agent does
+tools: [Read, Grep, Glob, Bash]
+model: inherit
+managed_by: user
+---
+
+# System prompt...
+```
+
+- Same managed_by lifecycle as rules and skills
+- Add from template: `codi add agent <name> --template <template>`
+- Add all: `codi add agent --all`
+- Available templates: code-reviewer, test-generator, security-analyzer
+- Generated formats: Claude Code (`.claude/agents/*.md`), Codex (`.codex/agents/*.toml`)

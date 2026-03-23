@@ -342,6 +342,8 @@ Brings your flags and rules up to date:
 - **Without options**: Adds any new flags from the catalog (forward-compatibility when upgrading codi)
 - **With `--preset`**: Resets ALL flags to the specified preset values
 - **With `--rules`**: Refreshes template-managed rules (`managed_by: codi`) to the latest content from the installed codi version. User-custom rules (`managed_by: user`) are never touched.
+- **With `--skills`**: Refreshes template-managed skills (`managed_by: codi`) to latest versions
+- **With `--agents`**: Refreshes template-managed agents (`managed_by: codi`) to latest versions
 
 ```bash
 # Add any new flags from latest codi version
@@ -350,23 +352,23 @@ codi update
 # Reset all flags to the strict preset
 codi update --preset strict
 
-# Refresh rules to latest templates
-codi update --rules
+# Refresh rules, skills, and agents to latest templates
+codi update --rules --skills --agents
 
-# Full update: flags + rules + regenerate
-codi update --preset balanced --rules --regenerate
+# Full update: flags + all artifacts + regenerate
+codi update --preset balanced --rules --skills --agents --regenerate
 
 # Preview without writing
 codi update --rules --dry-run
 ```
 
-#### Rule Ownership
+#### Artifact Ownership
 
-Rules have a `managed_by` field in their frontmatter:
-- **`managed_by: codi`** — created from a template, updated by `codi update --rules`
-- **`managed_by: user`** — custom rule, never overwritten by codi
+Rules, skills, and agents all use a `managed_by` field in their frontmatter:
+- **`managed_by: codi`** — created from a template, updated by `codi update --rules`, `--skills`, or `--agents`
+- **`managed_by: user`** — custom artifact, never overwritten by codi
 
-When you run `codi add rule security --template security`, the rule is created with `managed_by: codi`. When you run `codi add rule my-custom-rule` (no template), it's `managed_by: user`.
+When you run `codi add rule security --template security`, the rule is created with `managed_by: codi`. When you run `codi add rule my-custom-rule` (no template), it's `managed_by: user`. The same applies to skills and agents.
 
 #### `codi clean`
 
@@ -961,6 +963,8 @@ src/
 | gray-matter | YAML frontmatter parsing |
 
 ### Architecture
+
+For detailed architecture documentation, see [docs/architecture.md](docs/architecture.md).
 
 - **Result types** — all functions return `Result<T>` (`ok(data)` or `err(errors)`), no thrown exceptions
 - **Adapter pattern** — each agent has an independent adapter implementing `detect()` and `generate()`
