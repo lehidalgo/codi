@@ -54,16 +54,10 @@ export const claudeCodeAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
-    // Build CLAUDE.md (reference-based — rules live in .claude/rules/)
+    // Build CLAUDE.md (permissions + skills only — rules auto-load from .claude/rules/)
     const sections: string[] = [];
     if (flagText) {
       sections.push('## Permissions\n\n' + flagText);
-    }
-    if (config.rules.length > 0) {
-      const ruleList = config.rules
-        .map((r) => `- ${r.name}`)
-        .join('\n');
-      sections.push(`## Rules\n\nRules are defined in \`.claude/rules/\`:\n${ruleList}`);
     }
     for (const skill of config.skills) {
       sections.push(`## Skill: ${skill.name}\n\n${skill.content}`);
