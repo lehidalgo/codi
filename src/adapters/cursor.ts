@@ -41,6 +41,7 @@ export const cursorAdapter: AgentAdapter = {
     rules: '.cursor/rules',
     skills: null,
     commands: null,
+    agents: null,
     instructionFile: '.cursorrules',
     mcpConfig: null,
   } satisfies AgentPaths,

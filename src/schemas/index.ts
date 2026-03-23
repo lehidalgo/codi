@@ -20,3 +20,6 @@ export type { McpConfigInput, McpConfigOutput } from './mcp.js';
 
 export { HookDefinitionSchema, HooksConfigSchema } from './hooks.js';
 export type { HookDefinitionOutput, HooksConfigOutput } from './hooks.js';
+
+export { AgentFrontmatterSchema } from './agent.js';
+export type { AgentFrontmatterInput, AgentFrontmatterOutput } from './agent.js';

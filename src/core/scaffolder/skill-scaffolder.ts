@@ -13,6 +13,7 @@ description: Custom skill
 type: skill
 compatibility: []
 tools: []
+managed_by: user
 ---
 
 # {{name}}

@@ -4,6 +4,7 @@ description: Code review checklist and workflow. Use when reviewing PRs, examini
 type: skill
 compatibility: []
 tools: []
+managed_by: codi
 ---
 
 # {{name}}

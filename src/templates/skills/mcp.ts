@@ -4,6 +4,7 @@ description: Guidelines for using MCP server tools. Use when interacting with MC
 type: skill
 compatibility: [claude-code]
 tools: []
+managed_by: codi
 ---
 
 # {{name}}

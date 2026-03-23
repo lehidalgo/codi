@@ -5,6 +5,7 @@ import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
 export interface WizardResult {
   agents: string[];
   rules: string[];
+  skills: string[];
   preset: PresetName;
   versionPin: boolean;
 }
@@ -19,6 +20,13 @@ const AVAILABLE_RULES = [
   { value: 'performance', title: 'Performance', description: 'N+1 prevention, caching, async patterns, pagination' },
   { value: 'documentation', title: 'Documentation', description: 'API docs, README maintenance, ADRs, code comments' },
   { value: 'api-design', title: 'API design', description: 'REST conventions, versioning, pagination, rate limiting' },
+];
+
+const AVAILABLE_SKILLS = [
+  { value: 'mcp', title: 'MCP', description: 'Model Context Protocol integration skill' },
+  { value: 'code-review', title: 'Code review', description: 'Automated code review and feedback' },
+  { value: 'documentation', title: 'Documentation', description: 'Documentation generation and maintenance' },
+  { value: 'rule-management', title: 'Rule management', description: 'Rule creation and lifecycle management' },
 ];
 
 export async function runInitWizard(
@@ -55,6 +63,13 @@ export async function runInitWizard(
       hint: '- Space to toggle, Enter to confirm',
     },
     {
+      type: 'multiselect',
+      name: 'skills',
+      message: 'Include skills',
+      choices: AVAILABLE_SKILLS.map((s) => ({ ...s, selected: false })),
+      hint: '- Space to toggle, Enter to confirm',
+    },
+    {
       type: 'select',
       name: 'preset',
       message: 'Choose flag preset',
@@ -84,6 +99,7 @@ export async function runInitWizard(
   return {
     agents: response.agents as string[],
     rules: (response.rules ?? []) as string[],
+    skills: (response.skills ?? []) as string[],
     preset: (response.preset ?? 'balanced') as PresetName,
     versionPin: response.versionPin ?? true,
   };

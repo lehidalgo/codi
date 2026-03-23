@@ -10,6 +10,7 @@ import type { PresetName } from '../core/flags/flag-presets.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
+import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -94,6 +95,7 @@ export async function initHandler(
   let agentIds: string[];
   let presetName: PresetName = (options.preset as PresetName) ?? 'balanced';
   let ruleTemplates: string[] = [];
+  let skillTemplates: string[] = [];
 
   if (isInteractive(options)) {
     const detectedAdapters = await detectAdapters(projectRoot);
@@ -114,6 +116,7 @@ export async function initHandler(
     agentIds = wizardResult.agents;
     presetName = wizardResult.preset;
     ruleTemplates = wizardResult.rules;
+    skillTemplates = wizardResult.skills;
 
     await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin);
   } else {
@@ -147,6 +150,10 @@ export async function initHandler(
 
   for (const template of ruleTemplates) {
     await createRule({ name: template, codiDir, template });
+  }
+
+  for (const template of skillTemplates) {
+    await createSkill({ name: template, codiDir, template });
   }
 
   let generated = false;

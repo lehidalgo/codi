@@ -30,6 +30,7 @@ export const clineAdapter: AgentAdapter = {
     rules: '.cline',
     skills: '.cline/skills',
     commands: null,
+    agents: null,
     instructionFile: '.clinerules',
     mcpConfig: null,
   } satisfies AgentPaths,
