@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -25,9 +26,9 @@ export const codexAdapter: AgentAdapter = {
   name: 'Codex',
 
   paths: {
-    configRoot: '.',
+    configRoot: '.codex',
     rules: '.',
-    skills: null,
+    skills: '.agents/skills',
     commands: null,
     instructionFile: 'AGENTS.md',
     mcpConfig: null,
@@ -35,7 +36,7 @@ export const codexAdapter: AgentAdapter = {
 
   capabilities: {
     rules: true,
-    skills: false,
+    skills: true,
     commands: false,
     mcp: false,
     frontmatter: false,
@@ -45,29 +46,34 @@ export const codexAdapter: AgentAdapter = {
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
-    return exists(join(projectRoot, 'AGENTS.md'));
+    const hasFile = await exists(join(projectRoot, 'AGENTS.md'));
+    const hasDir = await exists(join(projectRoot, '.agents'));
+    return hasFile || hasDir;
   },
 
   async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+    const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
-    const sections: string[] = [];
 
+    // AGENTS.md — behavior guidance only (rules + flags, NOT skills)
+    const sections: string[] = [];
     if (flagText) {
       sections.push('## Permissions\n\n' + flagText);
     }
     for (const rule of config.rules) {
       sections.push(`## ${rule.name}\n\n${rule.content}`);
     }
-    for (const skill of config.skills) {
-      sections.push(`## Skill: ${skill.name}\n\n${skill.content}`);
-    }
-
     const content = sections.join('\n\n');
-    return [{
+    files.push({
       path: 'AGENTS.md',
       content,
       sources: ['codi.yaml'],
       hash: hashContent(content),
-    }];
+    });
+
+    // Generate .agents/skills/{name}/SKILL.md (auto-discovered by Codex)
+    files.push(...generateSkillFiles(config.skills, '.agents/skills'));
+
+    return files;
   },
 };
