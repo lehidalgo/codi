@@ -9,6 +9,7 @@ import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { hashContent } from '../utils/hash.js';
 import type { CommandResult } from '../core/output/types.js';
+import { writeAuditEntry } from '../core/audit/audit-log.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 
@@ -75,6 +76,15 @@ export async function generateHandler(
         }));
       await stateManager.updateAgent(agentId, agentFiles);
     }
+
+    await writeAuditEntry(codiDir, {
+      type: 'generate',
+      timestamp: new Date().toISOString(),
+      details: {
+        agents: genResult.data.agents,
+        filesGenerated: genResult.data.files.length,
+      },
+    });
   }
 
   return createCommandResult({

@@ -3,10 +3,10 @@ import { buildVerificationData } from '../../../../src/core/verify/token.js';
 import { createMockConfig } from '../../adapters/mock-config.js';
 
 describe('buildVerificationData', () => {
-  it('returns token in codi-XXXXXX format', () => {
+  it('returns token in codi-XXXXXXXXXXXX format', () => {
     const config = createMockConfig();
     const data = buildVerificationData(config);
-    expect(data.token).toMatch(/^codi-[a-f0-9]{6}$/);
+    expect(data.token).toMatch(/^codi-[a-f0-9]{12}$/);
   });
 
   it('returns deterministic output for same config', () => {
@@ -22,6 +22,26 @@ describe('buildVerificationData', () => {
     const config = createMockConfig();
     const data = buildVerificationData(config);
     expect(data.ruleNames).toEqual(['Code Style', 'Testing']);
+  });
+
+  it('collects skill names from config', () => {
+    const config = createMockConfig({
+      skills: [
+        { name: 'rule-management', description: 'Manage rules', content: 'Handle rule ops.' },
+      ],
+    });
+    const data = buildVerificationData(config);
+    expect(data.skillNames).toEqual(['rule-management']);
+  });
+
+  it('collects agent names from config', () => {
+    const config = createMockConfig({
+      agents: [
+        { name: 'code-reviewer', description: 'Reviews code', content: 'Review all PRs.' },
+      ],
+    });
+    const data = buildVerificationData(config);
+    expect(data.agentNames).toEqual(['code-reviewer']);
   });
 
   it('collects active flags from config', () => {
@@ -52,6 +72,34 @@ describe('buildVerificationData', () => {
     expect(t1).not.toBe(t2);
   });
 
+  it('changes token when rule content changes', () => {
+    const config1 = createMockConfig();
+    const config2 = createMockConfig({
+      rules: [
+        {
+          name: 'Code Style',
+          description: 'Enforce consistent code style',
+          content: 'Use 4-space indentation and double quotes.',
+          priority: 'high',
+          alwaysApply: true,
+          managedBy: 'codi',
+        },
+        {
+          name: 'Testing',
+          description: 'Testing requirements',
+          content: 'Write unit tests for all functions.',
+          priority: 'medium',
+          scope: ['**/*.test.ts'],
+          alwaysApply: false,
+          managedBy: 'codi',
+        },
+      ],
+    });
+    const t1 = buildVerificationData(config1).token;
+    const t2 = buildVerificationData(config2).token;
+    expect(t1).not.toBe(t2);
+  });
+
   it('changes token when agents change', () => {
     const config1 = createMockConfig();
     const config2 = createMockConfig({
@@ -66,5 +114,12 @@ describe('buildVerificationData', () => {
     const config = createMockConfig({ flags: {} });
     const data = buildVerificationData(config);
     expect(data.activeFlags).toEqual([]);
+  });
+
+  it('includes a timestamp', () => {
+    const config = createMockConfig();
+    const data = buildVerificationData(config);
+    expect(data.timestamp).toBeDefined();
+    expect(new Date(data.timestamp).getTime()).not.toBeNaN();
   });
 });

@@ -47,7 +47,7 @@ describe('verify command handler', () => {
     expect(result.command).toBe('verify');
 
     const data = result.data as { token: string; rules: string[]; flags: string[]; prompt: string };
-    expect(data.token).toMatch(/^codi-[a-f0-9]{6}$/);
+    expect(data.token).toMatch(/^codi-[a-f0-9]{12}$/);
     expect(data.rules.length).toBeGreaterThan(0);
     expect(typeof data.prompt).toBe('string');
     expect(data.prompt.length).toBeGreaterThan(0);
@@ -61,7 +61,7 @@ describe('verify command handler', () => {
     const json = JSON.stringify(result);
     const parsed = JSON.parse(json);
     expect(parsed.success).toBe(true);
-    expect(parsed.data.token).toMatch(/^codi-[a-f0-9]{6}$/);
+    expect(parsed.data.token).toMatch(/^codi-[a-f0-9]{12}$/);
   });
 
   it('validates a correct agent response in --check mode', async () => {
@@ -86,7 +86,7 @@ describe('verify command handler', () => {
     await initHandler(tmpDir, { agents: ['claude-code'] });
     await addRuleHandler(tmpDir, 'code-quality', { template: 'code-style' });
 
-    const response = 'Verification token: codi-000000\nRules loaded: none';
+    const response = 'Verification token: codi-000000000000\nRules loaded: none';
     const result = await verifyHandler(tmpDir, { check: response });
     expect(result.success).toBe(false);
     expect(result.exitCode).toBe(EXIT_CODES.VERIFY_MISMATCH);

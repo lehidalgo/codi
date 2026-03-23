@@ -16,7 +16,10 @@ Rules are defined in `.cursor/rules/`:
 ## Codi Verification
 
 This project uses Codi for unified AI agent configuration.
-When asked "verify codi" or "codi verify", respond with:
-- Verification token: `codi-61672e`
-- Rules loaded: [list the rule names you see in this file]
-- Flags active: [list any permission constraints from this file]
+- Verification token: `codi-55ccfb9ed7d5`
+- Rules: architecture, code-style, error-handling, git-workflow, security, testing
+- Skills: rule-management
+- Agents: code-reviewer, security-analyzer, test-generator
+- Generated: 2026-03-23T21:04:11.132Z
+
+When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.

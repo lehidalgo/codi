@@ -16,6 +16,7 @@ import { loadAgentTemplate, AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
+import { writeAuditEntry } from '../core/audit/audit-log.js';
 import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
@@ -312,6 +313,22 @@ export async function updateHandler(
       const genResult = await generate(configResult.data, projectRoot);
       regenerated = genResult.ok;
     }
+  }
+
+  if (!options.dryRun) {
+    await writeAuditEntry(codiDir, {
+      type: 'update',
+      timestamp: new Date().toISOString(),
+      details: {
+        flagsAdded,
+        flagsReset,
+        preset: presetName ?? null,
+        rulesUpdated,
+        skillsUpdated,
+        agentsUpdated,
+        regenerated,
+      },
+    });
   }
 
   return createCommandResult({

@@ -5,10 +5,19 @@ Do NOT use force push (--force) on git operations.
 All changes require pull request review before merging.
 Maximum context window: 50000 tokens.
 
+## Configuration
+- Rules (6): architecture, code-style, error-handling, git-workflow, security, testing
+- Skills (1): rule-management
+- Agents (3): code-reviewer, security-analyzer, test-generator
+- Generated: 2026-03-23T21:04:11.122Z
+
 ## Codi Verification
 
 This project uses Codi for unified AI agent configuration.
-When asked "verify codi" or "codi verify", respond with:
-- Verification token: `codi-61672e`
-- Rules loaded: [list the rule names you see in this file]
-- Flags active: [list any permission constraints from this file]
+- Verification token: `codi-55ccfb9ed7d5`
+- Rules: architecture, code-style, error-handling, git-workflow, security, testing
+- Skills: rule-management
+- Agents: code-reviewer, security-analyzer, test-generator
+- Generated: 2026-03-23T21:04:11.124Z
+
+When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.
