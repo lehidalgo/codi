@@ -1,0 +1,43 @@
+---
+name: testing
+description: Testing standards and TDD workflow
+priority: medium
+alwaysApply: true
+managed_by: user
+---
+
+# Testing Standards
+
+## Coverage & Requirements
+- Maintain minimum 80% code coverage
+- All new features require tests before merging
+- All bug fixes require a regression test
+- Critical paths require integration tests
+
+## Test-Driven Development (TDD)
+1. RED: Write a failing test that describes the expected behavior
+2. GREEN: Write the minimal implementation to make it pass
+3. REFACTOR: Improve the code while keeping tests green
+
+## Test Structure
+- Follow arrange-act-assert (AAA) pattern
+- One assertion per test when practical
+- Use descriptive names: "should [behavior] when [condition]"
+- Keep tests independent — no shared mutable state between tests
+
+## What to Test
+- Business logic and domain rules
+- Edge cases: empty inputs, nulls, boundaries, overflow
+- Error paths: invalid input, network failures, timeouts
+- Integration points: API endpoints, database operations
+
+## What NOT to Test
+- Framework internals or third-party library behavior
+- Trivial getters/setters with no logic
+- Implementation details (test behavior, not structure)
+
+## Mocking
+- Mock only external dependencies (APIs, databases, file system)
+- Do not mock the module under test
+- Prefer fakes and stubs over complex mock frameworks
+- Reset mocks between tests to avoid leaking state

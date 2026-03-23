@@ -10,10 +10,15 @@ export interface WizardResult {
 }
 
 const AVAILABLE_RULES = [
-  { value: 'security', title: 'Security', description: 'OWASP guidelines, secrets, input validation' },
-  { value: 'code-style', title: 'Code style', description: 'Naming, small functions, self-documenting code' },
-  { value: 'testing', title: 'Testing', description: '80% coverage, descriptive names, arrange-act-assert' },
-  { value: 'architecture', title: 'Architecture', description: 'Design patterns, composition, file structure' },
+  { value: 'security', title: 'Security', description: 'Secret management, input validation, OWASP, dependencies' },
+  { value: 'code-style', title: 'Code style', description: 'Naming conventions, function size, file organization' },
+  { value: 'testing', title: 'Testing', description: 'TDD workflow, 80% coverage, AAA pattern, mocking guidelines' },
+  { value: 'architecture', title: 'Architecture', description: 'Module design, dependency direction, SOLID principles' },
+  { value: 'git-workflow', title: 'Git workflow', description: 'Conventional commits, atomic commits, branch strategy' },
+  { value: 'error-handling', title: 'Error handling', description: 'Typed errors, logging, resilience, cleanup' },
+  { value: 'performance', title: 'Performance', description: 'N+1 prevention, caching, async patterns, pagination' },
+  { value: 'documentation', title: 'Documentation', description: 'API docs, README maintenance, ADRs, code comments' },
+  { value: 'api-design', title: 'API design', description: 'REST conventions, versioning, pagination, rate limiting' },
 ];
 
 export async function runInitWizard(
