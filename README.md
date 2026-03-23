@@ -237,6 +237,8 @@ Your existing `CLAUDE.md`, `.cursorrules`, etc. will be overwritten by codi's ge
 | `codi doctor` | Check project health | `--ci` |
 | `codi sync` | Sync config to team repo via PR | `--dry-run`, `-m, --message <msg>` |
 | `codi verify` | Verify agent loaded configuration | `--check <response>` |
+| `codi update` | Update flags to latest catalog or reset to preset | `--preset <name>`, `--regenerate`, `--dry-run` |
+| `codi clean` | Remove generated files (uninstall codi output) | `--all`, `--dry-run`, `--force` |
 
 Aliases: `codi gen` = `codi generate`.
 
@@ -329,6 +331,41 @@ With `--ci`, exits non-zero on any failure — designed for pre-commit hooks and
 Syncs your local `.codi/` rules and skills to a shared team repository via pull request. Requires the `gh` CLI to be installed and authenticated.
 
 Flow: clone team repo → create branch → copy paths → commit → push → create PR.
+
+#### `codi update`
+
+Brings your `flags.yaml` up to date:
+- **Without `--preset`**: Adds any new flags from the catalog that are missing (forward-compatibility when upgrading codi)
+- **With `--preset`**: Resets ALL flags to the specified preset values
+
+```bash
+# Add any new flags from latest codi version
+codi update
+
+# Reset all flags to the strict preset
+codi update --preset strict
+
+# Reset and regenerate in one step
+codi update --preset balanced --regenerate
+
+# Preview without writing
+codi update --preset strict --dry-run
+```
+
+#### `codi clean`
+
+Removes generated files from your project. By default keeps `.codi/` intact (your config is safe).
+
+```bash
+# Remove generated files only (CLAUDE.md, .cursorrules, etc.)
+codi clean
+
+# Full uninstall — also removes .codi/ directory
+codi clean --all
+
+# Preview without deleting
+codi clean --dry-run
+```
 
 ## Configuration
 
