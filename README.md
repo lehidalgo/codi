@@ -72,7 +72,10 @@ codi init --agents claude-code cursor --preset balanced
 ### Add More Rules Later
 
 ```bash
-# Add a rule from a built-in template
+# Add all 9 built-in template rules at once
+codi add rule --all
+
+# Add a specific rule from a template
 codi add rule security --template security
 
 # Add a blank rule to write yourself
@@ -237,7 +240,7 @@ Your existing `CLAUDE.md`, `.cursorrules`, etc. will be overwritten by codi's ge
 | `codi doctor` | Check project health | `--ci` |
 | `codi sync` | Sync config to team repo via PR | `--dry-run`, `-m, --message <msg>` |
 | `codi verify` | Verify agent loaded configuration | `--check <response>` |
-| `codi update` | Update flags to latest catalog or reset to preset | `--preset <name>`, `--regenerate`, `--dry-run` |
+| `codi update` | Update flags and rules to latest versions | `--preset <name>`, `--rules`, `--regenerate`, `--dry-run` |
 | `codi clean` | Remove generated files (uninstall codi output) | `--all`, `--dry-run`, `--force` |
 
 Aliases: `codi gen` = `codi generate`.
@@ -334,9 +337,10 @@ Flow: clone team repo → create branch → copy paths → commit → push → c
 
 #### `codi update`
 
-Brings your `flags.yaml` up to date:
-- **Without `--preset`**: Adds any new flags from the catalog that are missing (forward-compatibility when upgrading codi)
+Brings your flags and rules up to date:
+- **Without options**: Adds any new flags from the catalog (forward-compatibility when upgrading codi)
 - **With `--preset`**: Resets ALL flags to the specified preset values
+- **With `--rules`**: Refreshes template-managed rules (`managed_by: codi`) to the latest content from the installed codi version. User-custom rules (`managed_by: user`) are never touched.
 
 ```bash
 # Add any new flags from latest codi version
@@ -345,12 +349,23 @@ codi update
 # Reset all flags to the strict preset
 codi update --preset strict
 
-# Reset and regenerate in one step
-codi update --preset balanced --regenerate
+# Refresh rules to latest templates
+codi update --rules
+
+# Full update: flags + rules + regenerate
+codi update --preset balanced --rules --regenerate
 
 # Preview without writing
-codi update --preset strict --dry-run
+codi update --rules --dry-run
 ```
+
+#### Rule Ownership
+
+Rules have a `managed_by` field in their frontmatter:
+- **`managed_by: codi`** — created from a template, updated by `codi update --rules`
+- **`managed_by: user`** — custom rule, never overwritten by codi
+
+When you run `codi add rule security --template security`, the rule is created with `managed_by: codi`. When you run `codi add rule my-custom-rule` (no template), it's `managed_by: user`.
 
 #### `codi clean`
 

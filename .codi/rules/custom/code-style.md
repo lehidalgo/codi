@@ -3,7 +3,7 @@ name: code-style
 description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Code Style

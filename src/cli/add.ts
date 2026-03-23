@@ -12,6 +12,7 @@ import type { GlobalOptions } from './shared.js';
 
 interface AddRuleOptions extends GlobalOptions {
   template?: string;
+  all?: boolean;
 }
 
 interface AddRuleData {
@@ -130,16 +131,50 @@ export function registerAddCommand(program: Command): void {
     .description('Add resources to the .codi/ configuration');
 
   addCmd
-    .command('rule <name>')
+    .command('rule [name]')
     .description('Add a new custom rule')
     .option(
       '-t, --template <template>',
       `Use a template (${AVAILABLE_TEMPLATES.join(', ')})`,
     )
-    .action(async (name: string, cmdOptions: Record<string, unknown>) => {
+    .option('--all', 'Add all available template rules')
+    .action(async (name: string | undefined, cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: AddRuleOptions = { ...globalOptions, ...cmdOptions };
       initFromOptions(options);
+
+      if (options.all) {
+        const results: Array<{ name: string; success: boolean }> = [];
+        for (const tmpl of AVAILABLE_TEMPLATES) {
+          const result = await addRuleHandler(process.cwd(), tmpl, { ...options, template: tmpl });
+          results.push({ name: tmpl, success: result.success });
+        }
+        const added = results.filter((r) => r.success).map((r) => r.name);
+        const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        const summary = createCommandResult({
+          success: true,
+          command: 'add rule --all',
+          data: { added, skipped, total: AVAILABLE_TEMPLATES.length },
+          exitCode: EXIT_CODES.SUCCESS,
+        });
+        handleOutput(summary, options);
+        process.exit(summary.exitCode);
+        return;
+      }
+
+      if (!name) {
+        const err = createCommandResult({
+          success: false,
+          command: 'add rule',
+          data: { name: '', path: '', template: null },
+          errors: [{ code: 'E_CONFIG_INVALID', message: 'Rule name required. Use --all to add all templates.', hint: '', severity: 'error', context: {} }],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+        handleOutput(err, options);
+        process.exit(err.exitCode);
+        return;
+      }
+
       const result = await addRuleHandler(process.cwd(), name, options);
       handleOutput(result, options);
       process.exit(result.exitCode);
