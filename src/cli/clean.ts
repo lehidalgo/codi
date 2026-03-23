@@ -50,8 +50,13 @@ function collectGeneratedFiles(stateAgents: Record<string, Array<{ path: string 
   return [...files];
 }
 
-const AGENT_RULE_DIRS = ['.claude/rules', '.cursor/rules'];
-const AGENT_PARENT_DIRS = ['.claude', '.cursor'];
+const AGENT_SUBDIRS = [
+  '.claude/rules',
+  '.claude/commands',
+  '.cursor/rules',
+];
+const AGENT_FILES = ['.claude/mcp.json'];
+const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline'];
 
 export async function cleanHandler(
   projectRoot: string,
@@ -104,7 +109,24 @@ export async function cleanHandler(
     }
   }
 
-  for (const dir of AGENT_RULE_DIRS) {
+  for (const file of AGENT_FILES) {
+    const absPath = path.join(projectRoot, file);
+    if (options.dryRun) {
+      try {
+        await fs.access(absPath);
+        log.info(`Would delete: ${file}`);
+        filesDeleted.push(file);
+      } catch { /* doesn't exist */ }
+    } else {
+      const deleted = await safeDelete(absPath);
+      if (deleted) {
+        filesDeleted.push(file);
+        log.info(`Deleted: ${file}`);
+      }
+    }
+  }
+
+  for (const dir of AGENT_SUBDIRS) {
     const absDir = path.join(projectRoot, dir);
     try {
       await fs.access(absDir);
