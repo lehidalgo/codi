@@ -28,9 +28,9 @@ export interface CreateRuleOptions {
 export async function createRule(options: CreateRuleOptions): Promise<Result<string>> {
   const { name, codiDir, template } = options;
 
-  if (!NAME_PATTERN.test(name)) {
+  if (!NAME_PATTERN.test(name) || name.length > 64) {
     return err([createError('E_CONFIG_INVALID', {
-      message: `Invalid rule name "${name}". Use lowercase letters, digits, and hyphens only.`,
+      message: `Invalid rule name "${name}". Use lowercase letters, digits, and hyphens only (max 64 chars).`,
     })]);
   }
 

@@ -1,7 +1,6 @@
 export const template = `---
 name: {{name}}
 description: Code review checklist and workflow. Use when reviewing PRs, examining code changes, or when asked to review code quality
-type: skill
 compatibility: []
 tools: []
 managed_by: codi

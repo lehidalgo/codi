@@ -149,11 +149,17 @@ export async function initHandler(
   }
 
   for (const template of ruleTemplates) {
-    await createRule({ name: template, codiDir, template });
+    const result = await createRule({ name: template, codiDir, template });
+    if (!result.ok) {
+      log.warn(`Failed to create rule "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+    }
   }
 
   for (const template of skillTemplates) {
-    await createSkill({ name: template, codiDir, template });
+    const result = await createSkill({ name: template, codiDir, template });
+    if (!result.ok) {
+      log.warn(`Failed to create skill "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+    }
   }
 
   let generated = false;

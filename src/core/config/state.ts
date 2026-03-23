@@ -101,9 +101,7 @@ export class StateManager {
 
     for (const stored of storedFiles) {
       try {
-        const fullPath = path.isAbsolute(stored.path)
-          ? stored.path
-          : path.join(this.projectRoot, stored.path);
+        const fullPath = path.resolve(this.projectRoot, stored.path);
         const content = await fs.readFile(fullPath, 'utf8');
         const currentHash = hashContent(content);
         if (currentHash === stored.generatedHash) {

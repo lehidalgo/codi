@@ -1,6 +1,7 @@
 import prompts from 'prompts';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
+import { Logger } from '../core/output/logger.js';
 
 export interface WizardResult {
   agents: string[];
@@ -38,7 +39,7 @@ export async function runInitWizard(
     ? detectedStack.join(', ')
     : 'none detected';
 
-  console.log(`\n  Detected stack: ${stackLabel}\n`);
+  Logger.getInstance().info(`Detected stack: ${stackLabel}`);
 
   const agentChoices = allAgents.map((id) => ({
     title: id,

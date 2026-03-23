@@ -1,7 +1,6 @@
 export const template = `---
 name: {{name}}
 description: Guidelines for using MCP server tools. Use when interacting with MCP servers, calling MCP tools, or debugging MCP connections
-type: skill
 compatibility: [claude-code]
 tools: []
 managed_by: codi

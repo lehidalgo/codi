@@ -71,7 +71,7 @@ async function refreshManagedRules(
     }
 
     const ruleName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingTemplate(ruleName);
+    const templateName = findMatchingTemplate(ruleName, AVAILABLE_TEMPLATES, RULE_NAME_MAPPINGS);
 
     if (!templateName) {
       skipped.push(ruleName);
@@ -93,24 +93,15 @@ async function refreshManagedRules(
   return { updated, skipped };
 }
 
-function findMatchingTemplate(ruleName: string): string | null {
-  if (AVAILABLE_TEMPLATES.includes(ruleName)) return ruleName;
-  const mappings: Record<string, string> = {
-    'code-quality': 'code-style',
-    'testing-standards': 'testing',
-  };
-  return mappings[ruleName] ?? null;
+function findMatchingTemplate(name: string, available: string[], mappings: Record<string, string> = {}): string | null {
+  if (available.includes(name)) return name;
+  return mappings[name] ?? null;
 }
 
-function findMatchingSkillTemplate(skillName: string): string | null {
-  if (AVAILABLE_SKILL_TEMPLATES.includes(skillName)) return skillName;
-  return null;
-}
-
-function findMatchingAgentTemplate(agentName: string): string | null {
-  if (AVAILABLE_AGENT_TEMPLATES.includes(agentName)) return agentName;
-  return null;
-}
+const RULE_NAME_MAPPINGS: Record<string, string> = {
+  'code-quality': 'code-style',
+  'testing-standards': 'testing',
+};
 
 async function refreshManagedSkills(
   codiDir: string,
@@ -141,7 +132,7 @@ async function refreshManagedSkills(
     }
 
     const skillName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingSkillTemplate(skillName);
+    const templateName = findMatchingTemplate(skillName, AVAILABLE_SKILL_TEMPLATES);
 
     if (!templateName) {
       skipped.push(skillName);
@@ -192,7 +183,7 @@ async function refreshManagedAgents(
     }
 
     const agentName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingAgentTemplate(agentName);
+    const templateName = findMatchingTemplate(agentName, AVAILABLE_AGENT_TEMPLATES);
 
     if (!templateName) {
       skipped.push(agentName);

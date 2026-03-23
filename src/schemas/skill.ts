@@ -8,6 +8,9 @@ export const SkillFrontmatterSchema = z.object({
   tools: z.array(z.string()).optional(),
   model: z.string().optional(),
   managed_by: z.enum(['codi', 'user']).default('user'),
+  disableModelInvocation: z.boolean().optional(),
+  argumentHint: z.string().optional(),
+  allowedTools: z.array(z.string()).optional(),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

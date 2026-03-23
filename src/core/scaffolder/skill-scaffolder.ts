@@ -10,7 +10,6 @@ const NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 const DEFAULT_CONTENT = `---
 name: {{name}}
 description: Custom skill
-type: skill
 compatibility: []
 tools: []
 managed_by: user
@@ -29,9 +28,9 @@ export interface CreateSkillOptions {
 export async function createSkill(options: CreateSkillOptions): Promise<Result<string>> {
   const { name, codiDir, template } = options;
 
-  if (!NAME_PATTERN.test(name)) {
+  if (!NAME_PATTERN.test(name) || name.length > 64) {
     return err([createError('E_CONFIG_INVALID', {
-      message: `Invalid skill name "${name}". Use lowercase letters, digits, and hyphens only.`,
+      message: `Invalid skill name "${name}". Use lowercase letters, digits, and hyphens only (max 64 chars).`,
     })]);
   }
 
