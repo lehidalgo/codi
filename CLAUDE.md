@@ -5,16 +5,6 @@ Do NOT use force push (--force) on git operations.
 All changes require pull request review before merging.
 Maximum context window: 50000 tokens.
 
-## Rules
-
-Rules are defined in `.claude/rules/`:
-- architecture
-- code-style
-- error-handling
-- git-workflow
-- security
-- testing
-
 ## Codi Verification
 
 This project uses Codi for unified AI agent configuration.
