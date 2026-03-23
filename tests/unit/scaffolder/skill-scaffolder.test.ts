@@ -27,7 +27,7 @@ describe('skill scaffolder', () => {
     expect(result.data).toContain('my-skill.md');
     const content = await fs.readFile(result.data, 'utf-8');
     expect(content).toContain('name: my-skill');
-    expect(content).toContain('type: skill');
+    expect(content).toContain('managed_by: user');
     expect(content).toContain('Describe what this skill does');
   });
 

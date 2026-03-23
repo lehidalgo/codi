@@ -95,6 +95,7 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     hook: null,
     description: 'Maximum context token window',
   },
+  // TODO: Not yet implemented — flag is defined but has no runtime behavior
   progressive_loading: {
     type: 'enum',
     default: 'metadata',
@@ -102,6 +103,7 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     hook: null,
     description: 'Progressive loading strategy',
   },
+  // TODO: Partially implemented — used in doctor command but not enforced at generation time
   drift_detection: {
     type: 'enum',
     default: 'warn',
@@ -109,6 +111,7 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     hook: null,
     description: 'Drift detection behavior',
   },
+  // TODO: Not yet implemented — flag is defined but has no runtime behavior
   auto_generate_on_change: {
     type: 'boolean',
     default: false,

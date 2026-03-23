@@ -17,7 +17,7 @@ export function createError(
   const entry = ERROR_CATALOG[code];
   return {
     code,
-    message: interpolate(entry.hintTemplate, context),
+    message: `[${code}] ${interpolate(entry.hintTemplate, context)}`,
     hint: interpolate(entry.hintTemplate, context),
     severity: entry.severity,
     context,

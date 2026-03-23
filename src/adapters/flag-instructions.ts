@@ -34,7 +34,7 @@ export function buildFlagInstructions(flags: ResolvedFlags): string {
   }
 
   const mcpFlag = flags['mcp_allowed_servers'];
-  if (mcpFlag && Array.isArray(mcpFlag.value) && (mcpFlag.value as string[]).length > 0) {
+  if (mcpFlag && Array.isArray(mcpFlag.value) && mcpFlag.value.every((v: unknown) => typeof v === 'string') && mcpFlag.value.length > 0) {
     lines.push(`Only use these MCP servers: ${(mcpFlag.value as string[]).join(', ')}.`);
   }
 
@@ -44,7 +44,7 @@ export function buildFlagInstructions(flags: ResolvedFlags): string {
   }
 
   const langsFlag = flags['allowed_languages'];
-  if (langsFlag && Array.isArray(langsFlag.value) && !(langsFlag.value as string[]).includes('*')) {
+  if (langsFlag && Array.isArray(langsFlag.value) && langsFlag.value.every((v: unknown) => typeof v === 'string') && !(langsFlag.value as string[]).includes('*')) {
     lines.push(`Only use these languages: ${(langsFlag.value as string[]).join(', ')}.`);
   }
 

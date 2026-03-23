@@ -1,7 +1,6 @@
 export const template = `---
 name: {{name}}
 description: Documentation creation and maintenance. Use when writing docs, updating README, generating API documentation, or creating guides
-type: skill
 compatibility: []
 tools: []
 managed_by: codi

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const AgentFrontmatterSchema = z.object({
-  name: z.string(),
+  name: z.string().regex(/^[a-z][a-z0-9-]*$/).max(64),
   description: z.string().default(''),
   tools: z.array(z.string()).optional(),
   model: z.string().optional(),

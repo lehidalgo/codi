@@ -1,7 +1,6 @@
 export const template = `---
 name: {{name}}
 description: Create and manage codi rules. Use when the user asks to write, modify, update, or review codi rules and configuration
-type: skill
 compatibility: [claude-code, cursor, codex]
 tools: []
 managed_by: codi
