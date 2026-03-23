@@ -37,7 +37,7 @@ describe('codex adapter', () => {
     expect(files).toHaveLength(1);
     expect(files[0]!.path).toBe('AGENTS.md');
     expect(files[0]!.content).toContain('Do NOT execute shell commands.');
-    expect(files[0]!.content).toContain('Keep files under 500 lines.');
+    expect(files[0]!.content).toContain('Keep source code files under 500 lines.');
     expect(files[0]!.content).toContain('Code Style');
     expect(files[0]!.content).toContain('Testing');
     expect(files[0]!.hash).toBeTruthy();

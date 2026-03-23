@@ -1,6 +1,6 @@
 ## Permissions
 
-Keep files under 700 lines.
+Keep source code files under 700 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 All changes require pull request review before merging.
 Maximum context window: 50000 tokens.
@@ -36,6 +36,6 @@ Maximum context window: 50000 tokens.
 
 This project uses Codi for unified AI agent configuration.
 When asked "verify codi" or "codi verify", respond with:
-- Verification token: `codi-9ced0d`
+- Verification token: `codi-c324ad`
 - Rules loaded: [list the rule names you see in this file]
 - Flags active: [list any permission constraints from this file]

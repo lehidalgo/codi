@@ -15,7 +15,7 @@ export function buildFlagInstructions(flags: ResolvedFlags): string {
 
   const maxLines = flags['max_file_lines'];
   if (maxLines && typeof maxLines.value === 'number' && maxLines.value > 0) {
-    lines.push(`Keep files under ${maxLines.value} lines.`);
+    lines.push(`Keep source code files under ${maxLines.value} lines. Documentation files have no line limit.`);
   }
 
   const testsFlag = flags['require_tests'];

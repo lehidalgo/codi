@@ -6,7 +6,7 @@ describe('buildVerificationSection', () => {
   const data: VerificationData = {
     token: 'codi-abc123',
     ruleNames: ['code-quality', 'security'],
-    activeFlags: ['Keep files under 700 lines.'],
+    activeFlags: ['Keep source code files under 700 lines. Documentation files have no line limit.'],
   };
 
   it('contains the verification token', () => {
