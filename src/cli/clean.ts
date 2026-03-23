@@ -57,9 +57,10 @@ const AGENT_SUBDIRS = [
   '.cursor/rules',
   '.cursor/skills',
   '.cline/skills',
+  '.windsurf/skills',
 ];
 const AGENT_FILES = ['.claude/mcp.json'];
-const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline'];
+const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf'];
 
 export async function cleanHandler(
   projectRoot: string,

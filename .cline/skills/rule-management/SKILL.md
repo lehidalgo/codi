@@ -1,6 +1,6 @@
 ---
 name: rule-management
-description: Skill for creating and managing codi rules
+description: Create and manage codi rules. Use when the user asks to write, modify, update, or review codi rules and configuration
 ---
 
 # rule-management

@@ -43,7 +43,7 @@ describe('skill scaffolder', () => {
 
     const content = await fs.readFile(result.data, 'utf-8');
     expect(content).toContain('name: mcp-usage');
-    expect(content).toContain('MCP server usage');
+    expect(content).toContain('Guidelines for using MCP server tools');
   });
 
   it('creates a skill file with code-review template', async () => {
@@ -57,7 +57,7 @@ describe('skill scaffolder', () => {
     if (!result.ok) return;
 
     const content = await fs.readFile(result.data, 'utf-8');
-    expect(content).toContain('Code review workflow');
+    expect(content).toContain('Code review checklist and workflow');
   });
 
   it('creates a skill file with documentation template', async () => {
@@ -71,7 +71,7 @@ describe('skill scaffolder', () => {
     if (!result.ok) return;
 
     const content = await fs.readFile(result.data, 'utf-8');
-    expect(content).toContain('Documentation generation');
+    expect(content).toContain('Documentation creation and maintenance');
   });
 
   it('rejects invalid skill names', async () => {

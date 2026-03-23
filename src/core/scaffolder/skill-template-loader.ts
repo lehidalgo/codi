@@ -5,7 +5,7 @@ import { createError } from '../output/errors.js';
 const SKILL_TEMPLATES: Record<string, string> = {
   mcp: `---
 name: {{name}}
-description: MCP server usage skill
+description: Guidelines for using MCP server tools. Use when interacting with MCP servers, calling MCP tools, or debugging MCP connections
 type: skill
 compatibility: [claude-code]
 tools: []
@@ -26,7 +26,7 @@ Use this skill when interacting with MCP servers.
 
   'code-review': `---
 name: {{name}}
-description: Code review workflow skill
+description: Code review checklist and workflow. Use when reviewing PRs, examining code changes, or when asked to review code quality
 type: skill
 compatibility: []
 tools: []
@@ -48,7 +48,7 @@ Use this skill when reviewing code changes.
 
   documentation: `---
 name: {{name}}
-description: Documentation generation skill
+description: Documentation creation and maintenance. Use when writing docs, updating README, generating API documentation, or creating guides
 type: skill
 compatibility: []
 tools: []
@@ -70,7 +70,7 @@ Use this skill when generating or updating documentation.
 
   'rule-management': `---
 name: {{name}}
-description: Skill for creating and managing codi rules
+description: Create and manage codi rules. Use when the user asks to write, modify, update, or review codi rules and configuration
 type: skill
 compatibility: [claude-code, cursor, codex]
 tools: []
