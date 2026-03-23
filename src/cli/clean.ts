@@ -51,6 +51,7 @@ function collectGeneratedFiles(stateAgents: Record<string, Array<{ path: string 
 }
 
 const AGENT_RULE_DIRS = ['.claude/rules', '.cursor/rules'];
+const AGENT_PARENT_DIRS = ['.claude', '.cursor'];
 
 export async function cleanHandler(
   projectRoot: string,
@@ -114,6 +115,23 @@ export async function cleanHandler(
         await safeRmDir(absDir);
         dirsDeleted.push(dir);
         log.info(`Removed: ${dir}/`);
+      }
+    } catch { /* doesn't exist */ }
+  }
+
+  for (const dir of AGENT_PARENT_DIRS) {
+    const absDir = path.join(projectRoot, dir);
+    try {
+      const entries = await fs.readdir(absDir);
+      if (entries.length === 0) {
+        if (options.dryRun) {
+          log.info(`Would remove empty: ${dir}/`);
+          dirsDeleted.push(dir);
+        } else {
+          await safeRmDir(absDir);
+          dirsDeleted.push(dir);
+          log.info(`Removed empty: ${dir}/`);
+        }
       }
     } catch { /* doesn't exist */ }
   }
