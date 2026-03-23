@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import matter from 'gray-matter';
 import { resolveCodiDir } from '../utils/paths.js';
 import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
 import { getPreset } from '../core/flags/flag-presets.js';
@@ -9,6 +10,7 @@ import type { PresetName } from '../core/flags/flag-presets.js';
 import { registerAllAdapters } from '../adapters/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
+import { loadTemplate, AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -18,6 +20,7 @@ import type { GlobalOptions } from './shared.js';
 
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
+  rules?: boolean;
   regenerate?: boolean;
   dryRun?: boolean;
 }
@@ -26,7 +29,69 @@ interface UpdateData {
   flagsAdded: string[];
   flagsReset: boolean;
   preset: string | null;
+  rulesUpdated: string[];
+  rulesSkipped: string[];
   regenerated: boolean;
+}
+
+async function refreshManagedRules(
+  codiDir: string,
+  dryRun: boolean,
+  log: Logger,
+): Promise<{ updated: string[]; skipped: string[] }> {
+  const rulesDir = path.join(codiDir, 'rules', 'custom');
+  const updated: string[] = [];
+  const skipped: string[] = [];
+
+  let entries: string[];
+  try {
+    entries = await fs.readdir(rulesDir);
+  } catch {
+    return { updated, skipped };
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith('.md')) continue;
+    const filePath = path.join(rulesDir, entry);
+    const raw = await fs.readFile(filePath, 'utf8');
+    const parsed = matter(raw);
+    const managedBy = parsed.data['managed_by'] as string | undefined;
+
+    if (managedBy !== 'codi') {
+      skipped.push(entry.replace('.md', ''));
+      continue;
+    }
+
+    const ruleName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
+    const templateName = findMatchingTemplate(ruleName);
+
+    if (!templateName) {
+      skipped.push(ruleName);
+      continue;
+    }
+
+    const templateResult = loadTemplate(templateName);
+    if (!templateResult.ok) continue;
+
+    const newContent = templateResult.data.replace(/\{\{name\}\}/g, ruleName);
+
+    if (!dryRun) {
+      await fs.writeFile(filePath, newContent + '\n', 'utf-8');
+    }
+    updated.push(ruleName);
+    log.info(`${dryRun ? 'Would update' : 'Updated'} rule: ${ruleName}`);
+  }
+
+  return { updated, skipped };
+}
+
+function findMatchingTemplate(ruleName: string): string | null {
+  if (AVAILABLE_TEMPLATES.includes(ruleName)) return ruleName;
+  const mappings: Record<string, string> = {
+    'code-quality': 'code-style',
+    'testing-standards': 'testing',
+  };
+  return mappings[ruleName] ?? null;
 }
 
 export async function updateHandler(
@@ -45,7 +110,7 @@ export async function updateHandler(
     return createCommandResult({
       success: false,
       command: 'update',
-      data: { flagsAdded: [], flagsReset: false, preset: null, regenerated: false },
+      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], regenerated: false },
       errors: [{
         code: 'E_CONFIG_NOT_FOUND',
         message: 'No .codi/flags.yaml found. Run `codi init` first.',
@@ -67,7 +132,7 @@ export async function updateHandler(
       return createCommandResult({
         success: false,
         command: 'update',
-        data: { flagsAdded: [], flagsReset: false, preset: presetName, regenerated: false },
+        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], regenerated: false },
         errors: [{
           code: 'E_CONFIG_INVALID',
           message: `Invalid preset "${presetName}". Available: ${validPresets.join(', ')}`,
@@ -104,6 +169,14 @@ export async function updateHandler(
     await fs.writeFile(flagsFile, stringifyYaml(currentFlags), 'utf-8');
   }
 
+  let rulesUpdated: string[] = [];
+  let rulesSkipped: string[] = [];
+  if (options.rules) {
+    const result = await refreshManagedRules(codiDir, options.dryRun ?? false, log);
+    rulesUpdated = result.updated;
+    rulesSkipped = result.skipped;
+  }
+
   let regenerated = false;
   if (options.regenerate && !options.dryRun) {
     registerAllAdapters();
@@ -117,7 +190,7 @@ export async function updateHandler(
   return createCommandResult({
     success: true,
     command: 'update',
-    data: { flagsAdded, flagsReset, preset: presetName ?? null, regenerated },
+    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, regenerated },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
@@ -125,8 +198,9 @@ export async function updateHandler(
 export function registerUpdateCommand(program: Command): void {
   program
     .command('update')
-    .description('Update flags to latest catalog or reset to a preset')
+    .description('Update flags and rules to latest versions')
     .option('--preset <preset>', 'Reset flags to preset: minimal, balanced, strict')
+    .option('--rules', 'Refresh template-managed rules to latest versions')
     .option('--regenerate', 'Run codi generate after updating')
     .option('--dry-run', 'Show what would change without writing')
     .action(async (cmdOptions: Record<string, unknown>) => {

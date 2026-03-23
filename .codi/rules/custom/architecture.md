@@ -3,7 +3,7 @@ name: architecture
 description: Architecture guidelines and design patterns
 priority: high
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Architecture Guidelines

@@ -3,7 +3,7 @@ name: git-workflow
 description: Git workflow and commit conventions
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Git Workflow

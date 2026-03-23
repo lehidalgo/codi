@@ -3,7 +3,7 @@ name: security
 description: Security best practices and vulnerability prevention
 priority: high
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Security Rules

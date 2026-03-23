@@ -3,7 +3,7 @@ name: error-handling
 description: Error handling and resilience patterns
 priority: high
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Error Handling

@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+#### Rule Lifecycle
+- Template-created rules now use `managed_by: codi` (updatable by `codi update --rules`)
+- User-custom rules use `managed_by: user` (never overwritten)
+- `codi update --rules` refreshes all `managed_by: codi` rules to latest template versions
+- `codi add rule --all` adds all 9 template rules at once (skips existing)
+
 #### Lifecycle Commands
 - `codi update` — add missing flags from catalog or reset to a preset (`--preset minimal|balanced|strict`)
 - `codi update --regenerate` — update flags and regenerate in one step

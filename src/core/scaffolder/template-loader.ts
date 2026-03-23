@@ -8,7 +8,7 @@ name: {{name}}
 description: Security best practices and vulnerability prevention
 priority: high
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Security Rules
@@ -48,7 +48,7 @@ name: {{name}}
 description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Code Style
@@ -89,7 +89,7 @@ name: {{name}}
 description: Testing standards and TDD workflow
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Testing Standards
@@ -133,7 +133,7 @@ name: {{name}}
 description: Architecture guidelines and design patterns
 priority: high
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Architecture Guidelines
@@ -173,7 +173,7 @@ name: {{name}}
 description: Git workflow and commit conventions
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Git Workflow
@@ -207,7 +207,7 @@ name: {{name}}
 description: Error handling and resilience patterns
 priority: high
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Error Handling
@@ -247,7 +247,7 @@ name: {{name}}
 description: Performance optimization guidelines
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Performance Guidelines
@@ -287,7 +287,7 @@ name: {{name}}
 description: Documentation standards and practices
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Documentation Standards
@@ -327,7 +327,7 @@ name: {{name}}
 description: API design conventions and best practices
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # API Design

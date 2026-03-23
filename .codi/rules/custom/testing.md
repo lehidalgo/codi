@@ -3,7 +3,7 @@ name: testing
 description: Testing standards and TDD workflow
 priority: medium
 alwaysApply: true
-managed_by: user
+managed_by: codi
 ---
 
 # Testing Standards
