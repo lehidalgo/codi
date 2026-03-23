@@ -8,6 +8,12 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -17,11 +23,21 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run lint && npm run test && npm run build"
   },
   "engines": {
     "node": ">=20"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lehidalgo/codi.git"
+  },
+  "homepage": "https://github.com/lehidalgo/codi#readme",
+  "bugs": {
+    "url": "https://github.com/lehidalgo/codi/issues"
+  },
+  "author": "lehidalgo",
   "license": "MIT",
   "keywords": [
     "ai",
