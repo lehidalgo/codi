@@ -8,6 +8,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   'code-review': skillTemplates.codeReview,
   'documentation': skillTemplates.documentation,
   'rule-management': skillTemplates.ruleManagement,
+  'e2e-testing': skillTemplates.e2eTesting,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
