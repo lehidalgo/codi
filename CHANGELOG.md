@@ -28,9 +28,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - PR creation via `gh` CLI
 - Hash-based change detection between local and remote configs
 
+#### Governance (Phase 2)
+- 7-level config inheritance: org → team → repo → lang → framework → agent → user
+- Org config (`~/.codi/org.yaml`) for organization-wide policy enforcement
+- Team config (`~/.codi/teams/{name}.yaml`) for team-specific overrides
+- Framework layer (`.codi/frameworks/*.yaml`) for framework-specific defaults
+- `team` field in `codi.yaml` manifest to reference team config
+- 10 new behavioral flags (18 total): `lint_on_save`, `allow_force_push`, `require_pr_review`, `mcp_allowed_servers`, `require_documentation`, `allowed_languages`, `max_context_tokens`, `progressive_loading`, `drift_detection`, `auto_generate_on_change`
+- String array flag type (`string[]`) for `mcp_allowed_servers` and `allowed_languages`
+- Org, team, and repo levels can lock flags (previously only repo)
+- `codi doctor` checks org and team config validity
+- `codi init` scaffolds `frameworks/` directory
+- Flag instruction generation for new flags in all adapters
+
 #### Developer Experience
-- 325 tests across 47 test files
-- 13 structured exit codes with descriptive error hints
+- 365 tests across 48 test files
+- 23 structured error codes with descriptive hints
 
 ## [0.1.0] - 2026-03-21
 

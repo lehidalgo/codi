@@ -133,6 +133,7 @@ async function createCodiStructure(codiDir: string, agents: string[]): Promise<v
     path.join(codiDir, 'rules', 'generated', 'common'),
     path.join(codiDir, 'rules', 'custom'),
     path.join(codiDir, 'skills'),
+    path.join(codiDir, 'frameworks'),
   ];
   for (const dir of dirs) {
     await fs.mkdir(dir, { recursive: true });

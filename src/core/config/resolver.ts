@@ -5,7 +5,7 @@ import { ok, err } from '../../types/result.js';
 import type { Result } from '../../types/result.js';
 import type { NormalizedConfig } from '../../types/config.js';
 import type { FlagDefinition } from '../../types/flags.js';
-import { resolveCodiDir, resolveUserDir } from '../../utils/paths.js';
+import { resolveCodiDir, resolveUserDir, resolveOrgFile, resolveTeamFile } from '../../utils/paths.js';
 import { scanCodiDir } from './parser.js';
 import { composeConfig, flagsFromDefinitions } from './composer.js';
 import type { ConfigLayer } from './composer.js';
@@ -84,6 +84,64 @@ async function buildAgentLayers(codiDir: string): Promise<ConfigLayer[]> {
   return layers;
 }
 
+async function buildOrgLayer(): Promise<ConfigLayer | null> {
+  const orgFile = resolveOrgFile();
+  if (!(await fileExists(orgFile))) return null;
+
+  const data = await readYamlSafe(orgFile);
+  if (!data) return null;
+
+  const flags = extractFlags(data);
+  return {
+    level: 'org',
+    source: orgFile,
+    config: {
+      flags: flagsFromDefinitions(flags, orgFile),
+    },
+  };
+}
+
+async function buildTeamLayer(teamName: string): Promise<ConfigLayer | null> {
+  const teamFile = resolveTeamFile(teamName);
+  if (!(await fileExists(teamFile))) return null;
+
+  const data = await readYamlSafe(teamFile);
+  if (!data) return null;
+
+  const flags = extractFlags(data);
+  return {
+    level: 'team',
+    source: teamFile,
+    config: {
+      flags: flagsFromDefinitions(flags, teamFile),
+    },
+  };
+}
+
+async function buildFrameworkLayers(codiDir: string): Promise<ConfigLayer[]> {
+  const frameworksDir = path.join(codiDir, 'frameworks');
+  if (!(await fileExists(frameworksDir))) return [];
+
+  const layers: ConfigLayer[] = [];
+  const entries = await fs.readdir(frameworksDir);
+  for (const entry of entries) {
+    if (!entry.endsWith('.yaml') && !entry.endsWith('.yml')) continue;
+    const filePath = path.join(frameworksDir, entry);
+    const data = await readYamlSafe(filePath);
+    if (!data) continue;
+
+    const flags = extractFlags(data);
+    layers.push({
+      level: 'framework',
+      source: filePath,
+      config: {
+        flags: flagsFromDefinitions(flags, filePath),
+      },
+    });
+  }
+  return layers;
+}
+
 async function buildUserLayer(): Promise<ConfigLayer | null> {
   const userDir = resolveUserDir();
   const userFile = path.join(userDir, 'user.yaml');
@@ -123,13 +181,20 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
     },
   };
 
+  const orgLayer = await buildOrgLayer();
+  const teamName = parsed.manifest.team;
+  const teamLayer = teamName ? await buildTeamLayer(teamName) : null;
   const langLayers = await buildLangLayers(codiDir);
+  const frameworkLayers = await buildFrameworkLayers(codiDir);
   const agentLayers = await buildAgentLayers(codiDir);
   const userLayer = await buildUserLayer();
 
   const layers: ConfigLayer[] = [
+    ...(orgLayer ? [orgLayer] : []),
+    ...(teamLayer ? [teamLayer] : []),
     repoLayer,
     ...langLayers,
+    ...frameworkLayers,
     ...agentLayers,
     ...(userLayer ? [userLayer] : []),
   ];

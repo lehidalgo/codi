@@ -6,8 +6,8 @@ import {
 } from '../../../src/core/flags/flag-catalog.js';
 
 describe('FLAG_CATALOG', () => {
-  it('has exactly 8 entries', () => {
-    expect(Object.keys(FLAG_CATALOG)).toHaveLength(8);
+  it('has exactly 18 entries', () => {
+    expect(Object.keys(FLAG_CATALOG)).toHaveLength(18);
   });
 
   it('contains all expected flag names', () => {
@@ -20,6 +20,16 @@ describe('FLAG_CATALOG', () => {
       'require_tests',
       'allow_shell_commands',
       'allow_file_deletion',
+      'lint_on_save',
+      'allow_force_push',
+      'require_pr_review',
+      'mcp_allowed_servers',
+      'require_documentation',
+      'allowed_languages',
+      'max_context_tokens',
+      'progressive_loading',
+      'drift_detection',
+      'auto_generate_on_change',
     ];
     expect(Object.keys(FLAG_CATALOG).sort()).toEqual(expected.sort());
   });
@@ -90,8 +100,8 @@ describe('buildFlagSchema', () => {
 describe('getDefaultFlags', () => {
   const defaults = getDefaultFlags();
 
-  it('returns all 8 flags', () => {
-    expect(Object.keys(defaults)).toHaveLength(8);
+  it('returns all 18 flags', () => {
+    expect(Object.keys(defaults)).toHaveLength(18);
   });
 
   it('auto_commit defaults to false', () => {
@@ -108,6 +118,42 @@ describe('getDefaultFlags', () => {
 
   it('max_file_lines defaults to 700', () => {
     expect(defaults['max_file_lines']!.value).toBe(700);
+  });
+
+  it('lint_on_save defaults to true', () => {
+    expect(defaults['lint_on_save']!.value).toBe(true);
+  });
+
+  it('allow_force_push defaults to false', () => {
+    expect(defaults['allow_force_push']!.value).toBe(false);
+  });
+
+  it('require_pr_review defaults to true', () => {
+    expect(defaults['require_pr_review']!.value).toBe(true);
+  });
+
+  it('mcp_allowed_servers defaults to empty array', () => {
+    expect(defaults['mcp_allowed_servers']!.value).toEqual([]);
+  });
+
+  it('allowed_languages defaults to wildcard', () => {
+    expect(defaults['allowed_languages']!.value).toEqual(['*']);
+  });
+
+  it('max_context_tokens defaults to 50000', () => {
+    expect(defaults['max_context_tokens']!.value).toBe(50000);
+  });
+
+  it('progressive_loading defaults to metadata', () => {
+    expect(defaults['progressive_loading']!.value).toBe('metadata');
+  });
+
+  it('drift_detection defaults to warn', () => {
+    expect(defaults['drift_detection']!.value).toBe('warn');
+  });
+
+  it('auto_generate_on_change defaults to false', () => {
+    expect(defaults['auto_generate_on_change']!.value).toBe(false);
   });
 
   it('all defaults have source "default"', () => {
