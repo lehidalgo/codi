@@ -42,7 +42,7 @@ afterEach(async () => {
 
 describe('Full Pipeline Integration', () => {
   it('init creates .codi/ structure', async () => {
-    const result = await initHandler(tmpDir, {});
+    const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
     expect(result.data.stack).toContain('node');
 
@@ -69,19 +69,19 @@ describe('Full Pipeline Integration', () => {
 
   it('init with --force reinitializes', async () => {
     // First init
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
 
     // Second init without force fails
-    const failResult = await initHandler(tmpDir, {});
+    const failResult = await initHandler(tmpDir, { json: true });
     expect(failResult.success).toBe(false);
 
     // Second init with force succeeds
-    const forceResult = await initHandler(tmpDir, { force: true });
+    const forceResult = await initHandler(tmpDir, { force: true, json: true });
     expect(forceResult.success).toBe(true);
   });
 
   it('validate passes after init', async () => {
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
 
     const result = await validateHandler(tmpDir);
     expect(result.success).toBe(true);
@@ -94,14 +94,14 @@ describe('Full Pipeline Integration', () => {
   });
 
   it('generate runs after init', async () => {
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
 
     const result = await generateHandler(tmpDir, {});
     expect(result.success).toBe(true);
   });
 
   it('status reports no drift after generate', async () => {
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
 
     const result = await statusHandler(tmpDir);
     expect(result.success).toBe(true);
@@ -109,14 +109,14 @@ describe('Full Pipeline Integration', () => {
   });
 
   it('init creates frameworks/ directory', async () => {
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
     const frameworksDir = path.join(tmpDir, '.codi', 'frameworks');
     const stat = await fs.stat(frameworksDir);
     expect(stat.isDirectory()).toBe(true);
   });
 
   it('init generates all 18 flags in flags.yaml', async () => {
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
     const flagsContent = await fs.readFile(
       path.join(tmpDir, '.codi', 'flags.yaml'),
       'utf-8',
@@ -203,7 +203,7 @@ describe('7-Layer Governance Integration', () => {
   });
 
   it('backward compatibility: project without org/team/framework works', async () => {
-    await initHandler(tmpDir, {});
+    await initHandler(tmpDir, { json: true });
     const result = await validateHandler(tmpDir);
     expect(result.success).toBe(true);
   });

@@ -1,16 +1,16 @@
 {
   "version": "1",
-  "lastGenerated": "2026-03-21T00:27:17.125Z",
+  "lastGenerated": "2026-03-23T12:04:07.438Z",
   "agents": {
     "claude-code": [
       {
         "path": "CLAUDE.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.429Z"
       },
       {
         "path": ".claude/rules/code-quality.md",
@@ -19,7 +19,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.429Z"
       },
       {
         "path": ".claude/rules/security.md",
@@ -28,7 +28,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".claude/rules/testing-standards.md",
@@ -37,16 +37,16 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".cursorrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".cursor/rules/code-quality.mdc",
@@ -55,7 +55,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".cursor/rules/security.mdc",
@@ -64,7 +64,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".cursor/rules/testing-standards.mdc",
@@ -73,45 +73,45 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": "AGENTS.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".windsurfrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       },
       {
         "path": ".clinerules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.123Z"
+        "timestamp": "2026-03-23T12:04:07.430Z"
       }
     ],
     "cursor": [
       {
         "path": "CLAUDE.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".claude/rules/code-quality.md",
@@ -120,7 +120,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".claude/rules/security.md",
@@ -129,7 +129,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".claude/rules/testing-standards.md",
@@ -138,16 +138,16 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".cursorrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".cursor/rules/code-quality.mdc",
@@ -156,7 +156,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".cursor/rules/security.mdc",
@@ -165,7 +165,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".cursor/rules/testing-standards.mdc",
@@ -174,45 +174,45 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": "AGENTS.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".windsurfrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       },
       {
         "path": ".clinerules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.431Z"
       }
     ],
     "codex": [
       {
         "path": "CLAUDE.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".claude/rules/code-quality.md",
@@ -221,7 +221,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".claude/rules/security.md",
@@ -230,7 +230,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".claude/rules/testing-standards.md",
@@ -239,16 +239,16 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".cursorrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".cursor/rules/code-quality.mdc",
@@ -257,7 +257,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".cursor/rules/security.mdc",
@@ -266,7 +266,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".cursor/rules/testing-standards.mdc",
@@ -275,45 +275,45 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": "AGENTS.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".windsurfrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       },
       {
         "path": ".clinerules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.124Z"
+        "timestamp": "2026-03-23T12:04:07.432Z"
       }
     ],
     "windsurf": [
       {
         "path": "CLAUDE.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".claude/rules/code-quality.md",
@@ -322,7 +322,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".claude/rules/security.md",
@@ -331,7 +331,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".claude/rules/testing-standards.md",
@@ -340,16 +340,16 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".cursorrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".cursor/rules/code-quality.mdc",
@@ -358,7 +358,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".cursor/rules/security.mdc",
@@ -367,7 +367,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".cursor/rules/testing-standards.mdc",
@@ -376,45 +376,45 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": "AGENTS.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".windsurfrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       },
       {
         "path": ".clinerules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.434Z"
       }
     ],
     "cline": [
       {
         "path": "CLAUDE.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".claude/rules/code-quality.md",
@@ -423,7 +423,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".claude/rules/security.md",
@@ -432,7 +432,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".claude/rules/testing-standards.md",
@@ -441,16 +441,16 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".cursorrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".cursor/rules/code-quality.mdc",
@@ -459,7 +459,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".cursor/rules/security.mdc",
@@ -468,7 +468,7 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".cursor/rules/testing-standards.mdc",
@@ -477,34 +477,34 @@
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": "AGENTS.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f25746daa115e3ca69eff52cb11635b66d5b496aea3d39bded83b34ec07b904f",
+        "generatedHash": "8987fb306b2d93e84e8a2d1cfa0331eca98b2e111f3b0dcd4931b89d9c45090c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".windsurfrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       },
       {
         "path": ".clinerules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b980f0b6453780a509e9e8be642ad916fef55f6d24a17fe071ba67c01231b006",
+        "generatedHash": "f936921d9c56b3736a6f382ad80580b96019ffd7952ad46670be7e00822859c1",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-21T00:27:17.125Z"
+        "timestamp": "2026-03-23T12:04:07.438Z"
       }
     ]
   }

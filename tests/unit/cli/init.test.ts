@@ -18,7 +18,7 @@ describe('init command handler', () => {
   });
 
   it('creates .codi/ directory structure', async () => {
-    const result = await initHandler(tmpDir, {});
+    const result = await initHandler(tmpDir, { json: true });
 
     expect(result.success).toBe(true);
     expect(result.data.codiDir).toBe(path.join(tmpDir, '.codi'));
@@ -40,7 +40,7 @@ describe('init command handler', () => {
   it('fails if .codi/ already exists without --force', async () => {
     await fs.mkdir(path.join(tmpDir, '.codi'), { recursive: true });
 
-    const result = await initHandler(tmpDir, {});
+    const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
     expect(result.errors[0]!.message).toContain('already exists');
@@ -49,14 +49,14 @@ describe('init command handler', () => {
   it('reinitializes with --force', async () => {
     await fs.mkdir(path.join(tmpDir, '.codi'), { recursive: true });
 
-    const result = await initHandler(tmpDir, { force: true });
+    const result = await initHandler(tmpDir, { force: true, json: true });
     expect(result.success).toBe(true);
   });
 
   it('detects node stack when package.json exists', async () => {
     await fs.writeFile(path.join(tmpDir, 'package.json'), '{}', 'utf-8');
 
-    const result = await initHandler(tmpDir, {});
+    const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
     expect(result.data.stack).toContain('node');
   });
