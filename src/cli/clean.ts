@@ -59,6 +59,8 @@ const AGENT_SUBDIRS = [
   '.cline/skills',
   '.windsurf/skills',
   '.agents/skills',
+  '.claude/agents',
+  '.codex/agents',
 ];
 const AGENT_FILES = ['.claude/mcp.json'];
 const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf', '.agents', '.codex'];

@@ -2,7 +2,9 @@ import type { Command } from 'commander';
 import { resolveCodiDir } from '../utils/paths.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
+import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
+import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
@@ -194,5 +196,94 @@ export function registerAddCommand(program: Command): void {
       const result = await addSkillHandler(process.cwd(), name, options);
       handleOutput(result, options);
       process.exit(result.exitCode);
+    });
+
+  addCmd
+    .command('agent [name]')
+    .description('Add a new custom agent')
+    .option(
+      '-t, --template <template>',
+      `Use an agent template (${AVAILABLE_AGENT_TEMPLATES.join(', ')})`,
+    )
+    .option('--all', 'Add all available agent templates')
+    .action(async (name: string | undefined, cmdOptions: Record<string, unknown>) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      const options = { ...globalOptions, ...cmdOptions } as GlobalOptions & { template?: string; all?: boolean };
+      initFromOptions(options);
+      const codiDir = resolveCodiDir(process.cwd());
+
+      if (options.all) {
+        const results: Array<{ name: string; success: boolean }> = [];
+        for (const tmpl of AVAILABLE_AGENT_TEMPLATES) {
+          const result = await createAgent({ name: tmpl, codiDir, template: tmpl });
+          results.push({ name: tmpl, success: result.ok });
+        }
+        const added = results.filter((r) => r.success).map((r) => r.name);
+        const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        const summary = createCommandResult({
+          success: true,
+          command: 'add agent --all',
+          data: { added, skipped, total: AVAILABLE_AGENT_TEMPLATES.length },
+          exitCode: EXIT_CODES.SUCCESS,
+        });
+        handleOutput(summary, options);
+        process.exit(summary.exitCode);
+        return;
+      }
+
+      if (!name) {
+        const errResult = createCommandResult({
+          success: false,
+          command: 'add agent',
+          data: { name: '', path: '', template: null },
+          errors: [{ code: 'E_CONFIG_INVALID', message: 'Agent name required. Use --all to add all templates.', hint: '', severity: 'error', context: {} }],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+        handleOutput(errResult, options);
+        process.exit(errResult.exitCode);
+        return;
+      }
+
+      if (options.template && !AVAILABLE_AGENT_TEMPLATES.includes(options.template)) {
+        const errResult = createCommandResult({
+          success: false,
+          command: 'add agent',
+          data: { name, path: '', template: options.template },
+          errors: [{
+            code: 'E_CONFIG_INVALID',
+            message: `Unknown agent template "${options.template}". Available: ${AVAILABLE_AGENT_TEMPLATES.join(', ')}`,
+            hint: `Use one of: ${AVAILABLE_AGENT_TEMPLATES.join(', ')}`,
+            severity: 'error',
+            context: { template: options.template },
+          }],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+        handleOutput(errResult, options);
+        process.exit(errResult.exitCode);
+        return;
+      }
+
+      const result = await createAgent({ name, codiDir, template: options.template });
+      if (!result.ok) {
+        const errResult = createCommandResult({
+          success: false,
+          command: 'add agent',
+          data: { name, path: '', template: options.template ?? null },
+          errors: result.errors,
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+        handleOutput(errResult, options);
+        process.exit(errResult.exitCode);
+        return;
+      }
+
+      const successResult = createCommandResult({
+        success: true,
+        command: 'add agent',
+        data: { name, path: result.data, template: options.template ?? null },
+        exitCode: EXIT_CODES.SUCCESS,
+      });
+      handleOutput(successResult, options);
+      process.exit(successResult.exitCode);
     });
 }
