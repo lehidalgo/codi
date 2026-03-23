@@ -1,6 +1,10 @@
-# codi-cli
+<p align="center">
+  <img src="assets/logo.svg" alt="codi" width="400">
+</p>
 
-Unified configuration platform for AI coding agents.
+<p align="center">
+  <strong>Unified configuration platform for AI coding agents.</strong>
+</p>
 
 [![npm version](https://img.shields.io/npm/v/codi-cli)](https://www.npmjs.com/package/codi-cli)
 [![license](https://img.shields.io/npm/l/codi-cli)](./LICENSE)
