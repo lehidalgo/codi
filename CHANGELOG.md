@@ -45,6 +45,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 365 tests across 48 test files
 - 23 structured error codes with descriptive hints
 
+#### Release Infrastructure
+- MIT LICENSE file
+- GitHub Actions CI workflow (lint, test, build on push/PR)
+- GitHub Actions publish workflow (npm publish on GitHub release with provenance)
+- `prepublishOnly` script (lint + test + build)
+- Package metadata: repository, homepage, bugs, author, exports
+- `.nvmrc` for Node 20 version consistency
+
 ## [0.1.0] - 2026-03-21
 
 ### Added

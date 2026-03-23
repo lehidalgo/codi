@@ -1,9 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { ok, err } from '../../types/result.js';
+import { ok } from '../../types/result.js';
 import type { Result } from '../../types/result.js';
-import { createError } from '../output/errors.js';
 import { hashContent } from '../../utils/hash.js';
 import { cloneRepo, createBranch, stageFiles, commit, push } from './git-operations.js';
 import { createPullRequest } from './pr-creator.js';

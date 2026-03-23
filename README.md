@@ -2,10 +2,9 @@
 
 Unified configuration platform for AI coding agents.
 
-<!-- Badges -->
-<!-- [![npm version](https://img.shields.io/npm/v/@codi/cli)](https://www.npmjs.com/package/@codi/cli) -->
-<!-- [![license](https://img.shields.io/npm/l/@codi/cli)](./LICENSE) -->
-<!-- [![tests](https://img.shields.io/github/actions/workflow/status/your-org/codi/ci.yml?label=tests)](https://github.com/your-org/codi/actions) -->
+[![npm version](https://img.shields.io/npm/v/@codi/cli)](https://www.npmjs.com/package/@codi/cli)
+[![license](https://img.shields.io/npm/l/@codi/cli)](./LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/lehidalgo/codi/ci.yml?label=CI)](https://github.com/lehidalgo/codi/actions)
 
 ## What is Codi?
 
