@@ -5,9 +5,9 @@ export const SkillFrontmatterSchema = z.object({
   description: z.string().max(1024),
   type: z.literal('skill').default('skill'),
   compatibility: z.array(z.string()).optional(),
-  license: z.string().optional(),
   tools: z.array(z.string()).optional(),
   model: z.string().optional(),
+  managed_by: z.enum(['codi', 'user']).default('user'),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

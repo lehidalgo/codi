@@ -10,8 +10,9 @@ const NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 const DEFAULT_CONTENT = `---
 name: {{name}}
 description: Custom agent
-tools: Read, Grep, Glob, Bash
+tools: [Read, Grep, Glob, Bash]
 model: inherit
+managed_by: user
 ---
 
 # {{name}}

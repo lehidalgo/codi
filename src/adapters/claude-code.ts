@@ -30,6 +30,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     rules: '.claude/rules',
     skills: '.claude/skills',
     commands: '.claude/commands',
+    agents: '.claude/agents',
     instructionFile: 'CLAUDE.md',
     mcpConfig: '.claude/mcp.json',
   } satisfies AgentPaths,
@@ -41,7 +42,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     mcp: true,
     frontmatter: false,
     progressiveLoading: false,
-    agents: false,
+    agents: true,
     maxContextTokens: 200000,
   } satisfies AgentCapabilities,
 
@@ -88,7 +89,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       const lines = ['---'];
       lines.push(`name: ${agent.name}`);
       lines.push(`description: ${agent.description}`);
-      if (agent.tools) lines.push(`tools: ${agent.tools}`);
+      if (agent.tools) lines.push(`tools: ${agent.tools.join(', ')}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
       lines.push('---');
       const agentContent = `${lines.join('\n')}\n\n${agent.content}`;

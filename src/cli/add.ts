@@ -72,6 +72,7 @@ export async function addRuleHandler(
 
 interface AddSkillOptions extends GlobalOptions {
   template?: string;
+  all?: boolean;
 }
 
 interface AddSkillData {
@@ -122,6 +123,60 @@ export async function addSkillHandler(
   return createCommandResult({
     success: true,
     command: 'add skill',
+    data: { name, path: result.data, template: options.template ?? null },
+    exitCode: EXIT_CODES.SUCCESS,
+  });
+}
+
+interface AddAgentOptions extends GlobalOptions {
+  template?: string;
+  all?: boolean;
+}
+
+interface AddAgentData {
+  name: string;
+  path: string;
+  template: string | null;
+}
+
+export async function addAgentHandler(
+  projectRoot: string,
+  name: string,
+  options: { template?: string },
+): Promise<CommandResult<AddAgentData>> {
+  const codiDir = resolveCodiDir(projectRoot);
+
+  if (options.template && !AVAILABLE_AGENT_TEMPLATES.includes(options.template)) {
+    return createCommandResult({
+      success: false,
+      command: 'add agent',
+      data: { name, path: '', template: options.template },
+      errors: [{
+        code: 'E_CONFIG_INVALID',
+        message: `Unknown agent template "${options.template}". Available: ${AVAILABLE_AGENT_TEMPLATES.join(', ')}`,
+        hint: `Use one of: ${AVAILABLE_AGENT_TEMPLATES.join(', ')}`,
+        severity: 'error',
+        context: { template: options.template },
+      }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  const result = await createAgent({ name, codiDir, template: options.template });
+
+  if (!result.ok) {
+    return createCommandResult({
+      success: false,
+      command: 'add agent',
+      data: { name, path: '', template: options.template ?? null },
+      errors: result.errors,
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  return createCommandResult({
+    success: true,
+    command: 'add agent',
     data: { name, path: result.data, template: options.template ?? null },
     exitCode: EXIT_CODES.SUCCESS,
   });
@@ -183,16 +238,50 @@ export function registerAddCommand(program: Command): void {
     });
 
   addCmd
-    .command('skill <name>')
+    .command('skill [name]')
     .description('Add a new custom skill')
     .option(
       '-t, --template <template>',
       `Use a skill template (${AVAILABLE_SKILL_TEMPLATES.join(', ')})`,
     )
-    .action(async (name: string, cmdOptions: Record<string, unknown>) => {
+    .option('--all', 'Add all available skill templates')
+    .action(async (name: string | undefined, cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: AddSkillOptions = { ...globalOptions, ...cmdOptions };
       initFromOptions(options);
+
+      if (options.all) {
+        const results: Array<{ name: string; success: boolean }> = [];
+        for (const tmpl of AVAILABLE_SKILL_TEMPLATES) {
+          const result = await addSkillHandler(process.cwd(), tmpl, { ...options, template: tmpl });
+          results.push({ name: tmpl, success: result.success });
+        }
+        const added = results.filter((r) => r.success).map((r) => r.name);
+        const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        const summary = createCommandResult({
+          success: true,
+          command: 'add skill --all',
+          data: { added, skipped, total: AVAILABLE_SKILL_TEMPLATES.length },
+          exitCode: EXIT_CODES.SUCCESS,
+        });
+        handleOutput(summary, options);
+        process.exit(summary.exitCode);
+        return;
+      }
+
+      if (!name) {
+        const err = createCommandResult({
+          success: false,
+          command: 'add skill',
+          data: { name: '', path: '', template: null },
+          errors: [{ code: 'E_CONFIG_INVALID', message: 'Skill name required. Use --all to add all templates.', hint: '', severity: 'error', context: {} }],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+        handleOutput(err, options);
+        process.exit(err.exitCode);
+        return;
+      }
+
       const result = await addSkillHandler(process.cwd(), name, options);
       handleOutput(result, options);
       process.exit(result.exitCode);
@@ -208,15 +297,14 @@ export function registerAddCommand(program: Command): void {
     .option('--all', 'Add all available agent templates')
     .action(async (name: string | undefined, cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
-      const options = { ...globalOptions, ...cmdOptions } as GlobalOptions & { template?: string; all?: boolean };
+      const options: AddAgentOptions = { ...globalOptions, ...cmdOptions };
       initFromOptions(options);
-      const codiDir = resolveCodiDir(process.cwd());
 
       if (options.all) {
         const results: Array<{ name: string; success: boolean }> = [];
         for (const tmpl of AVAILABLE_AGENT_TEMPLATES) {
-          const result = await createAgent({ name: tmpl, codiDir, template: tmpl });
-          results.push({ name: tmpl, success: result.ok });
+          const result = await addAgentHandler(process.cwd(), tmpl, { template: tmpl });
+          results.push({ name: tmpl, success: result.success });
         }
         const added = results.filter((r) => r.success).map((r) => r.name);
         const skipped = results.filter((r) => !r.success).map((r) => r.name);
@@ -244,46 +332,8 @@ export function registerAddCommand(program: Command): void {
         return;
       }
 
-      if (options.template && !AVAILABLE_AGENT_TEMPLATES.includes(options.template)) {
-        const errResult = createCommandResult({
-          success: false,
-          command: 'add agent',
-          data: { name, path: '', template: options.template },
-          errors: [{
-            code: 'E_CONFIG_INVALID',
-            message: `Unknown agent template "${options.template}". Available: ${AVAILABLE_AGENT_TEMPLATES.join(', ')}`,
-            hint: `Use one of: ${AVAILABLE_AGENT_TEMPLATES.join(', ')}`,
-            severity: 'error',
-            context: { template: options.template },
-          }],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-        handleOutput(errResult, options);
-        process.exit(errResult.exitCode);
-        return;
-      }
-
-      const result = await createAgent({ name, codiDir, template: options.template });
-      if (!result.ok) {
-        const errResult = createCommandResult({
-          success: false,
-          command: 'add agent',
-          data: { name, path: '', template: options.template ?? null },
-          errors: result.errors,
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-        handleOutput(errResult, options);
-        process.exit(errResult.exitCode);
-        return;
-      }
-
-      const successResult = createCommandResult({
-        success: true,
-        command: 'add agent',
-        data: { name, path: result.data, template: options.template ?? null },
-        exitCode: EXIT_CODES.SUCCESS,
-      });
-      handleOutput(successResult, options);
-      process.exit(successResult.exitCode);
+      const result = await addAgentHandler(process.cwd(), name, options);
+      handleOutput(result, options);
+      process.exit(result.exitCode);
     });
 }

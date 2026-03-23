@@ -4,6 +4,7 @@ description: Documentation creation and maintenance. Use when writing docs, upda
 type: skill
 compatibility: []
 tools: []
+managed_by: codi
 ---
 
 # {{name}}

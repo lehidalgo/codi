@@ -16,6 +16,7 @@ import { CodiManifestSchema } from '../../schemas/manifest.js';
 import { FlagDefinitionSchema } from '../../schemas/flag.js';
 import { RuleFrontmatterSchema } from '../../schemas/rule.js';
 import { SkillFrontmatterSchema } from '../../schemas/skill.js';
+import { AgentFrontmatterSchema } from '../../schemas/agent.js';
 import { createError, zodToCodiErrors } from '../output/errors.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 
@@ -181,11 +182,19 @@ async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>
   try {
     const raw = await fs.readFile(filePath, 'utf8');
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
-    const name = (data['name'] as string) ?? path.basename(filePath, '.md');
-    const description = (data['description'] as string) ?? '';
-    const tools = (data['tools'] as string) ?? undefined;
-    const model = (data['model'] as string) ?? undefined;
-    return ok({ name, description, content, tools, model });
+    const parsed = AgentFrontmatterSchema.safeParse(data);
+    if (!parsed.success) {
+      return err(zodToCodiErrors(parsed.error, filePath));
+    }
+    const fm = parsed.data;
+    return ok({
+      name: fm.name,
+      description: fm.description,
+      content,
+      tools: fm.tools,
+      model: fm.model,
+      managedBy: fm.managed_by,
+    });
   } catch (cause) {
     return err([createError('E_FRONTMATTER_INVALID', {
       file: filePath,
@@ -209,6 +218,7 @@ async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>
       content,
       compatibility: fm.compatibility,
       tools: fm.tools,
+      managedBy: fm.managed_by,
     });
   } catch (cause) {
     return err([createError('E_FRONTMATTER_INVALID', {

@@ -30,6 +30,7 @@ export const codexAdapter: AgentAdapter = {
     rules: '.',
     skills: '.agents/skills',
     commands: null,
+    agents: '.codex/agents',
     instructionFile: 'AGENTS.md',
     mcpConfig: null,
   } satisfies AgentPaths,
@@ -41,7 +42,7 @@ export const codexAdapter: AgentAdapter = {
     mcp: false,
     frontmatter: false,
     progressiveLoading: false,
-    agents: false,
+    agents: true,
     maxContextTokens: 200000,
   } satisfies AgentCapabilities,
 

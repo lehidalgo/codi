@@ -4,6 +4,7 @@ description: Create and manage codi rules. Use when the user asks to write, modi
 type: skill
 compatibility: [claude-code, cursor, codex]
 tools: []
+managed_by: codi
 ---
 
 # {{name}}

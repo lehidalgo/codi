@@ -30,6 +30,7 @@ export const windsurfAdapter: AgentAdapter = {
     rules: '.',
     skills: '.windsurf/skills',
     commands: null,
+    agents: null,
     instructionFile: '.windsurfrules',
     mcpConfig: null,
   } satisfies AgentPaths,

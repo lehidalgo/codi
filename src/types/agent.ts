@@ -5,6 +5,7 @@ export interface AgentPaths {
   rules: string;
   skills: string | null;
   commands: string | null;
+  agents: string | null;
   instructionFile: string;
   mcpConfig: string | null;
 }

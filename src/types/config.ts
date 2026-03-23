@@ -43,6 +43,7 @@ export interface NormalizedSkill {
   disableModelInvocation?: boolean;
   argumentHint?: string;
   allowedTools?: string[];
+  managedBy?: 'codi' | 'user';
 }
 
 export interface NormalizedCommand {
@@ -55,8 +56,9 @@ export interface NormalizedAgent {
   name: string;
   description: string;
   content: string;
-  tools?: string;
+  tools?: string[];
   model?: string;
+  managedBy?: 'codi' | 'user';
 }
 
 export interface NormalizedContext {
