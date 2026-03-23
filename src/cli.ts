@@ -11,6 +11,7 @@ import { registerDoctorCommand } from './cli/doctor.js';
 import { registerSyncCommand } from './cli/sync.js';
 import { registerUpdateCommand } from './cli/update.js';
 import { registerCleanCommand } from './cli/clean.js';
+import { registerComplianceCommand } from './cli/compliance.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -32,5 +33,6 @@ registerDoctorCommand(program);
 registerSyncCommand(program);
 registerUpdateCommand(program);
 registerCleanCommand(program);
+registerComplianceCommand(program);
 
 program.parse();

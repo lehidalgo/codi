@@ -15,6 +15,8 @@ interface VerifyCommandOptions extends GlobalOptions {
 interface VerifyShowData {
   token: string;
   rules: string[];
+  skills: string[];
+  agents: string[];
   flags: string[];
   prompt: string;
 }
@@ -39,7 +41,7 @@ export async function verifyHandler(
     return createCommandResult({
       success: false,
       command: 'verify',
-      data: { token: '', rules: [], flags: [], prompt: '' } as VerifyShowData,
+      data: { token: '', rules: [], skills: [], agents: [], flags: [], prompt: '' } as VerifyShowData,
       errors: configResult.errors,
       exitCode: configResult.errors[0]?.code === 'E_CONFIG_NOT_FOUND'
         ? EXIT_CODES.CONFIG_NOT_FOUND
@@ -71,6 +73,8 @@ export async function verifyHandler(
     data: {
       token: verifyData.token,
       rules: verifyData.ruleNames,
+      skills: verifyData.skillNames,
+      agents: verifyData.agentNames,
       flags: verifyData.activeFlags,
       prompt,
     } satisfies VerifyShowData,

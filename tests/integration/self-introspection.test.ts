@@ -89,7 +89,7 @@ describe('Self-introspection (dogfooding)', () => {
       const content = await fs.readFile(filePath, 'utf-8');
       expect(content.length).toBeGreaterThan(0);
       expect(content).toContain('## Codi Verification');
-      expect(content).toMatch(/codi-[a-f0-9]{6}/);
+      expect(content).toMatch(/codi-[a-f0-9]{12}/);
     }
 
     // 6. Status shows no drift

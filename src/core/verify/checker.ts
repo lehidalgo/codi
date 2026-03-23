@@ -11,7 +11,7 @@ export interface VerifyResult {
   flagsMissing: string[];
 }
 
-const TOKEN_RE = /codi-[a-f0-9]{6}/;
+const TOKEN_RE = /codi-[a-f0-9]{12}/;
 
 export function checkAgentResponse(
   response: string,

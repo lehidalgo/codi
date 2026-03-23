@@ -61,6 +61,20 @@ export const claudeCodeAdapter: AgentAdapter = {
     if (flagText) {
       sections.push('## Permissions\n\n' + flagText);
     }
+
+    // Add config summary section
+    const ruleNames = config.rules.map(r => r.name);
+    const skillNames = config.skills.map(s => s.name);
+    const agentNames = config.agents.map(a => a.name);
+    if (ruleNames.length > 0 || skillNames.length > 0 || agentNames.length > 0) {
+      const summaryLines = ['## Configuration'];
+      if (ruleNames.length > 0) summaryLines.push(`- Rules (${ruleNames.length}): ${ruleNames.join(', ')}`);
+      if (skillNames.length > 0) summaryLines.push(`- Skills (${skillNames.length}): ${skillNames.join(', ')}`);
+      if (agentNames.length > 0) summaryLines.push(`- Agents (${agentNames.length}): ${agentNames.join(', ')}`);
+      summaryLines.push(`- Generated: ${new Date().toISOString()}`);
+      sections.push(summaryLines.join('\n'));
+    }
+
     const mainContent = sections.join('\n\n');
     files.push({
       path: 'CLAUDE.md',
