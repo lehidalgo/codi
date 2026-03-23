@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `codi update --rules` refreshes all `managed_by: codi` rules to latest template versions
 - `codi add rule --all` adds all 9 template rules at once (skips existing)
 
+#### Agent (Subagent) Support
+- `codi add agent <name>` with 3 built-in templates (`code-reviewer`, `test-generator`, `security-analyzer`)
+- `codi add agent --all` to add all agent templates at once
+- Agent scanner reads `.codi/agents/*.md` during config resolution
+- Claude Code: generates `.claude/agents/*.md` (Markdown + YAML frontmatter)
+- Codex: generates `.codex/agents/*.toml` (TOML format)
+
+#### Template Organization
+- Extracted all 16 templates to individual TypeScript modules in `src/templates/`
+- One file per template for easy editing, review, and contribution
+- Loader files simplified from 671 LOC to 73 LOC
+
 #### Lifecycle Commands
 - `codi update` — add missing flags from catalog or reset to a preset (`--preset minimal|balanced|strict`)
 - `codi update --regenerate` — update flags and regenerate in one step
@@ -40,7 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Wizard auto-skips in non-interactive environments (`--json`, `--quiet`, `--agents`)
 
 #### Skills
-- `codi add skill <name>` with 3 built-in templates (`mcp`, `code-review`, `documentation`)
+- `codi add skill <name>` with 4 built-in templates (`mcp`, `code-review`, `documentation`, `rule-management`)
 - Skill parsing from `.codi/skills/` directory
 - Skills rendered in Claude Code adapter output (`CLAUDE.md`)
 - `codi init` creates `.codi/skills/` directory
@@ -73,7 +85,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Flag instruction generation for new flags in all adapters
 
 #### Developer Experience
-- 365 tests across 48 test files
+- 385 tests across 52 test files
 - 23 structured error codes with descriptive hints
 
 #### Release Infrastructure

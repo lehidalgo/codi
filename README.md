@@ -60,7 +60,7 @@ codi init
 
 The wizard will ask you to:
 1. **Select agents** — auto-detected from your project
-2. **Choose rules** — pick from built-in templates (security, code-style, testing, architecture)
+2. **Choose rules** — pick from 9 built-in templates (security, code-style, testing, architecture, git-workflow, error-handling, performance, documentation, api-design)
 3. **Pick a preset** — `minimal`, `balanced` (recommended), or `strict`
 4. **Enable version pinning** — locks your team to a minimum codi version
 
@@ -242,6 +242,7 @@ Your existing `CLAUDE.md`, `.cursorrules`, etc. will be overwritten by codi's ge
 | `codi verify` | Verify agent loaded configuration | `--check <response>` |
 | `codi update` | Update flags and rules to latest versions | `--preset <name>`, `--rules`, `--regenerate`, `--dry-run` |
 | `codi clean` | Remove generated files (uninstall codi output) | `--all`, `--dry-run`, `--force` |
+| `codi add agent <name>` | Add a custom agent | `-t, --template <name>`, `--all` |
 
 Aliases: `codi gen` = `codi generate`.
 
@@ -646,6 +647,44 @@ Create skills with `codi add skill <name> --template <template>`:
 | `documentation` | Documentation generation standards |
 | `rule-management` | Guides AI agents to help create and manage codi rules |
 
+### Agents (Subagents)
+
+Agents are specialized worker roles that AI coding tools can delegate tasks to. They live in `.codi/agents/` as Markdown files:
+
+```markdown
+---
+name: code-reviewer
+description: Expert code reviewer for quality and security
+tools: Read, Grep, Glob, Bash
+model: inherit
+---
+
+You are a senior code reviewer...
+```
+
+```bash
+# Add all 3 built-in agent templates
+codi add agent --all
+
+# Add a specific agent
+codi add agent code-reviewer --template code-reviewer
+
+# Add a custom agent
+codi add agent my-custom-agent
+```
+
+#### Built-in Agent Templates
+
+| Template | Description |
+|----------|-------------|
+| `code-reviewer` | Code review focused on quality, security, and test coverage |
+| `test-generator` | Generates comprehensive unit tests with edge case coverage |
+| `security-analyzer` | Identifies vulnerabilities using OWASP Top 10 checklist |
+
+Agents are generated in each platform's native format:
+- **Claude Code**: `.claude/agents/{name}.md` (Markdown + YAML frontmatter)
+- **Codex**: `.codex/agents/{name}.toml` (TOML format)
+
 ## 7-Level Config Inheritance
 
 Codi resolves configuration through 7 layers. Each layer can set, override, or lock flag values. Later layers override earlier ones — unless a flag is locked.
@@ -917,7 +956,7 @@ src/
 | TypeScript | Strict mode, ESM, full type safety |
 | Commander.js | CLI framework |
 | Zod | Schema validation |
-| Vitest | Test runner (373 tests) |
+| Vitest | Test runner (385 tests) |
 | tsup | Bundler (ESM, Node 20 target) |
 | gray-matter | YAML frontmatter parsing |
 
