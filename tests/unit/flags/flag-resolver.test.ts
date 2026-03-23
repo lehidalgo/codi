@@ -28,7 +28,7 @@ describe('resolveFlags', () => {
     const result = resolveFlags([], emptyContext, FLAG_CATALOG);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(Object.keys(result.data)).toHaveLength(8);
+      expect(Object.keys(result.data)).toHaveLength(18);
       expect(result.data['auto_commit']!.value).toBe(false);
       expect(result.data['max_file_lines']!.value).toBe(700);
     }
@@ -311,6 +311,101 @@ describe('resolveFlags', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data['auto_commit']!.value).toBe(true);
+    }
+  });
+
+  it('org enforced+locked overrides all lower layers', () => {
+    const layers = [
+      layer('org', {
+        security_scan: { mode: 'enforced', value: true, locked: true },
+      }),
+      layer('team', {
+        security_scan: { mode: 'enabled', value: false },
+      }),
+    ];
+    const result = resolveFlags(layers, emptyContext, FLAG_CATALOG);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]!.code).toBe('E_FLAG_LOCKED');
+    }
+  });
+
+  it('team can override org non-locked flag', () => {
+    const layers = [
+      layer('org', {
+        max_file_lines: { mode: 'enabled', value: 700 },
+      }),
+      layer('team', {
+        max_file_lines: { mode: 'enabled', value: 500 },
+      }),
+    ];
+    const result = resolveFlags(layers, emptyContext, FLAG_CATALOG);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data['max_file_lines']!.value).toBe(500);
+      expect(result.data['max_file_lines']!.source).toBe('team.yaml');
+    }
+  });
+
+  it('framework layer sits between lang and agent', () => {
+    const layers = [
+      layer('repo', {
+        require_documentation: { mode: 'enabled', value: false },
+      }),
+      layer('lang', {
+        require_documentation: { mode: 'enabled', value: false },
+      }),
+      layer('framework', {
+        require_documentation: { mode: 'enabled', value: true },
+      }),
+      layer('agent', {
+        require_documentation: { mode: 'inherited' },
+      }),
+    ];
+    const result = resolveFlags(layers, emptyContext, FLAG_CATALOG);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data['require_documentation']!.value).toBe(true);
+      expect(result.data['require_documentation']!.source).toBe('framework.yaml');
+    }
+  });
+
+  it('full 7-layer resolution with user winning non-locked', () => {
+    const layers = [
+      layer('org', { allow_force_push: { mode: 'enforced', value: false, locked: true } }),
+      layer('team', { max_file_lines: { mode: 'enabled', value: 600 } }),
+      layer('repo', { auto_commit: { mode: 'enabled', value: false } }),
+      layer('lang', { type_checking: { mode: 'conditional', value: 'strict', conditions: { lang: ['typescript'] } } }),
+      layer('framework', { require_tests: { mode: 'enabled', value: true } }),
+      layer('agent', { auto_commit: { mode: 'inherited' } }),
+      layer('user', { auto_commit: { mode: 'enabled', value: true } }),
+    ];
+    const result = resolveFlags(layers, tsContext, FLAG_CATALOG);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data['allow_force_push']!.value).toBe(false);
+      expect(result.data['allow_force_push']!.locked).toBe(true);
+      expect(result.data['max_file_lines']!.value).toBe(600);
+      expect(result.data['auto_commit']!.value).toBe(true);
+      expect(result.data['type_checking']!.value).toBe('strict');
+      expect(result.data['require_tests']!.value).toBe(true);
+    }
+  });
+
+  it('string array flags resolve correctly', () => {
+    const layers = [
+      layer('org', {
+        mcp_allowed_servers: { mode: 'enabled', value: ['github', 'jira'] },
+      }),
+      layer('team', {
+        allowed_languages: { mode: 'enabled', value: ['typescript', 'python'] },
+      }),
+    ];
+    const result = resolveFlags(layers, emptyContext, FLAG_CATALOG);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data['mcp_allowed_servers']!.value).toEqual(['github', 'jira']);
+      expect(result.data['allowed_languages']!.value).toEqual(['typescript', 'python']);
     }
   });
 

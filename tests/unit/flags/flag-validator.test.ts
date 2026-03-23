@@ -178,7 +178,78 @@ describe('validateFlags', () => {
     expect(errors).toHaveLength(0);
   });
 
-  // Rule 11: Only repo level can use locked:true
+  // String array validation
+  it('string array flag with non-array produces error', () => {
+    const layers = [
+      layer('repo', {
+        mcp_allowed_servers: { mode: 'enabled', value: 'github' },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors.some((e) => e.code === 'E_FLAG_INVALID_VALUE')).toBe(true);
+  });
+
+  it('string array flag with valid array is accepted', () => {
+    const layers = [
+      layer('repo', {
+        mcp_allowed_servers: { mode: 'enabled', value: ['github', 'jira'] },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('string array flag with non-string elements produces error', () => {
+    const layers = [
+      layer('repo', {
+        mcp_allowed_servers: { mode: 'enabled', value: [1, 2] },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors.some((e) => e.code === 'E_FLAG_INVALID_VALUE')).toBe(true);
+  });
+
+  // Rule 11: Only org, team, and repo levels can use locked:true
+  it('rule 11: locked at org level is valid', () => {
+    const layers = [
+      layer('org', {
+        security_scan: { mode: 'enforced', value: true, locked: true },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rule 11: locked at team level is valid', () => {
+    const layers = [
+      layer('team', {
+        security_scan: { mode: 'enforced', value: true, locked: true },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rule 11: locked at framework level produces error', () => {
+    const layers = [
+      layer('framework', {
+        auto_commit: { mode: 'enforced', value: true, locked: true },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors.some((e) => e.code === 'E_FLAG_LOCKED_LEVEL')).toBe(true);
+  });
+
+  it('rule 11: locked at agent level produces error', () => {
+    const layers = [
+      layer('agent', {
+        auto_commit: { mode: 'enforced', value: true, locked: true },
+      }),
+    ];
+    const errors = validateFlags(layers, resolved, FLAG_CATALOG);
+    expect(errors.some((e) => e.code === 'E_FLAG_LOCKED_LEVEL')).toBe(true);
+  });
+
   it('rule 11: locked at user level produces error', () => {
     const layers = [
       layer('user', {

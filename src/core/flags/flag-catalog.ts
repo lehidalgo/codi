@@ -52,6 +52,69 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     hook: null,
     description: 'Allow file deletion',
   },
+  lint_on_save: {
+    type: 'boolean',
+    default: true,
+    hook: null,
+    description: 'Lint files on save',
+  },
+  allow_force_push: {
+    type: 'boolean',
+    default: false,
+    hook: null,
+    description: 'Allow force push to remote',
+  },
+  require_pr_review: {
+    type: 'boolean',
+    default: true,
+    hook: null,
+    description: 'Require PR review before merge',
+  },
+  mcp_allowed_servers: {
+    type: 'string[]',
+    default: [],
+    hook: null,
+    description: 'Allowed MCP server names',
+  },
+  require_documentation: {
+    type: 'boolean',
+    default: false,
+    hook: null,
+    description: 'Require documentation for new code',
+  },
+  allowed_languages: {
+    type: 'string[]',
+    default: ['*'],
+    hook: null,
+    description: 'Allowed programming languages',
+  },
+  max_context_tokens: {
+    type: 'number',
+    default: 50000,
+    min: 1000,
+    hook: null,
+    description: 'Maximum context token window',
+  },
+  progressive_loading: {
+    type: 'enum',
+    default: 'metadata',
+    values: ['off', 'metadata', 'full'],
+    hook: null,
+    description: 'Progressive loading strategy',
+  },
+  drift_detection: {
+    type: 'enum',
+    default: 'warn',
+    values: ['off', 'warn', 'error'],
+    hook: null,
+    description: 'Drift detection behavior',
+  },
+  auto_generate_on_change: {
+    type: 'boolean',
+    default: false,
+    hook: null,
+    description: 'Auto-generate on config change',
+  },
 };
 
 export function buildFlagSchema(

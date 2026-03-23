@@ -15,6 +15,7 @@ export const CodiManifestSchema = z.object({
   codi: z.object({
     requiredVersion: z.string().optional(),
   }).optional(),
+  team: z.string().max(64).optional(),
   sync: z.object({
     repo: z.string(),
     branch: z.string().default('main'),

@@ -91,12 +91,22 @@ export const ERROR_CATALOG = {
   E_FLAG_LOCKED_LEVEL: {
     exitCode: EXIT_CODES.FLAG_CONFLICT,
     severity: 'error' as const,
-    hintTemplate: 'Flag "{flag}" uses locked:true at "{level}" level. Only repo level can lock flags.',
+    hintTemplate: 'Flag "{flag}" uses locked:true at "{level}" level. Only org, team, and repo levels can lock flags.',
   },
   E_FLAG_UNKNOWN: {
     exitCode: EXIT_CODES.FLAG_CONFLICT,
     severity: 'error' as const,
     hintTemplate: 'Unknown flag "{flag}" in {source}. Check flag name spelling.',
+  },
+  E_ORG_CONFIG_INVALID: {
+    exitCode: EXIT_CODES.CONFIG_INVALID,
+    severity: 'error' as const,
+    hintTemplate: 'Org config at {path} is invalid: {message}',
+  },
+  E_TEAM_NOT_FOUND: {
+    exitCode: EXIT_CODES.CONFIG_NOT_FOUND,
+    severity: 'error' as const,
+    hintTemplate: 'Team config "{team}" not found at {path}. Create it or remove the team reference from manifest.',
   },
   E_VERIFY_NO_CONFIG: {
     exitCode: EXIT_CODES.CONFIG_NOT_FOUND,

@@ -120,6 +120,16 @@ Flags control agent behavior and enforcement modes.
 | `require_tests` | boolean | `false` | Require tests for new code |
 | `allow_shell_commands` | boolean | `true` | Allow shell command execution |
 | `allow_file_deletion` | boolean | `true` | Allow file deletion |
+| `lint_on_save` | boolean | `true` | Lint files on save |
+| `allow_force_push` | boolean | `false` | Allow force push to remote |
+| `require_pr_review` | boolean | `true` | Require PR review before merge |
+| `mcp_allowed_servers` | string[] | `[]` | Allowed MCP server names |
+| `require_documentation` | boolean | `false` | Require documentation for new code |
+| `allowed_languages` | string[] | `["*"]` | Allowed programming languages |
+| `max_context_tokens` | number | `50000` | Maximum context token window |
+| `progressive_loading` | enum (`off`, `metadata`, `full`) | `metadata` | Progressive loading strategy |
+| `drift_detection` | enum (`off`, `warn`, `error`) | `warn` | Drift detection behavior |
+| `auto_generate_on_change` | boolean | `false` | Auto-generate on config change |
 
 ### Rules
 
@@ -191,12 +201,29 @@ Create rules and skills from built-in templates:
 
 ### Layered Config
 
-Configuration resolves in layers, with later layers overriding earlier ones:
+Configuration resolves in 7 layers, with later layers overriding earlier ones (unless locked):
 
-1. **repo** — Base project configuration
-2. **lang** — Language-specific settings (auto-detected)
-3. **agent** — Agent-specific overrides
-4. **user** — User-level preferences
+1. **org** — Organization-wide policies (`~/.codi/org.yaml`)
+2. **team** — Team-specific overrides (`~/.codi/teams/{name}.yaml`)
+3. **repo** — Base project configuration (`.codi/flags.yaml`)
+4. **lang** — Language-specific settings (`.codi/lang/*.yaml`)
+5. **framework** — Framework-specific defaults (`.codi/frameworks/*.yaml`)
+6. **agent** — Agent-specific overrides (`.codi/agents/*.yaml`)
+7. **user** — User-level preferences (`~/.codi/user.yaml`)
+
+Flags can be locked at org, team, or repo level to prevent lower layers from overriding them.
+
+To reference a team config, add the `team` field to your manifest:
+
+```yaml
+# codi.yaml
+name: my-project
+version: "1"
+team: frontend
+agents:
+  - claude-code
+  - cursor
+```
 
 ## Verification
 

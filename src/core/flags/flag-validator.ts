@@ -4,6 +4,7 @@ import { createError } from '../output/errors.js';
 import type { FlagLayer } from './flag-resolver.js';
 
 const VALID_CONDITION_KEYS = new Set(['lang', 'framework', 'agent', 'file_pattern']);
+const LOCKABLE_LEVELS = new Set(['org', 'team', 'repo']);
 
 /**
  * Validates flags against 13 rules. MVP implements rules 1-4, 7-9, 11.
@@ -41,8 +42,8 @@ export function validateFlags(
         continue;
       }
 
-      // Rule 11: Only repo level can use locked:true
-      if (definition.locked && layer.level !== 'repo') {
+      // Rule 11: Only org, team, and repo levels can use locked:true
+      if (definition.locked && !LOCKABLE_LEVELS.has(layer.level)) {
         errors.push(
           createError('E_FLAG_LOCKED_LEVEL', {
             flag: flagName,
@@ -158,6 +159,18 @@ function validateFlagValue(
           createError('E_FLAG_INVALID_VALUE', {
             flag: flagName,
             reason: `expected one of [${spec.values?.join(', ')}], got "${String(value)}"`,
+          }),
+        );
+      }
+      break;
+
+    // String array flags must be arrays of strings
+    case 'string[]':
+      if (!Array.isArray(value) || !value.every((v: unknown) => typeof v === 'string')) {
+        errors.push(
+          createError('E_FLAG_INVALID_VALUE', {
+            flag: flagName,
+            reason: 'expected array of strings',
           }),
         );
       }
