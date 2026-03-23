@@ -34,12 +34,27 @@ describe('codex adapter', () => {
     const config = createMockConfig();
     const files = await codexAdapter.generate(config, {});
 
-    expect(files).toHaveLength(1);
-    expect(files[0]!.path).toBe('AGENTS.md');
-    expect(files[0]!.content).toContain('Do NOT execute shell commands.');
-    expect(files[0]!.content).toContain('Keep source code files under 500 lines.');
-    expect(files[0]!.content).toContain('Code Style');
-    expect(files[0]!.content).toContain('Testing');
-    expect(files[0]!.hash).toBeTruthy();
+    const agentsMd = files.find(f => f.path === 'AGENTS.md');
+    expect(agentsMd).toBeDefined();
+    expect(agentsMd!.content).toContain('Do NOT execute shell commands.');
+    expect(agentsMd!.content).toContain('Keep source code files under 500 lines.');
+    expect(agentsMd!.content).toContain('Code Style');
+    expect(agentsMd!.content).toContain('Testing');
+    expect(agentsMd!.hash).toBeTruthy();
+  });
+
+  it('generates skill files in .agents/skills/', async () => {
+    const config = createMockConfig({
+      skills: [{ name: 'test-skill', description: 'A test skill', content: 'Do something' }],
+    });
+    const files = await codexAdapter.generate(config, {});
+
+    const skillFile = files.find(f => f.path.includes('.agents/skills/'));
+    expect(skillFile).toBeDefined();
+    expect(skillFile!.path).toBe('.agents/skills/test-skill/SKILL.md');
+    expect(skillFile!.content).toContain('name: test-skill');
+
+    const agentsMd = files.find(f => f.path === 'AGENTS.md');
+    expect(agentsMd!.content).not.toContain('test-skill');
   });
 });
