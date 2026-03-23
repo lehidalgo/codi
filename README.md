@@ -110,9 +110,10 @@ After running `codi generate`, each agent gets a config file tailored to its for
 ```markdown
 ## Permissions
 
-Keep files under 700 lines.
+Keep source code files under 700 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 All changes require pull request review before merging.
+Maximum context window: 50000 tokens.
 
 ## security
 
@@ -120,10 +121,27 @@ All changes require pull request review before merging.
 
 - Never expose secrets, API keys, or credentials in code
 - Use environment variables for sensitive configuration
+- Validate and sanitize all user inputs
+- Follow OWASP security guidelines
+
+## code-style
+
+# Code Style
+
+- Follow consistent naming conventions
+- Keep functions focused and small
 ...
+
+## Codi Verification
+
+This project uses Codi for unified AI agent configuration.
+When asked "verify codi" or "codi verify", respond with:
+- Verification token: `codi-9ced0d`
+- Rules loaded: [list the rule names you see in this file]
+- Flags active: [list any permission constraints from this file]
 ```
 
-**.cursorrules** (for Cursor):
+**.cursorrules** (for Cursor) — same rules, different format:
 ```
 # Rules
 
@@ -135,6 +153,24 @@ All changes require pull request review before merging.
 ```
 
 Each adapter formats the same rules and flags for its agent's conventions. Individual rule files are also created in `.claude/rules/` and `.cursor/rules/` for agents that support per-rule files.
+
+### How Flags Become Instructions
+
+Flags in `flags.yaml` are automatically translated into natural-language instructions in the generated files:
+
+| Flag YAML | Generated Instruction |
+|-----------|----------------------|
+| `allow_force_push: false` | "Do NOT use force push (--force) on git operations." |
+| `max_file_lines: 700` | "Keep source code files under 700 lines. Documentation files have no line limit." |
+| `require_pr_review: true` | "All changes require pull request review before merging." |
+| `require_tests: true` | "Write tests for all new code." |
+| `allow_shell_commands: false` | "Do NOT execute shell commands." |
+| `require_documentation: true` | "Write documentation for all new code and APIs." |
+| `mcp_allowed_servers: [github, jira]` | "Only use these MCP servers: github, jira." |
+| `allowed_languages: [typescript, python]` | "Only use these languages: typescript, python." |
+| `max_context_tokens: 50000` | "Maximum context window: 50000 tokens." |
+
+Flags that are operational (like `drift_detection`, `progressive_loading`, `lint_on_save`) don't generate agent instructions — they control codi's behavior instead.
 
 ## Daily Workflow
 
@@ -239,6 +275,28 @@ Creates the `.codi/` directory structure with:
 | `minimal` | Permissive — security off, no test requirements, all actions allowed |
 | `balanced` | Recommended — security on, type-checking strict, no force-push |
 | `strict` | Enforced — security locked, tests required, shell/delete restricted |
+
+<details>
+<summary>Preset comparison (click to expand)</summary>
+
+| Flag | Minimal | Balanced | Strict |
+|------|---------|----------|--------|
+| `security_scan` | `false` | `true` | `true` (enforced, locked) |
+| `test_before_commit` | `false` | `true` | `true` (enforced, locked) |
+| `type_checking` | `off` | `strict` | `strict` (enforced, locked) |
+| `max_file_lines` | `1000` | `700` | `500` |
+| `require_tests` | `false` | `false` | `true` (enforced, locked) |
+| `allow_shell_commands` | `true` | `true` | `false` |
+| `allow_file_deletion` | `true` | `true` | `false` |
+| `allow_force_push` | `true` | `false` | `false` (enforced, locked) |
+| `require_pr_review` | `false` | `true` | `true` (enforced, locked) |
+| `require_documentation` | `false` | `false` | `true` |
+| `drift_detection` | `off` | `warn` | `error` |
+| `auto_generate_on_change` | `false` | `false` | `true` |
+
+Flags marked "enforced, locked" in the strict preset cannot be overridden by any lower layer.
+
+</details>
 
 After creating the structure, Codi automatically runs generation to produce the initial config files.
 
@@ -416,6 +474,38 @@ security_scan:
 ```
 
 Attempting to override a locked flag at a lower layer produces a validation error.
+
+#### Example `flags.yaml` (balanced preset)
+
+This is what `flags.yaml` looks like after running `codi init` with the balanced preset:
+
+```yaml
+auto_commit:
+  mode: enabled
+  value: false
+test_before_commit:
+  mode: enabled
+  value: true
+security_scan:
+  mode: enabled
+  value: true
+type_checking:
+  mode: enabled
+  value: strict
+max_file_lines:
+  mode: enabled
+  value: 700
+allow_force_push:
+  mode: enabled
+  value: false
+require_pr_review:
+  mode: enabled
+  value: true
+drift_detection:
+  mode: enabled
+  value: warn
+# ... and 10 more flags
+```
 
 ### Rules
 
@@ -727,6 +817,7 @@ npm test
 src/
   cli/              # Command handlers
     init.ts         #   codi init — project scaffolding
+    init-wizard.ts  #   Interactive setup wizard
     generate.ts     #   codi generate — config file generation
     validate.ts     #   codi validate — config validation
     status.ts       #   codi status — drift detection
@@ -777,6 +868,32 @@ src/
 - **Hash-based state** — SHA-256 hashes track generated file freshness for drift detection
 - **Layered resolution** — 7-level config cascade with locking and conditional evaluation
 - **23 structured error codes** — every error has a code, severity, and actionable hint
+
+## FAQ
+
+**Q: I already have a `CLAUDE.md` — will codi overwrite it?**
+Yes. Run `codi init`, move your rules into `.codi/rules/custom/` as Markdown files with frontmatter, then `codi generate`. Back up your existing files first.
+
+**Q: Do I commit generated files like `CLAUDE.md`?**
+Yes. Agents read these files from your repo. Commit both `.codi/` (your config) and generated files (the output).
+
+**Q: Can different team members use different flag values?**
+Yes. Personal preferences go in `~/.codi/user.yaml` (never committed). Org-wide policies go in `~/.codi/org.yaml` with `locked: true` to prevent overrides.
+
+**Q: What happens if I edit a generated file manually?**
+`codi status` will report it as "drifted". Running `codi generate` will overwrite your manual edit. If you want persistent changes, edit the rules in `.codi/rules/custom/` instead.
+
+**Q: How do I add codi to a CI pipeline?**
+Add `codi doctor --ci` to your CI. It exits non-zero if config is invalid, version is wrong, or generated files are stale.
+
+**Q: Can I use codi with only one agent?**
+Yes. Run `codi init --agents claude-code` (or any single agent). Codi works with 1 to 5 agents.
+
+**Q: What's the difference between a rule and a skill?**
+Rules are instructions that agents follow (e.g., "never expose secrets"). Skills are reusable workflows that agents can invoke (e.g., "code review checklist"). Both are Markdown files with YAML frontmatter.
+
+**Q: How do I remove a flag from my config?**
+Delete the flag entry from `.codi/flags.yaml` and run `codi generate`. Codi will use the catalog default for any missing flags.
 
 ## License
 
