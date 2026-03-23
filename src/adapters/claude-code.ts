@@ -83,6 +83,24 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Generate .claude/skills/{name}/SKILL.md
     files.push(...generateSkillFiles(config.skills, '.claude/skills'));
 
+    // Generate .claude/agents/{name}.md (Claude Code format)
+    for (const agent of config.agents) {
+      const lines = ['---'];
+      lines.push(`name: ${agent.name}`);
+      lines.push(`description: ${agent.description}`);
+      if (agent.tools) lines.push(`tools: ${agent.tools}`);
+      if (agent.model) lines.push(`model: ${agent.model}`);
+      lines.push('---');
+      const agentContent = `${lines.join('\n')}\n\n${agent.content}`;
+      const fileName = agent.name.toLowerCase().replace(/\s+/g, '-') + '.md';
+      files.push({
+        path: `.claude/agents/${fileName}`,
+        content: agentContent,
+        sources: ['codi.yaml'],
+        hash: hashContent(agentContent),
+      });
+    }
+
     return files;
   },
 };

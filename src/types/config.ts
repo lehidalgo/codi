@@ -55,6 +55,8 @@ export interface NormalizedAgent {
   name: string;
   description: string;
   content: string;
+  tools?: string;
+  model?: string;
 }
 
 export interface NormalizedContext {

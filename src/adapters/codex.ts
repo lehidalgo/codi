@@ -74,6 +74,23 @@ export const codexAdapter: AgentAdapter = {
     // Generate .agents/skills/{name}/SKILL.md (auto-discovered by Codex)
     files.push(...generateSkillFiles(config.skills, '.agents/skills'));
 
+    // Generate .codex/agents/{name}.toml (Codex TOML format)
+    for (const agent of config.agents) {
+      const lines: string[] = [];
+      lines.push(`name = "${agent.name}"`);
+      lines.push(`description = "${agent.description}"`);
+      lines.push(`developer_instructions = """\n${agent.content}\n"""`);
+      if (agent.model) lines.push(`model = "${agent.model}"`);
+      const tomlContent = lines.join('\n');
+      const fileName = agent.name.toLowerCase().replace(/\s+/g, '-') + '.toml';
+      files.push({
+        path: `.codex/agents/${fileName}`,
+        content: tomlContent,
+        sources: ['codi.yaml'],
+        hash: hashContent(tomlContent),
+      });
+    }
+
     return files;
   },
 };

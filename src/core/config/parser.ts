@@ -156,6 +156,44 @@ export async function scanSkills(skillsDir: string): Promise<Result<NormalizedSk
   return ok(skills);
 }
 
+async function scanAgents(agentsDir: string): Promise<Result<NormalizedAgent[]>> {
+  if (!(await fileExists(agentsDir))) {
+    return ok([]);
+  }
+  const agents: NormalizedAgent[] = [];
+  const errors: ReturnType<typeof createError>[] = [];
+
+  const files = await collectMarkdownFiles(agentsDir);
+  for (const file of files) {
+    const result = await parseAgentFile(file);
+    if (!result.ok) {
+      errors.push(...result.errors);
+    } else {
+      agents.push(result.data);
+    }
+  }
+
+  if (errors.length > 0) return err(errors);
+  return ok(agents);
+}
+
+async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>> {
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const name = (data['name'] as string) ?? path.basename(filePath, '.md');
+    const description = (data['description'] as string) ?? '';
+    const tools = (data['tools'] as string) ?? undefined;
+    const model = (data['model'] as string) ?? undefined;
+    return ok({ name, description, content, tools, model });
+  } catch (cause) {
+    return err([createError('E_FRONTMATTER_INVALID', {
+      file: filePath,
+      message: (cause as Error).message,
+    })]);
+  }
+}
+
 async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>> {
   try {
     const raw = await fs.readFile(filePath, 'utf8');
@@ -225,13 +263,16 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
   const skillsResult = await scanSkills(path.join(codiDir, 'skills'));
   if (!skillsResult.ok) return skillsResult;
 
+  const agentsResult = await scanAgents(path.join(codiDir, 'agents'));
+  if (!agentsResult.ok) return agentsResult;
+
   return ok({
     manifest: manifestResult.data,
     flags: flagsResult.data,
     rules: rulesResult.data,
     skills: skillsResult.data,
     commands: [],
-    agents: [],
+    agents: agentsResult.data,
     context: [],
   });
 }
