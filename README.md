@@ -181,9 +181,8 @@ git commit -m "update codi rules"
 | `codi add rule <name>` | Add a custom rule | `-t, --template <name>` |
 | `codi add skill <name>` | Add a custom skill | `-t, --template <name>` |
 | `codi doctor` | Check project health | `--ci` |
-| `codi sync` | Sync config to team repo via PR | `--dry-run`, `-m, --message <msg>` |
 | `codi verify` | Verify agent loaded configuration | `--check <response>` |
-| `codi update` | Update flags and rules to latest versions | `--preset <name>`, `--rules`, `--regenerate`, `--dry-run` |
+| `codi update` | Update flags and rules to latest versions | `--preset <name>`, `--rules`, `--regenerate`, `--dry-run`, `--from <repo>` |
 | `codi clean` | Remove generated files (uninstall codi output) | `--all`, `--dry-run`, `--force` |
 | `codi add agent <name>` | Add a custom agent | `-t, --template <name>`, `--all` |
 
@@ -224,9 +223,14 @@ Runs health checks: config validity, version compatibility, org/team config, and
 
 Brings flags and rules up to date. Without options, adds new flags from the catalog. With `--preset`, resets all flags. With `--rules`, `--skills`, or `--agents`, refreshes template-managed artifacts (`managed_by: codi`) to the latest versions. User-custom artifacts are never touched.
 
+Use `--from <repo>` to pull centralized artifacts from a team GitHub repository. This is one-way: codi reads from the remote repo but never writes to it. Only artifacts marked `managed_by: codi` are updated; user-custom artifacts are preserved.
+
 ```bash
 # Full update: flags + all artifacts + regenerate
 codi update --preset balanced --rules --skills --agents --regenerate
+
+# Pull team config from a centralized GitHub repo
+codi update --from org/team-codi-config
 ```
 
 ### `codi clean`
@@ -242,10 +246,6 @@ See [Writing Artifacts](docs/writing-rules.md) for templates and authoring guide
 ### `codi verify`
 
 Verify that your AI agent loaded the correct configuration. See [Verification](docs/verification.md).
-
-### `codi sync`
-
-Share config with your team via pull request. See [Team Sync](docs/team-sync.md).
 
 ## Configuration
 
@@ -279,7 +279,6 @@ When `requiredVersion` is set, `codi init` auto-installs a pre-commit hook that 
 | [Writing Artifacts](docs/writing-rules.md) | Create and customize rules, skills, agents |
 | [Governance](docs/governance.md) | 7-level inheritance, org policies, locking |
 | [Verification](docs/verification.md) | Token-based config verification |
-| [Team Sync](docs/team-sync.md) | Share config via PR |
 | [Migration](docs/migration.md) | Adopt codi in existing projects |
 | [Architecture](docs/architecture.md) | System design and internals |
 

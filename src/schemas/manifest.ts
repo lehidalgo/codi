@@ -16,10 +16,10 @@ export const CodiManifestSchema = z.object({
     requiredVersion: z.string().optional(),
   }).optional(),
   team: z.string().max(64).optional(),
-  sync: z.object({
+  source: z.object({
     repo: z.string(),
     branch: z.string().default('main'),
-    paths: z.array(z.string()).default(['rules', 'skills']),
+    paths: z.array(z.string()).default(['rules', 'skills', 'agents']),
   }).optional(),
 });
 

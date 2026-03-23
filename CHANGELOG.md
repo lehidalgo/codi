@@ -64,12 +64,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Pre-commit hook auto-inclusion when `requiredVersion` is set
 - `E_VERSION_MISMATCH` and `E_FILES_STALE` error codes
 
-#### Team Sync
-- `codi sync` command with `--dry-run` and `--message` options
-- `sync` config in `codi.yaml` (repo, branch, paths)
-- Git operations module for clone, branch, stage, commit, push
-- PR creation via `gh` CLI
-- Hash-based change detection between local and remote configs
+#### Remote Config Pull
+- `codi update --from <repo>` pulls centralized artifacts from a team GitHub repository
+- `source` config in `codi.yaml` (repo, branch, paths)
+- One-way pull: reads from remote, never writes to it
+- Respects `managed_by` ownership — only updates `managed_by: codi` artifacts
 
 #### Governance (Phase 2)
 - 7-level config inheritance: org → team → repo → lang → framework → agent → user
@@ -87,6 +86,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Developer Experience
 - 385 tests across 52 test files
 - 23 structured error codes with descriptive hints
+
+### Changed
+
+- Removed `codi sync` command (pushed local changes to remote — violated governance model). Replaced with `codi update --from <repo>` which pulls centralized artifacts from the team repository without writing to it.
+- Renamed `sync` config key to `source` in `codi.yaml`
 
 ### Fixed
 

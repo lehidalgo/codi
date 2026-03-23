@@ -16,7 +16,7 @@ export interface CodiManifest {
     requiredVersion?: string;
   };
   team?: string;
-  sync?: {
+  source?: {
     repo: string;
     branch: string;
     paths: string[];

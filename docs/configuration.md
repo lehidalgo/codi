@@ -42,11 +42,11 @@ team: frontend
 codi:
   requiredVersion: ">=0.1.0"
 
-# Team sync configuration
-sync:
+# Remote source for centralized team artifacts (used by codi update --from)
+source:
   repo: "org/team-codi-config"
   branch: main
-  paths: [rules, skills]
+  paths: [rules, skills, agents]
 
 # Control which content types are included
 layers:
