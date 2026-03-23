@@ -10,7 +10,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP) and Phase 2 (Go
 ## Current State
 
 - **Branch**: `main`
-- **Latest commit**: `6da7796` — refactor: extract templates to individual TypeScript modules
+- **Latest commit**: `d8d344d` — fix: address all audit findings
 - **npm**: `codi-cli@0.2.0` published with provenance
 - **GitHub**: public at `lehidalgo/codi`
 - **CI**: GitHub Actions passing (lint, test, build)

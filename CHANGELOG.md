@@ -88,6 +88,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 385 tests across 52 test files
 - 23 structured error codes with descriptive hints
 
+### Fixed
+
+- `createError()` message now includes error code prefix for clarity
+- Agent name validation enforces regex matching rules/skills
+- Skill schema validates `disableModelInvocation`, `argumentHint`, `allowedTools`
+- Console.log replaced with Logger in init wizard
+- Rule/skill creation in init logs warnings on failure
+- Path resolution standardized to `path.resolve()` in state manager
+- Scaffold names limited to 64 characters
+- Type guards added for array flag value casting
+- Removed undeclared `type: skill` from skill template frontmatter
+- Consolidated duplicate template-matching functions in update command
+- Added `satisfiesVersion` to utils barrel export
+
 #### Release Infrastructure
 - MIT LICENSE file
 - GitHub Actions CI workflow (lint, test, build on push/PR)
