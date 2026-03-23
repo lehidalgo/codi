@@ -1,9 +1,9 @@
-# @codi/cli
+# codi-cli
 
 Unified configuration platform for AI coding agents.
 
-[![npm version](https://img.shields.io/npm/v/@codi/cli)](https://www.npmjs.com/package/@codi/cli)
-[![license](https://img.shields.io/npm/l/@codi/cli)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/codi-cli)](https://www.npmjs.com/package/codi-cli)
+[![license](https://img.shields.io/npm/l/codi-cli)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/lehidalgo/codi/ci.yml?label=CI)](https://github.com/lehidalgo/codi/actions)
 
 ## What is Codi?
@@ -28,7 +28,7 @@ No more maintaining separate config files that drift apart. One config, every ag
 
 ```bash
 # Install
-pnpm add -D @codi/cli
+pnpm add -D codi-cli
 
 # Initialize — creates .codi/ with auto-detected agents and stack
 codi init --agents claude-code cursor
