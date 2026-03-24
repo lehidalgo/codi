@@ -177,7 +177,7 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
       agents: parsed.agents,
       context: parsed.context,
       flags: flagsFromDefinitions(parsed.flags, path.join(codiDir, 'flags.yaml')),
-      mcp: { servers: {} },
+      mcp: parsed.mcp,
     },
   };
 

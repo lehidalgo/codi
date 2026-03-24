@@ -17,8 +17,10 @@ import { FlagDefinitionSchema } from '../../schemas/flag.js';
 import { RuleFrontmatterSchema } from '../../schemas/rule.js';
 import { SkillFrontmatterSchema } from '../../schemas/skill.js';
 import { AgentFrontmatterSchema } from '../../schemas/agent.js';
+import { McpConfigSchema } from '../../schemas/mcp.js';
 import { createError, zodToCodiErrors } from '../output/errors.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
+import type { McpConfig } from '../../types/config.js';
 
 export interface ParsedCodiDir {
   manifest: CodiManifest;
@@ -28,6 +30,7 @@ export interface ParsedCodiDir {
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
   context: NormalizedContext[];
+  mcp: McpConfig;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -255,6 +258,21 @@ async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> 
   }
 }
 
+async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
+  const mcpPath = path.join(codiDir, 'mcp.yaml');
+  if (!(await fileExists(mcpPath))) {
+    return ok({ servers: {} });
+  }
+  const rawResult = await readYamlFile(mcpPath);
+  if (!rawResult.ok) return rawResult;
+
+  const parsed = McpConfigSchema.safeParse(rawResult.data);
+  if (!parsed.success) {
+    return err(zodToCodiErrors(parsed.error, mcpPath));
+  }
+  return ok(parsed.data as McpConfig);
+}
+
 export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCodiDir>> {
   const codiDir = path.join(projectRoot, '.codi');
   if (!(await fileExists(codiDir))) {
@@ -276,6 +294,9 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
   const agentsResult = await scanAgents(path.join(codiDir, 'agents'));
   if (!agentsResult.ok) return agentsResult;
 
+  const mcpResult = await parseMcpConfig(codiDir);
+  if (!mcpResult.ok) return mcpResult;
+
   return ok({
     manifest: manifestResult.data,
     flags: flagsResult.data,
@@ -284,5 +305,6 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
     commands: [],
     agents: agentsResult.data,
     context: [],
+    mcp: mcpResult.data,
   });
 }
