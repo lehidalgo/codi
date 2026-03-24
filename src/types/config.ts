@@ -24,6 +24,7 @@ export interface CodiManifest {
     registry: string;
     branch: string;
   };
+  presets?: string[];
 }
 
 export interface NormalizedRule {

@@ -10,6 +10,7 @@ import { scanCodiDir } from './parser.js';
 import { composeConfig, flagsFromDefinitions } from './composer.js';
 import type { ConfigLayer } from './composer.js';
 import { validateConfig } from './validator.js';
+import { loadPreset } from '../preset/preset-loader.js';
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -160,6 +161,32 @@ async function buildUserLayer(): Promise<ConfigLayer | null> {
   };
 }
 
+async function buildPresetLayers(codiDir: string, presetNames: string[]): Promise<ConfigLayer[]> {
+  const presetsDir = path.join(codiDir, 'presets');
+  const layers: ConfigLayer[] = [];
+
+  for (const name of presetNames) {
+    const result = await loadPreset(name, presetsDir);
+    if (!result.ok) continue;
+
+    const preset = result.data;
+    layers.push({
+      level: 'preset',
+      source: `preset:${name}`,
+      config: {
+        rules: preset.rules,
+        skills: preset.skills,
+        agents: preset.agents,
+        commands: preset.commands,
+        flags: flagsFromDefinitions(preset.flags, `preset:${name}`),
+        mcp: preset.mcp,
+      },
+    });
+  }
+
+  return layers;
+}
+
 export async function resolveConfig(projectRoot: string): Promise<Result<NormalizedConfig>> {
   const codiDir = resolveCodiDir(projectRoot);
   const scanResult = await scanCodiDir(projectRoot);
@@ -183,6 +210,8 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
   const orgLayer = await buildOrgLayer();
   const teamName = parsed.manifest.team;
   const teamLayer = teamName ? await buildTeamLayer(teamName) : null;
+  const presetNames = parsed.manifest.presets ?? [];
+  const presetLayers = await buildPresetLayers(codiDir, presetNames);
   const langLayers = await buildLangLayers(codiDir);
   const frameworkLayers = await buildFrameworkLayers(codiDir);
   const agentLayers = await buildAgentLayers(codiDir);
@@ -191,6 +220,7 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
   const layers: ConfigLayer[] = [
     ...(orgLayer ? [orgLayer] : []),
     ...(teamLayer ? [teamLayer] : []),
+    ...presetLayers,
     repoLayer,
     ...langLayers,
     ...frameworkLayers,

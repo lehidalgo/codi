@@ -25,6 +25,7 @@ export const CodiManifestSchema = z.object({
     registry: z.string(),
     branch: z.string().default('main'),
   }).optional(),
+  presets: z.array(z.string()).optional(),
 });
 
 export type CodiManifestInput = z.input<typeof CodiManifestSchema>;
