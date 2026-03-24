@@ -56,6 +56,7 @@ export const GIT_CLONE_DEPTH = '1';
 
 // --- Flag defaults ---
 export const DEFAULT_MAX_FILE_LINES = 700;
+export const PRE_COMMIT_MAX_FILE_LINES = 800;
 
 // --- Project-level counts (update when adding commands/adapters) ---
 export const CLI_COMMAND_COUNT = 16;

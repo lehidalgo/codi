@@ -246,7 +246,7 @@ codi add skill code-review --template code-review  # From template
 codi add skill --all                               # All templates
 ```
 
-Available templates: `code-review`, `documentation`, `mcp`, `codi-operations`, `e2e-testing`, `artifact-creator`, `security-scan`, `test-coverage`, `refactoring`, `codebase-onboarding`, `presentation`, `mobile-development`.
+Available templates: `code-review`, `documentation`, `mcp`, `codi-operations`, `e2e-testing`, `artifact-creator`, `security-scan`, `test-coverage`, `refactoring`, `codebase-onboarding`, `presentation`, `mobile-development`, `commit`.
 
 ## Writing Agents
 
@@ -340,7 +340,7 @@ codi add command deploy-check --template review  # From template
 codi add command --all                           # All templates
 ```
 
-Available templates: `review`, `test-run`, `security-scan`, `test-coverage`, `refactor`, `onboard`, `docs-lookup`. Commands are generated for Claude Code only (`.claude/commands/`).
+Available templates: `review`, `test-run`, `security-scan`, `test-coverage`, `refactor`, `onboard`, `docs-lookup`, `commit`. Commands are generated for Claude Code only (`.claude/commands/`).
 
 ## Artifact Ownership
 

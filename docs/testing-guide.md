@@ -160,7 +160,7 @@ npx codi add command review --template review
 ```bash
 npx codi add command --all
 ```
-**Expected**: All available command templates created (review, test-run).
+**Expected**: All available command templates created (review, test-run, security-scan, test-coverage, refactor, onboard, docs-lookup, commit).
 
 ### Step 3.9 — Verify managed_by distinction
 **[SYSTEM]**

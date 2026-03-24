@@ -100,7 +100,7 @@ Each adapter implements `detect()` (checks for existing config files) and `gener
 
 ## Error Handling
 
-- **23 error codes** defined in `src/core/output/error-catalog.ts`
+- **25 error codes** defined in `src/core/output/error-catalog.ts`
 - **13 exit codes** for CLI process termination
 - Error format:
 

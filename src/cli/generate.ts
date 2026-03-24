@@ -13,6 +13,9 @@ import { writeAuditEntry } from '../core/audit/audit-log.js';
 import { createBackup } from '../core/backup/backup-manager.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { detectHookSetup } from '../core/hooks/hook-detector.js';
+import { generateHooksConfig } from '../core/hooks/hook-config-generator.js';
+import { installHooks } from '../core/hooks/hook-installer.js';
 
 interface GenerateCommandOptions extends GlobalOptions {
   agent?: string[];
@@ -90,6 +93,28 @@ export async function generateHandler(
         filesGenerated: genResult.data.files.length,
       },
     });
+  }
+
+  // Re-install hooks to stay in sync with config changes
+  if (!options.dryRun) {
+    try {
+      const hookSetup = await detectHookSetup(projectRoot);
+      const languages = configResult.data.manifest.agents ?? [];
+      const hooksConfig = generateHooksConfig(configResult.data.flags, languages);
+      if (hooksConfig.hooks.length > 0) {
+        await installHooks({
+          projectRoot,
+          runner: hookSetup.runner,
+          hooks: hooksConfig.hooks,
+          flags: configResult.data.flags,
+          commitMsgValidation: hooksConfig.commitMsgValidation,
+          secretScan: hooksConfig.secretScan,
+          fileSizeCheck: hooksConfig.fileSizeCheck,
+        });
+      }
+    } catch {
+      // Hook installation is best-effort during generate
+    }
   }
 
   return createCommandResult({

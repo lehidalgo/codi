@@ -10,3 +10,4 @@ export { template as refactoring } from './refactoring.js';
 export { template as codebaseOnboarding } from './codebase-onboarding.js';
 export { template as presentation } from './presentation.js';
 export { template as mobileDevelopment } from './mobile-development.js';
+export { template as commit } from './commit.js';

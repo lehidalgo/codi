@@ -18,6 +18,10 @@ import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
 import { runInitWizard } from './init-wizard.js';
 import { initFromOptions, handleOutput } from './shared.js';
+import { detectHookSetup } from '../core/hooks/hook-detector.js';
+import { generateHooksConfig } from '../core/hooks/hook-config-generator.js';
+import { installHooks } from '../core/hooks/hook-installer.js';
+import { checkHookDependencies } from '../core/hooks/hook-dependency-checker.js';
 import type { GlobalOptions } from './shared.js';
 import { VERSION } from '../index.js';
 
@@ -173,10 +177,46 @@ export async function initHandler(
     }
   }
 
+  // Install pre-commit hooks
+  let hooksInstalled = false;
+  if (configResult.ok) {
+    try {
+      const hookSetup = await detectHookSetup(projectRoot);
+      const resolvedFlags = configResult.data.flags;
+      const hooksConfig = generateHooksConfig(resolvedFlags, stack);
+      if (hooksConfig.hooks.length > 0) {
+        const hookResult = await installHooks({
+          projectRoot,
+          runner: hookSetup.runner,
+          hooks: hooksConfig.hooks,
+          flags: resolvedFlags,
+          commitMsgValidation: hooksConfig.commitMsgValidation,
+          secretScan: hooksConfig.secretScan,
+          fileSizeCheck: hooksConfig.fileSizeCheck,
+        });
+        hooksInstalled = hookResult.ok;
+        if (hookResult.ok) {
+          log.info(`Pre-commit hooks installed (${hookSetup.runner === 'none' ? 'standalone' : hookSetup.runner})`);
+          const missingDeps = await checkHookDependencies(hooksConfig.hooks);
+          if (missingDeps.length > 0) {
+            log.warn('Missing hook tools — install before committing:');
+            for (const dep of missingDeps) {
+              log.warn(`  ${dep.name}: ${dep.installHint}`);
+            }
+          }
+        } else {
+          log.warn('Hook installation failed; you can set up hooks manually.');
+        }
+      }
+    } catch {
+      log.warn('Hook detection failed; skipping hook installation.');
+    }
+  }
+
   return createCommandResult({
     success: true,
     command: 'init',
-    data: { codiDir, agents: agentIds, stack, generated, preset: presetName, rules: ruleTemplates },
+    data: { codiDir, agents: agentIds, stack, generated, preset: presetName, rules: ruleTemplates, hooksInstalled },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }

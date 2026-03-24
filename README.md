@@ -9,7 +9,7 @@
 [![npm version](https://img.shields.io/npm/v/codi-cli)](https://www.npmjs.com/package/codi-cli)
 [![license](https://img.shields.io/npm/l/codi-cli)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/lehidalgo/codi/ci.yml?label=CI)](https://github.com/lehidalgo/codi/actions)
-[![tests](https://img.shields.io/badge/tests-381%20passing-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-407%20passing-brightgreen)]()
 
 ## What is Codi?
 
