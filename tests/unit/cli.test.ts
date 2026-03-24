@@ -9,7 +9,7 @@ describe('CLI', () => {
     const output = execFileSync('node', [CLI_PATH, '--version'], {
       encoding: 'utf-8',
     }).trim();
-    expect(output).toBe('0.2.0');
+    expect(output).toBe('0.3.0');
   });
 
   it('prints help with --help', () => {
