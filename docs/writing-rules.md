@@ -1,15 +1,44 @@
 # Writing & Customizing Artifacts
 
-This guide covers everything about creating, modifying, and contributing rules in Codi.
+**Date**: 2026-03-24
+**Document**: writing-rules.md
 
-## Rule Format
+This guide covers creating, formatting, and optimizing rules, skills, agents, and commands in Codi. All four artifact types follow the same lifecycle: create, store, generate, update, clean.
 
-Rules are Markdown files stored in `.codi/rules/custom/`. Each rule has two parts:
+## Size Budgets
 
-1. **YAML frontmatter** — metadata that controls how the rule is applied
-2. **Markdown body** — the actual instructions for AI agents
+AI agents have different context windows and per-file limits. Write artifacts within these constraints to ensure all agents can load your configuration.
 
-### Complete Example
+### Per-Agent Limits
+
+| Agent | Per-Rule Limit | Total Combined | Context Window |
+|-------|---------------|----------------|----------------|
+| Claude Code | 6,000 chars | ~40 KB | 200K tokens |
+| Cursor | No hard limit | 32K tokens | 32K tokens |
+| Codex | No hard limit | 32 KB default | 200K tokens |
+| Windsurf | 6,000 chars | 12,000 chars | 32K tokens |
+| Cline | No hard limit | No hard limit | 200K tokens |
+
+### Recommended Size Limits
+
+| Artifact | Max Content | Max Lines | Why |
+|----------|------------|-----------|-----|
+| Rule | 6,000 chars | ~50 lines | Windsurf/Claude Code per-file limit |
+| Skill | 6,000 chars | ~150 lines | Skills are workflows, naturally longer, but still bounded |
+| Agent | 6,000 chars | ~100 lines | System prompts should be focused |
+| Command | 6,000 chars | ~50 lines | Commands are concise action sequences |
+
+Codi warns (via `codi doctor`) when any artifact exceeds 6,000 chars or total combined content exceeds 12,000 chars.
+
+### What Counts Toward the Budget
+
+Only the **markdown body** counts — not frontmatter. Frontmatter is stripped during generation for most agents. The budget applies to the content that the AI agent actually reads.
+
+## Writing Effective Rules
+
+### Rule Format
+
+Rules are Markdown files in `.codi/rules/custom/`. Each has YAML frontmatter + markdown body.
 
 ```markdown
 ---
@@ -29,285 +58,243 @@ language: typescript
 ## Endpoint Naming
 - Use plural nouns: /users, /orders (not /user, /getOrders)
 - Use kebab-case for multi-word paths: /order-items
-- Nest related resources: /users/:id/orders
 
 ## Response Format
-All endpoints must return this structure:
+All endpoints must return:
 - Success: `{ data: T, meta?: { page, total } }`
-- Error: `{ error: { code: string, message: string, details?: unknown } }`
-
-## Status Codes
-- 200 for successful GET/PUT/PATCH
-- 201 for successful POST (resource created)
-- 204 for successful DELETE (no content)
-- 400 for validation errors
-- 401 for authentication required
-- 403 for authorization denied
-- 404 for resource not found
-- 500 for unexpected server errors
+- Error: `{ error: { code: string, message: string } }`
 ```
 
 ### Frontmatter Fields
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `name` | string | Yes | — | Rule identifier. Use kebab-case: `my-rule-name` |
-| `description` | string | Yes | — | One-line summary. Shown in `codi verify` output |
-| `priority` | `high` / `medium` / `low` | No | `medium` | Importance level for ordering |
-| `alwaysApply` | boolean | No | `false` | If true, always included in generated output |
-| `managed_by` | `codi` / `user` | No | `user` | Who owns this rule (see [Rule Ownership](#rule-ownership)) |
-| `scope` | string[] | No | — | Glob patterns to restrict where this rule applies |
-| `language` | string | No | — | Language-specific rule (e.g., `typescript`, `python`) |
+| `name` | string | Yes | — | Kebab-case identifier, max 64 chars. Must match `/^[a-z0-9-]+$/` |
+| `description` | string | Yes | — | One-line summary, max 512 chars |
+| `priority` | `high` / `medium` / `low` | No | `medium` | Controls ordering in generated output |
+| `alwaysApply` | boolean | No | `true` | If true, always included in output |
+| `managed_by` | `codi` / `user` | No | `user` | Who owns this artifact |
+| `scope` | string[] | No | — | Glob patterns restricting where this rule applies |
+| `language` | string | No | — | Language-specific rule (e.g., `typescript`) |
 
-### File Naming
+### Content Best Practices
 
-- Use **kebab-case**: `my-rule-name.md`
-- The filename should match the `name` field in frontmatter
-- No spaces, no uppercase, no special characters
+**Be specific, not vague.**
 
-## Writing a Custom Rule
+| Ineffective | Effective |
+|------------|-----------|
+| "Use consistent indentation" | "Use 2-space indentation" |
+| "Write enough tests" | "Maintain minimum 80% code coverage" |
+| "Handle errors properly" | "Return Result types for recoverable operations" |
+| "Follow best practices" | (Delete this — it says nothing) |
 
-### Step 1: Create the Rule
+**Use imperative mood.** Write commands, not suggestions.
+
+| Weak | Strong |
+|------|--------|
+| "You should validate inputs" | "Validate all inputs at system boundaries" |
+| "Tests should be independent" | "Keep tests independent — no shared mutable state" |
+
+**Include rationale.** Rules with "why" are followed more reliably by AI agents.
+
+```markdown
+- Use parameterized queries — prevents SQL injection
+- Pin dependency versions in lock files — reproducible builds across environments
+```
+
+**Show, don't tell.** Include code examples in fenced blocks for complex patterns.
+
+```markdown
+## Error Response Format
+Return typed errors with context:
+
+\`\`\`typescript
+return { error: { code: 'VALIDATION_FAILED', message: 'Email is required', field: 'email' } };
+\`\`\`
+```
+
+**Group related items** under clear markdown headings (h2, h3). Avoid h4+ — if you need that level of nesting, split into a separate rule.
+
+**One concern per rule.** Don't combine security, testing, and style in a single rule. Split them.
+
+### Anti-Patterns
+
+| Anti-Pattern | Why It's Bad | Fix |
+|-------------|-------------|-----|
+| Duplicating linter rules | AI can't enforce what a linter already catches. Wastes context budget. | Delete it. Use ESLint/Prettier instead. |
+| Vague philosophy | "Write clean code" gives AI nothing actionable to follow. | Replace with specific, measurable criteria. |
+| Giant monolith rule | Rules over 6K chars may be truncated by Windsurf/Claude Code. | Split into focused rules. |
+| Repeating framework docs | AI already knows React/Express/etc. Don't teach it. | Only document YOUR conventions. |
+| Including code style | Formatting, semicolons, quotes — these are linter concerns. | Use `.prettierrc` / `.eslintrc` instead. |
+
+### Effective Rule Checklist
+
+Before committing a rule, verify:
+
+- [ ] Under 6,000 chars (run `codi doctor` to check)
+- [ ] Uses imperative mood ("Validate X" not "X should be validated")
+- [ ] Includes rationale where non-obvious
+- [ ] Has measurable criteria (numbers, thresholds, patterns)
+- [ ] Does not duplicate linter/formatter configuration
+- [ ] Does not teach the AI things it already knows
+- [ ] Groups items under clear headings
+- [ ] Uses code examples for complex patterns
+
+## Creating Rules
+
+### From scratch
 
 ```bash
-# Creates a blank skeleton in .codi/rules/custom/our-api-conventions.md
 codi add rule our-api-conventions
 ```
 
-This creates:
+Creates `.codi/rules/custom/our-api-conventions.md` with a blank skeleton (`managed_by: user`).
 
-```markdown
----
-name: our-api-conventions
-description: Custom rule
-priority: medium
-alwaysApply: false
-managed_by: user
----
-
-# our-api-conventions
-
-Add your rule content here.
-```
-
-### Step 2: Write the Content
-
-Open `.codi/rules/custom/our-api-conventions.md` and replace the placeholder content with your team's specific guidelines.
-
-**Tips for writing good rules:**
-
-- **Be specific, not vague**: "Use 2-space indentation" not "Use consistent indentation"
-- **Include measurable criteria**: "80% test coverage" not "Write enough tests"
-- **Use imperative language**: "Validate all inputs" not "Inputs should be validated"
-- **Group related items** under clear headings
-- **Explain WHY** when the reason isn't obvious: "Use parameterized queries — prevents SQL injection"
-- **Provide examples** of correct vs incorrect approaches when helpful
-
-### Step 3: Generate
+### From template
 
 ```bash
-codi generate
+codi add rule security --template security
 ```
 
-This pushes your new rule to all configured agent output files.
+Creates from a built-in template (`managed_by: codi`).
 
-### Step 4: Verify
-
-```bash
-# Check that the rule appears in generated output
-codi verify
-
-# Check for drift
-codi status
-```
-
-## Modifying a Template Rule
-
-Template rules (created with `--template`) are marked `managed_by: codi`. If you modify one:
-
-```bash
-# Edit the template rule
-vim .codi/rules/custom/security.md
-
-# Regenerate
-codi generate
-```
-
-**Important**: If you run `codi update --rules` later, your modifications will be overwritten because `managed_by: codi` means codi owns this rule.
-
-### Keeping Custom Modifications
-
-If you want to customize a template rule AND keep your changes across updates, change the ownership:
-
-```yaml
----
-name: security
-description: Our customized security rules
-priority: high
-alwaysApply: true
-managed_by: user    # Changed from 'codi' to 'user'
----
-```
-
-Now `codi update --rules` will skip this file.
-
-## Rule Ownership
-
-The `managed_by` field controls how `codi update --rules` treats the rule:
-
-| Value | Created by | Updated by `codi update --rules` | When to use |
-|-------|-----------|--------------------------------|-------------|
-| `codi` | `codi add rule --template X` | Yes — replaced with latest template | You want automatic updates from new codi versions |
-| `user` | `codi add rule X` (no template) | No — never touched | You wrote custom content or customized a template |
-
-### Workflow for Teams
-
-```
-codi ships templates (managed_by: codi)
-     ↓
-Team member proposes improvement → PR to lehidalgo/codi
-     ↓
-PR merged → new codi version released
-     ↓
-Everyone runs: npm update codi-cli && codi update --rules --regenerate
-     ↓
-All managed_by: codi rules get the latest content
-User-custom rules (managed_by: user) are untouched
-```
-
-## Contributing Rule Improvements
-
-Want to improve a built-in rule template? Here's how:
-
-### Where Templates Live
-
-Templates are individual TypeScript modules in `src/templates/rules/`, `src/templates/skills/`, and `src/templates/agents/`. Each template follows this structure:
-
-```typescript
-'template-name': `---
-name: {{name}}
-description: Template description
-priority: high
-alwaysApply: true
-managed_by: codi
----
-
-# Rule Title
-
-## Section
-- Guideline 1
-- Guideline 2`,
-```
-
-### Contributing Process
-
-1. **Fork** the [codi repository](https://github.com/lehidalgo/codi)
-2. **Edit** the relevant template module in `src/templates/rules/`, `src/templates/skills/`, or `src/templates/agents/`
-3. **Test** your changes:
-   ```bash
-   npm run build
-   node dist/cli.js add rule test-rule --template your-template
-   cat .codi/rules/custom/test-rule.md
-   ```
-4. **Run tests**: `npm test`
-5. **Open a PR** with a clear description of what you changed and why
-
-### Guidelines for Template Content
-
-- Rules must be **language-agnostic** (work for any stack)
-- Content must be **actionable** (specific instructions, not philosophy)
-- Include **measurable criteria** where possible (numbers, thresholds)
-- Group items under **clear section headings**
-- Keep templates under **50 lines of content** (excluding frontmatter)
-- Use `managed_by: codi` in all templates
-
-## Using the Rule Management Skill
-
-Codi includes a built-in skill that helps AI agents assist with rule creation:
-
-```bash
-codi add skill codi-operations --template codi-operations
-```
-
-This skill teaches your AI agent to:
-- Help you write new rules following codi's format
-- Guide you through modifying existing rules
-- Run the right commands after changes
-- Explain managed_by implications
-
-Once added, ask your AI agent:
-- "Help me write a codi rule for our database conventions"
-- "Update our security rule to include API key rotation policy"
-- "What rules does this project have?"
-
-## Available Templates
-
-| Template | Category | Lines | Focus |
-|----------|----------|-------|-------|
-| `security` | Safety | ~35 | Secrets, validation, auth, deps, OWASP |
-| `code-style` | Quality | ~30 | Naming, functions, files, errors, comments |
-| `testing` | Quality | ~35 | TDD, coverage, AAA, mocking, edge cases |
-| `architecture` | Design | ~25 | Modules, deps, SOLID, avoid over-engineering |
-| `git-workflow` | Process | ~25 | Commits, branches, safety |
-| `error-handling` | Reliability | ~30 | Typed errors, logging, resilience, cleanup |
-| `performance` | Efficiency | ~30 | N+1, async, caching, pagination |
-| `documentation` | Docs | ~30 | API docs, README, ADRs, code comments |
-| `api-design` | Design | ~30 | REST, versioning, errors, pagination, limits |
-
-Add all at once:
+### Batch create
 
 ```bash
 codi add rule --all
 ```
 
-## Writing & Customizing Skills
+Creates all 9 available templates.
 
-Same lifecycle as rules. Skills live in `.codi/skills/` as Markdown:
+### Available Rule Templates
+
+| Template | Focus | Lines |
+|----------|-------|-------|
+| `security` | Secrets, validation, auth, deps, OWASP | ~35 |
+| `code-style` | Naming, functions, files, errors, comments | ~30 |
+| `testing` | TDD, coverage, AAA, mocking, edge cases | ~35 |
+| `architecture` | Modules, deps, SOLID, avoid over-engineering | ~25 |
+| `git-workflow` | Commits, branches, safety | ~25 |
+| `error-handling` | Typed errors, logging, resilience, cleanup | ~30 |
+| `performance` | N+1, async, caching, pagination | ~30 |
+| `documentation` | API docs, README, ADRs, code comments | ~30 |
+| `api-design` | REST, versioning, errors, pagination, limits | ~30 |
+
+## Writing Skills
+
+Skills are reusable workflows that AI agents can invoke. They live in `.codi/skills/`.
+
+### Skill Format
 
 ```markdown
 ---
-name: my-skill
-description: What this skill does
+name: code-review
+description: Systematic code review checklist
 compatibility: [claude-code, cursor]
-tools: []
+tools: [Read, Grep, Glob]
 managed_by: user
 ---
 
-# Instructions...
+# Code Review
+
+## Steps
+1. Read the changed files
+2. Check for security issues
+3. Verify test coverage
+4. Review naming and structure
 ```
 
-- `managed_by: codi` — template-managed, updated by `codi update --skills`
-- `managed_by: user` — custom, never overwritten
-- Add from template: `codi add skill <name> --template <template>`
-- Add all: `codi add skill --all`
-- Available templates: mcp, code-review, documentation, codi-operations
+### Skill Frontmatter
 
-## Writing & Customizing Agents
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | Yes | — | Kebab-case, max 64 chars |
+| `description` | string | Yes | — | One-line summary, max 1024 chars |
+| `compatibility` | string[] | No | — | Which agents support this skill |
+| `tools` | string[] | No | — | Tools the skill needs access to |
+| `managed_by` | `codi` / `user` | No | `user` | Who owns this skill |
+| `disableModelInvocation` | boolean | No | — | Prevent model from auto-invoking |
+| `argumentHint` | string | No | — | Hint text for skill arguments |
+| `allowedTools` | string[] | No | — | Restrict which tools the skill can use |
 
-Agents (subagents) are specialized worker roles. They live in `.codi/agents/`:
+### When to Use Skills vs Rules
+
+| Use a Rule when... | Use a Skill when... |
+|--------------------|---------------------|
+| The instruction is always active | The workflow is invoked on demand |
+| It's a constraint or policy | It's a step-by-step procedure |
+| It applies broadly to all code | It applies to a specific task |
+| Example: "Never expose secrets" | Example: "Code review checklist" |
+
+### Creating Skills
+
+```bash
+codi add skill code-review                        # Blank skeleton
+codi add skill code-review --template code-review  # From template
+codi add skill --all                               # All templates
+```
+
+Available templates: `code-review`, `documentation`, `mcp`, `codi-operations`, `e2e-testing`, `artifact-creator`.
+
+## Writing Agents
+
+Agents (subagents) are specialized worker roles. They live in `.codi/agents/`.
+
+### Agent Format
 
 ```markdown
 ---
-name: my-agent
-description: What this agent does
+name: code-reviewer
+description: Expert code reviewer for PRs and code quality
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: user
 ---
 
-# System prompt...
+# Code Reviewer
+
+You are an expert code reviewer. When reviewing code:
+
+## Focus Areas
+- Security vulnerabilities
+- Performance bottlenecks
+- Test coverage gaps
+- Naming and readability
 ```
 
-- `managed_by: codi` — template-managed, updated by `codi update --agents`
-- `managed_by: user` — custom, never overwritten
-- Add from template: `codi add agent <name> --template <template>`
-- Add all: `codi add agent --all`
-- Available templates: code-reviewer, test-generator, security-analyzer
-- Generated formats: Claude Code (`.claude/agents/*.md`), Codex (`.codex/agents/*.toml`)
+### Agent Frontmatter
 
-## Writing & Customizing Commands
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | Yes | — | Kebab-case, max 64 chars. Must match `/^[a-z][a-z0-9-]*$/` |
+| `description` | string | Yes | — | One-line summary, max 512 chars |
+| `tools` | string[] | No | — | Tools available to the agent |
+| `model` | string | No | — | Model override (e.g., `sonnet`, `inherit`) |
+| `managed_by` | `codi` / `user` | No | `user` | Who owns this agent |
 
-Commands are slash commands for Claude Code. They live in `.codi/commands/` as Markdown:
+### Agent Output Formats
+
+| Agent Platform | Output Format |
+|----------------|---------------|
+| Claude Code | `.claude/agents/*.md` with YAML frontmatter |
+| Codex | `.codex/agents/*.toml` in TOML format |
+| Cursor, Windsurf, Cline | Not supported |
+
+### Creating Agents
+
+```bash
+codi add agent code-reviewer                          # Blank skeleton
+codi add agent code-reviewer --template code-reviewer  # From template
+codi add agent --all                                   # All templates
+```
+
+Available templates: `code-reviewer`, `test-generator`, `security-analyzer`.
+
+## Writing Commands
+
+Commands are slash commands for Claude Code. They live in `.codi/commands/`.
+
+### Command Format
 
 ```markdown
 ---
@@ -325,34 +312,73 @@ managed_by: user
 4. Report deployment readiness
 ```
 
-**Frontmatter fields:**
+### Command Frontmatter
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Command identifier (kebab-case) |
-| `description` | string | Yes | What the command does |
-| `managed_by` | `codi` / `user` | No | Who owns this command |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | Yes | — | Kebab-case, max 64 chars |
+| `description` | string | Yes | — | One-line summary, max 512 chars |
+| `managed_by` | `codi` / `user` | No | `user` | Who owns this command |
 
-**Creating a command:**
+### Creating Commands
 
-1. `codi add command deploy-check` — creates blank skeleton
-2. Edit `.codi/commands/deploy-check.md` with your instructions
-3. `codi generate` — generates `.claude/commands/deploy-check.md`
-4. Test by typing `/deploy-check` in Claude Code
+```bash
+codi add command deploy-check                    # Blank skeleton
+codi add command deploy-check --template review  # From template
+codi add command --all                           # All templates
+```
 
-**Available templates:** `review`, `test-run`. Create with `codi add command <name> --template <template>`.
+Available templates: `review`, `test-run`. Commands are generated for Claude Code only (`.claude/commands/`).
 
-**Batch create:** `codi add command --all` creates all available command templates.
+## Artifact Ownership
 
-**Update:** `codi update --commands` refreshes `managed_by: codi` commands to latest templates.
+The `managed_by` field controls how `codi update` treats the artifact:
 
-**Note:** Commands are currently generated for Claude Code only (`.claude/commands/`).
+| Value | Created by | Updated by `codi update` | When to use |
+|-------|-----------|--------------------------|-------------|
+| `codi` | Template (`--template`) | Yes — replaced with latest | You want automatic updates from new codi versions |
+| `user` | Custom (`codi add`) | No — never touched | You wrote custom content or customized a template |
+
+### Keeping Custom Modifications
+
+If you customized a template rule and want to keep changes across updates, change the ownership:
+
+```yaml
+managed_by: user    # Changed from 'codi' to 'user'
+```
+
+Now `codi update --rules` will skip this file.
+
+## Per-Agent Format Constraints
+
+### How Artifacts Are Consumed
+
+| Agent | Rules Format | Skills Format | Context Budget |
+|-------|-------------|---------------|----------------|
+| Claude Code | Separate `.md` files in `.claude/rules/` | `SKILL.md` in subdirectories | 200K tokens — generous |
+| Cursor | `.mdc` files with frontmatter in `.cursor/rules/` | `SKILL.md` in subdirectories | 32K tokens — keep rules modular |
+| Codex | Inline sections in `AGENTS.md` | `SKILL.md` in subdirectories | 32K default — watch total size |
+| Windsurf | Inline in `.windsurfrules` | Inline + `SKILL.md` in subdirectories | 12K chars combined — most restrictive |
+| Cline | Inline in `.clinerules` | Inline + `SKILL.md` in subdirectories | 200K tokens — generous |
+
+### Implications
+
+- **Windsurf users**: Keep total config under 12K chars. Fewer rules with higher quality beats many rules.
+- **Cursor users**: Rules are auto-discovered from `.cursor/rules/` — modular is fine. Watch total budget.
+- **Inline agents** (Codex, Windsurf, Cline): All rules concatenated into one file. Size compounds fast.
+
+## File Naming
+
+- Use **kebab-case**: `my-rule-name.md`
+- The filename should match the `name` field in frontmatter
+- No spaces, no uppercase, no special characters
+- Max 64 characters
 
 ## Configuring MCP Servers
 
-MCP (Model Context Protocol) servers are configured in `.codi/mcp.yaml` and distributed to all supporting agents.
+MCP servers are configured in `.codi/mcp.yaml` and distributed to all supporting agents.
 
-### Server format
+### Server Format
 
 ```yaml
 # .codi/mcp.yaml
@@ -370,7 +396,7 @@ servers:
     url: "https://developers.openai.com/mcp"
 ```
 
-### Transport types
+### Transport Types
 
 | Transport | Fields | Use case |
 |-----------|--------|----------|
@@ -379,22 +405,18 @@ servers:
 
 ### Distribution
 
-MCP config is automatically distributed during `codi generate`:
+MCP config is distributed during `codi generate`:
 - Claude Code: `.claude/mcp.json`
 - Cursor: `.cursor/mcp.json`
 - Codex: `.codex/mcp.toml`
 - Windsurf: `.windsurf/mcp.json`
 - Cline: not supported
 
-### Validation
-
-After configuring, run `codi generate` and verify the output files contain your servers.
-
 ## Creating Custom Presets
 
-Presets are composable configuration packages containing flags + rules + skills + agents + commands + MCP config.
+Presets bundle flags + rules + skills + agents + commands + MCP config into reusable packages.
 
-### Preset structure
+### Preset Structure
 
 ```
 .codi/presets/my-preset/
@@ -406,7 +428,7 @@ Presets are composable configuration packages containing flags + rules + skills 
   mcp.yaml           # MCP servers (optional)
 ```
 
-### preset.yaml format
+### preset.yaml
 
 ```yaml
 name: react-typescript
@@ -423,17 +445,9 @@ flags:
     value: [typescript, javascript, css]
 ```
 
-### Creating a preset
+### Preset Composition
 
-1. `codi preset create my-preset` — scaffolds the preset directory
-2. Add rules/skills/agents/commands to the subdirectories
-3. Edit `preset.yaml` with your flags and metadata
-4. Add to your manifest: `presets: [my-preset]`
-5. `codi generate` — preset artifacts are included in output
-
-### Preset composition
-
-Multiple presets are applied in order. Later presets override earlier ones:
+Multiple presets apply in order — later presets override earlier ones:
 
 ```yaml
 # codi.yaml
@@ -443,16 +457,28 @@ presets:
   - strict-security    # Security rules (additive)
 ```
 
-### Inheritance
+Use `extends:` to inherit from another preset.
 
-Use `extends:` to inherit from another preset:
+## Contributing Templates
 
-```yaml
-extends: balanced      # Inherits all flags, then applies overrides
-```
+### Where Templates Live
 
-### Registry
+Templates are TypeScript modules in `src/templates/rules/`, `src/templates/skills/`, and `src/templates/agents/`.
 
-Install presets from Git: `codi preset install name --from org/repo`
-Search registry: `codi preset search react`
-Update installed: `codi preset update`
+### Guidelines for Template Content
+
+- Must be **language-agnostic** (work for any stack)
+- Must be **actionable** (specific instructions, not philosophy)
+- Include **measurable criteria** where possible
+- Group items under **clear section headings**
+- Keep under **50 lines of content** (excluding frontmatter)
+- Keep under **6,000 chars** of body content
+- Use `managed_by: codi` in all templates
+
+### Contributing Process
+
+1. Fork the [codi repository](https://github.com/lehidalgo/codi)
+2. Edit the template in `src/templates/`
+3. Test: `npm run build && node dist/cli.js add rule test --template your-template`
+4. Run tests: `npm test`
+5. Open a PR with a clear description

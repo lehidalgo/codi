@@ -8,6 +8,7 @@ import { generate } from '../core/generator/generator.js';
 import { StateManager } from '../core/config/state.js';
 import type { GeneratedFileState } from '../core/config/state.js';
 import { Logger } from '../core/output/logger.js';
+import { WATCH_DEBOUNCE_MS, STATE_FILENAME, AUDIT_FILENAME } from '../constants.js';
 import { writeAuditEntry } from '../core/audit/audit-log.js';
 import { initFromOptions } from './shared.js';
 import type { GlobalOptions } from './shared.js';
@@ -95,7 +96,7 @@ export function registerWatchCommand(program: Command): void {
 
       const watcher = fs.watch(codiDir, { recursive: true }, (_event, filename) => {
         if (!filename) return;
-        if (filename === 'state.json' || filename === 'audit.jsonl') return;
+        if (filename === STATE_FILENAME || filename === AUDIT_FILENAME) return;
 
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
@@ -107,7 +108,7 @@ export function registerWatchCommand(program: Command): void {
             log.info('Regeneration complete.');
           }
           generating = false;
-        }, 500);
+        }, WATCH_DEBOUNCE_MS);
       });
 
       process.on('SIGINT', () => {

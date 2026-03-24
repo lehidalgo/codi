@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { NormalizedConfig } from '../../types/config.js';
 import { buildFlagInstructions } from '../../adapters/flag-instructions.js';
+import { TOKEN_HASH_LENGTH, TOKEN_PREFIX } from '../../constants.js';
 
 export interface VerificationData {
   token: string;
@@ -39,7 +40,7 @@ export function buildVerificationData(config: NormalizedConfig): VerificationDat
   ].join('|');
 
   const hash = createHash('sha256').update(raw, 'utf8').digest('hex');
-  const token = `codi-${hash.slice(0, 12)}`;
+  const token = `${TOKEN_PREFIX}-${hash.slice(0, TOKEN_HASH_LENGTH)}`;
   const timestamp = new Date().toISOString();
 
   return { token, ruleNames, skillNames, agentNames, commandNames, mcpServerNames, activeFlags, timestamp };

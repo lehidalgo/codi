@@ -61,7 +61,7 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 - `codi update --{rules,skills,agents}` for managed artifact refresh
 - Zod schema validation for all three types
 - `managed_by` field on all three types
-- 9 rule templates, 5 skill templates, 3 agent templates
+- 9 rule templates, 6 skill templates, 3 agent templates
 
 ### Agent Output (per platform)
 - Claude Code: `.claude/rules/*.md` + `.claude/skills/*/SKILL.md` + `.claude/agents/*.md`
@@ -101,13 +101,13 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Source files | 119 in `src/` |
 | Test files | 47 in `tests/` |
 | Source LOC | ~9,259 |
-| Tests | 381 passing |
-| Error codes | 23 |
+| Tests | 391 passing |
+| Error codes | 24 |
 | Flags | 18 |
 | Config layers | 7 |
 | Adapters | 5 |
 | Rule templates | 9 |
-| Skill templates | 5 |
+| Skill templates | 6 |
 | Agent templates | 3 |
 | CLI commands | 15 |
 | Documentation guides | 9 |

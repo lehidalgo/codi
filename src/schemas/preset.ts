@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from '../constants.js';
 
 export const PresetManifestSchema = z.object({
-  name: z.string().regex(/^[a-z][a-z0-9-]*$/).max(64),
+  name: z.string().regex(NAME_PATTERN_STRICT).max(MAX_NAME_LENGTH),
   description: z.string().optional(),
   version: z.string().optional(),
   extends: z.string().optional(),

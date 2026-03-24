@@ -2,6 +2,7 @@ import prompts from 'prompts';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
 import { Logger } from '../core/output/logger.js';
+import { DEFAULT_PRESET } from '../constants.js';
 
 export interface WizardResult {
   agents: string[];
@@ -102,7 +103,7 @@ export async function runInitWizard(
     agents: response.agents as string[],
     rules: (response.rules ?? []) as string[],
     skills: (response.skills ?? []) as string[],
-    preset: (response.preset ?? 'balanced') as PresetName,
+    preset: (response.preset ?? DEFAULT_PRESET) as PresetName,
     versionPin: response.versionPin ?? true,
   };
 }

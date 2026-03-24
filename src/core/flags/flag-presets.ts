@@ -1,6 +1,7 @@
 import type { FlagDefinition } from '../../types/flags.js';
+import { PRESET_NAMES } from '../../constants.js';
 
-export type PresetName = 'minimal' | 'balanced' | 'strict';
+export type PresetName = (typeof PRESET_NAMES)[number];
 
 function flag(mode: FlagDefinition['mode'], value: unknown, locked = false): FlagDefinition {
   return locked ? { mode, value, locked } : { mode, value };
@@ -80,7 +81,7 @@ export function getPreset(name: PresetName): Record<string, FlagDefinition> {
 }
 
 export function getPresetNames(): PresetName[] {
-  return ['minimal', 'balanced', 'strict'];
+  return [...PRESET_NAMES];
 }
 
 export const PRESET_DESCRIPTIONS: Record<PresetName, string> = {

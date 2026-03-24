@@ -107,6 +107,8 @@ codi verify --check "token: codi-abc123, rules: security, code-style"
 | **Commands** | `.codi/commands/` | `.claude/commands/*.md` | -- | -- | -- | -- |
 | **MCP** | `.codi/mcp.yaml` | `.claude/mcp.json` | `.cursor/mcp.json` | `.codex/mcp.toml` | `.windsurf/mcp.json` | -- |
 
+Keep individual artifacts under 6,000 chars and total combined content under 12,000 chars (Windsurf limit). Run `codi doctor` to check. See the [Writing Artifacts](docs/writing-rules.md) guide for per-agent size budgets.
+
 ## CLI Reference
 
 | Command | Description | Key Options |

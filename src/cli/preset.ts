@@ -13,6 +13,7 @@ import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 import { scanCodiDir } from '../core/config/parser.js';
+import { PRESET_MANIFEST_FILENAME, ARTIFACT_TYPES, GIT_CLONE_DEPTH } from '../constants.js';
 import {
   getRegistryConfig,
   readLockFile,
@@ -61,13 +62,13 @@ export async function presetCreateHandler(
   } catch { /* doesn't exist, proceed */ }
 
   const manifest = { name, description: '', version: '1' };
-  const subdirs = ['rules', 'skills', 'agents', 'commands'];
+  const subdirs = [...ARTIFACT_TYPES];
 
   await fs.mkdir(presetDir, { recursive: true });
   for (const sub of subdirs) {
     await fs.mkdir(path.join(presetDir, sub), { recursive: true });
   }
-  await fs.writeFile(path.join(presetDir, 'preset.yaml'), stringifyYaml(manifest), 'utf8');
+  await fs.writeFile(path.join(presetDir, PRESET_MANIFEST_FILENAME), stringifyYaml(manifest), 'utf8');
 
   log.info(`Created preset "${name}" at .codi/presets/${name}/`);
 
@@ -92,7 +93,7 @@ export async function presetListHandler(
     const entries = await fs.readdir(presetsDir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const manifestPath = path.join(presetsDir, entry.name, 'preset.yaml');
+      const manifestPath = path.join(presetsDir, entry.name, PRESET_MANIFEST_FILENAME);
       try {
         const raw = await fs.readFile(manifestPath, 'utf8');
         const parsed = parseYaml(raw) as Record<string, unknown>;
@@ -134,13 +135,13 @@ export async function presetInstallHandler(
   const tmpDir = path.join(os.tmpdir(), `codi-preset-${Date.now()}`);
   try {
     log.info(`Cloning preset from ${from}...`);
-    await execFileAsync('git', ['clone', '--depth', '1', from, tmpDir]);
+    await execFileAsync('git', ['clone', '--depth', GIT_CLONE_DEPTH, from, tmpDir]);
 
     const presetSource = path.join(tmpDir, name);
     let sourceDir: string;
 
     try {
-      await fs.access(path.join(presetSource, 'preset.yaml'));
+      await fs.access(path.join(presetSource, PRESET_MANIFEST_FILENAME));
       sourceDir = presetSource;
     } catch {
       sourceDir = tmpDir;
@@ -296,7 +297,7 @@ export async function presetUpdateHandler(
         const destDir = path.join(codiDir, 'presets', name);
 
         try {
-          await fs.access(path.join(presetSourceDir, 'preset.yaml'));
+          await fs.access(path.join(presetSourceDir, PRESET_MANIFEST_FILENAME));
           await fs.rm(destDir, { recursive: true, force: true });
           await fs.mkdir(destDir, { recursive: true });
           await copyDir(presetSourceDir, destDir);

@@ -12,6 +12,7 @@ import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
+import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -44,7 +45,7 @@ export const clineAdapter: AgentAdapter = {
     frontmatter: false,
     progressiveLoading: false,
     agents: false,
-    maxContextTokens: 200000,
+    maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
@@ -71,7 +72,7 @@ export const clineAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [{
       path: '.clinerules',
       content,
-      sources: ['codi.yaml'],
+      sources: [MANIFEST_FILENAME],
       hash: hashContent(content),
     }];
 

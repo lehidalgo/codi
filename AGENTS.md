@@ -213,10 +213,10 @@ Maximum context window: 50000 tokens.
 ## Codi Verification
 
 This project uses Codi for unified AI agent configuration.
-- Verification token: `codi-6ed4e3041a8e`
+- Verification token: `codi-0b354adc4dfa`
 - Rules: architecture, code-style, error-handling, git-workflow, security, testing
-- Skills: codi-operations, e2e-testing
+- Skills: artifact-creator, codi-operations, e2e-testing
 - Agents: code-reviewer, security-analyzer, test-generator
-- Generated: 2026-03-24T16:34:23.685Z
+- Generated: 2026-03-24T18:51:55.407Z
 
 When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.

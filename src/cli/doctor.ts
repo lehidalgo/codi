@@ -1,6 +1,7 @@
 import type { Command } from 'commander';
 import { runAllChecks } from '../core/version/version-checker.js';
 import { resolveConfig } from '../core/config/resolver.js';
+import { validateContentSize } from '../core/config/validator.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
@@ -59,11 +60,16 @@ export async function doctorHandler(
       context: { check: r.check },
     }));
 
+  const contentWarnings = configResult.ok
+    ? validateContentSize(configResult.data)
+    : [];
+
   return createCommandResult({
     success: report.allPassed,
     command: 'doctor',
     data: report,
     errors: report.allPassed ? [] : errors,
+    warnings: contentWarnings,
     exitCode,
   });
 }

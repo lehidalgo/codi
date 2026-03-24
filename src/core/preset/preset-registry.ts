@@ -5,6 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { parse as parseYaml } from 'yaml';
 import type { CodiManifest } from '../../types/config.js';
+import { PRESET_MANIFEST_FILENAME, PRESET_LOCK_FILENAME, REGISTRY_INDEX_FILENAME, GIT_CLONE_DEPTH } from '../../constants.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -41,7 +42,7 @@ export function getRegistryConfig(manifest: CodiManifest | null): RegistryConfig
 }
 
 export async function readLockFile(codiDir: string): Promise<PresetLock> {
-  const lockPath = path.join(codiDir, 'preset-lock.json');
+  const lockPath = path.join(codiDir, PRESET_LOCK_FILENAME);
   try {
     const raw = await fs.readFile(lockPath, 'utf8');
     return JSON.parse(raw) as PresetLock;
@@ -51,20 +52,20 @@ export async function readLockFile(codiDir: string): Promise<PresetLock> {
 }
 
 export async function writeLockFile(codiDir: string, lock: PresetLock): Promise<void> {
-  const lockPath = path.join(codiDir, 'preset-lock.json');
+  const lockPath = path.join(codiDir, PRESET_LOCK_FILENAME);
   await fs.writeFile(lockPath, JSON.stringify(lock, null, 2), 'utf-8');
 }
 
 export async function cloneRegistry(config: RegistryConfig): Promise<string> {
   const tmpDir = path.join(os.tmpdir(), `codi-registry-${Date.now()}`);
   await execFileAsync('git', [
-    'clone', '--depth', '1', '--branch', config.branch, config.url, tmpDir,
+    'clone', '--depth', GIT_CLONE_DEPTH, '--branch', config.branch, config.url, tmpDir,
   ]);
   return tmpDir;
 }
 
 export async function readRegistryIndex(registryDir: string): Promise<RegistryEntry[]> {
-  const indexPath = path.join(registryDir, 'index.json');
+  const indexPath = path.join(registryDir, REGISTRY_INDEX_FILENAME);
   try {
     const raw = await fs.readFile(indexPath, 'utf8');
     return JSON.parse(raw) as RegistryEntry[];
@@ -84,7 +85,7 @@ export function filterEntries(entries: RegistryEntry[], query: string): Registry
 }
 
 export async function getPresetVersionFromDir(presetDir: string): Promise<string> {
-  const manifestPath = path.join(presetDir, 'preset.yaml');
+  const manifestPath = path.join(presetDir, PRESET_MANIFEST_FILENAME);
   try {
     const raw = await fs.readFile(manifestPath, 'utf8');
     const parsed = parseYaml(raw) as Record<string, unknown>;

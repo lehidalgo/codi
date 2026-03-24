@@ -7,6 +7,7 @@ import { registerAllAdapters } from '../adapters/index.js';
 import { detectAdapters, getAllAdapters } from '../core/generator/adapter-registry.js';
 import { getPreset } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
+import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
@@ -72,7 +73,7 @@ export async function initHandler(
       return createCommandResult({
         success: false,
         command: 'init',
-        data: { codiDir, agents: [], stack: [], generated: false, preset: 'balanced', rules: [] },
+        data: { codiDir, agents: [], stack: [], generated: false, preset: DEFAULT_PRESET, rules: [] },
         errors: [{
           code: 'E_CONFIG_INVALID',
           message: `.codi/ directory already exists. Use --force to reinitialize.`,
@@ -93,7 +94,7 @@ export async function initHandler(
   registerAllAdapters();
 
   let agentIds: string[];
-  let presetName: PresetName = (options.preset as PresetName) ?? 'balanced';
+  let presetName: PresetName = (options.preset as PresetName) ?? DEFAULT_PRESET;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
 
@@ -107,7 +108,7 @@ export async function initHandler(
       return createCommandResult({
         success: false,
         command: 'init',
-        data: { codiDir, agents: [], stack, generated: false, preset: 'balanced', rules: [] },
+        data: { codiDir, agents: [], stack, generated: false, preset: DEFAULT_PRESET, rules: [] },
         errors: [{ code: 'E_CONFIG_INVALID', message: 'Setup cancelled.', hint: '', severity: 'error', context: {} }],
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
@@ -206,7 +207,7 @@ async function createCodiStructure(
     manifest['codi'] = { requiredVersion: `>=${VERSION}` };
   }
   await fs.writeFile(
-    path.join(codiDir, 'codi.yaml'),
+    path.join(codiDir, MANIFEST_FILENAME),
     stringifyYaml(manifest),
     'utf-8',
   );
@@ -219,7 +220,7 @@ async function createCodiStructure(
     flagsObj[key] = entry;
   }
   await fs.writeFile(
-    path.join(codiDir, 'flags.yaml'),
+    path.join(codiDir, FLAGS_FILENAME),
     stringifyYaml(flagsObj),
     'utf-8',
   );

@@ -4,8 +4,7 @@ import { ok, err } from '../../types/result.js';
 import type { Result } from '../../types/result.js';
 import { createError } from '../output/errors.js';
 import { loadAgentTemplate } from './agent-template-loader.js';
-
-const NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
+import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from '../../constants.js';
 
 const DEFAULT_CONTENT = `---
 name: {{name}}
@@ -28,9 +27,9 @@ export interface CreateAgentOptions {
 export async function createAgent(options: CreateAgentOptions): Promise<Result<string>> {
   const { name, codiDir, template } = options;
 
-  if (!NAME_PATTERN.test(name) || name.length > 64) {
+  if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
     return err([createError('E_CONFIG_INVALID', {
-      message: `Invalid agent name "${name}". Use lowercase letters, digits, and hyphens only (max 64 chars).`,
+      message: `Invalid agent name "${name}". Use lowercase letters, digits, and hyphens only (max ${MAX_NAME_LENGTH} chars).`,
     })]);
   }
 

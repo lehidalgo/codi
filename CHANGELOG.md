@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-03-24
+
+### Added
+- Content size validation: `codi doctor` warns when artifacts exceed 6K chars or total exceeds 12K chars (Windsurf limit)
+- `W_CONTENT_SIZE` warning code for non-blocking size alerts (24 error/warning codes total)
+- New `artifact-creator` skill template — guides AI agents through writing quality artifact content (6 skill templates total)
+- `validateContentSize()` function with per-artifact and total budget checks
+- Validator unit tests (10 new tests, 391 total)
+
+### Changed
+- Agent and command description schemas now enforce max 512 chars (matching rules)
+- Centralized 30 hardcoded constants into `src/constants.ts` — single source of truth for all tunable values (sizes, patterns, filenames, presets, token config, context limits)
+- All schemas, scaffolders, validators, adapters, and CLI commands import from constants instead of using magic numbers
+- `docs/writing-rules.md` rewritten with per-agent size budgets, content best practices, anti-patterns, and quality checklist
+- `artifact-creator` template uses interpolated constants so values stay in sync automatically
+
+### Fixed
+- Agent/command description fields had no max length (now 512 chars, matching rules)
+- Hardcoded magic numbers scattered across 35+ files (now centralized in constants.ts)
+
 ## [0.2.0] - 2026-03-23
 
 ### Added

@@ -10,6 +10,7 @@ import { resolveCodiDir } from '../utils/paths.js';
 import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
 import { getPreset } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
+import { PRESET_NAMES, FLAGS_FILENAME, GIT_CLONE_DEPTH } from '../constants.js';
 import { registerAllAdapters } from '../adapters/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
@@ -279,7 +280,7 @@ async function pullFromSource(
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
-    await execFileAsync('git', ['clone', '--depth', '1', repoUrl, tmpDir]);
+    await execFileAsync('git', ['clone', '--depth', GIT_CLONE_DEPTH, repoUrl, tmpDir]);
   } catch {
     log.warn(`Failed to clone source repo: ${repo}`);
     return updated;
@@ -342,7 +343,7 @@ export async function updateHandler(
 ): Promise<CommandResult<UpdateData>> {
   const log = Logger.getInstance();
   const codiDir = resolveCodiDir(projectRoot);
-  const flagsFile = path.join(codiDir, 'flags.yaml');
+  const flagsFile = path.join(codiDir, FLAGS_FILENAME);
 
   let currentFlags: Record<string, unknown>;
   try {
@@ -369,7 +370,7 @@ export async function updateHandler(
   const presetName = options.preset as PresetName | undefined;
 
   if (presetName) {
-    const validPresets = ['minimal', 'balanced', 'strict'];
+    const validPresets = [...PRESET_NAMES];
     if (!validPresets.includes(presetName)) {
       return createCommandResult({
         success: false,

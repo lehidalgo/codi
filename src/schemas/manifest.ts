@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH, NAME_PATTERN } from '../constants.js';
 
 export const CodiManifestSchema = z.object({
-  name: z.string().regex(/^[a-z0-9-]+$/).max(64),
+  name: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH),
   version: z.enum(['1']),
-  description: z.string().max(512).optional(),
+  description: z.string().max(MAX_DESCRIPTION_LENGTH).optional(),
   agents: z.array(z.string()).optional(),
   layers: z.object({
     rules: z.boolean().default(true),
@@ -15,7 +16,7 @@ export const CodiManifestSchema = z.object({
   codi: z.object({
     requiredVersion: z.string().optional(),
   }).optional(),
-  team: z.string().max(64).optional(),
+  team: z.string().max(MAX_NAME_LENGTH).optional(),
   source: z.object({
     repo: z.string(),
     branch: z.string().default('main'),

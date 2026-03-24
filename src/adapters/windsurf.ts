@@ -12,6 +12,7 @@ import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
+import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -44,7 +45,7 @@ export const windsurfAdapter: AgentAdapter = {
     frontmatter: false,
     progressiveLoading: false,
     agents: false,
-    maxContextTokens: 32000,
+    maxContextTokens: CONTEXT_TOKENS_SMALL,
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
@@ -69,7 +70,7 @@ export const windsurfAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [{
       path: '.windsurfrules',
       content,
-      sources: ['codi.yaml'],
+      sources: [MANIFEST_FILENAME],
       hash: hashContent(content),
     }];
 
@@ -82,7 +83,7 @@ export const windsurfAdapter: AgentAdapter = {
       files.push({
         path: '.windsurf/mcp.json',
         content: mcpContent,
-        sources: ['mcp.yaml'],
+        sources: [MCP_FILENAME],
         hash: hashContent(mcpContent),
       });
     }
