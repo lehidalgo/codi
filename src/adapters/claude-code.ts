@@ -117,6 +117,18 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
+    // Generate .claude/commands/{name}.md
+    for (const cmd of config.commands) {
+      const cmdContent = addGeneratedHeader(`---\ndescription: ${cmd.description}\n---\n\n${cmd.content}`);
+      const fileName = cmd.name.toLowerCase().replace(/\s+/g, '-') + '.md';
+      files.push({
+        path: `.claude/commands/${fileName}`,
+        content: cmdContent,
+        sources: ['codi.yaml'],
+        hash: hashContent(cmdContent),
+      });
+    }
+
     // Generate .claude/mcp.json if MCP servers are configured
     if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
       const mcpContent = JSON.stringify(config.mcp, null, 2);

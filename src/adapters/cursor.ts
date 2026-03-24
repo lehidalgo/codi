@@ -44,14 +44,14 @@ export const cursorAdapter: AgentAdapter = {
     commands: null,
     agents: null,
     instructionFile: '.cursorrules',
-    mcpConfig: null,
+    mcpConfig: '.cursor/mcp.json',
   } satisfies AgentPaths,
 
   capabilities: {
     rules: true,
     skills: true,
     commands: false,
-    mcp: false,
+    mcp: true,
     frontmatter: true,
     progressiveLoading: false,
     agents: false,
@@ -102,6 +102,17 @@ export const cursorAdapter: AgentAdapter = {
 
     // Generate .cursor/skills/{name}/SKILL.md
     files.push(...generateSkillFiles(config.skills, '.cursor/skills'));
+
+    // Generate .cursor/mcp.json if MCP servers are configured
+    if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
+      const mcpContent = JSON.stringify(config.mcp, null, 2);
+      files.push({
+        path: '.cursor/mcp.json',
+        content: mcpContent,
+        sources: ['mcp.yaml'],
+        hash: hashContent(mcpContent),
+      });
+    }
 
     return files;
   },

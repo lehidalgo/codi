@@ -3,9 +3,11 @@ import { resolveCodiDir } from '../utils/paths.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
 import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
+import { createCommand } from '../core/scaffolder/command-scaffolder.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
+import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
@@ -182,6 +184,60 @@ export async function addAgentHandler(
   });
 }
 
+interface AddCommandOptions extends GlobalOptions {
+  template?: string;
+  all?: boolean;
+}
+
+interface AddCommandData {
+  name: string;
+  path: string;
+  template: string | null;
+}
+
+export async function addCommandHandler(
+  projectRoot: string,
+  name: string,
+  options: { template?: string },
+): Promise<CommandResult<AddCommandData>> {
+  const codiDir = resolveCodiDir(projectRoot);
+
+  if (options.template && !AVAILABLE_COMMAND_TEMPLATES.includes(options.template)) {
+    return createCommandResult({
+      success: false,
+      command: 'add command',
+      data: { name, path: '', template: options.template },
+      errors: [{
+        code: 'E_CONFIG_INVALID',
+        message: `Unknown command template "${options.template}". Available: ${AVAILABLE_COMMAND_TEMPLATES.join(', ')}`,
+        hint: `Use one of: ${AVAILABLE_COMMAND_TEMPLATES.join(', ')}`,
+        severity: 'error',
+        context: { template: options.template },
+      }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  const result = await createCommand({ name, codiDir, template: options.template });
+
+  if (!result.ok) {
+    return createCommandResult({
+      success: false,
+      command: 'add command',
+      data: { name, path: '', template: options.template ?? null },
+      errors: result.errors,
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  return createCommandResult({
+    success: true,
+    command: 'add command',
+    data: { name, path: result.data, template: options.template ?? null },
+    exitCode: EXIT_CODES.SUCCESS,
+  });
+}
+
 export function registerAddCommand(program: Command): void {
   const addCmd = program
     .command('add')
@@ -333,6 +389,56 @@ export function registerAddCommand(program: Command): void {
       }
 
       const result = await addAgentHandler(process.cwd(), name, options);
+      handleOutput(result, options);
+      process.exit(result.exitCode);
+    });
+
+  addCmd
+    .command('command [name]')
+    .description('Add a new custom command')
+    .option(
+      '-t, --template <template>',
+      `Use a command template (${AVAILABLE_COMMAND_TEMPLATES.join(', ')})`,
+    )
+    .option('--all', 'Add all available command templates')
+    .action(async (name: string | undefined, cmdOptions: Record<string, unknown>) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      const options: AddCommandOptions = { ...globalOptions, ...cmdOptions };
+      initFromOptions(options);
+
+      if (options.all) {
+        const results: Array<{ name: string; success: boolean }> = [];
+        for (const tmpl of AVAILABLE_COMMAND_TEMPLATES) {
+          const result = await addCommandHandler(process.cwd(), tmpl, { template: tmpl });
+          results.push({ name: tmpl, success: result.success });
+        }
+        const added = results.filter((r) => r.success).map((r) => r.name);
+        const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        const summary = createCommandResult({
+          success: true,
+          command: 'add command --all',
+          data: { added, skipped, total: AVAILABLE_COMMAND_TEMPLATES.length },
+          exitCode: EXIT_CODES.SUCCESS,
+        });
+        handleOutput(summary, options);
+        process.exit(summary.exitCode);
+        return;
+      }
+
+      if (!name) {
+        const errResult = createCommandResult({
+          success: false,
+          command: 'add command',
+          data: { name: '', path: '', template: null },
+          errors: [{ code: 'E_CONFIG_INVALID', message: 'Command name required. Use --all to add all templates.', hint: '', severity: 'error', context: {} }],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+        handleOutput(errResult, options);
+        process.exit(errResult.exitCode);
+        return;
+      }
+
+      const result = await addCommandHandler(process.cwd(), name, options);
       handleOutput(result, options);
       process.exit(result.exitCode);
     });

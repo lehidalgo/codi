@@ -17,6 +17,7 @@ import { FlagDefinitionSchema } from '../../schemas/flag.js';
 import { RuleFrontmatterSchema } from '../../schemas/rule.js';
 import { SkillFrontmatterSchema } from '../../schemas/skill.js';
 import { AgentFrontmatterSchema } from '../../schemas/agent.js';
+import { CommandFrontmatterSchema } from '../../schemas/command.js';
 import { McpConfigSchema } from '../../schemas/mcp.js';
 import { createError, zodToCodiErrors } from '../output/errors.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
@@ -160,6 +161,49 @@ export async function scanSkills(skillsDir: string): Promise<Result<NormalizedSk
   return ok(skills);
 }
 
+async function scanCommands(commandsDir: string): Promise<Result<NormalizedCommand[]>> {
+  if (!(await fileExists(commandsDir))) {
+    return ok([]);
+  }
+  const commands: NormalizedCommand[] = [];
+  const errors: ReturnType<typeof createError>[] = [];
+
+  const files = await collectMarkdownFiles(commandsDir);
+  for (const file of files) {
+    const result = await parseCommandFile(file);
+    if (!result.ok) {
+      errors.push(...result.errors);
+    } else {
+      commands.push(result.data);
+    }
+  }
+
+  if (errors.length > 0) return err(errors);
+  return ok(commands);
+}
+
+async function parseCommandFile(filePath: string): Promise<Result<NormalizedCommand>> {
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const parsed = CommandFrontmatterSchema.safeParse(data);
+    if (!parsed.success) {
+      return err(zodToCodiErrors(parsed.error, filePath));
+    }
+    const fm = parsed.data;
+    return ok({
+      name: fm.name,
+      description: fm.description,
+      content,
+    });
+  } catch (cause) {
+    return err([createError('E_FRONTMATTER_INVALID', {
+      file: filePath,
+      message: (cause as Error).message,
+    })]);
+  }
+}
+
 async function scanAgents(agentsDir: string): Promise<Result<NormalizedAgent[]>> {
   if (!(await fileExists(agentsDir))) {
     return ok([]);
@@ -291,6 +335,9 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
   const skillsResult = await scanSkills(path.join(codiDir, 'skills'));
   if (!skillsResult.ok) return skillsResult;
 
+  const commandsResult = await scanCommands(path.join(codiDir, 'commands'));
+  if (!commandsResult.ok) return commandsResult;
+
   const agentsResult = await scanAgents(path.join(codiDir, 'agents'));
   if (!agentsResult.ok) return agentsResult;
 
@@ -302,7 +349,7 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
     flags: flagsResult.data,
     rules: rulesResult.data,
     skills: skillsResult.data,
-    commands: [],
+    commands: commandsResult.data,
     agents: agentsResult.data,
     context: [],
     mcp: mcpResult.data,
