@@ -222,6 +222,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, 
 | [CI Integration](docs/ci-integration.md) | GitHub Actions workflow for codi validation |
 | [Testing Guide](docs/testing-guide.md) | E2E testing procedure (8 suites) |
 | [Multi-Tenant Design](docs/multi-tenant-design.md) | Presets, plugins, and stacks architecture |
+| [User Flows](docs/user-flows.md) | Complete user interaction paths and workflows |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
 | [Contributing](CONTRIBUTING.md) | Development setup and contribution guide |
 
