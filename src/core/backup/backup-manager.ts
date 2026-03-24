@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isPathSafe } from '../../utils/path-guard.js';
 
 const BACKUPS_DIR = 'backups';
 const MAX_BACKUPS = 5;
@@ -62,6 +63,7 @@ export async function createBackup(
   const backedUpFiles: string[] = [];
 
   for (const relPath of generatedFiles) {
+    if (!isPathSafe(projectRoot, relPath)) continue;
     const absSource = path.resolve(projectRoot, relPath);
     if (!(await fileExists(absSource))) continue;
 
@@ -133,6 +135,7 @@ export async function restoreBackup(
 
   const restoredFiles: string[] = [];
   for (const relPath of manifest.files) {
+    if (!isPathSafe(projectRoot, relPath)) continue;
     const sourcePath = path.join(backupDir, relPath);
     const destPath = path.resolve(projectRoot, relPath);
     await fs.mkdir(path.dirname(destPath), { recursive: true });

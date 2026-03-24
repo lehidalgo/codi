@@ -1,9 +1,12 @@
 import type { Command } from 'commander';
 import fs from 'node:fs';
 import { resolveCodiDir } from '../utils/paths.js';
+import { hashContent } from '../utils/hash.js';
 import { registerAllAdapters } from '../adapters/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
+import { StateManager } from '../core/config/state.js';
+import type { GeneratedFileState } from '../core/config/state.js';
 import { Logger } from '../core/output/logger.js';
 import { writeAuditEntry } from '../core/audit/audit-log.js';
 import { initFromOptions } from './shared.js';
@@ -28,10 +31,23 @@ async function runGenerate(projectRoot: string, log: Logger): Promise<boolean> {
   }
 
   const codiDir = resolveCodiDir(projectRoot);
+  const stateManager = new StateManager(codiDir, projectRoot);
+  for (const agentId of genResult.data.agents) {
+    const agentFiles = (genResult.data.filesByAgent?.[agentId] ?? genResult.data.files)
+      .map((f): GeneratedFileState => ({
+        path: f.path,
+        sourceHash: hashContent(f.sources.join(',')),
+        generatedHash: f.hash,
+        sources: f.sources,
+        timestamp: new Date().toISOString(),
+      }));
+    await stateManager.updateAgent(agentId, agentFiles);
+  }
+
   await writeAuditEntry(codiDir, {
     type: 'generate',
     timestamp: new Date().toISOString(),
-    details: { trigger: 'watch', agents: configResult.data.manifest.agents ?? [] },
+    details: { trigger: 'watch', agents: genResult.data.agents },
   });
 
   return true;
