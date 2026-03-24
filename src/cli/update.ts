@@ -16,6 +16,7 @@ import { generate } from '../core/generator/generator.js';
 import { loadTemplate, AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { loadSkillTemplate, AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { loadAgentTemplate, AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
+import { loadCommandTemplate, AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -32,6 +33,7 @@ interface UpdateOptions extends GlobalOptions {
   rules?: boolean;
   skills?: boolean;
   agents?: boolean;
+  commands?: boolean;
   regenerate?: boolean;
   dryRun?: boolean;
 }
@@ -46,6 +48,8 @@ interface UpdateData {
   skillsSkipped: string[];
   agentsUpdated: string[];
   agentsSkipped: string[];
+  commandsUpdated: string[];
+  commandsSkipped: string[];
   sourceUpdated: string[];
   regenerated: boolean;
 }
@@ -213,6 +217,57 @@ async function refreshManagedAgents(
   return { updated, skipped };
 }
 
+async function refreshManagedCommands(
+  codiDir: string,
+  dryRun: boolean,
+  log: Logger,
+): Promise<{ updated: string[]; skipped: string[] }> {
+  const commandsDir = path.join(codiDir, 'commands');
+  const updated: string[] = [];
+  const skipped: string[] = [];
+
+  let entries: string[];
+  try {
+    entries = await fs.readdir(commandsDir);
+  } catch {
+    return { updated, skipped };
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith('.md')) continue;
+    const filePath = path.join(commandsDir, entry);
+    const raw = await fs.readFile(filePath, 'utf8');
+    const parsed = matter(raw);
+    const managedBy = parsed.data['managed_by'] as string | undefined;
+
+    if (managedBy !== 'codi') {
+      skipped.push(entry.replace('.md', ''));
+      continue;
+    }
+
+    const commandName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
+    const templateName = findMatchingTemplate(commandName, AVAILABLE_COMMAND_TEMPLATES);
+
+    if (!templateName) {
+      skipped.push(commandName);
+      continue;
+    }
+
+    const templateResult = loadCommandTemplate(templateName);
+    if (!templateResult.ok) continue;
+
+    const newContent = templateResult.data.replace(/\{\{name\}\}/g, commandName);
+
+    if (!dryRun) {
+      await fs.writeFile(filePath, newContent + '\n', 'utf-8');
+    }
+    updated.push(commandName);
+    log.info(`${dryRun ? 'Would update' : 'Updated'} command: ${commandName}`);
+  }
+
+  return { updated, skipped };
+}
+
 async function pullFromSource(
   repo: string,
   codiDir: string,
@@ -297,7 +352,7 @@ export async function updateHandler(
     return createCommandResult({
       success: false,
       command: 'update',
-      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], sourceUpdated: [], regenerated: false },
+      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], sourceUpdated: [], regenerated: false },
       errors: [{
         code: 'E_CONFIG_NOT_FOUND',
         message: 'No .codi/flags.yaml found. Run `codi init` first.',
@@ -319,7 +374,7 @@ export async function updateHandler(
       return createCommandResult({
         success: false,
         command: 'update',
-        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], sourceUpdated: [], regenerated: false },
+        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], sourceUpdated: [], regenerated: false },
         errors: [{
           code: 'E_CONFIG_INVALID',
           message: `Invalid preset "${presetName}". Available: ${validPresets.join(', ')}`,
@@ -380,6 +435,14 @@ export async function updateHandler(
     agentsSkipped = result.skipped;
   }
 
+  let commandsUpdated: string[] = [];
+  let commandsSkipped: string[] = [];
+  if (options.commands) {
+    const result = await refreshManagedCommands(codiDir, options.dryRun ?? false, log);
+    commandsUpdated = result.updated;
+    commandsSkipped = result.skipped;
+  }
+
   let sourceUpdated: string[] = [];
   if (options.from) {
     sourceUpdated = await pullFromSource(options.from, codiDir, options.dryRun ?? false, log);
@@ -406,6 +469,7 @@ export async function updateHandler(
         rulesUpdated,
         skillsUpdated,
         agentsUpdated,
+        commandsUpdated,
         regenerated,
       },
     });
@@ -414,7 +478,7 @@ export async function updateHandler(
   return createCommandResult({
     success: true,
     command: 'update',
-    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, sourceUpdated, regenerated },
+    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, commandsUpdated, commandsSkipped, sourceUpdated, regenerated },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
@@ -422,12 +486,13 @@ export async function updateHandler(
 export function registerUpdateCommand(program: Command): void {
   program
     .command('update')
-    .description('Update flags, rules, skills, and agents to latest versions')
+    .description('Update flags, rules, skills, agents, and commands to latest versions')
     .option('--preset <preset>', 'Reset flags to preset: minimal, balanced, strict')
     .option('--from <repo>', 'Pull centralized artifacts from a GitHub repo (e.g., org/team-config)')
     .option('--rules', 'Refresh template-managed rules to latest versions')
     .option('--skills', 'Refresh template-managed skills to latest versions')
     .option('--agents', 'Refresh template-managed agents to latest versions')
+    .option('--commands', 'Refresh template-managed commands to latest versions')
     .option('--regenerate', 'Run codi generate after updating')
     .option('--dry-run', 'Show what would change without writing')
     .action(async (cmdOptions: Record<string, unknown>) => {

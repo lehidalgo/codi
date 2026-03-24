@@ -53,6 +53,7 @@ export interface NormalizedCommand {
   name: string;
   description: string;
   content: string;
+  managedBy?: 'codi' | 'user';
 }
 
 export interface NormalizedAgent {

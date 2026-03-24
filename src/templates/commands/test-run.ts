@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Run the project test suite and report results
+managed_by: codi
 ---
 
 Run the project's test suite:

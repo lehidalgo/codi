@@ -7,6 +7,8 @@ const expected: VerificationData = {
   ruleNames: ['code-quality', 'security', 'testing-standards'],
   skillNames: [],
   agentNames: [],
+  commandNames: [],
+  mcpServerNames: [],
   activeFlags: ['Keep source code files under 700 lines. Documentation files have no line limit.'],
   timestamp: '2026-03-23T20:00:00.000Z',
 };
