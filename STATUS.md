@@ -1,122 +1,142 @@
 # Project Status
 
 ## Date
-2026-03-23
+2026-03-24
 
 ## Summary
 
-Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP) and Phase 2 (Governance) are complete. CI/CD is operational. The project is public on GitHub with full documentation. Agent (subagent) support and reference-based generation are now implemented.
+Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), and all post-Phase 2 hardening is complete. The codebase passed a full architectural audit (9/10 score) and E2E testing across all 8 test suites. The governance model was corrected — `codi sync` (push to remote) was removed and replaced with `codi update --from` (one-way pull from central repo).
 
 ## Current State
 
 - **Branch**: `main`
-- **Latest commit**: `d8d344d` — fix: address all audit findings
+- **Latest commit**: `c5d612b` — feat: add E2E testing skill and comprehensive testing guide
 - **npm**: `codi-cli@0.2.0` published with provenance
 - **GitHub**: public at `lehidalgo/codi`
-- **CI**: GitHub Actions passing (lint, test, build)
-- **Tests**: 385 tests across 52 test files, all passing
+- **CI**: GitHub Actions passing (lint, build, test)
+- **Tests**: 377 tests across 48 test files, all passing
+- **Audit**: 9/10 — clean, production-ready (0 critical, 0 major findings)
+- **E2E**: All 8 test suites passed (including Claude Code agent integration)
 
-## Commit History
+## Recent Commits
 
 | Commit | Message |
 |--------|---------|
+| `c5d612b` | feat: add E2E testing skill and comprehensive testing guide |
+| `a4ff3e1` | feat: remove codi sync, add one-way pull from central repo |
+| `f1d6b63` | feat: adoption verification — stronger token, compliance command, audit log |
+| `55ea659` | docs: restructure README — move detailed content to separate guides |
+| `b555e68` | docs: fix all documentation gaps from audit |
+| `d8d344d` | fix: address all audit findings — 13 fixes across codebase |
+| `ef326d6` | refactor: unify rules, skills, and agents — full parity |
+| `80c45a9` | docs: update STATUS, README, CHANGELOG with agent support and current stats |
 | `6da7796` | refactor: extract templates to individual TypeScript modules |
 | `1c2f4d0` | feat: add agent (subagent) support for Claude Code and Codex |
-| `17bcf65` | fix: codex adapter follows official structure |
-| `ba21030` | feat: skills follow official best practices per agent |
-| `983b239` | feat: wire skills to all 5 agents with proper SKILL.md format |
-| `c998696` | feat: add rule authoring guide and rule-management skill |
-| `31bd2eb` | feat: rule lifecycle — managed_by distinction, update --rules, add --all |
-| `9615b3c` | fix: follow official best practices per agent |
-| `9592536` | feat: reference-based generation and production-grade rule templates |
-| `1a11331` | docs: comprehensive README rewrite with full feature documentation |
-| `34652ed` | fix: re-enable npm provenance (repo is now public) |
-| `acf4163` | fix: remove --provenance from npm publish (private repo) |
-| `8916c65` | fix: rename package from @codi/cli to codi-cli |
-| `4ac0034` | fix: run build before test in CI workflow |
-| `60d10b8` | chore: add package-lock.json for CI cache support |
-| `dd10e7a` | chore: add release infrastructure for npm publish |
-| `bfead2a` | feat: add Phase 2 governance — 18 flags and 7-level config inheritance |
-| `a2b331f` | docs: add STATUS.md session summary for continuity |
-| `44df09e` | feat: initial codi CLI implementation |
 
 ## What's Complete
 
 ### Phase 1: MVP
-- 10 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean
+- 11 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean, compliance
 - 5 agent adapters: Claude Code, Cursor, Codex, Windsurf, Cline
-- Config engine with 4-level inheritance (repo, lang, agent, user)
-- 8 behavioral flags with typed defaults
+- 7-level config inheritance (org → team → repo → lang → framework → agent → user)
+- 18 behavioral flags with 3 presets (minimal, balanced, strict)
 - Zod validation, hash-based state tracking, drift detection
-- Token-based verification system
-- Remote config pull via `codi update --from <repo>`
-- Version enforcement with `requiredVersion`
-- Pre-commit hook auto-installation
+- Token-based verification (12-char content hash, deterministic)
+- Version enforcement with `requiredVersion` and pre-commit hooks
 - Migration from existing CLAUDE.md and AGENTS.md
-- 9 rule templates, 4 skill templates, 3 agent templates
 
 ### Phase 2: Governance
-- 7-level config inheritance: org → team → repo → lang → framework → agent → user
-- 10 new flags (18 total) including string[] type (`mcp_allowed_servers`, `allowed_languages`)
-- Org config (`~/.codi/org.yaml`) and team config (`~/.codi/teams/{name}.yaml`)
+- Org config (`~/.codi/org.yaml`) with locked flag enforcement
+- Team config (`~/.codi/teams/{name}.yaml`) for team overrides
 - Framework layer (`.codi/frameworks/*.yaml`)
-- Locking at org, team, and repo levels
-- `codi doctor` validates org/team configs
+- `managed_by: codi` vs `managed_by: user` artifact ownership
+- `codi update --rules --skills --agents` refreshes managed artifacts
+- `codi update --from <repo>` one-way pull from central repository
 - 23 structured error codes
 
-### Agent (Subagent) Support
-- `codi add agent <name>` with 3 built-in templates (`code-reviewer`, `test-generator`, `security-analyzer`)
-- `codi add agent --all` to add all agent templates at once
-- Agent scanner reads `.codi/agents/*.md` during config resolution
-- Claude Code: generates `.claude/agents/*.md` (Markdown + YAML frontmatter)
-- Codex: generates `.codex/agents/*.toml` (TOML format)
+### Artifact Parity (Rules, Skills, Agents)
+- All three follow identical lifecycle: create → store → generate → update → clean
+- `codi add {rule,skill,agent} --all` for batch creation
+- `codi update --{rules,skills,agents}` for managed artifact refresh
+- Zod schema validation for all three types
+- `managed_by` field on all three types
+- 9 rule templates, 5 skill templates, 3 agent templates
 
-### Reference-Based Generation
-- CLAUDE.md and .cursorrules now reference rules instead of inlining them
-- Rules live in `.claude/rules/` and `.cursor/rules/` with full content
-- Central config files are lightweight indexes (flags + rule list + verification)
+### Agent Output (per platform)
+- Claude Code: `.claude/rules/*.md` + `.claude/skills/*/SKILL.md` + `.claude/agents/*.md`
+- Cursor: `.cursor/rules/*.mdc` + `.cursor/skills/*/SKILL.md`
+- Codex: `AGENTS.md` (inline) + `.agents/skills/*/SKILL.md` + `.codex/agents/*.toml`
+- Windsurf: `.windsurfrules` (inline) + `.windsurf/skills/*/SKILL.md`
+- Cline: `.clinerules` (inline) + `.cline/skills/*/SKILL.md`
 
-### Production-Grade Templates
-- 9 rule templates: security, code-style, testing, architecture, git-workflow, error-handling, performance, documentation, api-design
-- 4 skill templates: mcp, code-review, documentation, rule-management
-- 3 agent templates: code-reviewer, test-generator, security-analyzer
-- All 16 templates extracted to individual TypeScript modules in `src/templates/`
-- 28 generated files per project (rules + skills + agents across all agents)
-
-### Release Infrastructure
-- MIT LICENSE file
-- GitHub Actions CI (lint → build → test on push/PR)
-- GitHub Actions publish (npm publish with provenance on release)
-- `prepublishOnly` script (lint + test + build)
-- Package metadata: repository, homepage, bugs, exports
-- `.nvmrc` for Node 20
-- Package renamed from `@codi/cli` to `codi-cli` (no npm org needed)
-- Repo made public for provenance support
+### Adoption Verification
+- `codi compliance` — composite health check (doctor + drift + config summary)
+- Verification section in all generated files with 12-char content-based token
+- Configuration manifest in CLAUDE.md (rule/skill/agent counts + timestamp)
+- Audit log (`.codi/audit.jsonl`) records generate and update events
+- `codi doctor --ci` for pre-commit and CI pipeline integration
 
 ### Documentation
-- Comprehensive README with mermaid diagrams
+- README.md (339 lines) — concise with links to 8 detailed guides
+- docs/architecture.md — system design, hook system, error handling
+- docs/configuration.md — flags, presets, directory structure
+- docs/governance.md — 7-level inheritance, org policies
+- docs/writing-rules.md — artifact authoring guide (rules, skills, agents)
+- docs/verification.md — token system
+- docs/migration.md — adoption guide
+- docs/ci-integration.md — GitHub Actions examples
+- docs/adoption-verification.md — verification audit report
+- docs/testing-guide.md — E2E testing procedure (8 suites)
+
+### Release Infrastructure
+- MIT LICENSE, GitHub Actions CI + publish with provenance
+- `prepublishOnly` script, `.nvmrc` for Node 20
 - Terminal-style SVG logo
-- Full CHANGELOG following Keep a Changelog format
-- Rule authoring guide (`docs/writing-rules.md`)
 
 ## Project Stats
 
 | Metric | Value |
 |--------|-------|
 | Source files | 102 in `src/` |
-| Test files | 52 in `tests/` |
-| Source LOC | ~6,953 |
-| Tests | 385 passing |
+| Test files | 48 in `tests/` |
+| Source LOC | ~7,215 |
+| Tests | 377 passing |
 | Error codes | 23 |
 | Flags | 18 |
 | Config layers | 7 |
 | Adapters | 5 |
 | Rule templates | 9 |
-| Skill templates | 4 |
+| Skill templates | 5 |
 | Agent templates | 3 |
-| Generated files | 28 per project |
+| CLI commands | 11 |
+| Documentation guides | 9 |
 
-## What's Next: Phase 3 — Ecosystem
+## Resolved in This Session
+
+| Item | Resolution |
+|------|-----------|
+| `codi sync` violated governance | Removed. Replaced with `codi update --from` (one-way pull) |
+| Skills/agents not unified with rules | Full parity refactor — identical lifecycle for all three |
+| Weak verification token (6 chars, name-only) | Strengthened to 12 chars, hashes content, includes skills/agents |
+| No compliance command | Added `codi compliance` |
+| No audit log | Added `.codi/audit.jsonl` |
+| No testing guide | Created docs/testing-guide.md + e2e-testing skill |
+| Skill templates missing `managed_by` | Added to all artifact types |
+| Agent schema missing validation | Created AgentFrontmatterSchema with regex |
+| README too long (1003 lines) | Restructured to 339 lines with 8 doc links |
+| No architecture documentation | Created docs/architecture.md |
+| 13 audit findings (bugs, gaps) | All fixed |
+
+## What's Next
+
+### Immediate (before v0.3.0 release)
+- Implement `progressive_loading` flag (TODO in flag-catalog.ts)
+- Implement `auto_generate_on_change` flag (TODO in flag-catalog.ts)
+- Improve `drift_detection` flag enforcement at generation time
+- Add integration tests for `codi update --from`
+- Fix verify --check parser to handle varied response formats
+
+### Phase 3: Ecosystem
 
 | Epic | Description | Est. Days |
 |------|-------------|-----------|
@@ -130,7 +150,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP) and Phase 2 (Go
 
 **Total estimated: 26 days / 6 weeks**
 
-## Future: Phase 4 — Scale
+### Phase 4: Scale
 
 - Plugin system for custom adapters
 - Approval workflows (draft → review → publish)
@@ -140,5 +160,5 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP) and Phase 2 (Go
 
 ## Repository
 
-https://github.com/lehidalgo/codi
-https://www.npmjs.com/package/codi-cli
+- GitHub: https://github.com/lehidalgo/codi
+- npm: https://www.npmjs.com/package/codi-cli
