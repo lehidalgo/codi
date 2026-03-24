@@ -9,7 +9,6 @@ import type {
   NormalizedSkill,
   NormalizedCommand,
   NormalizedAgent,
-  NormalizedContext,
 } from '../../types/config.js';
 import type { FlagDefinition } from '../../types/flags.js';
 import { CodiManifestSchema } from '../../schemas/manifest.js';
@@ -30,7 +29,6 @@ export interface ParsedCodiDir {
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
-  context: NormalizedContext[];
   mcp: McpConfig;
 }
 
@@ -351,7 +349,6 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
     skills: skillsResult.data,
     commands: commandsResult.data,
     agents: agentsResult.data,
-    context: [],
     mcp: mcpResult.data,
   });
 }

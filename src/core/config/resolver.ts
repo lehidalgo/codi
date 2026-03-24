@@ -175,7 +175,6 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
       skills: parsed.skills,
       commands: parsed.commands,
       agents: parsed.agents,
-      context: parsed.context,
       flags: flagsFromDefinitions(parsed.flags, path.join(codiDir, 'flags.yaml')),
       mcp: parsed.mcp,
     },
