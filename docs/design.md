@@ -208,7 +208,7 @@ Implemented | Tested
 ### Validation
 1. Run `codi add rule my-rule` — verify `.codi/rules/custom/my-rule.md` created
 2. Run `codi add rule --template security` — verify template content applied
-3. Run `codi add skill --all` — verify all 5 skill templates created
+3. Run `codi add skill --all` — verify all 13 skill templates created
 Expected: Files created in correct locations with proper content.
 
 ### Contributing
@@ -920,7 +920,7 @@ Implemented | Tested
 
 ### Validation
 1. Run `codi add skill --template code-review` — verify SKILL.md created
-2. Run `codi add skill --all` — verify all 5 skill templates scaffolded
+2. Run `codi add skill --all` — verify all 13 skill templates scaffolded
 Expected: Skill files created in `.codi/skills/`.
 
 ### Contributing

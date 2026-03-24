@@ -161,6 +161,48 @@ This is expected behavior -- `--ci` mode exits with a non-zero code when any che
 
 `codi ci` runs `validate + doctor --ci`. Make sure generated files are committed and up to date before pushing.
 
+## Hook Issues
+
+### Pre-commit hooks not running
+
+Hooks are installed automatically by `codi init` and `codi generate`. If they're not running:
+
+1. Check if hooks exist: `ls .git/hooks/pre-commit`
+2. Reinstall: `codi generate`
+3. If using Husky: verify `.husky/pre-commit` exists
+
+### Hook tool not found ("command not found")
+
+Pre-commit hooks require language-specific tools. Install them for your stack:
+
+| Language | Tools | Install |
+|----------|-------|---------|
+| TypeScript/JS | eslint, prettier, tsc | `npm install -D eslint prettier typescript` |
+| Python | ruff, pyright | `pip install ruff pyright` |
+| Go | golangci-lint, gofmt | `go install github.com/golangci-lint/golangci-lint/cmd/golangci-lint@latest` |
+| Rust | clippy, rustfmt | `rustup component add clippy rustfmt` |
+| Java | google-java-format | `brew install google-java-format` |
+| Kotlin | ktfmt, detekt | `brew install ktfmt detekt` |
+| Swift | swiftformat, swiftlint | `brew install swiftformat swiftlint` |
+
+Run `codi doctor` to check which tools are missing.
+
+### Commit message rejected
+
+The commit-msg hook enforces conventional commits format. Valid format:
+
+```
+type(scope): description
+```
+
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
+
+First line must be ≤72 characters. Use imperative mood: "add feature" not "added feature".
+
+### Disabling hooks temporarily
+
+Use `--no-verify` only in emergencies. Codi strongly discourages bypassing hooks — fix the underlying issue instead.
+
 ## Debug Tips
 
 - Use `--verbose` flag for detailed logging on any command

@@ -11,6 +11,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   'refactor': commandTemplates.refactor,
   'onboard': commandTemplates.onboard,
   'docs-lookup': commandTemplates.docsLookup,
+  'commit': commandTemplates.commit,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);

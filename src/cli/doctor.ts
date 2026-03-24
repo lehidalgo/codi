@@ -4,6 +4,7 @@ import { resolveConfig } from '../core/config/resolver.js';
 import { validateContentSize } from '../core/config/validator.js';
 import { checkDocSync } from '../core/docs/doc-sync.js';
 import { createError } from '../core/output/errors.js';
+import { detectHookSetup } from '../core/hooks/hook-detector.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
@@ -77,12 +78,32 @@ export async function doctorHandler(
     return createError('W_DOCS_STALE', { message });
   });
 
+  // Check if hooks are installed
+  const hookWarnings = [];
+  try {
+    const hookSetup = await detectHookSetup(projectRoot);
+    if (hookSetup.runner === 'none') {
+      // Check if .git/hooks/pre-commit exists (standalone)
+      const fs = await import('node:fs/promises');
+      const path = await import('node:path');
+      try {
+        await fs.access(path.join(projectRoot, '.git', 'hooks', 'pre-commit'));
+      } catch {
+        hookWarnings.push(createError('W_DOCS_STALE', {
+          message: 'No pre-commit hooks detected — run: codi generate',
+        }));
+      }
+    }
+  } catch {
+    // Skip hook check if detection fails
+  }
+
   return createCommandResult({
     success: report.allPassed,
     command: 'doctor',
     data: report,
     errors: report.allPassed ? [] : errors,
-    warnings: [...contentWarnings, ...docWarnings],
+    warnings: [...contentWarnings, ...docWarnings, ...hookWarnings],
     exitCode,
   });
 }

@@ -16,6 +16,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   'codebase-onboarding': skillTemplates.codebaseOnboarding,
   'presentation': skillTemplates.presentation,
   'mobile-development': skillTemplates.mobileDevelopment,
+  'commit': skillTemplates.commit,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

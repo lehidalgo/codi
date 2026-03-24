@@ -97,3 +97,36 @@ for (const file of files) {
 }
 if (failed) process.exit(1);
 `;
+
+export const COMMIT_MSG_TEMPLATE = `#!/usr/bin/env node
+// Codi commit message validator
+// Enforces conventional commits format: type(scope): description
+
+const fs = require('fs');
+
+const msgFile = process.argv[2];
+if (!msgFile) {
+  console.error('No commit message file provided');
+  process.exit(1);
+}
+
+const msg = fs.readFileSync(msgFile, 'utf-8').trim();
+const firstLine = msg.split('\\n')[0];
+
+const TYPES = ['feat', 'fix', 'docs', 'refactor', 'test', 'chore', 'perf', 'ci', 'build', 'style', 'revert'];
+const pattern = new RegExp(\`^(\${TYPES.join('|')})(\\\\([^)]+\\\\))?!?: .+\`);
+
+if (!pattern.test(firstLine)) {
+  console.error('Invalid commit message format.');
+  console.error(\`Expected: type(scope): description\`);
+  console.error(\`Types: \${TYPES.join(', ')}\`);
+  console.error(\`Example: feat(auth): add OAuth2 login flow\`);
+  console.error(\`Got: \${firstLine}\`);
+  process.exit(1);
+}
+
+if (firstLine.length > 72) {
+  console.error(\`Commit message first line too long: \${firstLine.length} chars (max 72)\`);
+  process.exit(1);
+}
+`;

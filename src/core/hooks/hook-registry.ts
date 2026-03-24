@@ -27,6 +27,36 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
     { name: 'cargo-clippy', command: 'cargo clippy', stagedFilter: '**/*.rs' },
     { name: 'cargo-fmt', command: 'cargo fmt', stagedFilter: '**/*.rs' },
   ],
+  java: [
+    { name: 'google-java-format', command: 'google-java-format --replace', stagedFilter: '**/*.java' },
+    { name: 'checkstyle', command: 'checkstyle -c /google_checks.xml', stagedFilter: '**/*.java' },
+  ],
+  kotlin: [
+    { name: 'ktfmt', command: 'ktfmt --kotlinlang-style', stagedFilter: '**/*.kt' },
+    { name: 'detekt', command: 'detekt --input', stagedFilter: '**/*.kt' },
+  ],
+  swift: [
+    { name: 'swiftformat', command: 'swiftformat', stagedFilter: '**/*.swift' },
+    { name: 'swiftlint', command: 'swiftlint lint --strict', stagedFilter: '**/*.swift' },
+  ],
+  csharp: [
+    { name: 'dotnet-format', command: 'dotnet format --include', stagedFilter: '**/*.cs' },
+  ],
+  cpp: [
+    { name: 'clang-format', command: 'clang-format -i', stagedFilter: '**/*.{cpp,hpp,cc,h}' },
+    { name: 'clang-tidy', command: 'clang-tidy', stagedFilter: '**/*.{cpp,cc}' },
+  ],
+  php: [
+    { name: 'php-cs-fixer', command: 'php-cs-fixer fix', stagedFilter: '**/*.php' },
+    { name: 'phpstan', command: 'phpstan analyse', stagedFilter: '**/*.php' },
+  ],
+  ruby: [
+    { name: 'rubocop', command: 'rubocop -a', stagedFilter: '**/*.rb' },
+  ],
+  dart: [
+    { name: 'dart-format', command: 'dart format', stagedFilter: '**/*.dart' },
+    { name: 'dart-analyze', command: 'dart analyze', stagedFilter: '**/*.dart' },
+  ],
 };
 
 const GLOBAL_HOOKS: HookEntry[] = [

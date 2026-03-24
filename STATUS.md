@@ -14,7 +14,7 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 - **npm**: `codi-cli@0.3.0` published
 - **GitHub**: public at `lehidalgo/codi`
 - **CI**: GitHub Actions passing (lint, build, test)
-- **Tests**: 381 tests across 48 test files, all passing
+- **Tests**: 407 tests across 49 test files, all passing
 - **Docs**: 12 guide documents + README + CONTRIBUTING + CHANGELOG + STATUS
 - **Audit**: 9/10 — clean, production-ready
 - **E2E**: All 8 test suites passed (including Claude Code agent integration)
@@ -37,7 +37,7 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 ## What's Complete
 
 ### Phase 1: MVP
-- 15 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean, compliance, watch, ci, revert, marketplace, preset
+- 16 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean, compliance, watch, ci, revert, marketplace, preset, docs-update
 - 5 agent adapters: Claude Code, Cursor, Codex, Windsurf, Cline
 - 7-level config inheritance (org → team → repo → lang → framework → agent → user)
 - 18 behavioral flags with 3 presets (minimal, balanced, strict)
@@ -99,15 +99,15 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Metric | Value |
 |--------|-------|
 | Source files | 119 in `src/` |
-| Test files | 47 in `tests/` |
+| Test files | 49 in `tests/` |
 | Source LOC | ~9,259 |
-| Tests | 401 passing |
+| Tests | 407 passing |
 | Error codes | 25 |
 | Flags | 18 |
 | Config layers | 7 |
 | Adapters | 5 |
 | Rule templates | 21 |
-| Skill templates | 12 |
+| Skill templates | 13 |
 | Agent templates | 8 |
 | CLI commands | 16 |
 | Documentation guides | 9 |

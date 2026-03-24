@@ -1,6 +1,6 @@
 export const template = `---
 name: {{name}}
-description: Comprehensive validation of all codi features. Use when asked to test, audit, or verify the codi installation end-to-end. Covers all 15 commands, 7 artifact types, and 30 user flows.
+description: Comprehensive validation of all codi features. Use when asked to test, audit, or verify the codi installation end-to-end. Covers 16 commands, 7 artifact types, pre-commit hooks, doc-sync, and commit workflow.
 compatibility: [claude-code, cursor, codex]
 managed_by: codi
 ---
@@ -21,10 +21,11 @@ Full details: see docs/testing-guide.md and docs/user-flows.md.
 **[SYSTEM]** Create a test project and install codi:
 \\\`\\\`\\\`bash
 mkdir /tmp/codi-validation && cd /tmp/codi-validation
+git init
 npm init -y && npm install codi-cli
 npx codi --version
 \\\`\\\`\\\`
-Expected: Version prints (e.g., 0.3.0).
+Expected: Version prints (e.g., 0.3.1). Git repo initialized (needed for hooks).
 
 ## Suite 2: Initialization
 
@@ -33,6 +34,12 @@ Expected: Version prints (e.g., 0.3.0).
 npx codi init --agents claude-code cursor codex --preset balanced --json
 \\\`\\\`\\\`
 Expected: .codi/ created with codi.yaml, flags.yaml (18 flags), rules/, skills/, frameworks/.
+
+**[CODING AGENT]** Verify hooks were installed:
+\\\`\\\`\\\`bash
+ls .git/hooks/pre-commit .git/hooks/commit-msg
+\\\`\\\`\\\`
+Expected: Both files exist (pre-commit runner + commit message validator).
 
 **[HUMAN]** Interactive wizard: run \\\`npx codi init --force\\\` in terminal. Select agents, rules, skills, preset. Verify output matches.
 
@@ -45,7 +52,7 @@ npx codi add skill --all --json
 npx codi add agent --all --json
 npx codi add command --all --json
 \\\`\\\`\\\`
-Expected: 21 rules, 12 skills, 8 agents, 7 commands. All managed_by: codi.
+Expected: 21 rules, 13 skills, 8 agents, 8 commands. All managed_by: codi.
 
 **[SYSTEM]** Add custom artifacts:
 \\\`\\\`\\\`bash
@@ -61,7 +68,7 @@ Expected: managed_by: user.
 npx codi generate --json
 npx codi status --json
 \\\`\\\`\\\`
-Expected: Files generated. hasDrift: false.
+Expected: Files generated. hasDrift: false. Hooks re-installed.
 
 **[SYSTEM]** Inject and fix drift:
 \\\`\\\`\\\`bash
@@ -81,8 +88,9 @@ npx codi verify --json
 npx codi compliance --json
 npx codi doctor --ci --json
 npx codi ci --json
+npx codi docs-update --json
 \\\`\\\`\\\`
-Expected: 12-char token deterministic. All checks pass.
+Expected: 12-char token deterministic. All checks pass. docs-update reports fixed files (if any).
 
 ## Suite 6: Update & Presets
 
@@ -157,6 +165,84 @@ Expected: Clean removes generated. Regenerate works. Clean --all removes .codi/.
 **[SYSTEM]** \\\`npx codi verify --check "<response>"\\\`
 Expected: tokenMatch: true.
 
+## Suite 13: Pre-Commit Hooks
+
+**[SYSTEM]** Verify hook scripts exist:
+\\\`\\\`\\\`bash
+ls .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/codi-secret-scan.js .git/hooks/codi-file-size-check.js
+\\\`\\\`\\\`
+Expected: All 4 files present.
+
+**[SYSTEM]** Test file size check (800 LOC limit):
+\\\`\\\`\\\`bash
+python3 -c "print('\\n'.join(['line ' + str(i) for i in range(801)]))" > big-file.txt
+git add big-file.txt
+git commit -m "test: should fail"
+\\\`\\\`\\\`
+Expected: Commit blocked — "big-file.txt: 802 lines (max: 800)".
+
+**[SYSTEM]** Test secret scan:
+\\\`\\\`\\\`bash
+echo 'const key = "sk-abc123def456ghi789jkl012mno345pqr"' > secret-test.js
+git add secret-test.js
+git commit -m "test: should fail"
+\\\`\\\`\\\`
+Expected: Commit blocked — "Potential secret found".
+
+**[SYSTEM]** Test commit-msg validation:
+\\\`\\\`\\\`bash
+echo "hello" > valid-file.txt
+git add valid-file.txt
+git commit -m "bad message without type"
+\\\`\\\`\\\`
+Expected: Commit blocked — "Invalid commit message format".
+
+**[SYSTEM]** Valid commit:
+\\\`\\\`\\\`bash
+git commit -m "test: validate pre-commit hooks work"
+\\\`\\\`\\\`
+Expected: Commit succeeds (proper format, small file, no secrets).
+
+## Suite 14: Documentation Sync
+
+**[CODING AGENT]** Stale a count to test detection:
+\\\`\\\`\\\`bash
+# Temporarily edit STATUS.md to say "Rule templates | 9 |"
+\\\`\\\`\\\`
+
+**[SYSTEM]**
+\\\`\\\`\\\`bash
+npx codi doctor --json
+\\\`\\\`\\\`
+Expected: W_DOCS_STALE warning — "STATUS.md says Rule templates: 9 but 21 exist — run: codi docs-update".
+
+**[SYSTEM]**
+\\\`\\\`\\\`bash
+npx codi docs-update --json
+\\\`\\\`\\\`
+Expected: STATUS.md fixed. Count restored.
+
+**[SYSTEM]**
+\\\`\\\`\\\`bash
+npx codi doctor --json
+\\\`\\\`\\\`
+Expected: No doc-sync warnings.
+
+## Suite 15: Commit Workflow
+
+**[SYSTEM]** Add commit skill and command:
+\\\`\\\`\\\`bash
+npx codi add skill commit --template commit --json
+npx codi add command commit --template commit --json
+npx codi generate --json
+\\\`\\\`\\\`
+Expected: Commit skill and command created. Generated for all agents.
+
+**[CODING AGENT]** Verify the commit skill content includes:
+- Conventional commits format (feat, fix, docs, refactor, test, chore)
+- Pre-commit checks (formatting, linting, type checking, secret scan, file size)
+- Troubleshooting section (tool not found, hooks not installed, message rejected)
+
 ## Cleanup
 
 **[SYSTEM]** \\\`rm -rf /tmp/codi-validation\\\`
@@ -165,5 +251,5 @@ Expected: tokenMatch: true.
 
 - docs/testing-guide.md — full testing procedure
 - docs/user-flows.md — all 30 user flows
-- docs/troubleshooting.md — common issues
+- docs/troubleshooting.md — common issues (including hook troubleshooting)
 `;

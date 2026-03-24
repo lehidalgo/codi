@@ -69,9 +69,10 @@ describe('generateHooksConfig', () => {
     expect(eslintCount).toBe(1);
   });
 
-  it('returns empty hooks for unknown language', () => {
+  it('returns only global hooks for unknown language', () => {
     const config = generateHooksConfig(makeFlags({}), ['cobol']);
-    expect(config.hooks).toEqual([]);
+    const langHooks = config.hooks.filter((h) => h.name !== 'secret-scan' && h.name !== 'file-size-check');
+    expect(langHooks).toHaveLength(0);
   });
 
   it('combines hooks from multiple languages', () => {

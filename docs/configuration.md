@@ -253,7 +253,7 @@ description: Review recent code changes
 [Command instructions...]
 ```
 
-Available templates: `review`, `test-run`. Create with `codi add command <name> --template <template>`.
+Available templates: `review`, `test-run`, `security-scan`, `test-coverage`, `refactor`, `onboard`, `docs-lookup`, `commit`. Create with `codi add command <name> --template <template>`.
 
 ## MCP Configuration
 
