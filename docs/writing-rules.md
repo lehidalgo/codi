@@ -307,21 +307,152 @@ managed_by: user
 
 ## Writing & Customizing Commands
 
-Commands are slash commands for Claude Code. They live in `.codi/commands/`:
+Commands are slash commands for Claude Code. They live in `.codi/commands/` as Markdown:
 
 ```markdown
 ---
-name: my-command
-description: What this command does
+name: deploy-check
+description: Verify deployment readiness before pushing
 managed_by: user
 ---
 
-[Command instructions...]
+# Deploy Check
+
+## Steps
+1. Run the test suite
+2. Check for uncommitted changes
+3. Verify environment variables are set
+4. Report deployment readiness
 ```
 
-- `managed_by: codi` — template-managed, updated by `codi update --rules`
-- `managed_by: user` — custom, never overwritten
-- Add from template: `codi add command <name> --template <template>`
-- Add all: `codi add command --all`
-- Available templates: review, test-run
-- Generated to: `.claude/commands/{name}.md` (Claude Code only)
+**Frontmatter fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Command identifier (kebab-case) |
+| `description` | string | Yes | What the command does |
+| `managed_by` | `codi` / `user` | No | Who owns this command |
+
+**Creating a command:**
+
+1. `codi add command deploy-check` — creates blank skeleton
+2. Edit `.codi/commands/deploy-check.md` with your instructions
+3. `codi generate` — generates `.claude/commands/deploy-check.md`
+4. Test by typing `/deploy-check` in Claude Code
+
+**Available templates:** `review`, `test-run`. Create with `codi add command <name> --template <template>`.
+
+**Batch create:** `codi add command --all` creates all available command templates.
+
+**Update:** `codi update --commands` refreshes `managed_by: codi` commands to latest templates.
+
+**Note:** Commands are currently generated for Claude Code only (`.claude/commands/`).
+
+## Configuring MCP Servers
+
+MCP (Model Context Protocol) servers are configured in `.codi/mcp.yaml` and distributed to all supporting agents.
+
+### Server format
+
+```yaml
+# .codi/mcp.yaml
+servers:
+  # Local stdio server
+  github:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-github"]
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+
+  # Remote HTTP server
+  openai-docs:
+    type: http
+    url: "https://developers.openai.com/mcp"
+```
+
+### Transport types
+
+| Transport | Fields | Use case |
+|-----------|--------|----------|
+| `stdio` | `command`, `args`, `env` | Local tools, database connectors |
+| `http` | `type: http`, `url` | Cloud-hosted doc APIs, remote services |
+
+### Distribution
+
+MCP config is automatically distributed during `codi generate`:
+- Claude Code: `.claude/mcp.json`
+- Cursor: `.cursor/mcp.json`
+- Codex: `.codex/mcp.toml`
+- Windsurf: `.windsurf/mcp.json`
+- Cline: not supported
+
+### Validation
+
+After configuring, run `codi generate` and verify the output files contain your servers.
+
+## Creating Custom Presets
+
+Presets are composable configuration packages containing flags + rules + skills + agents + commands + MCP config.
+
+### Preset structure
+
+```
+.codi/presets/my-preset/
+  preset.yaml        # Manifest: name, description, version, extends, flags
+  rules/             # Rule markdown files (optional)
+  skills/            # Skill markdown files (optional)
+  agents/            # Agent markdown files (optional)
+  commands/          # Command markdown files (optional)
+  mcp.yaml           # MCP servers (optional)
+```
+
+### preset.yaml format
+
+```yaml
+name: react-typescript
+description: React + TypeScript with strict frontend rules
+version: "1.0.0"
+extends: balanced
+tags: [react, typescript, frontend]
+flags:
+  type_checking:
+    mode: enforced
+    value: strict
+  allowed_languages:
+    mode: enabled
+    value: [typescript, javascript, css]
+```
+
+### Creating a preset
+
+1. `codi preset create my-preset` — scaffolds the preset directory
+2. Add rules/skills/agents/commands to the subdirectories
+3. Edit `preset.yaml` with your flags and metadata
+4. Add to your manifest: `presets: [my-preset]`
+5. `codi generate` — preset artifacts are included in output
+
+### Preset composition
+
+Multiple presets are applied in order. Later presets override earlier ones:
+
+```yaml
+# codi.yaml
+presets:
+  - balanced           # Base flags
+  - my-react-setup     # React-specific rules + flags
+  - strict-security    # Security rules (additive)
+```
+
+### Inheritance
+
+Use `extends:` to inherit from another preset:
+
+```yaml
+extends: balanced      # Inherits all flags, then applies overrides
+```
+
+### Registry
+
+Install presets from Git: `codi preset install name --from org/repo`
+Search registry: `codi preset search react`
+Update installed: `codi preset update`

@@ -123,11 +123,28 @@ src/
 
 ### Adding a Command Template
 
-1. Create `src/templates/commands/{name}.ts` exporting a template object
+1. Create `src/templates/commands/{name}.ts` exporting a `template` string
 2. Export from `src/templates/commands/index.ts`
-3. Add to the command template map in the template loader
-4. Add tests
+3. Add to `TEMPLATE_MAP` in `src/core/scaffolder/command-template-loader.ts`
+4. Run `npm test`
+5. Submit PR
+
+### Adding a New Flag
+
+1. Add the flag definition to `src/core/flags/flag-catalog.ts`:
+   ```typescript
+   my_new_flag: {
+     type: 'boolean',    // boolean, number, enum, string[]
+     default: false,
+     hook: null,         // or hook name if it triggers a pre-commit hook
+     description: 'What this flag controls',
+   },
+   ```
+2. Add to all 3 presets in `src/core/flags/flag-presets.ts` (minimal, balanced, strict)
+3. If the flag should generate agent instructions, add to `src/adapters/flag-instructions.ts`
+4. Update the flag count in tests (`tests/unit/flags/flag-catalog.test.ts`)
 5. Run `npm test`
+6. Submit PR
 
 ### Adding a New CLI Command
 
