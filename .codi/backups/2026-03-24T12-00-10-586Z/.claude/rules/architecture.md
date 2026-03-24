@@ -1,0 +1,33 @@
+# architecture
+
+# Architecture Guidelines
+
+## File Organization
+- Respect the configured maximum file line limit
+- One responsibility per module
+- Group by feature or domain, not by file type
+- Keep related files close together in the directory tree
+
+## Dependencies
+- Depend on abstractions, not concrete implementations
+- No circular dependencies between modules
+- Dependencies flow inward: UI → services → domain → utilities
+- Use dependency injection for testability
+
+## Design Principles
+- Prefer composition over inheritance
+- Keep business logic out of UI components and controllers
+- Separate concerns: data access, business rules, presentation
+- Design for change: isolate likely change points behind interfaces
+
+## API Boundaries
+- Define clear contracts between modules
+- Use types/interfaces at module boundaries
+- Validate data at system boundaries, trust internal data
+- Keep internal implementation details private
+
+## Avoid Over-Engineering
+- Solve the current problem, not hypothetical future ones
+- Three similar lines are better than a premature abstraction
+- Add complexity only when it reduces overall system complexity
+- If in doubt, choose the simpler approach
