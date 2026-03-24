@@ -56,8 +56,14 @@ export async function complianceHandler(
 ): Promise<CommandResult<ComplianceData>> {
   const checks: ComplianceCheck[] = [];
 
+  // Resolve config early to get drift_detection flag
+  const configResult = await resolveConfig(projectRoot);
+  const driftMode = configResult.ok
+    ? (configResult.data.flags['drift_detection']?.value as string) ?? 'warn'
+    : 'warn';
+
   // Run doctor checks
-  const doctorResult = await runAllChecks(projectRoot);
+  const doctorResult = await runAllChecks(projectRoot, driftMode);
   let configValid = false;
   let versionMatch = true;
 
@@ -75,8 +81,7 @@ export async function complianceHandler(
     });
   }
 
-  // Resolve config for counts and token
-  const configResult = await resolveConfig(projectRoot);
+  // Use already-resolved config for counts and token
   let ruleCount = 0;
   let skillCount = 0;
   let agentCount = 0;
@@ -109,14 +114,19 @@ export async function complianceHandler(
   let generationAge = 'never';
   let hasDrift = false;
 
-  if (stateResult.ok) {
-    const state = stateResult.data;
-    if (state.lastGenerated) {
-      lastGenerated = state.lastGenerated;
-      generationAge = formatAge(state.lastGenerated);
-    }
+  if (stateResult.ok && stateResult.data.lastGenerated) {
+    lastGenerated = stateResult.data.lastGenerated;
+    generationAge = formatAge(stateResult.data.lastGenerated);
+  }
 
-    for (const agentId of Object.keys(state.agents)) {
+  if (driftMode === 'off') {
+    checks.push({
+      check: 'drift',
+      passed: true,
+      message: 'Drift detection is disabled.',
+    });
+  } else if (stateResult.ok) {
+    for (const agentId of Object.keys(stateResult.data.agents)) {
       const driftResult = await stateManager.detectDrift(agentId);
       if (driftResult.ok) {
         const drifted = driftResult.data.files.some(
@@ -125,26 +135,36 @@ export async function complianceHandler(
         if (drifted) hasDrift = true;
       }
     }
+
+    if (hasDrift) {
+      checks.push({
+        check: 'drift',
+        passed: false,
+        message: 'Generated files have drifted from source.',
+      });
+    } else {
+      checks.push({
+        check: 'drift',
+        passed: true,
+        message: 'No drift detected.',
+      });
+    }
   }
 
-  if (hasDrift) {
-    checks.push({
-      check: 'drift',
-      passed: false,
-      message: 'Generated files have drifted from source.',
-    });
-  } else {
+  if (!stateResult.ok && driftMode !== 'off') {
+    // State read failed but drift detection is enabled
     checks.push({
       check: 'drift',
       passed: true,
-      message: 'No drift detected.',
+      message: 'No state file found. Run `codi generate` first.',
     });
   }
 
   const allPassed = checks.every((c) => c.passed);
+  const hasDriftFailures = checks.some(c => !c.passed && c.check === 'drift');
   const exitCode = allPassed
     ? EXIT_CODES.SUCCESS
-    : options.ci
+    : (options.ci || (driftMode === 'error' && hasDriftFailures))
       ? EXIT_CODES.DOCTOR_FAILED
       : EXIT_CODES.SUCCESS;
 

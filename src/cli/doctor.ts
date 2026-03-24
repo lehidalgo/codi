@@ -1,5 +1,6 @@
 import type { Command } from 'commander';
 import { runAllChecks } from '../core/version/version-checker.js';
+import { resolveConfig } from '../core/config/resolver.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
@@ -23,7 +24,12 @@ export async function doctorHandler(
   projectRoot: string,
   options: DoctorOptions,
 ): Promise<CommandResult<DoctorData>> {
-  const reportResult = await runAllChecks(projectRoot);
+  const configResult = await resolveConfig(projectRoot);
+  const driftMode = configResult.ok
+    ? (configResult.data.flags['drift_detection']?.value as string) ?? 'warn'
+    : 'warn';
+
+  const reportResult = await runAllChecks(projectRoot, driftMode);
 
   if (!reportResult.ok) {
     return createCommandResult({
@@ -36,9 +42,10 @@ export async function doctorHandler(
   }
 
   const report = reportResult.data;
+  const hasDriftFailures = report.results.some(r => !r.passed && r.check.startsWith('drift-'));
   const exitCode = report.allPassed
     ? EXIT_CODES.SUCCESS
-    : options.ci
+    : (options.ci || (driftMode === 'error' && hasDriftFailures))
       ? EXIT_CODES.DOCTOR_FAILED
       : EXIT_CODES.SUCCESS;
 
