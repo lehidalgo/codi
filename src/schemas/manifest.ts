@@ -25,6 +25,10 @@ export const CodiManifestSchema = z.object({
     registry: z.string(),
     branch: z.string().default('main'),
   }).optional(),
+  presetRegistry: z.object({
+    url: z.string(),
+    branch: z.string().default('main'),
+  }).optional(),
   presets: z.array(z.string()).optional(),
 });
 
