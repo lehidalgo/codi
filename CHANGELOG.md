@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.3.1] - 2026-03-24
+## [0.3.1] - 2026-03-25
 
 ### Added
 
@@ -27,6 +27,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### ACS Compatibility
 - SKILL.md format verified compatible with Agentic Collaboration Standard (ACS) v1.0 and agentskills.io
 - Compatibility documented in docs/writing-rules.md
+
+#### Pre-Commit Hooks
+- Hook infrastructure wired into `codi init` and `codi generate` (previously dead code)
+- 12 language hook registries: TypeScript, JavaScript, Python, Go, Rust, Java, Kotlin, Swift, C#, C++, PHP, Ruby, Dart
+- File size check (800 LOC hard limit), secret scan, commit-msg validation (conventional commits)
+- Dependency checker reports missing tools with per-language install hints
+- `codi doctor` warns when no hooks detected
+- `commit` skill template — 5-step workflow with troubleshooting
+- `commit` command template — thin trigger for commit skill
 
 ### Changed
 - Centralized 30 hardcoded constants into `src/constants.ts` — sizes, patterns, filenames, presets, token config, context limits, git clone depth
