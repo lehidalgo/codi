@@ -236,3 +236,48 @@ Rules, skills, and agents all use a `managed_by` field in their frontmatter:
 - **`managed_by: user`** — custom artifact, never overwritten by codi
 
 When you run `codi add rule security --template security`, the rule is created with `managed_by: codi`. When you run `codi add rule my-custom-rule` (no template), it's `managed_by: user`. The same applies to skills and agents.
+
+## Commands Directory
+
+```
+.codi/commands/           # Custom slash commands (Markdown)
+```
+
+Commands are Markdown files in `.codi/commands/` with YAML frontmatter:
+
+```markdown
+---
+name: review
+description: Review recent code changes
+---
+[Command instructions...]
+```
+
+Available templates: `review`, `test-run`. Create with `codi add command <name> --template <template>`.
+
+## MCP Configuration
+
+```yaml
+# .codi/mcp.yaml
+servers:
+  github:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-github"]
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+```
+
+MCP config is distributed to each agent in its native format:
+- Claude Code: `.claude/mcp.json`
+- Codex: `.codex/mcp.toml`
+- Cursor: `.cursor/mcp.json`
+- Windsurf: `.windsurf/mcp.json`
+
+## Marketplace Configuration
+
+```yaml
+# codi.yaml
+marketplace:
+  registry: "org/codi-skills-registry"
+  branch: main
+```

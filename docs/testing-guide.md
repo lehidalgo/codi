@@ -47,7 +47,7 @@ npm install --save-dev <path-to-codi-repo-or-npm-package>
 ```bash
 npx codi --help
 ```
-**Expected**: Help output listing available commands: `init`, `generate`, `add`, `status`, `verify`, `update`, `clean`, `doctor`, `compliance`.
+**Expected**: Help output listing available commands: `init`, `generate`, `validate`, `status`, `add`, `verify`, `doctor`, `update`, `clean`, `compliance`, `watch`, `ci`, `revert`, `marketplace`.
 
 ---
 

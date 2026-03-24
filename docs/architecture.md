@@ -115,3 +115,19 @@ Each adapter implements `detect()` (checks for existing config files) and `gener
 ```
 
 All errors surface through the `Result<T>` pattern — callers handle errors explicitly via `result.ok` / `result.errors`.
+
+## Commands
+
+Commands are the fourth artifact type (alongside rules, skills, agents). They live in `.codi/commands/` as Markdown files and are generated to `.claude/commands/` for Claude Code. Commands follow the same `managed_by` lifecycle as other artifacts.
+
+## MCP Distribution
+
+MCP servers configured in `.codi/mcp.yaml` are distributed to each agent in its native format: JSON for Claude Code/Cursor/Windsurf, TOML for Codex.
+
+## Backup System
+
+Automatic backups are created before each `codi generate` in `.codi/backups/{timestamp}/`. Maximum 5 backups are kept. Restore with `codi revert`.
+
+## Watch Mode
+
+`codi watch` uses `fs.watch()` with 500ms debounce to auto-regenerate when `.codi/` files change. Requires `auto_generate_on_change: true` flag.

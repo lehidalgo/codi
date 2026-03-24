@@ -185,6 +185,12 @@ git commit -m "update codi rules"
 | `codi update` | Update flags and rules to latest versions | `--preset <name>`, `--rules`, `--regenerate`, `--dry-run`, `--from <repo>` |
 | `codi clean` | Remove generated files (uninstall codi output) | `--all`, `--dry-run`, `--force` |
 | `codi add agent <name>` | Add a custom agent | `-t, --template <name>`, `--all` |
+| `codi add command <name>` | Add a custom command | `-t, --template <name>`, `--all` |
+| `codi compliance` | Comprehensive health check | `--ci` |
+| `codi watch` | Auto-regenerate on file changes | `--once` |
+| `codi ci` | Composite CI validation | — |
+| `codi revert` | Restore from backup | `--list`, `--last`, `--backup <ts>` |
+| `codi marketplace` | Search/install skills from registry | `search <query>`, `install <name>` |
 
 Aliases: `codi gen` = `codi generate`.
 
@@ -239,9 +245,34 @@ Removes generated files from your project. By default keeps `.codi/` intact. Use
 
 ### `codi add`
 
-Add rules, skills, or agents. Use `--template` to create from a built-in template, or omit for a blank skeleton. Use `--all` to create all available templates at once.
+Add rules, skills, agents, or commands. Use `--template` to create from a built-in template, or omit for a blank skeleton. Use `--all` to create all available templates at once.
 
 See [Writing Artifacts](docs/writing-rules.md) for templates and authoring guide.
+
+### `codi compliance`
+
+Comprehensive health check combining validate + doctor + config summary. Use `--ci` for strict exit codes in pipelines.
+
+### `codi watch`
+
+Watches `.codi/` for file changes and auto-regenerates agent configs. Requires `auto_generate_on_change: true` flag. Use `--once` for single run.
+
+### `codi ci`
+
+Quick composite validation for CI: runs validate + doctor --ci. Exits non-zero on any failure.
+
+### `codi revert`
+
+Restore generated files from automatic backups (created before each `codi generate`). Use `--list` to see available backups, `--last` to restore most recent, or `--backup <timestamp>` for specific.
+
+### `codi marketplace`
+
+Search and install skills from a Git-based registry. Configure in `codi.yaml`:
+```yaml
+marketplace:
+  registry: "org/codi-skills-registry"
+  branch: main
+```
 
 ### `codi verify`
 
