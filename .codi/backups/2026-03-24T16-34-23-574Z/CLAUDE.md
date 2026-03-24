@@ -11,7 +11,7 @@ Maximum context window: 50000 tokens.
 - Rules (6): architecture, code-style, error-handling, git-workflow, security, testing
 - Skills (2): codi-operations, e2e-testing
 - Agents (3): code-reviewer, security-analyzer, test-generator
-- Generated: 2026-03-24T16:34:23.640Z
+- Generated: 2026-03-24T15:25:25.638Z
 
 ## Codi Verification
 
@@ -20,6 +20,6 @@ This project uses Codi for unified AI agent configuration.
 - Rules: architecture, code-style, error-handling, git-workflow, security, testing
 - Skills: codi-operations, e2e-testing
 - Agents: code-reviewer, security-analyzer, test-generator
-- Generated: 2026-03-24T16:34:23.643Z
+- Generated: 2026-03-24T15:25:25.639Z
 
 When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.
