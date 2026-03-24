@@ -9,12 +9,11 @@
 [![npm version](https://img.shields.io/npm/v/codi-cli)](https://www.npmjs.com/package/codi-cli)
 [![license](https://img.shields.io/npm/l/codi-cli)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/lehidalgo/codi/ci.yml?label=CI)](https://github.com/lehidalgo/codi/actions)
+[![tests](https://img.shields.io/badge/tests-381%20passing-brightgreen)]()
 
 ## What is Codi?
 
-AI coding agents (Claude Code, Cursor, Codex, Windsurf, Cline) each require their own configuration file with different formats and conventions. When you use multiple agents, you end up maintaining separate config files that inevitably drift apart.
-
-**Codi solves this.** Define your rules, flags, and settings once in a `.codi/` directory, and Codi generates the correct configuration file for each agent.
+AI coding agents (Claude Code, Cursor, Codex, Windsurf, Cline) each require their own configuration file with different formats and conventions. Codi lets you define rules, skills, agents, and flags once in a `.codi/` directory, then generates the correct configuration file for each agent. One config. Every agent. No drift.
 
 ```mermaid
 flowchart LR
@@ -25,21 +24,38 @@ flowchart LR
     C --> A5[".clinerules"]
 ```
 
-**One config. Every agent. No drift.**
+## Architecture Overview
 
-## Supported Agents
+Codi reads your `.codi/` directory, resolves configuration through 7 inheritance layers, and passes the result through agent-specific adapters to produce output files.
 
-| Agent | Generated File | Config Directory |
-|-------|---------------|-----------------|
-| Claude Code | `CLAUDE.md` | `.claude/rules/` |
-| Cursor | `.cursorrules` | `.cursor/rules/` |
-| Codex (OpenAI) | `AGENTS.md` | — |
-| Windsurf | `.windsurfrules` | — |
-| Cline | `.clinerules` | — |
+```mermaid
+flowchart TD
+    A[CLI Command] --> B[Config Resolution]
+    B --> C1[Org Layer]
+    B --> C2[Team Layer]
+    B --> C3[Repo Layer]
+    B --> C4[Lang Layer]
+    B --> C5[Framework Layer]
+    B --> C6[Agent Layer]
+    B --> C7[User Layer]
+    C1 --> D[Merged Config]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    C5 --> D
+    C6 --> D
+    C7 --> D
+    D --> E[Adapters]
+    E --> F1[Claude Code]
+    E --> F2[Cursor]
+    E --> F3[Codex]
+    E --> F4[Windsurf]
+    E --> F5[Cline]
+```
 
 ## Quick Start
 
-### Install
+### Installation
 
 ```bash
 # As a dev dependency (recommended)
@@ -54,32 +70,11 @@ npm install -g codi-cli
 ### Initialize
 
 ```bash
-# Interactive wizard — walks you through setup
+# Interactive wizard — select agents, rules, preset
 codi init
-```
 
-The wizard will ask you to:
-1. **Select agents** — auto-detected from your project
-2. **Choose rules** — pick from 9 built-in templates (security, code-style, testing, architecture, git-workflow, error-handling, performance, documentation, api-design)
-3. **Pick a preset** — `minimal`, `balanced` (recommended), or `strict`
-4. **Enable version pinning** — locks your team to a minimum codi version
-
-```bash
-# Or skip the wizard with explicit options
+# Or skip the wizard
 codi init --agents claude-code cursor --preset balanced
-```
-
-### Add More Rules Later
-
-```bash
-# Add all 9 built-in template rules at once
-codi add rule --all
-
-# Add a specific rule from a template
-codi add rule security --template security
-
-# Add a blank rule to write yourself
-codi add rule api-guidelines
 ```
 
 ### Generate
@@ -90,9 +85,6 @@ codi generate
 
 # Preview without writing files
 codi generate --dry-run
-
-# Generate for a specific agent only
-codi generate --agent claude-code
 ```
 
 ### Verify
@@ -101,42 +93,72 @@ codi generate --agent claude-code
 # Show the verification token and prompt
 codi verify
 
-# After asking your agent to verify, validate its response
+# Validate an agent's response
 codi verify --check "token: codi-abc123, rules: security, code-style"
 ```
 
-## What Gets Generated
+## Artifacts Matrix
 
-After running `codi generate`, each agent gets a config file tailored to its format. Here's what the output looks like:
+| Artifact | Location | Claude Code | Cursor | Codex | Windsurf | Cline |
+|----------|----------|-------------|--------|-------|----------|-------|
+| **Rules** | `.codi/rules/custom/` | `.claude/rules/*.md` | `.cursor/rules/*.mdc` | `AGENTS.md` (inline) | `.windsurfrules` (inline) | `.clinerules` (inline) |
+| **Skills** | `.codi/skills/` | `.claude/skills/*/SKILL.md` | `.cursor/skills/*/SKILL.md` | `.agents/skills/*/SKILL.md` | `.windsurf/skills/*/SKILL.md` | `.cline/skills/*/SKILL.md` |
+| **Agents** | `.codi/agents/` | `.claude/agents/*.md` | -- | `.codex/agents/*.toml` | -- | -- |
+| **Commands** | `.codi/commands/` | `.claude/commands/*.md` | -- | -- | -- | -- |
+| **MCP** | `.codi/mcp.yaml` | `.claude/mcp.json` | `.cursor/mcp.json` | `.codex/mcp.toml` | `.windsurf/mcp.json` | -- |
 
-**CLAUDE.md** (for Claude Code):
-```markdown
-## Permissions
+## CLI Reference
 
-Keep source code files under 700 lines. Documentation files have no line limit.
-Do NOT use force push (--force) on git operations.
-All changes require pull request review before merging.
-Maximum context window: 50000 tokens.
+| Command | Description | Key Options |
+|---------|-------------|-------------|
+| `codi init` | Initialize `.codi/` configuration | `--force`, `--agents <ids...>`, `--preset <name>` |
+| `codi generate` | Generate agent config files | `--agent <ids...>`, `--dry-run`, `--force` |
+| `codi validate` | Validate `.codi/` configuration | -- |
+| `codi status` | Show drift status of generated files | `--json` |
+| `codi add rule <name>` | Add a custom rule | `-t, --template <name>`, `--all` |
+| `codi add skill <name>` | Add a custom skill | `-t, --template <name>`, `--all` |
+| `codi add agent <name>` | Add a custom agent | `-t, --template <name>`, `--all` |
+| `codi add command <name>` | Add a custom command | `-t, --template <name>`, `--all` |
+| `codi doctor` | Check project health | `--ci` |
+| `codi verify` | Verify agent loaded configuration | `--check <response>` |
+| `codi update` | Update flags and artifacts to latest | `--preset`, `--rules`, `--skills`, `--agents`, `--from <repo>`, `--regenerate` |
+| `codi clean` | Remove generated files | `--all`, `--dry-run`, `--force` |
+| `codi compliance` | Comprehensive health check | `--ci` |
+| `codi watch` | Auto-regenerate on file changes | `--once` |
+| `codi ci` | Composite CI validation | -- |
+| `codi revert` | Restore from backup | `--list`, `--last`, `--backup <ts>` |
+| `codi marketplace` | Search/install skills from registry | `search <query>`, `install <name>` |
+| `codi preset` | Manage configuration presets | `create`, `list`, `install`, `search`, `update` |
 
-## security
+Aliases: `codi gen` = `codi generate`.
 
-# Security Rules
+### Global Options
 
-- Never expose secrets, API keys, or credentials in code
-- Use environment variables for sensitive configuration
-- Validate and sanitize all user inputs
-- Follow OWASP security guidelines
+| Option | Description |
+|--------|-------------|
+| `-j, --json` | Output as JSON (for scripting) |
+| `-v, --verbose` | Verbose/debug output |
+| `-q, --quiet` | Suppress non-essential output |
+| `--no-color` | Disable colored output |
 
-## Codi Verification
+## Configuration
 
-This project uses Codi for unified AI agent configuration.
-When asked "verify codi" or "codi verify", respond with:
-- Verification token: `codi-9ced0d`
-- Rules loaded: [list the rule names you see in this file]
-- Flags active: [list any permission constraints from this file]
+The `.codi/` directory holds your project manifest (`codi.yaml`), behavioral flags (`flags.yaml`), custom rules, skills, agents, commands, and override layers. Everything is YAML and Markdown.
+
+Codi ships with 18 behavioral flags and 3 presets (`minimal`, `balanced`, `strict`). Flags control permissions like `max_file_lines`, `allow_force_push`, `require_tests`, and more.
+
+For full details on directory structure, flags, and flag modes, see the [Configuration Guide](docs/configuration.md).
+
+## Presets
+
+Presets are composable packages that bundle flags, rules, skills, agents, commands, and MCP config into reusable units. Use built-in presets or create your own.
+
+```bash
+codi preset create my-setup
+codi preset install name --from org/repo
 ```
 
-Each adapter formats the same rules and flags for its agent's conventions. Individual rule files are also created in `.claude/rules/` and `.cursor/rules/` for agents that support per-rule files.
+See [Multi-Tenant Design](docs/multi-tenant-design.md) for the full preset architecture.
 
 ## Daily Workflow
 
@@ -159,182 +181,63 @@ git commit -m "update codi rules"
 
 | What | Commit? | Why |
 |------|---------|-----|
-| `.codi/codi.yaml` | Yes | Your project manifest — source of truth |
+| `.codi/codi.yaml` | Yes | Project manifest -- source of truth |
 | `.codi/flags.yaml` | Yes | Flag configuration |
 | `.codi/rules/custom/` | Yes | Your rules |
 | `.codi/skills/` | Yes | Your skills |
+| `.codi/agents/` | Yes | Your agents |
+| `.codi/commands/` | Yes | Your commands |
 | `.codi/state.json` | Yes | Enables drift detection for your team |
-| Generated files (`CLAUDE.md`, `.cursorrules`, etc.) | Yes | Agents need these files in the repo to read them |
+| Generated files | Yes | Agents need these files in the repo |
 | `~/.codi/user.yaml` | No | Personal preferences, never committed |
 | `~/.codi/org.yaml` | No | Shared via org tooling, not per-repo |
 
-## CLI Reference
+## Troubleshooting
 
-### Commands
+| Issue | Fix |
+|-------|-----|
+| `codi` command not found | `npx codi --version` or install globally |
+| Node.js version too old | Requires Node >= 20. Use `nvm install 20` |
+| Drift detected | Run `codi generate` to regenerate |
+| Token mismatch on verify | Config changed since last generate. Regenerate first |
+| Watch not triggering | Enable `auto_generate_on_change` flag in `flags.yaml` |
 
-| Command | Description | Key Options |
-|---------|-------------|-------------|
-| `codi init` | Initialize `.codi/` configuration | `--force`, `--agents <ids...>`, `--preset <name>` |
-| `codi generate` | Generate agent config files | `--agent <ids...>`, `--dry-run`, `--force` |
-| `codi validate` | Validate `.codi/` configuration | — |
-| `codi status` | Show drift status of generated files | — |
-| `codi add rule <name>` | Add a custom rule | `-t, --template <name>` |
-| `codi add skill <name>` | Add a custom skill | `-t, --template <name>` |
-| `codi doctor` | Check project health | `--ci` |
-| `codi verify` | Verify agent loaded configuration | `--check <response>` |
-| `codi update` | Update flags and rules to latest versions | `--preset <name>`, `--rules`, `--regenerate`, `--dry-run`, `--from <repo>` |
-| `codi clean` | Remove generated files (uninstall codi output) | `--all`, `--dry-run`, `--force` |
-| `codi add agent <name>` | Add a custom agent | `-t, --template <name>`, `--all` |
-| `codi add command <name>` | Add a custom command | `-t, --template <name>`, `--all` |
-| `codi compliance` | Comprehensive health check | `--ci` |
-| `codi watch` | Auto-regenerate on file changes | `--once` |
-| `codi ci` | Composite CI validation | — |
-| `codi revert` | Restore from backup | `--list`, `--last`, `--backup <ts>` |
-| `codi marketplace` | Search/install skills from registry | `search <query>`, `install <name>` |
-| `codi preset` | Manage configuration presets | `create`, `list`, `install`, `search`, `update` |
+See [Troubleshooting Guide](docs/troubleshooting.md) for detailed solutions.
 
-Aliases: `codi gen` = `codi generate`.
+## Contributing
 
-### Global Options
-
-| Option | Description |
-|--------|-------------|
-| `-j, --json` | Output as JSON (for scripting) |
-| `-v, --verbose` | Verbose/debug output |
-| `-q, --quiet` | Suppress non-essential output |
-| `--no-color` | Disable colored output |
-
-### `codi init`
-
-Creates the `.codi/` directory with manifest, flags, rules, skills, and framework directories. Auto-detects your stack and existing agent config files. Runs an interactive wizard by default.
-
-See [Configuration Guide](docs/configuration.md) for presets and flags.
-
-### `codi generate`
-
-Resolves configuration from all 7 layers and produces output files. Updates `.codi/state.json` with SHA-256 hashes for drift detection. Use `--dry-run` to preview.
-
-### `codi validate`
-
-Validates the `.codi/` configuration directory for correctness.
-
-### `codi status`
-
-Compares generated files against hashes in `.codi/state.json`. Reports each file as synced, drifted, or missing.
-
-### `codi doctor`
-
-Runs health checks: config validity, version compatibility, org/team config, and drift detection. Use `--ci` for non-zero exit on failure (designed for pre-commit hooks and CI pipelines).
-
-### `codi update`
-
-Brings flags and rules up to date. Without options, adds new flags from the catalog. With `--preset`, resets all flags. With `--rules`, `--skills`, or `--agents`, refreshes template-managed artifacts (`managed_by: codi`) to the latest versions. User-custom artifacts are never touched.
-
-Use `--from <repo>` to pull centralized artifacts from a team GitHub repository. This is one-way: codi reads from the remote repo but never writes to it. Only artifacts marked `managed_by: codi` are updated; user-custom artifacts are preserved.
-
-```bash
-# Full update: flags + all artifacts + regenerate
-codi update --preset balanced --rules --skills --agents --regenerate
-
-# Pull team config from a centralized GitHub repo
-codi update --from org/team-codi-config
-```
-
-### `codi clean`
-
-Removes generated files from your project. By default keeps `.codi/` intact. Use `--all` to also remove the `.codi/` directory. Use `--dry-run` to preview.
-
-### `codi add`
-
-Add rules, skills, agents, or commands. Use `--template` to create from a built-in template, or omit for a blank skeleton. Use `--all` to create all available templates at once.
-
-See [Writing Artifacts](docs/writing-rules.md) for templates and authoring guide.
-
-### `codi compliance`
-
-Comprehensive health check combining validate + doctor + config summary. Use `--ci` for strict exit codes in pipelines.
-
-### `codi watch`
-
-Watches `.codi/` for file changes and auto-regenerates agent configs. Requires `auto_generate_on_change: true` flag. Use `--once` for single run.
-
-### `codi ci`
-
-Quick composite validation for CI: runs validate + doctor --ci. Exits non-zero on any failure.
-
-### `codi revert`
-
-Restore generated files from automatic backups (created before each `codi generate`). Use `--list` to see available backups, `--last` to restore most recent, or `--backup <timestamp>` for specific.
-
-### `codi marketplace`
-
-Search and install skills from a Git-based registry. Configure in `codi.yaml`:
-```yaml
-marketplace:
-  registry: "org/codi-skills-registry"
-  branch: main
-```
-
-### `codi preset`
-
-Manage composable configuration presets. Presets package flags + rules + skills + agents + commands + MCP into reusable bundles.
-
-```bash
-codi preset create my-setup          # Scaffold new preset
-codi preset list                     # Show installed presets
-codi preset install name --from repo # Install from Git
-codi preset search react             # Search registry
-codi preset update                   # Update to latest versions
-```
-
-See [Design Reference](docs/design.md#preset-system) for full documentation.
-
-### `codi verify`
-
-Verify that your AI agent loaded the correct configuration. See [Verification](docs/verification.md).
-
-## Configuration
-
-The `.codi/` directory holds your project manifest (`codi.yaml`), behavioral flags (`flags.yaml`), custom rules, skills, and override layers. Everything is YAML and Markdown.
-
-For full details on directory structure, all 18 flags, presets, and flag modes, see the [Configuration Guide](docs/configuration.md).
-
-## 7-Level Config Inheritance
-
-Codi resolves configuration through 7 layers (org, team, repo, lang, framework, agent, user). Each layer can set, override, or lock flag values.
-
-For full details, see [Governance](docs/governance.md).
-
-## Version Enforcement
-
-Pin a minimum Codi version to keep your team aligned:
-
-```yaml
-# codi.yaml
-codi:
-  requiredVersion: ">=0.1.0"
-```
-
-When `requiredVersion` is set, `codi init` auto-installs a pre-commit hook that runs `codi doctor --ci`, catching version mismatches before code is pushed.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, and how to add new features.
 
 ## Documentation
 
 | Guide | Description |
 |-------|-------------|
-| [Design Reference](docs/design.md) | Complete design documentation for all 33 functionalities |
 | [Configuration](docs/configuration.md) | Flags, presets, directory structure, manifest |
-| [Writing Artifacts](docs/writing-rules.md) | Create and customize rules, skills, agents |
+| [Design Reference](docs/design.md) | Complete design documentation for all 33 functionalities |
+| [Architecture](docs/architecture.md) | System design, hook system, error handling |
 | [Governance](docs/governance.md) | 7-level inheritance, org policies, locking |
-| [Verification](docs/verification.md) | Token-based config verification |
+| [Writing Artifacts](docs/writing-rules.md) | Create and customize rules, skills, agents, commands |
+| [Adoption & Verification](docs/adoption-verification.md) | Token-based verification and adoption tracking |
 | [Migration](docs/migration.md) | Adopt codi in existing projects |
-| [Architecture](docs/architecture.md) | System design and internals |
 | [CI Integration](docs/ci-integration.md) | GitHub Actions workflow for codi validation |
 | [Testing Guide](docs/testing-guide.md) | E2E testing procedure (8 suites) |
-| [Adoption Verification](docs/adoption-verification.md) | Verification audit and adoption tracking |
+| [Multi-Tenant Design](docs/multi-tenant-design.md) | Presets, plugins, and stacks architecture |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+| [Contributing](CONTRIBUTING.md) | Development setup and contribution guide |
+
+## Roadmap
+
+Phase 4 (Scale) is next:
+
+- Plugin system for custom adapters
+- Approval workflows (draft, review, publish)
+- VS Code extension
+- Context compression engine
+- Remote includes (Git URLs as config sources)
 
 ## FAQ
 
-**Q: I already have a `CLAUDE.md` — will codi overwrite it?**
+**Q: I already have a `CLAUDE.md` -- will codi overwrite it?**
 Yes. Run `codi init`, move your rules into `.codi/rules/custom/` as Markdown files with frontmatter, then `codi generate`. Back up your existing files first.
 
 **Q: Do I commit generated files like `CLAUDE.md`?**
@@ -357,31 +260,6 @@ Rules are instructions that agents follow (e.g., "never expose secrets"). Skills
 
 **Q: How do I remove a flag from my config?**
 Delete the flag entry from `.codi/flags.yaml` and run `codi generate`. Codi will use the catalog default for any missing flags.
-
-## Development
-
-### Setup
-
-```bash
-git clone https://github.com/lehidalgo/codi.git
-cd codi
-npm install
-npm run build
-npm test
-```
-
-### Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run build` | Build with tsup |
-| `npm test` | Run tests (Vitest) |
-| `npm run test:watch` | Watch mode |
-| `npm run test:coverage` | Coverage report |
-| `npm run lint` | Type check (`tsc --noEmit`) |
-| `npm run dev` | Build in watch mode |
-
-For project structure and technical details, see [Architecture](docs/architecture.md).
 
 ## License
 

@@ -82,7 +82,7 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 - docs/configuration.md — flags, presets, directory structure
 - docs/governance.md — 7-level inheritance, org policies
 - docs/writing-rules.md — artifact authoring guide (rules, skills, agents)
-- docs/verification.md — token system
+- docs/adoption-verification.md — token system and adoption tracking
 - docs/migration.md — adoption guide
 - docs/ci-integration.md — GitHub Actions examples
 - docs/adoption-verification.md — verification audit report
