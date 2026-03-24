@@ -298,7 +298,8 @@ managed_by: user
 # System prompt...
 ```
 
-- Same managed_by lifecycle as rules and skills
+- `managed_by: codi` — template-managed, updated by `codi update --agents`
+- `managed_by: user` — custom, never overwritten
 - Add from template: `codi add agent <name> --template <template>`
 - Add all: `codi add agent --all`
 - Available templates: code-reviewer, test-generator, security-analyzer
