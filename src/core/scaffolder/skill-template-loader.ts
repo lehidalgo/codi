@@ -7,7 +7,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   'mcp': skillTemplates.mcp,
   'code-review': skillTemplates.codeReview,
   'documentation': skillTemplates.documentation,
-  'rule-management': skillTemplates.ruleManagement,
+  'codi-operations': skillTemplates.codiOperations,
   'e2e-testing': skillTemplates.e2eTesting,
 };
 

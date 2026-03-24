@@ -1,1275 +1,312 @@
 {
   "version": "1",
-  "lastGenerated": "2026-03-23T21:04:11.149Z",
+  "lastGenerated": "2026-03-24T12:00:10.714Z",
   "agents": {
     "claude-code": [
       {
         "path": "CLAUDE.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1f1a5a7b8453e71b4517f4c175921afe9a0ad674404b780b1f7665647a4acd5",
+        "generatedHash": "3e3a0a58dc2ac88f4c1fdb0f2834038e6ff04eaedb51635ea681f31522f58d9c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/rules/architecture.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08f72519f76cd3d1cfb8de788a76e5b8e7eabb04fd8ade0a7ef706d2667ee78b",
+        "generatedHash": "3679339714e277486dc49abf298addc6a14a78738d0b7108ae92e6240988212e",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/rules/code-style.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b4338406595c572c8d0c99f2bd096b9aa6f393237791ae34404dbd14269608ac",
+        "generatedHash": "00d2402984b659b6865d088fd40a46953b8225d312d6d586c5db51b617fc3d6f",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/rules/error-handling.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "4cf9def8cc26a7d44d28291b6a56c14799aedb0e60d2d2b2d7fa42ba89ac820a",
+        "generatedHash": "91d9e9534688279abae596ac24e9551c04879176390744068fb0ec28b2960363",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/rules/git-workflow.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "81f674813d81ab88cddf5f64c83e9ffc5d8cf4c6a73aac8d5a1d29f552cab5de",
+        "generatedHash": "577b102e36c34aa7d9149955dc545b2bbdc7110cf1380ba55b8b218b7943be24",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/rules/security.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "96b3914e057069dc112d6b4200f3bcfd546a84a6e631507863500f94f3a5caf1",
+        "generatedHash": "5f80efb545194cf4da5dbe4b449b296e13464d2a208bc50eb1ca6ad4b42ebb02",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/rules/testing.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "006288aa2dba4700080e2cce06b7335e7484300dd8563d45bacf24c7522fd968",
+        "generatedHash": "1a274406bb4c2f430785f6690d22114578917d8f67431a000efe513c17511842",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
-        "path": ".claude/skills/rule-management/SKILL.md",
+        "path": ".claude/skills/codi-operations/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
+        "generatedHash": "fd1d994a113d4a4666155e9d7de486446b27388a76daa4b38bbe20b3514be9aa",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
+      },
+      {
+        "path": ".claude/skills/e2e-testing/SKILL.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "0e0a094652b7ba9604f536d464d622f6eadeb5e74e2c6f1e84b0e3eea873e37c",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/agents/code-reviewer.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1c71d5226fcbc9f0726dacb53eb02c8cad163214f8f7637719f206624e760b2",
+        "generatedHash": "4a03eb714dba1cdd15c42b9bb9c2a763832a1c6fb32a9034c65852a9d677a6e8",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/agents/security-analyzer.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ae2976bea3d123f30201a69e0bef2761aeedf71edc72d4de6debcf381c0ef245",
+        "generatedHash": "82aac1eff239785357ac2b50be46e3320cb010b770cb585c549e2e3705167bc7",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       },
       {
         "path": ".claude/agents/test-generator.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f11305a51f1b1a13cb0cd2e3792a448416c76bf9905195dcabef4f7b1e54aaf7",
+        "generatedHash": "8606672204ec3399d0fddb149592c5dbbc0b202ee577ada8e551e3d53419a53d",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursorrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9d404e232c7acb62345c5f1caf285dd062e89686125104e07108d75724ed331a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/rules/architecture.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "2fa0649d5b6ec57301372c521cadb156697bb320f6f1e2355f00f4c9944a43c4",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/rules/code-style.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9b853db7b216f86550cf6277f7a8ec348d0561a539995702d857a9472e78703e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/rules/error-handling.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ce9a0877525fd5fa98f353a306668629a925124f2f1809cc53a273d6fe6d2b68",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/rules/git-workflow.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "34e9a81f422adff4064205312bbf49a5d0dd050c71c6138cc04ff5c65c3b79ae",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/rules/security.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08da0fbcb85b4fa843bc0dd0b676bcfd34189c586213fbd800cafefcb8e49958",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/rules/testing.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "881b29679d91e9afeb1709123e667006aa1fcd20dcb8c254a97cc5d3b22c6656",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cursor/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": "AGENTS.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "460d8009a464bfc10a23886e6666ad95d4373c9eca587d766357b736c16dfe75",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".agents/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".codex/agents/code-reviewer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ee6be840e50faa683f0d4cb912cb08f90a84698cfe472b1f828a97c266d0234f",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".codex/agents/security-analyzer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "89a7a3c540cdc16e64c0006283c09fe1a8240ce987c2297b4ebb905c12fdd877",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".codex/agents/test-generator.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6b17ff1192e91633f0e67d58866567ccba99249f75d6ca8d5d3bd15473c5e239",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".windsurfrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "66f01b97bab86802d4996b767de2a46cbe4e2e48d3e4bf1518f42daebd5dbd7c",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".windsurf/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".clinerules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6483c1086113fb95b27629c06a3bf5e85dfd96bc577d3d4237519d98d26da37e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
-      },
-      {
-        "path": ".cline/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.143Z"
+        "timestamp": "2026-03-24T12:00:10.703Z"
       }
     ],
     "cursor": [
       {
-        "path": "CLAUDE.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1f1a5a7b8453e71b4517f4c175921afe9a0ad674404b780b1f7665647a4acd5",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/rules/architecture.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08f72519f76cd3d1cfb8de788a76e5b8e7eabb04fd8ade0a7ef706d2667ee78b",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/rules/code-style.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b4338406595c572c8d0c99f2bd096b9aa6f393237791ae34404dbd14269608ac",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/rules/error-handling.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "4cf9def8cc26a7d44d28291b6a56c14799aedb0e60d2d2b2d7fa42ba89ac820a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/rules/git-workflow.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "81f674813d81ab88cddf5f64c83e9ffc5d8cf4c6a73aac8d5a1d29f552cab5de",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/rules/security.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "96b3914e057069dc112d6b4200f3bcfd546a84a6e631507863500f94f3a5caf1",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/rules/testing.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "006288aa2dba4700080e2cce06b7335e7484300dd8563d45bacf24c7522fd968",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/agents/code-reviewer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1c71d5226fcbc9f0726dacb53eb02c8cad163214f8f7637719f206624e760b2",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/agents/security-analyzer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ae2976bea3d123f30201a69e0bef2761aeedf71edc72d4de6debcf381c0ef245",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".claude/agents/test-generator.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f11305a51f1b1a13cb0cd2e3792a448416c76bf9905195dcabef4f7b1e54aaf7",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
         "path": ".cursorrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9d404e232c7acb62345c5f1caf285dd062e89686125104e07108d75724ed331a",
+        "generatedHash": "ea407d45c025d5ced81181c1078575fdacb3c3a2b68bec83b3cd3a7a8b03f593",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
         "path": ".cursor/rules/architecture.mdc",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "2fa0649d5b6ec57301372c521cadb156697bb320f6f1e2355f00f4c9944a43c4",
+        "generatedHash": "1350cbc01cfcf1f6b8cdd522970b63379347687b25af01e8b29fe41f774474eb",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
         "path": ".cursor/rules/code-style.mdc",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9b853db7b216f86550cf6277f7a8ec348d0561a539995702d857a9472e78703e",
+        "generatedHash": "f07106f30604c3b721dbf14a64efd250bff9abfbd6fc0a1be278a933554a605d",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
         "path": ".cursor/rules/error-handling.mdc",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ce9a0877525fd5fa98f353a306668629a925124f2f1809cc53a273d6fe6d2b68",
+        "generatedHash": "b112e1ed1d414a42595def6f33bb32a33cd70c3a89549f055935aed89ab738b7",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
         "path": ".cursor/rules/git-workflow.mdc",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "34e9a81f422adff4064205312bbf49a5d0dd050c71c6138cc04ff5c65c3b79ae",
+        "generatedHash": "1f7b51ef7dfc8d84f2d9634a64932cef8849bd19e4f5f01731eb475e4b4f3cfa",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
         "path": ".cursor/rules/security.mdc",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08da0fbcb85b4fa843bc0dd0b676bcfd34189c586213fbd800cafefcb8e49958",
+        "generatedHash": "fb88a4b5fb5678d2d8b662ef73522d0f0e83a1df9b75da85946e1398a9d1414b",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
         "path": ".cursor/rules/testing.mdc",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "881b29679d91e9afeb1709123e667006aa1fcd20dcb8c254a97cc5d3b22c6656",
+        "generatedHash": "bb1acd516979430cf9675cc5eb82434495667f8a6bed424523dbeacb3f997527",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
-        "path": ".cursor/skills/rule-management/SKILL.md",
+        "path": ".cursor/skills/codi-operations/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
+        "generatedHash": "fd1d994a113d4a4666155e9d7de486446b27388a76daa4b38bbe20b3514be9aa",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       },
       {
-        "path": "AGENTS.md",
+        "path": ".cursor/skills/e2e-testing/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "460d8009a464bfc10a23886e6666ad95d4373c9eca587d766357b736c16dfe75",
+        "generatedHash": "0e0a094652b7ba9604f536d464d622f6eadeb5e74e2c6f1e84b0e3eea873e37c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".agents/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".codex/agents/code-reviewer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ee6be840e50faa683f0d4cb912cb08f90a84698cfe472b1f828a97c266d0234f",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".codex/agents/security-analyzer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "89a7a3c540cdc16e64c0006283c09fe1a8240ce987c2297b4ebb905c12fdd877",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".codex/agents/test-generator.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6b17ff1192e91633f0e67d58866567ccba99249f75d6ca8d5d3bd15473c5e239",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".windsurfrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "66f01b97bab86802d4996b767de2a46cbe4e2e48d3e4bf1518f42daebd5dbd7c",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".windsurf/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".clinerules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6483c1086113fb95b27629c06a3bf5e85dfd96bc577d3d4237519d98d26da37e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
-      },
-      {
-        "path": ".cline/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.145Z"
+        "timestamp": "2026-03-24T12:00:10.706Z"
       }
     ],
     "codex": [
       {
-        "path": "CLAUDE.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1f1a5a7b8453e71b4517f4c175921afe9a0ad674404b780b1f7665647a4acd5",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/rules/architecture.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08f72519f76cd3d1cfb8de788a76e5b8e7eabb04fd8ade0a7ef706d2667ee78b",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/rules/code-style.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b4338406595c572c8d0c99f2bd096b9aa6f393237791ae34404dbd14269608ac",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/rules/error-handling.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "4cf9def8cc26a7d44d28291b6a56c14799aedb0e60d2d2b2d7fa42ba89ac820a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/rules/git-workflow.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "81f674813d81ab88cddf5f64c83e9ffc5d8cf4c6a73aac8d5a1d29f552cab5de",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/rules/security.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "96b3914e057069dc112d6b4200f3bcfd546a84a6e631507863500f94f3a5caf1",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/rules/testing.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "006288aa2dba4700080e2cce06b7335e7484300dd8563d45bacf24c7522fd968",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/agents/code-reviewer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1c71d5226fcbc9f0726dacb53eb02c8cad163214f8f7637719f206624e760b2",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/agents/security-analyzer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ae2976bea3d123f30201a69e0bef2761aeedf71edc72d4de6debcf381c0ef245",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".claude/agents/test-generator.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f11305a51f1b1a13cb0cd2e3792a448416c76bf9905195dcabef4f7b1e54aaf7",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursorrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9d404e232c7acb62345c5f1caf285dd062e89686125104e07108d75724ed331a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/rules/architecture.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "2fa0649d5b6ec57301372c521cadb156697bb320f6f1e2355f00f4c9944a43c4",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/rules/code-style.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9b853db7b216f86550cf6277f7a8ec348d0561a539995702d857a9472e78703e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/rules/error-handling.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ce9a0877525fd5fa98f353a306668629a925124f2f1809cc53a273d6fe6d2b68",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/rules/git-workflow.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "34e9a81f422adff4064205312bbf49a5d0dd050c71c6138cc04ff5c65c3b79ae",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/rules/security.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08da0fbcb85b4fa843bc0dd0b676bcfd34189c586213fbd800cafefcb8e49958",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/rules/testing.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "881b29679d91e9afeb1709123e667006aa1fcd20dcb8c254a97cc5d3b22c6656",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cursor/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
         "path": "AGENTS.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "460d8009a464bfc10a23886e6666ad95d4373c9eca587d766357b736c16dfe75",
+        "generatedHash": "7aa23c53f5d41acaef34a9bf7fdc52c9a10869a9e6f7f076ada500850c952a05",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
+        "timestamp": "2026-03-24T12:00:10.708Z"
       },
       {
-        "path": ".agents/skills/rule-management/SKILL.md",
+        "path": ".agents/skills/codi-operations/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
+        "generatedHash": "fd1d994a113d4a4666155e9d7de486446b27388a76daa4b38bbe20b3514be9aa",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
+        "timestamp": "2026-03-24T12:00:10.708Z"
+      },
+      {
+        "path": ".agents/skills/e2e-testing/SKILL.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "0e0a094652b7ba9604f536d464d622f6eadeb5e74e2c6f1e84b0e3eea873e37c",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-24T12:00:10.708Z"
       },
       {
         "path": ".codex/agents/code-reviewer.toml",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ee6be840e50faa683f0d4cb912cb08f90a84698cfe472b1f828a97c266d0234f",
+        "generatedHash": "3b45f13cd085ec7b34ef897a845cbe5d3d8634368bbc771a98195e3b4c3ec1cf",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
+        "timestamp": "2026-03-24T12:00:10.708Z"
       },
       {
         "path": ".codex/agents/security-analyzer.toml",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "89a7a3c540cdc16e64c0006283c09fe1a8240ce987c2297b4ebb905c12fdd877",
+        "generatedHash": "1938f667e46c2fc977134f31287d7a9856d5c23061529cf34b09d72eb4206080",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
+        "timestamp": "2026-03-24T12:00:10.708Z"
       },
       {
         "path": ".codex/agents/test-generator.toml",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6b17ff1192e91633f0e67d58866567ccba99249f75d6ca8d5d3bd15473c5e239",
+        "generatedHash": "6e2db2743fd842ee41840e7b7702e4a5438a4b32e73a68550a0e491627ae2595",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".windsurfrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "66f01b97bab86802d4996b767de2a46cbe4e2e48d3e4bf1518f42daebd5dbd7c",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".windsurf/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".clinerules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6483c1086113fb95b27629c06a3bf5e85dfd96bc577d3d4237519d98d26da37e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
-      },
-      {
-        "path": ".cline/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.146Z"
+        "timestamp": "2026-03-24T12:00:10.708Z"
       }
     ],
     "windsurf": [
       {
-        "path": "CLAUDE.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1f1a5a7b8453e71b4517f4c175921afe9a0ad674404b780b1f7665647a4acd5",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/rules/architecture.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08f72519f76cd3d1cfb8de788a76e5b8e7eabb04fd8ade0a7ef706d2667ee78b",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/rules/code-style.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b4338406595c572c8d0c99f2bd096b9aa6f393237791ae34404dbd14269608ac",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/rules/error-handling.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "4cf9def8cc26a7d44d28291b6a56c14799aedb0e60d2d2b2d7fa42ba89ac820a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/rules/git-workflow.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "81f674813d81ab88cddf5f64c83e9ffc5d8cf4c6a73aac8d5a1d29f552cab5de",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/rules/security.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "96b3914e057069dc112d6b4200f3bcfd546a84a6e631507863500f94f3a5caf1",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/rules/testing.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "006288aa2dba4700080e2cce06b7335e7484300dd8563d45bacf24c7522fd968",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/agents/code-reviewer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1c71d5226fcbc9f0726dacb53eb02c8cad163214f8f7637719f206624e760b2",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/agents/security-analyzer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ae2976bea3d123f30201a69e0bef2761aeedf71edc72d4de6debcf381c0ef245",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".claude/agents/test-generator.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f11305a51f1b1a13cb0cd2e3792a448416c76bf9905195dcabef4f7b1e54aaf7",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursorrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9d404e232c7acb62345c5f1caf285dd062e89686125104e07108d75724ed331a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/rules/architecture.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "2fa0649d5b6ec57301372c521cadb156697bb320f6f1e2355f00f4c9944a43c4",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/rules/code-style.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9b853db7b216f86550cf6277f7a8ec348d0561a539995702d857a9472e78703e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/rules/error-handling.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ce9a0877525fd5fa98f353a306668629a925124f2f1809cc53a273d6fe6d2b68",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/rules/git-workflow.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "34e9a81f422adff4064205312bbf49a5d0dd050c71c6138cc04ff5c65c3b79ae",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/rules/security.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08da0fbcb85b4fa843bc0dd0b676bcfd34189c586213fbd800cafefcb8e49958",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/rules/testing.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "881b29679d91e9afeb1709123e667006aa1fcd20dcb8c254a97cc5d3b22c6656",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cursor/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": "AGENTS.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "460d8009a464bfc10a23886e6666ad95d4373c9eca587d766357b736c16dfe75",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".agents/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".codex/agents/code-reviewer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ee6be840e50faa683f0d4cb912cb08f90a84698cfe472b1f828a97c266d0234f",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".codex/agents/security-analyzer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "89a7a3c540cdc16e64c0006283c09fe1a8240ce987c2297b4ebb905c12fdd877",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".codex/agents/test-generator.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6b17ff1192e91633f0e67d58866567ccba99249f75d6ca8d5d3bd15473c5e239",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
         "path": ".windsurfrules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "66f01b97bab86802d4996b767de2a46cbe4e2e48d3e4bf1518f42daebd5dbd7c",
+        "generatedHash": "1ea4be741537cf0b777a3a21f60017c6f6581a0c935a192dd0e53c255b99e7a9",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
+        "timestamp": "2026-03-24T12:00:10.710Z"
       },
       {
-        "path": ".windsurf/skills/rule-management/SKILL.md",
+        "path": ".windsurf/skills/codi-operations/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
+        "generatedHash": "fd1d994a113d4a4666155e9d7de486446b27388a76daa4b38bbe20b3514be9aa",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
+        "timestamp": "2026-03-24T12:00:10.710Z"
       },
       {
-        "path": ".clinerules",
+        "path": ".windsurf/skills/e2e-testing/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6483c1086113fb95b27629c06a3bf5e85dfd96bc577d3d4237519d98d26da37e",
+        "generatedHash": "0e0a094652b7ba9604f536d464d622f6eadeb5e74e2c6f1e84b0e3eea873e37c",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
-      },
-      {
-        "path": ".cline/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.147Z"
+        "timestamp": "2026-03-24T12:00:10.710Z"
       }
     ],
     "cline": [
       {
-        "path": "CLAUDE.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1f1a5a7b8453e71b4517f4c175921afe9a0ad674404b780b1f7665647a4acd5",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/rules/architecture.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08f72519f76cd3d1cfb8de788a76e5b8e7eabb04fd8ade0a7ef706d2667ee78b",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/rules/code-style.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "b4338406595c572c8d0c99f2bd096b9aa6f393237791ae34404dbd14269608ac",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/rules/error-handling.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "4cf9def8cc26a7d44d28291b6a56c14799aedb0e60d2d2b2d7fa42ba89ac820a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/rules/git-workflow.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "81f674813d81ab88cddf5f64c83e9ffc5d8cf4c6a73aac8d5a1d29f552cab5de",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/rules/security.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "96b3914e057069dc112d6b4200f3bcfd546a84a6e631507863500f94f3a5caf1",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/rules/testing.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "006288aa2dba4700080e2cce06b7335e7484300dd8563d45bacf24c7522fd968",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/agents/code-reviewer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "e1c71d5226fcbc9f0726dacb53eb02c8cad163214f8f7637719f206624e760b2",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/agents/security-analyzer.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ae2976bea3d123f30201a69e0bef2761aeedf71edc72d4de6debcf381c0ef245",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".claude/agents/test-generator.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "f11305a51f1b1a13cb0cd2e3792a448416c76bf9905195dcabef4f7b1e54aaf7",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursorrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9d404e232c7acb62345c5f1caf285dd062e89686125104e07108d75724ed331a",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/rules/architecture.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "2fa0649d5b6ec57301372c521cadb156697bb320f6f1e2355f00f4c9944a43c4",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/rules/code-style.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "9b853db7b216f86550cf6277f7a8ec348d0561a539995702d857a9472e78703e",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/rules/error-handling.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ce9a0877525fd5fa98f353a306668629a925124f2f1809cc53a273d6fe6d2b68",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/rules/git-workflow.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "34e9a81f422adff4064205312bbf49a5d0dd050c71c6138cc04ff5c65c3b79ae",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/rules/security.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "08da0fbcb85b4fa843bc0dd0b676bcfd34189c586213fbd800cafefcb8e49958",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/rules/testing.mdc",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "881b29679d91e9afeb1709123e667006aa1fcd20dcb8c254a97cc5d3b22c6656",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".cursor/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": "AGENTS.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "460d8009a464bfc10a23886e6666ad95d4373c9eca587d766357b736c16dfe75",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".agents/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".codex/agents/code-reviewer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "ee6be840e50faa683f0d4cb912cb08f90a84698cfe472b1f828a97c266d0234f",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".codex/agents/security-analyzer.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "89a7a3c540cdc16e64c0006283c09fe1a8240ce987c2297b4ebb905c12fdd877",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".codex/agents/test-generator.toml",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6b17ff1192e91633f0e67d58866567ccba99249f75d6ca8d5d3bd15473c5e239",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".windsurfrules",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "66f01b97bab86802d4996b767de2a46cbe4e2e48d3e4bf1518f42daebd5dbd7c",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
-        "path": ".windsurf/skills/rule-management/SKILL.md",
-        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
-        "sources": [
-          "codi.yaml"
-        ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
-      },
-      {
         "path": ".clinerules",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "6483c1086113fb95b27629c06a3bf5e85dfd96bc577d3d4237519d98d26da37e",
+        "generatedHash": "144362b24d58d9311ccc93764923a051095c9b42603fc3cb4c0fee21b01c65fd",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
+        "timestamp": "2026-03-24T12:00:10.713Z"
       },
       {
-        "path": ".cline/skills/rule-management/SKILL.md",
+        "path": ".cline/skills/codi-operations/SKILL.md",
         "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
-        "generatedHash": "1b292530e2bb42c38c6911a98d17f42aa01d8fd0b79a02cd9f6617c69630f6d6",
+        "generatedHash": "fd1d994a113d4a4666155e9d7de486446b27388a76daa4b38bbe20b3514be9aa",
         "sources": [
           "codi.yaml"
         ],
-        "timestamp": "2026-03-23T21:04:11.148Z"
+        "timestamp": "2026-03-24T12:00:10.713Z"
+      },
+      {
+        "path": ".cline/skills/e2e-testing/SKILL.md",
+        "sourceHash": "1f4ce39805ea1c7f5d2f64d0ca3bad7a23cf54285ef2e419800ea454ef4b8e9e",
+        "generatedHash": "0e0a094652b7ba9604f536d464d622f6eadeb5e74e2c6f1e84b0e3eea873e37c",
+        "sources": [
+          "codi.yaml"
+        ],
+        "timestamp": "2026-03-24T12:00:10.713Z"
       }
     ]
   }

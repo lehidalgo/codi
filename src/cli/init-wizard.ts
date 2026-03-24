@@ -27,7 +27,7 @@ const AVAILABLE_SKILLS = [
   { value: 'mcp', title: 'MCP', description: 'Model Context Protocol integration skill' },
   { value: 'code-review', title: 'Code review', description: 'Automated code review and feedback' },
   { value: 'documentation', title: 'Documentation', description: 'Documentation generation and maintenance' },
-  { value: 'rule-management', title: 'Rule management', description: 'Rule creation and lifecycle management' },
+  { value: 'codi-operations', title: 'Codi operations', description: 'Manage all codi artifacts, configuration, verification, and troubleshooting' },
   { value: 'e2e-testing', title: 'E2E testing', description: 'Testing guide for validating codi installation' },
 ];
 

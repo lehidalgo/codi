@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-03-24T12-00-10-586Z",
+  "files": [
+    "CLAUDE.md",
+    ".claude/rules/architecture.md",
+    ".claude/rules/code-style.md",
+    ".claude/rules/error-handling.md",
+    ".claude/rules/git-workflow.md",
+    ".claude/rules/security.md",
+    ".claude/rules/testing.md",
+    ".claude/skills/rule-management/SKILL.md",
+    ".claude/agents/code-reviewer.md",
+    ".claude/agents/security-analyzer.md",
+    ".claude/agents/test-generator.md",
+    ".cursorrules",
+    ".cursor/rules/architecture.mdc",
+    ".cursor/rules/code-style.mdc",
+    ".cursor/rules/error-handling.mdc",
+    ".cursor/rules/git-workflow.mdc",
+    ".cursor/rules/security.mdc",
+    ".cursor/rules/testing.mdc",
+    ".cursor/skills/rule-management/SKILL.md",
+    "AGENTS.md",
+    ".agents/skills/rule-management/SKILL.md",
+    ".codex/agents/code-reviewer.toml",
+    ".codex/agents/security-analyzer.toml",
+    ".codex/agents/test-generator.toml",
+    ".windsurfrules",
+    ".windsurf/skills/rule-management/SKILL.md",
+    ".clinerules",
+    ".cline/skills/rule-management/SKILL.md"
+  ]
+}
