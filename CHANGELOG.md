@@ -7,22 +7,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.3.1] - 2026-03-24
 
 ### Added
-- Content size validation: `codi doctor` warns when artifacts exceed 6K chars or total exceeds 12K chars (Windsurf limit)
-- `W_CONTENT_SIZE` warning code for non-blocking size alerts (24 error/warning codes total)
-- New `artifact-creator` skill template — guides AI agents through writing quality artifact content (6 skill templates total)
-- `validateContentSize()` function with per-artifact and total budget checks
-- Validator unit tests (10 new tests, 391 total)
+
+#### New Templates (23→48 total)
+- 9 language/framework rule templates: `golang`, `java`, `kotlin`, `rust`, `swift`, `csharp`, `nextjs`, `django`, `spring-boot`
+- 6 skill templates: `security-scan`, `test-coverage`, `refactoring`, `codebase-onboarding`, `presentation`, `mobile-development`
+- 5 agent templates: `docs-lookup`, `refactorer`, `onboarding-guide`, `performance-auditor`, `api-designer`
+- 5 command templates: `security-scan`, `test-coverage`, `refactor`, `onboard`, `docs-lookup`
+- `artifact-creator` skill template — guides AI agents through writing quality artifact content
+
+#### Content Validation
+- `codi doctor` warns when artifacts exceed 6K chars or total exceeds 12K chars (Windsurf limit)
+- `W_CONTENT_SIZE` warning code for non-blocking size alerts
+
+#### Documentation Sync
+- `codi docs-update` — dedicated command to auto-correct stale template counts in STATUS.md and CONTRIBUTING.md
+- `codi doctor` reports `W_DOCS_STALE` warnings when documentation counts are out of sync, with guidance to run `codi docs-update`
+- Doc-sync detects missing template entries in docs/writing-rules.md and stale source files, reporting them with guidance
+
+#### ACS Compatibility
+- SKILL.md format verified compatible with Agentic Collaboration Standard (ACS) v1.0 and agentskills.io
+- Compatibility documented in docs/writing-rules.md
 
 ### Changed
+- Centralized 30 hardcoded constants into `src/constants.ts` — sizes, patterns, filenames, presets, token config, context limits, git clone depth
 - Agent and command description schemas now enforce max 512 chars (matching rules)
-- Centralized 30 hardcoded constants into `src/constants.ts` — single source of truth for all tunable values (sizes, patterns, filenames, presets, token config, context limits)
-- All schemas, scaffolders, validators, adapters, and CLI commands import from constants instead of using magic numbers
-- `docs/writing-rules.md` rewritten with per-agent size budgets, content best practices, anti-patterns, and quality checklist
-- `artifact-creator` template uses interpolated constants so values stay in sync automatically
+- All schemas, scaffolders, validators, adapters, and CLI commands import from constants
+- `docs/writing-rules.md` rewritten with per-agent size budgets, content best practices, anti-patterns, quality checklist
+- Skills `code-review`, `documentation`, `mcp` expanded from stubs (~260 chars) to full workflows (~1500-2500 chars)
+- Commands follow skills-first pattern: thin triggers that invoke corresponding skills
 
 ### Fixed
-- Agent/command description fields had no max length (now 512 chars, matching rules)
-- Hardcoded magic numbers scattered across 35+ files (now centralized in constants.ts)
+- Agent/command description fields had no max length (now 512 chars)
+- Hardcoded magic numbers scattered across 35+ files (now centralized)
+- Documentation counts going stale when templates are added (now auto-detected and fixable)
 
 ## [0.2.0] - 2026-03-23
 

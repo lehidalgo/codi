@@ -179,6 +179,18 @@ Creates all 9 available templates.
 | `performance` | N+1, async, caching, pagination | ~30 |
 | `documentation` | API docs, README, ADRs, code comments | ~30 |
 | `api-design` | REST, versioning, errors, pagination, limits | ~30 |
+| `typescript` | Strict typing, immutability, async, named exports | ~40 |
+| `react` | Components, hooks, state, performance, patterns | ~40 |
+| `python` | Type hints, dataclasses, pytest, resource management | ~40 |
+| `golang` | Error wrapping, interfaces, table-driven tests, goroutines | ~40 |
+| `java` | Records, Streams, Optional, JUnit 5, constructor injection | ~35 |
+| `kotlin` | Null safety, sealed classes, coroutines, Kotest/MockK | ~40 |
+| `rust` | Ownership, Result/Option, traits, clippy, thiserror | ~40 |
+| `swift` | Protocols, actors, Swift Testing, value types, Keychain | ~40 |
+| `csharp` | Records, async/await, LINQ, nullable refs, xUnit | ~40 |
+| `nextjs` | App Router, server components, ISR, middleware, metadata | ~40 |
+| `django` | Fat models, QuerySet, DRF, migrations, pytest-django | ~40 |
+| `spring-boot` | Constructor DI, JPA, Security, profiles, ControllerAdvice | ~40 |
 
 ## Writing Skills
 
@@ -234,7 +246,7 @@ codi add skill code-review --template code-review  # From template
 codi add skill --all                               # All templates
 ```
 
-Available templates: `code-review`, `documentation`, `mcp`, `codi-operations`, `e2e-testing`, `artifact-creator`.
+Available templates: `code-review`, `documentation`, `mcp`, `codi-operations`, `e2e-testing`, `artifact-creator`, `security-scan`, `test-coverage`, `refactoring`, `codebase-onboarding`, `presentation`, `mobile-development`.
 
 ## Writing Agents
 
@@ -288,7 +300,7 @@ codi add agent code-reviewer --template code-reviewer  # From template
 codi add agent --all                                   # All templates
 ```
 
-Available templates: `code-reviewer`, `test-generator`, `security-analyzer`.
+Available templates: `code-reviewer`, `test-generator`, `security-analyzer`, `docs-lookup`, `refactorer`, `onboarding-guide`, `performance-auditor`, `api-designer`.
 
 ## Writing Commands
 
@@ -328,7 +340,7 @@ codi add command deploy-check --template review  # From template
 codi add command --all                           # All templates
 ```
 
-Available templates: `review`, `test-run`. Commands are generated for Claude Code only (`.claude/commands/`).
+Available templates: `review`, `test-run`, `security-scan`, `test-coverage`, `refactor`, `onboard`, `docs-lookup`. Commands are generated for Claude Code only (`.claude/commands/`).
 
 ## Artifact Ownership
 
@@ -458,6 +470,16 @@ presets:
 ```
 
 Use `extends:` to inherit from another preset.
+
+## SKILL.md Compatibility
+
+Codi's generated SKILL.md files are compatible with the [Agentic Collaboration Standard (ACS)](https://github.com/agentic-collaboration/standard) and [agentskills.io](https://agentskills.io) format:
+
+- **Core frontmatter**: `name` and `description` fields match the ACS v1.0 spec
+- **File location**: `.agents/skills/<name>/SKILL.md` matches the ACS layout
+- **Body format**: Free-form markdown, compatible with any ACS-compliant tool
+
+Codi adds extension fields (`compatibility`, `tools`, `managed_by`) in frontmatter. These are additive — ACS-compliant tools ignore unknown fields, so codi skills work in any ACS-compatible environment.
 
 ## Contributing Templates
 

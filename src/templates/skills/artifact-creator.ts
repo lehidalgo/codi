@@ -104,22 +104,28 @@ description: <max ${MAX_DESCRIPTION_LENGTH} chars>
 managed_by: user
 \\\`\\\`\\\`
 
-## Step 4: Generate
+## Step 4: Generate and Sync
 
 \\\`\\\`\\\`bash
 codi generate
-\\\`\\\`\\\`
-
-This pushes the new artifact to all configured agent output files.
-
-## Step 5: Validate
-
-\\\`\\\`\\\`bash
+codi docs-update
 codi doctor
 \\\`\\\`\\\`
 
-Check for:
-- No errors
+1. \\\`codi generate\\\` pushes the artifact to all agent config files
+2. \\\`codi docs-update\\\` auto-fixes stale counts in STATUS.md, CONTRIBUTING.md
+3. \\\`codi doctor\\\` checks for remaining issues
+
+## Step 5: Act on Doctor Warnings
+
+If \\\`codi doctor\\\` reports ACTION prompts (missing doc entries):
+1. Read the source file indicated in the ACTION
+2. Extract the key topics from the template content
+3. Write a detailed description (1-2 sentences listing main patterns)
+4. Add the row to the documentation table with: name, description, source path
+5. Run \\\`codi doctor\\\` again to verify clean
+
+Check also for:
 - Size warnings (any artifact >${Math.floor(MAX_ARTIFACT_CHARS / 1000)}K chars or total >${Math.floor(MAX_TOTAL_ARTIFACT_CHARS / 1000)}K chars)
 
 If warnings appear, trim the artifact content.

@@ -101,6 +101,8 @@ codi status                # Check for drift in generated files
 \`\`\`bash
 codi generate              # Regenerate all agent config files
 codi generate --dry-run    # Preview without writing
+codi docs-update           # Auto-fix stale documentation counts
+codi doctor                # Detect remaining doc issues — act on ACTION prompts
 codi clean                 # Remove generated files (keep .codi/)
 codi clean --all           # Full uninstall (remove .codi/ too)
 codi revert --list         # Show available backups

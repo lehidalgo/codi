@@ -6,6 +6,11 @@ import * as commandTemplates from '../../templates/commands/index.js';
 const TEMPLATE_MAP: Record<string, string> = {
   'review': commandTemplates.review,
   'test-run': commandTemplates.testRun,
+  'security-scan': commandTemplates.securityScan,
+  'test-coverage': commandTemplates.testCoverage,
+  'refactor': commandTemplates.refactor,
+  'onboard': commandTemplates.onboard,
+  'docs-lookup': commandTemplates.docsLookup,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);

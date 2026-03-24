@@ -45,7 +45,7 @@ npx codi add skill --all --json
 npx codi add agent --all --json
 npx codi add command --all --json
 \`\`\`
-Expected: 9 rules, 5 skills, 3 agents, 2 commands. All managed_by: codi.
+Expected: 21 rules, 12 skills, 8 agents, 7 commands. All managed_by: codi.
 
 **[SYSTEM]** Add custom artifacts:
 \`\`\`bash

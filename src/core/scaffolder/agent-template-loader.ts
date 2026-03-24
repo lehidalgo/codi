@@ -7,6 +7,11 @@ const TEMPLATE_MAP: Record<string, string> = {
   'code-reviewer': agentTemplates.codeReviewer,
   'test-generator': agentTemplates.testGenerator,
   'security-analyzer': agentTemplates.securityAnalyzer,
+  'docs-lookup': agentTemplates.docsLookup,
+  'refactorer': agentTemplates.refactorer,
+  'onboarding-guide': agentTemplates.onboardingGuide,
+  'performance-auditor': agentTemplates.performanceAuditor,
+  'api-designer': agentTemplates.apiDesigner,
 };
 
 export const AVAILABLE_AGENT_TEMPLATES = Object.keys(TEMPLATE_MAP);

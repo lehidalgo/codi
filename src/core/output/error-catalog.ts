@@ -128,6 +128,11 @@ export const ERROR_CATALOG = {
     severity: 'warn' as const,
     hintTemplate: '{message}',
   },
+  W_DOCS_STALE: {
+    exitCode: EXIT_CODES.SUCCESS,
+    severity: 'warn' as const,
+    hintTemplate: '{message}',
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
