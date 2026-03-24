@@ -5,7 +5,7 @@ import type { ResolvedFlags, FlagDefinition } from '../../types/flags.js';
 import type { CodiError } from '../output/types.js';
 import { createError } from '../output/errors.js';
 
-export type ConfigLayerLevel = 'org' | 'team' | 'repo' | 'lang' | 'framework' | 'agent' | 'user';
+export type ConfigLayerLevel = 'org' | 'team' | 'preset' | 'repo' | 'lang' | 'framework' | 'agent' | 'user';
 
 export interface ConfigLayer {
   level: ConfigLayerLevel;
