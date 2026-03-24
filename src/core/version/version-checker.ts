@@ -34,7 +34,12 @@ export function checkCodiVersion(requiredVersion: string): VersionCheckResult {
 
 export async function checkGeneratedFreshness(
   projectRoot: string,
+  driftMode: string = 'warn',
 ): Promise<VersionCheckResult[]> {
+  if (driftMode === 'off') {
+    return [{ check: 'generated-freshness', passed: true, message: 'Drift detection is disabled.' }];
+  }
+
   const codiDir = path.join(projectRoot, '.codi');
   const stateManager = new StateManager(codiDir, projectRoot);
   const stateResult = await stateManager.read();
@@ -135,6 +140,7 @@ export async function checkTeamConfig(teamName: string): Promise<VersionCheckRes
 
 export async function runAllChecks(
   projectRoot: string,
+  driftMode: string = 'warn',
 ): Promise<Result<DoctorReport>> {
   const results: VersionCheckResult[] = [];
 
@@ -162,7 +168,7 @@ export async function runAllChecks(
   }
 
   // Check generated files freshness
-  const freshnessResults = await checkGeneratedFreshness(projectRoot);
+  const freshnessResults = await checkGeneratedFreshness(projectRoot, driftMode);
   results.push(...freshnessResults);
 
   const allPassed = results.every((r) => r.passed);

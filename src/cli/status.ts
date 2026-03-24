@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { StateManager } from '../core/config/state.js';
 import type { DriftReport } from '../core/config/state.js';
 import { resolveCodiDir } from '../utils/paths.js';
+import { resolveConfig } from '../core/config/resolver.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
@@ -17,6 +18,20 @@ interface StatusData {
 export async function statusHandler(
   projectRoot: string,
 ): Promise<CommandResult<StatusData>> {
+  const configResult = await resolveConfig(projectRoot);
+  const driftMode = configResult.ok
+    ? (configResult.data.flags['drift_detection']?.value as string) ?? 'warn'
+    : 'warn';
+
+  if (driftMode === 'off') {
+    return createCommandResult({
+      success: true,
+      command: 'status',
+      data: { lastGenerated: '', agents: [], hasDrift: false },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  }
+
   const codiDir = resolveCodiDir(projectRoot);
   const stateManager = new StateManager(codiDir, projectRoot);
 
@@ -46,6 +61,10 @@ export async function statusHandler(
     if (drifted) hasDrift = true;
   }
 
+  const exitCode = hasDrift && driftMode === 'error'
+    ? EXIT_CODES.DRIFT_DETECTED
+    : EXIT_CODES.SUCCESS;
+
   return createCommandResult({
     success: true,
     command: 'status',
@@ -54,7 +73,7 @@ export async function statusHandler(
       agents: reports,
       hasDrift,
     },
-    exitCode: hasDrift ? EXIT_CODES.DRIFT_DETECTED : EXIT_CODES.SUCCESS,
+    exitCode,
   });
 }
 

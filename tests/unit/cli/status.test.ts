@@ -71,6 +71,7 @@ describe('status command handler', () => {
     const result = await statusHandler(tmpDir);
     expect(result.success).toBe(true);
     expect(result.data.hasDrift).toBe(true);
-    expect(result.exitCode).toBe(EXIT_CODES.DRIFT_DETECTED);
+    // Default drift_detection mode is 'warn' — reports drift but exits SUCCESS
+    expect(result.exitCode).toBe(EXIT_CODES.SUCCESS);
   });
 });
