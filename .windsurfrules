@@ -368,7 +368,7 @@ Verify: Config has correct agents, preset, and rules.
 ```bash
 npx codi add rule security --template security
 npx codi add rule my-custom-rule
-npx codi add skill rule-management --template rule-management
+npx codi add skill codi-operations --template codi-operations
 ```
 Verify: Template artifacts have `managed_by: codi`, custom have `managed_by: user`.
 
@@ -423,6 +423,6 @@ This project uses Codi for unified AI agent configuration.
 - Rules: architecture, code-style, error-handling, git-workflow, security, testing
 - Skills: codi-operations, e2e-testing
 - Agents: code-reviewer, security-analyzer, test-generator
-- Generated: 2026-03-24T12:45:50.130Z
+- Generated: 2026-03-24T15:25:25.666Z
 
 When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.

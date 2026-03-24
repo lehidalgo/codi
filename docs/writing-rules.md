@@ -226,7 +226,7 @@ managed_by: codi
 Codi includes a built-in skill that helps AI agents assist with rule creation:
 
 ```bash
-codi add skill rule-management --template rule-management
+codi add skill codi-operations --template codi-operations
 ```
 
 This skill teaches your AI agent to:
@@ -280,7 +280,7 @@ managed_by: user
 - `managed_by: user` — custom, never overwritten
 - Add from template: `codi add skill <name> --template <template>`
 - Add all: `codi add skill --all`
-- Available templates: mcp, code-review, documentation, rule-management
+- Available templates: mcp, code-review, documentation, codi-operations
 
 ## Writing & Customizing Agents
 

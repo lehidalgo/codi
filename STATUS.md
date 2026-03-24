@@ -5,13 +5,13 @@
 
 ## Summary
 
-Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), and **Phase 3 (Ecosystem)** are complete. All planned features implemented: commands support, MCP distribution to all agents, skill marketplace, CI integration, traceability, backup/revert, watch mode, drift enforcement. Only `progressive_loading` remains deferred.
+Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), and **Phase 3 (Ecosystem)** are complete. All planned features implemented: commands support, MCP distribution to all agents, skill marketplace, CI integration, traceability, backup/revert, watch mode, drift enforcement, presets command. Only `progressive_loading` remains deferred.
 
 ## Current State
 
 - **Branch**: `main`
-- **Latest commit**: `45d2606` — feat: unified codi-operations skill replaces rule-management
-- **npm**: `codi-cli@0.2.0` published (v0.3.0 ready to release)
+- **Latest commit**: `17d7bc5` — feat: unified codi-operations skill replaces rule-management
+- **npm**: `codi-cli@0.3.0` published
 - **GitHub**: public at `lehidalgo/codi`
 - **CI**: GitHub Actions passing (lint, build, test)
 - **Tests**: 381 tests across 47 test files, all passing
@@ -36,7 +36,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 ## What's Complete
 
 ### Phase 1: MVP
-- 14 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean, compliance, watch, ci, revert, marketplace
+- 15 CLI commands: init, generate, validate, status, add, verify, doctor, update, clean, compliance, watch, ci, revert, marketplace, preset
 - 5 agent adapters: Claude Code, Cursor, Codex, Windsurf, Cline
 - 7-level config inheritance (org → team → repo → lang → framework → agent → user)
 - 18 behavioral flags with 3 presets (minimal, balanced, strict)
@@ -97,9 +97,9 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 
 | Metric | Value |
 |--------|-------|
-| Source files | 115 in `src/` |
+| Source files | 119 in `src/` |
 | Test files | 47 in `tests/` |
-| Source LOC | ~8,417 |
+| Source LOC | ~9,259 |
 | Tests | 381 passing |
 | Error codes | 23 |
 | Flags | 18 |
@@ -108,7 +108,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Rule templates | 9 |
 | Skill templates | 5 |
 | Agent templates | 3 |
-| CLI commands | 14 |
+| CLI commands | 15 |
 | Documentation guides | 9 |
 
 ## Resolved in This Session
@@ -134,6 +134,8 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Agent schema missing validation | Created AgentFrontmatterSchema with regex |
 | README too long (1003 lines) | Restructured to 339 lines with 8 doc links |
 | Commands support missing | Done — `codi add command`, `.claude/commands/` generation, 2 templates |
+| `rule-management` skill stale | Replaced with `codi-operations` — unified skill covering all artifact types |
+| No preset command | Done — `codi preset` for managing presets |
 | MCP only for Claude Code | Done — distributed to Codex (`.toml`), Cursor (`.json`), Windsurf (`.json`) |
 | No architecture documentation | Created docs/architecture.md |
 | 13 audit findings (bugs, gaps) | All fixed |
