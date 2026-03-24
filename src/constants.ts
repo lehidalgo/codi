@@ -56,3 +56,13 @@ export const GIT_CLONE_DEPTH = '1';
 
 // --- Flag defaults ---
 export const DEFAULT_MAX_FILE_LINES = 700;
+
+// --- Project-level counts (update when adding commands/adapters) ---
+export const CLI_COMMAND_COUNT = 16;
+export const ADAPTER_COUNT = 5;
+
+// --- Per-layer line limits (ACS recommendations) ---
+export const MAX_CONTEXT_LINES = 300;
+export const MAX_SKILL_LINES = 500;
+export const MAX_COMMAND_LINES = 100;
+export const MAX_AGENT_LINES = 200;

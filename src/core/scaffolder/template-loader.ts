@@ -13,6 +13,18 @@ const TEMPLATE_MAP: Record<string, string> = {
   'performance': ruleTemplates.performance,
   'documentation': ruleTemplates.documentation,
   'api-design': ruleTemplates.apiDesign,
+  'typescript': ruleTemplates.typescript,
+  'react': ruleTemplates.react,
+  'python': ruleTemplates.python,
+  'golang': ruleTemplates.golang,
+  'java': ruleTemplates.java,
+  'kotlin': ruleTemplates.kotlin,
+  'rust': ruleTemplates.rust,
+  'swift': ruleTemplates.swift,
+  'csharp': ruleTemplates.csharp,
+  'nextjs': ruleTemplates.nextjs,
+  'django': ruleTemplates.django,
+  'spring-boot': ruleTemplates.springBoot,
 };
 
 export const AVAILABLE_TEMPLATES = Object.keys(TEMPLATE_MAP);

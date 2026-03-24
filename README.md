@@ -131,6 +131,7 @@ Keep individual artifacts under 6,000 chars and total combined content under 12,
 | `codi revert` | Restore from backup | `--list`, `--last`, `--backup <ts>` |
 | `codi marketplace` | Search/install skills from registry | `search <query>`, `install <name>` |
 | `codi preset` | Manage configuration presets | `create`, `list`, `install`, `search`, `update` |
+| `codi docs-update` | Update documentation counts to match templates | -- |
 
 Aliases: `codi gen` = `codi generate`.
 

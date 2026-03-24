@@ -2,6 +2,8 @@ import type { Command } from 'commander';
 import { runAllChecks } from '../core/version/version-checker.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { validateContentSize } from '../core/config/validator.js';
+import { checkDocSync } from '../core/docs/doc-sync.js';
+import { createError } from '../core/output/errors.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
@@ -64,12 +66,23 @@ export async function doctorHandler(
     ? validateContentSize(configResult.data)
     : [];
 
+  const docIssues = await checkDocSync(projectRoot);
+  const docWarnings = docIssues.map((issue) => {
+    let message = issue.fixable
+      ? `${issue.description} — run: codi docs-update`
+      : issue.description;
+    if (issue.action) {
+      message += `\n  ACTION: ${issue.action}`;
+    }
+    return createError('W_DOCS_STALE', { message });
+  });
+
   return createCommandResult({
     success: report.allPassed,
     command: 'doctor',
     data: report,
     errors: report.allPassed ? [] : errors,
-    warnings: contentWarnings,
+    warnings: [...contentWarnings, ...docWarnings],
     exitCode,
   });
 }

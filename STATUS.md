@@ -101,15 +101,15 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Source files | 119 in `src/` |
 | Test files | 47 in `tests/` |
 | Source LOC | ~9,259 |
-| Tests | 391 passing |
-| Error codes | 24 |
+| Tests | 401 passing |
+| Error codes | 25 |
 | Flags | 18 |
 | Config layers | 7 |
 | Adapters | 5 |
-| Rule templates | 9 |
-| Skill templates | 6 |
-| Agent templates | 3 |
-| CLI commands | 15 |
+| Rule templates | 21 |
+| Skill templates | 12 |
+| Agent templates | 8 |
+| CLI commands | 16 |
 | Documentation guides | 9 |
 
 ## Resolved in This Session

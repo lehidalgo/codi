@@ -16,6 +16,7 @@ import { registerWatchCommand } from './cli/watch.js';
 import { registerRevertCommand } from './cli/revert.js';
 import { registerMarketplaceCommand } from './cli/marketplace.js';
 import { registerPresetCommand } from './cli/preset.js';
+import { registerDocsUpdateCommand } from './cli/docs-update.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -42,5 +43,6 @@ registerWatchCommand(program);
 registerRevertCommand(program);
 registerMarketplaceCommand(program);
 registerPresetCommand(program);
+registerDocsUpdateCommand(program);
 
 program.parse();

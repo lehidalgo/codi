@@ -1,8 +1,7 @@
 export const template = `---
 name: {{name}}
-description: Guidelines for using MCP server tools. Use when interacting with MCP servers, calling MCP tools, or debugging MCP connections
+description: MCP (Model Context Protocol) server usage. Use when configuring MCP servers, calling MCP tools, or debugging MCP connections.
 compatibility: [claude-code]
-tools: []
 managed_by: codi
 ---
 
@@ -10,11 +9,65 @@ managed_by: codi
 
 ## When to Use
 
-Use this skill when interacting with MCP servers.
+Use when working with MCP servers — configuring, calling tools, or debugging.
 
-## Instructions
+## Configuration
 
-- Check available MCP tools before starting
-- Validate tool parameters before calling
-- Handle MCP connection errors gracefully
-- Log tool results for debugging`;
+MCP servers are defined in \\\`.codi/mcp.yaml\\\` and distributed to agents by \\\`codi generate\\\`.
+
+### Server Types
+
+**stdio** — local process:
+\\\`\\\`\\\`yaml
+servers:
+  github:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-github"]
+    env:
+      GITHUB_TOKEN: "\${GITHUB_TOKEN}"
+\\\`\\\`\\\`
+
+**http** — remote service:
+\\\`\\\`\\\`yaml
+servers:
+  docs-api:
+    type: http
+    url: "https://example.com/mcp"
+\\\`\\\`\\\`
+
+After editing, run \\\`codi generate\\\` to distribute to all agents.
+
+## Using MCP Tools
+
+### Step 1: Discover Available Tools
+
+**[CODING AGENT]** Before calling any MCP tool:
+- Check \\\`.codi/mcp.yaml\\\` for configured servers
+- List available tools from each server
+- Read tool descriptions and parameter schemas
+
+### Step 2: Validate Before Calling
+
+**[CODING AGENT]** Before each tool call:
+- Verify all required parameters are provided
+- Check parameter types match the schema
+- Ensure the server is configured for the current agent
+
+### Step 3: Handle Errors
+
+**[CODING AGENT]** When a tool call fails:
+- Log the error message and parameters used
+- Check if the server is running and reachable
+- Verify environment variables are set (tokens, API keys)
+- Try a simpler call to isolate the issue
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Tool not found | Server not in mcp.yaml | Add server to \\\`.codi/mcp.yaml\\\`, run \\\`codi generate\\\` |
+| Connection refused | Server not running | Start the server process or check the URL |
+| Auth failed | Missing env var | Set GITHUB_TOKEN, API_KEY, etc. in environment |
+| Invalid params | Wrong parameter types | Check the tool's schema for required fields and types |
+| Timeout | Server too slow | Increase timeout or check server health |
+`;
