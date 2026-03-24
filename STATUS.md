@@ -5,16 +5,17 @@
 
 ## Summary
 
-Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), and **Phase 3 (Ecosystem)** are complete. All planned features implemented: commands support, MCP distribution to all agents, skill marketplace, CI integration, traceability, backup/revert, watch mode, drift enforcement, presets command. Only `progressive_loading` remains deferred.
+Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), **Phase 3 (Ecosystem)**, and **Phase 4 (Multi-Tenant Presets)** are complete. Full documentation restructure done — README as modern hub, CONTRIBUTING.md, troubleshooting guide, user flows (30 flows), and all 7 artifact types at documentation parity. Only `progressive_loading` remains deferred.
 
 ## Current State
 
 - **Branch**: `main`
-- **Latest commit**: `17d7bc5` — feat: unified codi-operations skill replaces rule-management
+- **Latest commit**: `95a4809` — docs: fix artifact documentation parity
 - **npm**: `codi-cli@0.3.0` published
 - **GitHub**: public at `lehidalgo/codi`
 - **CI**: GitHub Actions passing (lint, build, test)
-- **Tests**: 381 tests across 47 test files, all passing
+- **Tests**: 381 tests across 48 test files, all passing
+- **Docs**: 12 guide documents + README + CONTRIBUTING + CHANGELOG + STATUS
 - **Audit**: 9/10 — clean, production-ready
 - **E2E**: All 8 test suites passed (including Claude Code agent integration)
 

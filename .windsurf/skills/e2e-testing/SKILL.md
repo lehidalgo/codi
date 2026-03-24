@@ -2,91 +2,167 @@
 
 ---
 name: e2e-testing
-description: End-to-end testing guide for validating codi installation. Use when asked to test or validate the codi setup
+description: Comprehensive validation of all codi features. Use when asked to test, audit, or verify the codi installation end-to-end. Covers all 15 commands, 7 artifact types, and 30 user flows.
 ---
 
 # e2e-testing
 
-## When to Use
+## Overview
 
-Use this skill when asked to test, validate, or verify the codi installation end-to-end.
+This skill guides systematic validation of ALL codi features in a test project. Each step is labeled:
+- **[SYSTEM]** — run this CLI command
+- **[HUMAN]** — STOP and ask the human to perform this action
+- **[CODING AGENT]** — the AI agent performs this
 
-## Action Labels
+Full details: see docs/testing-guide.md and docs/user-flows.md.
 
-Each step is labeled with who performs it:
+## Suite 1: Setup
 
-- **[SYSTEM]** — CLI command you can run directly
-- **[HUMAN]** — requires manual human interaction (STOP and ask the human)
-- **[CODING AGENT]** — requires an AI agent to perform and observe
+**[SYSTEM]** Create a test project and install codi:
+\`\`\`bash
+mkdir /tmp/codi-validation && cd /tmp/codi-validation
+npm init -y && npm install codi-cli
+npx codi --version
+\`\`\`
+Expected: Version prints (e.g., 0.3.0).
 
-## Procedure
+## Suite 2: Initialization
 
-Run the suites in order. When you encounter a **[HUMAN]** step, STOP and tell the user what they need to do manually. Wait for confirmation before continuing.
+**[SYSTEM]** Non-interactive init:
+\`\`\`bash
+npx codi init --agents claude-code cursor codex --preset balanced --json
+\`\`\`
+Expected: .codi/ created with codi.yaml, flags.yaml (18 flags), rules/, skills/, frameworks/.
 
-### Suite 1: Project Setup
-```bash
-mkdir /tmp/codi-e2e-test && cd /tmp/codi-e2e-test
-git init && echo '{}' > package.json
-npx codi --help
-```
-Verify: CLI prints help with available commands.
+**[HUMAN]** Interactive wizard: run \`npx codi init --force\` in terminal. Select agents, rules, skills, preset. Verify output matches.
 
-### Suite 2: Initialization
-```bash
-npx codi init --agents claude-code,cursor --preset balanced
-cat .codi/config.json
-```
-Verify: Config has correct agents, preset, and rules.
-**[HUMAN]** For wizard test: run `npx codi clean --all` then `npx codi init` interactively.
+## Suite 3: Artifacts (all 4 types)
 
-### Suite 3: Artifact Management
-```bash
-npx codi add rule security --template security
-npx codi add rule my-custom-rule
-npx codi add skill codi-operations --template codi-operations
-```
-Verify: Template artifacts have `managed_by: codi`, custom have `managed_by: user`.
+**[SYSTEM]** Add all templates:
+\`\`\`bash
+npx codi add rule --all --json
+npx codi add skill --all --json
+npx codi add agent --all --json
+npx codi add command --all --json
+\`\`\`
+Expected: 9 rules, 5 skills, 3 agents, 2 commands. All managed_by: codi.
 
-### Suite 4: Generation & Drift
-```bash
-npx codi generate
-npx codi status
-echo "# Modified" >> CLAUDE.md
-npx codi status
-npx codi generate
-```
-Verify: Status detects drift after modification, clean after regeneration.
+**[SYSTEM]** Add custom artifacts:
+\`\`\`bash
+npx codi add rule my-custom --json
+npx codi add skill my-custom --json
+\`\`\`
+Expected: managed_by: user.
 
-### Suite 5: Verification & Compliance
-```bash
-npx codi verify
-npx codi verify --check
-npx codi compliance
-npx codi doctor
-```
-Verify: Token is `codi-` + 12 hex chars and deterministic across runs.
+## Suite 4: Generation & Drift
 
-### Suite 6: Update & Presets
-```bash
-npx codi update --preset strict && npx codi generate
-npx codi update --preset balanced && npx codi generate
-npx codi update --rules
-```
-Verify: Preset changes apply. `managed_by: user` artifacts are untouched.
+**[SYSTEM]** Generate and check:
+\`\`\`bash
+npx codi generate --json
+npx codi status --json
+\`\`\`
+Expected: Files generated. hasDrift: false.
 
-### Suite 7: Clean & Reinstall
-```bash
-npx codi clean
-npx codi generate
-npx codi clean --all
-npx codi init --agents claude-code --preset balanced
-npx codi generate
-```
-Verify: Clean removes generated files. `--all` removes everything. Reinstall works.
+**[SYSTEM]** Inject and fix drift:
+\`\`\`bash
+echo "edit" >> CLAUDE.md
+npx codi status --json
+npx codi generate --json
+\`\`\`
+Expected: hasDrift true, then false after regenerate.
 
-### Suite 8: Agent Integration
-**[HUMAN]** Open the project in each configured agent (Claude Code, Cursor, Codex) and ask "verify codi". Verify the agent responds with the correct token.
+**[SYSTEM]** Verify per-agent: .claude/rules/, .cursor/rules/*.mdc, AGENTS.md, .codex/agents/*.toml, .windsurfrules, .clinerules, .claude/skills/, .windsurf/skills/.
 
-## Full Guide
+## Suite 5: Verification & Compliance
 
-See `docs/testing-guide.md` for the complete procedure with detailed expected outputs and failure signals.
+**[SYSTEM]**
+\`\`\`bash
+npx codi verify --json
+npx codi compliance --json
+npx codi doctor --ci --json
+npx codi ci --json
+\`\`\`
+Expected: 12-char token deterministic. All checks pass.
+
+## Suite 6: Update & Presets
+
+**[SYSTEM]** Preset switching:
+\`\`\`bash
+npx codi update --preset strict --regenerate --json
+npx codi update --preset balanced --regenerate --json
+\`\`\`
+Expected: Strict shows restricted instructions. Balanced restores defaults.
+
+**[SYSTEM]** Artifact refresh:
+\`\`\`bash
+npx codi update --rules --skills --agents --commands --dry-run --json
+\`\`\`
+Expected: Managed artifacts listed. Custom (managed_by: user) skipped.
+
+## Suite 7: Presets
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset create test-preset --json
+npx codi preset list --json
+\`\`\`
+Expected: Preset directory created. Visible in list.
+
+## Suite 8: MCP
+
+**[SYSTEM]** Configure and verify:
+\`\`\`bash
+cat > .codi/mcp.yaml << 'EOF'
+servers:
+  test-api:
+    type: http
+    url: "https://example.com/mcp"
+EOF
+npx codi generate --json
+\`\`\`
+Expected: .claude/mcp.json, .cursor/mcp.json, .codex/mcp.toml, .windsurf/mcp.json contain test-api.
+
+## Suite 9: Backup & Revert
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi revert --list --json
+npx codi revert --last --json
+\`\`\`
+Expected: Backups from prior generates. Restore succeeds.
+
+## Suite 10: Marketplace
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi marketplace search test --json
+\`\`\`
+Note: May fail if no registry configured. This is expected.
+
+## Suite 11: Clean & Reinstall
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi clean --json
+npx codi generate --json
+npx codi clean --all --json
+\`\`\`
+Expected: Clean removes generated. Regenerate works. Clean --all removes .codi/.
+
+## Suite 12: Agent Integration
+
+**[HUMAN]** Open Claude Code in the test project.
+**[HUMAN]** Ask: "verify codi"
+**[HUMAN]** Copy response.
+**[SYSTEM]** \`npx codi verify --check "<response>"\`
+Expected: tokenMatch: true.
+
+## Cleanup
+
+**[SYSTEM]** \`rm -rf /tmp/codi-validation\`
+
+## References
+
+- docs/testing-guide.md — full testing procedure
+- docs/user-flows.md — all 30 user flows
+- docs/troubleshooting.md — common issues
