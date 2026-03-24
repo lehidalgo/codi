@@ -1,9 +1,9 @@
 import type { Command } from 'commander';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import os from 'node:os';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { createCommandResult } from '../core/output/formatter.js';
@@ -12,13 +12,27 @@ import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { scanCodiDir } from '../core/config/parser.js';
+import {
+  getRegistryConfig,
+  readLockFile,
+  writeLockFile,
+  cloneRegistry,
+  readRegistryIndex,
+  filterEntries,
+  getPresetVersionFromDir,
+  copyDir,
+} from '../core/preset/preset-registry.js';
+import type { RegistryEntry } from '../core/preset/preset-registry.js';
 
 const execFileAsync = promisify(execFile);
 
 interface PresetData {
-  action: 'create' | 'list' | 'install';
+  action: 'create' | 'list' | 'install' | 'search' | 'update';
   name?: string;
   presets?: Array<{ name: string; description: string }>;
+  results?: RegistryEntry[];
+  updated?: string[];
 }
 
 export async function presetCreateHandler(
@@ -135,6 +149,16 @@ export async function presetInstallHandler(
     await fs.mkdir(destDir, { recursive: true });
     await copyDir(sourceDir, destDir);
 
+    // Write lock file entry
+    const version = await getPresetVersionFromDir(destDir);
+    const lock = await readLockFile(codiDir);
+    lock.presets[name] = {
+      version,
+      source: from,
+      installedAt: new Date().toISOString(),
+    };
+    await writeLockFile(codiDir, lock);
+
     log.info(`Installed preset "${name}" to .codi/presets/${name}/`);
 
     return createCommandResult({
@@ -162,17 +186,170 @@ export async function presetInstallHandler(
   }
 }
 
-async function copyDir(src: string, dest: string): Promise<void> {
-  const entries = await fs.readdir(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    if (entry.name === '.git') continue;
-    if (entry.isDirectory()) {
-      await fs.mkdir(destPath, { recursive: true });
-      await copyDir(srcPath, destPath);
+export async function presetSearchHandler(
+  projectRoot: string,
+  query: string,
+): Promise<CommandResult<PresetData>> {
+  const log = Logger.getInstance();
+
+  const codiResult = await scanCodiDir(projectRoot);
+  const manifest = codiResult.ok ? codiResult.data.manifest : null;
+  const registryConfig = getRegistryConfig(manifest);
+
+  let tmpDir: string | undefined;
+  try {
+    tmpDir = await cloneRegistry(registryConfig);
+    const allEntries = await readRegistryIndex(tmpDir);
+    const results = filterEntries(allEntries, query);
+
+    if (results.length === 0) {
+      log.info(`No presets found matching "${query}"`);
     } else {
-      await fs.copyFile(srcPath, destPath);
+      log.info(`Found ${results.length} preset(s) matching "${query}":`);
+      for (const entry of results) {
+        const tags = entry.tags.length > 0 ? ` [${entry.tags.join(', ')}]` : '';
+        log.info(`  ${entry.name}@${entry.version} — ${entry.description}${tags}`);
+      }
+    }
+
+    return createCommandResult({
+      success: true,
+      command: 'preset search',
+      data: { action: 'search', results },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  } catch (error) {
+    return createCommandResult({
+      success: false,
+      command: 'preset search',
+      data: { action: 'search' },
+      errors: [{
+        code: 'E_GENERAL',
+        message: `Failed to search registry: ${error instanceof Error ? error.message : String(error)}`,
+        hint: 'Check registry configuration in codi.yaml presetRegistry field.',
+        severity: 'error',
+        context: {},
+      }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  } finally {
+    if (tmpDir) {
+      await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+    }
+  }
+}
+
+export async function presetUpdateHandler(
+  projectRoot: string,
+  dryRun: boolean,
+): Promise<CommandResult<PresetData>> {
+  const log = Logger.getInstance();
+  const codiDir = resolveCodiDir(projectRoot);
+
+  const codiResult = await scanCodiDir(projectRoot);
+  const manifest = codiResult.ok ? codiResult.data.manifest : null;
+  const registryConfig = getRegistryConfig(manifest);
+  const lock = await readLockFile(codiDir);
+
+  const installedNames = Object.keys(lock.presets);
+  if (installedNames.length === 0) {
+    log.info('No presets tracked in lock file. Nothing to update.');
+    return createCommandResult({
+      success: true,
+      command: 'preset update',
+      data: { action: 'update', updated: [] },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  }
+
+  let tmpDir: string | undefined;
+  try {
+    tmpDir = await cloneRegistry(registryConfig);
+    const allEntries = await readRegistryIndex(tmpDir);
+    const entryMap = new Map(allEntries.map(e => [e.name, e]));
+
+    const updated: string[] = [];
+
+    for (const name of installedNames) {
+      const registryEntry = entryMap.get(name);
+      if (!registryEntry) {
+        log.info(`  ${name}: not found in registry, skipping`);
+        continue;
+      }
+
+      const lockEntry = lock.presets[name];
+      if (!lockEntry) {
+        log.info(`  ${name}: missing lock entry, skipping`);
+        continue;
+      }
+
+      const currentVersion = lockEntry.version;
+      if (registryEntry.version === currentVersion) {
+        log.info(`  ${name}: up to date (${currentVersion})`);
+        continue;
+      }
+
+      log.info(`  ${name}: ${currentVersion} -> ${registryEntry.version}`);
+
+      if (!dryRun) {
+        const presetSourceDir = path.join(tmpDir, name);
+        const destDir = path.join(codiDir, 'presets', name);
+
+        try {
+          await fs.access(path.join(presetSourceDir, 'preset.yaml'));
+          await fs.rm(destDir, { recursive: true, force: true });
+          await fs.mkdir(destDir, { recursive: true });
+          await copyDir(presetSourceDir, destDir);
+
+          lock.presets[name] = {
+            version: registryEntry.version,
+            source: lockEntry.source,
+            installedAt: new Date().toISOString(),
+          };
+          updated.push(name);
+        } catch (copyError) {
+          log.info(`  ${name}: failed to update — ${copyError instanceof Error ? copyError.message : String(copyError)}`);
+        }
+      } else {
+        updated.push(name);
+      }
+    }
+
+    if (!dryRun && updated.length > 0) {
+      await writeLockFile(codiDir, lock);
+    }
+
+    if (updated.length === 0) {
+      log.info('All presets are up to date.');
+    } else if (dryRun) {
+      log.info(`Would update ${updated.length} preset(s). Run without --dry-run to apply.`);
+    } else {
+      log.info(`Updated ${updated.length} preset(s).`);
+    }
+
+    return createCommandResult({
+      success: true,
+      command: 'preset update',
+      data: { action: 'update', updated },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  } catch (error) {
+    return createCommandResult({
+      success: false,
+      command: 'preset update',
+      data: { action: 'update' },
+      errors: [{
+        code: 'E_GENERAL',
+        message: `Failed to update presets: ${error instanceof Error ? error.message : String(error)}`,
+        hint: 'Check registry configuration and network connectivity.',
+        severity: 'error',
+        context: {},
+      }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  } finally {
+    if (tmpDir) {
+      await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
     }
   }
 }
@@ -212,6 +389,29 @@ export function registerPresetCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
       const result = await presetInstallHandler(process.cwd(), name, options.from);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('search <query>')
+    .description('Search preset registry')
+    .action(async (query: string) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetSearchHandler(process.cwd(), query);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('update')
+    .description('Update installed presets to latest versions')
+    .option('--dry-run', 'Show what would change without writing')
+    .action(async (options: { dryRun?: boolean }) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetUpdateHandler(process.cwd(), options.dryRun ?? false);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

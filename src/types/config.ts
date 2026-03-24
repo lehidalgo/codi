@@ -24,6 +24,10 @@ export interface CodiManifest {
     registry: string;
     branch: string;
   };
+  presetRegistry?: {
+    url: string;
+    branch: string;
+  };
   presets?: string[];
 }
 

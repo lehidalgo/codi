@@ -57,6 +57,26 @@ export async function loadPreset(name: string, presetsDir: string): Promise<Resu
 
   const manifest = validated.data;
 
+  // Resolve extends: load parent preset first, then merge child on top
+  let parentFlags: Record<string, FlagDefinition> = {};
+  let parentRules: NormalizedRule[] = [];
+  let parentSkills: NormalizedSkill[] = [];
+  let parentAgents: NormalizedAgent[] = [];
+  let parentCommands: NormalizedCommand[] = [];
+  let parentMcp: McpConfig = { servers: {} };
+
+  if (manifest.extends) {
+    const parentResult = await loadPreset(manifest.extends, presetsDir);
+    if (parentResult.ok) {
+      parentFlags = parentResult.data.flags;
+      parentRules = parentResult.data.rules;
+      parentSkills = parentResult.data.skills;
+      parentAgents = parentResult.data.agents;
+      parentCommands = parentResult.data.commands;
+      parentMcp = parentResult.data.mcp;
+    }
+  }
+
   const rules = await loadPresetArtifacts<NormalizedRule>(path.join(presetDir, 'rules'), parseRuleFile);
   const skills = await loadPresetArtifacts<NormalizedSkill>(path.join(presetDir, 'skills'), parseSkillFile);
   const agents = await loadPresetArtifacts<NormalizedAgent>(path.join(presetDir, 'agents'), parseAgentFile);
@@ -71,16 +91,32 @@ export async function loadPreset(name: string, presetsDir: string): Promise<Resu
     }
   } catch { /* no mcp.yaml */ }
 
+  // Merge: parent first, then child overrides
+  const mergedFlags = { ...parentFlags, ...(manifest.flags ?? {}) as Record<string, FlagDefinition> };
+  const mergedRules = mergeArtifacts(parentRules, rules);
+  const mergedSkills = mergeArtifacts(parentSkills, skills);
+  const mergedAgents = mergeArtifacts(parentAgents, agents);
+  const mergedCommands = mergeArtifacts(parentCommands, commands);
+  const mergedMcp: McpConfig = {
+    servers: { ...parentMcp.servers, ...mcp.servers },
+  };
+
   return ok({
     name: manifest.name,
     description: manifest.description ?? '',
-    flags: (manifest.flags ?? {}) as Record<string, FlagDefinition>,
-    rules,
-    skills,
-    agents,
-    commands,
-    mcp,
+    flags: mergedFlags,
+    rules: mergedRules,
+    skills: mergedSkills,
+    agents: mergedAgents,
+    commands: mergedCommands,
+    mcp: mergedMcp,
   });
+}
+
+function mergeArtifacts<T extends { name: string }>(parent: T[], child: T[]): T[] {
+  const childNames = new Set(child.map(c => c.name));
+  const fromParent = parent.filter(p => !childNames.has(p.name));
+  return [...fromParent, ...child];
 }
 
 async function loadPresetArtifacts<T>(dir: string, parser: (filePath: string) => Promise<T | null>): Promise<T[]> {
