@@ -53,7 +53,7 @@ The verification token is a SHA-256 hash of:
 
 Token format: `codi-{12 hex chars}`
 
-The token changes whenever any rule content, flag, skill, or agent changes.
+The token changes whenever any rule content, flag, skill, agent, or command changes.
 
 ## Audit Log
 

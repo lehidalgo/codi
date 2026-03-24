@@ -146,10 +146,26 @@ npx codi add agent code-reviewer --template code-reviewer
 - File created in `.codi/agents/`
 - Frontmatter contains `managed_by: codi`
 
-### Step 3.7 — Verify managed_by distinction
+### Step 3.7 — Add a command from template
 **[SYSTEM]**
 ```bash
-grep -r 'managed_by' .codi/rules/ .codi/skills/ .codi/agents/
+npx codi add command review --template review
+```
+**Expected**:
+- File created in `.codi/commands/review.md`
+- Frontmatter contains `managed_by: codi`
+
+### Step 3.8 — Add all commands
+**[SYSTEM]**
+```bash
+npx codi add command --all
+```
+**Expected**: All available command templates created (review, test-run).
+
+### Step 3.9 — Verify managed_by distinction
+**[SYSTEM]**
+```bash
+grep -r 'managed_by' .codi/rules/ .codi/skills/ .codi/agents/ .codi/commands/
 ```
 **Expected**: Template-based artifacts show `managed_by: codi`, custom artifacts show `managed_by: user`.
 
