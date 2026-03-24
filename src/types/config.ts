@@ -10,7 +10,6 @@ export interface CodiManifest {
     skills?: boolean;
     commands?: boolean;
     agents?: boolean;
-    context?: boolean;
   };
   codi?: {
     requiredVersion?: string;
@@ -65,11 +64,6 @@ export interface NormalizedAgent {
   managedBy?: 'codi' | 'user';
 }
 
-export interface NormalizedContext {
-  name: string;
-  content: string;
-}
-
 export interface McpConfig {
   servers: Record<string, {
     command: string;
@@ -84,7 +78,6 @@ export interface NormalizedConfig {
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
-  context: NormalizedContext[];
   flags: ResolvedFlags;
   mcp: McpConfig;
 }

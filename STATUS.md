@@ -148,44 +148,22 @@ Codi defines 8 artifact/system types. Here is the implementation status of each:
 | 2 | **Skills** | `.codi/skills/` | Yes | 5 | Yes | 5 agents | `--skills` | **Full** |
 | 3 | **Agents** | `.codi/agents/` | Yes | 3 | Yes | 2 agents (Claude/Codex) | `--agents` | **Full** |
 | 4 | **Commands** | `.codi/commands/` | Yes | 2 | Yes | 1 agent (Claude) | No | **Mostly done** |
-| 5 | **Context** | `.codi/context/` | No | No | No | No | No | **Not implemented** (type only) |
-| 6 | **MCP** | `.codi/mcp.yaml` | Yes | No | No | 4 agents | No | **Partial** (no templates, no add) |
-| 7 | **Hooks** | Auto-generated | No | 3 | No | Partial | No | **Infrastructure only** |
-| 8 | **Flags** | `.codi/flags.yaml` | Yes | 3 presets | N/A | Yes | `--preset` | **Full** |
+| 5 | **MCP** | `.codi/mcp.yaml` | Yes | No | No | 4 agents | No | **Partial** (no templates, no add) |
+| 6 | **Hooks** | Auto-generated | No | 3 | No | Partial | No | **Infrastructure only** |
+| 7 | **Flags** | `.codi/flags.yaml` | Yes | 3 presets | N/A | Yes | `--preset` | **Full** |
 
-### About Context Files
+### Why No Context Artifact
 
-**What it is:** Context files provide project knowledge that AI agents load at session start — architecture, domain rules, conventions, and anything a new team member would need to understand before making changes.
-
-**Origin:** The concept comes from the **Agentic Collaboration Standard (ACS) v1.0**, an open specification for portable AI agent configuration. ACS defines a `context` layer at `.agents/context/` with:
-- `project.md` (required) — stack, architecture, folder structure, conventions, restricted areas
-- `domain.md` (optional) — business entities, rules, glossary
-
-**Context vs Rules:**
-
-| | Context | Rules |
-|---|---------|-------|
-| Purpose | What the agent needs to **know** | How the agent should **behave** |
-| Content | Architecture, domain, conventions | Code style, testing, security |
-| Example | "Our API uses Express with JWT auth" | "Always validate inputs at system boundaries" |
-| Loading | At session start (Tier 1) | Persistent instructions |
-
-**Which agents support it:**
-- **Claude Code** — via CLAUDE.md and `.claude/` directory (project knowledge)
-- **Cursor** — via `.cursorrules` and context features
-- **ACS-compatible tools** — via `.agents/context/` (emerging standard)
-
-**Current status in codi:** `NormalizedContext` type is defined in `src/types/config.ts` but the parser returns `context: []` (hardcoded). No scanner, no templates, no generation. Decision pending on whether to implement or remove.
+The ACS (Agentic Collaboration Standard) defines a `context` layer for project knowledge (architecture, domain, conventions). Codi does not implement this as a separate artifact type because **custom rules and skills already serve this purpose**. Users can create a rule like `project-architecture` with project knowledge, or a skill like `domain-knowledge` with business rules — no separate artifact type needed.
 
 ## What's Next
 
 ### Immediate
 - Publish v0.3.0 to npm with all Phase 3 features
-- Decide on context files: implement, defer, or remove dead type
+- Context type removed — project knowledge expressed through custom rules/skills
 
 ### Deferred
 - `progressive_loading` flag — deferred to future version (requires adapter-specific implementation)
-- Context files — pending decision (see "About Context Files" above)
 
 ### Phase 3: Ecosystem — COMPLETE
 

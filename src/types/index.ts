@@ -16,7 +16,6 @@ export type {
   NormalizedSkill,
   NormalizedCommand,
   NormalizedAgent,
-  NormalizedContext,
   McpConfig,
   NormalizedConfig,
 } from './config.js';

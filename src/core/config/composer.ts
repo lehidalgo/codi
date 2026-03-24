@@ -24,7 +24,6 @@ const DEFAULT_CONFIG: NormalizedConfig = {
   skills: [],
   commands: [],
   agents: [],
-  context: [],
   flags: {},
   mcp: { servers: {} },
 };
@@ -53,10 +52,6 @@ export function composeConfig(layers: ConfigLayer[]): Result<NormalizedConfig> {
     if (cfg.agents) {
       merged.agents = [...merged.agents, ...cfg.agents];
     }
-    if (cfg.context) {
-      merged.context = [...merged.context, ...cfg.context];
-    }
-
     if (cfg.flags) {
       const flagErrors = mergeFlags(merged.flags, cfg.flags, layer.source, lockedFlags);
       errors.push(...flagErrors);
