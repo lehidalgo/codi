@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { resolveCodiDir } from '../utils/paths.js';
+import { isPathSafe } from '../utils/path-guard.js';
 import { StateManager } from '../core/config/state.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
@@ -83,6 +84,10 @@ export async function cleanHandler(
   if (hasStateFiles) {
     const generatedFiles = collectGeneratedFiles(stateResult.data.agents);
     for (const filePath of generatedFiles) {
+      if (!isPathSafe(projectRoot, filePath)) {
+        log.warn(`Skipping unsafe path: ${filePath}`);
+        continue;
+      }
       const absPath = path.resolve(projectRoot, filePath);
       if (options.dryRun) {
         log.info(`Would delete: ${filePath}`);
@@ -99,6 +104,10 @@ export async function cleanHandler(
     log.warn('No state file found. Cleaning known generated files.');
     const knownFiles = ['CLAUDE.md', 'AGENTS.md', '.cursorrules', '.windsurfrules', '.clinerules'];
     for (const file of knownFiles) {
+      if (!isPathSafe(projectRoot, file)) {
+        log.warn(`Skipping unsafe path: ${file}`);
+        continue;
+      }
       const absPath = path.join(projectRoot, file);
       if (options.dryRun) {
         try {

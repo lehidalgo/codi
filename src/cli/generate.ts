@@ -45,8 +45,10 @@ export async function generateHandler(
 
   registerAllAdapters();
 
-  const codiDirForBackup = resolveCodiDir(projectRoot);
-  await createBackup(projectRoot, codiDirForBackup);
+  if (!options.dryRun) {
+    const codiDirForBackup = resolveCodiDir(projectRoot);
+    await createBackup(projectRoot, codiDirForBackup);
+  }
 
   const genResult = await generate(configResult.data, projectRoot, {
     agents: options.agent,
@@ -69,8 +71,7 @@ export async function generateHandler(
     const stateManager = new StateManager(codiDir, projectRoot);
 
     for (const agentId of genResult.data.agents) {
-      const agentFiles = genResult.data.files
-        .filter((f) => f.sources.length > 0)
+      const agentFiles = (genResult.data.filesByAgent[agentId] ?? [])
         .map((f): GeneratedFileState => ({
           path: f.path,
           sourceHash: hashContent(f.sources.join(',')),

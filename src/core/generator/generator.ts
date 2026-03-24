@@ -12,6 +12,7 @@ import { hashContent } from '../../utils/hash.js';
 export interface GenerationResult {
   files: GeneratedFile[];
   agents: string[];
+  filesByAgent: Record<string, GeneratedFile[]>;
 }
 
 export async function generate(
@@ -22,6 +23,7 @@ export async function generate(
   const agentIds = options.agents ?? config.manifest.agents ?? [];
   const files: GeneratedFile[] = [];
   const agents: string[] = [];
+  const filesByAgent: Record<string, GeneratedFile[]> = {};
 
   for (const agentId of agentIds) {
     const adapter = getAdapter(agentId);
@@ -56,7 +58,8 @@ export async function generate(
 
     files.push(...generated);
     agents.push(agentId);
+    filesByAgent[agentId] = generated;
   }
 
-  return ok({ files, agents });
+  return ok({ files, agents, filesByAgent });
 }
