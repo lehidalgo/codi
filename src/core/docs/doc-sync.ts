@@ -56,7 +56,7 @@ function checkCountChecks(content: string, file: string, stats: ProjectStats): D
         file,
         description: `${file} says "${check.label}: ${match[1]}" but ${check.getStat(stats)} exist`,
         expected: String(check.getStat(stats)),
-        actual: match[1],
+        actual: match[1] ?? '',
         fixable: true,
       });
     }
