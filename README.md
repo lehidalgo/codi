@@ -275,12 +275,16 @@ When `requiredVersion` is set, `codi init` auto-installs a pre-commit hook that 
 
 | Guide | Description |
 |-------|-------------|
+| [Design Reference](docs/design.md) | Complete design documentation for all 30 functionalities |
 | [Configuration](docs/configuration.md) | Flags, presets, directory structure, manifest |
 | [Writing Artifacts](docs/writing-rules.md) | Create and customize rules, skills, agents |
 | [Governance](docs/governance.md) | 7-level inheritance, org policies, locking |
 | [Verification](docs/verification.md) | Token-based config verification |
 | [Migration](docs/migration.md) | Adopt codi in existing projects |
 | [Architecture](docs/architecture.md) | System design and internals |
+| [CI Integration](docs/ci-integration.md) | GitHub Actions workflow for codi validation |
+| [Testing Guide](docs/testing-guide.md) | E2E testing procedure (8 suites) |
+| [Adoption Verification](docs/adoption-verification.md) | Verification audit and adoption tracking |
 
 ## FAQ
 
