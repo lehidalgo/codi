@@ -10,6 +10,7 @@ const NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 const DEFAULT_CONTENT = `---
 name: {{name}}
 description: Custom command
+managed_by: user
 ---
 
 Add your command instructions here.`;

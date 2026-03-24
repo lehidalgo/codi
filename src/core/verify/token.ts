@@ -7,6 +7,8 @@ export interface VerificationData {
   ruleNames: string[];
   skillNames: string[];
   agentNames: string[];
+  commandNames: string[];
+  mcpServerNames: string[];
   activeFlags: string[];
   timestamp: string;
 }
@@ -15,6 +17,8 @@ export function buildVerificationData(config: NormalizedConfig): VerificationDat
   const ruleNames = config.rules.map((r) => r.name);
   const skillNames = config.skills.map((s) => s.name);
   const agentNames = config.agents.map((a) => a.name);
+  const commandNames = config.commands.map((c) => c.name).sort();
+  const mcpServerNames = Object.keys(config.mcp.servers).sort();
 
   const flagText = buildFlagInstructions(config.flags);
   const activeFlags = flagText
@@ -29,6 +33,8 @@ export function buildVerificationData(config: NormalizedConfig): VerificationDat
     ruleEntries,
     skillNames.join(','),
     agentNames.join(','),
+    commandNames.join(','),
+    mcpServerNames.join(','),
     activeFlags.join(','),
   ].join('|');
 
@@ -36,5 +42,5 @@ export function buildVerificationData(config: NormalizedConfig): VerificationDat
   const token = `codi-${hash.slice(0, 12)}`;
   const timestamp = new Date().toISOString();
 
-  return { token, ruleNames, skillNames, agentNames, activeFlags, timestamp };
+  return { token, ruleNames, skillNames, agentNames, commandNames, mcpServerNames, activeFlags, timestamp };
 }

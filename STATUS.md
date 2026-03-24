@@ -147,7 +147,7 @@ Codi defines 8 artifact/system types. Here is the implementation status of each:
 | 1 | **Rules** | `.codi/rules/custom/` | Yes | 9 | Yes | 5 agents | `--rules` | **Full** |
 | 2 | **Skills** | `.codi/skills/` | Yes | 5 | Yes | 5 agents | `--skills` | **Full** |
 | 3 | **Agents** | `.codi/agents/` | Yes | 3 | Yes | 2 agents (Claude/Codex) | `--agents` | **Full** |
-| 4 | **Commands** | `.codi/commands/` | Yes | 2 | Yes | 1 agent (Claude) | No | **Mostly done** |
+| 4 | **Commands** | `.codi/commands/` | Yes | 2 | Yes | 1 agent (Claude) | `--commands` | **Full** |
 | 5 | **MCP** | `.codi/mcp.yaml` | Yes | No | No | 4 agents | No | **Partial** (no templates, no add) |
 | 6 | **Hooks** | Auto-generated | No | 3 | No | Partial | No | **Infrastructure only** |
 | 7 | **Flags** | `.codi/flags.yaml` | Yes | 3 presets | N/A | Yes | `--preset` | **Full** |

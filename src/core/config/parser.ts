@@ -189,10 +189,12 @@ async function parseCommandFile(filePath: string): Promise<Result<NormalizedComm
       return err(zodToCodiErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
+    const managedBy = (data['managed_by'] as string) ?? undefined;
     return ok({
       name: fm.name,
       description: fm.description,
       content,
+      managedBy: managedBy as 'codi' | 'user' | undefined,
     });
   } catch (cause) {
     return err([createError('E_FRONTMATTER_INVALID', {

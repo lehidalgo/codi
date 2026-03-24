@@ -8,6 +8,8 @@ describe('buildVerificationSection', () => {
     ruleNames: ['code-quality', 'security'],
     skillNames: ['rule-management'],
     agentNames: ['code-reviewer'],
+    commandNames: [],
+    mcpServerNames: [],
     activeFlags: ['Keep source code files under 700 lines. Documentation files have no line limit.'],
     timestamp: '2026-03-23T20:12:30.000Z',
   };

@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Review recent code changes for quality and security
+managed_by: codi
 ---
 
 Review the most recent changes in the codebase:
