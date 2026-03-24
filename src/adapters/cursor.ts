@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig, NormalizedRule } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -78,7 +79,7 @@ export const cursorAdapter: AgentAdapter = {
         .join('\n');
       sections.push(`# Rules\n\nRules are defined in \`.cursor/rules/\`:\n${ruleList}`);
     }
-    const mainContent = sections.join('\n\n');
+    const mainContent = addGeneratedHeader(sections.join('\n\n'));
     files.push({
       path: '.cursorrules',
       content: mainContent,
@@ -89,7 +90,7 @@ export const cursorAdapter: AgentAdapter = {
     // Generate .cursor/rules/*.mdc with YAML frontmatter
     for (const rule of config.rules) {
       const frontmatter = buildMdcFrontmatter(rule);
-      const ruleContent = `${frontmatter}\n\n# ${rule.name}\n\n${rule.content}`;
+      const ruleContent = addGeneratedHeader(`${frontmatter}\n\n# ${rule.name}\n\n${rule.content}`);
       const fileName = rule.name.toLowerCase().replace(/\s+/g, '-') + '.mdc';
       files.push({
         path: `.cursor/rules/${fileName}`,

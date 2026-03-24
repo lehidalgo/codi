@@ -11,6 +11,7 @@ import { registerDoctorCommand } from './cli/doctor.js';
 import { registerUpdateCommand } from './cli/update.js';
 import { registerCleanCommand } from './cli/clean.js';
 import { registerComplianceCommand } from './cli/compliance.js';
+import { registerCiCommand } from './cli/ci.js';
 import { registerWatchCommand } from './cli/watch.js';
 
 const require = createRequire(import.meta.url);
@@ -33,6 +34,7 @@ registerDoctorCommand(program);
 registerUpdateCommand(program);
 registerCleanCommand(program);
 registerComplianceCommand(program);
+registerCiCommand(program);
 registerWatchCommand(program);
 
 program.parse();

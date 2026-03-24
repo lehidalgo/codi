@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -64,7 +65,7 @@ export const codexAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`## ${rule.name}\n\n${rule.content}`);
     }
-    const content = sections.join('\n\n');
+    const content = addGeneratedHeader(sections.join('\n\n'));
     files.push({
       path: 'AGENTS.md',
       content,
@@ -82,7 +83,7 @@ export const codexAdapter: AgentAdapter = {
       lines.push(`description = "${agent.description}"`);
       lines.push(`developer_instructions = """\n${agent.content}\n"""`);
       if (agent.model) lines.push(`model = "${agent.model}"`);
-      const tomlContent = lines.join('\n');
+      const tomlContent = addGeneratedHeader(lines.join('\n'), 'toml');
       const fileName = agent.name.toLowerCase().replace(/\s+/g, '-') + '.toml';
       files.push({
         path: `.codex/agents/${fileName}`,
