@@ -13,6 +13,8 @@ import { registerCleanCommand } from './cli/clean.js';
 import { registerComplianceCommand } from './cli/compliance.js';
 import { registerCiCommand } from './cli/ci.js';
 import { registerWatchCommand } from './cli/watch.js';
+import { registerRevertCommand } from './cli/revert.js';
+import { registerMarketplaceCommand } from './cli/marketplace.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -36,5 +38,7 @@ registerCleanCommand(program);
 registerComplianceCommand(program);
 registerCiCommand(program);
 registerWatchCommand(program);
+registerRevertCommand(program);
+registerMarketplaceCommand(program);
 
 program.parse();

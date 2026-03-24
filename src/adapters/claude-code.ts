@@ -117,6 +117,17 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
+    // Generate .claude/mcp.json if MCP servers are configured
+    if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
+      const mcpContent = JSON.stringify(config.mcp, null, 2);
+      files.push({
+        path: '.claude/mcp.json',
+        content: mcpContent,
+        sources: ['mcp.yaml'],
+        hash: hashContent(mcpContent),
+      });
+    }
+
     return files;
   },
 };

@@ -10,6 +10,7 @@ import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { hashContent } from '../utils/hash.js';
 import type { CommandResult } from '../core/output/types.js';
 import { writeAuditEntry } from '../core/audit/audit-log.js';
+import { createBackup } from '../core/backup/backup-manager.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 
@@ -43,6 +44,9 @@ export async function generateHandler(
   }
 
   registerAllAdapters();
+
+  const codiDirForBackup = resolveCodiDir(projectRoot);
+  await createBackup(projectRoot, codiDirForBackup);
 
   const genResult = await generate(configResult.data, projectRoot, {
     agents: options.agent,

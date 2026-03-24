@@ -21,6 +21,10 @@ export interface CodiManifest {
     branch: string;
     paths: string[];
   };
+  marketplace?: {
+    registry: string;
+    branch: string;
+  };
 }
 
 export interface NormalizedRule {
