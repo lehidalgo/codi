@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { NAME_PATTERN } from '../constants.js';
 
 export const HookDefinitionSchema = z.object({
-  name: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().regex(NAME_PATTERN),
   command: z.string(),
   condition: z.string(),
   staged_filter: z.string().optional(),

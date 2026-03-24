@@ -12,6 +12,7 @@ import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
+import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -44,7 +45,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     frontmatter: false,
     progressiveLoading: false,
     agents: true,
-    maxContextTokens: 200000,
+    maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
@@ -80,7 +81,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     files.push({
       path: 'CLAUDE.md',
       content: mainContent,
-      sources: ['codi.yaml'],
+      sources: [MANIFEST_FILENAME],
       hash: hashContent(mainContent),
     });
 
@@ -91,7 +92,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       files.push({
         path: `.claude/rules/${fileName}`,
         content: ruleContent,
-        sources: ['codi.yaml'],
+        sources: [MANIFEST_FILENAME],
         hash: hashContent(ruleContent),
       });
     }
@@ -112,7 +113,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       files.push({
         path: `.claude/agents/${fileName}`,
         content: agentContent,
-        sources: ['codi.yaml'],
+        sources: [MANIFEST_FILENAME],
         hash: hashContent(agentContent),
       });
     }
@@ -124,7 +125,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       files.push({
         path: `.claude/commands/${fileName}`,
         content: cmdContent,
-        sources: ['codi.yaml'],
+        sources: [MANIFEST_FILENAME],
         hash: hashContent(cmdContent),
       });
     }
@@ -135,7 +136,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       files.push({
         path: '.claude/mcp.json',
         content: mcpContent,
-        sources: ['mcp.yaml'],
+        sources: [MCP_FILENAME],
         hash: hashContent(mcpContent),
       });
     }

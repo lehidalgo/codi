@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH, NAME_PATTERN_STRICT, MANAGED_BY_VALUES } from '../constants.js';
 
 export const CommandFrontmatterSchema = z.object({
-  name: z.string().regex(/^[a-z][a-z0-9-]*$/).max(64),
-  description: z.string().default(''),
-  managed_by: z.enum(['codi', 'user']).default('user'),
+  name: z.string().regex(NAME_PATTERN_STRICT).max(MAX_NAME_LENGTH),
+  description: z.string().max(MAX_DESCRIPTION_LENGTH).default(''),
+  managed_by: z.enum(MANAGED_BY_VALUES).default('user'),
 });
 
 export type CommandFrontmatterInput = z.input<typeof CommandFrontmatterSchema>;

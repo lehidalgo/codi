@@ -12,6 +12,7 @@ import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
+import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -44,7 +45,7 @@ export const codexAdapter: AgentAdapter = {
     frontmatter: false,
     progressiveLoading: false,
     agents: true,
-    maxContextTokens: 200000,
+    maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
@@ -69,7 +70,7 @@ export const codexAdapter: AgentAdapter = {
     files.push({
       path: 'AGENTS.md',
       content,
-      sources: ['codi.yaml'],
+      sources: [MANIFEST_FILENAME],
       hash: hashContent(content),
     });
 
@@ -88,7 +89,7 @@ export const codexAdapter: AgentAdapter = {
       files.push({
         path: `.codex/agents/${fileName}`,
         content: tomlContent,
-        sources: ['codi.yaml'],
+        sources: [MANIFEST_FILENAME],
         hash: hashContent(tomlContent),
       });
     }
@@ -110,7 +111,7 @@ export const codexAdapter: AgentAdapter = {
       files.push({
         path: '.codex/mcp.toml',
         content: mcpContent,
-        sources: ['mcp.yaml'],
+        sources: [MCP_FILENAME],
         hash: hashContent(mcpContent),
       });
     }

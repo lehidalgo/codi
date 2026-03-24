@@ -1,4 +1,5 @@
 import type { ResolvedFlags } from '../../types/flags.js';
+import { DEFAULT_MAX_FILE_LINES } from '../../constants.js';
 import type { CodiManifest } from '../../types/config.js';
 import type { HookEntry } from './hook-registry.js';
 import { getHooksForLanguage, getDoctorHook } from './hook-registry.js';
@@ -59,7 +60,7 @@ function getMaxFileLines(flags: ResolvedFlags): number {
   if (flag && typeof flag.value === 'number') {
     return flag.value;
   }
-  return 700;
+  return DEFAULT_MAX_FILE_LINES;
 }
 
 export function generateHooksConfig(

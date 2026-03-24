@@ -8,6 +8,7 @@ import type { FlagDefinition } from '../../types/flags.js';
 import { createError } from '../output/errors.js';
 import { PresetManifestSchema } from '../../schemas/preset.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
+import { MCP_FILENAME, PRESET_MANIFEST_FILENAME } from '../../constants.js';
 import { getPreset as getBuiltinPreset, getPresetNames } from '../flags/flag-presets.js';
 
 export interface LoadedPreset {
@@ -40,7 +41,7 @@ export async function loadPreset(name: string, presetsDir: string): Promise<Resu
   }
 
   const presetDir = path.join(presetsDir, name);
-  const manifestPath = path.join(presetDir, 'preset.yaml');
+  const manifestPath = path.join(presetDir, PRESET_MANIFEST_FILENAME);
 
   let manifestRaw: string;
   try {
@@ -84,7 +85,7 @@ export async function loadPreset(name: string, presetsDir: string): Promise<Resu
 
   let mcp: McpConfig = { servers: {} };
   try {
-    const mcpRaw = await fs.readFile(path.join(presetDir, 'mcp.yaml'), 'utf8');
+    const mcpRaw = await fs.readFile(path.join(presetDir, MCP_FILENAME), 'utf8');
     const mcpParsed = parseYaml(mcpRaw) as Record<string, unknown>;
     if (mcpParsed && mcpParsed['servers']) {
       mcp = mcpParsed as unknown as McpConfig;

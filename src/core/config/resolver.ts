@@ -11,6 +11,7 @@ import { composeConfig, flagsFromDefinitions } from './composer.js';
 import type { ConfigLayer } from './composer.js';
 import { validateConfig } from './validator.js';
 import { loadPreset } from '../preset/preset-loader.js';
+import { FLAGS_FILENAME } from '../../constants.js';
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -202,7 +203,7 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
       skills: parsed.skills,
       commands: parsed.commands,
       agents: parsed.agents,
-      flags: flagsFromDefinitions(parsed.flags, path.join(codiDir, 'flags.yaml')),
+      flags: flagsFromDefinitions(parsed.flags, path.join(codiDir, FLAGS_FILENAME)),
       mcp: parsed.mcp,
     },
   };

@@ -123,6 +123,11 @@ export const ERROR_CATALOG = {
     severity: 'error' as const,
     hintTemplate: 'Generated files are stale: {message}. Run `codi generate` to sync.',
   },
+  W_CONTENT_SIZE: {
+    exitCode: EXIT_CODES.SUCCESS,
+    severity: 'warn' as const,
+    hintTemplate: '{message}',
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;

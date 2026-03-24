@@ -21,6 +21,7 @@ import { McpConfigSchema } from '../../schemas/mcp.js';
 import { createError, zodToCodiErrors } from '../output/errors.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import type { McpConfig } from '../../types/config.js';
+import { MANIFEST_FILENAME, FLAGS_FILENAME, MCP_FILENAME } from '../../constants.js';
 
 export interface ParsedCodiDir {
   manifest: CodiManifest;
@@ -52,7 +53,7 @@ async function readYamlFile(filePath: string): Promise<Result<unknown>> {
 }
 
 export async function parseManifest(codiDir: string): Promise<Result<CodiManifest>> {
-  const manifestPath = path.join(codiDir, 'codi.yaml');
+  const manifestPath = path.join(codiDir, MANIFEST_FILENAME);
   if (!(await fileExists(manifestPath))) {
     return err([createError('E_CONFIG_NOT_FOUND', { path: manifestPath })]);
   }
@@ -69,7 +70,7 @@ export async function parseManifest(codiDir: string): Promise<Result<CodiManifes
 export async function parseFlags(
   codiDir: string,
 ): Promise<Result<Record<string, FlagDefinition>>> {
-  const flagsPath = path.join(codiDir, 'flags.yaml');
+  const flagsPath = path.join(codiDir, FLAGS_FILENAME);
   if (!(await fileExists(flagsPath))) {
     return ok({});
   }
@@ -303,7 +304,7 @@ async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> 
 }
 
 async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
-  const mcpPath = path.join(codiDir, 'mcp.yaml');
+  const mcpPath = path.join(codiDir, MCP_FILENAME);
   if (!(await fileExists(mcpPath))) {
     return ok({ servers: {} });
   }

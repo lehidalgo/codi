@@ -4,6 +4,7 @@ import { ok, err } from '../../types/result.js';
 import type { Result } from '../../types/result.js';
 import { createError } from '../output/errors.js';
 import { hashContent } from '../../utils/hash.js';
+import { STATE_FILENAME } from '../../constants.js';
 
 export interface GeneratedFileState {
   path: string;
@@ -42,7 +43,7 @@ export class StateManager {
   private readonly projectRoot: string;
 
   constructor(codiDir: string, projectRoot?: string) {
-    this.statePath = path.join(codiDir, 'state.json');
+    this.statePath = path.join(codiDir, STATE_FILENAME);
     this.projectRoot = projectRoot ?? path.dirname(codiDir);
   }
 

@@ -1,9 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { isPathSafe } from '../../utils/path-guard.js';
-
-const BACKUPS_DIR = 'backups';
-const MAX_BACKUPS = 5;
+import { MAX_BACKUPS, STATE_FILENAME, BACKUPS_DIR, BACKUP_MANIFEST_FILENAME } from '../../constants.js';
 
 interface BackupManifest {
   timestamp: string;
@@ -37,7 +35,7 @@ export async function createBackup(
   projectRoot: string,
   codiDir: string,
 ): Promise<string | null> {
-  const statePath = path.join(codiDir, 'state.json');
+  const statePath = path.join(codiDir, STATE_FILENAME);
   if (!(await fileExists(statePath))) {
     return null;
   }
@@ -83,7 +81,7 @@ export async function createBackup(
     files: backedUpFiles,
   };
   await fs.writeFile(
-    path.join(backupDir, 'backup-manifest.json'),
+    path.join(backupDir, BACKUP_MANIFEST_FILENAME),
     JSON.stringify(manifest, null, 2),
     'utf8',
   );
@@ -104,7 +102,7 @@ export async function listBackups(codiDir: string): Promise<BackupInfo[]> {
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const manifestPath = path.join(backupsRoot, entry.name, 'backup-manifest.json');
+    const manifestPath = path.join(backupsRoot, entry.name, BACKUP_MANIFEST_FILENAME);
     if (!(await fileExists(manifestPath))) continue;
 
     try {
@@ -128,7 +126,7 @@ export async function restoreBackup(
   timestamp: string,
 ): Promise<string[]> {
   const backupDir = path.join(codiDir, BACKUPS_DIR, timestamp);
-  const manifestPath = path.join(backupDir, 'backup-manifest.json');
+  const manifestPath = path.join(backupDir, BACKUP_MANIFEST_FILENAME);
 
   const raw = await fs.readFile(manifestPath, 'utf8');
   const manifest = JSON.parse(raw) as BackupManifest;

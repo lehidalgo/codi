@@ -12,6 +12,7 @@ import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { GIT_CLONE_DEPTH, REGISTRY_INDEX_FILENAME } from '../constants.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -37,7 +38,7 @@ async function cloneRegistry(
   const tmpDir = path.join(os.tmpdir(), `codi-registry-${Date.now()}`);
   await execFileAsync('git', [
     'clone',
-    '--depth', '1',
+    '--depth', GIT_CLONE_DEPTH,
     '--branch', branch,
     registry,
     tmpDir,
@@ -46,7 +47,7 @@ async function cloneRegistry(
 }
 
 async function readRegistryIndex(registryDir: string): Promise<RegistryEntry[]> {
-  const indexPath = path.join(registryDir, 'index.json');
+  const indexPath = path.join(registryDir, REGISTRY_INDEX_FILENAME);
   const raw = await fs.readFile(indexPath, 'utf8');
   return JSON.parse(raw) as RegistryEntry[];
 }
