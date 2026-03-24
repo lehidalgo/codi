@@ -5,12 +5,12 @@
 
 ## Summary
 
-Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), and all post-Phase 2 hardening is complete. The codebase passed a full architectural audit (9/10 score) and E2E testing across all 8 test suites. The governance model was corrected — `codi sync` (push to remote) was removed and replaced with `codi update --from` (one-way pull from central repo).
+Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Governance), and all post-Phase 2 hardening is complete. All TODO flags are now implemented (`drift_detection` enforcement + `codi watch` for auto-regeneration). Only `progressive_loading` remains deferred to future versions. Codebase audit score: 9/10. E2E testing passed all 8 suites including Claude Code agent integration.
 
 ## Current State
 
 - **Branch**: `main`
-- **Latest commit**: `c5d612b` — feat: add E2E testing skill and comprehensive testing guide
+- **Latest commit**: `4fa5da9` — feat: implement drift_detection flag enforcement and codi watch
 - **npm**: `codi-cli@0.2.0` published with provenance
 - **GitHub**: public at `lehidalgo/codi`
 - **CI**: GitHub Actions passing (lint, build, test)
@@ -97,9 +97,9 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 
 | Metric | Value |
 |--------|-------|
-| Source files | 102 in `src/` |
+| Source files | 103 in `src/` |
 | Test files | 48 in `tests/` |
-| Source LOC | ~7,215 |
+| Source LOC | ~7,372 |
 | Tests | 377 passing |
 | Error codes | 23 |
 | Flags | 18 |
@@ -108,7 +108,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Rule templates | 9 |
 | Skill templates | 5 |
 | Agent templates | 3 |
-| CLI commands | 11 |
+| CLI commands | 12 |
 | Documentation guides | 9 |
 
 ## Resolved in This Session
@@ -121,6 +121,9 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | No compliance command | Added `codi compliance` |
 | No audit log | Added `.codi/audit.jsonl` |
 | No testing guide | Created docs/testing-guide.md + e2e-testing skill |
+| drift_detection flag not enforced | Implemented — off/warn/error controls doctor/status/compliance |
+| auto_generate_on_change not implemented | Added `codi watch` command with file watcher + debounce |
+| TODO comments in flag catalog | All removed — only progressive_loading deferred |
 | Skill templates missing `managed_by` | Added to all artifact types |
 | Agent schema missing validation | Created AgentFrontmatterSchema with regex |
 | README too long (1003 lines) | Restructured to 339 lines with 8 doc links |
@@ -130,11 +133,12 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 ## What's Next
 
 ### Immediate (before v0.3.0 release)
-- Implement `progressive_loading` flag (TODO in flag-catalog.ts)
-- Implement `auto_generate_on_change` flag (TODO in flag-catalog.ts)
-- Improve `drift_detection` flag enforcement at generation time
+- Fix verify --check parser to handle varied response formats (Claude uses different structure than expected)
 - Add integration tests for `codi update --from`
-- Fix verify --check parser to handle varied response formats
+- Publish v0.3.0 to npm with all new features
+
+### Deferred
+- `progressive_loading` flag — deferred to future version (requires adapter-specific implementation)
 
 ### Phase 3: Ecosystem
 
