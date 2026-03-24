@@ -1,6 +1,7 @@
 import type { NormalizedSkill } from '../types/config.js';
 import type { GeneratedFile } from '../types/agent.js';
 import { hashContent } from '../utils/hash.js';
+import { addGeneratedHeader } from './generated-header.js';
 
 export function buildSkillMd(skill: NormalizedSkill): string {
   const frontmatter: string[] = ['---'];
@@ -27,7 +28,7 @@ export function generateSkillFiles(
   const files: GeneratedFile[] = [];
   for (const skill of skills) {
     const dirName = skill.name.toLowerCase().replace(/\s+/g, '-');
-    const content = buildSkillMd(skill);
+    const content = addGeneratedHeader(buildSkillMd(skill));
     files.push({
       path: `${basePath}/${dirName}/SKILL.md`,
       content,

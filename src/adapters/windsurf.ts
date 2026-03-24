@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -64,7 +65,7 @@ export const windsurfAdapter: AgentAdapter = {
       sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
     }
 
-    const content = sections.join('\n\n');
+    const content = addGeneratedHeader(sections.join('\n\n'));
     const files: GeneratedFile[] = [{
       path: '.windsurfrules',
       content,

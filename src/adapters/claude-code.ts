@@ -10,6 +10,7 @@ import type {
 import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
+import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles } from './skill-generator.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -75,7 +76,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       sections.push(summaryLines.join('\n'));
     }
 
-    const mainContent = sections.join('\n\n');
+    const mainContent = addGeneratedHeader(sections.join('\n\n'));
     files.push({
       path: 'CLAUDE.md',
       content: mainContent,
@@ -85,7 +86,7 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/rules/*.md (no frontmatter)
     for (const rule of config.rules) {
-      const ruleContent = `# ${rule.name}\n\n${rule.content}`;
+      const ruleContent = addGeneratedHeader(`# ${rule.name}\n\n${rule.content}`);
       const fileName = rule.name.toLowerCase().replace(/\s+/g, '-') + '.md';
       files.push({
         path: `.claude/rules/${fileName}`,
@@ -106,7 +107,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       if (agent.tools) lines.push(`tools: ${agent.tools.join(', ')}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
       lines.push('---');
-      const agentContent = `${lines.join('\n')}\n\n${agent.content}`;
+      const agentContent = addGeneratedHeader(`${lines.join('\n')}\n\n${agent.content}`);
       const fileName = agent.name.toLowerCase().replace(/\s+/g, '-') + '.md';
       files.push({
         path: `.claude/agents/${fileName}`,

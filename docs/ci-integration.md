@@ -53,6 +53,24 @@ jobs:
       - run: npx codi status --json
 ```
 
+## Composite CI Command
+
+The `codi ci` command runs config validation and doctor checks in a single step. It is the recommended entry point for CI pipelines.
+
+```yaml
+- name: Validate codi configuration
+  run: npx codi ci
+```
+
+Use `--json` for machine-readable output:
+
+```yaml
+- name: Validate codi configuration
+  run: npx codi ci --json
+```
+
+`codi ci` exits with code 0 when all checks pass and non-zero when any check fails.
+
 ## Exit Codes
 
 | Code | Meaning |
