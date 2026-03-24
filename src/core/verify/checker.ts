@@ -13,6 +13,9 @@ export interface VerifyResult {
 
 const TOKEN_RE = /codi-[a-f0-9]{12}/;
 
+const RULE_HEADERS = [/rules?\s*loaded/i, /rules?\s*\(\d+\)/i, /^-?\s*rules?\s*:/i];
+const FLAG_HEADERS = [/flags?\s*active/i, /flags?\s*\(\d+\)/i, /^-?\s*flags?\s*:/i, /permissions?\s*:/i];
+
 export function checkAgentResponse(
   response: string,
   expected: VerificationData,
@@ -20,8 +23,8 @@ export function checkAgentResponse(
   const tokenMatch = TOKEN_RE.exec(response);
   const receivedToken = tokenMatch ? tokenMatch[0] : null;
 
-  const reportedRules = extractListItems(response, /rules?\s*loaded/i);
-  const reportedFlags = extractListItems(response, /flags?\s*active/i);
+  const reportedRules = extractListItems(response, RULE_HEADERS);
+  const reportedFlags = extractListItems(response, FLAG_HEADERS);
 
   const rulesFound: string[] = [];
   const rulesMissing: string[] = [];
@@ -59,15 +62,16 @@ export function checkAgentResponse(
   };
 }
 
-function extractListItems(text: string, headerPattern: RegExp): string[] {
+function extractListItems(text: string, headerPatterns: RegExp[]): string[] {
   const lines = text.split('\n');
   const items: string[] = [];
   let capturing = false;
 
   for (const line of lines) {
-    if (headerPattern.test(line)) {
+    const matchedPattern = headerPatterns.find((p) => p.test(line));
+    if (matchedPattern) {
       capturing = true;
-      const inline = line.replace(headerPattern, '').replace(/^[:\s-]+/, '').trim();
+      const inline = line.replace(matchedPattern, '').replace(/^[:\s\-()0-9]+/, '').trim();
       if (inline) {
         items.push(...inline.split(/[,;]/).map((s) => s.trim()).filter(Boolean));
       }
