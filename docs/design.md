@@ -3,7 +3,7 @@
 **Date**: 2026-03-24
 **Document**: design.md
 
-Comprehensive design reference covering all 30 functionalities in the Codi unified AI agent configuration system.
+Comprehensive design reference covering all 33 functionalities in the Codi unified AI agent configuration system.
 
 ---
 
@@ -48,6 +48,11 @@ Comprehensive design reference covering all 30 functionalities in the Codi unifi
 ### Governance
 29. [Artifact Ownership](#29-artifact-ownership)
 30. [One-Way Pull Model](#30-one-way-pull-model)
+
+### Extensions & Security
+31. [Preset System](#31-preset-system)
+32. [MCP HTTP Transport](#32-mcp-http-transport)
+33. [Path Safety Guard](#33-path-safety-guard)
 
 ---
 
@@ -1022,3 +1027,120 @@ Expected: User-managed local file preserved; codi-managed files updated from rem
 ### Contributing
 Files: `src/cli/update.ts` (function `pullFromSource`)
 How to extend: Add support for non-GitHub remotes. Implement version pinning via branch/tag parameters. Add conflict resolution strategies.
+
+---
+
+## 31. Preset System
+
+### Description
+Presets are composable configuration packages containing flags + rules + skills + agents + commands + MCP config. They enable teams to share reusable project setups across projects.
+
+**Commands:**
+- `codi preset create <name>` — scaffolds `.codi/presets/{name}/` with `preset.yaml` + artifact subdirs
+- `codi preset list` — shows installed presets with name and description
+- `codi preset install <name> --from <repo>` — installs preset from Git repository
+- `codi preset search <query>` — searches preset registry by name/tags/description
+- `codi preset update` — checks installed presets against registry for newer versions (`--dry-run` supported)
+
+**Preset format:**
+```
+preset-name/
+  preset.yaml        # name, description, version, extends, tags, flags
+  rules/             # Rule markdown files
+  skills/            # Skill markdown files
+  agents/            # Agent markdown files
+  commands/          # Command markdown files
+  mcp.yaml           # MCP server config
+```
+
+**Resolution:** `org → team → presets → repo → lang → framework → agent → user`. Presets applied in order from `presets:` array in manifest.
+
+**Lock file:** `.codi/preset-lock.json` tracks installed versions for reproducible builds.
+
+**Extends:** Presets can inherit from other presets via `extends: balanced` in `preset.yaml`.
+
+### Importance
+Enables multi-tenant team configuration. A React+TypeScript project and a Python+FastAPI project can each use different preset bundles without manual rule configuration.
+
+### Pros
+- Composable — multiple presets applied in order
+- Full artifact packages (not just flags)
+- Built-in presets still work (minimal/balanced/strict)
+- Lock file for reproducibility
+- Extends for inheritance
+
+### Cons
+- Registry requires external Git repo
+- No official public registry yet
+- Version conflicts between presets resolved by last-wins
+
+### Status
+Implemented (Phase 1 MVP + Phase 2 Registry)
+
+### Validation
+1. `codi preset create my-setup` — creates preset directory
+2. Add rules/skills to the preset directory
+3. Add `presets: [my-setup]` to `codi.yaml`
+4. `codi generate` — preset artifacts appear in generated output
+5. `codi preset list` — shows the preset
+
+### Contributing
+Files: `src/cli/preset.ts`, `src/core/preset/preset-loader.ts`, `src/core/preset/preset-registry.ts`, `src/schemas/preset.ts`
+Add new preset subcommands in `src/cli/preset.ts`. Preset loading logic in `preset-loader.ts`. Registry operations in `preset-registry.ts`.
+
+---
+
+## 32. MCP HTTP Transport
+
+### Description
+MCP schema supports both stdio (command + args) and HTTP (type + url) transports. HTTP transport enables cloud-hosted MCP servers like documentation APIs.
+
+### Importance
+Enables integration with remote MCP servers (OpenAI docs, Anthropic docs) without local processes.
+
+### Pros
+- Supports both local (stdio) and remote (HTTP) MCP servers
+- Compatible with official doc MCPs from OpenAI and Anthropic
+- Distributed to all 4 agents that support MCP
+
+### Cons
+- HTTP servers require network access
+- No authentication support beyond URL-based auth
+
+### Status
+Implemented
+
+### Validation
+1. Add HTTP server to `.codi/mcp.yaml`: `servers: { docs: { type: http, url: "https://..." } }`
+2. `codi generate` — `.claude/mcp.json` contains the HTTP server
+3. Verify `.cursor/mcp.json`, `.codex/mcp.toml`, `.windsurf/mcp.json` also generated
+
+### Contributing
+Files: `src/schemas/mcp.ts`, `src/types/config.ts` (McpConfig), adapters that generate MCP files.
+
+---
+
+## 33. Path Safety Guard
+
+### Description
+`isPathSafe()` utility prevents path traversal attacks in clean, backup, and restore operations. Validates that resolved paths stay within the project root.
+
+### Importance
+Critical security measure. Without it, crafted state.json or backup manifests could delete or overwrite files outside the project.
+
+### Pros
+- Prevents arbitrary file access via ../ segments
+- Applied to clean, backup, and restore operations
+- Shared utility — single implementation
+
+### Cons
+- Only validates at file operation time, not at config parse time
+
+### Status
+Implemented
+
+### Validation
+A state.json with `../../.ssh/config` path → clean skips it with warning.
+
+### Contributing
+Files: `src/utils/path-guard.ts`. Import and use before any file read/write that uses paths from state.json or backup manifests.

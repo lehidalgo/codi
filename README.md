@@ -191,6 +191,7 @@ git commit -m "update codi rules"
 | `codi ci` | Composite CI validation | — |
 | `codi revert` | Restore from backup | `--list`, `--last`, `--backup <ts>` |
 | `codi marketplace` | Search/install skills from registry | `search <query>`, `install <name>` |
+| `codi preset` | Manage configuration presets | `create`, `list`, `install`, `search`, `update` |
 
 Aliases: `codi gen` = `codi generate`.
 
@@ -274,6 +275,20 @@ marketplace:
   branch: main
 ```
 
+### `codi preset`
+
+Manage composable configuration presets. Presets package flags + rules + skills + agents + commands + MCP into reusable bundles.
+
+```bash
+codi preset create my-setup          # Scaffold new preset
+codi preset list                     # Show installed presets
+codi preset install name --from repo # Install from Git
+codi preset search react             # Search registry
+codi preset update                   # Update to latest versions
+```
+
+See [Design Reference](docs/design.md#preset-system) for full documentation.
+
 ### `codi verify`
 
 Verify that your AI agent loaded the correct configuration. See [Verification](docs/verification.md).
@@ -306,7 +321,7 @@ When `requiredVersion` is set, `codi init` auto-installs a pre-commit hook that 
 
 | Guide | Description |
 |-------|-------------|
-| [Design Reference](docs/design.md) | Complete design documentation for all 30 functionalities |
+| [Design Reference](docs/design.md) | Complete design documentation for all 33 functionalities |
 | [Configuration](docs/configuration.md) | Flags, presets, directory structure, manifest |
 | [Writing Artifacts](docs/writing-rules.md) | Create and customize rules, skills, agents |
 | [Governance](docs/governance.md) | 7-level inheritance, org policies, locking |
