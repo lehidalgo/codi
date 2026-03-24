@@ -62,7 +62,7 @@ const AGENT_SUBDIRS = [
   '.claude/agents',
   '.codex/agents',
 ];
-const AGENT_FILES = ['.claude/mcp.json'];
+const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/mcp.toml', '.windsurf/mcp.json'];
 const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf', '.agents', '.codex'];
 
 export async function cleanHandler(

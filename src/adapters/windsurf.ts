@@ -33,14 +33,14 @@ export const windsurfAdapter: AgentAdapter = {
     commands: null,
     agents: null,
     instructionFile: '.windsurfrules',
-    mcpConfig: null,
+    mcpConfig: '.windsurf/mcp.json',
   } satisfies AgentPaths,
 
   capabilities: {
     rules: true,
     skills: true,
     commands: false,
-    mcp: false,
+    mcp: true,
     frontmatter: false,
     progressiveLoading: false,
     agents: false,
@@ -75,6 +75,17 @@ export const windsurfAdapter: AgentAdapter = {
 
     // Generate .windsurf/skills/{name}/SKILL.md
     files.push(...generateSkillFiles(config.skills, '.windsurf/skills'));
+
+    // Generate .windsurf/mcp.json if MCP servers are configured
+    if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
+      const mcpContent = JSON.stringify(config.mcp, null, 2);
+      files.push({
+        path: '.windsurf/mcp.json',
+        content: mcpContent,
+        sources: ['mcp.yaml'],
+        hash: hashContent(mcpContent),
+      });
+    }
 
     return files;
   },
