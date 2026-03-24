@@ -14,6 +14,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `codi update --rules` refreshes all `managed_by: codi` rules to latest template versions
 - `codi add rule --all` adds all 9 template rules at once (skips existing)
 
+#### Commands Support
+- `codi add command <name>` with 2 built-in templates (`review`, `test-run`)
+- `codi add command --all` to add all command templates
+- Command scanner reads `.codi/commands/*.md` during config resolution
+- Claude Code: generates `.claude/commands/*.md`
+
+#### MCP Distribution
+- MCP config (`.codi/mcp.yaml`) now distributed to all supporting agents:
+  - Claude Code: `.claude/mcp.json`
+  - Codex: `.codex/mcp.toml`
+  - Cursor: `.cursor/mcp.json`
+  - Windsurf: `.windsurf/mcp.json`
+
 #### Agent (Subagent) Support
 - `codi add agent <name>` with 3 built-in templates (`code-reviewer`, `test-generator`, `security-analyzer`)
 - `codi add agent --all` to add all agent templates at once

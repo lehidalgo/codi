@@ -303,3 +303,24 @@ managed_by: user
 - Add all: `codi add agent --all`
 - Available templates: code-reviewer, test-generator, security-analyzer
 - Generated formats: Claude Code (`.claude/agents/*.md`), Codex (`.codex/agents/*.toml`)
+
+## Writing & Customizing Commands
+
+Commands are slash commands for Claude Code. They live in `.codi/commands/`:
+
+```markdown
+---
+name: my-command
+description: What this command does
+managed_by: user
+---
+
+[Command instructions...]
+```
+
+- `managed_by: codi` — template-managed, updated by `codi update --rules`
+- `managed_by: user` — custom, never overwritten
+- Add from template: `codi add command <name> --template <template>`
+- Add all: `codi add command --all`
+- Available templates: review, test-run
+- Generated to: `.claude/commands/{name}.md` (Claude Code only)
