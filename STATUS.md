@@ -10,7 +10,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 ## Current State
 
 - **Branch**: `main`
-- **Latest commit**: `4fa5da9` — feat: implement drift_detection flag enforcement and codi watch
+- **Latest commit**: `5f926ce` — fix: verify --check parser handles varied response formats
 - **npm**: `codi-cli@0.2.0` published with provenance
 - **GitHub**: public at `lehidalgo/codi`
 - **CI**: GitHub Actions passing (lint, build, test)
@@ -100,7 +100,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Source files | 103 in `src/` |
 | Test files | 48 in `tests/` |
 | Source LOC | ~7,372 |
-| Tests | 377 passing |
+| Tests | 381 passing |
 | Error codes | 23 |
 | Flags | 18 |
 | Config layers | 7 |
@@ -124,6 +124,7 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | drift_detection flag not enforced | Implemented — off/warn/error controls doctor/status/compliance |
 | auto_generate_on_change not implemented | Added `codi watch` command with file watcher + debounce |
 | TODO comments in flag catalog | All removed — only progressive_loading deferred |
+| verify --check parser too rigid | Fixed — accepts Rules (N):, Rules loaded:, Rules:, - Rules: formats |
 | Skill templates missing `managed_by` | Added to all artifact types |
 | Agent schema missing validation | Created AgentFrontmatterSchema with regex |
 | README too long (1003 lines) | Restructured to 339 lines with 8 doc links |
@@ -132,9 +133,8 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 
 ## What's Next
 
-### Immediate (before v0.3.0 release)
-- Fix verify --check parser to handle varied response formats (Claude uses different structure than expected)
-- Add integration tests for `codi update --from`
+### Immediate (ready for v0.3.0 release)
+- All pre-release items resolved
 - Publish v0.3.0 to npm with all new features
 
 ### Deferred
@@ -142,17 +142,17 @@ Codi v0.2.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 
 ### Phase 3: Ecosystem
 
-| Epic | Description | Est. Days |
-|------|-------------|-----------|
-| E7.1 | MCP centralization — unified `.codi/mcp.yaml` distributed to all agents | 5 |
-| E7.2 | Skill marketplace — Git-based skill sharing and discovery | 5 |
-| E7.3 | GitHub Actions integration — CI validation workflow (`< 30s`) | 4 |
-| E7.4 | `codi watch` — file watcher for auto-regeneration (`< 500ms`) | 3 |
-| E7.5 | Progressive loading — metadata in generated files for on-demand loading | 4 |
-| E7.6 | Traceability — source attribution comments in generated files | 2 |
-| E7.7 | Backup & revert — atomic backup/restore of generated files | 3 |
+| Epic | Description | Est. Days | Status |
+|------|-------------|-----------|--------|
+| E7.1 | MCP centralization — unified `.codi/mcp.yaml` distributed to all agents | 5 | Pending |
+| E7.2 | Skill marketplace — Git-based skill sharing and discovery | 5 | Pending |
+| E7.3 | GitHub Actions integration — CI validation workflow (`< 30s`) | 4 | Pending |
+| E7.4 | `codi watch` — file watcher for auto-regeneration | — | **Done** |
+| E7.5 | Progressive loading — metadata for on-demand loading | 4 | Deferred |
+| E7.6 | Traceability — source attribution comments in generated files | 2 | Pending |
+| E7.7 | Backup & revert — atomic backup/restore of generated files | 3 | Pending |
 
-**Total estimated: 26 days / 6 weeks**
+**Remaining: 19 days (E7.4 done, E7.5 deferred)**
 
 ### Phase 4: Scale
 
