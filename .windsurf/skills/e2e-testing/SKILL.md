@@ -43,7 +43,7 @@ Verify: Config has correct agents, preset, and rules.
 ```bash
 npx codi add rule security --template security
 npx codi add rule my-custom-rule
-npx codi add skill rule-management --template rule-management
+npx codi add skill codi-operations --template codi-operations
 ```
 Verify: Template artifacts have `managed_by: codi`, custom have `managed_by: user`.
 

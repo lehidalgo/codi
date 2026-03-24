@@ -47,7 +47,7 @@ npm install --save-dev <path-to-codi-repo-or-npm-package>
 ```bash
 npx codi --help
 ```
-**Expected**: Help output listing available commands: `init`, `generate`, `validate`, `status`, `add`, `verify`, `doctor`, `update`, `clean`, `compliance`, `watch`, `ci`, `revert`, `marketplace`.
+**Expected**: Help output listing available commands: `init`, `generate`, `validate`, `status`, `add`, `verify`, `doctor`, `update`, `clean`, `compliance`, `watch`, `ci`, `revert`, `marketplace`, `preset`.
 
 ---
 
@@ -122,7 +122,7 @@ npx codi add rule --all
 ### Step 3.4 — Add a skill from template
 **[SYSTEM]**
 ```bash
-npx codi add skill rule-management --template rule-management
+npx codi add skill codi-operations --template codi-operations
 ```
 **Expected**:
 - File created in `.codi/skills/`

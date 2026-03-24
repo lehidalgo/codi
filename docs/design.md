@@ -900,7 +900,7 @@ How to extend: Create a new `.ts` file in `src/templates/rules/`, export the tem
 ## 27. Skill Templates
 
 ### Description
-5 built-in skill templates providing reusable capabilities for AI agents. Templates: `mcp` (Model Context Protocol integration), `code-review` (automated review and feedback), `documentation` (doc generation and maintenance), `rule-management` (rule creation and lifecycle), `e2e-testing` (end-to-end testing workflows). Each template exports markdown content following the `SKILL.md` format convention.
+5 built-in skill templates providing reusable capabilities for AI agents. Templates: `mcp` (Model Context Protocol integration), `code-review` (automated review and feedback), `documentation` (doc generation and maintenance), `codi-operations` (rule creation and lifecycle), `e2e-testing` (end-to-end testing workflows). Each template exports markdown content following the `SKILL.md` format convention.
 
 ### Importance
 Skills extend agent capabilities beyond rules. Templates provide proven patterns for common automation tasks.
@@ -924,7 +924,7 @@ Implemented | Tested
 Expected: Skill files created in `.codi/skills/`.
 
 ### Contributing
-Files: `src/templates/skills/mcp.ts`, `src/templates/skills/code-review.ts`, `src/templates/skills/documentation.ts`, `src/templates/skills/rule-management.ts`, `src/templates/skills/e2e-testing.ts`, `src/templates/skills/index.ts`
+Files: `src/templates/skills/mcp.ts`, `src/templates/skills/code-review.ts`, `src/templates/skills/documentation.ts`, `src/templates/skills/codi-operations.ts`, `src/templates/skills/e2e-testing.ts`, `src/templates/skills/index.ts`
 How to extend: Create a new `.ts` file in `src/templates/skills/`, export the template string, and register it in `index.ts`.
 
 ---
