@@ -67,9 +67,11 @@ export interface NormalizedAgent {
 
 export interface McpConfig {
   servers: Record<string, {
-    command: string;
+    type?: 'stdio' | 'http';
+    command?: string;
     args?: string[];
     env?: Record<string, string>;
+    url?: string;
   }>;
 }
 
