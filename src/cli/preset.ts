@@ -31,6 +31,7 @@ import {
   presetValidateHandler,
   presetRemoveHandler,
   presetListEnhancedHandler,
+  presetEditHandler,
 } from './preset-handlers.js';
 import { runPresetWizard } from './preset-wizard.js';
 
@@ -406,6 +407,17 @@ export function registerPresetCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
       const result = await presetRemoveHandler(process.cwd(), name);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('edit <name>')
+    .description('Interactively edit preset artifact selection')
+    .action(async (name: string) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetEditHandler(process.cwd(), name);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
