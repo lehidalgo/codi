@@ -35,7 +35,7 @@ interface UpdateOptions extends GlobalOptions {
   skills?: boolean;
   agents?: boolean;
   commands?: boolean;
-  regenerate?: boolean;
+  // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
 }
 
@@ -450,7 +450,7 @@ export async function updateHandler(
   }
 
   let regenerated = false;
-  if (options.regenerate && !options.dryRun) {
+  if (!options.dryRun) {
     registerAllAdapters();
     const configResult = await resolveConfig(projectRoot);
     if (configResult.ok) {
@@ -494,7 +494,6 @@ export function registerUpdateCommand(program: Command): void {
     .option('--skills', 'Refresh template-managed skills to latest versions')
     .option('--agents', 'Refresh template-managed agents to latest versions')
     .option('--commands', 'Refresh template-managed commands to latest versions')
-    .option('--regenerate', 'Run codi generate after updating')
     .option('--dry-run', 'Show what would change without writing')
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
