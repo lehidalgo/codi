@@ -3,11 +3,15 @@ import type { PresetName } from '../core/flags/flag-presets.js';
 import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
 import { Logger } from '../core/output/logger.js';
 import { DEFAULT_PRESET } from '../constants.js';
+import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
+import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
 
 export interface WizardResult {
   agents: string[];
   rules: string[];
   skills: string[];
+  agentTemplates: string[];
+  commandTemplates: string[];
   preset: PresetName;
   versionPin: boolean;
 }
@@ -73,6 +77,28 @@ export async function runInitWizard(
       hint: '- Space to toggle, Enter to confirm',
     },
     {
+      type: 'multiselect',
+      name: 'agentTemplates',
+      message: 'Include agent definitions (sub-agents for specialized tasks)',
+      choices: AVAILABLE_AGENT_TEMPLATES.map((t) => ({
+        title: t,
+        value: t,
+        selected: true,
+      })),
+      hint: '- Space to toggle, Enter to confirm',
+    },
+    {
+      type: 'multiselect',
+      name: 'commandTemplates',
+      message: 'Include commands (slash-command triggers)',
+      choices: AVAILABLE_COMMAND_TEMPLATES.map((t) => ({
+        title: t,
+        value: t,
+        selected: true,
+      })),
+      hint: '- Space to toggle, Enter to confirm',
+    },
+    {
       type: 'select',
       name: 'preset',
       message: 'Choose flag preset',
@@ -103,6 +129,8 @@ export async function runInitWizard(
     agents: response.agents as string[],
     rules: (response.rules ?? []) as string[],
     skills: (response.skills ?? []) as string[],
+    agentTemplates: (response.agentTemplates ?? []) as string[],
+    commandTemplates: (response.commandTemplates ?? []) as string[],
     preset: (response.preset ?? DEFAULT_PRESET) as PresetName,
     versionPin: response.versionPin ?? true,
   };
