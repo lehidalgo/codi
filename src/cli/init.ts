@@ -12,6 +12,8 @@ import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
+import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
+import { createCommand } from '../core/scaffolder/command-scaffolder.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -101,6 +103,8 @@ export async function initHandler(
   let presetName: PresetName = (options.preset as PresetName) ?? DEFAULT_PRESET;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
+  let agentTemplates: string[] = [];
+  let commandTemplates: string[] = [];
 
   if (isInteractive(options)) {
     const detectedAdapters = await detectAdapters(projectRoot);
@@ -122,6 +126,8 @@ export async function initHandler(
     presetName = wizardResult.preset;
     ruleTemplates = wizardResult.rules;
     skillTemplates = wizardResult.skills;
+    agentTemplates = wizardResult.agentTemplates;
+    commandTemplates = wizardResult.commandTemplates;
 
     await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin);
   } else {
@@ -164,6 +170,20 @@ export async function initHandler(
     const result = await createSkill({ name: template, codiDir, template });
     if (!result.ok) {
       log.warn(`Failed to create skill "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+    }
+  }
+
+  for (const template of agentTemplates) {
+    const result = await createAgent({ name: template, codiDir, template });
+    if (!result.ok) {
+      log.warn(`Failed to create agent "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+    }
+  }
+
+  for (const template of commandTemplates) {
+    const result = await createCommand({ name: template, codiDir, template });
+    if (!result.ok) {
+      log.warn(`Failed to create command "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
     }
   }
 
