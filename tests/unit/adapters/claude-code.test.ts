@@ -45,8 +45,7 @@ describe('claude-code adapter', () => {
     expect(mainFile!.content).toContain('Do NOT delete files.');
     expect(mainFile!.content).toContain('Keep source code files under 500 lines.');
     expect(mainFile!.content).toContain('Write tests for all new code.');
-    expect(mainFile!.content).toContain('## Configuration');
-    expect(mainFile!.content).toContain('Rules (2)');
+    expect(mainFile!.content).toContain('## Workflow');
     expect(mainFile!.content).not.toContain('Use 2-space indentation');
     expect(mainFile!.hash).toBeTruthy();
   });

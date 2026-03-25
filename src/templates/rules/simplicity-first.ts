@@ -1,0 +1,60 @@
+export const template = `---
+name: {{name}}
+description: Simplicity-first development — avoid over-engineering, prefer direct solutions, minimize complexity
+priority: high
+alwaysApply: true
+managed_by: codi
+---
+
+# Simplicity First
+
+## Core Principle
+- The right amount of complexity is the minimum needed for the current task
+- Make it work, make it clear, then — only if needed — make it fast
+- Every abstraction has a cost; justify it with a real (not hypothetical) need
+
+## YAGNI — You Aren't Gonna Need It
+- Solve the current problem, not imagined future ones
+- Do not add configuration, feature flags, or extension points until a second use case exists
+- Delete speculative code — version control remembers it if you ever need it back
+
+BAD: Building a plugin system for an app that has one integration
+GOOD: A direct implementation now; extract a plugin system when the third integration arrives
+
+## Inline Over Abstraction
+- Three similar lines of code are better than a premature utility function
+- Extract a helper only when the same logic appears in three or more places
+- Avoid wrapping standard library or framework APIs — callers already know them
+
+BAD: \\\`wrapFetch(url)\\\` that adds nothing over \\\`fetch(url)\\\`
+GOOD: Using \\\`fetch(url)\\\` directly until retry/timeout logic is genuinely needed
+
+## Flat Over Nested
+- Prefer flat directory structures for small projects — deep hierarchies obscure simple codebases
+- One file per concern is fine; one directory per concern is premature until the concern grows
+- Avoid creating folders with a single file inside
+
+## Minimal Dependencies
+- Prefer the standard library over third-party packages for simple tasks
+- Every dependency is an upgrade burden, a security surface, and a build-time cost
+- Before adding a package, ask: can I write this in under 50 lines?
+
+## Skip Ceremony
+- Do not introduce design patterns (factories, observers, strategies, DI containers) unless the problem demands them
+- Do not create interfaces with a single implementation — that is speculative abstraction
+- Do not write abstractions for "testability" that make the code harder to read
+
+BAD: \\\`IUserRepository\\\` interface with only \\\`UserRepository\\\` implementing it
+GOOD: \\\`UserRepository\\\` class directly — extract the interface when a second implementation exists
+
+## No Premature Optimization
+- Write clear code first; optimize only when profiling shows a bottleneck
+- Avoid caching until you prove the computation is expensive
+- Avoid parallelism until you prove the sequential version is too slow
+- Algorithmic simplicity (O(n) is usually fine) beats clever O(log n) with complex setup
+
+## Keep It Readable
+- Prefer explicit over clever — the next reader should understand the code without comments
+- Use descriptive variable names even if they are longer
+- Avoid ternary chains, nested conditionals, and one-liner hacks
+- If a function needs a paragraph of explanation, it is too complex — simplify the code, not the comment`;

@@ -10,14 +10,14 @@ language: golang
 # Go Conventions
 
 ## Formatting & Tooling
-- Run \`gofmt\` and \`goimports\` on every save — non-negotiable
+- Run \`gofmt\` and \`goimports\` on every save — non-negotiable; eliminates all formatting debates
 - Run \`gosec\` for static security analysis in CI
 - Run \`go vet\` and \`staticcheck\` as part of the linting pipeline
 - Use \`golangci-lint\` to aggregate all linters in one pass
 
 ## Interfaces
-- Accept interfaces, return structs — keep contracts flexible
-- Keep interfaces small: 1-3 methods maximum
+- Accept interfaces, return structs — keep contracts flexible for callers, concrete for implementers
+- Keep interfaces small: 1-3 methods maximum — large interfaces are harder to implement and mock
 - Define interfaces where they are consumed, not where they are implemented
 - Use the standard naming convention: single-method interfaces end in \`-er\`
 
@@ -39,10 +39,10 @@ if err != nil {
 \`\`\`
 
 ## Concurrency
-- Pass \`context.Context\` as the first parameter to all external calls
+- Pass \`context.Context\` as the first parameter to all external calls — enables cancellation and deadline propagation
 - Set timeouts on every context used for network or database operations
 - Use channels for communication, mutexes for state protection
-- Never start goroutines without a plan to stop them
+- Never start goroutines without a plan to stop them — leaked goroutines cause memory leaks and deadlocks
 
 ## Testing
 - Write table-driven tests for functions with multiple input scenarios
@@ -83,7 +83,7 @@ func TestParsePort(t *testing.T) {
 
 ## Project Structure
 - Keep \`main.go\` minimal — delegate to internal packages
-- Use \`internal/\` to prevent external imports of private packages
+- Use \`internal/\` to prevent external imports of private packages — the Go compiler enforces this boundary
 - Group by domain, not by layer (avoid generic \`models/\`, \`utils/\` packages)
 - Prefer returning concrete types from constructors for discoverability
 `;

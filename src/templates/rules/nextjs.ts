@@ -12,7 +12,7 @@ language: typescript
 ## Server Components by Default
 - Use Server Components for all pages and layouts — they run on the server with zero client JS
 - Add \`'use client'\` only when the component needs interactivity (event handlers, hooks, browser APIs)
-- Keep client components small and push them to the leaves of the component tree
+- Keep client components small and push them to the leaves of the component tree — minimizes the client JS bundle
 - Pass server data to client components via props — do not fetch on the client what you can fetch on the server
 
 \`\`\`typescript
@@ -71,7 +71,7 @@ export default async function PricingPage() {
 
 ## Middleware
 - Use \`middleware.ts\` at the project root for auth checks, redirects, and geolocation logic
-- Keep middleware fast — it runs on every matched request at the edge
+- Keep middleware fast — it runs on every matched request at the edge; slow middleware adds latency to every page load
 - Use \`matcher\` config to limit which routes trigger the middleware
 
 ## Error & Loading Boundaries
@@ -83,6 +83,6 @@ export default async function PricingPage() {
 ## SEO
 - Export a \`metadata\` object or \`generateMetadata()\` function from every page
 - Include \`title\`, \`description\`, and \`openGraph\` properties at minimum
-- Use \`generateStaticParams()\` for dynamic routes to enable static generation
+- Use \`generateStaticParams()\` for dynamic routes to enable static generation — pre-rendered pages load instantly
 - Add \`robots.ts\` and \`sitemap.ts\` files at the app root
 `;

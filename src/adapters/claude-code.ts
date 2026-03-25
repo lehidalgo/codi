@@ -11,7 +11,14 @@ import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
-import { generateSkillFiles } from './skill-generator.js';
+import { generateSkillFiles, type ProgressiveLoadingMode } from './skill-generator.js';
+import {
+  buildProjectOverview,
+  buildCommandsTable,
+  buildDevelopmentNotes,
+  buildWorkflowSection,
+  getEnabledMcpServers,
+} from './section-builder.js';
 import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -43,7 +50,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     commands: true,
     mcp: true,
     frontmatter: false,
-    progressiveLoading: false,
+    progressiveLoading: true,
     agents: true,
     maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
@@ -58,24 +65,27 @@ export const claudeCodeAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
-    // Build CLAUDE.md (permissions only — rules and skills auto-load from .claude/)
+    // Build CLAUDE.md — rich project context + permissions
     const sections: string[] = [];
+
+    // Project overview from manifest
+    const overview = buildProjectOverview(config);
+    if (overview) sections.push(overview);
+
     if (flagText) {
       sections.push('## Permissions\n\n' + flagText);
     }
 
-    // Add config summary section
-    const ruleNames = config.rules.map(r => r.name);
-    const skillNames = config.skills.map(s => s.name);
-    const agentNames = config.agents.map(a => a.name);
-    if (ruleNames.length > 0 || skillNames.length > 0 || agentNames.length > 0) {
-      const summaryLines = ['## Configuration'];
-      if (ruleNames.length > 0) summaryLines.push(`- Rules (${ruleNames.length}): ${ruleNames.join(', ')}`);
-      if (skillNames.length > 0) summaryLines.push(`- Skills (${skillNames.length}): ${skillNames.join(', ')}`);
-      if (agentNames.length > 0) summaryLines.push(`- Agents (${agentNames.length}): ${agentNames.join(', ')}`);
-      summaryLines.push(`- Generated: ${new Date().toISOString()}`);
-      sections.push(summaryLines.join('\n'));
-    }
+    // Commands table
+    const commandsTable = buildCommandsTable(config);
+    if (commandsTable) sections.push(commandsTable);
+
+    // Development notes from flags
+    const devNotes = buildDevelopmentNotes(config);
+    if (devNotes) sections.push(devNotes);
+
+    // Workflow guidelines
+    sections.push(buildWorkflowSection());
 
     const mainContent = addGeneratedHeader(sections.join('\n\n'));
     files.push({
@@ -98,7 +108,8 @@ export const claudeCodeAdapter: AgentAdapter = {
     }
 
     // Generate .claude/skills/{name}/SKILL.md
-    files.push(...generateSkillFiles(config.skills, '.claude/skills'));
+    const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
+    files.push(...generateSkillFiles(config.skills, '.claude/skills', plMode));
 
     // Generate .claude/agents/{name}.md (Claude Code format)
     for (const agent of config.agents) {
@@ -131,8 +142,9 @@ export const claudeCodeAdapter: AgentAdapter = {
     }
 
     // Generate .claude/mcp.json if MCP servers are configured
-    if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(config.mcp, null, 2);
+    const enabledMcp = getEnabledMcpServers(config.mcp);
+    if (Object.keys(enabledMcp.servers).length > 0) {
+      const mcpContent = JSON.stringify(enabledMcp, null, 2);
       files.push({
         path: '.claude/mcp.json',
         content: mcpContent,

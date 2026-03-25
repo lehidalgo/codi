@@ -138,7 +138,7 @@ export async function checkDocSync(projectRoot: string): Promise<DocSyncIssue[]>
   const filesToCheck = [
     'STATUS.md',
     'CONTRIBUTING.md',
-    'docs/writing-rules.md',
+    'docs/guides/writing-rules.md',
     'src/templates/skills/e2e-testing.ts',
     '.codi/skills/e2e-testing.md',
   ];
@@ -150,7 +150,7 @@ export async function checkDocSync(projectRoot: string): Promise<DocSyncIssue[]>
     issues.push(...checkCountChecks(content, file, stats));
     issues.push(...checkInlineCounts(content, file, stats));
 
-    if (file === 'docs/writing-rules.md') {
+    if (file === 'docs/guides/writing-rules.md') {
       issues.push(...checkMissingTemplateEntries(content, file, stats.rules.names, 'rule', 'src/templates/rules'));
       issues.push(...checkMissingTemplateEntries(content, file, stats.skills.names, 'skill', 'src/templates/skills'));
       issues.push(...checkMissingTemplateEntries(content, file, stats.agents.names, 'agent', 'src/templates/agents'));

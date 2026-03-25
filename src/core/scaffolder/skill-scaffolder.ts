@@ -44,14 +44,14 @@ export async function createSkill(options: CreateSkillOptions): Promise<Result<s
 
   content = content.replace(/\{\{name\}\}/g, name);
 
-  const filePath = path.join(codiDir, 'skills', `${name}.md`);
-  const dir = path.dirname(filePath);
+  const skillDir = path.join(codiDir, 'skills', name);
+  const filePath = path.join(skillDir, 'SKILL.md');
 
   try {
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(skillDir, { recursive: true });
   } catch (cause) {
     return err([createError('E_PERMISSION_DENIED', {
-      path: dir,
+      path: skillDir,
     }, cause as Error)]);
   }
 
@@ -72,5 +72,54 @@ export async function createSkill(options: CreateSkillOptions): Promise<Result<s
     }, cause as Error)]);
   }
 
+  const scaffoldResult = await scaffoldSkillSubdirs(skillDir, name);
+  if (!scaffoldResult.ok) return scaffoldResult;
+
   return ok(filePath);
+}
+
+async function scaffoldSkillSubdirs(
+  skillDir: string,
+  name: string,
+): Promise<Result<string>> {
+  const evalsDir = path.join(skillDir, 'evals');
+  const subDirs = [
+    evalsDir,
+    path.join(skillDir, 'scripts'),
+    path.join(skillDir, 'references'),
+    path.join(skillDir, 'assets'),
+  ];
+
+  for (const dir of subDirs) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+    } catch (cause) {
+      return err([createError('E_PERMISSION_DENIED', {
+        path: dir,
+      }, cause as Error)]);
+    }
+  }
+
+  const evalsJson = JSON.stringify({ skill_name: name, evals: [] }, null, 2);
+  try {
+    await fs.writeFile(path.join(evalsDir, 'evals.json'), evalsJson + '\n', 'utf-8');
+  } catch (cause) {
+    return err([createError('E_PERMISSION_DENIED', {
+      path: path.join(evalsDir, 'evals.json'),
+    }, cause as Error)]);
+  }
+
+  const gitkeepDirs = ['scripts', 'references', 'assets'];
+  for (const sub of gitkeepDirs) {
+    const gitkeepPath = path.join(skillDir, sub, '.gitkeep');
+    try {
+      await fs.writeFile(gitkeepPath, '', 'utf-8');
+    } catch (cause) {
+      return err([createError('E_PERMISSION_DENIED', {
+        path: gitkeepPath,
+      }, cause as Error)]);
+    }
+  }
+
+  return ok(skillDir);
 }

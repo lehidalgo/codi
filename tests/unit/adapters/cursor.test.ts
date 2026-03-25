@@ -42,8 +42,8 @@ describe('cursor adapter', () => {
     const mainFile = files.find(f => f.path === '.cursorrules');
     expect(mainFile).toBeDefined();
     expect(mainFile!.content).toContain('Do NOT execute shell commands.');
-    expect(mainFile!.content).toContain('Code Style');
-    expect(mainFile!.content).toContain('Testing');
+    expect(mainFile!.content).toContain('## Workflow');
+    expect(mainFile!.content).toContain('## Project Overview');
   });
 
   it('generates .mdc rule files with YAML frontmatter', async () => {

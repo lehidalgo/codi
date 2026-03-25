@@ -13,6 +13,14 @@ managed_by: codi
 
 Use when asked to measure test coverage, find untested code, or generate missing tests.
 
+## When to Activate
+
+- User asks to measure or report current test coverage
+- User wants to identify files or functions that lack test coverage
+- User asks to generate tests for uncovered code paths
+- User needs a before/after coverage comparison after adding tests
+- New feature has been implemented and needs test coverage verification
+
 ## Coverage Analysis Process
 
 ### Step 1: Detect Test Framework

@@ -4,13 +4,13 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import prompts from 'prompts';
+import * as p from '@clack/prompts';
 import { resolveCodiDir } from '../utils/paths.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput, printBanner, printSection } from './shared.js';
+import { initFromOptions, handleOutput, printSection } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 import { parseFrontmatter } from '../utils/frontmatter.js';
 
@@ -149,7 +149,7 @@ export async function contributeHandler(
 ): Promise<CommandResult<ContributeData>> {
   const log = Logger.getInstance();
   const codiDir = resolveCodiDir(projectRoot);
-  printBanner('Contribute to CODI');
+  p.intro('codi — Contribute to CODI');
 
   // Discover all artifacts
   const allArtifacts = await discoverArtifacts(codiDir);
@@ -165,21 +165,27 @@ export async function contributeHandler(
 
   // Step 1: Select artifacts
   printSection('Select Artifacts');
-  const artifactChoices = allArtifacts.map(a => ({
-    title: `[${a.type}] ${a.name}`,
-    value: a.name,
-    description: `managed_by: ${a.managedBy}`,
-  }));
+  const selected = await p.multiselect({
+    message: 'Select artifacts to contribute',
+    options: allArtifacts.map(a => ({
+      label: `[${a.type}] ${a.name}`,
+      value: a.name,
+      hint: `managed_by: ${a.managedBy}`,
+    })),
+    required: false,
+  });
 
-  const selection = await prompts({
-    type: 'autocompleteMultiselect',
-    name: 'selected',
-    message: 'Select artifacts to contribute (type to search)',
-    choices: artifactChoices,
-    hint: '- Type to filter, Space to toggle, Enter to confirm',
-  }, { onCancel: () => false });
+  if (p.isCancel(selected)) {
+    p.cancel('Operation cancelled.');
+    return createCommandResult({
+      success: false, command: 'contribute',
+      data: { action: 'cancelled' },
+      errors: [{ code: 'E_GENERAL', message: 'Operation cancelled.', hint: '', severity: 'error', context: {} }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
 
-  if (!selection.selected || selection.selected.length === 0) {
+  if (selected.length === 0) {
     return createCommandResult({
       success: false, command: 'contribute',
       data: { action: 'cancelled' },
@@ -188,21 +194,20 @@ export async function contributeHandler(
     });
   }
 
-  const selected = allArtifacts.filter(a => (selection.selected as string[]).includes(a.name));
+  const selectedArtifacts = allArtifacts.filter(a => selected.includes(a.name));
 
   // Step 2: Choose contribution method
   printSection('Distribution');
-  const method = await prompts({
-    type: 'select',
-    name: 'method',
+  const method = await p.select({
     message: 'How do you want to contribute?',
-    choices: [
-      { title: 'Open PR to codi repository', value: 'pr', description: 'Requires gh CLI authentication' },
-      { title: 'Export as ZIP', value: 'zip', description: 'Share privately or manually' },
+    options: [
+      { label: 'Open PR to codi repository', value: 'pr' as const, hint: 'Requires gh CLI authentication' },
+      { label: 'Export as ZIP', value: 'zip' as const, hint: 'Share privately or manually' },
     ],
-  }, { onCancel: () => false });
+  });
 
-  if (!method.method) {
+  if (p.isCancel(method)) {
+    p.cancel('Operation cancelled.');
     return createCommandResult({
       success: false, command: 'contribute',
       data: { action: 'cancelled' },
@@ -212,7 +217,7 @@ export async function contributeHandler(
   }
 
   // Step 3: Execute
-  if (method.method === 'pr') {
+  if (method === 'pr') {
     if (!(await checkGhAuth(log))) {
       return createCommandResult({
         success: false, command: 'contribute',
@@ -222,14 +227,15 @@ export async function contributeHandler(
       });
     }
 
-    log.info(`Contributing ${selected.length} artifact(s) via PR...`);
-    const prUrl = await createContributionPR(selected, log);
+    log.info(`Contributing ${selectedArtifacts.length} artifact(s) via PR...`);
+    const prUrl = await createContributionPR(selectedArtifacts, log);
 
     if (prUrl) {
       log.info(`PR created: ${prUrl}`);
+      p.outro('Contribution submitted.');
       return createCommandResult({
         success: true, command: 'contribute',
-        data: { action: 'pr', artifacts: selected.map(a => a.name), prUrl },
+        data: { action: 'pr', artifacts: selectedArtifacts.map(a => a.name), prUrl },
         exitCode: EXIT_CODES.SUCCESS,
       });
     }
@@ -245,7 +251,7 @@ export async function contributeHandler(
   // ZIP export
   const zipDir = path.join(os.tmpdir(), `codi-contrib-${Date.now()}`);
   await fs.mkdir(zipDir, { recursive: true });
-  for (const artifact of selected) {
+  for (const artifact of selectedArtifacts) {
     const destDir = path.join(zipDir, artifact.type + 's');
     await fs.mkdir(destDir, { recursive: true });
     await fs.copyFile(artifact.path, path.join(destDir, path.basename(artifact.path)));
@@ -255,9 +261,10 @@ export async function contributeHandler(
   try {
     await execFileAsync('zip', ['-r', zipPath, '.'], { cwd: zipDir });
     log.info(`Exported to ${zipPath}`);
+    p.outro('Contribution exported.');
     return createCommandResult({
       success: true, command: 'contribute',
-      data: { action: 'zip', artifacts: selected.map(a => a.name), zipPath },
+      data: { action: 'zip', artifacts: selectedArtifacts.map(a => a.name), zipPath },
       exitCode: EXIT_CODES.SUCCESS,
     });
   } finally {

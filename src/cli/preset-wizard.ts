@@ -1,11 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import prompts from 'prompts';
+import * as p from '@clack/prompts';
 import { stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { Logger } from '../core/output/logger.js';
 import { PRESET_MANIFEST_FILENAME, NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from '../constants.js';
-import { printBanner, printSection } from './shared.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -30,112 +29,98 @@ export interface PresetWizardResult {
  * Guides the user through defining and packaging a preset.
  */
 export async function runPresetWizard(projectRoot: string): Promise<PresetWizardResult | null> {
-  printBanner('Preset Creator');
+  p.intro('codi — Preset Creator');
 
   // Step 1: Identity
-  const identity = await prompts([
-    {
-      type: 'text',
-      name: 'name',
-      message: 'Preset name (kebab-case)',
-      validate: (v: string) => {
-        if (!v) return 'Name is required';
-        if (v.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
-        if (!NAME_PATTERN_STRICT.test(v)) return 'Must be kebab-case, start with a letter';
-        return true;
-      },
+  const name = await p.text({
+    message: 'Preset name (kebab-case)',
+    validate: (v) => {
+      if (!v) return 'Name is required';
+      if (v.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
+      if (!NAME_PATTERN_STRICT.test(v)) return 'Must be kebab-case, start with a letter';
     },
-    {
-      type: 'text',
-      name: 'description',
-      message: 'Description',
-    },
-    {
-      type: 'text',
-      name: 'version',
-      message: 'Version',
-      initial: '1.0.0',
-    },
-    {
-      type: 'text',
-      name: 'tags',
-      message: 'Tags (comma-separated)',
-      initial: '',
-    },
-  ]);
+  });
+  if (p.isCancel(name)) { p.cancel('Operation cancelled.'); return null; }
 
-  if (!identity.name) return null;
+  const description = await p.text({
+    message: 'Description',
+  });
+  if (p.isCancel(description)) { p.cancel('Operation cancelled.'); return null; }
+
+  const version = await p.text({
+    message: 'Version',
+    defaultValue: '1.0.0',
+  });
+  if (p.isCancel(version)) { p.cancel('Operation cancelled.'); return null; }
+
+  const tags = await p.text({
+    message: 'Tags (comma-separated)',
+    defaultValue: '',
+  });
+  if (p.isCancel(tags)) { p.cancel('Operation cancelled.'); return null; }
 
   // Step 2: Base preset
   const allPresets = [...getPresetNames(), ...getBuiltinPresetNames()];
   const uniquePresets = [...new Set(allPresets)];
 
-  const baseChoice = await prompts({
-    type: 'select',
-    name: 'extends',
+  const extendsPreset = await p.select({
     message: 'Extend a base preset?',
-    choices: [
-      { title: '(none)', value: '' },
-      ...uniquePresets.map(p => ({ title: p, value: p })),
+    options: [
+      { label: '(none)', value: '' as const },
+      ...uniquePresets.map(pr => ({ label: pr, value: pr })),
     ],
   });
+  if (p.isCancel(extendsPreset)) { p.cancel('Operation cancelled.'); return null; }
 
   // Step 3: Select rules
-  printSection('Artifacts');
-  const ruleChoices = AVAILABLE_TEMPLATES.map(t => ({ title: t, value: t }));
-  const ruleSelection = await prompts({
-    type: 'autocompleteMultiselect',
-    name: 'rules',
-    message: 'Select rules (type to search)',
-    choices: ruleChoices,
-    hint: '- Type to filter, Space to toggle, Enter to confirm',
+  const rules = await p.multiselect({
+    message: 'Select rules',
+    options: AVAILABLE_TEMPLATES.map(t => ({ label: t, value: t })),
+    required: false,
   });
+  if (p.isCancel(rules)) { p.cancel('Operation cancelled.'); return null; }
 
-  const skillChoices = AVAILABLE_SKILL_TEMPLATES.map(t => ({ title: t, value: t }));
-  const skillSelection = await prompts({
-    type: 'autocompleteMultiselect',
-    name: 'skills',
-    message: 'Select skills (type to search)',
-    choices: skillChoices,
-    hint: '- Type to filter, Space to toggle, Enter to confirm',
+  const skills = await p.multiselect({
+    message: 'Select skills',
+    options: AVAILABLE_SKILL_TEMPLATES.map(t => ({ label: t, value: t })),
+    required: false,
   });
+  if (p.isCancel(skills)) { p.cancel('Operation cancelled.'); return null; }
 
-  const agentChoices = AVAILABLE_AGENT_TEMPLATES.map(t => ({ title: t, value: t }));
-  const agentSelection = await prompts({
-    type: 'autocompleteMultiselect',
-    name: 'agents',
-    message: 'Select agents (type to search)',
-    choices: agentChoices,
-    hint: '- Type to filter, Space to toggle, Enter to confirm',
+  const agents = await p.multiselect({
+    message: 'Select agents',
+    options: AVAILABLE_AGENT_TEMPLATES.map(t => ({ label: t, value: t })),
+    required: false,
   });
+  if (p.isCancel(agents)) { p.cancel('Operation cancelled.'); return null; }
 
   // Step 6: Output format
-  const formatChoice = await prompts({
-    type: 'select',
-    name: 'format',
+  const format = await p.select({
     message: 'Output format',
-    choices: [
-      { title: 'Local directory (.codi/presets/)', value: 'dir' },
-      { title: 'ZIP package', value: 'zip' },
-      { title: 'GitHub repository scaffold', value: 'github' },
+    options: [
+      { label: 'Local directory (.codi/presets/)', value: 'dir' as const },
+      { label: 'ZIP package', value: 'zip' as const },
+      { label: 'GitHub repository scaffold', value: 'github' as const },
     ],
   });
+  if (p.isCancel(format)) { p.cancel('Operation cancelled.'); return null; }
 
   const result: PresetWizardResult = {
-    name: identity.name as string,
-    description: (identity.description as string) ?? '',
-    version: (identity.version as string) ?? '1.0.0',
-    extends: baseChoice.extends || undefined,
-    tags: ((identity.tags as string) ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
-    rules: (ruleSelection.rules as string[]) ?? [],
-    skills: (skillSelection.skills as string[]) ?? [],
-    agents: (agentSelection.agents as string[]) ?? [],
-    outputFormat: (formatChoice.format as 'dir' | 'zip' | 'github') ?? 'dir',
+    name,
+    description: description ?? '',
+    version: version ?? '1.0.0',
+    extends: extendsPreset || undefined,
+    tags: (tags ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
+    rules,
+    skills,
+    agents,
+    outputFormat: format,
   };
 
   // Create the preset
   await scaffoldPreset(projectRoot, result);
 
+  p.outro('Preset created successfully.');
   return result;
 }
 

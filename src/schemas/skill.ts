@@ -12,6 +12,8 @@ export const SkillFrontmatterSchema = z.object({
   disableModelInvocation: z.boolean().optional(),
   argumentHint: z.string().optional(),
   allowedTools: z.array(z.string()).optional(),
+  license: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

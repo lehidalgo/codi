@@ -24,7 +24,7 @@ describe('skill scaffolder', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.data).toContain('my-skill.md');
+    expect(result.data).toContain(path.join('my-skill', 'SKILL.md'));
     const content = await fs.readFile(result.data, 'utf-8');
     expect(content).toContain('name: my-skill');
     expect(content).toContain('managed_by: user');
@@ -103,13 +103,26 @@ describe('skill scaffolder', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('writes to .codi/skills/ flat directory', async () => {
+  it('writes to .codi/skills/<name>/SKILL.md directory structure', async () => {
     const result = await createSkill({ name: 'flat-test', codiDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const expected = path.join(codiDir, 'skills', 'flat-test.md');
+    const expected = path.join(codiDir, 'skills', 'flat-test', 'SKILL.md');
     expect(result.data).toBe(expected);
+
+    const evalsJson = await fs.readFile(
+      path.join(codiDir, 'skills', 'flat-test', 'evals', 'evals.json'),
+      'utf-8',
+    );
+    const parsed = JSON.parse(evalsJson);
+    expect(parsed.skill_name).toBe('flat-test');
+    expect(parsed.evals).toEqual([]);
+
+    for (const sub of ['scripts', 'references', 'assets']) {
+      const gitkeep = path.join(codiDir, 'skills', 'flat-test', sub, '.gitkeep');
+      await expect(fs.access(gitkeep)).resolves.toBeUndefined();
+    }
   });
 });
