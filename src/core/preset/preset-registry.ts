@@ -24,6 +24,8 @@ export interface RegistryEntry {
 export interface PresetLockEntry {
   version: string;
   source: string;
+  sourceType: 'builtin' | 'zip' | 'github' | 'local' | 'registry';
+  commit?: string; // git commit hash for github sources
   installedAt: string;
 }
 

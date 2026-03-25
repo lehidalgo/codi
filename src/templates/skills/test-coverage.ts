@@ -1,6 +1,8 @@
+import { MIN_CODE_COVERAGE_PERCENT } from '../../constants.js';
+
 export const template = `---
 name: {{name}}
-description: Test coverage analysis workflow. Use to measure coverage, identify gaps below 80% threshold, and generate missing tests. Detects framework automatically and produces before/after comparison.
+description: Test coverage analysis workflow. Use to measure coverage, identify gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, and generate missing tests. Detects framework automatically and produces before/after comparison.
 compatibility: [claude-code, cursor, codex]
 managed_by: codi
 ---
@@ -35,7 +37,7 @@ Record the baseline coverage numbers before making any changes.
 ### Step 3: Identify Coverage Gaps
 
 **[CODING AGENT]** Parse the coverage output and identify:
-- Files below the 80% coverage threshold
+- Files below the ${MIN_CODE_COVERAGE_PERCENT}% coverage threshold
 - Specific uncovered line ranges in each file
 - Functions or methods with zero coverage
 - Branches (if/else, switch) that are only partially covered
@@ -72,7 +74,7 @@ Skip generating tests for:
 **[CODING AGENT]** Produce a coverage comparison report:
 - Overall coverage: before vs after (percentage change)
 - Per-file coverage improvements
-- Files still below 80% threshold
+- Files still below ${MIN_CODE_COVERAGE_PERCENT}% threshold
 - Remaining gaps that need manual attention (complex logic, integration points)
 - Total tests added and their locations
 `;

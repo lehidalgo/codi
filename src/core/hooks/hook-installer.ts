@@ -6,7 +6,7 @@ import { createError } from '../output/errors.js';
 import type { HookSetup } from './hook-detector.js';
 import type { HookEntry } from './hook-registry.js';
 import type { ResolvedFlags } from '../../types/flags.js';
-import { RUNNER_TEMPLATE, SECRET_SCAN_TEMPLATE, FILE_SIZE_CHECK_TEMPLATE, COMMIT_MSG_TEMPLATE } from './hook-templates.js';
+import { RUNNER_TEMPLATE, SECRET_SCAN_TEMPLATE, FILE_SIZE_CHECK_TEMPLATE, COMMIT_MSG_TEMPLATE, VERSION_CHECK_TEMPLATE } from './hook-templates.js';
 import { PRE_COMMIT_MAX_FILE_LINES } from '../../constants.js';
 
 export interface InstallOptions {
@@ -17,6 +17,7 @@ export interface InstallOptions {
   commitMsgValidation?: boolean;
   secretScan?: boolean;
   fileSizeCheck?: boolean;
+  versionCheck?: boolean;
 }
 
 function buildRunnerScript(hooks: HookEntry[]): string {
@@ -35,11 +36,14 @@ function buildFileSizeScript(maxLines: number): string {
 async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<void> {
   if (options.secretScan) {
     const secretScript = buildSecretScanScript();
-    await fs.writeFile(path.join(hookDir, 'codi-secret-scan.js'), secretScript, { encoding: 'utf-8', mode: 0o755 });
+    await fs.writeFile(path.join(hookDir, 'codi-secret-scan.mjs'), secretScript, { encoding: 'utf-8', mode: 0o755 });
   }
   if (options.fileSizeCheck) {
     const sizeScript = buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES);
-    await fs.writeFile(path.join(hookDir, 'codi-file-size-check.js'), sizeScript, { encoding: 'utf-8', mode: 0o755 });
+    await fs.writeFile(path.join(hookDir, 'codi-file-size-check.mjs'), sizeScript, { encoding: 'utf-8', mode: 0o755 });
+  }
+  if (options.versionCheck) {
+    await fs.writeFile(path.join(hookDir, 'codi-version-check.mjs'), VERSION_CHECK_TEMPLATE, { encoding: 'utf-8', mode: 0o755 });
   }
 }
 

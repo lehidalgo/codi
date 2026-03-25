@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
@@ -25,13 +25,21 @@ import {
   copyDir,
 } from '../core/preset/preset-registry.js';
 import type { RegistryEntry } from '../core/preset/preset-registry.js';
+import {
+  presetInstallUnifiedHandler,
+  presetExportHandler,
+  presetValidateHandler,
+  presetRemoveHandler,
+  presetListEnhancedHandler,
+} from './preset-handlers.js';
+import { runPresetWizard } from './preset-wizard.js';
 
 const execFileAsync = promisify(execFile);
 
-interface PresetData {
-  action: 'create' | 'list' | 'install' | 'search' | 'update';
+export interface PresetData {
+  action: 'create' | 'list' | 'install' | 'search' | 'update' | 'export' | 'validate' | 'info' | 'remove';
   name?: string;
-  presets?: Array<{ name: string; description: string }>;
+  presets?: Array<{ name: string; description: string; sourceType?: string }>;
   results?: RegistryEntry[];
   updated?: string[];
 }
@@ -80,49 +88,6 @@ export async function presetCreateHandler(
   });
 }
 
-export async function presetListHandler(
-  projectRoot: string,
-): Promise<CommandResult<PresetData>> {
-  const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
-  const presetsDir = path.join(codiDir, 'presets');
-
-  const presets: Array<{ name: string; description: string }> = [];
-
-  try {
-    const entries = await fs.readdir(presetsDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const manifestPath = path.join(presetsDir, entry.name, PRESET_MANIFEST_FILENAME);
-      try {
-        const raw = await fs.readFile(manifestPath, 'utf8');
-        const parsed = parseYaml(raw) as Record<string, unknown>;
-        presets.push({
-          name: entry.name,
-          description: (parsed['description'] as string) ?? '',
-        });
-      } catch {
-        presets.push({ name: entry.name, description: '(no manifest)' });
-      }
-    }
-  } catch { /* presetsDir doesn't exist */ }
-
-  if (presets.length === 0) {
-    log.info('No presets found in .codi/presets/');
-  } else {
-    for (const p of presets) {
-      log.info(`  ${p.name} — ${p.description || '(no description)'}`);
-    }
-  }
-
-  return createCommandResult({
-    success: true,
-    command: 'preset list',
-    data: { action: 'list', presets },
-    exitCode: EXIT_CODES.SUCCESS,
-  });
-}
-
 export async function presetInstallHandler(
   projectRoot: string,
   name: string,
@@ -150,12 +115,12 @@ export async function presetInstallHandler(
     await fs.mkdir(destDir, { recursive: true });
     await copyDir(sourceDir, destDir);
 
-    // Write lock file entry
     const version = await getPresetVersionFromDir(destDir);
     const lock = await readLockFile(codiDir);
     lock.presets[name] = {
       version,
       source: from,
+      sourceType: 'registry',
       installedAt: new Date().toISOString(),
     };
     await writeLockFile(codiDir, lock);
@@ -305,6 +270,7 @@ export async function presetUpdateHandler(
           lock.presets[name] = {
             version: registryEntry.version,
             source: lockEntry.source,
+            sourceType: lockEntry.sourceType ?? 'registry',
             installedAt: new Date().toISOString(),
           };
           updated.push(name);
@@ -361,11 +327,19 @@ export function registerPresetCommand(program: Command): void {
     .description('Manage configuration presets');
 
   cmd
-    .command('create <name>')
+    .command('create [name]')
     .description('Create a new preset scaffold')
-    .action(async (name: string) => {
+    .option('--interactive', 'Launch interactive creation wizard')
+    .action(async (name: string | undefined, options: { interactive?: boolean }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
+      if (options.interactive || !name) {
+        const wizardResult = await runPresetWizard(process.cwd());
+        if (!wizardResult) {
+          process.exit(1);
+        }
+        process.exit(0);
+      }
       const result = await presetCreateHandler(process.cwd(), name);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
@@ -374,22 +348,63 @@ export function registerPresetCommand(program: Command): void {
   cmd
     .command('list')
     .description('List installed presets')
-    .action(async () => {
+    .option('--builtin', 'Include built-in presets')
+    .action(async (options: { builtin?: boolean }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await presetListHandler(process.cwd());
+      const result = await presetListEnhancedHandler(process.cwd(), options.builtin ?? false);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
 
   cmd
-    .command('install <name>')
-    .requiredOption('--from <repo>', 'Git repository to install from')
-    .description('Install a preset from a git repository')
-    .action(async (name: string, options: { from: string }) => {
+    .command('install <source>')
+    .description('Install a preset (ZIP file, GitHub repo, or registry name)')
+    .option('--from <repo>', 'Git repository to install from (legacy)')
+    .action(async (source: string, options: { from?: string }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await presetInstallHandler(process.cwd(), name, options.from);
+      let result;
+      if (options.from) {
+        result = await presetInstallHandler(process.cwd(), source, options.from);
+      } else {
+        result = await presetInstallUnifiedHandler(process.cwd(), source);
+      }
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('export <name>')
+    .description('Export a preset as a ZIP file')
+    .option('--format <format>', 'Export format (zip)', 'zip')
+    .option('--output <path>', 'Output path', '.')
+    .action(async (name: string, options: { format: string; output: string }) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetExportHandler(process.cwd(), name, options.format, options.output);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('validate <name>')
+    .description('Validate a preset structure and schema')
+    .action(async (name: string) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetValidateHandler(process.cwd(), name);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('remove <name>')
+    .description('Remove an installed preset')
+    .action(async (name: string) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetRemoveHandler(process.cwd(), name);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

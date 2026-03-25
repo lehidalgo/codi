@@ -133,6 +133,36 @@ export const ERROR_CATALOG = {
     severity: 'warn' as const,
     hintTemplate: '{message}',
   },
+  E_PRESET_NOT_FOUND: {
+    exitCode: EXIT_CODES.PRESET_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Preset "{name}" not found. Check the name or install it with `codi preset install`.',
+  },
+  E_PRESET_INVALID: {
+    exitCode: EXIT_CODES.PRESET_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Preset "{name}" is invalid: {reason}',
+  },
+  E_PRESET_ZIP_FAILED: {
+    exitCode: EXIT_CODES.PRESET_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Failed to process ZIP preset: {reason}',
+  },
+  E_PRESET_GITHUB_FAILED: {
+    exitCode: EXIT_CODES.PRESET_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Failed to clone GitHub preset "{repo}": {reason}',
+  },
+  E_PRESET_CIRCULAR_EXTENDS: {
+    exitCode: EXIT_CODES.PRESET_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Circular extends chain detected: {chain}',
+  },
+  W_PRESET_SIZE: {
+    exitCode: EXIT_CODES.SUCCESS,
+    severity: 'warn' as const,
+    hintTemplate: '{message}',
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
