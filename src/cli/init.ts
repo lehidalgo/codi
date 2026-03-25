@@ -193,6 +193,7 @@ export async function initHandler(
           commitMsgValidation: hooksConfig.commitMsgValidation,
           secretScan: hooksConfig.secretScan,
           fileSizeCheck: hooksConfig.fileSizeCheck,
+          versionCheck: hooksConfig.versionCheck,
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
