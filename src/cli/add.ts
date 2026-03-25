@@ -11,7 +11,7 @@ import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
+import { initFromOptions, handleOutput, regenerateConfigs } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 
 interface AddRuleOptions extends GlobalOptions {
@@ -264,6 +264,7 @@ export function registerAddCommand(program: Command): void {
         }
         const added = results.filter((r) => r.success).map((r) => r.name);
         const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        await regenerateConfigs(process.cwd());
         const summary = createCommandResult({
           success: true,
           command: 'add rule --all',
@@ -289,6 +290,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       const result = await addRuleHandler(process.cwd(), name, options);
+      if (result.success) await regenerateConfigs(process.cwd());
       handleOutput(result, options);
       process.exit(result.exitCode);
     });
@@ -314,6 +316,7 @@ export function registerAddCommand(program: Command): void {
         }
         const added = results.filter((r) => r.success).map((r) => r.name);
         const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        await regenerateConfigs(process.cwd());
         const summary = createCommandResult({
           success: true,
           command: 'add skill --all',
@@ -339,6 +342,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       const result = await addSkillHandler(process.cwd(), name, options);
+      if (result.success) await regenerateConfigs(process.cwd());
       handleOutput(result, options);
       process.exit(result.exitCode);
     });
@@ -364,6 +368,7 @@ export function registerAddCommand(program: Command): void {
         }
         const added = results.filter((r) => r.success).map((r) => r.name);
         const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        await regenerateConfigs(process.cwd());
         const summary = createCommandResult({
           success: true,
           command: 'add agent --all',
@@ -389,6 +394,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       const result = await addAgentHandler(process.cwd(), name, options);
+      if (result.success) await regenerateConfigs(process.cwd());
       handleOutput(result, options);
       process.exit(result.exitCode);
     });
@@ -414,6 +420,7 @@ export function registerAddCommand(program: Command): void {
         }
         const added = results.filter((r) => r.success).map((r) => r.name);
         const skipped = results.filter((r) => !r.success).map((r) => r.name);
+        await regenerateConfigs(process.cwd());
         const summary = createCommandResult({
           success: true,
           command: 'add command --all',
@@ -439,6 +446,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       const result = await addCommandHandler(process.cwd(), name, options);
+      if (result.success) await regenerateConfigs(process.cwd());
       handleOutput(result, options);
       process.exit(result.exitCode);
     });
