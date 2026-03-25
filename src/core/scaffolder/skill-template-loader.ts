@@ -18,6 +18,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   'mobile-development': skillTemplates.mobileDevelopment,
   'commit': skillTemplates.commit,
   'preset-creator': skillTemplates.presetCreator,
+  'contribute': skillTemplates.contribute,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

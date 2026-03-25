@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2026-03-25
+
+### Added
+- **Preset-first init wizard** — choose built-in preset, import from ZIP/GitHub, or custom selection
+- **Searchable artifact selection** — `autocompleteMultiselect` with type-to-filter in all wizards
+- **Presets as artifact references** — `artifacts:` field in preset.yaml lists names, no file duplication
+- **`codi preset edit <name>`** — interactive add/remove artifacts from a preset
+- **`codi contribute`** — share artifacts via PR to upstream or ZIP export
+- **`contribute` skill template** — AI-guided contribution workflow with troubleshooting
+- **Init: ZIP/GitHub import** — import presets during project setup
+- **Init: save custom as preset** — save artifact selection as named preset for reuse
+- **CODI branding** — banner and section headers in all interactive wizards
+- 52 artifacts (21 rules, 15 skills, 8 agents, 8 commands) + 6 built-in presets
+
+### Changed
+- Preset manifest uses `artifacts:` references instead of subdirectory file copies
+- All multiselect prompts upgraded to searchable `autocompleteMultiselect`
+- Single preset behavior — no old dir-based fallback
+
+### Removed
+- Old directory-based preset loading (presets are reference-based only)
+- 56 lines of dead preset loader code
+
 ## [0.4.2] - 2026-03-25
 
 ### Added

@@ -14,6 +14,7 @@ import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
 import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
 import { createCommand } from '../core/scaffolder/command-scaffolder.js';
+import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -124,12 +125,54 @@ export async function initHandler(
 
     agentIds = wizardResult.agents;
     presetName = wizardResult.preset;
-    ruleTemplates = wizardResult.rules;
-    skillTemplates = wizardResult.skills;
-    agentTemplates = wizardResult.agentTemplates;
-    commandTemplates = wizardResult.commandTemplates;
+
+    if (wizardResult.configMode === 'preset' && wizardResult.presetName) {
+      // Built-in preset: get artifacts from preset definition
+      const presetDef = getBuiltinPresetDefinition(wizardResult.presetName);
+      if (presetDef) {
+        ruleTemplates = [...presetDef.rules];
+        skillTemplates = [...presetDef.skills];
+        agentTemplates = [...presetDef.agents];
+        commandTemplates = [...presetDef.commands];
+      }
+    } else if (wizardResult.configMode === 'zip' || wizardResult.configMode === 'github') {
+      // Import: will be handled after createCodiStructure via preset install
+    } else {
+      // Custom: use wizard selections
+      ruleTemplates = wizardResult.rules;
+      skillTemplates = wizardResult.skills;
+      agentTemplates = wizardResult.agentTemplates;
+      commandTemplates = wizardResult.commandTemplates;
+    }
 
     await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin);
+
+    // Handle import sources (ZIP/GitHub)
+    if (wizardResult.importSource) {
+      const { presetInstallUnifiedHandler } = await import('./preset-handlers.js');
+      const installResult = await presetInstallUnifiedHandler(projectRoot, wizardResult.importSource);
+      if (!installResult.success) {
+        log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? 'unknown error'}`);
+      }
+    }
+
+    // Save custom selection as preset if requested
+    if (wizardResult.saveAsPreset) {
+      const presetDir = path.join(codiDir, 'presets', wizardResult.saveAsPreset);
+      await fs.mkdir(presetDir, { recursive: true });
+      const { stringify } = await import('yaml');
+      await fs.writeFile(path.join(presetDir, 'preset.yaml'), stringify({
+        name: wizardResult.saveAsPreset,
+        version: '1.0.0',
+        artifacts: {
+          rules: wizardResult.rules,
+          skills: wizardResult.skills,
+          agents: wizardResult.agentTemplates,
+          commands: wizardResult.commandTemplates,
+        },
+      }), 'utf8');
+      log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
+    }
   } else {
     if (options.agents && options.agents.length > 0) {
       const knownIds = new Set(getAllAdapters().map((a) => a.id));
