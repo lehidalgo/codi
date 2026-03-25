@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.1] - 2026-03-25
+
+### Added
+- Init wizard now offers agent definition and command template selection (all 4 artifact types)
+- Agent and command templates selected by default in wizard
+- CI workflow runs on develop branch pushes and PRs
+- Auto-release workflow: merge to main triggers GitHub Release + npm publish
+
+### Changed
+- Hook scripts use `.mjs` extension and ESM imports for Node 20 compatibility
+- File-size pre-commit hook excludes codi-generated files (.clinerules, .windsurfrules, etc.)
+
 ## [0.4.0] - 2026-03-25
 
 ### Added
