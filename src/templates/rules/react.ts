@@ -1,3 +1,5 @@
+import { MAX_COMPONENT_LINES } from '../../constants.js';
+
 export const template = `---
 name: {{name}}
 description: React-specific conventions — components, hooks, state management, performance
@@ -12,7 +14,7 @@ language: typescript
 ## Components
 - Use functional components with TypeScript interfaces for props
 - One component per file — name the file after the component (PascalCase)
-- Keep components under 150 lines — extract sub-components when larger
+- Keep components under ${MAX_COMPONENT_LINES} lines — extract sub-components when larger
 - Colocate related files: component, styles, tests, types in the same directory
 
 \`\`\`typescript

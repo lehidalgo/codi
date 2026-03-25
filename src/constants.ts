@@ -29,6 +29,21 @@ export const MANAGED_BY_VALUES = ['codi', 'user'] as const;
 export const PRESET_NAMES = ['minimal', 'balanced', 'strict'] as const;
 export const DEFAULT_PRESET: (typeof PRESET_NAMES)[number] = 'balanced';
 
+// --- Built-in full presets (artifact bundles) ---
+export const BUILTIN_PRESET_NAMES = [
+  'minimal', 'balanced', 'strict',
+  'python-web', 'typescript-fullstack', 'security-hardened',
+] as const;
+export type BuiltinPresetName = (typeof BUILTIN_PRESET_NAMES)[number];
+
+// --- Preset source types ---
+export const PRESET_SOURCE_TYPES = ['builtin', 'zip', 'github', 'local'] as const;
+export type PresetSourceType = (typeof PRESET_SOURCE_TYPES)[number];
+
+// --- Preset size limits ---
+export const MAX_PRESET_ZIP_WARN_BYTES = 1_048_576;   // 1 MB
+export const MAX_PRESET_ZIP_ERROR_BYTES = 10_485_760;  // 10 MB
+
 // --- Config filenames ---
 export const MANIFEST_FILENAME = 'codi.yaml';
 export const FLAGS_FILENAME = 'flags.yaml';
@@ -67,3 +82,18 @@ export const MAX_CONTEXT_LINES = 300;
 export const MAX_SKILL_LINES = 500;
 export const MAX_COMMAND_LINES = 100;
 export const MAX_AGENT_LINES = 200;
+
+// --- Template counts (kept in sync by codi docs-update / doc-sync) ---
+export const RULE_TEMPLATE_COUNT = 21;
+export const SKILL_TEMPLATE_COUNT = 14;
+export const AGENT_TEMPLATE_COUNT = 8;
+export const COMMAND_TEMPLATE_COUNT = 8;
+export const FLAG_COUNT = 18;
+
+// --- Git commit standards ---
+export const GIT_COMMIT_FIRST_LINE_LIMIT = 72;
+
+// --- Code quality thresholds ---
+export const MIN_CODE_COVERAGE_PERCENT = 80;
+export const MAX_FUNCTION_LINES = 30;
+export const MAX_COMPONENT_LINES = 150;

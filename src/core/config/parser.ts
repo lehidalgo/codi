@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import fg from 'fast-glob';
 import { ok, err } from '../../types/result.js';
 import type { Result } from '../../types/result.js';
 import type {
@@ -125,18 +126,8 @@ export async function scanRules(rulesDir: string): Promise<Result<NormalizedRule
 }
 
 async function collectMarkdownFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      const nested = await collectMarkdownFiles(fullPath);
-      results.push(...nested);
-    } else if (entry.name.endsWith('.md')) {
-      results.push(fullPath);
-    }
-  }
-  return results;
+  if (!(await fileExists(dir))) return [];
+  return fg('**/*.md', { cwd: dir, absolute: true });
 }
 
 export async function scanSkills(skillsDir: string): Promise<Result<NormalizedSkill[]>> {

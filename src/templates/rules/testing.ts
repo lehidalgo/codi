@@ -1,3 +1,5 @@
+import { MIN_CODE_COVERAGE_PERCENT } from '../../constants.js';
+
 export const template = `---
 name: {{name}}
 description: Testing standards and TDD workflow
@@ -9,7 +11,7 @@ managed_by: codi
 # Testing Standards
 
 ## Coverage & Requirements
-- Maintain minimum 80% code coverage
+- Maintain minimum ${MIN_CODE_COVERAGE_PERCENT}% code coverage
 - All new features require tests before merging
 - All bug fixes require a regression test
 - Critical paths require integration tests

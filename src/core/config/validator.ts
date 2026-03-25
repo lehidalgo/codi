@@ -2,7 +2,13 @@ import type { NormalizedConfig } from '../../types/config.js';
 import type { CodiError } from '../output/types.js';
 import { createError } from '../output/errors.js';
 import { getAllAdapters } from '../generator/adapter-registry.js';
-import { MAX_ARTIFACT_CHARS, MAX_TOTAL_ARTIFACT_CHARS } from '../../constants.js';
+import {
+  MAX_ARTIFACT_CHARS,
+  MAX_TOTAL_ARTIFACT_CHARS,
+  MAX_SKILL_LINES,
+  MAX_COMMAND_LINES,
+  MAX_AGENT_LINES,
+} from '../../constants.js';
 
 const FALLBACK_ADAPTERS = ['claude-code', 'cursor', 'windsurf', 'codex', 'cline'];
 
@@ -37,30 +43,48 @@ export function validateContentSize(config: NormalizedConfig): CodiError[] {
 
   for (const skill of config.skills) {
     const len = skill.content.length;
+    const lines = skill.content.split('\n').length;
     totalChars += len;
     if (len > MAX_ARTIFACT_CHARS) {
       warnings.push(createError('W_CONTENT_SIZE', {
         message: `Skill "${skill.name}" is ${len.toLocaleString()} chars (limit: ${MAX_ARTIFACT_CHARS.toLocaleString()}). Consider splitting into smaller skills.`,
       }));
     }
+    if (lines > MAX_SKILL_LINES) {
+      warnings.push(createError('W_CONTENT_SIZE', {
+        message: `Skill "${skill.name}" is ${lines} lines (ACS recommendation: ≤${MAX_SKILL_LINES}). Consider splitting.`,
+      }));
+    }
   }
 
   for (const agent of config.agents) {
     const len = agent.content.length;
+    const lines = agent.content.split('\n').length;
     totalChars += len;
     if (len > MAX_ARTIFACT_CHARS) {
       warnings.push(createError('W_CONTENT_SIZE', {
         message: `Agent "${agent.name}" is ${len.toLocaleString()} chars (limit: ${MAX_ARTIFACT_CHARS.toLocaleString()}). Consider simplifying the system prompt.`,
       }));
     }
+    if (lines > MAX_AGENT_LINES) {
+      warnings.push(createError('W_CONTENT_SIZE', {
+        message: `Agent "${agent.name}" is ${lines} lines (ACS recommendation: ≤${MAX_AGENT_LINES}). Consider simplifying.`,
+      }));
+    }
   }
 
   for (const command of config.commands) {
     const len = command.content.length;
+    const lines = command.content.split('\n').length;
     totalChars += len;
     if (len > MAX_ARTIFACT_CHARS) {
       warnings.push(createError('W_CONTENT_SIZE', {
         message: `Command "${command.name}" is ${len.toLocaleString()} chars (limit: ${MAX_ARTIFACT_CHARS.toLocaleString()}).`,
+      }));
+    }
+    if (lines > MAX_COMMAND_LINES) {
+      warnings.push(createError('W_CONTENT_SIZE', {
+        message: `Command "${command.name}" is ${lines} lines (ACS recommendation: ≤${MAX_COMMAND_LINES}).`,
       }));
     }
   }

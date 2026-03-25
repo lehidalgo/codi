@@ -1,3 +1,5 @@
+import { GIT_COMMIT_FIRST_LINE_LIMIT } from '../../constants.js';
+
 export const template = `---
 name: {{name}}
 description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code changes.
@@ -62,13 +64,13 @@ If any check fails: fix the issue, re-stage, and commit again. Do NOT use \\\`--
 type(scope): short description in imperative mood
 
 Optional body explaining WHY (not what — the diff shows what).
-Wrap at 72 characters per line.
+Wrap at ${GIT_COMMIT_FIRST_LINE_LIMIT} characters per line.
 
 Footer: Fixes #123, Closes #456
 \\\`\\\`\\\`
 
 **Rules:**
-- First line ≤72 characters
+- First line ≤${GIT_COMMIT_FIRST_LINE_LIMIT} characters
 - Imperative mood: "add feature" not "added feature"
 - Scope is optional but helpful: \\\`feat(auth):\\\`, \\\`fix(api):\\\`
 - Body explains motivation and context, not implementation details
@@ -118,6 +120,6 @@ This re-detects the hook runner (Husky, pre-commit framework, or standalone) and
 If the commit-msg hook rejects your message:
 - Verify format: \\\`type(scope): description\\\`
 - Valid types: feat, fix, docs, refactor, test, chore, perf, ci
-- First line must be ≤72 characters
+- First line must be ≤${GIT_COMMIT_FIRST_LINE_LIMIT} characters
 - Use imperative mood: "add" not "added"
 `;
