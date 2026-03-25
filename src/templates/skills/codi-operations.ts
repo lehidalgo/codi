@@ -1,3 +1,8 @@
+import { AVAILABLE_TEMPLATES } from '../../core/scaffolder/template-loader.js';
+import { AVAILABLE_SKILL_TEMPLATES } from '../../core/scaffolder/skill-template-loader.js';
+import { AVAILABLE_AGENT_TEMPLATES } from '../../core/scaffolder/agent-template-loader.js';
+import { AVAILABLE_COMMAND_TEMPLATES } from '../../core/scaffolder/command-template-loader.js';
+
 export const template = `---
 name: {{name}}
 description: Unified codi operations skill. Use when managing rules, skills, agents, commands, configuration, verification, or troubleshooting codi setup.
@@ -12,10 +17,10 @@ Codi manages 4 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
-| Rules | .codi/rules/custom/ | codi add rule | 9 templates |
-| Skills | .codi/skills/ | codi add skill | 5 templates |
-| Agents | .codi/agents/ | codi add agent | 3 templates |
-| Commands | .codi/commands/ | codi add command | 2 templates |
+| Rules | .codi/rules/custom/ | codi add rule | ${AVAILABLE_TEMPLATES.length} templates |
+| Skills | .codi/skills/ | codi add skill | ${AVAILABLE_SKILL_TEMPLATES.length} templates |
+| Agents | .codi/agents/ | codi add agent | ${AVAILABLE_AGENT_TEMPLATES.length} templates |
+| Commands | .codi/commands/ | codi add command | ${AVAILABLE_COMMAND_TEMPLATES.length} templates |
 
 ### Creating Artifacts
 
@@ -69,11 +74,26 @@ managed_by: codi | user
 
 ## Configuration
 
-### Presets
+### Flag Presets
 \`\`\`bash
 codi update --preset minimal     # Permissive
 codi update --preset balanced    # Recommended (default)
 codi update --preset strict      # Enforced + locked
+\`\`\`
+
+### Preset Management
+\`\`\`bash
+codi preset create <name>              # Scaffold a new preset directory
+codi preset create --interactive       # Interactive preset creation wizard
+codi preset list                       # List installed presets
+codi preset list --builtin             # Include built-in presets (python-web, typescript-fullstack, security-hardened)
+codi preset validate <name>            # Validate preset structure and schema
+codi preset export <name> --format zip # Export as ZIP for private distribution
+codi preset install ./preset.zip       # Install from local ZIP file
+codi preset install github:org/repo    # Install from GitHub repository
+codi preset remove <name>             # Remove an installed preset
+codi preset search <query>            # Search preset registry
+codi preset update                    # Update GitHub-sourced presets
 \`\`\`
 
 ### Update Artifacts

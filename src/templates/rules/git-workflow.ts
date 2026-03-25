@@ -1,3 +1,5 @@
+import { GIT_COMMIT_FIRST_LINE_LIMIT } from '../../constants.js';
+
 export const template = `---
 name: {{name}}
 description: Git workflow and commit conventions
@@ -12,7 +14,7 @@ managed_by: codi
 - Use conventional commits format: type(scope): description
 - Types: feat, fix, docs, refactor, test, chore, perf, ci
 - Write in imperative mood: "add feature" not "added feature"
-- First line under 72 characters, details in body
+- First line under ${GIT_COMMIT_FIRST_LINE_LIMIT} characters, details in body
 
 ## Commit Practices
 - Make atomic commits: one logical change per commit

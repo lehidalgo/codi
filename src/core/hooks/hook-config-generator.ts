@@ -102,12 +102,16 @@ export function generateHooksConfig(
 
   const secretScan = isSecurityScanEnabled(flags);
   if (secretScan) {
-    allHooks.push({ name: 'secret-scan', command: 'node .git/hooks/codi-secret-scan.js', stagedFilter: '' });
+    allHooks.push({ name: 'secret-scan', command: 'node .git/hooks/codi-secret-scan.mjs', stagedFilter: '' });
   }
 
   const fileSizeCheck = isFileSizeCheckEnabled(flags);
   if (fileSizeCheck) {
-    allHooks.push({ name: 'file-size-check', command: 'node .git/hooks/codi-file-size-check.js', stagedFilter: '' });
+    allHooks.push({ name: 'file-size-check', command: 'node .git/hooks/codi-file-size-check.mjs', stagedFilter: '' });
+  }
+
+  if (hasVersionRequirement) {
+    allHooks.push({ name: 'version-check', command: 'node .git/hooks/codi-version-check.mjs', stagedFilter: '' });
   }
 
   return {

@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-03-25
+
+### Added
+
+#### Preset Management System
+- Presets elevated to first-class artifact bundles (rules, skills, agents, commands, flags, MCP configs)
+- 3 built-in full presets: `python-web`, `typescript-fullstack`, `security-hardened`
+- ZIP packaging: `codi preset export <name> --format zip` and `codi preset install ./preset.zip`
+- GitHub repo support: `codi preset install github:org/repo[@tag]` with commit tracking
+- `codi preset validate <name>` — validates preset structure and schema
+- `codi preset remove <name>` — removes installed preset and lock entry
+- `codi preset list --builtin` — shows built-in presets with source type indicators
+- `codi preset create --interactive` — guided wizard for preset creation
+- `preset-creator` skill template — AI-guided 7-step preset creation workflow
+- Unified install command auto-detects source type (ZIP, GitHub, registry, local)
+- Enhanced `preset-lock.json` with `sourceType`, `commit` hash tracking
+- Expanded `PresetManifestSchema` with `author`, `license`, `tags`, `compatibility`, `dependencies`
+- 6 new error codes for preset operations (`E_PRESET_NOT_FOUND`, `E_PRESET_INVALID`, etc.)
+
+#### E2E Testing Skill Expansion
+- Suite 7 expanded from 2 to 10 test steps covering full preset lifecycle
+- Tests: create, list --builtin, validate, export ZIP, remove, install from ZIP
+- Network-dependent tests (GitHub install, registry search, update) with human-guided steps
+- All hardcoded artifact counts replaced with auto-derived values from template loaders
+
+#### Constants Extraction
+- `GIT_COMMIT_FIRST_LINE_LIMIT`, `MIN_CODE_COVERAGE_PERCENT`, `MAX_FUNCTION_LINES`, `MAX_COMPONENT_LINES`
+- Template counts auto-derived from loader arrays (no manual count maintenance)
+- 10 template files updated to import and interpolate constants
+
+### Changed
+- `codi-operations` skill updated with full preset management command reference
+- `preset-loader.ts` refactored to use `preset-builtin.ts` materializer
+- `preset-registry.ts` lock entries now include `sourceType` field
+- CLI `preset.ts` split into `preset.ts` + `preset-handlers.ts` (700-line limit)
+
 ## [0.3.1] - 2026-03-25
 
 ### Added

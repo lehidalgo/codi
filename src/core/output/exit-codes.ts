@@ -12,6 +12,7 @@ export const EXIT_CODES = {
   PERMISSION_DENIED: 10,
   AGENT_NOT_FOUND: 11,
   VERIFY_MISMATCH: 12,
+  PRESET_ERROR: 13,
 } as const;
 
 export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];

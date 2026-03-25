@@ -1,3 +1,5 @@
+import { MAX_FUNCTION_LINES } from '../../constants.js';
+
 export const template = `---
 name: {{name}}
 description: Code style and formatting conventions
@@ -16,7 +18,7 @@ managed_by: codi
 - Booleans: prefix with is, has, can, should (e.g., isActive, hasPermission)
 
 ## Functions
-- Keep functions under 30 lines — extract when longer
+- Keep functions under ${MAX_FUNCTION_LINES} lines — extract when longer
 - Single responsibility: one function does one thing
 - Pure functions preferred: same input always produces same output
 - Limit parameters to 3 — use an options object for more
