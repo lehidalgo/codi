@@ -46,7 +46,7 @@ describe('installHooks', () => {
     expect(result.ok).toBe(true);
     const hookPath = path.join(tmpDir, '.git', 'hooks', 'pre-commit');
     const content = await fs.readFile(hookPath, 'utf-8');
-    expect(content).toContain('#!/usr/bin/env node');
+    expect(content).toContain('#!/bin/sh');
     expect(content).toContain('eslint --fix');
     expect(content).toContain('prettier --write');
 
