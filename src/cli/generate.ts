@@ -110,6 +110,7 @@ export async function generateHandler(
           commitMsgValidation: hooksConfig.commitMsgValidation,
           secretScan: hooksConfig.secretScan,
           fileSizeCheck: hooksConfig.fileSizeCheck,
+          versionCheck: hooksConfig.versionCheck,
         });
       }
     } catch {

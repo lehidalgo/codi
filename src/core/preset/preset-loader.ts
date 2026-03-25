@@ -9,7 +9,7 @@ import { createError } from '../output/errors.js';
 import { PresetManifestSchema } from '../../schemas/preset.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { MCP_FILENAME, PRESET_MANIFEST_FILENAME } from '../../constants.js';
-import { getPreset as getBuiltinPreset, getPresetNames } from '../flags/flag-presets.js';
+import { isBuiltinPreset as checkBuiltin, materializeBuiltinPreset } from './preset-builtin.js';
 
 export interface LoadedPreset {
   name: string;
@@ -22,22 +22,23 @@ export interface LoadedPreset {
   mcp: McpConfig;
 }
 
-function isBuiltinPreset(name: string): boolean {
-  return getPresetNames().includes(name as ReturnType<typeof getPresetNames>[number]);
+export async function loadPreset(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {
+  if (checkBuiltin(name)) {
+    return materializeBuiltinPreset(name);
+  }
+
+  return loadPresetFromDir(name, presetsDir);
 }
 
-export async function loadPreset(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {
-  if (isBuiltinPreset(name)) {
-    return ok({
-      name,
-      description: `Built-in ${name} preset`,
-      flags: getBuiltinPreset(name as ReturnType<typeof getPresetNames>[number]),
-      rules: [],
-      skills: [],
-      agents: [],
-      commands: [],
-      mcp: { servers: {} },
-    });
+/**
+ * Loads a preset from a directory under presetsDir.
+ * Does NOT check for built-in presets — use loadPreset() for that.
+ * Exported for use by preset-resolver which handles source routing separately.
+ */
+export async function loadPresetFromDir(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {
+  // Check if it's a built-in preset (backward compat for flag-only + full presets)
+  if (checkBuiltin(name)) {
+    return materializeBuiltinPreset(name);
   }
 
   const presetDir = path.join(presetsDir, name);
