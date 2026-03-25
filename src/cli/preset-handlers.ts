@@ -3,7 +3,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import prompts from 'prompts';
 import { resolveCodiDir } from '../utils/paths.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
@@ -23,6 +24,11 @@ import { getBuiltinPresetNames } from '../templates/presets/index.js';
 import { PRESET_DESCRIPTIONS, getPresetNames as getFlagPresetNames } from '../core/flags/flag-presets.js';
 import { presetInstallHandler } from './preset.js';
 import type { PresetData } from './preset.js';
+import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
+import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
+import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
+import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
+import { regenerateConfigs } from './shared.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -314,5 +320,77 @@ export async function presetListEnhancedHandler(
   return createCommandResult({
     success: true, command: 'preset list',
     data: { action: 'list', presets }, exitCode: EXIT_CODES.SUCCESS,
+  });
+}
+
+export async function presetEditHandler(
+  projectRoot: string,
+  name: string,
+): Promise<CommandResult<PresetData>> {
+  const log = Logger.getInstance();
+  const codiDir = resolveCodiDir(projectRoot);
+  const manifestPath = path.join(codiDir, 'presets', name, 'preset.yaml');
+
+  let manifestRaw: string;
+  try {
+    manifestRaw = await fs.readFile(manifestPath, 'utf8');
+  } catch {
+    return createCommandResult({
+      success: false, command: 'preset edit', data: { action: 'validate', name },
+      errors: [{ code: 'E_GENERAL', message: `Preset "${name}" not found.`, hint: '', severity: 'error', context: {} }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  const manifest = parseYaml(manifestRaw) as Record<string, unknown>;
+  const current = (manifest['artifacts'] ?? {}) as Record<string, string[]>;
+
+  const currentRules = new Set(current['rules'] ?? []);
+  const currentSkills = new Set(current['skills'] ?? []);
+  const currentAgents = new Set(current['agents'] ?? []);
+  const currentCommands = new Set(current['commands'] ?? []);
+
+  const ruleRes = await prompts({
+    type: 'autocompleteMultiselect', name: 'rules',
+    message: 'Rules (type to search)',
+    choices: AVAILABLE_TEMPLATES.map(t => ({ title: t, value: t, selected: currentRules.has(t) })),
+    hint: '- Type to filter, Space to toggle',
+  });
+
+  const skillRes = await prompts({
+    type: 'autocompleteMultiselect', name: 'skills',
+    message: 'Skills (type to search)',
+    choices: AVAILABLE_SKILL_TEMPLATES.map(t => ({ title: t, value: t, selected: currentSkills.has(t) })),
+    hint: '- Type to filter, Space to toggle',
+  });
+
+  const agentRes = await prompts({
+    type: 'autocompleteMultiselect', name: 'agents',
+    message: 'Agents (type to search)',
+    choices: AVAILABLE_AGENT_TEMPLATES.map(t => ({ title: t, value: t, selected: currentAgents.has(t) })),
+    hint: '- Type to filter, Space to toggle',
+  });
+
+  const cmdRes = await prompts({
+    type: 'autocompleteMultiselect', name: 'commands',
+    message: 'Commands (type to search)',
+    choices: AVAILABLE_COMMAND_TEMPLATES.map(t => ({ title: t, value: t, selected: currentCommands.has(t) })),
+    hint: '- Type to filter, Space to toggle',
+  });
+
+  manifest['artifacts'] = {
+    rules: (ruleRes.rules ?? []) as string[],
+    skills: (skillRes.skills ?? []) as string[],
+    agents: (agentRes.agents ?? []) as string[],
+    commands: (cmdRes.commands ?? []) as string[],
+  };
+
+  await fs.writeFile(manifestPath, stringifyYaml(manifest), 'utf8');
+  await regenerateConfigs(projectRoot);
+
+  log.info(`Updated preset "${name}".`);
+  return createCommandResult({
+    success: true, command: 'preset edit',
+    data: { action: 'validate', name }, exitCode: EXIT_CODES.SUCCESS,
   });
 }

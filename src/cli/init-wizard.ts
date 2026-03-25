@@ -10,8 +10,10 @@ import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template
 
 export interface WizardResult {
   agents: string[];
-  configMode: 'preset' | 'custom';
+  configMode: 'preset' | 'custom' | 'zip' | 'github';
   presetName?: string;
+  importSource?: string;
+  saveAsPreset?: string;
   rules: string[];
   skills: string[];
   agentTemplates: string[];
@@ -65,12 +67,55 @@ export async function runInitWizard(
     message: 'How do you want to configure?',
     choices: [
       { title: 'Use a built-in preset', value: 'preset', description: 'Curated configuration bundles' },
+      { title: 'Import from ZIP file', value: 'zip', description: 'Load a preset from a .zip package' },
+      { title: 'Import from GitHub', value: 'github', description: 'Load a preset from a GitHub repository' },
       { title: 'Custom selection', value: 'custom', description: 'Pick individual artifacts (searchable)' },
     ],
     initial: 0,
   }, { onCancel: () => false });
 
   if (!modeResponse.configMode) return null;
+
+  // Step 3: Import from ZIP
+  if (modeResponse.configMode === 'zip') {
+    const zipResponse = await prompts({
+      type: 'text',
+      name: 'path',
+      message: 'Path to preset ZIP file',
+      validate: (v: string) => v.endsWith('.zip') ? true : 'Must be a .zip file',
+    }, { onCancel: () => false });
+
+    if (!zipResponse.path) return null;
+
+    return {
+      agents: agentResponse.agents as string[],
+      configMode: 'zip' as const,
+      importSource: zipResponse.path as string,
+      rules: [], skills: [], agentTemplates: [], commandTemplates: [],
+      preset: DEFAULT_PRESET as PresetName,
+      versionPin: true,
+    };
+  }
+
+  // Step 3: Import from GitHub
+  if (modeResponse.configMode === 'github') {
+    const ghResponse = await prompts({
+      type: 'text',
+      name: 'repo',
+      message: 'GitHub repo (e.g., org/preset-name or github:org/repo@v1.0)',
+    }, { onCancel: () => false });
+
+    if (!ghResponse.repo) return null;
+
+    return {
+      agents: agentResponse.agents as string[],
+      configMode: 'github' as const,
+      importSource: ghResponse.repo as string,
+      rules: [], skills: [], agentTemplates: [], commandTemplates: [],
+      preset: DEFAULT_PRESET as PresetName,
+      versionPin: true,
+    };
+  }
 
   // Step 3a: Built-in preset path
   if (modeResponse.configMode === 'preset') {
@@ -151,6 +196,25 @@ export async function runInitWizard(
     initial: 0,
   }, { onCancel: () => false });
 
+  // Save as preset?
+  const saveResponse = await prompts({
+    type: 'confirm',
+    name: 'save',
+    message: 'Save this selection as a named preset for reuse?',
+    initial: false,
+  }, { onCancel: () => false });
+
+  let saveAsPreset: string | undefined;
+  if (saveResponse.save) {
+    const nameResponse = await prompts({
+      type: 'text',
+      name: 'name',
+      message: 'Preset name (kebab-case)',
+      validate: (v: string) => /^[a-z][a-z0-9-]*$/.test(v) ? true : 'Must be kebab-case, start with a letter',
+    }, { onCancel: () => false });
+    saveAsPreset = nameResponse.name as string | undefined;
+  }
+
   const pinResponse = await prompts({
     type: 'confirm',
     name: 'versionPin',
@@ -161,6 +225,7 @@ export async function runInitWizard(
   return {
     agents: agentResponse.agents as string[],
     configMode: 'custom',
+    saveAsPreset,
     rules: (ruleResponse.rules ?? []) as string[],
     skills: (skillResponse.skills ?? []) as string[],
     agentTemplates: (agentDefResponse.agentTemplates ?? []) as string[],

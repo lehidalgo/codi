@@ -135,6 +135,8 @@ export async function initHandler(
         agentTemplates = [...presetDef.agents];
         commandTemplates = [...presetDef.commands];
       }
+    } else if (wizardResult.configMode === 'zip' || wizardResult.configMode === 'github') {
+      // Import: will be handled after createCodiStructure via preset install
     } else {
       // Custom: use wizard selections
       ruleTemplates = wizardResult.rules;
@@ -144,6 +146,33 @@ export async function initHandler(
     }
 
     await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin);
+
+    // Handle import sources (ZIP/GitHub)
+    if (wizardResult.importSource) {
+      const { presetInstallUnifiedHandler } = await import('./preset-handlers.js');
+      const installResult = await presetInstallUnifiedHandler(projectRoot, wizardResult.importSource);
+      if (!installResult.success) {
+        log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? 'unknown error'}`);
+      }
+    }
+
+    // Save custom selection as preset if requested
+    if (wizardResult.saveAsPreset) {
+      const presetDir = path.join(codiDir, 'presets', wizardResult.saveAsPreset);
+      await fs.mkdir(presetDir, { recursive: true });
+      const { stringify } = await import('yaml');
+      await fs.writeFile(path.join(presetDir, 'preset.yaml'), stringify({
+        name: wizardResult.saveAsPreset,
+        version: '1.0.0',
+        artifacts: {
+          rules: wizardResult.rules,
+          skills: wizardResult.skills,
+          agents: wizardResult.agentTemplates,
+          commands: wizardResult.commandTemplates,
+        },
+      }), 'utf8');
+      log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
+    }
   } else {
     if (options.agents && options.agents.length > 0) {
       const knownIds = new Set(getAllAdapters().map((a) => a.id));
