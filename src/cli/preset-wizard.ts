@@ -4,7 +4,7 @@ import prompts from 'prompts';
 import { stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { Logger } from '../core/output/logger.js';
-import { PRESET_MANIFEST_FILENAME, ARTIFACT_TYPES, NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from '../constants.js';
+import { PRESET_MANIFEST_FILENAME, NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from '../constants.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -146,17 +146,20 @@ async function scaffoldPreset(projectRoot: string, config: PresetWizardResult): 
   const codiDir = resolveCodiDir(projectRoot);
   const presetDir = path.join(codiDir, 'presets', config.name);
 
-  // Create directory structure
+  // Create preset directory (no subdirs — artifacts are references)
   await fs.mkdir(presetDir, { recursive: true });
-  for (const sub of ARTIFACT_TYPES) {
-    await fs.mkdir(path.join(presetDir, sub), { recursive: true });
-  }
 
-  // Write manifest
+  // Write manifest with artifacts as references
   const manifest: Record<string, unknown> = {
     name: config.name,
     description: config.description,
     version: config.version,
+    artifacts: {
+      rules: config.rules,
+      skills: config.skills,
+      agents: config.agents,
+      commands: [],
+    },
   };
   if (config.extends) manifest['extends'] = config.extends;
   if (config.tags.length > 0) manifest['tags'] = config.tags;
