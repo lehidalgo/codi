@@ -3,6 +3,7 @@ import type { PresetName } from '../core/flags/flag-presets.js';
 import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
 import { DEFAULT_PRESET } from '../constants.js';
 import { printBanner, printSection } from './shared.js';
+import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -119,7 +120,7 @@ export async function runInitWizard(
     };
   }
 
-  // Step 3a: Built-in preset path
+  // Step 3a: Built-in preset path — show artifacts, editable
   if (modeResponse.configMode === 'preset') {
     const presetResponse = await prompts({
       type: 'select',
@@ -131,23 +132,80 @@ export async function runInitWizard(
 
     if (!presetResponse.presetName) return null;
 
-    const flagPreset = getBasePreset(presetResponse.presetName as string);
+    const selectedPreset = presetResponse.presetName as string;
+    const flagPreset = getBasePreset(selectedPreset);
+    const presetDef = getBuiltinPresetDefinition(selectedPreset);
+
+    // Pre-select the preset's artifacts so user can see and modify
+    const presetRules = new Set(presetDef?.rules ?? []);
+    const presetSkills = new Set(presetDef?.skills ?? []);
+    const presetAgents = new Set(presetDef?.agents ?? []);
+    const presetCommands = new Set(presetDef?.commands ?? []);
+
+    printSection(`Artifacts in "${selectedPreset}" (modify to customize)`);
+
+    const rRes = await prompts({ type: 'autocompleteMultiselect', name: 'rules',
+      message: 'Rules (type to search)',
+      choices: AVAILABLE_TEMPLATES.map(t => ({ title: t, value: t, selected: presetRules.has(t) })),
+      hint: '- Type to filter, Space to toggle',
+    }, { onCancel: () => false });
+
+    const sRes = await prompts({ type: 'autocompleteMultiselect', name: 'skills',
+      message: 'Skills (type to search)',
+      choices: AVAILABLE_SKILL_TEMPLATES.map(t => ({ title: t, value: t, selected: presetSkills.has(t) })),
+      hint: '- Type to filter, Space to toggle',
+    }, { onCancel: () => false });
+
+    const aRes = await prompts({ type: 'autocompleteMultiselect', name: 'agents',
+      message: 'Agents (type to search)',
+      choices: AVAILABLE_AGENT_TEMPLATES.map(t => ({ title: t, value: t, selected: presetAgents.has(t) })),
+      hint: '- Type to filter, Space to toggle',
+    }, { onCancel: () => false });
+
+    const cRes = await prompts({ type: 'autocompleteMultiselect', name: 'commands',
+      message: 'Commands (type to search)',
+      choices: AVAILABLE_COMMAND_TEMPLATES.map(t => ({ title: t, value: t, selected: presetCommands.has(t) })),
+      hint: '- Type to filter, Space to toggle',
+    }, { onCancel: () => false });
+
+    const userRules = (rRes.rules ?? []) as string[];
+    const userSkills = (sRes.skills ?? []) as string[];
+    const userAgents = (aRes.agents ?? []) as string[];
+    const userCommands = (cRes.commands ?? []) as string[];
+
+    // Check if user modified the preset
+    const changed = !sameArrays(userRules, [...presetRules])
+      || !sameArrays(userSkills, [...presetSkills])
+      || !sameArrays(userAgents, [...presetAgents])
+      || !sameArrays(userCommands, [...presetCommands]);
+
+    let saveAsPreset: string | undefined;
+    if (changed) {
+      printSection('Custom Preset');
+      const customName = await prompts({
+        type: 'text',
+        name: 'name',
+        message: 'You modified the preset. Save as custom preset (name)',
+        initial: `${selectedPreset}-custom`,
+        validate: (v: string) => /^[a-z][a-z0-9-]*$/.test(v) ? true : 'Must be kebab-case',
+      }, { onCancel: () => false });
+      saveAsPreset = customName.name as string | undefined;
+    }
 
     const pinResponse = await prompts({
-      type: 'confirm',
-      name: 'versionPin',
-      message: 'Enable version pinning?',
-      initial: true,
+      type: 'confirm', name: 'versionPin',
+      message: 'Enable version pinning?', initial: true,
     }, { onCancel: () => false });
 
     return {
       agents: agentResponse.agents as string[],
-      configMode: 'preset',
-      presetName: presetResponse.presetName as string,
-      rules: [],
-      skills: [],
-      agentTemplates: [],
-      commandTemplates: [],
+      configMode: changed ? 'custom' : 'preset',
+      presetName: changed ? undefined : selectedPreset,
+      saveAsPreset,
+      rules: userRules,
+      skills: userSkills,
+      agentTemplates: userAgents,
+      commandTemplates: userCommands,
       preset: flagPreset,
       versionPin: pinResponse.versionPin ?? true,
     };
@@ -242,6 +300,12 @@ export async function runInitWizard(
  * Maps full preset names to their base flag preset.
  * python-web extends balanced, security-hardened extends strict, etc.
  */
+function sameArrays(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a);
+  return b.every(item => setA.has(item));
+}
+
 function getBasePreset(name: string): PresetName {
   switch (name) {
     case 'minimal':
