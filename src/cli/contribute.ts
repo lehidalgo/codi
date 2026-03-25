@@ -1,0 +1,276 @@
+import type { Command } from 'commander';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import prompts from 'prompts';
+import { resolveCodiDir } from '../utils/paths.js';
+import { createCommandResult } from '../core/output/formatter.js';
+import { EXIT_CODES } from '../core/output/exit-codes.js';
+import { Logger } from '../core/output/logger.js';
+import type { CommandResult } from '../core/output/types.js';
+import { initFromOptions, handleOutput } from './shared.js';
+import type { GlobalOptions } from './shared.js';
+import { parseFrontmatter } from '../utils/frontmatter.js';
+
+const execFileAsync = promisify(execFile);
+const CODI_REPO = 'lehidalgo/codi';
+
+interface ContributeData {
+  action: 'pr' | 'zip' | 'cancelled';
+  artifacts?: string[];
+  prUrl?: string;
+  zipPath?: string;
+}
+
+interface ArtifactEntry {
+  name: string;
+  type: 'rule' | 'skill' | 'agent' | 'command';
+  managedBy: string;
+  path: string;
+}
+
+async function discoverArtifacts(codiDir: string): Promise<ArtifactEntry[]> {
+  const artifacts: ArtifactEntry[] = [];
+
+  const scanDir = async (dir: string, type: ArtifactEntry['type']) => {
+    try {
+      const entries = await fs.readdir(dir);
+      for (const entry of entries) {
+        if (!entry.endsWith('.md')) continue;
+        const filePath = path.join(dir, entry);
+        try {
+          const raw = await fs.readFile(filePath, 'utf8');
+          const { data } = parseFrontmatter<Record<string, unknown>>(raw);
+          artifacts.push({
+            name: (data['name'] as string) ?? path.basename(entry, '.md'),
+            type,
+            managedBy: (data['managed_by'] as string) ?? 'user',
+            path: filePath,
+          });
+        } catch { /* skip invalid files */ }
+      }
+    } catch { /* dir doesn't exist */ }
+  };
+
+  await scanDir(path.join(codiDir, 'rules', 'custom'), 'rule');
+  await scanDir(path.join(codiDir, 'rules', 'generated', 'common'), 'rule');
+  await scanDir(path.join(codiDir, 'skills'), 'skill');
+  await scanDir(path.join(codiDir, 'agents'), 'agent');
+  await scanDir(path.join(codiDir, 'commands'), 'command');
+
+  return artifacts;
+}
+
+function getTemplateDir(type: ArtifactEntry['type']): string {
+  switch (type) {
+    case 'rule': return 'src/templates/rules';
+    case 'skill': return 'src/templates/skills';
+    case 'agent': return 'src/templates/agents';
+    case 'command': return 'src/templates/commands';
+  }
+}
+
+async function checkGhAuth(log: Logger): Promise<boolean> {
+  try {
+    await execFileAsync('gh', ['auth', 'status']);
+    return true;
+  } catch {
+    log.info('GitHub CLI not authenticated.');
+    log.info('Run: gh auth login');
+    return false;
+  }
+}
+
+async function createContributionPR(
+  artifacts: ArtifactEntry[],
+  log: Logger,
+): Promise<string | null> {
+  const tmpDir = path.join(os.tmpdir(), `codi-contribute-${Date.now()}`);
+
+  try {
+    // Fork + clone
+    log.info('Forking and cloning codi repository...');
+    await execFileAsync('gh', ['repo', 'fork', CODI_REPO, '--clone', '--remote', '--default-branch-only'], {
+      cwd: os.tmpdir(),
+      env: { ...process.env, GH_REPO_DIR: tmpDir },
+    });
+
+    // Find the cloned directory
+    const { stdout: forkName } = await execFileAsync('gh', ['repo', 'view', '--json', 'name', '-q', '.name']);
+    const cloneDir = path.join(os.tmpdir(), forkName.trim());
+
+    // Create branch
+    const branchName = `contrib/add-${artifacts[0]?.name ?? 'artifacts'}-${Date.now()}`;
+    await execFileAsync('git', ['checkout', '-b', branchName], { cwd: cloneDir });
+
+    // Copy artifacts to correct template locations
+    for (const artifact of artifacts) {
+      const destDir = path.join(cloneDir, getTemplateDir(artifact.type));
+      const destFile = path.join(destDir, `${artifact.name}.ts`);
+
+      // Read the artifact content and wrap as a template export
+      const raw = await fs.readFile(artifact.path, 'utf8');
+      const escaped = raw.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+      const templateContent = `export const template = \`${escaped}\`;\n`;
+
+      await fs.mkdir(destDir, { recursive: true });
+      await fs.writeFile(destFile, templateContent, 'utf8');
+    }
+
+    // Commit
+    await execFileAsync('git', ['add', '.'], { cwd: cloneDir });
+    const names = artifacts.map(a => `${a.type}:${a.name}`).join(', ');
+    await execFileAsync('git', ['commit', '-m', `feat: contribute ${names}`], { cwd: cloneDir });
+
+    // Push
+    await execFileAsync('git', ['push', 'origin', branchName], { cwd: cloneDir });
+
+    // Create PR
+    const { stdout: prUrl } = await execFileAsync('gh', [
+      'pr', 'create',
+      '--repo', CODI_REPO,
+      '--title', `feat: contribute ${names}`,
+      '--body', `## Contributed Artifacts\n\n${artifacts.map(a => `- **${a.type}**: ${a.name}`).join('\n')}\n\nGenerated by \`codi contribute\`.`,
+    ], { cwd: cloneDir });
+
+    return prUrl.trim();
+  } catch (error) {
+    log.info(`PR creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    return null;
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+export async function contributeHandler(
+  projectRoot: string,
+): Promise<CommandResult<ContributeData>> {
+  const log = Logger.getInstance();
+  const codiDir = resolveCodiDir(projectRoot);
+
+  // Discover all artifacts
+  const allArtifacts = await discoverArtifacts(codiDir);
+  if (allArtifacts.length === 0) {
+    log.info('No artifacts found in .codi/. Nothing to contribute.');
+    return createCommandResult({
+      success: false, command: 'contribute',
+      data: { action: 'cancelled' },
+      errors: [{ code: 'E_GENERAL', message: 'No artifacts found.', hint: 'Add some artifacts first.', severity: 'error', context: {} }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  // Step 1: Select artifacts
+  const artifactChoices = allArtifacts.map(a => ({
+    title: `[${a.type}] ${a.name}`,
+    value: a.name,
+    description: `managed_by: ${a.managedBy}`,
+  }));
+
+  const selection = await prompts({
+    type: 'autocompleteMultiselect',
+    name: 'selected',
+    message: 'Select artifacts to contribute (type to search)',
+    choices: artifactChoices,
+    hint: '- Type to filter, Space to toggle, Enter to confirm',
+  }, { onCancel: () => false });
+
+  if (!selection.selected || selection.selected.length === 0) {
+    return createCommandResult({
+      success: false, command: 'contribute',
+      data: { action: 'cancelled' },
+      errors: [{ code: 'E_GENERAL', message: 'No artifacts selected.', hint: '', severity: 'error', context: {} }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  const selected = allArtifacts.filter(a => (selection.selected as string[]).includes(a.name));
+
+  // Step 2: Choose contribution method
+  const method = await prompts({
+    type: 'select',
+    name: 'method',
+    message: 'How do you want to contribute?',
+    choices: [
+      { title: 'Open PR to codi repository', value: 'pr', description: 'Requires gh CLI authentication' },
+      { title: 'Export as ZIP', value: 'zip', description: 'Share privately or manually' },
+    ],
+  }, { onCancel: () => false });
+
+  if (!method.method) {
+    return createCommandResult({
+      success: false, command: 'contribute',
+      data: { action: 'cancelled' },
+      errors: [{ code: 'E_GENERAL', message: 'Cancelled.', hint: '', severity: 'error', context: {} }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  // Step 3: Execute
+  if (method.method === 'pr') {
+    if (!(await checkGhAuth(log))) {
+      return createCommandResult({
+        success: false, command: 'contribute',
+        data: { action: 'pr' },
+        errors: [{ code: 'E_GENERAL', message: 'GitHub CLI not authenticated.', hint: 'Run: gh auth login', severity: 'error', context: {} }],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
+    log.info(`Contributing ${selected.length} artifact(s) via PR...`);
+    const prUrl = await createContributionPR(selected, log);
+
+    if (prUrl) {
+      log.info(`PR created: ${prUrl}`);
+      return createCommandResult({
+        success: true, command: 'contribute',
+        data: { action: 'pr', artifacts: selected.map(a => a.name), prUrl },
+        exitCode: EXIT_CODES.SUCCESS,
+      });
+    }
+
+    return createCommandResult({
+      success: false, command: 'contribute',
+      data: { action: 'pr' },
+      errors: [{ code: 'E_GENERAL', message: 'Failed to create PR. Try exporting as ZIP instead.', hint: '', severity: 'error', context: {} }],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  // ZIP export
+  const zipDir = path.join(os.tmpdir(), `codi-contrib-${Date.now()}`);
+  await fs.mkdir(zipDir, { recursive: true });
+  for (const artifact of selected) {
+    const destDir = path.join(zipDir, artifact.type + 's');
+    await fs.mkdir(destDir, { recursive: true });
+    await fs.copyFile(artifact.path, path.join(destDir, path.basename(artifact.path)));
+  }
+
+  const zipPath = path.join(projectRoot, `codi-contribution-${Date.now()}.zip`);
+  try {
+    await execFileAsync('zip', ['-r', zipPath, '.'], { cwd: zipDir });
+    log.info(`Exported to ${zipPath}`);
+    return createCommandResult({
+      success: true, command: 'contribute',
+      data: { action: 'zip', artifacts: selected.map(a => a.name), zipPath },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  } finally {
+    await fs.rm(zipDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+export function registerContributeCommand(program: Command): void {
+  program
+    .command('contribute')
+    .description('Contribute artifacts or presets back to the codi community')
+    .action(async () => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await contributeHandler(process.cwd());
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+}
