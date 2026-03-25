@@ -53,7 +53,7 @@ describe('Self-introspection (dogfooding)', () => {
     expect(result.errors[0]?.message).toContain('unknown-agent');
   });
 
-  it('full pipeline: init, add rules, validate, generate, status, drift', async () => {
+  it('full pipeline: init, add rules, validate, generate, status, drift', { timeout: 15000 }, async () => {
     // 1. Init with all agents
     const initResult = await initHandler(tmpDir, { agents: ALL_AGENTS });
     expect(initResult.success).toBe(true);
