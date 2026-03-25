@@ -5,7 +5,7 @@ import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
+import { initFromOptions, handleOutput, regenerateConfigs } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 
 interface RevertOptions extends GlobalOptions {
@@ -87,6 +87,7 @@ export async function revertHandler(
 
   const restoredFiles = await restoreBackup(projectRoot, codiDir, timestamp);
   log.info(`Restored ${restoredFiles.length} files from backup ${timestamp}`);
+  await regenerateConfigs(projectRoot);
 
   return createCommandResult({
     success: true,

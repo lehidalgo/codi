@@ -217,6 +217,6 @@ This project uses Codi for unified AI agent configuration.
 - Rules: architecture, code-style, error-handling, git-workflow, security, testing
 - Skills: artifact-creator, codi-operations, e2e-testing
 - Agents: code-reviewer, security-analyzer, test-generator
-- Generated: 2026-03-25T09:27:23.821Z
+- Generated: 2026-03-25T14:33:08.071Z
 
 When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.

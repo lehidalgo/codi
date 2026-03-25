@@ -2,6 +2,9 @@ import type { Command } from 'commander';
 import { Logger } from '../core/output/logger.js';
 import { formatHuman, formatJson } from '../core/output/formatter.js';
 import type { CommandResult } from '../core/output/types.js';
+import { registerAllAdapters } from '../adapters/index.js';
+import { resolveConfig } from '../core/config/resolver.js';
+import { generate } from '../core/generator/generator.js';
 
 export interface GlobalOptions {
   json?: boolean;
@@ -29,6 +32,28 @@ export function initFromOptions(options: GlobalOptions): void {
   const noColor = options.noColor ?? false;
 
   Logger.init({ level, mode, noColor });
+}
+
+/**
+ * Resolves config and regenerates all agent files.
+ * Call after any command that modifies .codi/ configuration.
+ * Returns true on success, false on failure (logs warning, never throws).
+ */
+export async function regenerateConfigs(projectRoot: string): Promise<boolean> {
+  const log = Logger.getInstance();
+  try {
+    registerAllAdapters();
+    const configResult = await resolveConfig(projectRoot);
+    if (!configResult.ok) {
+      log.warn('Auto-generate skipped: config resolution failed.');
+      return false;
+    }
+    const genResult = await generate(configResult.data, projectRoot);
+    return genResult.ok;
+  } catch {
+    log.warn('Auto-generate failed. Run `codi generate` manually.');
+    return false;
+  }
 }
 
 export function handleOutput(
