@@ -226,7 +226,7 @@ Complete map of user interaction paths with codi. Each flow includes the user ty
 
 **Validation:** `codi doctor` passes. `codi status` clean.
 
-**Edge Cases:** `--regenerate` combines update + generate. `--from <repo>` pulls from specific repo.
+**Edge Cases:** Update auto-generates agent configs. `--from <repo>` pulls from specific repo. `--dry-run` previews without writing.
 
 ---
 
@@ -378,7 +378,7 @@ Complete map of user interaction paths with codi. Each flow includes the user ty
 **Prerequisites:** Central repo URL known, local project initialized
 
 **Steps:**
-1. `codi update --from org/central-config --regenerate`
+1. `codi update --from org/central-config`
 
 **Expected Outcome:** Rules, flags, skills pulled and merged. Generated files regenerated.
 

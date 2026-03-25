@@ -123,7 +123,7 @@ Keep individual artifacts under 6,000 chars and total combined content under 12,
 | `codi add command <name>` | Add a custom command | `-t, --template <name>`, `--all` |
 | `codi doctor` | Check project health | `--ci` |
 | `codi verify` | Verify agent loaded configuration | `--check <response>` |
-| `codi update` | Update flags and artifacts to latest | `--preset`, `--rules`, `--skills`, `--agents`, `--from <repo>`, `--regenerate` |
+| `codi update` | Update flags and artifacts to latest | `--preset`, `--rules`, `--skills`, `--agents`, `--from <repo>`, `--dry-run` |
 | `codi clean` | Remove generated files | `--all`, `--dry-run`, `--force` |
 | `codi compliance` | Comprehensive health check | `--ci` |
 | `codi watch` | Auto-regenerate on file changes | `--once` |
@@ -242,7 +242,7 @@ Phase 4 (Scale) is next:
 ## FAQ
 
 **Q: I already have a `CLAUDE.md` -- will codi overwrite it?**
-Yes. Run `codi init`, move your rules into `.codi/rules/custom/` as Markdown files with frontmatter, then `codi generate`. Back up your existing files first.
+Yes. Run `codi init`, then move your rules into `.codi/rules/custom/` as Markdown files with frontmatter and run `codi generate`. Back up your existing files first.
 
 **Q: Do I commit generated files like `CLAUDE.md`?**
 Yes. Agents read these files from your repo. Commit both `.codi/` (your config) and generated files (the output).
@@ -263,7 +263,7 @@ Yes. Run `codi init --agents claude-code` (or any single agent). Codi works with
 Rules are instructions that agents follow (e.g., "never expose secrets"). Skills are reusable workflows that agents can invoke (e.g., "code review checklist"). Both are Markdown files with YAML frontmatter.
 
 **Q: How do I remove a flag from my config?**
-Delete the flag entry from `.codi/flags.yaml` and run `codi generate`. Codi will use the catalog default for any missing flags.
+Delete the flag entry from `.codi/flags.yaml` and run `codi generate` to apply the change. Codi will use the catalog default for any missing flags.
 
 ## License
 

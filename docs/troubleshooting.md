@@ -81,7 +81,7 @@ Only artifacts with `managed_by: codi` are updated during generation. User-creat
 To refresh all managed artifacts:
 
 ```bash
-codi update --rules --skills --agents --commands --regenerate
+codi update --rules --skills --agents --commands
 ```
 
 ### Generated file overwritten manually

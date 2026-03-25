@@ -35,7 +35,7 @@ interface UpdateOptions extends GlobalOptions {
   skills?: boolean;
   agents?: boolean;
   commands?: boolean;
-  regenerate?: boolean;
+  // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
 }
 

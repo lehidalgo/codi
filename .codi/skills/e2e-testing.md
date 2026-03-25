@@ -96,8 +96,8 @@ Expected: 12-char token deterministic. All checks pass. docs-update reports fixe
 
 **[SYSTEM]** Preset switching:
 \`\`\`bash
-npx codi update --preset strict --regenerate --json
-npx codi update --preset balanced --regenerate --json
+npx codi update --preset strict --json
+npx codi update --preset balanced --json
 \`\`\`
 Expected: Strict shows restricted instructions. Balanced restores defaults.
 
