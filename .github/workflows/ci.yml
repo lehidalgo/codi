@@ -28,3 +28,20 @@ jobs:
 
       - name: Test
         run: npm test
+
+  version-check:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version was bumped
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
+            echo "::error::Version v${VERSION} already released. Bump version in package.json before merging to main."
+            exit 1
+          fi
+          echo "Version v${VERSION} is new — ready to release."

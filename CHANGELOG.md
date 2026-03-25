@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.2] - 2026-03-25
+
+### Added
+- Auto-generate after every mutating command (`add`, `update`, `revert`) — no need to run `codi generate` manually
+- `codi generate` only needed after manual `.codi/` file edits
+
+### Removed
+- `--regenerate` flag from `update` command (now always-on unless `--dry-run`)
+
 ## [0.4.1] - 2026-03-25
 
 ### Added
