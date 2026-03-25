@@ -10,6 +10,10 @@ import { PresetManifestSchema } from '../../schemas/preset.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { MCP_FILENAME, PRESET_MANIFEST_FILENAME } from '../../constants.js';
 import { isBuiltinPreset as checkBuiltin, materializeBuiltinPreset } from './preset-builtin.js';
+import { loadTemplate } from '../scaffolder/template-loader.js';
+import { loadSkillTemplate } from '../scaffolder/skill-template-loader.js';
+import { loadAgentTemplate } from '../scaffolder/agent-template-loader.js';
+import { loadCommandTemplate } from '../scaffolder/command-template-loader.js';
 
 export interface LoadedPreset {
   name: string;
@@ -79,10 +83,13 @@ export async function loadPresetFromDir(name: string, presetsDir: string): Promi
     }
   }
 
-  const rules = await loadPresetArtifacts<NormalizedRule>(path.join(presetDir, 'rules'), parseRuleFile);
-  const skills = await loadPresetArtifacts<NormalizedSkill>(path.join(presetDir, 'skills'), parseSkillFile);
-  const agents = await loadPresetArtifacts<NormalizedAgent>(path.join(presetDir, 'agents'), parseAgentFile);
-  const commands = await loadPresetArtifacts<NormalizedCommand>(path.join(presetDir, 'commands'), parseCommandFile);
+  // Resolve artifacts by name from the artifacts field
+  // If no artifacts field, treat as flags-only preset (empty artifact lists)
+  const codiDir = path.dirname(presetsDir);
+  const resolved = manifest.artifacts
+    ? await resolveArtifactsByName(manifest.artifacts, codiDir)
+    : { rules: [], skills: [], agents: [], commands: [] };
+  const { rules, skills, agents, commands } = resolved;
 
   let mcp: McpConfig = { servers: {} };
   try {
@@ -121,71 +128,161 @@ function mergeArtifacts<T extends { name: string }>(parent: T[], child: T[]): T[
   return [...fromParent, ...child];
 }
 
-async function loadPresetArtifacts<T>(dir: string, parser: (filePath: string) => Promise<T | null>): Promise<T[]> {
-  const items: T[] = [];
-  try {
-    const entries = await fs.readdir(dir);
-    for (const entry of entries) {
-      if (!entry.endsWith('.md')) continue;
-      const item = await parser(path.join(dir, entry));
-      if (item) items.push(item);
-    }
-  } catch { /* dir doesn't exist */ }
-  return items;
+interface ArtifactNames {
+  rules?: string[];
+  skills?: string[];
+  agents?: string[];
+  commands?: string[];
 }
 
-async function parseRuleFile(filePath: string): Promise<NormalizedRule | null> {
+interface ResolvedArtifacts {
+  rules: NormalizedRule[];
+  skills: NormalizedSkill[];
+  agents: NormalizedAgent[];
+  commands: NormalizedCommand[];
+}
+
+/**
+ * Resolves artifact names to full normalized objects.
+ * Tries built-in templates first, then custom files in .codi/ canonical dirs.
+ */
+async function resolveArtifactsByName(
+  artifacts: ArtifactNames,
+  codiDir: string,
+): Promise<ResolvedArtifacts> {
+  const rules: NormalizedRule[] = [];
+  for (const name of artifacts.rules ?? []) {
+    const rule = resolveRule(name) ?? await loadRuleFromDir(name, codiDir);
+    if (rule) rules.push(rule);
+  }
+
+  const skills: NormalizedSkill[] = [];
+  for (const name of artifacts.skills ?? []) {
+    const skill = resolveSkill(name) ?? await loadSkillFromDir(name, codiDir);
+    if (skill) skills.push(skill);
+  }
+
+  const agents: NormalizedAgent[] = [];
+  for (const name of artifacts.agents ?? []) {
+    const agent = resolveAgent(name) ?? await loadAgentFromDir(name, codiDir);
+    if (agent) agents.push(agent);
+  }
+
+  const commands: NormalizedCommand[] = [];
+  for (const name of artifacts.commands ?? []) {
+    const cmd = resolveCommand(name) ?? await loadCommandFromDir(name, codiDir);
+    if (cmd) commands.push(cmd);
+  }
+
+  return { rules, skills, agents, commands };
+}
+
+function resolveRule(name: string): NormalizedRule | null {
+  const result = loadTemplate(name);
+  if (!result.ok) return null;
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const replaced = result.data.replace(/\{\{name\}\}/g, name);
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(replaced);
     return {
-      name: (data['name'] as string) ?? path.basename(filePath, '.md'),
+      name,
       description: (data['description'] as string) ?? '',
       content,
       priority: (data['priority'] as 'high' | 'medium' | 'low') ?? 'medium',
       alwaysApply: (data['alwaysApply'] as boolean) ?? true,
-      managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'codi',
+      managedBy: 'codi',
     };
   } catch { return null; }
 }
 
-async function parseSkillFile(filePath: string): Promise<NormalizedSkill | null> {
+function resolveSkill(name: string): NormalizedSkill | null {
+  const result = loadSkillTemplate(name);
+  if (!result.ok) return null;
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const replaced = result.data.replace(/\{\{name\}\}/g, name);
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(replaced);
     return {
-      name: (data['name'] as string) ?? path.basename(filePath, '.md'),
+      name,
       description: (data['description'] as string) ?? '',
       content,
-      managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'codi',
+      managedBy: 'codi',
     };
   } catch { return null; }
 }
 
-async function parseAgentFile(filePath: string): Promise<NormalizedAgent | null> {
+function resolveAgent(name: string): NormalizedAgent | null {
+  const result = loadAgentTemplate(name);
+  if (!result.ok) return null;
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const replaced = result.data.replace(/\{\{name\}\}/g, name);
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(replaced);
     return {
-      name: (data['name'] as string) ?? path.basename(filePath, '.md'),
+      name,
       description: (data['description'] as string) ?? '',
       content,
       tools: data['tools'] as string[] | undefined,
       model: data['model'] as string | undefined,
-      managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'codi',
+      managedBy: 'codi',
     };
   } catch { return null; }
 }
 
-async function parseCommandFile(filePath: string): Promise<NormalizedCommand | null> {
+function resolveCommand(name: string): NormalizedCommand | null {
+  const result = loadCommandTemplate(name);
+  if (!result.ok) return null;
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const replaced = result.data.replace(/\{\{name\}\}/g, name);
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(replaced);
     return {
-      name: (data['name'] as string) ?? path.basename(filePath, '.md'),
+      name,
       description: (data['description'] as string) ?? '',
       content,
-      managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'codi',
+      managedBy: 'codi',
     };
+  } catch { return null; }
+}
+
+async function loadRuleFromDir(name: string, codiDir: string): Promise<NormalizedRule | null> {
+  const paths = [
+    path.join(codiDir, 'rules', 'custom', `${name}.md`),
+    path.join(codiDir, 'rules', 'generated', 'common', `${name}.md`),
+  ];
+  for (const p of paths) {
+    try {
+      const raw = await fs.readFile(p, 'utf8');
+      const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+      return {
+        name,
+        description: (data['description'] as string) ?? '',
+        content,
+        priority: (data['priority'] as 'high' | 'medium' | 'low') ?? 'medium',
+        alwaysApply: (data['alwaysApply'] as boolean) ?? true,
+        managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'user',
+      };
+    } catch { continue; }
+  }
+  return null;
+}
+
+async function loadSkillFromDir(name: string, codiDir: string): Promise<NormalizedSkill | null> {
+  try {
+    const raw = await fs.readFile(path.join(codiDir, 'skills', `${name}.md`), 'utf8');
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    return { name, description: (data['description'] as string) ?? '', content, managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'user' };
+  } catch { return null; }
+}
+
+async function loadAgentFromDir(name: string, codiDir: string): Promise<NormalizedAgent | null> {
+  try {
+    const raw = await fs.readFile(path.join(codiDir, 'agents', `${name}.md`), 'utf8');
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    return { name, description: (data['description'] as string) ?? '', content, tools: data['tools'] as string[] | undefined, model: data['model'] as string | undefined, managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'user' };
+  } catch { return null; }
+}
+
+async function loadCommandFromDir(name: string, codiDir: string): Promise<NormalizedCommand | null> {
+  try {
+    const raw = await fs.readFile(path.join(codiDir, 'commands', `${name}.md`), 'utf8');
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    return { name, description: (data['description'] as string) ?? '', content, managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'user' };
   } catch { return null; }
 }

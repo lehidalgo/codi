@@ -17,6 +17,7 @@ import { registerRevertCommand } from './cli/revert.js';
 import { registerMarketplaceCommand } from './cli/marketplace.js';
 import { registerPresetCommand } from './cli/preset.js';
 import { registerDocsUpdateCommand } from './cli/docs-update.js';
+import { registerContributeCommand } from './cli/contribute.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -44,5 +45,6 @@ registerRevertCommand(program);
 registerMarketplaceCommand(program);
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);
+registerContributeCommand(program);
 
 program.parse();

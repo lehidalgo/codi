@@ -4,7 +4,8 @@ import prompts from 'prompts';
 import { stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { Logger } from '../core/output/logger.js';
-import { PRESET_MANIFEST_FILENAME, ARTIFACT_TYPES, NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from '../constants.js';
+import { PRESET_MANIFEST_FILENAME, NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from '../constants.js';
+import { printBanner, printSection } from './shared.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -29,9 +30,7 @@ export interface PresetWizardResult {
  * Guides the user through defining and packaging a preset.
  */
 export async function runPresetWizard(projectRoot: string): Promise<PresetWizardResult | null> {
-  const log = Logger.getInstance();
-  log.info('Preset Creation Wizard');
-  log.info('');
+  printBanner('Preset Creator');
 
   // Step 1: Identity
   const identity = await prompts([
@@ -82,33 +81,32 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
   });
 
   // Step 3: Select rules
+  printSection('Artifacts');
   const ruleChoices = AVAILABLE_TEMPLATES.map(t => ({ title: t, value: t }));
   const ruleSelection = await prompts({
-    type: 'multiselect',
+    type: 'autocompleteMultiselect',
     name: 'rules',
-    message: 'Select rule templates to include',
+    message: 'Select rules (type to search)',
     choices: ruleChoices,
-    hint: 'Space to toggle, Enter to confirm',
+    hint: '- Type to filter, Space to toggle, Enter to confirm',
   });
 
-  // Step 4: Select skills
   const skillChoices = AVAILABLE_SKILL_TEMPLATES.map(t => ({ title: t, value: t }));
   const skillSelection = await prompts({
-    type: 'multiselect',
+    type: 'autocompleteMultiselect',
     name: 'skills',
-    message: 'Select skill templates to include',
+    message: 'Select skills (type to search)',
     choices: skillChoices,
-    hint: 'Space to toggle, Enter to confirm',
+    hint: '- Type to filter, Space to toggle, Enter to confirm',
   });
 
-  // Step 5: Select agents
   const agentChoices = AVAILABLE_AGENT_TEMPLATES.map(t => ({ title: t, value: t }));
   const agentSelection = await prompts({
-    type: 'multiselect',
+    type: 'autocompleteMultiselect',
     name: 'agents',
-    message: 'Select agent templates to include',
+    message: 'Select agents (type to search)',
     choices: agentChoices,
-    hint: 'Space to toggle, Enter to confirm',
+    hint: '- Type to filter, Space to toggle, Enter to confirm',
   });
 
   // Step 6: Output format
@@ -146,17 +144,20 @@ async function scaffoldPreset(projectRoot: string, config: PresetWizardResult): 
   const codiDir = resolveCodiDir(projectRoot);
   const presetDir = path.join(codiDir, 'presets', config.name);
 
-  // Create directory structure
+  // Create preset directory (no subdirs — artifacts are references)
   await fs.mkdir(presetDir, { recursive: true });
-  for (const sub of ARTIFACT_TYPES) {
-    await fs.mkdir(path.join(presetDir, sub), { recursive: true });
-  }
 
-  // Write manifest
+  // Write manifest with artifacts as references
   const manifest: Record<string, unknown> = {
     name: config.name,
     description: config.description,
     version: config.version,
+    artifacts: {
+      rules: config.rules,
+      skills: config.skills,
+      agents: config.agents,
+      commands: [],
+    },
   };
   if (config.extends) manifest['extends'] = config.extends;
   if (config.tags.length > 0) manifest['tags'] = config.tags;

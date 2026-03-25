@@ -13,7 +13,7 @@ import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 import { scanCodiDir } from '../core/config/parser.js';
-import { PRESET_MANIFEST_FILENAME, ARTIFACT_TYPES, GIT_CLONE_DEPTH } from '../constants.js';
+import { PRESET_MANIFEST_FILENAME, GIT_CLONE_DEPTH } from '../constants.js';
 import {
   getRegistryConfig,
   readLockFile,
@@ -31,6 +31,7 @@ import {
   presetValidateHandler,
   presetRemoveHandler,
   presetListEnhancedHandler,
+  presetEditHandler,
 } from './preset-handlers.js';
 import { runPresetWizard } from './preset-wizard.js';
 
@@ -69,13 +70,14 @@ export async function presetCreateHandler(
     });
   } catch { /* doesn't exist, proceed */ }
 
-  const manifest = { name, description: '', version: '1' };
-  const subdirs = [...ARTIFACT_TYPES];
+  const manifest = {
+    name,
+    description: '',
+    version: '1.0.0',
+    artifacts: { rules: [], skills: [], agents: [], commands: [] },
+  };
 
   await fs.mkdir(presetDir, { recursive: true });
-  for (const sub of subdirs) {
-    await fs.mkdir(path.join(presetDir, sub), { recursive: true });
-  }
   await fs.writeFile(path.join(presetDir, PRESET_MANIFEST_FILENAME), stringifyYaml(manifest), 'utf8');
 
   log.info(`Created preset "${name}" at .codi/presets/${name}/`);
@@ -405,6 +407,17 @@ export function registerPresetCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
       const result = await presetRemoveHandler(process.cwd(), name);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  cmd
+    .command('edit <name>')
+    .description('Interactively edit preset artifact selection')
+    .action(async (name: string) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetEditHandler(process.cwd(), name);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
