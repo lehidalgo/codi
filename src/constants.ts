@@ -83,6 +83,13 @@ export const MAX_SKILL_LINES = 500;
 export const MAX_COMMAND_LINES = 100;
 export const MAX_AGENT_LINES = 200;
 
+// --- Template counts (kept in sync by codi docs-update / doc-sync) ---
+export const RULE_TEMPLATE_COUNT = 21;
+export const SKILL_TEMPLATE_COUNT = 14;
+export const AGENT_TEMPLATE_COUNT = 8;
+export const COMMAND_TEMPLATE_COUNT = 8;
+export const FLAG_COUNT = 18;
+
 // --- Git commit standards ---
 export const GIT_COMMIT_FIRST_LINE_LIMIT = 72;
 

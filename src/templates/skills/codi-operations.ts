@@ -1,7 +1,9 @@
-import { AVAILABLE_TEMPLATES } from '../../core/scaffolder/template-loader.js';
-import { AVAILABLE_SKILL_TEMPLATES } from '../../core/scaffolder/skill-template-loader.js';
-import { AVAILABLE_AGENT_TEMPLATES } from '../../core/scaffolder/agent-template-loader.js';
-import { AVAILABLE_COMMAND_TEMPLATES } from '../../core/scaffolder/command-template-loader.js';
+import {
+  RULE_TEMPLATE_COUNT,
+  SKILL_TEMPLATE_COUNT,
+  AGENT_TEMPLATE_COUNT,
+  COMMAND_TEMPLATE_COUNT,
+} from '../../constants.js';
 
 export const template = `---
 name: {{name}}
@@ -17,10 +19,10 @@ Codi manages 4 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
-| Rules | .codi/rules/custom/ | codi add rule | ${AVAILABLE_TEMPLATES.length} templates |
-| Skills | .codi/skills/ | codi add skill | ${AVAILABLE_SKILL_TEMPLATES.length} templates |
-| Agents | .codi/agents/ | codi add agent | ${AVAILABLE_AGENT_TEMPLATES.length} templates |
-| Commands | .codi/commands/ | codi add command | ${AVAILABLE_COMMAND_TEMPLATES.length} templates |
+| Rules | .codi/rules/custom/ | codi add rule | ${RULE_TEMPLATE_COUNT} templates |
+| Skills | .codi/skills/ | codi add skill | ${SKILL_TEMPLATE_COUNT} templates |
+| Agents | .codi/agents/ | codi add agent | ${AGENT_TEMPLATE_COUNT} templates |
+| Commands | .codi/commands/ | codi add command | ${COMMAND_TEMPLATE_COUNT} templates |
 
 ### Creating Artifacts
 

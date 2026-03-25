@@ -12,10 +12,10 @@ Codi manages 4 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
-| Rules | .codi/rules/custom/ | codi add rule | 9 templates |
-| Skills | .codi/skills/ | codi add skill | 5 templates |
-| Agents | .codi/agents/ | codi add agent | 3 templates |
-| Commands | .codi/commands/ | codi add command | 2 templates |
+| Rules | .codi/rules/custom/ | codi add rule | 21 templates |
+| Skills | .codi/skills/ | codi add skill | 14 templates |
+| Agents | .codi/agents/ | codi add agent | 8 templates |
+| Commands | .codi/commands/ | codi add command | 8 templates |
 
 ### Creating Artifacts
 
@@ -69,11 +69,26 @@ managed_by: codi | user
 
 ## Configuration
 
-### Presets
+### Flag Presets
 ```bash
 codi update --preset minimal     # Permissive
 codi update --preset balanced    # Recommended (default)
 codi update --preset strict      # Enforced + locked
+```
+
+### Preset Management
+```bash
+codi preset create <name>              # Scaffold a new preset directory
+codi preset create --interactive       # Interactive preset creation wizard
+codi preset list                       # List installed presets
+codi preset list --builtin             # Include built-in presets (python-web, typescript-fullstack, security-hardened)
+codi preset validate <name>            # Validate preset structure and schema
+codi preset export <name> --format zip # Export as ZIP for private distribution
+codi preset install ./preset.zip       # Install from local ZIP file
+codi preset install github:org/repo    # Install from GitHub repository
+codi preset remove <name>             # Remove an installed preset
+codi preset search <query>            # Search preset registry
+codi preset update                    # Update GitHub-sourced presets
 ```
 
 ### Update Artifacts
@@ -101,6 +116,8 @@ codi status                # Check for drift in generated files
 ```bash
 codi generate              # Regenerate all agent config files
 codi generate --dry-run    # Preview without writing
+codi docs-update           # Auto-fix stale documentation counts
+codi doctor                # Detect remaining doc issues — act on ACTION prompts
 codi clean                 # Remove generated files (keep .codi/)
 codi clean --all           # Full uninstall (remove .codi/ too)
 codi revert --list         # Show available backups

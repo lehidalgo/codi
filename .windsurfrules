@@ -301,22 +301,28 @@ description: <max 512 chars>
 managed_by: user
 \`\`\`
 
-## Step 4: Generate
+## Step 4: Generate and Sync
 
 \`\`\`bash
 codi generate
-\`\`\`
-
-This pushes the new artifact to all configured agent output files.
-
-## Step 5: Validate
-
-\`\`\`bash
+codi docs-update
 codi doctor
 \`\`\`
 
-Check for:
-- No errors
+1. \`codi generate\` pushes the artifact to all agent config files
+2. \`codi docs-update\` auto-fixes stale counts in STATUS.md, CONTRIBUTING.md
+3. \`codi doctor\` checks for remaining issues
+
+## Step 5: Act on Doctor Warnings
+
+If \`codi doctor\` reports ACTION prompts (missing doc entries):
+1. Read the source file indicated in the ACTION
+2. Extract the key topics from the template content
+3. Write a detailed description (1-2 sentences listing main patterns)
+4. Add the row to the documentation table with: name, description, source path
+5. Run \`codi doctor\` again to verify clean
+
+Check also for:
 - Size warnings (any artifact >6K chars or total >12K chars)
 
 If warnings appear, trim the artifact content.
@@ -355,10 +361,10 @@ Codi manages 4 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
-| Rules | .codi/rules/custom/ | codi add rule | 9 templates |
-| Skills | .codi/skills/ | codi add skill | 5 templates |
-| Agents | .codi/agents/ | codi add agent | 3 templates |
-| Commands | .codi/commands/ | codi add command | 2 templates |
+| Rules | .codi/rules/custom/ | codi add rule | 21 templates |
+| Skills | .codi/skills/ | codi add skill | 14 templates |
+| Agents | .codi/agents/ | codi add agent | 8 templates |
+| Commands | .codi/commands/ | codi add command | 8 templates |
 
 ### Creating Artifacts
 
@@ -412,11 +418,26 @@ managed_by: codi | user
 
 ## Configuration
 
-### Presets
+### Flag Presets
 ```bash
 codi update --preset minimal     # Permissive
 codi update --preset balanced    # Recommended (default)
 codi update --preset strict      # Enforced + locked
+```
+
+### Preset Management
+```bash
+codi preset create <name>              # Scaffold a new preset directory
+codi preset create --interactive       # Interactive preset creation wizard
+codi preset list                       # List installed presets
+codi preset list --builtin             # Include built-in presets (python-web, typescript-fullstack, security-hardened)
+codi preset validate <name>            # Validate preset structure and schema
+codi preset export <name> --format zip # Export as ZIP for private distribution
+codi preset install ./preset.zip       # Install from local ZIP file
+codi preset install github:org/repo    # Install from GitHub repository
+codi preset remove <name>             # Remove an installed preset
+codi preset search <query>            # Search preset registry
+codi preset update                    # Update GitHub-sourced presets
 ```
 
 ### Update Artifacts
@@ -444,6 +465,8 @@ codi status                # Check for drift in generated files
 ```bash
 codi generate              # Regenerate all agent config files
 codi generate --dry-run    # Preview without writing
+codi docs-update           # Auto-fix stale documentation counts
+codi doctor                # Detect remaining doc issues — act on ACTION prompts
 codi clean                 # Remove generated files (keep .codi/)
 codi clean --all           # Full uninstall (remove .codi/ too)
 codi revert --list         # Show available backups
@@ -514,7 +537,7 @@ npx codi add skill --all --json
 npx codi add agent --all --json
 npx codi add command --all --json
 \`\`\`
-Expected: 21 rules, 13 skills, 8 agents, 8 commands. All managed_by: codi.
+Expected: 21 rules, 14 skills, 8 agents, 8 commands. All managed_by: codi.
 
 **[SYSTEM]** Add custom artifacts:
 \`\`\`bash
@@ -569,14 +592,123 @@ npx codi update --rules --skills --agents --commands --dry-run --json
 \`\`\`
 Expected: Managed artifacts listed. Custom (managed_by: user) skipped.
 
-## Suite 7: Presets
+## Suite 7: Preset Management
+
+### 7a: Create & List
 
 **[SYSTEM]**
 \`\`\`bash
 npx codi preset create test-preset --json
 npx codi preset list --json
 \`\`\`
-Expected: Preset directory created. Visible in list.
+Expected: Preset directory created at .codi/presets/test-preset/ with preset.yaml and subdirs (rules/, skills/, agents/, commands/). Visible in list.
+
+### 7b: Built-in Presets
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset list --builtin --json
+\`\`\`
+Expected: Shows 6 built-in presets: minimal, balanced, strict, python-web, typescript-fullstack, security-hardened. Each with [builtin] source tag.
+
+### 7c: Validate
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset validate test-preset --json
+\`\`\`
+Expected: Preset "test-preset" is valid. Reports version, artifact counts (rules: 0, skills: 0, agents: 0, commands: 0).
+
+### 7d: Export as ZIP
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset export test-preset --format zip --output /tmp/codi-validation/
+ls /tmp/codi-validation/test-preset.zip
+\`\`\`
+Expected: ZIP file created. File exists at /tmp/codi-validation/test-preset.zip.
+
+### 7e: Remove
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset remove test-preset --json
+npx codi preset list --json
+\`\`\`
+Expected: Preset removed. No longer visible in list. Lock file entry cleared.
+
+### 7f: Install from ZIP
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset install /tmp/codi-validation/test-preset.zip --json
+npx codi preset list --json
+npx codi preset validate test-preset --json
+\`\`\`
+Expected: Preset installed from ZIP. Visible in list with [zip] source. Validation passes. Lock file has source: "zip:..." entry.
+
+### 7g: Cleanup
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset remove test-preset --json
+rm -f /tmp/codi-validation/test-preset.zip
+\`\`\`
+Expected: Preset and ZIP cleaned up.
+
+### 7h: GitHub Preset Install
+
+**[HUMAN]** Provide a GitHub repository URL that contains a valid preset (a repo with \`preset.yaml\` at the root). This can be:
+- A public preset repo (e.g., \`github:my-org/my-preset\`)
+- A private repo you have access to (SSH keys or GH_TOKEN configured)
+- If none exists, create a small test repo: add a \`preset.yaml\` with \`name: test-gh-preset\`, \`version: "1.0.0"\`, push to GitHub, and provide the org/repo path.
+
+**[SYSTEM]** Install the GitHub preset (substitute the real org/repo):
+\`\`\`bash
+npx codi preset install github:<org>/<repo> --json
+\`\`\`
+Expected: Preset cloned, validated, and installed to .codi/presets/<name>/.
+
+**[CODING AGENT]** Verify the installation:
+1. Run \`npx codi preset list --json\` — preset must appear with \`sourceType: "github"\`
+2. Read \`.codi/preset-lock.json\` — entry must have \`source: "github:..."\`, \`sourceType: "github"\`, and a \`commit\` hash
+3. Verify \`.codi/presets/<name>/preset.yaml\` exists
+
+**[SYSTEM]** Validate and clean up:
+\`\`\`bash
+npx codi preset validate <name> --json
+npx codi preset remove <name> --json
+\`\`\`
+Expected: Validation passes. Preset removed. Lock file entry cleared.
+
+### 7i: Preset Registry Search
+
+**[HUMAN]** Check if a preset registry is configured in \`.codi/codi.yaml\` under \`presetRegistry.url\`. If not configured, either:
+- Add a \`presetRegistry\` section pointing to a real registry repo, OR
+- Confirm this test should be skipped (the agent will note it as skipped)
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset search test --json
+\`\`\`
+
+**[CODING AGENT]** Verify the result:
+- If registry is configured: results are returned or "No presets found matching" message (both valid)
+- If registry is not configured or unreachable: a clear error message is reported (not a crash or unhandled exception)
+
+### 7j: Preset Update
+
+Prerequisite: A GitHub-sourced preset must be installed (from 7h). If 7h was skipped, skip this test too.
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi preset update --dry-run --json
+\`\`\`
+
+**[CODING AGENT]** Verify:
+- GitHub-sourced presets: reports "up to date" or lists available version changes
+- ZIP-sourced presets (if any): skipped with info message (ZIP presets require manual re-install)
+- No presets tracked: reports "Nothing to update"
 
 ## Suite 8: MCP
 
@@ -631,7 +763,7 @@ Expected: tokenMatch: true.
 
 **[SYSTEM]** Verify hook scripts exist:
 \`\`\`bash
-ls .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/codi-secret-scan.js .git/hooks/codi-file-size-check.js
+ls .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/codi-secret-scan.mjs .git/hooks/codi-file-size-check.mjs
 \`\`\`
 Expected: All 4 files present.
 
@@ -645,7 +777,7 @@ Expected: Commit blocked — "big-file.txt: 802 lines (max: 800)".
 
 **[SYSTEM]** Test secret scan:
 \`\`\`bash
-echo 'const key = "sk-abc123def456ghi789jkl012mno345pqr"' > secret-test.js
+printf 'const key = "sk-%s"\n' "abc123def456ghi789jkl012mno345pqr" > secret-test.js
 git add secret-test.js
 git commit -m "test: should fail"
 \`\`\`
@@ -705,6 +837,40 @@ Expected: Commit skill and command created. Generated for all agents.
 - Pre-commit checks (formatting, linting, type checking, secret scan, file size)
 - Troubleshooting section (tool not found, hooks not installed, message rejected)
 
+## Suite 16: Watch Mode
+
+**[SYSTEM]** Test auto-regeneration:
+\`\`\`bash
+npx codi watch --once &
+sleep 1
+echo "# trigger" >> .codi/rules/custom/my-custom.md
+sleep 2
+npx codi status --json
+\`\`\`
+Expected: Watch detects change and regenerates. Status shows no drift.
+
+## Suite 17: Hook Dependencies & Version Check
+
+**[SYSTEM]** Check hook dependency detection:
+\`\`\`bash
+npx codi doctor --json
+\`\`\`
+**[CODING AGENT]** Verify doctor output includes warnings for any missing hook tools (eslint, prettier, ruff, etc.) with install hints.
+
+**[SYSTEM]** Test version check hook (if requiredVersion set in codi.yaml):
+\`\`\`bash
+ls .git/hooks/codi-version-check.mjs
+\`\`\`
+Expected: File exists when manifest has \`codi.requiredVersion\`.
+
+## Suite 18: Update --from Source Pull
+
+**[SYSTEM]**
+\`\`\`bash
+npx codi update --from codi/team-config --dry-run --json
+\`\`\`
+Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and attempts a pull.
+
 ## Cleanup
 
 **[SYSTEM]** \`rm -rf /tmp/codi-validation\`
@@ -722,6 +888,6 @@ This project uses Codi for unified AI agent configuration.
 - Rules: architecture, code-style, error-handling, git-workflow, security, testing
 - Skills: artifact-creator, codi-operations, e2e-testing
 - Agents: code-reviewer, security-analyzer, test-generator
-- Generated: 2026-03-24T23:14:38.430Z
+- Generated: 2026-03-25T09:27:23.875Z
 
 When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.

@@ -85,7 +85,8 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const files = process.argv.slice(2);
+const GENERATED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents)\\//];
+const files = process.argv.slice(2).filter(f => !GENERATED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {
   try {

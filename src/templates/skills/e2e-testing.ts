@@ -1,9 +1,11 @@
-import { AVAILABLE_TEMPLATES } from '../../core/scaffolder/template-loader.js';
-import { AVAILABLE_SKILL_TEMPLATES } from '../../core/scaffolder/skill-template-loader.js';
-import { AVAILABLE_AGENT_TEMPLATES } from '../../core/scaffolder/agent-template-loader.js';
-import { AVAILABLE_COMMAND_TEMPLATES } from '../../core/scaffolder/command-template-loader.js';
-import { FLAG_CATALOG } from '../../core/flags/flag-catalog.js';
-import { PRE_COMMIT_MAX_FILE_LINES } from '../../constants.js';
+import {
+  RULE_TEMPLATE_COUNT,
+  SKILL_TEMPLATE_COUNT,
+  AGENT_TEMPLATE_COUNT,
+  COMMAND_TEMPLATE_COUNT,
+  FLAG_COUNT,
+  PRE_COMMIT_MAX_FILE_LINES,
+} from '../../constants.js';
 
 export const template = `---
 name: {{name}}
@@ -40,7 +42,7 @@ Expected: Version prints (e.g., 0.3.1). Git repo initialized (needed for hooks).
 \\\`\\\`\\\`bash
 npx codi init --agents claude-code cursor codex --preset balanced --json
 \\\`\\\`\\\`
-Expected: .codi/ created with codi.yaml, flags.yaml (${Object.keys(FLAG_CATALOG).length} flags), rules/, skills/, frameworks/.
+Expected: .codi/ created with codi.yaml, flags.yaml (${FLAG_COUNT} flags), rules/, skills/, frameworks/.
 
 **[CODING AGENT]** Verify hooks were installed:
 \\\`\\\`\\\`bash
@@ -59,7 +61,7 @@ npx codi add skill --all --json
 npx codi add agent --all --json
 npx codi add command --all --json
 \\\`\\\`\\\`
-Expected: ${AVAILABLE_TEMPLATES.length} rules, ${AVAILABLE_SKILL_TEMPLATES.length} skills, ${AVAILABLE_AGENT_TEMPLATES.length} agents, ${AVAILABLE_COMMAND_TEMPLATES.length} commands. All managed_by: codi.
+Expected: ${RULE_TEMPLATE_COUNT} rules, ${SKILL_TEMPLATE_COUNT} skills, ${AGENT_TEMPLATE_COUNT} agents, ${COMMAND_TEMPLATE_COUNT} commands. All managed_by: codi.
 
 **[SYSTEM]** Add custom artifacts:
 \\\`\\\`\\\`bash
@@ -330,7 +332,7 @@ Expected: Commit succeeds (proper format, small file, no secrets).
 \\\`\\\`\\\`bash
 npx codi doctor --json
 \\\`\\\`\\\`
-Expected: W_DOCS_STALE warning — "STATUS.md says Rule templates: 9 but ${AVAILABLE_TEMPLATES.length} exist — run: codi docs-update".
+Expected: W_DOCS_STALE warning — "STATUS.md says Rule templates: 9 but ${RULE_TEMPLATE_COUNT} exist — run: codi docs-update".
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
