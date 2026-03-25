@@ -11,6 +11,13 @@ managed_by: codi
 
 Guide the user through creating a CODI preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs.
 
+## When to Activate
+
+- User asks to create, package, or scaffold a new codi preset
+- User wants to bundle existing rules, skills, and agents into a reusable configuration
+- User needs to export a preset as a ZIP or publish it to a GitHub repository
+- User asks how to extend or customize a built-in preset
+
 ## Step 1: Define Identity
 
 Ask the user:

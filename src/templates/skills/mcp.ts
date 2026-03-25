@@ -11,6 +11,14 @@ managed_by: codi
 
 Use when working with MCP servers — configuring, calling tools, or debugging.
 
+## When to Activate
+
+- User asks to configure or set up an MCP server for their project
+- User needs to call an MCP tool and wants guidance on parameters or usage
+- An MCP tool call fails and the user needs help debugging the connection
+- User wants to add a new MCP server to \\\`.codi/mcp.yaml\\\`
+- User asks how to distribute MCP configuration across agents
+
 ## Configuration
 
 MCP servers are defined in \\\`.codi/mcp.yaml\\\` and distributed to agents by \\\`codi generate\\\`.

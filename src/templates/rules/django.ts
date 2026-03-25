@@ -10,7 +10,7 @@ language: python
 # Django Conventions
 
 ## Fat Models, Thin Views
-- Place business logic in models and custom managers — views should only dispatch
+- Place business logic in models and custom managers — views should only dispatch; testable logic should not depend on HTTP
 - Use model methods for operations on a single instance
 - Use custom managers and QuerySet methods for operations on collections
 - Keep views under 20 lines — extract logic into services or model methods
@@ -43,7 +43,7 @@ class Article(models.Model):
 - Use \`select_related()\` for ForeignKey and OneToOne fields accessed in the same request
 - Use \`prefetch_related()\` for ManyToMany and reverse ForeignKey lookups
 - Use \`only()\` or \`defer()\` to limit columns when full model loading is unnecessary
-- Use \`iterator()\` for large querysets that do not need caching
+- Use \`iterator()\` for large querysets that do not need caching — avoids loading all rows into memory
 - Never evaluate querysets in templates with additional queries — prefetch in the view
 
 \`\`\`python
@@ -67,9 +67,9 @@ articles = Article.objects.select_related("author").published()
 - Use \`RunPython\` with a reverse function for data migrations
 
 ## Transactions
-- Wrap multi-step database operations in \`@transaction.atomic\`
-- Use \`select_for_update()\` when concurrent writes to the same rows are possible
-- Keep transactions short — do not include external API calls inside atomic blocks
+- Wrap multi-step database operations in \`@transaction.atomic\` — partial writes leave data in an inconsistent state
+- Use \`select_for_update()\` when concurrent writes to the same rows are possible — prevents lost updates
+- Keep transactions short — do not include external API calls inside atomic blocks; slow calls hold locks and block other requests
 
 ## Settings
 - Split settings into \`base.py\`, \`dev.py\`, and \`prod.py\`

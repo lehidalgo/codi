@@ -81,13 +81,16 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 - README.md (339 lines) — concise with links to 8 detailed guides
 - docs/architecture.md — system design, hook system, error handling
 - docs/configuration.md — flags, presets, directory structure
-- docs/governance.md — 7-level inheritance, org policies
-- docs/writing-rules.md — artifact authoring guide (rules, skills, agents)
-- docs/adoption-verification.md — token system and adoption tracking
+- docs/reference/governance.md — 7-level inheritance, org policies
+- docs/guides/writing-rules.md — artifact authoring guide (rules, skills, agents)
+- docs/guides/adoption-verification.md — token system and adoption tracking
 - docs/migration.md — adoption guide
-- docs/ci-integration.md — GitHub Actions examples
-- docs/adoption-verification.md — verification audit report
-- docs/testing-guide.md — E2E testing procedure (8 suites)
+- docs/guides/ci-integration.md — GitHub Actions examples
+- docs/guides/testing-guide.md — E2E testing procedure (8 suites)
+- docs/spec/ — 10-chapter formal specification
+- docs/guides/artifact-lifecycle.md — ownership, drift, staleness
+- docs/guides/cloud-ci.md — CI/CD patterns (GitHub Actions, GitLab, Azure, Docker)
+- docs/guides/security.md — secret management, hook security, OWASP
 
 ### Release Infrastructure
 - MIT LICENSE, GitHub Actions CI + publish with provenance
@@ -121,7 +124,7 @@ Codi v0.3.0 is **published on npm** as `codi-cli`. Phase 1 (MVP), Phase 2 (Gover
 | Weak verification token (6 chars, name-only) | Strengthened to 12 chars, hashes content, includes skills/agents |
 | No compliance command | Added `codi compliance` |
 | No audit log | Added `.codi/audit.jsonl` |
-| No testing guide | Created docs/testing-guide.md + e2e-testing skill |
+| No testing guide | Created docs/guides/testing-guide.md + e2e-testing skill |
 | drift_detection flag not enforced | Implemented — off/warn/error controls doctor/status/compliance |
 | auto_generate_on_change not implemented | Added `codi watch` command with file watcher + debounce |
 | TODO comments in flag catalog | All removed — only progressive_loading deferred |

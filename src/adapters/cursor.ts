@@ -11,7 +11,8 @@ import type { NormalizedConfig, NormalizedRule } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
-import { generateSkillFiles } from './skill-generator.js';
+import { generateSkillFiles, type ProgressiveLoadingMode } from './skill-generator.js';
+import { buildProjectOverview, buildDevelopmentNotes, buildWorkflowSection, getEnabledMcpServers } from './section-builder.js';
 import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -54,7 +55,7 @@ export const cursorAdapter: AgentAdapter = {
     commands: false,
     mcp: true,
     frontmatter: true,
-    progressiveLoading: false,
+    progressiveLoading: true,
     agents: false,
     maxContextTokens: CONTEXT_TOKENS_SMALL,
   } satisfies AgentCapabilities,
@@ -69,17 +70,20 @@ export const cursorAdapter: AgentAdapter = {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
-    // Build .cursorrules (reference-based — rules live in .cursor/rules/)
+    // Build .cursorrules — project context + rule references
     const sections: string[] = [];
+
+    const overview = buildProjectOverview(config);
+    if (overview) sections.push(overview);
+
     if (flagText) {
       sections.push(flagText);
     }
-    if (config.rules.length > 0) {
-      const ruleList = config.rules
-        .map((r) => `- ${r.name}`)
-        .join('\n');
-      sections.push(`# Rules\n\nRules are defined in \`.cursor/rules/\`:\n${ruleList}`);
-    }
+
+    const devNotes = buildDevelopmentNotes(config);
+    if (devNotes) sections.push(devNotes);
+
+    sections.push(buildWorkflowSection());
     const mainContent = addGeneratedHeader(sections.join('\n\n'));
     files.push({
       path: '.cursorrules',
@@ -102,11 +106,13 @@ export const cursorAdapter: AgentAdapter = {
     }
 
     // Generate .cursor/skills/{name}/SKILL.md
-    files.push(...generateSkillFiles(config.skills, '.cursor/skills'));
+    const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
+    files.push(...generateSkillFiles(config.skills, '.cursor/skills', plMode));
 
     // Generate .cursor/mcp.json if MCP servers are configured
-    if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(config.mcp, null, 2);
+    const enabledMcp = getEnabledMcpServers(config.mcp);
+    if (Object.keys(enabledMcp.servers).length > 0) {
+      const mcpContent = JSON.stringify(enabledMcp, null, 2);
       files.push({
         path: '.cursor/mcp.json',
         content: mcpContent,

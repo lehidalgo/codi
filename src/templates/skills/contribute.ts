@@ -9,6 +9,13 @@ managed_by: codi
 
 Help the user contribute their custom artifacts (rules, skills, agents, commands) or presets back to the codi project or share them with their team.
 
+## When to Activate
+
+- User wants to contribute a custom rule, skill, agent, or command back to the codi project
+- User asks how to share their artifacts with their team or the community
+- User wants to open a pull request to the codi repository with their custom artifact
+- User asks to export artifacts as a ZIP for private sharing
+
 ## Step 1: Identify What to Contribute
 
 Ask the user what they want to share:

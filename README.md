@@ -15,15 +15,6 @@
 
 AI coding agents (Claude Code, Cursor, Codex, Windsurf, Cline) each require their own configuration file with different formats and conventions. Codi lets you define rules, skills, agents, and flags once in a `.codi/` directory, then generates the correct configuration file for each agent. One config. Every agent. No drift.
 
-```mermaid
-flowchart LR
-    C[".codi/ directory"] --> A1["CLAUDE.md"]
-    C --> A2[".cursorrules"]
-    C --> A3["AGENTS.md"]
-    C --> A4[".windsurfrules"]
-    C --> A5[".clinerules"]
-```
-
 ## Architecture Overview
 
 Codi reads your `.codi/` directory, resolves configuration through 7 inheritance layers, and passes the result through agent-specific adapters to produce output files.
@@ -107,7 +98,7 @@ codi verify --check "token: codi-abc123, rules: security, code-style"
 | **Commands** | `.codi/commands/` | `.claude/commands/*.md` | -- | -- | -- | -- |
 | **MCP** | `.codi/mcp.yaml` | `.claude/mcp.json` | `.cursor/mcp.json` | `.codex/mcp.toml` | `.windsurf/mcp.json` | -- |
 
-Keep individual artifacts under 6,000 chars and total combined content under 12,000 chars (Windsurf limit). Run `codi doctor` to check. See the [Writing Artifacts](docs/writing-rules.md) guide for per-agent size budgets.
+Keep individual artifacts under 6,000 chars and total combined content under 12,000 chars (Windsurf limit). Run `codi doctor` to check. See the [Writing Artifacts](docs/guides/writing-rules.md) guide for per-agent size budgets.
 
 ## CLI Reference
 
@@ -161,7 +152,7 @@ codi preset create my-setup
 codi preset install name --from org/repo
 ```
 
-See [Multi-Tenant Design](docs/multi-tenant-design.md) for the full preset architecture.
+See [Multi-Tenant Design](docs/reference/multi-tenant-design.md) for the full preset architecture.
 
 ## Daily Workflow
 
@@ -215,18 +206,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, 
 
 | Guide | Description |
 |-------|-------------|
+| [Documentation Index](docs/README.md) | Full documentation index with all guides, specs, and references |
+| [Specification](docs/spec/README.md) | 10-chapter formal specification (architecture, layout, artifacts, flags, etc.) |
 | [Configuration](docs/configuration.md) | Flags, presets, directory structure, manifest |
-| [Design Reference](docs/design.md) | Complete design documentation for all 33 functionalities |
 | [Architecture](docs/architecture.md) | System design, hook system, error handling |
-| [Governance](docs/governance.md) | 7-level inheritance, org policies, locking |
-| [Writing Artifacts](docs/writing-rules.md) | Create and customize rules, skills, agents, commands |
-| [Adoption & Verification](docs/adoption-verification.md) | Token-based verification and adoption tracking |
+| [Writing Artifacts](docs/guides/writing-rules.md) | Create and customize rules, skills, agents, commands |
+| [Artifact Lifecycle](docs/guides/artifact-lifecycle.md) | Ownership, drift detection, staleness, deprecation workflow |
+| [Cloud & CI](docs/guides/cloud-ci.md) | CI/CD patterns for GitHub Actions, GitLab, Azure, Docker |
+| [Security](docs/guides/security.md) | Secret management, hook security, MCP trust, OWASP |
 | [Migration](docs/migration.md) | Adopt codi in existing projects |
-| [CI Integration](docs/ci-integration.md) | GitHub Actions workflow for codi validation |
-| [Testing Guide](docs/testing-guide.md) | E2E testing procedure (8 suites) |
-| [Multi-Tenant Design](docs/multi-tenant-design.md) | Presets, plugins, and stacks architecture |
-| [User Flows](docs/user-flows.md) | Complete user interaction paths and workflows |
+| [CI Integration](docs/guides/ci-integration.md) | GitHub Actions workflow for codi validation |
+| [Testing Guide](docs/guides/testing-guide.md) | E2E testing procedure (8 suites) |
+| [Adoption & Verification](docs/guides/adoption-verification.md) | Token-based verification and adoption tracking |
+| [User Flows](docs/guides/user-flows.md) | Complete user interaction paths and workflows |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+| [Design Reference](docs/reference/design.md) | Complete design documentation for all 33 functionalities |
+| [Governance](docs/reference/governance.md) | 7-level inheritance, org policies, locking |
+| [Multi-Tenant Design](docs/reference/multi-tenant-design.md) | Presets, plugins, and stacks architecture |
 | [Contributing](CONTRIBUTING.md) | Development setup and contribution guide |
 
 ## Roadmap

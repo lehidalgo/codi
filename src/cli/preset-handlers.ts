@@ -4,7 +4,7 @@ import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
-import prompts from 'prompts';
+import * as p from '@clack/prompts';
 import { resolveCodiDir } from '../utils/paths.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
@@ -282,7 +282,7 @@ export async function presetListEnhancedHandler(
       presets.push({ name, description: PRESET_DESCRIPTIONS[name] ?? '', sourceType: 'builtin' });
     }
     for (const name of getBuiltinPresetNames()) {
-      if (!presets.some(p => p.name === name)) {
+      if (!presets.some(pr => pr.name === name)) {
         presets.push({ name, description: `Built-in ${name} preset`, sourceType: 'builtin' });
       }
     }
@@ -312,9 +312,9 @@ export async function presetListEnhancedHandler(
   if (presets.length === 0) {
     log.info('No presets found. Use --builtin to see built-in presets.');
   } else {
-    for (const p of presets) {
-      const tag = p.sourceType ? `[${p.sourceType}]` : '';
-      log.info(`  ${p.name} ${tag} — ${p.description || '(no description)'}`);
+    for (const pr of presets) {
+      const tag = pr.sourceType ? `[${pr.sourceType}]` : '';
+      log.info(`  ${pr.name} ${tag} — ${pr.description || '(no description)'}`);
     }
   }
 
@@ -331,6 +331,7 @@ export async function presetEditHandler(
   const log = Logger.getInstance();
   const codiDir = resolveCodiDir(projectRoot);
   printBanner('Preset Editor');
+  p.intro('codi — Preset Editor');
   const manifestPath = path.join(codiDir, 'presets', name, 'preset.yaml');
 
   let manifestRaw: string;
@@ -352,47 +353,60 @@ export async function presetEditHandler(
   const currentAgents = new Set(current['agents'] ?? []);
   const currentCommands = new Set(current['commands'] ?? []);
 
-  const ruleRes = await prompts({
-    type: 'autocompleteMultiselect', name: 'rules',
-    message: 'Rules (type to search)',
-    choices: AVAILABLE_TEMPLATES.map(t => ({ title: t, value: t, selected: currentRules.has(t) })),
-    hint: '- Type to filter, Space to toggle',
+  const rules = await p.multiselect({
+    message: 'Rules',
+    options: AVAILABLE_TEMPLATES.map(t => ({ label: t, value: t })),
+    initialValues: AVAILABLE_TEMPLATES.filter(t => currentRules.has(t)),
+    required: false,
   });
+  if (p.isCancel(rules)) { p.cancel('Operation cancelled.'); return createCancelledResult('preset edit', name); }
 
-  const skillRes = await prompts({
-    type: 'autocompleteMultiselect', name: 'skills',
-    message: 'Skills (type to search)',
-    choices: AVAILABLE_SKILL_TEMPLATES.map(t => ({ title: t, value: t, selected: currentSkills.has(t) })),
-    hint: '- Type to filter, Space to toggle',
+  const skills = await p.multiselect({
+    message: 'Skills',
+    options: AVAILABLE_SKILL_TEMPLATES.map(t => ({ label: t, value: t })),
+    initialValues: AVAILABLE_SKILL_TEMPLATES.filter(t => currentSkills.has(t)),
+    required: false,
   });
+  if (p.isCancel(skills)) { p.cancel('Operation cancelled.'); return createCancelledResult('preset edit', name); }
 
-  const agentRes = await prompts({
-    type: 'autocompleteMultiselect', name: 'agents',
-    message: 'Agents (type to search)',
-    choices: AVAILABLE_AGENT_TEMPLATES.map(t => ({ title: t, value: t, selected: currentAgents.has(t) })),
-    hint: '- Type to filter, Space to toggle',
+  const agents = await p.multiselect({
+    message: 'Agents',
+    options: AVAILABLE_AGENT_TEMPLATES.map(t => ({ label: t, value: t })),
+    initialValues: AVAILABLE_AGENT_TEMPLATES.filter(t => currentAgents.has(t)),
+    required: false,
   });
+  if (p.isCancel(agents)) { p.cancel('Operation cancelled.'); return createCancelledResult('preset edit', name); }
 
-  const cmdRes = await prompts({
-    type: 'autocompleteMultiselect', name: 'commands',
-    message: 'Commands (type to search)',
-    choices: AVAILABLE_COMMAND_TEMPLATES.map(t => ({ title: t, value: t, selected: currentCommands.has(t) })),
-    hint: '- Type to filter, Space to toggle',
+  const commands = await p.multiselect({
+    message: 'Commands',
+    options: AVAILABLE_COMMAND_TEMPLATES.map(t => ({ label: t, value: t })),
+    initialValues: AVAILABLE_COMMAND_TEMPLATES.filter(t => currentCommands.has(t)),
+    required: false,
   });
+  if (p.isCancel(commands)) { p.cancel('Operation cancelled.'); return createCancelledResult('preset edit', name); }
 
   manifest['artifacts'] = {
-    rules: (ruleRes.rules ?? []) as string[],
-    skills: (skillRes.skills ?? []) as string[],
-    agents: (agentRes.agents ?? []) as string[],
-    commands: (cmdRes.commands ?? []) as string[],
+    rules,
+    skills,
+    agents,
+    commands,
   };
 
   await fs.writeFile(manifestPath, stringifyYaml(manifest), 'utf8');
   await regenerateConfigs(projectRoot);
 
   log.info(`Updated preset "${name}".`);
+  p.outro('Preset updated.');
   return createCommandResult({
     success: true, command: 'preset edit',
     data: { action: 'validate', name }, exitCode: EXIT_CODES.SUCCESS,
+  });
+}
+
+function createCancelledResult(command: string, name: string): CommandResult<PresetData> {
+  return createCommandResult({
+    success: false, command, data: { action: 'validate', name },
+    errors: [{ code: 'E_GENERAL', message: 'Operation cancelled.', hint: '', severity: 'error', context: {} }],
+    exitCode: EXIT_CODES.GENERAL_ERROR,
   });
 }

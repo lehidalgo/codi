@@ -86,6 +86,53 @@ Adapts the generated hook script to the detected runner (husky config, pre-commi
 
 `codi update --from <repo>` pulls centralized artifacts (rules, skills, agents) from a team GitHub repository. This is strictly one-way: codi reads from the remote repo but never writes to it. Only artifacts marked `managed_by: codi` are updated; user-custom artifacts (`managed_by: user`) are never overwritten.
 
+## Generation Pipeline
+
+The generation pipeline transforms user configuration into agent-specific output files.
+
+```mermaid
+flowchart TD
+    A[".codi/ config files"] --> B["Config Resolver<br>src/core/config/resolver.ts"]
+    B --> C{"7-Layer<br>Resolution"}
+    C --> D["Composer<br>src/core/config/composer.ts"]
+    D --> E["Final Config Object<br>(flags + rules + skills + agents)"]
+    E --> F{"Adapter Selection"}
+    F --> G["Claude Code Adapter"]
+    F --> H["Cursor Adapter"]
+    F --> I["Codex Adapter"]
+    F --> J["Windsurf Adapter"]
+    F --> K["Cline Adapter"]
+    G --> L["CLAUDE.md<br>.claude/rules/*.md<br>.claude/agents/*.md"]
+    H --> M[".cursorrules<br>.cursor/rules/*.mdc"]
+    I --> N["AGENTS.md<br>.codex/agents/*.toml"]
+    J --> O[".windsurfrules"]
+    K --> P[".clinerules"]
+```
+
+## Data Flow
+
+How user edits flow through codi to the AI agents that consume the output.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as .codi/ Directory
+    participant R as Config Resolver
+    participant G as Generator
+    participant A as Adapter
+    participant O as Output Files
+    participant AI as AI Agent
+
+    U->>C: Edit rules, flags, or artifacts
+    U->>G: Run `codi generate`
+    G->>R: Resolve config (7 layers)
+    R-->>G: Merged config object
+    G->>A: Pass config to each adapter
+    A->>O: Write agent-specific files
+    AI->>O: Read generated config
+    Note over AI,O: Agent follows codi-generated instructions
+```
+
 ## Adapter Architecture
 
 | Adapter | Main File | Rules Location | Skills Location | Agents Location |

@@ -13,6 +13,8 @@ import { EXIT_CODES } from '../core/output/exit-codes.js';
 import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput, regenerateConfigs } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { runAddWizard } from './add-wizard.js';
+import type { ArtifactType, AddWizardResult } from './add-wizard.js';
 
 interface AddRuleOptions extends GlobalOptions {
   template?: string;
@@ -238,6 +240,38 @@ export async function addCommandHandler(
   });
 }
 
+type ArtifactHandler = (
+  projectRoot: string,
+  name: string,
+  options: { template?: string },
+) => Promise<CommandResult<{ name: string; path: string; template: string | null }>>;
+
+async function handleWizardFlow(
+  type: ArtifactType,
+  handler: ArtifactHandler,
+  options: GlobalOptions,
+): Promise<void> {
+  const wizardResult: AddWizardResult | null = await runAddWizard(type);
+  if (!wizardResult) { process.exit(0); return; }
+
+  const results: Array<{ name: string; success: boolean }> = [];
+  for (const selected of wizardResult.names) {
+    const templateOpt = wizardResult.useTemplates ? selected : undefined;
+    const result = await handler(process.cwd(), selected, { ...options, template: templateOpt });
+    results.push({ name: selected, success: result.success });
+  }
+  const added = results.filter(r => r.success).map(r => r.name);
+  if (added.length > 0) await regenerateConfigs(process.cwd());
+  const summary = createCommandResult({
+    success: true,
+    command: `add ${type}`,
+    data: { added, total: wizardResult.names.length },
+    exitCode: EXIT_CODES.SUCCESS,
+  });
+  handleOutput(summary, options);
+  process.exit(summary.exitCode);
+}
+
 export function registerAddCommand(program: Command): void {
   const addCmd = program
     .command('add')
@@ -273,6 +307,11 @@ export function registerAddCommand(program: Command): void {
         });
         handleOutput(summary, options);
         process.exit(summary.exitCode);
+        return;
+      }
+
+      if (!name && !options.json) {
+        await handleWizardFlow('rule', addRuleHandler, options);
         return;
       }
 
@@ -328,6 +367,11 @@ export function registerAddCommand(program: Command): void {
         return;
       }
 
+      if (!name && !options.json) {
+        await handleWizardFlow('skill', addSkillHandler, options);
+        return;
+      }
+
       if (!name) {
         const err = createCommandResult({
           success: false,
@@ -380,6 +424,11 @@ export function registerAddCommand(program: Command): void {
         return;
       }
 
+      if (!name && !options.json) {
+        await handleWizardFlow('agent', addAgentHandler, options);
+        return;
+      }
+
       if (!name) {
         const errResult = createCommandResult({
           success: false,
@@ -429,6 +478,11 @@ export function registerAddCommand(program: Command): void {
         });
         handleOutput(summary, options);
         process.exit(summary.exitCode);
+        return;
+      }
+
+      if (!name && !options.json) {
+        await handleWizardFlow('command', addCommandHandler, options);
         return;
       }
 

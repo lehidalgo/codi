@@ -18,7 +18,7 @@ language: kotlin
 ## Null Safety
 - Avoid the \`!!\` operator — use safe alternatives instead
 - Use \`?.\` for safe calls, \`?:\` (Elvis) for defaults, \`let\` for scoped operations
-- Prefer non-nullable types in public APIs — push nullability to boundaries
+- Prefer non-nullable types in public APIs — push nullability to boundaries; callers should not deal with null unless unavoidable
 - Use \`requireNotNull()\` with a message when null is a programming error
 
 \`\`\`kotlin
@@ -36,7 +36,7 @@ name?.let { validName ->
 
 ## Immutability
 - Prefer \`val\` over \`var\` — use \`var\` only when mutation is required
-- Use immutable collections (\`listOf\`, \`mapOf\`) by default
+- Use immutable collections (\`listOf\`, \`mapOf\`) by default — prevents unintended modification by other code
 - Use \`data class\` for value objects — get equals, hashCode, copy for free
 - Use \`copy()\` to create modified instances instead of mutating
 
@@ -60,11 +60,11 @@ fun <T> Result<T>.getOrThrow(): T = when (this) {
 ## Scope Functions
 - Use \`apply\` for object configuration, \`also\` for side effects
 - Use \`let\` for null-safe transformations, \`run\` for scoped computation
-- Avoid nesting scope functions — extract to named functions instead
+- Avoid nesting scope functions — extract to named functions instead; nested scopes obscure what \`this\` and \`it\` refer to
 
 ## Coroutines
-- Use structured concurrency — launch coroutines in a defined scope
-- Use \`withContext(Dispatchers.IO)\` for blocking operations
+- Use structured concurrency — launch coroutines in a defined scope; unscoped coroutines leak and cannot be cancelled
+- Use \`withContext(Dispatchers.IO)\` for blocking operations — prevents blocking the main/default dispatcher
 - Test coroutines with \`runTest\` from kotlinx-coroutines-test
 - Set timeouts with \`withTimeout()\` on all external calls
 

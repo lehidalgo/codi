@@ -17,7 +17,7 @@ language: swift
 
 ## Value Types & Immutability
 - Prefer \`let\` over \`var\` — use \`var\` only when the compiler requires mutation
-- Use structs by default — use classes only for reference semantics or inheritance
+- Use structs by default — use classes only for reference semantics or inheritance; structs are copied, eliminating shared mutation bugs
 - Use enums with associated values for modeling finite state
 - Prefer value semantics to avoid unintended shared mutation
 
@@ -45,9 +45,9 @@ struct UserProfile: Cacheable {
 \`\`\`
 
 ## Concurrency
-- Use structured concurrency with \`async\`/\`await\` — no completion handlers
-- Mark shared mutable state types as \`Sendable\` — enable strict concurrency
-- Use actors for shared mutable state protection
+- Use structured concurrency with \`async\`/\`await\` — no completion handlers; async/await prevents callback hell and race conditions
+- Mark shared mutable state types as \`Sendable\` — enable strict concurrency checking at compile time
+- Use actors for shared mutable state protection — actors serialize access, eliminating data races
 - Use \`Task.detached\` sparingly — prefer structured task groups
 
 \`\`\`swift
@@ -79,7 +79,7 @@ actor CounterStore {
 - Mock dependencies using protocol conformances — not subclassing
 
 ## Security & Secrets
-- Store secrets in Keychain Services — never in UserDefaults or plists
+- Store secrets in Keychain Services — never in UserDefaults or plists; UserDefaults is stored as plaintext XML
 - Use App Transport Security — enforce HTTPS for all connections
 - Validate all external input before processing
 - Use \`Data\` instead of \`String\` for sensitive values to control memory lifetime
