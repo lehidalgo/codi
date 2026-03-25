@@ -14,7 +14,7 @@ import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
 import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
 import { createCommand } from '../core/scaffolder/command-scaffolder.js';
-import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
+// Preset artifact lookup moved to init-wizard.ts
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -126,19 +126,10 @@ export async function initHandler(
     agentIds = wizardResult.agents;
     presetName = wizardResult.preset;
 
-    if (wizardResult.configMode === 'preset' && wizardResult.presetName) {
-      // Built-in preset: get artifacts from preset definition
-      const presetDef = getBuiltinPresetDefinition(wizardResult.presetName);
-      if (presetDef) {
-        ruleTemplates = [...presetDef.rules];
-        skillTemplates = [...presetDef.skills];
-        agentTemplates = [...presetDef.agents];
-        commandTemplates = [...presetDef.commands];
-      }
-    } else if (wizardResult.configMode === 'zip' || wizardResult.configMode === 'github') {
+    if (wizardResult.configMode === 'zip' || wizardResult.configMode === 'github') {
       // Import: will be handled after createCodiStructure via preset install
     } else {
-      // Custom: use wizard selections
+      // Preset or custom: wizard always returns the full artifact selections
       ruleTemplates = wizardResult.rules;
       skillTemplates = wizardResult.skills;
       agentTemplates = wizardResult.agentTemplates;
