@@ -13,6 +13,13 @@ managed_by: codi
 
 Use when asked to commit, or after completing a feature/fix/refactor.
 
+## When to Activate
+
+- User asks to commit staged or unstaged changes to git
+- User has completed a feature, bug fix, or refactor and needs to commit
+- User needs help writing a conventional commit message
+- Pre-commit hooks fail and the user needs troubleshooting guidance
+
 ## Commit Workflow
 
 ### Step 1: Review Changes

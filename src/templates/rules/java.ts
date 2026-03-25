@@ -47,11 +47,11 @@ public Optional<User> findById(String id) {
 ## Collections & Streams
 - Use Streams API for collection transformations — no manual loops for map/filter
 - Prefer method references over lambdas when they improve clarity
-- Use \`toList()\` (Java 16+) instead of \`Collectors.toList()\`
-- Avoid side effects inside stream operations
+- Use \`toList()\` (Java 16+) instead of \`Collectors.toList()\` — less boilerplate and returns unmodifiable list
+- Avoid side effects inside stream operations — side effects make streams unpredictable with parallel execution
 
 ## Dependency Injection
-- Use constructor injection — never field injection with \`@Autowired\`
+- Use constructor injection — never field injection with \`@Autowired\`; field injection hides dependencies and breaks testability
 - Mark injected fields as \`final\` — enforce immutability
 - Keep constructors simple — no business logic in constructors
 - Use \`@Qualifier\` when multiple beans of the same type exist
@@ -70,7 +70,7 @@ public Optional<User> findById(String id) {
 
 ## Error Handling
 - Define custom exception hierarchies for domain errors
-- Use \`try-with-resources\` for all closeable resources
+- Use \`try-with-resources\` for all closeable resources — guarantees cleanup even when exceptions are thrown
 - Log exceptions with structured context — never swallow silently
 - Return appropriate HTTP status codes from exception handlers
 `;

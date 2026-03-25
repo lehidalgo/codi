@@ -51,6 +51,8 @@ export interface NormalizedSkill {
   disableModelInvocation?: boolean;
   argumentHint?: string;
   allowedTools?: string[];
+  license?: string;
+  metadata?: Record<string, string>;
   managedBy?: 'codi' | 'user';
 }
 
@@ -77,6 +79,8 @@ export interface McpConfig {
     args?: string[];
     env?: Record<string, string>;
     url?: string;
+    headers?: Record<string, string>;
+    enabled?: boolean;
   }>;
 }
 

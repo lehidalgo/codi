@@ -11,6 +11,14 @@ managed_by: codi
 
 Use when building mobile applications, reviewing mobile code, or making architectural decisions for iOS, Android, or cross-platform projects.
 
+## When to Activate
+
+- User is building or modifying an iOS, Android, or cross-platform mobile app
+- User asks about mobile architecture patterns like MVVM, dependency injection, or data layers
+- User needs guidance on SwiftUI, UIKit, Jetpack Compose, or React Native code
+- User wants to review mobile code for platform-specific best practices
+- User asks about mobile testing strategies, accessibility, or app store guidelines
+
 ## Platform Guidelines
 
 ### iOS Development

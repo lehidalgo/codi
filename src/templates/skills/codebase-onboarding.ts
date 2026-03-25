@@ -11,6 +11,14 @@ managed_by: codi
 
 Use when asked to understand a new codebase, onboard to a project, or create a project overview.
 
+## When to Activate
+
+- User opens a new or unfamiliar project and asks for an overview
+- User asks to create an onboarding guide for new team members
+- User wants to understand the architecture, conventions, or key files of a codebase
+- User asks what the project does, how it is structured, or how to get started
+- A new AI agent needs context about the project before starting work
+
 ## Onboarding Process
 
 ### Phase 1: Reconnaissance

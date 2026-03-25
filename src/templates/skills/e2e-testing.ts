@@ -1,13 +1,14 @@
-import {
-  RULE_TEMPLATE_COUNT,
-  SKILL_TEMPLATE_COUNT,
-  AGENT_TEMPLATE_COUNT,
-  COMMAND_TEMPLATE_COUNT,
-  FLAG_COUNT,
-  PRE_COMMIT_MAX_FILE_LINES,
-} from '../../constants.js';
+import { PRE_COMMIT_MAX_FILE_LINES } from '../../constants.js';
+import type { TemplateCounts } from './types.js';
 
-export const template = `---
+export function getTemplate(counts: TemplateCounts): string {
+  const RULE_TEMPLATE_COUNT = counts.rules;
+  const SKILL_TEMPLATE_COUNT = counts.skills;
+  const AGENT_TEMPLATE_COUNT = counts.agents;
+  const COMMAND_TEMPLATE_COUNT = counts.commands;
+  const FLAG_COUNT = counts.flags;
+
+  return `---
 name: {{name}}
 description: Comprehensive validation of all codi features. Use when asked to test, audit, or verify the codi installation end-to-end. Covers 16 commands, 7 artifact types, preset management (create, validate, export, install, remove), pre-commit hooks, doc-sync, and commit workflow.
 compatibility: [claude-code, cursor, codex, windsurf, cline]
@@ -23,7 +24,7 @@ This skill guides systematic validation of ALL codi features in a test project. 
 - **[HUMAN]** — STOP and ask the human to perform this action
 - **[CODING AGENT]** — the AI agent performs this
 
-Full details: see docs/testing-guide.md and docs/user-flows.md.
+Full details: see docs/guides/testing-guide.md and docs/guides/user-flows.md.
 
 ## Suite 1: Setup
 
@@ -401,7 +402,8 @@ Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and a
 
 ## References
 
-- docs/testing-guide.md — full testing procedure
-- docs/user-flows.md — all 30 user flows
+- docs/guides/testing-guide.md — full testing procedure
+- docs/guides/user-flows.md — all 30 user flows
 - docs/troubleshooting.md — common issues (including hook troubleshooting)
 `;
+}

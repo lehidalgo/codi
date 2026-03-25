@@ -11,6 +11,13 @@ managed_by: codi
 
 Use when asked to clean up dead code, remove unused exports, or refactor for simplicity.
 
+## When to Activate
+
+- User asks to remove dead code, unused imports, or unused exports
+- User wants to consolidate duplicate functions or redundant abstractions
+- User asks to refactor a module for simplicity without changing behavior
+- User needs to identify and safely delete code that is no longer referenced
+
 ## Refactoring Process
 
 ### Step 1: Detect Dead Code

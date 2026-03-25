@@ -101,9 +101,9 @@ describe('checkDocSync', () => {
   });
 
   it('detects missing template in writing-rules.md with action prompt', async () => {
-    await fs.mkdir(path.join(tmpDir, 'docs'), { recursive: true });
+    await fs.mkdir(path.join(tmpDir, 'docs/guides'), { recursive: true });
     await fs.writeFile(
-      path.join(tmpDir, 'docs/writing-rules.md'),
+      path.join(tmpDir, 'docs/guides/writing-rules.md'),
       'Available: `security`, `testing`.',
     );
     const issues = await checkDocSync(tmpDir);

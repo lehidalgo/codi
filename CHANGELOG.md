@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] - 2026-03-26
+
+### Added
+- **Full skills spec compliance** — skills now scaffold as directories with evals/, scripts/, references/, assets/ subdirectories
+- **Progressive loading** — `progressive_loading` flag wired to all 5 adapters; metadata-only SKILL.md for auto-discovery agents, skill catalog for inline agents
+- **Specialized creator skills** — rule-creator (7-step), agent-creator (9-step), command-creator (6-step), skill-creator (8-step with eval lifecycle)
+- **Interactive `codi add` wizard** — launches searchable template selector when no args provided; backward compatible with flags
+- **Enriched adapter output** — CLAUDE.md/AGENTS.md now include Project Overview, Architecture, Key Commands, Development Notes, Workflow sections
+- **Workflow section** — all adapters generate agent behavior guidelines (understand→search→propose, self-evaluation checklist, commit discipline)
+- **Codex `config.toml` generation** — developer_instructions from flags + unified MCP server config
+- **17 MCP servers** — 6 essential (docs, memory, sequential-thinking, context7) + 11 popular tools (Stripe, Supabase, Vercel, Neon, Sentry, Linear, Notion, Prisma, GitHub, Upstash, Cloudflare)
+- **MCP schema extensions** — `headers` field for HTTP auth, `enabled` field for toggling servers
+- **2 new rule templates** — production-mindset (production-grade standards) and simplicity-first (YAGNI, minimal complexity)
+- **Development hooks** — husky pre-commit (lint) and commit-msg (conventional commits) for codi itself
+- **Documentation overhaul** — 11 spec chapters (docs/spec/), 3 new guides (artifact-lifecycle, cloud-ci, security), writing-artifacts.md comprehensive guide
+- **Documentation naming convention** — YYYYMMDD_HHMM_[CATEGORY]_filename.md with 10 categories
+- **Skills analysis document** — 1008-line research report on Claude Code Skills architecture
+
+### Changed
+- Replaced `prompts` library with `@clack/prompts` — modern wizard UI with intro/outro framing, built-in spinner
+- Dynamic template counts — removed 7 hardcoded constants, replaced with runtime calculations
+- CLAUDE.md is now lean (no inline rules) — rules auto-discovered from .claude/rules/
+- .cursorrules is now lean (no rule list) — rules auto-discovered from .cursor/rules/
+- Codex MCP unified into .codex/config.toml (no separate .codex/mcp.toml)
+- Docs reorganized into subdirectories: spec/, guides/, reference/, qa/
+- All doc references updated across README.md, STATUS.md, templates, and tests
+- Agent templates enhanced with confidence filtering, severity matrices, approval criteria
+- Skill templates enhanced with "When to Activate" sections
+- Rule templates enhanced with rationale annotations and BAD/GOOD examples
+- Security rule adds RLS/RBAC, untrusted code validation, CAPTCHAs
+- Documentation rule adds Mermaid-only, file naming convention, document types table
+- Removed artifact-creator skill (replaced by 4 specialized creators)
+
+### Fixed
+- Circular dependency in skill template loaders (factory function pattern)
+- Stale doc path references after docs/ reorganization
+
 ## [0.5.1] - 2026-03-25
 
 ### Added

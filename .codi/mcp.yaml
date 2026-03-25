@@ -1,4 +1,5 @@
 servers:
+  # --- Documentation ---
   openaiDeveloperDocs:
     type: http
     url: "https://developers.openai.com/mcp"
@@ -8,3 +9,58 @@ servers:
   claude-code-docs:
     type: http
     url: "https://code.claude.com/docs/mcp"
+
+  # --- Essential (no API key needed) ---
+  memory:
+    type: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-memory"]
+  sequential-thinking:
+    type: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+  context7:
+    type: stdio
+    command: npx
+    args: ["-y", "@upstash/context7-mcp"]
+
+  # --- Popular Tools (authenticate when needed) ---
+  stripe:
+    type: stdio
+    command: npx
+    args: ["-y", "@stripe/mcp"]
+  supabase:
+    type: http
+    url: "https://mcp.supabase.com/mcp"
+  vercel:
+    type: http
+    url: "https://mcp.vercel.com"
+  neon:
+    type: http
+    url: "https://mcp.neon.tech/mcp"
+  sentry:
+    type: stdio
+    command: npx
+    args: ["-y", "@sentry/mcp-server"]
+  linear:
+    type: http
+    url: "https://mcp.linear.app/mcp"
+  notion:
+    type: stdio
+    command: npx
+    args: ["-y", "@notionhq/notion-mcp-server"]
+  prisma:
+    type: stdio
+    command: npx
+    args: ["-y", "prisma", "mcp"]
+  github:
+    type: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-github"]
+  upstash:
+    type: stdio
+    command: npx
+    args: ["-y", "@upstash/mcp-server@latest"]
+  cloudflare-docs:
+    type: http
+    url: "https://docs.mcp.cloudflare.com/mcp"

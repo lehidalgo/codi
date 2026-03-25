@@ -19,3 +19,5 @@ export { template as csharp } from './csharp.js';
 export { template as nextjs } from './nextjs.js';
 export { template as django } from './django.js';
 export { template as springBoot } from './spring-boot.js';
+export { template as productionMindset } from './production-mindset.js';
+export { template as simplicityFirst } from './simplicity-first.js';

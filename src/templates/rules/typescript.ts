@@ -11,8 +11,8 @@ language: typescript
 
 ## Strict Typing
 - Never use \`any\` — use \`unknown\` and narrow with type guards
-- Enable \`strict: true\` in tsconfig.json
-- Use discriminated unions over type assertions
+- Enable \`strict: true\` in tsconfig.json — catches entire categories of bugs at compile time
+- Use discriminated unions over type assertions — type assertions bypass the compiler and hide bugs
 - Prefer \`interface\` for object shapes, \`type\` for unions and intersections
 
 \`\`\`typescript
@@ -30,7 +30,7 @@ function parse(data: unknown): string {
 
 ## Exports & Imports
 - Use named exports — no default exports (improves refactoring and auto-imports)
-- Group imports: external libraries, internal modules, types
+- Group imports: external libraries, internal modules, types — makes dependency sources immediately visible
 - Use \`import type\` for type-only imports — keeps runtime bundle clean
 
 ## Immutability
@@ -54,11 +54,11 @@ const updated = [...items, newItem];
 - Set timeouts on all external calls
 
 ## Validation
-- Validate external input at system boundaries with Zod or similar
+- Validate external input at system boundaries with Zod or similar — compile-time types vanish at runtime
 - Trust internal types — no redundant runtime checks inside the module
-- Use branded types for domain identifiers (UserId, OrderId)
+- Use branded types for domain identifiers (UserId, OrderId) — prevents accidentally passing an OrderId where a UserId is expected
 
 ## Enums & Constants
-- Prefer \`as const\` objects over TypeScript enums — better tree-shaking
+- Prefer \`as const\` objects over TypeScript enums — better tree-shaking and no runtime overhead
 - Use string literal unions for simple choices: \`type Status = 'active' | 'inactive'\`
 `;
