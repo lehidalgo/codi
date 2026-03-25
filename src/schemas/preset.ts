@@ -12,6 +12,13 @@ const PresetFlagSchema = z.object({
   locked: z.boolean().optional(),
 });
 
+const PresetArtifactsSchema = z.object({
+  rules: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  agents: z.array(z.string()).optional(),
+  commands: z.array(z.string()).optional(),
+}).optional();
+
 export const PresetManifestSchema = z.object({
   name: z.string().regex(NAME_PATTERN_STRICT).max(MAX_NAME_LENGTH),
   description: z.string().optional(),
@@ -22,6 +29,7 @@ export const PresetManifestSchema = z.object({
   tags: z.array(z.string()).optional(),
   compatibility: PresetCompatibilitySchema,
   dependencies: z.array(z.string()).optional(),
+  artifacts: PresetArtifactsSchema,
   flags: z.record(z.string(), PresetFlagSchema).optional(),
 });
 
