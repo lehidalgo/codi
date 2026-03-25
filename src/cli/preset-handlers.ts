@@ -24,6 +24,7 @@ import { getBuiltinPresetNames } from '../templates/presets/index.js';
 import { PRESET_DESCRIPTIONS, getPresetNames as getFlagPresetNames } from '../core/flags/flag-presets.js';
 import { presetInstallHandler } from './preset.js';
 import type { PresetData } from './preset.js';
+import { printBanner } from './shared.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -329,6 +330,7 @@ export async function presetEditHandler(
 ): Promise<CommandResult<PresetData>> {
   const log = Logger.getInstance();
   const codiDir = resolveCodiDir(projectRoot);
+  printBanner('Preset Editor');
   const manifestPath = path.join(codiDir, 'presets', name, 'preset.yaml');
 
   let manifestRaw: string;
