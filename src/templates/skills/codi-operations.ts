@@ -100,9 +100,9 @@ codi preset update                    # Update GitHub-sourced presets
 
 ### Update Artifacts
 \`\`\`bash
-codi update --rules --skills --agents    # Refresh managed_by: codi artifacts
+codi update --rules --skills --agents    # Refresh managed_by: codi artifacts (auto-generates)
 codi update --from org/team-repo         # Pull from central repo (read-only)
-codi update --regenerate                 # Also regenerate after update
+codi update --dry-run                    # Preview changes without writing
 \`\`\`
 
 ### MCP Configuration
@@ -121,7 +121,7 @@ codi status                # Check for drift in generated files
 ## Generation & Maintenance
 
 \`\`\`bash
-codi generate              # Regenerate all agent config files
+codi generate              # Regenerate all agent config files (only needed after manual .codi/ edits)
 codi generate --dry-run    # Preview without writing
 codi docs-update           # Auto-fix stale documentation counts
 codi doctor                # Detect remaining doc issues — act on ACTION prompts
