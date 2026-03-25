@@ -11,6 +11,13 @@ managed_by: codi
 
 Use when asked to create a presentation, slide deck, or pitch deck on any topic.
 
+## When to Activate
+
+- User asks to create a slide deck, presentation, or pitch deck
+- User needs an HTML-based presentation that works offline in a browser
+- User wants to present technical content, a proposal, or project status
+- User asks to generate slides from a topic outline or document
+
 ## Presentation Process
 
 ### Step 1: Gather Requirements

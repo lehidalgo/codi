@@ -11,6 +11,14 @@ managed_by: codi
 
 Use when creating, updating, or reviewing project documentation.
 
+## When to Activate
+
+- User asks to write or update a README, API docs, or architecture decision record
+- User needs to add JSDoc, docstrings, or inline documentation to code
+- User wants to generate documentation from existing code or APIs
+- User asks to review documentation for accuracy or completeness
+- User needs to create an onboarding guide or contributing guide
+
 ## Documentation Types
 
 ### README

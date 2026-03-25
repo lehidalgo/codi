@@ -11,6 +11,14 @@ managed_by: codi
 
 Use when asked to perform a security audit, scan for vulnerabilities, or check for hardcoded secrets.
 
+## When to Activate
+
+- User asks to audit the codebase for security vulnerabilities
+- User wants to scan for hardcoded secrets, API keys, or credentials in source code
+- User needs a dependency audit to check for known CVEs
+- User asks for an OWASP Top 10 analysis of their application
+- User wants to verify input validation and sanitization across endpoints
+
 ## Security Scan Process
 
 ### Step 1: Dependency Audit

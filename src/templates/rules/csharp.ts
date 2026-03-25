@@ -12,7 +12,7 @@ language: csharp
 ## Records & Data Types
 - Use records for immutable data models — get equality, hashing, and deconstruction
 - Use \`init\` properties for immutable object construction
-- Enable nullable reference types (\`<Nullable>enable</Nullable>\`) project-wide
+- Enable nullable reference types (\`<Nullable>enable</Nullable>\`) project-wide — catches null reference bugs at compile time
 - Prefer \`record struct\` for small value types to avoid heap allocations
 
 \`\`\`csharp
@@ -36,7 +36,7 @@ public record OrderId {
 \`\`\`
 
 ## Async Patterns
-- Use \`async\`/\`await\` for all I/O operations — never block with \`.Result\` or \`.Wait()\`
+- Use \`async\`/\`await\` for all I/O operations — never block with \`.Result\` or \`.Wait()\`; blocking causes thread pool starvation and deadlocks
 - Use \`ConfigureAwait(false)\` in library code to avoid deadlocks
 - Use \`IAsyncDisposable\` with \`await using\` for async resource cleanup
 - Prefer \`ValueTask<T>\` over \`Task<T>\` for hot paths that often complete synchronously
@@ -58,8 +58,8 @@ try {
 ## LINQ & Collections
 - Use LINQ for collection transformations — no manual loops for map/filter/reduce
 - Prefer method syntax for complex queries, query syntax for joins
-- Use \`IReadOnlyList<T>\` and \`IReadOnlyDictionary<K,V>\` in public APIs
-- Avoid materializing queries prematurely — defer \`.ToList()\` until needed
+- Use \`IReadOnlyList<T>\` and \`IReadOnlyDictionary<K,V>\` in public APIs — prevents callers from mutating your internal state
+- Avoid materializing queries prematurely — defer \`.ToList()\` until needed; premature materialization wastes memory on unused results
 
 ## Nullable Reference Types
 - Annotate all public APIs with nullability — no ambiguous references
@@ -88,6 +88,6 @@ try {
 ## Error Handling
 - Use \`ILogger<T>\` with structured logging — include correlation IDs
 - Define custom exception types for domain-specific errors
-- Use global exception handling middleware — no scattered try/catch
+- Use global exception handling middleware — no scattered try/catch; centralized handling ensures consistent error responses
 - Return \`ProblemDetails\` responses for API errors (RFC 9457)
 `;

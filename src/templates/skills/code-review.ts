@@ -11,6 +11,13 @@ managed_by: codi
 
 Use when asked to review code, examine a PR, or audit code quality.
 
+## When to Activate
+
+- User asks to review a pull request or specific code changes
+- User wants a code quality audit on a file, module, or entire codebase
+- User asks to check code against project rules before merging
+- User requests feedback on their implementation or architecture decisions
+
 ## Review Process
 
 ### Step 1: Identify Changes

@@ -10,8 +10,8 @@ language: rust
 # Rust Conventions
 
 ## Ownership & Borrowing
-- Prefer borrowing (\`&T\`, \`&mut T\`) over cloning — clone only when necessary
-- Use \`String\` for owned data, \`&str\` for borrowed string slices
+- Prefer borrowing (\`&T\`, \`&mut T\`) over cloning — clone only when necessary; unnecessary clones waste allocations
+- Use \`String\` for owned data, \`&str\` for borrowed string slices — choosing correctly avoids unnecessary allocations
 - Move values into functions when the caller no longer needs them
 - Use \`Cow<str>\` when a function may or may not need to allocate
 
@@ -50,11 +50,11 @@ fn load_config(path: &str) -> Result<Config, ConfigError> {
 - Let the compiler infer lifetimes when possible — annotate only when required
 - Name lifetimes descriptively for complex signatures: \`'input\`, \`'conn\`
 - Prefer owned types in public APIs to avoid lifetime complexity for callers
-- Use \`'static\` only for truly static data — not as a workaround
+- Use \`'static\` only for truly static data — not as a workaround; abusing \`'static\` hides design problems
 
 ## Linting & Formatting
 - Run \`cargo fmt\` on every save — non-negotiable
-- Run \`clippy\` and fix all warnings — treat them as errors in CI
+- Run \`clippy\` and fix all warnings — treat them as errors in CI; clippy catches common mistakes and idiomatic issues
 - Use \`#[must_use]\` on functions whose return values must not be ignored
 - Enable \`#![deny(clippy::all)]\` in library crates
 
@@ -84,8 +84,8 @@ mod tests {
 \`\`\`
 
 ## Performance & Safety
-- Prefer iterators over manual index loops — they optimize better
-- Use \`Vec::with_capacity\` when the size is known ahead of time
-- Avoid \`unsafe\` unless absolutely necessary — document every usage
+- Prefer iterators over manual index loops — they optimize better and eliminate bounds-check overhead
+- Use \`Vec::with_capacity\` when the size is known ahead of time — avoids repeated reallocations
+- Avoid \`unsafe\` unless absolutely necessary — document every usage; unsafe blocks void the compiler's safety guarantees
 - Use \`Arc<T>\` for shared ownership across threads, \`Rc<T>\` for single-threaded
 `;

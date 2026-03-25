@@ -257,6 +257,8 @@ async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>
       content,
       compatibility: fm.compatibility,
       tools: fm.tools,
+      license: fm.license,
+      metadata: fm.metadata,
       managedBy: fm.managed_by,
     });
   } catch (cause) {

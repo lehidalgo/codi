@@ -25,6 +25,8 @@ const TEMPLATE_MAP: Record<string, string> = {
   'nextjs': ruleTemplates.nextjs,
   'django': ruleTemplates.django,
   'spring-boot': ruleTemplates.springBoot,
+  'production-mindset': ruleTemplates.productionMindset,
+  'simplicity-first': ruleTemplates.simplicityFirst,
 };
 
 export const AVAILABLE_TEMPLATES = Object.keys(TEMPLATE_MAP);

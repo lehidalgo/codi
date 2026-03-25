@@ -1,11 +1,7 @@
-import {
-  RULE_TEMPLATE_COUNT,
-  SKILL_TEMPLATE_COUNT,
-  AGENT_TEMPLATE_COUNT,
-  COMMAND_TEMPLATE_COUNT,
-} from '../../constants.js';
+import type { TemplateCounts } from './types.js';
 
-export const template = `---
+export function getTemplate(counts: TemplateCounts): string {
+  return `---
 name: {{name}}
 description: Unified codi operations skill. Use when managing rules, skills, agents, commands, configuration, verification, or troubleshooting codi setup.
 managed_by: codi
@@ -19,10 +15,10 @@ Codi manages 4 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
-| Rules | .codi/rules/custom/ | codi add rule | ${RULE_TEMPLATE_COUNT} templates |
-| Skills | .codi/skills/ | codi add skill | ${SKILL_TEMPLATE_COUNT} templates |
-| Agents | .codi/agents/ | codi add agent | ${AGENT_TEMPLATE_COUNT} templates |
-| Commands | .codi/commands/ | codi add command | ${COMMAND_TEMPLATE_COUNT} templates |
+| Rules | .codi/rules/custom/ | codi add rule | ${counts.rules} templates |
+| Skills | .codi/skills/ | codi add skill | ${counts.skills} templates |
+| Agents | .codi/agents/ | codi add agent | ${counts.agents} templates |
+| Commands | .codi/commands/ | codi add command | ${counts.commands} templates |
 
 ### Creating Artifacts
 
@@ -146,3 +142,4 @@ codi watch                 # Auto-regenerate on .codi/ changes
 
 **Backup needed:** Backups are automatic before each generate. Use \`codi revert --list\` to see history.
 `;
+}

@@ -11,7 +11,8 @@ import type { NormalizedConfig } from '../types/config.js';
 import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
-import { generateSkillFiles } from './skill-generator.js';
+import { generateSkillFiles, buildSkillCatalog, type ProgressiveLoadingMode } from './skill-generator.js';
+import { buildProjectOverview, buildDevelopmentNotes, buildWorkflowSection, getEnabledMcpServers } from './section-builder.js';
 import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
@@ -56,14 +57,29 @@ export const windsurfAdapter: AgentAdapter = {
     const flagText = buildFlagInstructions(config.flags);
     const sections: string[] = [];
 
+    const overview = buildProjectOverview(config);
+    if (overview) sections.push(overview);
+
     if (flagText) {
       sections.push(flagText);
     }
+
+    const devNotes = buildDevelopmentNotes(config);
+    if (devNotes) sections.push(devNotes);
+
+    sections.push(buildWorkflowSection());
+
     for (const rule of config.rules) {
       sections.push(`# ${rule.name}\n\n${rule.content}`);
     }
-    for (const skill of config.skills) {
-      sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
+    const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
+    if (plMode === 'off') {
+      for (const skill of config.skills) {
+        sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
+      }
+    } else {
+      const catalog = buildSkillCatalog(config.skills);
+      if (catalog) sections.push(catalog);
     }
 
     const content = addGeneratedHeader(sections.join('\n\n'));
@@ -75,11 +91,12 @@ export const windsurfAdapter: AgentAdapter = {
     }];
 
     // Generate .windsurf/skills/{name}/SKILL.md
-    files.push(...generateSkillFiles(config.skills, '.windsurf/skills'));
+    files.push(...generateSkillFiles(config.skills, '.windsurf/skills', plMode));
 
     // Generate .windsurf/mcp.json if MCP servers are configured
-    if (config.mcp && Object.keys(config.mcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(config.mcp, null, 2);
+    const enabledMcp = getEnabledMcpServers(config.mcp);
+    if (Object.keys(enabledMcp.servers).length > 0) {
+      const mcpContent = JSON.stringify(enabledMcp, null, 2);
       files.push({
         path: '.windsurf/mcp.json',
         content: mcpContent,

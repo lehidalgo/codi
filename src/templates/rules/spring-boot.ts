@@ -13,7 +13,7 @@ language: java
 - Use constructor injection for all required dependencies — never \`@Autowired\` on fields
 - Mark constructors with a single dependency implicitly (no annotation needed)
 - Use \`@RequiredArgsConstructor\` (Lombok) to reduce boilerplate for final fields
-- Keep the number of constructor parameters under 5 — more signals the class does too much
+- Keep the number of constructor parameters under 5 — more signals the class has too many responsibilities
 
 \`\`\`java
 @Service
@@ -39,20 +39,20 @@ public class OrderService {
 ## REST Controllers
 - Use \`@RestController\` and return \`ResponseEntity<T>\` for typed responses with status codes
 - Use \`@RequestMapping\` at the class level for base path, HTTP method annotations on methods
-- Validate request bodies with \`@Valid\` and Bean Validation annotations
-- Keep controllers thin — delegate to service classes for business logic
+- Validate request bodies with \`@Valid\` and Bean Validation annotations — catches bad input before it reaches business logic
+- Keep controllers thin — delegate to service classes for business logic; fat controllers are untestable without HTTP
 
 ## JPA & Database
 - Annotate service methods with \`@Transactional\` — not repository or controller methods
-- Use \`@Transactional(readOnly = true)\` for read-only operations to enable optimizations
-- Define entity relationships carefully — prefer \`LAZY\` fetch type and load eagerly only when needed
+- Use \`@Transactional(readOnly = true)\` for read-only operations to enable optimizations — Hibernate skips dirty checking
+- Define entity relationships carefully — prefer \`LAZY\` fetch type and load eagerly only when needed; EAGER causes N+1 by default
 - Use Spring Data JPA derived queries or \`@Query\` with JPQL — avoid native SQL unless necessary
 
 ## Database Migrations
-- Use Flyway or Liquibase for all schema changes — never rely on \`ddl-auto\` in production
+- Use Flyway or Liquibase for all schema changes — never rely on \`ddl-auto\` in production; ddl-auto can drop data
 - Name migration files sequentially: \`V1__create_users.sql\`, \`V2__add_email_index.sql\`
 - Test migrations against a copy of the production schema before deploying
-- Never modify an already-applied migration — create a new one instead
+- Never modify an already-applied migration — create a new one instead; Flyway checks checksums and will fail on mismatch
 
 ## Error Handling
 - Use \`@ControllerAdvice\` with \`@ExceptionHandler\` for centralized error handling
@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
 - Use \`application.yml\` with Spring profiles: \`dev\`, \`staging\`, \`prod\`
 - Externalize secrets using environment variables or Spring Cloud Config
 - Use \`@ConfigurationProperties\` for type-safe configuration binding
-- Validate configuration at startup with \`@Validated\`
+- Validate configuration at startup with \`@Validated\` — fail fast instead of discovering missing config at runtime
 
 ## Testing
 - Use \`@SpringBootTest\` for full integration tests with the application context
