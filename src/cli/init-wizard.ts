@@ -1,8 +1,8 @@
 import prompts from 'prompts';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
-import { Logger } from '../core/output/logger.js';
 import { DEFAULT_PRESET } from '../constants.js';
+import { printBanner, printSection } from './shared.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -40,15 +40,16 @@ export async function runInitWizard(
   detectedAgents: string[],
   allAgents: string[],
 ): Promise<WizardResult | null> {
-  const log = Logger.getInstance();
+  printBanner('Project Setup');
   const stackLabel = detectedStack.length > 0 ? detectedStack.join(', ') : 'none detected';
-  log.info(`Detected stack: ${stackLabel}`);
+  printSection(`Detected stack: ${stackLabel}`);
 
   // Step 1: Select IDE agents
+  printSection('Agents');
   const agentResponse = await prompts({
-    type: 'multiselect',
+    type: 'autocompleteMultiselect',
     name: 'agents',
-    message: 'Select agents to generate config for',
+    message: 'Select agents to generate config for (type to search)',
     choices: allAgents.map((id) => ({
       title: id,
       value: id,
@@ -61,6 +62,7 @@ export async function runInitWizard(
   if (!agentResponse.agents || agentResponse.agents.length === 0) return null;
 
   // Step 2: Choose configuration mode
+  printSection('Configuration');
   const modeResponse = await prompts({
     type: 'select',
     name: 'configMode',
@@ -152,6 +154,7 @@ export async function runInitWizard(
   }
 
   // Step 3b: Custom selection path (searchable)
+  printSection('Artifacts');
   const ruleResponse = await prompts({
     type: 'autocompleteMultiselect',
     name: 'rules',

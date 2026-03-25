@@ -10,7 +10,7 @@ import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
+import { initFromOptions, handleOutput, printBanner, printSection } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 import { parseFrontmatter } from '../utils/frontmatter.js';
 
@@ -149,6 +149,7 @@ export async function contributeHandler(
 ): Promise<CommandResult<ContributeData>> {
   const log = Logger.getInstance();
   const codiDir = resolveCodiDir(projectRoot);
+  printBanner('Contribute to CODI');
 
   // Discover all artifacts
   const allArtifacts = await discoverArtifacts(codiDir);
@@ -163,6 +164,7 @@ export async function contributeHandler(
   }
 
   // Step 1: Select artifacts
+  printSection('Select Artifacts');
   const artifactChoices = allArtifacts.map(a => ({
     title: `[${a.type}] ${a.name}`,
     value: a.name,
@@ -189,6 +191,7 @@ export async function contributeHandler(
   const selected = allArtifacts.filter(a => (selection.selected as string[]).includes(a.name));
 
   // Step 2: Choose contribution method
+  printSection('Distribution');
   const method = await prompts({
     type: 'select',
     name: 'method',
