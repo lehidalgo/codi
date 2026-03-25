@@ -12,3 +12,4 @@ export { template as presentation } from './presentation.js';
 export { template as mobileDevelopment } from './mobile-development.js';
 export { template as commit } from './commit.js';
 export { template as presetCreator } from './preset-creator.js';
+export { template as contribute } from './contribute.js';

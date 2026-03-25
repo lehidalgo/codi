@@ -74,7 +74,7 @@ export const DEFAULT_MAX_FILE_LINES = 700;
 export const PRE_COMMIT_MAX_FILE_LINES = 800;
 
 // --- Project-level counts (update when adding commands/adapters) ---
-export const CLI_COMMAND_COUNT = 16;
+export const CLI_COMMAND_COUNT = 17;
 export const ADAPTER_COUNT = 5;
 
 // --- Per-layer line limits (ACS recommendations) ---
@@ -85,7 +85,7 @@ export const MAX_AGENT_LINES = 200;
 
 // --- Template counts (kept in sync by codi docs-update / doc-sync) ---
 export const RULE_TEMPLATE_COUNT = 21;
-export const SKILL_TEMPLATE_COUNT = 14;
+export const SKILL_TEMPLATE_COUNT = 15;
 export const AGENT_TEMPLATE_COUNT = 8;
 export const COMMAND_TEMPLATE_COUNT = 8;
 export const FLAG_COUNT = 18;
