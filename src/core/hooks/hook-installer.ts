@@ -206,12 +206,40 @@ async function installCommitMsgHook(projectRoot: string, runner: string): Promis
   return ok({ files: [] });
 }
 
+async function cleanStaleHooksFromOtherRunner(projectRoot: string, activeRunner: string): Promise<void> {
+  const CODI_PRE_COMMIT_MARKER = 'Codi pre-commit hook runner';
+  const CODI_COMMIT_MSG_MARKER = 'Codi commit message validator';
+
+  if (activeRunner === 'husky') {
+    // Clean stale standalone hooks in .git/hooks/ — husky doesn't use them
+    for (const [file, marker] of [['pre-commit', CODI_PRE_COMMIT_MARKER], ['commit-msg', CODI_COMMIT_MSG_MARKER]] as const) {
+      const hookPath = path.join(projectRoot, '.git', 'hooks', file);
+      try {
+        const content = await fs.readFile(hookPath, 'utf-8');
+        if (content.includes(marker)) await fs.unlink(hookPath);
+      } catch { /* doesn't exist */ }
+    }
+  } else if (activeRunner === 'none') {
+    // Clean stale husky hooks — standalone doesn't use them
+    for (const file of ['pre-commit', 'commit-msg']) {
+      const huskyPath = path.join(projectRoot, '.husky', file);
+      try {
+        const content = await fs.readFile(huskyPath, 'utf-8');
+        if (content.includes('# Codi hooks')) await fs.unlink(huskyPath);
+      } catch { /* doesn't exist */ }
+    }
+  }
+}
+
 export async function installHooks(options: InstallOptions): Promise<Result<HookInstallResult>> {
   const { projectRoot, runner, hooks, flags } = options;
 
   if (hooks.length === 0) {
     return ok({ files: [] });
   }
+
+  // Clean stale codi hooks from a previous runner before installing
+  await cleanStaleHooksFromOtherRunner(projectRoot, runner);
 
   const allFiles: string[] = [];
 
@@ -244,6 +272,15 @@ export async function installHooks(options: InstallOptions): Promise<Result<Hook
 
   if (!runnerResult.ok) return runnerResult;
   allFiles.push(...runnerResult.data.files);
+
+  // Write auxiliary .mjs scripts to .git/hooks/ regardless of runner —
+  // both husky and standalone reference them by path
+  if (runner !== 'none') {
+    const hookDir = path.join(projectRoot, '.git', 'hooks');
+    await fs.mkdir(hookDir, { recursive: true });
+    const auxFiles = await writeAuxiliaryScripts(hookDir, options);
+    allFiles.push(...auxFiles);
+  }
 
   return ok({ files: allFiles });
 }

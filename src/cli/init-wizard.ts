@@ -1,6 +1,6 @@
 import * as p from '@clack/prompts';
 import type { PresetName } from '../core/flags/flag-presets.js';
-import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
+import { PRESET_DESCRIPTIONS, getPresetNames } from '../core/flags/flag-presets.js';
 import { DEFAULT_PRESET } from '../constants.js';
 import { getBuiltinPresetDefinition, BUILTIN_PRESETS } from '../templates/presets/index.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
@@ -12,6 +12,7 @@ export interface WizardResult {
   agents: string[];
   configMode: 'preset' | 'custom' | 'zip' | 'github';
   presetName?: string;
+  selectedPresetName?: string;
   importSource?: string;
   saveAsPreset?: string;
   rules: string[];
@@ -247,6 +248,7 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
     agents,
     configMode: changed ? 'custom' : 'preset',
     presetName: changed ? undefined : selectedPreset,
+    selectedPresetName: selectedPreset,
     saveAsPreset,
     rules: userRules,
     skills: userSkills,
@@ -352,17 +354,14 @@ function sameArrays(a: string[], b: string[]): boolean {
 }
 
 function getBasePreset(name: string): PresetName {
-  switch (name) {
-    case 'minimal':
-    case 'balanced':
-    case 'strict':
-      return name;
-    case 'python-web':
-    case 'typescript-fullstack':
-      return 'balanced';
-    case 'security-hardened':
-      return 'strict';
-    default:
-      return 'balanced';
+  const baseNames = getPresetNames();
+  if (baseNames.includes(name as PresetName)) return name as PresetName;
+
+  const def = getBuiltinPresetDefinition(name);
+  if (def?.extends) {
+    const parent = def.extends as PresetName;
+    if (baseNames.includes(parent)) return parent;
   }
+
+  return DEFAULT_PRESET as PresetName;
 }
