@@ -1,7 +1,4 @@
 import type { FlagDefinition } from '../../types/flags.js';
-import { PRESET_NAMES } from '../../constants.js';
-
-export type PresetName = (typeof PRESET_NAMES)[number];
 
 function flag(mode: FlagDefinition['mode'], value: unknown, locked = false): FlagDefinition {
   return locked ? { mode, value, locked } : { mode, value };
@@ -70,18 +67,20 @@ const STRICT: Record<string, FlagDefinition> = {
   auto_generate_on_change: flag('enabled', true),
 };
 
-const PRESETS: Record<PresetName, Record<string, FlagDefinition>> = {
+const PRESETS = {
   minimal: MINIMAL,
   balanced: BALANCED,
   strict: STRICT,
-};
+} as const satisfies Record<string, Record<string, FlagDefinition>>;
+
+export type PresetName = keyof typeof PRESETS;
 
 export function getPreset(name: PresetName): Record<string, FlagDefinition> {
   return structuredClone(PRESETS[name]);
 }
 
 export function getPresetNames(): PresetName[] {
-  return [...PRESET_NAMES];
+  return Object.keys(PRESETS) as PresetName[];
 }
 
 export const PRESET_DESCRIPTIONS: Record<PresetName, string> = {

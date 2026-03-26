@@ -4,19 +4,9 @@ import { AVAILABLE_AGENT_TEMPLATES } from '../scaffolder/agent-template-loader.j
 import { AVAILABLE_COMMAND_TEMPLATES } from '../scaffolder/command-template-loader.js';
 import { FLAG_CATALOG } from '../flags/flag-catalog.js';
 import { ERROR_CATALOG } from '../output/error-catalog.js';
-import { PRESET_NAMES } from '../../constants.js';
-
-/** CLI commands registered in src/cli.ts — update when adding commands. */
-export const CLI_COMMANDS = [
-  'init', 'generate', 'validate', 'status', 'add', 'verify', 'doctor',
-  'update', 'clean', 'compliance', 'ci', 'watch', 'revert',
-  'marketplace', 'preset', 'docs-update', 'contribute',
-] as const;
-
-/** Supported agent adapters — update when adding adapters. */
-export const ADAPTER_NAMES = [
-  'claude-code', 'cursor', 'codex', 'windsurf', 'cline',
-] as const;
+import { getPresetNames } from '../flags/flag-presets.js';
+import { getBuiltinPresetNames } from '../../templates/presets/index.js';
+import { ALL_ADAPTERS } from '../../adapters/index.js';
 
 export interface ProjectStats {
   rules: { count: number; names: string[] };
@@ -37,9 +27,9 @@ export function collectStats(): ProjectStats {
     agents: { count: AVAILABLE_AGENT_TEMPLATES.length, names: [...AVAILABLE_AGENT_TEMPLATES] },
     commands: { count: AVAILABLE_COMMAND_TEMPLATES.length, names: [...AVAILABLE_COMMAND_TEMPLATES] },
     flags: { count: Object.keys(FLAG_CATALOG).length, names: Object.keys(FLAG_CATALOG) },
-    presets: { count: PRESET_NAMES.length, names: [...PRESET_NAMES] },
+    presets: { count: getPresetNames().length + getBuiltinPresetNames().length, names: [...getPresetNames(), ...getBuiltinPresetNames()] },
     errorCodes: Object.keys(ERROR_CATALOG).length,
-    cliCommands: CLI_COMMANDS.length,
-    adapters: ADAPTER_NAMES.length,
+    cliCommands: 17, // TODO: derive from command registry when available
+    adapters: ALL_ADAPTERS.length,
   };
 }

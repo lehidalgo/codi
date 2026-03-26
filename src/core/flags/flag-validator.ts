@@ -3,7 +3,7 @@ import type { CodiError } from '../output/types.js';
 import { createError } from '../output/errors.js';
 import type { FlagLayer } from './flag-resolver.js';
 
-const VALID_CONDITION_KEYS = new Set(['lang', 'framework', 'agent', 'file_pattern']);
+import { FLAG_CONDITION_KEYS } from '../../types/flags.js';
 const LOCKABLE_LEVELS = new Set(['org', 'team', 'repo']);
 
 /**
@@ -80,7 +80,7 @@ export function validateFlags(
       // Rule 4: conditions only accept keys: lang, framework, agent, file_pattern
       if (definition.conditions) {
         for (const key of Object.keys(definition.conditions)) {
-          if (!VALID_CONDITION_KEYS.has(key)) {
+          if (!FLAG_CONDITION_KEYS.has(key)) {
             errors.push(
               createError('E_FLAG_INVALID_CONDITION', {
                 flag: flagName,

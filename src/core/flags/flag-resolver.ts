@@ -4,6 +4,7 @@ import type {
   FlagSpec,
   ResolvedFlags,
 } from '../../types/flags.js';
+import { FLAG_CONDITION_KEYS } from '../../types/flags.js';
 import type { Result } from '../../types/result.js';
 import { ok, err } from '../../types/result.js';
 import type { CodiError } from '../output/types.js';
@@ -21,8 +22,6 @@ export interface ResolutionContext {
   frameworks: string[];
   agents: string[];
 }
-
-const VALID_CONDITION_KEYS = new Set(['lang', 'framework', 'agent', 'file_pattern']);
 
 function conditionsMatch(
   conditions: FlagConditions,
@@ -56,7 +55,7 @@ function conditionsMatch(
 }
 
 function hasValidConditionKeys(conditions: FlagConditions): boolean {
-  return Object.keys(conditions).every((key) => VALID_CONDITION_KEYS.has(key));
+  return Object.keys(conditions).every((key) => FLAG_CONDITION_KEYS.has(key));
 }
 
 export function resolveFlags(
