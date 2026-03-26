@@ -50,6 +50,19 @@ GOOD: \`createUser({ name, email, role, team, isActive, notify })\`
 - Use typed errors when the language supports them
 - Always clean up resources in finally blocks
 
+## No Hardcoding — Single Source of Truth
+- Never hardcode values that are defined or derivable elsewhere — duplicated lists drift and cause bugs
+- Magic numbers and magic strings must be named constants with clear intent
+- Dynamic lists (supported agents, preset names, template catalogs, flag keys) must be derived from their source of truth, not duplicated in arrays or sets
+- Configuration values belong in environment variables, config files, or constants modules — not scattered in business logic
+- If you find yourself copying a list from one file to another, extract it to a shared source and import it
+
+BAD: \`const presets = ['minimal', 'balanced', 'strict']\` (duplicates the preset registry)
+GOOD: \`const presets = getPresetNames()\` (derived from the registry)
+
+BAD: \`if (status === 3)\` (what does 3 mean?)
+GOOD: \`if (status === STATUS.APPROVED)\` (self-documenting constant)
+
 ## Comments
 - Write self-documenting code first
 - Comment the WHY, not the WHAT — the code already shows what it does
