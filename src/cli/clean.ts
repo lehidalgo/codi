@@ -74,7 +74,7 @@ const AGENT_SUBDIRS = [
   '.claude/agents',
   '.codex/agents',
 ];
-const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/mcp.toml', '.windsurf/mcp.json'];
+const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/mcp.toml', '.claude/settings.json', '.cursor/hooks.json'];
 const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf', '.agents', '.codex'];
 
 const CODI_HOOK_MARKER = '# Codi hooks';
@@ -311,9 +311,12 @@ export async function cleanHandler(
     }
   }
 
-  // Clean hook files (state-tracked + known patterns + husky sections)
-  const stateHooks = (stateResult.ok && stateResult.data.hooks) ? stateResult.data.hooks : [];
-  const hooksDeleted = await cleanHookFiles(projectRoot, stateHooks, options, log);
+  // Clean hook files only on full uninstall (--all) — preserves safety hooks on regular clean
+  let hooksDeleted: string[] = [];
+  if (options.all) {
+    const stateHooks = (stateResult.ok && stateResult.data.hooks) ? stateResult.data.hooks : [];
+    hooksDeleted = await cleanHookFiles(projectRoot, stateHooks, options, log);
+  }
 
   for (const dir of AGENT_SUBDIRS) {
     const absDir = path.join(projectRoot, dir);
