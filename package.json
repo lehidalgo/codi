@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -25,6 +25,9 @@
     "lint": "tsc --noEmit",
     "dev": "tsup --watch",
     "prepare": "husky",
+    "preversion": "npm run lint && npm run test",
+    "version": "npm run build && git add -A dist/",
+    "postversion": "git push && git push --tags",
     "prepublishOnly": "npm run lint && npm run test && npm run build"
   },
   "engines": {
@@ -60,7 +63,7 @@
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@vitest/coverage-v8": "^4.1.0",
-    "codi-cli": "^0.7.3",
+    "codi-cli": "^0.7.4",
     "husky": "^9.1.7",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
