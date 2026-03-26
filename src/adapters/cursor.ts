@@ -121,6 +121,49 @@ export const cursorAdapter: AgentAdapter = {
       });
     }
 
+    // Generate .cursor/hooks.json for native flag enforcement
+    const hooksJson = buildCursorHooks(config);
+    if (hooksJson) {
+      const hooksContent = JSON.stringify(hooksJson, null, 2);
+      files.push({
+        path: '.cursor/hooks.json',
+        content: hooksContent,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(hooksContent),
+      });
+    }
+
     return files;
   },
 };
+
+interface CursorHook {
+  command: string;
+  args?: string[];
+}
+
+interface CursorHooks {
+  beforeShellExecution?: CursorHook[];
+}
+
+function buildCursorHooks(config: NormalizedConfig): CursorHooks | null {
+  const flagValue = (key: string): unknown => config.flags[key]?.value;
+  const denyPatterns: string[] = [];
+
+  if (flagValue('allow_force_push') === false) {
+    denyPatterns.push('git push --force', 'git push -f');
+  }
+  if (flagValue('allow_file_deletion') === false) {
+    denyPatterns.push('rm -rf', 'rm -r');
+  }
+
+  if (denyPatterns.length === 0) return null;
+
+  // Build inline shell command that checks stdin JSON for denied patterns
+  const patternsArg = denyPatterns.join('|');
+  const script = `read input; cmd=$(echo "$input" | grep -o '"command":"[^"]*"' | head -1 | sed 's/"command":"//;s/"//'); if echo "$cmd" | grep -qE '${patternsArg}'; then echo '{"permission":"deny"}'; else echo '{}'; fi`;
+
+  return {
+    beforeShellExecution: [{ command: 'bash', args: ['-c', script] }],
+  };
+}

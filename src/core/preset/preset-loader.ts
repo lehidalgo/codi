@@ -265,7 +265,7 @@ async function loadRuleFromDir(name: string, codiDir: string): Promise<Normalize
 
 async function loadSkillFromDir(name: string, codiDir: string): Promise<NormalizedSkill | null> {
   try {
-    const raw = await fs.readFile(path.join(codiDir, 'skills', `${name}.md`), 'utf8');
+    const raw = await fs.readFile(path.join(codiDir, 'skills', name, 'SKILL.md'), 'utf8');
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     return { name, description: (data['description'] as string) ?? '', content, managedBy: (data['managed_by'] as 'codi' | 'user') ?? 'user' };
   } catch { return null; }

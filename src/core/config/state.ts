@@ -18,6 +18,7 @@ export interface StateData {
   version: '1';
   lastGenerated: string;
   agents: Record<string, GeneratedFileState[]>;
+  hooks: GeneratedFileState[];
 }
 
 export interface DriftFile {
@@ -36,6 +37,7 @@ const EMPTY_STATE: StateData = {
   version: '1',
   lastGenerated: new Date().toISOString(),
   agents: {},
+  hooks: [],
 };
 
 export class StateManager {
@@ -83,6 +85,16 @@ export class StateManager {
 
     const state = stateResult.data;
     state.agents[agentId] = files;
+    state.lastGenerated = new Date().toISOString();
+    return this.write(state);
+  }
+
+  async updateHooks(files: GeneratedFileState[]): Promise<Result<void>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const state = stateResult.data;
+    state.hooks = files;
     state.lastGenerated = new Date().toISOString();
     return this.write(state);
   }

@@ -16,6 +16,7 @@ import type { GlobalOptions } from './shared.js';
 import { detectHookSetup } from '../core/hooks/hook-detector.js';
 import { generateHooksConfig } from '../core/hooks/hook-config-generator.js';
 import { installHooks } from '../core/hooks/hook-installer.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 
 interface GenerateCommandOptions extends GlobalOptions {
   agent?: string[];
@@ -102,7 +103,7 @@ export async function generateHandler(
       const languages = configResult.data.manifest.agents ?? [];
       const hooksConfig = generateHooksConfig(configResult.data.flags, languages);
       if (hooksConfig.hooks.length > 0) {
-        await installHooks({
+        const hookResult = await installHooks({
           projectRoot,
           runner: hookSetup.runner,
           hooks: hooksConfig.hooks,
@@ -112,9 +113,58 @@ export async function generateHandler(
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
         });
+        if (hookResult.ok && hookResult.data.files.length > 0) {
+          const codiDirHooks = resolveCodiDir(projectRoot);
+          const stateManagerHooks = new StateManager(codiDirHooks, projectRoot);
+          const now = new Date().toISOString();
+          await stateManagerHooks.updateHooks(hookResult.data.files.map((f) => ({
+            path: f,
+            sourceHash: '',
+            generatedHash: '',
+            sources: ['hooks'],
+            timestamp: now,
+          })));
+
+          const ledger = new OperationsLedgerManager(codiDirHooks);
+          await ledger.addHookFiles(hookResult.data.files.map((f) => ({
+            path: f,
+            framework: hookSetup.runner === 'none' ? 'standalone' as const : hookSetup.runner as 'husky' | 'pre-commit' | 'lefthook',
+            type: inferHookFileType(f),
+            createdAt: now,
+          })));
+        }
       }
     } catch {
       // Hook installation is best-effort during generate
+    }
+  }
+
+  // Log generate operation to ledger
+  if (!options.dryRun) {
+    try {
+      const codiDirLedger = resolveCodiDir(projectRoot);
+      const ledger = new OperationsLedgerManager(codiDirLedger);
+      const now = new Date().toISOString();
+      const ledgerFiles = genResult.data.agents.flatMap((agentId) =>
+        (genResult.data.filesByAgent[agentId] ?? []).map((f) => ({
+          path: f.path,
+          agent: agentId,
+          type: inferGeneratedFileType(f.path),
+          createdAt: now,
+          updatedAt: now,
+        })),
+      );
+      await ledger.addGeneratedFiles(ledgerFiles);
+      await ledger.logOperation({
+        type: 'generate',
+        timestamp: now,
+        details: {
+          agents: genResult.data.agents,
+          filesGenerated: genResult.data.files.length,
+        },
+      });
+    } catch {
+      // Ledger write is best-effort
     }
   }
 
@@ -128,6 +178,24 @@ export async function generateHandler(
     },
     exitCode: EXIT_CODES.SUCCESS,
   });
+}
+
+function inferHookFileType(filePath: string): 'pre-commit' | 'commit-msg' | 'secret-scan' | 'file-size-check' | 'version-check' {
+  if (filePath.includes('secret-scan')) return 'secret-scan';
+  if (filePath.includes('file-size-check')) return 'file-size-check';
+  if (filePath.includes('version-check')) return 'version-check';
+  if (filePath.includes('commit-msg')) return 'commit-msg';
+  return 'pre-commit';
+}
+
+function inferGeneratedFileType(filePath: string): 'instruction' | 'rule' | 'skill' | 'command' | 'agent' | 'mcp' | 'settings' {
+  if (filePath.includes('/rules/')) return 'rule';
+  if (filePath.includes('/skills/')) return 'skill';
+  if (filePath.includes('/commands/')) return 'command';
+  if (filePath.includes('/agents/')) return 'agent';
+  if (filePath.includes('mcp.json') || filePath.includes('mcp.toml')) return 'mcp';
+  if (filePath.includes('settings.json')) return 'settings';
+  return 'instruction';
 }
 
 export function registerGenerateCommand(program: Command): void {

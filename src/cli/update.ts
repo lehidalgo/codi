@@ -25,6 +25,7 @@ import { writeAuditEntry } from '../core/audit/audit-log.js';
 import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -474,6 +475,21 @@ export async function updateHandler(
         regenerated,
       },
     });
+
+    try {
+      const ledger = new OperationsLedgerManager(codiDir);
+      await ledger.logOperation({
+        type: 'update',
+        timestamp: new Date().toISOString(),
+        details: {
+          flagsAdded, flagsReset, preset: presetName ?? null,
+          rulesUpdated, skillsUpdated, agentsUpdated, commandsUpdated,
+          regenerated,
+        },
+      });
+    } catch {
+      // Best-effort
+    }
   }
 
   return createCommandResult({

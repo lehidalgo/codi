@@ -1,0 +1,11 @@
+{
+  "beforeShellExecution": [
+    {
+      "command": "bash",
+      "args": [
+        "-c",
+        "read input; cmd=$(echo \"$input\" | grep -o '\"command\":\"[^\"]*\"' | head -1 | sed 's/\"command\":\"//;s/\"//'); if echo \"$cmd\" | grep -qE 'git push --force|git push -f'; then echo '{\"permission\":\"deny\"}'; else echo '{}'; fi"
+      ]
+    }
+  ]
+}

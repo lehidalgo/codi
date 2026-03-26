@@ -15,6 +15,7 @@ import { initFromOptions, handleOutput, regenerateConfigs } from './shared.js';
 import type { GlobalOptions } from './shared.js';
 import { runAddWizard } from './add-wizard.js';
 import type { ArtifactType, AddWizardResult } from './add-wizard.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 
 interface AddRuleOptions extends GlobalOptions {
   template?: string;
@@ -240,6 +241,20 @@ export async function addCommandHandler(
   });
 }
 
+async function logAddToLedger(projectRoot: string, artifactType: string, name: string): Promise<void> {
+  try {
+    const codiDir = resolveCodiDir(projectRoot);
+    const ledger = new OperationsLedgerManager(codiDir);
+    await ledger.logOperation({
+      type: 'add',
+      timestamp: new Date().toISOString(),
+      details: { artifactType, name },
+    });
+  } catch {
+    // Best-effort
+  }
+}
+
 type ArtifactHandler = (
   projectRoot: string,
   name: string,
@@ -261,7 +276,10 @@ async function handleWizardFlow(
     results.push({ name: selected, success: result.success });
   }
   const added = results.filter(r => r.success).map(r => r.name);
-  if (added.length > 0) await regenerateConfigs(process.cwd());
+  if (added.length > 0) {
+    await regenerateConfigs(process.cwd());
+    for (const name of added) await logAddToLedger(process.cwd(), type, name);
+  }
   const summary = createCommandResult({
     success: true,
     command: `add ${type}`,

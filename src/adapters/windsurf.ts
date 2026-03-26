@@ -12,8 +12,8 @@ import { hashContent } from '../utils/hash.js';
 import { buildFlagInstructions } from './flag-instructions.js';
 import { addGeneratedHeader } from './generated-header.js';
 import { generateSkillFiles, buildSkillCatalog, type ProgressiveLoadingMode } from './skill-generator.js';
-import { buildProjectOverview, buildDevelopmentNotes, buildWorkflowSection, getEnabledMcpServers } from './section-builder.js';
-import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
+import { buildProjectOverview, buildDevelopmentNotes, buildWorkflowSection } from './section-builder.js';
+import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME } from '../constants.js';
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -35,14 +35,14 @@ export const windsurfAdapter: AgentAdapter = {
     commands: null,
     agents: null,
     instructionFile: '.windsurfrules',
-    mcpConfig: '.windsurf/mcp.json',
+    mcpConfig: null,
   } satisfies AgentPaths,
 
   capabilities: {
     rules: true,
     skills: true,
     commands: false,
-    mcp: true,
+    mcp: false,
     frontmatter: false,
     progressiveLoading: false,
     agents: false,
@@ -93,17 +93,8 @@ export const windsurfAdapter: AgentAdapter = {
     // Generate .windsurf/skills/{name}/SKILL.md
     files.push(...generateSkillFiles(config.skills, '.windsurf/skills', plMode));
 
-    // Generate .windsurf/mcp.json if MCP servers are configured
-    const enabledMcp = getEnabledMcpServers(config.mcp);
-    if (Object.keys(enabledMcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(enabledMcp, null, 2);
-      files.push({
-        path: '.windsurf/mcp.json',
-        content: mcpContent,
-        sources: [MCP_FILENAME],
-        hash: hashContent(mcpContent),
-      });
-    }
+    // Note: Windsurf does NOT support project-level MCP config.
+    // MCP is user-global only at ~/.codeium/windsurf/mcp_config.json.
 
     return files;
   },
