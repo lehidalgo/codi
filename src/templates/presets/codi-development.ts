@@ -18,6 +18,7 @@ export const preset: BuiltinPresetDefinition = {
     security_scan: { mode: 'enforced', value: true },
     require_pr_review: { mode: 'enforced', value: true },
     allow_force_push: { mode: 'enforced', value: false },
+    allow_shell_commands: { mode: 'enabled', value: true },
     lint_on_save: { mode: 'enabled', value: true },
     max_file_lines: { mode: 'enforced', value: 500 },
     require_documentation: { mode: 'enabled', value: true },
