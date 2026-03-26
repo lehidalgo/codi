@@ -41,4 +41,11 @@ GOOD: Three separate commits, each reviewable independently
 - Never force push to main or shared branches — rewrites shared history and causes data loss
 - Always pull before pushing to avoid unnecessary merge conflicts
 - Resolve merge conflicts carefully — understand both sides
-- Tag releases with semantic versions (vMAJOR.MINOR.PATCH)`;
+- Tag releases with semantic versions (vMAJOR.MINOR.PATCH)
+
+## Release Management
+- Never publish without a fresh build — stale dist artifacts cause silent regressions
+- Use npm lifecycle hooks (preversion, version, prepublishOnly) to enforce build-before-release automatically
+- Run tests before every version bump — a broken release is worse than a delayed one
+- Verify the built output matches the source before publishing: grep for key changes in dist/
+- One atomic command for releases: \`npm version patch\` triggers lint, test, build, commit, and tag in sequence`;
