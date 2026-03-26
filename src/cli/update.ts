@@ -8,9 +8,9 @@ import { promisify } from 'node:util';
 import os from 'node:os';
 import { resolveCodiDir } from '../utils/paths.js';
 import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
-import { getPreset } from '../core/flags/flag-presets.js';
+import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
-import { PRESET_NAMES, FLAGS_FILENAME, GIT_CLONE_DEPTH } from '../constants.js';
+import { FLAGS_FILENAME, GIT_CLONE_DEPTH } from '../constants.js';
 import { registerAllAdapters } from '../adapters/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
@@ -371,7 +371,7 @@ export async function updateHandler(
   const presetName = options.preset as PresetName | undefined;
 
   if (presetName) {
-    const validPresets = [...PRESET_NAMES];
+    const validPresets = getPresetNames() as string[];
     if (!validPresets.includes(presetName)) {
       return createCommandResult({
         success: false,
@@ -504,7 +504,7 @@ export function registerUpdateCommand(program: Command): void {
   program
     .command('update')
     .description('Update flags, rules, skills, agents, and commands to latest versions')
-    .option('--preset <preset>', 'Reset flags to preset: minimal, balanced, strict')
+    .option('--preset <preset>', `Reset flags to preset: ${getPresetNames().join(', ')}`)
     .option('--from <repo>', 'Pull centralized artifacts from a GitHub repo (e.g., org/team-config)')
     .option('--rules', 'Refresh template-managed rules to latest versions')
     .option('--skills', 'Refresh template-managed skills to latest versions')

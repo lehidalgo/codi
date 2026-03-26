@@ -26,15 +26,10 @@ export const MAX_BACKUPS = 5;
 export const MANAGED_BY_VALUES = ['codi', 'user'] as const;
 
 // --- Presets ---
-export const PRESET_NAMES = ['minimal', 'balanced', 'strict'] as const;
-export const DEFAULT_PRESET: (typeof PRESET_NAMES)[number] = 'balanced';
-
-// --- Built-in full presets (artifact bundles) ---
-export const BUILTIN_PRESET_NAMES = [
-  'minimal', 'balanced', 'strict',
-  'python-web', 'typescript-fullstack', 'security-hardened',
-] as const;
-export type BuiltinPresetName = (typeof BUILTIN_PRESET_NAMES)[number];
+// Base preset names are derived from flag-presets.ts PRESETS object (source of truth).
+// Extended preset names are derived from templates/presets/index.ts BUILTIN_PRESETS.
+// Only the default preset identifier is a true constant.
+export const DEFAULT_PRESET = 'balanced';
 
 // --- Preset source types ---
 export const PRESET_SOURCE_TYPES = ['builtin', 'zip', 'github', 'local'] as const;
