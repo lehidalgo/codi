@@ -40,8 +40,9 @@ jobs:
       - name: Check version was bumped
         run: |
           VERSION=$(node -p 'require("./package.json").version')
-          if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
-            echo "::error::Version v${VERSION} already released. Bump version in package.json before merging to main."
+          PUBLISHED=$(npm view codi-cli version 2>/dev/null || echo "0.0.0")
+          if [ "$VERSION" = "$PUBLISHED" ]; then
+            echo "::error::Version v${VERSION} is already published to npm. Bump version before merging to main."
             exit 1
           fi
-          echo "Version v${VERSION} is new — ready to release."
+          echo "Version v${VERSION} is newer than published v${PUBLISHED} — ready to release."
