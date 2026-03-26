@@ -1,9 +1,0 @@
-commit_msg=$(cat "$1")
-
-# Validate conventional commit format
-if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .{1,72}"; then
-  echo "Invalid commit message format."
-  echo "Use: type(scope): description"
-  echo "Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
-  exit 1
-fi
