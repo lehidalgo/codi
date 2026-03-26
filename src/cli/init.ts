@@ -27,6 +27,8 @@ import { installHooks } from '../core/hooks/hook-installer.js';
 import { checkHookDependencies } from '../core/hooks/hook-dependency-checker.js';
 import type { GlobalOptions } from './shared.js';
 import { VERSION } from '../index.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
+// HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
   force?: boolean;
@@ -233,6 +235,7 @@ export async function initHandler(
 
   // Install pre-commit hooks
   let hooksInstalled = false;
+  let hookFiles: string[] = [];
   if (configResult.ok) {
     try {
       const hookSetup = await detectHookSetup(projectRoot);
@@ -251,6 +254,7 @@ export async function initHandler(
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
+          hookFiles = hookResult.data.files;
           log.info(`Pre-commit hooks installed (${hookSetup.runner === 'none' ? 'standalone' : hookSetup.runner})`);
           const missingDeps = await checkHookDependencies(hooksConfig.hooks);
           if (missingDeps.length > 0) {
@@ -268,12 +272,61 @@ export async function initHandler(
     }
   }
 
+  // Write operations ledger
+  try {
+    const ledger = new OperationsLedgerManager(codiDir);
+    const now = new Date().toISOString();
+    await ledger.setInitialization({
+      timestamp: now,
+      preset: presetName,
+      agents: agentIds,
+      stack,
+      codiVersion: VERSION,
+    });
+    if (ruleTemplates.length > 0 || skillTemplates.length > 0 || agentTemplates.length > 0 || commandTemplates.length > 0) {
+      await ledger.setActivePreset({
+        name: presetName,
+        installedAt: now,
+        artifactSelection: {
+          rules: ruleTemplates,
+          skills: skillTemplates,
+          agents: agentTemplates,
+          commands: commandTemplates,
+        },
+      });
+    }
+    await ledger.addConfigFiles([
+      { path: '.codi/codi.yaml', type: 'manifest', createdAt: now },
+      { path: '.codi/flags.yaml', type: 'flags', createdAt: now },
+      { path: '.codi/operations.json', type: 'ledger', createdAt: now },
+    ]);
+    if (hookFiles.length > 0) {
+      const hookSetup = await detectHookSetup(projectRoot);
+      await ledger.addHookFiles(hookFiles.map((f) => ({
+        path: f,
+        framework: hookSetup.runner === 'none' ? 'standalone' as const : hookSetup.runner as 'husky' | 'pre-commit' | 'lefthook',
+        type: inferHookType(f),
+        createdAt: now,
+      })));
+    }
+  } catch {
+    log.warn('Operations ledger write failed; this is non-critical.');
+  }
+
   return createCommandResult({
     success: true,
     command: 'init',
     data: { codiDir, agents: agentIds, stack, generated, preset: presetName, rules: ruleTemplates, hooksInstalled },
     exitCode: EXIT_CODES.SUCCESS,
   });
+}
+
+function inferHookType(filePath: string): 'pre-commit' | 'commit-msg' | 'secret-scan' | 'file-size-check' | 'version-check' {
+  if (filePath.includes('secret-scan')) return 'secret-scan';
+  if (filePath.includes('file-size-check')) return 'file-size-check';
+  if (filePath.includes('version-check')) return 'version-check';
+  if (filePath.includes('commit-msg')) return 'commit-msg';
+  return 'pre-commit';
 }
 
 async function createCodiStructure(

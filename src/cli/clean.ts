@@ -4,6 +4,7 @@ import path from 'node:path';
 import { resolveCodiDir } from '../utils/paths.js';
 import { isPathSafe } from '../utils/path-guard.js';
 import { StateManager } from '../core/config/state.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -20,6 +21,7 @@ interface CleanOptions extends GlobalOptions {
 interface CleanData {
   filesDeleted: string[];
   dirsDeleted: string[];
+  hooksDeleted: string[];
   codiDirRemoved: boolean;
 }
 
@@ -36,6 +38,15 @@ async function safeRmDir(dirPath: string): Promise<boolean> {
   try {
     await fs.rm(dirPath, { recursive: true, force: true });
     return true;
+  } catch {
+    return false;
+  }
+}
+
+async function isDirEmpty(dirPath: string): Promise<boolean> {
+  try {
+    const entries = await fs.readdir(dirPath);
+    return entries.length === 0;
   } catch {
     return false;
   }
@@ -65,6 +76,164 @@ const AGENT_SUBDIRS = [
 ];
 const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/mcp.toml', '.windsurf/mcp.json'];
 const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf', '.agents', '.codex'];
+
+const CODI_HOOK_MARKER = '# Codi hooks';
+
+const KNOWN_HOOK_FILES = [
+  '.git/hooks/codi-secret-scan.mjs',
+  '.git/hooks/codi-file-size-check.mjs',
+  '.git/hooks/codi-version-check.mjs',
+];
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fileContainsCodiMarker(filePath: string): Promise<boolean> {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return content.includes(CODI_HOOK_MARKER);
+  } catch {
+    return false;
+  }
+}
+
+async function removeCodiSectionFromFile(filePath: string): Promise<boolean> {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    if (!content.includes(CODI_HOOK_MARKER)) return false;
+
+    const lines = content.split('\n');
+    const filtered: string[] = [];
+    let inCodiSection = false;
+
+    for (const line of lines) {
+      if (line.trim() === CODI_HOOK_MARKER) {
+        inCodiSection = true;
+        continue;
+      }
+      if (inCodiSection && line.trim() === '') {
+        inCodiSection = false;
+        continue;
+      }
+      if (!inCodiSection) {
+        filtered.push(line);
+      }
+    }
+
+    const remaining = filtered.join('\n').trim();
+    if (remaining.length === 0) {
+      await fs.unlink(filePath);
+      return true;
+    }
+    await fs.writeFile(filePath, remaining + '\n', 'utf-8');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function cleanHookFiles(
+  projectRoot: string,
+  stateHooks: Array<{ path: string }>,
+  options: CleanOptions,
+  log: Logger,
+): Promise<string[]> {
+  const deleted: string[] = [];
+
+  // 1) State-tracked hook files
+  for (const hook of stateHooks) {
+    if (!isPathSafe(projectRoot, hook.path)) continue;
+    const absPath = path.resolve(projectRoot, hook.path);
+    if (options.dryRun) {
+      if (await fileExists(absPath)) {
+        log.info(`Would delete hook: ${hook.path}`);
+        deleted.push(hook.path);
+      }
+    } else {
+      const ok = await safeDelete(absPath);
+      if (ok) {
+        deleted.push(hook.path);
+        log.info(`Deleted hook: ${hook.path}`);
+      }
+    }
+  }
+
+  // 2) Known codi hook scripts (fallback if not in state)
+  const alreadyDeleted = new Set(deleted);
+  for (const hookFile of KNOWN_HOOK_FILES) {
+    if (alreadyDeleted.has(hookFile)) continue;
+    const absPath = path.join(projectRoot, hookFile);
+    if (options.dryRun) {
+      if (await fileExists(absPath)) {
+        log.info(`Would delete hook: ${hookFile}`);
+        deleted.push(hookFile);
+      }
+    } else {
+      const ok = await safeDelete(absPath);
+      if (ok) {
+        deleted.push(hookFile);
+        log.info(`Deleted hook: ${hookFile}`);
+      }
+    }
+  }
+
+  // 3) Husky files: remove codi sections or delete if codi-only
+  const huskyFiles = ['.husky/pre-commit', '.husky/commit-msg'];
+  for (const huskyFile of huskyFiles) {
+    if (alreadyDeleted.has(huskyFile)) continue;
+    const absPath = path.join(projectRoot, huskyFile);
+    if (!await fileContainsCodiMarker(absPath)) continue;
+
+    if (options.dryRun) {
+      log.info(`Would clean codi section from: ${huskyFile}`);
+      deleted.push(huskyFile);
+    } else {
+      const cleaned = await removeCodiSectionFromFile(absPath);
+      if (cleaned) {
+        deleted.push(huskyFile);
+        log.info(`Cleaned codi section from: ${huskyFile}`);
+      }
+    }
+  }
+
+  // 4) Standalone .git/hooks/pre-commit and commit-msg (only if codi marker present)
+  const standaloneHooks = ['.git/hooks/pre-commit', '.git/hooks/commit-msg'];
+  for (const hookFile of standaloneHooks) {
+    if (alreadyDeleted.has(hookFile)) continue;
+    const absPath = path.join(projectRoot, hookFile);
+    if (!await fileContainsCodiMarker(absPath)) continue;
+
+    if (options.dryRun) {
+      log.info(`Would delete hook: ${hookFile}`);
+      deleted.push(hookFile);
+    } else {
+      const ok = await safeDelete(absPath);
+      if (ok) {
+        deleted.push(hookFile);
+        log.info(`Deleted hook: ${hookFile}`);
+      }
+    }
+  }
+
+  // 5) Clean up empty .husky/ directory
+  const huskyDir = path.join(projectRoot, '.husky');
+  if (await isDirEmpty(huskyDir)) {
+    if (options.dryRun) {
+      log.info('Would remove empty: .husky/');
+    } else {
+      await safeRmDir(huskyDir);
+      log.info('Removed empty: .husky/');
+    }
+  }
+
+  return deleted;
+}
 
 export async function cleanHandler(
   projectRoot: string,
@@ -142,6 +311,10 @@ export async function cleanHandler(
     }
   }
 
+  // Clean hook files (state-tracked + known patterns + husky sections)
+  const stateHooks = (stateResult.ok && stateResult.data.hooks) ? stateResult.data.hooks : [];
+  const hooksDeleted = await cleanHookFiles(projectRoot, stateHooks, options, log);
+
   for (const dir of AGENT_SUBDIRS) {
     const absDir = path.join(projectRoot, dir);
     try {
@@ -159,19 +332,36 @@ export async function cleanHandler(
 
   for (const dir of AGENT_PARENT_DIRS) {
     const absDir = path.join(projectRoot, dir);
-    try {
-      const entries = await fs.readdir(absDir);
-      if (entries.length === 0) {
-        if (options.dryRun) {
-          log.info(`Would remove empty: ${dir}/`);
-          dirsDeleted.push(dir);
-        } else {
-          await safeRmDir(absDir);
-          dirsDeleted.push(dir);
-          log.info(`Removed empty: ${dir}/`);
-        }
+    if (await isDirEmpty(absDir)) {
+      if (options.dryRun) {
+        log.info(`Would remove empty: ${dir}/`);
+        dirsDeleted.push(dir);
+      } else {
+        await safeRmDir(absDir);
+        dirsDeleted.push(dir);
+        log.info(`Removed empty: ${dir}/`);
       }
-    } catch { /* doesn't exist */ }
+    }
+  }
+
+  // Log clean operation to ledger (before potentially removing .codi/)
+  if (!options.dryRun) {
+    try {
+      const ledger = new OperationsLedgerManager(codiDir);
+      await ledger.clearFiles();
+      await ledger.logOperation({
+        type: 'clean',
+        timestamp: new Date().toISOString(),
+        details: {
+          filesDeleted,
+          hooksDeleted,
+          dirsDeleted,
+          all: options.all ?? false,
+        },
+      });
+    } catch {
+      // Ledger write is best-effort; don't fail clean
+    }
   }
 
   let codiDirRemoved = false;
@@ -192,7 +382,7 @@ export async function cleanHandler(
   return createCommandResult({
     success: true,
     command: 'clean',
-    data: { filesDeleted, dirsDeleted, codiDirRemoved },
+    data: { filesDeleted, dirsDeleted, hooksDeleted, codiDirRemoved },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }

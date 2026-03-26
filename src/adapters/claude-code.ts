@@ -153,6 +153,71 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
+    // Generate .claude/settings.json (project-level hooks + env)
+    const settingsJson = buildSettingsJson(config);
+    if (settingsJson) {
+      const settingsContent = JSON.stringify(settingsJson, null, 2);
+      files.push({
+        path: '.claude/settings.json',
+        content: settingsContent,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(settingsContent),
+      });
+    }
+
     return files;
   },
 };
+
+interface ClaudeSettings {
+  permissions?: { deny?: string[] };
+  enabledMcpjsonServers?: string[];
+  env?: Record<string, string>;
+}
+
+function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
+  const settings: ClaudeSettings = {};
+
+  // Map flags to permissions.deny (native enforcement — hard blocks tool calls)
+  const deny: string[] = [];
+  const flagValue = (key: string): unknown => config.flags[key]?.value;
+
+  if (flagValue('allow_force_push') === false) {
+    deny.push('Bash(git push --force *)', 'Bash(git push -f *)');
+  }
+  if (flagValue('allow_shell_commands') === false) {
+    deny.push('Bash');
+  }
+  if (flagValue('allow_file_deletion') === false) {
+    deny.push('Bash(rm -rf *)', 'Bash(rm -r *)');
+  }
+
+  if (deny.length > 0) {
+    settings.permissions = { deny };
+  }
+
+  // Map mcp_allowed_servers to enabledMcpjsonServers (native MCP allowlist)
+  const mcpServers = flagValue('mcp_allowed_servers');
+  if (Array.isArray(mcpServers) && mcpServers.length > 0) {
+    settings.enabledMcpjsonServers = mcpServers as string[];
+  }
+
+  // Map flags to env vars
+  const env: Record<string, string> = {};
+  const maxTokens = config.flags.max_context_tokens?.value;
+  if (typeof maxTokens === 'number' && maxTokens > 0) {
+    // Convert token limit to autocompact percentage (trigger compaction at ~70% of limit)
+    const pct = Math.min(70, Math.round((maxTokens / CONTEXT_TOKENS_LARGE) * 100));
+    if (pct < 100) {
+      env['CLAUDE_AUTOCOMPACT_PCT_OVERRIDE'] = String(pct);
+    }
+  }
+
+  if (Object.keys(env).length > 0) {
+    settings.env = env;
+  }
+
+  // Only return if there's content to write
+  if (Object.keys(settings).length === 0) return null;
+  return settings;
+}

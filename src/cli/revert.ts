@@ -7,6 +7,7 @@ import { Logger } from '../core/output/logger.js';
 import type { CommandResult } from '../core/output/types.js';
 import { initFromOptions, handleOutput, regenerateConfigs } from './shared.js';
 import type { GlobalOptions } from './shared.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 
 interface RevertOptions extends GlobalOptions {
   list?: boolean;
@@ -88,6 +89,17 @@ export async function revertHandler(
   const restoredFiles = await restoreBackup(projectRoot, codiDir, timestamp);
   log.info(`Restored ${restoredFiles.length} files from backup ${timestamp}`);
   await regenerateConfigs(projectRoot);
+
+  try {
+    const ledger = new OperationsLedgerManager(codiDir);
+    await ledger.logOperation({
+      type: 'revert',
+      timestamp: new Date().toISOString(),
+      details: { backupTimestamp: timestamp, restoredFiles: restoredFiles.length },
+    });
+  } catch {
+    // Best-effort
+  }
 
   return createCommandResult({
     success: true,

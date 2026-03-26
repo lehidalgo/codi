@@ -60,6 +60,7 @@ export const CONTEXT_TOKENS_SMALL = 32_000;
 export const PRESET_MANIFEST_FILENAME = 'preset.yaml';
 export const BACKUP_MANIFEST_FILENAME = 'backup-manifest.json';
 export const PRESET_LOCK_FILENAME = 'preset-lock.json';
+export const OPERATIONS_LEDGER_FILENAME = 'operations.json';
 export const REGISTRY_INDEX_FILENAME = 'index.json';
 export const BACKUPS_DIR = 'backups';
 
