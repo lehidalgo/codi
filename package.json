@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -27,7 +27,7 @@
     "prepare": "husky",
     "preversion": "npm run lint && npm run test",
     "postversion": "git push && git push --tags",
-    "prepublishOnly": "[ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build"
+    "prepublishOnly": "[ \"$CI\" = \"true\" ] || [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build"
   },
   "engines": {
     "node": ">=20"
