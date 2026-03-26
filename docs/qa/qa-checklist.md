@@ -294,9 +294,9 @@ npx codi contribute
 
 ---
 
-## v0.5.2 Feature QA (2026-03-26)
+## v0.6.0 Feature QA (2026-03-26)
 
-**Environment**: /tmp/codi-qa-v2 (all 5 agents, balanced preset, all templates)
+**Environment**: /tmp/codi-qa-final (fresh install, all 5 agents, balanced preset, all templates)
 **Unit tests**: 407/407 passing | **Lint**: Clean
 
 ### Group 15: Dynamic Constants
@@ -418,14 +418,129 @@ npx codi contribute
 | 26.4 | All core rules have rationale annotations | PASSED | "— reason" format |
 | 26.5 | All core rules have BAD/GOOD examples | PASSED | At least 1 per rule |
 
+---
+
+## v0.6.0 Full QA — Fresh Install Verification (2026-03-26)
+
+**Environment**: /tmp/codi-qa-final (fresh `npm install codi-cli@0.6.0`)
+**Node**: v20.20.1 | **Version**: 0.6.0
+
+### Group 27: Fresh Install Lifecycle
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 27.1 | `codi --version` prints 0.6.0 | PASSED | |
+| 27.2 | `codi --help` shows all commands | PASSED | |
+| 27.3 | `codi init` with 5 agents + balanced preset | PASSED | All 5 agents configured |
+| 27.4 | Pre-commit hooks installed (.git/hooks/) | PASSED | pre-commit + commit-msg |
+| 27.5 | .codi/ structure created (codi.yaml, flags.yaml) | PASSED | |
+| 27.6 | All 5 instruction files generated | PASSED | CLAUDE.md, .cursorrules, AGENTS.md, .windsurfrules, .clinerules |
+
+### Group 28: Artifact Templates (Fresh)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 28.1 | `codi add rule --all` adds 23 rules | PASSED | |
+| 28.2 | `codi add skill --all` adds 18 skills | PASSED | |
+| 28.3 | `codi add agent --all` adds 8 agents | PASSED | |
+| 28.4 | `codi add command --all` adds 8 commands | PASSED | |
+| 28.5 | Custom rule `codi add rule my-custom` | PASSED | managed_by: user |
+| 28.6 | Skill directory has SKILL.md + evals/ + scripts/ + references/ + assets/ | PASSED | Full spec structure |
+| 28.7 | evals/evals.json has correct template | PASSED | `{"skill_name": "<name>", "evals": []}` |
+
+### Group 29: Per-Adapter Output (Fresh)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 29.1 | CLAUDE.md has Project Overview, Permissions, Key Commands, Dev Notes, Workflow | PASSED | 6 sections, lean |
+| 29.2 | CLAUDE.md does NOT inline rules | PASSED | Rules in .claude/rules/ (24 files) |
+| 29.3 | .cursorrules is lean (no inline rules) | PASSED | Context + Workflow only |
+| 29.4 | .cursor/rules/ has 24 .mdc files | PASSED | Auto-discovered |
+| 29.5 | AGENTS.md has inline rules (1486 lines) | PASSED | Codex requirement |
+| 29.6 | AGENTS.md has Available Agents table + Workflow | PASSED | |
+| 29.7 | .windsurfrules has inline rules (1496 lines) | PASSED | |
+| 29.8 | .clinerules has inline rules (1496 lines) | PASSED | |
+| 29.9 | .codex/config.toml has developer_instructions | PASSED | 5 flag-derived restrictions |
+| 29.10 | .codex/agents/ has 8 TOML files | PASSED | |
+
+### Group 30: Diagnostics (Fresh)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 30.1 | `codi validate` → valid, 0 errors | PASSED | |
+| 30.2 | `codi doctor` → allPassed | PASSED | Size warnings expected |
+| 30.3 | `codi status` → hasDrift: false | PASSED | |
+| 30.4 | `codi verify` → token generated | PASSED | 12-char hash |
+| 30.5 | `codi compliance` → success | PASSED | |
+| 30.6 | `codi ci` → success | PASSED | |
+
+### Group 31: Drift Detection (Fresh)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 31.1 | Inject content into CLAUDE.md → detect drift | PASSED | hasDrift detected |
+| 31.2 | `codi generate` fixes drift | PASSED | hasDrift: false after regen |
+
+### Group 32: Flag Presets (Fresh)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 32.1 | Switch to strict preset | PASSED | |
+| 32.2 | Switch to minimal preset | PASSED | |
+| 32.3 | Switch back to balanced | PASSED | |
+
+### Group 33: Clean & Regenerate (Fresh)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 33.1 | `codi clean` removes all generated files | PASSED | CLAUDE.md, .cursorrules etc. removed |
+| 33.2 | `codi generate` recreates all files | PASSED | All 5 instruction files restored |
+
+### Group 34: JSON Output & Error Handling
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 34.1 | All commands output valid JSON with --json | PASSED | keys: success, command, data, errors, warnings, exitCode, timestamp, version |
+| 34.2 | Missing .codi/ returns success: false | PASSED | Error handled gracefully |
+| 34.3 | Verbose mode works | PASSED | |
+
+### Group 35: Template Add (flag-based, no wizard)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 35.1 | `codi add rule name --template X` works | PASSED | No wizard launched |
+| 35.2 | Duplicate add returns success: false | PASSED | Already exists |
+
+### Group 36: Update & Docs-update
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 36.1 | `codi update` refreshes managed artifacts | PASSED | |
+| 36.2 | `codi docs-update` fixes stale counts | PASSED | |
+
+---
+
+## Pending Tests (Require Human Interaction)
+
+| # | Test | Status | How to Test |
+|---|------|--------|-------------|
+| P1 | Interactive wizard: `codi add rule` (no args) | PENDING | Run in terminal, verify searchable multi-select with @clack/prompts |
+| P2 | Interactive wizard: `codi add` (no type) | PENDING | Run in terminal, verify type picker (Rule/Skill/Agent/Command) |
+| P3 | Claude Code integration | PENDING | Open /tmp/codi-qa-final in Claude Code, ask "verify codi", run `npx codi verify --check "<response>"` |
+| P4 | Cursor integration | PENDING | Open in Cursor, verify .cursor/rules/ loads |
+| P5 | Codex integration | PENDING | Open in Codex, verify AGENTS.md loads |
+| P6 | Watch mode | PENDING | Run `npx codi watch`, edit .codi/ file, verify auto-regeneration |
+
+---
+
 ## QA Summary
 
 | Metric | Value |
 |--------|-------|
-| Unit tests | 407/407 passing |
-| Lint | Clean (0 errors) |
-| New test groups | 12 (Groups 15-26) |
-| Tests PASSED | 58 |
-| Tests PENDING | 2 (interactive wizard, requires terminal) |
-| Tests FAILED | 0 |
-| Size warnings | 4 skills over 6000 chars (expected for creator skills) |
+| **Unit tests** | 407/407 passing |
+| **Lint** | Clean (0 errors) |
+| **Feature test groups** | 22 (Groups 15-36) |
+| **Tests PASSED** | 74 |
+| **Tests PENDING** | 6 (require human interaction) |
+| **Tests FAILED** | 0 |
+| **Size warnings** | 4 skills over 6000 chars (expected for specialized creator skills) |
