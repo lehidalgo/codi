@@ -216,7 +216,8 @@ describe('installHooks', () => {
 
       const commitMsgPath = path.join(tmpDir, commitMsgRelPath);
       const content = await fs.readFile(commitMsgPath, 'utf-8');
-      expect(content).toContain('commitlint');
+      expect(content).toContain('# Codi hooks');
+      expect(content).toContain('Codi commit message validator');
     }
   });
 

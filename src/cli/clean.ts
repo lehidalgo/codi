@@ -74,7 +74,7 @@ const AGENT_SUBDIRS = [
   '.claude/agents',
   '.codex/agents',
 ];
-const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/mcp.toml', '.claude/settings.json', '.cursor/hooks.json'];
+const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/config.toml', '.claude/settings.json', '.cursor/hooks.json'];
 const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf', '.agents', '.codex'];
 
 const CODI_HOOK_MARKER = '# Codi hooks';
