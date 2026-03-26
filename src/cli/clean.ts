@@ -108,6 +108,13 @@ async function removeCodiSectionFromFile(filePath: string): Promise<boolean> {
     const content = await fs.readFile(filePath, 'utf-8');
     if (!content.includes(CODI_HOOK_MARKER)) return false;
 
+    // If file starts with the codi marker, codi owns the entire file — delete it
+    if (content.trimStart().startsWith(CODI_HOOK_MARKER)) {
+      await fs.unlink(filePath);
+      return true;
+    }
+
+    // Otherwise strip only the codi section (e.g., appended to existing pre-commit)
     const lines = content.split('\n');
     const filtered: string[] = [];
     let inCodiSection = false;
