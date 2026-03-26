@@ -92,6 +92,28 @@ async function installStandalone(
   }
 }
 
+function stripCodiSection(content: string): string {
+  const lines = content.split('\n');
+  const filtered: string[] = [];
+  let inCodiSection = false;
+
+  for (const line of lines) {
+    if (line.trim() === '# Codi hooks') {
+      inCodiSection = true;
+      continue;
+    }
+    if (inCodiSection && line.trim() === '') {
+      inCodiSection = false;
+      continue;
+    }
+    if (!inCodiSection) {
+      filtered.push(line);
+    }
+  }
+
+  return filtered.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '\n');
+}
+
 async function installHusky(
   projectRoot: string,
   hooks: HookEntry[],
@@ -108,7 +130,10 @@ async function installHusky(
     } catch {
       // file doesn't exist yet
     }
-    await fs.writeFile(huskyFile, existing + block, { encoding: 'utf-8', mode: 0o755 });
+
+    // Remove any existing codi section before appending to prevent duplicates
+    const cleaned = stripCodiSection(existing);
+    await fs.writeFile(huskyFile, cleaned + block, { encoding: 'utf-8', mode: 0o755 });
     return ok({ files: [path.relative(projectRoot, huskyFile)] });
   } catch (cause) {
     return err([createError('E_HOOK_FAILED', {
@@ -223,4 +248,4 @@ export async function installHooks(options: InstallOptions): Promise<Result<Hook
   return ok({ files: allFiles });
 }
 
-export { buildRunnerScript, buildSecretScanScript, buildFileSizeScript };
+export { buildRunnerScript, buildSecretScanScript, buildFileSizeScript, stripCodiSection };

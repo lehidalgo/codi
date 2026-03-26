@@ -7,6 +7,7 @@ import {
   buildRunnerScript,
   buildSecretScanScript,
   buildFileSizeScript,
+  stripCodiSection,
 } from '../../../src/core/hooks/hook-installer.js';
 import type { HookEntry } from '../../../src/core/hooks/hook-registry.js';
 import type { InstallOptions } from '../../../src/core/hooks/hook-installer.js';
@@ -84,6 +85,44 @@ describe('installHooks', () => {
     if (result.ok) {
       expect(result.data.files).toContain(path.join('.husky', 'pre-commit'));
     }
+  });
+
+  it('replaces existing codi section instead of appending duplicates', async () => {
+    await fs.mkdir(path.join(tmpDir, '.husky'), { recursive: true });
+    const existingContent = 'npm run lint\n\n# Codi hooks\nold-command --check\n\nnpm run other\n';
+    await fs.writeFile(path.join(tmpDir, '.husky', 'pre-commit'), existingContent, 'utf-8');
+
+    const result = await installHooks(baseOptions({ runner: 'husky' }));
+
+    expect(result.ok).toBe(true);
+    const content = await fs.readFile(path.join(tmpDir, '.husky', 'pre-commit'), 'utf-8');
+
+    // Should have exactly one codi section
+    const codiCount = (content.match(/# Codi hooks/g) ?? []).length;
+    expect(codiCount).toBe(1);
+
+    // Should contain new hooks, not old
+    expect(content).toContain('eslint --fix');
+    expect(content).toContain('prettier --write');
+    expect(content).not.toContain('old-command --check');
+
+    // Should preserve non-codi content
+    expect(content).toContain('npm run lint');
+    expect(content).toContain('npm run other');
+  });
+
+  it('handles multiple consecutive installs without duplication', async () => {
+    await fs.mkdir(path.join(tmpDir, '.husky'), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, '.husky', 'pre-commit'), 'npm run lint\n', 'utf-8');
+
+    // Install 3 times
+    await installHooks(baseOptions({ runner: 'husky' }));
+    await installHooks(baseOptions({ runner: 'husky' }));
+    await installHooks(baseOptions({ runner: 'husky' }));
+
+    const content = await fs.readFile(path.join(tmpDir, '.husky', 'pre-commit'), 'utf-8');
+    const codiCount = (content.match(/# Codi hooks/g) ?? []).length;
+    expect(codiCount).toBe(1);
   });
 
   it('creates .git/hooks directory when it does not exist (standalone)', async () => {
@@ -241,5 +280,30 @@ describe('buildFileSizeScript', () => {
     expect(script).toContain('const maxLines = 700');
     expect(script).not.toContain('{{MAX_LINES}}');
     expect(script).toContain('Codi file size checker');
+  });
+});
+
+describe('stripCodiSection', () => {
+  it('removes codi section from content', () => {
+    const input = 'npm run lint\n\n# Codi hooks\nsome-command\n\nnpm run other\n';
+    const result = stripCodiSection(input);
+    expect(result).toContain('npm run lint');
+    expect(result).toContain('npm run other');
+    expect(result).not.toContain('Codi hooks');
+    expect(result).not.toContain('some-command');
+  });
+
+  it('returns content unchanged when no codi section exists', () => {
+    const input = 'npm run lint\nnpm run test\n';
+    const result = stripCodiSection(input);
+    expect(result).toContain('npm run lint');
+    expect(result).toContain('npm run test');
+  });
+
+  it('handles content with only codi section', () => {
+    const input = '# Codi hooks\nsome-command\n';
+    const result = stripCodiSection(input);
+    expect(result).not.toContain('Codi hooks');
+    expect(result).not.toContain('some-command');
   });
 });
