@@ -194,7 +194,7 @@ async function installCommitMsgHook(projectRoot: string, runner: string): Promis
   if (runner === 'husky') {
     const huskyFile = path.join(projectRoot, '.husky', 'commit-msg');
     try {
-      await fs.writeFile(huskyFile, '#!/usr/bin/env sh\n. "$(dirname -- "$0")/_/husky.sh"\n\nnpx --no -- commitlint --edit ${1}\n', { encoding: 'utf-8', mode: 0o755 });
+      await fs.writeFile(huskyFile, `# Codi hooks\n${COMMIT_MSG_TEMPLATE}`, { encoding: 'utf-8', mode: 0o755 });
       return ok({ files: [path.relative(projectRoot, huskyFile)] });
     } catch (cause) {
       return err([createError('E_HOOK_FAILED', {
