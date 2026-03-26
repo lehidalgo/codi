@@ -7,7 +7,9 @@ import { registerAllAdapters } from '../adapters/index.js';
 import { detectAdapters, getAllAdapters } from '../core/generator/adapter-registry.js';
 import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
+import type { FlagDefinition } from '../types/flags.js';
 import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
+import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
@@ -140,7 +142,7 @@ export async function initHandler(
       commandTemplates = wizardResult.commandTemplates;
     }
 
-    await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin);
+    await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin, wizardResult.selectedPresetName);
 
     // Handle import sources (ZIP/GitHub)
     if (wizardResult.importSource) {
@@ -336,6 +338,7 @@ async function createCodiStructure(
   agents: string[],
   preset: PresetName,
   versionPin: boolean,
+  extendedPresetName?: string,
 ): Promise<void> {
   const dirs = [
     codiDir,
@@ -362,9 +365,19 @@ async function createCodiStructure(
     'utf-8',
   );
 
-  const presetFlags = getPreset(preset);
+  const baseFlags = getPreset(preset);
+
+  // Merge extended preset flag overrides on top of base flags
+  let mergedFlags: Record<string, FlagDefinition> = baseFlags;
+  if (extendedPresetName) {
+    const extDef = getBuiltinPresetDefinition(extendedPresetName);
+    if (extDef?.flags && Object.keys(extDef.flags).length > 0) {
+      mergedFlags = { ...baseFlags, ...extDef.flags };
+    }
+  }
+
   const flagsObj: Record<string, unknown> = {};
-  for (const [key, def] of Object.entries(presetFlags)) {
+  for (const [key, def] of Object.entries(mergedFlags)) {
     const entry: Record<string, unknown> = { mode: def.mode, value: def.value };
     if (def.locked) entry['locked'] = true;
     flagsObj[key] = entry;
