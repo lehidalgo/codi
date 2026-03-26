@@ -45,7 +45,7 @@ GOOD: Three separate commits, each reviewable independently
 
 ## Release Management
 - Never publish without a fresh build — stale dist artifacts cause silent regressions
-- Use npm lifecycle hooks (preversion, version, prepublishOnly) to enforce build-before-release automatically
+- Use npm lifecycle hooks (preversion, prepublishOnly) to enforce lint, test, and build automatically
 - Run tests before every version bump — a broken release is worse than a delayed one
 - Verify the built output matches the source before publishing: grep for key changes in dist/
-- One atomic command for releases: \`npm version patch\` triggers lint, test, build, commit, and tag in sequence`;
+- One atomic command for releases: \`npm version patch\` triggers lint, test, commit, and tag in sequence — then \`npm publish\` rebuilds via prepublishOnly`;
