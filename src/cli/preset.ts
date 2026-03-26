@@ -34,6 +34,7 @@ import {
   presetEditHandler,
 } from './preset-handlers.js';
 import { runPresetWizard } from './preset-wizard.js';
+import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -372,6 +373,16 @@ export function registerPresetCommand(program: Command): void {
       } else {
         result = await presetInstallUnifiedHandler(process.cwd(), source);
       }
+      if (result.success) {
+        try {
+          const ledger = new OperationsLedgerManager(resolveCodiDir(process.cwd()));
+          await ledger.logOperation({
+            type: 'preset-install',
+            timestamp: new Date().toISOString(),
+            details: { source, from: options.from ?? null },
+          });
+        } catch { /* best-effort */ }
+      }
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
@@ -407,6 +418,16 @@ export function registerPresetCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
       const result = await presetRemoveHandler(process.cwd(), name);
+      if (result.success) {
+        try {
+          const ledger = new OperationsLedgerManager(resolveCodiDir(process.cwd()));
+          await ledger.logOperation({
+            type: 'preset-remove',
+            timestamp: new Date().toISOString(),
+            details: { name },
+          });
+        } catch { /* best-effort */ }
+      }
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

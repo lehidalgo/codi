@@ -95,4 +95,75 @@ describe('update command handler', () => {
     expect(result.success).toBe(false);
     expect(result.errors[0]!.code).toBe('E_CONFIG_INVALID');
   });
+
+  it('refreshes codi-managed rules with --rules', async () => {
+    const codiDir = path.join(tmpDir, '.codi');
+    await fs.writeFile(
+      path.join(codiDir, 'flags.yaml'),
+      stringifyYaml({ auto_commit: { mode: 'enabled', value: false } }),
+      'utf-8',
+    );
+
+    // Create a codi-managed rule with a matching template name
+    await fs.writeFile(
+      path.join(codiDir, 'rules', 'custom', 'security.md'),
+      '---\nname: security\nmanaged_by: codi\n---\nold content',
+      'utf-8',
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesUpdated).toContain('security');
+  });
+
+  it('skips user-managed rules with --rules', async () => {
+    const codiDir = path.join(tmpDir, '.codi');
+    await fs.writeFile(
+      path.join(codiDir, 'flags.yaml'),
+      stringifyYaml({ auto_commit: { mode: 'enabled', value: false } }),
+      'utf-8',
+    );
+
+    await fs.writeFile(
+      path.join(codiDir, 'rules', 'custom', 'my-custom.md'),
+      '---\nname: my-custom\nmanaged_by: user\n---\nmy content',
+      'utf-8',
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesSkipped).toContain('my-custom');
+    expect(result.data.rulesUpdated).not.toContain('my-custom');
+  });
+
+  it('handles missing rules directory gracefully with --rules', async () => {
+    const codiDir = path.join(tmpDir, '.codi');
+    await fs.writeFile(
+      path.join(codiDir, 'flags.yaml'),
+      stringifyYaml({ auto_commit: { mode: 'enabled', value: false } }),
+      'utf-8',
+    );
+    // Remove the custom rules dir
+    await fs.rm(path.join(codiDir, 'rules'), { recursive: true, force: true });
+
+    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesUpdated).toEqual([]);
+  });
+
+  it('does not update rules/skills/agents when flags not passed', async () => {
+    const codiDir = path.join(tmpDir, '.codi');
+    await fs.writeFile(
+      path.join(codiDir, 'flags.yaml'),
+      stringifyYaml({ auto_commit: { mode: 'enabled', value: false } }),
+      'utf-8',
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, dryRun: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesUpdated).toEqual([]);
+    expect(result.data.skillsUpdated).toEqual([]);
+    expect(result.data.agentsUpdated).toEqual([]);
+    expect(result.data.commandsUpdated).toEqual([]);
+  });
 });

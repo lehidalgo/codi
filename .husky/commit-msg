@@ -1,39 +1,9 @@
-#!/usr/bin/env sh
+commit_msg=$(cat "$1")
 
-# Conventional commit message validation
-# Format: type(scope): description  OR  type: description
-# First line must be <= 72 characters
-
-commit_msg_file="$1"
-commit_msg=$(head -n 1 "$commit_msg_file")
-
-# Skip merge commits
-if echo "$commit_msg" | grep -qE '^Merge '; then
-  exit 0
-fi
-
-# Valid conventional commit types
-valid_types="feat|fix|docs|refactor|test|chore|perf|ci|build|revert"
-
-# Check format: type(scope): description OR type: description
-if ! echo "$commit_msg" | grep -qE "^($valid_types)(\(.+\))?: .+"; then
-  echo "ERROR: Invalid commit message format."
-  echo ""
-  echo "Expected: type(scope): description"
-  echo "Valid types: feat, fix, docs, refactor, test, chore, perf, ci, build, revert"
-  echo ""
-  echo "Examples:"
-  echo "  feat(cli): add preset export command"
-  echo "  fix: resolve drift detection false positive"
-  echo ""
-  echo "Your message: $commit_msg"
-  exit 1
-fi
-
-# Check first line length (72 chars max)
-msg_length=${#commit_msg}
-if [ "$msg_length" -gt 72 ]; then
-  echo "ERROR: Commit message first line is $msg_length characters (max: 72)."
-  echo "Your message: $commit_msg"
+# Validate conventional commit format
+if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .{1,72}"; then
+  echo "Invalid commit message format."
+  echo "Use: type(scope): description"
+  echo "Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
   exit 1
 fi

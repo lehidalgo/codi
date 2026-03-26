@@ -52,6 +52,8 @@ See the [Spec Index](spec/README.md) for the full chapter list (chapters 8-10 co
 | [Governance](reference/governance.md) | 7-level config inheritance and flag locking |
 | [Multi-Tenant Design](reference/multi-tenant-design.md) | Presets, plugins, and stacks for team sharing |
 | [v0.5.0 Preset Redesign](reference/v050-preset-redesign.md) | Preset and artifact ecosystem redesign (v0.5.0) |
+| [AI Agent Workspace Features](ai-agent-workspace-features-reference.md) | Cross-agent workspace features reference (all 5 agents) |
+| [Codi Generation Audit](codi-generation-audit.md) | Gap analysis: codi generation vs agent capabilities |
 
 ## QA
 

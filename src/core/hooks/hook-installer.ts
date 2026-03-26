@@ -9,6 +9,10 @@ import type { ResolvedFlags } from '../../types/flags.js';
 import { RUNNER_TEMPLATE, SECRET_SCAN_TEMPLATE, FILE_SIZE_CHECK_TEMPLATE, COMMIT_MSG_TEMPLATE, VERSION_CHECK_TEMPLATE } from './hook-templates.js';
 import { PRE_COMMIT_MAX_FILE_LINES } from '../../constants.js';
 
+export interface HookInstallResult {
+  files: string[];
+}
+
 export interface InstallOptions {
   projectRoot: string;
   runner: HookSetup['runner'];
@@ -33,18 +37,26 @@ function buildFileSizeScript(maxLines: number): string {
   return FILE_SIZE_CHECK_TEMPLATE.replace('{{MAX_LINES}}', String(maxLines));
 }
 
-async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<void> {
+async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
+  const files: string[] = [];
   if (options.secretScan) {
+    const secretPath = path.join(hookDir, 'codi-secret-scan.mjs');
     const secretScript = buildSecretScanScript();
-    await fs.writeFile(path.join(hookDir, 'codi-secret-scan.mjs'), secretScript, { encoding: 'utf-8', mode: 0o755 });
+    await fs.writeFile(secretPath, secretScript, { encoding: 'utf-8', mode: 0o755 });
+    files.push(path.relative(options.projectRoot, secretPath));
   }
   if (options.fileSizeCheck) {
+    const sizePath = path.join(hookDir, 'codi-file-size-check.mjs');
     const sizeScript = buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES);
-    await fs.writeFile(path.join(hookDir, 'codi-file-size-check.mjs'), sizeScript, { encoding: 'utf-8', mode: 0o755 });
+    await fs.writeFile(sizePath, sizeScript, { encoding: 'utf-8', mode: 0o755 });
+    files.push(path.relative(options.projectRoot, sizePath));
   }
   if (options.versionCheck) {
-    await fs.writeFile(path.join(hookDir, 'codi-version-check.mjs'), VERSION_CHECK_TEMPLATE, { encoding: 'utf-8', mode: 0o755 });
+    const versionPath = path.join(hookDir, 'codi-version-check.mjs');
+    await fs.writeFile(versionPath, VERSION_CHECK_TEMPLATE, { encoding: 'utf-8', mode: 0o755 });
+    files.push(path.relative(options.projectRoot, versionPath));
   }
+  return files;
 }
 
 async function installStandalone(
@@ -52,7 +64,7 @@ async function installStandalone(
   hooks: HookEntry[],
   _flags: ResolvedFlags,
   options: InstallOptions,
-): Promise<Result<void>> {
+): Promise<Result<HookInstallResult>> {
   const hookDir = path.join(projectRoot, '.git', 'hooks');
   try {
     await fs.mkdir(hookDir, { recursive: true });
@@ -68,8 +80,10 @@ async function installStandalone(
 
   try {
     await fs.writeFile(hookPath, script, { encoding: 'utf-8', mode: 0o755 });
-    await writeAuxiliaryScripts(hookDir, options);
-    return ok(undefined);
+    const files: string[] = [path.relative(projectRoot, hookPath)];
+    const auxFiles = await writeAuxiliaryScripts(hookDir, options);
+    files.push(...auxFiles);
+    return ok({ files });
   } catch (cause) {
     return err([createError('E_HOOK_FAILED', {
       hook: 'pre-commit',
@@ -81,7 +95,7 @@ async function installStandalone(
 async function installHusky(
   projectRoot: string,
   hooks: HookEntry[],
-): Promise<Result<void>> {
+): Promise<Result<HookInstallResult>> {
   const huskyFile = path.join(projectRoot, '.husky', 'pre-commit');
 
   const commands = hooks.map((h) => h.command).join('\n');
@@ -95,7 +109,7 @@ async function installHusky(
       // file doesn't exist yet
     }
     await fs.writeFile(huskyFile, existing + block, { encoding: 'utf-8', mode: 0o755 });
-    return ok(undefined);
+    return ok({ files: [path.relative(projectRoot, huskyFile)] });
   } catch (cause) {
     return err([createError('E_HOOK_FAILED', {
       hook: 'husky',
@@ -107,7 +121,7 @@ async function installHusky(
 async function installPreCommitFramework(
   projectRoot: string,
   hooks: HookEntry[],
-): Promise<Result<void>> {
+): Promise<Result<HookInstallResult>> {
   const configPath = path.join(projectRoot, '.pre-commit-config.yaml');
 
   const localHooks = hooks.map((h) => [
@@ -128,7 +142,7 @@ async function installPreCommitFramework(
       // file doesn't exist yet
     }
     await fs.writeFile(configPath, existing + block, 'utf-8');
-    return ok(undefined);
+    return ok({ files: [path.relative(projectRoot, configPath)] });
   } catch (cause) {
     return err([createError('E_HOOK_FAILED', {
       hook: 'pre-commit-config',
@@ -137,14 +151,14 @@ async function installPreCommitFramework(
   }
 }
 
-async function installCommitMsgHook(projectRoot: string, runner: string): Promise<Result<void>> {
+async function installCommitMsgHook(projectRoot: string, runner: string): Promise<Result<HookInstallResult>> {
   if (runner === 'none' || runner === 'lefthook') {
     const hookDir = path.join(projectRoot, '.git', 'hooks');
     try {
       await fs.mkdir(hookDir, { recursive: true });
       const hookPath = path.join(hookDir, 'commit-msg');
       await fs.writeFile(hookPath, COMMIT_MSG_TEMPLATE, { encoding: 'utf-8', mode: 0o755 });
-      return ok(undefined);
+      return ok({ files: [path.relative(projectRoot, hookPath)] });
     } catch (cause) {
       return err([createError('E_HOOK_FAILED', {
         hook: 'commit-msg',
@@ -156,7 +170,7 @@ async function installCommitMsgHook(projectRoot: string, runner: string): Promis
     const huskyFile = path.join(projectRoot, '.husky', 'commit-msg');
     try {
       await fs.writeFile(huskyFile, '#!/usr/bin/env sh\n. "$(dirname -- "$0")/_/husky.sh"\n\nnpx --no -- commitlint --edit ${1}\n', { encoding: 'utf-8', mode: 0o755 });
-      return ok(undefined);
+      return ok({ files: [path.relative(projectRoot, huskyFile)] });
     } catch (cause) {
       return err([createError('E_HOOK_FAILED', {
         hook: 'commit-msg',
@@ -164,36 +178,49 @@ async function installCommitMsgHook(projectRoot: string, runner: string): Promis
       })]);
     }
   }
-  return ok(undefined);
+  return ok({ files: [] });
 }
 
-export async function installHooks(options: InstallOptions): Promise<Result<void>> {
+export async function installHooks(options: InstallOptions): Promise<Result<HookInstallResult>> {
   const { projectRoot, runner, hooks, flags } = options;
 
   if (hooks.length === 0) {
-    return ok(undefined);
+    return ok({ files: [] });
   }
+
+  const allFiles: string[] = [];
 
   if (options.commitMsgValidation) {
     const msgResult = await installCommitMsgHook(projectRoot, runner);
     if (!msgResult.ok) return msgResult;
+    allFiles.push(...msgResult.data.files);
   }
 
+  let runnerResult: Result<HookInstallResult>;
   switch (runner) {
     case 'none':
-      return installStandalone(projectRoot, hooks, flags, options);
+      runnerResult = await installStandalone(projectRoot, hooks, flags, options);
+      break;
     case 'husky':
-      return installHusky(projectRoot, hooks);
+      runnerResult = await installHusky(projectRoot, hooks);
+      break;
     case 'pre-commit':
-      return installPreCommitFramework(projectRoot, hooks);
+      runnerResult = await installPreCommitFramework(projectRoot, hooks);
+      break;
     case 'lefthook':
-      return installStandalone(projectRoot, hooks, flags, options);
+      runnerResult = await installStandalone(projectRoot, hooks, flags, options);
+      break;
     default:
       return err([createError('E_HOOK_FAILED', {
         hook: 'install',
         reason: `Unsupported runner: ${runner as string}`,
       })]);
   }
+
+  if (!runnerResult.ok) return runnerResult;
+  allFiles.push(...runnerResult.data.files);
+
+  return ok({ files: allFiles });
 }
 
 export { buildRunnerScript, buildSecretScanScript, buildFileSizeScript };
