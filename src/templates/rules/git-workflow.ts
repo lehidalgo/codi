@@ -49,4 +49,5 @@ GOOD: Three separate commits, each reviewable independently
 - Run tests before every version bump — a broken release is worse than a delayed one
 - Verify the built output matches the source before publishing: grep for key changes in dist/
 - One atomic command for releases: \`npm version patch\` triggers lint, test, commit, and tag in sequence — then \`npm publish\` rebuilds via prepublishOnly
-- Configure \`.npmrc\` with \`message=chore(release): bump version to %s\` so npm version commits follow conventional format automatically`;
+- Configure \`.npmrc\` with \`message=chore(release): bump version to %s\` so npm version commits follow conventional format automatically
+- Guard \`prepublishOnly\` with a branch check — abort publish if not on main. Never publish from feature or develop branches`;
