@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -26,7 +26,6 @@
     "dev": "tsup --watch",
     "prepare": "husky",
     "preversion": "npm run lint && npm run test",
-    "version": "npm run build && git add -A dist/",
     "postversion": "git push && git push --tags",
     "prepublishOnly": "npm run lint && npm run test && npm run build"
   },
