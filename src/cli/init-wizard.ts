@@ -2,8 +2,7 @@ import * as p from '@clack/prompts';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import { PRESET_DESCRIPTIONS } from '../core/flags/flag-presets.js';
 import { DEFAULT_PRESET } from '../constants.js';
-import { printSection } from './shared.js';
-import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
+import { getBuiltinPresetDefinition, BUILTIN_PRESETS } from '../templates/presets/index.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -23,14 +22,33 @@ export interface WizardResult {
   versionPin: boolean;
 }
 
-const BUILTIN_PRESET_OPTIONS = [
-  { label: 'Balanced (recommended)', value: 'balanced' as const, hint: PRESET_DESCRIPTIONS.balanced },
-  { label: 'Minimal', value: 'minimal' as const, hint: PRESET_DESCRIPTIONS.minimal },
-  { label: 'Strict', value: 'strict' as const, hint: PRESET_DESCRIPTIONS.strict },
-  { label: 'Python Web', value: 'python-web' as const, hint: 'Python web dev with Django/FastAPI, security, testing' },
-  { label: 'TypeScript Fullstack', value: 'typescript-fullstack' as const, hint: 'TypeScript + React/Next.js, strict typing, CI' },
-  { label: 'Security Hardened', value: 'security-hardened' as const, hint: 'Maximum security, locked flags, restricted ops' },
-];
+function getReservedPresetNames(): Set<string> {
+  const basePresets = Object.keys(PRESET_DESCRIPTIONS);
+  const extendedPresets = Object.keys(BUILTIN_PRESETS);
+  return new Set([...basePresets, ...extendedPresets]);
+}
+
+function formatLabel(name: string): string {
+  return name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+function buildPresetOptions(): Array<{ label: string; value: string; hint: string }> {
+  // Base presets from flag system (minimal, balanced, strict)
+  const baseOptions = Object.entries(PRESET_DESCRIPTIONS).map(([name, desc]) => ({
+    label: name === DEFAULT_PRESET ? `${formatLabel(name)} (recommended)` : formatLabel(name),
+    value: name,
+    hint: desc,
+  }));
+
+  // Extended presets from template bundles (python-web, typescript-fullstack, etc.)
+  const extendedOptions = Object.entries(BUILTIN_PRESETS).map(([name, def]) => ({
+    label: formatLabel(name),
+    value: name,
+    hint: def.description,
+  }));
+
+  return [...baseOptions, ...extendedOptions];
+}
 
 export async function runInitWizard(
   detectedStack: string[],
@@ -38,11 +56,23 @@ export async function runInitWizard(
   allAgents: string[],
 ): Promise<WizardResult | null> {
   p.intro('codi — Project Setup');
+
+  p.note(
+    [
+      'space        toggle selection',
+      'a            select / deselect all',
+      'arrow keys   move up / down',
+      'enter        confirm',
+      'ctrl+c       cancel',
+    ].join('\n'),
+    'Keyboard shortcuts',
+  );
+
   const stackLabel = detectedStack.length > 0 ? detectedStack.join(', ') : 'none detected';
-  printSection(`Detected stack: ${stackLabel}`);
+  p.log.step(`Detected stack: ${stackLabel}`);
 
   // Step 1: Select IDE agents
-  printSection('Agents');
+  p.log.step('Agents');
   const agents = await p.multiselect({
     message: 'Select agents to generate config for',
     options: allAgents.map((id) => ({ label: id, value: id })),
@@ -58,7 +88,7 @@ export async function runInitWizard(
   if (agents.length === 0) return null;
 
   // Step 2: Choose configuration mode
-  printSection('Configuration');
+  p.log.step('Configuration');
   const configMode = await p.select({
     message: 'How do you want to configure?',
     options: [
@@ -133,7 +163,7 @@ export async function runInitWizard(
 async function handlePresetPath(agents: string[]): Promise<WizardResult | null> {
   const presetName = await p.select({
     message: 'Choose a preset',
-    options: BUILTIN_PRESET_OPTIONS,
+    options: buildPresetOptions(),
   });
 
   if (p.isCancel(presetName)) {
@@ -151,7 +181,7 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
   const presetAgents = new Set(presetDef?.agents ?? []);
   const presetCommands = new Set(presetDef?.commands ?? []);
 
-  printSection(`Artifacts in "${selectedPreset}" (modify to customize)`);
+  p.log.step(`Artifacts in "${selectedPreset}" (modify to customize)`);
 
   const userRules = await p.multiselect({
     message: 'Rules',
@@ -193,12 +223,14 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
 
   let saveAsPreset: string | undefined;
   if (changed) {
-    printSection('Custom Preset');
+    p.log.step('Custom Preset');
     const customName = await p.text({
       message: 'You modified the preset. Save as custom preset (name)',
-      defaultValue: `${selectedPreset}-custom`,
+      initialValue: `${selectedPreset}-custom`,
+      placeholder: `${selectedPreset}-custom`,
       validate: (v) => {
-        if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case';
+        if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case (lowercase letters, numbers, hyphens)';
+        if (getReservedPresetNames().has(v)) return `"${v}" is a built-in preset name — choose a different name`;
       },
     });
     if (p.isCancel(customName)) { p.cancel('Operation cancelled.'); return null; }
@@ -226,7 +258,7 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
 }
 
 async function handleCustomPath(agents: string[]): Promise<WizardResult | null> {
-  printSection('Artifacts');
+  p.log.step('Artifacts');
 
   const rules = await p.multiselect({
     message: 'Select rules',
@@ -280,8 +312,10 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null> 
   if (save) {
     const presetNameInput = await p.text({
       message: 'Preset name (kebab-case)',
+      placeholder: 'my-team-preset',
       validate: (v) => {
-        if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case, start with a letter';
+        if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case (lowercase letters, numbers, hyphens)';
+        if (getReservedPresetNames().has(v)) return `"${v}" is a built-in preset name — choose a different name`;
       },
     });
     if (p.isCancel(presetNameInput)) { p.cancel('Operation cancelled.'); return null; }

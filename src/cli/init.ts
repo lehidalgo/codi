@@ -5,7 +5,7 @@ import { stringify as stringifyYaml } from 'yaml';
 import { resolveCodiDir } from '../utils/paths.js';
 import { registerAllAdapters } from '../adapters/index.js';
 import { detectAdapters, getAllAdapters } from '../core/generator/adapter-registry.js';
-import { getPreset } from '../core/flags/flag-presets.js';
+import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
 import { resolveConfig } from '../core/config/resolver.js';
@@ -98,7 +98,9 @@ export async function initHandler(
   }
 
   const stack = await detectStack(projectRoot);
-  log.info(`Detected stack: ${stack.length > 0 ? stack.join(', ') : 'none'}`);
+  if (!isInteractive(options)) {
+    log.info(`Detected stack: ${stack.length > 0 ? stack.join(', ') : 'none'}`);
+  }
 
   registerAllAdapters();
 
@@ -380,7 +382,7 @@ export function registerInitCommand(program: Command): void {
     .description('Initialize a new .codi/ configuration directory')
     .option('--force', 'Reinitialize even if .codi/ exists')
     .option('--agents <agents...>', 'Specify agent IDs (skips wizard)')
-    .option('--preset <preset>', 'Flag preset: minimal, balanced, strict (default: balanced)')
+    .option('--preset <preset>', `Flag preset: ${getPresetNames().join(', ')} (default: ${DEFAULT_PRESET})`)
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: InitOptions = { ...globalOptions, ...cmdOptions };

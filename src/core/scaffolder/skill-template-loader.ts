@@ -29,6 +29,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   'rule-creator': skillTemplates.ruleCreator,
   'agent-creator': skillTemplates.agentCreator,
   'command-creator': skillTemplates.commandCreator,
+  'guided-qa-testing': skillTemplates.guidedQaTesting,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

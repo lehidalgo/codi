@@ -2,6 +2,7 @@ import type { NormalizedConfig } from '../../types/config.js';
 import type { CodiError } from '../output/types.js';
 import { createError } from '../output/errors.js';
 import { getAllAdapters } from '../generator/adapter-registry.js';
+import { ALL_ADAPTERS } from '../../adapters/index.js';
 import {
   MAX_ARTIFACT_CHARS,
   MAX_TOTAL_ARTIFACT_CHARS,
@@ -10,11 +11,9 @@ import {
   MAX_AGENT_LINES,
 } from '../../constants.js';
 
-const FALLBACK_ADAPTERS = ['claude-code', 'cursor', 'windsurf', 'codex', 'cline'];
-
 function getKnownAdapterIds(): string[] {
   const registered = getAllAdapters().map((a) => a.id);
-  return registered.length > 0 ? registered : FALLBACK_ADAPTERS;
+  return registered.length > 0 ? registered : ALL_ADAPTERS.map((a) => a.id);
 }
 
 export function validateConfig(config: NormalizedConfig): CodiError[] {

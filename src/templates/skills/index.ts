@@ -16,3 +16,4 @@ export { template as skillCreator } from './skill-creator.js';
 export { template as ruleCreator } from './rule-creator.js';
 export { template as agentCreator } from './agent-creator.js';
 export { template as commandCreator } from './command-creator.js';
+export { template as guidedQaTesting } from './guided-qa-testing.js';

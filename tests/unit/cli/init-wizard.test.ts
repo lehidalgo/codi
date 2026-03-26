@@ -5,11 +5,21 @@ vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   cancel: vi.fn(),
+  note: vi.fn(),
   multiselect: vi.fn(),
   select: vi.fn(),
   text: vi.fn(),
   confirm: vi.fn(),
   isCancel: vi.fn().mockReturnValue(false),
+  log: {
+    message: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    step: vi.fn(),
+    warn: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 import * as p from '@clack/prompts';
