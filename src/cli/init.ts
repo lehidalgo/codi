@@ -108,6 +108,7 @@ export async function initHandler(
 
   let agentIds: string[];
   let presetName: PresetName = (options.preset as PresetName) ?? DEFAULT_PRESET;
+  let displayPresetName: string = presetName;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
@@ -131,6 +132,7 @@ export async function initHandler(
 
     agentIds = wizardResult.agents;
     presetName = wizardResult.preset;
+    displayPresetName = wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? presetName;
 
     if (wizardResult.configMode === 'zip' || wizardResult.configMode === 'github') {
       // Import: will be handled after createCodiStructure via preset install
@@ -282,14 +284,14 @@ export async function initHandler(
     const now = new Date().toISOString();
     await ledger.setInitialization({
       timestamp: now,
-      preset: presetName,
+      preset: displayPresetName,
       agents: agentIds,
       stack,
       codiVersion: VERSION,
     });
     if (ruleTemplates.length > 0 || skillTemplates.length > 0 || agentTemplates.length > 0 || commandTemplates.length > 0) {
       await ledger.setActivePreset({
-        name: presetName,
+        name: displayPresetName,
         installedAt: now,
         artifactSelection: {
           rules: ruleTemplates,
@@ -320,7 +322,7 @@ export async function initHandler(
   return createCommandResult({
     success: true,
     command: 'init',
-    data: { codiDir, agents: agentIds, stack, generated, preset: presetName, rules: ruleTemplates, hooksInstalled },
+    data: { codiDir, agents: agentIds, stack, generated, preset: displayPresetName, rules: ruleTemplates, hooksInstalled },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
