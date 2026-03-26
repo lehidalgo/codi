@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 import { Command } from 'commander';
-import { addGlobalOptions, initFromOptions, handleOutput } from '../../../src/cli/shared.js';
+import { addGlobalOptions, initFromOptions, handleOutput, regenerateConfigs } from '../../../src/cli/shared.js';
 import { createCommandResult } from '../../../src/core/output/formatter.js';
 import { EXIT_CODES } from '../../../src/core/output/exit-codes.js';
+import { Logger } from '../../../src/core/output/logger.js';
+import { clearAdapters } from '../../../src/core/generator/adapter-registry.js';
 
 describe('shared CLI utilities', () => {
   describe('addGlobalOptions', () => {
@@ -80,6 +85,44 @@ describe('shared CLI utilities', () => {
       handleOutput(result, {});
       const output = (stdoutSpy.mock.calls[0]![0] as string);
       expect(output).toContain('[OK] test');
+    });
+  });
+
+  describe('regenerateConfigs', () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-shared-regen-'));
+      clearAdapters();
+      Logger.init({ level: 'error', mode: 'human', noColor: true });
+    });
+
+    afterEach(async () => {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+      clearAdapters();
+    });
+
+    it('returns false when no config exists', async () => {
+      const success = await regenerateConfigs(tmpDir);
+      expect(success).toBe(false);
+    });
+
+    it('returns true with a valid config', async () => {
+      const codiDir = path.join(tmpDir, '.codi');
+      await fs.mkdir(codiDir, { recursive: true });
+      await fs.writeFile(
+        path.join(codiDir, 'codi.yaml'),
+        'name: test\nversion: "1"\nagents:\n  - claude-code\n',
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(codiDir, 'flags.yaml'),
+        '{}',
+        'utf-8',
+      );
+
+      const success = await regenerateConfigs(tmpDir);
+      expect(success).toBe(true);
     });
   });
 });

@@ -6,8 +6,11 @@ import {
   checkCodiVersion,
   checkGeneratedFreshness,
   checkCodiDirectory,
+  checkOrgConfig,
+  checkTeamConfig,
   runAllChecks,
 } from '../../../../src/core/version/version-checker.js';
+import { hashContent } from '../../../../src/utils/hash.js';
 
 describe('checkCodiVersion', () => {
   it('passes when version satisfies exact match', () => {
@@ -40,6 +43,43 @@ describe('checkGeneratedFreshness', () => {
     const results = await checkGeneratedFreshness(tmpDir);
     expect(results).toHaveLength(1);
     expect(results[0]!.passed).toBe(true);
+  });
+
+  it('returns passed when driftMode is off', async () => {
+    const results = await checkGeneratedFreshness(tmpDir, 'off');
+    expect(results).toHaveLength(1);
+    expect(results[0]!.passed).toBe(true);
+    expect(results[0]!.message).toContain('disabled');
+  });
+
+  it('reports synced when tracked files match', async () => {
+    const filePath = path.join(tmpDir, 'CLAUDE.md');
+    const content = '# Test output';
+    await fs.writeFile(filePath, content, 'utf-8');
+
+    const stateData = {
+      version: '1',
+      lastGenerated: new Date().toISOString(),
+      agents: {
+        'claude-code': [{
+          path: filePath,
+          sourceHash: 'abc',
+          generatedHash: hashContent(content),
+          sources: ['codi.yaml'],
+          timestamp: new Date().toISOString(),
+        }],
+      },
+    };
+    await fs.writeFile(
+      path.join(tmpDir, '.codi', 'state.json'),
+      JSON.stringify(stateData),
+    );
+
+    const results = await checkGeneratedFreshness(tmpDir);
+    const claudeResult = results.find((r) => r.check === 'drift-claude-code');
+    expect(claudeResult).toBeDefined();
+    expect(claudeResult!.passed).toBe(true);
+    expect(claudeResult!.message).toContain('up to date');
   });
 
   it('reports drift when tracked files are missing', async () => {
@@ -99,6 +139,25 @@ describe('checkCodiDirectory', () => {
   });
 });
 
+describe('checkOrgConfig', () => {
+  it('returns a result with check name org-config', async () => {
+    const result = await checkOrgConfig();
+    expect(result.check).toBe('org-config');
+    // Either passes (org config found or not found is optional) or fails
+    expect(typeof result.passed).toBe('boolean');
+    expect(typeof result.message).toBe('string');
+  });
+});
+
+describe('checkTeamConfig', () => {
+  it('fails when team config file does not exist', async () => {
+    const result = await checkTeamConfig('nonexistent-team-xyz-12345');
+    expect(result.check).toBe('team-config');
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain('not found');
+  });
+});
+
 describe('runAllChecks', () => {
   let tmpDir: string;
 
@@ -139,5 +198,41 @@ describe('runAllChecks', () => {
     const versionResult = result.data.results.find((r) => r.check === 'codi-version');
     expect(versionResult).toBeDefined();
     expect(versionResult!.passed).toBe(false);
+  });
+
+  it('skips drift checks when driftMode is off', async () => {
+    const codiDir = path.join(tmpDir, '.codi');
+    await fs.mkdir(codiDir, { recursive: true });
+    await fs.writeFile(
+      path.join(codiDir, 'codi.yaml'),
+      `name: test\nversion: "1"\n`,
+    );
+
+    const result = await runAllChecks(tmpDir, 'off');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const freshnessResult = result.data.results.find(
+      (r) => r.check === 'generated-freshness',
+    );
+    expect(freshnessResult).toBeDefined();
+    expect(freshnessResult!.passed).toBe(true);
+    expect(freshnessResult!.message).toContain('disabled');
+  });
+
+  it('includes org-config check in results', async () => {
+    const codiDir = path.join(tmpDir, '.codi');
+    await fs.mkdir(codiDir, { recursive: true });
+    await fs.writeFile(
+      path.join(codiDir, 'codi.yaml'),
+      `name: test\nversion: "1"\n`,
+    );
+
+    const result = await runAllChecks(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const orgResult = result.data.results.find((r) => r.check === 'org-config');
+    expect(orgResult).toBeDefined();
   });
 });

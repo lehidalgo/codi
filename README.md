@@ -3,21 +3,140 @@
 </p>
 
 <p align="center">
-  <strong>Unified configuration platform for AI coding agents.</strong>
+  <strong>One config. Every AI agent. Zero drift.</strong>
+</p>
+
+<p align="center">
+  Define your rules, skills, agents, and flags once — Codi generates the correct configuration for Claude Code, Cursor, Codex, Windsurf, and Cline automatically.
 </p>
 
 [![npm version](https://img.shields.io/npm/v/codi-cli)](https://www.npmjs.com/package/codi-cli)
 [![license](https://img.shields.io/npm/l/codi-cli)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/lehidalgo/codi/ci.yml?label=CI)](https://github.com/lehidalgo/codi/actions)
-[![tests](https://img.shields.io/badge/tests-407%20passing-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-770%20passing-brightgreen)]()
 
-## What is Codi?
+---
 
-AI coding agents (Claude Code, Cursor, Codex, Windsurf, Cline) each require their own configuration file with different formats and conventions. Codi lets you define rules, skills, agents, and flags once in a `.codi/` directory, then generates the correct configuration file for each agent. One config. Every agent. No drift.
+## Why Codi?
 
-## Architecture Overview
+Every AI coding agent uses a different configuration format. Claude Code reads `CLAUDE.md`. Cursor reads `.cursorrules`. Codex reads `AGENTS.md`. When your team uses multiple agents — or different members prefer different tools — you end up maintaining duplicate configs that inevitably drift apart.
 
-Codi reads your `.codi/` directory, resolves configuration through 7 inheritance layers, and passes the result through agent-specific adapters to produce output files.
+**Codi eliminates this.** Write your configuration once in `.codi/`, and Codi generates the right file for every agent, every time.
+
+---
+
+## Feature Overview
+
+### Supported Agents
+
+| Agent | Config File | Rules | Skills | Agents | Commands | MCP |
+|:------|:-----------|:-----:|:------:|:------:|:--------:|:---:|
+| **Claude Code** | `CLAUDE.md` | `.claude/rules/*.md` | `.claude/skills/*/SKILL.md` | `.claude/agents/*.md` | `.claude/commands/*.md` | `.claude/mcp.json` |
+| **Cursor** | `.cursorrules` | `.cursor/rules/*.mdc` | `.cursor/skills/*/SKILL.md` | -- | -- | `.cursor/mcp.json` |
+| **Codex** | `AGENTS.md` | Inline | `.agents/skills/*/SKILL.md` | `.codex/agents/*.toml` | -- | `.codex/config.toml` |
+| **Windsurf** | `.windsurfrules` | Inline | `.windsurf/skills/*/SKILL.md` | -- | -- | -- |
+| **Cline** | `.clinerules` | Inline | `.cline/skills/*/SKILL.md` | -- | -- | -- |
+
+### Built-in Templates
+
+| Artifact | Count | Highlights |
+|:---------|:-----:|:-----------|
+| **Rules** | 23 | security, code-style, testing, architecture, git-workflow, error-handling, performance, documentation, api-design, golang, rust, nextjs, django, and more |
+| **Skills** | 18 | code-review, documentation, MCP, security-scan, test-coverage, refactoring, codebase-onboarding, presentation, mobile-development, and more |
+| **Agents** | 8 | code-reviewer, test-generator, security-analyzer, docs-lookup, refactorer, onboarding-guide, performance-auditor, api-designer |
+| **Commands** | 8 | review, test-run, security-scan, test-coverage, refactor, onboard, docs-lookup, commit |
+
+All templates are customizable. Create your own with `codi add rule|skill|agent|command <name>`.
+
+### Preset System
+
+| Preset | Focus | Description |
+|:-------|:------|:------------|
+| `minimal` | Permissive | Minimal guardrails, maximum flexibility |
+| `balanced` | Recommended | Sensible defaults for most projects |
+| `strict` | Enforced | Maximum safety and compliance |
+| `python-web` | Full stack | Python + web rules, skills, and agents |
+| `typescript-fullstack` | Full stack | TypeScript + fullstack rules, skills, and agents |
+| `security-hardened` | Security | Security-focused rules, scanning, and compliance |
+
+Create, share, and install presets from ZIP, GitHub, or the registry with `codi preset`.
+
+### Governance & Teams
+
+| Capability | Description |
+|:-----------|:------------|
+| **7-layer inheritance** | org &rarr; team &rarr; repo &rarr; language &rarr; framework &rarr; agent &rarr; user |
+| **Locked flags** | Org-level policies that cannot be overridden downstream |
+| **Artifact ownership** | `managed_by: codi` (auto-updated) vs `managed_by: user` (never overwritten) |
+| **Version pinning** | Enforce minimum Codi version across the team with `requiredVersion` |
+
+### MCP Integration
+
+| Capability | Details |
+|:-----------|:--------|
+| **Pre-configured servers** | 17 servers: docs, memory, sequential-thinking, context7, Stripe, Supabase, Vercel, Neon, Sentry, Linear, Notion, Prisma, GitHub, Upstash, Cloudflare |
+| **Centralized config** | Define once in `.codi/mcp.yaml`, auto-distributed in each agent's native format (JSON, TOML) |
+| **Server toggling** | Enable/disable individual servers with `enabled: false` |
+
+### CI/CD & DevOps
+
+| Capability | Details |
+|:-----------|:--------|
+| **Pre-commit hooks** | File size limits (800 LOC), secret scanning, conventional commit validation |
+| **CI validation** | `codi ci` and `codi doctor --ci` — exits non-zero on config errors or stale files |
+| **Backup & revert** | Automatic backup on every generate; restore with `codi revert --last` |
+| **Watch mode** | `codi watch` auto-regenerates when `.codi/` files change |
+| **Drift detection** | `codi status` reports when generated files are out of sync |
+
+### Behavioral Flags
+
+| Flag | Type | Description |
+|:-----|:-----|:------------|
+| `max_file_lines` | number | Maximum lines per source file |
+| `allow_force_push` | boolean | Allow `git push --force` |
+| `require_pr_review` | boolean | Require PR review before merging |
+| `test_before_commit` | boolean | Run tests before every commit |
+| `security_scan` | boolean | Run security scans before merging |
+| `auto_commit` | boolean | Allow auto-committing |
+| `progressive_loading` | string | Skill loading strategy (off/metadata/catalog) |
+| `drift_detection` | string | Drift enforcement level (off/warn/error) |
+| *+ 10 more* | | See [Configuration Guide](docs/configuration.md) for all 18 flags |
+
+---
+
+## Quick Start
+
+### 1. Install
+
+```bash
+npm install -D codi-cli
+```
+
+**Requires Node.js >= 20.**
+
+### 2. Initialize
+
+```bash
+# Interactive wizard — select agents, preset, and artifacts
+codi init
+
+# Or non-interactive
+codi init --agents claude-code cursor --preset balanced
+```
+
+### 3. Generate
+
+```bash
+codi generate
+```
+
+That's it. Your `CLAUDE.md`, `.cursorrules`, and any other agent files are generated and ready to commit.
+
+---
+
+## Architecture
+
+Codi reads your `.codi/` directory, resolves configuration through 7 inheritance layers, and passes the result through agent-specific adapters.
 
 ```mermaid
 flowchart TD
@@ -44,62 +163,6 @@ flowchart TD
     E --> F5[Cline]
 ```
 
-## Quick Start
-
-### Installation
-
-```bash
-# As a dev dependency (recommended)
-npm install -D codi-cli
-
-# Or globally
-npm install -g codi-cli
-```
-
-**Requires Node.js >= 20.**
-
-### Initialize
-
-```bash
-# Interactive wizard — select agents, rules, preset
-codi init
-
-# Or skip the wizard
-codi init --agents claude-code cursor --preset balanced
-```
-
-### Generate
-
-```bash
-# Generate config files for all detected agents
-codi generate
-
-# Preview without writing files
-codi generate --dry-run
-```
-
-### Verify
-
-```bash
-# Show the verification token and prompt
-codi verify
-
-# Validate an agent's response
-codi verify --check "token: codi-abc123, rules: security, code-style"
-```
-
-## Artifacts Matrix
-
-| Artifact | Location | Claude Code | Cursor | Codex | Windsurf | Cline |
-|----------|----------|-------------|--------|-------|----------|-------|
-| **Rules** | `.codi/rules/custom/` | `.claude/rules/*.md` | `.cursor/rules/*.mdc` | `AGENTS.md` (inline) | `.windsurfrules` (inline) | `.clinerules` (inline) |
-| **Skills** | `.codi/skills/` | `.claude/skills/*/SKILL.md` | `.cursor/skills/*/SKILL.md` | `.agents/skills/*/SKILL.md` | `.windsurf/skills/*/SKILL.md` | `.cline/skills/*/SKILL.md` |
-| **Agents** | `.codi/agents/` | `.claude/agents/*.md` | -- | `.codex/agents/*.toml` | -- | -- |
-| **Commands** | `.codi/commands/` | `.claude/commands/*.md` | -- | -- | -- | -- |
-| **MCP** | `.codi/mcp.yaml` | `.claude/mcp.json` | `.cursor/mcp.json` | `.codex/mcp.toml` | `.windsurf/mcp.json` | -- |
-
-Keep individual artifacts under 6,000 chars and total combined content under 12,000 chars (Windsurf limit). Run `codi doctor` to check. See the [Writing Artifacts](docs/guides/writing-rules.md) guide for per-agent size budgets.
-
 ## CLI Reference
 
 | Command | Description | Key Options |
@@ -121,7 +184,8 @@ Keep individual artifacts under 6,000 chars and total combined content under 12,
 | `codi ci` | Composite CI validation | -- |
 | `codi revert` | Restore from backup | `--list`, `--last`, `--backup <ts>` |
 | `codi marketplace` | Search/install skills from registry | `search <query>`, `install <name>` |
-| `codi preset` | Manage configuration presets | `create`, `list`, `install`, `search`, `update` |
+| `codi preset` | Manage configuration presets | `create`, `list`, `install`, `export`, `validate`, `remove`, `edit`, `search`, `update` |
+| `codi contribute` | Share artifacts with the community | -- |
 | `codi docs-update` | Update documentation counts to match templates | -- |
 
 Aliases: `codi gen` = `codi generate`.
@@ -139,18 +203,27 @@ Aliases: `codi gen` = `codi generate`.
 
 The `.codi/` directory holds your project manifest (`codi.yaml`), behavioral flags (`flags.yaml`), custom rules, skills, agents, commands, and override layers. Everything is YAML and Markdown.
 
-Codi ships with 18 behavioral flags and 3 presets (`minimal`, `balanced`, `strict`). Flags control permissions like `max_file_lines`, `allow_force_push`, `require_tests`, and more.
-
 For full details on directory structure, flags, and flag modes, see the [Configuration Guide](docs/configuration.md).
 
 ## Presets
 
-Presets are composable packages that bundle flags, rules, skills, agents, commands, and MCP config into reusable units. Use built-in presets or create your own.
+Presets bundle flags, rules, skills, agents, commands, and MCP config into reusable, shareable packages.
 
 ```bash
+# Use a built-in preset
+codi init --preset python-web
+
+# Create your own
 codi preset create my-setup
-codi preset install name --from org/repo
+
+# Install from GitHub
+codi preset install my-preset --from org/repo
+
+# Export as ZIP
+codi preset export my-setup --format zip
 ```
+
+**Built-in presets**: `minimal`, `balanced`, `strict`, `python-web`, `typescript-fullstack`, `security-hardened`.
 
 See [Multi-Tenant Design](docs/reference/multi-tenant-design.md) for the full preset architecture.
 
@@ -227,13 +300,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, 
 
 ## Roadmap
 
-Phase 4 (Scale) is next:
-
-- Plugin system for custom adapters
-- Approval workflows (draft, review, publish)
-- VS Code extension
-- Context compression engine
-- Remote includes (Git URLs as config sources)
+| Feature | Description |
+|:--------|:------------|
+| Plugin system | Custom adapters for new AI agents |
+| Approval workflows | Draft, review, publish lifecycle for artifacts |
+| VS Code extension | Visual config management inside the editor |
+| Context compression | Intelligent token-aware content trimming |
+| Remote includes | Git URLs as config sources for shared rules |
 
 ## FAQ
 

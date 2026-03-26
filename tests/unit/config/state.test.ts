@@ -42,6 +42,7 @@ describe('StateManager', () => {
           },
         ],
       },
+      hooks: [],
     };
 
     const writeResult = await mgr.write(state);
@@ -142,5 +143,140 @@ describe('StateManager', () => {
     expect(driftResult.ok).toBe(true);
     if (!driftResult.ok) return;
     expect(driftResult.data.files[0]!.status).toBe('missing');
+  });
+
+  describe('updateHooks', () => {
+    it('stores hook files in state', async () => {
+      const mgr = new StateManager(tmpDir);
+      const hooks: GeneratedFileState[] = [
+        {
+          path: '.git/hooks/codi-secret-scan.mjs',
+          sourceHash: 'src1',
+          generatedHash: 'gen1',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+      ];
+
+      const result = await mgr.updateHooks(hooks);
+      expect(result.ok).toBe(true);
+
+      const readResult = await mgr.read();
+      expect(readResult.ok).toBe(true);
+      if (!readResult.ok) return;
+      expect(readResult.data.hooks).toHaveLength(1);
+      expect(readResult.data.hooks[0]!.path).toBe('.git/hooks/codi-secret-scan.mjs');
+    });
+
+    it('replaces previous hooks on update', async () => {
+      const mgr = new StateManager(tmpDir);
+      const firstHooks: GeneratedFileState[] = [
+        {
+          path: '.git/hooks/codi-secret-scan.mjs',
+          sourceHash: 'a',
+          generatedHash: 'b',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+      ];
+      await mgr.updateHooks(firstHooks);
+
+      const secondHooks: GeneratedFileState[] = [
+        {
+          path: '.husky/pre-commit',
+          sourceHash: 'c',
+          generatedHash: 'd',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+        {
+          path: '.husky/commit-msg',
+          sourceHash: 'e',
+          generatedHash: 'f',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+      ];
+      await mgr.updateHooks(secondHooks);
+
+      const readResult = await mgr.read();
+      expect(readResult.ok).toBe(true);
+      if (!readResult.ok) return;
+      expect(readResult.data.hooks).toHaveLength(2);
+      expect(readResult.data.hooks.map(h => h.path)).toEqual([
+        '.husky/pre-commit',
+        '.husky/commit-msg',
+      ]);
+    });
+
+    it('preserves agent data when updating hooks', async () => {
+      const mgr = new StateManager(tmpDir);
+      await mgr.updateAgent('cursor', [
+        {
+          path: '.cursorrules',
+          sourceHash: 'x',
+          generatedHash: 'y',
+          sources: ['manifest'],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      await mgr.updateHooks([
+        {
+          path: '.git/hooks/codi-secret-scan.mjs',
+          sourceHash: 'a',
+          generatedHash: 'b',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const readResult = await mgr.read();
+      expect(readResult.ok).toBe(true);
+      if (!readResult.ok) return;
+      expect(readResult.data.agents['cursor']).toHaveLength(1);
+      expect(readResult.data.hooks).toHaveLength(1);
+    });
+
+    it('stores empty hooks array', async () => {
+      const mgr = new StateManager(tmpDir);
+      await mgr.updateHooks([
+        {
+          path: '.git/hooks/codi-secret-scan.mjs',
+          sourceHash: 'a',
+          generatedHash: 'b',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      await mgr.updateHooks([]);
+
+      const readResult = await mgr.read();
+      expect(readResult.ok).toBe(true);
+      if (!readResult.ok) return;
+      expect(readResult.data.hooks).toEqual([]);
+    });
+
+    it('updates lastGenerated timestamp', async () => {
+      const mgr = new StateManager(tmpDir);
+      const before = new Date().toISOString();
+
+      await mgr.updateHooks([
+        {
+          path: '.husky/pre-commit',
+          sourceHash: 'a',
+          generatedHash: 'b',
+          sources: ['hooks'],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const readResult = await mgr.read();
+      expect(readResult.ok).toBe(true);
+      if (!readResult.ok) return;
+      expect(readResult.data.lastGenerated).toBeDefined();
+      expect(readResult.data.lastGenerated! >= before).toBe(true);
+    });
   });
 });
