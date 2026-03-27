@@ -27,21 +27,4 @@ export function getBuiltinPresetNames(): string[] {
   return Object.keys(BUILTIN_PRESETS);
 }
 
-/**
- * Resolves a preset by name, merging parent flags if `extends` is set.
- * Returns the preset with all inherited flags resolved.
- */
-export function resolvePreset(name: string): BuiltinPresetDefinition | undefined {
-  const def = BUILTIN_PRESETS[name];
-  if (!def) return undefined;
-
-  if (!def.extends || !(def.extends in BUILTIN_PRESETS)) return def;
-
-  const parent = resolvePreset(def.extends);
-  if (!parent) return def;
-
-  const { extends: _, ...rest } = def;
-  return { ...rest, flags: { ...parent.flags, ...def.flags } };
-}
-
 export type { BuiltinPresetDefinition } from './types.js';

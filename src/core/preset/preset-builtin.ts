@@ -3,7 +3,7 @@ import type { Result } from '../../types/result.js';
 import type { NormalizedRule, NormalizedSkill, NormalizedAgent, McpConfig } from '../../types/config.js';
 import type { LoadedPreset } from './preset-loader.js';
 import type { BuiltinPresetDefinition } from '../../templates/presets/types.js';
-import { getBuiltinPresetDefinition, resolvePreset } from '../../templates/presets/index.js';
+import { getBuiltinPresetDefinition } from '../../templates/presets/index.js';
 import { loadTemplate } from '../scaffolder/template-loader.js';
 import { loadSkillTemplate } from '../scaffolder/skill-template-loader.js';
 import { loadAgentTemplate } from '../scaffolder/agent-template-loader.js';
@@ -19,7 +19,7 @@ export function isBuiltinPreset(name: string): boolean {
 
 /**
  * Materializes a built-in preset into a LoadedPreset.
- * Uses the unified registry — resolves inheritance via resolvePreset().
+ * Each preset is self-contained with all flags inline.
  */
 export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
   const definition = getBuiltinPresetDefinition(name);
@@ -31,8 +31,7 @@ export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
 }
 
 function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPreset> {
-  const resolved = resolvePreset(def.name);
-  const mergedFlags = resolved?.flags ?? def.flags;
+  const mergedFlags = def.flags;
 
   const rules = materializeRules(def.rules);
   const skills = materializeSkills(def.skills);

@@ -1,7 +1,8 @@
 import * as p from '@clack/prompts';
-import type { PresetName } from '../core/flags/flag-presets.js';
 import { DEFAULT_PRESET } from '../constants.js';
 import { getBuiltinPresetDefinition, BUILTIN_PRESETS } from '../templates/presets/index.js';
+import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
+import type { FlagDefinition } from '../types/flags.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
@@ -18,7 +19,8 @@ export interface WizardResult {
   skills: string[];
   agentTemplates: string[];
   commandTemplates: string[];
-  preset: PresetName;
+  preset: string;
+  flags?: Record<string, FlagDefinition>;
   versionPin: boolean;
 }
 
@@ -112,7 +114,7 @@ export async function runInitWizard(
       configMode: 'zip' as const,
       importSource: zipPath,
       rules: [], skills: [], agentTemplates: [], commandTemplates: [],
-      preset: DEFAULT_PRESET as PresetName,
+      preset: DEFAULT_PRESET,
       versionPin: true,
     };
   }
@@ -134,7 +136,7 @@ export async function runInitWizard(
       configMode: 'github' as const,
       importSource: repo,
       rules: [], skills: [], agentTemplates: [], commandTemplates: [],
-      preset: DEFAULT_PRESET as PresetName,
+      preset: DEFAULT_PRESET,
       versionPin: true,
     };
   }
@@ -146,6 +148,76 @@ export async function runInitWizard(
 
   // Step 3b: Custom selection path
   return handleCustomPath(agents);
+}
+
+async function editPresetFlags(
+  presetName: string,
+  flags: Record<string, FlagDefinition>,
+): Promise<Record<string, FlagDefinition> | null> {
+  const result = { ...flags };
+
+  // Show locked flags as info
+  const lockedEntries = Object.entries(flags).filter(([, def]) => def.locked);
+  if (lockedEntries.length > 0) {
+    p.log.info(`Locked flags: ${lockedEntries.map(([k, d]) => `${k}=${String(d.value)}`).join(', ')}`);
+  }
+
+  // Boolean flags — multiselect (selected = true, deselected = false)
+  const booleanKeys = Object.keys(flags).filter(
+    k => FLAG_CATALOG[k]?.type === 'boolean' && !flags[k]?.locked,
+  );
+  if (booleanKeys.length > 0) {
+    p.log.step(`Flags in "${presetName}" (modify to customize)`);
+    const selected = await p.multiselect({
+      message: 'Boolean flags (selected = enabled)',
+      options: booleanKeys.map(k => ({
+        label: `${k} — ${FLAG_CATALOG[k]!.description}`,
+        value: k,
+      })),
+      initialValues: booleanKeys.filter(k => flags[k]?.value === true),
+      required: false,
+    });
+    if (p.isCancel(selected)) { p.cancel('Operation cancelled.'); return null; }
+
+    const enabledSet = new Set(selected);
+    for (const key of booleanKeys) {
+      result[key] = { ...result[key]!, value: enabledSet.has(key) };
+    }
+  }
+
+  // Enum flags — individual selects
+  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
+    if (spec.type !== 'enum' || !spec.values || flags[key]?.locked || !flags[key]) continue;
+    const current = flags[key]!.value as string;
+    const enumVal = await p.select({
+      message: `${key} — ${spec.description}`,
+      options: spec.values.map(v => ({
+        label: v === current ? `${v} (current)` : v,
+        value: v,
+      })),
+    });
+    if (p.isCancel(enumVal)) { p.cancel('Operation cancelled.'); return null; }
+    result[key] = { ...result[key]!, value: enumVal };
+  }
+
+  // Number flags — text inputs
+  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
+    if (spec.type !== 'number' || flags[key]?.locked || !flags[key]) continue;
+    const current = flags[key]!.value as number;
+    const numVal = await p.text({
+      message: `${key} — ${spec.description}`,
+      initialValue: String(current),
+      validate: (v) => {
+        const n = Number(v);
+        if (isNaN(n) || !Number.isInteger(n)) return 'Must be an integer';
+        if (spec.min !== undefined && n < spec.min) return `Minimum: ${spec.min}`;
+      },
+    });
+    if (p.isCancel(numVal)) { p.cancel('Operation cancelled.'); return null; }
+    result[key] = { ...result[key]!, value: Number(numVal) };
+  }
+
+  return result;
 }
 
 async function handlePresetPath(agents: string[]): Promise<WizardResult | null> {
@@ -160,8 +232,12 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
   }
 
   const selectedPreset = presetName as string;
-  const flagPreset = getBasePresetName(selectedPreset);
   const presetDef = getBuiltinPresetDefinition(selectedPreset);
+  const originalFlags = { ...presetDef?.flags ?? {} };
+
+  // Step: Edit flags
+  const editedFlags = await editPresetFlags(selectedPreset, originalFlags);
+  if (!editedFlags) return null;
 
   // Pre-select the preset's artifacts so user can see and modify
   const presetRules = new Set(presetDef?.rules ?? []);
@@ -203,8 +279,10 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
   });
   if (p.isCancel(userCommands)) { p.cancel('Operation cancelled.'); return null; }
 
-  // Check if user modified the preset
-  const changed = !sameArrays(userRules, [...presetRules])
+  // Check if user modified the preset (artifacts or flags)
+  const flagsChanged = !sameFlagValues(editedFlags, originalFlags);
+  const changed = flagsChanged
+    || !sameArrays(userRules, [...presetRules])
     || !sameArrays(userSkills, [...presetSkills])
     || !sameArrays(userAgentTemplates, [...presetAgents])
     || !sameArrays(userCommands, [...presetCommands]);
@@ -241,7 +319,8 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
     skills: userSkills,
     agentTemplates: userAgentTemplates,
     commandTemplates: userCommands,
-    preset: flagPreset,
+    preset: selectedPreset,
+    flags: editedFlags,
     versionPin,
   };
 }
@@ -325,24 +404,17 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null> 
     skills,
     agentTemplates,
     commandTemplates,
-    preset: (preset ?? DEFAULT_PRESET) as PresetName,
+    preset: (preset ?? DEFAULT_PRESET) as string,
     versionPin,
   };
 }
 
-/**
- * Maps full preset names to their base flag preset.
- * python-web extends balanced, security-hardened extends strict, etc.
- */
 function sameArrays(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
   const setA = new Set(a);
   return b.every(item => setA.has(item));
 }
 
-function getBasePresetName(name: string): PresetName {
-  const def = BUILTIN_PRESETS[name];
-  if (!def) return DEFAULT_PRESET as PresetName;
-  if (!def.extends) return name as PresetName;
-  return getBasePresetName(def.extends);
+function sameFlagValues(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
 }

@@ -3,7 +3,6 @@ import {
   BUILTIN_PRESETS,
   getBuiltinPresetDefinition,
   getBuiltinPresetNames,
-  resolvePreset,
 } from '../../../../src/templates/presets/index.js';
 import { FLAG_CATALOG } from '../../../../src/core/flags/flag-catalog.js';
 
@@ -11,6 +10,8 @@ const ALL_PRESET_NAMES = [
   'minimal', 'balanced', 'strict',
   'python-web', 'typescript-fullstack', 'security-hardened', 'codi-development',
 ];
+
+const catalogKeys = Object.keys(FLAG_CATALOG).sort();
 
 describe('unified preset registry', () => {
   it('contains all 7 presets', () => {
@@ -34,48 +35,33 @@ describe('unified preset registry', () => {
 
   it('returns undefined for unknown preset', () => {
     expect(getBuiltinPresetDefinition('nonexistent')).toBeUndefined();
-    expect(resolvePreset('nonexistent')).toBeUndefined();
   });
 });
 
-describe('resolvePreset', () => {
-  const catalogKeys = Object.keys(FLAG_CATALOG).sort();
-
-  it('resolves base presets (no extends) with all 18 flags', () => {
-    for (const name of ['minimal', 'balanced', 'strict']) {
-      const resolved = resolvePreset(name);
-      expect(resolved).toBeDefined();
-      expect(Object.keys(resolved!.flags).sort()).toEqual(catalogKeys);
+describe('flat preset flags', () => {
+  it('each preset has all 18 flags inline', () => {
+    for (const name of ALL_PRESET_NAMES) {
+      const def = BUILTIN_PRESETS[name]!;
+      expect(Object.keys(def.flags).sort()).toEqual(catalogKeys);
     }
   });
 
-  it('resolves extended presets with all 18 flags after inheritance', () => {
-    for (const name of ['python-web', 'typescript-fullstack', 'security-hardened', 'codi-development']) {
-      const resolved = resolvePreset(name);
-      expect(resolved).toBeDefined();
-      expect(Object.keys(resolved!.flags).sort()).toEqual(catalogKeys);
+  it('no preset has an extends field', () => {
+    for (const name of ALL_PRESET_NAMES) {
+      const def = BUILTIN_PRESETS[name]!;
+      expect('extends' in def).toBe(false);
     }
   });
 
-  it('child flag overrides win over parent flags', () => {
-    const pythonWeb = resolvePreset('python-web');
-    expect(pythonWeb).toBeDefined();
-    // python-web extends balanced and overrides type_checking to enforced
-    expect(pythonWeb!.flags['type_checking']!.mode).toBe('enforced');
-    // balanced has type_checking as enabled
-    const balanced = resolvePreset('balanced');
-    expect(balanced!.flags['type_checking']!.mode).toBe('enabled');
+  it('python-web has enforced type_checking', () => {
+    const def = BUILTIN_PRESETS['python-web']!;
+    expect(def.flags['type_checking']!.mode).toBe('enforced');
   });
 
-  it('resolved preset does not contain extends field', () => {
-    const resolved = resolvePreset('codi-development');
-    expect(resolved).toBeDefined();
-    expect('extends' in resolved!).toBe(false);
-  });
-
-  it('base presets resolve to themselves', () => {
-    const balanced = resolvePreset('balanced');
-    const raw = BUILTIN_PRESETS['balanced']!;
-    expect(balanced!.flags).toEqual(raw.flags);
+  it('security-hardened has locked flags', () => {
+    const def = BUILTIN_PRESETS['security-hardened']!;
+    expect(def.flags['security_scan']!.locked).toBe(true);
+    expect(def.flags['allow_shell_commands']!.locked).toBe(true);
+    expect(def.flags['allow_file_deletion']!.locked).toBe(true);
   });
 });

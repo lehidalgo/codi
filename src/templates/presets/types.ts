@@ -8,7 +8,6 @@ export interface BuiltinPresetDefinition {
   name: string;
   description: string;
   version: string;
-  extends?: string;
   author: string;
   tags: string[];
   compatibility: {

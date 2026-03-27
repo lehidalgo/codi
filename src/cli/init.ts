@@ -9,7 +9,7 @@ import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import type { FlagDefinition } from '../types/flags.js';
 import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
-import { resolvePreset } from '../templates/presets/index.js';
+import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
@@ -107,7 +107,7 @@ export async function initHandler(
   registerAllAdapters();
 
   let agentIds: string[];
-  let presetName: PresetName = (options.preset as PresetName) ?? DEFAULT_PRESET;
+  let presetName: string = (options.preset as string) ?? DEFAULT_PRESET;
   let displayPresetName: string = presetName;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
@@ -144,7 +144,7 @@ export async function initHandler(
       commandTemplates = wizardResult.commandTemplates;
     }
 
-    await createCodiStructure(codiDir, agentIds, presetName, wizardResult.versionPin, wizardResult.selectedPresetName);
+    await createCodiStructure(codiDir, agentIds, wizardResult.selectedPresetName ?? presetName, wizardResult.versionPin, wizardResult.flags);
 
     // Handle import sources (ZIP/GitHub)
     if (wizardResult.importSource) {
@@ -338,9 +338,9 @@ function inferHookType(filePath: string): 'pre-commit' | 'commit-msg' | 'secret-
 async function createCodiStructure(
   codiDir: string,
   agents: string[],
-  preset: PresetName,
+  presetName: string,
   versionPin: boolean,
-  extendedPresetName?: string,
+  flagOverrides?: Record<string, FlagDefinition>,
 ): Promise<void> {
   const dirs = [
     codiDir,
@@ -367,8 +367,8 @@ async function createCodiStructure(
     'utf-8',
   );
 
-  const resolved = resolvePreset(extendedPresetName ?? preset);
-  const mergedFlags: Record<string, FlagDefinition> = resolved?.flags ?? getPreset(preset);
+  const presetDef = getBuiltinPresetDefinition(presetName);
+  const mergedFlags: Record<string, FlagDefinition> = flagOverrides ?? presetDef?.flags ?? getPreset(DEFAULT_PRESET as PresetName);
 
   const flagsObj: Record<string, unknown> = {};
   for (const [key, def] of Object.entries(mergedFlags)) {
