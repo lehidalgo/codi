@@ -23,6 +23,14 @@ export function buildVerificationSection(data: VerificationData): string {
   lines.push(`- Generated: ${data.timestamp}`);
   lines.push('');
   lines.push('When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.');
+  lines.push('');
+  lines.push('### Artifact Improvement');
+  lines.push('');
+  lines.push('When you observe recurring patterns not covered by current rules or skills:');
+  lines.push('1. Propose the improvement with evidence (2+ occurrences in the codebase)');
+  lines.push('2. If approved, write to `.codi/rules/custom/` or `.codi/skills/`');
+  lines.push('3. Run `codi generate` to propagate changes');
+  lines.push('4. Use `/compare-preset` to review local improvements vs upstream Codi');
 
   return lines.join('\n');
 }

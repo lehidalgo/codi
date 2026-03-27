@@ -43,11 +43,13 @@ export const preset: BuiltinPresetDefinition = {
     'security',
     'testing',
     'performance',
+    'codi-improvement',
   ],
   skills: [
     'code-review',
     'commit',
     'security-scan',
+    'compare-preset',
     'codebase-onboarding',
     'documentation',
     'refactoring',
