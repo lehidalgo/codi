@@ -32,7 +32,7 @@ export const preset: BuiltinPresetDefinition = {
   },
   rules: ['python', 'security', 'api-design', 'testing', 'error-handling'],
   skills: ['code-review', 'security-scan', 'e2e-testing'],
-  agents: ['code-reviewer', 'security-analyzer', 'test-generator'],
-  commands: [],
+  agents: ['code-reviewer', 'security-analyzer', 'test-generator', 'python-expert'],
+  commands: ['check'],
   mcpServers: [],
 };
