@@ -120,7 +120,12 @@ async function installHusky(
 ): Promise<Result<HookInstallResult>> {
   const huskyFile = path.join(projectRoot, '.husky', 'pre-commit');
 
-  const commands = hooks.map((h) => h.command).join('\n');
+  const commands = hooks.map((h) => {
+    if (h.stagedFilter) {
+      return `${h.command} $(git diff --cached --name-only --diff-filter=ACMR)`;
+    }
+    return h.command;
+  }).join('\n');
   const block = `\n# Codi hooks\n${commands}\n`;
 
   try {

@@ -82,9 +82,24 @@ describe('installHooks', () => {
     expect(content).toContain('# Codi hooks');
     expect(content).toContain('eslint --fix');
     expect(content).toContain('prettier --write');
+    // Hooks with stagedFilter should include git diff to pass staged files
+    expect(content).toContain('$(git diff --cached --name-only --diff-filter=ACMR)');
     if (result.ok) {
       expect(result.data.files).toContain(path.join('.husky', 'pre-commit'));
     }
+  });
+
+  it('does not append git diff for husky hooks without stagedFilter', async () => {
+    await fs.mkdir(path.join(tmpDir, '.husky'), { recursive: true });
+    const noFilterHooks: HookEntry[] = [
+      { name: 'version-check', command: 'node .git/hooks/codi-version-check.mjs', stagedFilter: '' },
+    ];
+
+    await installHooks(baseOptions({ runner: 'husky', hooks: noFilterHooks }));
+
+    const content = await fs.readFile(path.join(tmpDir, '.husky', 'pre-commit'), 'utf-8');
+    expect(content).toContain('node .git/hooks/codi-version-check.mjs');
+    expect(content).not.toContain('$(git diff');
   });
 
   it('replaces existing codi section instead of appending duplicates', async () => {
