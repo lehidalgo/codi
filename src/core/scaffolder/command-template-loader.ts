@@ -12,6 +12,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   'onboard': commandTemplates.onboard,
   'docs-lookup': commandTemplates.docsLookup,
   'commit': commandTemplates.commit,
+  'session-handoff': commandTemplates.sessionHandoff,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);

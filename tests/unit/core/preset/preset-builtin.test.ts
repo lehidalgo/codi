@@ -42,6 +42,7 @@ describe('materializeBuiltinPreset', () => {
       expect(result.data.name).toBe('python-web');
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
+      expect(Object.keys(result.data.flags).length).toBe(18);
     }
   });
 
