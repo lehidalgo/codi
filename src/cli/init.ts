@@ -16,6 +16,7 @@ import { createRule } from '../core/scaffolder/rule-scaffolder.js';
 import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
 import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
 import { createCommand } from '../core/scaffolder/command-scaffolder.js';
+import { createMcpServer } from '../core/scaffolder/mcp-scaffolder.js';
 // Preset artifact lookup moved to init-wizard.ts
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
@@ -113,6 +114,7 @@ export async function initHandler(
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
   let commandTemplates: string[] = [];
+  let mcpServerTemplates: string[] = [];
 
   if (isInteractive(options)) {
     const detectedAdapters = await detectAdapters(projectRoot);
@@ -142,6 +144,7 @@ export async function initHandler(
       skillTemplates = wizardResult.skills;
       agentTemplates = wizardResult.agentTemplates;
       commandTemplates = wizardResult.commandTemplates;
+      mcpServerTemplates = wizardResult.mcpServers;
     }
 
     await createCodiStructure(codiDir, agentIds, wizardResult.selectedPresetName ?? presetName, wizardResult.versionPin, wizardResult.flags);
@@ -168,6 +171,7 @@ export async function initHandler(
           skills: wizardResult.skills,
           agents: wizardResult.agentTemplates,
           commands: wizardResult.commandTemplates,
+          mcpServers: wizardResult.mcpServers,
         },
       }), 'utf8');
       log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
@@ -246,6 +250,13 @@ export async function initHandler(
     }
   }
 
+  for (const template of mcpServerTemplates) {
+    const result = await createMcpServer({ name: template, codiDir, template });
+    if (!result.ok) {
+      log.warn(`Failed to create MCP server "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+    }
+  }
+
   let generated = false;
   const configResult = await resolveConfig(projectRoot);
   if (configResult.ok) {
@@ -306,7 +317,7 @@ export async function initHandler(
       stack,
       codiVersion: VERSION,
     });
-    if (ruleTemplates.length > 0 || skillTemplates.length > 0 || agentTemplates.length > 0 || commandTemplates.length > 0) {
+    if (ruleTemplates.length > 0 || skillTemplates.length > 0 || agentTemplates.length > 0 || commandTemplates.length > 0 || mcpServerTemplates.length > 0) {
       await ledger.setActivePreset({
         name: displayPresetName,
         installedAt: now,
@@ -315,6 +326,7 @@ export async function initHandler(
           skills: skillTemplates,
           agents: agentTemplates,
           commands: commandTemplates,
+          mcpServers: mcpServerTemplates,
         },
       });
     }
@@ -364,6 +376,8 @@ async function createCodiStructure(
     path.join(codiDir, 'rules', 'generated', 'common'),
     path.join(codiDir, 'rules', 'custom'),
     path.join(codiDir, 'skills'),
+    path.join(codiDir, 'mcp-servers', 'generated'),
+    path.join(codiDir, 'mcp-servers', 'custom'),
     path.join(codiDir, 'frameworks'),
   ];
   for (const dir of dirs) {

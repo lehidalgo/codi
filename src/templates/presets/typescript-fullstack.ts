@@ -34,4 +34,5 @@ export const preset: BuiltinPresetDefinition = {
   skills: ['code-review', 'e2e-testing', 'refactoring'],
   agents: ['code-reviewer', 'test-generator'],
   commands: [],
+  mcpServers: [],
 };

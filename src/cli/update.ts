@@ -18,6 +18,7 @@ import { loadTemplate, AVAILABLE_TEMPLATES } from '../core/scaffolder/template-l
 import { loadSkillTemplate, AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { loadAgentTemplate, AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
 import { loadCommandTemplate, AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
+import { loadMcpServerTemplate, AVAILABLE_MCP_SERVER_TEMPLATES } from '../core/scaffolder/mcp-template-loader.js';
 import { createCommandResult } from '../core/output/formatter.js';
 import { EXIT_CODES } from '../core/output/exit-codes.js';
 import { Logger } from '../core/output/logger.js';
@@ -36,6 +37,7 @@ interface UpdateOptions extends GlobalOptions {
   skills?: boolean;
   agents?: boolean;
   commands?: boolean;
+  mcpServers?: boolean;
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
 }
@@ -52,6 +54,8 @@ interface UpdateData {
   agentsSkipped: string[];
   commandsUpdated: string[];
   commandsSkipped: string[];
+  mcpServersUpdated: string[];
+  mcpServersSkipped: string[];
   sourceUpdated: string[];
   regenerated: boolean;
 }
@@ -270,6 +274,65 @@ async function refreshManagedCommands(
   return { updated, skipped };
 }
 
+async function refreshManagedMcpServers(
+  codiDir: string,
+  dryRun: boolean,
+  log: Logger,
+): Promise<{ updated: string[]; skipped: string[] }> {
+  const generatedDir = path.join(codiDir, 'mcp-servers', 'generated');
+  const updated: string[] = [];
+  const skipped: string[] = [];
+
+  let entries: string[];
+  try {
+    entries = await fs.readdir(generatedDir);
+  } catch {
+    return { updated, skipped };
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith('.yaml')) continue;
+    const filePath = path.join(generatedDir, entry);
+    const raw = await fs.readFile(filePath, 'utf8');
+    const parsed = parseYaml(raw) as Record<string, unknown>;
+    const managedBy = parsed['managed_by'] as string | undefined;
+
+    if (managedBy !== 'codi') {
+      skipped.push(entry.replace('.yaml', ''));
+      continue;
+    }
+
+    const serverName = (parsed['name'] as string) ?? entry.replace('.yaml', '');
+    if (!AVAILABLE_MCP_SERVER_TEMPLATES.includes(serverName)) {
+      skipped.push(serverName);
+      continue;
+    }
+
+    const templateResult = loadMcpServerTemplate(serverName);
+    if (!templateResult.ok) continue;
+
+    const tmpl = templateResult.data;
+    const yamlObj: Record<string, unknown> = {
+      name: tmpl.name,
+      managed_by: 'codi',
+      ...(tmpl.type && { type: tmpl.type }),
+      ...(tmpl.command && { command: tmpl.command }),
+      ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
+      ...(tmpl.env && Object.keys(tmpl.env).length > 0 && { env: tmpl.env }),
+      ...(tmpl.url && { url: tmpl.url }),
+      ...(tmpl.headers && Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
+    };
+
+    if (!dryRun) {
+      await fs.writeFile(filePath, stringifyYaml(yamlObj), 'utf-8');
+    }
+    updated.push(serverName);
+    log.info(`${dryRun ? 'Would update' : 'Updated'} MCP server: ${serverName}`);
+  }
+
+  return { updated, skipped };
+}
+
 async function pullFromSource(
   repo: string,
   codiDir: string,
@@ -354,7 +417,7 @@ export async function updateHandler(
     return createCommandResult({
       success: false,
       command: 'update',
-      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], sourceUpdated: [], regenerated: false },
+      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], mcpServersUpdated: [], mcpServersSkipped: [], sourceUpdated: [], regenerated: false },
       errors: [{
         code: 'E_CONFIG_NOT_FOUND',
         message: 'No .codi/flags.yaml found. Run `codi init` first.',
@@ -376,7 +439,7 @@ export async function updateHandler(
       return createCommandResult({
         success: false,
         command: 'update',
-        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], sourceUpdated: [], regenerated: false },
+        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], mcpServersUpdated: [], mcpServersSkipped: [], sourceUpdated: [], regenerated: false },
         errors: [{
           code: 'E_CONFIG_INVALID',
           message: `Invalid preset "${presetName}". Available: ${validPresets.join(', ')}`,
@@ -445,6 +508,14 @@ export async function updateHandler(
     commandsSkipped = result.skipped;
   }
 
+  let mcpServersUpdated: string[] = [];
+  let mcpServersSkipped: string[] = [];
+  if (options.mcpServers) {
+    const result = await refreshManagedMcpServers(codiDir, options.dryRun ?? false, log);
+    mcpServersUpdated = result.updated;
+    mcpServersSkipped = result.skipped;
+  }
+
   let sourceUpdated: string[] = [];
   if (options.from) {
     sourceUpdated = await pullFromSource(options.from, codiDir, options.dryRun ?? false, log);
@@ -472,6 +543,7 @@ export async function updateHandler(
         skillsUpdated,
         agentsUpdated,
         commandsUpdated,
+        mcpServersUpdated,
         regenerated,
       },
     });
@@ -484,6 +556,7 @@ export async function updateHandler(
         details: {
           flagsAdded, flagsReset, preset: presetName ?? null,
           rulesUpdated, skillsUpdated, agentsUpdated, commandsUpdated,
+          mcpServersUpdated,
           regenerated,
         },
       });
@@ -495,7 +568,7 @@ export async function updateHandler(
   return createCommandResult({
     success: true,
     command: 'update',
-    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, commandsUpdated, commandsSkipped, sourceUpdated, regenerated },
+    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, commandsUpdated, commandsSkipped, mcpServersUpdated, mcpServersSkipped, sourceUpdated, regenerated },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
@@ -510,6 +583,7 @@ export function registerUpdateCommand(program: Command): void {
     .option('--skills', 'Refresh template-managed skills to latest versions')
     .option('--agents', 'Refresh template-managed agents to latest versions')
     .option('--commands', 'Refresh template-managed commands to latest versions')
+    .option('--mcp-servers', 'Refresh template-managed MCP servers to latest versions')
     .option('--dry-run', 'Show what would change without writing')
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;

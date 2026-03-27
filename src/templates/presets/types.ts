@@ -23,4 +23,6 @@ export interface BuiltinPresetDefinition {
   agents: string[];
   /** Command template names to include (from src/templates/commands/) */
   commands: string[];
+  /** MCP server template names to include (from src/templates/mcp-servers/) */
+  mcpServers?: string[];
 }
