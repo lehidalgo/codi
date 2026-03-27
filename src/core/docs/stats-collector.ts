@@ -4,7 +4,6 @@ import { AVAILABLE_AGENT_TEMPLATES } from '../scaffolder/agent-template-loader.j
 import { AVAILABLE_COMMAND_TEMPLATES } from '../scaffolder/command-template-loader.js';
 import { FLAG_CATALOG } from '../flags/flag-catalog.js';
 import { ERROR_CATALOG } from '../output/error-catalog.js';
-import { getPresetNames } from '../flags/flag-presets.js';
 import { getBuiltinPresetNames } from '../../templates/presets/index.js';
 import { ALL_ADAPTERS } from '../../adapters/index.js';
 
@@ -27,7 +26,7 @@ export function collectStats(): ProjectStats {
     agents: { count: AVAILABLE_AGENT_TEMPLATES.length, names: [...AVAILABLE_AGENT_TEMPLATES] },
     commands: { count: AVAILABLE_COMMAND_TEMPLATES.length, names: [...AVAILABLE_COMMAND_TEMPLATES] },
     flags: { count: Object.keys(FLAG_CATALOG).length, names: Object.keys(FLAG_CATALOG) },
-    presets: { count: getPresetNames().length + getBuiltinPresetNames().length, names: [...getPresetNames(), ...getBuiltinPresetNames()] },
+    presets: { count: getBuiltinPresetNames().length, names: [...getBuiltinPresetNames()] },
     errorCodes: Object.keys(ERROR_CATALOG).length,
     cliCommands: 17, // TODO: derive from command registry when available
     adapters: ALL_ADAPTERS.length,

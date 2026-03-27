@@ -6,6 +6,8 @@ export function buildFlagInstructions(flags: ResolvedFlags): string {
   const shellFlag = flags['allow_shell_commands'];
   if (shellFlag && shellFlag.value === false) {
     lines.push('Do NOT execute shell commands.');
+  } else if (shellFlag && shellFlag.value === true) {
+    lines.push('Shell commands are allowed.');
   }
 
   const deleteFlag = flags['allow_file_deletion'];

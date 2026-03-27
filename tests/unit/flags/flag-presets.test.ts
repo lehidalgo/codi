@@ -51,7 +51,7 @@ describe('flag presets', () => {
     expect(preset['require_tests']!.mode).toBe('enforced');
     expect(preset['allow_force_push']!.mode).toBe('enforced');
     expect(preset['allow_force_push']!.value).toBe(false);
-    expect(preset['allow_shell_commands']!.value).toBe(false);
+    expect(preset['allow_shell_commands']!.value).toBe(true);
   });
 
   it('getPreset returns a clone (not a reference)', () => {

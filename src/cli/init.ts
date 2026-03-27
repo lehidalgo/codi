@@ -9,7 +9,7 @@ import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import type { FlagDefinition } from '../types/flags.js';
 import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
-import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
+import { resolvePreset } from '../templates/presets/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
@@ -367,16 +367,8 @@ async function createCodiStructure(
     'utf-8',
   );
 
-  const baseFlags = getPreset(preset);
-
-  // Merge extended preset flag overrides on top of base flags
-  let mergedFlags: Record<string, FlagDefinition> = baseFlags;
-  if (extendedPresetName) {
-    const extDef = getBuiltinPresetDefinition(extendedPresetName);
-    if (extDef?.flags && Object.keys(extDef.flags).length > 0) {
-      mergedFlags = { ...baseFlags, ...extDef.flags };
-    }
-  }
+  const resolved = resolvePreset(extendedPresetName ?? preset);
+  const mergedFlags: Record<string, FlagDefinition> = resolved?.flags ?? getPreset(preset);
 
   const flagsObj: Record<string, unknown> = {};
   for (const [key, def] of Object.entries(mergedFlags)) {
