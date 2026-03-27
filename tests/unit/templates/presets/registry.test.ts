@@ -9,12 +9,13 @@ import { FLAG_CATALOG } from '../../../../src/core/flags/flag-catalog.js';
 const ALL_PRESET_NAMES = [
   'minimal', 'balanced', 'strict',
   'python-web', 'typescript-fullstack', 'security-hardened', 'codi-development',
+  'power-user', 'data-ml',
 ];
 
 const catalogKeys = Object.keys(FLAG_CATALOG).sort();
 
 describe('unified preset registry', () => {
-  it('contains all 7 presets', () => {
+  it('contains all 9 presets', () => {
     expect(getBuiltinPresetNames().sort()).toEqual(ALL_PRESET_NAMES.sort());
   });
 

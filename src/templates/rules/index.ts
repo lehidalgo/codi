@@ -21,3 +21,6 @@ export { template as django } from './django.js';
 export { template as springBoot } from './spring-boot.js';
 export { template as productionMindset } from './production-mindset.js';
 export { template as simplicityFirst } from './simplicity-first.js';
+export { template as workflow } from './workflow.js';
+export { template as spanishOrthography } from './spanish-orthography.js';
+export { template as agentUsage } from './agent-usage.js';
