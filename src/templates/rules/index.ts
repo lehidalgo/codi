@@ -24,3 +24,4 @@ export { template as simplicityFirst } from './simplicity-first.js';
 export { template as workflow } from './workflow.js';
 export { template as spanishOrthography } from './spanish-orthography.js';
 export { template as agentUsage } from './agent-usage.js';
+export { template as codiImprovement } from './codi-improvement.js';
