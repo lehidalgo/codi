@@ -53,12 +53,12 @@ describe('init command handler', () => {
     expect(result.success).toBe(true);
   });
 
-  it('detects node stack when package.json exists', async () => {
+  it('detects javascript stack when package.json exists', async () => {
     await fs.writeFile(path.join(tmpDir, 'package.json'), '{}', 'utf-8');
 
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
-    expect(result.data.stack).toContain('node');
+    expect(result.data.stack).toContain('javascript');
   });
 
   it('detects python stack when pyproject.toml exists', async () => {
@@ -75,7 +75,7 @@ describe('init command handler', () => {
 
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
-    expect(result.data.stack).toContain('node');
+    expect(result.data.stack).toContain('javascript');
     expect(result.data.stack).toContain('python');
   });
 

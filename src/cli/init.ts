@@ -28,6 +28,7 @@ import { detectHookSetup } from '../core/hooks/hook-detector.js';
 import { generateHooksConfig } from '../core/hooks/hook-config-generator.js';
 import { installHooks } from '../core/hooks/hook-installer.js';
 import { checkHookDependencies } from '../core/hooks/hook-dependency-checker.js';
+import { detectStack } from '../core/hooks/stack-detector.js';
 import type { GlobalOptions } from './shared.js';
 import { VERSION } from '../index.js';
 import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
@@ -48,25 +49,6 @@ interface InitData {
   rules: string[];
 }
 
-const STACK_INDICATORS: Record<string, string> = {
-  'package.json': 'node',
-  'pyproject.toml': 'python',
-  'go.mod': 'go',
-  'Cargo.toml': 'rust',
-};
-
-async function detectStack(projectRoot: string): Promise<string[]> {
-  const detected: string[] = [];
-  for (const [file, stack] of Object.entries(STACK_INDICATORS)) {
-    try {
-      await fs.access(path.join(projectRoot, file));
-      detected.push(stack);
-    } catch {
-      // File not found, skip
-    }
-  }
-  return detected;
-}
 
 function isInteractive(options: InitOptions): boolean {
   return !options.json && !options.quiet && !options.agents;

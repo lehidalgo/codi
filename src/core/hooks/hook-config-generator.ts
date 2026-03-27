@@ -93,7 +93,7 @@ export function generateHooksConfig(
   if (testBeforeCommit) {
     const testHooks = getTestHooksForLanguages(languages);
     for (const hook of testHooks) {
-      const alreadyAdded = allHooks.some((h) => h.name === hook.name);
+      const alreadyAdded = allHooks.some((h) => h.name === hook.name || h.command === hook.command);
       if (!alreadyAdded) {
         allHooks.push(hook);
       }
