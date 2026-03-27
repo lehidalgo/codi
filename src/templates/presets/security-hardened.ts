@@ -14,7 +14,7 @@ export const preset: BuiltinPresetDefinition = {
   flags: {
     security_scan: { mode: 'enforced', value: true, locked: true },
     type_checking: { mode: 'enforced', value: 'strict', locked: true },
-    allow_shell_commands: { mode: 'enforced', value: false, locked: true },
+    allow_shell_commands: { mode: 'enforced', value: true, locked: true },
     allow_file_deletion: { mode: 'enforced', value: false, locked: true },
     allow_force_push: { mode: 'enforced', value: false, locked: true },
     require_pr_review: { mode: 'enforced', value: true, locked: true },

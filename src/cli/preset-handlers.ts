@@ -20,8 +20,7 @@ import {
 import { parsePresetIdentifier, extractPresetName } from '../core/preset/preset-resolver.js';
 import { installPresetFromZip, createPresetZip } from '../core/preset/preset-zip.js';
 import { validatePreset } from '../core/preset/preset-validator.js';
-import { getBuiltinPresetNames } from '../templates/presets/index.js';
-import { PRESET_DESCRIPTIONS, getPresetNames as getFlagPresetNames } from '../core/flags/flag-presets.js';
+import { getBuiltinPresetNames, BUILTIN_PRESETS } from '../templates/presets/index.js';
 import { presetInstallHandler } from './preset.js';
 import type { PresetData } from './preset.js';
 import { printBanner } from './shared.js';
@@ -278,13 +277,9 @@ export async function presetListEnhancedHandler(
   const presets: Array<{ name: string; description: string; sourceType?: string }> = [];
 
   if (showBuiltin) {
-    for (const name of getFlagPresetNames()) {
-      presets.push({ name, description: PRESET_DESCRIPTIONS[name] ?? '', sourceType: 'builtin' });
-    }
     for (const name of getBuiltinPresetNames()) {
-      if (!presets.some(pr => pr.name === name)) {
-        presets.push({ name, description: `Built-in ${name} preset`, sourceType: 'builtin' });
-      }
+      const def = BUILTIN_PRESETS[name];
+      presets.push({ name, description: def?.description ?? '', sourceType: 'builtin' });
     }
   }
 

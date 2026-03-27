@@ -77,6 +77,14 @@ describe('buildFlagInstructions', () => {
     expect(result).toContain('32000 tokens');
   });
 
+  it('generates positive instruction for allow_shell_commands: true', () => {
+    const flags: ResolvedFlags = {
+      allow_shell_commands: makeFlag(true),
+    };
+    const result = buildFlagInstructions(flags);
+    expect(result).toContain('Shell commands are allowed');
+  });
+
   it('combines multiple flag instructions', () => {
     const flags: ResolvedFlags = {
       allow_shell_commands: makeFlag(false),
