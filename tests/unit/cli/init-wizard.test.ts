@@ -24,6 +24,36 @@ vi.mock('@clack/prompts', () => ({
 
 import * as p from '@clack/prompts';
 import { runInitWizard } from '../../../src/cli/init-wizard.js';
+import { getBuiltinPresetDefinition } from '../../../src/templates/presets/index.js';
+import { FLAG_CATALOG } from '../../../src/core/flags/flag-catalog.js';
+
+/**
+ * Mock the flag editing prompts that editPresetFlags() makes:
+ * 1 multiselect (booleans) + N selects (enums) + N texts (numbers)
+ * Returns the default values so flags appear unchanged.
+ */
+function mockFlagEditing(presetName: string): void {
+  const presetDef = getBuiltinPresetDefinition(presetName);
+  const flags = presetDef?.flags ?? {};
+
+  // Boolean multiselect: return keys where value is true and not locked
+  const booleanTrueKeys = Object.keys(flags).filter(
+    k => FLAG_CATALOG[k]?.type === 'boolean' && !flags[k]?.locked && flags[k]?.value === true,
+  );
+  vi.mocked(p.multiselect).mockResolvedValueOnce(booleanTrueKeys as never);
+
+  // Enum selects: return current value for each
+  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
+    if (spec.type !== 'enum' || !spec.values || flags[key]?.locked || !flags[key]) continue;
+    vi.mocked(p.select).mockResolvedValueOnce(flags[key]!.value as never);
+  }
+
+  // Number texts: return current value as string
+  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
+    if (spec.type !== 'number' || flags[key]?.locked || !flags[key]) continue;
+    vi.mocked(p.text).mockResolvedValueOnce(String(flags[key]!.value) as never);
+  }
+}
 
 describe('runInitWizard', () => {
   beforeEach(() => {
@@ -73,7 +103,6 @@ describe('runInitWizard', () => {
   });
 
   it('returns custom config with artifact selections', async () => {
-    // Step 1: agent selection
     vi.mocked(p.multiselect)
       .mockResolvedValueOnce(['claude-code'] as never)    // agents
       .mockResolvedValueOnce(['security'] as never)        // rules
@@ -101,8 +130,6 @@ describe('runInitWizard', () => {
   });
 
   it('returns preset config when preset mode selected without modifications', async () => {
-    // Need to get the preset definition to know what initialValues will be
-    const { getBuiltinPresetDefinition } = await import('../../../src/templates/presets/index.js');
     const presetDef = getBuiltinPresetDefinition('balanced');
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
@@ -110,19 +137,25 @@ describe('runInitWizard', () => {
     const presetCommands = presetDef?.commands ?? [];
 
     // Step 1: agent selection
-    vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(['claude-code'] as never)     // agents
-      .mockResolvedValueOnce(presetRules as never)         // rules (same as preset)
-      .mockResolvedValueOnce(presetSkills as never)        // skills (same as preset)
-      .mockResolvedValueOnce(presetAgents as never)        // agents (same as preset)
-      .mockResolvedValueOnce(presetCommands as never);     // commands (same as preset)
+    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
 
+    // Step 2: config mode + preset choice
     vi.mocked(p.select)
-      .mockResolvedValueOnce('preset' as never)            // config mode
-      .mockResolvedValueOnce('balanced' as never);         // preset choice
+      .mockResolvedValueOnce('preset' as never)
+      .mockResolvedValueOnce('balanced' as never);
 
-    vi.mocked(p.confirm)
-      .mockResolvedValueOnce(false as never);              // version pin
+    // Step 3: flag editing (return defaults — no changes)
+    mockFlagEditing('balanced');
+
+    // Step 4: artifact editing (return same as preset — no changes)
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(presetRules as never)
+      .mockResolvedValueOnce(presetSkills as never)
+      .mockResolvedValueOnce(presetAgents as never)
+      .mockResolvedValueOnce(presetCommands as never);
+
+    // Step 5: version pin
+    vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
 
     const result = await runInitWizard([], [], ['claude-code']);
 
@@ -132,30 +165,33 @@ describe('runInitWizard', () => {
   });
 
   it('prompts save-as-preset when preset artifacts are modified', async () => {
-    // Get actual preset artifacts to ensure we're really different
-    const { getBuiltinPresetDefinition } = await import('../../../src/templates/presets/index.js');
     const presetDef = getBuiltinPresetDefinition('strict');
     const presetRules = presetDef?.rules ?? [];
-
-    // Remove one rule to ensure it's "modified"
     const modifiedRules = presetRules.length > 0 ? presetRules.slice(1) : ['extra-rule'];
 
-    vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(['claude-code'] as never)     // agents
-      .mockResolvedValueOnce(modifiedRules as never)       // rules (different = modified)
-      .mockResolvedValueOnce(presetDef?.skills ?? [] as never) // skills (same)
-      .mockResolvedValueOnce(presetDef?.agents ?? [] as never) // agents (same)
-      .mockResolvedValueOnce(presetDef?.commands ?? [] as never); // commands (same)
+    // Step 1: agent selection
+    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
 
+    // Step 2: config mode + preset choice
     vi.mocked(p.select)
       .mockResolvedValueOnce('preset' as never)
       .mockResolvedValueOnce('strict' as never);
 
-    vi.mocked(p.text)
-      .mockResolvedValueOnce('my-custom-preset' as never); // save name
+    // Step 3: flag editing (return defaults)
+    mockFlagEditing('strict');
 
-    vi.mocked(p.confirm)
-      .mockResolvedValueOnce(true as never);               // version pin
+    // Step 4: artifacts (modified rules)
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(modifiedRules as never)
+      .mockResolvedValueOnce(presetDef?.skills ?? [] as never)
+      .mockResolvedValueOnce(presetDef?.agents ?? [] as never)
+      .mockResolvedValueOnce(presetDef?.commands ?? [] as never);
+
+    // Step 5: save-as-preset name
+    vi.mocked(p.text).mockResolvedValueOnce('my-custom-preset' as never);
+
+    // Step 6: version pin
+    vi.mocked(p.confirm).mockResolvedValueOnce(true as never);
 
     const result = await runInitWizard([], [], ['claude-code']);
 
@@ -164,32 +200,33 @@ describe('runInitWizard', () => {
     expect(result!.saveAsPreset).toBe('my-custom-preset');
   });
 
-  it('maps python-web preset to balanced base', async () => {
-    const { getBuiltinPresetDefinition } = await import('../../../src/templates/presets/index.js');
+  it('returns selected preset name directly (no base mapping)', async () => {
     const presetDef = getBuiltinPresetDefinition('python-web');
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
     const presetCommands = presetDef?.commands ?? [];
 
-    vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(['claude-code'] as never)
-      .mockResolvedValueOnce(presetRules as never)
-      .mockResolvedValueOnce(presetSkills as never)
-      .mockResolvedValueOnce(presetAgents as never)
-      .mockResolvedValueOnce(presetCommands as never);
+    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
 
     vi.mocked(p.select)
       .mockResolvedValueOnce('preset' as never)
       .mockResolvedValueOnce('python-web' as never);
 
-    vi.mocked(p.confirm)
-      .mockResolvedValueOnce(false as never);
+    mockFlagEditing('python-web');
+
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(presetRules as never)
+      .mockResolvedValueOnce(presetSkills as never)
+      .mockResolvedValueOnce(presetAgents as never)
+      .mockResolvedValueOnce(presetCommands as never);
+
+    vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
 
     const result = await runInitWizard([], [], ['claude-code']);
 
     expect(result).not.toBeNull();
-    expect(result!.preset).toBe('balanced');
+    expect(result!.preset).toBe('python-web');
   });
 
   it('returns null when configMode is cancelled', async () => {

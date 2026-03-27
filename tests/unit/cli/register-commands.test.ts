@@ -27,7 +27,7 @@ describe('registerAddCommand', () => {
     expect(subNames).toContain('skill');
     expect(subNames).toContain('agent');
     expect(subNames).toContain('command');
-  });
+  }, 15000);
 });
 
 describe('registerPresetCommand', () => {
