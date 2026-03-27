@@ -9,7 +9,7 @@ import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
 import type { PresetName } from '../core/flags/flag-presets.js';
 import type { FlagDefinition } from '../types/flags.js';
 import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
-import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
+import { getBuiltinPresetDefinition, getBuiltinPresetNames } from '../templates/presets/index.js';
 import { resolveConfig } from '../core/config/resolver.js';
 import { generate } from '../core/generator/generator.js';
 import { createRule } from '../core/scaffolder/rule-scaffolder.js';
@@ -173,6 +173,23 @@ export async function initHandler(
       log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
     }
   } else {
+    const knownPresets = getBuiltinPresetNames();
+    if (!knownPresets.includes(presetName)) {
+      return createCommandResult({
+        success: false,
+        command: 'init',
+        data: { codiDir, agents: [], stack, generated: false, preset: presetName, rules: [] },
+        errors: [{
+          code: 'E_CONFIG_INVALID',
+          message: `Unknown preset: "${presetName}". Known: ${knownPresets.join(', ')}`,
+          hint: `Available presets: ${knownPresets.join(', ')}`,
+          severity: 'error',
+          context: { unknownPreset: presetName },
+        }],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
     if (options.agents && options.agents.length > 0) {
       const knownIds = new Set(getAllAdapters().map((a) => a.id));
       const unknownAgents = options.agents.filter((id) => !knownIds.has(id));

@@ -98,16 +98,16 @@ Codi v0.6.0 is **published on npm** as `codi-cli`. Phases 1-4 are complete. Full
 | Test files | 71 in `tests/` |
 | Source LOC | ~17,684 |
 | Tests | 767 passing |
-| Error codes | 25 |
+| Error codes | 31 |
 | Flags | 18 |
 | Config layers | 7 |
 | Adapters | 5 |
 | Rule templates | 23 |
-| Skill templates | 18 |
+| Skill templates | 19 |
 | Agent templates | 8 |
-| Command templates | 8 |
+| Command templates | 9 |
 | Presets | 6 |
-| CLI commands | 16 |
+| CLI commands | 17 |
 
 ## What's Next
 

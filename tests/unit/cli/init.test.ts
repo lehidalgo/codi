@@ -97,6 +97,20 @@ describe('init command handler', () => {
     expect(flagsContent).toContain('security_scan:');
   });
 
+  it('rejects unknown preset names', async () => {
+    const result = await initHandler(tmpDir, { json: true, preset: 'nonexistent' });
+    expect(result.success).toBe(false);
+    expect(result.errors[0]!.code).toBe('E_CONFIG_INVALID');
+    expect(result.errors[0]!.message).toContain('Unknown preset');
+    expect(result.errors[0]!.message).toContain('nonexistent');
+  });
+
+  it('accepts known preset names', async () => {
+    const result = await initHandler(tmpDir, { json: true, preset: 'strict' });
+    expect(result.success).toBe(true);
+    expect(result.data.preset).toBe('strict');
+  });
+
   it('rejects unknown agent IDs', async () => {
     const result = await initHandler(tmpDir, { json: true, agents: ['nonexistent-agent'] });
     expect(result.success).toBe(false);
