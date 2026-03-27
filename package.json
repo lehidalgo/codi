@@ -26,7 +26,7 @@
     "dev": "tsup --watch",
     "prepare": "husky",
     "preversion": "npm run lint && npm run test",
-    "postversion": "git push && git push --tags",
+    "postversion": "git push",
     "prepublishOnly": "[ \"$CI\" = \"true\" ] || [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build"
   },
   "engines": {
