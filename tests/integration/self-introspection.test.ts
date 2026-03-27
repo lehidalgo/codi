@@ -121,6 +121,6 @@ describe('Self-introspection (dogfooding)', () => {
     const result = await initHandler(tmpDir, { agents: ['claude-code'] });
     expect(result.success).toBe(true);
     expect(result.data.agents).toEqual(['claude-code']);
-    expect(result.data.stack).toContain('node');
+    expect(result.data.stack).toContain('javascript');
   });
 });

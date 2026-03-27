@@ -16,6 +16,7 @@ import type { GlobalOptions } from './shared.js';
 import { detectHookSetup } from '../core/hooks/hook-detector.js';
 import { generateHooksConfig } from '../core/hooks/hook-config-generator.js';
 import { installHooks } from '../core/hooks/hook-installer.js';
+import { detectStack } from '../core/hooks/stack-detector.js';
 import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
 
 interface GenerateCommandOptions extends GlobalOptions {
@@ -100,7 +101,7 @@ export async function generateHandler(
   if (!options.dryRun) {
     try {
       const hookSetup = await detectHookSetup(projectRoot);
-      const languages = configResult.data.manifest.agents ?? [];
+      const languages = await detectStack(projectRoot);
       const hooksConfig = generateHooksConfig(configResult.data.flags, languages);
       if (hooksConfig.hooks.length > 0) {
         const hookResult = await installHooks({

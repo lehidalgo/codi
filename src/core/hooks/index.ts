@@ -9,3 +9,5 @@ export type { InstallOptions } from './hook-installer.js';
 
 export { generateHooksConfig } from './hook-config-generator.js';
 export type { HooksConfig } from './hook-config-generator.js';
+
+export { detectStack } from './stack-detector.js';

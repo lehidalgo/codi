@@ -35,7 +35,7 @@ beforeEach(async () => {
   // Create a subdirectory with a valid project name (lowercase only)
   tmpDir = path.join(base, 'test-project');
   await fs.mkdir(tmpDir, { recursive: true });
-  // Create a package.json so init detects 'node' stack
+  // Create a package.json so init detects 'javascript' stack
   await fs.writeFile(
     path.join(tmpDir, 'package.json'),
     JSON.stringify({ name: 'test-project', version: '1.0.0' }),
@@ -57,7 +57,7 @@ describe('Full Pipeline Integration', () => {
   it('init creates .codi/ structure', async () => {
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
-    expect(result.data.stack).toContain('node');
+    expect(result.data.stack).toContain('javascript');
 
     // Verify .codi/ directory exists
     const codiDir = path.join(tmpDir, '.codi');
