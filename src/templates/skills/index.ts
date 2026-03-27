@@ -17,3 +17,4 @@ export { template as ruleCreator } from './rule-creator.js';
 export { template as agentCreator } from './agent-creator.js';
 export { template as commandCreator } from './command-creator.js';
 export { template as guidedQaTesting } from './guided-qa-testing.js';
+export { template as mcpServerCreator } from './mcp-server-creator.js';

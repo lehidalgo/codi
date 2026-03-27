@@ -108,7 +108,8 @@ describe('runInitWizard', () => {
       .mockResolvedValueOnce(['security'] as never)        // rules
       .mockResolvedValueOnce(['code-review'] as never)     // skills
       .mockResolvedValueOnce([])                           // agent templates
-      .mockResolvedValueOnce(['commit'] as never);         // commands
+      .mockResolvedValueOnce(['commit'] as never)          // commands
+      .mockResolvedValueOnce(['github'] as never);         // MCP servers
 
     vi.mocked(p.select)
       .mockResolvedValueOnce('custom' as never)            // config mode
@@ -135,6 +136,7 @@ describe('runInitWizard', () => {
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
     const presetCommands = presetDef?.commands ?? [];
+    const presetMcpServers = presetDef?.mcpServers ?? [];
 
     // Step 1: agent selection
     vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
@@ -152,7 +154,8 @@ describe('runInitWizard', () => {
       .mockResolvedValueOnce(presetRules as never)
       .mockResolvedValueOnce(presetSkills as never)
       .mockResolvedValueOnce(presetAgents as never)
-      .mockResolvedValueOnce(presetCommands as never);
+      .mockResolvedValueOnce(presetCommands as never)
+      .mockResolvedValueOnce(presetMcpServers as never);
 
     // Step 5: version pin
     vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
@@ -185,7 +188,8 @@ describe('runInitWizard', () => {
       .mockResolvedValueOnce(modifiedRules as never)
       .mockResolvedValueOnce(presetDef?.skills ?? [] as never)
       .mockResolvedValueOnce(presetDef?.agents ?? [] as never)
-      .mockResolvedValueOnce(presetDef?.commands ?? [] as never);
+      .mockResolvedValueOnce(presetDef?.commands ?? [] as never)
+      .mockResolvedValueOnce(presetDef?.mcpServers ?? [] as never);
 
     // Step 5: save-as-preset name
     vi.mocked(p.text).mockResolvedValueOnce('my-custom-preset' as never);
@@ -206,6 +210,7 @@ describe('runInitWizard', () => {
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
     const presetCommands = presetDef?.commands ?? [];
+    const presetMcpServers = presetDef?.mcpServers ?? [];
 
     vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
 
@@ -219,7 +224,8 @@ describe('runInitWizard', () => {
       .mockResolvedValueOnce(presetRules as never)
       .mockResolvedValueOnce(presetSkills as never)
       .mockResolvedValueOnce(presetAgents as never)
-      .mockResolvedValueOnce(presetCommands as never);
+      .mockResolvedValueOnce(presetCommands as never)
+      .mockResolvedValueOnce(presetMcpServers as never);
 
     vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
 

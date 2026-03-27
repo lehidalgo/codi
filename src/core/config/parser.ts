@@ -296,19 +296,53 @@ async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> 
   }
 }
 
-async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
-  const mcpPath = path.join(codiDir, MCP_FILENAME);
-  if (!(await fileExists(mcpPath))) {
-    return ok({ servers: {} });
-  }
-  const rawResult = await readYamlFile(mcpPath);
-  if (!rawResult.ok) return rawResult;
+async function scanMcpServersDir(codiDir: string): Promise<Record<string, Record<string, unknown>>> {
+  const mcpServersDir = path.join(codiDir, 'mcp-servers');
+  const servers: Record<string, Record<string, unknown>> = {};
 
-  const parsed = McpConfigSchema.safeParse(rawResult.data);
-  if (!parsed.success) {
-    return err(zodToCodiErrors(parsed.error, mcpPath));
+  for (const sub of ['generated', 'custom']) {
+    const subPath = path.join(mcpServersDir, sub);
+    if (!(await fileExists(subPath))) continue;
+    const files = await fg('**/*.yaml', { cwd: subPath, absolute: true });
+    for (const file of files) {
+      const raw = await readYamlFile(file);
+      if (!raw.ok) continue;
+      const data = raw.data as Record<string, unknown>;
+      const name = data['name'] as string;
+      if (!name) continue;
+      const { name: _name, managed_by: _managedBy, ...serverConfig } = data;
+      servers[name] = serverConfig;
+    }
   }
-  return ok(parsed.data as McpConfig);
+
+  return servers;
+}
+
+async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
+  // 1. Read legacy mcp.yaml
+  let legacyServers: Record<string, Record<string, unknown>> = {};
+  const mcpPath = path.join(codiDir, MCP_FILENAME);
+  if (await fileExists(mcpPath)) {
+    const rawResult = await readYamlFile(mcpPath);
+    if (rawResult.ok) {
+      const parsed = McpConfigSchema.safeParse(rawResult.data);
+      if (parsed.success) {
+        legacyServers = (parsed.data as McpConfig).servers as Record<string, Record<string, unknown>>;
+      } else {
+        return err(zodToCodiErrors(parsed.error, mcpPath));
+      }
+    } else {
+      return rawResult;
+    }
+  }
+
+  // 2. Scan individual files from mcp-servers/generated/ and mcp-servers/custom/
+  const individualServers = await scanMcpServersDir(codiDir);
+
+  // 3. Merge: individual files take precedence over legacy
+  const merged = { ...legacyServers, ...individualServers };
+
+  return ok({ servers: merged } as McpConfig);
 }
 
 export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCodiDir>> {

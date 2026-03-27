@@ -7,6 +7,7 @@ import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
 import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
+import { AVAILABLE_MCP_SERVER_TEMPLATES, loadMcpServerTemplate } from '../core/scaffolder/mcp-template-loader.js';
 
 export interface WizardResult {
   agents: string[];
@@ -19,6 +20,7 @@ export interface WizardResult {
   skills: string[];
   agentTemplates: string[];
   commandTemplates: string[];
+  mcpServers: string[];
   preset: string;
   flags?: Record<string, FlagDefinition>;
   versionPin: boolean;
@@ -130,8 +132,8 @@ async function handleZipPath(agents: string[]): Promise<WizardResult | null | ty
 
   p.outro('Importing preset from ZIP.');
   return {
-    agents, configMode: 'zip', importSource: zipPath,
-    rules: [], skills: [], agentTemplates: [], commandTemplates: [],
+    agents, configMode: 'zip', importSource: zipPath as string,
+    rules: [], skills: [], agentTemplates: [], commandTemplates: [], mcpServers: [],
     preset: DEFAULT_PRESET, versionPin: true,
   };
 }
@@ -144,8 +146,8 @@ async function handleGithubPath(agents: string[]): Promise<WizardResult | null |
 
   p.outro('Importing preset from GitHub.');
   return {
-    agents, configMode: 'github', importSource: repo,
-    rules: [], skills: [], agentTemplates: [], commandTemplates: [],
+    agents, configMode: 'github', importSource: repo as string,
+    rules: [], skills: [], agentTemplates: [], commandTemplates: [], mcpServers: [],
     preset: DEFAULT_PRESET, versionPin: true,
   };
 }
@@ -223,6 +225,7 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null |
   let skills: string[] | undefined;
   let agentTpls: string[] | undefined;
   let commands: string[] | undefined;
+  let mcpServers: string[] | undefined;
   let saveAsPreset: string | undefined;
 
   while (step >= 0) {
@@ -303,17 +306,31 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null |
       }
       case 6: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
-        const presetRulesSet = new Set(presetDef?.rules ?? []);
-        const presetSkillsSet = new Set(presetDef?.skills ?? []);
-        const presetAgentsSet = new Set(presetDef?.agents ?? []);
-        const presetCommandsSet = new Set(presetDef?.commands ?? []);
-
+        const presetMcps = new Set(presetDef?.mcpServers ?? []);
+        const val = await p.multiselect({
+          message: 'MCP Servers',
+          options: AVAILABLE_MCP_SERVER_TEMPLATES.map(t => {
+            const tmpl = loadMcpServerTemplate(t);
+            const hint = tmpl.ok ? tmpl.data.description : '';
+            return { label: t, value: t, hint };
+          }),
+          initialValues: mcpServers ?? AVAILABLE_MCP_SERVER_TEMPLATES.filter(t => presetMcps.has(t)),
+          required: false,
+        });
+        if (isBack(val)) { step--; break; }
+        mcpServers = val as string[];
+        step++;
+        break;
+      }
+      case 7: {
+        const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const flagsChanged = !sameFlagValues(editedFlags!, originalFlags);
         const changed = flagsChanged
-          || !sameArrays(rules!, [...presetRulesSet])
-          || !sameArrays(skills!, [...presetSkillsSet])
-          || !sameArrays(agentTpls!, [...presetAgentsSet])
-          || !sameArrays(commands!, [...presetCommandsSet]);
+          || !sameArrays(rules!, [...(presetDef?.rules ?? [])])
+          || !sameArrays(skills!, [...(presetDef?.skills ?? [])])
+          || !sameArrays(agentTpls!, [...(presetDef?.agents ?? [])])
+          || !sameArrays(commands!, [...(presetDef?.commands ?? [])])
+          || !sameArrays(mcpServers!, [...(presetDef?.mcpServers ?? [])]);
 
         if (changed) {
           p.log.step('Custom Preset');
@@ -332,21 +349,18 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null |
         step++;
         break;
       }
-      case 7: {
+      case 8: {
         const versionPin = await p.confirm({ message: 'Enable version pinning?' });
         if (isBack(versionPin)) { step--; break; }
 
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
-        const presetRulesSet = new Set(presetDef?.rules ?? []);
-        const presetSkillsSet = new Set(presetDef?.skills ?? []);
-        const presetAgentsSet = new Set(presetDef?.agents ?? []);
-        const presetCommandsSet = new Set(presetDef?.commands ?? []);
         const flagsChanged = !sameFlagValues(editedFlags!, originalFlags);
         const changed = flagsChanged
-          || !sameArrays(rules!, [...presetRulesSet])
-          || !sameArrays(skills!, [...presetSkillsSet])
-          || !sameArrays(agentTpls!, [...presetAgentsSet])
-          || !sameArrays(commands!, [...presetCommandsSet]);
+          || !sameArrays(rules!, [...(presetDef?.rules ?? [])])
+          || !sameArrays(skills!, [...(presetDef?.skills ?? [])])
+          || !sameArrays(agentTpls!, [...(presetDef?.agents ?? [])])
+          || !sameArrays(commands!, [...(presetDef?.commands ?? [])])
+          || !sameArrays(mcpServers!, [...(presetDef?.mcpServers ?? [])]);
 
         p.outro('Configuration complete.');
         return {
@@ -359,6 +373,7 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null |
           skills: skills!,
           agentTemplates: agentTpls!,
           commandTemplates: commands!,
+          mcpServers: mcpServers!,
           preset: selectedPreset!,
           flags: editedFlags,
           versionPin: versionPin as boolean,
@@ -375,6 +390,7 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null |
   let skills: string[] | undefined;
   let agentTpls: string[] | undefined;
   let commandTpls: string[] | undefined;
+  let mcpServers: string[] | undefined;
   let preset: string | undefined;
   let saveAsPreset: string | undefined;
 
@@ -430,6 +446,22 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null |
         break;
       }
       case 4: {
+        const val = await p.multiselect({
+          message: 'Select MCP servers',
+          options: AVAILABLE_MCP_SERVER_TEMPLATES.map(t => {
+            const tmpl = loadMcpServerTemplate(t);
+            const hint = tmpl.ok ? tmpl.data.description : '';
+            return { label: t, value: t, hint };
+          }),
+          initialValues: mcpServers ?? [],
+          required: false,
+        });
+        if (isBack(val)) { step--; break; }
+        mcpServers = val as string[];
+        step++;
+        break;
+      }
+      case 5: {
         const val = await p.select({
           message: 'Choose flag preset',
           options: [
@@ -443,7 +475,7 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null |
         step++;
         break;
       }
-      case 5: {
+      case 6: {
         const save = await p.confirm({ message: 'Save this selection as a named preset for reuse?', initialValue: false });
         if (isBack(save)) { step--; break; }
         if (save) {
@@ -464,7 +496,7 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null |
         step++;
         break;
       }
-      case 6: {
+      case 7: {
         const versionPin = await p.confirm({ message: 'Enable version pinning?' });
         if (isBack(versionPin)) { step--; break; }
 
@@ -477,6 +509,7 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null |
           skills: skills!,
           agentTemplates: agentTpls!,
           commandTemplates: commandTpls!,
+          mcpServers: mcpServers!,
           preset: (preset ?? DEFAULT_PRESET) as string,
           versionPin: versionPin as boolean,
         };

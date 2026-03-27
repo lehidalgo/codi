@@ -34,4 +34,5 @@ export const preset: BuiltinPresetDefinition = {
   skills: [],
   agents: [],
   commands: [],
+  mcpServers: [],
 };

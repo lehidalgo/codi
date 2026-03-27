@@ -43,4 +43,5 @@ export const preset: BuiltinPresetDefinition = {
   ],
   agents: ['code-reviewer', 'test-generator', 'security-analyzer'],
   commands: ['review', 'test-run', 'test-coverage', 'security-scan', 'commit', 'refactor', 'onboard'],
+  mcpServers: ['github'],
 };

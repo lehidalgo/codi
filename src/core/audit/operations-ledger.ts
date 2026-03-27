@@ -23,6 +23,7 @@ export interface LedgerActivePreset {
     skills: string[];
     agents: string[];
     commands: string[];
+    mcpServers?: string[];
   };
 }
 

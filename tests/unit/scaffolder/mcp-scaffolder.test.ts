@@ -1,0 +1,97 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { parse as parseYaml } from 'yaml';
+import { createMcpServer } from '../../../src/core/scaffolder/mcp-scaffolder.js';
+
+describe('mcp scaffolder', () => {
+  let tmpDir: string;
+  let codiDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-mcp-'));
+    codiDir = path.join(tmpDir, '.codi');
+    await fs.mkdir(codiDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('creates a custom server yaml in custom/ when no template', async () => {
+    const result = await createMcpServer({ name: 'my-api', codiDir });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.data).toContain(path.join('mcp-servers', 'custom', 'my-api.yaml'));
+    const content = await fs.readFile(result.data, 'utf-8');
+    const parsed = parseYaml(content) as Record<string, unknown>;
+    expect(parsed['name']).toBe('my-api');
+    expect(parsed['managed_by']).toBe('user');
+    expect(parsed['command']).toBe('');
+  });
+
+  it('creates a generated server yaml from template', async () => {
+    const result = await createMcpServer({
+      name: 'github',
+      codiDir,
+      template: 'github',
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.data).toContain(path.join('mcp-servers', 'generated', 'github.yaml'));
+    const content = await fs.readFile(result.data, 'utf-8');
+    const parsed = parseYaml(content) as Record<string, unknown>;
+    expect(parsed['name']).toBe('github');
+    expect(parsed['managed_by']).toBe('codi');
+    expect(parsed['command']).toBe('npx');
+    expect(parsed['args']).toContain('@modelcontextprotocol/server-github');
+    expect(parsed['env']).toHaveProperty('GITHUB_TOKEN');
+  });
+
+  it('rejects duplicate server names', async () => {
+    await createMcpServer({ name: 'test-server', codiDir });
+    const result = await createMcpServer({ name: 'test-server', codiDir });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]?.message).toContain('already exists');
+  });
+
+  it('rejects invalid server names', async () => {
+    const result = await createMcpServer({ name: 'Invalid_Name', codiDir });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]?.message).toContain('Invalid MCP server name');
+  });
+
+  it('rejects unknown template names', async () => {
+    const result = await createMcpServer({
+      name: 'test',
+      codiDir,
+      template: 'nonexistent-template',
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('creates server with env vars from template', async () => {
+    const result = await createMcpServer({
+      name: 'postgres',
+      codiDir,
+      template: 'postgres',
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, 'utf-8');
+    const parsed = parseYaml(content) as Record<string, unknown>;
+    expect(parsed['env']).toHaveProperty('POSTGRES_CONNECTION_STRING');
+  });
+});
