@@ -8,7 +8,6 @@ import { PRESET_MANIFEST_FILENAME, NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from '
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
 import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
 import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
-import { getPresetNames } from '../core/flags/flag-presets.js';
 import { getBuiltinPresetNames } from '../templates/presets/index.js';
 import { createPresetZip } from '../core/preset/preset-zip.js';
 
@@ -60,7 +59,7 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
   if (p.isCancel(tags)) { p.cancel('Operation cancelled.'); return null; }
 
   // Step 2: Base preset
-  const allPresets = [...getPresetNames(), ...getBuiltinPresetNames()];
+  const allPresets = getBuiltinPresetNames();
   const uniquePresets = [...new Set(allPresets)];
 
   const extendsPreset = await p.select({

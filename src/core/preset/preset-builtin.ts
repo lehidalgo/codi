@@ -1,11 +1,9 @@
 import { ok, err } from '../../types/result.js';
 import type { Result } from '../../types/result.js';
 import type { NormalizedRule, NormalizedSkill, NormalizedAgent, McpConfig } from '../../types/config.js';
-import type { FlagDefinition } from '../../types/flags.js';
 import type { LoadedPreset } from './preset-loader.js';
 import type { BuiltinPresetDefinition } from '../../templates/presets/types.js';
-import { getBuiltinPresetDefinition } from '../../templates/presets/index.js';
-import { getPreset as getFlagPreset, getPresetNames as getFlagPresetNames } from '../flags/flag-presets.js';
+import { getBuiltinPresetDefinition, resolvePreset } from '../../templates/presets/index.js';
 import { loadTemplate } from '../scaffolder/template-loader.js';
 import { loadSkillTemplate } from '../scaffolder/skill-template-loader.js';
 import { loadAgentTemplate } from '../scaffolder/agent-template-loader.js';
@@ -13,35 +11,17 @@ import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { createError } from '../output/errors.js';
 
 /**
- * Checks if a name corresponds to a built-in preset (flag-only or full).
+ * Checks if a name corresponds to a built-in preset.
  */
 export function isBuiltinPreset(name: string): boolean {
-  const flagPresetNames = getFlagPresetNames() as readonly string[];
-  if (flagPresetNames.includes(name)) return true;
   return getBuiltinPresetDefinition(name) !== undefined;
 }
 
 /**
  * Materializes a built-in preset into a LoadedPreset.
- * Handles both legacy flag-only presets and new full presets.
+ * Uses the unified registry — resolves inheritance via resolvePreset().
  */
 export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
-  // Legacy flag-only presets (minimal, balanced, strict)
-  const flagPresetNames = getFlagPresetNames();
-  if ((flagPresetNames as readonly string[]).includes(name)) {
-    return ok({
-      name,
-      description: `Built-in ${name} preset`,
-      flags: getFlagPreset(name as ReturnType<typeof getFlagPresetNames>[number]),
-      rules: [],
-      skills: [],
-      agents: [],
-      commands: [],
-      mcp: { servers: {} },
-    });
-  }
-
-  // Full built-in presets
   const definition = getBuiltinPresetDefinition(name);
   if (!definition) {
     return err([createError('E_PRESET_NOT_FOUND', { name })]);
@@ -51,16 +31,9 @@ export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
 }
 
 function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPreset> {
-  // Resolve parent flags if extends is a flag-only preset
-  let parentFlags: Record<string, FlagDefinition> = {};
-  if (def.extends) {
-    const flagPresetNames = getFlagPresetNames();
-    if ((flagPresetNames as readonly string[]).includes(def.extends)) {
-      parentFlags = getFlagPreset(def.extends as ReturnType<typeof getFlagPresetNames>[number]);
-    }
-  }
+  const resolved = resolvePreset(def.name);
+  const mergedFlags = resolved?.flags ?? def.flags;
 
-  const mergedFlags = { ...parentFlags, ...def.flags };
   const rules = materializeRules(def.rules);
   const skills = materializeSkills(def.skills);
   const agents = materializeAgents(def.agents);

@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] - 2026-03-27
+
+### Added
+- **Standalone preset template modules** — minimal, balanced, strict presets extracted into individual files under `src/templates/presets/`
+- **`resolvePreset()` with inheritance** — presets can extend a base preset and override specific flags
+- **Unified `BUILTIN_PRESETS` registry** — single source of truth for all built-in presets via `src/templates/presets/index.ts`
+- **Preset registry tests** — new `tests/unit/templates/presets/registry.test.ts`
+- **codi-development preset** — dedicated preset for codi's own development with npm lifecycle hooks
+
+### Changed
+- **Init wizard simplified** — uses unified preset registry instead of duplicated definitions
+- **Preset handlers refactored** — consume `BUILTIN_PRESETS` registry directly
+- **Flag presets consolidated** — removed inline preset definitions from `flag-presets.ts`
+- **Stats collector updated** — reads preset metadata from registry
+
+### Fixed
+- **Version check** — compares against npm registry instead of git tags
+- **Shell commands in codi-development** — preset now correctly allows shell commands
+- **Init output** — shows actual preset name, not base preset name
+- **Hook install** — cleans stale hooks, writes `.mjs` scripts correctly
+- **`clean --all`** — fully removes codi-owned husky hook files
+- **Node 22 in CI** — CI uses Node 22, allows publishing in detached HEAD
+- **npm publish restricted to main** — enforced publish-only-from-main guard
+- **Codex config.toml** — removed from git tracking
+- **Clean command** — catches codex config.toml + husky commit-msg without marker
+
 ## [0.7.0] - 2026-03-26
 
 ### Added

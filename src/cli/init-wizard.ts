@@ -1,6 +1,5 @@
 import * as p from '@clack/prompts';
 import type { PresetName } from '../core/flags/flag-presets.js';
-import { PRESET_DESCRIPTIONS, getPresetNames } from '../core/flags/flag-presets.js';
 import { DEFAULT_PRESET } from '../constants.js';
 import { getBuiltinPresetDefinition, BUILTIN_PRESETS } from '../templates/presets/index.js';
 import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
@@ -24,9 +23,7 @@ export interface WizardResult {
 }
 
 function getReservedPresetNames(): Set<string> {
-  const basePresets = Object.keys(PRESET_DESCRIPTIONS);
-  const extendedPresets = Object.keys(BUILTIN_PRESETS);
-  return new Set([...basePresets, ...extendedPresets]);
+  return new Set(Object.keys(BUILTIN_PRESETS));
 }
 
 function formatLabel(name: string): string {
@@ -34,21 +31,11 @@ function formatLabel(name: string): string {
 }
 
 function buildPresetOptions(): Array<{ label: string; value: string; hint: string }> {
-  // Base presets from flag system (minimal, balanced, strict)
-  const baseOptions = Object.entries(PRESET_DESCRIPTIONS).map(([name, desc]) => ({
+  return Object.entries(BUILTIN_PRESETS).map(([name, def]) => ({
     label: name === DEFAULT_PRESET ? `${formatLabel(name)} (recommended)` : formatLabel(name),
-    value: name,
-    hint: desc,
-  }));
-
-  // Extended presets from template bundles (python-web, typescript-fullstack, etc.)
-  const extendedOptions = Object.entries(BUILTIN_PRESETS).map(([name, def]) => ({
-    label: formatLabel(name),
     value: name,
     hint: def.description,
   }));
-
-  return [...baseOptions, ...extendedOptions];
 }
 
 export async function runInitWizard(
@@ -173,7 +160,7 @@ async function handlePresetPath(agents: string[]): Promise<WizardResult | null> 
   }
 
   const selectedPreset = presetName as string;
-  const flagPreset = getBasePreset(selectedPreset);
+  const flagPreset = getBasePresetName(selectedPreset);
   const presetDef = getBuiltinPresetDefinition(selectedPreset);
 
   // Pre-select the preset's artifacts so user can see and modify
@@ -296,9 +283,9 @@ async function handleCustomPath(agents: string[]): Promise<WizardResult | null> 
   const preset = await p.select({
     message: 'Choose flag preset',
     options: [
-      { label: 'Balanced (recommended)', value: 'balanced' as const, hint: PRESET_DESCRIPTIONS.balanced },
-      { label: 'Minimal', value: 'minimal' as const, hint: PRESET_DESCRIPTIONS.minimal },
-      { label: 'Strict', value: 'strict' as const, hint: PRESET_DESCRIPTIONS.strict },
+      { label: 'Balanced (recommended)', value: 'balanced' as const, hint: BUILTIN_PRESETS['balanced']!.description },
+      { label: 'Minimal', value: 'minimal' as const, hint: BUILTIN_PRESETS['minimal']!.description },
+      { label: 'Strict', value: 'strict' as const, hint: BUILTIN_PRESETS['strict']!.description },
     ],
   });
   if (p.isCancel(preset)) { p.cancel('Operation cancelled.'); return null; }
@@ -353,15 +340,9 @@ function sameArrays(a: string[], b: string[]): boolean {
   return b.every(item => setA.has(item));
 }
 
-function getBasePreset(name: string): PresetName {
-  const baseNames = getPresetNames();
-  if (baseNames.includes(name as PresetName)) return name as PresetName;
-
-  const def = getBuiltinPresetDefinition(name);
-  if (def?.extends) {
-    const parent = def.extends as PresetName;
-    if (baseNames.includes(parent)) return parent;
-  }
-
-  return DEFAULT_PRESET as PresetName;
+function getBasePresetName(name: string): PresetName {
+  const def = BUILTIN_PRESETS[name];
+  if (!def) return DEFAULT_PRESET as PresetName;
+  if (!def.extends) return name as PresetName;
+  return getBasePresetName(def.extends);
 }

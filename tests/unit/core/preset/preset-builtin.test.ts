@@ -22,18 +22,15 @@ describe('isBuiltinPreset', () => {
 });
 
 describe('materializeBuiltinPreset', () => {
-  it('materializes a flag-only preset', () => {
+  it('materializes balanced preset with artifacts', () => {
     const result = materializeBuiltinPreset('balanced');
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.name).toBe('balanced');
+      expect(result.data.description).toBe('Recommended — security on, type-checking strict, no force-push');
       expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBeGreaterThan(0);
-      expect(result.data.rules).toEqual([]);
-      expect(result.data.skills).toEqual([]);
-      expect(result.data.agents).toEqual([]);
-      expect(result.data.commands).toEqual([]);
+      expect(Object.keys(result.data.flags).length).toBe(18);
     }
   });
 
@@ -66,7 +63,7 @@ describe('materializeBuiltinPreset', () => {
     }
   });
 
-  it('flag-only presets have mcp with empty servers', () => {
+  it('presets have mcp with empty servers', () => {
     const result = materializeBuiltinPreset('strict');
 
     expect(result.ok).toBe(true);
