@@ -63,7 +63,7 @@ describe('runInitWizard', () => {
 
   it('returns null when agent selection is cancelled', async () => {
     vi.mocked(p.multiselect).mockResolvedValueOnce(Symbol('cancel') as never);
-    vi.mocked(p.isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true);
+    vi.mocked(p.isCancel).mockReturnValueOnce(true);
 
     const result = await runInitWizard([], [], ['claude-code', 'cursor']);
     expect(result).toBeNull();
@@ -229,14 +229,18 @@ describe('runInitWizard', () => {
     expect(result!.preset).toBe('python-web');
   });
 
-  it('returns null when configMode is cancelled', async () => {
-    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
+  it('goes back to agents when configMode is cancelled, then exits on second cancel', async () => {
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(['claude-code'] as never)  // agents (first pass)
+      .mockResolvedValueOnce(Symbol('cancel') as never);  // agents (after back)
     vi.mocked(p.select).mockResolvedValueOnce(Symbol('cancel') as never);
     vi.mocked(p.isCancel)
-      .mockReturnValueOnce(false)  // agents check
-      .mockReturnValueOnce(true);  // configMode check
+      .mockReturnValueOnce(false)  // agents check (first pass)
+      .mockReturnValueOnce(true)   // configMode cancel → back
+      .mockReturnValueOnce(true);  // agents cancel → exit
 
     const result = await runInitWizard([], [], ['claude-code']);
     expect(result).toBeNull();
+    expect(p.cancel).toHaveBeenCalled();
   });
 });
