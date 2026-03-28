@@ -29,6 +29,9 @@ for (const hook of hooks) {
   const cmd = hook.passFiles === false ? hook.command : \`\${hook.command} \${files.join(' ')}\`;
   try {
     execSync(cmd, { stdio: 'inherit' });
+    if (hook.modifiesFiles) {
+      execSync(\`git add \${files.join(' ')}\`, { stdio: 'inherit' });
+    }
   } catch (e) {
     console.error(\`\${hook.name} failed\`);
     exitCode = 1;

@@ -5,9 +5,7 @@ import {
 } from "../../../src/adapters/permission-builder.js";
 import type { ResolvedFlags } from "../../../src/types/flags.js";
 
-function makeFlags(
-  overrides: Record<string, unknown> = {},
-): ResolvedFlags {
+function makeFlags(overrides: Record<string, unknown> = {}): ResolvedFlags {
   const defaults: Record<string, unknown> = {
     allow_force_push: true,
     allow_file_deletion: true,
@@ -88,7 +86,9 @@ describe("buildStrongTextRestrictions", () => {
       }),
     );
     const text = buildStrongTextRestrictions(rules)!;
-    expect(text).toContain("REQUIRED: All changes must go through pull request");
+    expect(text).toContain(
+      "REQUIRED: All changes must go through pull request",
+    );
     expect(text).toContain("REQUIRED: Run the test suite");
     expect(text).toContain("REQUIRED: Run security scans");
   });
@@ -100,9 +100,7 @@ describe("buildStrongTextRestrictions", () => {
   });
 
   it("includes shell command block", () => {
-    const rules = extractDenyRules(
-      makeFlags({ allow_shell_commands: false }),
-    );
+    const rules = extractDenyRules(makeFlags({ allow_shell_commands: false }));
     const text = buildStrongTextRestrictions(rules)!;
     expect(text).toContain("BLOCKED: All shell commands");
   });

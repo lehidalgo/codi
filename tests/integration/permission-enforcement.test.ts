@@ -119,7 +119,9 @@ describe("permission enforcement across all agents", () => {
       expect(rules!.content).toContain("BLOCKED: git push --force");
       expect(rules!.content).toContain("BLOCKED: rm -rf");
       expect(rules!.content).toContain("BLOCKED: All shell commands");
-      expect(rules!.content).toContain("REQUIRED: All changes must go through pull request");
+      expect(rules!.content).toContain(
+        "REQUIRED: All changes must go through pull request",
+      );
       expect(rules!.content).toContain("REQUIRED: Run the test suite");
       expect(rules!.content).toContain("REQUIRED: Run security scans");
     });
@@ -135,7 +137,9 @@ describe("permission enforcement across all agents", () => {
       expect(rules!.content).toContain("BLOCKED: git push --force");
       expect(rules!.content).toContain("BLOCKED: rm -rf");
       expect(rules!.content).toContain("BLOCKED: All shell commands");
-      expect(rules!.content).toContain("REQUIRED: All changes must go through pull request");
+      expect(rules!.content).toContain(
+        "REQUIRED: All changes must go through pull request",
+      );
     });
   });
 

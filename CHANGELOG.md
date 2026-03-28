@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Stats collector test** — validates `collectStats()` output against source-of-truth registries
 - **Output snapshot tests** — vitest snapshots for generated instruction files across all 5 adapters
 - **Testing analysis report** — comprehensive coverage analysis with gap identification and improvement roadmap
+- **Auto-restage after formatters** — pre-commit hooks with `modifiesFiles: true` automatically re-stage fixed files, preventing formatter changes from being left as unstaged diffs
 
 ### Fixed
 
