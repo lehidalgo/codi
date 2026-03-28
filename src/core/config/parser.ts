@@ -1,28 +1,32 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { parse as parseYaml } from 'yaml';
-import fg from 'fast-glob';
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { parse as parseYaml } from "yaml";
+import fg from "fast-glob";
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
 import type {
   CodiManifest,
   NormalizedRule,
   NormalizedSkill,
   NormalizedCommand,
   NormalizedAgent,
-} from '../../types/config.js';
-import type { FlagDefinition } from '../../types/flags.js';
-import { CodiManifestSchema } from '../../schemas/manifest.js';
-import { FlagDefinitionSchema } from '../../schemas/flag.js';
-import { RuleFrontmatterSchema } from '../../schemas/rule.js';
-import { SkillFrontmatterSchema } from '../../schemas/skill.js';
-import { AgentFrontmatterSchema } from '../../schemas/agent.js';
-import { CommandFrontmatterSchema } from '../../schemas/command.js';
-import { McpConfigSchema } from '../../schemas/mcp.js';
-import { createError, zodToCodiErrors } from '../output/errors.js';
-import { parseFrontmatter } from '../../utils/frontmatter.js';
-import type { McpConfig } from '../../types/config.js';
-import { MANIFEST_FILENAME, FLAGS_FILENAME, MCP_FILENAME } from '../../constants.js';
+} from "../../types/config.js";
+import type { FlagDefinition } from "../../types/flags.js";
+import { CodiManifestSchema } from "../../schemas/manifest.js";
+import { FlagDefinitionSchema } from "../../schemas/flag.js";
+import { RuleFrontmatterSchema } from "../../schemas/rule.js";
+import { SkillFrontmatterSchema } from "../../schemas/skill.js";
+import { AgentFrontmatterSchema } from "../../schemas/agent.js";
+import { CommandFrontmatterSchema } from "../../schemas/command.js";
+import { McpConfigSchema } from "../../schemas/mcp.js";
+import { createError, zodToCodiErrors } from "../output/errors.js";
+import { parseFrontmatter } from "../../utils/frontmatter.js";
+import type { McpConfig } from "../../types/config.js";
+import {
+  MANIFEST_FILENAME,
+  FLAGS_FILENAME,
+  MCP_FILENAME,
+} from "../../constants.js";
 
 export interface ParsedCodiDir {
   manifest: CodiManifest;
@@ -45,18 +49,22 @@ async function fileExists(filePath: string): Promise<boolean> {
 
 async function readYamlFile(filePath: string): Promise<Result<unknown>> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const parsed: unknown = parseYaml(raw);
     return ok(parsed);
   } catch (cause) {
-    return err([createError('E_CONFIG_PARSE_FAILED', { file: filePath }, cause as Error)]);
+    return err([
+      createError("E_CONFIG_PARSE_FAILED", { file: filePath }, cause as Error),
+    ]);
   }
 }
 
-export async function parseManifest(codiDir: string): Promise<Result<CodiManifest>> {
+export async function parseManifest(
+  codiDir: string,
+): Promise<Result<CodiManifest>> {
   const manifestPath = path.join(codiDir, MANIFEST_FILENAME);
   if (!(await fileExists(manifestPath))) {
-    return err([createError('E_CONFIG_NOT_FOUND', { path: manifestPath })]);
+    return err([createError("E_CONFIG_NOT_FOUND", { path: manifestPath })]);
   }
   const rawResult = await readYamlFile(manifestPath);
   if (!rawResult.ok) return rawResult;
@@ -79,7 +87,7 @@ export async function parseFlags(
   if (!rawResult.ok) return rawResult;
 
   const rawObj = rawResult.data as Record<string, unknown> | null;
-  if (!rawObj || typeof rawObj !== 'object') {
+  if (!rawObj || typeof rawObj !== "object") {
     return ok({});
   }
 
@@ -99,14 +107,16 @@ export async function parseFlags(
   return ok(flags);
 }
 
-export async function scanRules(rulesDir: string): Promise<Result<NormalizedRule[]>> {
+export async function scanRules(
+  rulesDir: string,
+): Promise<Result<NormalizedRule[]>> {
   if (!(await fileExists(rulesDir))) {
     return ok([]);
   }
   const rules: NormalizedRule[] = [];
   const errors: ReturnType<typeof createError>[] = [];
 
-  const subdirs = ['generated', 'custom'];
+  const subdirs = ["generated", "custom"];
   for (const sub of subdirs) {
     const subPath = path.join(rulesDir, sub);
     if (!(await fileExists(subPath))) continue;
@@ -127,10 +137,12 @@ export async function scanRules(rulesDir: string): Promise<Result<NormalizedRule
 
 async function collectMarkdownFiles(dir: string): Promise<string[]> {
   if (!(await fileExists(dir))) return [];
-  return fg('**/*.md', { cwd: dir, absolute: true });
+  return fg("**/*.md", { cwd: dir, absolute: true });
 }
 
-export async function scanSkills(skillsDir: string): Promise<Result<NormalizedSkill[]>> {
+export async function scanSkills(
+  skillsDir: string,
+): Promise<Result<NormalizedSkill[]>> {
   if (!(await fileExists(skillsDir))) {
     return ok([]);
   }
@@ -151,7 +163,9 @@ export async function scanSkills(skillsDir: string): Promise<Result<NormalizedSk
   return ok(skills);
 }
 
-async function scanCommands(commandsDir: string): Promise<Result<NormalizedCommand[]>> {
+async function scanCommands(
+  commandsDir: string,
+): Promise<Result<NormalizedCommand[]>> {
   if (!(await fileExists(commandsDir))) {
     return ok([]);
   }
@@ -172,31 +186,37 @@ async function scanCommands(commandsDir: string): Promise<Result<NormalizedComma
   return ok(commands);
 }
 
-async function parseCommandFile(filePath: string): Promise<Result<NormalizedCommand>> {
+async function parseCommandFile(
+  filePath: string,
+): Promise<Result<NormalizedCommand>> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = CommandFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
       return err(zodToCodiErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
-    const managedBy = (data['managed_by'] as string) ?? undefined;
+    const managedBy = (data["managed_by"] as string) ?? undefined;
     return ok({
       name: fm.name,
       description: fm.description,
       content,
-      managedBy: managedBy as 'codi' | 'user' | undefined,
+      managedBy: managedBy as "codi" | "user" | undefined,
     });
   } catch (cause) {
-    return err([createError('E_FRONTMATTER_INVALID', {
-      file: filePath,
-      message: (cause as Error).message,
-    })]);
+    return err([
+      createError("E_FRONTMATTER_INVALID", {
+        file: filePath,
+        message: (cause as Error).message,
+      }),
+    ]);
   }
 }
 
-async function scanAgents(agentsDir: string): Promise<Result<NormalizedAgent[]>> {
+async function scanAgents(
+  agentsDir: string,
+): Promise<Result<NormalizedAgent[]>> {
   if (!(await fileExists(agentsDir))) {
     return ok([]);
   }
@@ -217,9 +237,11 @@ async function scanAgents(agentsDir: string): Promise<Result<NormalizedAgent[]>>
   return ok(agents);
 }
 
-async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>> {
+async function parseAgentFile(
+  filePath: string,
+): Promise<Result<NormalizedAgent>> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = AgentFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
@@ -235,16 +257,20 @@ async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>
       managedBy: fm.managed_by,
     });
   } catch (cause) {
-    return err([createError('E_FRONTMATTER_INVALID', {
-      file: filePath,
-      message: (cause as Error).message,
-    })]);
+    return err([
+      createError("E_FRONTMATTER_INVALID", {
+        file: filePath,
+        message: (cause as Error).message,
+      }),
+    ]);
   }
 }
 
-export async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>> {
+export async function parseSkillFile(
+  filePath: string,
+): Promise<Result<NormalizedSkill>> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = SkillFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
@@ -252,9 +278,10 @@ export async function parseSkillFile(filePath: string): Promise<Result<Normalize
     }
     const fm = parsed.data;
     const pathsRaw = fm.paths;
-    const normalizedPaths = typeof pathsRaw === 'string'
-      ? pathsRaw.split(',').map((p) => p.trim())
-      : pathsRaw;
+    const normalizedPaths =
+      typeof pathsRaw === "string"
+        ? pathsRaw.split(",").map((p) => p.trim())
+        : pathsRaw;
     return ok({
       name: fm.name,
       description: fm.description,
@@ -271,21 +298,25 @@ export async function parseSkillFile(filePath: string): Promise<Result<Normalize
       effort: fm.effort,
       context: fm.context,
       agent: fm.agent,
-      userInvocable: fm['user-invocable'],
+      userInvocable: fm["user-invocable"],
       paths: normalizedPaths,
       shell: fm.shell,
     });
   } catch (cause) {
-    return err([createError('E_FRONTMATTER_INVALID', {
-      file: filePath,
-      message: (cause as Error).message,
-    })]);
+    return err([
+      createError("E_FRONTMATTER_INVALID", {
+        file: filePath,
+        message: (cause as Error).message,
+      }),
+    ]);
   }
 }
 
-async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> {
+async function parseRuleFile(
+  filePath: string,
+): Promise<Result<NormalizedRule>> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = RuleFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
@@ -303,26 +334,30 @@ async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> 
       managedBy: fm.managed_by,
     });
   } catch (cause) {
-    return err([createError('E_FRONTMATTER_INVALID', {
-      file: filePath,
-      message: (cause as Error).message,
-    })]);
+    return err([
+      createError("E_FRONTMATTER_INVALID", {
+        file: filePath,
+        message: (cause as Error).message,
+      }),
+    ]);
   }
 }
 
-async function scanMcpServersDir(codiDir: string): Promise<Record<string, Record<string, unknown>>> {
-  const mcpServersDir = path.join(codiDir, 'mcp-servers');
+async function scanMcpServersDir(
+  codiDir: string,
+): Promise<Record<string, Record<string, unknown>>> {
+  const mcpServersDir = path.join(codiDir, "mcp-servers");
   const servers: Record<string, Record<string, unknown>> = {};
 
-  for (const sub of ['generated', 'custom']) {
+  for (const sub of ["generated", "custom"]) {
     const subPath = path.join(mcpServersDir, sub);
     if (!(await fileExists(subPath))) continue;
-    const files = await fg('**/*.yaml', { cwd: subPath, absolute: true });
+    const files = await fg("**/*.yaml", { cwd: subPath, absolute: true });
     for (const file of files) {
       const raw = await readYamlFile(file);
       if (!raw.ok) continue;
       const data = raw.data as Record<string, unknown>;
-      const name = data['name'] as string;
+      const name = data["name"] as string;
       if (!name) continue;
       const { name: _name, managed_by: _managedBy, ...serverConfig } = data;
       servers[name] = serverConfig;
@@ -341,7 +376,10 @@ async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
     if (rawResult.ok) {
       const parsed = McpConfigSchema.safeParse(rawResult.data);
       if (parsed.success) {
-        legacyServers = (parsed.data as McpConfig).servers as Record<string, Record<string, unknown>>;
+        legacyServers = (parsed.data as McpConfig).servers as Record<
+          string,
+          Record<string, unknown>
+        >;
       } else {
         return err(zodToCodiErrors(parsed.error, mcpPath));
       }
@@ -359,10 +397,12 @@ async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
   return ok({ servers: merged } as McpConfig);
 }
 
-export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCodiDir>> {
-  const codiDir = path.join(projectRoot, '.codi');
+export async function scanCodiDir(
+  projectRoot: string,
+): Promise<Result<ParsedCodiDir>> {
+  const codiDir = path.join(projectRoot, ".codi");
   if (!(await fileExists(codiDir))) {
-    return err([createError('E_CONFIG_NOT_FOUND', { path: codiDir })]);
+    return err([createError("E_CONFIG_NOT_FOUND", { path: codiDir })]);
   }
 
   const manifestResult = await parseManifest(codiDir);
@@ -371,16 +411,16 @@ export async function scanCodiDir(projectRoot: string): Promise<Result<ParsedCod
   const flagsResult = await parseFlags(codiDir);
   if (!flagsResult.ok) return flagsResult;
 
-  const rulesResult = await scanRules(path.join(codiDir, 'rules'));
+  const rulesResult = await scanRules(path.join(codiDir, "rules"));
   if (!rulesResult.ok) return rulesResult;
 
-  const skillsResult = await scanSkills(path.join(codiDir, 'skills'));
+  const skillsResult = await scanSkills(path.join(codiDir, "skills"));
   if (!skillsResult.ok) return skillsResult;
 
-  const commandsResult = await scanCommands(path.join(codiDir, 'commands'));
+  const commandsResult = await scanCommands(path.join(codiDir, "commands"));
   if (!commandsResult.ok) return commandsResult;
 
-  const agentsResult = await scanAgents(path.join(codiDir, 'agents'));
+  const agentsResult = await scanAgents(path.join(codiDir, "agents"));
   if (!agentsResult.ok) return agentsResult;
 
   const mcpResult = await parseMcpConfig(codiDir);

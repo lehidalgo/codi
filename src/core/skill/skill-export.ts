@@ -1,24 +1,38 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
-import type { NormalizedSkill } from '../../types/config.js';
-import type { CodiError } from '../output/types.js';
-import { createError } from '../output/errors.js';
-import { buildSkillMd, SKIP_DIRS, SKIP_FILES } from '../../adapters/skill-generator.js';
-import { parseSkillFile } from '../config/parser.js';
-import { SKILL_OUTPUT_FILENAME } from '../../constants.js';
-import { MAX_PRESET_ZIP_WARN_BYTES, MAX_PRESET_ZIP_ERROR_BYTES } from '../../constants.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
+import type { NormalizedSkill } from "../../types/config.js";
+import type { CodiError } from "../output/types.js";
+import { createError } from "../output/errors.js";
+import {
+  buildSkillMd,
+  SKIP_DIRS,
+  SKIP_FILES,
+} from "../../adapters/skill-generator.js";
+import { parseSkillFile } from "../config/parser.js";
+import { SKILL_OUTPUT_FILENAME } from "../../constants.js";
+import {
+  MAX_PRESET_ZIP_WARN_BYTES,
+  MAX_PRESET_ZIP_ERROR_BYTES,
+} from "../../constants.js";
 
 const execFileAsync = promisify(execFile);
 
-export type SkillExportFormat = 'standard' | 'claude-plugin' | 'codex-plugin' | 'zip';
+export type SkillExportFormat =
+  | "standard"
+  | "claude-plugin"
+  | "codex-plugin"
+  | "zip";
 
 export const EXPORT_FORMATS: SkillExportFormat[] = [
-  'standard', 'claude-plugin', 'codex-plugin', 'zip',
+  "standard",
+  "claude-plugin",
+  "codex-plugin",
+  "zip",
 ];
 
 export interface SkillExportOptions {
@@ -47,19 +61,23 @@ export async function validateSkillForExport(
   try {
     await fs.access(skillDir);
   } catch {
-    return err([createError('E_SKILL_NOT_FOUND', {
-      name,
-      path: skillDir,
-    })]);
+    return err([
+      createError("E_SKILL_NOT_FOUND", {
+        name,
+        path: skillDir,
+      }),
+    ]);
   }
 
   try {
     await fs.access(skillMdPath);
   } catch {
-    return err([createError('E_SKILL_NOT_FOUND', {
-      name,
-      path: skillMdPath,
-    })]);
+    return err([
+      createError("E_SKILL_NOT_FOUND", {
+        name,
+        path: skillMdPath,
+      }),
+    ]);
   }
 
   const parseResult = await parseSkillFile(skillMdPath);
@@ -67,10 +85,12 @@ export async function validateSkillForExport(
 
   const skill = parseResult.data;
   if (!skill.description || skill.description.trim().length === 0) {
-    return err([createError('E_SKILL_INVALID', {
-      name,
-      reason: 'Description is required for marketplace export.',
-    })]);
+    return err([
+      createError("E_SKILL_INVALID", {
+        name,
+        reason: "Description is required for marketplace export.",
+      }),
+    ]);
   }
 
   return ok(skill);
@@ -83,13 +103,13 @@ export async function exportSkill(
   options: SkillExportOptions,
 ): Promise<Result<SkillExportResult>> {
   const { name, codiDir, outputDir, format } = options;
-  const skillDir = path.join(codiDir, 'skills', name);
+  const skillDir = path.join(codiDir, "skills", name);
 
   const validateResult = await validateSkillForExport(skillDir, name);
   if (!validateResult.ok) return validateResult;
   const skill = validateResult.data;
 
-  const isZip = format === 'zip';
+  const isZip = format === "zip";
   const stagingDir = isZip
     ? path.join(os.tmpdir(), `codi-skill-export-${Date.now()}`)
     : outputDir;
@@ -99,24 +119,30 @@ export async function exportSkill(
   }
 
   try {
-    const baseFormat = isZip ? 'standard' : format;
+    const baseFormat = isZip ? "standard" : format;
     let buildResult: Result<SkillExportResult>;
 
     switch (baseFormat) {
-      case 'standard':
+      case "standard":
         buildResult = await buildStandardExport(skill, skillDir, stagingDir);
         break;
-      case 'claude-plugin':
-        buildResult = await buildClaudePluginExport(skill, skillDir, stagingDir);
+      case "claude-plugin":
+        buildResult = await buildClaudePluginExport(
+          skill,
+          skillDir,
+          stagingDir,
+        );
         break;
-      case 'codex-plugin':
+      case "codex-plugin":
         buildResult = await buildCodexPluginExport(skill, skillDir, stagingDir);
         break;
       default:
-        return err([createError('E_SKILL_EXPORT_FAILED', {
-          name,
-          reason: `Unsupported format: ${format}`,
-        })]);
+        return err([
+          createError("E_SKILL_EXPORT_FAILED", {
+            name,
+            reason: `Unsupported format: ${format}`,
+          }),
+        ]);
     }
 
     if (!buildResult.ok) return buildResult;
@@ -132,7 +158,7 @@ export async function exportSkill(
 
       return ok({
         outputPath: zipResult.data.outputPath,
-        format: 'zip',
+        format: "zip",
         sizeBytes: zipResult.data.sizeBytes,
         warnings: [...buildResult.data.warnings, ...zipResult.data.warnings],
       });
@@ -159,14 +185,18 @@ async function buildStandardExport(
 
   // Write clean SKILL.md (no Codi-internal fields, no generated header)
   const cleanMd = buildSkillMd(skill);
-  await fs.writeFile(path.join(destDir, SKILL_OUTPUT_FILENAME), cleanMd, 'utf-8');
+  await fs.writeFile(
+    path.join(destDir, SKILL_OUTPUT_FILENAME),
+    cleanMd,
+    "utf-8",
+  );
 
   // Copy supporting files
   await copySkillFiles(skillDir, destDir);
 
   return ok({
     outputPath: destDir,
-    format: 'standard' as SkillExportFormat,
+    format: "standard" as SkillExportFormat,
     warnings: [],
   });
 }
@@ -180,8 +210,8 @@ async function buildClaudePluginExport(
   outputDir: string,
 ): Promise<Result<SkillExportResult>> {
   const pluginDir = path.join(outputDir, `${skill.name}-plugin`);
-  const skillsDir = path.join(pluginDir, 'skills', skill.name);
-  const manifestDir = path.join(pluginDir, '.claude-plugin');
+  const skillsDir = path.join(pluginDir, "skills", skill.name);
+  const manifestDir = path.join(pluginDir, ".claude-plugin");
 
   await fs.mkdir(skillsDir, { recursive: true });
   await fs.mkdir(manifestDir, { recursive: true });
@@ -189,25 +219,29 @@ async function buildClaudePluginExport(
   // Write plugin.json
   const manifest = {
     name: skill.name,
-    description: skill.description.split('\n')[0]?.trim() ?? skill.description,
-    version: '1.0.0',
+    description: skill.description.split("\n")[0]?.trim() ?? skill.description,
+    version: "1.0.0",
   };
   await fs.writeFile(
-    path.join(manifestDir, 'plugin.json'),
-    JSON.stringify(manifest, null, 2) + '\n',
-    'utf-8',
+    path.join(manifestDir, "plugin.json"),
+    JSON.stringify(manifest, null, 2) + "\n",
+    "utf-8",
   );
 
   // Write clean SKILL.md
   const cleanMd = buildSkillMd(skill);
-  await fs.writeFile(path.join(skillsDir, SKILL_OUTPUT_FILENAME), cleanMd, 'utf-8');
+  await fs.writeFile(
+    path.join(skillsDir, SKILL_OUTPUT_FILENAME),
+    cleanMd,
+    "utf-8",
+  );
 
   // Copy supporting files
   await copySkillFiles(skillDir, skillsDir);
 
   return ok({
     outputPath: pluginDir,
-    format: 'claude-plugin' as SkillExportFormat,
+    format: "claude-plugin" as SkillExportFormat,
     warnings: [],
   });
 }
@@ -221,8 +255,8 @@ async function buildCodexPluginExport(
   outputDir: string,
 ): Promise<Result<SkillExportResult>> {
   const pluginDir = path.join(outputDir, `${skill.name}-plugin`);
-  const skillsDir = path.join(pluginDir, 'skills', skill.name);
-  const manifestDir = path.join(pluginDir, '.codex-plugin');
+  const skillsDir = path.join(pluginDir, "skills", skill.name);
+  const manifestDir = path.join(pluginDir, ".codex-plugin");
 
   await fs.mkdir(skillsDir, { recursive: true });
   await fs.mkdir(manifestDir, { recursive: true });
@@ -230,25 +264,29 @@ async function buildCodexPluginExport(
   // Write plugin.json
   const manifest = {
     name: skill.name,
-    description: skill.description.split('\n')[0]?.trim() ?? skill.description,
-    version: '1.0.0',
+    description: skill.description.split("\n")[0]?.trim() ?? skill.description,
+    version: "1.0.0",
   };
   await fs.writeFile(
-    path.join(manifestDir, 'plugin.json'),
-    JSON.stringify(manifest, null, 2) + '\n',
-    'utf-8',
+    path.join(manifestDir, "plugin.json"),
+    JSON.stringify(manifest, null, 2) + "\n",
+    "utf-8",
   );
 
   // Write clean SKILL.md
   const cleanMd = buildSkillMd(skill);
-  await fs.writeFile(path.join(skillsDir, SKILL_OUTPUT_FILENAME), cleanMd, 'utf-8');
+  await fs.writeFile(
+    path.join(skillsDir, SKILL_OUTPUT_FILENAME),
+    cleanMd,
+    "utf-8",
+  );
 
   // Copy supporting files
   await copySkillFiles(skillDir, skillsDir);
 
   return ok({
     outputPath: pluginDir,
-    format: 'codex-plugin' as SkillExportFormat,
+    format: "codex-plugin" as SkillExportFormat,
     warnings: [],
   });
 }
@@ -259,34 +297,42 @@ async function buildCodexPluginExport(
 async function createSkillZip(
   sourceDir: string,
   outputPath: string,
-): Promise<Result<{ outputPath: string; sizeBytes: number; warnings: CodiError[] }>> {
+): Promise<
+  Result<{ outputPath: string; sizeBytes: number; warnings: CodiError[] }>
+> {
   const warnings: CodiError[] = [];
   const parentDir = path.dirname(sourceDir);
   const dirName = path.basename(sourceDir);
 
   try {
-    await execFileAsync('zip', ['-r', path.resolve(outputPath), dirName], {
+    await execFileAsync("zip", ["-r", path.resolve(outputPath), dirName], {
       cwd: parentDir,
     });
   } catch (cause) {
-    return err([createError('E_SKILL_EXPORT_FAILED', {
-      name: dirName,
-      reason: `Failed to create ZIP: ${cause instanceof Error ? cause.message : String(cause)}. Ensure 'zip' command is available.`,
-    })]);
+    return err([
+      createError("E_SKILL_EXPORT_FAILED", {
+        name: dirName,
+        reason: `Failed to create ZIP: ${cause instanceof Error ? cause.message : String(cause)}. Ensure 'zip' command is available.`,
+      }),
+    ]);
   }
 
   const stat = await fs.stat(outputPath);
   if (stat.size > MAX_PRESET_ZIP_ERROR_BYTES) {
     await fs.unlink(outputPath).catch(() => {});
-    return err([createError('E_SKILL_EXPORT_FAILED', {
-      name: dirName,
-      reason: `ZIP exceeds maximum size of ${MAX_PRESET_ZIP_ERROR_BYTES / 1_048_576}MB`,
-    })]);
+    return err([
+      createError("E_SKILL_EXPORT_FAILED", {
+        name: dirName,
+        reason: `ZIP exceeds maximum size of ${MAX_PRESET_ZIP_ERROR_BYTES / 1_048_576}MB`,
+      }),
+    ]);
   }
   if (stat.size > MAX_PRESET_ZIP_WARN_BYTES) {
-    warnings.push(createError('W_CONTENT_SIZE', {
-      message: `ZIP is ${(stat.size / 1_048_576).toFixed(1)}MB — consider reducing skill size`,
-    }));
+    warnings.push(
+      createError("W_CONTENT_SIZE", {
+        message: `ZIP is ${(stat.size / 1_048_576).toFixed(1)}MB — consider reducing skill size`,
+      }),
+    );
   }
 
   return ok({ outputPath, sizeBytes: stat.size, warnings });
@@ -329,8 +375,8 @@ async function copyDirFiltered(
 
     if (entry.name === SKILL_OUTPUT_FILENAME) continue;
     if (SKIP_FILES.has(entry.name)) continue;
-    const topDir = relativePath.split('/')[0] ?? '';
-    if (topDir === 'evals') continue;
+    const topDir = relativePath.split("/")[0] ?? "";
+    if (topDir === "evals") continue;
 
     await fs.mkdir(path.dirname(destPath), { recursive: true });
     await fs.copyFile(sourcePath, destPath);
@@ -340,15 +386,13 @@ async function copyDirFiltered(
 /**
  * Lists available skills in .codi/skills/ directory.
  */
-export async function listAvailableSkills(
-  codiDir: string,
-): Promise<string[]> {
-  const skillsDir = path.join(codiDir, 'skills');
+export async function listAvailableSkills(codiDir: string): Promise<string[]> {
+  const skillsDir = path.join(codiDir, "skills");
   try {
     const entries = await fs.readdir(skillsDir, { withFileTypes: true });
     return entries
-      .filter(e => e.isDirectory())
-      .map(e => e.name)
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
       .sort();
   } catch {
     return [];

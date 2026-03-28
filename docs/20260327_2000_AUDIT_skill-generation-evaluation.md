@@ -1,4 +1,5 @@
 # Skill Generation Evaluation: Codi vs Claude Code Official Architecture
+
 **Date**: 2026-03-27 20:00
 **Document**: 20260327_2000_AUDIT_skill-generation-evaluation.md
 **Category**: AUDIT
@@ -32,21 +33,21 @@ my-skill/
 
 ### SKILL.md Frontmatter Fields (Official)
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | No | Display name; defaults to directory name. Lowercase, hyphens, max 64 chars |
-| `description` | Recommended | What the skill does and when to use it. Claude uses this for auto-loading |
-| `argument-hint` | No | Hint shown during autocomplete (e.g., `[issue-number]`) |
-| `disable-model-invocation` | No | `true` prevents Claude auto-loading. Default: `false` |
-| `user-invocable` | No | `false` hides from `/` menu. Default: `true` |
-| `allowed-tools` | No | Tools Claude can use without permission when skill is active |
-| `model` | No | Model to use when skill is active |
-| `effort` | No | Effort level override (`low`, `medium`, `high`, `max`) |
-| `context` | No | `fork` to run in a forked subagent context |
-| `agent` | No | Which subagent type when `context: fork` |
-| `hooks` | No | Hooks scoped to this skill's lifecycle |
-| `paths` | No | Glob patterns limiting when skill activates |
-| `shell` | No | Shell for inline commands (`bash` or `powershell`) |
+| Field                      | Required    | Description                                                                |
+| -------------------------- | ----------- | -------------------------------------------------------------------------- |
+| `name`                     | No          | Display name; defaults to directory name. Lowercase, hyphens, max 64 chars |
+| `description`              | Recommended | What the skill does and when to use it. Claude uses this for auto-loading  |
+| `argument-hint`            | No          | Hint shown during autocomplete (e.g., `[issue-number]`)                    |
+| `disable-model-invocation` | No          | `true` prevents Claude auto-loading. Default: `false`                      |
+| `user-invocable`           | No          | `false` hides from `/` menu. Default: `true`                               |
+| `allowed-tools`            | No          | Tools Claude can use without permission when skill is active               |
+| `model`                    | No          | Model to use when skill is active                                          |
+| `effort`                   | No          | Effort level override (`low`, `medium`, `high`, `max`)                     |
+| `context`                  | No          | `fork` to run in a forked subagent context                                 |
+| `agent`                    | No          | Which subagent type when `context: fork`                                   |
+| `hooks`                    | No          | Hooks scoped to this skill's lifecycle                                     |
+| `paths`                    | No          | Glob patterns limiting when skill activates                                |
+| `shell`                    | No          | Shell for inline commands (`bash` or `powershell`)                         |
 
 ### Key Architectural Principles
 
@@ -72,17 +73,18 @@ my-skill/
 
 ### Per-Agent Skill Support Matrix
 
-| Agent | Skill Directory | Skill Files | Inline in Instruction File | Progressive Loading | Frontmatter | Discovery |
-|-------|----------------|-------------|---------------------------|--------------------|----|-----------|
-| **Claude Code** | `.claude/skills/{name}/` | `SKILL.md` | No (separate files) | Yes (metadata-only stub) | Yes (official spec) | Auto-discovery |
-| **Cursor** | `.cursor/skills/{name}/` | `SKILL.md` | No (separate files) | Yes (metadata-only stub) | Partial | Manual |
-| **Codex** | `.agents/skills/{name}/` | `SKILL.md` | No (separate files) | Yes (metadata-only stub) | Unknown | Manual |
-| **Windsurf** | `.windsurf/skills/{name}/` | `SKILL.md` | Yes (full content in `.windsurfrules`) | No | No | Via instruction file |
-| **Cline** | `.cline/skills/{name}/` | `SKILL.md` | Yes (full content in `.clinerules`) | No | No | Via instruction file |
+| Agent           | Skill Directory            | Skill Files | Inline in Instruction File             | Progressive Loading      | Frontmatter         | Discovery            |
+| --------------- | -------------------------- | ----------- | -------------------------------------- | ------------------------ | ------------------- | -------------------- |
+| **Claude Code** | `.claude/skills/{name}/`   | `SKILL.md`  | No (separate files)                    | Yes (metadata-only stub) | Yes (official spec) | Auto-discovery       |
+| **Cursor**      | `.cursor/skills/{name}/`   | `SKILL.md`  | No (separate files)                    | Yes (metadata-only stub) | Partial             | Manual               |
+| **Codex**       | `.agents/skills/{name}/`   | `SKILL.md`  | No (separate files)                    | Yes (metadata-only stub) | Unknown             | Manual               |
+| **Windsurf**    | `.windsurf/skills/{name}/` | `SKILL.md`  | Yes (full content in `.windsurfrules`) | No                       | No                  | Via instruction file |
+| **Cline**       | `.cline/skills/{name}/`    | `SKILL.md`  | Yes (full content in `.clinerules`)    | No                       | No                  | Via instruction file |
 
 ### How Each Agent Consumes Skills
 
 **Claude Code** (`src/adapters/claude-code.ts`):
+
 - Generates `SKILL.md` files in `.claude/skills/{name}/`
 - With progressive loading: generates metadata-only stubs pointing to `.codi/skills/{name}/SKILL.md`
 - Without progressive loading: generates full `SKILL.md` with all content
@@ -90,22 +92,26 @@ my-skill/
 - Auto-discovers skills from directory structure
 
 **Cursor** (`src/adapters/cursor.ts`):
+
 - Generates `SKILL.md` files in `.cursor/skills/{name}/`
 - Same progressive loading behavior as Claude Code
 - Frontmatter support is partial (no official Cursor skill spec)
 
 **Codex** (`src/adapters/codex.ts`):
+
 - Generates `SKILL.md` files in `.agents/skills/{name}/`
 - Same progressive loading behavior
 - Codex skill format is less documented
 
 **Windsurf** (`src/adapters/windsurf.ts`):
+
 - Dual output: inline skill content in `.windsurfrules` AND separate `SKILL.md` files in `.windsurf/skills/`
 - No progressive loading support
 - No frontmatter support
 - Primary consumption is via the instruction file, not skill directories
 
 **Cline** (`src/adapters/cline.ts`):
+
 - Identical pattern to Windsurf: inline in `.clinerules` + separate `SKILL.md` files
 - No progressive loading or frontmatter support
 - Primary consumption is via the instruction file
@@ -136,7 +142,6 @@ description: Git commit workflow...
 # license: MIT
 # metadata-key: "value"
 ---
-
 [skill content from template]
 ```
 
@@ -147,7 +152,6 @@ description: Git commit workflow...
 name: commit
 description: Git commit workflow...
 ---
-
 Full skill content available at: .codi/skills/commit/SKILL.md
 ```
 
@@ -189,6 +193,7 @@ The `createSkill()` function creates a full directory scaffold:
 ### 4.3 Template System
 
 Skill templates in `src/templates/skills/` export a template string with:
+
 - Codi-specific frontmatter: `managed_by: codi`, `compatibility: [...]`
 - `{{name}}` placeholder substituted during scaffolding
 - Full skill body content
@@ -236,22 +241,22 @@ files.push({
 
 **What Codi supports in `buildSkillMd()`**:
 
-| Field | Supported | Generated |
-|-------|-----------|-----------|
-| `name` | Yes | Yes |
-| `description` | Yes | Yes |
-| `disable-model-invocation` | Yes | Conditional |
-| `argument-hint` | Yes | Conditional |
-| `allowed-tools` | Yes | Conditional |
-| `license` | Yes | Conditional |
-| `model` | No | No |
-| `effort` | No | No |
-| `context` | No | No |
-| `agent` | No | No |
-| `hooks` | No | No |
-| `paths` | No | No |
-| `shell` | No | No |
-| `user-invocable` | No | No |
+| Field                      | Supported | Generated   |
+| -------------------------- | --------- | ----------- |
+| `name`                     | Yes       | Yes         |
+| `description`              | Yes       | Yes         |
+| `disable-model-invocation` | Yes       | Conditional |
+| `argument-hint`            | Yes       | Conditional |
+| `allowed-tools`            | Yes       | Conditional |
+| `license`                  | Yes       | Conditional |
+| `model`                    | No        | No          |
+| `effort`                   | No        | No          |
+| `context`                  | No        | No          |
+| `agent`                    | No        | No          |
+| `hooks`                    | No        | No          |
+| `paths`                    | No        | No          |
+| `shell`                    | No        | No          |
+| `user-invocable`           | No        | No          |
 
 **Impact**: Medium. Skills that need subagent execution (`context: fork`), path-based activation (`paths`), or effort control (`effort`) cannot be configured through Codi.
 
@@ -301,6 +306,7 @@ files.push({
 ### Skill Creator (`src/templates/skills/skill-creator.ts`)
 
 **Strengths**:
+
 - Comprehensive 8-step lifecycle (capture intent → scaffold → write → evals → run → grade → optimize → register)
 - Detailed description writing guide with BAD/GOOD examples
 - Eval format is well-specified with objective pass/fail criteria
@@ -309,15 +315,15 @@ files.push({
 
 **Gaps vs Official Spec**:
 
-| Skill Creator Teaches | Official Spec Says | Gap |
-|----------------------|--------------------|----- |
-| Scaffold: `SKILL.md`, `evals.json`, `scripts/` | Structure: `SKILL.md`, optional `reference.md`, `examples.md`, `scripts/` | Missing `reference.md` and `examples.md` patterns |
-| Frontmatter: `name`, `description`, `managed_by` | Frontmatter: `name`, `description`, `disable-model-invocation`, `context`, `agent`, `paths`, `effort`, `model`, `hooks`, `allowed-tools` | Missing 8 frontmatter fields |
-| No mention of `$ARGUMENTS` substitution | Full substitution system: `$ARGUMENTS`, `$N`, `${CLAUDE_SKILL_DIR}` | Users can't create argument-driven skills |
-| No mention of `context: fork` subagent execution | Full subagent support with agent type selection | Users can't create skills that run in isolation |
-| No mention of `` !`command` `` dynamic injection | Pre-execution shell commands for live data | Users can't create data-fetching skills |
-| No mention of `disable-model-invocation` for side-effect skills | Explicit guidance: use for deploy, commit, send-slack | Users can't control invocation mode |
-| Teaches `compatibility: [claude-code, cursor, codex]` | Not a Claude Code field | Codi-specific field adds no value to Claude Code |
+| Skill Creator Teaches                                           | Official Spec Says                                                                                                                       | Gap                                               |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Scaffold: `SKILL.md`, `evals.json`, `scripts/`                  | Structure: `SKILL.md`, optional `reference.md`, `examples.md`, `scripts/`                                                                | Missing `reference.md` and `examples.md` patterns |
+| Frontmatter: `name`, `description`, `managed_by`                | Frontmatter: `name`, `description`, `disable-model-invocation`, `context`, `agent`, `paths`, `effort`, `model`, `hooks`, `allowed-tools` | Missing 8 frontmatter fields                      |
+| No mention of `$ARGUMENTS` substitution                         | Full substitution system: `$ARGUMENTS`, `$N`, `${CLAUDE_SKILL_DIR}`                                                                      | Users can't create argument-driven skills         |
+| No mention of `context: fork` subagent execution                | Full subagent support with agent type selection                                                                                          | Users can't create skills that run in isolation   |
+| No mention of `` !`command` `` dynamic injection                | Pre-execution shell commands for live data                                                                                               | Users can't create data-fetching skills           |
+| No mention of `disable-model-invocation` for side-effect skills | Explicit guidance: use for deploy, commit, send-slack                                                                                    | Users can't control invocation mode               |
+| Teaches `compatibility: [claude-code, cursor, codex]`           | Not a Claude Code field                                                                                                                  | Codi-specific field adds no value to Claude Code  |
 
 ### Rule Creator, Agent Creator, Command Creator
 
@@ -362,12 +368,12 @@ interface NormalizedSkill {
   content: string;
   // Add missing official fields
   model?: string;
-  effort?: 'low' | 'medium' | 'high' | 'max';
-  context?: 'fork';
+  effort?: "low" | "medium" | "high" | "max";
+  context?: "fork";
   agent?: string;
   hooks?: Record<string, unknown>;
   paths?: string[];
-  shell?: 'bash' | 'powershell';
+  shell?: "bash" | "powershell";
   userInvocable?: boolean;
 }
 ```
@@ -392,6 +398,7 @@ interface NormalizedSkill {
 ### R5: Update Skill Creator Template with Official Spec (MEDIUM)
 
 **Change**: Add sections to the skill-creator template covering:
+
 - All official frontmatter fields with usage guidance
 - `$ARGUMENTS` substitution with examples
 - `context: fork` subagent execution pattern
@@ -441,19 +448,19 @@ Codi's skill implementation has **two distinct pipelines** with different maturi
 
 ### Current State vs Official Spec
 
-| Aspect | Codi Status | Official Spec | Alignment |
-|--------|------------|---------------|-----------|
-| Directory-based skills | Yes | Yes | Aligned |
-| SKILL.md as entry point | Yes | Yes | Aligned |
-| Frontmatter (basic) | `name`, `description` | `name`, `description` | Aligned |
-| Frontmatter (advanced) | 3 of 12 fields | 12 fields | Partial |
-| Supporting files | Scaffolded but not propagated | Core feature | Gap |
-| Scripts directory | Scaffolded but not propagated | Executed, not loaded | Gap |
-| Evals | Codi-specific (good practice) | Not part of spec | Codi extension |
-| String substitutions | Not supported in templates | Full system | Gap |
-| Dynamic context injection | Not supported | `` !`command` `` | Gap |
-| Progressive loading | Yes (metadata stubs) | Native behavior | Aligned |
-| Multi-agent output | 5 agents with adapted formats | Claude Code only | Codi advantage |
+| Aspect                    | Codi Status                   | Official Spec         | Alignment      |
+| ------------------------- | ----------------------------- | --------------------- | -------------- |
+| Directory-based skills    | Yes                           | Yes                   | Aligned        |
+| SKILL.md as entry point   | Yes                           | Yes                   | Aligned        |
+| Frontmatter (basic)       | `name`, `description`         | `name`, `description` | Aligned        |
+| Frontmatter (advanced)    | 3 of 12 fields                | 12 fields             | Partial        |
+| Supporting files          | Scaffolded but not propagated | Core feature          | Gap            |
+| Scripts directory         | Scaffolded but not propagated | Executed, not loaded  | Gap            |
+| Evals                     | Codi-specific (good practice) | Not part of spec      | Codi extension |
+| String substitutions      | Not supported in templates    | Full system           | Gap            |
+| Dynamic context injection | Not supported                 | `` !`command` ``      | Gap            |
+| Progressive loading       | Yes (metadata stubs)          | Native behavior       | Aligned        |
+| Multi-agent output        | 5 agents with adapted formats | Claude Code only      | Codi advantage |
 
 ### Recommended Priority Order
 
@@ -465,6 +472,7 @@ Codi's skill implementation has **two distinct pipelines** with different maturi
 6. **R6** — Agent-specific skill adaptation for Windsurf/Cline
 
 Sources:
+
 - [Extend Claude with skills - Claude Code Docs](https://code.claude.com/docs/en/skills)
 - [Skill authoring best practices - Claude API Docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
 - [Agent Skills - Claude API Docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview)

@@ -108,7 +108,7 @@ describe("installHooks", () => {
     expect(content).toContain("npx prettier --write");
     // Staged files collected once, then filtered per hook with grep
     expect(content).toContain(
-      'STAGED=$(git diff --cached --name-only --diff-filter=ACMR)',
+      "STAGED=$(git diff --cached --name-only --diff-filter=ACMR)",
     );
     expect(content).toContain("grep -E");
     if (result.ok) {
@@ -413,9 +413,7 @@ describe("globToGrepPattern", () => {
   });
 
   it("converts cpp extension glob", () => {
-    expect(globToGrepPattern("**/*.{cpp,hpp,cc,h}")).toBe(
-      "\\.(cpp|hpp|cc|h)$",
-    );
+    expect(globToGrepPattern("**/*.{cpp,hpp,cc,h}")).toBe("\\.(cpp|hpp|cc|h)$");
   });
 
   it("returns empty string for unrecognized glob", () => {
@@ -435,7 +433,7 @@ describe("buildHuskyCommands", () => {
     ];
     const result = buildHuskyCommands(hooks);
     expect(result).toContain(
-      'STAGED=$(git diff --cached --name-only --diff-filter=ACMR)',
+      "STAGED=$(git diff --cached --name-only --diff-filter=ACMR)",
     );
     expect(result).toContain("grep -E '\\.(ts|tsx|js|jsx)$'");
     expect(result).toContain("npx eslint --fix $ESLINT");

@@ -18,7 +18,12 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       command: "npx prettier --write",
       stagedFilter: "**/*.{ts,tsx,js,jsx}",
     },
-    { name: "tsc", command: "npx tsc --noEmit", stagedFilter: "**/*.{ts,tsx}", passFiles: false },
+    {
+      name: "tsc",
+      command: "npx tsc --noEmit",
+      stagedFilter: "**/*.{ts,tsx}",
+      passFiles: false,
+    },
   ],
   javascript: [
     {
@@ -39,7 +44,12 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       stagedFilter: "**/*.py",
     },
     { name: "ruff-format", command: "ruff format", stagedFilter: "**/*.py" },
-    { name: "pyright", command: "npx pyright", stagedFilter: "**/*.py", passFiles: false },
+    {
+      name: "pyright",
+      command: "npx pyright",
+      stagedFilter: "**/*.py",
+      passFiles: false,
+    },
   ],
   go: [
     {
@@ -51,8 +61,18 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
     { name: "gofmt", command: "gofmt -w", stagedFilter: "**/*.go" },
   ],
   rust: [
-    { name: "cargo-clippy", command: "cargo clippy", stagedFilter: "**/*.rs", passFiles: false },
-    { name: "cargo-fmt", command: "cargo fmt", stagedFilter: "**/*.rs", passFiles: false },
+    {
+      name: "cargo-clippy",
+      command: "cargo clippy",
+      stagedFilter: "**/*.rs",
+      passFiles: false,
+    },
+    {
+      name: "cargo-fmt",
+      command: "cargo fmt",
+      stagedFilter: "**/*.rs",
+      passFiles: false,
+    },
   ],
   java: [
     {
@@ -107,7 +127,12 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       command: "php-cs-fixer fix",
       stagedFilter: "**/*.php",
     },
-    { name: "phpstan", command: "phpstan analyse", stagedFilter: "**/*.php", passFiles: false },
+    {
+      name: "phpstan",
+      command: "phpstan analyse",
+      stagedFilter: "**/*.php",
+      passFiles: false,
+    },
   ],
   ruby: [{ name: "rubocop", command: "rubocop -a", stagedFilter: "**/*.rb" }],
   dart: [

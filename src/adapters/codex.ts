@@ -1,24 +1,31 @@
-import { access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { access } from "node:fs/promises";
+import { join } from "node:path";
 import type {
   AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
   GenerateOptions,
-} from '../types/agent.js';
-import type { NormalizedConfig } from '../types/config.js';
-import { hashContent } from '../utils/hash.js';
-import { buildFlagInstructions } from './flag-instructions.js';
-import { addGeneratedHeader } from './generated-header.js';
-import { generateSkillFiles, type ProgressiveLoadingMode } from './skill-generator.js';
+} from "../types/agent.js";
+import type { NormalizedConfig } from "../types/config.js";
+import { hashContent } from "../utils/hash.js";
+import { buildFlagInstructions } from "./flag-instructions.js";
+import { addGeneratedHeader } from "./generated-header.js";
+import {
+  generateSkillFiles,
+  type ProgressiveLoadingMode,
+} from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildAgentsTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
-} from './section-builder.js';
-import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
+} from "./section-builder.js";
+import {
+  CONTEXT_TOKENS_LARGE,
+  MANIFEST_FILENAME,
+  MCP_FILENAME,
+} from "../constants.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -30,17 +37,17 @@ async function exists(path: string): Promise<boolean> {
 }
 
 export const codexAdapter: AgentAdapter = {
-  id: 'codex',
-  name: 'Codex',
+  id: "codex",
+  name: "Codex",
 
   paths: {
-    configRoot: '.codex',
-    rules: '.',
-    skills: '.agents/skills',
+    configRoot: ".codex",
+    rules: ".",
+    skills: ".agents/skills",
     commands: null,
-    agents: '.codex/agents',
-    instructionFile: 'AGENTS.md',
-    mcpConfig: '.codex/mcp.toml',
+    agents: ".codex/agents",
+    instructionFile: "AGENTS.md",
+    mcpConfig: ".codex/mcp.toml",
   } satisfies AgentPaths,
 
   capabilities: {
@@ -55,12 +62,15 @@ export const codexAdapter: AgentAdapter = {
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
-    const hasFile = await exists(join(projectRoot, 'AGENTS.md'));
-    const hasDir = await exists(join(projectRoot, '.agents'));
+    const hasFile = await exists(join(projectRoot, "AGENTS.md"));
+    const hasDir = await exists(join(projectRoot, ".agents"));
     return hasFile || hasDir;
   },
 
-  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+  async generate(
+    config: NormalizedConfig,
+    _options: GenerateOptions,
+  ): Promise<GeneratedFile[]> {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
@@ -72,7 +82,7 @@ export const codexAdapter: AgentAdapter = {
     if (overview) sections.push(overview);
 
     if (flagText) {
-      sections.push('## Permissions\n\n' + flagText);
+      sections.push("## Permissions\n\n" + flagText);
     }
 
     // Agents table with descriptions
@@ -90,17 +100,25 @@ export const codexAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`## ${rule.name}\n\n${rule.content}`);
     }
-    const content = addGeneratedHeader(sections.join('\n\n'));
+    const content = addGeneratedHeader(sections.join("\n\n"));
     files.push({
-      path: 'AGENTS.md',
+      path: "AGENTS.md",
       content,
       sources: [MANIFEST_FILENAME],
       hash: hashContent(content),
     });
 
     // Generate .agents/skills/{name}/SKILL.md + supporting files (auto-discovered by Codex)
-    const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
-    files.push(...await generateSkillFiles(config.skills, '.agents/skills', plMode, _options.projectRoot));
+    const plMode = ((config.flags.progressive_loading?.value as string) ??
+      "off") as ProgressiveLoadingMode;
+    files.push(
+      ...(await generateSkillFiles(
+        config.skills,
+        ".agents/skills",
+        plMode,
+        _options.projectRoot,
+      )),
+    );
 
     // Generate .codex/agents/{name}.toml (Codex TOML format)
     for (const agent of config.agents) {
@@ -109,8 +127,8 @@ export const codexAdapter: AgentAdapter = {
       lines.push(`description = "${agent.description}"`);
       lines.push(`developer_instructions = """\n${agent.content}\n"""`);
       if (agent.model) lines.push(`model = "${agent.model}"`);
-      const tomlContent = addGeneratedHeader(lines.join('\n'), 'toml');
-      const fileName = agent.name.toLowerCase().replace(/\s+/g, '-') + '.toml';
+      const tomlContent = addGeneratedHeader(lines.join("\n"), "toml");
+      const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".toml";
       files.push({
         path: `.codex/agents/${fileName}`,
         content: tomlContent,
@@ -122,27 +140,38 @@ export const codexAdapter: AgentAdapter = {
     // Generate .codex/config.toml (native settings + developer_instructions + MCP servers)
     const restrictions = buildFlagRestrictions(config.flags);
     const nativeSettings = buildCodexNativeSettings(config.flags);
-    const enabledServers = Object.entries(config.mcp.servers)
-      .filter(([, s]) => s.enabled !== false);
+    const enabledServers = Object.entries(config.mcp.servers).filter(
+      ([, s]) => s.enabled !== false,
+    );
     const hasMcp = enabledServers.length > 0;
 
     if (restrictions || nativeSettings || hasMcp) {
-      const configLines = ['# Generated by Codi | Do not edit — run: codi generate'];
+      const configLines = [
+        "# Generated by Codi | Do not edit — run: codi generate",
+      ];
 
       // Native settings (machine-enforced, not text)
       if (nativeSettings) {
-        configLines.push('', ...nativeSettings);
+        configLines.push("", ...nativeSettings);
       }
 
       if (restrictions) {
-        configLines.push('', `developer_instructions = """`, restrictions, `"""`);
+        configLines.push(
+          "",
+          `developer_instructions = """`,
+          restrictions,
+          `"""`,
+        );
       }
 
       if (hasMcp) {
         for (const [name, server] of enabledServers) {
-          configLines.push('', `[mcp_servers.${name}]`);
+          configLines.push("", `[mcp_servers.${name}]`);
           if (server.command) configLines.push(`command = "${server.command}"`);
-          if (server.args) configLines.push(`args = [${server.args.map(a => `"${a}"`).join(', ')}]`);
+          if (server.args)
+            configLines.push(
+              `args = [${server.args.map((a) => `"${a}"`).join(", ")}]`,
+            );
           if (server.url) configLines.push(`url = "${server.url}"`);
           if (server.env) {
             for (const [k, v] of Object.entries(server.env)) {
@@ -157,9 +186,9 @@ export const codexAdapter: AgentAdapter = {
         }
       }
 
-      const configContent = configLines.join('\n');
+      const configContent = configLines.join("\n");
       files.push({
-        path: '.codex/config.toml',
+        path: ".codex/config.toml",
         content: configContent,
         sources: [MANIFEST_FILENAME, MCP_FILENAME],
         hash: hashContent(configContent),
@@ -171,16 +200,18 @@ export const codexAdapter: AgentAdapter = {
 };
 
 /** Build native Codex config.toml settings from codi flags. */
-function buildCodexNativeSettings(flags: NormalizedConfig['flags']): string[] | null {
+function buildCodexNativeSettings(
+  flags: NormalizedConfig["flags"],
+): string[] | null {
   const lines: string[] = [];
   const flagValue = (key: string): unknown => flags[key]?.value;
 
-  if (flagValue('allow_shell_commands') === false) {
-    lines.push('[features]', 'shell_tool = false');
+  if (flagValue("allow_shell_commands") === false) {
+    lines.push("[features]", "shell_tool = false");
   }
 
-  const maxTokens = flagValue('max_context_tokens');
-  if (typeof maxTokens === 'number' && maxTokens > 0) {
+  const maxTokens = flagValue("max_context_tokens");
+  if (typeof maxTokens === "number" && maxTokens > 0) {
     lines.push(`model_context_window = ${maxTokens}`);
   }
 
@@ -188,28 +219,38 @@ function buildCodexNativeSettings(flags: NormalizedConfig['flags']): string[] | 
 }
 
 /** Build command restriction instructions from codi flags for Codex developer_instructions. */
-function buildFlagRestrictions(flags: NormalizedConfig['flags']): string | null {
+function buildFlagRestrictions(
+  flags: NormalizedConfig["flags"],
+): string | null {
   const flagValue = (key: string): unknown => flags[key]?.value;
   const lines: string[] = [];
 
-  if (flagValue('allow_force_push') === false) {
-    lines.push('FORBIDDEN: git push --force (or -f) — force push is disabled by project policy');
+  if (flagValue("allow_force_push") === false) {
+    lines.push(
+      "FORBIDDEN: git push --force (or -f) — force push is disabled by project policy",
+    );
   }
-  if (flagValue('allow_file_deletion') === false) {
-    lines.push('REQUIRES APPROVAL: rm -rf, rm -r — file deletion requires explicit user confirmation');
+  if (flagValue("allow_file_deletion") === false) {
+    lines.push(
+      "REQUIRES APPROVAL: rm -rf, rm -r — file deletion requires explicit user confirmation",
+    );
   }
-  if (flagValue('auto_commit') === false) {
-    lines.push('REQUIRES APPROVAL: git commit — always ask before committing');
+  if (flagValue("auto_commit") === false) {
+    lines.push("REQUIRES APPROVAL: git commit — always ask before committing");
   }
-  if (flagValue('require_pr_review') === true) {
-    lines.push('REQUIRED: All changes must go through pull request review before merging');
+  if (flagValue("require_pr_review") === true) {
+    lines.push(
+      "REQUIRED: All changes must go through pull request review before merging",
+    );
   }
-  if (flagValue('test_before_commit') === true) {
-    lines.push('REQUIRED: Run the test suite before every commit');
+  if (flagValue("test_before_commit") === true) {
+    lines.push("REQUIRED: Run the test suite before every commit");
   }
-  if (flagValue('security_scan') === true) {
-    lines.push('REQUIRED: Run security scans (npm audit / pip audit) before merging');
+  if (flagValue("security_scan") === true) {
+    lines.push(
+      "REQUIRED: Run security scans (npm audit / pip audit) before merging",
+    );
   }
 
-  return lines.length > 0 ? lines.join('\n') : null;
+  return lines.length > 0 ? lines.join("\n") : null;
 }

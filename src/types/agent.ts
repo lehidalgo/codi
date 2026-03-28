@@ -1,4 +1,4 @@
-import type { NormalizedConfig } from './config.js';
+import type { NormalizedConfig } from "./config.js";
 
 export interface AgentPaths {
   configRoot: string;
@@ -35,7 +35,12 @@ export interface GenerateOptions {
   projectRoot?: string;
 }
 
-export type FileStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'error';
+export type FileStatus =
+  | "created"
+  | "updated"
+  | "unchanged"
+  | "deleted"
+  | "error";
 
 export interface AgentFileStatus {
   path: string;
@@ -55,5 +60,8 @@ export interface AgentAdapter {
   detect(projectRoot: string): Promise<boolean>;
   paths: AgentPaths;
   capabilities: AgentCapabilities;
-  generate(config: NormalizedConfig, options: GenerateOptions): Promise<GeneratedFile[]>;
+  generate(
+    config: NormalizedConfig,
+    options: GenerateOptions,
+  ): Promise<GeneratedFile[]>;
 }
