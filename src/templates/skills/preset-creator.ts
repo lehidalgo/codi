@@ -1,4 +1,4 @@
-import { MAX_NAME_LENGTH } from '../../constants.js';
+import { MAX_NAME_LENGTH } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
@@ -16,7 +16,7 @@ Guide the user through creating a CODI preset — a reusable bundle of rules, sk
 - User asks to create, package, or scaffold a new codi preset
 - User wants to bundle existing rules, skills, and agents into a reusable configuration
 - User needs to export a preset as a ZIP or publish it to a GitHub repository
-- User asks how to extend or customize a built-in preset
+- User asks how to customize or fork a built-in preset
 
 ## Step 1: Define Identity
 
@@ -25,7 +25,7 @@ Ask the user:
 2. **Description**: one sentence describing the preset's purpose
 3. **Version**: semver format (default: \`1.0.0\`)
 4. **Tags**: comma-separated tags for discoverability
-5. **Base preset**: extend an existing preset? (e.g., \`balanced\`, \`strict\`, or none)
+5. **Reference preset**: use an existing preset as a starting point to copy from? (e.g., \`balanced\`, \`strict\`, or start blank)
 
 ## Step 2: Select Artifacts
 
@@ -112,7 +112,7 @@ Report any errors or warnings to the user.
 ## Important Notes
 
 - Presets are private by default — ZIP files stay local, GitHub repos use the org's access controls
-- Built-in presets (\`minimal\`, \`balanced\`, \`strict\`, \`python-web\`, \`typescript-fullstack\`, \`security-hardened\`) can be extended via the \`extends\` field
+- Presets are flat and self-contained — no inheritance. To customize a built-in preset, copy its artifacts into a new preset and modify them directly
 - The preset manifest (\`preset.yaml\`) must include at minimum: \`name\`, \`description\`, \`version\`
 - All \`.md\` files in artifact directories must have valid YAML frontmatter
 `;

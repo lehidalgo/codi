@@ -166,22 +166,16 @@ If doctor reports warnings, address them before finishing.
 - [ ] Measurable criteria where applicable (numbers, thresholds, patterns)
 - [ ] Scope is as narrow as possible while covering the intent
 
-## Available Rule Templates (23)
+## Available Rule Templates
 
-Run \\\`codi add rule --all\\\` to list all templates. Common ones include:
+Run \\\`codi add rule --all\\\` to list all templates. Major categories include:
 
-| Template | Description |
-|----------|-------------|
-| security | Input validation, secret management, auth rules |
-| code-style | Naming, formatting, file organization |
-| testing | Coverage targets, TDD workflow, test structure |
-| architecture | Dependency rules, module boundaries, layering |
-| error-handling | Error propagation, logging, resilience patterns |
-| api-design | REST conventions, versioning, response formats |
-| database | Query patterns, migration rules, connection management |
-| performance | Caching, query optimization, payload limits |
-| accessibility | WCAG compliance, ARIA usage, keyboard navigation |
-| documentation | Comment style, README structure, changelog format |
+| Category | Templates |
+|----------|-----------|
+| Practice | security, code-style, testing, architecture, error-handling, api-design, performance, documentation, git-workflow, production-mindset, simplicity-first |
+| Language | typescript, python, golang, java, kotlin, rust, swift, csharp |
+| Framework | react, nextjs, django, spring-boot |
+| Meta | workflow, agent-usage, codi-improvement |
 
 ## Constraints
 

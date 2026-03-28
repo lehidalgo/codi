@@ -26,11 +26,13 @@ Use when building mobile applications, reviewing mobile code, or making architec
 **[CODING AGENT]** Follow these patterns for iOS:
 
 **SwiftUI (preferred for new UI):**
-- Use declarative syntax with \\\`@State\\\`, \\\`@Binding\\\`, \\\`@ObservedObject\\\`, \\\`@EnvironmentObject\\\`
-- Create SwiftUI previews for every view
+- Use \\\`@Observable\\\` macro (iOS 17+) for state management — replaces \\\`ObservableObject\\\`/\\\`@Published\\\` with simpler, more granular tracking
+- Use \\\`@State\\\` for view-local state, \\\`@Binding\\\` for child-to-parent, \\\`@Environment\\\` for shared dependencies
+- Create SwiftUI previews for every view using \\\`#Preview\\\` macro
 - Use \\\`@MainActor\\\` for UI-bound state
 - Prefer \\\`.task { }\\\` modifier for async loading over \\\`onAppear\\\`
 - Use \\\`NavigationStack\\\` (not deprecated \\\`NavigationView\\\`)
+- Use SwiftData with \\\`@Model\\\` for persistence (iOS 17+) — simpler than Core Data
 
 **UIKit (use when SwiftUI is insufficient):**
 - Programmatic layout with Auto Layout (avoid storyboards in teams)
@@ -50,8 +52,9 @@ Use when building mobile applications, reviewing mobile code, or making architec
 - Material 3 design components
 - \\\`LazyColumn\\\`/\\\`LazyRow\\\` for lists (not \\\`Column\\\` with \\\`forEach\\\`)
 - Use \\\`remember\\\` and \\\`derivedStateOf\\\` to minimize recompositions
-- \\\`collectAsStateWithLifecycle\\\` for Flow observation
+- \\\`collectAsStateWithLifecycle\\\` for Flow observation (StateFlow/SharedFlow)
 - Use Compose Navigation for screen transitions
+- Use Hilt for DI with \\\`@HiltViewModel\\\` — integrates with Compose lifecycle
 
 **XML Layouts (legacy maintenance only):**
 - Use ViewBinding (not findViewById or synthetic)

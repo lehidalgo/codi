@@ -134,6 +134,20 @@ export const cursorAdapter: AgentAdapter = {
       )),
     );
 
+    // Generate .cursor/brands/{name}.md
+    for (const brand of config.brands) {
+      const brandContent = addGeneratedHeader(
+        `# ${brand.name}\n\n${brand.content}`,
+      );
+      const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      files.push({
+        path: `.cursor/brands/${fileName}`,
+        content: brandContent,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(brandContent),
+      });
+    }
+
     // Generate .cursor/mcp.json if MCP servers are configured
     const enabledMcp = getEnabledMcpServers(config.mcp);
     if (Object.keys(enabledMcp.servers).length > 0) {

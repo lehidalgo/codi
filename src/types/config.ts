@@ -79,6 +79,13 @@ export interface NormalizedAgent {
   managedBy?: "codi" | "user";
 }
 
+export interface NormalizedBrand {
+  name: string;
+  description: string;
+  content: string;
+  managedBy?: "codi" | "user";
+}
+
 export interface McpConfig {
   servers: Record<
     string,
@@ -100,6 +107,7 @@ export interface NormalizedConfig {
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
+  brands: NormalizedBrand[];
   flags: ResolvedFlags;
   mcp: McpConfig;
 }

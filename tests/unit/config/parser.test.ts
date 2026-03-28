@@ -1,9 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import {
   parseManifest,
   parseFlags,
   scanRules,
+  scanSkills,
+  scanCodiDir,
+  parseSkillFile,
 } from "../../../src/core/config/parser.js";
 
 const FIXTURES = path.resolve(__dirname, "../../fixtures/inheritance");
@@ -64,5 +69,286 @@ describe("scanRules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data).toEqual([]);
+  });
+});
+
+describe("scanSkills", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-parser-skills-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns empty array when skills dir is missing", async () => {
+    const result = await scanSkills("/nonexistent/skills");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data).toEqual([]);
+  });
+
+  it("parses a valid skill file", async () => {
+    const skillsDir = path.join(tmpDir, "skills");
+    const skillDir = path.join(skillsDir, "my-skill");
+    await fs.mkdir(skillDir, { recursive: true });
+    await fs.writeFile(
+      path.join(skillDir, "SKILL.md"),
+      `---
+name: my-skill
+description: A test skill
+managed_by: user
+---
+
+Skill content here.`,
+      "utf-8",
+    );
+
+    const result = await scanSkills(skillsDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.length).toBe(1);
+    expect(result.data[0]!.name).toBe("my-skill");
+    expect(result.data[0]!.description).toBe("A test skill");
+    expect(result.data[0]!.content).toContain("Skill content here.");
+  });
+
+  it("scans multiple skills", async () => {
+    const skillsDir = path.join(tmpDir, "skills");
+    for (const name of ["alpha", "beta"]) {
+      const dir = path.join(skillsDir, name);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        path.join(dir, "SKILL.md"),
+        `---\nname: ${name}\ndescription: Skill ${name}\n---\nContent of ${name}`,
+        "utf-8",
+      );
+    }
+
+    const result = await scanSkills(skillsDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.length).toBe(2);
+    const names = result.data.map((s) => s.name).sort();
+    expect(names).toEqual(["alpha", "beta"]);
+  });
+
+  it("returns error for skill with invalid frontmatter", async () => {
+    const skillsDir = path.join(tmpDir, "skills");
+    const skillDir = path.join(skillsDir, "bad-skill");
+    await fs.mkdir(skillDir, { recursive: true });
+    await fs.writeFile(
+      path.join(skillDir, "SKILL.md"),
+      `---
+description: Missing name field
+---
+
+Content.`,
+      "utf-8",
+    );
+
+    const result = await scanSkills(skillsDir);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("parseSkillFile", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-parse-skill-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("parses skill with comma-separated paths", async () => {
+    const filePath = path.join(tmpDir, "SKILL.md");
+    await fs.writeFile(
+      filePath,
+      `---
+name: path-skill
+description: Skill with paths
+paths: "src/**,tests/**"
+---
+
+Content.`,
+      "utf-8",
+    );
+
+    const result = await parseSkillFile(filePath);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.paths).toEqual(["src/**", "tests/**"]);
+  });
+
+  it("parses skill with array paths", async () => {
+    const filePath = path.join(tmpDir, "SKILL.md");
+    await fs.writeFile(
+      filePath,
+      `---
+name: array-path-skill
+description: Skill with array paths
+paths:
+  - src/**
+  - tests/**
+---
+
+Content.`,
+      "utf-8",
+    );
+
+    const result = await parseSkillFile(filePath);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.paths).toEqual(["src/**", "tests/**"]);
+  });
+
+  it("parses skill with optional fields", async () => {
+    const filePath = path.join(tmpDir, "SKILL.md");
+    await fs.writeFile(
+      filePath,
+      `---
+name: full-skill
+description: Full featured skill
+managed_by: codi
+user-invocable: true
+---
+
+Full content.`,
+      "utf-8",
+    );
+
+    const result = await parseSkillFile(filePath);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.managedBy).toBe("codi");
+    expect(result.data.userInvocable).toBe(true);
+  });
+});
+
+describe("scanCodiDir", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-scan-dir-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns error when .codi directory does not exist", async () => {
+    const result = await scanCodiDir(tmpDir);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]!.code).toBe("E_CONFIG_NOT_FOUND");
+  });
+
+  it("returns error when manifest is missing", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.mkdir(codiDir, { recursive: true });
+
+    const result = await scanCodiDir(tmpDir);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]!.code).toBe("E_CONFIG_NOT_FOUND");
+  });
+
+  it("parses minimal .codi directory with just manifest", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.mkdir(codiDir, { recursive: true });
+    await fs.writeFile(
+      path.join(codiDir, "codi.yaml"),
+      'name: test\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+
+    const result = await scanCodiDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.manifest.name).toBe("test");
+    expect(result.data.rules).toEqual([]);
+    expect(result.data.skills).toEqual([]);
+    expect(result.data.commands).toEqual([]);
+    expect(result.data.agents).toEqual([]);
+    expect(result.data.brands).toEqual([]);
+    expect(result.data.flags).toEqual({});
+  });
+
+  it("parses .codi directory with rules and skills", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.mkdir(codiDir, { recursive: true });
+    await fs.writeFile(
+      path.join(codiDir, "codi.yaml"),
+      'name: full\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+
+    // Add a rule
+    const rulesDir = path.join(codiDir, "rules");
+    await fs.mkdir(rulesDir, { recursive: true });
+    await fs.writeFile(
+      path.join(rulesDir, "testing.md"),
+      "---\nname: testing\ndescription: Testing\npriority: high\nmanaged_by: codi\n---\nTest rule.",
+      "utf-8",
+    );
+
+    // Add a skill
+    const skillsDir = path.join(codiDir, "skills", "commit");
+    await fs.mkdir(skillsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(skillsDir, "SKILL.md"),
+      "---\nname: commit\ndescription: Commit skill\n---\nCommit content.",
+      "utf-8",
+    );
+
+    const result = await scanCodiDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.rules.length).toBe(1);
+    expect(result.data.rules[0]!.name).toBe("testing");
+    expect(result.data.skills.length).toBe(1);
+    expect(result.data.skills[0]!.name).toBe("commit");
+  });
+
+  it("returns error for invalid manifest YAML", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.mkdir(codiDir, { recursive: true });
+    await fs.writeFile(
+      path.join(codiDir, "codi.yaml"),
+      "{ broken yaml [[[",
+      "utf-8",
+    );
+
+    const result = await scanCodiDir(tmpDir);
+    expect(result.ok).toBe(false);
+  });
+
+  it("parses MCP servers from individual yaml files", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.mkdir(codiDir, { recursive: true });
+    await fs.writeFile(
+      path.join(codiDir, "codi.yaml"),
+      'name: mcp-test\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+
+    const mcpDir = path.join(codiDir, "mcp-servers");
+    await fs.mkdir(mcpDir, { recursive: true });
+    await fs.writeFile(
+      path.join(mcpDir, "github.yaml"),
+      'name: github\ncommand: npx\nargs:\n  - "@modelcontextprotocol/server-github"\n',
+      "utf-8",
+    );
+
+    const result = await scanCodiDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.mcp.servers).toBeDefined();
+    expect(result.data.mcp.servers["github"]).toBeDefined();
   });
 });

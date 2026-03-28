@@ -1,12 +1,22 @@
 export const template = `---
 name: {{name}}
-description: API design conventions and best practices
+description: API design conventions, multi-protocol guidance, and schema-first development
 priority: medium
 alwaysApply: true
 managed_by: codi
 ---
 
 # API Design
+
+## Protocol Selection
+- Use REST for public-facing APIs — widest client compatibility and tooling
+- Use tRPC or GraphQL for internal frontend-to-backend communication — end-to-end type safety reduces integration bugs
+- Use gRPC for service-to-service communication — binary protocol with streaming support and code generation
+- Use AsyncAPI to document event-driven interfaces — the equivalent of OpenAPI for message-driven architectures
+
+## Schema-First Design
+- Define the API contract (OpenAPI spec) before writing implementation code — generates docs, client SDKs, and validation automatically
+- Keep the spec in version control alongside the code — drift between spec and implementation causes integration failures
 
 ## RESTful Conventions
 - Use nouns for resources: /users, /orders (not /getUsers, /createOrder) — URLs name resources, HTTP methods name actions
@@ -24,6 +34,10 @@ GOOD: \`POST /users\`, \`GET /users\`, \`DELETE /users/5\`
 - Return consistent error format: { code, message, details }
 - Use proper HTTP status codes: 200 (OK), 201 (Created), 204 (No Content), 400 (Bad Request), 404 (Not Found), 500 (Internal Error)
 
+## Idempotency
+- Accept an Idempotency-Key header on all non-idempotent endpoints (POST, PATCH) — clients can safely retry without duplicate side effects
+- Store the response for each idempotency key and return it on duplicate requests — use TTL to expire old keys
+
 ## Versioning & Evolution
 - Version APIs from day one: /api/v1/ or Accept header — adding versioning later requires migrating all clients
 - Add new fields as optional — do not remove existing fields
@@ -39,6 +53,14 @@ GOOD: \`GET /orders?cursor=abc&limit=50\` with next/previous links in response
 - Support filtering: ?status=active&created_after=2024-01-01
 - Support sorting: ?sort=created_at&order=desc
 - Return pagination metadata: total count, next/previous links
+
+## Webhooks
+- Sign webhook payloads with HMAC — consumers must verify signatures before processing
+- Implement retry with exponential backoff for failed deliveries — assume at-least-once delivery
+- Route failed webhooks to a dead letter queue after max retries — provide a UI for manual inspection and replay
+
+## API Gateway
+- Centralize cross-cutting concerns (authentication, rate limiting, logging) at the gateway — avoid duplicating this logic in every service
 
 ## Security & Limits
 - Implement rate limiting on all public endpoints — prevents abuse and protects backend resources

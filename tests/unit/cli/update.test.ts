@@ -185,4 +185,202 @@ describe("update command handler", () => {
     expect(result.data.agentsUpdated).toEqual([]);
     expect(result.data.commandsUpdated).toEqual([]);
   });
+
+  it("refreshes codi-managed skills with --skills", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const skillsDir = path.join(codiDir, "skills");
+    await fs.mkdir(skillsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(skillsDir, "commit.md"),
+      "---\nname: commit\nmanaged_by: codi\n---\nold content",
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, skills: true });
+    expect(result.success).toBe(true);
+    expect(result.data.skillsUpdated).toContain("commit");
+  });
+
+  it("skips user-managed skills with --skills", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const skillsDir = path.join(codiDir, "skills");
+    await fs.mkdir(skillsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(skillsDir, "my-skill.md"),
+      "---\nname: my-skill\nmanaged_by: user\n---\nuser content",
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, skills: true });
+    expect(result.success).toBe(true);
+    expect(result.data.skillsSkipped).toContain("my-skill");
+  });
+
+  it("refreshes codi-managed agents with --agents", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const agentsDir = path.join(codiDir, "agents");
+    await fs.mkdir(agentsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(agentsDir, "code-reviewer.md"),
+      "---\nname: code-reviewer\nmanaged_by: codi\n---\nold agent content",
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, agents: true });
+    expect(result.success).toBe(true);
+    expect(result.data.agentsUpdated).toContain("code-reviewer");
+  });
+
+  it("refreshes codi-managed commands with --commands", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const commandsDir = path.join(codiDir, "commands");
+    await fs.mkdir(commandsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(commandsDir, "commit.md"),
+      "---\nname: commit\nmanaged_by: codi\n---\nold command content",
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, commands: true });
+    expect(result.success).toBe(true);
+    expect(result.data.commandsUpdated).toContain("commit");
+  });
+
+  it("refreshes codi-managed MCP servers with --mcp-servers", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const mcpDir = path.join(codiDir, "mcp-servers");
+    await fs.mkdir(mcpDir, { recursive: true });
+    await fs.writeFile(
+      path.join(mcpDir, "github.yaml"),
+      stringifyYaml({
+        name: "github",
+        managed_by: "codi",
+        command: "old-command",
+      }),
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, {
+      json: true,
+      mcpServers: true,
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.mcpServersUpdated).toContain("github");
+  });
+
+  it("skips user-managed MCP servers with --mcp-servers", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const mcpDir = path.join(codiDir, "mcp-servers");
+    await fs.mkdir(mcpDir, { recursive: true });
+    await fs.writeFile(
+      path.join(mcpDir, "custom-server.yaml"),
+      stringifyYaml({
+        name: "custom-server",
+        managed_by: "user",
+        command: "my-cmd",
+      }),
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, {
+      json: true,
+      mcpServers: true,
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.mcpServersSkipped).toContain("custom-server");
+  });
+
+  it("dry-run with --rules does not write to files", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const originalContent =
+      "---\nname: security\nmanaged_by: codi\n---\nold content";
+    await fs.writeFile(
+      path.join(codiDir, "rules", "security.md"),
+      originalContent,
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, {
+      json: true,
+      rules: true,
+      dryRun: true,
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesUpdated).toContain("security");
+
+    // File should not have changed
+    const afterContent = await fs.readFile(
+      path.join(codiDir, "rules", "security.md"),
+      "utf-8",
+    );
+    expect(afterContent).toBe(originalContent);
+  });
+
+  it("handles missing skills directory gracefully with --skills", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, skills: true });
+    expect(result.success).toBe(true);
+    expect(result.data.skillsUpdated).toEqual([]);
+  });
+
+  it("handles missing agents directory gracefully with --agents", async () => {
+    const codiDir = path.join(tmpDir, ".codi");
+    await fs.writeFile(
+      path.join(codiDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { json: true, agents: true });
+    expect(result.success).toBe(true);
+    expect(result.data.agentsUpdated).toEqual([]);
+  });
 });

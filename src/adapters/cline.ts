@@ -94,6 +94,11 @@ export const clineAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`# ${rule.name}\n\n${rule.content}`);
     }
+
+    for (const brand of config.brands) {
+      sections.push(`# Brand: ${brand.name}\n\n${brand.content}`);
+    }
+
     const plMode = ((config.flags.progressive_loading?.value as string) ??
       "off") as ProgressiveLoadingMode;
     if (plMode === "off") {

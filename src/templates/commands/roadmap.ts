@@ -9,6 +9,6 @@ Create a structured roadmap/todo list as a JSON file in docs/roadmaps/.
 ## Instructions
 - Use the template at docs/roadmap-template.json if it exists
 - Save to docs/roadmaps/ directory
-- Filename convention: ddmmyy_hhmm_roadmap_name.json
+- Filename convention: YYYYMMDD_HHMM_roadmap_name.json
 - Include clear task descriptions, priorities, and status tracking
 `;

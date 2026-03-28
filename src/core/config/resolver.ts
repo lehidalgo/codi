@@ -1,17 +1,22 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { parse as parseYaml } from 'yaml';
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
-import type { NormalizedConfig } from '../../types/config.js';
-import type { FlagDefinition } from '../../types/flags.js';
-import { resolveCodiDir, resolveUserDir, resolveOrgFile, resolveTeamFile } from '../../utils/paths.js';
-import { scanCodiDir } from './parser.js';
-import { composeConfig, flagsFromDefinitions } from './composer.js';
-import type { ConfigLayer } from './composer.js';
-import { validateConfig } from './validator.js';
-import { loadPreset } from '../preset/preset-loader.js';
-import { FLAGS_FILENAME } from '../../constants.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { parse as parseYaml } from "yaml";
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
+import type { NormalizedConfig } from "../../types/config.js";
+import type { FlagDefinition } from "../../types/flags.js";
+import {
+  resolveCodiDir,
+  resolveUserDir,
+  resolveOrgFile,
+  resolveTeamFile,
+} from "../../utils/paths.js";
+import { scanCodiDir } from "./parser.js";
+import { composeConfig, flagsFromDefinitions } from "./composer.js";
+import type { ConfigLayer } from "./composer.js";
+import { validateConfig } from "./validator.js";
+import { loadPreset } from "../preset/preset-loader.js";
+import { FLAGS_FILENAME } from "../../constants.js";
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -22,37 +27,41 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function readYamlSafe(filePath: string): Promise<Record<string, unknown> | null> {
+async function readYamlSafe(
+  filePath: string,
+): Promise<Record<string, unknown> | null> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const parsed = parseYaml(raw) as Record<string, unknown> | null;
-    return parsed && typeof parsed === 'object' ? parsed : null;
+    return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     return null;
   }
 }
 
-function extractFlags(obj: Record<string, unknown>): Record<string, FlagDefinition> {
-  const flagsRaw = obj['flags'] as Record<string, FlagDefinition> | undefined;
-  if (!flagsRaw || typeof flagsRaw !== 'object') return {};
+function extractFlags(
+  obj: Record<string, unknown>,
+): Record<string, FlagDefinition> {
+  const flagsRaw = obj["flags"] as Record<string, FlagDefinition> | undefined;
+  if (!flagsRaw || typeof flagsRaw !== "object") return {};
   return flagsRaw;
 }
 
 async function buildLangLayers(codiDir: string): Promise<ConfigLayer[]> {
-  const langDir = path.join(codiDir, 'lang');
+  const langDir = path.join(codiDir, "lang");
   if (!(await fileExists(langDir))) return [];
 
   const layers: ConfigLayer[] = [];
   const entries = await fs.readdir(langDir);
   for (const entry of entries) {
-    if (!entry.endsWith('.yaml') && !entry.endsWith('.yml')) continue;
+    if (!entry.endsWith(".yaml") && !entry.endsWith(".yml")) continue;
     const filePath = path.join(langDir, entry);
     const data = await readYamlSafe(filePath);
     if (!data) continue;
 
     const flags = extractFlags(data);
     layers.push({
-      level: 'lang',
+      level: "lang",
       source: filePath,
       config: {
         flags: flagsFromDefinitions(flags, filePath),
@@ -63,20 +72,20 @@ async function buildLangLayers(codiDir: string): Promise<ConfigLayer[]> {
 }
 
 async function buildAgentLayers(codiDir: string): Promise<ConfigLayer[]> {
-  const agentsDir = path.join(codiDir, 'agents');
+  const agentsDir = path.join(codiDir, "agents");
   if (!(await fileExists(agentsDir))) return [];
 
   const layers: ConfigLayer[] = [];
   const entries = await fs.readdir(agentsDir);
   for (const entry of entries) {
-    if (!entry.endsWith('.yaml') && !entry.endsWith('.yml')) continue;
+    if (!entry.endsWith(".yaml") && !entry.endsWith(".yml")) continue;
     const filePath = path.join(agentsDir, entry);
     const data = await readYamlSafe(filePath);
     if (!data) continue;
 
     const flags = extractFlags(data);
     layers.push({
-      level: 'agent',
+      level: "agent",
       source: filePath,
       config: {
         flags: flagsFromDefinitions(flags, filePath),
@@ -95,7 +104,7 @@ async function buildOrgLayer(): Promise<ConfigLayer | null> {
 
   const flags = extractFlags(data);
   return {
-    level: 'org',
+    level: "org",
     source: orgFile,
     config: {
       flags: flagsFromDefinitions(flags, orgFile),
@@ -112,7 +121,7 @@ async function buildTeamLayer(teamName: string): Promise<ConfigLayer | null> {
 
   const flags = extractFlags(data);
   return {
-    level: 'team',
+    level: "team",
     source: teamFile,
     config: {
       flags: flagsFromDefinitions(flags, teamFile),
@@ -121,20 +130,20 @@ async function buildTeamLayer(teamName: string): Promise<ConfigLayer | null> {
 }
 
 async function buildFrameworkLayers(codiDir: string): Promise<ConfigLayer[]> {
-  const frameworksDir = path.join(codiDir, 'frameworks');
+  const frameworksDir = path.join(codiDir, "frameworks");
   if (!(await fileExists(frameworksDir))) return [];
 
   const layers: ConfigLayer[] = [];
   const entries = await fs.readdir(frameworksDir);
   for (const entry of entries) {
-    if (!entry.endsWith('.yaml') && !entry.endsWith('.yml')) continue;
+    if (!entry.endsWith(".yaml") && !entry.endsWith(".yml")) continue;
     const filePath = path.join(frameworksDir, entry);
     const data = await readYamlSafe(filePath);
     if (!data) continue;
 
     const flags = extractFlags(data);
     layers.push({
-      level: 'framework',
+      level: "framework",
       source: filePath,
       config: {
         flags: flagsFromDefinitions(flags, filePath),
@@ -146,7 +155,7 @@ async function buildFrameworkLayers(codiDir: string): Promise<ConfigLayer[]> {
 
 async function buildUserLayer(): Promise<ConfigLayer | null> {
   const userDir = resolveUserDir();
-  const userFile = path.join(userDir, 'user.yaml');
+  const userFile = path.join(userDir, "user.yaml");
   if (!(await fileExists(userFile))) return null;
 
   const data = await readYamlSafe(userFile);
@@ -154,7 +163,7 @@ async function buildUserLayer(): Promise<ConfigLayer | null> {
 
   const flags = extractFlags(data);
   return {
-    level: 'user',
+    level: "user",
     source: userFile,
     config: {
       flags: flagsFromDefinitions(flags, userFile),
@@ -162,8 +171,11 @@ async function buildUserLayer(): Promise<ConfigLayer | null> {
   };
 }
 
-async function buildPresetLayers(codiDir: string, presetNames: string[]): Promise<ConfigLayer[]> {
-  const presetsDir = path.join(codiDir, 'presets');
+async function buildPresetLayers(
+  codiDir: string,
+  presetNames: string[],
+): Promise<ConfigLayer[]> {
+  const presetsDir = path.join(codiDir, "presets");
   const layers: ConfigLayer[] = [];
 
   for (const name of presetNames) {
@@ -172,13 +184,14 @@ async function buildPresetLayers(codiDir: string, presetNames: string[]): Promis
 
     const preset = result.data;
     layers.push({
-      level: 'preset',
+      level: "preset",
       source: `preset:${name}`,
       config: {
         rules: preset.rules,
         skills: preset.skills,
         agents: preset.agents,
         commands: preset.commands,
+        brands: preset.brands,
         flags: flagsFromDefinitions(preset.flags, `preset:${name}`),
         mcp: preset.mcp,
       },
@@ -188,14 +201,16 @@ async function buildPresetLayers(codiDir: string, presetNames: string[]): Promis
   return layers;
 }
 
-export async function resolveConfig(projectRoot: string): Promise<Result<NormalizedConfig>> {
+export async function resolveConfig(
+  projectRoot: string,
+): Promise<Result<NormalizedConfig>> {
   const codiDir = resolveCodiDir(projectRoot);
   const scanResult = await scanCodiDir(projectRoot);
   if (!scanResult.ok) return scanResult;
 
   const parsed = scanResult.data;
   const repoLayer: ConfigLayer = {
-    level: 'repo',
+    level: "repo",
     source: codiDir,
     config: {
       manifest: parsed.manifest,
@@ -203,7 +218,11 @@ export async function resolveConfig(projectRoot: string): Promise<Result<Normali
       skills: parsed.skills,
       commands: parsed.commands,
       agents: parsed.agents,
-      flags: flagsFromDefinitions(parsed.flags, path.join(codiDir, FLAGS_FILENAME)),
+      brands: parsed.brands,
+      flags: flagsFromDefinitions(
+        parsed.flags,
+        path.join(codiDir, FLAGS_FILENAME),
+      ),
       mcp: parsed.mcp,
     },
   };

@@ -2,7 +2,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_ARTIFACT_CHARS,
-} from '../../constants.js';
+} from "../../constants.js";
 
 export const template = `---
 name: {{name}}
@@ -146,20 +146,20 @@ codi doctor
 1. \\\`codi generate\\\` distributes the command to agent configuration
 2. \\\`codi doctor\\\` checks for remaining issues
 
-## Available Command Templates (8)
+## Available Command Templates
 
-Run \\\`codi add command --all\\\` to list all templates. Common ones include:
+Run \\\`codi add command --all\\\` to list all templates. Categories include:
 
-| Template | Description |
-|----------|-------------|
-| commit | Stage changes and create a conventional commit |
-| lint-fix | Run linters with auto-fix and report results |
-| test-run | Execute test suite with coverage report |
-| deploy-check | Pre-deployment validation checklist |
-| db-migrate | Run database migrations safely |
-| docs-update | Regenerate documentation from source |
-| changelog | Generate changelog from recent commits |
-| release | Version bump, tag, and release workflow |
+| Category | Templates |
+|----------|-----------|
+| Git | commit |
+| Quality | review, refactor |
+| Testing | test-run, test-coverage |
+| Security | security-scan |
+| Docs | docs-lookup, onboard |
+| Workflow | session-handoff, open-day, close-day, roadmap |
+| Exploration | codebase-explore, check |
+| Graph | index-graph, update-graph |
 
 ## Constraints
 

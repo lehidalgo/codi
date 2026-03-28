@@ -28,10 +28,21 @@ function parse(data: unknown): string {
 }
 \`\`\`
 
+## The \`satisfies\` Operator
+- Use \`satisfies\` to validate expressions against a type without widening — retains literal types
+- Prefer \`satisfies\` over \`as\` for config objects, route maps, and static data — \`as\` bypasses the compiler, \`satisfies\` validates and narrows
+- Default hierarchy: type annotations first, \`satisfies\` when precision matters, \`as\` as a last resort
+
 ## Exports & Imports
 - Use named exports — no default exports (improves refactoring and auto-imports)
 - Group imports: external libraries, internal modules, types — makes dependency sources immediately visible
 - Use \`import type\` for type-only imports — keeps runtime bundle clean
+- Do not use index.ts barrel files for re-exporting — they break tree-shaking, inflate bundles, and slow down HMR and test runners
+- Import directly from the source module, not through a barrel
+
+## Module Configuration
+- Enable \`verbatimModuleSyntax: true\` in tsconfig — enforces explicit \`import type\` and prevents silent import elision
+- Pair with \`moduleResolution: "Bundler"\` for projects using modern bundlers (Vite, esbuild, webpack 5)
 
 ## Immutability
 - Prefer \`const\` over \`let\` — never use \`var\`
@@ -61,4 +72,13 @@ const updated = [...items, newItem];
 ## Enums & Constants
 - Prefer \`as const\` objects over TypeScript enums — better tree-shaking and no runtime overhead
 - Use string literal unions for simple choices: \`type Status = 'active' | 'inactive'\`
+
+## Linting & Formatting
+- Evaluate Biome as a unified linter and formatter — single binary, 10-25x faster than ESLint + Prettier combined
+- If using ESLint, prefer flat config format (eslint.config.js) — the legacy .eslintrc format is deprecated since ESLint v9
+- Run formatting and linting in pre-commit hooks — do not rely on IDE settings alone
+
+## Decorators
+- Prefer TC39 standard decorators (TS 5.0+) over \`experimentalDecorators\` for new projects — standard decorators are spec-compliant and forward-compatible
+- Use decorator metadata (\`Symbol.metadata\`, TS 5.2+) instead of reflect-metadata for runtime type information
 `;

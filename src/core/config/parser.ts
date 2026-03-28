@@ -10,6 +10,7 @@ import type {
   NormalizedSkill,
   NormalizedCommand,
   NormalizedAgent,
+  NormalizedBrand,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
 import { CodiManifestSchema } from "../../schemas/manifest.js";
@@ -18,6 +19,7 @@ import { RuleFrontmatterSchema } from "../../schemas/rule.js";
 import { SkillFrontmatterSchema } from "../../schemas/skill.js";
 import { AgentFrontmatterSchema } from "../../schemas/agent.js";
 import { CommandFrontmatterSchema } from "../../schemas/command.js";
+import { BrandFrontmatterSchema } from "../../schemas/brand.js";
 import { McpConfigSchema } from "../../schemas/mcp.js";
 import { createError, zodToCodiErrors } from "../output/errors.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
@@ -35,6 +37,7 @@ export interface ParsedCodiDir {
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
+  brands: NormalizedBrand[];
   mcp: McpConfig;
 }
 
@@ -261,6 +264,67 @@ async function parseAgentFile(
   }
 }
 
+async function scanBrands(
+  brandsDir: string,
+): Promise<Result<NormalizedBrand[]>> {
+  if (!(await fileExists(brandsDir))) {
+    return ok([]);
+  }
+  const brands: NormalizedBrand[] = [];
+  const errors: ReturnType<typeof createError>[] = [];
+
+  // Brands are directory-based: brands/<name>/BRAND.md
+  let entries: import("node:fs").Dirent[];
+  try {
+    entries = await fs.readdir(brandsDir, { withFileTypes: true });
+  } catch {
+    return ok([]);
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+    const brandFile = path.join(brandsDir, entry.name, "BRAND.md");
+    if (!(await fileExists(brandFile))) continue;
+
+    const result = await parseBrandFile(brandFile);
+    if (!result.ok) {
+      errors.push(...result.errors);
+    } else {
+      brands.push(result.data);
+    }
+  }
+
+  if (errors.length > 0) return err(errors);
+  return ok(brands);
+}
+
+async function parseBrandFile(
+  filePath: string,
+): Promise<Result<NormalizedBrand>> {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    const parsed = BrandFrontmatterSchema.safeParse(data);
+    if (!parsed.success) {
+      return err(zodToCodiErrors(parsed.error, filePath));
+    }
+    const fm = parsed.data;
+    return ok({
+      name: fm.name,
+      description: fm.description,
+      content,
+      managedBy: fm.managed_by,
+    });
+  } catch (cause) {
+    return err([
+      createError("E_FRONTMATTER_INVALID", {
+        file: filePath,
+        message: (cause as Error).message,
+      }),
+    ]);
+  }
+}
+
 export async function parseSkillFile(
   filePath: string,
 ): Promise<Result<NormalizedSkill>> {
@@ -415,6 +479,9 @@ export async function scanCodiDir(
   const agentsResult = await scanAgents(path.join(codiDir, "agents"));
   if (!agentsResult.ok) return agentsResult;
 
+  const brandsResult = await scanBrands(path.join(codiDir, "brands"));
+  if (!brandsResult.ok) return brandsResult;
+
   const mcpResult = await parseMcpConfig(codiDir);
   if (!mcpResult.ok) return mcpResult;
 
@@ -425,6 +492,7 @@ export async function scanCodiDir(
     skills: skillsResult.data,
     commands: commandsResult.data,
     agents: agentsResult.data,
+    brands: brandsResult.data,
     mcp: mcpResult.data,
   });
 }

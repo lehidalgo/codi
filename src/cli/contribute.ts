@@ -35,7 +35,7 @@ interface ContributeData {
 
 export interface ArtifactEntry {
   name: string;
-  type: "rule" | "skill" | "agent" | "command";
+  type: "rule" | "skill" | "agent" | "command" | "brand";
   managedBy: string;
   path: string;
 }
@@ -74,23 +74,27 @@ export async function discoverArtifacts(
     }
   };
 
-  const scanSkillDir = async (dir: string) => {
+  const scanDirBased = async (
+    dir: string,
+    type: ArtifactEntry["type"],
+    indexFile: string,
+  ) => {
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
-        const skillMdPath = path.join(dir, entry.name, SKILL_OUTPUT_FILENAME);
+        const mdPath = path.join(dir, entry.name, indexFile);
         try {
-          const raw = await fs.readFile(skillMdPath, "utf8");
+          const raw = await fs.readFile(mdPath, "utf8");
           const { data } = parseFrontmatter<Record<string, unknown>>(raw);
           artifacts.push({
             name: (data["name"] as string) ?? entry.name,
-            type: "skill",
+            type,
             managedBy: (data["managed_by"] as string) ?? "user",
             path: path.join(dir, entry.name),
           });
         } catch {
-          /* skip invalid skills */
+          /* skip invalid entries */
         }
       }
     } catch {
@@ -99,9 +103,14 @@ export async function discoverArtifacts(
   };
 
   await scanFlatDir(path.join(codiDir, "rules"), "rule");
-  await scanSkillDir(path.join(codiDir, "skills"));
+  await scanDirBased(
+    path.join(codiDir, "skills"),
+    "skill",
+    SKILL_OUTPUT_FILENAME,
+  );
   await scanFlatDir(path.join(codiDir, "agents"), "agent");
   await scanFlatDir(path.join(codiDir, "commands"), "command");
+  await scanDirBased(path.join(codiDir, "brands"), "brand", "BRAND.md");
 
   return artifacts;
 }
@@ -124,7 +133,7 @@ export async function buildPresetPackage(
     const typeDir = path.join(presetDir, typeKey);
     await fs.mkdir(typeDir, { recursive: true });
 
-    if (artifact.type === "skill") {
+    if (artifact.type === "skill" || artifact.type === "brand") {
       const destSkillDir = path.join(typeDir, artifact.name);
       await fs.mkdir(destSkillDir, { recursive: true });
       await copyDir(artifact.path, destSkillDir);
@@ -176,6 +185,8 @@ function getTemplateDir(type: ArtifactEntry["type"]): string {
       return "src/templates/agents";
     case "command":
       return "src/templates/commands";
+    case "brand":
+      return "src/templates/brands";
   }
 }
 
@@ -184,10 +195,14 @@ function getTemplateDir(type: ArtifactEntry["type"]): string {
  * For skills (directory-based), reads the SKILL.md file.
  */
 async function artifactToTemplate(artifact: ArtifactEntry): Promise<string> {
-  const mdPath =
-    artifact.type === "skill"
-      ? path.join(artifact.path, SKILL_OUTPUT_FILENAME)
-      : artifact.path;
+  const dirBasedIndex: Record<string, string> = {
+    skill: SKILL_OUTPUT_FILENAME,
+    brand: "BRAND.md",
+  };
+  const indexFile = dirBasedIndex[artifact.type];
+  const mdPath = indexFile
+    ? path.join(artifact.path, indexFile)
+    : artifact.path;
   const raw = await fs.readFile(mdPath, "utf8");
   const escaped = raw.replace(/`/g, "\\`").replace(/\$/g, "\\$");
   return `export const template = \`${escaped}\`;\n`;

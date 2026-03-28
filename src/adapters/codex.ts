@@ -104,6 +104,11 @@ export const codexAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`## ${rule.name}\n\n${rule.content}`);
     }
+
+    // Inline brands
+    for (const brand of config.brands) {
+      sections.push(`## Brand: ${brand.name}\n\n${brand.content}`);
+    }
     const content = addGeneratedHeader(sections.join("\n\n"));
     files.push({
       path: "AGENTS.md",

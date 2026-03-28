@@ -19,6 +19,16 @@ Use when creating, updating, or reviewing project documentation.
 - User asks to review documentation for accuracy or completeness
 - User needs to create an onboarding guide or contributing guide
 
+## Diataxis Framework
+
+Before writing, classify the documentation type:
+- **Tutorial**: learning-oriented, step-by-step guided experience
+- **How-to Guide**: task-oriented, solving a specific problem
+- **Reference**: information-oriented, factual description of APIs/config
+- **Explanation**: understanding-oriented, discussing concepts and reasoning
+
+Do not mix types in one document — a tutorial should not include exhaustive reference tables.
+
 ## Documentation Types
 
 ### README
@@ -66,9 +76,16 @@ Store in \\\`docs/adr/\\\` with numbered filenames (\\\`001-use-postgres.md\\\`)
 - Remove commented-out code — version control has the history
 - Use TODO with ticket references: \\\`// TODO(JIRA-123): migrate to v2 endpoint\\\`
 
+## Docs-as-Code Workflow
+
+- Store documentation in the same repository as code — changes ship together in the same PR
+- Auto-generate API reference from OpenAPI specs or code annotations where possible
+- Use CI to validate documentation: lint markdown, check broken links, test code examples
+
 ## Quality Checklist
 
 - [ ] Language is clear and concise
+- [ ] Classified by Diataxis type (tutorial, how-to, reference, explanation)
 - [ ] Code examples are copy-paste ready and tested
 - [ ] No outdated references to removed features
 - [ ] Links work and point to current resources

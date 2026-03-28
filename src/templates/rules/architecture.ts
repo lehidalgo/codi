@@ -1,6 +1,6 @@
 export const template = `---
 name: {{name}}
-description: Architecture guidelines and design patterns
+description: Architecture guidelines, design patterns, and module boundaries
 priority: high
 alwaysApply: true
 managed_by: codi
@@ -18,6 +18,17 @@ GOOD: users/, orders/, payments/ (all feature files colocated)
 
 - Keep related files close together in the directory tree
 
+## Modular Monolith First
+- Start with a modular monolith — extract microservices only when scaling demands prove the boundary is stable
+- Enforce module boundaries at compile time (internal packages, module visibility) — boundaries without enforcement erode
+- Use event-driven communication between modules when preparing for future extraction
+
+## Architecture Patterns
+- Use hexagonal architecture (ports and adapters) for core domains — separate business logic from infrastructure through defined ports
+- Consider vertical slice architecture for feature delivery — each use case is self-contained with its own handler, validation, and persistence
+- Use CQRS when read and write models have divergent requirements — do not apply it everywhere by default
+- Define bounded contexts to identify module boundaries — a module owns its data and exposes only contracts
+
 ## Dependencies
 - Depend on abstractions, not concrete implementations — enables swapping implementations without changing callers
 - No circular dependencies between modules — circular deps make code untestable and hard to reason about
@@ -32,9 +43,13 @@ GOOD: users/, orders/, payments/ (all feature files colocated)
 BAD: UserController extends BaseController extends AuthController
 GOOD: UserController uses AuthService and LoggingMiddleware
 
-- Keep business logic out of UI components and controllers
 - Separate concerns: data access, business rules, presentation
 - Design for change: isolate likely change points behind interfaces
+
+## Event-Driven Communication
+- Use the Outbox Pattern to guarantee at-least-once event delivery without distributed transactions
+- Use the Inbox Pattern for message idempotency at the consumer side
+- Prefer async events between modules over synchronous calls — reduces coupling and enables independent scaling
 
 ## API Boundaries
 - Define clear contracts between modules

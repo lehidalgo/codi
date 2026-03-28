@@ -96,6 +96,7 @@ Apply the same delete-and-test cycle for each consolidation.
 - Items removed (count by category)
 - Items skipped with reasons
 - Lines of code removed
+- Complexity improvement: report before/after cognitive complexity for refactored modules (if linter supports it)
 - Test results: all passing, none broken
 - CAUTION and DANGER items left for manual review
 
