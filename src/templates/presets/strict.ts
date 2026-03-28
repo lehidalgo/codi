@@ -44,6 +44,7 @@ export const preset: BuiltinPresetDefinition = {
     "security-scan",
     "commit",
     "test-coverage",
+    "error-recovery",
     "codi-compare-preset",
   ],
   agents: ["code-reviewer", "security-analyzer", "test-generator"],

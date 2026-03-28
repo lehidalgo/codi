@@ -55,6 +55,7 @@ export const preset: BuiltinPresetDefinition = {
     "documentation",
     "refactoring",
     "test-coverage",
+    "error-recovery",
   ],
   agents: ["codebase-explorer", "code-reviewer", "security-analyzer"],
   commands: [
