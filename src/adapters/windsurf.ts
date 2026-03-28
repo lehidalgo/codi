@@ -90,8 +90,8 @@ export const windsurfAdapter: AgentAdapter = {
       hash: hashContent(content),
     }];
 
-    // Generate .windsurf/skills/{name}/SKILL.md
-    files.push(...generateSkillFiles(config.skills, '.windsurf/skills', plMode));
+    // Generate .windsurf/skills/{name}/SKILL.md + supporting files
+    files.push(...await generateSkillFiles(config.skills, '.windsurf/skills', plMode, _options.projectRoot));
 
     // Note: Windsurf does NOT support project-level MCP config.
     // MCP is user-global only at ~/.codeium/windsurf/mcp_config.json.

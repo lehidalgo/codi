@@ -107,9 +107,9 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
-    // Generate .claude/skills/{name}/SKILL.md
+    // Generate .claude/skills/{name}/SKILL.md + supporting files
     const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
-    files.push(...generateSkillFiles(config.skills, '.claude/skills', plMode));
+    files.push(...await generateSkillFiles(config.skills, '.claude/skills', plMode, _options.projectRoot));
 
     // Generate .claude/agents/{name}.md (Claude Code format)
     for (const agent of config.agents) {

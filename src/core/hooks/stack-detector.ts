@@ -1,21 +1,25 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import fs from "node:fs/promises";
+import path from "node:path";
 
 /**
  * Maps project indicator files to programming language keys
  * that match the hook-registry language entries.
  */
 const STACK_INDICATORS: Record<string, string[]> = {
-  'tsconfig.json':    ['typescript'],
-  'package.json':     ['javascript'],
-  'pyproject.toml':   ['python'],
-  'requirements.txt': ['python'],
-  'go.mod':           ['go'],
-  'Cargo.toml':       ['rust'],
-  'pom.xml':          ['java'],
-  'build.gradle':     ['kotlin'],
-  'build.gradle.kts': ['kotlin'],
-  'Package.swift':    ['swift'],
+  "tsconfig.json": ["typescript"],
+  "package.json": ["javascript"],
+  "pyproject.toml": ["python"],
+  "requirements.txt": ["python"],
+  "go.mod": ["go"],
+  "Cargo.toml": ["rust"],
+  "pom.xml": ["java"],
+  "build.gradle": ["kotlin"],
+  "build.gradle.kts": ["kotlin"],
+  "Package.swift": ["swift"],
+  "composer.json": ["php"],
+  Gemfile: ["ruby"],
+  "pubspec.yaml": ["dart"],
+  "CMakeLists.txt": ["cpp"],
 };
 
 export async function detectStack(projectRoot: string): Promise<string[]> {
@@ -28,5 +32,16 @@ export async function detectStack(projectRoot: string): Promise<string[]> {
       // File not found, skip
     }
   }
+
+  // C# detection: project files have variable names (*.csproj, *.sln)
+  try {
+    const entries = await fs.readdir(projectRoot);
+    if (entries.some((e) => e.endsWith(".csproj") || e.endsWith(".sln"))) {
+      detected.add("csharp");
+    }
+  } catch {
+    // readdir failed, skip
+  }
+
   return [...detected];
 }

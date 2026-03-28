@@ -32,6 +32,7 @@ export interface GenerateOptions {
   agents?: string[];
   dryRun?: boolean;
   force?: boolean;
+  projectRoot?: string;
 }
 
 export type FileStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'error';

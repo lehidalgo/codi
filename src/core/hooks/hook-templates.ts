@@ -1,4 +1,4 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT } from '../../constants.js';
+import { GIT_COMMIT_FIRST_LINE_LIMIT } from "../../constants.js";
 
 // These are template strings for generated hook scripts.
 // They are written to disk as standalone Node.js scripts, not executed in this process.
@@ -26,8 +26,9 @@ for (const hook of hooks) {
   const files = getStagedFiles(hook.stagedFilter);
   if (files.length === 0) continue;
   console.log(\`Running \${hook.name}...\`);
+  const cmd = hook.passFiles === false ? hook.command : \`\${hook.command} \${files.join(' ')}\`;
   try {
-    execSync(\`\${hook.command} \${files.join(' ')}\`, { stdio: 'inherit' });
+    execSync(cmd, { stdio: 'inherit' });
   } catch (e) {
     console.error(\`\${hook.name} failed\`);
     exitCode = 1;
@@ -50,7 +51,8 @@ const PATTERNS = [
   /sk-[a-zA-Z0-9]{32,}/,
 ];
 
-const files = process.argv.slice(2);
+const TEST_PATHS = [/tests?\\//, /\\.test\\.[jt]sx?$/, /\\.spec\\.[jt]sx?$/, /__tests__\\//];
+const files = process.argv.slice(2).filter(f => !TEST_PATHS.some(p => p.test(f)));
 let found = false;
 for (const file of files) {
   try {
@@ -85,8 +87,8 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const GENERATED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents)\\//];
-const files = process.argv.slice(2).filter(f => !GENERATED.some(p => p.test(f)));
+const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents)\\//, /-lock\\.json$/, /\\.lock$/];
+const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {
   try {

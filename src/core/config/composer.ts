@@ -31,7 +31,7 @@ const DEFAULT_CONFIG: NormalizedConfig = {
 export function composeConfig(layers: ConfigLayer[]): Result<NormalizedConfig> {
   const errors: CodiError[] = [];
   const lockedFlags: LockedFlag[] = [];
-  let merged: NormalizedConfig = structuredClone(DEFAULT_CONFIG);
+  const merged: NormalizedConfig = structuredClone(DEFAULT_CONFIG);
 
   for (const layer of layers) {
     const cfg = layer.config;

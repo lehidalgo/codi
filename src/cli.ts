@@ -1,5 +1,7 @@
 import { Command } from 'commander';
-import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { addGlobalOptions } from './cli/shared.js';
 import { registerInitCommand } from './cli/init.js';
 import { registerGenerateCommand } from './cli/generate.js';
@@ -18,9 +20,13 @@ import { registerMarketplaceCommand } from './cli/marketplace.js';
 import { registerPresetCommand } from './cli/preset.js';
 import { registerDocsUpdateCommand } from './cli/docs-update.js';
 import { registerContributeCommand } from './cli/contribute.js';
+import { registerSkillCommand } from './cli/skill.js';
+import { runCommandCenter } from './cli/hub.js';
+import { Logger } from './core/output/logger.js';
+import type { GlobalOptions } from './cli/shared.js';
 
-const require = createRequire(import.meta.url);
-const pkg = require('../package.json') as { version: string };
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')) as { version: string };
 
 const program = new Command();
 program
@@ -46,5 +52,17 @@ registerMarketplaceCommand(program);
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);
 registerContributeCommand(program);
+registerSkillCommand(program);
+
+// Bare `codi` (no subcommand) → launch Command Center
+program.action(async () => {
+  const opts = program.opts() as GlobalOptions;
+  if (opts.json || opts.quiet) {
+    program.help();
+    return;
+  }
+  Logger.init({ level: 'info', mode: 'human', noColor: opts.noColor ?? false });
+  await runCommandCenter(process.cwd());
+});
 
 program.parse();

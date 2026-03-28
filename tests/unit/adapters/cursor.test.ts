@@ -170,10 +170,10 @@ describe('cursor adapter', () => {
     });
     const files = await cursorAdapter.generate(config, {});
 
-    const skillFiles = files.filter(f => f.path.startsWith('.cursor/skills/'));
-    expect(skillFiles).toHaveLength(2);
-    expect(skillFiles.find(f => f.path === '.cursor/skills/deploy/SKILL.md')).toBeDefined();
-    expect(skillFiles.find(f => f.path === '.cursor/skills/review/SKILL.md')).toBeDefined();
+    const skillMds = files.filter(f => f.path.startsWith('.cursor/skills/') && f.path.endsWith('SKILL.md'));
+    expect(skillMds).toHaveLength(2);
+    expect(skillMds.find(f => f.path === '.cursor/skills/deploy/SKILL.md')).toBeDefined();
+    expect(skillMds.find(f => f.path === '.cursor/skills/review/SKILL.md')).toBeDefined();
   });
 
   // --- generate() with MCP servers ---
@@ -261,9 +261,11 @@ describe('cursor adapter', () => {
 
     for (const file of files) {
       expect(file.path).toBeTruthy();
-      expect(file.content).toBeTruthy();
+      if (!file.path.endsWith('.gitkeep')) {
+        expect(file.content).toBeTruthy();
+      }
       expect(file.sources).toBeDefined();
-      expect(file.hash).toBeTruthy();
+      expect(file.hash).toBeDefined();
     }
   });
 });

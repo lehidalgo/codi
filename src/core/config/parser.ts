@@ -242,7 +242,7 @@ async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>
   }
 }
 
-async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>> {
+export async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>> {
   try {
     const raw = await fs.readFile(filePath, 'utf8');
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -251,6 +251,10 @@ async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>
       return err(zodToCodiErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
+    const pathsRaw = fm.paths;
+    const normalizedPaths = typeof pathsRaw === 'string'
+      ? pathsRaw.split(',').map((p) => p.trim())
+      : pathsRaw;
     return ok({
       name: fm.name,
       description: fm.description,
@@ -260,6 +264,16 @@ async function parseSkillFile(filePath: string): Promise<Result<NormalizedSkill>
       license: fm.license,
       metadata: fm.metadata,
       managedBy: fm.managed_by,
+      disableModelInvocation: fm.disableModelInvocation,
+      argumentHint: fm.argumentHint,
+      allowedTools: fm.allowedTools,
+      model: fm.model,
+      effort: fm.effort,
+      context: fm.context,
+      agent: fm.agent,
+      userInvocable: fm['user-invocable'],
+      paths: normalizedPaths,
+      shell: fm.shell,
     });
   } catch (cause) {
     return err([createError('E_FRONTMATTER_INVALID', {
