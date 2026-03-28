@@ -10,7 +10,7 @@ import type {
 import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
-import { addGeneratedHeader } from "./generated-header.js";
+import { addGeneratedFooter } from "./generated-header.js";
 import {
   generateSkillFiles,
   type ProgressiveLoadingMode,
@@ -97,7 +97,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Workflow guidelines
     sections.push(buildWorkflowSection());
 
-    const mainContent = addGeneratedHeader(sections.join("\n\n"));
+    const mainContent = addGeneratedFooter(sections.join("\n\n"));
     files.push({
       path: "CLAUDE.md",
       content: mainContent,
@@ -107,8 +107,8 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/rules/*.md (no frontmatter)
     for (const rule of config.rules) {
-      const ruleContent = addGeneratedHeader(
-        `# ${rule.name}\n\n${rule.content}`,
+      const ruleContent = addGeneratedFooter(
+        `# (codi) ${rule.name}\n\n${rule.content}`,
       );
       const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
@@ -128,6 +128,7 @@ export const claudeCodeAdapter: AgentAdapter = {
         ".claude/skills",
         plMode,
         _options.projectRoot,
+        "(codi) ",
       )),
     );
 
@@ -135,11 +136,11 @@ export const claudeCodeAdapter: AgentAdapter = {
     for (const agent of config.agents) {
       const lines = ["---"];
       lines.push(`name: ${agent.name}`);
-      lines.push(`description: ${agent.description}`);
+      lines.push(`description: (codi) ${agent.description}`);
       if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
       lines.push("---");
-      const agentContent = addGeneratedHeader(
+      const agentContent = addGeneratedFooter(
         `${lines.join("\n")}\n\n${agent.content}`,
       );
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";
@@ -153,8 +154,8 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/commands/{name}.md
     for (const cmd of config.commands) {
-      const cmdContent = addGeneratedHeader(
-        `---\ndescription: ${cmd.description}\n---\n\n${cmd.content}`,
+      const cmdContent = addGeneratedFooter(
+        `---\ndescription: (codi) ${cmd.description}\n---\n\n${cmd.content}`,
       );
       const fileName = cmd.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
@@ -167,8 +168,8 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/brands/{name}.md
     for (const brand of config.brands) {
-      const brandContent = addGeneratedHeader(
-        `# ${brand.name}\n\n${brand.content}`,
+      const brandContent = addGeneratedFooter(
+        `# (codi) ${brand.name}\n\n${brand.content}`,
       );
       const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({

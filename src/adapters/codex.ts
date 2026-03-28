@@ -10,7 +10,7 @@ import type {
 import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
-import { addGeneratedHeader } from "./generated-header.js";
+import { addGeneratedFooter } from "./generated-header.js";
 import {
   generateSkillFiles,
   type ProgressiveLoadingMode,
@@ -109,7 +109,7 @@ export const codexAdapter: AgentAdapter = {
     for (const brand of config.brands) {
       sections.push(`## Brand: ${brand.name}\n\n${brand.content}`);
     }
-    const content = addGeneratedHeader(sections.join("\n\n"));
+    const content = addGeneratedFooter(sections.join("\n\n"));
     files.push({
       path: "AGENTS.md",
       content,
@@ -136,7 +136,7 @@ export const codexAdapter: AgentAdapter = {
       lines.push(`description = "${agent.description}"`);
       lines.push(`developer_instructions = """\n${agent.content}\n"""`);
       if (agent.model) lines.push(`model = "${agent.model}"`);
-      const tomlContent = addGeneratedHeader(lines.join("\n"), "toml");
+      const tomlContent = addGeneratedFooter(lines.join("\n"), "toml");
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".toml";
       files.push({
         path: `.codex/agents/${fileName}`,

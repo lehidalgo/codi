@@ -10,7 +10,7 @@ import type {
 import type { NormalizedConfig, NormalizedRule } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
-import { addGeneratedHeader } from "./generated-header.js";
+import { addGeneratedFooter } from "./generated-header.js";
 import {
   generateSkillFiles,
   type ProgressiveLoadingMode,
@@ -99,7 +99,7 @@ export const cursorAdapter: AgentAdapter = {
     if (devNotes) sections.push(devNotes);
 
     sections.push(buildWorkflowSection());
-    const mainContent = addGeneratedHeader(sections.join("\n\n"));
+    const mainContent = addGeneratedFooter(sections.join("\n\n"));
     files.push({
       path: ".cursorrules",
       content: mainContent,
@@ -110,7 +110,7 @@ export const cursorAdapter: AgentAdapter = {
     // Generate .cursor/rules/*.mdc with YAML frontmatter
     for (const rule of config.rules) {
       const frontmatter = buildMdcFrontmatter(rule);
-      const ruleContent = addGeneratedHeader(
+      const ruleContent = addGeneratedFooter(
         `${frontmatter}\n\n# ${rule.name}\n\n${rule.content}`,
       );
       const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".mdc";
@@ -136,7 +136,7 @@ export const cursorAdapter: AgentAdapter = {
 
     // Generate .cursor/brands/{name}.md
     for (const brand of config.brands) {
-      const brandContent = addGeneratedHeader(
+      const brandContent = addGeneratedFooter(
         `# ${brand.name}\n\n${brand.content}`,
       );
       const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
