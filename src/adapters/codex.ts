@@ -22,6 +22,10 @@ import {
   buildWorkflowSection,
 } from "./section-builder.js";
 import {
+  extractDenyRules,
+  buildStrongTextRestrictions,
+} from "./permission-builder.js";
+import {
   CONTEXT_TOKENS_LARGE,
   MANIFEST_FILENAME,
   MCP_FILENAME,
@@ -222,35 +226,5 @@ function buildCodexNativeSettings(
 function buildFlagRestrictions(
   flags: NormalizedConfig["flags"],
 ): string | null {
-  const flagValue = (key: string): unknown => flags[key]?.value;
-  const lines: string[] = [];
-
-  if (flagValue("allow_force_push") === false) {
-    lines.push(
-      "FORBIDDEN: git push --force (or -f) — force push is disabled by project policy",
-    );
-  }
-  if (flagValue("allow_file_deletion") === false) {
-    lines.push(
-      "REQUIRES APPROVAL: rm -rf, rm -r — file deletion requires explicit user confirmation",
-    );
-  }
-  if (flagValue("auto_commit") === false) {
-    lines.push("REQUIRES APPROVAL: git commit — always ask before committing");
-  }
-  if (flagValue("require_pr_review") === true) {
-    lines.push(
-      "REQUIRED: All changes must go through pull request review before merging",
-    );
-  }
-  if (flagValue("test_before_commit") === true) {
-    lines.push("REQUIRED: Run the test suite before every commit");
-  }
-  if (flagValue("security_scan") === true) {
-    lines.push(
-      "REQUIRED: Run security scans (npm audit / pip audit) before merging",
-    );
-  }
-
-  return lines.length > 0 ? lines.join("\n") : null;
+  return buildStrongTextRestrictions(extractDenyRules(flags));
 }
