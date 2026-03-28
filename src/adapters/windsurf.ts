@@ -10,7 +10,7 @@ import type {
 import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
-import { addGeneratedHeader } from "./generated-header.js";
+import { addGeneratedFooter } from "./generated-header.js";
 import {
   generateSkillFiles,
   buildSkillCatalog,
@@ -108,7 +108,7 @@ export const windsurfAdapter: AgentAdapter = {
       if (catalog) sections.push(catalog);
     }
 
-    const content = addGeneratedHeader(sections.join("\n\n"));
+    const content = addGeneratedFooter(sections.join("\n\n"));
     const files: GeneratedFile[] = [
       {
         path: ".windsurfrules",

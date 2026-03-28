@@ -3,7 +3,7 @@ import { join, relative, extname } from "node:path";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
-import { addGeneratedHeader } from "./generated-header.js";
+import { addGeneratedFooter } from "./generated-header.js";
 import { SKILL_OUTPUT_FILENAME, MANIFEST_FILENAME } from "../constants.js";
 
 // Directories to skip when propagating from .codi/skills/ to agent dirs
@@ -29,10 +29,13 @@ const BINARY_EXTENSIONS = new Set([
   ".bz2",
 ]);
 
-export function buildSkillMd(skill: NormalizedSkill): string {
+export function buildSkillMd(
+  skill: NormalizedSkill,
+  descriptionPrefix = "",
+): string {
   const frontmatter: string[] = ["---"];
   frontmatter.push(`name: ${skill.name}`);
-  frontmatter.push(`description: ${skill.description}`);
+  frontmatter.push(`description: ${descriptionPrefix}${skill.description}`);
   if (skill.disableModelInvocation) {
     frontmatter.push("disable-model-invocation: true");
   }
@@ -74,11 +77,14 @@ export function buildSkillMd(skill: NormalizedSkill): string {
 }
 
 /** Build a metadata-only SKILL.md (Tier 1 — name + description only). */
-export function buildSkillMetadataOnly(skill: NormalizedSkill): string {
+export function buildSkillMetadataOnly(
+  skill: NormalizedSkill,
+  descriptionPrefix = "",
+): string {
   const lines = [
     "---",
     `name: ${skill.name}`,
-    `description: ${skill.description}`,
+    `description: ${descriptionPrefix}${skill.description}`,
     "---",
     "",
     `Full skill content available at: .codi/skills/${skill.name}/SKILL.md`,
@@ -103,6 +109,7 @@ export async function generateSkillFiles(
   basePath: string,
   progressiveLoading: ProgressiveLoadingMode = "off",
   projectRoot?: string,
+  descriptionPrefix = "",
 ): Promise<GeneratedFile[]> {
   const files: GeneratedFile[] = [];
   for (const skill of skills) {
@@ -112,9 +119,9 @@ export async function generateSkillFiles(
     // 1. Generate SKILL.md
     const raw =
       progressiveLoading === "off"
-        ? buildSkillMd(skill)
-        : buildSkillMetadataOnly(skill);
-    const content = addGeneratedHeader(raw);
+        ? buildSkillMd(skill, descriptionPrefix)
+        : buildSkillMetadataOnly(skill, descriptionPrefix);
+    const content = addGeneratedFooter(raw);
     files.push({
       path: `${skillBasePath}/${SKILL_OUTPUT_FILENAME}`,
       content,
