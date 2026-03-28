@@ -9,6 +9,12 @@ language: swift
 
 # Swift Conventions
 
+## Swift 6 Language Mode
+- Enable Swift 6 language mode to enforce data-race safety as compiler errors — not just warnings
+- Migrate incrementally — enable \`StrictConcurrency=complete\` per-target before flipping to Swift 6 mode project-wide
+- Annotate types that cross isolation boundaries as \`Sendable\` — the compiler rejects non-Sendable transfers between actors
+- Use \`@MainActor\` on UI-bound types and \`nonisolated\` to opt specific methods out of actor isolation
+
 ## Formatting & Tooling
 - Run SwiftFormat and SwiftLint on every build — enforce consistent style
 - Fix all linter warnings before merging — treat warnings as errors in CI
@@ -43,6 +49,18 @@ struct UserProfile: Cacheable {
     var cacheKey: String { "user-\\(id)" }
 }
 \`\`\`
+
+## Observation Framework (iOS 17+)
+- Use \`@Observable\` macro for state management in SwiftUI — replaces \`ObservableObject\` and \`@Published\` with simpler, more granular tracking
+- SwiftUI views automatically track which \`@Observable\` properties they read — no need for \`@ObservedObject\` wrappers
+
+## Noncopyable Types
+- Use \`~Copyable\` for types representing unique resources (file handles, locks, GPU buffers) — prevents accidental duplication
+- Use \`consuming\` and \`borrowing\` parameter modifiers to control ownership transfer
+
+## Macros
+- Use Swift macros for compile-time code generation — prefer \`@attached\` macros over runtime reflection
+- Use \`#Preview\` for SwiftUI previews, \`@Observable\` for observation, \`@Model\` for SwiftData
 
 ## Concurrency
 - Use structured concurrency with \`async\`/\`await\` — no completion handlers; async/await prevents callback hell and race conditions
@@ -83,6 +101,14 @@ actor CounterStore {
 - Use App Transport Security — enforce HTTPS for all connections
 - Validate all external input before processing
 - Use \`Data\` instead of \`String\` for sensitive values to control memory lifetime
+
+## SwiftData (iOS 17+)
+- Use SwiftData with \`@Model\` macro for persistence in new projects — simpler API than Core Data with SwiftUI integration
+- Use \`@Query\` in SwiftUI views for declarative data fetching with automatic UI updates
+
+## Server-Side Swift
+- Use Vapor or Hummingbird for HTTP server applications — both support Swift 6 concurrency natively
+- Share models and validation logic between client and server when both are Swift
 
 ## Dependencies
 - Use Swift Package Manager for dependency management

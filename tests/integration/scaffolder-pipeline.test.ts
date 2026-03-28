@@ -1,0 +1,228 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { createRule } from "../../src/core/scaffolder/rule-scaffolder.js";
+import { createSkill } from "../../src/core/scaffolder/skill-scaffolder.js";
+import { createAgent } from "../../src/core/scaffolder/agent-scaffolder.js";
+import { createCommand } from "../../src/core/scaffolder/command-scaffolder.js";
+import { createMcpServer } from "../../src/core/scaffolder/mcp-scaffolder.js";
+import { createBrand } from "../../src/core/scaffolder/brand-scaffolder.js";
+import { scanRules, scanSkills } from "../../src/core/config/parser.js";
+import { Logger } from "../../src/core/output/logger.js";
+import { parseFrontmatter } from "../../src/utils/frontmatter.js";
+
+let tmpDir: string;
+let codiDir: string;
+
+beforeEach(async () => {
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-scaff-pipe-"));
+  codiDir = path.join(tmpDir, ".codi");
+  await fs.mkdir(codiDir, { recursive: true });
+  Logger.init({ level: "error", mode: "human", noColor: true });
+});
+
+afterEach(async () => {
+  await fs.rm(tmpDir, { recursive: true, force: true });
+});
+
+describe("Scaffolder Pipeline: create → verify → parse", () => {
+  it("scaffolded rule is parseable by scanRules", async () => {
+    const result = await createRule({ name: "test-rule", codiDir });
+    expect(result.ok).toBe(true);
+
+    const rulesDir = path.join(codiDir, "rules");
+    const scanResult = await scanRules(rulesDir);
+    expect(scanResult.ok).toBe(true);
+    if (!scanResult.ok) return;
+
+    expect(scanResult.data).toHaveLength(1);
+    expect(scanResult.data[0]!.name).toBe("test-rule");
+    expect(scanResult.data[0]!.managedBy).toBe("user");
+  });
+
+  it("scaffolded template rule is parseable by scanRules", async () => {
+    const result = await createRule({
+      name: "my-sec",
+      codiDir,
+      template: "security",
+    });
+    expect(result.ok).toBe(true);
+
+    const rulesDir = path.join(codiDir, "rules");
+    const scanResult = await scanRules(rulesDir);
+    expect(scanResult.ok).toBe(true);
+    if (!scanResult.ok) return;
+
+    expect(scanResult.data).toHaveLength(1);
+    expect(scanResult.data[0]!.name).toBe("my-sec");
+    expect(scanResult.data[0]!.content).toContain("Security");
+  });
+
+  it("scaffolded skill is parseable by scanSkills", async () => {
+    const result = await createSkill({ name: "test-skill", codiDir });
+    expect(result.ok).toBe(true);
+
+    const skillsDir = path.join(codiDir, "skills");
+    const scanResult = await scanSkills(skillsDir);
+    expect(scanResult.ok).toBe(true);
+    if (!scanResult.ok) return;
+
+    expect(scanResult.data).toHaveLength(1);
+    expect(scanResult.data[0]!.name).toBe("test-skill");
+  });
+
+  it("scaffolded skill creates all subdirectories", async () => {
+    const result = await createSkill({ name: "full-skill", codiDir });
+    expect(result.ok).toBe(true);
+
+    const skillDir = path.join(codiDir, "skills", "full-skill");
+    for (const sub of ["evals", "scripts", "references", "assets"]) {
+      const stat = await fs.stat(path.join(skillDir, sub));
+      expect(stat.isDirectory()).toBe(true);
+    }
+  });
+
+  it("scaffolded agent has valid frontmatter", async () => {
+    const result = await createAgent({ name: "test-agent", codiDir });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, "utf-8");
+    const { data } = parseFrontmatter<Record<string, unknown>>(content);
+    expect(data["name"]).toBe("test-agent");
+    expect(data["managed_by"]).toBe("user");
+    expect(Array.isArray(data["tools"])).toBe(true);
+  });
+
+  it("scaffolded command has valid frontmatter", async () => {
+    const result = await createCommand({ name: "test-cmd", codiDir });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, "utf-8");
+    const { data } = parseFrontmatter<Record<string, unknown>>(content);
+    expect(data["name"]).toBe("test-cmd");
+    expect(data["managed_by"]).toBe("user");
+  });
+
+  it("scaffolded MCP server produces valid YAML", async () => {
+    const result = await createMcpServer({ name: "test-mcp", codiDir });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, "utf-8");
+    expect(content).toContain("name: test-mcp");
+    expect(content).toContain("managed_by: user");
+  });
+
+  it("scaffolded MCP server with template has template content", async () => {
+    const result = await createMcpServer({
+      name: "gh-mcp",
+      codiDir,
+      template: "github",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, "utf-8");
+    expect(content).toContain("managed_by: codi");
+  });
+
+  it("scaffolded brand creates directory structure", async () => {
+    const result = await createBrand({ name: "test-brand", codiDir });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, "utf-8");
+    expect(content).toContain("name: test-brand");
+    expect(content).toContain("Brand Identity");
+
+    const brandDir = path.join(codiDir, "brands", "test-brand");
+    for (const sub of ["assets", "references"]) {
+      const stat = await fs.stat(path.join(brandDir, sub));
+      expect(stat.isDirectory()).toBe(true);
+    }
+  });
+});
+
+describe("Scaffolder Pipeline: multiple artifacts", () => {
+  it("creates multiple rules and all are parseable", async () => {
+    for (const name of ["rule-a", "rule-b", "rule-c"]) {
+      const result = await createRule({ name, codiDir });
+      expect(result.ok).toBe(true);
+    }
+
+    const scanResult = await scanRules(path.join(codiDir, "rules"));
+    expect(scanResult.ok).toBe(true);
+    if (!scanResult.ok) return;
+    expect(scanResult.data).toHaveLength(3);
+    const names = scanResult.data.map((r) => r.name).sort();
+    expect(names).toEqual(["rule-a", "rule-b", "rule-c"]);
+  });
+
+  it("creates multiple skills and all are parseable", async () => {
+    for (const name of ["skill-x", "skill-y"]) {
+      const result = await createSkill({ name, codiDir });
+      expect(result.ok).toBe(true);
+    }
+
+    const scanResult = await scanSkills(path.join(codiDir, "skills"));
+    expect(scanResult.ok).toBe(true);
+    if (!scanResult.ok) return;
+    expect(scanResult.data).toHaveLength(2);
+  });
+});
+
+describe("Scaffolder Pipeline: error paths", () => {
+  it("rejects duplicate rule", async () => {
+    await createRule({ name: "dup", codiDir });
+    const result = await createRule({ name: "dup", codiDir });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects duplicate skill", async () => {
+    await createSkill({ name: "dup", codiDir });
+    const result = await createSkill({ name: "dup", codiDir });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects duplicate agent", async () => {
+    await createAgent({ name: "dup", codiDir });
+    const result = await createAgent({ name: "dup", codiDir });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects duplicate command", async () => {
+    await createCommand({ name: "dup", codiDir });
+    const result = await createCommand({ name: "dup", codiDir });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects duplicate MCP server", async () => {
+    await createMcpServer({ name: "dup", codiDir });
+    const result = await createMcpServer({ name: "dup", codiDir });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects duplicate brand", async () => {
+    await createBrand({ name: "dup", codiDir });
+    const result = await createBrand({ name: "dup", codiDir });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects invalid names for all artifact types", async () => {
+    const invalidName = "INVALID_NAME!";
+
+    expect((await createRule({ name: invalidName, codiDir })).ok).toBe(false);
+    expect((await createSkill({ name: invalidName, codiDir })).ok).toBe(false);
+    expect((await createAgent({ name: invalidName, codiDir })).ok).toBe(false);
+    expect((await createCommand({ name: invalidName, codiDir })).ok).toBe(
+      false,
+    );
+    expect((await createMcpServer({ name: invalidName, codiDir })).ok).toBe(
+      false,
+    );
+    expect((await createBrand({ name: invalidName, codiDir })).ok).toBe(false);
+  });
+});

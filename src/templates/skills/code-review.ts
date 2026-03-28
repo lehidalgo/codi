@@ -50,6 +50,8 @@ List each changed file with the type of change (added, modified, deleted).
 - API contract: does the implementation match the interface?
 - Concurrency: race conditions, shared mutable state
 - Backward compatibility: breaking changes to public APIs
+- Test quality: do tests cover the actual behavior change, not just exist? Are assertions meaningful?
+- Accessibility: do UI changes maintain keyboard navigation, ARIA labels, and semantic HTML?
 
 ### Step 5: Format Findings
 

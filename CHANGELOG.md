@@ -27,6 +27,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Output snapshot tests** — vitest snapshots for generated instruction files across all 5 adapters
 - **Testing analysis report** — comprehensive coverage analysis with gap identification and improvement roadmap
 - **Auto-restage after formatters** — pre-commit hooks with `modifiesFiles: true` automatically re-stage fixed files, preventing formatter changes from being left as unstaged diffs
+- **Brands as first-class artifact type** — `codi add brand <name>` creates `.codi/brands/<name>/` with BRAND.md template, assets/, and references/ directories. Brands define design tokens (CSS variables, typography, logos, tone of voice) consumed by engine skills
+- **Brand injection in all 5 adapters** — brands are injected into generated output for Claude Code, Cursor, Codex, Windsurf, and Cline
+- **`deck-engine` skill template** — comprehensive presentation engine with slide components (title, section divider, bullet list, card grid, metric cards, code block, split layout, flow diagram), CSS foundation with brand token integration, and JS navigation (keyboard/wheel/touch)
+- **`doc-engine` skill template** — document generation engine for reports, proposals, one-pagers, and case studies with branded HTML templates, print CSS for A4 PDF export, and component library (callouts, metrics, tables)
+
+### Deprecated
+
+- **`presentation` skill template** — replaced by `deck-engine` which adds brand integration, richer component catalog, and full navigation engine
 
 ### Fixed
 

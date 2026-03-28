@@ -44,28 +44,46 @@ Parse the output and note all known vulnerabilities with their severity.
 
 Skip test fixtures, examples, and documentation files.
 
-### Step 3: OWASP Top 10 Analysis
+### Step 3: OWASP Top 10:2025 Analysis
 
-**[CODING AGENT]** Check the codebase against OWASP Top 10 categories:
+**[CODING AGENT]** Check the codebase against OWASP Top 10:2025 categories:
 
-1. **Injection** — SQL, NoSQL, OS command, LDAP injection via unsanitized input
-2. **Broken Authentication** — Weak session management, missing rate limiting, plaintext passwords
-3. **Sensitive Data Exposure** — Unencrypted PII, missing HTTPS, verbose error messages
-4. **XML External Entities (XXE)** — Unsafe XML parsing configurations
-5. **Broken Access Control** — Missing authorization checks, IDOR vulnerabilities
-6. **Security Misconfiguration** — Debug mode enabled, default credentials, open CORS
-7. **Cross-Site Scripting (XSS)** — Unescaped user input rendered in HTML/JS
-8. **Insecure Deserialization** — Untrusted data deserialized without validation
-9. **Known Vulnerabilities** — Outdated dependencies with published CVEs
-10. **Insufficient Logging** — Missing audit trails for security events
+1. **A01 — Broken Access Control** — Missing authorization checks, IDOR/BOLA, CORS misconfiguration, privilege escalation
+2. **A02 — Security Misconfiguration** — Debug mode enabled, default credentials, unnecessary features, missing security headers
+3. **A03 — Software Supply Chain Failures** — Unverified dependencies, missing lockfile integrity, no SBOM, unsigned artifacts
+4. **A04 — Injection** — SQL, NoSQL, OS command, LDAP, template injection via unsanitized input
+5. **A05 — Insecure Design** — Missing threat modeling, business logic flaws, insufficient rate limiting
+6. **A06 — Vulnerable and Outdated Components** — Dependencies with known CVEs, unmaintained packages
+7. **A07 — Authentication Failures** — Weak session management, missing MFA, plaintext passwords, no brute-force protection
+8. **A08 — Data Integrity Failures** — Insecure deserialization, unsigned updates, untrusted CI/CD pipelines
+9. **A09 — Security Logging and Monitoring Failures** — Missing audit trails, no alerting on suspicious activity
+10. **A10 — Mishandling of Exceptional Conditions** — Errors that fail open, unhandled exceptions that leak data or bypass auth
 
-### Step 4: Review Dependency Versions
+### Step 3b: AI-Generated Code Check
 
-**[CODING AGENT]** Check all dependencies for:
-- Packages with known CVEs not caught by the audit tool
-- Severely outdated packages (2+ major versions behind)
-- Packages that are unmaintained or archived
-- Packages with suspicious download counts or recent ownership changes
+**[CODING AGENT]** If the project uses AI coding assistants:
+- Check for prompt injection vectors (user input embedded in LLM prompts)
+- Verify LLM outputs are validated before use in SQL, shell, or HTML
+- Check that AI agents do not have excessive permissions (credentials, admin APIs)
+
+### Step 3c: Security Headers Check
+
+**[CODING AGENT]** If the project serves HTTP responses, verify:
+- Content-Security-Policy is configured
+- Strict-Transport-Security is set with appropriate max-age
+- X-Content-Type-Options: nosniff is present
+- Referrer-Policy is configured
+- Permissions-Policy disables unused browser features
+
+### Step 4: Supply Chain Security
+
+**[CODING AGENT]** Check supply chain security:
+- Verify lockfile exists and integrity hashes are present — lockfiles without hashes allow tampering
+- Check for typosquatted package names — compare against known legitimate packages
+- Verify dependencies are not archived or unmaintained (no commits in 12+ months)
+- Check for packages with suspicious recent ownership changes
+- Verify no packages are severely outdated (2+ major versions behind)
+- If container images are used, check for non-root USER and minimal base images (distroless/Alpine)
 
 ### Step 5: Input Validation Check
 

@@ -21,6 +21,7 @@ export interface PresetValidationResult {
     skills: number;
     agents: number;
     commands: number;
+    brands: number;
   };
 }
 
@@ -95,8 +96,20 @@ export async function validatePreset(
   }
 
   // 4. Count and validate artifacts in each directory
-  const artifactDirs = ["rules", "skills", "agents", "commands"] as const;
-  const artifactCounts = { rules: 0, skills: 0, agents: 0, commands: 0 };
+  const artifactDirs = [
+    "rules",
+    "skills",
+    "agents",
+    "commands",
+    "brands",
+  ] as const;
+  const artifactCounts = {
+    rules: 0,
+    skills: 0,
+    agents: 0,
+    commands: 0,
+    brands: 0,
+  };
 
   for (const dir of artifactDirs) {
     const dirPath = path.join(presetDir, dir);
@@ -151,20 +164,25 @@ async function validateArtifactDir(
     }
   }
 
-  // Validate directory-based artifacts (skills with SKILL.md)
-  if (dirName === "skills") {
+  // Validate directory-based artifacts (skills with SKILL.md, brands with BRAND.md)
+  const dirBasedFiles: Record<string, string> = {
+    skills: SKILL_OUTPUT_FILENAME,
+    brands: "BRAND.md",
+  };
+  const indexFile = dirBasedFiles[dirName];
+  if (indexFile) {
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const skillMdPath = path.join(dirPath, entry.name, SKILL_OUTPUT_FILENAME);
+      const mdPath = path.join(dirPath, entry.name, indexFile);
       try {
-        const raw = await fs.readFile(skillMdPath, "utf8");
+        const raw = await fs.readFile(mdPath, "utf8");
         parseFrontmatter<Record<string, unknown>>(raw);
         count++;
       } catch {
         errors.push(
           createError("E_PRESET_INVALID", {
             name: presetName,
-            reason: `Invalid or missing SKILL.md in ${dirName}/${entry.name}/`,
+            reason: `Invalid or missing ${indexFile} in ${dirName}/${entry.name}/`,
           }),
         );
       }

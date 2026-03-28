@@ -1,8 +1,8 @@
-import { MIN_CODE_COVERAGE_PERCENT } from '../../constants.js';
+import { MIN_CODE_COVERAGE_PERCENT } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
-description: Testing standards and TDD workflow
+description: Testing strategy, TDD workflow, and test infrastructure
 priority: medium
 alwaysApply: true
 managed_by: codi
@@ -10,11 +10,16 @@ managed_by: codi
 
 # Testing Standards
 
+## Testing Strategy — Prioritize by ROI
+- Write mostly integration tests — they provide the highest confidence-to-cost ratio (testing trophy model)
+- Use unit tests for pure logic with complex branching — not for trivial code
+- Use end-to-end tests sparingly for critical user journeys — they are slow and brittle
+- Use static analysis (types, linters) as the first line of defense — catches bugs before tests run
+
 ## Coverage & Requirements
 - Maintain minimum ${MIN_CODE_COVERAGE_PERCENT}% code coverage
 - All new features require tests before merging — untested code is a liability
 - All bug fixes require a regression test — prevents the same bug from recurring
-- Write all three test types: unit tests for logic, integration tests for API/database, end-to-end tests for critical user flows
 - Critical paths require integration tests
 
 ## Test-Driven Development (TDD)
@@ -45,8 +50,25 @@ GOOD: Each test creates its own data in the arrange phase
 BAD: Assert that an internal method was called 3 times
 GOOD: Assert that the output matches the expected result
 
+## Contract Testing
+- Use consumer-driven contract tests (Pact or similar) between services — catches integration breaks before deployment
+- Each consumer defines its expected API contract; the provider verifies it in CI
+
+## Realistic Test Infrastructure
+- Use Testcontainers for integration tests that need real databases, message brokers, or caches — mocking persistence hides real bugs
+- Reserve mocks for truly external services (third-party APIs, payment gateways)
+
 ## Mocking
-- Mock only external dependencies (APIs, databases, file system)
+- Mock only external dependencies (APIs, third-party services)
 - Do not mock the module under test — you would be testing the mock, not the code
 - Prefer fakes and stubs over complex mock frameworks
-- Reset mocks between tests to avoid leaking state`;
+- Reset mocks between tests to avoid leaking state
+
+## Advanced Techniques
+- Use property-based testing for functions with large input spaces — the framework generates edge cases you would not write by hand
+- Use mutation testing periodically to verify test suite effectiveness — if mutants survive, tests are weak
+- Avoid large snapshot tests — developers blindly update them instead of investigating failures; keep snapshots small and focused
+
+## Speed & Parallelism
+- Run tests in parallel by default — ensure tests are isolated with no shared mutable state
+- Keep the full test suite under 5 minutes — slow suites get skipped`;

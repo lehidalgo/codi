@@ -1,4 +1,4 @@
-import { MAX_COMPONENT_LINES } from '../../constants.js';
+import { MAX_COMPONENT_LINES } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
@@ -30,12 +30,23 @@ export function UserCard({ name, email, onEdit }: UserCardProps) {
 }
 \`\`\`
 
+## React 19 Features
+- Use \`use()\` to read Promises and Context directly in render — replaces many useEffect data-fetching patterns
+- \`use()\` can be called inside conditionals and loops — unlike other hooks
+- Use \`useActionState\` to manage form submission state — consolidates pending state, error handling, and result
+- Use \`useFormStatus\` in child components to access parent form submission state without prop drilling
+- Use \`useOptimistic\` for immediate UI updates while async operations complete
+- Pass \`ref\` as a regular prop — \`forwardRef\` is deprecated in React 19
+- Render \`<title>\`, \`<link>\`, \`<meta>\` directly in components — React 19 hoists them to \`<head>\` automatically
+
+## React Compiler
+- With React Compiler enabled, manual \`useMemo\`, \`useCallback\`, and \`memo\` are unnecessary — the compiler auto-memoizes
+- Follow the Rules of React strictly: components and hooks must be pure, no mutation of props/state during render
+- If not using React Compiler, continue using \`useMemo\`/\`useCallback\` for expensive computations and stable callback references
+
 ## Hooks
-- Extract reusable logic into custom hooks (use\` prefix)
+- Extract reusable logic into custom hooks (\`use\` prefix)
 - Keep hooks focused — one concern per hook
-- Use \`useMemo\` for expensive computations that depend on specific values
-- Use \`useCallback\` for callbacks passed to memoized children
-- Avoid premature memoization — measure first, optimize second; unnecessary memos add complexity without benefit
 
 ## State Management
 - Start with local state (\`useState\`) — lift only when needed
@@ -48,6 +59,12 @@ export function UserCard({ name, email, onEdit }: UserCardProps) {
 - Avoid creating objects and functions inside render — extract to constants or hooks
 - Use \`key\` prop correctly — stable, unique identifiers, never array indices for dynamic lists
 - Profile with React DevTools before optimizing
+
+## Server Components
+- Prefer Server Components for data fetching and static content — zero client JS
+- Add \`'use client'\` only when the component needs interactivity (event handlers, hooks, browser APIs)
+- Keep client components small and push them to the leaves of the component tree
+- Use Server Actions (\`"use server"\`) for form mutations — enables progressive enhancement
 
 ## Patterns to Avoid
 - No inline styles — use CSS modules, Tailwind, or styled-components

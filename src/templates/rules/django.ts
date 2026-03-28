@@ -54,11 +54,26 @@ articles = Article.objects.all()
 articles = Article.objects.select_related("author").published()
 \`\`\`
 
+## Async Views & ORM
+- Use \`async def\` views for I/O-bound endpoints — async views avoid thread-pool exhaustion under high concurrency
+- Use async ORM methods (\`aget()\`, \`afilter()\`, \`acreate()\`, \`acount()\`) in async views — mixing sync ORM in async views triggers sync_to_async overhead
+- Ensure all middleware supports async — a single sync middleware forces Django to use a thread per request
+- Deploy with Uvicorn or Hypercorn for ASGI — required for async views to deliver concurrency benefits
+
+## GeneratedField (Django 5.0+)
+- Use \`GeneratedField\` for database-computed columns instead of Python \`@property\` — values are queryable, indexable, and computed at the database level
+- Choose \`db_persist=True\` (stored) for frequently read values, \`db_persist=False\` (virtual) for rarely accessed computed values
+
+## Security Defaults
+- Use \`LoginRequiredMiddleware\` (Django 5.1+) to require authentication by default — decorate public views with \`@login_not_required\`
+- This inverts the security model from opt-in to opt-out — prevents accidentally exposing views
+
 ## DRF Serializers
 - Use \`validate_<field>()\` methods for field-level validation
 - Use \`validate()\` for cross-field validation
 - Keep serializers focused — use separate serializers for list vs detail
 - Use \`SerializerMethodField\` sparingly — prefer annotated querysets for computed fields
+- Consider Django Ninja for new API projects — Pydantic-based validation, async-first, auto-generated OpenAPI docs
 
 ## Migrations
 - Use \`django.db.migrations\` for all schema changes — never write manual SQL for schema

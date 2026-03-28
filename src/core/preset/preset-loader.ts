@@ -8,6 +8,7 @@ import type {
   NormalizedSkill,
   NormalizedAgent,
   NormalizedCommand,
+  NormalizedBrand,
   McpConfig,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
@@ -32,6 +33,7 @@ export interface LoadedPreset {
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
   commands: NormalizedCommand[];
+  brands: NormalizedBrand[];
   mcp: McpConfig;
 }
 
@@ -88,6 +90,7 @@ export async function loadPresetFromDir(
   let parentSkills: NormalizedSkill[] = [];
   let parentAgents: NormalizedAgent[] = [];
   let parentCommands: NormalizedCommand[] = [];
+  let parentBrands: NormalizedBrand[] = [];
   let parentMcp: McpConfig = { servers: {} };
 
   if (manifest.extends) {
@@ -98,6 +101,7 @@ export async function loadPresetFromDir(
       parentSkills = parentResult.data.skills;
       parentAgents = parentResult.data.agents;
       parentCommands = parentResult.data.commands;
+      parentBrands = parentResult.data.brands;
       parentMcp = parentResult.data.mcp;
     }
   }
@@ -107,8 +111,8 @@ export async function loadPresetFromDir(
   const codiDir = path.dirname(presetsDir);
   const resolved = manifest.artifacts
     ? await resolveArtifactsByName(manifest.artifacts, codiDir)
-    : { rules: [], skills: [], agents: [], commands: [] };
-  const { rules, skills, agents, commands } = resolved;
+    : { rules: [], skills: [], agents: [], commands: [], brands: [] };
+  const { rules, skills, agents, commands, brands } = resolved;
 
   let mcp: McpConfig = { servers: {} };
   try {
@@ -133,6 +137,7 @@ export async function loadPresetFromDir(
   const mergedSkills = mergeArtifacts(parentSkills, skills);
   const mergedAgents = mergeArtifacts(parentAgents, agents);
   const mergedCommands = mergeArtifacts(parentCommands, commands);
+  const mergedBrands = mergeArtifacts(parentBrands, brands);
   const mergedMcp: McpConfig = {
     servers: { ...parentMcp.servers, ...mcp.servers },
   };
@@ -145,6 +150,7 @@ export async function loadPresetFromDir(
     skills: mergedSkills,
     agents: mergedAgents,
     commands: mergedCommands,
+    brands: mergedBrands,
     mcp: mergedMcp,
   });
 }
@@ -163,6 +169,7 @@ interface ArtifactNames {
   skills?: string[];
   agents?: string[];
   commands?: string[];
+  brands?: string[];
 }
 
 interface ResolvedArtifacts {
@@ -170,6 +177,7 @@ interface ResolvedArtifacts {
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
   commands: NormalizedCommand[];
+  brands: NormalizedBrand[];
 }
 
 /**
@@ -205,7 +213,13 @@ async function resolveArtifactsByName(
     if (cmd) commands.push(cmd);
   }
 
-  return { rules, skills, agents, commands };
+  const brands: NormalizedBrand[] = [];
+  for (const name of artifacts.brands ?? []) {
+    const brand = await loadBrandFromDir(name, codiDir);
+    if (brand) brands.push(brand);
+  }
+
+  return { rules, skills, agents, commands, brands };
 }
 
 function resolveRule(name: string): NormalizedRule | null {
@@ -359,6 +373,27 @@ async function loadCommandFromDir(
   try {
     const raw = await fs.readFile(
       path.join(codiDir, "commands", `${name}.md`),
+      "utf8",
+    );
+    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+    return {
+      name,
+      description: (data["description"] as string) ?? "",
+      content,
+      managedBy: (data["managed_by"] as "codi" | "user") ?? "user",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function loadBrandFromDir(
+  name: string,
+  codiDir: string,
+): Promise<NormalizedBrand | null> {
+  try {
+    const raw = await fs.readFile(
+      path.join(codiDir, "brands", name, "BRAND.md"),
       "utf8",
     );
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);

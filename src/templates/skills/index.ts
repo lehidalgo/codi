@@ -7,7 +7,8 @@ export { template as securityScan } from "./security-scan.js";
 export { template as testCoverage } from "./test-coverage.js";
 export { template as refactoring } from "./refactoring.js";
 export { template as codebaseOnboarding } from "./codebase-onboarding.js";
-export { template as presentation } from "./presentation.js";
+// Deprecated: replaced by deck-engine. File kept for backwards compatibility.
+// export { template as presentation } from "./presentation.js";
 export { template as mobileDevelopment } from "./mobile-development.js";
 export { template as commit } from "./commit.js";
 export { template as presetCreator } from "./preset-creator.js";
@@ -20,3 +21,5 @@ export { template as guidedQaTesting } from "./guided-qa-testing.js";
 export { template as mcpServerCreator } from "./mcp-server-creator.js";
 export { template as comparePreset } from "./compare-preset.js";
 export { template as errorRecovery } from "./error-recovery.js";
+export { template as deckEngine } from "./deck-engine.js";
+export { template as docEngine } from "./doc-engine.js";

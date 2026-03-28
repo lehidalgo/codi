@@ -69,6 +69,13 @@ After editing, run \\\`codi generate\\\` to distribute to all agents.
 - Verify environment variables are set (tokens, API keys)
 - Try a simpler call to isolate the issue
 
+## Security Considerations
+
+- Never hardcode tokens or API keys in \\\`mcp.yaml\\\` — use \\\`\\\${VAR_NAME}\\\` syntax to reference environment variables
+- Apply least-privilege: grant MCP servers access only to the resources they need
+- For http servers, verify the URL uses HTTPS in production — unencrypted MCP traffic exposes tool calls and results
+- Review MCP server permissions before granting access to sensitive data (databases, admin APIs)
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |

@@ -20,7 +20,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   "test-coverage": skillTemplates.testCoverage,
   refactoring: skillTemplates.refactoring,
   "codebase-onboarding": skillTemplates.codebaseOnboarding,
-  presentation: skillTemplates.presentation,
+  // presentation: deprecated, replaced by deck-engine
   "mobile-development": skillTemplates.mobileDevelopment,
   commit: skillTemplates.commit,
   "codi-preset-creator": skillTemplates.presetCreator,
@@ -33,6 +33,8 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   "guided-qa-testing": skillTemplates.guidedQaTesting,
   "mcp-server-creator": skillTemplates.mcpServerCreator,
   "error-recovery": skillTemplates.errorRecovery,
+  "deck-engine": skillTemplates.deckEngine,
+  "doc-engine": skillTemplates.docEngine,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

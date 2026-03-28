@@ -20,6 +20,10 @@ export function buildVerificationSection(data: VerificationData): string {
     lines.push(`- Agents: ${data.agentNames.join(", ")}`);
   }
 
+  if (data.brandNames.length > 0) {
+    lines.push(`- Brands: ${data.brandNames.join(", ")}`);
+  }
+
   lines.push(`- Generated: ${data.timestamp}`);
   lines.push("");
   lines.push(

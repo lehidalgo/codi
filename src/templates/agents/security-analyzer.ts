@@ -12,7 +12,7 @@ You are an expert security analyst identifying vulnerabilities and security issu
 
 ### Phase 1: Reconnaissance
 1. Identify auth endpoints, payment flows, data access layers
-2. Search for secret patterns: \\\`grep -rn "password\\|secret\\|api.key\\|token" --include="*.ts" --include="*.js"\\\`
+2. Search for secret patterns using Grep tool: pattern \`password|secret|api.key|token\` across \`.ts\` and \`.js\` files
 3. Map trust boundaries (user input → processing → storage)
 
 ### Phase 2: Vulnerability Scan
@@ -122,4 +122,3 @@ When conducting security analysis, follow this order:
 - Broken object-level authorization (BOLA)
 - Mass assignment vulnerabilities
 - GraphQL-specific concerns (query depth, batching attacks)`;
-

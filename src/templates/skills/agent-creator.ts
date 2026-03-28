@@ -2,7 +2,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_ARTIFACT_CHARS,
-} from '../../constants.js';
+} from "../../constants.js";
 
 export const template = `---
 name: {{name}}
@@ -194,20 +194,17 @@ codi doctor
 1. \\\`codi generate\\\` distributes the agent to all configured platforms
 2. \\\`codi doctor\\\` checks for remaining issues
 
-## Available Agent Templates (8)
+## Available Agent Templates
 
-Run \\\`codi add agent --all\\\` to list all templates. Common ones include:
+Run \\\`codi add agent --all\\\` to list all templates. Major categories include:
 
-| Template | Description |
-|----------|-------------|
-| code-reviewer | PR review with severity-ranked findings |
-| security-analyzer | Vulnerability detection and threat assessment |
-| test-generator | Automated test suite creation |
-| refactoring-advisor | Code smell detection and improvement suggestions |
-| documentation-writer | API docs, README, and changelog generation |
-| performance-analyzer | Bottleneck detection and optimization advice |
-| accessibility-auditor | WCAG compliance checking |
-| migration-planner | Framework/library upgrade planning |
+| Category | Templates |
+|----------|-----------|
+| Quality | code-reviewer, refactorer, test-generator |
+| Security | security-analyzer |
+| Architecture | api-designer, performance-auditor |
+| Docs | onboarding-guide, docs-lookup, codebase-explorer |
+| Domain | ai-engineering-expert, data-analytics-bi-expert, data-engineering-expert, data-intensive-architect, data-science-specialist, legal-compliance-eu, marketing-seo-specialist, mlops-engineer, nextjs-researcher, openai-agents-specialist, payload-cms-auditor, python-expert, scalability-expert |
 
 ## Constraints
 
