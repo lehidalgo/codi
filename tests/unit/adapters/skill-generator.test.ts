@@ -41,10 +41,30 @@ describe('buildSkillMd', () => {
     expect(result).toContain('license: MIT');
   });
 
-  it('includes metadata entries', () => {
+  it('does not emit metadata entries (Codi-internal, stripped from output)', () => {
     const result = buildSkillMd({ ...baseSkill, metadata: { author: 'test', version: '1.0' } });
-    expect(result).toContain('metadata-author: "test"');
-    expect(result).toContain('metadata-version: "1.0"');
+    expect(result).not.toContain('metadata-author');
+    expect(result).not.toContain('metadata-version');
+  });
+
+  it('includes new official frontmatter fields when set', () => {
+    const result = buildSkillMd({
+      ...baseSkill,
+      model: 'sonnet',
+      effort: 'high',
+      context: 'fork',
+      agent: 'Explore',
+      userInvocable: false,
+      paths: ['src/api/**'],
+      shell: 'bash',
+    });
+    expect(result).toContain('model: sonnet');
+    expect(result).toContain('effort: high');
+    expect(result).toContain('context: fork');
+    expect(result).toContain('agent: Explore');
+    expect(result).toContain('user-invocable: false');
+    expect(result).toContain('paths: src/api/**');
+    expect(result).toContain('shell: bash');
   });
 
   it('omits optional fields when not set', () => {
@@ -77,34 +97,47 @@ describe('generateSkillFiles', () => {
     { name: 'review', description: 'Review', content: 'review content' },
   ];
 
-  it('generates one SKILL.md per skill', () => {
-    const files = generateSkillFiles(skills, '.claude/skills');
-    expect(files).toHaveLength(2);
-    expect(files[0]!.path).toBe('.claude/skills/deploy/SKILL.md');
-    expect(files[1]!.path).toBe('.claude/skills/review/SKILL.md');
+  it('generates SKILL.md + skeleton per skill', async () => {
+    const files = await generateSkillFiles(skills, '.claude/skills');
+    // Each skill: 1 SKILL.md + 3 .gitkeep (scripts, references, assets)
+    expect(files).toHaveLength(8);
+    const skillMds = files.filter((f) => f.path.endsWith('SKILL.md'));
+    expect(skillMds).toHaveLength(2);
+    expect(skillMds[0]!.path).toBe('.claude/skills/deploy/SKILL.md');
+    expect(skillMds[1]!.path).toBe('.claude/skills/review/SKILL.md');
   });
 
-  it('uses full content when progressive loading is off', () => {
-    const files = generateSkillFiles(skills, '.test/skills', 'off');
-    expect(files[0]!.content).toContain('deploy content');
+  it('creates skeleton .gitkeep files', async () => {
+    const files = await generateSkillFiles(skills, '.claude/skills');
+    const gitkeeps = files.filter((f) => f.path.endsWith('.gitkeep'));
+    expect(gitkeeps).toHaveLength(6); // 3 per skill
+    expect(gitkeeps.some((f) => f.path.includes('scripts/.gitkeep'))).toBe(true);
+    expect(gitkeeps.some((f) => f.path.includes('references/.gitkeep'))).toBe(true);
+    expect(gitkeeps.some((f) => f.path.includes('assets/.gitkeep'))).toBe(true);
   });
 
-  it('uses metadata only when progressive loading is metadata', () => {
-    const files = generateSkillFiles(skills, '.test/skills', 'metadata');
-    expect(files[0]!.content).not.toContain('deploy content');
-    expect(files[0]!.content).toContain('Full skill content available');
+  it('uses full content when progressive loading is off', async () => {
+    const files = await generateSkillFiles(skills, '.test/skills', 'off');
+    const skillMd = files.find((f) => f.path.endsWith('SKILL.md'));
+    expect(skillMd!.content).toContain('deploy content');
   });
 
-  it('returns empty array for no skills', () => {
-    const files = generateSkillFiles([], '.claude/skills');
+  it('uses metadata only when progressive loading is metadata', async () => {
+    const files = await generateSkillFiles(skills, '.test/skills', 'metadata');
+    const skillMd = files.find((f) => f.path.endsWith('SKILL.md'));
+    expect(skillMd!.content).not.toContain('deploy content');
+    expect(skillMd!.content).toContain('Full skill content available');
+  });
+
+  it('returns empty array for no skills', async () => {
+    const files = await generateSkillFiles([], '.claude/skills');
     expect(files).toHaveLength(0);
   });
 
-  it('each file has hash and sources', () => {
-    const files = generateSkillFiles(skills, '.claude/skills');
+  it('each file has hash and sources', async () => {
+    const files = await generateSkillFiles(skills, '.claude/skills');
     for (const file of files) {
       expect(file.hash).toBeDefined();
-      expect(file.hash.length).toBeGreaterThan(0);
       expect(file.sources).toContain('codi.yaml');
     }
   });

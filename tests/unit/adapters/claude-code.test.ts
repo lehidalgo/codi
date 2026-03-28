@@ -148,10 +148,15 @@ describe('claude-code adapter', () => {
       const files = await claudeCodeAdapter.generate(config, {});
 
       const skillFiles = files.filter(f => f.path.startsWith('.claude/skills/'));
-      expect(skillFiles).toHaveLength(1);
-      expect(skillFiles[0]!.path).toBe('.claude/skills/code-review/SKILL.md');
-      expect(skillFiles[0]!.content).toContain('code-review');
-      expect(skillFiles[0]!.content).toContain('Perform thorough code reviews.');
+      const skillMds = skillFiles.filter(f => f.path.endsWith('SKILL.md'));
+      expect(skillMds).toHaveLength(1);
+      expect(skillMds[0]!.path).toBe('.claude/skills/code-review/SKILL.md');
+      expect(skillMds[0]!.content).toContain('code-review');
+      expect(skillMds[0]!.content).toContain('Perform thorough code reviews.');
+      // Skeleton directories created
+      expect(skillFiles.some(f => f.path.includes('scripts/.gitkeep'))).toBe(true);
+      expect(skillFiles.some(f => f.path.includes('references/.gitkeep'))).toBe(true);
+      expect(skillFiles.some(f => f.path.includes('assets/.gitkeep'))).toBe(true);
     });
 
     it('produces no skill files when skills array is empty', async () => {

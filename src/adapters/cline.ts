@@ -92,8 +92,8 @@ export const clineAdapter: AgentAdapter = {
       hash: hashContent(content),
     }];
 
-    // Generate .cline/skills/{name}/SKILL.md
-    files.push(...generateSkillFiles(config.skills, '.cline/skills', plMode));
+    // Generate .cline/skills/{name}/SKILL.md + supporting files
+    files.push(...await generateSkillFiles(config.skills, '.cline/skills', plMode, _options.projectRoot));
 
     return files;
   },

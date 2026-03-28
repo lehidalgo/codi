@@ -54,6 +54,13 @@ export interface NormalizedSkill {
   license?: string;
   metadata?: Record<string, string>;
   managedBy?: 'codi' | 'user';
+  model?: string;
+  effort?: 'low' | 'medium' | 'high' | 'max';
+  context?: 'fork';
+  agent?: string;
+  userInvocable?: boolean;
+  paths?: string[];
+  shell?: 'bash' | 'powershell';
 }
 
 export interface NormalizedCommand {

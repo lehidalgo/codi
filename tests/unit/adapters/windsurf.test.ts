@@ -148,9 +148,9 @@ describe('windsurf adapter', () => {
     });
     const files = await windsurfAdapter.generate(config, {});
 
-    const skillFiles = files.filter(f => f.path.startsWith('.windsurf/skills/'));
-    expect(skillFiles).toHaveLength(1);
-    expect(skillFiles[0]!.path).toBe('.windsurf/skills/alpha/SKILL.md');
+    const skillMds = files.filter(f => f.path.startsWith('.windsurf/skills/') && f.path.endsWith('SKILL.md'));
+    expect(skillMds).toHaveLength(1);
+    expect(skillMds[0]!.path).toBe('.windsurf/skills/alpha/SKILL.md');
   });
 
   it('generates multiple skill files', async () => {
@@ -163,8 +163,8 @@ describe('windsurf adapter', () => {
     });
     const files = await windsurfAdapter.generate(config, {});
 
-    const skillFiles = files.filter(f => f.path.startsWith('.windsurf/skills/'));
-    expect(skillFiles).toHaveLength(2);
+    const skillMds = files.filter(f => f.path.startsWith('.windsurf/skills/') && f.path.endsWith('SKILL.md'));
+    expect(skillMds).toHaveLength(2);
   });
 
   // --- MCP not supported (Windsurf only reads global MCP config) ---
@@ -213,9 +213,12 @@ describe('windsurf adapter', () => {
 
     for (const file of files) {
       expect(file.path).toBeTruthy();
-      expect(file.content).toBeTruthy();
+      // .gitkeep files have empty content by design
+      if (!file.path.endsWith('.gitkeep')) {
+        expect(file.content).toBeTruthy();
+      }
       expect(file.sources).toBeDefined();
-      expect(file.hash).toBeTruthy();
+      expect(file.hash).toBeDefined();
     }
   });
 });

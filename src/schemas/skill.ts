@@ -14,6 +14,13 @@ export const SkillFrontmatterSchema = z.object({
   allowedTools: z.array(z.string()).optional(),
   license: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
+  // Official Claude Code frontmatter fields
+  effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
+  context: z.literal('fork').optional(),
+  agent: z.string().optional(),
+  'user-invocable': z.boolean().optional(),
+  paths: z.union([z.array(z.string()), z.string()]).optional(),
+  shell: z.enum(['bash', 'powershell']).optional(),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

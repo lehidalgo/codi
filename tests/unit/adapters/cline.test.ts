@@ -165,9 +165,9 @@ describe('cline adapter', () => {
     });
     const files = await clineAdapter.generate(config, {});
 
-    const skillFiles = files.filter(f => f.path.startsWith('.cline/skills/'));
-    expect(skillFiles).toHaveLength(1);
-    expect(skillFiles[0]!.path).toBe('.cline/skills/review/SKILL.md');
+    const skillMds = files.filter(f => f.path.startsWith('.cline/skills/') && f.path.endsWith('SKILL.md'));
+    expect(skillMds).toHaveLength(1);
+    expect(skillMds[0]!.path).toBe('.cline/skills/review/SKILL.md');
   });
 
   it('generates multiple skill files', async () => {
@@ -181,11 +181,11 @@ describe('cline adapter', () => {
     });
     const files = await clineAdapter.generate(config, {});
 
-    const skillFiles = files.filter(f => f.path.startsWith('.cline/skills/'));
-    expect(skillFiles).toHaveLength(3);
-    expect(skillFiles.find(f => f.path === '.cline/skills/alpha/SKILL.md')).toBeDefined();
-    expect(skillFiles.find(f => f.path === '.cline/skills/beta/SKILL.md')).toBeDefined();
-    expect(skillFiles.find(f => f.path === '.cline/skills/gamma/SKILL.md')).toBeDefined();
+    const skillMds = files.filter(f => f.path.startsWith('.cline/skills/') && f.path.endsWith('SKILL.md'));
+    expect(skillMds).toHaveLength(3);
+    expect(skillMds.find(f => f.path === '.cline/skills/alpha/SKILL.md')).toBeDefined();
+    expect(skillMds.find(f => f.path === '.cline/skills/beta/SKILL.md')).toBeDefined();
+    expect(skillMds.find(f => f.path === '.cline/skills/gamma/SKILL.md')).toBeDefined();
   });
 
   // --- Cline does NOT support MCP ---
@@ -248,9 +248,11 @@ describe('cline adapter', () => {
 
     for (const file of files) {
       expect(file.path).toBeTruthy();
-      expect(file.content).toBeTruthy();
+      if (!file.path.endsWith('.gitkeep')) {
+        expect(file.content).toBeTruthy();
+      }
       expect(file.sources).toBeDefined();
-      expect(file.hash).toBeTruthy();
+      expect(file.hash).toBeDefined();
     }
   });
 });

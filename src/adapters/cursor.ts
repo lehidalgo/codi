@@ -105,9 +105,9 @@ export const cursorAdapter: AgentAdapter = {
       });
     }
 
-    // Generate .cursor/skills/{name}/SKILL.md
+    // Generate .cursor/skills/{name}/SKILL.md + supporting files
     const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
-    files.push(...generateSkillFiles(config.skills, '.cursor/skills', plMode));
+    files.push(...await generateSkillFiles(config.skills, '.cursor/skills', plMode, _options.projectRoot));
 
     // Generate .cursor/mcp.json if MCP servers are configured
     const enabledMcp = getEnabledMcpServers(config.mcp);

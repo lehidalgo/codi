@@ -63,6 +63,83 @@ managed_by: codi
 ---
 \\\`\\\`\\\`
 
+#### Official Frontmatter Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| \\\`name\\\` | Yes | Skill name (kebab-case, max 64 chars). Becomes the /slash-command |
+| \\\`description\\\` | Yes | Trigger description — Claude uses this to decide when to load the skill |
+| \\\`disable-model-invocation\\\` | No | \\\`true\\\` = only user can invoke via /name. Use for side-effect skills (deploy, commit) |
+| \\\`user-invocable\\\` | No | \\\`false\\\` = hidden from / menu. Use for background knowledge |
+| \\\`allowed-tools\\\` | No | Tools Claude can use without permission when skill is active |
+| \\\`argument-hint\\\` | No | Hint shown during autocomplete (e.g., \\\`[issue-number]\\\`) |
+| \\\`model\\\` | No | Override model for this skill |
+| \\\`effort\\\` | No | Reasoning effort: \\\`low\\\`, \\\`medium\\\`, \\\`high\\\`, \\\`max\\\` |
+| \\\`context\\\` | No | \\\`fork\\\` = run in isolated subagent context |
+| \\\`agent\\\` | No | Subagent type when \\\`context: fork\\\` (\\\`Explore\\\`, \\\`Plan\\\`, or custom) |
+| \\\`paths\\\` | No | Glob patterns limiting when skill auto-activates |
+| \\\`shell\\\` | No | \\\`bash\\\` or \\\`powershell\\\` for inline shell commands |
+| \\\`managed_by\\\` | No | Codi-internal: \\\`codi\\\` or \\\`user\\\` (stripped from agent output) |
+
+#### Arguments and Substitutions
+
+Skills can accept arguments via \\\`$ARGUMENTS\\\` placeholders:
+
+\\\`\\\`\\\`yaml
+---
+name: fix-issue
+description: Fix a GitHub issue by number
+disable-model-invocation: true
+---
+
+Fix GitHub issue $ARGUMENTS following our coding standards.
+\\\`\\\`\\\`
+
+When the user runs \\\`/fix-issue 123\\\`, Claude receives "Fix GitHub issue 123...".
+
+Use \\\`$ARGUMENTS[N]\\\` or \\\`$N\\\` for positional arguments:
+- \\\`$0\\\` = first argument, \\\`$1\\\` = second, etc.
+
+Other substitutions:
+- \\\`\${CLAUDE_SKILL_DIR}\\\` = the directory containing SKILL.md
+- \\\`\${CLAUDE_SESSION_ID}\\\` = current session ID
+
+#### Dynamic Context Injection
+
+Use \\\`!\\\\\\\`command\\\\\\\`\\\` to run shell commands before the skill content reaches Claude:
+
+\\\`\\\`\\\`yaml
+---
+name: pr-summary
+context: fork
+agent: Explore
+---
+
+## PR Context
+- Diff: !\\\\\\\`gh pr diff\\\\\\\`
+- Comments: !\\\\\\\`gh pr view --comments\\\\\\\`
+
+Summarize this pull request.
+\\\`\\\`\\\`
+
+The commands execute first, and their output replaces the placeholder. Claude only sees the result.
+
+#### Subagent Execution
+
+Add \\\`context: fork\\\` to run the skill in an isolated subagent:
+
+\\\`\\\`\\\`yaml
+---
+name: deep-research
+context: fork
+agent: Explore
+---
+
+Research $ARGUMENTS thoroughly using Glob and Grep.
+\\\`\\\`\\\`
+
+The skill content becomes the subagent's task. Results are summarized back to the main conversation.
+
 #### Description Writing Guide
 
 The description is the MOST IMPORTANT part — it determines when the skill triggers. Follow these rules strictly:

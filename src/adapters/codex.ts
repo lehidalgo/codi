@@ -98,9 +98,9 @@ export const codexAdapter: AgentAdapter = {
       hash: hashContent(content),
     });
 
-    // Generate .agents/skills/{name}/SKILL.md (auto-discovered by Codex)
+    // Generate .agents/skills/{name}/SKILL.md + supporting files (auto-discovered by Codex)
     const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
-    files.push(...generateSkillFiles(config.skills, '.agents/skills', plMode));
+    files.push(...await generateSkillFiles(config.skills, '.agents/skills', plMode, _options.projectRoot));
 
     // Generate .codex/agents/{name}.toml (Codex TOML format)
     for (const agent of config.agents) {

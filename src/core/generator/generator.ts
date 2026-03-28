@@ -37,7 +37,7 @@ export async function generate(
       }]);
     }
 
-    const generated = await adapter.generate(config, options);
+    const generated = await adapter.generate(config, { ...options, projectRoot });
 
     const verifyData = buildVerificationData(config);
     const verifySection = buildVerificationSection(verifyData);

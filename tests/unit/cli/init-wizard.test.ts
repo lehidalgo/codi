@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock @clack/prompts before importing the module
-vi.mock('@clack/prompts', () => ({
+vi.mock("@clack/prompts", () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   cancel: vi.fn(),
@@ -22,10 +22,10 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-import * as p from '@clack/prompts';
-import { runInitWizard } from '../../../src/cli/init-wizard.js';
-import { getBuiltinPresetDefinition } from '../../../src/templates/presets/index.js';
-import { FLAG_CATALOG } from '../../../src/core/flags/flag-catalog.js';
+import * as p from "@clack/prompts";
+import { runInitWizard } from "../../../src/cli/init-wizard.js";
+import { getBuiltinPresetDefinition } from "../../../src/templates/presets/index.js";
+import { FLAG_CATALOG } from "../../../src/core/flags/flag-catalog.js";
 
 /**
  * Mock the flag editing prompts that editPresetFlags() makes:
@@ -38,116 +38,140 @@ function mockFlagEditing(presetName: string): void {
 
   // Boolean multiselect: return keys where value is true and not locked
   const booleanTrueKeys = Object.keys(flags).filter(
-    k => FLAG_CATALOG[k]?.type === 'boolean' && !flags[k]?.locked && flags[k]?.value === true,
+    (k) =>
+      FLAG_CATALOG[k]?.type === "boolean" &&
+      !flags[k]?.locked &&
+      flags[k]?.value === true,
   );
   vi.mocked(p.multiselect).mockResolvedValueOnce(booleanTrueKeys as never);
 
   // Enum selects: return current value for each
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
-    if (spec.type !== 'enum' || !spec.values || flags[key]?.locked || !flags[key]) continue;
+    if (
+      spec.type !== "enum" ||
+      !spec.values ||
+      flags[key]?.locked ||
+      !flags[key]
+    )
+      continue;
     vi.mocked(p.select).mockResolvedValueOnce(flags[key]!.value as never);
   }
 
   // Number texts: return current value as string
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
-    if (spec.type !== 'number' || flags[key]?.locked || !flags[key]) continue;
+    if (spec.type !== "number" || flags[key]?.locked || !flags[key]) continue;
     vi.mocked(p.text).mockResolvedValueOnce(String(flags[key]!.value) as never);
   }
 }
 
-describe('runInitWizard', () => {
+describe("runInitWizard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(p.isCancel).mockReturnValue(false);
   });
 
-  it('returns null when agent selection is cancelled', async () => {
-    vi.mocked(p.multiselect).mockResolvedValueOnce(Symbol('cancel') as never);
+  it("returns null when language selection is cancelled", async () => {
+    vi.mocked(p.multiselect).mockResolvedValueOnce(Symbol("cancel") as never);
     vi.mocked(p.isCancel).mockReturnValueOnce(true);
 
-    const result = await runInitWizard([], [], ['claude-code', 'cursor']);
+    const result = await runInitWizard([], [], ["claude-code", "cursor"]);
     expect(result).toBeNull();
     expect(p.cancel).toHaveBeenCalled();
   });
 
-  it('returns null when no agents selected', async () => {
-    vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
+  it("returns null when no agents selected", async () => {
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(["typescript"] as never) // languages
+      .mockResolvedValueOnce([] as never); // agents (empty)
 
-    const result = await runInitWizard([], [], ['claude-code']);
+    const result = await runInitWizard([], [], ["claude-code"]);
     expect(result).toBeNull();
   });
 
-  it('returns zip config when zip mode selected', async () => {
-    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
-    vi.mocked(p.select).mockResolvedValueOnce('zip' as never);
-    vi.mocked(p.text).mockResolvedValueOnce('/path/to/preset.zip' as never);
-
-    const result = await runInitWizard(['node'], ['claude-code'], ['claude-code', 'cursor']);
-
-    expect(result).not.toBeNull();
-    expect(result!.configMode).toBe('zip');
-    expect(result!.importSource).toBe('/path/to/preset.zip');
-    expect(result!.agents).toEqual(['claude-code']);
-  });
-
-  it('returns github config when github mode selected', async () => {
-    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
-    vi.mocked(p.select).mockResolvedValueOnce('github' as never);
-    vi.mocked(p.text).mockResolvedValueOnce('org/my-preset' as never);
-
-    const result = await runInitWizard([], [], ['claude-code']);
-
-    expect(result).not.toBeNull();
-    expect(result!.configMode).toBe('github');
-    expect(result!.importSource).toBe('org/my-preset');
-  });
-
-  it('returns custom config with artifact selections', async () => {
+  it("returns zip config when zip mode selected", async () => {
     vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(['claude-code'] as never)    // agents
-      .mockResolvedValueOnce(['security'] as never)        // rules
-      .mockResolvedValueOnce(['code-review'] as never)     // skills
-      .mockResolvedValueOnce([])                           // agent templates
-      .mockResolvedValueOnce(['commit'] as never)          // commands
-      .mockResolvedValueOnce(['github'] as never);         // MCP servers
+      .mockResolvedValueOnce(["typescript"] as never) // languages
+      .mockResolvedValueOnce(["claude-code"] as never); // agents
+    vi.mocked(p.select).mockResolvedValueOnce("zip" as never);
+    vi.mocked(p.text).mockResolvedValueOnce("/path/to/preset.zip" as never);
+
+    const result = await runInitWizard(
+      ["typescript"],
+      ["claude-code"],
+      ["claude-code", "cursor"],
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.configMode).toBe("zip");
+    expect(result!.importSource).toBe("/path/to/preset.zip");
+    expect(result!.agents).toEqual(["claude-code"]);
+    expect(result!.languages).toEqual(["typescript"]);
+  });
+
+  it("returns github config when github mode selected", async () => {
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce([] as never) // languages (none)
+      .mockResolvedValueOnce(["claude-code"] as never); // agents
+    vi.mocked(p.select).mockResolvedValueOnce("github" as never);
+    vi.mocked(p.text).mockResolvedValueOnce("org/my-preset" as never);
+
+    const result = await runInitWizard([], [], ["claude-code"]);
+
+    expect(result).not.toBeNull();
+    expect(result!.configMode).toBe("github");
+    expect(result!.importSource).toBe("org/my-preset");
+    expect(result!.languages).toEqual([]);
+  });
+
+  it("returns custom config with artifact selections", async () => {
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(["typescript"] as never) // languages
+      .mockResolvedValueOnce(["claude-code"] as never) // agents
+      .mockResolvedValueOnce(["security"] as never) // rules
+      .mockResolvedValueOnce(["code-review"] as never) // skills
+      .mockResolvedValueOnce([]) // agent templates
+      .mockResolvedValueOnce(["commit"] as never) // commands
+      .mockResolvedValueOnce(["github"] as never); // MCP servers
 
     vi.mocked(p.select)
-      .mockResolvedValueOnce('custom' as never)            // config mode
-      .mockResolvedValueOnce('balanced' as never);         // flag preset
+      .mockResolvedValueOnce("custom" as never) // config mode
+      .mockResolvedValueOnce("balanced" as never); // flag preset
 
     vi.mocked(p.confirm)
-      .mockResolvedValueOnce(false as never)               // save as preset? no
-      .mockResolvedValueOnce(true as never);               // version pin? yes
+      .mockResolvedValueOnce(false as never) // save as preset? no
+      .mockResolvedValueOnce(true as never); // version pin? yes
 
-    const result = await runInitWizard(['node'], [], ['claude-code']);
+    const result = await runInitWizard(["typescript"], [], ["claude-code"]);
 
     expect(result).not.toBeNull();
-    expect(result!.configMode).toBe('custom');
-    expect(result!.rules).toEqual(['security']);
-    expect(result!.skills).toEqual(['code-review']);
-    expect(result!.commandTemplates).toEqual(['commit']);
-    expect(result!.preset).toBe('balanced');
+    expect(result!.configMode).toBe("custom");
+    expect(result!.rules).toEqual(["security"]);
+    expect(result!.skills).toEqual(["code-review"]);
+    expect(result!.commandTemplates).toEqual(["commit"]);
+    expect(result!.preset).toBe("balanced");
     expect(result!.versionPin).toBe(true);
   });
 
-  it('returns preset config when preset mode selected without modifications', async () => {
-    const presetDef = getBuiltinPresetDefinition('balanced');
+  it("returns preset config when preset mode selected without modifications", async () => {
+    const presetDef = getBuiltinPresetDefinition("balanced");
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
     const presetCommands = presetDef?.commands ?? [];
     const presetMcpServers = presetDef?.mcpServers ?? [];
 
-    // Step 1: agent selection
-    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
+    // Step 0: language selection + Step 1: agent selection
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce([] as never) // languages
+      .mockResolvedValueOnce(["claude-code"] as never); // agents
 
     // Step 2: config mode + preset choice
     vi.mocked(p.select)
-      .mockResolvedValueOnce('preset' as never)
-      .mockResolvedValueOnce('balanced' as never);
+      .mockResolvedValueOnce("preset" as never)
+      .mockResolvedValueOnce("balanced" as never);
 
     // Step 3: flag editing (return defaults — no changes)
-    mockFlagEditing('balanced');
+    mockFlagEditing("balanced");
 
     // Step 4: artifact editing (return same as preset — no changes)
     vi.mocked(p.multiselect)
@@ -160,65 +184,70 @@ describe('runInitWizard', () => {
     // Step 5: version pin
     vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
 
-    const result = await runInitWizard([], [], ['claude-code']);
+    const result = await runInitWizard([], [], ["claude-code"]);
 
     expect(result).not.toBeNull();
-    expect(result!.configMode).toBe('preset');
-    expect(result!.presetName).toBe('balanced');
+    expect(result!.configMode).toBe("preset");
+    expect(result!.presetName).toBe("balanced");
   });
 
-  it('prompts save-as-preset when preset artifacts are modified', async () => {
-    const presetDef = getBuiltinPresetDefinition('strict');
+  it("prompts save-as-preset when preset artifacts are modified", async () => {
+    const presetDef = getBuiltinPresetDefinition("strict");
     const presetRules = presetDef?.rules ?? [];
-    const modifiedRules = presetRules.length > 0 ? presetRules.slice(1) : ['extra-rule'];
+    const modifiedRules =
+      presetRules.length > 0 ? presetRules.slice(1) : ["extra-rule"];
 
-    // Step 1: agent selection
-    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
+    // Step 0: language selection + Step 1: agent selection
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce([] as never) // languages
+      .mockResolvedValueOnce(["claude-code"] as never); // agents
 
     // Step 2: config mode + preset choice
     vi.mocked(p.select)
-      .mockResolvedValueOnce('preset' as never)
-      .mockResolvedValueOnce('strict' as never);
+      .mockResolvedValueOnce("preset" as never)
+      .mockResolvedValueOnce("strict" as never);
 
     // Step 3: flag editing (return defaults)
-    mockFlagEditing('strict');
+    mockFlagEditing("strict");
 
     // Step 4: artifacts (modified rules)
     vi.mocked(p.multiselect)
       .mockResolvedValueOnce(modifiedRules as never)
-      .mockResolvedValueOnce(presetDef?.skills ?? [] as never)
-      .mockResolvedValueOnce(presetDef?.agents ?? [] as never)
-      .mockResolvedValueOnce(presetDef?.commands ?? [] as never)
-      .mockResolvedValueOnce(presetDef?.mcpServers ?? [] as never);
+      .mockResolvedValueOnce(presetDef?.skills ?? ([] as never))
+      .mockResolvedValueOnce(presetDef?.agents ?? ([] as never))
+      .mockResolvedValueOnce(presetDef?.commands ?? ([] as never))
+      .mockResolvedValueOnce(presetDef?.mcpServers ?? ([] as never));
 
     // Step 5: save-as-preset name
-    vi.mocked(p.text).mockResolvedValueOnce('my-custom-preset' as never);
+    vi.mocked(p.text).mockResolvedValueOnce("my-custom-preset" as never);
 
     // Step 6: version pin
     vi.mocked(p.confirm).mockResolvedValueOnce(true as never);
 
-    const result = await runInitWizard([], [], ['claude-code']);
+    const result = await runInitWizard([], [], ["claude-code"]);
 
     expect(result).not.toBeNull();
-    expect(result!.configMode).toBe('custom');
-    expect(result!.saveAsPreset).toBe('my-custom-preset');
+    expect(result!.configMode).toBe("custom");
+    expect(result!.saveAsPreset).toBe("my-custom-preset");
   });
 
-  it('returns selected preset name directly (no base mapping)', async () => {
-    const presetDef = getBuiltinPresetDefinition('python-web');
+  it("returns selected preset name directly (no base mapping)", async () => {
+    const presetDef = getBuiltinPresetDefinition("python-web");
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
     const presetCommands = presetDef?.commands ?? [];
     const presetMcpServers = presetDef?.mcpServers ?? [];
 
-    vi.mocked(p.multiselect).mockResolvedValueOnce(['claude-code'] as never);
+    vi.mocked(p.multiselect)
+      .mockResolvedValueOnce(["python"] as never) // languages
+      .mockResolvedValueOnce(["claude-code"] as never); // agents
 
     vi.mocked(p.select)
-      .mockResolvedValueOnce('preset' as never)
-      .mockResolvedValueOnce('python-web' as never);
+      .mockResolvedValueOnce("preset" as never)
+      .mockResolvedValueOnce("python-web" as never);
 
-    mockFlagEditing('python-web');
+    mockFlagEditing("python-web");
 
     vi.mocked(p.multiselect)
       .mockResolvedValueOnce(presetRules as never)
@@ -229,23 +258,24 @@ describe('runInitWizard', () => {
 
     vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
 
-    const result = await runInitWizard([], [], ['claude-code']);
+    const result = await runInitWizard([], [], ["claude-code"]);
 
     expect(result).not.toBeNull();
-    expect(result!.preset).toBe('python-web');
+    expect(result!.preset).toBe("python-web");
   });
 
-  it('goes back to agents when configMode is cancelled, then exits on second cancel', async () => {
+  it("goes back from agents to languages, then exits on cancel", async () => {
+    // Flow: languages(ok) → agents(cancel) → languages(cancel) → exit
     vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(['claude-code'] as never)  // agents (first pass)
-      .mockResolvedValueOnce(Symbol('cancel') as never);  // agents (after back)
-    vi.mocked(p.select).mockResolvedValueOnce(Symbol('cancel') as never);
+      .mockResolvedValueOnce([] as never) // languages (first pass, ok)
+      .mockResolvedValueOnce(Symbol("cancel") as never) // agents (cancel → back to languages)
+      .mockResolvedValueOnce(Symbol("cancel") as never); // languages (cancel → exit)
     vi.mocked(p.isCancel)
-      .mockReturnValueOnce(false)  // agents check (first pass)
-      .mockReturnValueOnce(true)   // configMode cancel → back
-      .mockReturnValueOnce(true);  // agents cancel → exit
+      .mockReturnValueOnce(false) // languages check (first pass, ok)
+      .mockReturnValueOnce(true) // agents cancel → back to languages
+      .mockReturnValueOnce(true); // languages cancel → exit
 
-    const result = await runInitWizard([], [], ['claude-code']);
+    const result = await runInitWizard([], [], ["claude-code"]);
     expect(result).toBeNull();
     expect(p.cancel).toHaveBeenCalled();
   });

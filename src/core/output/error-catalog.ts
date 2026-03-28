@@ -163,6 +163,21 @@ export const ERROR_CATALOG = {
     severity: 'warn' as const,
     hintTemplate: '{message}',
   },
+  E_SKILL_NOT_FOUND: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Skill "{name}" not found at {path}. Run `codi add skill` to create one.',
+  },
+  E_SKILL_EXPORT_FAILED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: 'error' as const,
+    hintTemplate: 'Failed to export skill "{name}": {reason}',
+  },
+  E_SKILL_INVALID: {
+    exitCode: EXIT_CODES.CONFIG_INVALID,
+    severity: 'error' as const,
+    hintTemplate: 'Skill "{name}" is invalid: {reason}',
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
