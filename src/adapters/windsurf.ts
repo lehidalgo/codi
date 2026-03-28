@@ -21,6 +21,10 @@ import {
   buildDevelopmentNotes,
   buildWorkflowSection,
 } from "./section-builder.js";
+import {
+  extractDenyRules,
+  buildStrongTextRestrictions,
+} from "./permission-builder.js";
 import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME } from "../constants.js";
 
 async function exists(path: string): Promise<boolean> {
@@ -74,6 +78,11 @@ export const windsurfAdapter: AgentAdapter = {
     if (flagText) {
       sections.push(flagText);
     }
+
+    const restrictions = buildStrongTextRestrictions(
+      extractDenyRules(config.flags),
+    );
+    if (restrictions) sections.push(restrictions);
 
     const devNotes = buildDevelopmentNotes(config);
     if (devNotes) sections.push(devNotes);
