@@ -4,6 +4,8 @@ export interface HookEntry {
   stagedFilter: string;
   /** When false, the tool uses project config (e.g. tsconfig.json) and should not receive file args. Defaults to true. */
   passFiles?: boolean;
+  /** When true, the hook modifies files (formatters/fixers). Modified files are re-staged automatically after the hook runs. */
+  modifiesFiles?: boolean;
 }
 
 const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
@@ -12,11 +14,13 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "eslint",
       command: "npx eslint --fix",
       stagedFilter: "**/*.{ts,tsx,js,jsx}",
+      modifiesFiles: true,
     },
     {
       name: "prettier",
       command: "npx prettier --write",
       stagedFilter: "**/*.{ts,tsx,js,jsx}",
+      modifiesFiles: true,
     },
     {
       name: "tsc",
@@ -30,11 +34,13 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "eslint",
       command: "npx eslint --fix",
       stagedFilter: "**/*.{ts,tsx,js,jsx}",
+      modifiesFiles: true,
     },
     {
       name: "prettier",
       command: "npx prettier --write",
       stagedFilter: "**/*.{ts,tsx,js,jsx}",
+      modifiesFiles: true,
     },
   ],
   python: [
@@ -42,8 +48,14 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "ruff-check",
       command: "ruff check --fix",
       stagedFilter: "**/*.py",
+      modifiesFiles: true,
     },
-    { name: "ruff-format", command: "ruff format", stagedFilter: "**/*.py" },
+    {
+      name: "ruff-format",
+      command: "ruff format",
+      stagedFilter: "**/*.py",
+      modifiesFiles: true,
+    },
     {
       name: "pyright",
       command: "npx pyright",
@@ -58,7 +70,12 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       stagedFilter: "**/*.go",
       passFiles: false,
     },
-    { name: "gofmt", command: "gofmt -w", stagedFilter: "**/*.go" },
+    {
+      name: "gofmt",
+      command: "gofmt -w",
+      stagedFilter: "**/*.go",
+      modifiesFiles: true,
+    },
   ],
   rust: [
     {
@@ -72,6 +89,7 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       command: "cargo fmt",
       stagedFilter: "**/*.rs",
       passFiles: false,
+      modifiesFiles: true,
     },
   ],
   java: [
@@ -79,6 +97,7 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "google-java-format",
       command: "google-java-format --replace",
       stagedFilter: "**/*.java",
+      modifiesFiles: true,
     },
     {
       name: "checkstyle",
@@ -91,11 +110,17 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "ktfmt",
       command: "ktfmt --kotlinlang-style",
       stagedFilter: "**/*.kt",
+      modifiesFiles: true,
     },
     { name: "detekt", command: "detekt --input", stagedFilter: "**/*.kt" },
   ],
   swift: [
-    { name: "swiftformat", command: "swiftformat", stagedFilter: "**/*.swift" },
+    {
+      name: "swiftformat",
+      command: "swiftformat",
+      stagedFilter: "**/*.swift",
+      modifiesFiles: true,
+    },
     {
       name: "swiftlint",
       command: "swiftlint lint --strict",
@@ -107,6 +132,7 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "dotnet-format",
       command: "dotnet format --include",
       stagedFilter: "**/*.cs",
+      modifiesFiles: true,
     },
   ],
   cpp: [
@@ -114,6 +140,7 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "clang-format",
       command: "clang-format -i",
       stagedFilter: "**/*.{cpp,hpp,cc,h}",
+      modifiesFiles: true,
     },
     {
       name: "clang-tidy",
@@ -126,6 +153,7 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       name: "php-cs-fixer",
       command: "php-cs-fixer fix",
       stagedFilter: "**/*.php",
+      modifiesFiles: true,
     },
     {
       name: "phpstan",
@@ -134,9 +162,21 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       passFiles: false,
     },
   ],
-  ruby: [{ name: "rubocop", command: "rubocop -a", stagedFilter: "**/*.rb" }],
+  ruby: [
+    {
+      name: "rubocop",
+      command: "rubocop -a",
+      stagedFilter: "**/*.rb",
+      modifiesFiles: true,
+    },
+  ],
   dart: [
-    { name: "dart-format", command: "dart format", stagedFilter: "**/*.dart" },
+    {
+      name: "dart-format",
+      command: "dart format",
+      stagedFilter: "**/*.dart",
+      modifiesFiles: true,
+    },
     {
       name: "dart-analyze",
       command: "dart analyze",

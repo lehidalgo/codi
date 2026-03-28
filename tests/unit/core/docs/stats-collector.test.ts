@@ -24,7 +24,9 @@ describe("collectStats", () => {
 
   it("rules count matches AVAILABLE_TEMPLATES", () => {
     expect(stats.rules.count).toBe(AVAILABLE_TEMPLATES.length);
-    expect(stats.rules.names).toEqual(expect.arrayContaining(["security", "testing"]));
+    expect(stats.rules.names).toEqual(
+      expect.arrayContaining(["security", "testing"]),
+    );
   });
 
   it("skills count matches AVAILABLE_SKILL_TEMPLATES", () => {
@@ -34,7 +36,9 @@ describe("collectStats", () => {
 
   it("agents count matches AVAILABLE_AGENT_TEMPLATES", () => {
     expect(stats.agents.count).toBe(AVAILABLE_AGENT_TEMPLATES.length);
-    expect(stats.agents.names).toEqual(expect.arrayContaining(["code-reviewer"]));
+    expect(stats.agents.names).toEqual(
+      expect.arrayContaining(["code-reviewer"]),
+    );
   });
 
   it("commands count matches AVAILABLE_COMMAND_TEMPLATES", () => {

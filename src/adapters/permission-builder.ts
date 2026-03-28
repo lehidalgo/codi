@@ -40,9 +40,7 @@ export function buildStrongTextRestrictions(
     lines.push("BLOCKED: All shell commands — shell access is disabled");
   }
   if (rules.autoCommit) {
-    lines.push(
-      "REQUIRES APPROVAL: git commit — always ask before committing",
-    );
+    lines.push("REQUIRES APPROVAL: git commit — always ask before committing");
   }
   if (rules.requirePrReview) {
     lines.push(
