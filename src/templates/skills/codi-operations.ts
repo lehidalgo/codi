@@ -1,4 +1,4 @@
-import type { TemplateCounts } from './types.js';
+import type { TemplateCounts } from "./types.js";
 
 export function getTemplate(counts: TemplateCounts): string {
   return `---
