@@ -1,37 +1,39 @@
-import { Command } from 'commander';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { addGlobalOptions } from './cli/shared.js';
-import { registerInitCommand } from './cli/init.js';
-import { registerGenerateCommand } from './cli/generate.js';
-import { registerValidateCommand } from './cli/validate.js';
-import { registerStatusCommand } from './cli/status.js';
-import { registerAddCommand } from './cli/add.js';
-import { registerVerifyCommand } from './cli/verify.js';
-import { registerDoctorCommand } from './cli/doctor.js';
-import { registerUpdateCommand } from './cli/update.js';
-import { registerCleanCommand } from './cli/clean.js';
-import { registerComplianceCommand } from './cli/compliance.js';
-import { registerCiCommand } from './cli/ci.js';
-import { registerWatchCommand } from './cli/watch.js';
-import { registerRevertCommand } from './cli/revert.js';
-import { registerMarketplaceCommand } from './cli/marketplace.js';
-import { registerPresetCommand } from './cli/preset.js';
-import { registerDocsUpdateCommand } from './cli/docs-update.js';
-import { registerContributeCommand } from './cli/contribute.js';
-import { registerSkillCommand } from './cli/skill.js';
-import { runCommandCenter } from './cli/hub.js';
-import { Logger } from './core/output/logger.js';
-import type { GlobalOptions } from './cli/shared.js';
+import { Command } from "commander";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { addGlobalOptions } from "./cli/shared.js";
+import { registerInitCommand } from "./cli/init.js";
+import { registerGenerateCommand } from "./cli/generate.js";
+import { registerValidateCommand } from "./cli/validate.js";
+import { registerStatusCommand } from "./cli/status.js";
+import { registerAddCommand } from "./cli/add.js";
+import { registerVerifyCommand } from "./cli/verify.js";
+import { registerDoctorCommand } from "./cli/doctor.js";
+import { registerUpdateCommand } from "./cli/update.js";
+import { registerCleanCommand } from "./cli/clean.js";
+import { registerComplianceCommand } from "./cli/compliance.js";
+import { registerCiCommand } from "./cli/ci.js";
+import { registerWatchCommand } from "./cli/watch.js";
+import { registerRevertCommand } from "./cli/revert.js";
+import { registerMarketplaceCommand } from "./cli/marketplace.js";
+import { registerPresetCommand } from "./cli/preset.js";
+import { registerDocsUpdateCommand } from "./cli/docs-update.js";
+import { registerContributeCommand } from "./cli/contribute.js";
+import { registerSkillCommand } from "./cli/skill.js";
+import { runCommandCenter } from "./cli/hub.js";
+import { Logger } from "./core/output/logger.js";
+import type { GlobalOptions } from "./cli/shared.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')) as { version: string };
+const pkg = JSON.parse(
+  readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
+) as { version: string };
 
 const program = new Command();
 program
-  .name('codi')
-  .description('Unified configuration platform for AI coding agents')
+  .name("codi")
+  .description("Unified configuration platform for AI coding agents")
   .version(pkg.version);
 
 addGlobalOptions(program);
@@ -61,7 +63,7 @@ program.action(async () => {
     program.help();
     return;
   }
-  Logger.init({ level: 'info', mode: 'human', noColor: opts.noColor ?? false });
+  Logger.init({ level: "info", mode: "human", noColor: opts.noColor ?? false });
   await runCommandCenter(process.cwd());
 });
 

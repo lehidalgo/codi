@@ -1,19 +1,27 @@
-import { access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { access } from "node:fs/promises";
+import { join } from "node:path";
 import type {
   AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
   GenerateOptions,
-} from '../types/agent.js';
-import type { NormalizedConfig } from '../types/config.js';
-import { hashContent } from '../utils/hash.js';
-import { buildFlagInstructions } from './flag-instructions.js';
-import { addGeneratedHeader } from './generated-header.js';
-import { generateSkillFiles, buildSkillCatalog, type ProgressiveLoadingMode } from './skill-generator.js';
-import { buildProjectOverview, buildDevelopmentNotes, buildWorkflowSection } from './section-builder.js';
-import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME } from '../constants.js';
+} from "../types/agent.js";
+import type { NormalizedConfig } from "../types/config.js";
+import { hashContent } from "../utils/hash.js";
+import { buildFlagInstructions } from "./flag-instructions.js";
+import { addGeneratedHeader } from "./generated-header.js";
+import {
+  generateSkillFiles,
+  buildSkillCatalog,
+  type ProgressiveLoadingMode,
+} from "./skill-generator.js";
+import {
+  buildProjectOverview,
+  buildDevelopmentNotes,
+  buildWorkflowSection,
+} from "./section-builder.js";
+import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME } from "../constants.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -25,16 +33,16 @@ async function exists(path: string): Promise<boolean> {
 }
 
 export const clineAdapter: AgentAdapter = {
-  id: 'cline',
-  name: 'Cline',
+  id: "cline",
+  name: "Cline",
 
   paths: {
-    configRoot: '.cline',
-    rules: '.cline',
-    skills: '.cline/skills',
+    configRoot: ".cline",
+    rules: ".cline",
+    skills: ".cline/skills",
     commands: null,
     agents: null,
-    instructionFile: '.clinerules',
+    instructionFile: ".clinerules",
     mcpConfig: null,
   } satisfies AgentPaths,
 
@@ -50,12 +58,15 @@ export const clineAdapter: AgentAdapter = {
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
-    const hasFile = await exists(join(projectRoot, '.clinerules'));
-    const hasDir = await exists(join(projectRoot, '.cline'));
+    const hasFile = await exists(join(projectRoot, ".clinerules"));
+    const hasDir = await exists(join(projectRoot, ".cline"));
     return hasFile || hasDir;
   },
 
-  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+  async generate(
+    config: NormalizedConfig,
+    _options: GenerateOptions,
+  ): Promise<GeneratedFile[]> {
     const flagText = buildFlagInstructions(config.flags);
     const sections: string[] = [];
 
@@ -74,8 +85,9 @@ export const clineAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       sections.push(`# ${rule.name}\n\n${rule.content}`);
     }
-    const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
-    if (plMode === 'off') {
+    const plMode = ((config.flags.progressive_loading?.value as string) ??
+      "off") as ProgressiveLoadingMode;
+    if (plMode === "off") {
       for (const skill of config.skills) {
         sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
       }
@@ -84,16 +96,25 @@ export const clineAdapter: AgentAdapter = {
       if (catalog) sections.push(catalog);
     }
 
-    const content = addGeneratedHeader(sections.join('\n\n'));
-    const files: GeneratedFile[] = [{
-      path: '.clinerules',
-      content,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(content),
-    }];
+    const content = addGeneratedHeader(sections.join("\n\n"));
+    const files: GeneratedFile[] = [
+      {
+        path: ".clinerules",
+        content,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(content),
+      },
+    ];
 
     // Generate .cline/skills/{name}/SKILL.md + supporting files
-    files.push(...await generateSkillFiles(config.skills, '.cline/skills', plMode, _options.projectRoot));
+    files.push(
+      ...(await generateSkillFiles(
+        config.skills,
+        ".cline/skills",
+        plMode,
+        _options.projectRoot,
+      )),
+    );
 
     return files;
   },
