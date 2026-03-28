@@ -1,6 +1,4 @@
-import {
-  MAX_NAME_LENGTH,
-} from '../../constants.js';
+import { MAX_NAME_LENGTH } from "../../constants.js";
 
 export const template = `---
 name: {{name}}

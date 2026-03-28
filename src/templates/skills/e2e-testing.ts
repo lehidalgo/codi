@@ -1,5 +1,5 @@
-import { PRE_COMMIT_MAX_FILE_LINES } from '../../constants.js';
-import type { TemplateCounts } from './types.js';
+import { PRE_COMMIT_MAX_FILE_LINES } from "../../constants.js";
+import type { TemplateCounts } from "./types.js";
 
 export function getTemplate(counts: TemplateCounts): string {
   const RULE_TEMPLATE_COUNT = counts.rules;

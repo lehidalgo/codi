@@ -2,7 +2,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_ARTIFACT_CHARS,
-} from '../../constants.js';
+} from "../../constants.js";
 
 export const template = `---
 name: {{name}}
