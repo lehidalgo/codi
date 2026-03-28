@@ -18,6 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Language selection in init wizard** — users can add/remove languages for pre-commit hooks during `codi init`
 - **Hook dependency auto-install** — prompts to install missing npm packages (eslint, prettier, tsc) during init
 - **Per-hook file filtering** — husky pre-commit hooks now filter staged files per tool via grep, with `passFiles` flag for project-config tools (tsc, pyright, cargo clippy)
+- **Error-recovery skill** — activates after 2+ agent error corrections, generates diagnostic REVIEW report with pattern analysis, recommends session reset to prevent context contamination
+- **Permission enforcement for all agents** — shared `permission-builder.ts` provides RESTRICTIONS (ENFORCED) sections with BLOCKED/REQUIRED prefixes for Windsurf, Cline, and Codex adapters
+- **Permission enforcement integration test** — verifies all 5 agents produce correct enforcement from the same flags
+- **Scaffolder unit tests** — rule, agent, command scaffolders and all 3 template loaders now tested (91% coverage)
+- **Utils unit tests** — paths, frontmatter, hash utilities now tested (100% line coverage)
+- **Stats collector test** — validates `collectStats()` output against source-of-truth registries
+- **Output snapshot tests** — vitest snapshots for generated instruction files across all 5 adapters
+- **Testing analysis report** — comprehensive coverage analysis with gap identification and improvement roadmap
 
 ### Fixed
 
