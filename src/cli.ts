@@ -23,6 +23,7 @@ import { registerContributeCommand } from "./cli/contribute.js";
 import { registerSkillCommand } from "./cli/skill.js";
 import { runCommandCenter } from "./cli/hub.js";
 import { Logger } from "./core/output/logger.js";
+import { PROJECT_NAME } from "./constants.js";
 import type { GlobalOptions } from "./cli/shared.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -32,7 +33,7 @@ const pkg = JSON.parse(
 
 const program = new Command();
 program
-  .name("codi")
+  .name(PROJECT_NAME)
   .description("Unified configuration platform for AI coding agents")
   .version(pkg.version);
 

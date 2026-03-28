@@ -17,14 +17,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Language detection for 5 new languages** — PHP (composer.json), Ruby (Gemfile), Dart (pubspec.yaml), C++ (CMakeLists.txt), C# (_.csproj/_.sln) now auto-detected
 - **Language selection in init wizard** — users can add/remove languages for pre-commit hooks during `codi init`
 - **Hook dependency auto-install** — prompts to install missing npm packages (eslint, prettier, tsc) during init
+- **Per-hook file filtering** — husky pre-commit hooks now filter staged files per tool via grep, with `passFiles` flag for project-config tools (tsc, pyright, cargo clippy)
+
+### Fixed
+
+- **Contribution ZIP round-trip** — exported ZIP now includes `preset.yaml` manifest, making it re-importable via `codi init`
+- **PR pathway uses clone+push** — contributions clone official repo, push to user's GitHub, open PR to `develop` (no fork required)
+- **Skill discovery in contribute** — directory-based skills (`skills/{name}/SKILL.md`) are now properly discovered and exported with supporting files
+- **Preset validator handles skill directories** — validation counts and checks directory-based skills alongside flat .md artifacts
+- **Secret scan excludes test files** — prevents false positives on test fixtures containing mock API keys
+- **File size check excludes lock files** — package-lock.json no longer triggers size warnings
+- **Skill-creator scaffold description** — now shows all 5 directories (evals/, scripts/, references/, assets/) matching actual scaffolder output
+- **Default skill template frontmatter** — removed non-standard `compatibility` and `tools` fields, improved placeholder text
+- **Binary file corruption in skill export** — supporting file copy now skips binary files (images, fonts, archives) that corrupt when read as UTF-8
 
 ### Changed
 
+- **Project identity centralized** — `PROJECT_NAME`, `PROJECT_DIR`, `PROJECT_REPO`, `PROJECT_TARGET_BRANCH` constants in `constants.ts` replace hardcoded strings
+- **Codi meta-artifacts prefixed** — 7 skills renamed with `codi-` prefix: `codi-contribute`, `codi-compare-preset`, `codi-preset-creator`, `codi-skill-creator`, `codi-rule-creator`, `codi-agent-creator`, `codi-command-creator`
+- **Contribute skill template rewritten** — comprehensive guide with GitHub CLI setup, GitHub MCP config, 4 contribution methods, quality checklist
+- **Init wizard UX improved** — all flags show detailed hints, enum values explain each option, artifacts show descriptions from templates, version pinning explained
+- **Flag catalog enriched** — all 17 flags now have `hint` text; enum flags have `valueHints` per value
 - **Skill frontmatter stripping** — generated SKILL.md no longer contains `managed_by`, `compatibility`, or `metadata-*` fields (Codi-internal only)
 - **`cli.ts` entry point** — replaced `createRequire` with ESM-native `readFileSync` + `JSON.parse`
 - **`parseSkillFile` exported** — now reusable outside parser.ts for skill validation
 - **`SKIP_DIRS`/`SKIP_FILES` exported** — reusable filtering constants from skill-generator.ts
-- **Skill creator template** — updated with official Claude Code spec: frontmatter fields table, $ARGUMENTS substitutions, context:fork, dynamic injection
+- **Skill creator template** — updated with official Claude Code spec: frontmatter fields table, $ARGUMENTS substitutions, context:fork, dynamic injection, context budget awareness
 - **Hook commands use `npx` prefix** — Node-based tools (eslint, prettier, tsc, pyright) now resolve from node_modules/.bin in any shell context
 - **Init wizard extracted** — wizard path handlers moved to init-wizard-paths.ts for modularity (530 → 119 lines)
 

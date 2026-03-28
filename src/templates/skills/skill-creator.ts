@@ -43,8 +43,11 @@ This creates the following structure:
 \\\`\\\`\\\`
 .codi/skills/<name>/
 ├── SKILL.md        # The skill instructions (what the agent reads)
-├── evals.json      # Test cases to verify the skill works
-└── scripts/        # Optional helper scripts (created when needed)
+├── evals/
+│   └── evals.json  # Test cases to verify the skill works
+├── scripts/        # Optional helper scripts referenced by SKILL.md
+├── references/     # Optional reference materials and examples
+└── assets/         # Optional images, diagrams, supporting media
 \\\`\\\`\\\`
 
 If the directory already exists, confirm with the user before overwriting.
@@ -176,6 +179,13 @@ The SKILL.md body should follow this pattern:
 - If the skill needs complex logic, move helpers to \\\`scripts/\\\` directory
 - Each step should be self-contained and actionable
 - Prefer concrete instructions over abstract principles
+
+#### Context Budget Awareness
+
+- Claude Code and Codex have 200k token budgets — full skill content loads fine
+- Cursor and Windsurf have 32k token budgets — keep skills concise
+- With \\\`progressive_loading: metadata\\\`, only name + description are loaded initially
+- Large skills on low-budget agents should move detail to \\\`scripts/\\\` or \\\`references/\\\`
 
 ### Step 4 — Write Evals
 

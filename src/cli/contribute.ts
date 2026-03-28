@@ -1,147 +1,326 @@
-import type { Command } from 'commander';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import * as p from '@clack/prompts';
-import { resolveCodiDir } from '../utils/paths.js';
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import { Logger } from '../core/output/logger.js';
-import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput, printSection } from './shared.js';
-import type { GlobalOptions } from './shared.js';
-import { parseFrontmatter } from '../utils/frontmatter.js';
+import type { Command } from "commander";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { stringify as stringifyYaml } from "yaml";
+import * as p from "@clack/prompts";
+import { resolveCodiDir } from "../utils/paths.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import { Logger } from "../core/output/logger.js";
+import type { CommandResult } from "../core/output/types.js";
+import { initFromOptions, handleOutput, printSection } from "./shared.js";
+import type { GlobalOptions } from "./shared.js";
+import { parseFrontmatter } from "../utils/frontmatter.js";
+import { copyDir } from "../core/preset/preset-registry.js";
+import {
+  SKILL_OUTPUT_FILENAME,
+  PRESET_MANIFEST_FILENAME,
+  NAME_PATTERN_STRICT,
+  MAX_NAME_LENGTH,
+  PROJECT_REPO,
+  PROJECT_TARGET_BRANCH,
+} from "../constants.js";
 
 const execFileAsync = promisify(execFile);
-const CODI_REPO = 'lehidalgo/codi';
 
 interface ContributeData {
-  action: 'pr' | 'zip' | 'cancelled';
+  action: "pr" | "zip" | "cancelled";
   artifacts?: string[];
   prUrl?: string;
   zipPath?: string;
 }
 
-interface ArtifactEntry {
+export interface ArtifactEntry {
   name: string;
-  type: 'rule' | 'skill' | 'agent' | 'command';
+  type: "rule" | "skill" | "agent" | "command";
   managedBy: string;
   path: string;
 }
 
-async function discoverArtifacts(codiDir: string): Promise<ArtifactEntry[]> {
+/**
+ * Discovers all artifacts in the .codi/ directory.
+ * Handles both flat .md files (rules, agents, commands) and
+ * directory-based skills (skills/{name}/SKILL.md).
+ */
+export async function discoverArtifacts(
+  codiDir: string,
+): Promise<ArtifactEntry[]> {
   const artifacts: ArtifactEntry[] = [];
 
-  const scanDir = async (dir: string, type: ArtifactEntry['type']) => {
+  const scanFlatDir = async (dir: string, type: ArtifactEntry["type"]) => {
     try {
       const entries = await fs.readdir(dir);
       for (const entry of entries) {
-        if (!entry.endsWith('.md')) continue;
+        if (!entry.endsWith(".md")) continue;
         const filePath = path.join(dir, entry);
         try {
-          const raw = await fs.readFile(filePath, 'utf8');
+          const raw = await fs.readFile(filePath, "utf8");
           const { data } = parseFrontmatter<Record<string, unknown>>(raw);
           artifacts.push({
-            name: (data['name'] as string) ?? path.basename(entry, '.md'),
+            name: (data["name"] as string) ?? path.basename(entry, ".md"),
             type,
-            managedBy: (data['managed_by'] as string) ?? 'user',
+            managedBy: (data["managed_by"] as string) ?? "user",
             path: filePath,
           });
-        } catch { /* skip invalid files */ }
+        } catch {
+          /* skip invalid files */
+        }
       }
-    } catch { /* dir doesn't exist */ }
+    } catch {
+      /* dir doesn't exist */
+    }
   };
 
-  await scanDir(path.join(codiDir, 'rules', 'custom'), 'rule');
-  await scanDir(path.join(codiDir, 'rules', 'generated', 'common'), 'rule');
-  await scanDir(path.join(codiDir, 'skills'), 'skill');
-  await scanDir(path.join(codiDir, 'agents'), 'agent');
-  await scanDir(path.join(codiDir, 'commands'), 'command');
+  const scanSkillDir = async (dir: string) => {
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const skillMdPath = path.join(dir, entry.name, SKILL_OUTPUT_FILENAME);
+        try {
+          const raw = await fs.readFile(skillMdPath, "utf8");
+          const { data } = parseFrontmatter<Record<string, unknown>>(raw);
+          artifacts.push({
+            name: (data["name"] as string) ?? entry.name,
+            type: "skill",
+            managedBy: (data["managed_by"] as string) ?? "user",
+            path: path.join(dir, entry.name),
+          });
+        } catch {
+          /* skip invalid skills */
+        }
+      }
+    } catch {
+      /* dir doesn't exist */
+    }
+  };
+
+  await scanFlatDir(path.join(codiDir, "rules", "custom"), "rule");
+  await scanFlatDir(path.join(codiDir, "rules", "generated", "common"), "rule");
+  await scanSkillDir(path.join(codiDir, "skills"));
+  await scanFlatDir(path.join(codiDir, "agents"), "agent");
+  await scanFlatDir(path.join(codiDir, "commands"), "command");
 
   return artifacts;
 }
 
-function getTemplateDir(type: ArtifactEntry['type']): string {
-  switch (type) {
-    case 'rule': return 'src/templates/rules';
-    case 'skill': return 'src/templates/skills';
-    case 'agent': return 'src/templates/agents';
-    case 'command': return 'src/templates/commands';
+/**
+ * Builds a valid preset package directory from selected artifacts.
+ * The resulting directory contains preset.yaml + artifact files,
+ * compatible with codi's ZIP import flow.
+ */
+export async function buildPresetPackage(
+  artifacts: ArtifactEntry[],
+  presetName: string,
+  stagingDir: string,
+): Promise<string> {
+  const presetDir = path.join(stagingDir, presetName);
+  const artifactNames: Record<string, string[]> = {};
+
+  for (const artifact of artifacts) {
+    const typeKey = artifact.type + "s";
+    const typeDir = path.join(presetDir, typeKey);
+    await fs.mkdir(typeDir, { recursive: true });
+
+    if (artifact.type === "skill") {
+      const destSkillDir = path.join(typeDir, artifact.name);
+      await fs.mkdir(destSkillDir, { recursive: true });
+      await copyDir(artifact.path, destSkillDir);
+    } else {
+      await fs.copyFile(
+        artifact.path,
+        path.join(typeDir, path.basename(artifact.path)),
+      );
+    }
+
+    (artifactNames[typeKey] ??= []).push(artifact.name);
   }
+
+  const manifest = {
+    name: presetName,
+    description: "Community contribution",
+    version: "1.0.0",
+    artifacts: Object.fromEntries(
+      Object.entries(artifactNames).filter(([, v]) => v.length > 0),
+    ),
+  };
+  await fs.writeFile(
+    path.join(presetDir, PRESET_MANIFEST_FILENAME),
+    stringifyYaml(manifest),
+    "utf8",
+  );
+
+  return presetDir;
 }
 
 async function checkGhAuth(log: Logger): Promise<boolean> {
   try {
-    await execFileAsync('gh', ['auth', 'status']);
+    await execFileAsync("gh", ["auth", "status"]);
     return true;
   } catch {
-    log.info('GitHub CLI not authenticated.');
-    log.info('Run: gh auth login');
+    log.info("GitHub CLI not authenticated.");
+    log.info("Run: gh auth login");
     return false;
   }
+}
+
+function getTemplateDir(type: ArtifactEntry["type"]): string {
+  switch (type) {
+    case "rule":
+      return "src/templates/rules";
+    case "skill":
+      return "src/templates/skills";
+    case "agent":
+      return "src/templates/agents";
+    case "command":
+      return "src/templates/commands";
+  }
+}
+
+/**
+ * Reads an artifact's markdown content and wraps it as a TypeScript template export.
+ * For skills (directory-based), reads the SKILL.md file.
+ */
+async function artifactToTemplate(artifact: ArtifactEntry): Promise<string> {
+  const mdPath =
+    artifact.type === "skill"
+      ? path.join(artifact.path, SKILL_OUTPUT_FILENAME)
+      : artifact.path;
+  const raw = await fs.readFile(mdPath, "utf8");
+  const escaped = raw.replace(/`/g, "\\`").replace(/\$/g, "\\$");
+  return `export const template = \`${escaped}\`;\n`;
 }
 
 async function createContributionPR(
   artifacts: ArtifactEntry[],
   log: Logger,
 ): Promise<string | null> {
-  const tmpDir = path.join(os.tmpdir(), `codi-contribute-${Date.now()}`);
+  const cloneDir = path.join(os.tmpdir(), `codi-contribute-${Date.now()}`);
 
   try {
-    // Fork + clone
-    log.info('Forking and cloning codi repository...');
-    await execFileAsync('gh', ['repo', 'fork', CODI_REPO, '--clone', '--remote', '--default-branch-only'], {
-      cwd: os.tmpdir(),
-      env: { ...process.env, GH_REPO_DIR: tmpDir },
+    // 1. Get the authenticated GitHub username
+    const { stdout: userLogin } = await execFileAsync("gh", [
+      "api",
+      "user",
+      "--jq",
+      ".login",
+    ]);
+    const ghUser = userLogin.trim();
+    if (!ghUser) throw new Error("Could not determine GitHub username");
+
+    // 2. Clone the official codi repo
+    log.info("Cloning codi repository...");
+    await execFileAsync("git", [
+      "clone",
+      "--depth",
+      "1",
+      `https://github.com/${PROJECT_REPO}.git`,
+      cloneDir,
+    ]);
+
+    // 3. Ensure user has a "codi" repo on their account
+    try {
+      await execFileAsync("gh", [
+        "repo",
+        "view",
+        `${ghUser}/codi`,
+        "--json",
+        "name",
+      ]);
+    } catch {
+      log.info(`Creating ${ghUser}/codi on GitHub...`);
+      await execFileAsync("gh", [
+        "repo",
+        "create",
+        `${ghUser}/codi`,
+        "--public",
+        "--description",
+        "Codi contributions",
+      ]);
+    }
+
+    // 4. Add user's repo as a remote and create branch
+    await execFileAsync(
+      "git",
+      ["remote", "add", "user", `https://github.com/${ghUser}/codi.git`],
+      { cwd: cloneDir },
+    );
+
+    const branchName = `contrib/add-${artifacts[0]?.name ?? "artifacts"}-${Date.now()}`;
+    await execFileAsync("git", ["checkout", "-b", branchName], {
+      cwd: cloneDir,
     });
 
-    // Find the cloned directory
-    const { stdout: forkName } = await execFileAsync('gh', ['repo', 'view', '--json', 'name', '-q', '.name']);
-    const cloneDir = path.join(os.tmpdir(), forkName.trim());
-
-    // Create branch
-    const branchName = `contrib/add-${artifacts[0]?.name ?? 'artifacts'}-${Date.now()}`;
-    await execFileAsync('git', ['checkout', '-b', branchName], { cwd: cloneDir });
-
-    // Copy artifacts to correct template locations
+    // 5. Convert each artifact to a TypeScript template
     for (const artifact of artifacts) {
       const destDir = path.join(cloneDir, getTemplateDir(artifact.type));
       const destFile = path.join(destDir, `${artifact.name}.ts`);
-
-      // Read the artifact content and wrap as a template export
-      const raw = await fs.readFile(artifact.path, 'utf8');
-      const escaped = raw.replace(/`/g, '\\`').replace(/\$/g, '\\$');
-      const templateContent = `export const template = \`${escaped}\`;\n`;
-
+      const templateContent = await artifactToTemplate(artifact);
       await fs.mkdir(destDir, { recursive: true });
-      await fs.writeFile(destFile, templateContent, 'utf8');
+      await fs.writeFile(destFile, templateContent, "utf8");
     }
 
-    // Commit
-    await execFileAsync('git', ['add', '.'], { cwd: cloneDir });
-    const names = artifacts.map(a => `${a.type}:${a.name}`).join(', ');
-    await execFileAsync('git', ['commit', '-m', `feat: contribute ${names}`], { cwd: cloneDir });
+    // 6. Commit and push to user's remote
+    await execFileAsync("git", ["add", "."], { cwd: cloneDir });
+    const names = artifacts.map((a) => `${a.type}:${a.name}`).join(", ");
+    await execFileAsync("git", ["commit", "-m", `feat: contribute ${names}`], {
+      cwd: cloneDir,
+    });
 
-    // Push
-    await execFileAsync('git', ['push', 'origin', branchName], { cwd: cloneDir });
+    await execFileAsync("git", ["push", "user", branchName], {
+      cwd: cloneDir,
+    });
 
-    // Create PR
-    const { stdout: prUrl } = await execFileAsync('gh', [
-      'pr', 'create',
-      '--repo', CODI_REPO,
-      '--title', `feat: contribute ${names}`,
-      '--body', `## Contributed Artifacts\n\n${artifacts.map(a => `- **${a.type}**: ${a.name}`).join('\n')}\n\nGenerated by \`codi contribute\`.`,
-    ], { cwd: cloneDir });
+    // 7. Open PR from user's repo to official develop branch
+    const { stdout: prUrl } = await execFileAsync(
+      "gh",
+      [
+        "pr",
+        "create",
+        "--repo",
+        PROJECT_REPO,
+        "--base",
+        PROJECT_TARGET_BRANCH,
+        "--head",
+        `${ghUser}:${branchName}`,
+        "--title",
+        `feat: contribute ${names}`,
+        "--body",
+        `## Contributed Artifacts\n\n${artifacts.map((a) => `- **${a.type}**: ${a.name}`).join("\n")}\n\nGenerated by \`codi contribute\`.`,
+      ],
+      { cwd: cloneDir },
+    );
 
     return prUrl.trim();
   } catch (error) {
-    log.info(`PR creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    log.info(
+      `PR creation failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return null;
   } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+    await fs.rm(cloneDir, { recursive: true, force: true }).catch(() => {});
   }
+}
+
+function cancelResult(): CommandResult<ContributeData> {
+  return createCommandResult({
+    success: false,
+    command: "contribute",
+    data: { action: "cancelled" },
+    errors: [
+      {
+        code: "E_GENERAL",
+        message: "Operation cancelled.",
+        hint: "",
+        severity: "error",
+        context: {},
+      },
+    ],
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+  });
 }
 
 export async function contributeHandler(
@@ -149,25 +328,34 @@ export async function contributeHandler(
 ): Promise<CommandResult<ContributeData>> {
   const log = Logger.getInstance();
   const codiDir = resolveCodiDir(projectRoot);
-  p.intro('codi — Contribute to CODI');
+  p.intro("codi — Contribute to CODI");
 
-  // Discover all artifacts
+  // Step 1: Discover all artifacts
   const allArtifacts = await discoverArtifacts(codiDir);
   if (allArtifacts.length === 0) {
-    log.info('No artifacts found in .codi/. Nothing to contribute.');
+    log.info("No artifacts found in .codi/. Nothing to contribute.");
     return createCommandResult({
-      success: false, command: 'contribute',
-      data: { action: 'cancelled' },
-      errors: [{ code: 'E_GENERAL', message: 'No artifacts found.', hint: 'Add some artifacts first.', severity: 'error', context: {} }],
+      success: false,
+      command: "contribute",
+      data: { action: "cancelled" },
+      errors: [
+        {
+          code: "E_GENERAL",
+          message: "No artifacts found.",
+          hint: "Add some artifacts first.",
+          severity: "error",
+          context: {},
+        },
+      ],
       exitCode: EXIT_CODES.GENERAL_ERROR,
     });
   }
 
-  // Step 1: Select artifacts
-  printSection('Select Artifacts');
+  // Step 2: Select artifacts
+  printSection("Select Artifacts");
   const selected = await p.multiselect({
-    message: 'Select artifacts to contribute',
-    options: allArtifacts.map(a => ({
+    message: "Select artifacts to contribute",
+    options: allArtifacts.map((a) => ({
       label: `[${a.type}] ${a.name}`,
       value: a.name,
       hint: `managed_by: ${a.managedBy}`,
@@ -176,53 +364,71 @@ export async function contributeHandler(
   });
 
   if (p.isCancel(selected)) {
-    p.cancel('Operation cancelled.');
-    return createCommandResult({
-      success: false, command: 'contribute',
-      data: { action: 'cancelled' },
-      errors: [{ code: 'E_GENERAL', message: 'Operation cancelled.', hint: '', severity: 'error', context: {} }],
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
+    p.cancel("Operation cancelled.");
+    return cancelResult();
   }
 
   if (selected.length === 0) {
     return createCommandResult({
-      success: false, command: 'contribute',
-      data: { action: 'cancelled' },
-      errors: [{ code: 'E_GENERAL', message: 'No artifacts selected.', hint: '', severity: 'error', context: {} }],
+      success: false,
+      command: "contribute",
+      data: { action: "cancelled" },
+      errors: [
+        {
+          code: "E_GENERAL",
+          message: "No artifacts selected.",
+          hint: "",
+          severity: "error",
+          context: {},
+        },
+      ],
       exitCode: EXIT_CODES.GENERAL_ERROR,
     });
   }
 
-  const selectedArtifacts = allArtifacts.filter(a => selected.includes(a.name));
+  const selectedArtifacts = allArtifacts.filter((a) =>
+    selected.includes(a.name),
+  );
 
-  // Step 2: Choose contribution method
-  printSection('Distribution');
+  // Step 3: Choose contribution method
+  printSection("Distribution");
   const method = await p.select({
-    message: 'How do you want to contribute?',
+    message: "How do you want to contribute?",
     options: [
-      { label: 'Open PR to codi repository', value: 'pr' as const, hint: 'Requires gh CLI authentication' },
-      { label: 'Export as ZIP', value: 'zip' as const, hint: 'Share privately or manually' },
+      {
+        label: "Open PR to codi repository",
+        value: "pr" as const,
+        hint: `Requires gh CLI — PR targets ${PROJECT_TARGET_BRANCH} branch`,
+      },
+      {
+        label: "Export as ZIP",
+        value: "zip" as const,
+        hint: "Re-importable preset package for sharing",
+      },
     ],
   });
 
   if (p.isCancel(method)) {
-    p.cancel('Operation cancelled.');
-    return createCommandResult({
-      success: false, command: 'contribute',
-      data: { action: 'cancelled' },
-      errors: [{ code: 'E_GENERAL', message: 'Cancelled.', hint: '', severity: 'error', context: {} }],
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
+    p.cancel("Operation cancelled.");
+    return cancelResult();
   }
 
-  // Step 3: Execute
-  if (method === 'pr') {
+  // Step 4: Execute
+  if (method === "pr") {
     if (!(await checkGhAuth(log))) {
       return createCommandResult({
-        success: false, command: 'contribute',
-        data: { action: 'pr' },
-        errors: [{ code: 'E_GENERAL', message: 'GitHub CLI not authenticated.', hint: 'Run: gh auth login', severity: 'error', context: {} }],
+        success: false,
+        command: "contribute",
+        data: { action: "pr" },
+        errors: [
+          {
+            code: "E_GENERAL",
+            message: "GitHub CLI not authenticated.",
+            hint: "Run: gh auth login",
+            severity: "error",
+            context: {},
+          },
+        ],
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
     }
@@ -232,50 +438,87 @@ export async function contributeHandler(
 
     if (prUrl) {
       log.info(`PR created: ${prUrl}`);
-      p.outro('Contribution submitted.');
+      p.outro("Contribution submitted.");
       return createCommandResult({
-        success: true, command: 'contribute',
-        data: { action: 'pr', artifacts: selectedArtifacts.map(a => a.name), prUrl },
+        success: true,
+        command: "contribute",
+        data: {
+          action: "pr",
+          artifacts: selectedArtifacts.map((a) => a.name),
+          prUrl,
+        },
         exitCode: EXIT_CODES.SUCCESS,
       });
     }
 
     return createCommandResult({
-      success: false, command: 'contribute',
-      data: { action: 'pr' },
-      errors: [{ code: 'E_GENERAL', message: 'Failed to create PR. Try exporting as ZIP instead.', hint: '', severity: 'error', context: {} }],
+      success: false,
+      command: "contribute",
+      data: { action: "pr" },
+      errors: [
+        {
+          code: "E_GENERAL",
+          message: "Failed to create PR. Try exporting as ZIP instead.",
+          hint: "",
+          severity: "error",
+          context: {},
+        },
+      ],
       exitCode: EXIT_CODES.GENERAL_ERROR,
     });
   }
 
-  // ZIP export
-  const zipDir = path.join(os.tmpdir(), `codi-contrib-${Date.now()}`);
-  await fs.mkdir(zipDir, { recursive: true });
-  for (const artifact of selectedArtifacts) {
-    const destDir = path.join(zipDir, artifact.type + 's');
-    await fs.mkdir(destDir, { recursive: true });
-    await fs.copyFile(artifact.path, path.join(destDir, path.basename(artifact.path)));
-  }
+  // ZIP export — builds a re-importable preset package
+  printSection("Preset Name");
+  const presetNameInput = await p.text({
+    message: "Preset name for the exported package",
+    placeholder: "my-contribution",
+    validate: (val = "") => {
+      if (!NAME_PATTERN_STRICT.test(val))
+        return "Must be lowercase kebab-case starting with a letter";
+      if (val.length > MAX_NAME_LENGTH)
+        return `Max ${MAX_NAME_LENGTH} characters`;
+      return undefined;
+    },
+  });
 
-  const zipPath = path.join(projectRoot, `codi-contribution-${Date.now()}.zip`);
+  if (p.isCancel(presetNameInput)) {
+    p.cancel("Operation cancelled.");
+    return cancelResult();
+  }
+  const presetName = presetNameInput as string;
+
+  const stagingDir = path.join(os.tmpdir(), `codi-contrib-${Date.now()}`);
+  await fs.mkdir(stagingDir, { recursive: true });
+
+  await buildPresetPackage(selectedArtifacts, presetName, stagingDir);
+
+  const zipPath = path.join(projectRoot, `${presetName}.zip`);
   try {
-    await execFileAsync('zip', ['-r', zipPath, '.'], { cwd: zipDir });
+    await execFileAsync("zip", ["-r", zipPath, presetName], {
+      cwd: stagingDir,
+    });
     log.info(`Exported to ${zipPath}`);
-    p.outro('Contribution exported.');
+    p.outro("Contribution exported.");
     return createCommandResult({
-      success: true, command: 'contribute',
-      data: { action: 'zip', artifacts: selectedArtifacts.map(a => a.name), zipPath },
+      success: true,
+      command: "contribute",
+      data: {
+        action: "zip",
+        artifacts: selectedArtifacts.map((a) => a.name),
+        zipPath,
+      },
       exitCode: EXIT_CODES.SUCCESS,
     });
   } finally {
-    await fs.rm(zipDir, { recursive: true, force: true }).catch(() => {});
+    await fs.rm(stagingDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
 export function registerContributeCommand(program: Command): void {
   program
-    .command('contribute')
-    .description('Contribute artifacts or presets back to the codi community')
+    .command("contribute")
+    .description("Contribute artifacts as a preset to the codi community")
     .action(async () => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
