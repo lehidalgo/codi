@@ -63,7 +63,7 @@ The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://git
 List the user's custom artifacts:
 
 \\\`\\\`\\\`bash
-ls .codi/rules/custom/ .codi/skills/ .codi/agents/ .codi/commands/ 2>/dev/null
+ls .codi/rules/ .codi/skills/ .codi/agents/ .codi/commands/ 2>/dev/null
 \\\`\\\`\\\`
 
 Help the user identify:

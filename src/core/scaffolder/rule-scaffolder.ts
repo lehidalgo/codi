@@ -44,7 +44,7 @@ export async function createRule(options: CreateRuleOptions): Promise<Result<str
 
   content = content.replace(/\{\{name\}\}/g, name);
 
-  const filePath = path.join(codiDir, 'rules', 'custom', `${name}.md`);
+  const filePath = path.join(codiDir, 'rules', `${name}.md`);
   const dir = path.dirname(filePath);
 
   try {

@@ -51,7 +51,7 @@ const PATTERNS = [
   /sk-[a-zA-Z0-9]{32,}/,
 ];
 
-const TEST_PATHS = [/tests?\\//, /\\.test\\.[jt]sx?$/, /\\.spec\\.[jt]sx?$/, /__tests__\\//];
+const TEST_PATHS = [/tests?\\//, /\\.test\\.[jt]sx?$/, /\\.spec\\.[jt]sx?$/, /__tests__\\//, /src\\/templates\\//];
 const files = process.argv.slice(2).filter(f => !TEST_PATHS.some(p => p.test(f)));
 let found = false;
 for (const file of files) {

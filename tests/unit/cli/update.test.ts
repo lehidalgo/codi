@@ -14,7 +14,7 @@ describe('update command handler', () => {
     Logger.init({ level: 'error', mode: 'human', noColor: true });
 
     const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(path.join(codiDir, 'rules', 'custom'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
     await fs.writeFile(
       path.join(codiDir, 'codi.yaml'),
       stringifyYaml({ name: 'test', version: '1', agents: ['claude-code'] }),
@@ -106,7 +106,7 @@ describe('update command handler', () => {
 
     // Create a codi-managed rule with a matching template name
     await fs.writeFile(
-      path.join(codiDir, 'rules', 'custom', 'security.md'),
+      path.join(codiDir, 'rules', 'security.md'),
       '---\nname: security\nmanaged_by: codi\n---\nold content',
       'utf-8',
     );
@@ -125,7 +125,7 @@ describe('update command handler', () => {
     );
 
     await fs.writeFile(
-      path.join(codiDir, 'rules', 'custom', 'my-custom.md'),
+      path.join(codiDir, 'rules', 'my-custom.md'),
       '---\nname: my-custom\nmanaged_by: user\n---\nmy content',
       'utf-8',
     );

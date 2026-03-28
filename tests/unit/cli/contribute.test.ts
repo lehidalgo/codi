@@ -46,7 +46,7 @@ describe("contributeHandler", () => {
 
   it("returns error when .codi/ exists but has no artifact files", async () => {
     const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(path.join(codiDir, "rules", "custom"), { recursive: true });
+    await fs.mkdir(path.join(codiDir, "rules"), { recursive: true });
     await fs.mkdir(path.join(codiDir, "skills"), { recursive: true });
     await fs.mkdir(path.join(codiDir, "agents"), { recursive: true });
     await fs.mkdir(path.join(codiDir, "commands"), { recursive: true });
@@ -60,9 +60,9 @@ describe("contributeHandler", () => {
 });
 
 describe("discoverArtifacts", () => {
-  it("discovers flat .md rules in custom directory", async () => {
+  it("discovers flat .md rules in rules directory", async () => {
     const codiDir = path.join(tmpDir, ".codi");
-    const rulesDir = path.join(codiDir, "rules", "custom");
+    const rulesDir = path.join(codiDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "my-rule.md"),
@@ -76,23 +76,6 @@ describe("discoverArtifacts", () => {
     expect(artifacts[0]!.name).toBe("my-rule");
     expect(artifacts[0]!.type).toBe("rule");
     expect(artifacts[0]!.path).toBe(path.join(rulesDir, "my-rule.md"));
-  });
-
-  it("discovers flat .md rules in generated/common directory", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const rulesDir = path.join(codiDir, "rules", "generated", "common");
-    await fs.mkdir(rulesDir, { recursive: true });
-    await fs.writeFile(
-      path.join(rulesDir, "security.md"),
-      "---\nname: security\ntype: rule\n---\nSecurity content",
-      "utf8",
-    );
-
-    const artifacts = await discoverArtifacts(codiDir);
-
-    expect(artifacts).toHaveLength(1);
-    expect(artifacts[0]!.name).toBe("security");
-    expect(artifacts[0]!.type).toBe("rule");
   });
 
   it("discovers directory-based skills with SKILL.md", async () => {
@@ -158,7 +141,7 @@ describe("discoverArtifacts", () => {
     const codiDir = path.join(tmpDir, ".codi");
 
     // Rule
-    const rulesDir = path.join(codiDir, "rules", "custom");
+    const rulesDir = path.join(codiDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "style.md"),
@@ -394,7 +377,7 @@ describe("ZIP round-trip", () => {
   it("exported preset ZIP can be re-imported via extractPresetZip", async () => {
     // 1. Create source artifacts
     const codiDir = path.join(tmpDir, ".codi");
-    const rulesDir = path.join(codiDir, "rules", "custom");
+    const rulesDir = path.join(codiDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "my-rule.md"),

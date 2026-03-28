@@ -242,10 +242,7 @@ function resolveCommand(name: string): NormalizedCommand | null {
 }
 
 async function loadRuleFromDir(name: string, codiDir: string): Promise<NormalizedRule | null> {
-  const paths = [
-    path.join(codiDir, 'rules', 'custom', `${name}.md`),
-    path.join(codiDir, 'rules', 'generated', 'common', `${name}.md`),
-  ];
+  const paths = [path.join(codiDir, 'rules', `${name}.md`)];
   for (const p of paths) {
     try {
       const raw = await fs.readFile(p, 'utf8');

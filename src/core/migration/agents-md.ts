@@ -103,7 +103,7 @@ export async function importAgentsMd(
   }
 
   const rules: NormalizedRule[] = [];
-  const rulesDir = path.join(projectRoot, '.codi', 'rules', 'custom');
+  const rulesDir = path.join(projectRoot, '.codi', 'rules');
 
   try {
     await fs.mkdir(rulesDir, { recursive: true });

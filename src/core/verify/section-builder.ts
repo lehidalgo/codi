@@ -35,7 +35,7 @@ export function buildVerificationSection(data: VerificationData): string {
     "1. Propose the improvement with evidence (2+ occurrences in the codebase)",
   );
   lines.push(
-    "2. If approved, write to `.codi/rules/custom/` or `.codi/skills/`",
+    "2. If approved, write to `.codi/rules/` or `.codi/skills/`",
   );
   lines.push("3. Run `codi generate` to propagate changes");
   lines.push(

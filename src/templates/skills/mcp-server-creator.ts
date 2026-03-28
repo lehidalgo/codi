@@ -42,7 +42,7 @@ Do NOT proceed until questions 1-2 have clear answers.
 codi add mcp-server <name>
 \\\`\\\`\\\`
 
-This creates \\\`.codi/mcp-servers/custom/<name>.yaml\\\` with a blank skeleton.
+This creates \\\`.codi/mcp-servers/<name>.yaml\\\` with a blank skeleton.
 
 The name must be:
 - kebab-case (lowercase letters, digits, hyphens)
@@ -86,7 +86,7 @@ headers:
 **[CODING AGENT]** Verify the configuration:
 
 1. Run \\\`codi validate\\\` — confirms no config errors
-2. Check name uniqueness across \\\`generated/\\\` and \\\`custom/\\\`
+2. Check name uniqueness in \\\`mcp-servers/\\\`
 3. Verify required fields:
    - stdio: \\\`command\\\` must not be empty
    - http: \\\`url\\\` must be a valid URL

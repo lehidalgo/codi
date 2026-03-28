@@ -12,7 +12,7 @@ beforeEach(async () => {
   // Copy fixture AGENTS.md
   const src = path.join(FIXTURE_DIR, 'AGENTS.md');
   await fs.copyFile(src, path.join(tmpDir, 'AGENTS.md'));
-  await fs.mkdir(path.join(tmpDir, '.codi', 'rules', 'custom'), { recursive: true });
+  await fs.mkdir(path.join(tmpDir, '.codi', 'rules'), { recursive: true });
 });
 
 afterEach(async () => {
@@ -42,11 +42,11 @@ describe('importAgentsMd', () => {
     expect(codeStyleRule?.content).toContain('camelCase');
   });
 
-  it('writes rule files to .codi/rules/custom/', async () => {
+  it('writes rule files to .codi/rules/', async () => {
     const result = await importAgentsMd(tmpDir);
     expect(result.ok).toBe(true);
 
-    const rulesDir = path.join(tmpDir, '.codi', 'rules', 'custom');
+    const rulesDir = path.join(tmpDir, '.codi', 'rules');
     const files = await fs.readdir(rulesDir);
     expect(files).toContain('code-style.md');
     expect(files).toContain('testing.md');
@@ -57,7 +57,7 @@ describe('importAgentsMd', () => {
     await importAgentsMd(tmpDir);
 
     const content = await fs.readFile(
-      path.join(tmpDir, '.codi', 'rules', 'custom', 'code-style.md'),
+      path.join(tmpDir, '.codi', 'rules', 'code-style.md'),
       'utf-8',
     );
     expect(content).toContain('---');

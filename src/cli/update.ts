@@ -65,7 +65,7 @@ async function refreshManagedRules(
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const rulesDir = path.join(codiDir, 'rules', 'custom');
+  const rulesDir = path.join(codiDir, 'rules');
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -279,20 +279,20 @@ async function refreshManagedMcpServers(
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const generatedDir = path.join(codiDir, 'mcp-servers', 'generated');
+  const mcpDir = path.join(codiDir, 'mcp-servers');
   const updated: string[] = [];
   const skipped: string[] = [];
 
   let entries: string[];
   try {
-    entries = await fs.readdir(generatedDir);
+    entries = await fs.readdir(mcpDir);
   } catch {
     return { updated, skipped };
   }
 
   for (const entry of entries) {
     if (!entry.endsWith('.yaml')) continue;
-    const filePath = path.join(generatedDir, entry);
+    const filePath = path.join(mcpDir, entry);
     const raw = await fs.readFile(filePath, 'utf8');
     const parsed = parseYaml(raw) as Record<string, unknown>;
     const managedBy = parsed['managed_by'] as string | undefined;
@@ -350,7 +350,7 @@ async function pullFromSource(
     return updated;
   }
 
-  const sourcePaths = ['rules/custom', 'skills', 'agents'];
+  const sourcePaths = ['rules', 'skills', 'agents'];
 
   for (const syncPath of sourcePaths) {
     const sourceDir = path.join(tmpDir, '.codi', syncPath);

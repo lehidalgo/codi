@@ -15,7 +15,7 @@ Codi manages 4 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
-| Rules | .codi/rules/custom/ | codi add rule | ${counts.rules} templates |
+| Rules | .codi/rules/ | codi add rule | ${counts.rules} templates |
 | Skills | .codi/skills/ | codi add skill | ${counts.skills} templates |
 | Agents | .codi/agents/ | codi add agent | ${counts.agents} templates |
 | Commands | .codi/commands/ | codi add command | ${counts.commands} templates |

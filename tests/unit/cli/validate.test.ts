@@ -27,7 +27,7 @@ describe('validate command handler', () => {
 
   it('reports valid config', async () => {
     const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(path.join(codiDir, 'rules', 'custom'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
 
     const manifest = { name: 'test', version: '1', agents: ['claude-code'] };
     await fs.writeFile(
@@ -50,7 +50,7 @@ describe('validate command handler', () => {
 
   it('reports invalid agents', async () => {
     const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(path.join(codiDir, 'rules', 'custom'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
 
     const manifest = { name: 'test', version: '1', agents: ['nonexistent-agent'] };
     await fs.writeFile(

@@ -31,7 +31,7 @@ Then inventory local customizations:
 
 \\\`\\\`\\\`bash
 # List custom rules (user-created or improved)
-ls .codi/rules/custom/ 2>/dev/null
+ls .codi/rules/ 2>/dev/null
 
 # List skills (check for managed_by: user in frontmatter)
 grep -rl "managed_by: user" .codi/skills/ 2>/dev/null
@@ -42,7 +42,7 @@ ls .codi/agents/ 2>/dev/null
 
 Record:
 - The installed preset name
-- All custom rules in \`.codi/rules/custom/\`
+- All custom rules in \`.codi/rules/\`
 - Any skills or agents with \`managed_by: user\` (project-specific versions)
 - The Codi version from \`codi.yaml\`
 
@@ -70,13 +70,13 @@ ls "$TEMP_DIR/codi-upstream/src/templates/presets/"
 
 ### Rules Comparison
 For each rule in the installed preset:
-1. Read local version from \`.codi/rules/custom/<name>.md\` (if customized) or the generated output
+1. Read local version from \`.codi/rules/<name>.md\` (if customized) or the generated output
 2. Read upstream version from \`$TEMP_DIR/codi-upstream/src/templates/rules/<name>.ts\`
 3. Extract the template string content from the TypeScript file
 4. Identify: added sections, removed sections, modified guidance
 
 ### Custom Rules (local-only)
-List rules in \`.codi/rules/custom/\` that have no upstream equivalent — these are **contribution candidates**.
+List rules in \`.codi/rules/\` that have no upstream equivalent — these are **contribution candidates**.
 
 ### Skills Comparison
 For skills with \`managed_by: user\`:

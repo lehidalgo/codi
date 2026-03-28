@@ -106,7 +106,7 @@ describe('scanCodiDir with skills', () => {
   it('includes skills in parsed result', async () => {
     const codiDir = path.join(tmpDir, '.codi');
     await fs.mkdir(path.join(codiDir, 'skills'), { recursive: true });
-    await fs.mkdir(path.join(codiDir, 'rules', 'generated'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
 
     await fs.writeFile(
       path.join(codiDir, 'codi.yaml'),

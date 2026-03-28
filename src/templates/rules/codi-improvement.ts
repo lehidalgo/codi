@@ -35,8 +35,8 @@ configuration does not address, propose improvements to the user.
 
 | Artifact Type | Write Location | Ownership |
 |---------------|---------------|-----------|
-| Rules (built-in) | \`.codi/rules/custom/<name>.md\` (new custom rule) | managed_by: user |
-| Rules (custom) | \`.codi/rules/custom/<name>.md\` (edit in place) | managed_by: user |
+| Rules (built-in) | \`.codi/rules/<name>.md\` (new custom rule) | managed_by: user |
+| Rules (custom) | \`.codi/rules/<name>.md\` (edit in place) | managed_by: user |
 | Skills | \`.codi/skills/<name>/SKILL.md\` (project-specific copy) | managed_by: user |
 | Agents | \`.codi/agents/<name>.md\` (project-specific copy) | managed_by: user |
 

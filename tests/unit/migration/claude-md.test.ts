@@ -11,7 +11,7 @@ beforeEach(async () => {
   tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-migration-claude-'));
   const src = path.join(FIXTURE_DIR, 'CLAUDE.md');
   await fs.copyFile(src, path.join(tmpDir, 'CLAUDE.md'));
-  await fs.mkdir(path.join(tmpDir, '.codi', 'rules', 'custom'), { recursive: true });
+  await fs.mkdir(path.join(tmpDir, '.codi', 'rules'), { recursive: true });
 });
 
 afterEach(async () => {
@@ -47,7 +47,7 @@ describe('importClaudeMd', () => {
   it('writes rule files to disk', async () => {
     await importClaudeMd(tmpDir);
 
-    const rulesDir = path.join(tmpDir, '.codi', 'rules', 'custom');
+    const rulesDir = path.join(tmpDir, '.codi', 'rules');
     const files = await fs.readdir(rulesDir);
     expect(files).toContain('general.md');
     expect(files).toContain('code-quality.md');
@@ -58,7 +58,7 @@ describe('importClaudeMd', () => {
     await importClaudeMd(tmpDir);
 
     const content = await fs.readFile(
-      path.join(tmpDir, '.codi', 'rules', 'custom', 'general.md'),
+      path.join(tmpDir, '.codi', 'rules', 'general.md'),
       'utf-8',
     );
     expect(content).toContain('---');

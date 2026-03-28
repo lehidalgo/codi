@@ -38,7 +38,7 @@ describe('compliance command handler', () => {
 
   it('reports compliance for a valid project', async () => {
     const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(path.join(codiDir, 'rules', 'custom'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
 
     const manifest = { name: 'test', version: '1', agents: ['claude-code'] };
     await fs.writeFile(

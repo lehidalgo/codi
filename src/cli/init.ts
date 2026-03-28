@@ -486,11 +486,9 @@ async function createCodiStructure(
 ): Promise<void> {
   const dirs = [
     codiDir,
-    path.join(codiDir, "rules", "generated", "common"),
-    path.join(codiDir, "rules", "custom"),
+    path.join(codiDir, "rules"),
     path.join(codiDir, "skills"),
-    path.join(codiDir, "mcp-servers", "generated"),
-    path.join(codiDir, "mcp-servers", "custom"),
+    path.join(codiDir, "mcp-servers"),
     path.join(codiDir, "frameworks"),
   ];
   for (const dir of dirs) {
