@@ -45,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Skill creator template** — updated with official Claude Code spec: frontmatter fields table, $ARGUMENTS substitutions, context:fork, dynamic injection, context budget awareness
 - **Hook commands use `npx` prefix** — Node-based tools (eslint, prettier, tsc, pyright) now resolve from node_modules/.bin in any shell context
 - **Init wizard extracted** — wizard path handlers moved to init-wizard-paths.ts for modularity (530 → 119 lines)
+- **Rules directory flattened** — removed `rules/generated/common/` + `rules/custom/` split; all rules now live in flat `.codi/rules/` directory, consistent with skills/, agents/, commands/
+- **MCP servers directory flattened** — removed `mcp-servers/generated/` + `mcp-servers/custom/` split; all configs now in flat `.codi/mcp-servers/`; `managed_by` field handles ownership
 
 ## [0.8.0] - 2026-03-27
 

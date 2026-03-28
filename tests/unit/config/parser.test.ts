@@ -43,7 +43,7 @@ describe('parseFlags', () => {
 });
 
 describe('scanRules', () => {
-  it('scans rules from generated directory', async () => {
+  it('scans rules from rules directory', async () => {
     const rulesDir = path.join(BASIC, 'rules');
     const result = await scanRules(rulesDir);
     expect(result.ok).toBe(true);

@@ -22,9 +22,7 @@ export async function createMcpServer(options: CreateMcpServerOptions): Promise<
     })]);
   }
 
-  const isTemplate = !!template;
-  const subdir = isTemplate ? 'generated' : 'custom';
-  const filePath = path.join(codiDir, 'mcp-servers', subdir, `${name}.yaml`);
+  const filePath = path.join(codiDir, 'mcp-servers', `${name}.yaml`);
   const dir = path.dirname(filePath);
 
   try {

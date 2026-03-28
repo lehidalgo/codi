@@ -116,18 +116,13 @@ export async function scanRules(
   const rules: NormalizedRule[] = [];
   const errors: ReturnType<typeof createError>[] = [];
 
-  const subdirs = ["generated", "custom"];
-  for (const sub of subdirs) {
-    const subPath = path.join(rulesDir, sub);
-    if (!(await fileExists(subPath))) continue;
-    const files = await collectMarkdownFiles(subPath);
-    for (const file of files) {
-      const result = await parseRuleFile(file);
-      if (!result.ok) {
-        errors.push(...result.errors);
-      } else {
-        rules.push(result.data);
-      }
+  const files = await collectMarkdownFiles(rulesDir);
+  for (const file of files) {
+    const result = await parseRuleFile(file);
+    if (!result.ok) {
+      errors.push(...result.errors);
+    } else {
+      rules.push(result.data);
     }
   }
 
@@ -349,19 +344,16 @@ async function scanMcpServersDir(
   const mcpServersDir = path.join(codiDir, "mcp-servers");
   const servers: Record<string, Record<string, unknown>> = {};
 
-  for (const sub of ["generated", "custom"]) {
-    const subPath = path.join(mcpServersDir, sub);
-    if (!(await fileExists(subPath))) continue;
-    const files = await fg("**/*.yaml", { cwd: subPath, absolute: true });
-    for (const file of files) {
-      const raw = await readYamlFile(file);
-      if (!raw.ok) continue;
-      const data = raw.data as Record<string, unknown>;
-      const name = data["name"] as string;
-      if (!name) continue;
-      const { name: _name, managed_by: _managedBy, ...serverConfig } = data;
-      servers[name] = serverConfig;
-    }
+  if (!(await fileExists(mcpServersDir))) return servers;
+  const files = await fg("*.yaml", { cwd: mcpServersDir, absolute: true });
+  for (const file of files) {
+    const raw = await readYamlFile(file);
+    if (!raw.ok) continue;
+    const data = raw.data as Record<string, unknown>;
+    const name = data["name"] as string;
+    if (!name) continue;
+    const { name: _name, managed_by: _managedBy, ...serverConfig } = data;
+    servers[name] = serverConfig;
   }
 
   return servers;
@@ -388,7 +380,7 @@ async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
     }
   }
 
-  // 2. Scan individual files from mcp-servers/generated/ and mcp-servers/custom/
+  // 2. Scan individual files from mcp-servers/
   const individualServers = await scanMcpServersDir(codiDir);
 
   // 3. Merge: individual files take precedence over legacy

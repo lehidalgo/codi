@@ -368,7 +368,7 @@ Expected: Commit skill and command created. Generated for all agents.
 \\\`\\\`\\\`bash
 npx codi watch --once &
 sleep 1
-echo "# trigger" >> .codi/rules/custom/my-custom.md
+echo "# trigger" >> .codi/rules/my-custom.md
 sleep 2
 npx codi status --json
 \\\`\\\`\\\`

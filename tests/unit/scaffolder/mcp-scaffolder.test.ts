@@ -19,13 +19,13 @@ describe('mcp scaffolder', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('creates a custom server yaml in custom/ when no template', async () => {
+  it('creates a server yaml when no template', async () => {
     const result = await createMcpServer({ name: 'my-api', codiDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.data).toContain(path.join('mcp-servers', 'custom', 'my-api.yaml'));
+    expect(result.data).toContain(path.join('mcp-servers', 'my-api.yaml'));
     const content = await fs.readFile(result.data, 'utf-8');
     const parsed = parseYaml(content) as Record<string, unknown>;
     expect(parsed['name']).toBe('my-api');
@@ -33,7 +33,7 @@ describe('mcp scaffolder', () => {
     expect(parsed['command']).toBe('');
   });
 
-  it('creates a generated server yaml from template', async () => {
+  it('creates a server yaml from template', async () => {
     const result = await createMcpServer({
       name: 'github',
       codiDir,
@@ -43,7 +43,7 @@ describe('mcp scaffolder', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.data).toContain(path.join('mcp-servers', 'generated', 'github.yaml'));
+    expect(result.data).toContain(path.join('mcp-servers', 'github.yaml'));
     const content = await fs.readFile(result.data, 'utf-8');
     const parsed = parseYaml(content) as Record<string, unknown>;
     expect(parsed['name']).toBe('github');

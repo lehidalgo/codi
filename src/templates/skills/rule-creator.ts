@@ -64,7 +64,7 @@ To start blank:
 codi add rule <name>
 \\\`\\\`\\\`
 
-This creates \\\`.codi/rules/custom/<name>.md\\\` with a blank skeleton.
+This creates \\\`.codi/rules/<name>.md\\\` with a blank skeleton.
 
 ## Step 4 — Write Frontmatter
 

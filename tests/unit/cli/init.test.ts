@@ -33,8 +33,8 @@ describe('init command handler', () => {
     const flags = await fs.readFile(path.join(codiDir, 'flags.yaml'), 'utf-8');
     expect(flags).toContain('auto_commit:');
 
-    const customDir = await fs.stat(path.join(codiDir, 'rules', 'custom'));
-    expect(customDir.isDirectory()).toBe(true);
+    const rulesDir = await fs.stat(path.join(codiDir, 'rules'));
+    expect(rulesDir.isDirectory()).toBe(true);
   });
 
   it('fails if .codi/ already exists without --force', async () => {

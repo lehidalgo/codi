@@ -98,8 +98,7 @@ export async function discoverArtifacts(
     }
   };
 
-  await scanFlatDir(path.join(codiDir, "rules", "custom"), "rule");
-  await scanFlatDir(path.join(codiDir, "rules", "generated", "common"), "rule");
+  await scanFlatDir(path.join(codiDir, "rules"), "rule");
   await scanSkillDir(path.join(codiDir, "skills"));
   await scanFlatDir(path.join(codiDir, "agents"), "agent");
   await scanFlatDir(path.join(codiDir, "commands"), "command");

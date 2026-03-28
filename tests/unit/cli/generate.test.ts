@@ -27,7 +27,7 @@ describe('generate command handler', () => {
 
   it('generates files for configured agents', async () => {
     const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(path.join(codiDir, 'rules', 'custom'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
 
     const manifest = { name: 'test', version: '1', agents: ['claude-code'] };
     await fs.writeFile(
@@ -49,7 +49,7 @@ describe('generate command handler', () => {
 
   it('supports --dry-run without writing files', async () => {
     const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(path.join(codiDir, 'rules', 'custom'), { recursive: true });
+    await fs.mkdir(path.join(codiDir, 'rules'), { recursive: true });
 
     const manifest = { name: 'test', version: '1', agents: ['claude-code'] };
     await fs.writeFile(
