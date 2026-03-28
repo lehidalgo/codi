@@ -32,6 +32,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   "codi-compare-preset": skillTemplates.comparePreset,
   "guided-qa-testing": skillTemplates.guidedQaTesting,
   "mcp-server-creator": skillTemplates.mcpServerCreator,
+  "error-recovery": skillTemplates.errorRecovery,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
