@@ -3,7 +3,7 @@ name: {{name}}
 description: |
   Compare local Codi artifacts against upstream templates. Use when the user wants
   to see what they have customized, check for upstream updates, or prepare to
-  contribute improvements back to Codi. Also activate on /compare-preset.
+  contribute improvements back to Codi. Also activate on /codi-compare-preset.
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: codi
 ---
@@ -16,7 +16,7 @@ managed_by: codi
 - User wants to see what they have customized vs what is upstream
 - User is preparing to contribute improvements back to Codi
 - User asks about upgrading or updating Codi artifacts
-- User runs \`/compare-preset\`
+- User runs \`/codi-compare-preset\`
 
 ## Step 1: Identify Local State
 

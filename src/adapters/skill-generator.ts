@@ -1,5 +1,5 @@
 import { readdir, readFile, access } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { join, relative, extname } from "node:path";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
@@ -9,6 +9,25 @@ import { SKILL_OUTPUT_FILENAME, MANIFEST_FILENAME } from "../constants.js";
 // Directories to skip when propagating from .codi/skills/ to agent dirs
 export const SKIP_DIRS = new Set(["evals"]);
 export const SKIP_FILES = new Set([".gitkeep", "evals.json"]);
+
+// Binary extensions to skip — these corrupt when read as UTF-8
+const BINARY_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".ico",
+  ".webp",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".eot",
+  ".pdf",
+  ".zip",
+  ".tar",
+  ".gz",
+  ".bz2",
+]);
 
 export function buildSkillMd(skill: NormalizedSkill): string {
   const frontmatter: string[] = ["---"];
@@ -173,10 +192,11 @@ async function scanDir(
       continue;
     }
 
-    // Skip SKILL.md (generated from template), .gitkeep, evals
+    // Skip SKILL.md (generated from template), .gitkeep, evals, binary files
     if (entry.name === SKILL_OUTPUT_FILENAME) continue;
     if (SKIP_FILES.has(entry.name)) continue;
     if (topDir === "evals") continue;
+    if (BINARY_EXTENSIONS.has(extname(entry.name).toLowerCase())) continue;
 
     try {
       const content = await readFile(fullPath, "utf-8");

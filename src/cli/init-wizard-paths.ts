@@ -6,10 +6,22 @@ import {
 } from "../templates/presets/index.js";
 import { FLAG_CATALOG } from "../core/flags/flag-catalog.js";
 import type { FlagDefinition } from "../types/flags.js";
-import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
-import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
-import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
+import {
+  AVAILABLE_TEMPLATES,
+  loadTemplate,
+} from "../core/scaffolder/template-loader.js";
+import {
+  AVAILABLE_SKILL_TEMPLATES,
+  loadSkillTemplate,
+} from "../core/scaffolder/skill-template-loader.js";
+import {
+  AVAILABLE_AGENT_TEMPLATES,
+  loadAgentTemplate,
+} from "../core/scaffolder/agent-template-loader.js";
+import {
+  AVAILABLE_COMMAND_TEMPLATES,
+  loadCommandTemplate,
+} from "../core/scaffolder/command-template-loader.js";
 import {
   AVAILABLE_MCP_SERVER_TEMPLATES,
   loadMcpServerTemplate,
@@ -31,6 +43,14 @@ export function formatLabel(name: string): string {
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+function extractTemplateHint(templateContent: string): string {
+  const multiLine = templateContent.match(/^description:\s*\|\s*\n\s+(.+)/m);
+  if (multiLine?.[1]) return multiLine[1].trim();
+  const singleLine = templateContent.match(/^description:\s*(.+)$/m);
+  if (singleLine?.[1]) return singleLine[1].trim();
+  return "";
 }
 
 export function buildPresetOptions(): Array<{
@@ -82,8 +102,9 @@ async function editPresetFlags(
     const selected = await p.multiselect({
       message: "Boolean flags (selected = enabled)",
       options: booleanKeys.map((k) => ({
-        label: `${k} — ${FLAG_CATALOG[k]!.description}`,
+        label: formatLabel(k),
         value: k,
+        hint: FLAG_CATALOG[k]!.hint ?? FLAG_CATALOG[k]!.description,
       })),
       initialValues: booleanKeys.filter((k) => flags[k]?.value === true),
       required: false,
@@ -107,7 +128,11 @@ async function editPresetFlags(
     const current = flags[key]!.value as string;
     const enumVal = await p.select({
       message: `${key} — ${spec.description}`,
-      options: spec.values.map((v) => ({ label: v, value: v })),
+      options: spec.values.map((v) => ({
+        label: v,
+        value: v,
+        hint: spec.valueHints?.[v] ?? "",
+      })),
       initialValue: current,
     });
     if (p.isCancel(enumVal)) return null;
@@ -119,6 +144,7 @@ async function editPresetFlags(
     const current = flags[key]!.value as number;
     const numVal = await p.text({
       message: `${key} — ${spec.description}`,
+      placeholder: spec.hint ?? `min: ${spec.min ?? 1}`,
       initialValue: String(current),
       validate: (v) => {
         const n = Number(v);
@@ -230,7 +256,11 @@ export async function handlePresetPath(
         p.log.step(`Artifacts in "${selectedPreset}" (modify to customize)`);
         const val = await p.multiselect({
           message: "Rules",
-          options: AVAILABLE_TEMPLATES.map((t) => ({ label: t, value: t })),
+          options: AVAILABLE_TEMPLATES.map((t) => {
+            const tmpl = loadTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues:
             rules ?? AVAILABLE_TEMPLATES.filter((t) => presetRules.has(t)),
           required: false,
@@ -248,10 +278,11 @@ export async function handlePresetPath(
         const presetSkills = new Set(presetDef?.skills ?? []);
         const val = await p.multiselect({
           message: "Skills",
-          options: AVAILABLE_SKILL_TEMPLATES.map((t) => ({
-            label: t,
-            value: t,
-          })),
+          options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
+            const tmpl = loadSkillTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues:
             skills ??
             AVAILABLE_SKILL_TEMPLATES.filter((t) => presetSkills.has(t)),
@@ -270,10 +301,11 @@ export async function handlePresetPath(
         const presetAgents = new Set(presetDef?.agents ?? []);
         const val = await p.multiselect({
           message: "Agents",
-          options: AVAILABLE_AGENT_TEMPLATES.map((t) => ({
-            label: t,
-            value: t,
-          })),
+          options: AVAILABLE_AGENT_TEMPLATES.map((t) => {
+            const tmpl = loadAgentTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues:
             agentTpls ??
             AVAILABLE_AGENT_TEMPLATES.filter((t) => presetAgents.has(t)),
@@ -292,10 +324,11 @@ export async function handlePresetPath(
         const presetCommands = new Set(presetDef?.commands ?? []);
         const val = await p.multiselect({
           message: "Commands",
-          options: AVAILABLE_COMMAND_TEMPLATES.map((t) => ({
-            label: t,
-            value: t,
-          })),
+          options: AVAILABLE_COMMAND_TEMPLATES.map((t) => {
+            const tmpl = loadCommandTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues:
             commands ??
             AVAILABLE_COMMAND_TEMPLATES.filter((t) => presetCommands.has(t)),
@@ -366,6 +399,9 @@ export async function handlePresetPath(
         break;
       }
       case 8: {
+        p.log.info(
+          "Version pinning locks codi to the current version — prevents breaking changes on update",
+        );
         const versionPin = await p.confirm({
           message: "Enable version pinning?",
         });
@@ -425,7 +461,11 @@ export async function handleCustomPath(
         p.log.step("Artifacts");
         const val = await p.multiselect({
           message: "Select rules",
-          options: AVAILABLE_TEMPLATES.map((t) => ({ label: t, value: t })),
+          options: AVAILABLE_TEMPLATES.map((t) => {
+            const tmpl = loadTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues: rules ?? [...AVAILABLE_TEMPLATES],
           required: false,
         });
@@ -437,10 +477,11 @@ export async function handleCustomPath(
       case 1: {
         const val = await p.multiselect({
           message: "Select skills",
-          options: AVAILABLE_SKILL_TEMPLATES.map((t) => ({
-            label: t,
-            value: t,
-          })),
+          options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
+            const tmpl = loadSkillTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues: skills,
           required: false,
         });
@@ -455,10 +496,11 @@ export async function handleCustomPath(
       case 2: {
         const val = await p.multiselect({
           message: "Select agent definitions",
-          options: AVAILABLE_AGENT_TEMPLATES.map((t) => ({
-            label: t,
-            value: t,
-          })),
+          options: AVAILABLE_AGENT_TEMPLATES.map((t) => {
+            const tmpl = loadAgentTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues: agentTpls ?? [...AVAILABLE_AGENT_TEMPLATES],
           required: false,
         });
@@ -473,10 +515,11 @@ export async function handleCustomPath(
       case 3: {
         const val = await p.multiselect({
           message: "Select commands",
-          options: AVAILABLE_COMMAND_TEMPLATES.map((t) => ({
-            label: t,
-            value: t,
-          })),
+          options: AVAILABLE_COMMAND_TEMPLATES.map((t) => {
+            const tmpl = loadCommandTemplate(t);
+            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
+            return { label: formatLabel(t), value: t, hint };
+          }),
           initialValues: commandTpls ?? [...AVAILABLE_COMMAND_TEMPLATES],
           required: false,
         });
@@ -569,6 +612,9 @@ export async function handleCustomPath(
         break;
       }
       case 7: {
+        p.log.info(
+          "Version pinning locks codi to the current version — prevents breaking changes on update",
+        );
         const versionPin = await p.confirm({
           message: "Enable version pinning?",
         });
