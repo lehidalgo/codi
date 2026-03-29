@@ -62,11 +62,7 @@ export function renderSkillTemplatesByCategory(
       return `| **${category}** | ${sorted.join(", ")} |`;
     });
 
-  return [
-    "| Category | Skills |",
-    "|----------|--------|",
-    ...rows,
-  ].join("\n");
+  return ["| Category | Skills |", "|----------|--------|", ...rows].join("\n");
 }
 
 /**

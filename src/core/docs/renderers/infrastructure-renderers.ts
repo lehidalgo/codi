@@ -59,9 +59,7 @@ export function renderErrorCatalog(
   catalog: Record<string, ErrorEntry>,
 ): string {
   const rows = Object.entries(catalog).map(([code, entry]) => {
-    const hint = entry.hintTemplate
-      .replace(/\{[^}]+\}/g, "...")
-      .slice(0, 80);
+    const hint = entry.hintTemplate.replace(/\{[^}]+\}/g, "...").slice(0, 80);
     return `| \`${code}\` | ${entry.severity} | ${entry.exitCode} | ${hint} |`;
   });
 
@@ -99,7 +97,7 @@ export function renderMcpServers(
     const type = srv.type ?? "stdio";
     const cmd = srv.command
       ? `\`${srv.command} ${(srv.args ?? []).join(" ")}\``
-      : srv.url ?? "—";
+      : (srv.url ?? "—");
     return `| \`${key}\` | ${srv.description} | ${type} | ${cmd} |`;
   });
 
@@ -138,14 +136,34 @@ export function renderCliReference(commands: CliCommand[]): string {
 
 export function renderLayerOrder(): string {
   const layers = [
-    ["1", "**Org**", "`~/.codi/orgs/{org}/config.yaml`", "Organization-wide policies"],
+    [
+      "1",
+      "**Org**",
+      "`~/.codi/orgs/{org}/config.yaml`",
+      "Organization-wide policies",
+    ],
     ["2", "**Team**", "`~/.codi/teams/{name}.yaml`", "Team-specific overrides"],
-    ["3", "**Preset**", "Built-in or installed presets", "Bundles of flags + artifacts (multiple, applied in order)"],
+    [
+      "3",
+      "**Preset**",
+      "Built-in or installed presets",
+      "Bundles of flags + artifacts (multiple, applied in order)",
+    ],
     ["4", "**Repo**", "`.codi/` directory", "Project-level configuration"],
     ["5", "**Lang**", "`.codi/lang/*.yaml`", "Language-specific rules"],
-    ["6", "**Framework**", "`.codi/frameworks/*.yaml`", "Framework-specific rules"],
+    [
+      "6",
+      "**Framework**",
+      "`.codi/frameworks/*.yaml`",
+      "Framework-specific rules",
+    ],
     ["7", "**Agent**", "`.codi/agents/*.yaml`", "Per-agent overrides"],
-    ["8", "**User**", "`~/.codi/user.yaml`", "Personal preferences (never committed)"],
+    [
+      "8",
+      "**User**",
+      "`~/.codi/user.yaml`",
+      "Personal preferences (never committed)",
+    ],
   ];
 
   const rows = layers.map(

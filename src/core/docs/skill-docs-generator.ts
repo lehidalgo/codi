@@ -26,10 +26,7 @@ interface SkillFrontmatter {
 
 const DEFAULT_CATEGORY = "Uncategorized";
 
-function resolveTemplatePlaceholders(
-  content: string,
-  name: string,
-): string {
+function resolveTemplatePlaceholders(content: string, name: string): string {
   return content.replace(/\{\{name\}\}/g, name);
 }
 
@@ -44,9 +41,7 @@ function flattenDescription(desc: string): string {
  * Also handles \${...} → ${...}.
  */
 function unescapeTemplateOutput(content: string): string {
-  return content
-    .replace(/\\`/g, "`")
-    .replace(/\\\$/g, "$");
+  return content.replace(/\\`/g, "`").replace(/\\\$/g, "$");
 }
 
 export function collectSkillEntries(): SkillDocEntry[] {
@@ -113,9 +108,7 @@ export function generateSkillDocsHtml(): string {
  * Build and write the HTML skill catalog to docs/_site/index.html.
  * Returns the absolute path of the written file.
  */
-export async function buildSkillDocsFile(
-  projectRoot: string,
-): Promise<string> {
+export async function buildSkillDocsFile(projectRoot: string): Promise<string> {
   const html = generateSkillDocsHtml();
   const outPath = join(projectRoot, "docs", "_site", "index.html");
   await mkdir(dirname(outPath), { recursive: true });

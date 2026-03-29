@@ -60,7 +60,11 @@ describe("aggregateStats", () => {
         {
           outcome: "partial",
           issues: [
-            { category: "missing-step", description: "No CSRF", severity: "high" },
+            {
+              category: "missing-step",
+              description: "No CSRF",
+              severity: "high",
+            },
           ],
         },
         0,
@@ -69,8 +73,16 @@ describe("aggregateStats", () => {
         {
           outcome: "partial",
           issues: [
-            { category: "missing-step", description: "No auth", severity: "medium" },
-            { category: "unclear-step", description: "Ambiguous", severity: "low" },
+            {
+              category: "missing-step",
+              description: "No auth",
+              severity: "medium",
+            },
+            {
+              category: "unclear-step",
+              description: "Ambiguous",
+              severity: "low",
+            },
           ],
         },
         1,
@@ -221,9 +233,7 @@ describe("formatStatsTable", () => {
   });
 
   it("produces markdown table", () => {
-    const stats = aggregateAllStats([
-      makeEntry({ skillName: "commit" }, 0),
-    ]);
+    const stats = aggregateAllStats([makeEntry({ skillName: "commit" }, 0)]);
     const table = formatStatsTable(stats);
     expect(table).toContain("| commit |");
     expect(table).toContain("| Skill |");

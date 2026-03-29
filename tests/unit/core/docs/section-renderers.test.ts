@@ -261,7 +261,8 @@ describe("section-renderers", () => {
         E_LONG: {
           exitCode: 2,
           severity: "warning",
-          hintTemplate: "This is a {very} long hint with {placeholders} " +
+          hintTemplate:
+            "This is a {very} long hint with {placeholders} " +
             "that should be truncated after eighty characters to keep the table readable",
         },
       };
@@ -275,7 +276,12 @@ describe("section-renderers", () => {
   describe("renderHubActions", () => {
     it("renders action rows", () => {
       const actions: HubAction[] = [
-        { label: "Generate", hint: "Build configs", group: "build", value: "generate" },
+        {
+          label: "Generate",
+          hint: "Build configs",
+          group: "build",
+          value: "generate",
+        },
       ];
       const result = renderHubActions(actions);
 

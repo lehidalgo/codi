@@ -171,9 +171,7 @@ export async function skillStatsHandler(
   }
 
   if (skillName) {
-    const skillEntries = result.data.filter(
-      (e) => e.skillName === skillName,
-    );
+    const skillEntries = result.data.filter((e) => e.skillName === skillName);
     if (skillEntries.length === 0) {
       log.info(`No feedback found for skill "${skillName}".`);
     }
