@@ -1,9 +1,9 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { OPERATIONS_LEDGER_FILENAME } from '../../constants.js';
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
-import { createError } from '../output/errors.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { OPERATIONS_LEDGER_FILENAME } from "../../constants.js";
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
+import { createError } from "../output/errors.js";
 
 // ── Interfaces ──────────────────────────────────────────────────────
 
@@ -30,36 +30,48 @@ export interface LedgerActivePreset {
 export interface LedgerGeneratedFile {
   path: string;
   agent: string;
-  type: 'instruction' | 'rule' | 'skill' | 'command' | 'agent' | 'mcp' | 'settings';
+  type:
+    | "instruction"
+    | "rule"
+    | "skill"
+    | "command"
+    | "agent"
+    | "mcp"
+    | "settings";
   createdAt: string;
   updatedAt: string;
 }
 
 export interface LedgerHookFile {
   path: string;
-  framework: 'husky' | 'pre-commit' | 'lefthook' | 'standalone';
-  type: 'pre-commit' | 'commit-msg' | 'secret-scan' | 'file-size-check' | 'version-check';
+  framework: "husky" | "pre-commit" | "lefthook" | "standalone";
+  type:
+    | "pre-commit"
+    | "commit-msg"
+    | "secret-scan"
+    | "file-size-check"
+    | "version-check";
   createdAt: string;
 }
 
 export interface LedgerConfigFile {
   path: string;
-  type: 'manifest' | 'flags' | 'mcp' | 'state' | 'lock' | 'ledger';
+  type: "manifest" | "flags" | "mcp" | "state" | "lock" | "ledger";
   createdAt: string;
 }
 
 export type OperationType =
-  | 'init'
-  | 'generate'
-  | 'clean'
-  | 'add'
-  | 'update'
-  | 'preset-install'
-  | 'preset-remove'
-  | 'revert'
-  | 'skill-feedback'
-  | 'skill-evolve'
-  | 'skill-stats';
+  | "init"
+  | "generate"
+  | "clean"
+  | "add"
+  | "update"
+  | "preset-install"
+  | "preset-remove"
+  | "revert"
+  | "skill-feedback"
+  | "skill-evolve"
+  | "skill-stats";
 
 export interface LedgerOperation {
   type: OperationType;
@@ -68,7 +80,7 @@ export interface LedgerOperation {
 }
 
 export interface OperationsLedgerData {
-  version: '1';
+  version: "1";
   initialized: LedgerInitialization | null;
   activePreset: LedgerActivePreset | null;
   files: {
@@ -82,7 +94,7 @@ export interface OperationsLedgerData {
 // ── Constants ───────────────────────────────────────────────────────
 
 const EMPTY_LEDGER: OperationsLedgerData = {
-  version: '1',
+  version: "1",
   initialized: null,
   activePreset: null,
   files: { generated: [], hooks: [], config: [] },
@@ -100,16 +112,22 @@ export class OperationsLedgerManager {
 
   async read(): Promise<Result<OperationsLedgerData>> {
     try {
-      const raw = await fs.readFile(this.ledgerPath, 'utf8');
+      const raw = await fs.readFile(this.ledgerPath, "utf8");
       const data = JSON.parse(raw) as OperationsLedgerData;
       return ok(data);
     } catch (cause) {
       if (isFileNotFound(cause)) {
         return ok(structuredClone(EMPTY_LEDGER));
       }
-      return err([createError('E_CONFIG_PARSE_FAILED', {
-        file: this.ledgerPath,
-      }, cause as Error)]);
+      return err([
+        createError(
+          "E_CONFIG_PARSE_FAILED",
+          {
+            file: this.ledgerPath,
+          },
+          cause as Error,
+        ),
+      ]);
     }
   }
 
@@ -118,13 +136,19 @@ export class OperationsLedgerManager {
       const dir = path.dirname(this.ledgerPath);
       await fs.mkdir(dir, { recursive: true });
       const tmpPath = `${this.ledgerPath}.tmp.${Date.now()}`;
-      await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+      await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf8");
       await fs.rename(tmpPath, this.ledgerPath);
       return ok(undefined);
     } catch (cause) {
-      return err([createError('E_CONFIG_PARSE_FAILED', {
-        file: this.ledgerPath,
-      }, cause as Error)]);
+      return err([
+        createError(
+          "E_CONFIG_PARSE_FAILED",
+          {
+            file: this.ledgerPath,
+          },
+          cause as Error,
+        ),
+      ]);
     }
   }
 
@@ -135,7 +159,7 @@ export class OperationsLedgerManager {
     const data = readResult.data;
     data.initialized = init;
     data.operations.push({
-      type: 'init',
+      type: "init",
       timestamp: init.timestamp,
       details: {
         preset: init.preset,
@@ -238,5 +262,7 @@ export class OperationsLedgerManager {
 // ── Helpers ─────────────────────────────────────────────────────────
 
 function isFileNotFound(error: unknown): boolean {
-  return error instanceof Error && (error as NodeJS.ErrnoException).code === 'ENOENT';
+  return (
+    error instanceof Error && (error as NodeJS.ErrnoException).code === "ENOENT"
+  );
 }

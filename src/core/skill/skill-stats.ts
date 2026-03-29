@@ -32,8 +32,7 @@ function computeTrend(entries: FeedbackEntry[]): Trend {
   if (entries.length < TREND_WINDOW * 2) return "stable";
 
   const sorted = [...entries].sort(
-    (a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
 
   const recent = sorted.slice(-TREND_WINDOW);
@@ -65,8 +64,7 @@ function computeTopIssues(
 }
 
 export function aggregateStats(entries: FeedbackEntry[]): SkillStatsResult {
-  const skillName =
-    entries.length > 0 ? entries[0]!.skillName : "unknown";
+  const skillName = entries.length > 0 ? entries[0]!.skillName : "unknown";
   const successRate = computeSuccessRate(entries);
 
   return {

@@ -138,8 +138,11 @@ export async function skillVersionsHandler(
         command: "skill versions",
         data: { action: "versions", skillName },
         errors: result.errors.map((e) => ({
-          code: e.code, message: e.message, hint: e.hint,
-          severity: e.severity as "error", context: e.context,
+          code: e.code,
+          message: e.message,
+          hint: e.hint,
+          severity: e.severity as "error",
+          context: e.context,
         })),
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
@@ -175,8 +178,11 @@ export async function skillVersionsHandler(
         command: "skill versions",
         data: { action: "versions", skillName },
         errors: result.errors.map((e) => ({
-          code: e.code, message: e.message, hint: e.hint,
-          severity: e.severity as "error", context: e.context,
+          code: e.code,
+          message: e.message,
+          hint: e.hint,
+          severity: e.severity as "error",
+          context: e.context,
         })),
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
@@ -198,8 +204,11 @@ export async function skillVersionsHandler(
       command: "skill versions",
       data: { action: "versions", skillName },
       errors: result.errors.map((e) => ({
-        code: e.code, message: e.message, hint: e.hint,
-        severity: e.severity as "error", context: e.context,
+        code: e.code,
+        message: e.message,
+        hint: e.hint,
+        severity: e.severity as "error",
+        context: e.context,
       })),
       exitCode: EXIT_CODES.GENERAL_ERROR,
     });

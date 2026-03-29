@@ -61,7 +61,7 @@ describe("renderSkillTemplatesByCategory", () => {
   it("produces a table grouped by category", () => {
     const map = {
       "Code Quality": ["code-review", "testing"],
-      "Tools": ["mcp"],
+      Tools: ["mcp"],
     };
     const result = renderSkillTemplatesByCategory(map);
 

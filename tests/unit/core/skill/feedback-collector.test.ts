@@ -159,14 +159,8 @@ describe("pruneFeedback", () => {
       timestamp: new Date().toISOString(),
     });
 
-    await fs.writeFile(
-      path.join(fbDir, "old.json"),
-      JSON.stringify(oldEntry),
-    );
-    await fs.writeFile(
-      path.join(fbDir, "new.json"),
-      JSON.stringify(newEntry),
-    );
+    await fs.writeFile(path.join(fbDir, "old.json"), JSON.stringify(oldEntry));
+    await fs.writeFile(path.join(fbDir, "new.json"), JSON.stringify(newEntry));
 
     const result = await pruneFeedback(tmpDir, 30);
     expect(result.ok).toBe(true);

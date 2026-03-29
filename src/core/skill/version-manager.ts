@@ -110,7 +110,10 @@ export async function restoreVersion(
   skillDir: string,
   version: number,
 ): Promise<Result<void>> {
-  const versionPath = path.join(versionsDir(skillDir), versionFilename(version));
+  const versionPath = path.join(
+    versionsDir(skillDir),
+    versionFilename(version),
+  );
   const skillPath = path.join(skillDir, SKILL_OUTPUT_FILENAME);
 
   let content: string;
@@ -156,14 +159,20 @@ export async function diffVersions(
     content1 = await fs.readFile(path1, "utf-8");
   } catch {
     return err([
-      createError("E_VERSION_NOT_FOUND", { version: String(v1), name: skillName }),
+      createError("E_VERSION_NOT_FOUND", {
+        version: String(v1),
+        name: skillName,
+      }),
     ]);
   }
   try {
     content2 = await fs.readFile(path2, "utf-8");
   } catch {
     return err([
-      createError("E_VERSION_NOT_FOUND", { version: String(v2), name: skillName }),
+      createError("E_VERSION_NOT_FOUND", {
+        version: String(v2),
+        name: skillName,
+      }),
     ]);
   }
 

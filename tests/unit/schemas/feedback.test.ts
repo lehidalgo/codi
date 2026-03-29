@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { FeedbackEntrySchema, FeedbackIssueSchema } from "../../../src/schemas/feedback.js";
+import {
+  FeedbackEntrySchema,
+  FeedbackIssueSchema,
+} from "../../../src/schemas/feedback.js";
 
 describe("FeedbackIssueSchema", () => {
   it("accepts valid issue", () => {
@@ -53,7 +56,11 @@ describe("FeedbackEntrySchema", () => {
       ...validEntry,
       outcome: "partial",
       issues: [
-        { category: "missing-step", description: "No CSRF check", severity: "high" },
+        {
+          category: "missing-step",
+          description: "No CSRF check",
+          severity: "high",
+        },
       ],
       suggestions: ["Add CSRF validation step"],
     });
@@ -73,22 +80,34 @@ describe("FeedbackEntrySchema", () => {
   });
 
   it("rejects invalid UUID", () => {
-    const result = FeedbackEntrySchema.safeParse({ ...validEntry, id: "not-a-uuid" });
+    const result = FeedbackEntrySchema.safeParse({
+      ...validEntry,
+      id: "not-a-uuid",
+    });
     expect(result.success).toBe(false);
   });
 
   it("rejects invalid agent", () => {
-    const result = FeedbackEntrySchema.safeParse({ ...validEntry, agent: "vscode" });
+    const result = FeedbackEntrySchema.safeParse({
+      ...validEntry,
+      agent: "vscode",
+    });
     expect(result.success).toBe(false);
   });
 
   it("rejects invalid outcome", () => {
-    const result = FeedbackEntrySchema.safeParse({ ...validEntry, outcome: "maybe" });
+    const result = FeedbackEntrySchema.safeParse({
+      ...validEntry,
+      outcome: "maybe",
+    });
     expect(result.success).toBe(false);
   });
 
   it("rejects skill name with spaces", () => {
-    const result = FeedbackEntrySchema.safeParse({ ...validEntry, skillName: "my skill" });
+    const result = FeedbackEntrySchema.safeParse({
+      ...validEntry,
+      skillName: "my skill",
+    });
     expect(result.success).toBe(false);
   });
 

@@ -1,4 +1,4 @@
-import { MIN_CODE_COVERAGE_PERCENT } from '../../constants.js';
+import { MIN_CODE_COVERAGE_PERCENT } from "../../constants.js";
 
 export const template = `---
 name: {{name}}

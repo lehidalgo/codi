@@ -86,8 +86,8 @@ function resolveTypeName(field: any): string {
       // Zod v3: _def.values is string[]
       const entries = field._def.entries;
       const values = entries
-        ? Object.values(entries) as string[]
-        : (field._def.values as string[]) ?? [];
+        ? (Object.values(entries) as string[])
+        : ((field._def.values as string[]) ?? []);
       return values.map((v) => `\`${v}\``).join(" \\| ");
     }
     case "array":
@@ -144,7 +144,8 @@ export function renderZodSchemaTable(
 
 function formatDefault(value: unknown): string {
   if (typeof value === "string") return value;
-  if (typeof value === "boolean" || typeof value === "number") return String(value);
+  if (typeof value === "boolean" || typeof value === "number")
+    return String(value);
   if (Array.isArray(value)) {
     return value.length === 0 ? "[]" : JSON.stringify(value);
   }
@@ -183,7 +184,9 @@ function flattenShape(
     const inner = unwrapToTerminal(field as z.ZodTypeAny);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod _def is untyped
     const innerDef = (inner as any)._def;
-    const innerKind = (innerDef?.type ?? innerDef?.typeName) as string | undefined;
+    const innerKind = (innerDef?.type ?? innerDef?.typeName) as
+      | string
+      | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod v4 shape access
     const nestedShape = (inner as any).shape ?? innerDef?.shape;
     if ((innerKind === "object" || innerKind === "ZodObject") && nestedShape) {
@@ -202,7 +205,9 @@ function flattenShape(
         info.defaultValue !== undefined
           ? `\`${formatDefault(info.defaultValue)}\``
           : "—";
-      rows.push(`| \`${fullKey}\` | ${info.typeName} | ${req} | ${def} | ${desc} |`);
+      rows.push(
+        `| \`${fullKey}\` | ${info.typeName} | ${req} | ${def} | ${desc} |`,
+      );
     }
   }
 }
@@ -215,8 +220,10 @@ function unwrapToTerminal(field: z.ZodTypeAny): z.ZodTypeAny {
     const typeName = current._def?.typeName as string | undefined;
     const kind = defType ?? typeName;
     if (
-      kind === "default" || kind === "ZodDefault" ||
-      kind === "optional" || kind === "ZodOptional"
+      kind === "default" ||
+      kind === "ZodDefault" ||
+      kind === "optional" ||
+      kind === "ZodOptional"
     ) {
       current = current._def.innerType;
       continue;

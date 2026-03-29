@@ -121,9 +121,7 @@ describe("injectSections", () => {
     if (!result.ok) return;
 
     expect(result.data.missing).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("nonexistent_section"),
-      ]),
+      expect.arrayContaining([expect.stringContaining("nonexistent_section")]),
     );
   });
 

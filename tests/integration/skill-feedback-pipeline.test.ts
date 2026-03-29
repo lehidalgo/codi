@@ -38,9 +38,7 @@ function makeEntry(overrides: Partial<FeedbackEntry> = {}): FeedbackEntry {
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), "codi-feedback-pipeline-"),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-feedback-pipeline-"));
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -136,11 +134,7 @@ describe("Skill feedback pipeline (end-to-end)", () => {
 
     // Write invalid JSON directly to feedback dir
     const fbDir = path.join(tmpDir, "feedback");
-    await fs.writeFile(
-      path.join(fbDir, "corrupt.json"),
-      "not-json",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(fbDir, "corrupt.json"), "not-json", "utf-8");
     await fs.writeFile(
       path.join(fbDir, "bad-schema.json"),
       JSON.stringify({ id: "not-uuid", skillName: "x" }),
@@ -165,14 +159,26 @@ describe("Skill feedback pipeline (end-to-end)", () => {
       makeEntry({
         outcome: "partial",
         issues: [
-          { category: "missing-step", description: "No CSRF", severity: "high" },
+          {
+            category: "missing-step",
+            description: "No CSRF",
+            severity: "high",
+          },
         ],
       }),
       makeEntry({
         outcome: "failure",
         issues: [
-          { category: "missing-step", description: "No auth", severity: "medium" },
-          { category: "wrong-output", description: "Bad format", severity: "low" },
+          {
+            category: "missing-step",
+            description: "No auth",
+            severity: "medium",
+          },
+          {
+            category: "wrong-output",
+            description: "Bad format",
+            severity: "low",
+          },
         ],
       }),
     ];

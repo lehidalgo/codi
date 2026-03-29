@@ -32,7 +32,9 @@ function makeEntry(
   };
 }
 
-function makeStats(overrides: Partial<SkillStatsResult> = {}): SkillStatsResult {
+function makeStats(
+  overrides: Partial<SkillStatsResult> = {},
+): SkillStatsResult {
   return {
     skillName: "commit",
     totalEntries: 5,
@@ -124,7 +126,11 @@ describe("generateImprovementPrompt", () => {
       makeEntry({
         outcome: "partial",
         issues: [
-          { category: "missing-step", description: "No CSRF check", severity: "high" },
+          {
+            category: "missing-step",
+            description: "No CSRF check",
+            severity: "high",
+          },
         ],
       }),
     ];
@@ -147,9 +153,7 @@ describe("generateImprovementPrompt", () => {
   });
 
   it("includes suggestions when present", async () => {
-    const entries = [
-      makeEntry({ suggestions: ["Add CSRF validation step"] }),
-    ];
+    const entries = [makeEntry({ suggestions: ["Add CSRF validation step"] })];
 
     const options: ImproveOptions = {
       skillName: "commit",

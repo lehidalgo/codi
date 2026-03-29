@@ -40,7 +40,9 @@ export function buildSkillMd(
 ): string {
   const frontmatter: string[] = ["---"];
   frontmatter.push(`name: ${skill.name}`);
-  frontmatter.push(`description: ${descriptionPrefix}${flattenDescription(skill.description)}`);
+  frontmatter.push(
+    `description: ${descriptionPrefix}${flattenDescription(skill.description)}`,
+  );
   if (skill.disableModelInvocation) {
     frontmatter.push("disable-model-invocation: true");
   }

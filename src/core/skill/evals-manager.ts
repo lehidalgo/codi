@@ -11,9 +11,7 @@ function evalsPath(skillDir: string): string {
   return path.join(skillDir, "evals", EVALS_FILENAME);
 }
 
-export async function readEvals(
-  skillDir: string,
-): Promise<Result<EvalsData>> {
+export async function readEvals(skillDir: string): Promise<Result<EvalsData>> {
   const filePath = evalsPath(skillDir);
   try {
     const raw = await fs.readFile(filePath, "utf-8");

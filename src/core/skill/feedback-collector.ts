@@ -152,10 +152,7 @@ export async function pruneFeedback(
           (a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
-        const toRemove = sorted.slice(
-          0,
-          sorted.length - MAX_FEEDBACK_ENTRIES,
-        );
+        const toRemove = sorted.slice(0, sorted.length - MAX_FEEDBACK_ENTRIES);
         for (const e of toRemove) {
           const ts = e.timestamp.replace(/[:.]/g, "-");
           const filename = `${ts}-${e.skillName}.json`;

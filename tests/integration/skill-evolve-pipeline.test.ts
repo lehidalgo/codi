@@ -58,13 +58,36 @@ describe("Skill evolve pipeline (end-to-end)", () => {
     // 2. Write feedback entries (need >= 3)
     const entries = [
       makeEntry({ outcome: "success" }, 0),
-      makeEntry({ outcome: "partial", issues: [
-        { category: "missing-step", description: "No scope check", severity: "medium" },
-      ] }, 1),
-      makeEntry({ outcome: "success", suggestions: ["Add breaking change detection"] }, 2),
-      makeEntry({ outcome: "failure", issues: [
-        { category: "missing-step", description: "No CSRF", severity: "high" },
-      ] }, 3),
+      makeEntry(
+        {
+          outcome: "partial",
+          issues: [
+            {
+              category: "missing-step",
+              description: "No scope check",
+              severity: "medium",
+            },
+          ],
+        },
+        1,
+      ),
+      makeEntry(
+        { outcome: "success", suggestions: ["Add breaking change detection"] },
+        2,
+      ),
+      makeEntry(
+        {
+          outcome: "failure",
+          issues: [
+            {
+              category: "missing-step",
+              description: "No CSRF",
+              severity: "high",
+            },
+          ],
+        },
+        3,
+      ),
     ];
 
     for (const entry of entries) {

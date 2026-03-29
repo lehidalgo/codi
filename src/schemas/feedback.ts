@@ -9,11 +9,7 @@ export const FEEDBACK_AGENTS = [
   "cline",
 ] as const;
 
-export const FEEDBACK_OUTCOMES = [
-  "success",
-  "partial",
-  "failure",
-] as const;
+export const FEEDBACK_OUTCOMES = ["success", "partial", "failure"] as const;
 
 export const ISSUE_CATEGORIES = [
   "trigger-miss",

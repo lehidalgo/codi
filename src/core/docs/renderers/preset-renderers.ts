@@ -44,7 +44,8 @@ export function renderPresetFlagComparison(
   const flagNames = Object.keys(flagCatalog);
   const rows = flagNames.map((flag) => {
     const flagSpec = flagCatalog[flag];
-    if (!flagSpec) return `| \`${flag}\` | ${core.map(() => "—").join(" | ")} |`;
+    if (!flagSpec)
+      return `| \`${flag}\` | ${core.map(() => "—").join(" | ")} |`;
     const cells = core.map((c) => {
       const fd = c.def.flags[flag];
       if (!fd) return `\`${String(flagSpec.default)}\``;

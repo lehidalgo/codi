@@ -13,7 +13,8 @@ let tmpDir: string;
 let skillDir: string;
 
 const SKILL_CONTENT_V1 = "---\nname: commit\n---\n\n# commit\n\nStep 1: Do A\n";
-const SKILL_CONTENT_V2 = "---\nname: commit\n---\n\n# commit\n\nStep 1: Do A\nStep 2: Do B\n";
+const SKILL_CONTENT_V2 =
+  "---\nname: commit\n---\n\n# commit\n\nStep 1: Do A\nStep 2: Do B\n";
 
 beforeEach(async () => {
   tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-version-test-"));
@@ -95,7 +96,10 @@ describe("restoreVersion", () => {
     const result = await restoreVersion(skillDir, 1);
     expect(result.ok).toBe(true);
 
-    const restored = await fs.readFile(path.join(skillDir, "SKILL.md"), "utf-8");
+    const restored = await fs.readFile(
+      path.join(skillDir, "SKILL.md"),
+      "utf-8",
+    );
     expect(restored).toBe(SKILL_CONTENT_V1);
   });
 

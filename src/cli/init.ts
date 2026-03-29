@@ -395,9 +395,8 @@ export async function initHandler(
 
   // Generate HTML documentation site (non-critical)
   try {
-    const { buildSkillDocsFile } = await import(
-      "../core/docs/skill-docs-generator.js"
-    );
+    const { buildSkillDocsFile } =
+      await import("../core/docs/skill-docs-generator.js");
     const docsPath = await buildSkillDocsFile(projectRoot);
     log.info(`Documentation site generated: ${docsPath}`);
   } catch {
@@ -406,12 +405,12 @@ export async function initHandler(
 
   // Update code-driven documentation sections (non-critical)
   try {
-    const { injectSections } = await import(
-      "../core/docs/docs-generator.js"
-    );
+    const { injectSections } = await import("../core/docs/docs-generator.js");
     const result = await injectSections(projectRoot);
     if (result.ok && result.data.updated.length > 0) {
-      log.info(`Documentation sections updated: ${result.data.updated.join(", ")}`);
+      log.info(
+        `Documentation sections updated: ${result.data.updated.join(", ")}`,
+      );
     }
   } catch {
     log.warn("Documentation section generation skipped.");

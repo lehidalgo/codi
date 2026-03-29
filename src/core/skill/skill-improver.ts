@@ -137,9 +137,7 @@ function buildIssuesSection(
     for (const entry of entries) {
       for (const i of entry.issues) {
         if (i.category === issue.category && descriptions.length < 5) {
-          descriptions.push(
-            `- "${i.description}" (severity: ${i.severity})`,
-          );
+          descriptions.push(`- "${i.description}" (severity: ${i.severity})`);
         }
       }
     }
