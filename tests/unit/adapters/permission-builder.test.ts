@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   extractDenyRules,
   buildStrongTextRestrictions,
-} from "../../../src/adapters/permission-builder.js";
-import type { ResolvedFlags } from "../../../src/types/flags.js";
+} from "#src/adapters/permission-builder.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 
 function makeFlags(overrides: Record<string, unknown> = {}): ResolvedFlags {
   const defaults: Record<string, unknown> = {

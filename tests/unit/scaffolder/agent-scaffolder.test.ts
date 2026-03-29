@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { createAgent } from "../../../src/core/scaffolder/agent-scaffolder.js";
+import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
 
 describe("agent scaffolder", () => {
   let tmpDir: string;

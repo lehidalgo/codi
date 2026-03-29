@@ -12,10 +12,7 @@ vi.mock("@clack/prompts", () => ({
 }));
 
 import * as p from "@clack/prompts";
-import {
-  runAddWizard,
-  selectArtifactType,
-} from "../../../src/cli/add-wizard.js";
+import { runAddWizard, selectArtifactType } from "#src/cli/add-wizard.js";
 
 describe("selectArtifactType", () => {
   beforeEach(() => {

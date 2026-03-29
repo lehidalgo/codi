@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getAvailableActions, HUB_ACTIONS } from "../../../src/cli/hub.js";
+import { getAvailableActions, HUB_ACTIONS } from "#src/cli/hub.js";
 
 describe("Command Center hub", () => {
   describe("HUB_ACTIONS", () => {

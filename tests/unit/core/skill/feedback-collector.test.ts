@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { Logger } from "../../../../src/core/output/logger.js";
+import { Logger } from "#src/core/output/logger.js";
 import {
   readAllFeedback,
   readFeedbackForSkill,
   writeFeedback,
   pruneFeedback,
-} from "../../../../src/core/skill/feedback-collector.js";
-import type { FeedbackEntry } from "../../../../src/schemas/feedback.js";
+} from "#src/core/skill/feedback-collector.js";
+import type { FeedbackEntry } from "#src/schemas/feedback.js";
 
 let tmpDir: string;
 

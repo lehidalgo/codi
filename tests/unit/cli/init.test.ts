@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { initHandler } from "../../../src/cli/init.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { initHandler } from "#src/cli/init.js";
+import { Logger } from "#src/core/output/logger.js";
 
 describe("init command handler", () => {
   let tmpDir: string;

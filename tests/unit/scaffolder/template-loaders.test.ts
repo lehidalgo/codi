@@ -2,15 +2,15 @@ import { describe, it, expect } from "vitest";
 import {
   loadTemplate,
   AVAILABLE_TEMPLATES,
-} from "../../../src/core/scaffolder/template-loader.js";
+} from "#src/core/scaffolder/template-loader.js";
 import {
   loadAgentTemplate,
   AVAILABLE_AGENT_TEMPLATES,
-} from "../../../src/core/scaffolder/agent-template-loader.js";
+} from "#src/core/scaffolder/agent-template-loader.js";
 import {
   loadCommandTemplate,
   AVAILABLE_COMMAND_TEMPLATES,
-} from "../../../src/core/scaffolder/command-template-loader.js";
+} from "#src/core/scaffolder/command-template-loader.js";
 
 describe("template-loader (rules)", () => {
   it("has available templates", () => {

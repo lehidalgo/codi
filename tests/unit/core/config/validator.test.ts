@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   validateConfig,
   validateContentSize,
-} from "../../../../src/core/config/validator.js";
-import type { NormalizedConfig } from "../../../../src/types/config.js";
+} from "#src/core/config/validator.js";
+import type { NormalizedConfig } from "#src/types/config.js";
 import {
   MAX_ARTIFACT_CHARS,
   MAX_TOTAL_ARTIFACT_CHARS,
-} from "../../../../src/constants.js";
+} from "#src/constants.js";
 
 function makeConfig(
   overrides: Partial<NormalizedConfig> = {},

@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { Logger } from "../../../src/core/output/logger.js";
+import { Logger } from "#src/core/output/logger.js";
 import {
   skillEvolveHandler,
   skillVersionsHandler,
-} from "../../../src/cli/skill-evolve-handler.js";
-import { writeFeedback } from "../../../src/core/skill/feedback-collector.js";
-import { saveVersion } from "../../../src/core/skill/version-manager.js";
-import type { FeedbackEntry } from "../../../src/schemas/feedback.js";
+} from "#src/cli/skill-evolve-handler.js";
+import { writeFeedback } from "#src/core/skill/feedback-collector.js";
+import { saveVersion } from "#src/core/skill/version-manager.js";
+import type { FeedbackEntry } from "#src/schemas/feedback.js";
 
 let tmpDir: string;
 let originalCwd: string;

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { detectStack } from "../../../src/core/hooks/stack-detector.js";
+import { detectStack } from "#src/core/hooks/stack-detector.js";
 
 let tmpDir: string;
 

@@ -3,9 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
-import { validateHandler } from "../../../src/cli/validate.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+import { validateHandler } from "#src/cli/validate.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 
 describe("validate command handler", () => {
   let tmpDir: string;

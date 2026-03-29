@@ -1,7 +1,7 @@
 /**
  * Flag-related documentation renderers.
  */
-import type { FlagSpec } from "../../../types/flags.js";
+import type { FlagSpec } from "#src/types/flags.js";
 
 // ---------------------------------------------------------------------------
 // Flags table

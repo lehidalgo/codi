@@ -5,11 +5,11 @@ import {
   extractSkillCategory,
   renderAgentTemplateList,
   renderCommandTemplateList,
-} from "../../../../../src/core/docs/renderers/template-renderers.js";
-import { AVAILABLE_TEMPLATES } from "../../../../../src/core/scaffolder/template-loader.js";
-import { AVAILABLE_SKILL_TEMPLATES } from "../../../../../src/core/scaffolder/skill-template-loader.js";
-import { AVAILABLE_AGENT_TEMPLATES } from "../../../../../src/core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../../../../../src/core/scaffolder/command-template-loader.js";
+} from "#src/core/docs/renderers/template-renderers.js";
+import { AVAILABLE_TEMPLATES } from "#src/core/scaffolder/template-loader.js";
+import { AVAILABLE_SKILL_TEMPLATES } from "#src/core/scaffolder/skill-template-loader.js";
+import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-loader.js";
+import { AVAILABLE_COMMAND_TEMPLATES } from "#src/core/scaffolder/command-template-loader.js";
 
 describe("renderRuleTemplateList", () => {
   it("includes all rule template names", () => {

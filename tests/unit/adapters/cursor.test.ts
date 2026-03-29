@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { cursorAdapter } from "../../../src/adapters/cursor.js";
+import { cursorAdapter } from "#src/adapters/cursor.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_SMALL } from "../../../src/constants.js";
+import { CONTEXT_TOKENS_SMALL } from "#src/constants.js";
 
 describe("cursor adapter", () => {
   const tmpDir = join(tmpdir(), "codi-test-cursor-" + Date.now());

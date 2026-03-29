@@ -1,9 +1,9 @@
 /**
  * Infrastructure documentation renderers: adapters, errors, hub, MCP, CLI, layers.
  */
-import type { AgentAdapter } from "../../../types/agent.js";
-import type { McpServerTemplate } from "../../../templates/mcp-servers/index.js";
-import type { HubAction } from "../../../cli/hub.js";
+import type { AgentAdapter } from "#src/types/agent.js";
+import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
+import type { HubAction } from "#src/cli/hub.js";
 
 // ---------------------------------------------------------------------------
 // Adapter table

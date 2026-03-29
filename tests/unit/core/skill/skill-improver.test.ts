@@ -2,16 +2,16 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { Logger } from "../../../../src/core/output/logger.js";
+import { Logger } from "#src/core/output/logger.js";
 import {
   validateEvolveReadiness,
   generateImprovementPrompt,
   buildImproveOptions,
-} from "../../../../src/core/skill/skill-improver.js";
-import type { ImproveOptions } from "../../../../src/core/skill/skill-improver.js";
-import { writeFeedback } from "../../../../src/core/skill/feedback-collector.js";
-import type { FeedbackEntry } from "../../../../src/schemas/feedback.js";
-import type { SkillStatsResult } from "../../../../src/core/skill/skill-stats.js";
+} from "#src/core/skill/skill-improver.js";
+import type { ImproveOptions } from "#src/core/skill/skill-improver.js";
+import { writeFeedback } from "#src/core/skill/feedback-collector.js";
+import type { FeedbackEntry } from "#src/schemas/feedback.js";
+import type { SkillStatsResult } from "#src/core/skill/skill-stats.js";
 
 let tmpDir: string;
 

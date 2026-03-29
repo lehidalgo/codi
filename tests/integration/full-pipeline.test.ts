@@ -4,26 +4,26 @@ import path from "node:path";
 import os from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { initHandler } from "../../src/cli/init.js";
-import { generateHandler } from "../../src/cli/generate.js";
-import { statusHandler } from "../../src/cli/status.js";
-import { validateHandler } from "../../src/cli/validate.js";
-import { cleanHandler } from "../../src/cli/clean.js";
-import { addRuleHandler } from "../../src/cli/add.js";
-import { updateHandler } from "../../src/cli/update.js";
-import { revertHandler } from "../../src/cli/revert.js";
-import { regenerateConfigs } from "../../src/cli/shared.js";
+import { initHandler } from "#src/cli/init.js";
+import { generateHandler } from "#src/cli/generate.js";
+import { statusHandler } from "#src/cli/status.js";
+import { validateHandler } from "#src/cli/validate.js";
+import { cleanHandler } from "#src/cli/clean.js";
+import { addRuleHandler } from "#src/cli/add.js";
+import { updateHandler } from "#src/cli/update.js";
+import { revertHandler } from "#src/cli/revert.js";
+import { regenerateConfigs } from "#src/cli/shared.js";
 import { parse as parseYaml } from "yaml";
-import { Logger } from "../../src/core/output/logger.js";
-import { clearAdapters } from "../../src/core/generator/adapter-registry.js";
-import { resolveFlags } from "../../src/core/flags/flag-resolver.js";
+import { Logger } from "#src/core/output/logger.js";
+import { clearAdapters } from "#src/core/generator/adapter-registry.js";
+import { resolveFlags } from "#src/core/flags/flag-resolver.js";
 import type {
   FlagLayer,
   ResolutionContext,
-} from "../../src/core/flags/flag-resolver.js";
-import { FLAG_CATALOG } from "../../src/core/flags/flag-catalog.js";
-import { validateFlags } from "../../src/core/flags/flag-validator.js";
-import { getDefaultFlags } from "../../src/core/flags/flag-catalog.js";
+} from "#src/core/flags/flag-resolver.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
+import { validateFlags } from "#src/core/flags/flag-validator.js";
+import { getDefaultFlags } from "#src/core/flags/flag-catalog.js";
 
 const execFileAsync = promisify(execFile);
 

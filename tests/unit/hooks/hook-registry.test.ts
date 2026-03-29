@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getHooksForLanguage,
   getSupportedLanguages,
-} from "../../../src/core/hooks/hook-registry.js";
+} from "#src/core/hooks/hook-registry.js";
 
 describe("getHooksForLanguage", () => {
   it("returns typescript hooks with npx prefix", () => {

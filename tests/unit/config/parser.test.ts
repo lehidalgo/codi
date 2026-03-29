@@ -9,7 +9,7 @@ import {
   scanSkills,
   scanCodiDir,
   parseSkillFile,
-} from "../../../src/core/config/parser.js";
+} from "#src/core/config/parser.js";
 
 const FIXTURES = path.resolve(__dirname, "../../fixtures/inheritance");
 const BASIC = path.join(FIXTURES, "basic-merge/input/.codi");

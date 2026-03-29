@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { checkAgentResponse } from "../../../../src/core/verify/checker.js";
-import type { VerificationData } from "../../../../src/core/verify/token.js";
+import { checkAgentResponse } from "#src/core/verify/checker.js";
+import type { VerificationData } from "#src/core/verify/token.js";
 
 const expected: VerificationData = {
   token: "codi-a3f8b2c1d4e5",

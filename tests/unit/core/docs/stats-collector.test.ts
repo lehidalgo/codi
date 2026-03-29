@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { collectStats } from "../../../../src/core/docs/stats-collector.js";
-import { AVAILABLE_TEMPLATES } from "../../../../src/core/scaffolder/template-loader.js";
-import { AVAILABLE_SKILL_TEMPLATES } from "../../../../src/core/scaffolder/skill-template-loader.js";
-import { AVAILABLE_AGENT_TEMPLATES } from "../../../../src/core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../../../../src/core/scaffolder/command-template-loader.js";
-import { FLAG_CATALOG } from "../../../../src/core/flags/flag-catalog.js";
-import { ALL_ADAPTERS } from "../../../../src/adapters/index.js";
+import { collectStats } from "#src/core/docs/stats-collector.js";
+import { AVAILABLE_TEMPLATES } from "#src/core/scaffolder/template-loader.js";
+import { AVAILABLE_SKILL_TEMPLATES } from "#src/core/scaffolder/skill-template-loader.js";
+import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-loader.js";
+import { AVAILABLE_COMMAND_TEMPLATES } from "#src/core/scaffolder/command-template-loader.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
+import { ALL_ADAPTERS } from "#src/adapters/index.js";
 
 describe("collectStats", () => {
   const stats = collectStats();

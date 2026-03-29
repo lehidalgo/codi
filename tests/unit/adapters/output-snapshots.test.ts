@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { claudeCodeAdapter } from "../../../src/adapters/claude-code.js";
-import { cursorAdapter } from "../../../src/adapters/cursor.js";
-import { codexAdapter } from "../../../src/adapters/codex.js";
-import { windsurfAdapter } from "../../../src/adapters/windsurf.js";
-import { clineAdapter } from "../../../src/adapters/cline.js";
+import { claudeCodeAdapter } from "#src/adapters/claude-code.js";
+import { cursorAdapter } from "#src/adapters/cursor.js";
+import { codexAdapter } from "#src/adapters/codex.js";
+import { windsurfAdapter } from "#src/adapters/windsurf.js";
+import { clineAdapter } from "#src/adapters/cline.js";
 import { createMockConfig } from "./mock-config.js";
-import type { AgentAdapter } from "../../../src/types/agent.js";
+import type { AgentAdapter } from "#src/types/agent.js";
 
 const adapters: AgentAdapter[] = [
   claudeCodeAdapter,

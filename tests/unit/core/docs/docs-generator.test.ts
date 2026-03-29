@@ -5,7 +5,7 @@ import os from "node:os";
 import {
   injectSections,
   validateSections,
-} from "../../../../src/core/docs/docs-generator.js";
+} from "#src/core/docs/docs-generator.js";
 
 let tmpDir: string;
 

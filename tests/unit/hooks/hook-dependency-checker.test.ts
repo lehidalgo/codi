@@ -3,8 +3,8 @@ import {
   extractToolName,
   NODE_PACKAGES,
   checkHookDependencies,
-} from "../../../src/core/hooks/hook-dependency-checker.js";
-import type { HookEntry } from "../../../src/core/hooks/hook-registry.js";
+} from "#src/core/hooks/hook-dependency-checker.js";
+import type { HookEntry } from "#src/core/hooks/hook-registry.js";
 
 describe("extractToolName", () => {
   it("extracts tool name from simple command", () => {

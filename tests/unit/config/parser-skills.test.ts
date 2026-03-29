@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { scanSkills, scanCodiDir } from "../../../src/core/config/parser.js";
+import { scanSkills, scanCodiDir } from "#src/core/config/parser.js";
 
 describe("scanSkills", () => {
   let tmpDir: string;

@@ -9,15 +9,15 @@ import {
   contributeHandler,
   discoverArtifacts,
   buildPresetPackage,
-} from "../../../src/cli/contribute.js";
-import type { ArtifactEntry } from "../../../src/cli/contribute.js";
-import { extractPresetZip } from "../../../src/core/preset/preset-zip.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+} from "#src/cli/contribute.js";
+import type { ArtifactEntry } from "#src/cli/contribute.js";
+import { extractPresetZip } from "#src/core/preset/preset-zip.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PRESET_MANIFEST_FILENAME,
   SKILL_OUTPUT_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 

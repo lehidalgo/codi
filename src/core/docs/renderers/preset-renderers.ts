@@ -1,8 +1,8 @@
 /**
  * Preset-related documentation renderers.
  */
-import type { FlagSpec } from "../../../types/flags.js";
-import type { BuiltinPresetDefinition } from "../../../templates/presets/types.js";
+import type { FlagSpec } from "#src/types/flags.js";
+import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
 
 // ---------------------------------------------------------------------------
 // Preset table

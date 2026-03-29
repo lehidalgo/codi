@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashContent } from "../../../src/utils/hash.js";
+import { hashContent } from "#src/utils/hash.js";
 
 describe("hashContent", () => {
   it("returns a 64-character hex string (SHA-256)", () => {

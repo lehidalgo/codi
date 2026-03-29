@@ -3,11 +3,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
-import { resolveConfig } from "../../src/core/config/resolver.js";
-import { generate } from "../../src/core/generator/generator.js";
-import { registerAllAdapters } from "../../src/adapters/index.js";
-import { clearAdapters } from "../../src/core/generator/adapter-registry.js";
-import { Logger } from "../../src/core/output/logger.js";
+import { resolveConfig } from "#src/core/config/resolver.js";
+import { generate } from "#src/core/generator/generator.js";
+import { registerAllAdapters } from "#src/adapters/index.js";
+import { clearAdapters } from "#src/core/generator/adapter-registry.js";
+import { Logger } from "#src/core/output/logger.js";
 
 let tmpDir: string;
 

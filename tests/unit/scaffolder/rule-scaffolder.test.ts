@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { createRule } from "../../../src/core/scaffolder/rule-scaffolder.js";
+import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
 
 describe("rule scaffolder", () => {
   let tmpDir: string;

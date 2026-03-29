@@ -23,9 +23,9 @@ vi.mock("@clack/prompts", () => ({
 }));
 
 import * as p from "@clack/prompts";
-import { runInitWizard } from "../../../src/cli/init-wizard.js";
-import { getBuiltinPresetDefinition } from "../../../src/templates/presets/index.js";
-import { FLAG_CATALOG } from "../../../src/core/flags/flag-catalog.js";
+import { runInitWizard } from "#src/cli/init-wizard.js";
+import { getBuiltinPresetDefinition } from "#src/templates/presets/index.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
 
 /**
  * Mock the flag editing prompts that editPresetFlags() makes:

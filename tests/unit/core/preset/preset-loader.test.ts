@@ -5,7 +5,7 @@ import os from "node:os";
 import {
   loadPreset,
   loadPresetFromDir,
-} from "../../../../src/core/preset/preset-loader.js";
+} from "#src/core/preset/preset-loader.js";
 
 describe("loadPresetFromDir", () => {
   let tmpDir: string;

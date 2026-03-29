@@ -3,13 +3,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
-import { loadPreset } from "../../src/core/preset/preset-loader.js";
+import { loadPreset } from "#src/core/preset/preset-loader.js";
 import {
   getBuiltinPresetNames,
   BUILTIN_PRESETS,
-} from "../../src/templates/presets/index.js";
-import { resolveConfig } from "../../src/core/config/resolver.js";
-import { Logger } from "../../src/core/output/logger.js";
+} from "#src/templates/presets/index.js";
+import { resolveConfig } from "#src/core/config/resolver.js";
+import { Logger } from "#src/core/output/logger.js";
 
 let tmpDir: string;
 

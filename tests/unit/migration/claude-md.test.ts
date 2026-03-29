@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { importClaudeMd } from "../../../src/core/migration/claude-md.js";
+import { importClaudeMd } from "#src/core/migration/claude-md.js";
 
 const FIXTURE_DIR = path.join(
   __dirname,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { EvalCaseSchema, EvalsDataSchema } from "../../../src/schemas/evals.js";
+import { EvalCaseSchema, EvalsDataSchema } from "#src/schemas/evals.js";
 
 describe("EvalCaseSchema", () => {
   it("accepts valid eval case with all fields", () => {

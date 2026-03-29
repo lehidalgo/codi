@@ -39,10 +39,37 @@ function parse(data: unknown): string {
 - Use \`import type\` for type-only imports — keeps runtime bundle clean
 - Do not use index.ts barrel files for re-exporting — they break tree-shaking, inflate bundles, and slow down HMR and test runners
 - Import directly from the source module, not through a barrel
+- Never use deep relative imports (3+ levels of \`../\`) — they are fragile, unreadable, and break on file moves
+
+## Path Aliases — Eliminate Deep Relative Imports
+- Use Node.js subpath imports (\`#src/*\`) for projects using \`moduleResolution: "NodeNext"\` — native, zero-dependency, works at runtime without build tools
+- Use \`@/*\` path aliases for projects using \`moduleResolution: "Bundler"\` (Vite, Next.js, webpack 5) — requires bundler to resolve at build time
+- Configure aliases in both \`package.json\` (\`"imports"\` field) and \`tsconfig.json\` (\`"paths"\`) — ensures runtime resolution and IDE/type-checker support
+- Keep relative imports (\`./\`, \`../\`) for same-directory and immediate-neighbor files — aliases add noise for truly local references
+
+\`\`\`jsonc
+// package.json — Node.js subpath imports (NodeNext)
+{ "imports": { "#src/*": "./src/*" } }
+
+// tsconfig.json — type-checker + IDE resolution
+{ "compilerOptions": { "paths": { "#src/*": ["./src/*"] } } }
+\`\`\`
+
+\`\`\`typescript
+// BAD: deep relative import — fragile and unreadable
+import { UserSchema } from "../../../schemas/user.js";
+
+// GOOD: subpath import — clear, stable, refactor-proof
+import { UserSchema } from "#src/schemas/user.js";
+
+// GOOD: relative import for nearby sibling — locality is clear
+import { validate } from "../validation/rules.js";
+\`\`\`
 
 ## Module Configuration
 - Enable \`verbatimModuleSyntax: true\` in tsconfig — enforces explicit \`import type\` and prevents silent import elision
 - Pair with \`moduleResolution: "Bundler"\` for projects using modern bundlers (Vite, esbuild, webpack 5)
+- Use \`moduleResolution: "NodeNext"\` for Node.js libraries and CLIs — strict ESM compliance with native subpath import support
 
 ## Immutability
 - Prefer \`const\` over \`let\` — never use \`var\`

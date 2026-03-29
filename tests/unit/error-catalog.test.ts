@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
-import { ERROR_CATALOG } from "../../src/core/output/error-catalog.js";
-import { createError, zodToCodiErrors } from "../../src/core/output/errors.js";
-import { EXIT_CODES } from "../../src/core/output/exit-codes.js";
+import { ERROR_CATALOG } from "#src/core/output/error-catalog.js";
+import { createError, zodToCodiErrors } from "#src/core/output/errors.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 
 describe("ERROR_CATALOG", () => {
   it("has unique error codes", () => {
