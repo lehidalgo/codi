@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.
+category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: codi
 ---

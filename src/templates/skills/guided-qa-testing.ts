@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Step-by-step QA testing methodology. Coding agent drives the process one phase at a time — executing automatable checks, flagging human-only phases, planning bug fixes collaboratively, and tracking all results in a living QA report document.
+category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: codi
 ---

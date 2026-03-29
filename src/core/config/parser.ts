@@ -147,7 +147,7 @@ export async function scanSkills(
   const skills: NormalizedSkill[] = [];
   const errors: ReturnType<typeof createError>[] = [];
 
-  const files = await collectMarkdownFiles(skillsDir);
+  const files = await fg("**/SKILL.md", { cwd: skillsDir, absolute: true });
   for (const file of files) {
     const result = await parseSkillFile(file);
     if (!result.ok) {

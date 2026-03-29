@@ -4,6 +4,7 @@ description: |
   Compare local Codi artifacts against upstream templates. Use when the user wants
   to see what they have customized, check for upstream updates, or prepare to
   contribute improvements back to Codi. Also activate on /codi-compare-preset.
+category: Codi Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: codi
 ---

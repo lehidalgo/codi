@@ -207,6 +207,6 @@ Use `--no-verify` only in emergencies. Codi strongly discourages bypassing hooks
 
 - Use `--verbose` flag for detailed logging on any command
 - Use `--json` flag for machine-readable output
-- Check `.codi/audit.jsonl` for event history (generate, update, clean, init)
+- Check `.codi/operations-ledger.json` for event history (generate, update, clean, init)
 - Use `codi compliance` for a comprehensive health report
 - Use `codi revert --list` to see available backups if generation went wrong

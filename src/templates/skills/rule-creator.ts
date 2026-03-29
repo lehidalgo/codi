@@ -10,6 +10,7 @@ description: |
   Rule creation workflow. Use when the user asks to create, write, or define
   a coding rule, standard, or convention. Also activate when the user wants
   to enforce behavior, set constraints, or establish coding standards.
+category: Codi Platform
 managed_by: codi
 ---
 

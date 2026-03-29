@@ -4,6 +4,7 @@ export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
 description: Unified codi operations skill. Use when managing rules, skills, agents, commands, configuration, verification, or troubleshooting codi setup.
+category: Codi Platform
 managed_by: codi
 ---
 

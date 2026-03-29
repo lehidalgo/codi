@@ -35,6 +35,20 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   "error-recovery": skillTemplates.errorRecovery,
   "deck-engine": skillTemplates.deckEngine,
   "doc-engine": skillTemplates.docEngine,
+  "claude-api": skillTemplates.claudeApi,
+  pdf: skillTemplates.pdf,
+  xlsx: skillTemplates.xlsx,
+  docx: skillTemplates.docx,
+  "webapp-testing": skillTemplates.webappTesting,
+  pptx: skillTemplates.pptx,
+  "frontend-design": skillTemplates.frontendDesign,
+  "theme-factory": skillTemplates.themeFactory,
+  "web-artifacts-builder": skillTemplates.webArtifactsBuilder,
+  "algorithmic-art": skillTemplates.algorithmicArt,
+  "canvas-design": skillTemplates.canvasDesign,
+  "internal-comms": skillTemplates.internalComms,
+  "slack-gif-creator": skillTemplates.slackGifCreator,
+  "codi-docs": skillTemplates.codiDocs,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

@@ -10,6 +10,7 @@ description: |
   Command creation workflow. Use when the user asks to create, write, or define
   a slash command. Also activate when the user wants to add a custom CLI action,
   shortcut, or automation triggered by a slash prefix.
+category: Codi Platform
 managed_by: codi
 ---
 

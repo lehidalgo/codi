@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: MCP (Model Context Protocol) server usage. Use when configuring MCP servers, calling MCP tools, or debugging MCP connections.
+category: Developer Tools
 compatibility: [claude-code]
 managed_by: codi
 ---

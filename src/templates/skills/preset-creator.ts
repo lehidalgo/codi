@@ -3,6 +3,7 @@ import { MAX_NAME_LENGTH } from "../../constants.js";
 export const template = `---
 name: {{name}}
 description: Guided creation of CODI presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.
+category: Codi Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: codi
 ---

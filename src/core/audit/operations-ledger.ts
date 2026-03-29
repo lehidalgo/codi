@@ -56,7 +56,10 @@ export type OperationType =
   | 'update'
   | 'preset-install'
   | 'preset-remove'
-  | 'revert';
+  | 'revert'
+  | 'skill-feedback'
+  | 'skill-evolve'
+  | 'skill-stats';
 
 export interface LedgerOperation {
   type: OperationType;

@@ -3,6 +3,7 @@ import { formatHuman } from "../core/output/formatter.js";
 import { regenerateConfigs } from "./shared.js";
 import { initHandler } from "./init.js";
 import { generateHandler } from "./generate.js";
+import { docsHandler } from "./docs.js";
 import { doctorHandler } from "./doctor.js";
 import { cleanHandler } from "./clean.js";
 import { updateHandler } from "./update.js";
@@ -356,6 +357,11 @@ export async function handleMarketplace(projectRoot: string): Promise<void> {
 
 export async function handleContribute(projectRoot: string): Promise<void> {
   const result = await contributeHandler(projectRoot);
+  process.stdout.write(formatHuman(result) + "\n");
+}
+
+export async function handleDocs(projectRoot: string): Promise<void> {
+  const result = await docsHandler(projectRoot, {});
   process.stdout.write(formatHuman(result) + "\n");
 }
 

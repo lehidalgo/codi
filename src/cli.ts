@@ -19,6 +19,7 @@ import { registerRevertCommand } from "./cli/revert.js";
 import { registerMarketplaceCommand } from "./cli/marketplace.js";
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
+import { registerDocsCommand } from "./cli/docs.js";
 import { registerContributeCommand } from "./cli/contribute.js";
 import { registerSkillCommand } from "./cli/skill.js";
 import { runCommandCenter } from "./cli/hub.js";
@@ -54,6 +55,7 @@ registerRevertCommand(program);
 registerMarketplaceCommand(program);
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);
+registerDocsCommand(program);
 registerContributeCommand(program);
 registerSkillCommand(program);
 

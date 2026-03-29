@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Guide the user through contributing artifacts back to the codi project. Covers GitHub CLI setup, GitHub MCP configuration, PR creation, ZIP export, and manual workflows.
+category: Codi Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: codi
 ---

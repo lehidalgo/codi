@@ -3,6 +3,7 @@ import { GIT_COMMIT_FIRST_LINE_LIMIT } from '../../constants.js';
 export const template = `---
 name: {{name}}
 description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code changes.
+category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: codi
 ---
