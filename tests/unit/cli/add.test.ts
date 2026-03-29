@@ -9,9 +9,9 @@ import {
   addCommandHandler,
   addMcpServerHandler,
   addBrandHandler,
-} from "../../../src/cli/add.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+} from "#src/cli/add.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 
 describe("add rule command handler", () => {
   let tmpDir: string;

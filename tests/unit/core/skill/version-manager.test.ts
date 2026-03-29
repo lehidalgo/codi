@@ -7,7 +7,7 @@ import {
   listVersions,
   restoreVersion,
   diffVersions,
-} from "../../../../src/core/skill/version-manager.js";
+} from "#src/core/skill/version-manager.js";
 
 let tmpDir: string;
 let skillDir: string;

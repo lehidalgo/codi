@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { createSkill } from "../../../src/core/scaffolder/skill-scaffolder.js";
+import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
 
 describe("skill scaffolder", () => {
   let tmpDir: string;

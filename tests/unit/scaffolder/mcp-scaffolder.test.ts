@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { parse as parseYaml } from "yaml";
-import { createMcpServer } from "../../../src/core/scaffolder/mcp-scaffolder.js";
+import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
 
 describe("mcp scaffolder", () => {
   let tmpDir: string;

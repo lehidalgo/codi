@@ -115,11 +115,8 @@ import {
   handleAdd,
   handlePresetMenu,
   showCliOnly,
-} from "../../../src/cli/hub-handlers.js";
-import {
-  selectArtifactType,
-  runAddWizard,
-} from "../../../src/cli/add-wizard.js";
+} from "#src/cli/hub-handlers.js";
+import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
 
 describe("hub-handlers", () => {
   beforeEach(() => {

@@ -34,6 +34,7 @@ GOOD: users/, orders/, payments/ (all feature files colocated)
 - No circular dependencies between modules — circular deps make code untestable and hard to reason about
 - Dependencies flow inward: UI → services → domain → utilities
 - Use dependency injection for testability
+- Use path aliases (\`#src/*\`, \`@/*\`) for cross-module imports — makes dependency direction visible and survives file moves
 
 ## Design Principles
 - Reuse existing components before creating new ones — search the codebase first

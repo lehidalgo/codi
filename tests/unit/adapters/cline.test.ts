@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { clineAdapter } from "../../../src/adapters/cline.js";
+import { clineAdapter } from "#src/adapters/cline.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_LARGE } from "../../../src/constants.js";
+import { CONTEXT_TOKENS_LARGE } from "#src/constants.js";
 
 describe("cline adapter", () => {
   const tmpDir = join(tmpdir(), "codi-test-cline-" + Date.now());

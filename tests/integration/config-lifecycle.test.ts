@@ -3,18 +3,18 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
-import { resolveConfig } from "../../src/core/config/resolver.js";
+import { resolveConfig } from "#src/core/config/resolver.js";
 import {
   scanCodiDir,
   parseManifest,
   parseFlags,
   scanRules,
   scanSkills,
-} from "../../src/core/config/parser.js";
-import { composeConfig } from "../../src/core/config/composer.js";
-import type { ConfigLayer } from "../../src/core/config/composer.js";
-import { validateConfig } from "../../src/core/config/validator.js";
-import { Logger } from "../../src/core/output/logger.js";
+} from "#src/core/config/parser.js";
+import { composeConfig } from "#src/core/config/composer.js";
+import type { ConfigLayer } from "#src/core/config/composer.js";
+import { validateConfig } from "#src/core/config/validator.js";
+import { Logger } from "#src/core/output/logger.js";
 
 let tmpDir: string;
 

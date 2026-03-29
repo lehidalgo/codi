@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { stringify as stringifyYaml, parse as parseYaml } from "yaml";
-import { updateHandler } from "../../../src/cli/update.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { updateHandler } from "#src/cli/update.js";
+import { Logger } from "#src/core/output/logger.js";
 
 describe("update command handler", () => {
   let tmpDir: string;

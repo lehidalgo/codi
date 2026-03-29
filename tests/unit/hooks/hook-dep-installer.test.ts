@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   logMissingDeps,
   installMissingDeps,
-} from "../../../src/core/hooks/hook-dep-installer.js";
-import type { DependencyCheck } from "../../../src/core/hooks/hook-dependency-checker.js";
-import type { Logger } from "../../../src/core/output/logger.js";
+} from "#src/core/hooks/hook-dep-installer.js";
+import type { DependencyCheck } from "#src/core/hooks/hook-dependency-checker.js";
+import type { Logger } from "#src/core/output/logger.js";
 
 function createMockLogger(): Logger {
   return {

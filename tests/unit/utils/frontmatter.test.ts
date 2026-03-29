@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseFrontmatter } from "../../../src/utils/frontmatter.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 
 interface TestFrontmatter {
   name: string;

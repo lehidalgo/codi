@@ -7,8 +7,8 @@ import {
   resolveOrgFile,
   resolveTeamFile,
   normalizePath,
-} from "../../../src/utils/paths.js";
-import { PROJECT_DIR } from "../../../src/constants.js";
+} from "#src/utils/paths.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 describe("resolveCodiDir", () => {
   it("joins project root with .codi", () => {

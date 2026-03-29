@@ -10,9 +10,9 @@ import {
   stripCodiSection,
   globToGrepPattern,
   buildHuskyCommands,
-} from "../../../src/core/hooks/hook-installer.js";
-import type { HookEntry } from "../../../src/core/hooks/hook-registry.js";
-import type { InstallOptions } from "../../../src/core/hooks/hook-installer.js";
+} from "#src/core/hooks/hook-installer.js";
+import type { HookEntry } from "#src/core/hooks/hook-registry.js";
+import type { InstallOptions } from "#src/core/hooks/hook-installer.js";
 
 let tmpDir: string;
 

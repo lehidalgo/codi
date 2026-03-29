@@ -3,12 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { parse as parseYaml } from "yaml";
-import { presetCreateHandler } from "../../../src/cli/preset.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { presetCreateHandler } from "#src/cli/preset.js";
+import { Logger } from "#src/core/output/logger.js";
 import {
   PRESET_MANIFEST_FILENAME,
   PRESET_LOCK_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 describe("presetCreateHandler", () => {
   let tmpDir: string;

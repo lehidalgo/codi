@@ -9,7 +9,7 @@ import {
   renderCommandFields,
   renderBrandFields,
   renderManifestFields,
-} from "../../../../../src/core/docs/renderers/schema-renderers.js";
+} from "#src/core/docs/renderers/schema-renderers.js";
 
 // ---------------------------------------------------------------------------
 // extractZodFieldInfo

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   FeedbackEntrySchema,
   FeedbackIssueSchema,
-} from "../../../src/schemas/feedback.js";
+} from "#src/schemas/feedback.js";
 
 describe("FeedbackIssueSchema", () => {
   it("accepts valid issue", () => {

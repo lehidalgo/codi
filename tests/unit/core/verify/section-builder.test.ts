@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildVerificationSection } from "../../../../src/core/verify/section-builder.js";
-import type { VerificationData } from "../../../../src/core/verify/token.js";
+import { buildVerificationSection } from "#src/core/verify/section-builder.js";
+import type { VerificationData } from "#src/core/verify/token.js";
 
 describe("buildVerificationSection", () => {
   const data: VerificationData = {

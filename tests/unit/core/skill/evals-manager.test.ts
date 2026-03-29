@@ -7,8 +7,8 @@ import {
   writeEvals,
   updateEvalResult,
   getEvalsSummary,
-} from "../../../../src/core/skill/evals-manager.js";
-import type { EvalsData } from "../../../../src/schemas/evals.js";
+} from "#src/core/skill/evals-manager.js";
+import type { EvalsData } from "#src/schemas/evals.js";
 
 let tmpDir: string;
 

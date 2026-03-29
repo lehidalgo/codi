@@ -41,9 +41,10 @@ GOOD: \`createUser({ name, email, role, team, isActive, notify })\`
 
 ## File Organization
 - One primary export per file where practical — simplifies imports and dependency tracking
-- Group imports: external libraries, internal modules, types
+- Group imports: external libraries, path-aliased modules, relative modules, types
 - Order imports alphabetically within each group
 - Keep files focused on a single concern
+- Never use deep relative imports (3+ levels of \`../\`) — use path aliases (\`#src/*\`, \`@/*\`) instead; deep traversals are fragile and unreadable
 
 ## Type Discipline
 - Treat type errors as design feedback, not noise — fix the design, don't suppress the error

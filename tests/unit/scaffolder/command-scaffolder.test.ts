@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { createCommand } from "../../../src/core/scaffolder/command-scaffolder.js";
+import { createCommand } from "#src/core/scaffolder/command-scaffolder.js";
 
 describe("command scaffolder", () => {
   let tmpDir: string;

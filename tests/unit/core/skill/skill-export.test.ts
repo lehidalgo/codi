@@ -14,7 +14,7 @@ import {
   exportSkill,
   listAvailableSkills,
   type SkillExportFormat,
-} from "../../../../src/core/skill/skill-export.js";
+} from "#src/core/skill/skill-export.js";
 
 const VALID_SKILL_MD = `---
 name: test-skill

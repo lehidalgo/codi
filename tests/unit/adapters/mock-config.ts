@@ -1,4 +1,4 @@
-import type { NormalizedConfig } from "../../../src/types/config.js";
+import type { NormalizedConfig } from "#src/types/config.js";
 
 export function createMockConfig(
   overrides?: Partial<NormalizedConfig>,

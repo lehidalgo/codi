@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { createBrand } from "../../../src/core/scaffolder/brand-scaffolder.js";
+import { createBrand } from "#src/core/scaffolder/brand-scaffolder.js";
 
 describe("brand scaffolder", () => {
   let tmpDir: string;

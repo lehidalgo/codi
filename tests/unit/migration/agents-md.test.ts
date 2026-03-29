@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { importAgentsMd } from "../../../src/core/migration/agents-md.js";
+import { importAgentsMd } from "#src/core/migration/agents-md.js";
 
 const FIXTURE_DIR = path.join(
   __dirname,

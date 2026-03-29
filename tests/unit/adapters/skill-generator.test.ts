@@ -4,8 +4,8 @@ import {
   buildSkillMetadataOnly,
   generateSkillFiles,
   buildSkillCatalog,
-} from "../../../src/adapters/skill-generator.js";
-import type { NormalizedSkill } from "../../../src/types/config.js";
+} from "#src/adapters/skill-generator.js";
+import type { NormalizedSkill } from "#src/types/config.js";
 
 const baseSkill: NormalizedSkill = {
   name: "deploy",

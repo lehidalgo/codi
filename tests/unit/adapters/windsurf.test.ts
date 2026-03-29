@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { windsurfAdapter } from "../../../src/adapters/windsurf.js";
+import { windsurfAdapter } from "#src/adapters/windsurf.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_SMALL } from "../../../src/constants.js";
+import { CONTEXT_TOKENS_SMALL } from "#src/constants.js";
 
 describe("windsurf adapter", () => {
   const tmpDir = join(tmpdir(), "codi-test-windsurf-" + Date.now());

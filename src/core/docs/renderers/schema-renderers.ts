@@ -3,12 +3,12 @@
  * Generic introspection of Zod schemas to produce field documentation.
  */
 import { z } from "zod";
-import { RuleFrontmatterSchema } from "../../../schemas/rule.js";
-import { SkillFrontmatterSchema } from "../../../schemas/skill.js";
-import { AgentFrontmatterSchema } from "../../../schemas/agent.js";
-import { CommandFrontmatterSchema } from "../../../schemas/command.js";
-import { BrandFrontmatterSchema } from "../../../schemas/brand.js";
-import { CodiManifestSchema } from "../../../schemas/manifest.js";
+import { RuleFrontmatterSchema } from "#src/schemas/rule.js";
+import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
+import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
+import { CommandFrontmatterSchema } from "#src/schemas/command.js";
+import { BrandFrontmatterSchema } from "#src/schemas/brand.js";
+import { CodiManifestSchema } from "#src/schemas/manifest.js";
 
 // ---------------------------------------------------------------------------
 // Generic Zod field introspection

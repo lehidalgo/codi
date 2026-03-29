@@ -4,8 +4,8 @@ import {
   aggregateAllStats,
   formatStatsTable,
   formatDetailedStats,
-} from "../../../../src/core/skill/skill-stats.js";
-import type { FeedbackEntry } from "../../../../src/schemas/feedback.js";
+} from "#src/core/skill/skill-stats.js";
+import type { FeedbackEntry } from "#src/schemas/feedback.js";
 
 function makeEntry(
   overrides: Partial<FeedbackEntry> = {},

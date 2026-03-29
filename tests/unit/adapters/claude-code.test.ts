@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { claudeCodeAdapter } from "../../../src/adapters/claude-code.js";
-import { CONTEXT_TOKENS_LARGE } from "../../../src/constants.js";
+import { claudeCodeAdapter } from "#src/adapters/claude-code.js";
+import { CONTEXT_TOKENS_LARGE } from "#src/constants.js";
 import { createMockConfig } from "./mock-config.js";
 
 describe("claude-code adapter", () => {

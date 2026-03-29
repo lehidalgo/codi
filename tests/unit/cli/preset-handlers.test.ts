@@ -8,13 +8,13 @@ import {
   presetRemoveHandler,
   presetListEnhancedHandler,
   presetExportHandler,
-} from "../../../src/cli/preset-handlers.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+} from "#src/cli/preset-handlers.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PRESET_MANIFEST_FILENAME,
   PRESET_LOCK_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 describe("presetValidateHandler", () => {
   let tmpDir: string;
