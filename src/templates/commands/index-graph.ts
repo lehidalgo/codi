@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Full re-index of the code knowledge graph via graph-code MCP
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Perform a FULL re-index of the code knowledge graph for the current project.

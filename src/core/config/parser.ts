@@ -2,10 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import fg from "fast-glob";
+import { resolveProjectDir } from "../../utils/paths.js";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type {
-  CodiManifest,
+  ProjectManifest,
+  ManagedBy,
   NormalizedRule,
   NormalizedSkill,
   NormalizedCommand,
@@ -13,7 +15,7 @@ import type {
   NormalizedBrand,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
-import { CodiManifestSchema } from "../../schemas/manifest.js";
+import { ProjectManifestSchema } from "../../schemas/manifest.js";
 import { FlagDefinitionSchema } from "../../schemas/flag.js";
 import { RuleFrontmatterSchema } from "../../schemas/rule.js";
 import { SkillFrontmatterSchema } from "../../schemas/skill.js";
@@ -21,7 +23,7 @@ import { AgentFrontmatterSchema } from "../../schemas/agent.js";
 import { CommandFrontmatterSchema } from "../../schemas/command.js";
 import { BrandFrontmatterSchema } from "../../schemas/brand.js";
 import { McpConfigSchema } from "../../schemas/mcp.js";
-import { createError, zodToCodiErrors } from "../output/errors.js";
+import { createError, zodToProjectErrors } from "../output/errors.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 import type { McpConfig } from "../../types/config.js";
 import {
@@ -30,8 +32,8 @@ import {
   MCP_FILENAME,
 } from "../../constants.js";
 
-export interface ParsedCodiDir {
-  manifest: CodiManifest;
+export interface ParsedProjectDir {
+  manifest: ProjectManifest;
   flags: Record<string, FlagDefinition>;
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
@@ -63,26 +65,26 @@ async function readYamlFile(filePath: string): Promise<Result<unknown>> {
 }
 
 export async function parseManifest(
-  codiDir: string,
-): Promise<Result<CodiManifest>> {
-  const manifestPath = path.join(codiDir, MANIFEST_FILENAME);
+  configDir: string,
+): Promise<Result<ProjectManifest>> {
+  const manifestPath = path.join(configDir, MANIFEST_FILENAME);
   if (!(await fileExists(manifestPath))) {
     return err([createError("E_CONFIG_NOT_FOUND", { path: manifestPath })]);
   }
   const rawResult = await readYamlFile(manifestPath);
   if (!rawResult.ok) return rawResult;
 
-  const parsed = CodiManifestSchema.safeParse(rawResult.data);
+  const parsed = ProjectManifestSchema.safeParse(rawResult.data);
   if (!parsed.success) {
-    return err(zodToCodiErrors(parsed.error, manifestPath));
+    return err(zodToProjectErrors(parsed.error, manifestPath));
   }
-  return ok(parsed.data as CodiManifest);
+  return ok(parsed.data as ProjectManifest);
 }
 
 export async function parseFlags(
-  codiDir: string,
+  configDir: string,
 ): Promise<Result<Record<string, FlagDefinition>>> {
-  const flagsPath = path.join(codiDir, FLAGS_FILENAME);
+  const flagsPath = path.join(configDir, FLAGS_FILENAME);
   if (!(await fileExists(flagsPath))) {
     return ok({});
   }
@@ -100,7 +102,7 @@ export async function parseFlags(
   for (const [key, value] of Object.entries(rawObj)) {
     const parsed = FlagDefinitionSchema.safeParse(value);
     if (!parsed.success) {
-      errors.push(...zodToCodiErrors(parsed.error, `${flagsPath}#${key}`));
+      errors.push(...zodToProjectErrors(parsed.error, `${flagsPath}#${key}`));
     } else {
       flags[key] = parsed.data as FlagDefinition;
     }
@@ -192,7 +194,7 @@ async function parseCommandFile(
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = CommandFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
-      return err(zodToCodiErrors(parsed.error, filePath));
+      return err(zodToProjectErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
     const managedBy = (data["managed_by"] as string) ?? undefined;
@@ -200,7 +202,7 @@ async function parseCommandFile(
       name: fm.name,
       description: fm.description,
       content,
-      managedBy: managedBy as "codi" | "user" | undefined,
+      managedBy: managedBy as ManagedBy | undefined,
     });
   } catch (cause) {
     return err([
@@ -243,7 +245,7 @@ async function parseAgentFile(
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = AgentFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
-      return err(zodToCodiErrors(parsed.error, filePath));
+      return err(zodToProjectErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
     return ok({
@@ -306,7 +308,7 @@ async function parseBrandFile(
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = BrandFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
-      return err(zodToCodiErrors(parsed.error, filePath));
+      return err(zodToProjectErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
     return ok({
@@ -333,7 +335,7 @@ export async function parseSkillFile(
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = SkillFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
-      return err(zodToCodiErrors(parsed.error, filePath));
+      return err(zodToProjectErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
     const pathsRaw = fm.paths;
@@ -379,7 +381,7 @@ async function parseRuleFile(
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const parsed = RuleFrontmatterSchema.safeParse(data);
     if (!parsed.success) {
-      return err(zodToCodiErrors(parsed.error, filePath));
+      return err(zodToProjectErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
     return ok({
@@ -403,9 +405,9 @@ async function parseRuleFile(
 }
 
 async function scanMcpServersDir(
-  codiDir: string,
+  configDir: string,
 ): Promise<Record<string, Record<string, unknown>>> {
-  const mcpServersDir = path.join(codiDir, "mcp-servers");
+  const mcpServersDir = path.join(configDir, "mcp-servers");
   const servers: Record<string, Record<string, unknown>> = {};
 
   if (!(await fileExists(mcpServersDir))) return servers;
@@ -423,10 +425,10 @@ async function scanMcpServersDir(
   return servers;
 }
 
-async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
+async function parseMcpConfig(configDir: string): Promise<Result<McpConfig>> {
   // 1. Read legacy mcp.yaml
   let legacyServers: Record<string, Record<string, unknown>> = {};
-  const mcpPath = path.join(codiDir, MCP_FILENAME);
+  const mcpPath = path.join(configDir, MCP_FILENAME);
   if (await fileExists(mcpPath)) {
     const rawResult = await readYamlFile(mcpPath);
     if (rawResult.ok) {
@@ -437,7 +439,7 @@ async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
           Record<string, unknown>
         >;
       } else {
-        return err(zodToCodiErrors(parsed.error, mcpPath));
+        return err(zodToProjectErrors(parsed.error, mcpPath));
       }
     } else {
       return rawResult;
@@ -445,7 +447,7 @@ async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
   }
 
   // 2. Scan individual files from mcp-servers/
-  const individualServers = await scanMcpServersDir(codiDir);
+  const individualServers = await scanMcpServersDir(configDir);
 
   // 3. Merge: individual files take precedence over legacy
   const merged = { ...legacyServers, ...individualServers };
@@ -453,36 +455,36 @@ async function parseMcpConfig(codiDir: string): Promise<Result<McpConfig>> {
   return ok({ servers: merged } as McpConfig);
 }
 
-export async function scanCodiDir(
+export async function scanProjectDir(
   projectRoot: string,
-): Promise<Result<ParsedCodiDir>> {
-  const codiDir = path.join(projectRoot, ".codi");
-  if (!(await fileExists(codiDir))) {
-    return err([createError("E_CONFIG_NOT_FOUND", { path: codiDir })]);
+): Promise<Result<ParsedProjectDir>> {
+  const configDir = resolveProjectDir(projectRoot);
+  if (!(await fileExists(configDir))) {
+    return err([createError("E_CONFIG_NOT_FOUND", { path: configDir })]);
   }
 
-  const manifestResult = await parseManifest(codiDir);
+  const manifestResult = await parseManifest(configDir);
   if (!manifestResult.ok) return manifestResult;
 
-  const flagsResult = await parseFlags(codiDir);
+  const flagsResult = await parseFlags(configDir);
   if (!flagsResult.ok) return flagsResult;
 
-  const rulesResult = await scanRules(path.join(codiDir, "rules"));
+  const rulesResult = await scanRules(path.join(configDir, "rules"));
   if (!rulesResult.ok) return rulesResult;
 
-  const skillsResult = await scanSkills(path.join(codiDir, "skills"));
+  const skillsResult = await scanSkills(path.join(configDir, "skills"));
   if (!skillsResult.ok) return skillsResult;
 
-  const commandsResult = await scanCommands(path.join(codiDir, "commands"));
+  const commandsResult = await scanCommands(path.join(configDir, "commands"));
   if (!commandsResult.ok) return commandsResult;
 
-  const agentsResult = await scanAgents(path.join(codiDir, "agents"));
+  const agentsResult = await scanAgents(path.join(configDir, "agents"));
   if (!agentsResult.ok) return agentsResult;
 
-  const brandsResult = await scanBrands(path.join(codiDir, "brands"));
+  const brandsResult = await scanBrands(path.join(configDir, "brands"));
   if (!brandsResult.ok) return brandsResult;
 
-  const mcpResult = await parseMcpConfig(codiDir);
+  const mcpResult = await parseMcpConfig(configDir);
   if (!mcpResult.ok) return mcpResult;
 
   return ok({

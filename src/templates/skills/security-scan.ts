@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Security analysis workflow. Use to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}

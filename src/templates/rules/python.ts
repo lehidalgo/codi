@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Python-specific conventions — typing, data models, testing, resource management
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: python
 ---
 

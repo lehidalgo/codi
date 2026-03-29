@@ -2,6 +2,10 @@ import {
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_ARTIFACT_CHARS,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
 } from "../../constants.js";
 
 export const template = `---
@@ -10,8 +14,8 @@ description: |
   Command creation workflow. Use when the user asks to create, write, or define
   a slash command. Also activate when the user wants to add a custom CLI action,
   shortcut, or automation triggered by a slash prefix.
-category: Codi Platform
-managed_by: codi
+category: ${PROJECT_NAME_DISPLAY} Platform
+managed_by: ${PROJECT_NAME}
 ---
 
 # Command Creator
@@ -42,10 +46,10 @@ Do NOT proceed until questions 1-2 have clear answers.
 **[CODING AGENT]** Scaffold the command:
 
 \\\`\\\`\\\`bash
-codi add command <name>
+${PROJECT_CLI} add command <name>
 \\\`\\\`\\\`
 
-This creates \\\`.codi/commands/<name>.md\\\` with a blank skeleton.
+This creates \\\`${PROJECT_DIR}/commands/<name>.md\\\` with a blank skeleton.
 
 Fill in the YAML frontmatter:
 
@@ -132,7 +136,7 @@ Report to the user:
 - [ ] Exact bash commands are included where applicable
 - [ ] \\\`name\\\` in frontmatter matches the filename
 - [ ] Description starts with a verb
-- [ ] No overlap with existing commands in \\\`.codi/commands/\\\`
+- [ ] No overlap with existing commands in \\\`${PROJECT_DIR}/commands/\\\`
 - [ ] Note: commands are currently Claude Code only
 
 ### Step 6 — Register
@@ -140,16 +144,16 @@ Report to the user:
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
-codi generate
-codi doctor
+${PROJECT_CLI} generate
+${PROJECT_CLI} doctor
 \\\`\\\`\\\`
 
-1. \\\`codi generate\\\` distributes the command to agent configuration
-2. \\\`codi doctor\\\` checks for remaining issues
+1. \\\`${PROJECT_CLI} generate\\\` distributes the command to agent configuration
+2. \\\`${PROJECT_CLI} doctor\\\` checks for remaining issues
 
 ## Available Command Templates
 
-Run \\\`codi add command --all\\\` to list all templates. Categories include:
+Run \\\`${PROJECT_CLI} add command --all\\\` to list all templates. Categories include:
 
 | Category | Templates |
 |----------|-----------|
@@ -164,7 +168,7 @@ Run \\\`codi add command --all\\\` to list all templates. Categories include:
 
 ## Constraints
 
-- Do NOT create commands that duplicate existing ones — check \\\`.codi/commands/\\\` first
+- Do NOT create commands that duplicate existing ones — check \\\`${PROJECT_DIR}/commands/\\\` first
 - Do NOT exceed 50 lines in the body — commands are meant to be short
 - Do NOT create commands without exact bash commands for executable steps
 - Do NOT include complex branching logic — split into separate commands instead

@@ -12,14 +12,14 @@ import {
   MAX_FEEDBACK_ENTRIES,
 } from "../../constants.js";
 
-function feedbackDir(codiDir: string): string {
-  return path.join(codiDir, FEEDBACK_DIR);
+function feedbackDir(configDir: string): string {
+  return path.join(configDir, FEEDBACK_DIR);
 }
 
 export async function readAllFeedback(
-  codiDir: string,
+  configDir: string,
 ): Promise<Result<FeedbackEntry[]>> {
-  const dir = feedbackDir(codiDir);
+  const dir = feedbackDir(configDir);
   const log = Logger.getInstance();
 
   let files: string[];
@@ -49,19 +49,19 @@ export async function readAllFeedback(
 }
 
 export async function readFeedbackForSkill(
-  codiDir: string,
+  configDir: string,
   skillName: string,
 ): Promise<Result<FeedbackEntry[]>> {
-  const allResult = await readAllFeedback(codiDir);
+  const allResult = await readAllFeedback(configDir);
   if (!allResult.ok) return allResult;
   return ok(allResult.data.filter((e) => e.skillName === skillName));
 }
 
 export async function writeFeedback(
-  codiDir: string,
+  configDir: string,
   entry: FeedbackEntry,
 ): Promise<Result<string>> {
-  const dir = feedbackDir(codiDir);
+  const dir = feedbackDir(configDir);
 
   const parsed = FeedbackEntrySchema.safeParse(entry);
   if (!parsed.success) {
@@ -102,13 +102,13 @@ export async function writeFeedback(
 }
 
 export async function pruneFeedback(
-  codiDir: string,
+  configDir: string,
   maxAgeDays: number = MAX_FEEDBACK_AGE_DAYS,
 ): Promise<Result<number>> {
-  const allResult = await readAllFeedback(codiDir);
+  const allResult = await readAllFeedback(configDir);
   if (!allResult.ok) return allResult;
 
-  const dir = feedbackDir(codiDir);
+  const dir = feedbackDir(configDir);
   const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
   let pruned = 0;
 
@@ -137,7 +137,7 @@ export async function pruneFeedback(
   }
 
   // Enforce MAX_FEEDBACK_ENTRIES per skill
-  const remaining = await readAllFeedback(codiDir);
+  const remaining = await readAllFeedback(configDir);
   if (remaining.ok) {
     const bySkill = new Map<string, FeedbackEntry[]>();
     for (const e of remaining.data) {

@@ -2,7 +2,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type { NormalizedConfig } from "../../types/config.js";
 import type { ResolvedFlags, FlagDefinition } from "../../types/flags.js";
-import type { CodiError } from "../output/types.js";
+import type { ProjectError } from "../output/types.js";
 import { createError } from "../output/errors.js";
 
 export type ConfigLayerLevel =
@@ -38,7 +38,7 @@ const DEFAULT_CONFIG: NormalizedConfig = {
 };
 
 export function composeConfig(layers: ConfigLayer[]): Result<NormalizedConfig> {
-  const errors: CodiError[] = [];
+  const errors: ProjectError[] = [];
   const lockedFlags: LockedFlag[] = [];
   const merged: NormalizedConfig = structuredClone(DEFAULT_CONFIG);
 
@@ -90,8 +90,8 @@ function mergeFlags(
   incoming: ResolvedFlags,
   source: string,
   lockedFlags: LockedFlag[],
-): CodiError[] {
-  const errors: CodiError[] = [];
+): ProjectError[] {
+  const errors: ProjectError[] = [];
 
   for (const [key, flag] of Object.entries(incoming)) {
     const locked = lockedFlags.find((l) => l.flag === key);

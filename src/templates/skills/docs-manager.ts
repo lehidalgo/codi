@@ -1,18 +1,24 @@
+import {
+  PROJECT_CLI,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: |
-  Codi self-documentation skill. Use when the user asks to build, update,
-  or check the Codi project documentation. Also activate when the user mentions
+  ${PROJECT_NAME_DISPLAY} self-documentation skill. Use when the user asks to build, update,
+  or check the ${PROJECT_NAME_DISPLAY} project documentation. Also activate when the user mentions
   docs freshness, stale documentation, building the docs site, or generating
   the skill catalog HTML page.
-category: Codi Platform
-managed_by: codi
+category: ${PROJECT_NAME_DISPLAY} Platform
+managed_by: ${PROJECT_NAME}
 user-invocable: true
 ---
 
-# Codi Documentation Manager
+# ${PROJECT_NAME_DISPLAY} Documentation Manager
 
-Maintains Codi's own documentation using a **marker-based code-driven generator**.
+Maintains ${PROJECT_NAME_DISPLAY}'s own documentation using a **marker-based code-driven generator**.
 Data tables (flag lists, schema fields, template catalogs, preset comparisons) are
 auto-generated from code. Prose (explanations, examples, directory structures) is
 human-authored and preserved between markers.
@@ -52,13 +58,13 @@ Everything outside markers is preserved exactly as written.
 **[CODING AGENT]** Run validation to check if any generated sections are stale:
 
 \\\`\\\`\\\`bash
-npx codi docs --validate
+npx ${PROJECT_CLI} docs --validate
 \\\`\\\`\\\`
 
 If stale sections are detected, regenerate them:
 
 \\\`\\\`\\\`bash
-npx codi docs --generate
+npx ${PROJECT_CLI} docs --generate
 \\\`\\\`\\\`
 
 This automatically updates all 21 data tables from their source-of-truth code structures.
@@ -95,10 +101,10 @@ For each significant change (new artifact type, renamed field, new adapter, remo
 
 \\\`\\\`\\\`bash
 # Build the HTML skill catalog site
-npx codi docs --html
+npx ${PROJECT_CLI} docs --html
 
 # Optionally export JSON for machine consumption
-npx codi docs --json
+npx ${PROJECT_CLI} docs --json
 \\\`\\\`\\\`
 
 This produces \\\`docs/_site/index.html\\\` — a self-contained HTML file with:
@@ -112,7 +118,7 @@ This produces \\\`docs/_site/index.html\\\` — a self-contained HTML file with:
 **[CODING AGENT]** Confirm everything is in sync:
 
 \\\`\\\`\\\`bash
-npx codi docs --validate
+npx ${PROJECT_CLI} docs --validate
 \\\`\\\`\\\`
 
 Also check for broken relative links:
@@ -140,7 +146,7 @@ docs/
   configuration.md       # Manifest, flags, modes, layers, MCP (4 generated sections)
   presets.md             # Built-in presets, create/install/export (2 generated sections)
   workflows.md           # Daily usage, CI/CD, marketplace (manual)
-  migration.md           # Adopting Codi in existing projects (manual)
+  migration.md           # Adopting ${PROJECT_NAME_DISPLAY} in existing projects (manual)
   troubleshooting.md     # Common issues and fixes (manual)
   deprecated/            # Archive of old docs (spec, QA, roadmaps, research)
 \\\`\\\`\\\`

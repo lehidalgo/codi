@@ -11,16 +11,17 @@ import {
   loadCommandTemplate,
   AVAILABLE_COMMAND_TEMPLATES,
 } from "#src/core/scaffolder/command-template-loader.js";
+import { prefixedName } from "#src/constants.js";
 
 describe("template-loader (rules)", () => {
   it("has available templates", () => {
     expect(AVAILABLE_TEMPLATES.length).toBeGreaterThan(0);
-    expect(AVAILABLE_TEMPLATES).toContain("security");
-    expect(AVAILABLE_TEMPLATES).toContain("testing");
+    expect(AVAILABLE_TEMPLATES).toContain(prefixedName("security"));
+    expect(AVAILABLE_TEMPLATES).toContain(prefixedName("testing"));
   });
 
   it("loads a known template", () => {
-    const result = loadTemplate("security");
+    const result = loadTemplate(prefixedName("security"));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.length).toBeGreaterThan(0);
@@ -35,12 +36,12 @@ describe("template-loader (rules)", () => {
 describe("agent-template-loader", () => {
   it("has available templates", () => {
     expect(AVAILABLE_AGENT_TEMPLATES.length).toBeGreaterThan(0);
-    expect(AVAILABLE_AGENT_TEMPLATES).toContain("code-reviewer");
-    expect(AVAILABLE_AGENT_TEMPLATES).toContain("test-generator");
+    expect(AVAILABLE_AGENT_TEMPLATES).toContain(prefixedName("code-reviewer"));
+    expect(AVAILABLE_AGENT_TEMPLATES).toContain(prefixedName("test-generator"));
   });
 
   it("loads a known template", () => {
-    const result = loadAgentTemplate("code-reviewer");
+    const result = loadAgentTemplate(prefixedName("code-reviewer"));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.length).toBeGreaterThan(0);
@@ -55,12 +56,12 @@ describe("agent-template-loader", () => {
 describe("command-template-loader", () => {
   it("has available templates", () => {
     expect(AVAILABLE_COMMAND_TEMPLATES.length).toBeGreaterThan(0);
-    expect(AVAILABLE_COMMAND_TEMPLATES).toContain("commit");
-    expect(AVAILABLE_COMMAND_TEMPLATES).toContain("review");
+    expect(AVAILABLE_COMMAND_TEMPLATES).toContain(prefixedName("commit"));
+    expect(AVAILABLE_COMMAND_TEMPLATES).toContain(prefixedName("review"));
   });
 
   it("loads a known template", () => {
-    const result = loadCommandTemplate("commit");
+    const result = loadCommandTemplate(prefixedName("commit"));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.length).toBeGreaterThan(0);

@@ -4,7 +4,7 @@ import { getAvailableActions, HUB_ACTIONS } from "#src/cli/hub.js";
 describe("Command Center hub", () => {
   describe("HUB_ACTIONS", () => {
     it("covers all CLI commands", () => {
-      // 18 CLI commands minus `codi` itself = every command has a hub action
+      // 18 CLI commands minus the root command itself = every command has a hub action
       expect(HUB_ACTIONS.length).toBeGreaterThanOrEqual(17);
     });
 

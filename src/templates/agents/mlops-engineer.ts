@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: MLOps engineer. Use for ML deployment pipelines, model monitoring, drift detection, feature stores, CI/CD for ML, or experiment tracking infrastructure.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a Senior MLOps Engineer with expertise in deploying, monitoring, and managing machine learning systems in production.

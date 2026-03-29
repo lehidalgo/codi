@@ -87,7 +87,7 @@ export function groupByCategory(entries: SkillDocEntry[]): CategoryGroup[] {
 
 /**
  * Export skill catalog as JSON for consumption by build scripts.
- * Used by the codi-docs skill's build-docs script.
+ * Used by the documentation skill's build-docs script.
  */
 export function exportSkillCatalogJson(): string {
   const entries = collectSkillEntries();

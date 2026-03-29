@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
+import { PROJECT_DIR } from "#src/constants.js";
 import {
-  runCodi,
+  runCli,
   createTempProject,
   fileExists,
   readFile,
@@ -19,7 +20,7 @@ beforeEach(async () => {
   cleanup = project.cleanup;
 
   // Init project
-  await runCodi(projectDir, ["init", "--agents", "claude-code"]);
+  await runCli(projectDir, ["init", "--agents", "claude-code"]);
 });
 
 afterEach(async () => {
@@ -28,10 +29,15 @@ afterEach(async () => {
 
 describe("E2E: preset operations", () => {
   it("creates a custom preset", async () => {
-    const result = await runCodi(projectDir, ["preset", "create", "my-preset"]);
+    const result = await runCli(projectDir, ["preset", "create", "my-preset"]);
     expect(result.exitCode).toBe(0);
 
-    const presetDir = path.join(projectDir, ".codi", "presets", "my-preset");
+    const presetDir = path.join(
+      projectDir,
+      PROJECT_DIR,
+      "presets",
+      "my-preset",
+    );
     expect(await fileExists(presetDir)).toBe(true);
     expect(await fileExists(path.join(presetDir, "preset.yaml"))).toBe(true);
 
@@ -42,7 +48,7 @@ describe("E2E: preset operations", () => {
   });
 
   it("lists presets with --builtin", async () => {
-    const result = await runCodi(projectDir, ["preset", "list", "--builtin"]);
+    const result = await runCli(projectDir, ["preset", "list", "--builtin"]);
     expect(result.exitCode).toBe(0);
 
     // JSON output should contain presets array
@@ -54,9 +60,9 @@ describe("E2E: preset operations", () => {
 
   it("validates a custom preset", async () => {
     // Create preset first
-    await runCodi(projectDir, ["preset", "create", "valid-preset"]);
+    await runCli(projectDir, ["preset", "create", "valid-preset"]);
 
-    const result = await runCodi(projectDir, [
+    const result = await runCli(projectDir, [
       "preset",
       "validate",
       "valid-preset",
@@ -65,29 +71,34 @@ describe("E2E: preset operations", () => {
   });
 
   it("removes a custom preset", async () => {
-    await runCodi(projectDir, ["preset", "create", "removable"]);
+    await runCli(projectDir, ["preset", "create", "removable"]);
 
-    const presetDir = path.join(projectDir, ".codi", "presets", "removable");
+    const presetDir = path.join(
+      projectDir,
+      PROJECT_DIR,
+      "presets",
+      "removable",
+    );
     expect(await fileExists(presetDir)).toBe(true);
 
-    const result = await runCodi(projectDir, ["preset", "remove", "removable"]);
+    const result = await runCli(projectDir, ["preset", "remove", "removable"]);
     expect(result.exitCode).toBe(0);
     expect(await fileExists(presetDir)).toBe(false);
   });
 
   it("remove fails for nonexistent preset", async () => {
-    const result = await runCodi(projectDir, ["preset", "remove", "ghost"]);
+    const result = await runCli(projectDir, ["preset", "remove", "ghost"]);
     expect(result.exitCode).not.toBe(0);
   });
 });
 
 describe("E2E: update with preset flags", () => {
   it("update --preset strict changes flags", async () => {
-    const result = await runCodi(projectDir, ["update", "--preset", "strict"]);
+    const result = await runCli(projectDir, ["update", "--preset", "strict"]);
     expect(result.exitCode).toBe(0);
 
     const flagsContent = await readFile(
-      path.join(projectDir, ".codi", "flags.yaml"),
+      path.join(projectDir, PROJECT_DIR, "flags.yaml"),
     );
     const flags = parseYaml(flagsContent) as Record<
       string,
@@ -98,7 +109,7 @@ describe("E2E: update with preset flags", () => {
   });
 
   it("update --preset invalid fails", async () => {
-    const result = await runCodi(projectDir, [
+    const result = await runCli(projectDir, [
       "update",
       "--preset",
       "nonexistent",
@@ -108,13 +119,13 @@ describe("E2E: update with preset flags", () => {
 
   it("update --dry-run does not change files", async () => {
     const flagsBefore = await readFile(
-      path.join(projectDir, ".codi", "flags.yaml"),
+      path.join(projectDir, PROJECT_DIR, "flags.yaml"),
     );
 
-    await runCodi(projectDir, ["update", "--preset", "strict", "--dry-run"]);
+    await runCli(projectDir, ["update", "--preset", "strict", "--dry-run"]);
 
     const flagsAfter = await readFile(
-      path.join(projectDir, ".codi", "flags.yaml"),
+      path.join(projectDir, PROJECT_DIR, "flags.yaml"),
     );
     expect(flagsAfter).toBe(flagsBefore);
   });

@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
@@ -62,10 +62,10 @@ export async function skillExportHandler(
     });
   }
 
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
   const result = await exportSkill({
     name,
-    codiDir,
+    configDir,
     outputDir: output,
     format: format as SkillExportFormat,
   });
@@ -109,10 +109,10 @@ export async function skillFeedbackHandler(
   skillName?: string,
   limit?: number,
 ): Promise<CommandResult<FeedbackData>> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
   const result = skillName
-    ? await readFeedbackForSkill(codiDir, skillName)
-    : await readAllFeedback(codiDir);
+    ? await readFeedbackForSkill(configDir, skillName)
+    : await readAllFeedback(configDir);
 
   if (!result.ok) {
     return createCommandResult({
@@ -151,8 +151,8 @@ export async function skillStatsHandler(
   skillName?: string,
 ): Promise<CommandResult<StatsData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
-  const result = await readAllFeedback(codiDir);
+  const configDir = resolveProjectDir(projectRoot);
+  const result = await readAllFeedback(configDir);
 
   if (!result.ok) {
     return createCommandResult({

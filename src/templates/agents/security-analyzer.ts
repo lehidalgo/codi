@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Security vulnerability analyzer. Use for security-critical code like auth, payments, data handling, or when auditing for vulnerabilities.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are an expert security analyst identifying vulnerabilities and security issues.

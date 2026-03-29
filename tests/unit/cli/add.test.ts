@@ -12,13 +12,14 @@ import {
 } from "#src/cli/add.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("add rule command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-`));
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -41,7 +42,7 @@ describe("add rule command handler", () => {
 
   it("creates a rule file with security template", async () => {
     const result = await addRuleHandler(tmpDir, "my-security", {
-      template: "security",
+      template: prefixedName("security"),
     });
 
     expect(result.success).toBe(true);
@@ -53,7 +54,7 @@ describe("add rule command handler", () => {
 
   it("creates a rule file with testing template", async () => {
     const result = await addRuleHandler(tmpDir, "test-rules", {
-      template: "testing",
+      template: prefixedName("testing"),
     });
 
     expect(result.success).toBe(true);
@@ -86,8 +87,10 @@ describe("add skill command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-skill-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-add-skill-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -112,7 +115,7 @@ describe("add skill command handler", () => {
     const result = await addSkillHandler(tmpDir, "test-skill", {});
     expect(result.success).toBe(true);
 
-    const skillDir = path.join(tmpDir, ".codi", "skills", "test-skill");
+    const skillDir = path.join(tmpDir, PROJECT_DIR, "skills", "test-skill");
     const dirs = ["evals", "scripts", "references", "assets"];
     for (const dir of dirs) {
       const stat = await fs.stat(path.join(skillDir, dir));
@@ -125,7 +128,7 @@ describe("add skill command handler", () => {
 
     const evalsPath = path.join(
       tmpDir,
-      ".codi",
+      PROJECT_DIR,
       "skills",
       "eval-skill",
       "evals",
@@ -158,11 +161,11 @@ describe("add skill command handler", () => {
 
   it("creates a skill with commit template", async () => {
     const result = await addSkillHandler(tmpDir, "my-commit-skill", {
-      template: "commit",
+      template: prefixedName("commit"),
     });
 
     expect(result.success).toBe(true);
-    expect(result.data.template).toBe("commit");
+    expect(result.data.template).toBe(prefixedName("commit"));
     const content = await fs.readFile(result.data.path, "utf-8");
     expect(content).toContain("name: my-commit-skill");
   });
@@ -178,8 +181,10 @@ describe("add agent command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-agent-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-add-agent-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -222,11 +227,11 @@ describe("add agent command handler", () => {
 
   it("creates an agent file with code-reviewer template", async () => {
     const result = await addAgentHandler(tmpDir, "my-reviewer", {
-      template: "code-reviewer",
+      template: prefixedName("code-reviewer"),
     });
 
     expect(result.success).toBe(true);
-    expect(result.data.template).toBe("code-reviewer");
+    expect(result.data.template).toBe(prefixedName("code-reviewer"));
     const content = await fs.readFile(result.data.path, "utf-8");
     expect(content).toContain("name: my-reviewer");
   });
@@ -242,8 +247,10 @@ describe("add command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-cmd-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-add-cmd-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -285,11 +292,11 @@ describe("add command handler", () => {
 
   it("creates a command file with commit template", async () => {
     const result = await addCommandHandler(tmpDir, "my-commit", {
-      template: "commit",
+      template: prefixedName("commit"),
     });
 
     expect(result.success).toBe(true);
-    expect(result.data.template).toBe("commit");
+    expect(result.data.template).toBe(prefixedName("commit"));
     const content = await fs.readFile(result.data.path, "utf-8");
     expect(content).toContain("name: my-commit");
   });
@@ -299,8 +306,10 @@ describe("add mcp-server command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-mcp-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-add-mcp-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -329,7 +338,7 @@ describe("add mcp-server command handler", () => {
     expect(result.success).toBe(true);
     expect(result.data.template).toBe("github");
     const content = await fs.readFile(result.data.path, "utf-8");
-    expect(content).toContain("managed_by: codi");
+    expect(content).toContain(`managed_by: ${PROJECT_NAME}`);
   });
 
   it("fails with invalid MCP server name", async () => {
@@ -363,8 +372,10 @@ describe("add brand command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-brand-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-add-brand-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -389,7 +400,7 @@ describe("add brand command handler", () => {
     const result = await addBrandHandler(tmpDir, "test-brand");
     expect(result.success).toBe(true);
 
-    const brandDir = path.join(tmpDir, ".codi", "brands", "test-brand");
+    const brandDir = path.join(tmpDir, PROJECT_DIR, "brands", "test-brand");
     for (const sub of ["assets", "references"]) {
       const stat = await fs.stat(path.join(brandDir, sub));
       expect(stat.isDirectory()).toBe(true);
@@ -413,8 +424,10 @@ describe("add handler shared behaviors", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-add-shared-"));
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-add-shared-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 

@@ -4,10 +4,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { windsurfAdapter } from "#src/adapters/windsurf.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_SMALL } from "#src/constants.js";
+import {
+  CONTEXT_TOKENS_SMALL,
+  PROJECT_NAME,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("windsurf adapter", () => {
-  const tmpDir = join(tmpdir(), "codi-test-windsurf-" + Date.now());
+  const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-windsurf-` + Date.now());
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true });
@@ -78,7 +82,7 @@ describe("windsurf adapter", () => {
     expect(mainFile).toBeDefined();
     expect(mainFile!.content).toContain("## Workflow");
     expect(mainFile!.hash).toBeTruthy();
-    expect(mainFile!.sources).toContain("codi.yaml");
+    expect(mainFile!.sources).toContain(MANIFEST_FILENAME);
 
     // No MCP or extra files
     const mcpFile = files.find((f) => f.path === ".windsurf/mcp.json");
@@ -113,7 +117,7 @@ describe("windsurf adapter", () => {
           content: "Never expose API keys.",
           priority: "high",
           alwaysApply: true,
-          managedBy: "codi",
+          managedBy: PROJECT_NAME,
         },
       ],
       flags: {},

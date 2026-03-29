@@ -1,11 +1,15 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT } from "../../constants.js";
+import {
+  GIT_COMMIT_FIRST_LINE_LIMIT,
+  PROJECT_CLI,
+  PROJECT_NAME,
+} from "../../constants.js";
 
 export const template = `---
 name: {{name}}
 description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code changes.
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
@@ -106,7 +110,7 @@ If the commit message doesn't follow conventional format, the commit-msg hook wi
 ### Hook tool not found
 If pre-commit fails with "command not found":
 
-**[SYSTEM]** Run \\\`codi doctor\\\` to check hook status.
+**[SYSTEM]** Run \\\`${PROJECT_CLI} doctor\\\` to check hook status.
 
 **[SYSTEM]** Install missing tools for your language:
 - TypeScript/JS: \\\`npm install -D eslint prettier typescript\\\`
@@ -120,7 +124,7 @@ If pre-commit fails with "command not found":
 ### Hooks not installed
 If no pre-commit hooks run at all:
 
-**[SYSTEM]** Reinstall hooks: \\\`codi generate\\\`
+**[SYSTEM]** Reinstall hooks: \\\`${PROJECT_CLI} generate\\\`
 
 This re-detects the hook runner (Husky, pre-commit framework, or standalone) and installs hooks for the project's detected languages.
 

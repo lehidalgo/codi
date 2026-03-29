@@ -4,10 +4,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { cursorAdapter } from "#src/adapters/cursor.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_SMALL } from "#src/constants.js";
+import {
+  CONTEXT_TOKENS_SMALL,
+  PROJECT_NAME,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("cursor adapter", () => {
-  const tmpDir = join(tmpdir(), "codi-test-cursor-" + Date.now());
+  const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-cursor-` + Date.now());
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true });
@@ -88,7 +92,7 @@ describe("cursor adapter", () => {
     expect(mainFile).toBeDefined();
     expect(mainFile!.content).toContain("## Workflow");
     expect(mainFile!.hash).toBeTruthy();
-    expect(mainFile!.sources).toContain("codi.yaml");
+    expect(mainFile!.sources).toContain(MANIFEST_FILENAME);
 
     // No rule files or skill files
     const ruleFiles = files.filter((f) => f.path.startsWith(".cursor/rules/"));
@@ -134,7 +138,7 @@ describe("cursor adapter", () => {
           content: "Follow this rule always.",
           priority: "high",
           alwaysApply: true,
-          managedBy: "codi",
+          managedBy: PROJECT_NAME,
         },
       ],
     });
@@ -159,7 +163,7 @@ describe("cursor adapter", () => {
           content: "content",
           priority: "low",
           alwaysApply: false,
-          managedBy: "codi",
+          managedBy: PROJECT_NAME,
         },
       ],
     });
@@ -265,7 +269,7 @@ describe("cursor adapter", () => {
         allow_shell_commands: {
           value: false,
           mode: "enforced",
-          source: "codi.yaml",
+          source: MANIFEST_FILENAME,
           locked: false,
         },
       },
@@ -275,13 +279,13 @@ describe("cursor adapter", () => {
         allow_shell_commands: {
           value: true,
           mode: "enforced",
-          source: "codi.yaml",
+          source: MANIFEST_FILENAME,
           locked: false,
         },
         max_file_lines: {
           value: 1000,
           mode: "enforced",
-          source: "codi.yaml",
+          source: MANIFEST_FILENAME,
           locked: false,
         },
       },

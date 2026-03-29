@@ -7,15 +7,20 @@ import {
   parseFlags,
   scanRules,
   scanSkills,
-  scanCodiDir,
+  scanProjectDir,
   parseSkillFile,
 } from "#src/core/config/parser.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 const FIXTURES = path.resolve(__dirname, "../../fixtures/inheritance");
 const BASIC = path.join(FIXTURES, "basic-merge/input/.codi");
 
 describe("parseManifest", () => {
-  it("parses a valid codi.yaml", async () => {
+  it("parses a valid manifest file", async () => {
     const result = await parseManifest(BASIC);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -24,7 +29,7 @@ describe("parseManifest", () => {
     expect(result.data.agents).toEqual(["claude-code", "cursor"]);
   });
 
-  it("returns error for missing codi.yaml", async () => {
+  it("returns error for missing manifest file", async () => {
     const result = await parseManifest("/nonexistent/path");
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -60,7 +65,7 @@ describe("scanRules", () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0]!.name).toBe("security");
     expect(result.data[0]!.priority).toBe("high");
-    expect(result.data[0]!.managedBy).toBe("codi");
+    expect(result.data[0]!.managedBy).toBe(PROJECT_NAME);
     expect(result.data[0]!.content).toBe("Follow security best practices.");
   });
 
@@ -76,7 +81,9 @@ describe("scanSkills", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-parser-skills-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-parser-skills-`),
+    );
   });
 
   afterEach(async () => {
@@ -158,7 +165,9 @@ describe("parseSkillFile", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-parse-skill-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-parse-skill-`),
+    );
   });
 
   afterEach(async () => {
@@ -214,7 +223,7 @@ Content.`,
       `---
 name: full-skill
 description: Full featured skill
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 user-invocable: true
 ---
 
@@ -225,49 +234,51 @@ Full content.`,
     const result = await parseSkillFile(filePath);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.managedBy).toBe("codi");
+    expect(result.data.managedBy).toBe(PROJECT_NAME);
     expect(result.data.userInvocable).toBe(true);
   });
 });
 
-describe("scanCodiDir", () => {
+describe("scanProjectDir", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-scan-dir-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-scan-dir-`),
+    );
   });
 
   afterEach(async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("returns error when .codi directory does not exist", async () => {
-    const result = await scanCodiDir(tmpDir);
+  it(`returns error when ${PROJECT_DIR} directory does not exist`, async () => {
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.code).toBe("E_CONFIG_NOT_FOUND");
   });
 
   it("returns error when manifest is missing", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
 
-    const result = await scanCodiDir(tmpDir);
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.code).toBe("E_CONFIG_NOT_FOUND");
   });
 
-  it("parses minimal .codi directory with just manifest", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+  it(`parses minimal ${PROJECT_DIR} directory with just manifest`, async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       'name: test\nversion: "1"\nagents:\n  - claude-code\n',
       "utf-8",
     );
 
-    const result = await scanCodiDir(tmpDir);
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.manifest.name).toBe("test");
@@ -279,26 +290,26 @@ describe("scanCodiDir", () => {
     expect(result.data.flags).toEqual({});
   });
 
-  it("parses .codi directory with rules and skills", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+  it(`parses ${PROJECT_DIR} directory with rules and skills`, async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       'name: full\nversion: "1"\nagents:\n  - claude-code\n',
       "utf-8",
     );
 
     // Add a rule
-    const rulesDir = path.join(codiDir, "rules");
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "testing.md"),
-      "---\nname: testing\ndescription: Testing\npriority: high\nmanaged_by: codi\n---\nTest rule.",
+      `---\nname: testing\ndescription: Testing\npriority: high\nmanaged_by: ${PROJECT_NAME}\n---\nTest rule.`,
       "utf-8",
     );
 
     // Add a skill
-    const skillsDir = path.join(codiDir, "skills", "commit");
+    const skillsDir = path.join(configDir, "skills", "commit");
     await fs.mkdir(skillsDir, { recursive: true });
     await fs.writeFile(
       path.join(skillsDir, "SKILL.md"),
@@ -306,7 +317,7 @@ describe("scanCodiDir", () => {
       "utf-8",
     );
 
-    const result = await scanCodiDir(tmpDir);
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.rules.length).toBe(1);
@@ -316,28 +327,28 @@ describe("scanCodiDir", () => {
   });
 
   it("returns error for invalid manifest YAML", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       "{ broken yaml [[[",
       "utf-8",
     );
 
-    const result = await scanCodiDir(tmpDir);
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(false);
   });
 
   it("parses MCP servers from individual yaml files", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       'name: mcp-test\nversion: "1"\nagents:\n  - claude-code\n',
       "utf-8",
     );
 
-    const mcpDir = path.join(codiDir, "mcp-servers");
+    const mcpDir = path.join(configDir, "mcp-servers");
     await fs.mkdir(mcpDir, { recursive: true });
     await fs.writeFile(
       path.join(mcpDir, "github.yaml"),
@@ -345,7 +356,7 @@ describe("scanCodiDir", () => {
       "utf-8",
     );
 
-    const result = await scanCodiDir(tmpDir);
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.mcp.servers).toBeDefined();

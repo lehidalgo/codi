@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Error handling, resilience patterns, and observability integration
 priority: high
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Error Handling

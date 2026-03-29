@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Java conventions — records, streams, Optional, testing, dependency injection
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: java
 ---
 

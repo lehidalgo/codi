@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { PROJECT_NAME } from "#src/constants.js";
 import {
   saveVersion,
   listVersions,
@@ -17,7 +18,9 @@ const SKILL_CONTENT_V2 =
   "---\nname: commit\n---\n\n# commit\n\nStep 1: Do A\nStep 2: Do B\n";
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-version-test-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-version-test-`),
+  );
   skillDir = path.join(tmpDir, "commit");
   await fs.mkdir(skillDir, { recursive: true });
 });

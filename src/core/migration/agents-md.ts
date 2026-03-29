@@ -4,6 +4,7 @@ import type { Result } from "../../types/result.js";
 import type { NormalizedRule } from "../../types/config.js";
 import { ok, err } from "../../types/result.js";
 import { createError } from "../output/errors.js";
+import { resolveProjectDir } from "../../utils/paths.js";
 
 export interface MigrationResult {
   rules: NormalizedRule[];
@@ -105,7 +106,7 @@ export async function importAgentsMd(
   }
 
   const rules: NormalizedRule[] = [];
-  const rulesDir = path.join(projectRoot, ".codi", "rules");
+  const rulesDir = path.join(resolveProjectDir(projectRoot), "rules");
 
   try {
     await fs.mkdir(rulesDir, { recursive: true });

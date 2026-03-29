@@ -1,36 +1,46 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
-import { Command } from 'commander';
-import { addGlobalOptions, initFromOptions, handleOutput, regenerateConfigs } from '../../../src/cli/shared.js';
-import { createCommandResult } from '../../../src/core/output/formatter.js';
-import { EXIT_CODES } from '../../../src/core/output/exit-codes.js';
-import { Logger } from '../../../src/core/output/logger.js';
-import { clearAdapters } from '../../../src/core/generator/adapter-registry.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { Command } from "commander";
+import {
+  addGlobalOptions,
+  initFromOptions,
+  handleOutput,
+  regenerateConfigs,
+} from "../../../src/cli/shared.js";
+import { createCommandResult } from "../../../src/core/output/formatter.js";
+import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+import { Logger } from "../../../src/core/output/logger.js";
+import { clearAdapters } from "../../../src/core/generator/adapter-registry.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "../../../src/constants.js";
 
-describe('shared CLI utilities', () => {
-  describe('addGlobalOptions', () => {
-    it('adds --json, --verbose, --quiet, --no-color options', () => {
+describe("shared CLI utilities", () => {
+  describe("addGlobalOptions", () => {
+    it("adds --json, --verbose, --quiet, --no-color options", () => {
       const cmd = new Command();
       addGlobalOptions(cmd);
 
-      cmd.parse(['--json', '--verbose'], { from: 'user' });
+      cmd.parse(["--json", "--verbose"], { from: "user" });
       const opts = cmd.opts();
-      expect(opts['json']).toBe(true);
-      expect(opts['verbose']).toBe(true);
+      expect(opts["json"]).toBe(true);
+      expect(opts["verbose"]).toBe(true);
     });
   });
 
-  describe('initFromOptions', () => {
+  describe("initFromOptions", () => {
     let exitSpy: ReturnType<typeof vi.spyOn>;
     let stderrSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-        throw new Error('process.exit called');
+      exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+        throw new Error("process.exit called");
       });
-      stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+      stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -38,63 +48,65 @@ describe('shared CLI utilities', () => {
       stderrSpy.mockRestore();
     });
 
-    it('initializes logger with defaults', () => {
+    it("initializes logger with defaults", () => {
       expect(() => initFromOptions({})).not.toThrow();
     });
 
-    it('rejects --verbose and --quiet together', () => {
+    it("rejects --verbose and --quiet together", () => {
       expect(() => initFromOptions({ verbose: true, quiet: true })).toThrow();
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
   });
 
-  describe('handleOutput', () => {
+  describe("handleOutput", () => {
     let stdoutSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
+      stdoutSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
     });
 
     afterEach(() => {
       stdoutSpy.mockRestore();
     });
 
-    it('outputs JSON when --json is set', () => {
+    it("outputs JSON when --json is set", () => {
       const result = createCommandResult({
         success: true,
-        command: 'test',
-        data: { hello: 'world' },
+        command: "test",
+        data: { hello: "world" },
         exitCode: EXIT_CODES.SUCCESS,
       });
 
       handleOutput(result, { json: true });
-      const output = (stdoutSpy.mock.calls[0]![0] as string);
+      const output = stdoutSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output);
       expect(parsed.success).toBe(true);
-      expect(parsed.data.hello).toBe('world');
+      expect(parsed.data.hello).toBe("world");
     });
 
-    it('outputs human-readable format by default', () => {
+    it("outputs human-readable format by default", () => {
       const result = createCommandResult({
         success: true,
-        command: 'test',
+        command: "test",
         data: null,
         exitCode: EXIT_CODES.SUCCESS,
       });
 
       handleOutput(result, {});
-      const output = (stdoutSpy.mock.calls[0]![0] as string);
-      expect(output).toContain('[OK] test');
+      const output = stdoutSpy.mock.calls[0]![0] as string;
+      expect(output).toContain("[OK] test");
     });
   });
 
-  describe('regenerateConfigs', () => {
+  describe("regenerateConfigs", () => {
     let tmpDir: string;
 
     beforeEach(async () => {
-      tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-shared-regen-'));
+      tmpDir = await fs.mkdtemp(
+        path.join(os.tmpdir(), `${PROJECT_NAME}-shared-regen-`),
+      );
       clearAdapters();
-      Logger.init({ level: 'error', mode: 'human', noColor: true });
+      Logger.init({ level: "error", mode: "human", noColor: true });
     });
 
     afterEach(async () => {
@@ -102,24 +114,20 @@ describe('shared CLI utilities', () => {
       clearAdapters();
     });
 
-    it('returns false when no config exists', async () => {
+    it("returns false when no config exists", async () => {
       const success = await regenerateConfigs(tmpDir);
       expect(success).toBe(false);
     });
 
-    it('returns true with a valid config', async () => {
-      const codiDir = path.join(tmpDir, '.codi');
-      await fs.mkdir(codiDir, { recursive: true });
+    it("returns true with a valid config", async () => {
+      const configDir = path.join(tmpDir, PROJECT_DIR);
+      await fs.mkdir(configDir, { recursive: true });
       await fs.writeFile(
-        path.join(codiDir, 'codi.yaml'),
+        path.join(configDir, MANIFEST_FILENAME),
         'name: test\nversion: "1"\nagents:\n  - claude-code\n',
-        'utf-8',
+        "utf-8",
       );
-      await fs.writeFile(
-        path.join(codiDir, 'flags.yaml'),
-        '{}',
-        'utf-8',
-      );
+      await fs.writeFile(path.join(configDir, "flags.yaml"), "{}", "utf-8");
 
       const success = await regenerateConfigs(tmpDir);
       expect(success).toBe(true);

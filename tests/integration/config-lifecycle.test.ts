@@ -5,7 +5,7 @@ import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
 import { resolveConfig } from "#src/core/config/resolver.js";
 import {
-  scanCodiDir,
+  scanProjectDir,
   parseManifest,
   parseFlags,
   scanRules,
@@ -15,11 +15,18 @@ import { composeConfig } from "#src/core/config/composer.js";
 import type { ConfigLayer } from "#src/core/config/composer.js";
 import { validateConfig } from "#src/core/config/validator.js";
 import { Logger } from "#src/core/output/logger.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-config-lifecycle-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-config-lifecycle-`),
+  );
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -27,7 +34,7 @@ afterEach(async () => {
   await fs.rm(tmpDir, { recursive: true, force: true });
 });
 
-async function createCodiProject(config: {
+async function createTestProject(config: {
   manifest?: Record<string, unknown>;
   flags?: Record<string, unknown>;
   rules?: Array<{
@@ -40,8 +47,8 @@ async function createCodiProject(config: {
   agents?: Array<{ name: string; content: string; tools?: string[] }>;
   commands?: Array<{ name: string; content: string }>;
 }): Promise<string> {
-  const codiDir = path.join(tmpDir, ".codi");
-  await fs.mkdir(codiDir, { recursive: true });
+  const configDir = path.join(tmpDir, PROJECT_DIR);
+  await fs.mkdir(configDir, { recursive: true });
 
   const manifest = config.manifest ?? {
     name: "test-project",
@@ -49,21 +56,21 @@ async function createCodiProject(config: {
     agents: ["claude-code"],
   };
   await fs.writeFile(
-    path.join(codiDir, "codi.yaml"),
+    path.join(configDir, MANIFEST_FILENAME),
     stringifyYaml(manifest),
     "utf-8",
   );
 
   if (config.flags) {
     await fs.writeFile(
-      path.join(codiDir, "flags.yaml"),
+      path.join(configDir, "flags.yaml"),
       stringifyYaml(config.flags),
       "utf-8",
     );
   }
 
   if (config.rules) {
-    const rulesDir = path.join(codiDir, "rules");
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     for (const rule of config.rules) {
       const frontmatter = [
@@ -86,7 +93,7 @@ async function createCodiProject(config: {
 
   if (config.skills) {
     for (const skill of config.skills) {
-      const skillDir = path.join(codiDir, "skills", skill.name);
+      const skillDir = path.join(configDir, "skills", skill.name);
       await fs.mkdir(skillDir, { recursive: true });
       const frontmatter = `---\nname: ${skill.name}\ndescription: ${skill.name} skill\n---\n\n${skill.content}`;
       await fs.writeFile(path.join(skillDir, "SKILL.md"), frontmatter, "utf-8");
@@ -94,7 +101,7 @@ async function createCodiProject(config: {
   }
 
   if (config.agents) {
-    const agentsDir = path.join(codiDir, "agents");
+    const agentsDir = path.join(configDir, "agents");
     await fs.mkdir(agentsDir, { recursive: true });
     for (const agent of config.agents) {
       const tools = agent.tools ?? ["Read", "Grep"];
@@ -108,7 +115,7 @@ async function createCodiProject(config: {
   }
 
   if (config.commands) {
-    const commandsDir = path.join(codiDir, "commands");
+    const commandsDir = path.join(configDir, "commands");
     await fs.mkdir(commandsDir, { recursive: true });
     for (const cmd of config.commands) {
       const frontmatter = `---\nname: ${cmd.name}\ndescription: ${cmd.name} command\n---\n\n${cmd.content}`;
@@ -125,7 +132,7 @@ async function createCodiProject(config: {
 
 describe("Config Lifecycle: parse → compose → validate → resolve", () => {
   it("resolves minimal project with only manifest", async () => {
-    await createCodiProject({});
+    await createTestProject({});
     const result = await resolveConfig(tmpDir);
 
     expect(result.ok).toBe(true);
@@ -137,7 +144,7 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
   });
 
   it("resolves project with rules, skills, and agents", async () => {
-    await createCodiProject({
+    await createTestProject({
       rules: [
         {
           name: "security",
@@ -173,7 +180,7 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
   });
 
   it("flags merge from flags.yaml into resolved config", async () => {
-    await createCodiProject({
+    await createTestProject({
       flags: {
         security_scan: { mode: "enforced", value: true },
         max_file_lines: { mode: "enabled", value: 500 },
@@ -189,14 +196,14 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
   });
 
   it("lang layer overrides repo flags", async () => {
-    await createCodiProject({
+    await createTestProject({
       flags: {
         max_file_lines: { mode: "enabled", value: 700 },
       },
     });
 
     // Add lang layer
-    const langDir = path.join(tmpDir, ".codi", "lang");
+    const langDir = path.join(tmpDir, PROJECT_DIR, "lang");
     await fs.mkdir(langDir, { recursive: true });
     await fs.writeFile(
       path.join(langDir, "typescript.yaml"),
@@ -219,24 +226,24 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
 
 describe("Config Lifecycle: individual parse steps", () => {
   it("parseManifest → scanRules → scanSkills all succeed independently", async () => {
-    await createCodiProject({
+    await createTestProject({
       rules: [{ name: "test-rule", content: "Test content." }],
       skills: [{ name: "test-skill", content: "Skill content." }],
     });
 
-    const codiDir = path.join(tmpDir, ".codi");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
 
-    const manifestResult = await parseManifest(codiDir);
+    const manifestResult = await parseManifest(configDir);
     expect(manifestResult.ok).toBe(true);
 
-    const rulesResult = await scanRules(path.join(codiDir, "rules"));
+    const rulesResult = await scanRules(path.join(configDir, "rules"));
     expect(rulesResult.ok).toBe(true);
     if (rulesResult.ok) {
       expect(rulesResult.data).toHaveLength(1);
       expect(rulesResult.data[0]!.name).toBe("test-rule");
     }
 
-    const skillsResult = await scanSkills(path.join(codiDir, "skills"));
+    const skillsResult = await scanSkills(path.join(configDir, "skills"));
     expect(skillsResult.ok).toBe(true);
     if (skillsResult.ok) {
       expect(skillsResult.data).toHaveLength(1);
@@ -245,10 +252,10 @@ describe("Config Lifecycle: individual parse steps", () => {
   });
 
   it("parseFlags returns empty when no flags.yaml", async () => {
-    await createCodiProject({});
-    const codiDir = path.join(tmpDir, ".codi");
+    await createTestProject({});
+    const configDir = path.join(tmpDir, PROJECT_DIR);
 
-    const result = await parseFlags(codiDir);
+    const result = await parseFlags(configDir);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data).toEqual({});
@@ -269,7 +276,7 @@ describe("Config Lifecycle: compose and validate", () => {
               name: "r1",
               description: "",
               content: "Rule one.",
-              managedBy: "codi",
+              managedBy: PROJECT_NAME,
             },
           ],
           flags: {},
@@ -300,7 +307,7 @@ describe("Config Lifecycle: compose and validate", () => {
   });
 
   it("validateConfig returns no errors for valid config", async () => {
-    await createCodiProject({
+    await createTestProject({
       rules: [{ name: "sec", content: "Security." }],
     });
 
@@ -313,7 +320,7 @@ describe("Config Lifecycle: compose and validate", () => {
   });
 
   it("validateConfig catches unknown agents in manifest", async () => {
-    await createCodiProject({
+    await createTestProject({
       manifest: {
         name: "test",
         version: "1",
@@ -321,7 +328,7 @@ describe("Config Lifecycle: compose and validate", () => {
       },
     });
 
-    const scanResult = await scanCodiDir(tmpDir);
+    const scanResult = await scanProjectDir(tmpDir);
     expect(scanResult.ok).toBe(true);
     if (!scanResult.ok) return;
 

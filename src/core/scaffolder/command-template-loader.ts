@@ -1,18 +1,19 @@
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
-import { createError } from '../output/errors.js';
-import * as commandTemplates from '../../templates/commands/index.js';
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
+import { createError } from "../output/errors.js";
+import { prefixedName } from "../../constants.js";
+import * as commandTemplates from "../../templates/commands/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
-  'review': commandTemplates.review,
-  'test-run': commandTemplates.testRun,
-  'security-scan': commandTemplates.securityScan,
-  'test-coverage': commandTemplates.testCoverage,
-  'refactor': commandTemplates.refactor,
-  'onboard': commandTemplates.onboard,
-  'docs-lookup': commandTemplates.docsLookup,
-  'commit': commandTemplates.commit,
-  'session-handoff': commandTemplates.sessionHandoff,
+  [prefixedName("review")]: commandTemplates.review,
+  [prefixedName("test-run")]: commandTemplates.testRun,
+  [prefixedName("security-scan")]: commandTemplates.securityScan,
+  [prefixedName("test-coverage")]: commandTemplates.testCoverage,
+  [prefixedName("refactor")]: commandTemplates.refactor,
+  [prefixedName("onboard")]: commandTemplates.onboard,
+  [prefixedName("docs-lookup")]: commandTemplates.docsLookup,
+  [prefixedName("commit")]: commandTemplates.commit,
+  [prefixedName("session-handoff")]: commandTemplates.sessionHandoff,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);
@@ -20,9 +21,11 @@ export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);
 export function loadCommandTemplate(templateName: string): Result<string> {
   const content = TEMPLATE_MAP[templateName];
   if (!content) {
-    return err([createError('E_CONFIG_NOT_FOUND', {
-      path: `command-template:${templateName}`,
-    })]);
+    return err([
+      createError("E_CONFIG_NOT_FOUND", {
+        path: `command-template:${templateName}`,
+      }),
+    ]);
   }
   return ok(content);
 }

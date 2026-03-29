@@ -6,11 +6,19 @@ import matter from "gray-matter";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import os from "node:os";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
+import { resolveArtifactName } from "../constants.js";
 import { FLAG_CATALOG } from "../core/flags/flag-catalog.js";
 import { getPreset, getPresetNames } from "../core/flags/flag-presets.js";
 import type { PresetName } from "../core/flags/flag-presets.js";
-import { FLAGS_FILENAME, GIT_CLONE_DEPTH } from "../constants.js";
+import {
+  FLAGS_FILENAME,
+  GIT_CLONE_DEPTH,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  prefixedName,
+} from "../constants.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { generate } from "../core/generator/generator.js";
@@ -76,11 +84,11 @@ interface UpdateData {
 }
 
 async function refreshManagedRules(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const rulesDir = path.join(codiDir, "rules");
+  const rulesDir = path.join(configDir, "rules");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -98,7 +106,7 @@ async function refreshManagedRules(
     const parsed = matter(raw);
     const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== "codi") {
+    if (managedBy !== PROJECT_NAME) {
       skipped.push(entry.replace(".md", ""));
       continue;
     }
@@ -141,16 +149,16 @@ function findMatchingTemplate(
 }
 
 const RULE_NAME_MAPPINGS: Record<string, string> = {
-  "code-quality": "code-style",
-  "testing-standards": "testing",
+  "code-quality": prefixedName("code-style"),
+  "testing-standards": prefixedName("testing"),
 };
 
 async function refreshManagedSkills(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const skillsDir = path.join(codiDir, "skills");
+  const skillsDir = path.join(configDir, "skills");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -168,7 +176,7 @@ async function refreshManagedSkills(
     const parsed = matter(raw);
     const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== "codi") {
+    if (managedBy !== PROJECT_NAME) {
       skipped.push(entry.replace(".md", ""));
       continue;
     }
@@ -201,11 +209,11 @@ async function refreshManagedSkills(
 }
 
 async function refreshManagedAgents(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const agentsDir = path.join(codiDir, "agents");
+  const agentsDir = path.join(configDir, "agents");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -223,7 +231,7 @@ async function refreshManagedAgents(
     const parsed = matter(raw);
     const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== "codi") {
+    if (managedBy !== PROJECT_NAME) {
       skipped.push(entry.replace(".md", ""));
       continue;
     }
@@ -256,11 +264,11 @@ async function refreshManagedAgents(
 }
 
 async function refreshManagedCommands(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const commandsDir = path.join(codiDir, "commands");
+  const commandsDir = path.join(configDir, "commands");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -278,7 +286,7 @@ async function refreshManagedCommands(
     const parsed = matter(raw);
     const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== "codi") {
+    if (managedBy !== PROJECT_NAME) {
       skipped.push(entry.replace(".md", ""));
       continue;
     }
@@ -314,11 +322,11 @@ async function refreshManagedCommands(
 }
 
 async function refreshManagedMcpServers(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const mcpDir = path.join(codiDir, "mcp-servers");
+  const mcpDir = path.join(configDir, "mcp-servers");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -336,7 +344,7 @@ async function refreshManagedMcpServers(
     const parsed = parseYaml(raw) as Record<string, unknown>;
     const managedBy = parsed["managed_by"] as string | undefined;
 
-    if (managedBy !== "codi") {
+    if (managedBy !== PROJECT_NAME) {
       skipped.push(entry.replace(".yaml", ""));
       continue;
     }
@@ -353,7 +361,7 @@ async function refreshManagedMcpServers(
     const tmpl = templateResult.data;
     const yamlObj: Record<string, unknown> = {
       name: tmpl.name,
-      managed_by: "codi",
+      managed_by: PROJECT_NAME,
       ...(tmpl.type && { type: tmpl.type }),
       ...(tmpl.command && { command: tmpl.command }),
       ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
@@ -377,12 +385,12 @@ async function refreshManagedMcpServers(
 
 async function pullFromSource(
   repo: string,
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<string[]> {
   const updated: string[] = [];
-  const tmpDir = path.join(os.tmpdir(), `codi-pull-${Date.now()}`);
+  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
@@ -401,8 +409,8 @@ async function pullFromSource(
   const sourcePaths = ["rules", "skills", "agents"];
 
   for (const syncPath of sourcePaths) {
-    const sourceDir = path.join(tmpDir, ".codi", syncPath);
-    const localDir = path.join(codiDir, syncPath);
+    const sourceDir = path.join(tmpDir, PROJECT_DIR, syncPath);
+    const localDir = path.join(configDir, syncPath);
 
     let entries: string[];
     try {
@@ -422,8 +430,8 @@ async function pullFromSource(
       const parsed = matter(sourceContent);
       const managedBy = parsed.data["managed_by"] as string | undefined;
 
-      // Only pull managed_by: codi artifacts
-      if (managedBy !== "codi") continue;
+      // Only pull managed_by: project-managed artifacts
+      if (managedBy !== PROJECT_NAME) continue;
 
       // Check if local file exists and is user-managed
       try {
@@ -454,8 +462,8 @@ export async function updateHandler(
   options: UpdateOptions,
 ): Promise<CommandResult<UpdateData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
-  const flagsFile = path.join(codiDir, FLAGS_FILENAME);
+  const configDir = resolveProjectDir(projectRoot);
+  const flagsFile = path.join(configDir, FLAGS_FILENAME);
 
   let currentFlags: Record<string, unknown>;
   try {
@@ -485,8 +493,8 @@ export async function updateHandler(
       errors: [
         {
           code: "E_CONFIG_NOT_FOUND",
-          message: "No .codi/flags.yaml found. Run `codi init` first.",
-          hint: "Run `codi init` to create the configuration.",
+          message: `No ${PROJECT_DIR}/flags.yaml found. Run \`${PROJECT_CLI} init\` first.`,
+          hint: `Run \`${PROJECT_CLI} init\` to create the configuration.`,
           severity: "error",
           context: { path: flagsFile },
         },
@@ -497,44 +505,48 @@ export async function updateHandler(
 
   const flagsAdded: string[] = [];
   let flagsReset = false;
-  const presetName = options.preset as PresetName | undefined;
+  const validPresets = getPresetNames() as string[];
+  const presetName = options.preset
+    ? (resolveArtifactName(options.preset, validPresets) as
+        | PresetName
+        | undefined)
+    : undefined;
+
+  if (options.preset && !presetName) {
+    return createCommandResult({
+      success: false,
+      command: "update",
+      data: {
+        flagsAdded: [],
+        flagsReset: false,
+        preset: options.preset,
+        rulesUpdated: [],
+        rulesSkipped: [],
+        skillsUpdated: [],
+        skillsSkipped: [],
+        agentsUpdated: [],
+        agentsSkipped: [],
+        commandsUpdated: [],
+        commandsSkipped: [],
+        mcpServersUpdated: [],
+        mcpServersSkipped: [],
+        sourceUpdated: [],
+        regenerated: false,
+      },
+      errors: [
+        {
+          code: "E_CONFIG_INVALID",
+          message: `Invalid preset "${options.preset}". Available: ${validPresets.join(", ")}`,
+          hint: `Use one of: ${validPresets.join(", ")}`,
+          severity: "error",
+          context: { preset: options.preset },
+        },
+      ],
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
+  }
 
   if (presetName) {
-    const validPresets = getPresetNames() as string[];
-    if (!validPresets.includes(presetName)) {
-      return createCommandResult({
-        success: false,
-        command: "update",
-        data: {
-          flagsAdded: [],
-          flagsReset: false,
-          preset: presetName,
-          rulesUpdated: [],
-          rulesSkipped: [],
-          skillsUpdated: [],
-          skillsSkipped: [],
-          agentsUpdated: [],
-          agentsSkipped: [],
-          commandsUpdated: [],
-          commandsSkipped: [],
-          mcpServersUpdated: [],
-          mcpServersSkipped: [],
-          sourceUpdated: [],
-          regenerated: false,
-        },
-        errors: [
-          {
-            code: "E_CONFIG_INVALID",
-            message: `Invalid preset "${presetName}". Available: ${validPresets.join(", ")}`,
-            hint: `Use one of: ${validPresets.join(", ")}`,
-            severity: "error",
-            context: { preset: presetName },
-          },
-        ],
-        exitCode: EXIT_CODES.CONFIG_INVALID,
-      });
-    }
-
     const preset = getPreset(presetName);
     const updatedFlags: Record<string, unknown> = {};
     for (const [key, def] of Object.entries(preset)) {
@@ -567,7 +579,7 @@ export async function updateHandler(
   let rulesSkipped: string[] = [];
   if (options.rules) {
     const result = await refreshManagedRules(
-      codiDir,
+      configDir,
       options.dryRun ?? false,
       log,
     );
@@ -579,7 +591,7 @@ export async function updateHandler(
   let skillsSkipped: string[] = [];
   if (options.skills) {
     const result = await refreshManagedSkills(
-      codiDir,
+      configDir,
       options.dryRun ?? false,
       log,
     );
@@ -591,7 +603,7 @@ export async function updateHandler(
   let agentsSkipped: string[] = [];
   if (options.agents) {
     const result = await refreshManagedAgents(
-      codiDir,
+      configDir,
       options.dryRun ?? false,
       log,
     );
@@ -603,7 +615,7 @@ export async function updateHandler(
   let commandsSkipped: string[] = [];
   if (options.commands) {
     const result = await refreshManagedCommands(
-      codiDir,
+      configDir,
       options.dryRun ?? false,
       log,
     );
@@ -615,7 +627,7 @@ export async function updateHandler(
   let mcpServersSkipped: string[] = [];
   if (options.mcpServers) {
     const result = await refreshManagedMcpServers(
-      codiDir,
+      configDir,
       options.dryRun ?? false,
       log,
     );
@@ -627,7 +639,7 @@ export async function updateHandler(
   if (options.from) {
     sourceUpdated = await pullFromSource(
       options.from,
-      codiDir,
+      configDir,
       options.dryRun ?? false,
       log,
     );
@@ -644,7 +656,7 @@ export async function updateHandler(
   }
 
   if (!options.dryRun) {
-    await writeAuditEntry(codiDir, {
+    await writeAuditEntry(configDir, {
       type: "update",
       timestamp: new Date().toISOString(),
       details: {
@@ -661,7 +673,7 @@ export async function updateHandler(
     });
 
     try {
-      const ledger = new OperationsLedgerManager(codiDir);
+      const ledger = new OperationsLedgerManager(configDir);
       await ledger.logOperation({
         type: "update",
         timestamp: new Date().toISOString(),

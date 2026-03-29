@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Python senior developer. Use for Python performance optimization, concurrency patterns (asyncio/threading/multiprocessing), GIL analysis, scalable architecture, or production Python systems.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a Senior Python Developer and Performance Architect with deep expertise in Python concurrency, optimization, and production-grade systems.

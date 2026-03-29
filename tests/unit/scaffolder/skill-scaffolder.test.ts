@@ -3,15 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("skill scaffolder", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-skill-"));
-    codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-skill-`));
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -19,7 +20,7 @@ describe("skill scaffolder", () => {
   });
 
   it("creates a skill file with default content", async () => {
-    const result = await createSkill({ name: "my-skill", codiDir });
+    const result = await createSkill({ name: "my-skill", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -34,8 +35,8 @@ describe("skill scaffolder", () => {
   it("creates a skill file with mcp template", async () => {
     const result = await createSkill({
       name: "mcp-usage",
-      codiDir,
-      template: "mcp",
+      configDir,
+      template: prefixedName("mcp"),
     });
 
     expect(result.ok).toBe(true);
@@ -49,8 +50,8 @@ describe("skill scaffolder", () => {
   it("creates a skill file with code-review template", async () => {
     const result = await createSkill({
       name: "review",
-      codiDir,
-      template: "code-review",
+      configDir,
+      template: prefixedName("code-review"),
     });
 
     expect(result.ok).toBe(true);
@@ -63,8 +64,8 @@ describe("skill scaffolder", () => {
   it("creates a skill file with documentation template", async () => {
     const result = await createSkill({
       name: "docs",
-      codiDir,
-      template: "documentation",
+      configDir,
+      template: prefixedName("documentation"),
     });
 
     expect(result.ok).toBe(true);
@@ -75,18 +76,18 @@ describe("skill scaffolder", () => {
   });
 
   it("rejects invalid skill names", async () => {
-    const result = await createSkill({ name: "Invalid_Name", codiDir });
+    const result = await createSkill({ name: "Invalid_Name", configDir });
     expect(result.ok).toBe(false);
   });
 
   it("rejects names starting with a digit", async () => {
-    const result = await createSkill({ name: "1bad", codiDir });
+    const result = await createSkill({ name: "1bad", configDir });
     expect(result.ok).toBe(false);
   });
 
   it("fails if skill already exists", async () => {
-    await createSkill({ name: "existing", codiDir });
-    const result = await createSkill({ name: "existing", codiDir });
+    await createSkill({ name: "existing", configDir });
+    const result = await createSkill({ name: "existing", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -96,24 +97,24 @@ describe("skill scaffolder", () => {
   it("fails with unknown template", async () => {
     const result = await createSkill({
       name: "test",
-      codiDir,
+      configDir,
       template: "nonexistent",
     });
 
     expect(result.ok).toBe(false);
   });
 
-  it("writes to .codi/skills/<name>/SKILL.md directory structure", async () => {
-    const result = await createSkill({ name: "flat-test", codiDir });
+  it(`writes to ${PROJECT_DIR}/skills/<name>/SKILL.md directory structure`, async () => {
+    const result = await createSkill({ name: "flat-test", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const expected = path.join(codiDir, "skills", "flat-test", "SKILL.md");
+    const expected = path.join(configDir, "skills", "flat-test", "SKILL.md");
     expect(result.data).toBe(expected);
 
     const evalsJson = await fs.readFile(
-      path.join(codiDir, "skills", "flat-test", "evals", "evals.json"),
+      path.join(configDir, "skills", "flat-test", "evals", "evals.json"),
       "utf-8",
     );
     const parsed = JSON.parse(evalsJson);
@@ -122,7 +123,7 @@ describe("skill scaffolder", () => {
 
     for (const sub of ["scripts", "references", "assets"]) {
       const gitkeep = path.join(
-        codiDir,
+        configDir,
         "skills",
         "flat-test",
         sub,

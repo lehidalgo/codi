@@ -1,23 +1,29 @@
-import type { Command } from 'commander';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import os from 'node:os';
-import { resolveCodiDir } from '../utils/paths.js';
-import { resolveConfig } from '../core/config/resolver.js';
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import { Logger } from '../core/output/logger.js';
-import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
-import type { GlobalOptions } from './shared.js';
-import { GIT_CLONE_DEPTH, REGISTRY_INDEX_FILENAME } from '../constants.js';
+import type { Command } from "commander";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import os from "node:os";
+import { resolveProjectDir } from "../utils/paths.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import { Logger } from "../core/output/logger.js";
+import type { CommandResult } from "../core/output/types.js";
+import { initFromOptions, handleOutput } from "./shared.js";
+import type { GlobalOptions } from "./shared.js";
+import {
+  GIT_CLONE_DEPTH,
+  REGISTRY_INDEX_FILENAME,
+  PROJECT_CLI,
+  PROJECT_NAME,
+  PROJECT_DIR,
+} from "../constants.js";
 
 const execFileAsync = promisify(execFile);
 
-const DEFAULT_REGISTRY = 'https://github.com/codi-registry/skills.git';
-const DEFAULT_BRANCH = 'main';
+const DEFAULT_REGISTRY = `https://github.com/${PROJECT_NAME}-registry/skills.git`;
+const DEFAULT_BRANCH = "main";
 
 interface RegistryEntry {
   name: string;
@@ -26,7 +32,7 @@ interface RegistryEntry {
 }
 
 interface MarketplaceData {
-  action: 'search' | 'install';
+  action: "search" | "install";
   results?: RegistryEntry[];
   installed?: string;
 }
@@ -35,24 +41,34 @@ async function cloneRegistry(
   registry: string,
   branch: string,
 ): Promise<string> {
-  const tmpDir = path.join(os.tmpdir(), `codi-registry-${Date.now()}`);
-  await execFileAsync('git', [
-    'clone',
-    '--depth', GIT_CLONE_DEPTH,
-    '--branch', branch,
+  const tmpDir = path.join(
+    os.tmpdir(),
+    `${PROJECT_NAME}-registry-${Date.now()}`,
+  );
+  await execFileAsync("git", [
+    "clone",
+    "--depth",
+    GIT_CLONE_DEPTH,
+    "--branch",
+    branch,
     registry,
     tmpDir,
   ]);
   return tmpDir;
 }
 
-async function readRegistryIndex(registryDir: string): Promise<RegistryEntry[]> {
+async function readRegistryIndex(
+  registryDir: string,
+): Promise<RegistryEntry[]> {
   const indexPath = path.join(registryDir, REGISTRY_INDEX_FILENAME);
-  const raw = await fs.readFile(indexPath, 'utf8');
+  const raw = await fs.readFile(indexPath, "utf8");
   return JSON.parse(raw) as RegistryEntry[];
 }
 
-function filterEntries(entries: RegistryEntry[], query: string): RegistryEntry[] {
+function filterEntries(
+  entries: RegistryEntry[],
+  query: string,
+): RegistryEntry[] {
   const lower = query.toLowerCase();
   return entries.filter(
     (e) =>
@@ -86,13 +102,15 @@ export async function marketplaceSearchHandler(
 
     return createCommandResult({
       success: true,
-      command: 'marketplace search',
-      data: { action: 'search', results },
+      command: "marketplace search",
+      data: { action: "search", results },
       exitCode: EXIT_CODES.SUCCESS,
     });
   } finally {
     if (registryDir) {
-      await fs.rm(registryDir, { recursive: true, force: true }).catch(() => {});
+      await fs
+        .rm(registryDir, { recursive: true, force: true })
+        .catch(() => {});
     }
   }
 }
@@ -103,7 +121,7 @@ export async function marketplaceInstallHandler(
   _options: GlobalOptions,
 ): Promise<CommandResult<MarketplaceData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
   const { registry, branch } = await getRegistryConfig(projectRoot);
 
   let registryDir: string | null = null;
@@ -116,37 +134,43 @@ export async function marketplaceInstallHandler(
     if (!entry) {
       return createCommandResult({
         success: false,
-        command: 'marketplace install',
-        data: { action: 'install' },
-        errors: [{
-          code: 'E_GENERAL',
-          message: `Skill "${skillName}" not found in registry.`,
-          hint: 'Use `codi marketplace search <query>` to find available skills.',
-          severity: 'error',
-          context: {},
-        }],
+        command: "marketplace install",
+        data: { action: "install" },
+        errors: [
+          {
+            code: "E_GENERAL",
+            message: `Skill "${skillName}" not found in registry.`,
+            hint: `Use \`${PROJECT_CLI} marketplace search <query>\` to find available skills.`,
+            severity: "error",
+            context: {},
+          },
+        ],
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
     }
 
     const sourcePath = path.join(registryDir, entry.path);
-    const destDir = path.join(codiDir, 'skills');
+    const destDir = path.join(configDir, "skills");
     await fs.mkdir(destDir, { recursive: true });
 
     const destPath = path.join(destDir, `${skillName}.md`);
     await fs.copyFile(sourcePath, destPath);
 
-    log.info(`Installed skill "${skillName}" to .codi/skills/${skillName}.md`);
+    log.info(
+      `Installed skill "${skillName}" to ${PROJECT_DIR}/skills/${skillName}.md`,
+    );
 
     return createCommandResult({
       success: true,
-      command: 'marketplace install',
-      data: { action: 'install', installed: skillName },
+      command: "marketplace install",
+      data: { action: "install", installed: skillName },
       exitCode: EXIT_CODES.SUCCESS,
     });
   } finally {
     if (registryDir) {
-      await fs.rm(registryDir, { recursive: true, force: true }).catch(() => {});
+      await fs
+        .rm(registryDir, { recursive: true, force: true })
+        .catch(() => {});
     }
   }
 }
@@ -171,27 +195,35 @@ async function getRegistryConfig(
 
 export function registerMarketplaceCommand(program: Command): void {
   const cmd = program
-    .command('marketplace')
-    .description('Search and install skills from a registry');
+    .command("marketplace")
+    .description("Search and install skills from a registry");
 
   cmd
-    .command('search <query>')
-    .description('Search for skills in the registry')
+    .command("search <query>")
+    .description("Search for skills in the registry")
     .action(async (query: string) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await marketplaceSearchHandler(process.cwd(), query, globalOptions);
+      const result = await marketplaceSearchHandler(
+        process.cwd(),
+        query,
+        globalOptions,
+      );
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
 
   cmd
-    .command('install <name>')
-    .description('Install a skill from the registry')
+    .command("install <name>")
+    .description("Install a skill from the registry")
     .action(async (name: string) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await marketplaceInstallHandler(process.cwd(), name, globalOptions);
+      const result = await marketplaceInstallHandler(
+        process.cwd(),
+        name,
+        globalOptions,
+      );
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

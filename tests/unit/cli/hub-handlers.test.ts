@@ -117,6 +117,7 @@ import {
   showCliOnly,
 } from "#src/cli/hub-handlers.js";
 import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
+import { PROJECT_CLI } from "#src/constants.js";
 
 describe("hub-handlers", () => {
   beforeEach(() => {
@@ -139,7 +140,7 @@ describe("hub-handlers", () => {
 
   describe("showCliOnly", () => {
     it("displays CLI usage information", () => {
-      showCliOnly("watch", "codi watch");
+      showCliOnly("watch", `${PROJECT_CLI} watch`);
       expect(p.log.info).toHaveBeenCalledTimes(3);
     });
   });

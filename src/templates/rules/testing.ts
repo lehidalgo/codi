@@ -1,11 +1,11 @@
-import { MIN_CODE_COVERAGE_PERCENT } from "../../constants.js";
+import { MIN_CODE_COVERAGE_PERCENT, PROJECT_NAME } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
 description: Testing strategy, TDD workflow, and test infrastructure
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Testing Standards

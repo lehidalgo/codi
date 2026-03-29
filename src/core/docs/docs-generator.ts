@@ -22,6 +22,7 @@ import { BUILTIN_MCP_SERVERS } from "../../templates/mcp-servers/index.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
 import { ALL_ADAPTERS } from "../../adapters/index.js";
 import { HUB_ACTIONS } from "../../cli/hub.js";
+import { PROJECT_CLI } from "../../constants.js";
 
 import {
   // Flags
@@ -295,7 +296,7 @@ export async function validateSections(
         {
           code: "W_DOCS_STALE",
           message: `Documentation is out of sync: ${report.staleSections.map((s) => `${s.file}:${s.section}`).join(", ")}`,
-          hint: "Run `codi docs --generate` to update.",
+          hint: `Run \`${PROJECT_CLI} docs --generate\` to update.`,
           severity: "warn" as const,
           context: {},
         },

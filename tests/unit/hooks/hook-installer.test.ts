@@ -7,12 +7,13 @@ import {
   buildRunnerScript,
   buildSecretScanScript,
   buildFileSizeScript,
-  stripCodiSection,
+  stripGeneratedSection,
   globToGrepPattern,
   buildHuskyCommands,
 } from "#src/core/hooks/hook-installer.js";
 import type { HookEntry } from "#src/core/hooks/hook-registry.js";
 import type { InstallOptions } from "#src/core/hooks/hook-installer.js";
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 let tmpDir: string;
 
@@ -40,7 +41,9 @@ const baseOptions = (
 });
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-hooks-install-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-hooks-install-`),
+  );
 });
 
 afterEach(async () => {
@@ -86,7 +89,7 @@ describe("installHooks", () => {
     expect(stat.mode & 0o111).toBeGreaterThan(0);
   });
 
-  it("appends Codi hooks block to existing husky pre-commit file", async () => {
+  it(`appends ${PROJECT_NAME_DISPLAY} hooks block to existing husky pre-commit file`, async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
     const existingContent = '#!/bin/sh\necho "existing"\n';
     await fs.writeFile(
@@ -103,7 +106,7 @@ describe("installHooks", () => {
       "utf-8",
     );
     expect(content).toContain("existing");
-    expect(content).toContain("# Codi hooks");
+    expect(content).toContain(`# ${PROJECT_NAME_DISPLAY} hooks`);
     expect(content).toContain("npx eslint --fix");
     expect(content).toContain("npx prettier --write");
     // Staged files collected once, then filtered per hook with grep
@@ -121,7 +124,7 @@ describe("installHooks", () => {
     const noFilterHooks: HookEntry[] = [
       {
         name: "version-check",
-        command: "node .git/hooks/codi-version-check.mjs",
+        command: `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
         stagedFilter: "",
       },
     ];
@@ -132,15 +135,16 @@ describe("installHooks", () => {
       path.join(tmpDir, ".husky", "pre-commit"),
       "utf-8",
     );
-    expect(content).toContain("node .git/hooks/codi-version-check.mjs");
+    expect(content).toContain(
+      `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
+    );
     // Global hooks run unconditionally — no grep filter applied
     expect(content).not.toContain("grep");
   });
 
-  it("replaces existing codi section instead of appending duplicates", async () => {
+  it("replaces existing generated section instead of appending duplicates", async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
-    const existingContent =
-      "npm run lint\n\n# Codi hooks\nold-command --check\n\nnpm run other\n";
+    const existingContent = `npm run lint\n\n# ${PROJECT_NAME_DISPLAY} hooks\nold-command --check\n\nnpm run other\n`;
     await fs.writeFile(
       path.join(tmpDir, ".husky", "pre-commit"),
       existingContent,
@@ -155,16 +159,17 @@ describe("installHooks", () => {
       "utf-8",
     );
 
-    // Should have exactly one codi section
-    const codiCount = (content.match(/# Codi hooks/g) ?? []).length;
-    expect(codiCount).toBe(1);
+    // Should have exactly one generated section
+    const hookHeaderRegex = new RegExp(`# ${PROJECT_NAME_DISPLAY} hooks`, "g");
+    const sectionCount = (content.match(hookHeaderRegex) ?? []).length;
+    expect(sectionCount).toBe(1);
 
     // Should contain new hooks, not old
     expect(content).toContain("npx eslint --fix");
     expect(content).toContain("npx prettier --write");
     expect(content).not.toContain("old-command --check");
 
-    // Should preserve non-codi content
+    // Should preserve non-generated content
     expect(content).toContain("npm run lint");
     expect(content).toContain("npm run other");
   });
@@ -186,8 +191,9 @@ describe("installHooks", () => {
       path.join(tmpDir, ".husky", "pre-commit"),
       "utf-8",
     );
-    const codiCount = (content.match(/# Codi hooks/g) ?? []).length;
-    expect(codiCount).toBe(1);
+    const hookHeaderRegex2 = new RegExp(`# ${PROJECT_NAME_DISPLAY} hooks`, "g");
+    const sectionCount2 = (content.match(hookHeaderRegex2) ?? []).length;
+    expect(sectionCount2).toBe(1);
   });
 
   it("creates .git/hooks directory when it does not exist (standalone)", async () => {
@@ -206,12 +212,16 @@ describe("installHooks", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const secretRelPath = path.join(".git", "hooks", "codi-secret-scan.mjs");
+      const secretRelPath = path.join(
+        ".git",
+        "hooks",
+        `${PROJECT_NAME}-secret-scan.mjs`,
+      );
       expect(result.data.files).toContain(secretRelPath);
 
       const secretPath = path.join(tmpDir, secretRelPath);
       const content = await fs.readFile(secretPath, "utf-8");
-      expect(content).toContain("Codi secret scanner");
+      expect(content).toContain(`${PROJECT_NAME_DISPLAY} secret scanner`);
       expect(content).toContain("PATTERNS");
 
       const stat = await fs.stat(secretPath);
@@ -227,13 +237,13 @@ describe("installHooks", () => {
       const sizeRelPath = path.join(
         ".git",
         "hooks",
-        "codi-file-size-check.mjs",
+        `${PROJECT_NAME}-file-size-check.mjs`,
       );
       expect(result.data.files).toContain(sizeRelPath);
 
       const sizePath = path.join(tmpDir, sizeRelPath);
       const content = await fs.readFile(sizePath, "utf-8");
-      expect(content).toContain("Codi file size checker");
+      expect(content).toContain(`${PROJECT_NAME_DISPLAY} file size checker`);
       expect(content).toContain("maxLines");
       expect(content).not.toContain("{{MAX_LINES}}");
     }
@@ -247,13 +257,15 @@ describe("installHooks", () => {
       const versionRelPath = path.join(
         ".git",
         "hooks",
-        "codi-version-check.mjs",
+        `${PROJECT_NAME}-version-check.mjs`,
       );
       expect(result.data.files).toContain(versionRelPath);
 
       const versionPath = path.join(tmpDir, versionRelPath);
       const content = await fs.readFile(versionPath, "utf-8");
-      expect(content).toContain("Codi version and freshness checker");
+      expect(content).toContain(
+        `${PROJECT_NAME_DISPLAY} version and freshness checker`,
+      );
     }
   });
 
@@ -269,7 +281,9 @@ describe("installHooks", () => {
 
       const commitMsgPath = path.join(tmpDir, commitMsgRelPath);
       const content = await fs.readFile(commitMsgPath, "utf-8");
-      expect(content).toContain("Codi commit message validator");
+      expect(content).toContain(
+        `${PROJECT_NAME_DISPLAY} commit message validator`,
+      );
 
       const stat = await fs.stat(commitMsgPath);
       expect(stat.mode & 0o111).toBeGreaterThan(0);
@@ -293,8 +307,10 @@ describe("installHooks", () => {
 
       const commitMsgPath = path.join(tmpDir, commitMsgRelPath);
       const content = await fs.readFile(commitMsgPath, "utf-8");
-      expect(content).toContain("# Codi hooks");
-      expect(content).toContain("Codi commit message validator");
+      expect(content).toContain(`# ${PROJECT_NAME_DISPLAY} hooks`);
+      expect(content).toContain(
+        `${PROJECT_NAME_DISPLAY} commit message validator`,
+      );
     }
   });
 
@@ -317,13 +333,13 @@ describe("installHooks", () => {
         path.join(".git", "hooks", "pre-commit"),
       );
       expect(result.data.files).toContain(
-        path.join(".git", "hooks", "codi-secret-scan.mjs"),
+        path.join(".git", "hooks", `${PROJECT_NAME}-secret-scan.mjs`),
       );
       expect(result.data.files).toContain(
-        path.join(".git", "hooks", "codi-file-size-check.mjs"),
+        path.join(".git", "hooks", `${PROJECT_NAME}-file-size-check.mjs`),
       );
       expect(result.data.files).toContain(
-        path.join(".git", "hooks", "codi-version-check.mjs"),
+        path.join(".git", "hooks", `${PROJECT_NAME}-version-check.mjs`),
       );
       expect(result.data.files).toHaveLength(5);
     }
@@ -371,32 +387,31 @@ describe("buildFileSizeScript", () => {
 
     expect(script).toContain("const maxLines = 700");
     expect(script).not.toContain("{{MAX_LINES}}");
-    expect(script).toContain("Codi file size checker");
+    expect(script).toContain(`${PROJECT_NAME_DISPLAY} file size checker`);
   });
 });
 
-describe("stripCodiSection", () => {
-  it("removes codi section from content", () => {
-    const input =
-      "npm run lint\n\n# Codi hooks\nsome-command\n\nnpm run other\n";
-    const result = stripCodiSection(input);
+describe("stripGeneratedSection", () => {
+  it("removes generated section from content", () => {
+    const input = `npm run lint\n\n# ${PROJECT_NAME_DISPLAY} hooks\nsome-command\n\nnpm run other\n`;
+    const result = stripGeneratedSection(input);
     expect(result).toContain("npm run lint");
     expect(result).toContain("npm run other");
-    expect(result).not.toContain("Codi hooks");
+    expect(result).not.toContain(`${PROJECT_NAME_DISPLAY} hooks`);
     expect(result).not.toContain("some-command");
   });
 
-  it("returns content unchanged when no codi section exists", () => {
+  it("returns content unchanged when no generated section exists", () => {
     const input = "npm run lint\nnpm run test\n";
-    const result = stripCodiSection(input);
+    const result = stripGeneratedSection(input);
     expect(result).toContain("npm run lint");
     expect(result).toContain("npm run test");
   });
 
-  it("handles content with only codi section", () => {
-    const input = "# Codi hooks\nsome-command\n";
-    const result = stripCodiSection(input);
-    expect(result).not.toContain("Codi hooks");
+  it("handles content with only generated section", () => {
+    const input = `# ${PROJECT_NAME_DISPLAY} hooks\nsome-command\n`;
+    const result = stripGeneratedSection(input);
+    expect(result).not.toContain(`${PROJECT_NAME_DISPLAY} hooks`);
     expect(result).not.toContain("some-command");
   });
 });

@@ -13,7 +13,11 @@ import {
   COMMIT_MSG_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
 } from "./hook-templates.js";
-import { PRE_COMMIT_MAX_FILE_LINES } from "../../constants.js";
+import {
+  PRE_COMMIT_MAX_FILE_LINES,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../../constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 
 /** Internal result type for helper functions (no dep checks) */
@@ -56,7 +60,7 @@ async function writeAuxiliaryScripts(
 ): Promise<string[]> {
   const files: string[] = [];
   if (options.secretScan) {
-    const secretPath = path.join(hookDir, "codi-secret-scan.mjs");
+    const secretPath = path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`);
     const secretScript = buildSecretScanScript();
     await fs.writeFile(secretPath, secretScript, {
       encoding: "utf-8",
@@ -65,7 +69,7 @@ async function writeAuxiliaryScripts(
     files.push(path.relative(options.projectRoot, secretPath));
   }
   if (options.fileSizeCheck) {
-    const sizePath = path.join(hookDir, "codi-file-size-check.mjs");
+    const sizePath = path.join(hookDir, `${PROJECT_NAME}-file-size-check.mjs`);
     const sizeScript = buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES);
     await fs.writeFile(sizePath, sizeScript, {
       encoding: "utf-8",
@@ -74,7 +78,7 @@ async function writeAuxiliaryScripts(
     files.push(path.relative(options.projectRoot, sizePath));
   }
   if (options.versionCheck) {
-    const versionPath = path.join(hookDir, "codi-version-check.mjs");
+    const versionPath = path.join(hookDir, `${PROJECT_NAME}-version-check.mjs`);
     await fs.writeFile(versionPath, VERSION_CHECK_TEMPLATE, {
       encoding: "utf-8",
       mode: 0o755,
@@ -121,21 +125,21 @@ async function installStandalone(
   }
 }
 
-function stripCodiSection(content: string): string {
+function stripGeneratedSection(content: string): string {
   const lines = content.split("\n");
   const filtered: string[] = [];
-  let inCodiSection = false;
+  let inGeneratedSection = false;
 
   for (const line of lines) {
-    if (line.trim() === "# Codi hooks") {
-      inCodiSection = true;
+    if (line.trim() === `# ${PROJECT_NAME_DISPLAY} hooks`) {
+      inGeneratedSection = true;
       continue;
     }
-    if (inCodiSection && line.trim() === "") {
-      inCodiSection = false;
+    if (inGeneratedSection && line.trim() === "") {
+      inGeneratedSection = false;
       continue;
     }
-    if (!inCodiSection) {
+    if (!inGeneratedSection) {
       filtered.push(line);
     }
   }
@@ -218,7 +222,7 @@ async function installHusky(
   const huskyFile = path.join(projectRoot, ".husky", "pre-commit");
 
   const commands = buildHuskyCommands(hooks);
-  const block = `\n# Codi hooks\n${commands}\n`;
+  const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n${commands}\n`;
 
   try {
     let existing = "";
@@ -228,8 +232,8 @@ async function installHusky(
       // file doesn't exist yet
     }
 
-    // Remove any existing codi section before appending to prevent duplicates
-    const cleaned = stripCodiSection(existing);
+    // Remove any existing generated section before appending to prevent duplicates
+    const cleaned = stripGeneratedSection(existing);
     await fs.writeFile(huskyFile, cleaned + block, {
       encoding: "utf-8",
       mode: 0o755,
@@ -267,7 +271,7 @@ async function installPreCommitFramework(
     })
     .join("\n");
 
-  const block = `\n# Codi hooks\n- repo: local\n  hooks:\n${localHooks}\n`;
+  const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n- repo: local\n  hooks:\n${localHooks}\n`;
 
   try {
     let existing = "";
@@ -314,10 +318,14 @@ async function installCommitMsgHook(
   if (runner === "husky") {
     const huskyFile = path.join(projectRoot, ".husky", "commit-msg");
     try {
-      await fs.writeFile(huskyFile, `# Codi hooks\n${COMMIT_MSG_TEMPLATE}`, {
-        encoding: "utf-8",
-        mode: 0o755,
-      });
+      await fs.writeFile(
+        huskyFile,
+        `# ${PROJECT_NAME_DISPLAY} hooks\n${COMMIT_MSG_TEMPLATE}`,
+        {
+          encoding: "utf-8",
+          mode: 0o755,
+        },
+      );
       return ok({ files: [path.relative(projectRoot, huskyFile)] });
     } catch (cause) {
       return err([
@@ -335,14 +343,14 @@ async function cleanStaleHooksFromOtherRunner(
   projectRoot: string,
   activeRunner: string,
 ): Promise<void> {
-  const CODI_PRE_COMMIT_MARKER = "Codi pre-commit hook runner";
-  const CODI_COMMIT_MSG_MARKER = "Codi commit message validator";
+  const PRE_COMMIT_MARKER = `${PROJECT_NAME_DISPLAY} pre-commit hook runner`;
+  const COMMIT_MSG_MARKER = `${PROJECT_NAME_DISPLAY} commit message validator`;
 
   if (activeRunner === "husky") {
     // Clean stale standalone hooks in .git/hooks/ — husky doesn't use them
     for (const [file, marker] of [
-      ["pre-commit", CODI_PRE_COMMIT_MARKER],
-      ["commit-msg", CODI_COMMIT_MSG_MARKER],
+      ["pre-commit", PRE_COMMIT_MARKER],
+      ["commit-msg", COMMIT_MSG_MARKER],
     ] as const) {
       const hookPath = path.join(projectRoot, ".git", "hooks", file);
       try {
@@ -358,7 +366,8 @@ async function cleanStaleHooksFromOtherRunner(
       const huskyPath = path.join(projectRoot, ".husky", file);
       try {
         const content = await fs.readFile(huskyPath, "utf-8");
-        if (content.includes("# Codi hooks")) await fs.unlink(huskyPath);
+        if (content.includes(`# ${PROJECT_NAME_DISPLAY} hooks`))
+          await fs.unlink(huskyPath);
       } catch {
         /* doesn't exist */
       }
@@ -375,7 +384,7 @@ export async function installHooks(
     return ok({ files: [], missingDeps: [] });
   }
 
-  // Clean stale codi hooks from a previous runner before installing
+  // Clean stale generated hooks from a previous runner before installing
   await cleanStaleHooksFromOtherRunner(projectRoot, runner);
 
   const allFiles: string[] = [];
@@ -438,7 +447,7 @@ export {
   buildRunnerScript,
   buildSecretScanScript,
   buildFileSizeScript,
-  stripCodiSection,
+  stripGeneratedSection,
   globToGrepPattern,
   buildHuskyCommands,
 };

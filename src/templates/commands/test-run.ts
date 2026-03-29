@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Run the project test suite and report results
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Run the project's test suite:

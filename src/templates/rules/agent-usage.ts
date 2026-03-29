@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Guidelines for spawning and managing sub-agents — when to use, best practices, parallel execution
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Agent Usage

@@ -17,6 +17,8 @@ import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PRESET_MANIFEST_FILENAME,
   SKILL_OUTPUT_FILENAME,
+  PROJECT_NAME,
+  PROJECT_DIR,
 } from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
@@ -24,7 +26,9 @@ const execFileAsync = promisify(execFile);
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-contrib-test-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-contrib-test-`),
+  );
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -44,12 +48,12 @@ describe("contributeHandler", () => {
     expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
   });
 
-  it("returns error when .codi/ exists but has no artifact files", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(path.join(codiDir, "rules"), { recursive: true });
-    await fs.mkdir(path.join(codiDir, "skills"), { recursive: true });
-    await fs.mkdir(path.join(codiDir, "agents"), { recursive: true });
-    await fs.mkdir(path.join(codiDir, "commands"), { recursive: true });
+  it(`returns error when ${PROJECT_DIR}/ exists but has no artifact files`, async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
+    await fs.mkdir(path.join(configDir, "skills"), { recursive: true });
+    await fs.mkdir(path.join(configDir, "agents"), { recursive: true });
+    await fs.mkdir(path.join(configDir, "commands"), { recursive: true });
 
     const result = await contributeHandler(tmpDir);
 
@@ -61,8 +65,8 @@ describe("contributeHandler", () => {
 
 describe("discoverArtifacts", () => {
   it("discovers flat .md rules in rules directory", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const rulesDir = path.join(codiDir, "rules");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "my-rule.md"),
@@ -70,7 +74,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0]!.name).toBe("my-rule");
@@ -79,8 +83,8 @@ describe("discoverArtifacts", () => {
   });
 
   it("discovers directory-based skills with SKILL.md", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = path.join(codiDir, "skills", "code-review");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const skillDir = path.join(configDir, "skills", "code-review");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(
       path.join(skillDir, SKILL_OUTPUT_FILENAME),
@@ -94,7 +98,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0]!.name).toBe("code-review");
@@ -104,8 +108,8 @@ describe("discoverArtifacts", () => {
   });
 
   it("discovers flat .md agents", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const agentsDir = path.join(codiDir, "agents");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const agentsDir = path.join(configDir, "agents");
     await fs.mkdir(agentsDir, { recursive: true });
     await fs.writeFile(
       path.join(agentsDir, "reviewer.md"),
@@ -113,7 +117,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0]!.name).toBe("reviewer");
@@ -121,8 +125,8 @@ describe("discoverArtifacts", () => {
   });
 
   it("discovers flat .md commands", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const commandsDir = path.join(codiDir, "commands");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const commandsDir = path.join(configDir, "commands");
     await fs.mkdir(commandsDir, { recursive: true });
     await fs.writeFile(
       path.join(commandsDir, "deploy.md"),
@@ -130,7 +134,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0]!.name).toBe("deploy");
@@ -138,10 +142,10 @@ describe("discoverArtifacts", () => {
   });
 
   it("discovers multiple artifact types in a polyglot project", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
 
     // Rule
-    const rulesDir = path.join(codiDir, "rules");
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "style.md"),
@@ -150,7 +154,7 @@ describe("discoverArtifacts", () => {
     );
 
     // Skill (directory-based)
-    const skillDir = path.join(codiDir, "skills", "lint");
+    const skillDir = path.join(configDir, "skills", "lint");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(
       path.join(skillDir, SKILL_OUTPUT_FILENAME),
@@ -159,7 +163,7 @@ describe("discoverArtifacts", () => {
     );
 
     // Agent
-    const agentsDir = path.join(codiDir, "agents");
+    const agentsDir = path.join(configDir, "agents");
     await fs.mkdir(agentsDir, { recursive: true });
     await fs.writeFile(
       path.join(agentsDir, "bot.md"),
@@ -167,7 +171,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(3);
     const types = artifacts.map((a) => a.type).sort();
@@ -175,26 +179,26 @@ describe("discoverArtifacts", () => {
   });
 
   it("skips skills without SKILL.md", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = path.join(codiDir, "skills", "broken-skill");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const skillDir = path.join(configDir, "skills", "broken-skill");
     await fs.mkdir(skillDir, { recursive: true });
     // No SKILL.md inside — should be skipped
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(0);
   });
 
-  it("returns empty array for nonexistent .codi directory", async () => {
+  it("returns empty array for nonexistent config directory", async () => {
     const artifacts = await discoverArtifacts(
-      path.join(tmpDir, ".codi-nonexistent"),
+      path.join(tmpDir, `${PROJECT_DIR}-nonexistent`),
     );
     expect(artifacts).toEqual([]);
   });
 
   it("uses directory name as fallback when skill has no name in frontmatter", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = path.join(codiDir, "skills", "my-skill");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const skillDir = path.join(configDir, "skills", "my-skill");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(
       path.join(skillDir, SKILL_OUTPUT_FILENAME),
@@ -202,7 +206,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
 
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
 
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0]!.name).toBe("my-skill");
@@ -376,8 +380,8 @@ describe("buildPresetPackage", () => {
 describe("ZIP round-trip", () => {
   it("exported preset ZIP can be re-imported via extractPresetZip", async () => {
     // 1. Create source artifacts
-    const codiDir = path.join(tmpDir, ".codi");
-    const rulesDir = path.join(codiDir, "rules");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "my-rule.md"),
@@ -385,7 +389,7 @@ describe("ZIP round-trip", () => {
       "utf8",
     );
 
-    const skillDir = path.join(codiDir, "skills", "my-skill");
+    const skillDir = path.join(configDir, "skills", "my-skill");
     await fs.mkdir(path.join(skillDir, "scripts"), { recursive: true });
     await fs.writeFile(
       path.join(skillDir, SKILL_OUTPUT_FILENAME),
@@ -399,7 +403,7 @@ describe("ZIP round-trip", () => {
     );
 
     // 2. Discover artifacts
-    const artifacts = await discoverArtifacts(codiDir);
+    const artifacts = await discoverArtifacts(configDir);
     expect(artifacts).toHaveLength(2);
 
     // 3. Build preset package

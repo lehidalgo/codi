@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Performance analysis agent. Use to profile bottlenecks, detect anti-patterns, and recommend optimizations.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a performance auditor. Identify bottlenecks, detect anti-patterns, and recommend targeted optimizations.

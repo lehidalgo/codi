@@ -1,179 +1,194 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 import {
-  checkCodiVersion,
+  checkProjectVersion,
   checkGeneratedFreshness,
-  checkCodiDirectory,
+  checkProjectDirectory,
   checkOrgConfig,
   checkTeamConfig,
   runAllChecks,
-} from '../../../../src/core/version/version-checker.js';
-import { hashContent } from '../../../../src/utils/hash.js';
+} from "../../../../src/core/version/version-checker.js";
+import { hashContent } from "../../../../src/utils/hash.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "../../../../src/constants.js";
 
-describe('checkCodiVersion', () => {
-  it('passes when version satisfies exact match', () => {
+describe("checkProjectVersion", () => {
+  it("passes when version satisfies exact match", () => {
     // This tests against the actual package version
-    const result = checkCodiVersion('>=0.0.1');
-    expect(result.check).toBe('codi-version');
+    const result = checkProjectVersion(">=0.0.1");
+    expect(result.check).toBe(`${PROJECT_NAME}-version`);
     expect(result.passed).toBe(true);
   });
 
-  it('fails when required version is impossibly high', () => {
-    const result = checkCodiVersion('>=99.0.0');
+  it("fails when required version is impossibly high", () => {
+    const result = checkProjectVersion(">=99.0.0");
     expect(result.passed).toBe(false);
-    expect(result.message).toContain('does not satisfy');
+    expect(result.message).toContain("does not satisfy");
   });
 });
 
-describe('checkGeneratedFreshness', () => {
+describe("checkGeneratedFreshness", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-version-'));
-    await fs.mkdir(path.join(tmpDir, '.codi'), { recursive: true });
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-version-`),
+    );
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
   });
 
   afterEach(async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('passes when no state file exists', async () => {
+  it("passes when no state file exists", async () => {
     const results = await checkGeneratedFreshness(tmpDir);
     expect(results).toHaveLength(1);
     expect(results[0]!.passed).toBe(true);
   });
 
-  it('returns passed when driftMode is off', async () => {
-    const results = await checkGeneratedFreshness(tmpDir, 'off');
+  it("returns passed when driftMode is off", async () => {
+    const results = await checkGeneratedFreshness(tmpDir, "off");
     expect(results).toHaveLength(1);
     expect(results[0]!.passed).toBe(true);
-    expect(results[0]!.message).toContain('disabled');
+    expect(results[0]!.message).toContain("disabled");
   });
 
-  it('reports synced when tracked files match', async () => {
-    const filePath = path.join(tmpDir, 'CLAUDE.md');
-    const content = '# Test output';
-    await fs.writeFile(filePath, content, 'utf-8');
+  it("reports synced when tracked files match", async () => {
+    const filePath = path.join(tmpDir, "CLAUDE.md");
+    const content = "# Test output";
+    await fs.writeFile(filePath, content, "utf-8");
 
     const stateData = {
-      version: '1',
+      version: "1",
       lastGenerated: new Date().toISOString(),
       agents: {
-        'claude-code': [{
-          path: filePath,
-          sourceHash: 'abc',
-          generatedHash: hashContent(content),
-          sources: ['codi.yaml'],
-          timestamp: new Date().toISOString(),
-        }],
+        "claude-code": [
+          {
+            path: filePath,
+            sourceHash: "abc",
+            generatedHash: hashContent(content),
+            sources: [MANIFEST_FILENAME],
+            timestamp: new Date().toISOString(),
+          },
+        ],
       },
     };
     await fs.writeFile(
-      path.join(tmpDir, '.codi', 'state.json'),
+      path.join(tmpDir, PROJECT_DIR, "state.json"),
       JSON.stringify(stateData),
     );
 
     const results = await checkGeneratedFreshness(tmpDir);
-    const claudeResult = results.find((r) => r.check === 'drift-claude-code');
+    const claudeResult = results.find((r) => r.check === "drift-claude-code");
     expect(claudeResult).toBeDefined();
     expect(claudeResult!.passed).toBe(true);
-    expect(claudeResult!.message).toContain('up to date');
+    expect(claudeResult!.message).toContain("up to date");
   });
 
-  it('reports drift when tracked files are missing', async () => {
+  it("reports drift when tracked files are missing", async () => {
     const stateData = {
-      version: '1',
+      version: "1",
       lastGenerated: new Date().toISOString(),
       agents: {
-        'claude-code': [{
-          path: 'CLAUDE.md',
-          sourceHash: 'abc',
-          generatedHash: 'def',
-          sources: ['codi.yaml'],
-          timestamp: new Date().toISOString(),
-        }],
+        "claude-code": [
+          {
+            path: "CLAUDE.md",
+            sourceHash: "abc",
+            generatedHash: "def",
+            sources: [MANIFEST_FILENAME],
+            timestamp: new Date().toISOString(),
+          },
+        ],
       },
     };
     await fs.writeFile(
-      path.join(tmpDir, '.codi', 'state.json'),
+      path.join(tmpDir, PROJECT_DIR, "state.json"),
       JSON.stringify(stateData),
     );
 
     const results = await checkGeneratedFreshness(tmpDir);
-    const claudeResult = results.find((r) => r.check === 'drift-claude-code');
+    const claudeResult = results.find((r) => r.check === "drift-claude-code");
     expect(claudeResult).toBeDefined();
     expect(claudeResult!.passed).toBe(false);
-    expect(claudeResult!.message).toContain('out of sync');
+    expect(claudeResult!.message).toContain("out of sync");
   });
 });
 
-describe('checkCodiDirectory', () => {
+describe("checkProjectDirectory", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-doctor-dir-'));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-doctor-dir-`),
+    );
   });
 
   afterEach(async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('fails when .codi directory does not exist', async () => {
-    const result = await checkCodiDirectory(tmpDir);
+  it(`fails when ${PROJECT_DIR} directory does not exist`, async () => {
+    const result = await checkProjectDirectory(tmpDir);
     expect(result.passed).toBe(false);
-    expect(result.message).toContain('.codi/ directory has issues');
+    expect(result.message).toContain(`${PROJECT_DIR}/ directory has issues`);
   });
 
-  it('passes with valid .codi directory', async () => {
-    const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(codiDir, { recursive: true });
+  it(`passes with valid ${PROJECT_DIR} directory`, async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, 'codi.yaml'),
+      path.join(configDir, MANIFEST_FILENAME),
       `name: test\nversion: "1"\n`,
     );
 
-    const result = await checkCodiDirectory(tmpDir);
+    const result = await checkProjectDirectory(tmpDir);
     expect(result.passed).toBe(true);
   });
 });
 
-describe('checkOrgConfig', () => {
-  it('returns a result with check name org-config', async () => {
+describe("checkOrgConfig", () => {
+  it("returns a result with check name org-config", async () => {
     const result = await checkOrgConfig();
-    expect(result.check).toBe('org-config');
+    expect(result.check).toBe("org-config");
     // Either passes (org config found or not found is optional) or fails
-    expect(typeof result.passed).toBe('boolean');
-    expect(typeof result.message).toBe('string');
+    expect(typeof result.passed).toBe("boolean");
+    expect(typeof result.message).toBe("string");
   });
 });
 
-describe('checkTeamConfig', () => {
-  it('fails when team config file does not exist', async () => {
-    const result = await checkTeamConfig('nonexistent-team-xyz-12345');
-    expect(result.check).toBe('team-config');
+describe("checkTeamConfig", () => {
+  it("fails when team config file does not exist", async () => {
+    const result = await checkTeamConfig("nonexistent-team-xyz-12345");
+    expect(result.check).toBe("team-config");
     expect(result.passed).toBe(false);
-    expect(result.message).toContain('not found');
+    expect(result.message).toContain("not found");
   });
 });
 
-describe('runAllChecks', () => {
+describe("runAllChecks", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codi-all-checks-'));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-all-checks-`),
+    );
   });
 
   afterEach(async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('returns report with allPassed when everything is valid', async () => {
-    const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(codiDir, { recursive: true });
+  it("returns report with allPassed when everything is valid", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, 'codi.yaml'),
+      path.join(configDir, MANIFEST_FILENAME),
       `name: test\nversion: "1"\n`,
     );
 
@@ -183,48 +198,50 @@ describe('runAllChecks', () => {
     expect(result.data.allPassed).toBe(true);
   });
 
-  it('checks version requirement from manifest', async () => {
-    const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(codiDir, { recursive: true });
+  it("checks version requirement from manifest", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, 'codi.yaml'),
-      `name: test\nversion: "1"\ncodi:\n  requiredVersion: ">=99.0.0"\n`,
+      path.join(configDir, MANIFEST_FILENAME),
+      `name: test\nversion: "1"\nengine:\n  requiredVersion: ">=99.0.0"\n`,
     );
 
     const result = await runAllChecks(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.allPassed).toBe(false);
-    const versionResult = result.data.results.find((r) => r.check === 'codi-version');
+    const versionResult = result.data.results.find(
+      (r) => r.check === `${PROJECT_NAME}-version`,
+    );
     expect(versionResult).toBeDefined();
     expect(versionResult!.passed).toBe(false);
   });
 
-  it('skips drift checks when driftMode is off', async () => {
-    const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(codiDir, { recursive: true });
+  it("skips drift checks when driftMode is off", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, 'codi.yaml'),
+      path.join(configDir, MANIFEST_FILENAME),
       `name: test\nversion: "1"\n`,
     );
 
-    const result = await runAllChecks(tmpDir, 'off');
+    const result = await runAllChecks(tmpDir, "off");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     const freshnessResult = result.data.results.find(
-      (r) => r.check === 'generated-freshness',
+      (r) => r.check === "generated-freshness",
     );
     expect(freshnessResult).toBeDefined();
     expect(freshnessResult!.passed).toBe(true);
-    expect(freshnessResult!.message).toContain('disabled');
+    expect(freshnessResult!.message).toContain("disabled");
   });
 
-  it('includes org-config check in results', async () => {
-    const codiDir = path.join(tmpDir, '.codi');
-    await fs.mkdir(codiDir, { recursive: true });
+  it("includes org-config check in results", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, 'codi.yaml'),
+      path.join(configDir, MANIFEST_FILENAME),
       `name: test\nversion: "1"\n`,
     );
 
@@ -232,7 +249,7 @@ describe('runAllChecks', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const orgResult = result.data.results.find((r) => r.check === 'org-config');
+    const orgResult = result.data.results.find((r) => r.check === "org-config");
     expect(orgResult).toBeDefined();
   });
 });

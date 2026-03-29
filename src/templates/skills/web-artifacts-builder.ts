@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui). Use for complex artifacts requiring state management, routing, or shadcn/ui components - not for simple single-file HTML/JSX artifacts.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Web Artifacts Builder

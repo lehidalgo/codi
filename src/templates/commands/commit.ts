@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Create a well-structured git commit with conventional message format
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Use the commit skill to create a well-structured git commit.

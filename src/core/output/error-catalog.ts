@@ -1,9 +1,10 @@
+import { PROJECT_CLI, PROJECT_NAME_DISPLAY } from "../../constants.js";
 import { EXIT_CODES } from "./exit-codes.js";
-import type { CodiError } from "./types.js";
+import type { ProjectError } from "./types.js";
 
 interface CatalogEntry {
   exitCode: number;
-  severity: CodiError["severity"];
+  severity: ProjectError["severity"];
   hintTemplate: string;
 }
 
@@ -17,8 +18,7 @@ export const ERROR_CATALOG = {
   E_CONFIG_NOT_FOUND: {
     exitCode: EXIT_CODES.CONFIG_NOT_FOUND,
     severity: "error" as const,
-    hintTemplate:
-      "Config file not found at {path}. Run `codi init` to create one.",
+    hintTemplate: `Config file not found at {path}. Run \`${PROJECT_CLI} init\` to create one.`,
   },
   E_CONFIG_INVALID: {
     exitCode: EXIT_CODES.CONFIG_INVALID,
@@ -55,7 +55,7 @@ export const ERROR_CATALOG = {
   E_DRIFT_DETECTED: {
     exitCode: EXIT_CODES.DRIFT_DETECTED,
     severity: "warn" as const,
-    hintTemplate: "Drift detected in {file}. Run `codi generate` to sync.",
+    hintTemplate: `Drift detected in {file}. Run \`${PROJECT_CLI} generate\` to sync.`,
   },
   E_HOOK_FAILED: {
     exitCode: EXIT_CODES.HOOK_FAILED,
@@ -119,19 +119,17 @@ export const ERROR_CATALOG = {
   E_VERIFY_NO_CONFIG: {
     exitCode: EXIT_CODES.CONFIG_NOT_FOUND,
     severity: "error" as const,
-    hintTemplate:
-      "No Codi config found. Run `codi init` then `codi generate` before verifying.",
+    hintTemplate: `No ${PROJECT_NAME_DISPLAY} config found. Run \`${PROJECT_CLI} init\` then \`${PROJECT_CLI} generate\` before verifying.`,
   },
   E_VERSION_MISMATCH: {
     exitCode: EXIT_CODES.DOCTOR_FAILED,
     severity: "error" as const,
-    hintTemplate: "Codi version does not satisfy required version: {message}",
+    hintTemplate: `${PROJECT_NAME_DISPLAY} version does not satisfy required version: {message}`,
   },
   E_FILES_STALE: {
     exitCode: EXIT_CODES.DOCTOR_FAILED,
     severity: "error" as const,
-    hintTemplate:
-      "Generated files are stale: {message}. Run `codi generate` to sync.",
+    hintTemplate: `Generated files are stale: {message}. Run \`${PROJECT_CLI} generate\` to sync.`,
   },
   W_CONTENT_SIZE: {
     exitCode: EXIT_CODES.SUCCESS,
@@ -146,8 +144,7 @@ export const ERROR_CATALOG = {
   E_PRESET_NOT_FOUND: {
     exitCode: EXIT_CODES.PRESET_ERROR,
     severity: "error" as const,
-    hintTemplate:
-      'Preset "{name}" not found. Check the name or install it with `codi preset install`.',
+    hintTemplate: `Preset "{name}" not found. Check the name or install it with \`${PROJECT_CLI} preset install\`.`,
   },
   E_PRESET_INVALID: {
     exitCode: EXIT_CODES.PRESET_ERROR,
@@ -177,8 +174,7 @@ export const ERROR_CATALOG = {
   E_SKILL_NOT_FOUND: {
     exitCode: EXIT_CODES.GENERAL_ERROR,
     severity: "error" as const,
-    hintTemplate:
-      'Skill "{name}" not found at {path}. Run `codi add skill` to create one.',
+    hintTemplate: `Skill "{name}" not found at {path}. Run \`${PROJECT_CLI} add skill\` to create one.`,
   },
   E_SKILL_EXPORT_FAILED: {
     exitCode: EXIT_CODES.GENERAL_ERROR,

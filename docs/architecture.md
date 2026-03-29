@@ -201,7 +201,7 @@ Each flag resolves to:
 All fallible operations return `Result<T>` instead of throwing exceptions:
 
 ```typescript
-type Result<T, E = CodiError[]> =
+type Result<T, E = ProjectError[]> =
   | { ok: true; data: T }
   | { ok: false; errors: E };
 ```

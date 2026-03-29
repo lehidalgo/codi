@@ -4,7 +4,7 @@ import { registerAllAdapters } from "../adapters/index.js";
 import { generate } from "../core/generator/generator.js";
 import { StateManager } from "../core/config/state.js";
 import type { GeneratedFileState } from "../core/config/state.js";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { hashContent } from "../utils/hash.js";
@@ -54,8 +54,8 @@ export async function generateHandler(
   registerAllAdapters();
 
   if (!options.dryRun) {
-    const codiDirForBackup = resolveCodiDir(projectRoot);
-    await createBackup(projectRoot, codiDirForBackup);
+    const configDirForBackup = resolveProjectDir(projectRoot);
+    await createBackup(projectRoot, configDirForBackup);
   }
 
   const genResult = await generate(configResult.data, projectRoot, {
@@ -75,8 +75,8 @@ export async function generateHandler(
   }
 
   if (!options.dryRun) {
-    const codiDir = resolveCodiDir(projectRoot);
-    const stateManager = new StateManager(codiDir, projectRoot);
+    const configDir = resolveProjectDir(projectRoot);
+    const stateManager = new StateManager(configDir, projectRoot);
 
     for (const agentId of genResult.data.agents) {
       const agentFiles = (genResult.data.filesByAgent[agentId] ?? []).map(
@@ -91,7 +91,7 @@ export async function generateHandler(
       await stateManager.updateAgent(agentId, agentFiles);
     }
 
-    await writeAuditEntry(codiDir, {
+    await writeAuditEntry(configDir, {
       type: "generate",
       timestamp: new Date().toISOString(),
       details: {
@@ -135,8 +135,11 @@ export async function generateHandler(
           }
         }
         if (hookResult.ok && hookResult.data.files.length > 0) {
-          const codiDirHooks = resolveCodiDir(projectRoot);
-          const stateManagerHooks = new StateManager(codiDirHooks, projectRoot);
+          const configDirHooks = resolveProjectDir(projectRoot);
+          const stateManagerHooks = new StateManager(
+            configDirHooks,
+            projectRoot,
+          );
           const now = new Date().toISOString();
           await stateManagerHooks.updateHooks(
             hookResult.data.files.map((f) => ({
@@ -148,7 +151,7 @@ export async function generateHandler(
             })),
           );
 
-          const ledger = new OperationsLedgerManager(codiDirHooks);
+          const ledger = new OperationsLedgerManager(configDirHooks);
           await ledger.addHookFiles(
             hookResult.data.files.map((f) => ({
               path: f,
@@ -170,8 +173,8 @@ export async function generateHandler(
   // Log generate operation to ledger
   if (!options.dryRun) {
     try {
-      const codiDirLedger = resolveCodiDir(projectRoot);
-      const ledger = new OperationsLedgerManager(codiDirLedger);
+      const configDirLedger = resolveProjectDir(projectRoot);
+      const ledger = new OperationsLedgerManager(configDirLedger);
       const now = new Date().toISOString();
       const ledgerFiles = genResult.data.agents.flatMap((agentId) =>
         (genResult.data.filesByAgent[agentId] ?? []).map((f) => ({

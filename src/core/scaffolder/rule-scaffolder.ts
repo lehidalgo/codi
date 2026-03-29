@@ -20,14 +20,14 @@ Add your rule content here.`;
 
 export interface CreateRuleOptions {
   name: string;
-  codiDir: string;
+  configDir: string;
   template?: string;
 }
 
 export async function createRule(
   options: CreateRuleOptions,
 ): Promise<Result<string>> {
-  const { name, codiDir, template } = options;
+  const { name, configDir, template } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
     return err([
@@ -48,7 +48,7 @@ export async function createRule(
 
   content = content.replace(/\{\{name\}\}/g, name);
 
-  const filePath = path.join(codiDir, "rules", `${name}.md`);
+  const filePath = path.join(configDir, "rules", `${name}.md`);
   const dir = path.dirname(filePath);
 
   try {

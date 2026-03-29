@@ -2,12 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import * as p from "@clack/prompts";
 import { stringify as stringifyYaml } from "yaml";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { Logger } from "../core/output/logger.js";
 import {
   PRESET_MANIFEST_FILENAME,
   NAME_PATTERN_STRICT,
   MAX_NAME_LENGTH,
+  PROJECT_CLI,
+  PROJECT_DIR,
 } from "../constants.js";
 import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
@@ -35,7 +37,7 @@ export interface PresetWizardResult {
 export async function runPresetWizard(
   projectRoot: string,
 ): Promise<PresetWizardResult | null> {
-  p.intro("codi — Preset Creator");
+  p.intro(`${PROJECT_CLI} — Preset Creator`);
 
   // Step 1: Identity
   const name = await p.text({
@@ -130,7 +132,10 @@ export async function runPresetWizard(
   const format = await p.select({
     message: "Output format",
     options: [
-      { label: "Local directory (.codi/presets/)", value: "dir" as const },
+      {
+        label: `Local directory (${PROJECT_DIR}/presets/)`,
+        value: "dir" as const,
+      },
       { label: "ZIP package", value: "zip" as const },
       { label: "GitHub repository scaffold", value: "github" as const },
     ],
@@ -168,8 +173,8 @@ async function scaffoldPreset(
   config: PresetWizardResult,
 ): Promise<void> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
-  const presetDir = path.join(codiDir, "presets", config.name);
+  const configDir = resolveProjectDir(projectRoot);
+  const presetDir = path.join(configDir, "presets", config.name);
 
   // Create preset directory (no subdirs — artifacts are references)
   await fs.mkdir(presetDir, { recursive: true });
@@ -196,7 +201,7 @@ async function scaffoldPreset(
     "utf8",
   );
 
-  log.info(`Created preset scaffold at .codi/presets/${config.name}/`);
+  log.info(`Created preset scaffold at ${PROJECT_DIR}/presets/${config.name}/`);
   log.info(
     `  Rules: ${config.rules.length}, Skills: ${config.skills.length}, Agents: ${config.agents.length}, Brands: ${config.brands.length}`,
   );
@@ -208,22 +213,24 @@ async function scaffoldPreset(
       log.info(`Exported to ${zipResult.data.outputPath}`);
     } else {
       log.info(
-        "Failed to create ZIP. You can export later with: codi preset export",
+        `Failed to create ZIP. You can export later with: ${PROJECT_CLI} preset export`,
       );
     }
   } else if (config.outputFormat === "github") {
     log.info("");
     log.info("To create a GitHub repository:");
-    log.info(`  1. Copy .codi/presets/${config.name}/ to a new directory`);
+    log.info(
+      `  1. Copy ${PROJECT_DIR}/presets/${config.name}/ to a new directory`,
+    );
     log.info(
       '  2. Run: git init && git add . && git commit -m "Initial preset"',
     );
     log.info("  3. Push to GitHub");
     log.info(
-      `  4. Others install with: codi preset install github:org/${config.name}`,
+      `  4. Others install with: ${PROJECT_CLI} preset install github:org/${config.name}`,
     );
   }
 
   log.info("");
-  log.info(`Validate with: codi preset validate ${config.name}`);
+  log.info(`Validate with: ${PROJECT_CLI} preset validate ${config.name}`);
 }

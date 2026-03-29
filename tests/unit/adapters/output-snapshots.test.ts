@@ -8,6 +8,7 @@ import { codexAdapter } from "#src/adapters/codex.js";
 import { windsurfAdapter } from "#src/adapters/windsurf.js";
 import { clineAdapter } from "#src/adapters/cline.js";
 import { createMockConfig } from "./mock-config.js";
+import { PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 import type { AgentAdapter } from "#src/types/agent.js";
 
 const adapters: AgentAdapter[] = [
@@ -24,7 +25,7 @@ describe("generated output snapshots", () => {
   beforeEach(async () => {
     tmpDir = join(
       tmpdir(),
-      `codi-snap-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `${PROJECT_NAME}-snap-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     await mkdir(tmpDir, { recursive: true });
   });
@@ -41,7 +42,7 @@ describe("generated output snapshots", () => {
         content: "Use 2-space indentation and single quotes.",
         priority: "high",
         alwaysApply: true,
-        managedBy: "codi",
+        managedBy: PROJECT_NAME,
       },
     ],
     skills: [
@@ -51,26 +52,26 @@ describe("generated output snapshots", () => {
         content: "Review all code changes for quality.",
         priority: "high",
         alwaysApply: true,
-        managedBy: "codi",
+        managedBy: PROJECT_NAME,
       },
     ],
     flags: {
       allow_force_push: {
         value: false,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
       allow_shell_commands: {
         value: true,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
       max_file_lines: {
         value: 500,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
     },

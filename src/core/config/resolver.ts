@@ -6,12 +6,12 @@ import type { Result } from "../../types/result.js";
 import type { NormalizedConfig } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
 import {
-  resolveCodiDir,
+  resolveProjectDir,
   resolveUserDir,
   resolveOrgFile,
   resolveTeamFile,
 } from "../../utils/paths.js";
-import { scanCodiDir } from "./parser.js";
+import { scanProjectDir } from "./parser.js";
 import { composeConfig, flagsFromDefinitions } from "./composer.js";
 import type { ConfigLayer } from "./composer.js";
 import { validateConfig } from "./validator.js";
@@ -47,8 +47,8 @@ function extractFlags(
   return flagsRaw;
 }
 
-async function buildLangLayers(codiDir: string): Promise<ConfigLayer[]> {
-  const langDir = path.join(codiDir, "lang");
+async function buildLangLayers(configDir: string): Promise<ConfigLayer[]> {
+  const langDir = path.join(configDir, "lang");
   if (!(await fileExists(langDir))) return [];
 
   const layers: ConfigLayer[] = [];
@@ -71,8 +71,8 @@ async function buildLangLayers(codiDir: string): Promise<ConfigLayer[]> {
   return layers;
 }
 
-async function buildAgentLayers(codiDir: string): Promise<ConfigLayer[]> {
-  const agentsDir = path.join(codiDir, "agents");
+async function buildAgentLayers(configDir: string): Promise<ConfigLayer[]> {
+  const agentsDir = path.join(configDir, "agents");
   if (!(await fileExists(agentsDir))) return [];
 
   const layers: ConfigLayer[] = [];
@@ -129,8 +129,8 @@ async function buildTeamLayer(teamName: string): Promise<ConfigLayer | null> {
   };
 }
 
-async function buildFrameworkLayers(codiDir: string): Promise<ConfigLayer[]> {
-  const frameworksDir = path.join(codiDir, "frameworks");
+async function buildFrameworkLayers(configDir: string): Promise<ConfigLayer[]> {
+  const frameworksDir = path.join(configDir, "frameworks");
   if (!(await fileExists(frameworksDir))) return [];
 
   const layers: ConfigLayer[] = [];
@@ -172,10 +172,10 @@ async function buildUserLayer(): Promise<ConfigLayer | null> {
 }
 
 async function buildPresetLayers(
-  codiDir: string,
+  configDir: string,
   presetNames: string[],
 ): Promise<ConfigLayer[]> {
-  const presetsDir = path.join(codiDir, "presets");
+  const presetsDir = path.join(configDir, "presets");
   const layers: ConfigLayer[] = [];
 
   for (const name of presetNames) {
@@ -204,14 +204,14 @@ async function buildPresetLayers(
 export async function resolveConfig(
   projectRoot: string,
 ): Promise<Result<NormalizedConfig>> {
-  const codiDir = resolveCodiDir(projectRoot);
-  const scanResult = await scanCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
+  const scanResult = await scanProjectDir(projectRoot);
   if (!scanResult.ok) return scanResult;
 
   const parsed = scanResult.data;
   const repoLayer: ConfigLayer = {
     level: "repo",
-    source: codiDir,
+    source: configDir,
     config: {
       manifest: parsed.manifest,
       rules: parsed.rules,
@@ -221,7 +221,7 @@ export async function resolveConfig(
       brands: parsed.brands,
       flags: flagsFromDefinitions(
         parsed.flags,
-        path.join(codiDir, FLAGS_FILENAME),
+        path.join(configDir, FLAGS_FILENAME),
       ),
       mcp: parsed.mcp,
     },
@@ -231,10 +231,10 @@ export async function resolveConfig(
   const teamName = parsed.manifest.team;
   const teamLayer = teamName ? await buildTeamLayer(teamName) : null;
   const presetNames = parsed.manifest.presets ?? [];
-  const presetLayers = await buildPresetLayers(codiDir, presetNames);
-  const langLayers = await buildLangLayers(codiDir);
-  const frameworkLayers = await buildFrameworkLayers(codiDir);
-  const agentLayers = await buildAgentLayers(codiDir);
+  const presetLayers = await buildPresetLayers(configDir, presetNames);
+  const langLayers = await buildLangLayers(configDir);
+  const frameworkLayers = await buildFrameworkLayers(configDir);
+  const agentLayers = await buildAgentLayers(configDir);
   const userLayer = await buildUserLayer();
 
   const layers: ConfigLayer[] = [

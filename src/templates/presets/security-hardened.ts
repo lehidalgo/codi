@@ -1,14 +1,15 @@
+import { PROJECT_NAME, prefixedName } from "../../constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
-  name: "security-hardened",
+  name: prefixedName("security-hardened"),
   description:
     "Maximum security enforcement with locked flags, mandatory scans, and restricted operations",
   version: "1.0.0",
-  author: "codi",
+  author: PROJECT_NAME,
   tags: ["security", "hardened", "compliance", "enterprise"],
   compatibility: {
-    codi: ">=0.3.0",
+    engine: ">=0.3.0",
     agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
   },
   flags: {
@@ -32,15 +33,24 @@ export const preset: BuiltinPresetDefinition = {
     auto_generate_on_change: { mode: "enabled", value: true },
   },
   rules: [
-    "security",
-    "code-style",
-    "testing",
-    "error-handling",
-    "api-design",
-    "git-workflow",
+    prefixedName("security"),
+    prefixedName("code-style"),
+    prefixedName("testing"),
+    prefixedName("error-handling"),
+    prefixedName("api-design"),
+    prefixedName("git-workflow"),
   ],
-  skills: ["security-scan", "code-review", "commit"],
-  agents: ["security-analyzer", "code-reviewer"],
-  commands: ["security-scan", "review", "commit", "test-run"],
+  skills: [
+    prefixedName("security-scan"),
+    prefixedName("code-review"),
+    prefixedName("commit"),
+  ],
+  agents: [prefixedName("security-analyzer"), prefixedName("code-reviewer")],
+  commands: [
+    prefixedName("security-scan"),
+    prefixedName("review"),
+    prefixedName("commit"),
+    prefixedName("test-run"),
+  ],
   mcpServers: [],
 };

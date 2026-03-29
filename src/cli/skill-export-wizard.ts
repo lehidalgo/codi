@@ -1,10 +1,14 @@
 import * as p from "@clack/prompts";
 import path from "node:path";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { listAvailableSkills } from "../core/skill/skill-export.js";
 import type { SkillExportFormat } from "../core/skill/skill-export.js";
 import { parseSkillFile } from "../core/config/parser.js";
-import { SKILL_OUTPUT_FILENAME } from "../constants.js";
+import {
+  SKILL_OUTPUT_FILENAME,
+  PROJECT_CLI,
+  PROJECT_DIR,
+} from "../constants.js";
 
 export interface SkillExportWizardResult {
   name: string;
@@ -23,20 +27,20 @@ interface SkillOption {
 export async function runSkillExportWizard(
   projectRoot: string,
 ): Promise<SkillExportWizardResult | null> {
-  p.intro("codi — Skill Export");
+  p.intro(`${PROJECT_CLI} — Skill Export`);
 
-  const codiDir = resolveCodiDir(projectRoot);
-  const skillNames = await listAvailableSkills(codiDir);
+  const configDir = resolveProjectDir(projectRoot);
+  const skillNames = await listAvailableSkills(configDir);
 
   if (skillNames.length === 0) {
     p.cancel(
-      "No skills found in .codi/skills/. Create one first with `codi add skill`.",
+      `No skills found in ${PROJECT_DIR}/skills/. Create one first with \`${PROJECT_CLI} add skill\`.`,
     );
     return null;
   }
 
   // Load descriptions for display
-  const skillOptions = await loadSkillOptions(codiDir, skillNames);
+  const skillOptions = await loadSkillOptions(configDir, skillNames);
 
   // Step 1: Select skill
   const selectedSkill = await p.select({
@@ -116,13 +120,13 @@ export async function runSkillExportWizard(
 }
 
 async function loadSkillOptions(
-  codiDir: string,
+  configDir: string,
   names: string[],
 ): Promise<SkillOption[]> {
   const options: SkillOption[] = [];
   for (const name of names) {
     const skillMdPath = path.join(
-      codiDir,
+      configDir,
       "skills",
       name,
       SKILL_OUTPUT_FILENAME,

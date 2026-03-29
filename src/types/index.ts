@@ -1,5 +1,5 @@
-export type { Result } from './result.js';
-export { ok, err, isOk, isErr } from './result.js';
+export type { Result } from "./result.js";
+export { ok, err, isOk, isErr } from "./result.js";
 
 export type {
   FlagMode,
@@ -8,17 +8,17 @@ export type {
   ResolvedFlags,
   ResolvedFlag,
   FlagSpec,
-} from './flags.js';
+} from "./flags.js";
 
 export type {
-  CodiManifest,
+  ProjectManifest,
   NormalizedRule,
   NormalizedSkill,
   NormalizedCommand,
   NormalizedAgent,
   McpConfig,
   NormalizedConfig,
-} from './config.js';
+} from "./config.js";
 
 export type {
   AgentPaths,
@@ -29,4 +29,4 @@ export type {
   AgentFileStatus,
   AgentStatus,
   AgentAdapter,
-} from './agent.js';
+} from "./agent.js";

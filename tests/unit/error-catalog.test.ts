@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
 import { ERROR_CATALOG } from "#src/core/output/error-catalog.js";
-import { createError, zodToCodiErrors } from "#src/core/output/errors.js";
+import { createError, zodToProjectErrors } from "#src/core/output/errors.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
+import { MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("ERROR_CATALOG", () => {
   it("has unique error codes", () => {
@@ -46,7 +47,7 @@ describe("createError", () => {
   });
 
   it("preserves context", () => {
-    const ctx = { file: "codi.yml", extra: 42 };
+    const ctx = { file: MANIFEST_FILENAME, extra: 42 };
     const error = createError("E_CONFIG_PARSE_FAILED", ctx);
     expect(error.context).toEqual(ctx);
   });
@@ -67,13 +68,13 @@ describe("createError", () => {
   });
 });
 
-describe("zodToCodiErrors", () => {
-  it("converts Zod errors to CodiError array", () => {
+describe("zodToProjectErrors", () => {
+  it("converts Zod errors to ProjectError array", () => {
     const schema = z.object({ name: z.string(), age: z.number() });
     const result = schema.safeParse({ name: 123, age: "old" });
     expect(result.success).toBe(false);
     if (!result.success) {
-      const errors = zodToCodiErrors(result.error, "test.yml");
+      const errors = zodToProjectErrors(result.error, "test.yml");
       expect(errors.length).toBeGreaterThan(0);
       for (const err of errors) {
         expect(err.code).toBe("E_SCHEMA_VALIDATION");

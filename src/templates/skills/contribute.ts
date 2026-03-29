@@ -1,20 +1,29 @@
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  PROJECT_REPO,
+  PROJECT_URL,
+} from "../../constants.js";
+
 export const template = `---
 name: {{name}}
-description: Guide the user through contributing artifacts back to the codi project. Covers GitHub CLI setup, GitHub MCP configuration, PR creation, ZIP export, and manual workflows.
-category: Codi Platform
+description: Guide the user through contributing artifacts back to the ${PROJECT_NAME} project. Covers GitHub CLI setup, GitHub MCP configuration, PR creation, ZIP export, and manual workflows.
+category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
 
-Help the user contribute their custom artifacts (rules, skills, agents, commands) back to the official codi project or share them privately with their team.
+Help the user contribute their custom artifacts (rules, skills, agents, commands) back to the official ${PROJECT_NAME} project or share them privately with their team.
 
 ## When to Activate
 
-- User wants to contribute a rule, skill, agent, or command back to the codi project
+- User wants to contribute a rule, skill, agent, or command back to the ${PROJECT_NAME} project
 - User asks how to share artifacts with the community or their team
-- User wants to open a pull request to the codi repository
+- User wants to open a pull request to the ${PROJECT_NAME} repository
 - User asks to export artifacts as a ZIP for private sharing
 - User needs help setting up GitHub CLI or GitHub MCP for contributions
 
@@ -64,12 +73,12 @@ The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://git
 List the user's custom artifacts:
 
 \\\`\\\`\\\`bash
-ls .codi/rules/ .codi/skills/ .codi/agents/ .codi/commands/ 2>/dev/null
+ls ${PROJECT_DIR}/rules/ ${PROJECT_DIR}/skills/ ${PROJECT_DIR}/agents/ ${PROJECT_DIR}/commands/ 2>/dev/null
 \\\`\\\`\\\`
 
 Help the user identify:
 - Custom rules, skills, agents, or commands they created or improved
-- Artifacts with \\\`managed_by: user\\\` (user-created) or \\\`managed_by: codi\\\` (improved built-in)
+- Artifacts with \\\`managed_by: user\\\` (user-created) or \\\`managed_by: ${PROJECT_NAME}\\\` (improved built-in)
 - Artifacts that have been tested and proven useful in real workflows
 
 ## Step 3: Choose Contribution Method
@@ -77,28 +86,28 @@ Help the user identify:
 ### Option A: Interactive CLI (Recommended)
 
 \\\`\\\`\\\`bash
-codi contribute
+${PROJECT_CLI} contribute
 \\\`\\\`\\\`
 
 The wizard will:
-1. Discover all artifacts in \\\`.codi/\\\`
+1. Discover all artifacts in \\\`${PROJECT_DIR}/\\\`
 2. Present a multi-select list for choosing which to contribute
 3. Offer two distribution methods:
-   - **Open PR to codi repository** — requires GitHub CLI auth, targets the \\\`develop\\\` branch
+   - **Open PR to ${PROJECT_NAME} repository** — requires GitHub CLI auth, targets the \\\`develop\\\` branch
    - **Export as ZIP** — creates a re-importable preset package
 
 For the PR method, the wizard:
-- Clones the official codi repository
+- Clones the official ${PROJECT_NAME} repository
 - Creates a repo on the user's GitHub account (if needed)
 - Converts artifacts to TypeScript templates in \\\`src/templates/\\\`
 - Pushes a branch and opens a PR to \\\`develop\\\`
 
 ### Option B: Manual PR (Advanced Users)
 
-1. Clone the official codi repository:
+1. Clone the official ${PROJECT_NAME} repository:
    \\\`\\\`\\\`bash
-   git clone https://github.com/lehidalgo/codi.git /tmp/codi-contrib
-   cd /tmp/codi-contrib
+   git clone ${PROJECT_URL}.git /tmp/${PROJECT_NAME}-contrib
+   cd /tmp/${PROJECT_NAME}-contrib
    \\\`\\\`\\\`
 
 2. Create a contribution branch:
@@ -117,7 +126,7 @@ For the PR method, the wizard:
    export const template = \\\\\\\`---
    name: {{name}}
    description: Your artifact description
-   managed_by: codi
+   managed_by: ${PROJECT_NAME}
    ---
 
    # {{name}}
@@ -130,9 +139,9 @@ For the PR method, the wizard:
 
 6. Push to your GitHub account and open a PR:
    \\\`\\\`\\\`bash
-   git remote add user https://github.com/YOUR_USERNAME/codi.git
+   git remote add user https://github.com/YOUR_USERNAME/${PROJECT_NAME}.git
    git push user contrib/add-my-artifact
-   gh pr create --repo lehidalgo/codi --base develop \\\\
+   gh pr create --repo ${PROJECT_REPO} --base develop \\\\
      --title "feat: add my-artifact template" \\\\
      --body "Description of the contribution"
    \\\`\\\`\\\`
@@ -140,14 +149,14 @@ For the PR method, the wizard:
 ### Option C: Private Sharing (ZIP)
 
 \\\`\\\`\\\`bash
-codi contribute
+${PROJECT_CLI} contribute
 # Select artifacts → choose "Export as ZIP"
 \\\`\\\`\\\`
 
 The ZIP contains a complete preset package with \\\`preset.yaml\\\` manifest. Recipients install with:
 
 \\\`\\\`\\\`bash
-codi preset install ./contribution.zip
+${PROJECT_CLI} preset install ./contribution.zip
 \\\`\\\`\\\`
 
 ### Option D: Using GitHub MCP Tools
@@ -187,7 +196,7 @@ The CLI creates a repo on your GitHub account to push the branch. Ensure:
 
 ### PR has merge conflicts
 \\\`\\\`\\\`bash
-cd /tmp/codi-contrib
+cd /tmp/${PROJECT_NAME}-contrib
 git fetch origin develop
 git rebase origin/develop
 # Resolve conflicts, then:
@@ -195,5 +204,5 @@ git push user contrib/my-branch --force-with-lease
 \\\`\\\`\\\`
 
 ### ZIP import fails
-Ensure the ZIP was created by \\\`codi contribute\\\` — it must contain a \\\`preset.yaml\\\` manifest at the root or one level deep.
+Ensure the ZIP was created by \\\`${PROJECT_CLI} contribute\\\` — it must contain a \\\`preset.yaml\\\` manifest at the root or one level deep.
 `;

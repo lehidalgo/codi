@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Measure and improve test coverage
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Use the test-coverage skill to measure and improve code coverage.

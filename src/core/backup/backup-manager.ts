@@ -1,7 +1,12 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { isPathSafe } from '../../utils/path-guard.js';
-import { MAX_BACKUPS, STATE_FILENAME, BACKUPS_DIR, BACKUP_MANIFEST_FILENAME } from '../../constants.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { isPathSafe } from "../../utils/path-guard.js";
+import {
+  MAX_BACKUPS,
+  STATE_FILENAME,
+  BACKUPS_DIR,
+  BACKUP_MANIFEST_FILENAME,
+} from "../../constants.js";
 
 interface BackupManifest {
   timestamp: string;
@@ -33,16 +38,16 @@ async function fileExists(filePath: string): Promise<boolean> {
 
 export async function createBackup(
   projectRoot: string,
-  codiDir: string,
+  configDir: string,
 ): Promise<string | null> {
-  const statePath = path.join(codiDir, STATE_FILENAME);
+  const statePath = path.join(configDir, STATE_FILENAME);
   if (!(await fileExists(statePath))) {
     return null;
   }
 
   let stateData: { agents: Record<string, Array<{ path: string }>> };
   try {
-    const raw = await fs.readFile(statePath, 'utf8');
+    const raw = await fs.readFile(statePath, "utf8");
     stateData = JSON.parse(raw) as typeof stateData;
   } catch {
     return null;
@@ -53,8 +58,8 @@ export async function createBackup(
     return null;
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupsRoot = path.join(codiDir, BACKUPS_DIR);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupsRoot = path.join(configDir, BACKUPS_DIR);
   const backupDir = path.join(backupsRoot, timestamp);
   await fs.mkdir(backupDir, { recursive: true });
 
@@ -83,7 +88,7 @@ export async function createBackup(
   await fs.writeFile(
     path.join(backupDir, BACKUP_MANIFEST_FILENAME),
     JSON.stringify(manifest, null, 2),
-    'utf8',
+    "utf8",
   );
 
   await cleanupOldBackups(backupsRoot);
@@ -91,8 +96,8 @@ export async function createBackup(
   return timestamp;
 }
 
-export async function listBackups(codiDir: string): Promise<BackupInfo[]> {
-  const backupsRoot = path.join(codiDir, BACKUPS_DIR);
+export async function listBackups(configDir: string): Promise<BackupInfo[]> {
+  const backupsRoot = path.join(configDir, BACKUPS_DIR);
   if (!(await dirExists(backupsRoot))) {
     return [];
   }
@@ -102,11 +107,15 @@ export async function listBackups(codiDir: string): Promise<BackupInfo[]> {
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const manifestPath = path.join(backupsRoot, entry.name, BACKUP_MANIFEST_FILENAME);
+    const manifestPath = path.join(
+      backupsRoot,
+      entry.name,
+      BACKUP_MANIFEST_FILENAME,
+    );
     if (!(await fileExists(manifestPath))) continue;
 
     try {
-      const raw = await fs.readFile(manifestPath, 'utf8');
+      const raw = await fs.readFile(manifestPath, "utf8");
       const manifest = JSON.parse(raw) as BackupManifest;
       backups.push({
         timestamp: manifest.timestamp,
@@ -122,13 +131,13 @@ export async function listBackups(codiDir: string): Promise<BackupInfo[]> {
 
 export async function restoreBackup(
   projectRoot: string,
-  codiDir: string,
+  configDir: string,
   timestamp: string,
 ): Promise<string[]> {
-  const backupDir = path.join(codiDir, BACKUPS_DIR, timestamp);
+  const backupDir = path.join(configDir, BACKUPS_DIR, timestamp);
   const manifestPath = path.join(backupDir, BACKUP_MANIFEST_FILENAME);
 
-  const raw = await fs.readFile(manifestPath, 'utf8');
+  const raw = await fs.readFile(manifestPath, "utf8");
   const manifest = JSON.parse(raw) as BackupManifest;
 
   const restoredFiles: string[] = [];
@@ -156,7 +165,10 @@ async function cleanupOldBackups(backupsDir: string): Promise<void> {
   while (dirs.length > MAX_BACKUPS) {
     const oldest = dirs.shift();
     if (!oldest) break;
-    await fs.rm(path.join(backupsDir, oldest), { recursive: true, force: true });
+    await fs.rm(path.join(backupsDir, oldest), {
+      recursive: true,
+      force: true,
+    });
   }
 }
 

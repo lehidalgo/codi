@@ -1,5 +1,5 @@
 import type { NormalizedConfig } from "../../types/config.js";
-import type { CodiError } from "../output/types.js";
+import type { ProjectError } from "../output/types.js";
 import { createError } from "../output/errors.js";
 import { getAllAdapters } from "../generator/adapter-registry.js";
 import { ALL_ADAPTERS } from "../../adapters/index.js";
@@ -16,8 +16,8 @@ function getKnownAdapterIds(): string[] {
   return registered.length > 0 ? registered : ALL_ADAPTERS.map((a) => a.id);
 }
 
-export function validateConfig(config: NormalizedConfig): CodiError[] {
-  const errors: CodiError[] = [];
+export function validateConfig(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
 
   errors.push(...validateAgents(config));
   errors.push(...validateRules(config));
@@ -27,8 +27,8 @@ export function validateConfig(config: NormalizedConfig): CodiError[] {
   return errors;
 }
 
-export function validateContentSize(config: NormalizedConfig): CodiError[] {
-  const warnings: CodiError[] = [];
+export function validateContentSize(config: NormalizedConfig): ProjectError[] {
+  const warnings: ProjectError[] = [];
   let totalChars = 0;
 
   for (const rule of config.rules) {
@@ -126,8 +126,8 @@ export function validateContentSize(config: NormalizedConfig): CodiError[] {
   return warnings;
 }
 
-function validateAgents(config: NormalizedConfig): CodiError[] {
-  const errors: CodiError[] = [];
+function validateAgents(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
   const agentIds = config.manifest.agents ?? [];
 
   for (const agentId of agentIds) {
@@ -145,8 +145,8 @@ function validateAgents(config: NormalizedConfig): CodiError[] {
   return errors;
 }
 
-function validateRules(config: NormalizedConfig): CodiError[] {
-  const errors: CodiError[] = [];
+function validateRules(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
   const names = new Set<string>();
 
   for (const rule of config.rules) {
@@ -171,8 +171,8 @@ function validateRules(config: NormalizedConfig): CodiError[] {
   return errors;
 }
 
-function validateBrands(config: NormalizedConfig): CodiError[] {
-  const errors: CodiError[] = [];
+function validateBrands(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
   const names = new Set<string>();
 
   for (const brand of config.brands) {
@@ -189,8 +189,8 @@ function validateBrands(config: NormalizedConfig): CodiError[] {
   return errors;
 }
 
-function validateFlags(config: NormalizedConfig): CodiError[] {
-  const errors: CodiError[] = [];
+function validateFlags(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
 
   for (const [key, flag] of Object.entries(config.flags)) {
     if (flag.mode === "enforced" && flag.value === undefined) {

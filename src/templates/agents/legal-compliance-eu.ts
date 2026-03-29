@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: EU regulatory compliance specialist. Use for GDPR review, data protection impact assessments, privacy-by-design, cross-border data transfers, or EU AI Act requirements.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are an EU Regulatory Compliance Specialist with deep expertise in GDPR, the EU AI Act, and European data protection frameworks.

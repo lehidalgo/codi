@@ -2,6 +2,11 @@ import {
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_ARTIFACT_CHARS,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  devArtifactName,
 } from "../../constants.js";
 
 export const template = `---
@@ -10,8 +15,8 @@ description: |
   Rule creation workflow. Use when the user asks to create, write, or define
   a coding rule, standard, or convention. Also activate when the user wants
   to enforce behavior, set constraints, or establish coding standards.
-category: Codi Platform
-managed_by: codi
+category: ${PROJECT_NAME_DISPLAY} Platform
+managed_by: ${PROJECT_NAME}
 ---
 
 # Rule Creator
@@ -50,22 +55,22 @@ If unsure, start with a narrow scope. It is easier to widen later than to narrow
 **[CODING AGENT]** Check available templates:
 
 \\\`\\\`\\\`bash
-codi add rule --all
+${PROJECT_CLI} add rule --all
 \\\`\\\`\\\`
 
 This lists all built-in rule templates. To use one as a starting point:
 
 \\\`\\\`\\\`bash
-codi add rule <template-name>
+${PROJECT_CLI} add rule <template-name>
 \\\`\\\`\\\`
 
 To start blank:
 
 \\\`\\\`\\\`bash
-codi add rule <name>
+${PROJECT_CLI} add rule <name>
 \\\`\\\`\\\`
 
-This creates \\\`.codi/rules/<name>.md\\\` with a blank skeleton.
+This creates \\\`${PROJECT_DIR}/rules/<name>.md\\\` with a blank skeleton.
 
 ## Step 4 — Write Frontmatter
 
@@ -149,12 +154,12 @@ app.post('/users', (req, res) => {
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
-codi generate
-codi doctor
+${PROJECT_CLI} generate
+${PROJECT_CLI} doctor
 \\\`\\\`\\\`
 
-1. \\\`codi generate\\\` distributes the rule to all configured agents
-2. \\\`codi doctor\\\` checks for remaining issues (size warnings, missing docs)
+1. \\\`${PROJECT_CLI} generate\\\` distributes the rule to all configured agents
+2. \\\`${PROJECT_CLI} doctor\\\` checks for remaining issues (size warnings, missing docs)
 
 If doctor reports warnings, address them before finishing.
 
@@ -163,20 +168,20 @@ If doctor reports warnings, address them before finishing.
 - [ ] Rule prevents a real, specific problem (not theoretical)
 - [ ] Rationale explains the "why" for every constraint
 - [ ] BAD/GOOD examples are realistic, not contrived
-- [ ] No overlap with existing rules in \\\`.codi/rules/\\\`
+- [ ] No overlap with existing rules in \\\`${PROJECT_DIR}/rules/\\\`
 - [ ] Measurable criteria where applicable (numbers, thresholds, patterns)
 - [ ] Scope is as narrow as possible while covering the intent
 
 ## Available Rule Templates
 
-Run \\\`codi add rule --all\\\` to list all templates. Major categories include:
+Run \\\`${PROJECT_CLI} add rule --all\\\` to list all templates. Major categories include:
 
 | Category | Templates |
 |----------|-----------|
 | Practice | security, code-style, testing, architecture, error-handling, api-design, performance, documentation, git-workflow, production-mindset, simplicity-first |
 | Language | typescript, python, golang, java, kotlin, rust, swift, csharp |
 | Framework | react, nextjs, django, spring-boot |
-| Meta | workflow, agent-usage, codi-improvement |
+| Meta | workflow, agent-usage, ${devArtifactName("improvement")} |
 
 ## Constraints
 

@@ -3,15 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { createBrand } from "#src/core/scaffolder/brand-scaffolder.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("brand scaffolder", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-brand-"));
-    codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-brand-`));
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -19,7 +20,7 @@ describe("brand scaffolder", () => {
   });
 
   it("creates a brand directory with BRAND.md", async () => {
-    const result = await createBrand({ name: "my-brand", codiDir });
+    const result = await createBrand({ name: "my-brand", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -32,7 +33,7 @@ describe("brand scaffolder", () => {
   });
 
   it("creates assets and references subdirectories", async () => {
-    const result = await createBrand({ name: "test-brand", codiDir });
+    const result = await createBrand({ name: "test-brand", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -56,7 +57,7 @@ describe("brand scaffolder", () => {
   });
 
   it("replaces {{name}} placeholder in content", async () => {
-    const result = await createBrand({ name: "acme-corp", codiDir });
+    const result = await createBrand({ name: "acme-corp", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -68,15 +69,15 @@ describe("brand scaffolder", () => {
   });
 
   it("rejects invalid names", async () => {
-    const result = await createBrand({ name: "Invalid_Name", codiDir });
+    const result = await createBrand({ name: "Invalid_Name", configDir });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.message).toContain("Invalid brand name");
   });
 
   it("fails if brand already exists", async () => {
-    await createBrand({ name: "existing", codiDir });
-    const result = await createBrand({ name: "existing", codiDir });
+    await createBrand({ name: "existing", configDir });
+    const result = await createBrand({ name: "existing", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -84,7 +85,7 @@ describe("brand scaffolder", () => {
   });
 
   it("includes CSS variables block", async () => {
-    const result = await createBrand({ name: "styled", codiDir });
+    const result = await createBrand({ name: "styled", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;

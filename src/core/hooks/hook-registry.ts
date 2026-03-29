@@ -1,3 +1,5 @@
+import { PROJECT_CLI, PROJECT_NAME } from "../../constants.js";
+
 export interface HookEntry {
   name: string;
   command: string;
@@ -186,7 +188,11 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
 };
 
 const GLOBAL_HOOKS: HookEntry[] = [
-  { name: "codi-doctor", command: "npx codi doctor --ci", stagedFilter: "" },
+  {
+    name: `${PROJECT_NAME}-doctor`,
+    command: `npx ${PROJECT_CLI} doctor --ci`,
+    stagedFilter: "",
+  },
 ];
 
 export function getDoctorHook(): HookEntry {

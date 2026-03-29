@@ -2,13 +2,20 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { scanSkills, scanCodiDir } from "#src/core/config/parser.js";
+import { scanSkills, scanProjectDir } from "#src/core/config/parser.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("scanSkills", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-parser-skills-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-parser-skills-`),
+    );
   });
 
   afterEach(async () => {
@@ -133,11 +140,13 @@ Main skill content.
   });
 });
 
-describe("scanCodiDir with skills", () => {
+describe("scanProjectDir with skills", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-scan-skills-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-scan-skills-`),
+    );
   });
 
   afterEach(async () => {
@@ -145,13 +154,13 @@ describe("scanCodiDir with skills", () => {
   });
 
   it("includes skills in parsed result", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = path.join(codiDir, "skills", "my-skill");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const skillDir = path.join(configDir, "skills", "my-skill");
     await fs.mkdir(skillDir, { recursive: true });
-    await fs.mkdir(path.join(codiDir, "rules"), { recursive: true });
+    await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
 
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       `name: test-project\nversion: "1"\n`,
     );
 
@@ -167,7 +176,7 @@ Skill content here.
 `,
     );
 
-    const result = await scanCodiDir(tmpDir);
+    const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.skills).toHaveLength(1);

@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import {
   detectAdapters,
@@ -15,6 +15,10 @@ import {
   DEFAULT_PRESET,
   MANIFEST_FILENAME,
   FLAGS_FILENAME,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  resolveArtifactName,
 } from "../constants.js";
 import {
   getBuiltinPresetDefinition,
@@ -52,7 +56,7 @@ interface InitOptions extends GlobalOptions {
 }
 
 interface InitData {
-  codiDir: string;
+  configDir: string;
   agents: string[];
   stack: string[];
   generated: boolean;
@@ -69,16 +73,16 @@ export async function initHandler(
   options: InitOptions,
 ): Promise<CommandResult<InitData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
   try {
-    await fs.access(codiDir);
+    await fs.access(configDir);
     if (!options.force) {
       return createCommandResult({
         success: false,
         command: "init",
         data: {
-          codiDir,
+          configDir,
           agents: [],
           stack: [],
           generated: false,
@@ -88,10 +92,10 @@ export async function initHandler(
         errors: [
           {
             code: "E_CONFIG_INVALID",
-            message: `.codi/ directory already exists. Use --force to reinitialize.`,
+            message: `${PROJECT_DIR}/ directory already exists. Use --force to reinitialize.`,
             hint: "Use --force to reinitialize.",
             severity: "error",
-            context: { codiDir },
+            context: { configDir },
           },
         ],
         exitCode: EXIT_CODES.GENERAL_ERROR,
@@ -109,7 +113,12 @@ export async function initHandler(
   registerAllAdapters();
 
   let agentIds: string[];
-  let presetName: string = (options.preset as string) ?? DEFAULT_PRESET;
+  const rawPreset = options.preset as string | undefined;
+  let presetName: string =
+    (rawPreset
+      ? (resolveArtifactName(rawPreset, getPresetNames() as string[]) ??
+        rawPreset)
+      : undefined) ?? DEFAULT_PRESET;
   let displayPresetName: string = presetName;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
@@ -132,7 +141,7 @@ export async function initHandler(
         success: false,
         command: "init",
         data: {
-          codiDir,
+          configDir,
           agents: [],
           stack,
           generated: false,
@@ -165,7 +174,7 @@ export async function initHandler(
       wizardResult.configMode === "zip" ||
       wizardResult.configMode === "github"
     ) {
-      // Import: will be handled after createCodiStructure via preset install
+      // Import: will be handled after createProjectStructure via preset install
     } else {
       // Preset or custom: wizard always returns the full artifact selections
       ruleTemplates = wizardResult.rules;
@@ -175,8 +184,8 @@ export async function initHandler(
       mcpServerTemplates = wizardResult.mcpServers;
     }
 
-    await createCodiStructure(
-      codiDir,
+    await createProjectStructure(
+      configDir,
       agentIds,
       wizardResult.selectedPresetName ?? presetName,
       wizardResult.versionPin,
@@ -201,7 +210,7 @@ export async function initHandler(
     // Save custom selection as preset if requested
     if (wizardResult.saveAsPreset) {
       const presetDir = path.join(
-        codiDir,
+        configDir,
         "presets",
         wizardResult.saveAsPreset,
       );
@@ -233,7 +242,7 @@ export async function initHandler(
         success: false,
         command: "init",
         data: {
-          codiDir,
+          configDir,
           agents: [],
           stack,
           generated: false,
@@ -261,7 +270,7 @@ export async function initHandler(
           success: false,
           command: "init",
           data: {
-            codiDir,
+            configDir,
             agents: [],
             stack,
             generated: false,
@@ -287,11 +296,11 @@ export async function initHandler(
     }
 
     log.info(`Using agents: ${agentIds.join(", ")}`);
-    await createCodiStructure(codiDir, agentIds, presetName, false);
+    await createProjectStructure(configDir, agentIds, presetName, false);
   }
 
   for (const template of ruleTemplates) {
-    const result = await createRule({ name: template, codiDir, template });
+    const result = await createRule({ name: template, configDir, template });
     if (!result.ok) {
       log.warn(
         `Failed to create rule "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -300,7 +309,7 @@ export async function initHandler(
   }
 
   for (const template of skillTemplates) {
-    const result = await createSkill({ name: template, codiDir, template });
+    const result = await createSkill({ name: template, configDir, template });
     if (!result.ok) {
       log.warn(
         `Failed to create skill "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -309,7 +318,7 @@ export async function initHandler(
   }
 
   for (const template of agentTemplates) {
-    const result = await createAgent({ name: template, codiDir, template });
+    const result = await createAgent({ name: template, configDir, template });
     if (!result.ok) {
       log.warn(
         `Failed to create agent "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -318,7 +327,7 @@ export async function initHandler(
   }
 
   for (const template of commandTemplates) {
-    const result = await createCommand({ name: template, codiDir, template });
+    const result = await createCommand({ name: template, configDir, template });
     if (!result.ok) {
       log.warn(
         `Failed to create command "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -327,7 +336,11 @@ export async function initHandler(
   }
 
   for (const template of mcpServerTemplates) {
-    const result = await createMcpServer({ name: template, codiDir, template });
+    const result = await createMcpServer({
+      name: template,
+      configDir,
+      template,
+    });
     if (!result.ok) {
       log.warn(
         `Failed to create MCP server "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -342,7 +355,7 @@ export async function initHandler(
     generated = genResult.ok;
     if (!genResult.ok) {
       log.warn(
-        "Generation after init failed; you can run `codi generate` later.",
+        `Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`,
       );
     }
   }
@@ -418,7 +431,7 @@ export async function initHandler(
 
   // Write operations ledger
   try {
-    const ledger = new OperationsLedgerManager(codiDir);
+    const ledger = new OperationsLedgerManager(configDir);
     const now = new Date().toISOString();
     await ledger.setInitialization({
       timestamp: now,
@@ -447,9 +460,17 @@ export async function initHandler(
       });
     }
     await ledger.addConfigFiles([
-      { path: ".codi/codi.yaml", type: "manifest", createdAt: now },
-      { path: ".codi/flags.yaml", type: "flags", createdAt: now },
-      { path: ".codi/operations.json", type: "ledger", createdAt: now },
+      {
+        path: `${PROJECT_DIR}/${MANIFEST_FILENAME}`,
+        type: "manifest",
+        createdAt: now,
+      },
+      { path: `${PROJECT_DIR}/flags.yaml`, type: "flags", createdAt: now },
+      {
+        path: `${PROJECT_DIR}/operations.json`,
+        type: "ledger",
+        createdAt: now,
+      },
     ]);
     if (hookFiles.length > 0) {
       const hookSetup = await detectHookSetup(projectRoot);
@@ -473,7 +494,7 @@ export async function initHandler(
     success: true,
     command: "init",
     data: {
-      codiDir,
+      configDir,
       agents: agentIds,
       stack,
       generated,
@@ -500,34 +521,34 @@ function inferHookType(
   return "pre-commit";
 }
 
-async function createCodiStructure(
-  codiDir: string,
+async function createProjectStructure(
+  configDir: string,
   agents: string[],
   presetName: string,
   versionPin: boolean,
   flagOverrides?: Record<string, FlagDefinition>,
 ): Promise<void> {
   const dirs = [
-    codiDir,
-    path.join(codiDir, "rules"),
-    path.join(codiDir, "skills"),
-    path.join(codiDir, "mcp-servers"),
-    path.join(codiDir, "frameworks"),
+    configDir,
+    path.join(configDir, "rules"),
+    path.join(configDir, "skills"),
+    path.join(configDir, "mcp-servers"),
+    path.join(configDir, "frameworks"),
   ];
   for (const dir of dirs) {
     await fs.mkdir(dir, { recursive: true });
   }
 
   const manifest: Record<string, unknown> = {
-    name: path.basename(path.dirname(codiDir)),
+    name: path.basename(path.dirname(configDir)),
     version: "1",
     agents,
   };
   if (versionPin) {
-    manifest["codi"] = { requiredVersion: `>=${VERSION}` };
+    manifest[PROJECT_NAME] = { requiredVersion: `>=${VERSION}` };
   }
   await fs.writeFile(
-    path.join(codiDir, MANIFEST_FILENAME),
+    path.join(configDir, MANIFEST_FILENAME),
     stringifyYaml(manifest),
     "utf-8",
   );
@@ -545,7 +566,7 @@ async function createCodiStructure(
     flagsObj[key] = entry;
   }
   await fs.writeFile(
-    path.join(codiDir, FLAGS_FILENAME),
+    path.join(configDir, FLAGS_FILENAME),
     stringifyYaml(flagsObj),
     "utf-8",
   );
@@ -554,8 +575,8 @@ async function createCodiStructure(
 export function registerInitCommand(program: Command): void {
   program
     .command("init")
-    .description("Initialize a new .codi/ configuration directory")
-    .option("--force", "Reinitialize even if .codi/ exists")
+    .description(`Initialize a new ${PROJECT_DIR}/ configuration directory`)
+    .option("--force", `Reinitialize even if ${PROJECT_DIR}/ exists`)
     .option("--agents <agents...>", "Specify agent IDs (skips wizard)")
     .option(
       "--preset <preset>",

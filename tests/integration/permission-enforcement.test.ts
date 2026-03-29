@@ -8,6 +8,7 @@ import { codexAdapter } from "#src/adapters/codex.js";
 import { windsurfAdapter } from "#src/adapters/windsurf.js";
 import { clineAdapter } from "#src/adapters/cline.js";
 import { createMockConfig } from "../unit/adapters/mock-config.js";
+import { PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 import type { NormalizedConfig } from "#src/types/config.js";
 import type { ResolvedFlagEntry } from "#src/types/flags.js";
 
@@ -15,7 +16,7 @@ function makeStrictFlags(): NormalizedConfig["flags"] {
   const entry = (value: unknown): ResolvedFlagEntry => ({
     value,
     mode: "enforced",
-    source: "codi.yaml",
+    source: MANIFEST_FILENAME,
     locked: false,
   });
 
@@ -34,7 +35,7 @@ function makePermissiveFlags(): NormalizedConfig["flags"] {
   const entry = (value: unknown): ResolvedFlagEntry => ({
     value,
     mode: "enforced",
-    source: "codi.yaml",
+    source: MANIFEST_FILENAME,
     locked: false,
   });
 
@@ -55,7 +56,7 @@ describe("permission enforcement across all agents", () => {
   beforeEach(async () => {
     tmpDir = join(
       tmpdir(),
-      `codi-perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `${PROJECT_NAME}-perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     await mkdir(tmpDir, { recursive: true });
   });

@@ -1,23 +1,31 @@
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  PROJECT_URL,
+} from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: |
-  Compare local Codi artifacts against upstream templates. Use when the user wants
+  Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream templates. Use when the user wants
   to see what they have customized, check for upstream updates, or prepare to
-  contribute improvements back to Codi. Also activate on /codi-compare-preset.
-category: Codi Platform
+  contribute improvements back to ${PROJECT_NAME_DISPLAY}. Also activate on /${PROJECT_NAME}-compare-preset.
+category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
 
 ## When to Activate
 
-- User asks to compare their local Codi setup against the latest version
+- User asks to compare their local ${PROJECT_NAME_DISPLAY} setup against the latest version
 - User wants to see what they have customized vs what is upstream
-- User is preparing to contribute improvements back to Codi
-- User asks about upgrading or updating Codi artifacts
-- User runs \`/codi-compare-preset\`
+- User is preparing to contribute improvements back to ${PROJECT_NAME_DISPLAY}
+- User asks about upgrading or updating ${PROJECT_NAME_DISPLAY} artifacts
+- User runs \`/${PROJECT_NAME}-compare-preset\`
 
 ## Step 1: Identify Local State
 
@@ -25,35 +33,35 @@ managed_by: codi
 
 \\\`\\\`\\\`bash
 # Read manifest to get preset name and artifact lists
-cat .codi/codi.yaml
+cat ${PROJECT_DIR}/${PROJECT_NAME}.yaml
 \\\`\\\`\\\`
 
 Then inventory local customizations:
 
 \\\`\\\`\\\`bash
 # List custom rules (user-created or improved)
-ls .codi/rules/ 2>/dev/null
+ls ${PROJECT_DIR}/rules/ 2>/dev/null
 
 # List skills (check for managed_by: user in frontmatter)
-grep -rl "managed_by: user" .codi/skills/ 2>/dev/null
+grep -rl "managed_by: user" ${PROJECT_DIR}/skills/ 2>/dev/null
 
 # List agents
-ls .codi/agents/ 2>/dev/null
+ls ${PROJECT_DIR}/agents/ 2>/dev/null
 \\\`\\\`\\\`
 
 Record:
 - The installed preset name
-- All custom rules in \`.codi/rules/\`
+- All custom rules in \`${PROJECT_DIR}/rules/\`
 - Any skills or agents with \`managed_by: user\` (project-specific versions)
-- The Codi version from \`codi.yaml\`
+- The ${PROJECT_NAME_DISPLAY} version from \`${PROJECT_NAME}.yaml\`
 
 ## Step 2: Fetch Upstream State
 
-**[CODING AGENT]** Get the latest Codi templates:
+**[CODING AGENT]** Get the latest ${PROJECT_NAME_DISPLAY} templates:
 
 \\\`\\\`\\\`bash
 TEMP_DIR=$(mktemp -d)
-git clone --depth 1 https://github.com/lehidalgo/codi.git "$TEMP_DIR/codi-upstream" 2>/dev/null
+git clone --depth 1 ${PROJECT_URL}.git "$TEMP_DIR/${PROJECT_NAME}-upstream" 2>/dev/null
 \\\`\\\`\\\`
 
 If the clone fails (offline, network error), skip upstream comparison and show only the local customization report.
@@ -62,7 +70,7 @@ Read the corresponding preset definition:
 
 \\\`\\\`\\\`bash
 # Find the preset file (preset name from Step 1)
-ls "$TEMP_DIR/codi-upstream/src/templates/presets/"
+ls "$TEMP_DIR/${PROJECT_NAME}-upstream/src/templates/presets/"
 \\\`\\\`\\\`
 
 ## Step 3: Compare Artifacts
@@ -71,18 +79,18 @@ ls "$TEMP_DIR/codi-upstream/src/templates/presets/"
 
 ### Rules Comparison
 For each rule in the installed preset:
-1. Read local version from \`.codi/rules/<name>.md\` (if customized) or the generated output
-2. Read upstream version from \`$TEMP_DIR/codi-upstream/src/templates/rules/<name>.ts\`
+1. Read local version from \`${PROJECT_DIR}/rules/<name>.md\` (if customized) or the generated output
+2. Read upstream version from \`$TEMP_DIR/${PROJECT_NAME}-upstream/src/templates/rules/<name>.ts\`
 3. Extract the template string content from the TypeScript file
 4. Identify: added sections, removed sections, modified guidance
 
 ### Custom Rules (local-only)
-List rules in \`.codi/rules/\` that have no upstream equivalent — these are **contribution candidates**.
+List rules in \`${PROJECT_DIR}/rules/\` that have no upstream equivalent — these are **contribution candidates**.
 
 ### Skills Comparison
 For skills with \`managed_by: user\`:
-1. Read local \`.codi/skills/<name>/SKILL.md\`
-2. Read upstream \`$TEMP_DIR/codi-upstream/src/templates/skills/<name>.ts\`
+1. Read local \`${PROJECT_DIR}/skills/<name>/SKILL.md\`
+2. Read upstream \`$TEMP_DIR/${PROJECT_NAME}-upstream/src/templates/skills/<name>.ts\`
 3. Identify added steps, modified workflows, expanded scope
 
 ### Agents Comparison
@@ -115,17 +123,17 @@ Same approach: diff local agent files against upstream template strings.
 **[CODING AGENT]** Based on the user's choice:
 
 ### Contribute Local Improvements
-Guide the user through the \`codi contribute\` workflow:
+Guide the user through the \`${PROJECT_CLI} contribute\` workflow:
 \\\`\\\`\\\`bash
-codi contribute
+${PROJECT_CLI} contribute
 \\\`\\\`\\\`
 Or use the contribute skill for the full workflow (fork, branch, PR).
 
 ### Pull Upstream Updates
 \\\`\\\`\\\`bash
-codi update
+${PROJECT_CLI} update
 \\\`\\\`\\\`
-This only updates \`managed_by: codi\` artifacts — user customizations are preserved.
+This only updates \`managed_by: ${PROJECT_NAME}\` artifacts — user customizations are preserved.
 
 ### Both
 Contribute first (so improvements are not overwritten), then pull updates.

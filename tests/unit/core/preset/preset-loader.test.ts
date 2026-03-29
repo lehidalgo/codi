@@ -6,16 +6,19 @@ import {
   loadPreset,
   loadPresetFromDir,
 } from "#src/core/preset/preset-loader.js";
+import { PROJECT_NAME, PROJECT_DIR, prefixedName } from "#src/constants.js";
 
 describe("loadPresetFromDir", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
   let presetsDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-preset-loader-"));
-    codiDir = path.join(tmpDir, ".codi");
-    presetsDir = path.join(codiDir, "presets");
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-loader-`),
+    );
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    presetsDir = path.join(configDir, "presets");
     await fs.mkdir(presetsDir, { recursive: true });
   });
 
@@ -41,7 +44,7 @@ describe("loadPresetFromDir", () => {
     );
 
     // Create the skill in directory structure (not flat file)
-    const skillDir = path.join(codiDir, "skills", "my-skill");
+    const skillDir = path.join(configDir, "skills", "my-skill");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(
       path.join(skillDir, "SKILL.md"),
@@ -157,8 +160,8 @@ describe("loadPresetFromDir", () => {
         "version: 1.0.0",
         "artifacts:",
         "  rules:",
-        "    - security",
-        "    - testing",
+        `    - ${prefixedName("security")}`,
+        `    - ${prefixedName("testing")}`,
       ].join("\n"),
       "utf-8",
     );
@@ -168,7 +171,7 @@ describe("loadPresetFromDir", () => {
     if (!result.ok) return;
     expect(result.data.rules.length).toBe(2);
     const names = result.data.rules.map((r) => r.name).sort();
-    expect(names).toEqual(["security", "testing"]);
+    expect(names).toEqual([prefixedName("security"), prefixedName("testing")]);
   });
 
   it("resolves agents from builtin templates by name", async () => {
@@ -182,7 +185,7 @@ describe("loadPresetFromDir", () => {
         "version: 1.0.0",
         "artifacts:",
         "  agents:",
-        "    - code-reviewer",
+        `    - ${prefixedName("code-reviewer")}`,
       ].join("\n"),
       "utf-8",
     );
@@ -191,7 +194,7 @@ describe("loadPresetFromDir", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.agents.length).toBe(1);
-    expect(result.data.agents[0]!.name).toBe("code-reviewer");
+    expect(result.data.agents[0]!.name).toBe(prefixedName("code-reviewer"));
   });
 
   it("resolves commands from builtin templates by name", async () => {
@@ -205,7 +208,7 @@ describe("loadPresetFromDir", () => {
         "version: 1.0.0",
         "artifacts:",
         "  commands:",
-        "    - commit",
+        `    - ${prefixedName("commit")}`,
       ].join("\n"),
       "utf-8",
     );
@@ -214,7 +217,7 @@ describe("loadPresetFromDir", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.commands.length).toBe(1);
-    expect(result.data.commands[0]!.name).toBe("commit");
+    expect(result.data.commands[0]!.name).toBe(prefixedName("commit"));
   });
 
   it("loads MCP config from preset directory", async () => {
@@ -254,7 +257,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.description).toBe("");
   });
 
-  it("resolves custom rules from .codi/rules/ directory", async () => {
+  it(`resolves custom rules from ${PROJECT_DIR}/rules/ directory`, async () => {
     const presetDir = path.join(presetsDir, "custom-rule");
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
@@ -270,8 +273,8 @@ describe("loadPresetFromDir", () => {
       "utf-8",
     );
 
-    // Create the custom rule in .codi/rules/
-    const rulesDir = path.join(codiDir, "rules");
+    // Create the custom rule in the config rules directory
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "my-custom.md"),
@@ -290,10 +293,10 @@ describe("loadPresetFromDir", () => {
 
 describe("loadPreset — builtin presets", () => {
   it('loads builtin "minimal" preset', async () => {
-    const result = await loadPreset("minimal", "/nonexistent");
+    const result = await loadPreset(prefixedName("minimal"), "/nonexistent");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.name).toBe("minimal");
+    expect(result.data.name).toBe(prefixedName("minimal"));
     // Minimal preset has rules, skills, agents, or commands
     const totalArtifacts =
       result.data.rules.length +
@@ -304,17 +307,17 @@ describe("loadPreset — builtin presets", () => {
   });
 
   it('loads builtin "balanced" preset', async () => {
-    const result = await loadPreset("balanced", "/nonexistent");
+    const result = await loadPreset(prefixedName("balanced"), "/nonexistent");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.name).toBe("balanced");
+    expect(result.data.name).toBe(prefixedName("balanced"));
   });
 
   it('loads builtin "strict" preset', async () => {
-    const result = await loadPreset("strict", "/nonexistent");
+    const result = await loadPreset(prefixedName("strict"), "/nonexistent");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.name).toBe("strict");
+    expect(result.data.name).toBe(prefixedName("strict"));
   });
 
   it("falls through to directory loading for unknown preset", async () => {

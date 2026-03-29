@@ -5,18 +5,22 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { loadMcpServerTemplate } from "./mcp-template-loader.js";
-import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "../../constants.js";
+import {
+  MAX_NAME_LENGTH,
+  NAME_PATTERN_STRICT,
+  PROJECT_NAME,
+} from "../../constants.js";
 
 export interface CreateMcpServerOptions {
   name: string;
-  codiDir: string;
+  configDir: string;
   template?: string;
 }
 
 export async function createMcpServer(
   options: CreateMcpServerOptions,
 ): Promise<Result<string>> {
-  const { name, codiDir, template } = options;
+  const { name, configDir, template } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
     return err([
@@ -26,7 +30,7 @@ export async function createMcpServer(
     ]);
   }
 
-  const filePath = path.join(codiDir, "mcp-servers", `${name}.yaml`);
+  const filePath = path.join(configDir, "mcp-servers", `${name}.yaml`);
   const dir = path.dirname(filePath);
 
   try {
@@ -63,7 +67,7 @@ export async function createMcpServer(
 
     yamlObj = {
       name: tmpl.name,
-      managed_by: "codi",
+      managed_by: PROJECT_NAME,
       ...(tmpl.type && { type: tmpl.type }),
       ...(tmpl.command && { command: tmpl.command }),
       ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),

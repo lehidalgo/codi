@@ -1,5 +1,8 @@
-export { CodiManifestSchema } from "./manifest.js";
-export type { CodiManifestInput, CodiManifestOutput } from "./manifest.js";
+export { ProjectManifestSchema } from "./manifest.js";
+export type {
+  ProjectManifestInput,
+  ProjectManifestOutput,
+} from "./manifest.js";
 
 export { RuleFrontmatterSchema } from "./rule.js";
 export type { RuleFrontmatterInput, RuleFrontmatterOutput } from "./rule.js";

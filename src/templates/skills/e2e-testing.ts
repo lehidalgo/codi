@@ -1,4 +1,9 @@
-import { PRE_COMMIT_MAX_FILE_LINES } from "../../constants.js";
+import {
+  PRE_COMMIT_MAX_FILE_LINES,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+} from "../../constants.js";
 import type { TemplateCounts } from "./types.js";
 
 export function getTemplate(counts: TemplateCounts): string {
@@ -10,17 +15,17 @@ export function getTemplate(counts: TemplateCounts): string {
 
   return `---
 name: {{name}}
-description: Comprehensive validation of all codi features. Use when asked to test, audit, or verify the codi installation end-to-end. Covers 16 commands, 7 artifact types, preset management (create, validate, export, install, remove), pre-commit hooks, doc-sync, and commit workflow.
+description: Comprehensive validation of all ${PROJECT_NAME} features. Use when asked to test, audit, or verify the ${PROJECT_NAME} installation end-to-end. Covers 16 commands, 7 artifact types, preset management (create, validate, export, install, remove), pre-commit hooks, doc-sync, and commit workflow.
 category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
 
 ## Overview
 
-This skill guides systematic validation of ALL codi features in a test project. Each step is labeled:
+This skill guides systematic validation of ALL ${PROJECT_NAME} features in a test project. Each step is labeled:
 - **[SYSTEM]** — run this CLI command
 - **[HUMAN]** — STOP and ask the human to perform this action
 - **[CODING AGENT]** — the AI agent performs this
@@ -29,12 +34,12 @@ Full details: see docs/guides/testing-guide.md and docs/guides/user-flows.md.
 
 ## Suite 1: Setup
 
-**[SYSTEM]** Create a test project and install codi:
+**[SYSTEM]** Create a test project and install ${PROJECT_NAME}:
 \\\`\\\`\\\`bash
-mkdir /tmp/codi-validation && cd /tmp/codi-validation
+mkdir /tmp/${PROJECT_NAME}-validation && cd /tmp/${PROJECT_NAME}-validation
 git init
-npm init -y && npm install codi-cli
-npx codi --version
+npm init -y && npm install ${PROJECT_NAME}-cli
+npx ${PROJECT_CLI} --version
 \\\`\\\`\\\`
 Expected: Version prints (e.g., 0.3.1). Git repo initialized (needed for hooks).
 
@@ -42,9 +47,9 @@ Expected: Version prints (e.g., 0.3.1). Git repo initialized (needed for hooks).
 
 **[SYSTEM]** Non-interactive init:
 \\\`\\\`\\\`bash
-npx codi init --agents claude-code cursor codex --preset balanced --json
+npx ${PROJECT_CLI} init --agents claude-code cursor codex --preset balanced --json
 \\\`\\\`\\\`
-Expected: .codi/ created with codi.yaml, flags.yaml (${FLAG_COUNT} flags), rules/, skills/, frameworks/.
+Expected: ${PROJECT_DIR}/ created with ${PROJECT_NAME}.yaml, flags.yaml (${FLAG_COUNT} flags), rules/, skills/, frameworks/.
 
 **[CODING AGENT]** Verify hooks were installed:
 \\\`\\\`\\\`bash
@@ -52,23 +57,23 @@ ls .git/hooks/pre-commit .git/hooks/commit-msg
 \\\`\\\`\\\`
 Expected: Both files exist (pre-commit runner + commit message validator).
 
-**[HUMAN]** Interactive wizard: run \\\`npx codi init --force\\\` in terminal. Select agents, rules, skills, preset. Verify output matches.
+**[HUMAN]** Interactive wizard: run \\\`npx ${PROJECT_CLI} init --force\\\` in terminal. Select agents, rules, skills, preset. Verify output matches.
 
 ## Suite 3: Artifacts (all 4 types)
 
 **[SYSTEM]** Add all templates:
 \\\`\\\`\\\`bash
-npx codi add rule --all --json
-npx codi add skill --all --json
-npx codi add agent --all --json
-npx codi add command --all --json
+npx ${PROJECT_CLI} add rule --all --json
+npx ${PROJECT_CLI} add skill --all --json
+npx ${PROJECT_CLI} add agent --all --json
+npx ${PROJECT_CLI} add command --all --json
 \\\`\\\`\\\`
-Expected: ${RULE_TEMPLATE_COUNT} rules, ${SKILL_TEMPLATE_COUNT} skills, ${AGENT_TEMPLATE_COUNT} agents, ${COMMAND_TEMPLATE_COUNT} commands. All managed_by: codi.
+Expected: ${RULE_TEMPLATE_COUNT} rules, ${SKILL_TEMPLATE_COUNT} skills, ${AGENT_TEMPLATE_COUNT} agents, ${COMMAND_TEMPLATE_COUNT} commands. All managed_by: ${PROJECT_NAME}.
 
 **[SYSTEM]** Add custom artifacts:
 \\\`\\\`\\\`bash
-npx codi add rule my-custom --json
-npx codi add skill my-custom --json
+npx ${PROJECT_CLI} add rule my-custom --json
+npx ${PROJECT_CLI} add skill my-custom --json
 \\\`\\\`\\\`
 Expected: managed_by: user.
 
@@ -76,16 +81,16 @@ Expected: managed_by: user.
 
 **[SYSTEM]** Generate and check:
 \\\`\\\`\\\`bash
-npx codi generate --json
-npx codi status --json
+npx ${PROJECT_CLI} generate --json
+npx ${PROJECT_CLI} status --json
 \\\`\\\`\\\`
 Expected: Files generated. hasDrift: false. Hooks re-installed.
 
 **[SYSTEM]** Inject and fix drift:
 \\\`\\\`\\\`bash
 echo "edit" >> CLAUDE.md
-npx codi status --json
-npx codi generate --json
+npx ${PROJECT_CLI} status --json
+npx ${PROJECT_CLI} generate --json
 \\\`\\\`\\\`
 Expected: hasDrift true, then false after regenerate.
 
@@ -95,11 +100,11 @@ Expected: hasDrift true, then false after regenerate.
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi verify --json
-npx codi compliance --json
-npx codi doctor --ci --json
-npx codi ci --json
-npx codi docs-update --json
+npx ${PROJECT_CLI} verify --json
+npx ${PROJECT_CLI} compliance --json
+npx ${PROJECT_CLI} doctor --ci --json
+npx ${PROJECT_CLI} ci --json
+npx ${PROJECT_CLI} docs-update --json
 \\\`\\\`\\\`
 Expected: 12-char token deterministic. All checks pass. docs-update reports fixed files (if any).
 
@@ -107,14 +112,14 @@ Expected: 12-char token deterministic. All checks pass. docs-update reports fixe
 
 **[SYSTEM]** Preset switching:
 \\\`\\\`\\\`bash
-npx codi update --preset strict --json
-npx codi update --preset balanced --json
+npx ${PROJECT_CLI} update --preset strict --json
+npx ${PROJECT_CLI} update --preset balanced --json
 \\\`\\\`\\\`
 Expected: Strict shows restricted instructions. Balanced restores defaults.
 
 **[SYSTEM]** Artifact refresh:
 \\\`\\\`\\\`bash
-npx codi update --rules --skills --agents --commands --dry-run --json
+npx ${PROJECT_CLI} update --rules --skills --agents --commands --dry-run --json
 \\\`\\\`\\\`
 Expected: Managed artifacts listed. Custom (managed_by: user) skipped.
 
@@ -124,16 +129,16 @@ Expected: Managed artifacts listed. Custom (managed_by: user) skipped.
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset create test-preset --json
-npx codi preset list --json
+npx ${PROJECT_CLI} preset create test-preset --json
+npx ${PROJECT_CLI} preset list --json
 \\\`\\\`\\\`
-Expected: Preset directory created at .codi/presets/test-preset/ with preset.yaml and subdirs (rules/, skills/, agents/, commands/). Visible in list.
+Expected: Preset directory created at ${PROJECT_DIR}/presets/test-preset/ with preset.yaml and subdirs (rules/, skills/, agents/, commands/). Visible in list.
 
 ### 7b: Built-in Presets
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset list --builtin --json
+npx ${PROJECT_CLI} preset list --builtin --json
 \\\`\\\`\\\`
 Expected: Shows 6 built-in presets: minimal, balanced, strict, python-web, typescript-fullstack, security-hardened. Each with [builtin] source tag.
 
@@ -141,7 +146,7 @@ Expected: Shows 6 built-in presets: minimal, balanced, strict, python-web, types
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset validate test-preset --json
+npx ${PROJECT_CLI} preset validate test-preset --json
 \\\`\\\`\\\`
 Expected: Preset "test-preset" is valid. Reports version, artifact counts (rules: 0, skills: 0, agents: 0, commands: 0).
 
@@ -149,17 +154,17 @@ Expected: Preset "test-preset" is valid. Reports version, artifact counts (rules
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset export test-preset --format zip --output /tmp/codi-validation/
-ls /tmp/codi-validation/test-preset.zip
+npx ${PROJECT_CLI} preset export test-preset --format zip --output /tmp/${PROJECT_NAME}-validation/
+ls /tmp/${PROJECT_NAME}-validation/test-preset.zip
 \\\`\\\`\\\`
-Expected: ZIP file created. File exists at /tmp/codi-validation/test-preset.zip.
+Expected: ZIP file created. File exists at /tmp/${PROJECT_NAME}-validation/test-preset.zip.
 
 ### 7e: Remove
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset remove test-preset --json
-npx codi preset list --json
+npx ${PROJECT_CLI} preset remove test-preset --json
+npx ${PROJECT_CLI} preset list --json
 \\\`\\\`\\\`
 Expected: Preset removed. No longer visible in list. Lock file entry cleared.
 
@@ -167,9 +172,9 @@ Expected: Preset removed. No longer visible in list. Lock file entry cleared.
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset install /tmp/codi-validation/test-preset.zip --json
-npx codi preset list --json
-npx codi preset validate test-preset --json
+npx ${PROJECT_CLI} preset install /tmp/${PROJECT_NAME}-validation/test-preset.zip --json
+npx ${PROJECT_CLI} preset list --json
+npx ${PROJECT_CLI} preset validate test-preset --json
 \\\`\\\`\\\`
 Expected: Preset installed from ZIP. Visible in list with [zip] source. Validation passes. Lock file has source: "zip:..." entry.
 
@@ -177,8 +182,8 @@ Expected: Preset installed from ZIP. Visible in list with [zip] source. Validati
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset remove test-preset --json
-rm -f /tmp/codi-validation/test-preset.zip
+npx ${PROJECT_CLI} preset remove test-preset --json
+rm -f /tmp/${PROJECT_NAME}-validation/test-preset.zip
 \\\`\\\`\\\`
 Expected: Preset and ZIP cleaned up.
 
@@ -191,31 +196,31 @@ Expected: Preset and ZIP cleaned up.
 
 **[SYSTEM]** Install the GitHub preset (substitute the real org/repo):
 \\\`\\\`\\\`bash
-npx codi preset install github:<org>/<repo> --json
+npx ${PROJECT_CLI} preset install github:<org>/<repo> --json
 \\\`\\\`\\\`
-Expected: Preset cloned, validated, and installed to .codi/presets/<name>/.
+Expected: Preset cloned, validated, and installed to ${PROJECT_DIR}/presets/<name>/.
 
 **[CODING AGENT]** Verify the installation:
-1. Run \\\`npx codi preset list --json\\\` — preset must appear with \\\`sourceType: "github"\\\`
-2. Read \\\`.codi/preset-lock.json\\\` — entry must have \\\`source: "github:..."\\\`, \\\`sourceType: "github"\\\`, and a \\\`commit\\\` hash
-3. Verify \\\`.codi/presets/<name>/preset.yaml\\\` exists
+1. Run \\\`npx ${PROJECT_CLI} preset list --json\\\` — preset must appear with \\\`sourceType: "github"\\\`
+2. Read \\\`${PROJECT_DIR}/preset-lock.json\\\` — entry must have \\\`source: "github:..."\\\`, \\\`sourceType: "github"\\\`, and a \\\`commit\\\` hash
+3. Verify \\\`${PROJECT_DIR}/presets/<name>/preset.yaml\\\` exists
 
 **[SYSTEM]** Validate and clean up:
 \\\`\\\`\\\`bash
-npx codi preset validate <name> --json
-npx codi preset remove <name> --json
+npx ${PROJECT_CLI} preset validate <name> --json
+npx ${PROJECT_CLI} preset remove <name> --json
 \\\`\\\`\\\`
 Expected: Validation passes. Preset removed. Lock file entry cleared.
 
 ### 7i: Preset Registry Search
 
-**[HUMAN]** Check if a preset registry is configured in \\\`.codi/codi.yaml\\\` under \\\`presetRegistry.url\\\`. If not configured, either:
+**[HUMAN]** Check if a preset registry is configured in \\\`${PROJECT_DIR}/${PROJECT_NAME}.yaml\\\` under \\\`presetRegistry.url\\\`. If not configured, either:
 - Add a \\\`presetRegistry\\\` section pointing to a real registry repo, OR
 - Confirm this test should be skipped (the agent will note it as skipped)
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset search test --json
+npx ${PROJECT_CLI} preset search test --json
 \\\`\\\`\\\`
 
 **[CODING AGENT]** Verify the result:
@@ -228,7 +233,7 @@ Prerequisite: A GitHub-sourced preset must be installed (from 7h). If 7h was ski
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi preset update --dry-run --json
+npx ${PROJECT_CLI} preset update --dry-run --json
 \\\`\\\`\\\`
 
 **[CODING AGENT]** Verify:
@@ -240,13 +245,13 @@ npx codi preset update --dry-run --json
 
 **[SYSTEM]** Configure and verify:
 \\\`\\\`\\\`bash
-cat > .codi/mcp.yaml << 'EOF'
+cat > ${PROJECT_DIR}/mcp.yaml << 'EOF'
 servers:
   test-api:
     type: http
     url: "https://example.com/mcp"
 EOF
-npx codi generate --json
+npx ${PROJECT_CLI} generate --json
 \\\`\\\`\\\`
 Expected: .claude/mcp.json, .cursor/mcp.json, .codex/mcp.toml, .windsurf/mcp.json contain test-api.
 
@@ -254,8 +259,8 @@ Expected: .claude/mcp.json, .cursor/mcp.json, .codex/mcp.toml, .windsurf/mcp.jso
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi revert --list --json
-npx codi revert --last --json
+npx ${PROJECT_CLI} revert --list --json
+npx ${PROJECT_CLI} revert --last --json
 \\\`\\\`\\\`
 Expected: Backups from prior generates. Restore succeeds.
 
@@ -263,7 +268,7 @@ Expected: Backups from prior generates. Restore succeeds.
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi marketplace search test --json
+npx ${PROJECT_CLI} marketplace search test --json
 \\\`\\\`\\\`
 Note: May fail if no registry configured. This is expected.
 
@@ -271,25 +276,25 @@ Note: May fail if no registry configured. This is expected.
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi clean --json
-npx codi generate --json
-npx codi clean --all --json
+npx ${PROJECT_CLI} clean --json
+npx ${PROJECT_CLI} generate --json
+npx ${PROJECT_CLI} clean --all --json
 \\\`\\\`\\\`
-Expected: Clean removes generated. Regenerate works. Clean --all removes .codi/.
+Expected: Clean removes generated. Regenerate works. Clean --all removes ${PROJECT_DIR}/.
 
 ## Suite 12: Agent Integration
 
 **[HUMAN]** Open Claude Code in the test project.
-**[HUMAN]** Ask: "verify codi"
+**[HUMAN]** Ask: "verify ${PROJECT_NAME}"
 **[HUMAN]** Copy response.
-**[SYSTEM]** \\\`npx codi verify --check "<response>"\\\`
+**[SYSTEM]** \\\`npx ${PROJECT_CLI} verify --check "<response>"\\\`
 Expected: tokenMatch: true.
 
 ## Suite 13: Pre-Commit Hooks
 
 **[SYSTEM]** Verify hook scripts exist:
 \\\`\\\`\\\`bash
-ls .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/codi-secret-scan.mjs .git/hooks/codi-file-size-check.mjs
+ls .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/${PROJECT_NAME}-secret-scan.mjs .git/hooks/${PROJECT_NAME}-file-size-check.mjs
 \\\`\\\`\\\`
 Expected: All 4 files present.
 
@@ -332,19 +337,19 @@ Expected: Commit succeeds (proper format, small file, no secrets).
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi doctor --json
+npx ${PROJECT_CLI} doctor --json
 \\\`\\\`\\\`
-Expected: W_DOCS_STALE warning — "STATUS.md says Rule templates: 9 but ${RULE_TEMPLATE_COUNT} exist — run: codi docs-update".
+Expected: W_DOCS_STALE warning — "STATUS.md says Rule templates: 9 but ${RULE_TEMPLATE_COUNT} exist — run: ${PROJECT_CLI} docs-update".
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi docs-update --json
+npx ${PROJECT_CLI} docs-update --json
 \\\`\\\`\\\`
 Expected: STATUS.md fixed. Count restored.
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi doctor --json
+npx ${PROJECT_CLI} doctor --json
 \\\`\\\`\\\`
 Expected: No doc-sync warnings.
 
@@ -352,9 +357,9 @@ Expected: No doc-sync warnings.
 
 **[SYSTEM]** Add commit skill and command:
 \\\`\\\`\\\`bash
-npx codi add skill commit --template commit --json
-npx codi add command commit --template commit --json
-npx codi generate --json
+npx ${PROJECT_CLI} add skill commit --template commit --json
+npx ${PROJECT_CLI} add command commit --template commit --json
+npx ${PROJECT_CLI} generate --json
 \\\`\\\`\\\`
 Expected: Commit skill and command created. Generated for all agents.
 
@@ -367,11 +372,11 @@ Expected: Commit skill and command created. Generated for all agents.
 
 **[SYSTEM]** Test auto-regeneration:
 \\\`\\\`\\\`bash
-npx codi watch --once &
+npx ${PROJECT_CLI} watch --once &
 sleep 1
-echo "# trigger" >> .codi/rules/my-custom.md
+echo "# trigger" >> ${PROJECT_DIR}/rules/my-custom.md
 sleep 2
-npx codi status --json
+npx ${PROJECT_CLI} status --json
 \\\`\\\`\\\`
 Expected: Watch detects change and regenerates. Status shows no drift.
 
@@ -379,27 +384,27 @@ Expected: Watch detects change and regenerates. Status shows no drift.
 
 **[SYSTEM]** Check hook dependency detection:
 \\\`\\\`\\\`bash
-npx codi doctor --json
+npx ${PROJECT_CLI} doctor --json
 \\\`\\\`\\\`
 **[CODING AGENT]** Verify doctor output includes warnings for any missing hook tools (eslint, prettier, ruff, etc.) with install hints.
 
-**[SYSTEM]** Test version check hook (if requiredVersion set in codi.yaml):
+**[SYSTEM]** Test version check hook (if requiredVersion set in ${PROJECT_NAME}.yaml):
 \\\`\\\`\\\`bash
-ls .git/hooks/codi-version-check.mjs
+ls .git/hooks/${PROJECT_NAME}-version-check.mjs
 \\\`\\\`\\\`
-Expected: File exists when manifest has \\\`codi.requiredVersion\\\`.
+Expected: File exists when manifest has \\\`${PROJECT_NAME}.requiredVersion\\\`.
 
 ## Suite 18: Update --from Source Pull
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash
-npx codi update --from codi/team-config --dry-run --json
+npx ${PROJECT_CLI} update --from ${PROJECT_NAME}/team-config --dry-run --json
 \\\`\\\`\\\`
 Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and attempts a pull.
 
 ## Cleanup
 
-**[SYSTEM]** \\\`rm -rf /tmp/codi-validation\\\`
+**[SYSTEM]** \\\`rm -rf /tmp/${PROJECT_NAME}-validation\\\`
 
 ## References
 

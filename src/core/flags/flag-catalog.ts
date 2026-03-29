@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { FlagSpec, ResolvedFlags } from "../../types/flags.js";
+import { PROJECT_DIR } from "../../constants.js";
 
 export const FLAG_CATALOG: Record<string, FlagSpec> = {
   auto_commit: {
@@ -146,7 +147,7 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     default: false,
     hook: null,
     description: "Auto-generate on config change",
-    hint: "Automatically regenerate agent configs when .codi/ files change",
+    hint: `Automatically regenerate agent configs when ${PROJECT_DIR}/ files change`,
   },
 };
 

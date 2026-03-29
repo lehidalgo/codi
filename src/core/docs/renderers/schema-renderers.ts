@@ -8,7 +8,12 @@ import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
 import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
 import { CommandFrontmatterSchema } from "#src/schemas/command.js";
 import { BrandFrontmatterSchema } from "#src/schemas/brand.js";
-import { CodiManifestSchema } from "#src/schemas/manifest.js";
+import { ProjectManifestSchema } from "#src/schemas/manifest.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  PROJECT_CLI,
+} from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
 // Generic Zod field introspection
@@ -301,10 +306,10 @@ const MANIFEST_DESCRIPTIONS: Record<string, string> = {
   "layers.commands": "Include commands in generation",
   "layers.agents": "Include agents in generation",
   "layers.context": "Include context in generation",
-  codi: "Codi CLI settings",
-  "codi.requiredVersion": "Minimum Codi version (semver range)",
+  [PROJECT_NAME]: `${PROJECT_NAME_DISPLAY} CLI settings`,
+  [`${PROJECT_NAME}.requiredVersion`]: `Minimum ${PROJECT_NAME_DISPLAY} version (semver range)`,
   team: "Team name for team-level config",
-  source: "Remote repo for `codi update --from`",
+  source: `Remote repo for \`${PROJECT_CLI} update --from\``,
   "source.repo": "Repository identifier",
   "source.branch": "Branch to pull from",
   "source.paths": "Artifact paths to sync",
@@ -342,5 +347,5 @@ export function renderBrandFields(): string {
 }
 
 export function renderManifestFields(): string {
-  return renderFlatSchemaTable(CodiManifestSchema, MANIFEST_DESCRIPTIONS);
+  return renderFlatSchemaTable(ProjectManifestSchema, MANIFEST_DESCRIPTIONS);
 }

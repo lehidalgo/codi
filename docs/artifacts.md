@@ -53,7 +53,7 @@ managed_by: codi              # codi (template) | user (custom)
 Create from templates: `codi add rule security --template security`
 
 <!-- GENERATED:START:rule_templates -->
-`api-design`, `architecture`, `code-style`, `csharp`, `django`, `documentation`, `error-handling`, `git-workflow`, `golang`, `java`, `kotlin`, `nextjs`, `performance`, `production-mindset`, `python`, `react`, `rust`, `security`, `simplicity-first`, `spring-boot`, `swift`, `testing`, `typescript`
+`codi-api-design`, `codi-architecture`, `codi-code-style`, `codi-csharp`, `codi-django`, `codi-documentation`, `codi-error-handling`, `codi-git-workflow`, `codi-golang`, `codi-java`, `codi-kotlin`, `codi-nextjs`, `codi-performance`, `codi-production-mindset`, `codi-python`, `codi-react`, `codi-rust`, `codi-security`, `codi-simplicity-first`, `codi-spring-boot`, `codi-swift`, `codi-testing`, `codi-typescript`
 <!-- GENERATED:END:rule_templates -->
 
 ---
@@ -123,12 +123,12 @@ managed_by: codi
 <!-- GENERATED:START:skill_templates -->
 | Category | Skills |
 |----------|--------|
-| **Code Quality** | code-review, e2e-testing, error-recovery, guided-qa-testing, refactoring, security-scan, test-coverage, webapp-testing |
-| **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs, codi-operations, codi-preset-creator, codi-rule-creator, codi-skill-creator |
-| **Creative and Design** | algorithmic-art, canvas-design, frontend-design, slack-gif-creator, theme-factory, web-artifacts-builder |
-| **Developer Tools** | claude-api, codebase-onboarding, commit, documentation, internal-comms, mcp, mcp-server-creator, mobile-development |
-| **Document Generation** | deck-engine, doc-engine |
-| **File Format Tools** | docx, pdf, pptx, xlsx |
+| **Code Quality** | codi-code-review, codi-e2e-testing, codi-error-recovery, codi-guided-qa-testing, codi-refactoring, codi-security-scan, codi-test-coverage, codi-webapp-testing |
+| **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs-manager, codi-operations, codi-preset-creator, codi-rule-creator, codi-skill-creator |
+| **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory, codi-web-artifacts-builder |
+| **Developer Tools** | codi-claude-api, codi-codebase-onboarding, codi-commit, codi-documentation, codi-internal-comms, codi-mcp, codi-mcp-server-creator, codi-mobile-development |
+| **Document Generation** | codi-deck-engine, codi-doc-engine |
+| **File Format Tools** | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
 <!-- GENERATED:END:skill_templates -->
 
 ### Progressive Loading
@@ -172,7 +172,7 @@ managed_by: codi
 ### Built-in Agent Templates
 
 <!-- GENERATED:START:agent_templates -->
-`api-designer`, `code-reviewer`, `docs-lookup`, `onboarding-guide`, `performance-auditor`, `refactorer`, `security-analyzer`, `test-generator`
+`codi-api-designer`, `codi-code-reviewer`, `codi-docs-lookup`, `codi-onboarding-guide`, `codi-performance-auditor`, `codi-refactorer`, `codi-security-analyzer`, `codi-test-generator`
 <!-- GENERATED:END:agent_templates -->
 
 ---
@@ -203,7 +203,7 @@ description: Create a well-structured git commit
 ### Built-in Command Templates
 
 <!-- GENERATED:START:command_templates -->
-`commit`, `docs-lookup`, `onboard`, `refactor`, `review`, `security-scan`, `session-handoff`, `test-coverage`, `test-run`
+`codi-commit`, `codi-docs-lookup`, `codi-onboard`, `codi-refactor`, `codi-review`, `codi-security-scan`, `codi-session-handoff`, `codi-test-coverage`, `codi-test-run`
 <!-- GENERATED:END:command_templates -->
 
 ---

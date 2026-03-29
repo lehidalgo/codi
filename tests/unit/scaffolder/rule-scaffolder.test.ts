@@ -3,15 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("rule scaffolder", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-rule-"));
-    codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-rule-`));
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -19,7 +20,7 @@ describe("rule scaffolder", () => {
   });
 
   it("creates a rule file with default content", async () => {
-    const result = await createRule({ name: "my-rule", codiDir });
+    const result = await createRule({ name: "my-rule", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -34,8 +35,8 @@ describe("rule scaffolder", () => {
   it("creates a rule from a known template", async () => {
     const result = await createRule({
       name: "project-security",
-      codiDir,
-      template: "security",
+      configDir,
+      template: prefixedName("security"),
     });
 
     expect(result.ok).toBe(true);
@@ -48,8 +49,8 @@ describe("rule scaffolder", () => {
   it("replaces {{name}} placeholder in template content", async () => {
     const result = await createRule({
       name: "custom-style",
-      codiDir,
-      template: "code-style",
+      configDir,
+      template: prefixedName("code-style"),
     });
 
     expect(result.ok).toBe(true);
@@ -60,20 +61,20 @@ describe("rule scaffolder", () => {
   });
 
   it("rejects invalid names", async () => {
-    const result = await createRule({ name: "Invalid_Name", codiDir });
+    const result = await createRule({ name: "Invalid_Name", configDir });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.message).toContain("Invalid rule name");
   });
 
   it("rejects names starting with a digit", async () => {
-    const result = await createRule({ name: "1bad", codiDir });
+    const result = await createRule({ name: "1bad", configDir });
     expect(result.ok).toBe(false);
   });
 
   it("fails if rule already exists", async () => {
-    await createRule({ name: "existing", codiDir });
-    const result = await createRule({ name: "existing", codiDir });
+    await createRule({ name: "existing", configDir });
+    const result = await createRule({ name: "existing", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -83,7 +84,7 @@ describe("rule scaffolder", () => {
   it("fails with unknown template", async () => {
     const result = await createRule({
       name: "test",
-      codiDir,
+      configDir,
       template: "nonexistent-template",
     });
 

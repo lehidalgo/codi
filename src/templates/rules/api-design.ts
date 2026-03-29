@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: API design conventions, multi-protocol guidance, and schema-first development
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # API Design

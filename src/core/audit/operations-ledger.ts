@@ -106,8 +106,8 @@ const EMPTY_LEDGER: OperationsLedgerData = {
 export class OperationsLedgerManager {
   private readonly ledgerPath: string;
 
-  constructor(codiDir: string) {
-    this.ledgerPath = path.join(codiDir, OPERATIONS_LEDGER_FILENAME);
+  constructor(configDir: string) {
+    this.ledgerPath = path.join(configDir, OPERATIONS_LEDGER_FILENAME);
   }
 
   async read(): Promise<Result<OperationsLedgerData>> {

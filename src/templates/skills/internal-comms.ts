@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates, company newsletters, FAQs, incident reports, project updates, etc.).
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 ## When to use this skill

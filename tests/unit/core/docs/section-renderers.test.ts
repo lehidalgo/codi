@@ -4,6 +4,7 @@ import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
 import type { AgentAdapter } from "#src/types/agent.js";
 import type { HubAction } from "#src/cli/hub.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
+import { PROJECT_CLI } from "#src/constants.js";
 import {
   renderFlagsTable,
   renderFlagModes,
@@ -315,9 +316,9 @@ describe("section-renderers", () => {
       ];
       const result = renderCliReference(cmds);
 
-      expect(result).toContain("`codi init`");
+      expect(result).toContain(`\`${PROJECT_CLI} init\``);
       expect(result).toContain("--force");
-      expect(result).toContain("`codi generate`");
+      expect(result).toContain(`\`${PROJECT_CLI} generate\``);
     });
   });
 

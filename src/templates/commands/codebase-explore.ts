@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Explore and understand the codebase using the code graph knowledge graph
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Explore and understand the codebase using the graph-code MCP knowledge graph.

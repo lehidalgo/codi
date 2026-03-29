@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: C# conventions — records, async patterns, LINQ, nullable types, testing
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: csharp
 ---
 

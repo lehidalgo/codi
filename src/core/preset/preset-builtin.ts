@@ -1,3 +1,4 @@
+import { PROJECT_NAME } from "../../constants.js";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type {
@@ -106,7 +107,7 @@ function parseRuleTemplate(
       content: body,
       priority: (data["priority"] as "high" | "medium" | "low") ?? "medium",
       alwaysApply: (data["alwaysApply"] as boolean) ?? true,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
@@ -124,7 +125,7 @@ function parseSkillTemplate(
       name: (data["name"] as string) ?? name,
       description: (data["description"] as string) ?? "",
       content: body,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
@@ -144,7 +145,7 @@ function parseAgentTemplate(
       content: body,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;

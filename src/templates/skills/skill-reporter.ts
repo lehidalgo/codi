@@ -1,12 +1,18 @@
+import {
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: |
   Internal meta-skill that instructs you to report feedback on skill usage.
   After completing a task that used a skill, write a structured JSON feedback
-  file so Codi can aggregate skill health metrics and drive improvements.
-category: Codi Platform
+  file so ${PROJECT_NAME_DISPLAY} can aggregate skill health metrics and drive improvements.
+category: ${PROJECT_NAME_DISPLAY} Platform
 user-invocable: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
@@ -24,7 +30,7 @@ work. Skip trivial invocations (e.g., skill loaded but immediately cancelled).
 
 ## Feedback JSON Schema
 
-Write a single JSON file to \`.codi/feedback/\` with this exact structure:
+Write a single JSON file to \`${PROJECT_DIR}/feedback/\` with this exact structure:
 
 \`\`\`json
 {
@@ -78,12 +84,12 @@ Your agent identifier. Use exactly one of:
 
 Save the file as:
 \`\`\`
-.codi/feedback/{timestamp}-{skill-name}.json
+${PROJECT_DIR}/feedback/{timestamp}-{skill-name}.json
 \`\`\`
 
 Replace colons and dots in the timestamp with hyphens. Example:
 \`\`\`
-.codi/feedback/2026-03-28T21-30-00-000Z-commit.json
+${PROJECT_DIR}/feedback/2026-03-28T21-30-00-000Z-commit.json
 \`\`\`
 
 ## Examples

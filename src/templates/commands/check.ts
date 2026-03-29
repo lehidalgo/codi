@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Diagnose errors and problems using MCP servers and structured reasoning
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Follow this workflow every time you hit an error or problem:

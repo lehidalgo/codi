@@ -1,13 +1,17 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
 // PresetSourceType used via preset-source.ts types
-import type { PresetSourceDescriptor } from './preset-source.js';
-import type { LoadedPreset } from './preset-loader.js';
-import { loadPresetFromDir } from './preset-loader.js';
-import { isBuiltinPreset as checkBuiltin, materializeBuiltinPreset } from './preset-builtin.js';
-import { createError } from '../output/errors.js';
+import type { PresetSourceDescriptor } from "./preset-source.js";
+import type { LoadedPreset } from "./preset-loader.js";
+import { loadPresetFromDir } from "./preset-loader.js";
+import {
+  isBuiltinPreset as checkBuiltin,
+  materializeBuiltinPreset,
+} from "./preset-builtin.js";
+import { createError } from "../output/errors.js";
+import { PROJECT_CLI } from "../../constants.js";
 
 /**
  * Parses a preset identifier string into a source descriptor.
@@ -20,21 +24,21 @@ import { createError } from '../output/errors.js';
  *   "github:org/repo@v1.0"            → github with tag
  *   "github:org/repo#branch"          → github with branch
  *   "https://github.com/org/repo"     → github
- *   "my-custom-preset"                → local (directory in .codi/presets/)
+ *   "my-custom-preset"                → local (local directory in presets/)
  */
 export function parsePresetIdentifier(id: string): PresetSourceDescriptor {
   // Built-in presets
   if (isBuiltinPresetName(id)) {
-    return { type: 'builtin', identifier: id };
+    return { type: "builtin", identifier: id };
   }
 
   // ZIP files
-  if (id.endsWith('.zip')) {
-    return { type: 'zip', identifier: id };
+  if (id.endsWith(".zip")) {
+    return { type: "zip", identifier: id };
   }
 
   // GitHub shorthand: github:org/repo[@tag][#branch]
-  if (id.startsWith('github:')) {
+  if (id.startsWith("github:")) {
     return parseGithubIdentifier(id.slice(7));
   }
 
@@ -45,7 +49,7 @@ export function parsePresetIdentifier(id: string): PresetSourceDescriptor {
   }
 
   // Default: local directory name
-  return { type: 'local', identifier: id };
+  return { type: "local", identifier: id };
 }
 
 /**
@@ -66,14 +70,14 @@ export async function resolveAndLoadPreset(
   const descriptor = parsePresetIdentifier(id);
 
   switch (descriptor.type) {
-    case 'builtin':
+    case "builtin":
       return loadBuiltinPreset(descriptor.identifier, presetsDir);
 
-    case 'local':
+    case "local":
       return loadLocalPreset(descriptor.identifier, presetsDir);
 
-    case 'zip':
-    case 'github':
+    case "zip":
+    case "github":
       // These sources should have been installed into presetsDir already.
       // Try loading from presetsDir by extracting the preset name.
       return loadInstalledPreset(descriptor, presetsDir);
@@ -85,7 +89,9 @@ function isBuiltinPresetName(name: string): boolean {
 }
 
 function isGithubUrl(id: string): boolean {
-  return id.startsWith('https://github.com/') || id.startsWith('http://github.com/');
+  return (
+    id.startsWith("https://github.com/") || id.startsWith("http://github.com/")
+  );
 }
 
 function extractGithubRepoPath(url: string): string {
@@ -98,7 +104,7 @@ function parseGithubIdentifier(raw: string): PresetSourceDescriptor {
   const tagMatch = raw.match(/^(.+?)@(.+)$/);
   if (tagMatch && tagMatch[1] && tagMatch[2]) {
     return {
-      type: 'github',
+      type: "github",
       identifier: tagMatch[1],
       version: tagMatch[2],
       ref: tagMatch[2],
@@ -109,13 +115,13 @@ function parseGithubIdentifier(raw: string): PresetSourceDescriptor {
   const branchMatch = raw.match(/^(.+?)#(.+)$/);
   if (branchMatch && branchMatch[1] && branchMatch[2]) {
     return {
-      type: 'github',
+      type: "github",
       identifier: branchMatch[1],
       ref: branchMatch[2],
     };
   }
 
-  return { type: 'github', identifier: raw };
+  return { type: "github", identifier: raw };
 }
 
 async function loadBuiltinPreset(
@@ -138,7 +144,7 @@ async function loadLocalPreset(
 ): Promise<Result<LoadedPreset>> {
   const presetDir = path.join(presetsDir, name);
   if (!(await dirExists(presetDir))) {
-    return err([createError('E_PRESET_NOT_FOUND', { name })]);
+    return err([createError("E_PRESET_NOT_FOUND", { name })]);
   }
   return loadPresetFromDir(name, presetsDir);
 }
@@ -152,10 +158,11 @@ async function loadInstalledPreset(
   const presetDir = path.join(presetsDir, name);
 
   if (!(await dirExists(presetDir))) {
-    const hint = descriptor.type === 'zip'
-      ? `Install it first: codi preset install ${descriptor.identifier}`
-      : `Install it first: codi preset install github:${descriptor.identifier}`;
-    return err([createError('E_PRESET_NOT_FOUND', { name, hint })]);
+    const hint =
+      descriptor.type === "zip"
+        ? `Install it first: ${PROJECT_CLI} preset install ${descriptor.identifier}`
+        : `Install it first: ${PROJECT_CLI} preset install github:${descriptor.identifier}`;
+    return err([createError("E_PRESET_NOT_FOUND", { name, hint })]);
   }
 
   return loadPresetFromDir(name, presetsDir);
@@ -166,12 +173,12 @@ async function loadInstalledPreset(
  */
 export function extractPresetName(descriptor: PresetSourceDescriptor): string {
   switch (descriptor.type) {
-    case 'zip': {
-      const basename = path.basename(descriptor.identifier, '.zip');
+    case "zip": {
+      const basename = path.basename(descriptor.identifier, ".zip");
       return basename;
     }
-    case 'github': {
-      const parts = descriptor.identifier.split('/');
+    case "github": {
+      const parts = descriptor.identifier.split("/");
       return parts[parts.length - 1] ?? descriptor.identifier;
     }
     default:

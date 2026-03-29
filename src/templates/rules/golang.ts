@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Go conventions — error handling, interfaces, testing, concurrency patterns
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: golang
 ---
 

@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { importClaudeMd } from "#src/core/migration/claude-md.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 const FIXTURE_DIR = path.join(
   __dirname,
@@ -11,10 +12,12 @@ const FIXTURE_DIR = path.join(
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-migration-claude-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-migration-claude-`),
+  );
   const src = path.join(FIXTURE_DIR, "CLAUDE.md");
   await fs.copyFile(src, path.join(tmpDir, "CLAUDE.md"));
-  await fs.mkdir(path.join(tmpDir, ".codi", "rules"), { recursive: true });
+  await fs.mkdir(path.join(tmpDir, PROJECT_DIR, "rules"), { recursive: true });
 });
 
 afterEach(async () => {
@@ -52,7 +55,7 @@ describe("importClaudeMd", () => {
   it("writes rule files to disk", async () => {
     await importClaudeMd(tmpDir);
 
-    const rulesDir = path.join(tmpDir, ".codi", "rules");
+    const rulesDir = path.join(tmpDir, PROJECT_DIR, "rules");
     const files = await fs.readdir(rulesDir);
     expect(files).toContain("general.md");
     expect(files).toContain("code-quality.md");
@@ -63,7 +66,7 @@ describe("importClaudeMd", () => {
     await importClaudeMd(tmpDir);
 
     const content = await fs.readFile(
-      path.join(tmpDir, ".codi", "rules", "general.md"),
+      path.join(tmpDir, PROJECT_DIR, "rules", "general.md"),
       "utf-8",
     );
     expect(content).toContain("---");
@@ -72,7 +75,9 @@ describe("importClaudeMd", () => {
   });
 
   it("returns error when CLAUDE.md not found", async () => {
-    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-empty-"));
+    const emptyDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-empty-`),
+    );
     const result = await importClaudeMd(emptyDir);
     expect(result.ok).toBe(false);
     if (!result.ok) {

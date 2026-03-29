@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Single source of truth for project naming** — all hardcoded "codi"/"Codi" references across 313 files now derive from `constants.ts`. Renaming the project requires changing only `PROJECT_NAME` and `package.json`
+- **Schema field rename** — manifest `codi.requiredVersion` → `engine.requiredVersion`; preset compatibility `codi` → `engine` (breaking change for existing configs)
+- **Internal identifier renames** — `CodiManifest` → `ProjectManifest`, `CodiError` → `ProjectError`, `resolveCodiDir` → `resolveProjectDir`, `scanCodiDir` → `scanProjectDir`, and 12 other identifier renames for consistency
+- **Template content now interpolated** — `managed_by`, tmpdir prefixes, hook filenames, skill prose, and adapter prefixes all derive from constants at runtime
+
 ### Added
 
 - **`codi skill export` command** — export skills as Agent Skills standard, Claude Code plugin, Codex plugin, or ZIP bundle for marketplace distribution

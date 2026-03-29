@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Incremental update of the code knowledge graph for changed files
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Incrementally update the code knowledge graph, processing only files that changed since the last index.

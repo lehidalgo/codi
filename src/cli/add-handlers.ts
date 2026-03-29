@@ -1,4 +1,5 @@
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
+import { resolveArtifactName } from "../constants.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
@@ -35,9 +36,13 @@ export async function addRuleHandler(
   name: string,
   options: AddRuleOptions,
 ): Promise<CommandResult<AddRuleData>> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  if (options.template && !AVAILABLE_TEMPLATES.includes(options.template)) {
+  const resolvedTemplate = options.template
+    ? resolveArtifactName(options.template, AVAILABLE_TEMPLATES)
+    : undefined;
+
+  if (options.template && !resolvedTemplate) {
     return createCommandResult({
       success: false,
       command: "add rule",
@@ -57,8 +62,8 @@ export async function addRuleHandler(
 
   const result = await createRule({
     name,
-    codiDir,
-    template: options.template,
+    configDir,
+    template: resolvedTemplate,
   });
 
   if (!result.ok) {
@@ -95,12 +100,13 @@ export async function addSkillHandler(
   name: string,
   options: AddSkillOptions,
 ): Promise<CommandResult<AddSkillData>> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  if (
-    options.template &&
-    !AVAILABLE_SKILL_TEMPLATES.includes(options.template)
-  ) {
+  const resolvedTemplate = options.template
+    ? resolveArtifactName(options.template, AVAILABLE_SKILL_TEMPLATES)
+    : undefined;
+
+  if (options.template && !resolvedTemplate) {
     return createCommandResult({
       success: false,
       command: "add skill",
@@ -120,8 +126,8 @@ export async function addSkillHandler(
 
   const result = await createSkill({
     name,
-    codiDir,
-    template: options.template,
+    configDir,
+    template: resolvedTemplate,
   });
 
   if (!result.ok) {
@@ -158,12 +164,13 @@ export async function addAgentHandler(
   name: string,
   options: { template?: string },
 ): Promise<CommandResult<AddAgentData>> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  if (
-    options.template &&
-    !AVAILABLE_AGENT_TEMPLATES.includes(options.template)
-  ) {
+  const resolvedTemplate = options.template
+    ? resolveArtifactName(options.template, AVAILABLE_AGENT_TEMPLATES)
+    : undefined;
+
+  if (options.template && !resolvedTemplate) {
     return createCommandResult({
       success: false,
       command: "add agent",
@@ -183,8 +190,8 @@ export async function addAgentHandler(
 
   const result = await createAgent({
     name,
-    codiDir,
-    template: options.template,
+    configDir,
+    template: resolvedTemplate,
   });
 
   if (!result.ok) {
@@ -221,12 +228,13 @@ export async function addCommandHandler(
   name: string,
   options: { template?: string },
 ): Promise<CommandResult<AddCommandData>> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  if (
-    options.template &&
-    !AVAILABLE_COMMAND_TEMPLATES.includes(options.template)
-  ) {
+  const resolvedTemplate = options.template
+    ? resolveArtifactName(options.template, AVAILABLE_COMMAND_TEMPLATES)
+    : undefined;
+
+  if (options.template && !resolvedTemplate) {
     return createCommandResult({
       success: false,
       command: "add command",
@@ -246,8 +254,8 @@ export async function addCommandHandler(
 
   const result = await createCommand({
     name,
-    codiDir,
-    template: options.template,
+    configDir,
+    template: resolvedTemplate,
   });
 
   if (!result.ok) {
@@ -278,9 +286,9 @@ export async function addBrandHandler(
   name: string,
   _options?: { template?: string },
 ): Promise<CommandResult<AddBrandData>> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  const result = await createBrand({ name, codiDir });
+  const result = await createBrand({ name, configDir });
 
   if (!result.ok) {
     return createCommandResult({
@@ -307,12 +315,13 @@ export async function addMcpServerHandler(
 ): Promise<
   CommandResult<{ name: string; path: string; template: string | null }>
 > {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  if (
-    options.template &&
-    !AVAILABLE_MCP_SERVER_TEMPLATES.includes(options.template)
-  ) {
+  const resolvedTemplate = options.template
+    ? resolveArtifactName(options.template, AVAILABLE_MCP_SERVER_TEMPLATES)
+    : undefined;
+
+  if (options.template && !resolvedTemplate) {
     return createCommandResult({
       success: false,
       command: "add mcp-server",
@@ -332,8 +341,8 @@ export async function addMcpServerHandler(
 
   const result = await createMcpServer({
     name,
-    codiDir,
-    template: options.template,
+    configDir,
+    template: resolvedTemplate,
   });
 
   if (!result.ok) {
@@ -360,8 +369,8 @@ async function logAddToLedger(
   name: string,
 ): Promise<void> {
   try {
-    const codiDir = resolveCodiDir(projectRoot);
-    const ledger = new OperationsLedgerManager(codiDir);
+    const configDir = resolveProjectDir(projectRoot);
+    const ledger = new OperationsLedgerManager(configDir);
     await ledger.logOperation({
       type: "add",
       timestamp: new Date().toISOString(),

@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import { PROJECT_CLI } from "../constants.js";
 import { getSupportedLanguages } from "../core/hooks/hook-registry.js";
 import {
   handleZipPath,
@@ -35,7 +36,7 @@ export async function runInitWizard(
   detectedAgents: string[],
   allAgents: string[],
 ): Promise<WizardResult | null> {
-  p.intro("codi — Project Setup");
+  p.intro(`${PROJECT_CLI} — Project Setup`);
 
   p.note(
     [

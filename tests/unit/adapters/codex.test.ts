@@ -4,10 +4,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { codexAdapter } from "#src/adapters/codex.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_LARGE } from "#src/constants.js";
+import {
+  CONTEXT_TOKENS_LARGE,
+  PROJECT_NAME,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("codex adapter", () => {
-  const tmpDir = join(tmpdir(), "codi-test-codex-" + Date.now());
+  const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-codex-` + Date.now());
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true });
@@ -122,7 +126,7 @@ describe("codex adapter", () => {
           content: "Follow this rule.",
           priority: "high",
           alwaysApply: true,
-          managedBy: "codi",
+          managedBy: PROJECT_NAME,
         },
       ],
     });
@@ -201,7 +205,7 @@ describe("codex adapter", () => {
     expect(agentFile!.content).toContain('description = "Code reviewer agent"');
     expect(agentFile!.content).toContain("Review all pull requests carefully.");
     expect(agentFile!.content).toContain('model = "gpt-4"');
-    expect(agentFile!.sources).toContain("codi.yaml");
+    expect(agentFile!.sources).toContain(MANIFEST_FILENAME);
   });
 
   it("generates agent TOML without model when not specified", async () => {
@@ -319,13 +323,13 @@ describe("codex adapter", () => {
         allow_force_push: {
           value: false,
           mode: "enforced",
-          source: "codi.yaml",
+          source: MANIFEST_FILENAME,
           locked: false,
         },
         require_pr_review: {
           value: true,
           mode: "enforced",
-          source: "codi.yaml",
+          source: MANIFEST_FILENAME,
           locked: false,
         },
       },

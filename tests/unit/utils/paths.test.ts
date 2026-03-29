@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import path from "node:path";
 import os from "node:os";
 import {
-  resolveCodiDir,
+  resolveProjectDir,
   resolveUserDir,
   resolveOrgFile,
   resolveTeamFile,
@@ -10,15 +10,15 @@ import {
 } from "#src/utils/paths.js";
 import { PROJECT_DIR } from "#src/constants.js";
 
-describe("resolveCodiDir", () => {
-  it("joins project root with .codi", () => {
-    const result = resolveCodiDir("/my/project");
+describe("resolveProjectDir", () => {
+  it(`joins project root with ${PROJECT_DIR}`, () => {
+    const result = resolveProjectDir("/my/project");
     expect(result).toBe(path.join("/my/project", PROJECT_DIR));
   });
 });
 
 describe("resolveUserDir", () => {
-  it("joins homedir with .codi", () => {
+  it(`joins homedir with ${PROJECT_DIR}`, () => {
     const result = resolveUserDir();
     expect(result).toBe(path.join(os.homedir(), PROJECT_DIR));
   });

@@ -1,9 +1,10 @@
 /**
- * Renders the full HTML page for the Codi skill catalog.
+ * Renders the full HTML page for the skill catalog.
  * Self-contained: embedded CSS + JS, no external dependencies.
  */
 import type { CategoryGroup, SkillDocEntry } from "./skill-docs-generator.js";
 import { esc, slugify, md2html } from "./markdown-converter.js";
+import { PROJECT_NAME_DISPLAY } from "../../constants.js";
 
 function renderBadges(skill: SkillDocEntry): string {
   const badges: string[] = [];
@@ -171,19 +172,19 @@ export function renderSkillDocsPage(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Codi Skills Catalog</title>
+<title>${PROJECT_NAME_DISPLAY} Skills Catalog</title>
 <style>${CSS}</style>
 </head>
 <body>
 <div class="layout">
   <nav class="sidebar">
-    <h1>Codi Skills</h1>
+    <h1>${PROJECT_NAME_DISPLAY} Skills</h1>
     <p class="stats">${totalSkills} skills</p>
     <input type="text" class="search-box" placeholder="Search skills..." id="search">
     ${sidebar}
   </nav>
   <main class="main">
-    <h1>Codi Skills Catalog</h1>
+    <h1>${PROJECT_NAME_DISPLAY} Skills Catalog</h1>
     <p style="color:var(--text-muted);margin-bottom:2rem">
       ${totalSkills} skills across ${groups.length} categories.
       Click a skill header to expand/collapse.

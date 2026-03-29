@@ -10,6 +10,11 @@ import {
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  PROJECT_NAME_DISPLAY,
+} from "#src/constants.js";
+import {
   validateSkillForExport,
   exportSkill,
   listAvailableSkills,
@@ -19,7 +24,7 @@ import {
 const VALID_SKILL_MD = `---
 name: test-skill
 description: A test skill for unit testing
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Test Skill
@@ -41,41 +46,44 @@ license: MIT
 Advanced content.`;
 
 describe("skill-export", () => {
-  const tmpBase = join(tmpdir(), "codi-test-skill-export-" + Date.now());
-  const codiDir = join(tmpBase, ".codi");
+  const tmpBase = join(
+    tmpdir(),
+    `${PROJECT_NAME}-test-skill-export-` + Date.now(),
+  );
+  const configDir = join(tmpBase, PROJECT_DIR);
   const outputDir = join(tmpBase, "output");
 
   beforeEach(async () => {
-    await mkdir(join(codiDir, "skills", "test-skill", "scripts"), {
+    await mkdir(join(configDir, "skills", "test-skill", "scripts"), {
       recursive: true,
     });
-    await mkdir(join(codiDir, "skills", "test-skill", "references"), {
+    await mkdir(join(configDir, "skills", "test-skill", "references"), {
       recursive: true,
     });
-    await mkdir(join(codiDir, "skills", "test-skill", "assets"), {
+    await mkdir(join(configDir, "skills", "test-skill", "assets"), {
       recursive: true,
     });
-    await mkdir(join(codiDir, "skills", "test-skill", "evals"), {
+    await mkdir(join(configDir, "skills", "test-skill", "evals"), {
       recursive: true,
     });
     await writeFile(
-      join(codiDir, "skills", "test-skill", "SKILL.md"),
+      join(configDir, "skills", "test-skill", "SKILL.md"),
       VALID_SKILL_MD,
     );
     await writeFile(
-      join(codiDir, "skills", "test-skill", "scripts", "helper.sh"),
+      join(configDir, "skills", "test-skill", "scripts", "helper.sh"),
       '#!/bin/bash\necho "hello"',
     );
     await writeFile(
-      join(codiDir, "skills", "test-skill", "references", "guide.md"),
+      join(configDir, "skills", "test-skill", "references", "guide.md"),
       "# Guide",
     );
     await writeFile(
-      join(codiDir, "skills", "test-skill", "scripts", ".gitkeep"),
+      join(configDir, "skills", "test-skill", "scripts", ".gitkeep"),
       "",
     );
     await writeFile(
-      join(codiDir, "skills", "test-skill", "evals", "evals.json"),
+      join(configDir, "skills", "test-skill", "evals", "evals.json"),
       "[]",
     );
     await mkdir(outputDir, { recursive: true });
@@ -90,7 +98,7 @@ describe("skill-export", () => {
   describe("validateSkillForExport", () => {
     it("returns error when skill directory does not exist", async () => {
       const result = await validateSkillForExport(
-        join(codiDir, "skills", "nonexistent"),
+        join(configDir, "skills", "nonexistent"),
         "nonexistent",
       );
       expect(result.ok).toBe(false);
@@ -100,7 +108,7 @@ describe("skill-export", () => {
     });
 
     it("returns error when SKILL.md is missing", async () => {
-      const emptyDir = join(codiDir, "skills", "empty-skill");
+      const emptyDir = join(configDir, "skills", "empty-skill");
       await mkdir(emptyDir, { recursive: true });
       const result = await validateSkillForExport(emptyDir, "empty-skill");
       expect(result.ok).toBe(false);
@@ -110,7 +118,7 @@ describe("skill-export", () => {
     });
 
     it("returns error when description is empty", async () => {
-      const noDescDir = join(codiDir, "skills", "no-desc");
+      const noDescDir = join(configDir, "skills", "no-desc");
       await mkdir(noDescDir, { recursive: true });
       await writeFile(
         join(noDescDir, "SKILL.md"),
@@ -121,7 +129,7 @@ describe("skill-export", () => {
     });
 
     it("returns ok with parsed skill on valid input", async () => {
-      const skillDir = join(codiDir, "skills", "test-skill");
+      const skillDir = join(configDir, "skills", "test-skill");
       const result = await validateSkillForExport(skillDir, "test-skill");
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -137,7 +145,7 @@ describe("skill-export", () => {
     it("creates output directory with clean SKILL.md", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -155,7 +163,7 @@ describe("skill-export", () => {
     it("strips managed_by from exported SKILL.md", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -173,7 +181,7 @@ describe("skill-export", () => {
     it("copies supporting files from scripts/ and references/", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -196,7 +204,7 @@ describe("skill-export", () => {
     it("excludes evals/ directory", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -212,7 +220,7 @@ describe("skill-export", () => {
     it("excludes .gitkeep files", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -226,10 +234,10 @@ describe("skill-export", () => {
       expect(scriptsFiles).toContain("helper.sh");
     });
 
-    it("does not include Generated by Codi header", async () => {
+    it("does not include generated-by header", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -240,18 +248,18 @@ describe("skill-export", () => {
         join(result.data.outputPath, "SKILL.md"),
         "utf-8",
       );
-      expect(skillMd).not.toContain("Generated by Codi");
+      expect(skillMd).not.toContain(`Generated by ${PROJECT_NAME_DISPLAY}`);
     });
 
     it("preserves official frontmatter fields", async () => {
       // Create skill with all fields
-      const advDir = join(codiDir, "skills", "advanced-skill");
+      const advDir = join(configDir, "skills", "advanced-skill");
       await mkdir(advDir, { recursive: true });
       await writeFile(join(advDir, "SKILL.md"), VALID_SKILL_WITH_FIELDS);
 
       const result = await exportSkill({
         name: "advanced-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -276,7 +284,7 @@ describe("skill-export", () => {
     it("creates .claude-plugin/plugin.json", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "claude-plugin",
       });
@@ -297,7 +305,7 @@ describe("skill-export", () => {
     it("creates skills/{name}/SKILL.md", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "claude-plugin",
       });
@@ -314,7 +322,7 @@ describe("skill-export", () => {
     it("copies supporting files into plugin structure", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "claude-plugin",
       });
@@ -337,7 +345,7 @@ describe("skill-export", () => {
     it("output directory is named {name}-plugin", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "claude-plugin",
       });
@@ -353,7 +361,7 @@ describe("skill-export", () => {
     it("creates .codex-plugin/plugin.json", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "codex-plugin",
       });
@@ -373,7 +381,7 @@ describe("skill-export", () => {
     it("creates skills/{name}/SKILL.md", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "codex-plugin",
       });
@@ -394,7 +402,7 @@ describe("skill-export", () => {
     it("creates a ZIP file", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "zip",
       });
@@ -415,7 +423,7 @@ describe("skill-export", () => {
     it("cleans up staging directory after ZIP creation", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "zip",
       });
@@ -433,7 +441,7 @@ describe("skill-export", () => {
     it("returns error for nonexistent skill", async () => {
       const result = await exportSkill({
         name: "nonexistent",
-        codiDir,
+        configDir,
         outputDir,
         format: "standard",
       });
@@ -446,7 +454,7 @@ describe("skill-export", () => {
     it("returns error for unsupported format", async () => {
       const result = await exportSkill({
         name: "test-skill",
-        codiDir,
+        configDir,
         outputDir,
         format: "invalid" as SkillExportFormat,
       });
@@ -461,21 +469,23 @@ describe("skill-export", () => {
 
   describe("listAvailableSkills", () => {
     it("lists skill directories", async () => {
-      const skills = await listAvailableSkills(codiDir);
+      const skills = await listAvailableSkills(configDir);
       expect(skills).toContain("test-skill");
     });
 
     it("returns empty array when skills dir does not exist", async () => {
-      const emptyCodiDir = join(tmpBase, "empty-codi");
-      await mkdir(emptyCodiDir, { recursive: true });
-      const skills = await listAvailableSkills(emptyCodiDir);
+      const emptyConfigDir = join(tmpBase, "empty-config");
+      await mkdir(emptyConfigDir, { recursive: true });
+      const skills = await listAvailableSkills(emptyConfigDir);
       expect(skills).toEqual([]);
     });
 
     it("returns sorted list", async () => {
-      await mkdir(join(codiDir, "skills", "alpha-skill"), { recursive: true });
-      await mkdir(join(codiDir, "skills", "zeta-skill"), { recursive: true });
-      const skills = await listAvailableSkills(codiDir);
+      await mkdir(join(configDir, "skills", "alpha-skill"), {
+        recursive: true,
+      });
+      await mkdir(join(configDir, "skills", "zeta-skill"), { recursive: true });
+      const skills = await listAvailableSkills(configDir);
       expect(skills).toEqual([...skills].sort());
     });
   });

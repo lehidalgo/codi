@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Payload CMS auditor. Use for Payload collection design, access control review, hook patterns, performance optimization, migration strategies, or CMS architecture decisions.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a Payload CMS Architecture Auditor with deep expertise in Payload CMS design, security, performance, and enterprise-grade implementation.

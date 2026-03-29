@@ -4,15 +4,16 @@ import path from "node:path";
 import os from "node:os";
 import { parse as parseYaml } from "yaml";
 import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("mcp scaffolder", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-mcp-"));
-    codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-mcp-`));
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -20,7 +21,7 @@ describe("mcp scaffolder", () => {
   });
 
   it("creates a server yaml when no template", async () => {
-    const result = await createMcpServer({ name: "my-api", codiDir });
+    const result = await createMcpServer({ name: "my-api", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -36,7 +37,7 @@ describe("mcp scaffolder", () => {
   it("creates a server yaml from template", async () => {
     const result = await createMcpServer({
       name: "github",
-      codiDir,
+      configDir,
       template: "github",
     });
 
@@ -47,15 +48,15 @@ describe("mcp scaffolder", () => {
     const content = await fs.readFile(result.data, "utf-8");
     const parsed = parseYaml(content) as Record<string, unknown>;
     expect(parsed["name"]).toBe("github");
-    expect(parsed["managed_by"]).toBe("codi");
+    expect(parsed["managed_by"]).toBe(PROJECT_NAME);
     expect(parsed["command"]).toBe("npx");
     expect(parsed["args"]).toContain("@modelcontextprotocol/server-github");
     expect(parsed["env"]).toHaveProperty("GITHUB_TOKEN");
   });
 
   it("rejects duplicate server names", async () => {
-    await createMcpServer({ name: "test-server", codiDir });
-    const result = await createMcpServer({ name: "test-server", codiDir });
+    await createMcpServer({ name: "test-server", configDir });
+    const result = await createMcpServer({ name: "test-server", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -63,7 +64,7 @@ describe("mcp scaffolder", () => {
   });
 
   it("rejects invalid server names", async () => {
-    const result = await createMcpServer({ name: "Invalid_Name", codiDir });
+    const result = await createMcpServer({ name: "Invalid_Name", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -73,7 +74,7 @@ describe("mcp scaffolder", () => {
   it("rejects unknown template names", async () => {
     const result = await createMcpServer({
       name: "test",
-      codiDir,
+      configDir,
       template: "nonexistent-template",
     });
 
@@ -83,7 +84,7 @@ describe("mcp scaffolder", () => {
   it("creates server with env vars from template", async () => {
     const result = await createMcpServer({
       name: "postgres",
-      codiDir,
+      configDir,
       template: "postgres",
     });
 

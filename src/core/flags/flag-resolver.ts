@@ -3,13 +3,13 @@ import type {
   FlagDefinition,
   FlagSpec,
   ResolvedFlags,
-} from '../../types/flags.js';
-import { FLAG_CONDITION_KEYS } from '../../types/flags.js';
-import type { Result } from '../../types/result.js';
-import { ok, err } from '../../types/result.js';
-import type { CodiError } from '../output/types.js';
-import { createError } from '../output/errors.js';
-import { getDefaultFlags } from './flag-catalog.js';
+} from "../../types/flags.js";
+import { FLAG_CONDITION_KEYS } from "../../types/flags.js";
+import type { Result } from "../../types/result.js";
+import { ok, err } from "../../types/result.js";
+import type { ProjectError } from "../output/types.js";
+import { createError } from "../output/errors.js";
+import { getDefaultFlags } from "./flag-catalog.js";
 
 export interface FlagLayer {
   level: string;
@@ -32,16 +32,16 @@ function conditionsMatch(
 
     let contextValues: string[];
     switch (key) {
-      case 'lang':
+      case "lang":
         contextValues = context.languages;
         break;
-      case 'framework':
+      case "framework":
         contextValues = context.frameworks;
         break;
-      case 'agent':
+      case "agent":
         contextValues = context.agents;
         break;
-      case 'file_pattern':
+      case "file_pattern":
         // file_pattern matching is deferred to runtime; treat as match for resolution
         continue;
       default:
@@ -65,14 +65,17 @@ export function resolveFlags(
 ): Result<ResolvedFlags> {
   const resolved = getDefaultFlags();
   const lockedFlags = new Map<string, string>(); // flag name → source that locked it
-  const errors: CodiError[] = [];
+  const errors: ProjectError[] = [];
 
   for (const layer of layers) {
     for (const [flagName, definition] of Object.entries(layer.flags)) {
       const spec = catalog[flagName];
       if (!spec) {
         errors.push(
-          createError('E_FLAG_UNKNOWN', { flag: flagName, source: layer.source }),
+          createError("E_FLAG_UNKNOWN", {
+            flag: flagName,
+            source: layer.source,
+          }),
         );
         continue;
       }
@@ -81,35 +84,35 @@ export function resolveFlags(
       const lockSource = lockedFlags.get(flagName);
       if (lockSource) {
         errors.push(
-          createError('E_FLAG_LOCKED', { flag: flagName, source: lockSource }),
+          createError("E_FLAG_LOCKED", { flag: flagName, source: lockSource }),
         );
         continue;
       }
 
-      const mode = definition.mode ?? 'inherited';
+      const mode = definition.mode ?? "inherited";
 
       switch (mode) {
-        case 'inherited':
+        case "inherited":
           // Skip — use parent value
           break;
 
-        case 'delegated_to_agent_default':
+        case "delegated_to_agent_default":
           // Use catalog default, continue to lower levels
           resolved[flagName] = {
             value: spec.default,
-            mode: 'delegated_to_agent_default',
+            mode: "delegated_to_agent_default",
             source: layer.source,
             locked: false,
           };
           break;
 
-        case 'conditional': {
+        case "conditional": {
           if (!definition.conditions) break;
           if (!hasValidConditionKeys(definition.conditions)) break;
           if (conditionsMatch(definition.conditions, context)) {
             resolved[flagName] = {
               value: definition.value ?? spec.default,
-              mode: 'conditional',
+              mode: "conditional",
               source: layer.source,
               locked: false,
             };
@@ -117,11 +120,13 @@ export function resolveFlags(
           break;
         }
 
-        case 'enforced':
-        case 'enabled':
-        case 'disabled': {
+        case "enforced":
+        case "enabled":
+        case "disabled": {
           const value =
-            mode === 'disabled' ? getDisabledValue(spec) : (definition.value ?? spec.default);
+            mode === "disabled"
+              ? getDisabledValue(spec)
+              : (definition.value ?? spec.default);
 
           resolved[flagName] = {
             value,
@@ -148,13 +153,13 @@ export function resolveFlags(
 
 function getDisabledValue(spec: FlagSpec): unknown {
   switch (spec.type) {
-    case 'boolean':
+    case "boolean":
       return false;
-    case 'number':
+    case "number":
       return 0;
-    case 'enum':
-      return 'off';
-    case 'string[]':
+    case "enum":
+      return "off";
+    case "string[]":
       return [];
   }
 }

@@ -33,11 +33,12 @@ export {
   addBrandHandler,
   addMcpServerHandler,
 } from "./add-handlers.js";
+import { PROJECT_CLI, PROJECT_DIR } from "../constants.js";
 
 export function registerAddCommand(program: Command): void {
   const addCmd = program
     .command("add")
-    .description("Add resources to the .codi/ configuration");
+    .description(`Add resources to the ${PROJECT_DIR}/ configuration`);
 
   addCmd
     .command("rule [name]")
@@ -347,7 +348,7 @@ export function registerAddCommand(program: Command): void {
               {
                 code: "E_CONFIG_INVALID",
                 message: "Brand name required.",
-                hint: "Usage: codi add brand <name>",
+                hint: `Usage: ${PROJECT_CLI} add brand <name>`,
                 severity: "error",
                 context: {},
               },

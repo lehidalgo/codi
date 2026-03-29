@@ -1,5 +1,5 @@
-import { VERSION } from '../../index.js';
-import type { CodiError, CommandResult } from './types.js';
+import { VERSION } from "../../index.js";
+import type { ProjectError, CommandResult } from "./types.js";
 
 export function formatHuman(result: CommandResult<unknown>): string {
   const lines: string[] = [];
@@ -22,15 +22,16 @@ export function formatHuman(result: CommandResult<unknown>): string {
   }
 
   if (result.data !== null && result.data !== undefined) {
-    const dataStr = typeof result.data === 'string'
-      ? result.data
-      : JSON.stringify(result.data, null, 2);
+    const dataStr =
+      typeof result.data === "string"
+        ? result.data
+        : JSON.stringify(result.data, null, 2);
     if (dataStr) {
       lines.push(dataStr);
     }
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 export function formatJson(result: CommandResult<unknown>): string {
@@ -41,8 +42,8 @@ export function createCommandResult<T>(options: {
   success: boolean;
   command: string;
   data: T;
-  errors?: CodiError[];
-  warnings?: CodiError[];
+  errors?: ProjectError[];
+  warnings?: ProjectError[];
   exitCode: number;
 }): CommandResult<T> {
   return {

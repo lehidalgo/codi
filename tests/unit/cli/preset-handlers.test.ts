@@ -14,13 +14,17 @@ import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PRESET_MANIFEST_FILENAME,
   PRESET_LOCK_FILENAME,
+  PROJECT_NAME,
+  PROJECT_DIR,
 } from "#src/constants.js";
 
 describe("presetValidateHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-val-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-val-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -31,7 +35,7 @@ describe("presetValidateHandler", () => {
   it("succeeds for a valid preset with manifest", async () => {
     // Arrange
     const presetName = "my-preset";
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
 
     const manifest = {
@@ -59,7 +63,7 @@ describe("presetValidateHandler", () => {
   it("fails when preset manifest is missing", async () => {
     // Arrange
     const presetName = "no-manifest";
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
 
     // Act
@@ -75,7 +79,7 @@ describe("presetValidateHandler", () => {
   it("fails when preset manifest has invalid YAML", async () => {
     // Arrange
     const presetName = "bad-yaml";
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, PRESET_MANIFEST_FILENAME),
@@ -94,7 +98,7 @@ describe("presetValidateHandler", () => {
   it("fails when manifest does not match schema (missing name)", async () => {
     // Arrange
     const presetName = "no-name";
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
 
     const manifest = { version: "1.0.0" };
@@ -117,7 +121,7 @@ describe("presetRemoveHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-rm-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-rm-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -128,8 +132,8 @@ describe("presetRemoveHandler", () => {
   it("removes an installed preset and updates lock file", async () => {
     // Arrange
     const presetName = "removable";
-    const codiDir = path.join(tmpDir, ".codi");
-    const presetDir = path.join(codiDir, "presets", presetName);
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const presetDir = path.join(configDir, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, PRESET_MANIFEST_FILENAME),
@@ -148,7 +152,7 @@ describe("presetRemoveHandler", () => {
       },
     };
     await fs.writeFile(
-      path.join(codiDir, PRESET_LOCK_FILENAME),
+      path.join(configDir, PRESET_LOCK_FILENAME),
       JSON.stringify(lock, null, 2),
       "utf-8",
     );
@@ -167,15 +171,15 @@ describe("presetRemoveHandler", () => {
 
     // Verify lock file was updated
     const updatedLock = JSON.parse(
-      await fs.readFile(path.join(codiDir, PRESET_LOCK_FILENAME), "utf-8"),
+      await fs.readFile(path.join(configDir, PRESET_LOCK_FILENAME), "utf-8"),
     );
     expect(updatedLock.presets[presetName]).toBeUndefined();
   });
 
   it("returns error when preset does not exist", async () => {
     // Arrange
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
 
     // Act
     const result = await presetRemoveHandler(tmpDir, "nonexistent");
@@ -191,7 +195,9 @@ describe("presetListEnhancedHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-list-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-list-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -201,8 +207,8 @@ describe("presetListEnhancedHandler", () => {
 
   it("returns empty list when no presets directory exists", async () => {
     // Arrange
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
 
     // Act
     const result = await presetListEnhancedHandler(tmpDir, false);
@@ -218,7 +224,7 @@ describe("presetListEnhancedHandler", () => {
   it("lists installed presets from directory", async () => {
     // Arrange
     const presetName = "my-preset";
-    const presetsDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetsDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetsDir, { recursive: true });
 
     const manifest = {
@@ -249,8 +255,8 @@ describe("presetListEnhancedHandler", () => {
 
   it("includes builtin presets when showBuiltin is true", async () => {
     // Arrange
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
 
     // Act
     const result = await presetListEnhancedHandler(tmpDir, true);
@@ -269,7 +275,7 @@ describe("presetListEnhancedHandler", () => {
   it("lists preset with no manifest as (no manifest)", async () => {
     // Arrange
     const presetName = "bare-preset";
-    const presetsDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetsDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetsDir, { recursive: true });
     // No preset.yaml file
 
@@ -292,7 +298,9 @@ describe("presetExportHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-export-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-export-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -312,8 +320,8 @@ describe("presetExportHandler", () => {
 
   it("fails when preset does not exist", async () => {
     // Arrange
-    const codiDir = path.join(tmpDir, ".codi", "presets");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR, "presets");
+    await fs.mkdir(configDir, { recursive: true });
 
     // Act
     const result = await presetExportHandler(
@@ -332,7 +340,7 @@ describe("presetExportHandler", () => {
   it("exports a valid preset as zip", async () => {
     // Arrange
     const presetName = "exportable";
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
 
     const manifest = {
@@ -367,7 +375,9 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-list2-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-list2-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -376,7 +386,7 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   });
 
   it("lists multiple installed presets", async () => {
-    const presetsBase = path.join(tmpDir, ".codi", "presets");
+    const presetsBase = path.join(tmpDir, PROJECT_DIR, "presets");
 
     for (const name of ["alpha", "beta", "gamma"]) {
       const dir = path.join(presetsBase, name);
@@ -402,8 +412,8 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   });
 
   it("shows sourceType from lock file", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const presetDir = path.join(codiDir, "presets", "locked-preset");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const presetDir = path.join(configDir, "presets", "locked-preset");
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, PRESET_MANIFEST_FILENAME),
@@ -416,7 +426,7 @@ describe("presetListEnhancedHandler — additional coverage", () => {
     );
 
     await fs.writeFile(
-      path.join(codiDir, PRESET_LOCK_FILENAME),
+      path.join(configDir, PRESET_LOCK_FILENAME),
       JSON.stringify(
         {
           presets: {
@@ -446,7 +456,7 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   });
 
   it("combines builtin and local presets", async () => {
-    const presetDir = path.join(tmpDir, ".codi", "presets", "local-one");
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", "local-one");
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, PRESET_MANIFEST_FILENAME),
@@ -477,7 +487,9 @@ describe("presetRemoveHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-rm2-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-rm2-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -486,8 +498,8 @@ describe("presetRemoveHandler — additional coverage", () => {
   });
 
   it("removes preset even without lock entry", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const presetDir = path.join(codiDir, "presets", "unlocked");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const presetDir = path.join(configDir, "presets", "unlocked");
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, PRESET_MANIFEST_FILENAME),
@@ -507,7 +519,9 @@ describe("presetValidateHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-ph-val2-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-val2-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -516,7 +530,12 @@ describe("presetValidateHandler — additional coverage", () => {
   });
 
   it("reports artifact counts for valid preset", async () => {
-    const presetDir = path.join(tmpDir, ".codi", "presets", "with-artifacts");
+    const presetDir = path.join(
+      tmpDir,
+      PROJECT_DIR,
+      "presets",
+      "with-artifacts",
+    );
     await fs.mkdir(presetDir, { recursive: true });
 
     const manifest = {
@@ -542,8 +561,8 @@ describe("presetValidateHandler — additional coverage", () => {
   });
 
   it("fails when preset directory does not exist", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
 
     const result = await presetValidateHandler(tmpDir, "ghost");
     expect(result.success).toBe(false);
