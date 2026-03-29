@@ -162,6 +162,9 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
     `STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`,
   ];
 
+  // Track which variable names hold files modified by formatters
+  const modifiedVars: string[] = [];
+
   for (const h of hooks) {
     if (!h.stagedFilter) {
       // Global hook (no filter) — always runs
@@ -179,6 +182,7 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
       } else {
         lines.push(`[ -n "$STAGED" ] && ${h.command} $STAGED`);
       }
+      if (h.modifiesFiles) modifiedVars.push("STAGED");
       continue;
     }
 
@@ -191,6 +195,16 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
       lines.push(`[ -n "$${varName}" ] && ${h.command}`);
     } else {
       lines.push(`[ -n "$${varName}" ] && ${h.command} $${varName}`);
+    }
+
+    if (h.modifiesFiles) modifiedVars.push(varName);
+  }
+
+  // Re-stage files after formatters modify them on disk
+  if (modifiedVars.length > 0) {
+    const unique = [...new Set(modifiedVars)];
+    for (const v of unique) {
+      lines.push(`[ -n "$${v}" ] && git add $${v}`);
     }
   }
 
