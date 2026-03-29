@@ -1,5 +1,5 @@
 import type { FlagDefinition } from "../../types/flags.js";
-import { prefixedName } from "../../constants.js";
+import { prefixedName } from "#src/constants.js";
 import {
   BUILTIN_PRESETS,
   getBuiltinPresetDefinition,

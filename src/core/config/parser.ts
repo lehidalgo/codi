@@ -30,7 +30,7 @@ import {
   MANIFEST_FILENAME,
   FLAGS_FILENAME,
   MCP_FILENAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 export interface ParsedProjectDir {
   manifest: ProjectManifest;

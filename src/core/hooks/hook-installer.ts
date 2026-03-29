@@ -17,7 +17,7 @@ import {
   PRE_COMMIT_MAX_FILE_LINES,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
-} from "../../constants.js";
+} from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 
 /** Internal result type for helper functions (no dep checks) */

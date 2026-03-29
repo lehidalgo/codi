@@ -1,4 +1,4 @@
-import { PROJECT_NAME, prefixedName } from "../../constants.js";
+import { PROJECT_NAME, prefixedName } from "#src/constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {

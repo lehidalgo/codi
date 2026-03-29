@@ -1,5 +1,5 @@
 import type { VerificationData } from "./token.js";
-import { PROJECT_NAME } from "../../constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 export interface VerifyResult {
   tokenMatch: boolean;

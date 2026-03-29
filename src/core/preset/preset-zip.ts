@@ -10,7 +10,7 @@ import {
   MAX_PRESET_ZIP_ERROR_BYTES,
   PRESET_MANIFEST_FILENAME,
   PROJECT_NAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 import { createError } from "../output/errors.js";
 import type { ProjectError } from "../output/types.js";
 import { validatePreset } from "./preset-validator.js";

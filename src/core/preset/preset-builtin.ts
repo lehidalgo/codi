@@ -1,4 +1,4 @@
-import { PROJECT_NAME } from "../../constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type {

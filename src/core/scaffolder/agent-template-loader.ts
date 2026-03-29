@@ -1,7 +1,7 @@
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { prefixedName } from "../../constants.js";
+import { prefixedName } from "#src/constants.js";
 import * as agentTemplates from "../../templates/agents/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {

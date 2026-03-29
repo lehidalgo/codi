@@ -2,7 +2,7 @@ import {
   GIT_COMMIT_FIRST_LINE_LIMIT,
   PROJECT_CLI,
   PROJECT_NAME_DISPLAY,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 // These are template strings for generated hook scripts.
 // They are written to disk as standalone Node.js scripts, not executed in this process.

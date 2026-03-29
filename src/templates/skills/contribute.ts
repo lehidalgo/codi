@@ -5,7 +5,7 @@ import {
   PROJECT_NAME_DISPLAY,
   PROJECT_REPO,
   PROJECT_URL,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}

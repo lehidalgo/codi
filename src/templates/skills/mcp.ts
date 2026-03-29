@@ -1,4 +1,4 @@
-import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "../../constants.js";
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}

@@ -9,7 +9,7 @@ import type { PresetManifest } from "../../schemas/preset.js";
 import {
   PRESET_MANIFEST_FILENAME,
   SKILL_OUTPUT_FILENAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 import { createError } from "../output/errors.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 

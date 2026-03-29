@@ -6,7 +6,7 @@ import {
   STATE_FILENAME,
   BACKUPS_DIR,
   BACKUP_MANIFEST_FILENAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 interface BackupManifest {
   timestamp: string;

@@ -11,7 +11,7 @@ import {
   materializeBuiltinPreset,
 } from "./preset-builtin.js";
 import { createError } from "../output/errors.js";
-import { PROJECT_CLI } from "../../constants.js";
+import { PROJECT_CLI } from "#src/constants.js";
 
 /**
  * Parses a preset identifier string into a source descriptor.

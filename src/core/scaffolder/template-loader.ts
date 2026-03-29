@@ -1,7 +1,7 @@
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { prefixedName, resolveArtifactName } from "../../constants.js";
+import { prefixedName, resolveArtifactName } from "#src/constants.js";
 import * as ruleTemplates from "../../templates/rules/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {

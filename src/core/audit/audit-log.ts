@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { AUDIT_FILENAME } from "../../constants.js";
+import { AUDIT_FILENAME } from "#src/constants.js";
 
 export interface AuditEntry {
   type: "generate" | "update" | "clean" | "init";

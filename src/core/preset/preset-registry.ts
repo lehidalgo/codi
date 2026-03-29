@@ -11,7 +11,7 @@ import {
   REGISTRY_INDEX_FILENAME,
   GIT_CLONE_DEPTH,
   PROJECT_NAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 

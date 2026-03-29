@@ -4,7 +4,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   prefixedName,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 export function buildVerificationSection(data: VerificationData): string {
   const lines = [

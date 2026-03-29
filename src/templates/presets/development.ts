@@ -2,7 +2,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   prefixedName,
-} from "../../constants.js";
+} from "#src/constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {

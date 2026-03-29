@@ -20,7 +20,7 @@ import {
   MCP_FILENAME,
   PRESET_MANIFEST_FILENAME,
   PROJECT_NAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 import {
   isBuiltinPreset as checkBuiltin,
   materializeBuiltinPreset,

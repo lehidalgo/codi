@@ -7,7 +7,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   devArtifactName,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
