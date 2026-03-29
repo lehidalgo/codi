@@ -487,4 +487,61 @@ describe("buildHuskyCommands", () => {
     // global hook runs unconditionally
     expect(result).toContain("npm test");
   });
+
+  it("re-stages files after hooks with modifiesFiles", () => {
+    const hooks: HookEntry[] = [
+      {
+        name: "eslint",
+        command: "npx eslint --fix",
+        stagedFilter: "**/*.{ts,tsx,js,jsx}",
+        modifiesFiles: true,
+      },
+      {
+        name: "prettier",
+        command: "npx prettier --write",
+        stagedFilter: "**/*.{ts,tsx,js,jsx}",
+        modifiesFiles: true,
+      },
+      {
+        name: "tsc",
+        command: "npx tsc --noEmit",
+        stagedFilter: "**/*.{ts,tsx}",
+        passFiles: false,
+      },
+    ];
+    const result = buildHuskyCommands(hooks);
+
+    // Formatters should trigger a git add to re-stage
+    expect(result).toContain('[ -n "$ESLINT" ] && git add $ESLINT');
+    expect(result).toContain('[ -n "$PRETTIER" ] && git add $PRETTIER');
+    // Non-modifying hooks should NOT trigger git add
+    expect(result).not.toContain("git add $TSC");
+  });
+
+  it("does not add git add when no hooks modify files", () => {
+    const hooks: HookEntry[] = [
+      {
+        name: "tsc",
+        command: "npx tsc --noEmit",
+        stagedFilter: "**/*.{ts,tsx}",
+        passFiles: false,
+      },
+    ];
+    const result = buildHuskyCommands(hooks);
+    expect(result).not.toContain("git add");
+  });
+
+  it("deduplicates re-stage variables", () => {
+    const hooks: HookEntry[] = [
+      {
+        name: "eslint",
+        command: "npx eslint --fix",
+        stagedFilter: "**/*.{ts,tsx,js,jsx}",
+        modifiesFiles: true,
+      },
+    ];
+    const result = buildHuskyCommands(hooks);
+    const addLines = result.split("\n").filter((l) => l.includes("git add"));
+    expect(addLines).toHaveLength(1);
+  });
 });
