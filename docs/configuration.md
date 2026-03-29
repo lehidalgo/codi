@@ -95,8 +95,8 @@ marketplace:
 | `layers.commands` | boolean | Yes | `true` | Include commands in generation |
 | `layers.agents` | boolean | Yes | `true` | Include agents in generation |
 | `layers.context` | boolean | Yes | `true` | Include context in generation |
-| `codi` | object | No | — | Codi CLI settings |
-| `codi.requiredVersion` | string | No | — | Minimum Codi version (semver range) |
+| `engine` | object | No | — |  |
+| `engine.requiredVersion` | string | No | — |  |
 | `team` | string | No | — | Team name for team-level config |
 | `source` | object | No | — | Remote repo for `codi update --from` |
 | `source.repo` | string | Yes | — | Repository identifier |

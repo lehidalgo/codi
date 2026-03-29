@@ -1,14 +1,15 @@
+import { PROJECT_NAME, prefixedName } from "../../constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
-  name: "python-web",
+  name: prefixedName("python-web"),
   description:
     "Python web development with Django/FastAPI conventions, security, and testing",
   version: "1.0.0",
-  author: "codi",
+  author: PROJECT_NAME,
   tags: ["python", "web", "django", "fastapi", "api"],
   compatibility: {
-    codi: ">=0.3.0",
+    engine: ">=0.3.0",
     agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
   },
   flags: {
@@ -32,20 +33,31 @@ export const preset: BuiltinPresetDefinition = {
     auto_generate_on_change: { mode: "enabled", value: false },
   },
   rules: [
-    "python",
-    "django",
-    "security",
-    "api-design",
-    "testing",
-    "error-handling",
+    prefixedName("python"),
+    prefixedName("django"),
+    prefixedName("security"),
+    prefixedName("api-design"),
+    prefixedName("testing"),
+    prefixedName("error-handling"),
   ],
-  skills: ["code-review", "security-scan", "e2e-testing", "commit"],
+  skills: [
+    prefixedName("code-review"),
+    prefixedName("security-scan"),
+    prefixedName("e2e-testing"),
+    prefixedName("commit"),
+  ],
   agents: [
-    "code-reviewer",
-    "security-analyzer",
-    "test-generator",
-    "python-expert",
+    prefixedName("code-reviewer"),
+    prefixedName("security-analyzer"),
+    prefixedName("test-generator"),
+    prefixedName("python-expert"),
   ],
-  commands: ["check", "commit", "review", "test-run", "security-scan"],
+  commands: [
+    prefixedName("check"),
+    prefixedName("commit"),
+    prefixedName("review"),
+    prefixedName("test-run"),
+    prefixedName("security-scan"),
+  ],
   mcpServers: [],
 };

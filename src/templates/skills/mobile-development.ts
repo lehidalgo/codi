@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Mobile development patterns and guidelines. Covers iOS (SwiftUI/UIKit), Android (Compose/XML), and cross-platform (KMP, React Native, Flutter) with architecture, testing, and platform-specific best practices.
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}

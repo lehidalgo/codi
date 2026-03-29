@@ -59,7 +59,7 @@ registerDocsCommand(program);
 registerContributeCommand(program);
 registerSkillCommand(program);
 
-// Bare `codi` (no subcommand) → launch Command Center
+// Bare command (no subcommand) → launch Command Center
 program.action(async () => {
   const opts = program.opts() as GlobalOptions;
   if (opts.json || opts.quiet) {

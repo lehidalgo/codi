@@ -30,10 +30,10 @@ export interface EvolveReadiness {
 }
 
 export async function validateEvolveReadiness(
-  codiDir: string,
+  configDir: string,
   skillName: string,
 ): Promise<Result<EvolveReadiness>> {
-  const skillDir = path.join(codiDir, "skills", skillName);
+  const skillDir = path.join(configDir, "skills", skillName);
   const skillPath = path.join(skillDir, SKILL_OUTPUT_FILENAME);
 
   let skillExists = false;
@@ -54,7 +54,7 @@ export async function validateEvolveReadiness(
     });
   }
 
-  const fbResult = await readFeedbackForSkill(codiDir, skillName);
+  const fbResult = await readFeedbackForSkill(configDir, skillName);
   const feedbackCount = fbResult.ok ? fbResult.data.length : 0;
 
   if (feedbackCount < MIN_FEEDBACK_FOR_EVOLVE) {
@@ -187,13 +187,13 @@ function buildInstructions(): string {
 }
 
 /**
- * Convenience: build full ImproveOptions from codiDir + skillName.
+ * Convenience: build full ImproveOptions from configDir + skillName.
  */
 export async function buildImproveOptions(
-  codiDir: string,
+  configDir: string,
   skillName: string,
 ): Promise<Result<ImproveOptions>> {
-  const skillDir = path.join(codiDir, "skills", skillName);
+  const skillDir = path.join(configDir, "skills", skillName);
   const skillPath = path.join(skillDir, SKILL_OUTPUT_FILENAME);
 
   let skillContent: string;
@@ -208,7 +208,7 @@ export async function buildImproveOptions(
     ]);
   }
 
-  const fbResult = await readFeedbackForSkill(codiDir, skillName);
+  const fbResult = await readFeedbackForSkill(configDir, skillName);
   const entries = fbResult.ok ? fbResult.data : [];
   const stats = aggregateStats(entries);
 

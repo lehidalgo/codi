@@ -6,6 +6,7 @@ import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-l
 import { AVAILABLE_COMMAND_TEMPLATES } from "#src/core/scaffolder/command-template-loader.js";
 import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
 import { ALL_ADAPTERS } from "#src/adapters/index.js";
+import { prefixedName } from "#src/constants.js";
 
 describe("collectStats", () => {
   const stats = collectStats();
@@ -25,7 +26,10 @@ describe("collectStats", () => {
   it("rules count matches AVAILABLE_TEMPLATES", () => {
     expect(stats.rules.count).toBe(AVAILABLE_TEMPLATES.length);
     expect(stats.rules.names).toEqual(
-      expect.arrayContaining(["security", "testing"]),
+      expect.arrayContaining([
+        prefixedName("security"),
+        prefixedName("testing"),
+      ]),
     );
   });
 
@@ -37,13 +41,15 @@ describe("collectStats", () => {
   it("agents count matches AVAILABLE_AGENT_TEMPLATES", () => {
     expect(stats.agents.count).toBe(AVAILABLE_AGENT_TEMPLATES.length);
     expect(stats.agents.names).toEqual(
-      expect.arrayContaining(["code-reviewer"]),
+      expect.arrayContaining([prefixedName("code-reviewer")]),
     );
   });
 
   it("commands count matches AVAILABLE_COMMAND_TEMPLATES", () => {
     expect(stats.commands.count).toBe(AVAILABLE_COMMAND_TEMPLATES.length);
-    expect(stats.commands.names).toEqual(expect.arrayContaining(["commit"]));
+    expect(stats.commands.names).toEqual(
+      expect.arrayContaining([prefixedName("commit")]),
+    );
   });
 
   it("flags count matches FLAG_CATALOG keys", () => {
@@ -58,7 +64,7 @@ describe("collectStats", () => {
 
   it("presets count is positive", () => {
     expect(stats.presets.count).toBeGreaterThan(0);
-    expect(stats.presets.names).toContain("balanced");
+    expect(stats.presets.names).toContain(prefixedName("balanced"));
   });
 
   it("error codes is positive", () => {

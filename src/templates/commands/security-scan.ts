@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Run a comprehensive security scan on the codebase
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Use the security-scan skill to analyze this codebase for vulnerabilities.

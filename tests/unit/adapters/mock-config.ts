@@ -1,4 +1,5 @@
 import type { NormalizedConfig } from "#src/types/config.js";
+import { PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 
 export function createMockConfig(
   overrides?: Partial<NormalizedConfig>,
@@ -16,7 +17,7 @@ export function createMockConfig(
         content: "Use 2-space indentation and single quotes.",
         priority: "high",
         alwaysApply: true,
-        managedBy: "codi",
+        managedBy: PROJECT_NAME,
       },
       {
         name: "Testing",
@@ -25,7 +26,7 @@ export function createMockConfig(
         priority: "medium",
         scope: ["**/*.test.ts"],
         alwaysApply: false,
-        managedBy: "codi",
+        managedBy: PROJECT_NAME,
       },
     ],
     skills: [],
@@ -37,25 +38,25 @@ export function createMockConfig(
       allow_shell_commands: {
         value: false,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
       allow_file_deletion: {
         value: false,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
       max_file_lines: {
         value: 500,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
       require_tests: {
         value: true,
         mode: "enforced",
-        source: "codi.yaml",
+        source: MANIFEST_FILENAME,
         locked: false,
       },
     },

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { PROJECT_NAME } from "#src/constants.js";
 import {
   readEvals,
   writeEvals,
@@ -24,7 +25,9 @@ function makeEvalsData(overrides: Partial<EvalsData> = {}): EvalsData {
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-evals-test-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-evals-test-`),
+  );
 });
 
 afterEach(async () => {

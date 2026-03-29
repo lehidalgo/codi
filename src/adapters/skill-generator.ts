@@ -4,9 +4,13 @@ import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
 import { addGeneratedFooter } from "./generated-header.js";
-import { SKILL_OUTPUT_FILENAME, MANIFEST_FILENAME } from "../constants.js";
+import {
+  SKILL_OUTPUT_FILENAME,
+  MANIFEST_FILENAME,
+  PROJECT_DIR,
+} from "../constants.js";
 
-// Directories to skip when propagating from .codi/skills/ to agent dirs
+// Directories to skip when propagating skills to agent dirs
 export const SKIP_DIRS = new Set(["evals", "versions"]);
 export const SKIP_FILES = new Set([".gitkeep", "evals.json"]);
 
@@ -77,7 +81,7 @@ export function buildSkillMd(
     frontmatter.push(`license: ${skill.license}`);
   }
   // Note: managed_by, compatibility, and metadata-* are NOT emitted
-  // They are Codi-internal fields that consume agent context budget
+  // They are internal fields that consume agent context budget
   frontmatter.push("---");
 
   return `${frontmatter.join("\n")}\n\n${skill.content}`;
@@ -94,7 +98,7 @@ export function buildSkillMetadataOnly(
     `description: ${descriptionPrefix}${flattenDescription(skill.description)}`,
     "---",
     "",
-    `Full skill content available at: .codi/skills/${skill.name}/SKILL.md`,
+    `Full skill content available at: ${PROJECT_DIR}/skills/${skill.name}/SKILL.md`,
   ];
   return lines.join("\n");
 }
@@ -107,9 +111,9 @@ export type ProgressiveLoadingMode = "off" | "metadata" | "full";
  * For each skill:
  * 1. Generates SKILL.md from template content
  * 2. Creates the full skill skeleton (scripts/, references/, assets/ with .gitkeep)
- * 3. Scans .codi/skills/{name}/ for user-added supporting files
+ * 3. Scans skill directory for user-added supporting files
  * 4. Copies supporting files (scripts, references, assets, sibling .md)
- * 5. Excludes evals/ (Codi-only, build-time concern)
+ * 5. Excludes evals/ (build-time only concern)
  */
 export async function generateSkillFiles(
   skills: NormalizedSkill[],
@@ -146,10 +150,10 @@ export async function generateSkillFiles(
       });
     }
 
-    // 3. Scan .codi/skills/{name}/ for supporting files
+    // 3. Scan skill directory for user-added supporting files
     if (projectRoot) {
-      const codiSkillDir = join(projectRoot, ".codi", "skills", dirName);
-      const supporting = await collectSupportingFiles(codiSkillDir);
+      const projectSkillDir = join(projectRoot, PROJECT_DIR, "skills", dirName);
+      const supporting = await collectSupportingFiles(projectSkillDir);
       for (const sf of supporting) {
         files.push({
           path: `${skillBasePath}/${sf.relativePath}`,
@@ -168,7 +172,7 @@ interface SupportingFile {
   content: string;
 }
 
-/** Scan a .codi/skills/{name}/ directory for supporting files to propagate. */
+/** Scan a skill directory for supporting files to propagate. */
 async function collectSupportingFiles(
   skillDir: string,
 ): Promise<SupportingFile[]> {
@@ -235,6 +239,6 @@ export function buildSkillCatalog(skills: NormalizedSkill[]): string | null {
     lines.push(`| ${skill.name} | ${desc} |`);
   }
   lines.push("");
-  lines.push("Full skill content: `.codi/skills/<name>/SKILL.md`");
+  lines.push(`Full skill content: \`${PROJECT_DIR}/skills/<name>/SKILL.md\``);
   return lines.join("\n");
 }

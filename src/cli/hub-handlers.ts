@@ -35,6 +35,7 @@ import {
 } from "./add.js";
 import { getAllAdapters } from "../core/generator/adapter-registry.js";
 import { registerAllAdapters } from "../adapters/index.js";
+import { PROJECT_DIR } from "../constants.js";
 
 // --- Helpers ---
 
@@ -61,7 +62,7 @@ export function showCliOnly(command: string, usage: string): void {
 
 export async function handleInit(projectRoot: string): Promise<void> {
   const force = await p.confirm({
-    message: "Force reinitialize if .codi/ already exists?",
+    message: `Force reinitialize if ${PROJECT_DIR}/ already exists?`,
     initialValue: false,
   });
   if (isCancelled(force)) return;
@@ -153,7 +154,7 @@ export async function handleDoctor(projectRoot: string): Promise<void> {
 
 export async function handleClean(projectRoot: string): Promise<void> {
   const cleanAll = await p.confirm({
-    message: "Remove everything including .codi/? (full uninstall)",
+    message: `Remove everything including ${PROJECT_DIR}/? (full uninstall)`,
     initialValue: false,
   });
   if (isCancelled(cleanAll)) return;
@@ -166,7 +167,7 @@ export async function handleClean(projectRoot: string): Promise<void> {
 
   if (!dryRun) {
     const target = cleanAll
-      ? ".codi/ and all generated files"
+      ? `${PROJECT_DIR}/ and all generated files`
       : "generated agent config files";
     const confirmed = await p.confirm({
       message: `This will remove ${target}. Continue?`,

@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Marketing and SEO specialist. Use for SEO audits, content strategy, keyword research, technical SEO, conversion optimization, or growth marketing research.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a Marketing and SEO Specialist with expertise in technical SEO, content strategy, conversion optimization, and growth marketing for web applications.

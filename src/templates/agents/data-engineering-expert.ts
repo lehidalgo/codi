@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Data engineering architect. Use for ETL/ELT pipeline design, data warehouse/lakehouse architecture, orchestration tool selection, or data quality frameworks.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a Senior Data Engineering Architect with expertise in designing, implementing, and optimizing data pipelines and platforms at scale.

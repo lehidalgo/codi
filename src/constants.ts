@@ -3,9 +3,34 @@
 
 // --- Project identity ---
 export const PROJECT_NAME = "codi";
-export const PROJECT_DIR = ".codi";
+export const PROJECT_NAME_DISPLAY = "Codi"; // Title case for prose
+export const PROJECT_CLI = PROJECT_NAME; // CLI binary name
+export const PROJECT_DIR = `.${PROJECT_NAME}`;
 export const PROJECT_REPO = "lehidalgo/codi";
+export const PROJECT_URL = `https://github.com/${PROJECT_REPO}`;
 export const PROJECT_TARGET_BRANCH = "develop";
+
+// --- Artifact naming ---
+/** Prefix a base artifact name with the project name. */
+export function prefixedName(base: string): string {
+  return `${PROJECT_NAME}-${base}`;
+}
+
+/** Name for project-development artifacts (prefix + base + -dev). */
+export function devArtifactName(base: string): string {
+  return `${PROJECT_NAME}-${base}-dev`;
+}
+
+/** Resolve an artifact name: accept both short ("strict") and prefixed ("codi-strict") forms. */
+export function resolveArtifactName(
+  input: string,
+  validNames: readonly string[],
+): string | undefined {
+  if (validNames.includes(input)) return input;
+  const prefixed = prefixedName(input);
+  if (validNames.includes(prefixed)) return prefixed;
+  return undefined;
+}
 
 // --- Artifact size limits ---
 export const MAX_NAME_LENGTH = 64;
@@ -35,7 +60,7 @@ export const MANAGED_BY_VALUES = [PROJECT_NAME, "user"] as const;
 // Base preset names are derived from flag-presets.ts PRESETS object (source of truth).
 // Extended preset names are derived from templates/presets/index.ts BUILTIN_PRESETS.
 // Only the default preset identifier is a true constant.
-export const DEFAULT_PRESET = "balanced";
+export const DEFAULT_PRESET = prefixedName("balanced");
 
 // --- Preset source types ---
 export const PRESET_SOURCE_TYPES = [
@@ -51,7 +76,7 @@ export const MAX_PRESET_ZIP_WARN_BYTES = 1_048_576; // 1 MB
 export const MAX_PRESET_ZIP_ERROR_BYTES = 10_485_760; // 10 MB
 
 // --- Config filenames ---
-export const MANIFEST_FILENAME = "codi.yaml";
+export const MANIFEST_FILENAME = `${PROJECT_NAME}.yaml`;
 export const FLAGS_FILENAME = "flags.yaml";
 export const MCP_FILENAME = "mcp.yaml";
 export const STATE_FILENAME = "state.json";

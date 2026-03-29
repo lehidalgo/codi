@@ -26,6 +26,7 @@ import {
   CONTEXT_TOKENS_LARGE,
   MANIFEST_FILENAME,
   MCP_FILENAME,
+  PROJECT_NAME,
 } from "../constants.js";
 
 async function exists(path: string): Promise<boolean> {
@@ -108,7 +109,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Generate .claude/rules/*.md (no frontmatter)
     for (const rule of config.rules) {
       const ruleContent = addGeneratedFooter(
-        `# (codi-rule) ${rule.name}\n\n${rule.content}`,
+        `# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
       );
       const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
@@ -128,7 +129,7 @@ export const claudeCodeAdapter: AgentAdapter = {
         ".claude/skills",
         plMode,
         _options.projectRoot,
-        "(codi-skill) ",
+        `(${PROJECT_NAME}-skill) `,
       )),
     );
 
@@ -136,7 +137,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     for (const agent of config.agents) {
       const lines = ["---"];
       lines.push(`name: ${agent.name}`);
-      lines.push(`description: (codi-agent) ${agent.description}`);
+      lines.push(`description: (${PROJECT_NAME}-agent) ${agent.description}`);
       if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
       lines.push("---");
@@ -155,7 +156,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Generate .claude/commands/{name}.md
     for (const cmd of config.commands) {
       const cmdContent = addGeneratedFooter(
-        `---\ndescription: (codi-cmd) ${cmd.description}\n---\n\n${cmd.content}`,
+        `---\ndescription: (${PROJECT_NAME}-cmd) ${cmd.description}\n---\n\n${cmd.content}`,
       );
       const fileName = cmd.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
@@ -169,7 +170,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Generate .claude/brands/{name}.md
     for (const brand of config.brands) {
       const brandContent = addGeneratedFooter(
-        `# (codi-brand) ${brand.name}\n\n${brand.content}`,
+        `# (${PROJECT_NAME}-brand) ${brand.name}\n\n${brand.content}`,
       );
       const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({

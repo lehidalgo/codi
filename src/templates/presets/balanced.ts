@@ -1,13 +1,18 @@
+import {
+  PROJECT_NAME,
+  prefixedName,
+  devArtifactName,
+} from "../../constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
-  name: "balanced",
+  name: prefixedName("balanced"),
   description: "Recommended — security on, type-checking strict, no force-push",
   version: "1.0.0",
-  author: "codi",
+  author: PROJECT_NAME,
   tags: ["balanced", "recommended", "general"],
   compatibility: {
-    codi: ">=0.3.0",
+    engine: ">=0.3.0",
     agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
   },
   flags: {
@@ -30,9 +35,17 @@ export const preset: BuiltinPresetDefinition = {
     drift_detection: { mode: "enabled", value: "warn" },
     auto_generate_on_change: { mode: "enabled", value: false },
   },
-  rules: ["code-style", "error-handling", "codi-improvement"],
-  skills: ["code-review", "commit", "codi-compare-preset"],
-  agents: ["code-reviewer"],
-  commands: ["review", "commit"],
+  rules: [
+    prefixedName("code-style"),
+    prefixedName("error-handling"),
+    devArtifactName("improvement"),
+  ],
+  skills: [
+    prefixedName("code-review"),
+    prefixedName("commit"),
+    prefixedName("compare-preset"),
+  ],
+  agents: [prefixedName("code-reviewer")],
+  commands: [prefixedName("review"), prefixedName("commit")],
   mcpServers: [],
 };

@@ -1,11 +1,11 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT } from "../../constants.js";
+import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_NAME } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
 description: Git workflow and commit conventions
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Git Workflow

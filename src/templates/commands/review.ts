@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Review recent code changes for quality and security
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Review the most recent changes in the codebase:

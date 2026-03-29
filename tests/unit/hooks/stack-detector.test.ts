@@ -3,11 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { detectStack } from "#src/core/hooks/stack-detector.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-stack-"));
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-stack-`));
 });
 
 afterEach(async () => {

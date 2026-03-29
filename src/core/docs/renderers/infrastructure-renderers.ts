@@ -4,6 +4,7 @@
 import type { AgentAdapter } from "#src/types/agent.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
 import type { HubAction } from "#src/cli/hub.js";
+import { PROJECT_CLI, PROJECT_DIR } from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
 // Adapter table
@@ -120,7 +121,7 @@ interface CliCommand {
 
 export function renderCliReference(commands: CliCommand[]): string {
   const rows = commands.map((c) => {
-    return `| \`codi ${c.name}\` | ${c.description} | ${c.options ?? ""} |`;
+    return `| \`${PROJECT_CLI} ${c.name}\` | ${c.description} | ${c.options ?? ""} |`;
   });
 
   return [
@@ -139,29 +140,49 @@ export function renderLayerOrder(): string {
     [
       "1",
       "**Org**",
-      "`~/.codi/orgs/{org}/config.yaml`",
+      `\`~/${PROJECT_DIR}/orgs/{org}/config.yaml\``,
       "Organization-wide policies",
     ],
-    ["2", "**Team**", "`~/.codi/teams/{name}.yaml`", "Team-specific overrides"],
+    [
+      "2",
+      "**Team**",
+      `\`~/${PROJECT_DIR}/teams/{name}.yaml\``,
+      "Team-specific overrides",
+    ],
     [
       "3",
       "**Preset**",
       "Built-in or installed presets",
       "Bundles of flags + artifacts (multiple, applied in order)",
     ],
-    ["4", "**Repo**", "`.codi/` directory", "Project-level configuration"],
-    ["5", "**Lang**", "`.codi/lang/*.yaml`", "Language-specific rules"],
+    [
+      "4",
+      "**Repo**",
+      `\`${PROJECT_DIR}/\` directory`,
+      "Project-level configuration",
+    ],
+    [
+      "5",
+      "**Lang**",
+      `\`${PROJECT_DIR}/lang/*.yaml\``,
+      "Language-specific rules",
+    ],
     [
       "6",
       "**Framework**",
-      "`.codi/frameworks/*.yaml`",
+      `\`${PROJECT_DIR}/frameworks/*.yaml\``,
       "Framework-specific rules",
     ],
-    ["7", "**Agent**", "`.codi/agents/*.yaml`", "Per-agent overrides"],
+    [
+      "7",
+      "**Agent**",
+      `\`${PROJECT_DIR}/agents/*.yaml\``,
+      "Per-agent overrides",
+    ],
     [
       "8",
       "**User**",
-      "`~/.codi/user.yaml`",
+      `\`~/${PROJECT_DIR}/user.yaml\``,
       "Personal preferences (never committed)",
     ],
   ];

@@ -1,16 +1,21 @@
-import type { Command } from 'commander';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { resolveCodiDir } from '../utils/paths.js';
-import { isPathSafe } from '../utils/path-guard.js';
-import { StateManager } from '../core/config/state.js';
-import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import { Logger } from '../core/output/logger.js';
-import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
-import type { GlobalOptions } from './shared.js';
+import type { Command } from "commander";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { resolveProjectDir } from "../utils/paths.js";
+import { isPathSafe } from "../utils/path-guard.js";
+import { StateManager } from "../core/config/state.js";
+import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import { Logger } from "../core/output/logger.js";
+import type { CommandResult } from "../core/output/types.js";
+import { initFromOptions, handleOutput } from "./shared.js";
+import type { GlobalOptions } from "./shared.js";
+import {
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../constants.js";
 
 interface CleanOptions extends GlobalOptions {
   all?: boolean;
@@ -22,7 +27,7 @@ interface CleanData {
   filesDeleted: string[];
   dirsDeleted: string[];
   hooksDeleted: string[];
-  codiDirRemoved: boolean;
+  configDirRemoved: boolean;
 }
 
 async function safeDelete(filePath: string): Promise<boolean> {
@@ -52,7 +57,9 @@ async function isDirEmpty(dirPath: string): Promise<boolean> {
   }
 }
 
-function collectGeneratedFiles(stateAgents: Record<string, Array<{ path: string }>>): string[] {
+function collectGeneratedFiles(
+  stateAgents: Record<string, Array<{ path: string }>>,
+): string[] {
   const files = new Set<string>();
   for (const agentFiles of Object.values(stateAgents)) {
     for (const file of agentFiles) {
@@ -63,26 +70,39 @@ function collectGeneratedFiles(stateAgents: Record<string, Array<{ path: string 
 }
 
 const AGENT_SUBDIRS = [
-  '.claude/rules',
-  '.claude/commands',
-  '.claude/skills',
-  '.cursor/rules',
-  '.cursor/skills',
-  '.cline/skills',
-  '.windsurf/skills',
-  '.agents/skills',
-  '.claude/agents',
-  '.codex/agents',
+  ".claude/rules",
+  ".claude/commands",
+  ".claude/skills",
+  ".cursor/rules",
+  ".cursor/skills",
+  ".cline/skills",
+  ".windsurf/skills",
+  ".agents/skills",
+  ".claude/agents",
+  ".codex/agents",
 ];
-const AGENT_FILES = ['.claude/mcp.json', '.cursor/mcp.json', '.codex/config.toml', '.claude/settings.json', '.cursor/hooks.json'];
-const AGENT_PARENT_DIRS = ['.claude', '.cursor', '.cline', '.windsurf', '.agents', '.codex'];
+const AGENT_FILES = [
+  ".claude/mcp.json",
+  ".cursor/mcp.json",
+  ".codex/config.toml",
+  ".claude/settings.json",
+  ".cursor/hooks.json",
+];
+const AGENT_PARENT_DIRS = [
+  ".claude",
+  ".cursor",
+  ".cline",
+  ".windsurf",
+  ".agents",
+  ".codex",
+];
 
-const CODI_HOOK_MARKER = '# Codi hooks';
+const GENERATED_HOOK_MARKER = `# ${PROJECT_NAME_DISPLAY} hooks`;
 
 const KNOWN_HOOK_FILES = [
-  '.git/hooks/codi-secret-scan.mjs',
-  '.git/hooks/codi-file-size-check.mjs',
-  '.git/hooks/codi-version-check.mjs',
+  `.git/hooks/${PROJECT_NAME}-secret-scan.mjs`,
+  `.git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
+  `.git/hooks/${PROJECT_NAME}-version-check.mjs`,
 ];
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -94,51 +114,53 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function fileContainsCodiMarker(filePath: string): Promise<boolean> {
+async function fileContainsGeneratedMarker(filePath: string): Promise<boolean> {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    return content.includes(CODI_HOOK_MARKER);
+    const content = await fs.readFile(filePath, "utf-8");
+    return content.includes(GENERATED_HOOK_MARKER);
   } catch {
     return false;
   }
 }
 
-async function removeCodiSectionFromFile(filePath: string): Promise<boolean> {
+async function removeGeneratedSectionFromFile(
+  filePath: string,
+): Promise<boolean> {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    if (!content.includes(CODI_HOOK_MARKER)) return false;
+    const content = await fs.readFile(filePath, "utf-8");
+    if (!content.includes(GENERATED_HOOK_MARKER)) return false;
 
-    // If file starts with the codi marker, codi owns the entire file — delete it
-    if (content.trimStart().startsWith(CODI_HOOK_MARKER)) {
+    // If file starts with the hook marker, framework owns the entire file — delete it
+    if (content.trimStart().startsWith(GENERATED_HOOK_MARKER)) {
       await fs.unlink(filePath);
       return true;
     }
 
-    // Otherwise strip only the codi section (e.g., appended to existing pre-commit)
-    const lines = content.split('\n');
+    // Otherwise strip only the generated section (e.g., appended to existing pre-commit)
+    const lines = content.split("\n");
     const filtered: string[] = [];
-    let inCodiSection = false;
+    let inGeneratedSection = false;
 
     for (const line of lines) {
-      if (line.trim() === CODI_HOOK_MARKER) {
-        inCodiSection = true;
+      if (line.trim() === GENERATED_HOOK_MARKER) {
+        inGeneratedSection = true;
         continue;
       }
-      if (inCodiSection && line.trim() === '') {
-        inCodiSection = false;
+      if (inGeneratedSection && line.trim() === "") {
+        inGeneratedSection = false;
         continue;
       }
-      if (!inCodiSection) {
+      if (!inGeneratedSection) {
         filtered.push(line);
       }
     }
 
-    const remaining = filtered.join('\n').trim();
+    const remaining = filtered.join("\n").trim();
     if (remaining.length === 0) {
       await fs.unlink(filePath);
       return true;
     }
-    await fs.writeFile(filePath, remaining + '\n', 'utf-8');
+    await fs.writeFile(filePath, remaining + "\n", "utf-8");
     return true;
   } catch {
     return false;
@@ -171,7 +193,7 @@ async function cleanHookFiles(
     }
   }
 
-  // 2) Known codi hook scripts (fallback if not in state)
+  // 2) Known generated hook scripts (fallback if not in state)
   const alreadyDeleted = new Set(deleted);
   for (const hookFile of KNOWN_HOOK_FILES) {
     if (alreadyDeleted.has(hookFile)) continue;
@@ -190,31 +212,31 @@ async function cleanHookFiles(
     }
   }
 
-  // 3) Husky files: remove codi sections or delete if codi-only
-  const huskyFiles = ['.husky/pre-commit', '.husky/commit-msg'];
+  // 3) Husky files: remove generated sections or delete if framework-generated
+  const huskyFiles = [".husky/pre-commit", ".husky/commit-msg"];
   for (const huskyFile of huskyFiles) {
     if (alreadyDeleted.has(huskyFile)) continue;
     const absPath = path.join(projectRoot, huskyFile);
-    if (!await fileContainsCodiMarker(absPath)) continue;
+    if (!(await fileContainsGeneratedMarker(absPath))) continue;
 
     if (options.dryRun) {
-      log.info(`Would clean codi section from: ${huskyFile}`);
+      log.info(`Would clean generated section from: ${huskyFile}`);
       deleted.push(huskyFile);
     } else {
-      const cleaned = await removeCodiSectionFromFile(absPath);
+      const cleaned = await removeGeneratedSectionFromFile(absPath);
       if (cleaned) {
         deleted.push(huskyFile);
-        log.info(`Cleaned codi section from: ${huskyFile}`);
+        log.info(`Cleaned generated section from: ${huskyFile}`);
       }
     }
   }
 
-  // 4) Standalone .git/hooks/pre-commit and commit-msg (only if codi marker present)
-  const standaloneHooks = ['.git/hooks/pre-commit', '.git/hooks/commit-msg'];
+  // 4) Standalone .git/hooks/pre-commit and commit-msg (only if hook marker present)
+  const standaloneHooks = [".git/hooks/pre-commit", ".git/hooks/commit-msg"];
   for (const hookFile of standaloneHooks) {
     if (alreadyDeleted.has(hookFile)) continue;
     const absPath = path.join(projectRoot, hookFile);
-    if (!await fileContainsCodiMarker(absPath)) continue;
+    if (!(await fileContainsGeneratedMarker(absPath))) continue;
 
     if (options.dryRun) {
       log.info(`Would delete hook: ${hookFile}`);
@@ -229,13 +251,13 @@ async function cleanHookFiles(
   }
 
   // 5) Clean up empty .husky/ directory
-  const huskyDir = path.join(projectRoot, '.husky');
+  const huskyDir = path.join(projectRoot, ".husky");
   if (await isDirEmpty(huskyDir)) {
     if (options.dryRun) {
-      log.info('Would remove empty: .husky/');
+      log.info("Would remove empty: .husky/");
     } else {
       await safeRmDir(huskyDir);
-      log.info('Removed empty: .husky/');
+      log.info("Removed empty: .husky/");
     }
   }
 
@@ -247,15 +269,16 @@ export async function cleanHandler(
   options: CleanOptions,
 ): Promise<CommandResult<CleanData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
   const filesDeleted: string[] = [];
   const dirsDeleted: string[] = [];
 
-  const stateManager = new StateManager(codiDir, projectRoot);
+  const stateManager = new StateManager(configDir, projectRoot);
   const stateResult = await stateManager.read();
 
-  const hasStateFiles = stateResult.ok && Object.keys(stateResult.data.agents).length > 0;
+  const hasStateFiles =
+    stateResult.ok && Object.keys(stateResult.data.agents).length > 0;
 
   if (hasStateFiles) {
     const generatedFiles = collectGeneratedFiles(stateResult.data.agents);
@@ -277,8 +300,14 @@ export async function cleanHandler(
       }
     }
   } else if (!hasStateFiles) {
-    log.warn('No state file found. Cleaning known generated files.');
-    const knownFiles = ['CLAUDE.md', 'AGENTS.md', '.cursorrules', '.windsurfrules', '.clinerules'];
+    log.warn("No state file found. Cleaning known generated files.");
+    const knownFiles = [
+      "CLAUDE.md",
+      "AGENTS.md",
+      ".cursorrules",
+      ".windsurfrules",
+      ".clinerules",
+    ];
     for (const file of knownFiles) {
       if (!isPathSafe(projectRoot, file)) {
         log.warn(`Skipping unsafe path: ${file}`);
@@ -290,7 +319,9 @@ export async function cleanHandler(
           await fs.access(absPath);
           log.info(`Would delete: ${file}`);
           filesDeleted.push(file);
-        } catch { /* doesn't exist */ }
+        } catch {
+          /* doesn't exist */
+        }
       } else {
         const deleted = await safeDelete(absPath);
         if (deleted) {
@@ -308,7 +339,9 @@ export async function cleanHandler(
         await fs.access(absPath);
         log.info(`Would delete: ${file}`);
         filesDeleted.push(file);
-      } catch { /* doesn't exist */ }
+      } catch {
+        /* doesn't exist */
+      }
     } else {
       const deleted = await safeDelete(absPath);
       if (deleted) {
@@ -321,7 +354,8 @@ export async function cleanHandler(
   // Clean hook files only on full uninstall (--all) — preserves safety hooks on regular clean
   let hooksDeleted: string[] = [];
   if (options.all) {
-    const stateHooks = (stateResult.ok && stateResult.data.hooks) ? stateResult.data.hooks : [];
+    const stateHooks =
+      stateResult.ok && stateResult.data.hooks ? stateResult.data.hooks : [];
     hooksDeleted = await cleanHookFiles(projectRoot, stateHooks, options, log);
   }
 
@@ -337,7 +371,9 @@ export async function cleanHandler(
         dirsDeleted.push(dir);
         log.info(`Removed: ${dir}/`);
       }
-    } catch { /* doesn't exist */ }
+    } catch {
+      /* doesn't exist */
+    }
   }
 
   for (const dir of AGENT_PARENT_DIRS) {
@@ -354,13 +390,13 @@ export async function cleanHandler(
     }
   }
 
-  // Log clean operation to ledger (before potentially removing .codi/)
+  // Log clean operation to ledger (before potentially removing config directory)
   if (!options.dryRun) {
     try {
-      const ledger = new OperationsLedgerManager(codiDir);
+      const ledger = new OperationsLedgerManager(configDir);
       await ledger.clearFiles();
       await ledger.logOperation({
-        type: 'clean',
+        type: "clean",
         timestamp: new Date().toISOString(),
         details: {
           filesDeleted,
@@ -374,36 +410,43 @@ export async function cleanHandler(
     }
   }
 
-  let codiDirRemoved = false;
+  let configDirRemoved = false;
   if (options.all) {
     try {
-      await fs.access(codiDir);
+      await fs.access(configDir);
       if (options.dryRun) {
-        log.info('Would remove: .codi/');
-        codiDirRemoved = true;
+        log.info(`Would remove: ${PROJECT_DIR}/`);
+        configDirRemoved = true;
       } else {
-        await safeRmDir(codiDir);
-        codiDirRemoved = true;
-        log.info('Removed: .codi/');
+        await safeRmDir(configDir);
+        configDirRemoved = true;
+        log.info(`Removed: ${PROJECT_DIR}/`);
       }
-    } catch { /* doesn't exist */ }
+    } catch {
+      /* doesn't exist */
+    }
   }
 
   return createCommandResult({
     success: true,
-    command: 'clean',
-    data: { filesDeleted, dirsDeleted, hooksDeleted, codiDirRemoved },
+    command: "clean",
+    data: { filesDeleted, dirsDeleted, hooksDeleted, configDirRemoved },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
 
 export function registerCleanCommand(program: Command): void {
   program
-    .command('clean')
-    .description('Remove generated files and optionally the .codi/ directory')
-    .option('--all', 'Remove everything including .codi/ (full uninstall)')
-    .option('--dry-run', 'Show what would be deleted without deleting')
-    .option('--force', 'Skip confirmation')
+    .command("clean")
+    .description(
+      `Remove generated files and optionally the ${PROJECT_DIR}/ directory`,
+    )
+    .option(
+      "--all",
+      `Remove everything including ${PROJECT_DIR}/ (full uninstall)`,
+    )
+    .option("--dry-run", "Show what would be deleted without deleting")
+    .option("--force", "Skip confirmation")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: CleanOptions = { ...globalOptions, ...cmdOptions };

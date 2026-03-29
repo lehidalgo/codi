@@ -1,8 +1,10 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: HTML slide deck generation workflow. Creates a single-file presentation with embedded CSS, ready to present in any browser. Follows best practices for minimal text, high contrast, and readable typography.
 compatibility: [claude-code, cursor]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}

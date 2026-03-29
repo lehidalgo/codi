@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { DEFAULT_PRESET } from "../constants.js";
+import { DEFAULT_PRESET, prefixedName, PROJECT_CLI } from "../constants.js";
 import {
   getBuiltinPresetDefinition,
   BUILTIN_PRESETS,
@@ -400,7 +400,7 @@ export async function handlePresetPath(
       }
       case 8: {
         p.log.info(
-          "Version pinning locks codi to the current version — prevents breaking changes on update",
+          `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
         const versionPin = await p.confirm({
           message: "Enable version pinning?",
@@ -556,18 +556,18 @@ export async function handleCustomPath(
           options: [
             {
               label: "Balanced (recommended)",
-              value: "balanced" as const,
-              hint: BUILTIN_PRESETS["balanced"]!.description,
+              value: prefixedName("balanced"),
+              hint: BUILTIN_PRESETS[prefixedName("balanced")]!.description,
             },
             {
               label: "Minimal",
-              value: "minimal" as const,
-              hint: BUILTIN_PRESETS["minimal"]!.description,
+              value: prefixedName("minimal"),
+              hint: BUILTIN_PRESETS[prefixedName("minimal")]!.description,
             },
             {
               label: "Strict",
-              value: "strict" as const,
-              hint: BUILTIN_PRESETS["strict"]!.description,
+              value: prefixedName("strict"),
+              hint: BUILTIN_PRESETS[prefixedName("strict")]!.description,
             },
           ],
         });
@@ -613,7 +613,7 @@ export async function handleCustomPath(
       }
       case 7: {
         p.log.info(
-          "Version pinning locks codi to the current version — prevents breaking changes on update",
+          `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
         const versionPin = await p.confirm({
           message: "Enable version pinning?",

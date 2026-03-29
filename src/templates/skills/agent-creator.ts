@@ -2,6 +2,10 @@ import {
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_ARTIFACT_CHARS,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
 } from "../../constants.js";
 
 export const template = `---
@@ -10,8 +14,8 @@ description: |
   Agent creation workflow. Use when the user asks to create, build, or define
   a specialized agent. Also activate when the user wants to add a code reviewer,
   security analyzer, test generator, or any autonomous worker role.
-category: Codi Platform
-managed_by: codi
+category: ${PROJECT_NAME_DISPLAY} Platform
+managed_by: ${PROJECT_NAME}
 ---
 
 # Agent Creator
@@ -43,10 +47,10 @@ Do NOT proceed until questions 1-3 have clear answers.
 **[CODING AGENT]** Scaffold the agent:
 
 \\\`\\\`\\\`bash
-codi add agent <name>
+${PROJECT_CLI} add agent <name>
 \\\`\\\`\\\`
 
-This creates \\\`.codi/agents/<name>.md\\\` with a blank skeleton.
+This creates \\\`${PROJECT_DIR}/agents/<name>.md\\\` with a blank skeleton.
 
 #### Write Frontmatter
 
@@ -188,16 +192,16 @@ Adapt the severity levels and criteria to match the agent's domain.
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
-codi generate
-codi doctor
+${PROJECT_CLI} generate
+${PROJECT_CLI} doctor
 \\\`\\\`\\\`
 
-1. \\\`codi generate\\\` distributes the agent to all configured platforms
-2. \\\`codi doctor\\\` checks for remaining issues
+1. \\\`${PROJECT_CLI} generate\\\` distributes the agent to all configured platforms
+2. \\\`${PROJECT_CLI} doctor\\\` checks for remaining issues
 
 ## Available Agent Templates
 
-Run \\\`codi add agent --all\\\` to list all templates. Major categories include:
+Run \\\`${PROJECT_CLI} add agent --all\\\` to list all templates. Major categories include:
 
 | Category | Templates |
 |----------|-----------|
@@ -209,7 +213,7 @@ Run \\\`codi add agent --all\\\` to list all templates. Major categories include
 
 ## Constraints
 
-- Do NOT create agents with overlapping responsibilities — check \\\`.codi/agents/\\\` first
+- Do NOT create agents with overlapping responsibilities — check \\\`${PROJECT_DIR}/agents/\\\` first
 - Do NOT include tools the agent does not actually need — minimal tool surface
 - Do NOT exceed ${MAX_ARTIFACT_CHARS.toLocaleString()} chars — move complex logic to skill scripts
 - Do NOT create agents without confidence filtering — unfiltered output is noisy

@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Infrastructure scalability expert. Use for horizontal/vertical scaling decisions, database sharding, caching architecture, load balancing, or capacity planning.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are an Infrastructure Scalability Expert specializing in designing and optimizing web applications for high traffic and large user bases.

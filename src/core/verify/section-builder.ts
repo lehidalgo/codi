@@ -1,10 +1,16 @@
 import type { VerificationData } from "./token.js";
+import {
+  PROJECT_NAME_DISPLAY,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  prefixedName,
+} from "../../constants.js";
 
 export function buildVerificationSection(data: VerificationData): string {
   const lines = [
-    "## Codi Verification",
+    `## ${PROJECT_NAME_DISPLAY} Verification`,
     "",
-    "This project uses Codi for unified AI agent configuration.",
+    `This project uses ${PROJECT_NAME_DISPLAY} for unified AI agent configuration.`,
     `- Verification token: \`${data.token}\``,
   ];
 
@@ -27,7 +33,7 @@ export function buildVerificationSection(data: VerificationData): string {
   lines.push(`- Generated: ${data.timestamp}`);
   lines.push("");
   lines.push(
-    'When asked "verify codi" or "codi verify", respond with the verification token and confirm the rules, skills, and agents listed above.',
+    `When asked "verify ${PROJECT_CLI}" or "${PROJECT_CLI} verify", respond with the verification token and confirm the rules, skills, and agents listed above.`,
   );
   lines.push("");
   lines.push("### Artifact Improvement");
@@ -38,10 +44,12 @@ export function buildVerificationSection(data: VerificationData): string {
   lines.push(
     "1. Propose the improvement with evidence (2+ occurrences in the codebase)",
   );
-  lines.push("2. If approved, write to `.codi/rules/` or `.codi/skills/`");
-  lines.push("3. Run `codi generate` to propagate changes");
   lines.push(
-    "4. Use `/codi-compare-preset` to review local improvements vs upstream Codi",
+    `2. If approved, write to \`${PROJECT_DIR}/rules/\` or \`${PROJECT_DIR}/skills/\``,
+  );
+  lines.push(`3. Run \`${PROJECT_CLI} generate\` to propagate changes`);
+  lines.push(
+    `4. Use \`/${prefixedName("compare-preset")}\` to review local improvements vs upstream ${PROJECT_NAME_DISPLAY}`,
   );
 
   return lines.join("\n");

@@ -10,11 +10,19 @@ import {
 } from "#src/templates/presets/index.js";
 import { resolveConfig } from "#src/core/config/resolver.js";
 import { Logger } from "#src/core/output/logger.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+  prefixedName,
+} from "#src/constants.js";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-preset-wf-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-preset-wf-`),
+  );
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -63,15 +71,15 @@ describe("Preset Workflow: preset definitions match loaded content", () => {
 
 describe("Preset Workflow: apply preset to project via resolveConfig", () => {
   it('project with "minimal" preset resolves correctly', async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       stringifyYaml({
         name: "preset-test",
         version: "1",
         agents: ["claude-code"],
-        presets: ["minimal"],
+        presets: [prefixedName("minimal")],
       }),
       "utf-8",
     );
@@ -86,15 +94,15 @@ describe("Preset Workflow: apply preset to project via resolveConfig", () => {
   });
 
   it('project with "strict" preset has enforced flags', async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       stringifyYaml({
         name: "strict-test",
         version: "1",
         agents: ["claude-code"],
-        presets: ["strict"],
+        presets: [prefixedName("strict")],
       }),
       "utf-8",
     );
@@ -111,21 +119,21 @@ describe("Preset Workflow: apply preset to project via resolveConfig", () => {
   });
 
   it("project presets merge with local rules", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       stringifyYaml({
         name: "merge-test",
         version: "1",
         agents: ["claude-code"],
-        presets: ["minimal"],
+        presets: [prefixedName("minimal")],
       }),
       "utf-8",
     );
 
     // Add a local rule
-    const rulesDir = path.join(codiDir, "rules");
+    const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
       path.join(rulesDir, "local-rule.md"),
@@ -145,9 +153,9 @@ describe("Preset Workflow: apply preset to project via resolveConfig", () => {
 });
 
 describe("Preset Workflow: custom preset from directory", () => {
-  it("loads a custom preset from .codi/presets/", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const presetsDir = path.join(codiDir, "presets");
+  it(`loads a custom preset from ${PROJECT_DIR}/presets/`, async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const presetsDir = path.join(configDir, "presets");
     const customPresetDir = path.join(presetsDir, "my-custom");
     await fs.mkdir(customPresetDir, { recursive: true });
 
@@ -158,8 +166,8 @@ describe("Preset Workflow: custom preset from directory", () => {
         description: "Custom team preset",
         version: "1.0.0",
         artifacts: {
-          rules: ["security", "testing"],
-          skills: ["commit"],
+          rules: [prefixedName("security"), prefixedName("testing")],
+          skills: [prefixedName("commit")],
         },
       }),
       "utf-8",
@@ -174,17 +182,17 @@ describe("Preset Workflow: custom preset from directory", () => {
     // Builtin rules should be resolved
     expect(result.data.rules.length).toBe(2);
     expect(result.data.rules.map((r) => r.name).sort()).toEqual([
-      "security",
-      "testing",
+      prefixedName("security"),
+      prefixedName("testing"),
     ]);
     // Builtin skill should be resolved
     expect(result.data.skills.length).toBe(1);
-    expect(result.data.skills[0]!.name).toBe("commit");
+    expect(result.data.skills[0]!.name).toBe(prefixedName("commit"));
   });
 
   it("custom preset with flags-only (no artifacts)", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const presetsDir = path.join(codiDir, "presets");
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const presetsDir = path.join(configDir, "presets");
     const flagsPresetDir = path.join(presetsDir, "team-flags");
     await fs.mkdir(flagsPresetDir, { recursive: true });
 

@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Create a structured roadmap todo list in JSON format
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Create a structured roadmap/todo list as a JSON file in docs/roadmaps/.

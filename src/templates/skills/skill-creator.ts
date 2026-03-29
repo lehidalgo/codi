@@ -1,11 +1,18 @@
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: |
   Skill creation and improvement workflow. Use when the user asks to create,
   build, write, or improve a skill. Also activate when the user mentions
   evals, skill testing, description optimization, or skill packaging.
-category: Codi Platform
-managed_by: codi
+category: ${PROJECT_NAME_DISPLAY} Platform
+managed_by: ${PROJECT_NAME}
 ---
 
 # Skill Creator
@@ -27,7 +34,7 @@ managed_by: codi
 2. **When should it trigger?** — Ask for 3-5 specific scenarios (not vague categories). Example: "When the user says 'review this PR'" not "when doing code stuff."
 3. **What output should it produce?** — A file? Terminal output? A structured report?
 4. **What tools does it need?** — Read, Write, Edit, Bash, Glob, Grep, or external MCP tools?
-5. **Are there existing skills to reference?** — Check \\\`.codi/skills/\\\` for similar skills to learn from.
+5. **Are there existing skills to reference?** — Check \\\`${PROJECT_DIR}/skills/\\\` for similar skills to learn from.
 
 Do NOT proceed until you have clear answers for at least questions 1-3.
 
@@ -36,13 +43,13 @@ Do NOT proceed until you have clear answers for at least questions 1-3.
 **[CODING AGENT]** Run the scaffolding command:
 
 \\\`\\\`\\\`bash
-codi add skill <name>
+${PROJECT_CLI} add skill <name>
 \\\`\\\`\\\`
 
 This creates the following structure:
 
 \\\`\\\`\\\`
-.codi/skills/<name>/
+${PROJECT_DIR}/skills/<name>/
 ├── SKILL.md        # The skill instructions (what the agent reads)
 ├── evals/
 │   └── evals.json  # Test cases to verify the skill works
@@ -63,7 +70,7 @@ If the directory already exists, confirm with the user before overwriting.
 ---
 name: <skill-name>
 description: <description following the rules below>
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 \\\`\\\`\\\`
 
@@ -83,7 +90,7 @@ managed_by: codi
 | \\\`agent\\\` | No | Subagent type when \\\`context: fork\\\` (\\\`Explore\\\`, \\\`Plan\\\`, or custom) |
 | \\\`paths\\\` | No | Glob patterns limiting when skill auto-activates |
 | \\\`shell\\\` | No | \\\`bash\\\` or \\\`powershell\\\` for inline shell commands |
-| \\\`managed_by\\\` | No | Codi-internal: \\\`codi\\\` or \\\`user\\\` (stripped from agent output) |
+| \\\`managed_by\\\` | No | ${PROJECT_NAME_DISPLAY}-internal: \\\`${PROJECT_NAME}\\\` or \\\`user\\\` (stripped from agent output) |
 
 #### Arguments and Substitutions
 
@@ -307,12 +314,12 @@ Update the description until all 20 queries classify correctly.
 
 **[CODING AGENT]** After the skill passes evals and description optimization:
 
-1. Run \\\`codi generate\\\` to distribute the skill to all configured agents
+1. Run \\\`${PROJECT_CLI} generate\\\` to distribute the skill to all configured agents
 2. Verify the skill appears in the generated agent configuration
 3. Confirm with the user that the skill is ready
 
 \\\`\\\`\\\`bash
-codi generate
+${PROJECT_CLI} generate
 \\\`\\\`\\\`
 
 ## Progressive Disclosure Architecture
@@ -353,8 +360,8 @@ Claude reads only the relevant reference file based on user context.
 
 If the agent writes the same helper logic 3+ times across test cases, extract it:
 
-1. Create the script in \\\`.codi/skills/<name>/scripts/\\\`
-2. Reference it from SKILL.md: "Run \\\`bash .codi/skills/<name>/scripts/helper.sh\\\`"
+1. Create the script in \\\`${PROJECT_DIR}/skills/<name>/scripts/\\\`
+2. Reference it from SKILL.md: "Run \\\`bash ${PROJECT_DIR}/skills/<name>/scripts/helper.sh\\\`"
 3. Keep scripts focused — one script per task
 4. Include a comment header explaining what the script does
 
@@ -368,7 +375,7 @@ If the agent writes the same helper logic 3+ times across test cases, extract it
 
 ## Constraints
 
-- Do NOT create skills that duplicate existing ones — check \\\`.codi/skills/\\\` first
+- Do NOT create skills that duplicate existing ones — check \\\`${PROJECT_DIR}/skills/\\\` first
 - Do NOT create skills with vague descriptions — every word must earn its place
 - Do NOT skip evals — untested skills are unreliable skills
 - Do NOT exceed 500 lines in SKILL.md body — split into scripts if needed

@@ -123,15 +123,15 @@ All templates are customizable. Create your own with `codi add rule|skill|agent|
 <!-- GENERATED:START:preset_table -->
 | Preset | Focus | Description |
 |:-------|:------|:------------|
-| `minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
-| `balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
-| `strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
-| `python-web` | python | Python web development with Django/FastAPI conventions, security, and testing |
-| `typescript-fullstack` | typescript | TypeScript fullstack development with React/Next.js, strict typing, and CI best practices |
-| `security-hardened` | security | Maximum security enforcement with locked flags, mandatory scans, and restricted operations |
-| `codi-development` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
-| `power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
-| `data-ml` | data | Data engineering, data science, ML, and AI agent specialists |
+| `codi-minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
+| `codi-balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
+| `codi-strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
+| `codi-python-web` | python | Python web development with Django/FastAPI conventions, security, and testing |
+| `codi-typescript-fullstack` | typescript | TypeScript fullstack development with React/Next.js, strict typing, and CI best practices |
+| `codi-security-hardened` | security | Maximum security enforcement with locked flags, mandatory scans, and restricted operations |
+| `codi-dev` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
+| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
+| `codi-data-ml` | data | Data engineering, data science, ML, and AI agent specialists |
 <!-- GENERATED:END:preset_table -->
 
 Create, share, and install presets from ZIP, GitHub, or the registry with `codi preset`.

@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Log daily work summary to the control file
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Update docs/CONTROL.json with a summary of the day's work.

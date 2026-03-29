@@ -4,12 +4,18 @@ import path from "node:path";
 import os from "node:os";
 import { initHandler } from "#src/cli/init.js";
 import { Logger } from "#src/core/output/logger.js";
+import {
+  prefixedName,
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("init command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-init-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-init-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -17,31 +23,34 @@ describe("init command handler", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("creates .codi/ directory structure", async () => {
+  it(`creates ${PROJECT_DIR}/ directory structure`, async () => {
     const result = await initHandler(tmpDir, { json: true });
 
     expect(result.success).toBe(true);
-    expect(result.data.codiDir).toBe(path.join(tmpDir, ".codi"));
+    expect(result.data.configDir).toBe(path.join(tmpDir, PROJECT_DIR));
 
-    const codiDir = path.join(tmpDir, ".codi");
-    const stat = await fs.stat(codiDir);
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const stat = await fs.stat(configDir);
     expect(stat.isDirectory()).toBe(true);
 
     const manifest = await fs.readFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       "utf-8",
     );
     expect(manifest).toContain('version: "1"');
 
-    const flags = await fs.readFile(path.join(codiDir, "flags.yaml"), "utf-8");
+    const flags = await fs.readFile(
+      path.join(configDir, "flags.yaml"),
+      "utf-8",
+    );
     expect(flags).toContain("auto_commit:");
 
-    const rulesDir = await fs.stat(path.join(codiDir, "rules"));
+    const rulesDir = await fs.stat(path.join(configDir, "rules"));
     expect(rulesDir.isDirectory()).toBe(true);
   });
 
-  it("fails if .codi/ already exists without --force", async () => {
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+  it(`fails if ${PROJECT_DIR}/ already exists without --force`, async () => {
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
 
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(false);
@@ -50,7 +59,7 @@ describe("init command handler", () => {
   });
 
   it("reinitializes with --force", async () => {
-    await fs.mkdir(path.join(tmpDir, ".codi"), { recursive: true });
+    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
 
     const result = await initHandler(tmpDir, { force: true, json: true });
     expect(result.success).toBe(true);
@@ -95,7 +104,7 @@ describe("init command handler", () => {
     expect(result.success).toBe(true);
 
     const manifest = await fs.readFile(
-      path.join(tmpDir, ".codi", "codi.yaml"),
+      path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME),
       "utf-8",
     );
     expect(manifest).toContain("name:");
@@ -108,7 +117,7 @@ describe("init command handler", () => {
     expect(result.success).toBe(true);
 
     const flagsContent = await fs.readFile(
-      path.join(tmpDir, ".codi", "flags.yaml"),
+      path.join(tmpDir, PROJECT_DIR, "flags.yaml"),
       "utf-8",
     );
     expect(flagsContent).toContain("security_scan:");
@@ -126,9 +135,12 @@ describe("init command handler", () => {
   });
 
   it("accepts known preset names", async () => {
-    const result = await initHandler(tmpDir, { json: true, preset: "strict" });
+    const result = await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("strict"),
+    });
     expect(result.success).toBe(true);
-    expect(result.data.preset).toBe("strict");
+    expect(result.data.preset).toBe(prefixedName("strict"));
   });
 
   it("rejects unknown agent IDs", async () => {
@@ -152,7 +164,7 @@ describe("init command handler", () => {
   it("creates operations ledger", async () => {
     await initHandler(tmpDir, { json: true });
 
-    const ledgerPath = path.join(tmpDir, ".codi", "operations.json");
+    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "operations.json");
     const ledger = JSON.parse(await fs.readFile(ledgerPath, "utf-8"));
     expect(ledger.version).toBe("1");
     expect(ledger.initialized).toBeDefined();

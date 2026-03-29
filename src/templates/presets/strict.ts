@@ -1,14 +1,19 @@
+import {
+  PROJECT_NAME,
+  prefixedName,
+  devArtifactName,
+} from "../../constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
-  name: "strict",
+  name: prefixedName("strict"),
   description:
     "Enforced — security locked, tests required, delete restricted, no force-push",
   version: "1.0.0",
-  author: "codi",
+  author: PROJECT_NAME,
   tags: ["strict", "enforced", "security"],
   compatibility: {
-    codi: ">=0.3.0",
+    engine: ">=0.3.0",
     agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
   },
   flags: {
@@ -32,22 +37,32 @@ export const preset: BuiltinPresetDefinition = {
     auto_generate_on_change: { mode: "enabled", value: true },
   },
   rules: [
-    "code-style",
-    "testing",
-    "error-handling",
-    "security",
-    "git-workflow",
-    "codi-improvement",
+    prefixedName("code-style"),
+    prefixedName("testing"),
+    prefixedName("error-handling"),
+    prefixedName("security"),
+    prefixedName("git-workflow"),
+    devArtifactName("improvement"),
   ],
   skills: [
-    "code-review",
-    "security-scan",
-    "commit",
-    "test-coverage",
-    "error-recovery",
-    "codi-compare-preset",
+    prefixedName("code-review"),
+    prefixedName("security-scan"),
+    prefixedName("commit"),
+    prefixedName("test-coverage"),
+    prefixedName("error-recovery"),
+    prefixedName("compare-preset"),
   ],
-  agents: ["code-reviewer", "security-analyzer", "test-generator"],
-  commands: ["review", "commit", "security-scan", "test-run", "test-coverage"],
+  agents: [
+    prefixedName("code-reviewer"),
+    prefixedName("security-analyzer"),
+    prefixedName("test-generator"),
+  ],
+  commands: [
+    prefixedName("review"),
+    prefixedName("commit"),
+    prefixedName("security-scan"),
+    prefixedName("test-run"),
+    prefixedName("test-coverage"),
+  ],
   mcpServers: [],
 };

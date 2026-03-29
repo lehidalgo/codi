@@ -3,15 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { createCommand } from "#src/core/scaffolder/command-scaffolder.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("command scaffolder", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-cmd-"));
-    codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-cmd-`));
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -19,7 +20,7 @@ describe("command scaffolder", () => {
   });
 
   it("creates a command file with default content", async () => {
-    const result = await createCommand({ name: "my-command", codiDir });
+    const result = await createCommand({ name: "my-command", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -34,8 +35,8 @@ describe("command scaffolder", () => {
   it("creates a command from a known template", async () => {
     const result = await createCommand({
       name: "my-review",
-      codiDir,
-      template: "review",
+      configDir,
+      template: prefixedName("review"),
     });
 
     expect(result.ok).toBe(true);
@@ -48,8 +49,8 @@ describe("command scaffolder", () => {
   it("replaces {{name}} placeholder in template content", async () => {
     const result = await createCommand({
       name: "custom-cmd",
-      codiDir,
-      template: "commit",
+      configDir,
+      template: prefixedName("commit"),
     });
 
     expect(result.ok).toBe(true);
@@ -60,15 +61,15 @@ describe("command scaffolder", () => {
   });
 
   it("rejects invalid names", async () => {
-    const result = await createCommand({ name: "Invalid_Name", codiDir });
+    const result = await createCommand({ name: "Invalid_Name", configDir });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.message).toContain("Invalid command name");
   });
 
   it("fails if command already exists", async () => {
-    await createCommand({ name: "existing", codiDir });
-    const result = await createCommand({ name: "existing", codiDir });
+    await createCommand({ name: "existing", configDir });
+    const result = await createCommand({ name: "existing", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -78,7 +79,7 @@ describe("command scaffolder", () => {
   it("fails with unknown template", async () => {
     const result = await createCommand({
       name: "test",
-      codiDir,
+      configDir,
       template: "nonexistent-template",
     });
 

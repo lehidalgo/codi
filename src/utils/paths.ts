@@ -2,7 +2,7 @@ import path from "node:path";
 import os from "node:os";
 import { PROJECT_DIR } from "../constants.js";
 
-export function resolveCodiDir(projectRoot: string): string {
+export function resolveProjectDir(projectRoot: string): string {
   return path.join(projectRoot, PROJECT_DIR);
 }
 

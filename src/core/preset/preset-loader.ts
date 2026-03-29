@@ -4,6 +4,7 @@ import { parse as parseYaml } from "yaml";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type {
+  ManagedBy,
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
@@ -15,7 +16,11 @@ import type { FlagDefinition } from "../../types/flags.js";
 import { createError } from "../output/errors.js";
 import { PresetManifestSchema } from "../../schemas/preset.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
-import { MCP_FILENAME, PRESET_MANIFEST_FILENAME } from "../../constants.js";
+import {
+  MCP_FILENAME,
+  PRESET_MANIFEST_FILENAME,
+  PROJECT_NAME,
+} from "../../constants.js";
 import {
   isBuiltinPreset as checkBuiltin,
   materializeBuiltinPreset,
@@ -108,9 +113,9 @@ export async function loadPresetFromDir(
 
   // Resolve artifacts by name from the artifacts field
   // If no artifacts field, treat as flags-only preset (empty artifact lists)
-  const codiDir = path.dirname(presetsDir);
+  const configDir = path.dirname(presetsDir);
   const resolved = manifest.artifacts
-    ? await resolveArtifactsByName(manifest.artifacts, codiDir)
+    ? await resolveArtifactsByName(manifest.artifacts, configDir)
     : { rules: [], skills: [], agents: [], commands: [], brands: [] };
   const { rules, skills, agents, commands, brands } = resolved;
 
@@ -182,40 +187,42 @@ interface ResolvedArtifacts {
 
 /**
  * Resolves artifact names to full normalized objects.
- * Tries built-in templates first, then custom files in .codi/ canonical dirs.
+ * Tries built-in templates first, then custom files in project canonical dirs.
  */
 async function resolveArtifactsByName(
   artifacts: ArtifactNames,
-  codiDir: string,
+  configDir: string,
 ): Promise<ResolvedArtifacts> {
   const rules: NormalizedRule[] = [];
   for (const name of artifacts.rules ?? []) {
-    const rule = resolveRule(name) ?? (await loadRuleFromDir(name, codiDir));
+    const rule = resolveRule(name) ?? (await loadRuleFromDir(name, configDir));
     if (rule) rules.push(rule);
   }
 
   const skills: NormalizedSkill[] = [];
   for (const name of artifacts.skills ?? []) {
-    const skill = resolveSkill(name) ?? (await loadSkillFromDir(name, codiDir));
+    const skill =
+      resolveSkill(name) ?? (await loadSkillFromDir(name, configDir));
     if (skill) skills.push(skill);
   }
 
   const agents: NormalizedAgent[] = [];
   for (const name of artifacts.agents ?? []) {
-    const agent = resolveAgent(name) ?? (await loadAgentFromDir(name, codiDir));
+    const agent =
+      resolveAgent(name) ?? (await loadAgentFromDir(name, configDir));
     if (agent) agents.push(agent);
   }
 
   const commands: NormalizedCommand[] = [];
   for (const name of artifacts.commands ?? []) {
     const cmd =
-      resolveCommand(name) ?? (await loadCommandFromDir(name, codiDir));
+      resolveCommand(name) ?? (await loadCommandFromDir(name, configDir));
     if (cmd) commands.push(cmd);
   }
 
   const brands: NormalizedBrand[] = [];
   for (const name of artifacts.brands ?? []) {
-    const brand = await loadBrandFromDir(name, codiDir);
+    const brand = await loadBrandFromDir(name, configDir);
     if (brand) brands.push(brand);
   }
 
@@ -235,7 +242,7 @@ function resolveRule(name: string): NormalizedRule | null {
       content,
       priority: (data["priority"] as "high" | "medium" | "low") ?? "medium",
       alwaysApply: (data["alwaysApply"] as boolean) ?? true,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
@@ -253,7 +260,7 @@ function resolveSkill(name: string): NormalizedSkill | null {
       name,
       description: (data["description"] as string) ?? "",
       content,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
@@ -273,7 +280,7 @@ function resolveAgent(name: string): NormalizedAgent | null {
       content,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
@@ -291,7 +298,7 @@ function resolveCommand(name: string): NormalizedCommand | null {
       name,
       description: (data["description"] as string) ?? "",
       content,
-      managedBy: "codi",
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
@@ -300,9 +307,9 @@ function resolveCommand(name: string): NormalizedCommand | null {
 
 async function loadRuleFromDir(
   name: string,
-  codiDir: string,
+  configDir: string,
 ): Promise<NormalizedRule | null> {
-  const paths = [path.join(codiDir, "rules", `${name}.md`)];
+  const paths = [path.join(configDir, "rules", `${name}.md`)];
   for (const p of paths) {
     try {
       const raw = await fs.readFile(p, "utf8");
@@ -313,7 +320,7 @@ async function loadRuleFromDir(
         content,
         priority: (data["priority"] as "high" | "medium" | "low") ?? "medium",
         alwaysApply: (data["alwaysApply"] as boolean) ?? true,
-        managedBy: (data["managed_by"] as "codi" | "user") ?? "user",
+        managedBy: (data["managed_by"] as ManagedBy) ?? "user",
       };
     } catch {
       continue;
@@ -324,11 +331,11 @@ async function loadRuleFromDir(
 
 async function loadSkillFromDir(
   name: string,
-  codiDir: string,
+  configDir: string,
 ): Promise<NormalizedSkill | null> {
   try {
     const raw = await fs.readFile(
-      path.join(codiDir, "skills", name, "SKILL.md"),
+      path.join(configDir, "skills", name, "SKILL.md"),
       "utf8",
     );
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -336,7 +343,7 @@ async function loadSkillFromDir(
       name,
       description: (data["description"] as string) ?? "",
       content,
-      managedBy: (data["managed_by"] as "codi" | "user") ?? "user",
+      managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
   } catch {
     return null;
@@ -345,11 +352,11 @@ async function loadSkillFromDir(
 
 async function loadAgentFromDir(
   name: string,
-  codiDir: string,
+  configDir: string,
 ): Promise<NormalizedAgent | null> {
   try {
     const raw = await fs.readFile(
-      path.join(codiDir, "agents", `${name}.md`),
+      path.join(configDir, "agents", `${name}.md`),
       "utf8",
     );
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -359,7 +366,7 @@ async function loadAgentFromDir(
       content,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,
-      managedBy: (data["managed_by"] as "codi" | "user") ?? "user",
+      managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
   } catch {
     return null;
@@ -368,11 +375,11 @@ async function loadAgentFromDir(
 
 async function loadCommandFromDir(
   name: string,
-  codiDir: string,
+  configDir: string,
 ): Promise<NormalizedCommand | null> {
   try {
     const raw = await fs.readFile(
-      path.join(codiDir, "commands", `${name}.md`),
+      path.join(configDir, "commands", `${name}.md`),
       "utf8",
     );
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -380,7 +387,7 @@ async function loadCommandFromDir(
       name,
       description: (data["description"] as string) ?? "",
       content,
-      managedBy: (data["managed_by"] as "codi" | "user") ?? "user",
+      managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
   } catch {
     return null;
@@ -389,11 +396,11 @@ async function loadCommandFromDir(
 
 async function loadBrandFromDir(
   name: string,
-  codiDir: string,
+  configDir: string,
 ): Promise<NormalizedBrand | null> {
   try {
     const raw = await fs.readFile(
-      path.join(codiDir, "brands", name, "BRAND.md"),
+      path.join(configDir, "brands", name, "BRAND.md"),
       "utf8",
     );
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -401,7 +408,7 @@ async function loadBrandFromDir(
       name,
       description: (data["description"] as string) ?? "",
       content,
-      managedBy: (data["managed_by"] as "codi" | "user") ?? "user",
+      managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
   } catch {
     return null;

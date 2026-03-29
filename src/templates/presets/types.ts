@@ -1,7 +1,7 @@
 import type { FlagDefinition } from "../../types/flags.js";
 
 /**
- * Definition of a built-in preset that ships with the CODI npm package.
+ * Definition of a built-in preset that ships with the CLI npm package.
  * References rule/skill/agent template names rather than inline content.
  */
 export interface BuiltinPresetDefinition {
@@ -11,7 +11,7 @@ export interface BuiltinPresetDefinition {
   author: string;
   tags: string[];
   compatibility: {
-    codi?: string;
+    engine?: string;
     agents?: string[];
   };
   flags: Record<string, FlagDefinition>;

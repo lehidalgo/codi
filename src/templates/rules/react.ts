@@ -1,11 +1,11 @@
-import { MAX_COMPONENT_LINES } from "../../constants.js";
+import { MAX_COMPONENT_LINES, PROJECT_NAME } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
 description: React-specific conventions — components, hooks, state management, performance
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: typescript
 ---
 

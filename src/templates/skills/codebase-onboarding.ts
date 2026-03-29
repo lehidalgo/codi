@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Codebase onboarding workflow. Systematically analyzes a project to produce a concise onboarding guide covering setup, architecture, conventions, and key files. Designed for new team members or AI agents.
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}

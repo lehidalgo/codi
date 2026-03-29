@@ -8,13 +8,18 @@ import { Logger } from "#src/core/output/logger.js";
 import {
   PRESET_MANIFEST_FILENAME,
   PRESET_LOCK_FILENAME,
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
 } from "#src/constants.js";
 
 describe("presetCreateHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-preset-create-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-create-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -34,7 +39,7 @@ describe("presetCreateHandler", () => {
     expect(result.data.action).toBe("create");
     expect(result.data.name).toBe(presetName);
 
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     const stat = await fs.stat(presetDir);
     expect(stat.isDirectory()).toBe(true);
 
@@ -55,7 +60,7 @@ describe("presetCreateHandler", () => {
   it("returns error if preset already exists", async () => {
     // Arrange
     const presetName = "existing-preset";
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     await fs.mkdir(presetDir, { recursive: true });
 
     // Act
@@ -78,7 +83,7 @@ describe("presetCreateHandler", () => {
     // Assert
     expect(result.success).toBe(true);
 
-    const presetDir = path.join(tmpDir, ".codi", "presets", presetName);
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", presetName);
     const stat = await fs.stat(presetDir);
     expect(stat.isDirectory()).toBe(true);
   });
@@ -93,7 +98,7 @@ describe("presetCreateHandler", () => {
     // Assert
     const manifestPath = path.join(
       tmpDir,
-      ".codi",
+      PROJECT_DIR,
       "presets",
       presetName,
       PRESET_MANIFEST_FILENAME,
@@ -108,7 +113,9 @@ describe("presetUpdateHandler — empty lock file", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-preset-update-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-update-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -117,18 +124,18 @@ describe("presetUpdateHandler — empty lock file", () => {
   });
 
   it("handles empty lock file (no presets to update)", async () => {
-    // Arrange — create .codi dir with empty lock file
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    // Arrange — create config dir with empty lock file
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, PRESET_LOCK_FILENAME),
+      path.join(configDir, PRESET_LOCK_FILENAME),
       JSON.stringify({ presets: {} }, null, 2),
       "utf-8",
     );
 
-    // presetUpdateHandler calls scanCodiDir which needs codi.yaml
+    // presetUpdateHandler calls scanProjectDir which needs the manifest
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       'name: test\nversion: "1"\n',
       "utf-8",
     );
@@ -146,11 +153,11 @@ describe("presetUpdateHandler — empty lock file", () => {
   });
 
   it("handles missing lock file (no presets to update)", async () => {
-    // Arrange — create .codi dir without lock file
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    // Arrange — create config dir without lock file
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       'name: test\nversion: "1"\n',
       "utf-8",
     );
@@ -168,15 +175,15 @@ describe("presetUpdateHandler — empty lock file", () => {
 
   it("dry-run with empty lock file returns empty updated list", async () => {
     // Arrange
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
-      path.join(codiDir, PRESET_LOCK_FILENAME),
+      path.join(configDir, PRESET_LOCK_FILENAME),
       JSON.stringify({ presets: {} }, null, 2),
       "utf-8",
     );
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       'name: test\nversion: "1"\n',
       "utf-8",
     );
@@ -196,7 +203,9 @@ describe("presetCreateHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-preset-create2-"));
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-create2-`),
+    );
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -223,8 +232,8 @@ describe("presetCreateHandler — additional coverage", () => {
     expect(r1.success).toBe(true);
     expect(r2.success).toBe(true);
 
-    const dir1 = path.join(tmpDir, ".codi", "presets", "preset-one");
-    const dir2 = path.join(tmpDir, ".codi", "presets", "preset-two");
+    const dir1 = path.join(tmpDir, PROJECT_DIR, "presets", "preset-one");
+    const dir2 = path.join(tmpDir, PROJECT_DIR, "presets", "preset-two");
     await expect(fs.access(dir1)).resolves.toBeUndefined();
     await expect(fs.access(dir2)).resolves.toBeUndefined();
   });

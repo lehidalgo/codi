@@ -69,13 +69,13 @@ Describe the brand personality, writing patterns, and communication style.
 
 export interface CreateBrandOptions {
   name: string;
-  codiDir: string;
+  configDir: string;
 }
 
 export async function createBrand(
   options: CreateBrandOptions,
 ): Promise<Result<string>> {
-  const { name, codiDir } = options;
+  const { name, configDir } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
     return err([
@@ -85,7 +85,7 @@ export async function createBrand(
     ]);
   }
 
-  const brandDir = path.join(codiDir, "brands", name);
+  const brandDir = path.join(configDir, "brands", name);
   const filePath = path.join(brandDir, "BRAND.md");
 
   try {

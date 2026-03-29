@@ -1,7 +1,7 @@
 export { template as mcp } from "./mcp.js";
 export { template as codeReview } from "./code-review.js";
 export { template as documentation } from "./documentation.js";
-export { getTemplate as getCodiOperationsTemplate } from "./codi-operations.js";
+export { getTemplate as getOperationsTemplate } from "./operations.js";
 export { getTemplate as getE2eTestingTemplate } from "./e2e-testing.js";
 export { template as securityScan } from "./security-scan.js";
 export { template as testCoverage } from "./test-coverage.js";
@@ -37,4 +37,4 @@ export { template as algorithmicArt } from "./algorithmic-art.js";
 export { template as canvasDesign } from "./canvas-design.js";
 export { template as internalComms } from "./internal-comms.js";
 export { template as slackGifCreator } from "./slack-gif-creator.js";
-export { template as codiDocs } from "./codi-docs.js";
+export { template as docsManager } from "./docs-manager.js";

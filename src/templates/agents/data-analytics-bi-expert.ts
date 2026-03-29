@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Data analytics and BI specialist. Use for dashboard design, data visualization, KPI frameworks, metric definitions, or analytical SQL optimization.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a Data Analytics and Business Intelligence specialist with deep expertise in dashboard design, data visualization, metric frameworks, and analytical reporting.

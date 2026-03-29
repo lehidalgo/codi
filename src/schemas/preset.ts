@@ -3,7 +3,7 @@ import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "../constants.js";
 
 const PresetCompatibilitySchema = z
   .object({
-    codi: z.string().optional(),
+    engine: z.string().optional(),
     agents: z.array(z.string()).optional(),
   })
   .optional();

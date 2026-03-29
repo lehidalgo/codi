@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { PROJECT_NAME } from "#src/constants.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
   validateEvolveReadiness,
@@ -47,7 +48,9 @@ function makeStats(
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-improver-test-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-improver-test-`),
+  );
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -204,7 +207,7 @@ describe("generateImprovementPrompt", () => {
 });
 
 describe("buildImproveOptions", () => {
-  it("builds options from codiDir and skillName", async () => {
+  it("builds options from configDir and skillName", async () => {
     const skillDir = path.join(tmpDir, "skills", "commit");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(

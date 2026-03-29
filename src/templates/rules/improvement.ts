@@ -1,16 +1,23 @@
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../../constants.js";
+
 export const template = `---
 name: {{name}}
-description: Continuous artifact improvement — observe patterns, propose rule/skill improvements with evidence, write to .codi/ with user approval
+description: Continuous artifact improvement — observe patterns, propose rule/skill improvements with evidence, write to ${PROJECT_DIR}/ with user approval
 priority: low
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Continuous Artifact Improvement
 
 ## Core Principle
 As you work with this codebase, you are both a consumer and an improver of the rules,
-skills, and agents installed by Codi. When you observe patterns that the current
+skills, and agents installed by ${PROJECT_NAME_DISPLAY}. When you observe patterns that the current
 configuration does not address, propose improvements to the user.
 
 ## When to Propose Improvements
@@ -28,22 +35,22 @@ configuration does not address, propose improvements to the user.
 2. **Show evidence**: Point to 2-3 real occurrences in the codebase that demonstrate the pattern
 3. **Draft the improvement**: Write the exact text that should be added or changed
 4. **Present to user**: Show the current vs proposed content and ask for approval
-5. **If approved**: Write the change to the appropriate \`.codi/\` file
-6. **Regenerate**: Remind the user to run \`codi generate\` to propagate changes
+5. **If approved**: Write the change to the appropriate \`${PROJECT_DIR}/\` file
+6. **Regenerate**: Remind the user to run \`${PROJECT_CLI} generate\` to propagate changes
 
 ## Where to Write Improvements
 
 | Artifact Type | Write Location | Ownership |
 |---------------|---------------|-----------|
-| Rules (built-in) | \`.codi/rules/<name>.md\` (new custom rule) | managed_by: user |
-| Rules (custom) | \`.codi/rules/<name>.md\` (edit in place) | managed_by: user |
-| Skills | \`.codi/skills/<name>/SKILL.md\` (project-specific copy) | managed_by: user |
-| Agents | \`.codi/agents/<name>.md\` (project-specific copy) | managed_by: user |
+| Rules (built-in) | \`${PROJECT_DIR}/rules/<name>.md\` (new custom rule) | managed_by: user |
+| Rules (custom) | \`${PROJECT_DIR}/rules/<name>.md\` (edit in place) | managed_by: user |
+| Skills | \`${PROJECT_DIR}/skills/<name>/SKILL.md\` (project-specific copy) | managed_by: user |
+| Agents | \`${PROJECT_DIR}/agents/<name>.md\` (project-specific copy) | managed_by: user |
 
-**IMPORTANT**: Never overwrite \`managed_by: codi\` artifacts directly. Instead:
+**IMPORTANT**: Never overwrite \`managed_by: ${PROJECT_NAME}\` artifacts directly. Instead:
 - For rule improvements: create a new custom rule that extends or refines the built-in
 - For skill/agent improvements: create a project-specific version with \`managed_by: user\`
-- The user can later contribute improvements upstream via \`codi contribute\`
+- The user can later contribute improvements upstream via \`${PROJECT_CLI} contribute\`
 
 ## What NOT to Do
 

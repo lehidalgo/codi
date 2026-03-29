@@ -1,12 +1,13 @@
-import type { Command } from 'commander';
-import { resolveConfig } from '../core/config/resolver.js';
-import { buildVerificationData } from '../core/verify/token.js';
-import { checkAgentResponse } from '../core/verify/checker.js';
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
-import type { GlobalOptions } from './shared.js';
+import type { Command } from "commander";
+import { resolveConfig } from "../core/config/resolver.js";
+import { buildVerificationData } from "../core/verify/token.js";
+import { checkAgentResponse } from "../core/verify/checker.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import type { CommandResult } from "../core/output/types.js";
+import { initFromOptions, handleOutput } from "./shared.js";
+import type { GlobalOptions } from "./shared.js";
+import { PROJECT_CLI } from "../constants.js";
 
 interface VerifyCommandOptions extends GlobalOptions {
   check?: string;
@@ -40,12 +41,20 @@ export async function verifyHandler(
   if (!configResult.ok) {
     return createCommandResult({
       success: false,
-      command: 'verify',
-      data: { token: '', rules: [], skills: [], agents: [], flags: [], prompt: '' } as VerifyShowData,
+      command: "verify",
+      data: {
+        token: "",
+        rules: [],
+        skills: [],
+        agents: [],
+        flags: [],
+        prompt: "",
+      } as VerifyShowData,
       errors: configResult.errors,
-      exitCode: configResult.errors[0]?.code === 'E_CONFIG_NOT_FOUND'
-        ? EXIT_CODES.CONFIG_NOT_FOUND
-        : EXIT_CODES.CONFIG_INVALID,
+      exitCode:
+        configResult.errors[0]?.code === "E_CONFIG_NOT_FOUND"
+          ? EXIT_CODES.CONFIG_NOT_FOUND
+          : EXIT_CODES.CONFIG_INVALID,
     });
   }
 
@@ -53,23 +62,24 @@ export async function verifyHandler(
 
   if (options.check) {
     const result = checkAgentResponse(options.check, verifyData);
-    const allMatch = result.tokenMatch
-      && result.rulesMissing.length === 0
-      && result.flagsMissing.length === 0;
+    const allMatch =
+      result.tokenMatch &&
+      result.rulesMissing.length === 0 &&
+      result.flagsMissing.length === 0;
 
     return createCommandResult({
       success: allMatch,
-      command: 'verify --check',
+      command: "verify --check",
       data: result satisfies VerifyCheckData,
       exitCode: allMatch ? EXIT_CODES.SUCCESS : EXIT_CODES.VERIFY_MISMATCH,
     });
   }
 
-  const prompt = 'Verify codi configuration. Report the verification token, rule names, and active flags from your instructions.';
+  const prompt = `Verify ${PROJECT_CLI} configuration. Report the verification token, rule names, and active flags from your instructions.`;
 
   return createCommandResult({
     success: true,
-    command: 'verify',
+    command: "verify",
     data: {
       token: verifyData.token,
       rules: verifyData.ruleNames,
@@ -84,9 +94,9 @@ export async function verifyHandler(
 
 export function registerVerifyCommand(program: Command): void {
   program
-    .command('verify')
-    .description('Verify agent configuration awareness')
-    .option('--check <response>', 'Validate a pasted agent response')
+    .command("verify")
+    .description("Verify agent configuration awareness")
+    .option("--check <response>", "Validate a pasted agent response")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: VerifyCommandOptions = { ...globalOptions, ...cmdOptions };

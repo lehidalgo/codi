@@ -5,6 +5,11 @@ import {
   generateSkillFiles,
   buildSkillCatalog,
 } from "#src/adapters/skill-generator.js";
+import {
+  PROJECT_NAME_DISPLAY,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 import type { NormalizedSkill } from "#src/types/config.js";
 
 const baseSkill: NormalizedSkill = {
@@ -44,7 +49,7 @@ describe("buildSkillMd", () => {
     expect(result).toContain("license: MIT");
   });
 
-  it("does not emit metadata entries (Codi-internal, stripped from output)", () => {
+  it(`does not emit metadata entries (${PROJECT_NAME_DISPLAY}-internal, stripped from output)`, () => {
     const result = buildSkillMd({
       ...baseSkill,
       metadata: { author: "test", version: "1.0" },
@@ -93,7 +98,7 @@ describe("buildSkillMetadataOnly", () => {
 
   it("includes reference to full skill file", () => {
     const result = buildSkillMetadataOnly(baseSkill);
-    expect(result).toContain(".codi/skills/deploy/SKILL.md");
+    expect(result).toContain(`${PROJECT_DIR}/skills/deploy/SKILL.md`);
   });
 });
 
@@ -148,7 +153,7 @@ describe("generateSkillFiles", () => {
     const files = await generateSkillFiles(skills, ".claude/skills");
     for (const file of files) {
       expect(file.hash).toBeDefined();
-      expect(file.sources).toContain("codi.yaml");
+      expect(file.sources).toContain(MANIFEST_FILENAME);
     }
   });
 });
@@ -171,6 +176,6 @@ describe("buildSkillCatalog", () => {
     expect(result).toContain("## Available Skills");
     expect(result).toContain("| deploy | Deploy to production |");
     expect(result).toContain("| review | Code review |");
-    expect(result).toContain(".codi/skills/<name>/SKILL.md");
+    expect(result).toContain(`${PROJECT_DIR}/skills/<name>/SKILL.md`);
   });
 });

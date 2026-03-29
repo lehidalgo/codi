@@ -1,10 +1,15 @@
 import { describe, it, expect } from "vitest";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  PROJECT_CLI,
+} from "#src/constants.js";
 import { buildVerificationSection } from "#src/core/verify/section-builder.js";
 import type { VerificationData } from "#src/core/verify/token.js";
 
 describe("buildVerificationSection", () => {
   const data: VerificationData = {
-    token: "codi-abc123def456",
+    token: `${PROJECT_NAME}-abc123def456`,
     ruleNames: ["code-quality", "security"],
     skillNames: ["rule-management"],
     agentNames: ["code-reviewer"],
@@ -19,12 +24,12 @@ describe("buildVerificationSection", () => {
 
   it("contains the verification token", () => {
     const section = buildVerificationSection(data);
-    expect(section).toContain("`codi-abc123def456`");
+    expect(section).toContain(`\`${PROJECT_NAME}-abc123def456\``);
   });
 
-  it("contains the Codi Verification header", () => {
+  it("contains the verification header", () => {
     const section = buildVerificationSection(data);
-    expect(section).toContain("## Codi Verification");
+    expect(section).toContain(`## ${PROJECT_NAME_DISPLAY} Verification`);
   });
 
   it("lists rule names explicitly", () => {
@@ -49,8 +54,8 @@ describe("buildVerificationSection", () => {
 
   it("includes instruction prompt for the agent", () => {
     const section = buildVerificationSection(data);
-    expect(section).toContain("verify codi");
-    expect(section).toContain("codi verify");
+    expect(section).toContain(`verify ${PROJECT_CLI}`);
+    expect(section).toContain(`${PROJECT_CLI} verify`);
   });
 
   it("omits rules line when no rules", () => {

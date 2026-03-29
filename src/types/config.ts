@@ -1,6 +1,9 @@
+import type { MANAGED_BY_VALUES } from "../constants.js";
 import type { ResolvedFlags } from "./flags.js";
 
-export interface CodiManifest {
+export type ManagedBy = (typeof MANAGED_BY_VALUES)[number];
+
+export interface ProjectManifest {
   name: string;
   version: "1";
   description?: string;
@@ -11,7 +14,7 @@ export interface CodiManifest {
     commands?: boolean;
     agents?: boolean;
   };
-  codi?: {
+  engine?: {
     requiredVersion?: string;
   };
   team?: string;
@@ -39,7 +42,7 @@ export interface NormalizedRule {
   priority: "high" | "medium" | "low";
   scope?: string[];
   alwaysApply: boolean;
-  managedBy: "codi" | "user";
+  managedBy: ManagedBy;
 }
 
 export interface NormalizedSkill {
@@ -54,7 +57,7 @@ export interface NormalizedSkill {
   category?: string;
   license?: string;
   metadata?: Record<string, string>;
-  managedBy?: "codi" | "user";
+  managedBy?: ManagedBy;
   model?: string;
   effort?: "low" | "medium" | "high" | "max";
   context?: "fork";
@@ -68,7 +71,7 @@ export interface NormalizedCommand {
   name: string;
   description: string;
   content: string;
-  managedBy?: "codi" | "user";
+  managedBy?: ManagedBy;
 }
 
 export interface NormalizedAgent {
@@ -77,14 +80,14 @@ export interface NormalizedAgent {
   content: string;
   tools?: string[];
   model?: string;
-  managedBy?: "codi" | "user";
+  managedBy?: ManagedBy;
 }
 
 export interface NormalizedBrand {
   name: string;
   description: string;
   content: string;
-  managedBy?: "codi" | "user";
+  managedBy?: ManagedBy;
 }
 
 export interface McpConfig {
@@ -103,7 +106,7 @@ export interface McpConfig {
 }
 
 export interface NormalizedConfig {
-  manifest: CodiManifest;
+  manifest: ProjectManifest;
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];

@@ -1,9 +1,11 @@
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: MCP (Model Context Protocol) server usage. Use when configuring MCP servers, calling MCP tools, or debugging MCP connections.
 category: Developer Tools
 compatibility: [claude-code]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
@@ -17,12 +19,12 @@ Use when working with MCP servers — configuring, calling tools, or debugging.
 - User asks to configure or set up an MCP server for their project
 - User needs to call an MCP tool and wants guidance on parameters or usage
 - An MCP tool call fails and the user needs help debugging the connection
-- User wants to add a new MCP server to \\\`.codi/mcp.yaml\\\`
+- User wants to add a new MCP server to \\\`${PROJECT_DIR}/mcp.yaml\\\`
 - User asks how to distribute MCP configuration across agents
 
 ## Configuration
 
-MCP servers are defined in \\\`.codi/mcp.yaml\\\` and distributed to agents by \\\`codi generate\\\`.
+MCP servers are defined in \\\`${PROJECT_DIR}/mcp.yaml\\\` and distributed to agents by \\\`${PROJECT_CLI} generate\\\`.
 
 ### Server Types
 
@@ -44,14 +46,14 @@ servers:
     url: "https://example.com/mcp"
 \\\`\\\`\\\`
 
-After editing, run \\\`codi generate\\\` to distribute to all agents.
+After editing, run \\\`${PROJECT_CLI} generate\\\` to distribute to all agents.
 
 ## Using MCP Tools
 
 ### Step 1: Discover Available Tools
 
 **[CODING AGENT]** Before calling any MCP tool:
-- Check \\\`.codi/mcp.yaml\\\` for configured servers
+- Check \\\`${PROJECT_DIR}/mcp.yaml\\\` for configured servers
 - List available tools from each server
 - Read tool descriptions and parameter schemas
 
@@ -81,7 +83,7 @@ After editing, run \\\`codi generate\\\` to distribute to all agents.
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Tool not found | Server not in mcp.yaml | Add server to \\\`.codi/mcp.yaml\\\`, run \\\`codi generate\\\` |
+| Tool not found | Server not in mcp.yaml | Add server to \\\`${PROJECT_DIR}/mcp.yaml\\\`, run \\\`${PROJECT_CLI} generate\\\` |
 | Connection refused | Server not running | Start the server process or check the URL |
 | Auth failed | Missing env var | Set GITHUB_TOKEN, API_KEY, etc. in environment |
 | Invalid params | Wrong parameter types | Check the tool's schema for required fields and types |

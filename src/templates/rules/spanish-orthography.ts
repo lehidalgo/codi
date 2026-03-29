@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Spanish language orthography enforcement — accents, tildes, punctuation
 priority: low
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Spanish Orthography

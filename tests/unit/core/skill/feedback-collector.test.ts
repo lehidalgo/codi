@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { PROJECT_NAME } from "#src/constants.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
   readAllFeedback,
@@ -28,7 +29,9 @@ function makeEntry(overrides: Partial<FeedbackEntry> = {}): FeedbackEntry {
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-feedback-test-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-feedback-test-`),
+  );
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 

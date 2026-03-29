@@ -1,11 +1,11 @@
-import { MAX_FUNCTION_LINES } from "../../constants.js";
+import { MAX_FUNCTION_LINES, PROJECT_NAME } from "../../constants.js";
 
 export const template = `---
 name: {{name}}
 description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Code Style

@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { Logger } from "#src/core/output/logger.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 import {
   skillEvolveHandler,
   skillVersionsHandler,
@@ -32,11 +33,11 @@ function makeEntry(
 }
 
 async function setupSkillWithFeedback(
-  codiDir: string,
+  configDir: string,
   skillName: string,
   feedbackCount: number,
 ): Promise<string> {
-  const skillDir = path.join(codiDir, "skills", skillName);
+  const skillDir = path.join(configDir, "skills", skillName);
   await fs.mkdir(skillDir, { recursive: true });
   await fs.writeFile(
     path.join(skillDir, "SKILL.md"),
@@ -44,17 +45,19 @@ async function setupSkillWithFeedback(
   );
 
   for (let i = 0; i < feedbackCount; i++) {
-    await writeFeedback(codiDir, makeEntry({ skillName }, i));
+    await writeFeedback(configDir, makeEntry({ skillName }, i));
   }
 
   return skillDir;
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-handler-test-"));
-  // Create .codi structure so resolveCodiDir works
-  const codiDir = path.join(tmpDir, ".codi");
-  await fs.mkdir(codiDir, { recursive: true });
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-handler-test-`),
+  );
+  // Create config structure so resolveProjectDir works
+  const configDir = path.join(tmpDir, PROJECT_DIR);
+  await fs.mkdir(configDir, { recursive: true });
   Logger.init({ level: "error", mode: "human", noColor: true });
   originalCwd = process.cwd();
 });
@@ -66,16 +69,16 @@ afterEach(async () => {
 
 describe("skillEvolveHandler", () => {
   it("returns failure when skill is not ready", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await setupSkillWithFeedback(codiDir, "commit", 1); // only 1, need 3
+    const configDir = path.join(tmpDir, ".codi");
+    await setupSkillWithFeedback(configDir, "commit", 1); // only 1, need 3
 
     const result = await skillEvolveHandler(tmpDir, "commit", false);
     expect(result.success).toBe(false);
   });
 
   it("returns success with prompt when skill has enough feedback", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await setupSkillWithFeedback(codiDir, "commit", 3);
+    const configDir = path.join(tmpDir, ".codi");
+    await setupSkillWithFeedback(configDir, "commit", 3);
 
     const result = await skillEvolveHandler(tmpDir, "commit", false);
     expect(result.success).toBe(true);
@@ -86,8 +89,8 @@ describe("skillEvolveHandler", () => {
   });
 
   it("dry-run does not save a version", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = await setupSkillWithFeedback(codiDir, "commit", 3);
+    const configDir = path.join(tmpDir, ".codi");
+    const skillDir = await setupSkillWithFeedback(configDir, "commit", 3);
 
     const result = await skillEvolveHandler(tmpDir, "commit", true);
     expect(result.success).toBe(true);
@@ -107,8 +110,8 @@ describe("skillEvolveHandler", () => {
 
 describe("skillVersionsHandler", () => {
   it("lists versions as table", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = await setupSkillWithFeedback(codiDir, "commit", 0);
+    const configDir = path.join(tmpDir, ".codi");
+    const skillDir = await setupSkillWithFeedback(configDir, "commit", 0);
 
     // Save two versions
     await saveVersion(skillDir);
@@ -124,8 +127,8 @@ describe("skillVersionsHandler", () => {
   });
 
   it("returns empty list when no versions exist", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await setupSkillWithFeedback(codiDir, "commit", 0);
+    const configDir = path.join(tmpDir, ".codi");
+    await setupSkillWithFeedback(configDir, "commit", 0);
 
     const result = await skillVersionsHandler(tmpDir, "commit", {});
     expect(result.success).toBe(true);
@@ -133,8 +136,8 @@ describe("skillVersionsHandler", () => {
   });
 
   it("restores a version", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = await setupSkillWithFeedback(codiDir, "commit", 0);
+    const configDir = path.join(tmpDir, ".codi");
+    const skillDir = await setupSkillWithFeedback(configDir, "commit", 0);
     const original = await fs.readFile(
       path.join(skillDir, "SKILL.md"),
       "utf-8",
@@ -156,8 +159,8 @@ describe("skillVersionsHandler", () => {
   });
 
   it("returns failure for restoring non-existent version", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await setupSkillWithFeedback(codiDir, "commit", 0);
+    const configDir = path.join(tmpDir, ".codi");
+    await setupSkillWithFeedback(configDir, "commit", 0);
 
     const result = await skillVersionsHandler(tmpDir, "commit", {
       restore: 99,
@@ -166,8 +169,8 @@ describe("skillVersionsHandler", () => {
   });
 
   it("shows diff between versions", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    const skillDir = await setupSkillWithFeedback(codiDir, "commit", 0);
+    const configDir = path.join(tmpDir, ".codi");
+    const skillDir = await setupSkillWithFeedback(configDir, "commit", 0);
 
     await saveVersion(skillDir);
     await fs.writeFile(
@@ -185,8 +188,8 @@ describe("skillVersionsHandler", () => {
   });
 
   it("rejects invalid diff format", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await setupSkillWithFeedback(codiDir, "commit", 0);
+    const configDir = path.join(tmpDir, ".codi");
+    await setupSkillWithFeedback(configDir, "commit", 0);
 
     const result = await skillVersionsHandler(tmpDir, "commit", {
       diff: "not-numbers",

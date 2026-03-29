@@ -1,3 +1,5 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: |
@@ -8,7 +10,7 @@ description: |
   content authoring task.
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}

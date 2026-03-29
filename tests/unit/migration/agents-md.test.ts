@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { importAgentsMd } from "#src/core/migration/agents-md.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 const FIXTURE_DIR = path.join(
   __dirname,
@@ -11,11 +12,13 @@ const FIXTURE_DIR = path.join(
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-migration-agents-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-migration-agents-`),
+  );
   // Copy fixture AGENTS.md
   const src = path.join(FIXTURE_DIR, "AGENTS.md");
   await fs.copyFile(src, path.join(tmpDir, "AGENTS.md"));
-  await fs.mkdir(path.join(tmpDir, ".codi", "rules"), { recursive: true });
+  await fs.mkdir(path.join(tmpDir, PROJECT_DIR, "rules"), { recursive: true });
 });
 
 afterEach(async () => {
@@ -47,11 +50,11 @@ describe("importAgentsMd", () => {
     expect(codeStyleRule?.content).toContain("camelCase");
   });
 
-  it("writes rule files to .codi/rules/", async () => {
+  it(`writes rule files to ${PROJECT_DIR}/rules/`, async () => {
     const result = await importAgentsMd(tmpDir);
     expect(result.ok).toBe(true);
 
-    const rulesDir = path.join(tmpDir, ".codi", "rules");
+    const rulesDir = path.join(tmpDir, PROJECT_DIR, "rules");
     const files = await fs.readdir(rulesDir);
     expect(files).toContain("code-style.md");
     expect(files).toContain("testing.md");
@@ -62,7 +65,7 @@ describe("importAgentsMd", () => {
     await importAgentsMd(tmpDir);
 
     const content = await fs.readFile(
-      path.join(tmpDir, ".codi", "rules", "code-style.md"),
+      path.join(tmpDir, PROJECT_DIR, "rules", "code-style.md"),
       "utf-8",
     );
     expect(content).toContain("---");
@@ -72,7 +75,9 @@ describe("importAgentsMd", () => {
   });
 
   it("returns error when AGENTS.md not found", async () => {
-    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-empty-"));
+    const emptyDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-empty-`),
+    );
     const result = await importAgentsMd(emptyDir);
     expect(result.ok).toBe(false);
     if (!result.ok) {

@@ -3,7 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
-import type { CodiError } from "../output/types.js";
+import type { ProjectError } from "../output/types.js";
 import { PresetManifestSchema } from "../../schemas/preset.js";
 import type { PresetManifest } from "../../schemas/preset.js";
 import {
@@ -15,7 +15,7 @@ import { parseFrontmatter } from "../../utils/frontmatter.js";
 
 export interface PresetValidationResult {
   manifest: PresetManifest;
-  warnings: CodiError[];
+  warnings: ProjectError[];
   artifactCounts: {
     rules: number;
     skills: number;
@@ -37,8 +37,8 @@ export interface PresetValidationResult {
 export async function validatePreset(
   presetDir: string,
 ): Promise<Result<PresetValidationResult>> {
-  const errors: CodiError[] = [];
-  const warnings: CodiError[] = [];
+  const errors: ProjectError[] = [];
+  const warnings: ProjectError[] = [];
 
   // 1. Check preset.yaml exists
   const manifestPath = path.join(presetDir, PRESET_MANIFEST_FILENAME);
@@ -134,8 +134,8 @@ async function validateArtifactDir(
   dirPath: string,
   dirName: string,
   presetName: string,
-  errors: CodiError[],
-  _warnings: CodiError[],
+  errors: ProjectError[],
+  _warnings: ProjectError[],
 ): Promise<number> {
   let entries;
   try {

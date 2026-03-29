@@ -1,10 +1,11 @@
-import type { Command } from 'commander';
-import { Logger } from '../core/output/logger.js';
-import { formatHuman, formatJson } from '../core/output/formatter.js';
-import type { CommandResult } from '../core/output/types.js';
-import { registerAllAdapters } from '../adapters/index.js';
-import { resolveConfig } from '../core/config/resolver.js';
-import { generate } from '../core/generator/generator.js';
+import type { Command } from "commander";
+import { PROJECT_CLI } from "../constants.js";
+import { Logger } from "../core/output/logger.js";
+import { formatHuman, formatJson } from "../core/output/formatter.js";
+import type { CommandResult } from "../core/output/types.js";
+import { registerAllAdapters } from "../adapters/index.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { generate } from "../core/generator/generator.js";
 
 export interface GlobalOptions {
   json?: boolean;
@@ -15,20 +16,22 @@ export interface GlobalOptions {
 
 export function addGlobalOptions(cmd: Command): Command {
   return cmd
-    .option('-j, --json', 'Output as JSON')
-    .option('-v, --verbose', 'Verbose output')
-    .option('-q, --quiet', 'Suppress non-essential output')
-    .option('--no-color', 'Disable colored output');
+    .option("-j, --json", "Output as JSON")
+    .option("-v, --verbose", "Verbose output")
+    .option("-q, --quiet", "Suppress non-essential output")
+    .option("--no-color", "Disable colored output");
 }
 
 export function initFromOptions(options: GlobalOptions): void {
   if (options.verbose && options.quiet) {
-    process.stderr.write('[ERR] --verbose and --quiet are mutually exclusive\n');
+    process.stderr.write(
+      "[ERR] --verbose and --quiet are mutually exclusive\n",
+    );
     process.exit(1);
   }
 
-  const level = options.verbose ? 'debug' : options.quiet ? 'error' : 'info';
-  const mode = options.json ? 'json' : 'human';
+  const level = options.verbose ? "debug" : options.quiet ? "error" : "info";
+  const mode = options.json ? "json" : "human";
   const noColor = options.noColor ?? false;
 
   Logger.init({ level, mode, noColor });
@@ -36,7 +39,7 @@ export function initFromOptions(options: GlobalOptions): void {
 
 /**
  * Resolves config and regenerates all agent files.
- * Call after any command that modifies .codi/ configuration.
+ * Call after any command that modifies the project configuration.
  * Returns true on success, false on failure (logs warning, never throws).
  */
 export async function regenerateConfigs(projectRoot: string): Promise<boolean> {
@@ -45,29 +48,33 @@ export async function regenerateConfigs(projectRoot: string): Promise<boolean> {
     registerAllAdapters();
     const configResult = await resolveConfig(projectRoot);
     if (!configResult.ok) {
-      log.warn('Auto-generate skipped: config resolution failed.');
+      log.warn("Auto-generate skipped: config resolution failed.");
       return false;
     }
     const genResult = await generate(configResult.data, projectRoot);
     return genResult.ok;
   } catch {
-    log.warn('Auto-generate failed. Run `codi generate` manually.');
+    log.warn(`Auto-generate failed. Run \`${PROJECT_CLI} generate\` manually.`);
     return false;
   }
 }
 
 /**
- * Prints the CODI banner with a wizard title.
+ * Prints the CLI banner with a wizard title.
  */
 export function printBanner(title: string): void {
   const log = Logger.getInstance();
-  log.info('');
-  log.info('  \u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E');
-  log.info('  \u2502        C O D I              \u2502');
-  log.info('  \u2502  Unified Agent Config       \u2502');
-  log.info('  \u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F');
+  log.info("");
+  log.info(
+    "  \u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E",
+  );
+  log.info("  \u2502        C O D I              \u2502");
+  log.info("  \u2502  Unified Agent Config       \u2502");
+  log.info(
+    "  \u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
+  );
   log.info(`  ${title}`);
-  log.info('');
+  log.info("");
 }
 
 /**
@@ -75,7 +82,7 @@ export function printBanner(title: string): void {
  */
 export function printSection(label: string): void {
   const log = Logger.getInstance();
-  log.info('');
+  log.info("");
   log.info(`  \u25B8 ${label}`);
 }
 
@@ -84,8 +91,8 @@ export function handleOutput(
   options: { json?: boolean },
 ): void {
   if (options.json) {
-    process.stdout.write(formatJson(result) + '\n');
+    process.stdout.write(formatJson(result) + "\n");
   } else {
-    process.stdout.write(formatHuman(result) + '\n');
+    process.stdout.write(formatHuman(result) + "\n");
   }
 }

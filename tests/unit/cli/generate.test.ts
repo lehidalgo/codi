@@ -6,12 +6,17 @@ import { stringify as stringifyYaml } from "yaml";
 import { generateHandler } from "#src/cli/generate.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
+import {
+  PROJECT_NAME,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("generate command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-gen-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-gen-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -19,24 +24,24 @@ describe("generate command handler", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("fails when no .codi/ directory exists", async () => {
+  it(`fails when no ${PROJECT_DIR}/ directory exists`, async () => {
     const result = await generateHandler(tmpDir, {});
     expect(result.success).toBe(false);
     expect(result.exitCode).toBe(EXIT_CODES.CONFIG_NOT_FOUND);
   });
 
   it("generates files for configured agents", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(path.join(codiDir, "rules"), { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
 
     const manifest = { name: "test", version: "1", agents: ["claude-code"] };
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       stringifyYaml(manifest),
       "utf-8",
     );
     await fs.writeFile(
-      path.join(codiDir, "flags.yaml"),
+      path.join(configDir, "flags.yaml"),
       stringifyYaml({}),
       "utf-8",
     );
@@ -48,17 +53,17 @@ describe("generate command handler", () => {
   });
 
   it("supports --dry-run without writing files", async () => {
-    const codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(path.join(codiDir, "rules"), { recursive: true });
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
 
     const manifest = { name: "test", version: "1", agents: ["claude-code"] };
     await fs.writeFile(
-      path.join(codiDir, "codi.yaml"),
+      path.join(configDir, MANIFEST_FILENAME),
       stringifyYaml(manifest),
       "utf-8",
     );
     await fs.writeFile(
-      path.join(codiDir, "flags.yaml"),
+      path.join(configDir, "flags.yaml"),
       stringifyYaml({}),
       "utf-8",
     );
@@ -68,7 +73,7 @@ describe("generate command handler", () => {
 
     // state.json should not be written in dry-run mode
     const stateExists = await fs
-      .access(path.join(codiDir, "state.json"))
+      .access(path.join(configDir, "state.json"))
       .then(() => true)
       .catch(() => false);
     expect(stateExists).toBe(false);

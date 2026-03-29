@@ -1,4 +1,9 @@
-import { MAX_NAME_LENGTH } from "../../constants.js";
+import {
+  MAX_NAME_LENGTH,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+} from "../../constants.js";
 
 export const template = `---
 name: {{name}}
@@ -7,7 +12,7 @@ description: |
   an MCP server. Also activate when the user wants to connect an external tool,
   database, or API as an MCP server for their AI coding agents.
 category: Developer Tools
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # MCP Server Creator
@@ -38,10 +43,10 @@ Do NOT proceed until questions 1-2 have clear answers.
 **[CODING AGENT]** Create the server config:
 
 \\\`\\\`\\\`bash
-codi add mcp-server <name>
+${PROJECT_CLI} add mcp-server <name>
 \\\`\\\`\\\`
 
-This creates \\\`.codi/mcp-servers/<name>.yaml\\\` with a blank skeleton.
+This creates \\\`${PROJECT_DIR}/mcp-servers/<name>.yaml\\\` with a blank skeleton.
 
 The name must be:
 - kebab-case (lowercase letters, digits, hyphens)
@@ -84,8 +89,8 @@ headers:
 
 **[CODING AGENT]** Verify the configuration:
 
-1. Run \\\`codi validate\\\` — confirms no config errors
-2. Check name uniqueness in \\\`mcp-servers/\\\`
+1. Run \\\`${PROJECT_CLI} validate\\\` — confirms no config errors
+2. Check name uniqueness in \\\`${PROJECT_DIR}/mcp-servers/\\\`
 3. Verify required fields:
    - stdio: \\\`command\\\` must not be empty
    - http: \\\`url\\\` must be a valid URL
@@ -95,7 +100,7 @@ headers:
 
 **[CODING AGENT]** Verify the server works:
 
-1. Run \\\`codi generate\\\` — produces agent-specific configs (\\\`.claude/mcp.json\\\`, etc.)
+1. Run \\\`${PROJECT_CLI} generate\\\` — produces agent-specific configs (\\\`.claude/mcp.json\\\`, etc.)
 2. For stdio servers: verify the command runs (\\\`npx -y <package> --help\\\`)
 3. For http servers: verify the URL is reachable
 4. Use the MCP Inspector for interactive testing:
@@ -120,7 +125,7 @@ If building a standalone MCP server as a package:
    const transport = new StdioServerTransport();
    await server.connect(transport);
    \\\`\\\`\\\`
-3. Run \\\`codi contribute\\\` to share as a community template
+3. Run \\\`${PROJECT_CLI} contribute\\\` to share as a community template
 
 ## Building a Custom MCP Server
 
@@ -167,8 +172,8 @@ Before finishing, verify:
 - [ ] Description clearly states what the server provides
 - [ ] All required env vars use \\\$\\{VAR_NAME\\} syntax (no hardcoded secrets)
 - [ ] Transport type matches use case (stdio for local, http for remote)
-- [ ] \\\`codi validate\\\` passes
-- [ ] \\\`codi generate\\\` produces correct agent configs
+- [ ] \\\`${PROJECT_CLI} validate\\\` passes
+- [ ] \\\`${PROJECT_CLI} generate\\\` produces correct agent configs
 
 ## Common Patterns
 

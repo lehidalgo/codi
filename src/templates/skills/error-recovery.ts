@@ -1,3 +1,5 @@
+import { PROJECT_CLI, PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: |
@@ -5,7 +7,7 @@ description: |
   your own mistakes 2 or more times in the current conversation. Produces a
   diagnostic report analyzing what went wrong, why, and how to prevent it.
 category: Code Quality
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
@@ -102,7 +104,7 @@ For each error you made, record:
 - [What checks should be run before proceeding]
 
 ### Proposed Rules or Tests
-- [If a pattern suggests a new codi rule, describe it]
+- [If a pattern suggests a new ${PROJECT_NAME} rule, describe it]
 - [If a missing test caused the error, describe what test to add]
 \\\`\\\`\\\`
 
@@ -126,12 +128,12 @@ For each error you made, record:
 
 **[CODING AGENT]** If the error pattern suggests a systemic fix:
 
-- **Recurring type errors** → propose a codi rule for stricter type checking practices
+- **Recurring type errors** → propose a ${PROJECT_NAME} rule for stricter type checking practices
 - **Missing file/path errors** → propose a rule to always verify paths before operations
 - **Test failures from stale fixtures** → propose a test maintenance rule
 - **API hallucinations** → propose a rule to always query the code graph before referencing functions
 
-Use \\\`codi add rule <name>\\\` to scaffold the rule if the user approves.
+Use \\\`${PROJECT_CLI} add rule <name>\\\` to scaffold the rule if the user approves.
 
 ## Important Notes
 

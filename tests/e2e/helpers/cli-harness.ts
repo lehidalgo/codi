@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { PROJECT_NAME } from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -15,10 +16,10 @@ export interface CliResult {
 }
 
 /**
- * Runs the codi CLI with given arguments in the specified directory.
+ * Runs the CLI with given arguments in the specified directory.
  * Always appends --json for parseable output.
  */
-export async function runCodi(
+export async function runCli(
   cwd: string,
   args: string[],
   options: { json?: boolean; timeout?: number } = {},
@@ -52,7 +53,7 @@ export async function runCodi(
 export async function createTempProject(
   name = "test-project",
 ): Promise<{ projectDir: string; cleanup: () => Promise<void> }> {
-  const base = await fs.mkdtemp(path.join(os.tmpdir(), "codi-e2e-"));
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-e2e-`));
   const projectDir = path.join(base, name);
   await fs.mkdir(projectDir, { recursive: true });
 
@@ -89,7 +90,7 @@ export async function readFile(filePath: string): Promise<string> {
 }
 
 /**
- * Parses JSON output from a codi CLI command.
+ * Parses JSON output from a CLI command.
  */
 export function parseJsonOutput(stdout: string): Record<string, unknown> {
   // CLI may output non-JSON lines before the JSON; find the JSON block

@@ -1,20 +1,26 @@
-import { MAX_NAME_LENGTH } from "../../constants.js";
+import {
+  MAX_NAME_LENGTH,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+} from "../../constants.js";
 
 export const template = `---
 name: {{name}}
-description: Guided creation of CODI presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.
-category: Codi Platform
+description: Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.
+category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
 
-Guide the user through creating a CODI preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs.
+Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs.
 
 ## When to Activate
 
-- User asks to create, package, or scaffold a new codi preset
+- User asks to create, package, or scaffold a new ${PROJECT_NAME} preset
 - User wants to bundle existing rules, skills, and agents into a reusable configuration
 - User needs to export a preset as a ZIP or publish it to a GitHub repository
 - User asks how to customize or fork a built-in preset
@@ -33,10 +39,10 @@ Ask the user:
 List available artifacts from the current project and built-in templates.
 
 Ask the user which to include in the preset:
-- **Rules**: list rules from \`.codi/rules/\` and built-in templates
-- **Skills**: list skills from \`.codi/skills/\` and built-in templates
-- **Agents**: list agents from \`.codi/agents/\`
-- **Commands**: list commands from \`.codi/commands/\`
+- **Rules**: list rules from \`${PROJECT_DIR}/rules/\` and built-in templates
+- **Skills**: list skills from \`${PROJECT_DIR}/skills/\` and built-in templates
+- **Agents**: list agents from \`${PROJECT_DIR}/agents/\`
+- **Commands**: list commands from \`${PROJECT_DIR}/commands/\`
 
 ## Step 3: Configure Flags
 
@@ -55,7 +61,7 @@ Ask if any MCP server configurations should be included:
 
 Run:
 \\\`\\\`\\\`bash
-codi preset create <name>
+${PROJECT_CLI} preset create <name>
 \\\`\\\`\\\`
 
 Then populate the generated directory:
@@ -72,7 +78,7 @@ Then populate the generated directory:
 Ask the user how they want to distribute the preset:
 
 ### Option A: Local directory (default)
-The preset stays in \`.codi/presets/<name>/\`. Reference it in \`codi.yaml\`:
+The preset stays in \`${PROJECT_DIR}/presets/<name>/\`. Reference it in \`${PROJECT_NAME}.yaml\`:
 \\\`\\\`\\\`yaml
 presets:
   - <name>
@@ -81,11 +87,11 @@ presets:
 ### Option B: ZIP package
 Export the preset as a portable ZIP file:
 \\\`\\\`\\\`bash
-codi preset export <name> --format zip --output ./<name>.zip
+${PROJECT_CLI} preset export <name> --format zip --output ./<name>.zip
 \\\`\\\`\\\`
 The ZIP can be shared privately and installed with:
 \\\`\\\`\\\`bash
-codi preset install ./<name>.zip
+${PROJECT_CLI} preset install ./<name>.zip
 \\\`\\\`\\\`
 
 ### Option C: GitHub repository
@@ -98,14 +104,14 @@ Create a repository scaffold for version-controlled distribution:
 
 Others can install with:
 \\\`\\\`\\\`bash
-codi preset install github:org/repo-name
+${PROJECT_CLI} preset install github:org/repo-name
 \\\`\\\`\\\`
 
 ## Step 7: Validate
 
 Run validation to ensure the preset is well-formed:
 \\\`\\\`\\\`bash
-codi preset validate <name>
+${PROJECT_CLI} preset validate <name>
 \\\`\\\`\\\`
 
 Report any errors or warnings to the user.

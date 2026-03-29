@@ -1,14 +1,15 @@
+import { PROJECT_NAME, prefixedName } from "../../constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
-  name: "typescript-fullstack",
+  name: prefixedName("typescript-fullstack"),
   description:
     "TypeScript fullstack development with React/Next.js, strict typing, and CI best practices",
   version: "1.0.0",
-  author: "codi",
+  author: PROJECT_NAME,
   tags: ["typescript", "react", "nextjs", "fullstack", "frontend", "backend"],
   compatibility: {
-    codi: ">=0.3.0",
+    engine: ">=0.3.0",
     agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
   },
   flags: {
@@ -32,22 +33,32 @@ export const preset: BuiltinPresetDefinition = {
     auto_generate_on_change: { mode: "enabled", value: false },
   },
   rules: [
-    "typescript",
-    "react",
-    "nextjs",
-    "code-style",
-    "testing",
-    "architecture",
-    "error-handling",
+    prefixedName("typescript"),
+    prefixedName("react"),
+    prefixedName("nextjs"),
+    prefixedName("code-style"),
+    prefixedName("testing"),
+    prefixedName("architecture"),
+    prefixedName("error-handling"),
   ],
   skills: [
-    "code-review",
-    "e2e-testing",
-    "refactoring",
-    "commit",
-    "security-scan",
+    prefixedName("code-review"),
+    prefixedName("e2e-testing"),
+    prefixedName("refactoring"),
+    prefixedName("commit"),
+    prefixedName("security-scan"),
   ],
-  agents: ["code-reviewer", "test-generator", "nextjs-researcher"],
-  commands: ["check", "commit", "review", "test-run", "security-scan"],
+  agents: [
+    prefixedName("code-reviewer"),
+    prefixedName("test-generator"),
+    prefixedName("nextjs-researcher"),
+  ],
+  commands: [
+    prefixedName("check"),
+    prefixedName("commit"),
+    prefixedName("review"),
+    prefixedName("test-run"),
+    prefixedName("security-scan"),
+  ],
   mcpServers: [],
 };

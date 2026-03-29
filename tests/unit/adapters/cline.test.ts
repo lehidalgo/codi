@@ -4,10 +4,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { clineAdapter } from "#src/adapters/cline.js";
 import { createMockConfig } from "./mock-config.js";
-import { CONTEXT_TOKENS_LARGE } from "#src/constants.js";
+import {
+  CONTEXT_TOKENS_LARGE,
+  PROJECT_NAME,
+  MANIFEST_FILENAME,
+} from "#src/constants.js";
 
 describe("cline adapter", () => {
-  const tmpDir = join(tmpdir(), "codi-test-cline-" + Date.now());
+  const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-cline-` + Date.now());
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true });
@@ -83,7 +87,7 @@ describe("cline adapter", () => {
     expect(mainFile).toBeDefined();
     expect(mainFile!.content).toContain("## Workflow");
     expect(mainFile!.hash).toBeTruthy();
-    expect(mainFile!.sources).toContain("codi.yaml");
+    expect(mainFile!.sources).toContain(MANIFEST_FILENAME);
 
     // Only the instruction file, no extras
     expect(files).toHaveLength(1);
@@ -111,7 +115,7 @@ describe("cline adapter", () => {
           content: "Use camelCase for variables.",
           priority: "medium",
           alwaysApply: true,
-          managedBy: "codi",
+          managedBy: PROJECT_NAME,
         },
         {
           name: "Error Handling",
@@ -119,7 +123,7 @@ describe("cline adapter", () => {
           content: "Always catch errors.",
           priority: "high",
           alwaysApply: true,
-          managedBy: "codi",
+          managedBy: PROJECT_NAME,
         },
       ],
       flags: {},

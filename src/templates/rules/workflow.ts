@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Human-in-the-loop workflow — baby steps, self-evaluation, MCP-first exploration, no unsolicited commits
 priority: high
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Workflow

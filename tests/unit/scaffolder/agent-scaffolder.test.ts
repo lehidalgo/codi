@@ -3,15 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("agent scaffolder", () => {
   let tmpDir: string;
-  let codiDir: string;
+  let configDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-agent-"));
-    codiDir = path.join(tmpDir, ".codi");
-    await fs.mkdir(codiDir, { recursive: true });
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-agent-`));
+    configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -19,7 +20,7 @@ describe("agent scaffolder", () => {
   });
 
   it("creates an agent file with default content", async () => {
-    const result = await createAgent({ name: "my-agent", codiDir });
+    const result = await createAgent({ name: "my-agent", configDir });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -34,8 +35,8 @@ describe("agent scaffolder", () => {
   it("creates an agent from a known template", async () => {
     const result = await createAgent({
       name: "reviewer",
-      codiDir,
-      template: "code-reviewer",
+      configDir,
+      template: prefixedName("code-reviewer"),
     });
 
     expect(result.ok).toBe(true);
@@ -48,8 +49,8 @@ describe("agent scaffolder", () => {
   it("replaces {{name}} placeholder in template content", async () => {
     const result = await createAgent({
       name: "my-reviewer",
-      codiDir,
-      template: "test-generator",
+      configDir,
+      template: prefixedName("test-generator"),
     });
 
     expect(result.ok).toBe(true);
@@ -60,15 +61,15 @@ describe("agent scaffolder", () => {
   });
 
   it("rejects invalid names", async () => {
-    const result = await createAgent({ name: "Invalid_Name", codiDir });
+    const result = await createAgent({ name: "Invalid_Name", configDir });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.message).toContain("Invalid agent name");
   });
 
   it("fails if agent already exists", async () => {
-    await createAgent({ name: "existing", codiDir });
-    const result = await createAgent({ name: "existing", codiDir });
+    await createAgent({ name: "existing", configDir });
+    const result = await createAgent({ name: "existing", configDir });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -78,7 +79,7 @@ describe("agent scaffolder", () => {
   it("fails with unknown template", async () => {
     const result = await createAgent({
       name: "test",
-      codiDir,
+      configDir,
       template: "nonexistent-template",
     });
 

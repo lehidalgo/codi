@@ -1,6 +1,11 @@
 import * as p from "@clack/prompts";
 import fs from "node:fs/promises";
-import { resolveCodiDir } from "../utils/paths.js";
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME_DISPLAY,
+} from "../constants.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { statusHandler } from "./status.js";
 import { ciHandler } from "./ci.js";
 import { validateHandler } from "./validate.js";
@@ -37,7 +42,7 @@ export const HUB_ACTIONS: HubAction[] = [
   {
     value: "init",
     label: "Initialize project",
-    hint: "Set up .codi/ with agents, presets, and rules",
+    hint: `Set up ${PROJECT_DIR}/ with agents, presets, and rules`,
     requiresProject: false,
     group: "setup",
   },
@@ -80,7 +85,7 @@ export const HUB_ACTIONS: HubAction[] = [
   {
     value: "contribute",
     label: "Contribute to community",
-    hint: "Share your artifacts with the codi project",
+    hint: `Share your artifacts with the ${PROJECT_NAME_DISPLAY} project`,
     requiresProject: true,
     group: "build",
   },
@@ -109,7 +114,7 @@ export const HUB_ACTIONS: HubAction[] = [
   {
     value: "validate",
     label: "Validate config",
-    hint: "Check .codi/ configuration is valid",
+    hint: `Check ${PROJECT_DIR}/ configuration is valid`,
     requiresProject: true,
     group: "monitor",
   },
@@ -158,7 +163,7 @@ export const HUB_ACTIONS: HubAction[] = [
   {
     value: "watch",
     label: "Watch for changes",
-    hint: "Auto-regenerate on .codi/ changes (long-running)",
+    hint: `Auto-regenerate on ${PROJECT_DIR}/ changes (long-running)`,
     requiresProject: true,
     group: "monitor",
   },
@@ -179,20 +184,20 @@ export function getAvailableActions(hasProject: boolean): HubAction[] {
 }
 
 /**
- * Interactive Command Center — launched when user runs bare `codi`.
+ * Interactive Command Center — launched when user runs bare command.
  * Loops the main menu until the user selects Exit or presses Ctrl+C.
  */
 export async function runCommandCenter(projectRoot: string): Promise<void> {
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  p.intro("codi — Command Center");
+  p.intro(`${PROJECT_CLI} — Command Center`);
 
   while (true) {
-    const hasProject = await dirExists(codiDir);
+    const hasProject = await dirExists(configDir);
 
     if (!hasProject) {
       p.log.warn(
-        'No .codi/ directory found. Initialize a project first or select "Initialize project".',
+        `No ${PROJECT_DIR}/ directory found. Initialize a project first or select "Initialize project".`,
       );
     }
 
@@ -276,7 +281,7 @@ async function routeAction(action: string, projectRoot: string): Promise<void> {
       await handleRevert(projectRoot);
       break;
     case "watch":
-      showCliOnly("watch", "codi watch");
+      showCliOnly("watch", `${PROJECT_CLI} watch`);
       break;
     case "docs-update":
       await printResult(docsUpdateHandler(projectRoot));

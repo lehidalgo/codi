@@ -16,6 +16,7 @@ import {
   generateImprovementPrompt,
 } from "#src/core/skill/skill-improver.js";
 import type { FeedbackEntry } from "#src/schemas/feedback.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 let tmpDir: string;
 
@@ -37,7 +38,9 @@ function makeEntry(
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codi-evolve-pipeline-"));
+  tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${PROJECT_NAME}-evolve-pipeline-`),
+  );
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 

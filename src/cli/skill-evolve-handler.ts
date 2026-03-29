@@ -1,5 +1,5 @@
 import path from "node:path";
-import { resolveCodiDir } from "../utils/paths.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
@@ -29,9 +29,9 @@ export async function skillEvolveHandler(
   dryRun: boolean,
 ): Promise<CommandResult<EvolveData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
-  const readiness = await validateEvolveReadiness(codiDir, skillName);
+  const readiness = await validateEvolveReadiness(configDir, skillName);
   if (!readiness.ok) {
     return createCommandResult({
       success: false,
@@ -61,7 +61,7 @@ export async function skillEvolveHandler(
 
   let version: number | undefined;
   if (!dryRun) {
-    const skillDir = path.join(codiDir, "skills", skillName);
+    const skillDir = path.join(configDir, "skills", skillName);
     const versionResult = await saveVersion(skillDir);
     if (versionResult.ok) {
       version = versionResult.data.version;
@@ -69,7 +69,7 @@ export async function skillEvolveHandler(
     }
   }
 
-  const optionsResult = await buildImproveOptions(codiDir, skillName);
+  const optionsResult = await buildImproveOptions(configDir, skillName);
   if (!optionsResult.ok) {
     return createCommandResult({
       success: false,
@@ -126,8 +126,8 @@ export async function skillVersionsHandler(
   options: { restore?: number; diff?: string },
 ): Promise<CommandResult<VersionsData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
-  const skillDir = path.join(codiDir, "skills", skillName);
+  const configDir = resolveProjectDir(projectRoot);
+  const skillDir = path.join(configDir, "skills", skillName);
 
   // Restore mode
   if (options.restore !== undefined) {

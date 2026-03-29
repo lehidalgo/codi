@@ -4,6 +4,7 @@ import type { Result } from "../../types/result.js";
 import type { NormalizedRule } from "../../types/config.js";
 import { ok, err } from "../../types/result.js";
 import { createError } from "../output/errors.js";
+import { resolveProjectDir } from "../../utils/paths.js";
 import type { MigrationResult } from "./agents-md.js";
 
 interface Section {
@@ -102,7 +103,7 @@ export async function importClaudeMd(
   }
 
   const rules: NormalizedRule[] = [];
-  const rulesDir = path.join(projectRoot, ".codi", "rules");
+  const rulesDir = path.join(resolveProjectDir(projectRoot), "rules");
 
   try {
     await fs.mkdir(rulesDir, { recursive: true });

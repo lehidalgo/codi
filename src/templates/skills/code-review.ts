@@ -1,9 +1,11 @@
+import { PROJECT_DIR, PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # {{name}}
@@ -36,7 +38,7 @@ List each changed file with the type of change (added, modified, deleted).
 
 ### Step 3: Analyze Against Rules
 
-**[CODING AGENT]** Check each change against the project's rules in \`.codi/rules/\`:
+**[CODING AGENT]** Check each change against the project's rules in \`${PROJECT_DIR}/rules/\`:
 - **Security**: secrets exposure, input validation, injection risks
 - **Error handling**: unhandled errors, missing cleanup, silent failures
 - **Testing**: new code without tests, changed behavior without updated tests

@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Research documentation and references using multi-source search
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Research documentation and references using a prioritized multi-source search strategy.

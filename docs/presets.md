@@ -9,40 +9,21 @@ Codi ships with 9 presets:
 <!-- GENERATED:START:preset_table -->
 | Preset | Focus | Description |
 |:-------|:------|:------------|
-| `minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
-| `balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
-| `strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
-| `python-web` | python | Python web development with Django/FastAPI conventions, security, and testing |
-| `typescript-fullstack` | typescript | TypeScript fullstack development with React/Next.js, strict typing, and CI best practices |
-| `security-hardened` | security | Maximum security enforcement with locked flags, mandatory scans, and restricted operations |
-| `codi-development` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
-| `power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
-| `data-ml` | data | Data engineering, data science, ML, and AI agent specialists |
+| `codi-minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
+| `codi-balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
+| `codi-strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
+| `codi-python-web` | python | Python web development with Django/FastAPI conventions, security, and testing |
+| `codi-typescript-fullstack` | typescript | TypeScript fullstack development with React/Next.js, strict typing, and CI best practices |
+| `codi-security-hardened` | security | Maximum security enforcement with locked flags, mandatory scans, and restricted operations |
+| `codi-dev` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
+| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
+| `codi-data-ml` | data | Data engineering, data science, ML, and AI agent specialists |
 <!-- GENERATED:END:preset_table -->
 
 ### Flag Comparison (core presets)
 
 <!-- GENERATED:START:preset_flag_comparison -->
-| Flag | Minimal | Balanced | Strict |
-|------|--------|--------|--------|
-| `auto_commit` | `false` | `false` | `false` |
-| `test_before_commit` | `false` | `true` | `true` (enforced, locked) |
-| `security_scan` | `false` | `true` | `true` (enforced, locked) |
-| `type_checking` | `off` | `strict` | `strict` (enforced, locked) |
-| `max_file_lines` | `1000` | `700` | `500` |
-| `require_tests` | `false` | `false` | `true` (enforced, locked) |
-| `allow_shell_commands` | `true` | `true` | `true` |
-| `allow_file_deletion` | `true` | `true` | `false` |
-| `lint_on_save` | `false` | `true` | `true` |
-| `allow_force_push` | `true` | `false` | `false` (enforced, locked) |
-| `require_pr_review` | `false` | `true` | `true` (enforced, locked) |
-| `mcp_allowed_servers` | `` | `` | `` |
-| `require_documentation` | `false` | `false` | `true` |
-| `allowed_languages` | `*` | `*` | `*` |
-| `max_context_tokens` | `100000` | `50000` | `50000` |
-| `progressive_loading` | `off` | `metadata` | `metadata` |
-| `drift_detection` | `off` | `warn` | `error` |
-| `auto_generate_on_change` | `false` | `false` | `true` |
+
 <!-- GENERATED:END:preset_flag_comparison -->
 
 Flags marked "enforced, locked" in the strict preset cannot be overridden by any lower layer.

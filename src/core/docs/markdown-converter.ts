@@ -1,6 +1,6 @@
 /**
  * Minimal Markdown → HTML converter.
- * Handles the disciplined subset of Markdown used in Codi skill templates:
+ * Handles the disciplined subset of Markdown used in skill templates:
  * headings, paragraphs, lists, code blocks, tables, links, bold/italic, inline code.
  */
 

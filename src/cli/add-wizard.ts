@@ -3,7 +3,11 @@ import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
-import { NAME_PATTERN_STRICT, MAX_NAME_LENGTH } from "../constants.js";
+import {
+  NAME_PATTERN_STRICT,
+  MAX_NAME_LENGTH,
+  PROJECT_CLI,
+} from "../constants.js";
 
 export type ArtifactType = "rule" | "skill" | "agent" | "command" | "brand";
 
@@ -12,9 +16,9 @@ export interface AddWizardResult {
   useTemplates: boolean;
 }
 
-/** When user runs `codi add` with no subcommand. */
+/** When user runs the add command with no subcommand. */
 export async function selectArtifactType(): Promise<ArtifactType | null> {
-  p.intro("codi — Add Artifact");
+  p.intro(`${PROJECT_CLI} — Add Artifact`);
 
   const type = await p.select({
     message: "What do you want to create?",
@@ -55,7 +59,7 @@ export async function selectArtifactType(): Promise<ArtifactType | null> {
   return type;
 }
 
-/** When user runs `codi add <type>` with no name. */
+/** When user runs the add command with a type but no name. */
 export async function runAddWizard(
   type: ArtifactType,
 ): Promise<AddWizardResult | null> {

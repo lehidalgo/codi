@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Expert code reviewer. Use when reviewing PRs, examining code changes, or auditing code quality and security.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a senior code reviewer ensuring high standards of quality, security, and maintainability.

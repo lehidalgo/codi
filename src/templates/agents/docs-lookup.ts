@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
 description: Research agent that searches documentation before coding. Use to verify API signatures, check deprecations, and find working examples.
 tools: [Read, Grep, Glob]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a documentation research agent. Search official docs, source code, and type definitions before any code is written.

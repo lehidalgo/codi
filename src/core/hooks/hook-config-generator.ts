@@ -1,8 +1,8 @@
-import type { ResolvedFlags } from '../../types/flags.js';
-import { DEFAULT_MAX_FILE_LINES } from '../../constants.js';
-import type { CodiManifest } from '../../types/config.js';
-import type { HookEntry } from './hook-registry.js';
-import { getHooksForLanguage, getDoctorHook } from './hook-registry.js';
+import type { ResolvedFlags } from "../../types/flags.js";
+import { DEFAULT_MAX_FILE_LINES, PROJECT_NAME } from "../../constants.js";
+import type { ProjectManifest } from "../../types/config.js";
+import type { HookEntry } from "./hook-registry.js";
+import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";
 
 export interface HooksConfig {
   hooks: HookEntry[];
@@ -22,16 +22,13 @@ interface FlagHookMapping {
 
 const FLAG_HOOK_MAPPINGS: FlagHookMapping[] = [
   {
-    flagName: 'type_checking',
-    hookNames: ['tsc', 'pyright'],
-    check: (flag) => flag.value !== 'off' && flag.mode !== 'disabled',
+    flagName: "type_checking",
+    hookNames: ["tsc", "pyright"],
+    check: (flag) => flag.value !== "off" && flag.mode !== "disabled",
   },
 ];
 
-function isHookEnabled(
-  hookName: string,
-  flags: ResolvedFlags,
-): boolean {
+function isHookEnabled(hookName: string, flags: ResolvedFlags): boolean {
   for (const mapping of FLAG_HOOK_MAPPINGS) {
     if (mapping.hookNames.includes(hookName)) {
       const flag = flags[mapping.flagName];
@@ -44,22 +41,22 @@ function isHookEnabled(
 }
 
 function isSecurityScanEnabled(flags: ResolvedFlags): boolean {
-  const flag = flags['security_scan'];
+  const flag = flags["security_scan"];
   if (!flag) return true;
-  if (flag.mode === 'disabled') return false;
+  if (flag.mode === "disabled") return false;
   return flag.value !== false;
 }
 
 function isFileSizeCheckEnabled(flags: ResolvedFlags): boolean {
-  const flag = flags['max_file_lines'];
+  const flag = flags["max_file_lines"];
   if (!flag) return false;
-  if (flag.mode === 'disabled') return false;
-  return typeof flag.value === 'number' && flag.value > 0;
+  if (flag.mode === "disabled") return false;
+  return typeof flag.value === "number" && flag.value > 0;
 }
 
 function getMaxFileLines(flags: ResolvedFlags): number {
-  const flag = flags['max_file_lines'];
-  if (flag && typeof flag.value === 'number') {
+  const flag = flags["max_file_lines"];
+  if (flag && typeof flag.value === "number") {
     return flag.value;
   }
   return DEFAULT_MAX_FILE_LINES;
@@ -68,11 +65,11 @@ function getMaxFileLines(flags: ResolvedFlags): number {
 export function generateHooksConfig(
   flags: ResolvedFlags,
   languages: string[],
-  manifest?: CodiManifest,
+  manifest?: ProjectManifest,
 ): HooksConfig {
   const allHooks: HookEntry[] = [];
 
-  const hasVersionRequirement = Boolean(manifest?.codi?.requiredVersion);
+  const hasVersionRequirement = Boolean(manifest?.engine?.requiredVersion);
   if (hasVersionRequirement) {
     allHooks.push(getDoctorHook());
   }
@@ -93,7 +90,9 @@ export function generateHooksConfig(
   if (testBeforeCommit) {
     const testHooks = getTestHooksForLanguages(languages);
     for (const hook of testHooks) {
-      const alreadyAdded = allHooks.some((h) => h.name === hook.name || h.command === hook.command);
+      const alreadyAdded = allHooks.some(
+        (h) => h.name === hook.name || h.command === hook.command,
+      );
       if (!alreadyAdded) {
         allHooks.push(hook);
       }
@@ -102,16 +101,28 @@ export function generateHooksConfig(
 
   const secretScan = isSecurityScanEnabled(flags);
   if (secretScan) {
-    allHooks.push({ name: 'secret-scan', command: 'node .git/hooks/codi-secret-scan.mjs', stagedFilter: '**/*' });
+    allHooks.push({
+      name: "secret-scan",
+      command: `node .git/hooks/${PROJECT_NAME}-secret-scan.mjs`,
+      stagedFilter: "**/*",
+    });
   }
 
   const fileSizeCheck = isFileSizeCheckEnabled(flags);
   if (fileSizeCheck) {
-    allHooks.push({ name: 'file-size-check', command: 'node .git/hooks/codi-file-size-check.mjs', stagedFilter: '**/*' });
+    allHooks.push({
+      name: "file-size-check",
+      command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
+      stagedFilter: "**/*",
+    });
   }
 
   if (hasVersionRequirement) {
-    allHooks.push({ name: 'version-check', command: 'node .git/hooks/codi-version-check.mjs', stagedFilter: '' });
+    allHooks.push({
+      name: "version-check",
+      command: `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
+      stagedFilter: "",
+    });
   }
 
   return {
@@ -126,26 +137,26 @@ export function generateHooksConfig(
 }
 
 function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
-  const flag = flags['test_before_commit'];
+  const flag = flags["test_before_commit"];
   if (!flag) return true;
-  if (flag.mode === 'disabled') return false;
+  if (flag.mode === "disabled") return false;
   return flag.value !== false;
 }
 
 function getTestHooksForLanguages(languages: string[]): HookEntry[] {
   const TEST_COMMANDS: Record<string, HookEntry> = {
-    typescript: { name: 'test-ts', command: 'npm test', stagedFilter: '' },
-    javascript: { name: 'test-js', command: 'npm test', stagedFilter: '' },
-    python: { name: 'test-py', command: 'pytest', stagedFilter: '' },
-    go: { name: 'test-go', command: 'go test ./...', stagedFilter: '' },
-    rust: { name: 'test-rs', command: 'cargo test', stagedFilter: '' },
-    java: { name: 'test-java', command: 'mvn test -q', stagedFilter: '' },
-    kotlin: { name: 'test-kt', command: 'gradle test', stagedFilter: '' },
-    swift: { name: 'test-swift', command: 'swift test', stagedFilter: '' },
-    csharp: { name: 'test-cs', command: 'dotnet test', stagedFilter: '' },
-    dart: { name: 'test-dart', command: 'dart test', stagedFilter: '' },
-    php: { name: 'test-php', command: 'phpunit', stagedFilter: '' },
-    ruby: { name: 'test-rb', command: 'bundle exec rspec', stagedFilter: '' },
+    typescript: { name: "test-ts", command: "npm test", stagedFilter: "" },
+    javascript: { name: "test-js", command: "npm test", stagedFilter: "" },
+    python: { name: "test-py", command: "pytest", stagedFilter: "" },
+    go: { name: "test-go", command: "go test ./...", stagedFilter: "" },
+    rust: { name: "test-rs", command: "cargo test", stagedFilter: "" },
+    java: { name: "test-java", command: "mvn test -q", stagedFilter: "" },
+    kotlin: { name: "test-kt", command: "gradle test", stagedFilter: "" },
+    swift: { name: "test-swift", command: "swift test", stagedFilter: "" },
+    csharp: { name: "test-cs", command: "dotnet test", stagedFilter: "" },
+    dart: { name: "test-dart", command: "dart test", stagedFilter: "" },
+    php: { name: "test-php", command: "phpunit", stagedFilter: "" },
+    ruby: { name: "test-rb", command: "bundle exec rspec", stagedFilter: "" },
   };
   const hooks: HookEntry[] = [];
   for (const lang of languages) {

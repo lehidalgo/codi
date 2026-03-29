@@ -24,6 +24,13 @@ import type {
 import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
 import { validateFlags } from "#src/core/flags/flag-validator.js";
 import { getDefaultFlags } from "#src/core/flags/flag-catalog.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  PROJECT_DIR,
+  MANIFEST_FILENAME,
+  prefixedName,
+} from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,7 +44,7 @@ async function fileExists(p: string): Promise<boolean> {
 let tmpDir: string;
 
 beforeEach(async () => {
-  const base = await fs.mkdtemp(path.join(os.tmpdir(), "codi-int-"));
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-int-`));
   // Create a subdirectory with a valid project name (lowercase only)
   tmpDir = path.join(base, "test-project");
   await fs.mkdir(tmpDir, { recursive: true });
@@ -60,33 +67,33 @@ afterEach(async () => {
 });
 
 describe("Full Pipeline Integration", () => {
-  it("init creates .codi/ structure", async () => {
+  it(`init creates ${PROJECT_DIR}/ structure`, async () => {
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
     expect(result.data.stack).toContain("javascript");
 
-    // Verify .codi/ directory exists
-    const codiDir = path.join(tmpDir, ".codi");
-    const stat = await fs.stat(codiDir);
+    // Verify config directory exists
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    const stat = await fs.stat(configDir);
     expect(stat.isDirectory()).toBe(true);
 
-    // Verify codi.yaml exists
+    // Verify manifest exists
     const manifestExists = await fs
-      .access(path.join(codiDir, "codi.yaml"))
+      .access(path.join(configDir, MANIFEST_FILENAME))
       .then(() => true)
       .catch(() => false);
     expect(manifestExists).toBe(true);
 
     // Verify flags.yaml exists
     const flagsExists = await fs
-      .access(path.join(codiDir, "flags.yaml"))
+      .access(path.join(configDir, "flags.yaml"))
       .then(() => true)
       .catch(() => false);
     expect(flagsExists).toBe(true);
 
     // Verify rules directory
     const rulesExists = await fs
-      .access(path.join(codiDir, "rules"))
+      .access(path.join(configDir, "rules"))
       .then(() => true)
       .catch(() => false);
     expect(rulesExists).toBe(true);
@@ -113,7 +120,7 @@ describe("Full Pipeline Integration", () => {
     expect(result.data.valid).toBe(true);
   });
 
-  it("validate fails without .codi/", async () => {
+  it(`validate fails without ${PROJECT_DIR}/`, async () => {
     const result = await validateHandler(tmpDir);
     expect(result.success).toBe(false);
   });
@@ -135,7 +142,7 @@ describe("Full Pipeline Integration", () => {
 
   it("init creates frameworks/ directory", async () => {
     await initHandler(tmpDir, { json: true });
-    const frameworksDir = path.join(tmpDir, ".codi", "frameworks");
+    const frameworksDir = path.join(tmpDir, PROJECT_DIR, "frameworks");
     const stat = await fs.stat(frameworksDir);
     expect(stat.isDirectory()).toBe(true);
   });
@@ -143,7 +150,7 @@ describe("Full Pipeline Integration", () => {
   it("init generates all 18 flags in flags.yaml", async () => {
     await initHandler(tmpDir, { json: true });
     const flagsContent = await fs.readFile(
-      path.join(tmpDir, ".codi", "flags.yaml"),
+      path.join(tmpDir, PROJECT_DIR, "flags.yaml"),
       "utf-8",
     );
     // All 18 flags should be present
@@ -291,7 +298,7 @@ describe("Clean Lifecycle", () => {
 
     // Verify generated files exist
     expect(await fileExists(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
-    expect(await fileExists(path.join(tmpDir, ".codi"))).toBe(true);
+    expect(await fileExists(path.join(tmpDir, PROJECT_DIR))).toBe(true);
 
     // Clean --all
     const cleanResult = await cleanHandler(tmpDir, { json: true, all: true });
@@ -300,20 +307,20 @@ describe("Clean Lifecycle", () => {
 
     // Verify generated files are gone
     expect(await fileExists(path.join(tmpDir, "CLAUDE.md"))).toBe(false);
-    expect(await fileExists(path.join(tmpDir, ".codi"))).toBe(false);
+    expect(await fileExists(path.join(tmpDir, PROJECT_DIR))).toBe(false);
   });
 
-  it("clean without --all keeps .codi/ but removes generated files", async () => {
+  it(`clean without --all keeps ${PROJECT_DIR}/ but removes generated files`, async () => {
     await initHandler(tmpDir, { json: true, agents: ["claude-code"] });
     await generateHandler(tmpDir, {});
 
     const cleanResult = await cleanHandler(tmpDir, { json: true });
     expect(cleanResult.success).toBe(true);
-    expect(cleanResult.data.codiDirRemoved).toBe(false);
+    expect(cleanResult.data.configDirRemoved).toBe(false);
 
-    // CLAUDE.md gone but .codi/ remains
+    // CLAUDE.md gone but config dir remains
     expect(await fileExists(path.join(tmpDir, "CLAUDE.md"))).toBe(false);
-    expect(await fileExists(path.join(tmpDir, ".codi"))).toBe(true);
+    expect(await fileExists(path.join(tmpDir, PROJECT_DIR))).toBe(true);
   });
 });
 
@@ -329,7 +336,7 @@ describe("Multi-Agent Generation", () => {
     // Claude Code files
     expect(await fileExists(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
     const claudeMd = await fs.readFile(path.join(tmpDir, "CLAUDE.md"), "utf-8");
-    expect(claudeMd).toContain("Generated by Codi");
+    expect(claudeMd).toContain(`Generated by ${PROJECT_NAME_DISPLAY}`);
 
     // Cursor files
     expect(await fileExists(path.join(tmpDir, ".cursorrules"))).toBe(true);
@@ -337,7 +344,7 @@ describe("Multi-Agent Generation", () => {
       path.join(tmpDir, ".cursorrules"),
       "utf-8",
     );
-    expect(cursorRules).toContain("Generated by Codi");
+    expect(cursorRules).toContain(`Generated by ${PROJECT_NAME_DISPLAY}`);
   });
 });
 
@@ -347,15 +354,15 @@ describe("Add Artifact → Regenerate", () => {
 
     // Add a security rule
     const addResult = await addRuleHandler(tmpDir, "security", {
-      template: "security",
+      template: prefixedName("security"),
     });
     expect(addResult.success).toBe(true);
 
     // Regenerate
     await regenerateConfigs(tmpDir);
 
-    // Verify the rule file exists in .codi/
-    const ruleFile = path.join(tmpDir, ".codi", "rules", "security.md");
+    // Verify the rule file exists in config dir
+    const ruleFile = path.join(tmpDir, PROJECT_DIR, "rules", "security.md");
     expect(await fileExists(ruleFile)).toBe(true);
 
     // Verify generated agent output includes the rule
@@ -394,15 +401,15 @@ describe("Update Flags → Regenerate", () => {
     // Update to strict preset
     const updateResult = await updateHandler(tmpDir, {
       json: true,
-      preset: "strict",
+      preset: prefixedName("strict"),
     });
     expect(updateResult.success).toBe(true);
     expect(updateResult.data.flagsReset).toBe(true);
-    expect(updateResult.data.preset).toBe("strict");
+    expect(updateResult.data.preset).toBe(prefixedName("strict"));
 
     // Verify flags.yaml has strict values
     const flagsContent = await fs.readFile(
-      path.join(tmpDir, ".codi", "flags.yaml"),
+      path.join(tmpDir, PROJECT_DIR, "flags.yaml"),
       "utf-8",
     );
     const flags = parseYaml(flagsContent) as Record<
@@ -422,15 +429,17 @@ describe("Hook Lifecycle", () => {
     await initHandler(tmpDir, { json: true, agents: ["claude-code"] });
     await generateHandler(tmpDir, {});
 
-    // Check if any codi hook scripts were created
+    // Check if any hook scripts were created
     const hooksDir = path.join(tmpDir, ".git", "hooks");
     const hooksDirExists = await fileExists(hooksDir);
 
     if (hooksDirExists) {
       const hookFiles = await fs.readdir(hooksDir);
-      const codiHooks = hookFiles.filter((f) => f.startsWith("codi-"));
+      const projectHooks = hookFiles.filter((f) =>
+        f.startsWith(`${PROJECT_NAME}-`),
+      );
 
-      if (codiHooks.length > 0) {
+      if (projectHooks.length > 0) {
         // Clean should remove them
         const cleanResult = await cleanHandler(tmpDir, {
           json: true,
@@ -438,12 +447,12 @@ describe("Hook Lifecycle", () => {
         });
         expect(cleanResult.success).toBe(true);
 
-        // Verify codi hooks are gone
+        // Verify project hooks are gone
         const afterClean = await fs.readdir(hooksDir).catch(() => []);
-        const remainingCodiHooks = afterClean.filter((f) =>
-          f.startsWith("codi-"),
+        const remainingProjectHooks = afterClean.filter((f) =>
+          f.startsWith(`${PROJECT_NAME}-`),
         );
-        expect(remainingCodiHooks).toEqual([]);
+        expect(remainingProjectHooks).toEqual([]);
       }
     }
   });
@@ -451,7 +460,7 @@ describe("Hook Lifecycle", () => {
 
 describe("Operations Ledger Tracking", () => {
   it("tracks operations across init → generate → clean", async () => {
-    const ledgerPath = path.join(tmpDir, ".codi", "operations.json");
+    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "operations.json");
 
     // Init creates the ledger
     await initHandler(tmpDir, { json: true, agents: ["claude-code"] });

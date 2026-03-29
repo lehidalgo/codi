@@ -24,14 +24,14 @@ managed_by: user
 
 export interface CreateSkillOptions {
   name: string;
-  codiDir: string;
+  configDir: string;
   template?: string;
 }
 
 export async function createSkill(
   options: CreateSkillOptions,
 ): Promise<Result<string>> {
-  const { name, codiDir, template } = options;
+  const { name, configDir, template } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
     return err([
@@ -52,7 +52,7 @@ export async function createSkill(
 
   content = content.replace(/\{\{name\}\}/g, name);
 
-  const skillDir = path.join(codiDir, "skills", name);
+  const skillDir = path.join(configDir, "skills", name);
   const filePath = path.join(skillDir, "SKILL.md");
 
   try {

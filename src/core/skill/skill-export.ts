@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type { NormalizedSkill } from "../../types/config.js";
-import type { CodiError } from "../output/types.js";
+import type { ProjectError } from "../output/types.js";
 import { createError } from "../output/errors.js";
 import {
   buildSkillMd,
@@ -14,10 +14,11 @@ import {
   SKIP_FILES,
 } from "../../adapters/skill-generator.js";
 import { parseSkillFile } from "../config/parser.js";
-import { SKILL_OUTPUT_FILENAME } from "../../constants.js";
 import {
+  SKILL_OUTPUT_FILENAME,
   MAX_PRESET_ZIP_WARN_BYTES,
   MAX_PRESET_ZIP_ERROR_BYTES,
+  PROJECT_NAME,
 } from "../../constants.js";
 
 const execFileAsync = promisify(execFile);
@@ -37,7 +38,7 @@ export const EXPORT_FORMATS: SkillExportFormat[] = [
 
 export interface SkillExportOptions {
   name: string;
-  codiDir: string;
+  configDir: string;
   outputDir: string;
   format: SkillExportFormat;
 }
@@ -46,7 +47,7 @@ export interface SkillExportResult {
   outputPath: string;
   format: SkillExportFormat;
   sizeBytes?: number;
-  warnings: CodiError[];
+  warnings: ProjectError[];
 }
 
 /**
@@ -102,8 +103,8 @@ export async function validateSkillForExport(
 export async function exportSkill(
   options: SkillExportOptions,
 ): Promise<Result<SkillExportResult>> {
-  const { name, codiDir, outputDir, format } = options;
-  const skillDir = path.join(codiDir, "skills", name);
+  const { name, configDir, outputDir, format } = options;
+  const skillDir = path.join(configDir, "skills", name);
 
   const validateResult = await validateSkillForExport(skillDir, name);
   if (!validateResult.ok) return validateResult;
@@ -111,7 +112,7 @@ export async function exportSkill(
 
   const isZip = format === "zip";
   const stagingDir = isZip
-    ? path.join(os.tmpdir(), `codi-skill-export-${Date.now()}`)
+    ? path.join(os.tmpdir(), `${PROJECT_NAME}-skill-export-${Date.now()}`)
     : outputDir;
 
   if (isZip) {
@@ -183,7 +184,7 @@ async function buildStandardExport(
   const destDir = path.join(outputDir, skill.name);
   await fs.mkdir(destDir, { recursive: true });
 
-  // Write clean SKILL.md (no Codi-internal fields, no generated header)
+  // Write clean SKILL.md (no internal fields, no generated header)
   const cleanMd = buildSkillMd(skill);
   await fs.writeFile(
     path.join(destDir, SKILL_OUTPUT_FILENAME),
@@ -298,9 +299,9 @@ async function createSkillZip(
   sourceDir: string,
   outputPath: string,
 ): Promise<
-  Result<{ outputPath: string; sizeBytes: number; warnings: CodiError[] }>
+  Result<{ outputPath: string; sizeBytes: number; warnings: ProjectError[] }>
 > {
-  const warnings: CodiError[] = [];
+  const warnings: ProjectError[] = [];
   const parentDir = path.dirname(sourceDir);
   const dirName = path.basename(sourceDir);
 
@@ -384,10 +385,12 @@ async function copyDirFiltered(
 }
 
 /**
- * Lists available skills in .codi/skills/ directory.
+ * Lists available skills in the skills directory.
  */
-export async function listAvailableSkills(codiDir: string): Promise<string[]> {
-  const skillsDir = path.join(codiDir, "skills");
+export async function listAvailableSkills(
+  configDir: string,
+): Promise<string[]> {
+  const skillsDir = path.join(configDir, "skills");
   try {
     const entries = await fs.readdir(skillsDir, { withFileTypes: true });
     return entries

@@ -1,9 +1,11 @@
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
-description: Document generation engine for creating branded reports, proposals, one-pagers, and case studies. Outputs HTML with print CSS for PDF export, with optional pandoc conversion to DOCX. Integrates with Codi brand artifacts.
+description: Document generation engine for creating branded reports, proposals, one-pagers, and case studies. Outputs HTML with print CSS for PDF export, with optional pandoc conversion to DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
 category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 user-invocable: true
 ---
 

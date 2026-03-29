@@ -1,9 +1,11 @@
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "../../constants.js";
+
 export const template = `---
 name: {{name}}
-description: Presentation engine for generating branded HTML slide decks. Creates self-contained HTML presentations with navigation, animations, and print-to-PDF support. Integrates with Codi brand artifacts for consistent visual identity.
+description: Presentation engine for generating branded HTML slide decks. Creates self-contained HTML presentations with navigation, animations, and print-to-PDF support. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts for consistent visual identity.
 category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 user-invocable: true
 ---
 
