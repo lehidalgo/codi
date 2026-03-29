@@ -225,6 +225,30 @@ git commit -m "update codi rules"
 
 ---
 
+## Test Coverage
+
+<!-- GENERATED:START:test_coverage -->
+| Metric | Coverage | Threshold | Status |
+|:-------|--------:|--------:|:------:|
+| Statements | 74.2% | 70% | Pass |
+| Branches | 66.4% | 63% | Pass |
+| Functions | 77.6% | 73% | Pass |
+| Lines | 75.8% | 70% | Pass |
+
+**Module thresholds:**
+
+| Module | Stmts | Branch | Funcs | Thresholds (S/B/F) |
+|:-------|------:|-------:|------:|:-------------------|
+| adapters | 94.9% | 92.4% | 100.0% | 93% / 90% / 100% |
+| core/config | 78.2% | 66.3% | 96.1% | 76% / 64% / 94% |
+| core/flags | 92.5% | 87.6% | 100.0% | 90% / 85% / 100% |
+| core/verify | 97.9% | 96.8% | 95.0% | 95% / 94% / 93% |
+| schemas | 100.0% | 100.0% | 100.0% | 100% / 100% / 100% |
+| utils | 97.6% | 94.4% | 100.0% | 95% / 92% / 100% |
+<!-- GENERATED:END:test_coverage -->
+
+---
+
 ## FAQ
 
 **Q: I already have a `CLAUDE.md` — will Codi overwrite it?**

@@ -43,3 +43,5 @@ export {
   renderBrandFields,
   renderManifestFields,
 } from "./schema-renderers.js";
+
+export { renderTestCoverage } from "./coverage-renderer.js";

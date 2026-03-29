@@ -54,6 +54,8 @@ import {
   renderCommandFields,
   renderBrandFields,
   renderManifestFields,
+  // Coverage
+  renderTestCoverage,
 } from "./section-renderers.js";
 
 // ---------------------------------------------------------------------------
@@ -76,7 +78,7 @@ export interface ValidationReport {
 // Section registry: maps marker names to rendered content
 // ---------------------------------------------------------------------------
 
-function generateAllSections(): Record<string, string> {
+function generateAllSections(projectRoot: string): Record<string, string> {
   const counts = {
     rules: AVAILABLE_TEMPLATES.length,
     ruleNames: [...AVAILABLE_TEMPLATES].sort(),
@@ -130,6 +132,9 @@ function generateAllSections(): Record<string, string> {
     command_fields: renderCommandFields(),
     brand_fields: renderBrandFields(),
     manifest_fields: renderManifestFields(),
+
+    // --- Testing (1) ---
+    test_coverage: renderTestCoverage(projectRoot),
   };
 }
 
@@ -191,7 +196,7 @@ export async function injectSections(
   projectRoot: string,
 ): Promise<Result<InjectionReport>> {
   try {
-    const sections = generateAllSections();
+    const sections = generateAllSections(projectRoot);
     const docFiles = await findDocFiles(projectRoot);
     const report: InjectionReport = {
       updated: [],
@@ -248,7 +253,7 @@ export async function validateSections(
   projectRoot: string,
 ): Promise<Result<ValidationReport>> {
   try {
-    const sections = generateAllSections();
+    const sections = generateAllSections(projectRoot);
     const docFiles = await findDocFiles(projectRoot);
     const report: ValidationReport = {
       inSync: true,
