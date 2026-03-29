@@ -4,7 +4,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { hashContent } from "../../utils/hash.js";
-import { STATE_FILENAME } from "../../constants.js";
+import { STATE_FILENAME } from "#src/constants.js";
 
 export interface GeneratedFileState {
   path: string;

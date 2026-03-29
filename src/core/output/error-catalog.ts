@@ -1,4 +1,4 @@
-import { PROJECT_CLI, PROJECT_NAME_DISPLAY } from "../../constants.js";
+import { PROJECT_CLI, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import { EXIT_CODES } from "./exit-codes.js";
 import type { ProjectError } from "./types.js";
 

@@ -4,7 +4,7 @@
  */
 import type { CategoryGroup, SkillDocEntry } from "./skill-docs-generator.js";
 import { esc, slugify, md2html } from "./markdown-converter.js";
-import { PROJECT_NAME_DISPLAY } from "../../constants.js";
+import { PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 function renderBadges(skill: SkillDocEntry): string {
   const badges: string[] = [];

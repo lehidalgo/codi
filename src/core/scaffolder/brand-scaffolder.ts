@@ -3,7 +3,7 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "../../constants.js";
+import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 
 const DEFAULT_CONTENT = `---
 name: {{name}}

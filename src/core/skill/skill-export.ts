@@ -19,7 +19,7 @@ import {
   MAX_PRESET_ZIP_WARN_BYTES,
   MAX_PRESET_ZIP_ERROR_BYTES,
   PROJECT_NAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 

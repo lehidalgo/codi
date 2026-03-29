@@ -1,5 +1,5 @@
 import type { ResolvedFlags } from "../../types/flags.js";
-import { DEFAULT_MAX_FILE_LINES, PROJECT_NAME } from "../../constants.js";
+import { DEFAULT_MAX_FILE_LINES, PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "../../types/config.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";

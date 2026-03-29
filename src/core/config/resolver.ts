@@ -16,7 +16,7 @@ import { composeConfig, flagsFromDefinitions } from "./composer.js";
 import type { ConfigLayer } from "./composer.js";
 import { validateConfig } from "./validator.js";
 import { loadPreset } from "../preset/preset-loader.js";
-import { FLAGS_FILENAME } from "../../constants.js";
+import { FLAGS_FILENAME } from "#src/constants.js";
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {

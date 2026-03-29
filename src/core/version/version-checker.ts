@@ -15,7 +15,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
-} from "../../constants.js";
+} from "#src/constants.js";
 import { VERSION } from "../../index.js";
 
 export interface VersionCheckResult {

@@ -5,7 +5,7 @@ import type { Result } from "../../types/result.js";
 import { EvalsDataSchema } from "../../schemas/evals.js";
 import type { EvalsData } from "../../schemas/evals.js";
 import { createError } from "../output/errors.js";
-import { EVALS_FILENAME } from "../../constants.js";
+import { EVALS_FILENAME } from "#src/constants.js";
 
 function evalsPath(skillDir: string): string {
   return path.join(skillDir, "evals", EVALS_FILENAME);

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { NormalizedConfig } from "../../types/config.js";
 import { buildFlagInstructions } from "../../adapters/flag-instructions.js";
-import { TOKEN_HASH_LENGTH, TOKEN_PREFIX } from "../../constants.js";
+import { TOKEN_HASH_LENGTH, TOKEN_PREFIX } from "#src/constants.js";
 
 export interface VerificationData {
   token: string;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { FlagSpec, ResolvedFlags } from "../../types/flags.js";
-import { PROJECT_DIR } from "../../constants.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export const FLAG_CATALOG: Record<string, FlagSpec> = {
   auto_commit: {

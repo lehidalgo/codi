@@ -4,7 +4,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   PROJECT_URL,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}

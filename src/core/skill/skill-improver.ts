@@ -6,7 +6,7 @@ import { createError } from "../output/errors.js";
 import {
   MIN_FEEDBACK_FOR_EVOLVE,
   SKILL_OUTPUT_FILENAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 import { readFeedbackForSkill } from "./feedback-collector.js";
 import { aggregateStats } from "./skill-stats.js";
 import type { SkillStatsResult } from "./skill-stats.js";

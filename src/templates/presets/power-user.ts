@@ -1,8 +1,4 @@
-import {
-  PROJECT_NAME,
-  prefixedName,
-  devArtifactName,
-} from "../../constants.js";
+import { PROJECT_NAME, prefixedName, devArtifactName } from "#src/constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {

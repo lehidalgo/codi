@@ -1,4 +1,4 @@
-import { MAX_COMPONENT_LINES, PROJECT_NAME } from "../../constants.js";
+import { MAX_COMPONENT_LINES, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}

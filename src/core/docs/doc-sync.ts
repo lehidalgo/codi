@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { collectStats } from "./stats-collector.js";
 import type { ProjectStats } from "./stats-collector.js";
-import { PROJECT_DIR } from "../../constants.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export interface DocSyncIssue {
   file: string;

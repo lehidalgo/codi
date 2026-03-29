@@ -1,4 +1,4 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_NAME } from "../../constants.js";
+import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}

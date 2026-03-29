@@ -3,7 +3,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
-} from "../../constants.js";
+} from "#src/constants.js";
 import type { TemplateCounts } from "./types.js";
 
 export function getTemplate(counts: TemplateCounts): string {

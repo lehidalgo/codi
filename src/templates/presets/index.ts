@@ -1,4 +1,4 @@
-import { prefixedName, PROJECT_NAME } from "../../constants.js";
+import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 import { preset as minimal } from "./minimal.js";
 import { preset as balanced } from "./balanced.js";
 import { preset as strict } from "./strict.js";

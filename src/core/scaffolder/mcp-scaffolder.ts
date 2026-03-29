@@ -9,7 +9,7 @@ import {
   MAX_NAME_LENGTH,
   NAME_PATTERN_STRICT,
   PROJECT_NAME,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 export interface CreateMcpServerOptions {
   name: string;

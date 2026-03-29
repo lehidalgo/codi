@@ -1,4 +1,4 @@
-import { PROJECT_CLI, PROJECT_NAME } from "../../constants.js";
+import { PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
 
 export interface HookEntry {
   name: string;

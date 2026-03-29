@@ -9,7 +9,7 @@ import {
   MAX_SKILL_LINES,
   MAX_COMMAND_LINES,
   MAX_AGENT_LINES,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 function getKnownAdapterIds(): string[] {
   const registered = getAllAdapters().map((a) => a.id);

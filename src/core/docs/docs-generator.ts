@@ -22,7 +22,7 @@ import { BUILTIN_MCP_SERVERS } from "../../templates/mcp-servers/index.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
 import { ALL_ADAPTERS } from "../../adapters/index.js";
 import { HUB_ACTIONS } from "../../cli/hub.js";
-import { PROJECT_CLI } from "../../constants.js";
+import { PROJECT_CLI } from "#src/constants.js";
 
 import {
   // Flags

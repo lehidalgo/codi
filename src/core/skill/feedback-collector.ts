@@ -10,7 +10,7 @@ import {
   FEEDBACK_DIR,
   MAX_FEEDBACK_AGE_DAYS,
   MAX_FEEDBACK_ENTRIES,
-} from "../../constants.js";
+} from "#src/constants.js";
 
 function feedbackDir(configDir: string): string {
   return path.join(configDir, FEEDBACK_DIR);
