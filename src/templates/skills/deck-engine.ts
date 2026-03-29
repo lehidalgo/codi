@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Presentation engine for generating branded HTML slide decks. Creates self-contained HTML presentations with navigation, animations, and print-to-PDF support. Integrates with Codi brand artifacts for consistent visual identity.
+category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: codi
 user-invocable: true

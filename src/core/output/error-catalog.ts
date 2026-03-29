@@ -190,6 +190,32 @@ export const ERROR_CATALOG = {
     severity: "error" as const,
     hintTemplate: 'Skill "{name}" is invalid: {reason}',
   },
+  E_FEEDBACK_NOT_FOUND: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Feedback not found at {path}.",
+  },
+  E_FEEDBACK_INVALID: {
+    exitCode: EXIT_CODES.CONFIG_INVALID,
+    severity: "error" as const,
+    hintTemplate: "Invalid feedback data: {reason}",
+  },
+  E_FEEDBACK_WRITE_FAILED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Failed to write feedback: {reason}",
+  },
+  E_EVOLVE_NOT_READY: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "warn" as const,
+    hintTemplate:
+      'Skill "{name}" needs at least {min} feedback entries to evolve (has {count})',
+  },
+  E_VERSION_NOT_FOUND: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: 'Version {version} not found for skill "{name}"',
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;

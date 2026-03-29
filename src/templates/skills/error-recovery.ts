@@ -4,6 +4,7 @@ description: |
   Error recovery and session health skill. Activate when you have corrected
   your own mistakes 2 or more times in the current conversation. Produces a
   diagnostic report analyzing what went wrong, why, and how to prevent it.
+category: Code Quality
 managed_by: codi
 ---
 

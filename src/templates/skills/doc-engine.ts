@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Document generation engine for creating branded reports, proposals, one-pagers, and case studies. Outputs HTML with print CSS for PDF export, with optional pandoc conversion to DOCX. Integrates with Codi brand artifacts.
+category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: codi
 user-invocable: true

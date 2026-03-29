@@ -41,7 +41,7 @@ managed_by: user
 - One rule per file
 ```
 
-See [Writing Artifacts](guides/writing-rules.md) for the complete frontmatter reference and authoring guide.
+See [Artifacts](artifacts.md) for the complete frontmatter reference and authoring guide.
 
 ## Migration Paths by Source
 
@@ -265,7 +265,7 @@ flowchart LR
     J --> O
 ```
 
-After migration, all agents share the same rules from a single source of truth in `.codi/`. See [Architecture](architecture.md) for details on the generation pipeline and adapter system.
+After migration, all agents share the same rules from a single source of truth in `.codi/`. See [Architecture](architecture.md) for the generation pipeline and [Workflows](workflows.md) for daily usage.
 
 ### What Happens During Init
 

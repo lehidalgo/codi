@@ -94,6 +94,14 @@ export const MAX_AGENT_LINES = 200;
 // --- Git commit standards ---
 export const GIT_COMMIT_FIRST_LINE_LIMIT = 72;
 
+// --- Skill feedback & evolution ---
+export const FEEDBACK_DIR = "feedback";
+export const VERSIONS_DIR = "versions";
+export const EVALS_FILENAME = "evals.json";
+export const MAX_FEEDBACK_ENTRIES = 1000;
+export const MAX_FEEDBACK_AGE_DAYS = 90;
+export const MIN_FEEDBACK_FOR_EVOLVE = 3;
+
 // --- Code quality thresholds ---
 export const MIN_CODE_COVERAGE_PERCENT = 80;
 export const MAX_FUNCTION_LINES = 30;

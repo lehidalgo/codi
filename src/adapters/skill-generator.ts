@@ -7,7 +7,7 @@ import { addGeneratedFooter } from "./generated-header.js";
 import { SKILL_OUTPUT_FILENAME, MANIFEST_FILENAME } from "../constants.js";
 
 // Directories to skip when propagating from .codi/skills/ to agent dirs
-export const SKIP_DIRS = new Set(["evals"]);
+export const SKIP_DIRS = new Set(["evals", "versions"]);
 export const SKIP_FILES = new Set([".gitkeep", "evals.json"]);
 
 // Binary extensions to skip — these corrupt when read as UTF-8
@@ -29,13 +29,18 @@ const BINARY_EXTENSIONS = new Set([
   ".bz2",
 ]);
 
+/** Collapse multiline descriptions to a single line for frontmatter. */
+function flattenDescription(desc: string): string {
+  return desc.replace(/\n\s*/g, " ").trim();
+}
+
 export function buildSkillMd(
   skill: NormalizedSkill,
   descriptionPrefix = "",
 ): string {
   const frontmatter: string[] = ["---"];
   frontmatter.push(`name: ${skill.name}`);
-  frontmatter.push(`description: ${descriptionPrefix}${skill.description}`);
+  frontmatter.push(`description: ${descriptionPrefix}${flattenDescription(skill.description)}`);
   if (skill.disableModelInvocation) {
     frontmatter.push("disable-model-invocation: true");
   }
@@ -84,7 +89,7 @@ export function buildSkillMetadataOnly(
   const lines = [
     "---",
     `name: ${skill.name}`,
-    `description: ${descriptionPrefix}${skill.description}`,
+    `description: ${descriptionPrefix}${flattenDescription(skill.description)}`,
     "---",
     "",
     `Full skill content available at: .codi/skills/${skill.name}/SKILL.md`,

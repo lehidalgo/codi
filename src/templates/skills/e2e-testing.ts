@@ -11,6 +11,7 @@ export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
 description: Comprehensive validation of all codi features. Use when asked to test, audit, or verify the codi installation end-to-end. Covers 16 commands, 7 artifact types, preset management (create, validate, export, install, remove), pre-commit hooks, doc-sync, and commit workflow.
+category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: codi
 ---

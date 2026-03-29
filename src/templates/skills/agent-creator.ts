@@ -10,6 +10,7 @@ description: |
   Agent creation workflow. Use when the user asks to create, build, or define
   a specialized agent. Also activate when the user wants to add a code reviewer,
   security analyzer, test generator, or any autonomous worker role.
+category: Codi Platform
 managed_by: codi
 ---
 

@@ -23,3 +23,9 @@ export type { HookDefinitionOutput, HooksConfigOutput } from './hooks.js';
 
 export { AgentFrontmatterSchema } from './agent.js';
 export type { AgentFrontmatterInput, AgentFrontmatterOutput } from './agent.js';
+
+export { FeedbackEntrySchema, FeedbackIssueSchema, FEEDBACK_AGENTS, FEEDBACK_OUTCOMES, ISSUE_CATEGORIES } from './feedback.js';
+export type { FeedbackEntry, FeedbackIssue, FeedbackAgent, FeedbackOutcome, IssueCategory } from './feedback.js';
+
+export { EvalsDataSchema, EvalCaseSchema } from './evals.js';
+export type { EvalsData, EvalCase } from './evals.js';

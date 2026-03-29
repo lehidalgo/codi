@@ -19,6 +19,7 @@ import {
   handleMarketplace,
   handleContribute,
   handlePresetMenu,
+  handleDocs,
   printResult,
   showCliOnly,
 } from "./hub-handlers.js";
@@ -80,6 +81,13 @@ export const HUB_ACTIONS: HubAction[] = [
     value: "contribute",
     label: "Contribute to community",
     hint: "Share your artifacts with the codi project",
+    requiresProject: true,
+    group: "build",
+  },
+  {
+    value: "docs",
+    label: "Generate documentation",
+    hint: "Build HTML skill catalog site",
     requiresProject: true,
     group: "build",
   },
@@ -236,6 +244,9 @@ async function routeAction(action: string, projectRoot: string): Promise<void> {
       break;
     case "contribute":
       await handleContribute(projectRoot);
+      break;
+    case "docs":
+      await handleDocs(projectRoot);
       break;
     case "status":
       await printResult(statusHandler(projectRoot));

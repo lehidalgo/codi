@@ -1,6 +1,7 @@
 dist/
 node_modules/
 coverage/
+docs/_site/
 *.tsbuildinfo
 .DS_Store
 projs/

@@ -17,6 +17,7 @@ export const SkillFrontmatterSchema = z.object({
   disableModelInvocation: z.boolean().optional(),
   argumentHint: z.string().optional(),
   allowedTools: z.array(z.string()).optional(),
+  category: z.string().optional(),
   license: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
   // Official Claude Code frontmatter fields

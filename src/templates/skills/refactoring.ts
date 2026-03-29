@@ -1,6 +1,7 @@
 export const template = `---
 name: {{name}}
 description: Safe dead code removal and refactoring workflow. Detects unused code, classifies safety level, and deletes with test verification after each change. Stops immediately if tests fail.
+category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: codi
 ---

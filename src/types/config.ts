@@ -51,6 +51,7 @@ export interface NormalizedSkill {
   disableModelInvocation?: boolean;
   argumentHint?: string;
   allowedTools?: string[];
+  category?: string;
   license?: string;
   metadata?: Record<string, string>;
   managedBy?: "codi" | "user";

@@ -4,6 +4,7 @@ description: |
   Skill creation and improvement workflow. Use when the user asks to create,
   build, write, or improve a skill. Also activate when the user mentions
   evals, skill testing, description optimization, or skill packaging.
+category: Codi Platform
 managed_by: codi
 ---
 
@@ -314,14 +315,56 @@ Update the description until all 20 queries classify correctly.
 codi generate
 \\\`\\\`\\\`
 
+## Progressive Disclosure Architecture
+
+Skills use a three-level loading system — design content for the right level:
+
+1. **Metadata** (name + description) — Always in context (~100 words). This is the trigger layer.
+2. **SKILL.md body** — Loaded when skill activates (<500 lines ideal). This is the instruction layer.
+3. **Bundled resources** — Loaded on demand (unlimited size). Scripts execute without loading into context.
+
+\\\`\\\`\\\`
+skill-name/
+├── SKILL.md          # Required: frontmatter + instructions
+├── evals/            # Test cases (evals.json)
+├── scripts/          # Executable helpers (deterministic/repetitive tasks)
+├── references/       # Docs loaded into context as needed
+└── assets/           # Files used in output (templates, icons, fonts)
+\\\`\\\`\\\`
+
+**Key rules:**
+- Keep SKILL.md under 500 lines; overflow goes to references/
+- Reference files clearly from SKILL.md with guidance on when to read them
+- For large reference files (>300 lines), include a table of contents
+- Scripts can be called directly without reading their source — treat them as black boxes
+
+**Domain organization** — when a skill supports multiple domains/frameworks:
+\\\`\\\`\\\`
+cloud-deploy/
+├── SKILL.md (workflow + selection)
+└── references/
+    ├── aws.md
+    ├── gcp.md
+    └── azure.md
+\\\`\\\`\\\`
+Claude reads only the relevant reference file based on user context.
+
 ## When to Bundle Scripts
 
-If while building or using a skill you notice the agent writes the same helper logic 3 or more times, extract it into a reusable script:
+If the agent writes the same helper logic 3+ times across test cases, extract it:
 
 1. Create the script in \\\`.codi/skills/<name>/scripts/\\\`
 2. Reference it from SKILL.md: "Run \\\`bash .codi/skills/<name>/scripts/helper.sh\\\`"
 3. Keep scripts focused — one script per task
 4. Include a comment header explaining what the script does
+
+## Skill Writing Style
+
+- Use imperative form in instructions
+- Explain the WHY behind instructions — LLMs respond better to reasoning than rigid MUSTs
+- Include concrete examples for output formats and commit message patterns
+- Use theory of mind: write skills that generalize, not narrow to specific examples
+- Write a draft, review with fresh eyes, then improve before presenting to the user
 
 ## Constraints
 

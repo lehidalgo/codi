@@ -27,7 +27,9 @@
     "prepare": "husky",
     "preversion": "npm run lint && npm run build && npm run test",
     "postversion": "git push",
-    "prepublishOnly": "[ \"$CI\" = \"true\" ] || [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build"
+    "prepublishOnly": "[ \"$CI\" = \"true\" ] || [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build",
+    "docs:generate": "node dist/cli.js docs --generate",
+    "docs:validate": "node dist/cli.js docs --validate"
   },
   "engines": {
     "node": ">=20"

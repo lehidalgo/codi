@@ -1,6 +1,12 @@
 export const template = `---
 name: {{name}}
-description: Documentation creation and maintenance workflows. Use when writing docs, updating README, generating API documentation, or creating architecture decision records.
+description: |
+  Documentation creation and maintenance workflows. Use when writing docs, updating
+  README, generating API documentation, creating architecture decision records, or
+  co-authoring proposals, specs, and decision docs. Also activate when the user
+  mentions writing docs, drafting specs, creating proposals, or any structured
+  content authoring task.
+category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: codi
 ---
@@ -9,7 +15,8 @@ managed_by: codi
 
 ## When to Use
 
-Use when creating, updating, or reviewing project documentation.
+Use when creating, updating, or reviewing project documentation. Also use when co-authoring
+proposals, technical specs, decision docs, RFCs, or similar structured content.
 
 ## When to Activate
 
@@ -18,6 +25,8 @@ Use when creating, updating, or reviewing project documentation.
 - User wants to generate documentation from existing code or APIs
 - User asks to review documentation for accuracy or completeness
 - User needs to create an onboarding guide or contributing guide
+- User mentions writing docs, drafting proposals, specs, decision docs, or RFCs
+- User wants to co-author a document through structured iteration
 
 ## Diataxis Framework
 
@@ -81,6 +90,47 @@ Store in \\\`docs/adr/\\\` with numbered filenames (\\\`001-use-postgres.md\\\`)
 - Store documentation in the same repository as code — changes ship together in the same PR
 - Auto-generate API reference from OpenAPI specs or code annotations where possible
 - Use CI to validate documentation: lint markdown, check broken links, test code examples
+
+## Co-Authoring Workflow
+
+For substantial documents (proposals, specs, decision docs), offer this 3-stage workflow:
+
+### Stage 1 — Context Gathering
+
+**Goal:** Close the gap between what the user knows and what the agent knows.
+
+1. Ask meta-context: document type, audience, desired impact, format/template, constraints
+2. Encourage an info dump: background, related discussions, alternative solutions, organizational context, timeline pressures, technical dependencies, stakeholder concerns
+3. Ask 5-10 clarifying questions based on gaps
+4. Continue until edge cases and trade-offs can be discussed without needing basics explained
+
+### Stage 2 — Refinement & Structure
+
+**Goal:** Build the document section by section through brainstorming, curation, and iteration.
+
+For each section:
+1. **Clarify**: Ask what to include in this section
+2. **Brainstorm**: Generate 5-20 candidate points (look for forgotten context, new angles)
+3. **Curate**: User selects what to keep/remove/combine
+4. **Gap check**: Ask if anything important is missing
+5. **Draft**: Write the section using \\\`str_replace\\\` or file edits
+6. **Refine**: Iterate with surgical edits until the user is satisfied
+
+Start with whichever section has the most unknowns. Leave summary sections for last.
+
+After 80%+ of sections are done, re-read the entire document checking for: flow and consistency, redundancy, filler content, and whether every sentence carries weight.
+
+### Stage 3 — Reader Testing
+
+**Goal:** Test the document with a fresh perspective to catch blind spots.
+
+1. Predict 5-10 reader questions
+2. If subagents are available: test each question with a fresh agent (no conversation context)
+3. If no subagents: guide the user to test in a fresh conversation
+4. Also check for: ambiguity, false assumptions, contradictions
+5. Fix any issues found, then loop back to refinement if needed
+
+**Exit condition:** Reader consistently answers questions correctly with no new gaps.
 
 ## Quality Checklist
 
