@@ -12,7 +12,7 @@ import {
 } from "../core/scaffolder/template-loader.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
-  loadSkillTemplate,
+  loadSkillTemplateContent,
 } from "../core/scaffolder/skill-template-loader.js";
 import {
   AVAILABLE_AGENT_TEMPLATES,
@@ -279,7 +279,7 @@ export async function handlePresetPath(
         const val = await p.multiselect({
           message: "Skills",
           options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
-            const tmpl = loadSkillTemplate(t);
+            const tmpl = loadSkillTemplateContent(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
             return { label: formatLabel(t), value: t, hint };
           }),
@@ -478,7 +478,7 @@ export async function handleCustomPath(
         const val = await p.multiselect({
           message: "Select skills",
           options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
-            const tmpl = loadSkillTemplate(t);
+            const tmpl = loadSkillTemplateContent(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
             return { label: formatLabel(t), value: t, hint };
           }),

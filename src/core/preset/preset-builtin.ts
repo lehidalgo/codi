@@ -11,7 +11,7 @@ import type { LoadedPreset } from "./preset-loader.js";
 import type { BuiltinPresetDefinition } from "../../templates/presets/types.js";
 import { getBuiltinPresetDefinition } from "../../templates/presets/index.js";
 import { loadTemplate } from "../scaffolder/template-loader.js";
-import { loadSkillTemplate } from "../scaffolder/skill-template-loader.js";
+import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 import { createError } from "../output/errors.js";
@@ -53,7 +53,6 @@ function materializeDefinition(
     skills,
     agents,
     commands: [],
-    brands: [],
     mcp: { servers: {} } as McpConfig,
   });
 }
@@ -73,7 +72,7 @@ function materializeRules(templateNames: string[]): NormalizedRule[] {
 function materializeSkills(templateNames: string[]): NormalizedSkill[] {
   const skills: NormalizedSkill[] = [];
   for (const name of templateNames) {
-    const result = loadSkillTemplate(name);
+    const result = loadSkillTemplateContent(name);
     if (!result.ok) continue;
 
     const skill = parseSkillTemplate(name, result.data);

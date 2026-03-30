@@ -28,6 +28,7 @@ import {
   MCP_FILENAME,
   PROJECT_NAME,
 } from "../constants.js";
+import { partitionBrandSkills } from "./brand-filter.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -49,7 +50,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     commands: ".claude/commands",
     agents: ".claude/agents",
     instructionFile: "CLAUDE.md",
-    mcpConfig: ".claude/mcp.json",
+    mcpConfig: ".mcp.json",
   } satisfies AgentPaths,
 
   capabilities: {
@@ -120,12 +121,15 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
+    // Partition skills into regular and brand-category skills
+    const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
+
     // Generate .claude/skills/{name}/SKILL.md + supporting files
     const plMode = ((config.flags.progressive_loading?.value as string) ??
       "off") as ProgressiveLoadingMode;
     files.push(
       ...(await generateSkillFiles(
-        config.skills,
+        regularSkills,
         ".claude/skills",
         plMode,
         _options.projectRoot,
@@ -167,8 +171,8 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
-    // Generate .claude/brands/{name}.md
-    for (const brand of config.brands) {
+    // Generate .claude/brands/{name}.md from brand-category skills
+    for (const brand of brandSkills) {
       const brandContent = addGeneratedFooter(
         `# (${PROJECT_NAME}-brand) ${brand.name}\n\n${brand.content}`,
       );
@@ -181,12 +185,13 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
-    // Generate .claude/mcp.json if MCP servers are configured
+    // Generate .mcp.json (project-scoped MCP for Claude Code)
     const enabledMcp = getEnabledMcpServers(config.mcp);
     if (Object.keys(enabledMcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(enabledMcp, null, 2);
+      const mcpOutput = { mcpServers: enabledMcp.servers };
+      const mcpContent = JSON.stringify(mcpOutput, null, 2);
       files.push({
-        path: ".claude/mcp.json",
+        path: ".mcp.json",
         content: mcpContent,
         sources: [MCP_FILENAME],
         hash: hashContent(mcpContent),
@@ -211,7 +216,6 @@ export const claudeCodeAdapter: AgentAdapter = {
 
 interface ClaudeSettings {
   permissions?: { deny?: string[] };
-  enabledMcpjsonServers?: string[];
   env?: Record<string, string>;
 }
 
@@ -234,12 +238,6 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
 
   if (deny.length > 0) {
     settings.permissions = { deny };
-  }
-
-  // Map mcp_allowed_servers to enabledMcpjsonServers (native MCP allowlist)
-  const mcpServers = flagValue("mcp_allowed_servers");
-  if (Array.isArray(mcpServers) && mcpServers.length > 0) {
-    settings.enabledMcpjsonServers = mcpServers as string[];
   }
 
   // Map flags to env vars

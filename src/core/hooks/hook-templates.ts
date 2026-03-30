@@ -57,19 +57,23 @@ const PATTERNS = [
   /ghp_[a-zA-Z0-9]{36}/,
   /sk-[a-zA-Z0-9]{32,}/,
 ];
-
-const TEST_PATHS = [/tests?\\//, /\\.test\\.[jt]sx?$/, /\\.spec\\.[jt]sx?$/, /__tests__\\//, /src\\/templates\\//];
-const files = process.argv.slice(2).filter(f => !TEST_PATHS.some(p => p.test(f)));
+const FALSE_POS = /['"](?:your-|\\\\*\\$\\{|process\\.env|os\\.environ)/;
+const EXCLUDED = [/tests?\\//, /\\.test\\.[jt]sx?$/, /\\.spec\\.[jt]sx?$/, /__tests__\\//, /\\/references\\//];
+const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let found = false;
 for (const file of files) {
   try {
     const content = fs.readFileSync(file, 'utf-8');
+    const lines = content.split('\\n');
     for (const pattern of PATTERNS) {
-      if (pattern.test(content)) {
-        console.error(\`Potential secret found in \${file}\`);
-        found = true;
-        break;
+      for (const line of lines) {
+        if (pattern.test(line) && !FALSE_POS.test(line)) {
+          console.error(\`Potential secret found in \${file}\`);
+          found = true;
+          break;
+        }
       }
+      if (found) break;
     }
   } catch {}
 }
@@ -94,7 +98,7 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents)\\//, /-lock\\.json$/, /\\.lock$/];
+const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents)\\//, /-lock\\.json$/, /\\.lock$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {

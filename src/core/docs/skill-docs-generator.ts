@@ -3,7 +3,7 @@ import { join, dirname } from "node:path";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
-  loadSkillTemplate,
+  loadSkillTemplateContent,
 } from "../scaffolder/skill-template-loader.js";
 import { renderSkillDocsPage } from "./skill-docs-template.js";
 
@@ -48,7 +48,7 @@ export function collectSkillEntries(): SkillDocEntry[] {
   const entries: SkillDocEntry[] = [];
 
   for (const templateName of AVAILABLE_SKILL_TEMPLATES) {
-    const result = loadSkillTemplate(templateName);
+    const result = loadSkillTemplateContent(templateName);
     if (!result.ok) continue;
 
     const raw = resolveTemplatePlaceholders(result.data, templateName);

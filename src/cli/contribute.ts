@@ -39,7 +39,7 @@ interface ContributeData {
 
 export interface ArtifactEntry {
   name: string;
-  type: "rule" | "skill" | "agent" | "command" | "brand";
+  type: "rule" | "skill" | "agent" | "command";
   managedBy: string;
   path: string;
 }
@@ -114,7 +114,6 @@ export async function discoverArtifacts(
   );
   await scanFlatDir(path.join(configDir, "agents"), "agent");
   await scanFlatDir(path.join(configDir, "commands"), "command");
-  await scanDirBased(path.join(configDir, "brands"), "brand", "BRAND.md");
 
   return artifacts;
 }
@@ -137,7 +136,7 @@ export async function buildPresetPackage(
     const typeDir = path.join(presetDir, typeKey);
     await fs.mkdir(typeDir, { recursive: true });
 
-    if (artifact.type === "skill" || artifact.type === "brand") {
+    if (artifact.type === "skill") {
       const destSkillDir = path.join(typeDir, artifact.name);
       await fs.mkdir(destSkillDir, { recursive: true });
       await copyDir(artifact.path, destSkillDir);
@@ -189,8 +188,6 @@ function getTemplateDir(type: ArtifactEntry["type"]): string {
       return "src/templates/agents";
     case "command":
       return "src/templates/commands";
-    case "brand":
-      return "src/templates/brands";
   }
 }
 
@@ -201,7 +198,6 @@ function getTemplateDir(type: ArtifactEntry["type"]): string {
 async function artifactToTemplate(artifact: ArtifactEntry): Promise<string> {
   const dirBasedIndex: Record<string, string> = {
     skill: SKILL_OUTPUT_FILENAME,
-    brand: "BRAND.md",
   };
   const indexFile = dirBasedIndex[artifact.type];
   const mdPath = indexFile

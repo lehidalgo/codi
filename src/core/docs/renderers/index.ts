@@ -40,7 +40,6 @@ export {
   renderSkillFields,
   renderAgentFields,
   renderCommandFields,
-  renderBrandFields,
   renderManifestFields,
 } from "./schema-renderers.js";
 

@@ -11,6 +11,7 @@ import type { NormalizedConfig, NormalizedRule } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
+import { partitionBrandSkills } from "./brand-filter.js";
 import {
   generateSkillFiles,
   type ProgressiveLoadingMode,
@@ -122,20 +123,23 @@ export const cursorAdapter: AgentAdapter = {
       });
     }
 
+    // Partition skills into regular and brand-category skills
+    const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
+
     // Generate .cursor/skills/{name}/SKILL.md + supporting files
     const plMode = ((config.flags.progressive_loading?.value as string) ??
       "off") as ProgressiveLoadingMode;
     files.push(
       ...(await generateSkillFiles(
-        config.skills,
+        regularSkills,
         ".cursor/skills",
         plMode,
         _options.projectRoot,
       )),
     );
 
-    // Generate .cursor/brands/{name}.md
-    for (const brand of config.brands) {
+    // Generate .cursor/brands/{name}.md from brand-category skills
+    for (const brand of brandSkills) {
       const brandContent = addGeneratedFooter(
         `# ${brand.name}\n\n${brand.content}`,
       );
@@ -151,7 +155,8 @@ export const cursorAdapter: AgentAdapter = {
     // Generate .cursor/mcp.json if MCP servers are configured
     const enabledMcp = getEnabledMcpServers(config.mcp);
     if (Object.keys(enabledMcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(enabledMcp, null, 2);
+      const mcpOutput = { mcpServers: enabledMcp.servers };
+      const mcpContent = JSON.stringify(mcpOutput, null, 2);
       files.push({
         path: ".cursor/mcp.json",
         content: mcpContent,

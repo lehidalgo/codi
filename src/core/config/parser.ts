@@ -12,7 +12,6 @@ import type {
   NormalizedSkill,
   NormalizedCommand,
   NormalizedAgent,
-  NormalizedBrand,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
 import { ProjectManifestSchema } from "../../schemas/manifest.js";
@@ -21,7 +20,6 @@ import { RuleFrontmatterSchema } from "../../schemas/rule.js";
 import { SkillFrontmatterSchema } from "../../schemas/skill.js";
 import { AgentFrontmatterSchema } from "../../schemas/agent.js";
 import { CommandFrontmatterSchema } from "../../schemas/command.js";
-import { BrandFrontmatterSchema } from "../../schemas/brand.js";
 import { McpConfigSchema } from "../../schemas/mcp.js";
 import { createError, zodToProjectErrors } from "../output/errors.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
@@ -30,6 +28,7 @@ import {
   MANIFEST_FILENAME,
   FLAGS_FILENAME,
   MCP_FILENAME,
+  BRAND_CATEGORY,
 } from "#src/constants.js";
 
 export interface ParsedProjectDir {
@@ -39,7 +38,6 @@ export interface ParsedProjectDir {
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
-  brands: NormalizedBrand[];
   mcp: McpConfig;
 }
 
@@ -266,16 +264,16 @@ async function parseAgentFile(
   }
 }
 
-async function scanBrands(
+async function scanLegacyBrands(
   brandsDir: string,
-): Promise<Result<NormalizedBrand[]>> {
+): Promise<Result<NormalizedSkill[]>> {
   if (!(await fileExists(brandsDir))) {
     return ok([]);
   }
-  const brands: NormalizedBrand[] = [];
+  const skills: NormalizedSkill[] = [];
   const errors: ReturnType<typeof createError>[] = [];
 
-  // Brands are directory-based: brands/<name>/BRAND.md
+  // Legacy brands are directory-based: brands/<name>/BRAND.md
   let entries: import("node:fs").Dirent[];
   try {
     entries = await fs.readdir(brandsDir, { withFileTypes: true });
@@ -288,34 +286,41 @@ async function scanBrands(
     const brandFile = path.join(brandsDir, entry.name, "BRAND.md");
     if (!(await fileExists(brandFile))) continue;
 
-    const result = await parseBrandFile(brandFile);
+    const result = await parseLegacyBrandFile(brandFile);
     if (!result.ok) {
       errors.push(...result.errors);
     } else {
-      brands.push(result.data);
+      skills.push(result.data);
     }
   }
 
   if (errors.length > 0) return err(errors);
-  return ok(brands);
+  return ok(skills);
 }
 
-async function parseBrandFile(
+async function parseLegacyBrandFile(
   filePath: string,
-): Promise<Result<NormalizedBrand>> {
+): Promise<Result<NormalizedSkill>> {
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
-    const parsed = BrandFrontmatterSchema.safeParse(data);
-    if (!parsed.success) {
-      return err(zodToProjectErrors(parsed.error, filePath));
+    const name = data["name"] as string | undefined;
+    const description = (data["description"] as string) ?? "";
+    const managedBy = (data["managed_by"] as string) ?? undefined;
+    if (!name) {
+      return err([
+        createError("E_FRONTMATTER_INVALID", {
+          file: filePath,
+          message: "Missing required field: name",
+        }),
+      ]);
     }
-    const fm = parsed.data;
     return ok({
-      name: fm.name,
-      description: fm.description,
+      name,
+      description,
       content,
-      managedBy: fm.managed_by,
+      category: BRAND_CATEGORY,
+      managedBy: managedBy as ManagedBy | undefined,
     });
   } catch (cause) {
     return err([
@@ -481,8 +486,11 @@ export async function scanProjectDir(
   const agentsResult = await scanAgents(path.join(configDir, "agents"));
   if (!agentsResult.ok) return agentsResult;
 
-  const brandsResult = await scanBrands(path.join(configDir, "brands"));
-  if (!brandsResult.ok) return brandsResult;
+  // Scan legacy brands/ directory and merge as brand-category skills
+  const legacyBrandsResult = await scanLegacyBrands(
+    path.join(configDir, "brands"),
+  );
+  if (!legacyBrandsResult.ok) return legacyBrandsResult;
 
   const mcpResult = await parseMcpConfig(configDir);
   if (!mcpResult.ok) return mcpResult;
@@ -491,10 +499,9 @@ export async function scanProjectDir(
     manifest: manifestResult.data,
     flags: flagsResult.data,
     rules: rulesResult.data,
-    skills: skillsResult.data,
+    skills: [...skillsResult.data, ...legacyBrandsResult.data],
     commands: commandsResult.data,
     agents: agentsResult.data,
-    brands: brandsResult.data,
     mcp: mcpResult.data,
   });
 }

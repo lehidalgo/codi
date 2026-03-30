@@ -382,13 +382,16 @@ describe("claude-code adapter", () => {
       });
       const files = await claudeCodeAdapter.generate(config, {});
 
-      const mcpFile = files.find((f) => f.path === ".claude/mcp.json");
+      const mcpFile = files.find((f) => f.path === ".mcp.json");
       expect(mcpFile).toBeDefined();
 
       const parsed = JSON.parse(mcpFile!.content);
-      expect(parsed.servers["my-server"]).toBeDefined();
-      expect(parsed.servers["my-server"].command).toBe("npx");
-      expect(parsed.servers["my-server"].args).toEqual(["-y", "my-mcp-server"]);
+      expect(parsed.mcpServers["my-server"]).toBeDefined();
+      expect(parsed.mcpServers["my-server"].command).toBe("npx");
+      expect(parsed.mcpServers["my-server"].args).toEqual([
+        "-y",
+        "my-mcp-server",
+      ]);
     });
 
     it("strips the enabled field from MCP server entries", async () => {
@@ -405,10 +408,10 @@ describe("claude-code adapter", () => {
         },
       });
       const files = await claudeCodeAdapter.generate(config, {});
-      const mcpFile = files.find((f) => f.path === ".claude/mcp.json")!;
+      const mcpFile = files.find((f) => f.path === ".mcp.json")!;
       const parsed = JSON.parse(mcpFile.content);
 
-      expect(parsed.servers["my-server"]).not.toHaveProperty("enabled");
+      expect(parsed.mcpServers["my-server"]).not.toHaveProperty("enabled");
     });
 
     it("excludes disabled MCP servers", async () => {
@@ -426,18 +429,18 @@ describe("claude-code adapter", () => {
         },
       });
       const files = await claudeCodeAdapter.generate(config, {});
-      const mcpFile = files.find((f) => f.path === ".claude/mcp.json")!;
+      const mcpFile = files.find((f) => f.path === ".mcp.json")!;
       const parsed = JSON.parse(mcpFile.content);
 
-      expect(parsed.servers).toHaveProperty("active");
-      expect(parsed.servers).not.toHaveProperty("disabled");
+      expect(parsed.mcpServers).toHaveProperty("active");
+      expect(parsed.mcpServers).not.toHaveProperty("disabled");
     });
 
     it("does not produce mcp.json when no servers are configured", async () => {
       const config = createMockConfig({ mcp: { servers: {} } });
       const files = await claudeCodeAdapter.generate(config, {});
 
-      const mcpFile = files.find((f) => f.path === ".claude/mcp.json");
+      const mcpFile = files.find((f) => f.path === ".mcp.json");
       expect(mcpFile).toBeUndefined();
     });
 
@@ -456,7 +459,7 @@ describe("claude-code adapter", () => {
       });
       const files = await claudeCodeAdapter.generate(config, {});
 
-      const mcpFile = files.find((f) => f.path === ".claude/mcp.json");
+      const mcpFile = files.find((f) => f.path === ".mcp.json");
       expect(mcpFile).toBeUndefined();
     });
   });
@@ -610,26 +613,6 @@ describe("claude-code adapter", () => {
       expect(parsed.permissions.deny).toContain("Bash");
     });
 
-    it("generates enabledMcpjsonServers for mcp_allowed_servers", async () => {
-      const config = createMockConfig({
-        flags: {
-          mcp_allowed_servers: {
-            value: ["memory", "docs"],
-            mode: "enabled",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      );
-      expect(settingsFile).toBeDefined();
-      const parsed = JSON.parse(settingsFile!.content);
-      expect(parsed.enabledMcpjsonServers).toEqual(["memory", "docs"]);
-    });
-
     it("returns null when max_context_tokens is zero", async () => {
       const config = createMockConfig({
         flags: {
@@ -713,7 +696,7 @@ describe("claude-code adapter", () => {
       expect(claudeCodeAdapter.paths.commands).toBe(".claude/commands");
       expect(claudeCodeAdapter.paths.agents).toBe(".claude/agents");
       expect(claudeCodeAdapter.paths.instructionFile).toBe("CLAUDE.md");
-      expect(claudeCodeAdapter.paths.mcpConfig).toBe(".claude/mcp.json");
+      expect(claudeCodeAdapter.paths.mcpConfig).toBe(".mcp.json");
     });
   });
 });

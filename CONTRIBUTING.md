@@ -107,7 +107,10 @@ src/
 
 ### Adding a Skill Template
 
-1. Create `src/templates/skills/{name}.ts` exporting a template object
+1. Create a directory `src/templates/skills/{name}/` with:
+   - `template.ts` — exports the SKILL.md content string
+   - `index.ts` — re-exports `{ template }` from `./template.js`
+   - (optional) `assets/`, `references/`, `scripts/` — static files copied during scaffolding
 2. Export from `src/templates/skills/index.ts`
 3. Add to the skill template map in the template loader
 4. Add tests

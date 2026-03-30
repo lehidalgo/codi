@@ -7,7 +7,6 @@ import { RuleFrontmatterSchema } from "#src/schemas/rule.js";
 import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
 import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
 import { CommandFrontmatterSchema } from "#src/schemas/command.js";
-import { BrandFrontmatterSchema } from "#src/schemas/brand.js";
 import { ProjectManifestSchema } from "#src/schemas/manifest.js";
 import {
   PROJECT_NAME,
@@ -289,12 +288,6 @@ const COMMAND_DESCRIPTIONS: Record<string, string> = {
   managed_by: "Who manages this artifact",
 };
 
-const BRAND_DESCRIPTIONS: Record<string, string> = {
-  name: "Brand name (strict alphanumeric + hyphens)",
-  description: "Brand description",
-  managed_by: "Who manages this artifact",
-};
-
 const MANIFEST_DESCRIPTIONS: Record<string, string> = {
   name: "Project name (alphanumeric + hyphens)",
   version: "Manifest version (always `1`)",
@@ -340,10 +333,6 @@ export function renderAgentFields(): string {
 
 export function renderCommandFields(): string {
   return renderZodSchemaTable(CommandFrontmatterSchema, COMMAND_DESCRIPTIONS);
-}
-
-export function renderBrandFields(): string {
-  return renderZodSchemaTable(BrandFrontmatterSchema, BRAND_DESCRIPTIONS);
 }
 
 export function renderManifestFields(): string {

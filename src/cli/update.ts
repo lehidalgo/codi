@@ -27,7 +27,7 @@ import {
   AVAILABLE_TEMPLATES,
 } from "../core/scaffolder/template-loader.js";
 import {
-  loadSkillTemplate,
+  loadSkillTemplateContent,
   AVAILABLE_SKILL_TEMPLATES,
 } from "../core/scaffolder/skill-template-loader.js";
 import {
@@ -193,7 +193,7 @@ async function refreshManagedSkills(
       continue;
     }
 
-    const templateResult = loadSkillTemplate(templateName);
+    const templateResult = loadSkillTemplateContent(templateName);
     if (!templateResult.ok) continue;
 
     const newContent = templateResult.data.replace(/\{\{name\}\}/g, skillName);

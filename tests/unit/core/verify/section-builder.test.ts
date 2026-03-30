@@ -14,7 +14,6 @@ describe("buildVerificationSection", () => {
     skillNames: ["rule-management"],
     agentNames: ["code-reviewer"],
     commandNames: [],
-    brandNames: [],
     mcpServerNames: [],
     activeFlags: [
       "Keep source code files under 700 lines. Documentation files have no line limit.",

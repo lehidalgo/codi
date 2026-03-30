@@ -191,7 +191,6 @@ async function buildPresetLayers(
         skills: preset.skills,
         agents: preset.agents,
         commands: preset.commands,
-        brands: preset.brands,
         flags: flagsFromDefinitions(preset.flags, `preset:${name}`),
         mcp: preset.mcp,
       },
@@ -218,7 +217,6 @@ export async function resolveConfig(
       skills: parsed.skills,
       commands: parsed.commands,
       agents: parsed.agents,
-      brands: parsed.brands,
       flags: flagsFromDefinitions(
         parsed.flags,
         path.join(configDir, FLAGS_FILENAME),

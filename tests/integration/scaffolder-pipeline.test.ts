@@ -7,7 +7,6 @@ import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
 import { createCommand } from "#src/core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
-import { createBrand } from "#src/core/scaffolder/brand-scaffolder.js";
 import { scanRules, scanSkills } from "#src/core/config/parser.js";
 import { Logger } from "#src/core/output/logger.js";
 import { parseFrontmatter } from "#src/utils/frontmatter.js";
@@ -80,7 +79,7 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
     expect(result.ok).toBe(true);
 
     const skillDir = path.join(configDir, "skills", "full-skill");
-    for (const sub of ["evals", "scripts", "references", "assets"]) {
+    for (const sub of ["evals", "scripts", "references", "assets", "agents"]) {
       const stat = await fs.stat(path.join(skillDir, sub));
       expect(stat.isDirectory()).toBe(true);
     }
@@ -132,18 +131,23 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
     expect(content).toContain(`managed_by: ${PROJECT_NAME}`);
   });
 
-  it("scaffolded brand creates directory structure", async () => {
-    const result = await createBrand({ name: "test-brand", configDir });
+  it("scaffolded brand skill creates directory structure", async () => {
+    const result = await createSkill({
+      name: "test-brand",
+      configDir,
+      template: prefixedName("brand-identity"),
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     const content = await fs.readFile(result.data, "utf-8");
     expect(content).toContain("name: test-brand");
+    expect(content).toContain("category: brand");
     expect(content).toContain("Brand Identity");
 
-    const brandDir = path.join(configDir, "brands", "test-brand");
-    for (const sub of ["assets", "references"]) {
-      const stat = await fs.stat(path.join(brandDir, sub));
+    const skillDir = path.join(configDir, "skills", "test-brand");
+    for (const sub of ["assets", "references", "scripts", "evals"]) {
+      const stat = await fs.stat(path.join(skillDir, sub));
       expect(stat.isDirectory()).toBe(true);
     }
   });
@@ -208,9 +212,17 @@ describe("Scaffolder Pipeline: error paths", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("rejects duplicate brand", async () => {
-    await createBrand({ name: "dup", configDir });
-    const result = await createBrand({ name: "dup", configDir });
+  it("rejects duplicate brand skill", async () => {
+    await createSkill({
+      name: "dup",
+      configDir,
+      template: prefixedName("brand-identity"),
+    });
+    const result = await createSkill({
+      name: "dup",
+      configDir,
+      template: prefixedName("brand-identity"),
+    });
     expect(result.ok).toBe(false);
   });
 
@@ -228,9 +240,6 @@ describe("Scaffolder Pipeline: error paths", () => {
       false,
     );
     expect((await createMcpServer({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createBrand({ name: invalidName, configDir })).ok).toBe(
       false,
     );
   });

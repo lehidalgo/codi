@@ -18,7 +18,6 @@ function makeConfig(
     skills: [],
     commands: [],
     agents: [],
-    brands: [],
     flags: {},
     mcp: { servers: {} },
     ...overrides,

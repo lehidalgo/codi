@@ -9,7 +9,6 @@ import type {
   NormalizedSkill,
   NormalizedAgent,
   NormalizedCommand,
-  NormalizedBrand,
   McpConfig,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
@@ -20,13 +19,14 @@ import {
   MCP_FILENAME,
   PRESET_MANIFEST_FILENAME,
   PROJECT_NAME,
+  BRAND_CATEGORY,
 } from "#src/constants.js";
 import {
   isBuiltinPreset as checkBuiltin,
   materializeBuiltinPreset,
 } from "./preset-builtin.js";
 import { loadTemplate } from "../scaffolder/template-loader.js";
-import { loadSkillTemplate } from "../scaffolder/skill-template-loader.js";
+import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
 import { loadCommandTemplate } from "../scaffolder/command-template-loader.js";
 
@@ -38,7 +38,6 @@ export interface LoadedPreset {
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
   commands: NormalizedCommand[];
-  brands: NormalizedBrand[];
   mcp: McpConfig;
 }
 
@@ -95,7 +94,6 @@ export async function loadPresetFromDir(
   let parentSkills: NormalizedSkill[] = [];
   let parentAgents: NormalizedAgent[] = [];
   let parentCommands: NormalizedCommand[] = [];
-  let parentBrands: NormalizedBrand[] = [];
   let parentMcp: McpConfig = { servers: {} };
 
   if (manifest.extends) {
@@ -106,7 +104,6 @@ export async function loadPresetFromDir(
       parentSkills = parentResult.data.skills;
       parentAgents = parentResult.data.agents;
       parentCommands = parentResult.data.commands;
-      parentBrands = parentResult.data.brands;
       parentMcp = parentResult.data.mcp;
     }
   }
@@ -116,8 +113,8 @@ export async function loadPresetFromDir(
   const configDir = path.dirname(presetsDir);
   const resolved = manifest.artifacts
     ? await resolveArtifactsByName(manifest.artifacts, configDir)
-    : { rules: [], skills: [], agents: [], commands: [], brands: [] };
-  const { rules, skills, agents, commands, brands } = resolved;
+    : { rules: [], skills: [], agents: [], commands: [] };
+  const { rules, skills, agents, commands } = resolved;
 
   let mcp: McpConfig = { servers: {} };
   try {
@@ -142,7 +139,6 @@ export async function loadPresetFromDir(
   const mergedSkills = mergeArtifacts(parentSkills, skills);
   const mergedAgents = mergeArtifacts(parentAgents, agents);
   const mergedCommands = mergeArtifacts(parentCommands, commands);
-  const mergedBrands = mergeArtifacts(parentBrands, brands);
   const mergedMcp: McpConfig = {
     servers: { ...parentMcp.servers, ...mcp.servers },
   };
@@ -155,7 +151,6 @@ export async function loadPresetFromDir(
     skills: mergedSkills,
     agents: mergedAgents,
     commands: mergedCommands,
-    brands: mergedBrands,
     mcp: mergedMcp,
   });
 }
@@ -174,6 +169,7 @@ interface ArtifactNames {
   skills?: string[];
   agents?: string[];
   commands?: string[];
+  // @deprecated — use skills with category: brand instead
   brands?: string[];
 }
 
@@ -182,7 +178,6 @@ interface ResolvedArtifacts {
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
   commands: NormalizedCommand[];
-  brands: NormalizedBrand[];
 }
 
 /**
@@ -220,13 +215,13 @@ async function resolveArtifactsByName(
     if (cmd) commands.push(cmd);
   }
 
-  const brands: NormalizedBrand[] = [];
+  // Convert deprecated brands field to brand-category skills
   for (const name of artifacts.brands ?? []) {
-    const brand = await loadBrandFromDir(name, configDir);
-    if (brand) brands.push(brand);
+    const brand = await loadLegacyBrandFromDir(name, configDir);
+    if (brand) skills.push(brand);
   }
 
-  return { rules, skills, agents, commands, brands };
+  return { rules, skills, agents, commands };
 }
 
 function resolveRule(name: string): NormalizedRule | null {
@@ -250,7 +245,7 @@ function resolveRule(name: string): NormalizedRule | null {
 }
 
 function resolveSkill(name: string): NormalizedSkill | null {
-  const result = loadSkillTemplate(name);
+  const result = loadSkillTemplateContent(name);
   if (!result.ok) return null;
   try {
     const replaced = result.data.replace(/\{\{name\}\}/g, name);
@@ -394,10 +389,10 @@ async function loadCommandFromDir(
   }
 }
 
-async function loadBrandFromDir(
+async function loadLegacyBrandFromDir(
   name: string,
   configDir: string,
-): Promise<NormalizedBrand | null> {
+): Promise<NormalizedSkill | null> {
   try {
     const raw = await fs.readFile(
       path.join(configDir, "brands", name, "BRAND.md"),
@@ -408,6 +403,7 @@ async function loadBrandFromDir(
       name,
       description: (data["description"] as string) ?? "",
       content,
+      category: BRAND_CATEGORY,
       managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
   } catch {
