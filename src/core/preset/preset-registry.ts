@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { z } from "zod";
 import { parse as parseYaml } from "yaml";
+import { execFileAsync } from "../../utils/exec.js";
 import type { ProjectManifest } from "../../types/config.js";
 import {
   PRESET_MANIFEST_FILENAME,
@@ -13,7 +13,12 @@ import {
   PROJECT_NAME,
 } from "#src/constants.js";
 
-const execFileAsync = promisify(execFile);
+const RegistryEntrySchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  version: z.string(),
+  tags: z.array(z.string()),
+});
 
 export interface RegistryConfig {
   url: string;
@@ -92,7 +97,9 @@ export async function readRegistryIndex(
   const indexPath = path.join(registryDir, REGISTRY_INDEX_FILENAME);
   try {
     const raw = await fs.readFile(indexPath, "utf8");
-    return JSON.parse(raw) as RegistryEntry[];
+    const parsed: unknown = JSON.parse(raw);
+    const result = z.array(RegistryEntrySchema).safeParse(parsed);
+    return result.success ? result.data : [];
   } catch {
     return [];
   }

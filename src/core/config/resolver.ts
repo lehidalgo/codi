@@ -17,15 +17,7 @@ import type { ConfigLayer } from "./composer.js";
 import { validateConfig } from "./validator.js";
 import { loadPreset } from "../preset/preset-loader.js";
 import { FLAGS_FILENAME } from "#src/constants.js";
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { fileExists } from "../../utils/fs.js";
 
 async function readYamlSafe(
   filePath: string,
@@ -225,15 +217,27 @@ export async function resolveConfig(
     },
   };
 
-  const orgLayer = await buildOrgLayer();
   const teamName = parsed.manifest.team;
-  const teamLayer = teamName ? await buildTeamLayer(teamName) : null;
   const presetNames = parsed.manifest.presets ?? [];
-  const presetLayers = await buildPresetLayers(configDir, presetNames);
-  const langLayers = await buildLangLayers(configDir);
-  const frameworkLayers = await buildFrameworkLayers(configDir);
-  const agentLayers = await buildAgentLayers(configDir);
-  const userLayer = await buildUserLayer();
+
+  // All layer builders are independent — run in parallel
+  const [
+    orgLayer,
+    teamLayer,
+    presetLayers,
+    langLayers,
+    frameworkLayers,
+    agentLayers,
+    userLayer,
+  ] = await Promise.all([
+    buildOrgLayer(),
+    teamName ? buildTeamLayer(teamName) : Promise.resolve(null),
+    buildPresetLayers(configDir, presetNames),
+    buildLangLayers(configDir),
+    buildFrameworkLayers(configDir),
+    buildAgentLayers(configDir),
+    buildUserLayer(),
+  ]);
 
   const layers: ConfigLayer[] = [
     ...(orgLayer ? [orgLayer] : []),

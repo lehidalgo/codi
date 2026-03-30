@@ -11,6 +11,11 @@ description: |
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Documentation
+  examples:
+    - "Write documentation"
+    - "Generate API docs"
 ---
 
 # {{name}}

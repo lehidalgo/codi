@@ -6,6 +6,11 @@ description: Toolkit for styling artifacts with a theme. These artifacts can be 
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Theme Styling
+  examples:
+    - "Apply a theme to my document"
+    - "Style this artifact"
 ---
 
 

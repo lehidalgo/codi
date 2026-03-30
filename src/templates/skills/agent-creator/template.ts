@@ -16,6 +16,11 @@ description: |
   security analyzer, test generator, or any autonomous worker role.
 category: ${PROJECT_NAME_DISPLAY} Platform
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Agent Creation
+  examples:
+    - "Create a new agent"
+    - "Build a specialized subagent"
 ---
 
 # Agent Creator

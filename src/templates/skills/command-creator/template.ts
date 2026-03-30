@@ -16,6 +16,11 @@ description: |
   shortcut, or automation triggered by a slash prefix.
 category: ${PROJECT_NAME_DISPLAY} Platform
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Command Creation
+  examples:
+    - "Create a slash command"
+    - "Add a new command"
 ---
 
 # Command Creator

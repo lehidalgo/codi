@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveProjectDir } from "../utils/paths.js";
 import { isPathSafe } from "../utils/path-guard.js";
+import { fileExists } from "../utils/fs.js";
 import { StateManager } from "../core/config/state.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { createCommandResult } from "../core/output/formatter.js";
@@ -104,15 +105,6 @@ const KNOWN_HOOK_FILES = [
   `.git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
   `.git/hooks/${PROJECT_NAME}-version-check.mjs`,
 ];
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function fileContainsGeneratedMarker(filePath: string): Promise<boolean> {
   try {
@@ -405,8 +397,8 @@ export async function cleanHandler(
           all: options.all ?? false,
         },
       });
-    } catch {
-      // Ledger write is best-effort; don't fail clean
+    } catch (cause) {
+      log.debug("Ledger write failed during clean", cause);
     }
   }
 

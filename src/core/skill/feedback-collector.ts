@@ -26,7 +26,8 @@ export async function readAllFeedback(
   try {
     const entries = await fs.readdir(dir);
     files = entries.filter((f) => f.endsWith(".json")).sort();
-  } catch {
+  } catch (cause) {
+    log.debug("Feedback directory not readable", cause);
     return ok([]);
   }
 
@@ -105,6 +106,7 @@ export async function pruneFeedback(
   configDir: string,
   maxAgeDays: number = MAX_FEEDBACK_AGE_DAYS,
 ): Promise<Result<number>> {
+  const log = Logger.getInstance();
   const allResult = await readAllFeedback(configDir);
   if (!allResult.ok) return allResult;
 
@@ -115,7 +117,8 @@ export async function pruneFeedback(
   let files: string[];
   try {
     files = (await fs.readdir(dir)).filter((f) => f.endsWith(".json"));
-  } catch {
+  } catch (cause) {
+    log.debug("Feedback directory not readable during prune", cause);
     return ok(0);
   }
 
@@ -131,8 +134,8 @@ export async function pruneFeedback(
           pruned++;
         }
       }
-    } catch {
-      // Skip unreadable files
+    } catch (cause) {
+      log.debug("Skipping unreadable feedback file", cause);
     }
   }
 
@@ -159,8 +162,8 @@ export async function pruneFeedback(
           try {
             await fs.unlink(path.join(dir, filename));
             pruned++;
-          } catch {
-            // Best-effort
+          } catch (cause) {
+            log.debug("Failed to prune feedback entry", cause);
           }
         }
       }

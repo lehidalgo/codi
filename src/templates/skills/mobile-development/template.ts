@@ -6,6 +6,11 @@ description: Mobile development patterns and guidelines. Covers iOS (SwiftUI/UIK
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Mobile Development
+  examples:
+    - "Build a mobile app"
+    - "iOS or Android patterns"
 ---
 
 # {{name}}

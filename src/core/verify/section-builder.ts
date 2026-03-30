@@ -35,8 +35,10 @@ export function buildVerificationSection(data: VerificationData): string {
   lines.push("### Artifact Improvement");
   lines.push("");
   lines.push(
-    "When you observe recurring patterns not covered by current rules or skills:",
+    `You are both a consumer and an improver of ${PROJECT_NAME_DISPLAY} artifacts. When you notice gaps or outdated patterns — propose improvements with evidence.`,
   );
+  lines.push("");
+  lines.push("**Improvement loop:**");
   lines.push(
     "1. Propose the improvement with evidence (2+ occurrences in the codebase)",
   );
@@ -45,8 +47,12 @@ export function buildVerificationSection(data: VerificationData): string {
   );
   lines.push(`3. Run \`${PROJECT_CLI} generate\` to propagate changes`);
   lines.push(
-    `4. Use \`/${prefixedName("compare-preset")}\` to review local improvements vs upstream ${PROJECT_NAME_DISPLAY}`,
+    `4. After using a skill, write feedback to \`${PROJECT_DIR}/feedback/\` (see ${prefixedName("skill-reporter")})`,
   );
+  lines.push(
+    `5. Use \`/${prefixedName("compare-preset")}\` to compare local improvements vs upstream`,
+  );
+  lines.push(`6. Share improvements via \`${PROJECT_CLI} contribute\``);
 
   return lines.join("\n");
 }

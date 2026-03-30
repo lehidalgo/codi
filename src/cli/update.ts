@@ -3,8 +3,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import matter from "gray-matter";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import os from "node:os";
 import { resolveProjectDir } from "../utils/paths.js";
 import { resolveArtifactName } from "../constants.js";
@@ -47,11 +45,11 @@ import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
 import { writeAuditEntry } from "../core/audit/audit-log.js";
 import type { CommandResult } from "../core/output/types.js";
+import type { Result } from "../types/result.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "../utils/exec.js";
 
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
@@ -83,25 +81,34 @@ interface UpdateData {
   regenerated: boolean;
 }
 
-async function refreshManagedRules(
-  configDir: string,
-  dryRun: boolean,
-  log: Logger,
+interface RefreshArtifactOptions {
+  configDir: string;
+  subDir: string;
+  label: string;
+  availableTemplates: string[];
+  loadTemplate: (name: string) => Result<string>;
+  nameMappings?: Record<string, string>;
+  dryRun: boolean;
+  log: Logger;
+}
+
+async function refreshManagedArtifacts(
+  opts: RefreshArtifactOptions,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const rulesDir = path.join(configDir, "rules");
+  const dir = path.join(opts.configDir, opts.subDir);
   const updated: string[] = [];
   const skipped: string[] = [];
 
   let entries: string[];
   try {
-    entries = await fs.readdir(rulesDir);
+    entries = await fs.readdir(dir);
   } catch {
     return { updated, skipped };
   }
 
   for (const entry of entries) {
     if (!entry.endsWith(".md")) continue;
-    const filePath = path.join(rulesDir, entry);
+    const filePath = path.join(dir, entry);
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = matter(raw);
     const managedBy = parsed.data["managed_by"] as string | undefined;
@@ -111,29 +118,30 @@ async function refreshManagedRules(
       continue;
     }
 
-    const ruleName =
-      (parsed.data["name"] as string) ?? entry.replace(".md", "");
+    const name = (parsed.data["name"] as string) ?? entry.replace(".md", "");
     const templateName = findMatchingTemplate(
-      ruleName,
-      AVAILABLE_TEMPLATES,
-      RULE_NAME_MAPPINGS,
+      name,
+      opts.availableTemplates,
+      opts.nameMappings,
     );
 
     if (!templateName) {
-      skipped.push(ruleName);
+      skipped.push(name);
       continue;
     }
 
-    const templateResult = loadTemplate(templateName);
+    const templateResult = opts.loadTemplate(templateName);
     if (!templateResult.ok) continue;
 
-    const newContent = templateResult.data.replace(/\{\{name\}\}/g, ruleName);
+    const newContent = templateResult.data.replace(/\{\{name\}\}/g, name);
 
-    if (!dryRun) {
+    if (!opts.dryRun) {
       await fs.writeFile(filePath, newContent + "\n", "utf-8");
     }
-    updated.push(ruleName);
-    log.info(`${dryRun ? "Would update" : "Updated"} rule: ${ruleName}`);
+    updated.push(name);
+    opts.log.info(
+      `${opts.dryRun ? "Would update" : "Updated"} ${opts.label}: ${name}`,
+    );
   }
 
   return { updated, skipped };
@@ -152,174 +160,6 @@ const RULE_NAME_MAPPINGS: Record<string, string> = {
   "code-quality": prefixedName("code-style"),
   "testing-standards": prefixedName("testing"),
 };
-
-async function refreshManagedSkills(
-  configDir: string,
-  dryRun: boolean,
-  log: Logger,
-): Promise<{ updated: string[]; skipped: string[] }> {
-  const skillsDir = path.join(configDir, "skills");
-  const updated: string[] = [];
-  const skipped: string[] = [];
-
-  let entries: string[];
-  try {
-    entries = await fs.readdir(skillsDir);
-  } catch {
-    return { updated, skipped };
-  }
-
-  for (const entry of entries) {
-    if (!entry.endsWith(".md")) continue;
-    const filePath = path.join(skillsDir, entry);
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = matter(raw);
-    const managedBy = parsed.data["managed_by"] as string | undefined;
-
-    if (managedBy !== PROJECT_NAME) {
-      skipped.push(entry.replace(".md", ""));
-      continue;
-    }
-
-    const skillName =
-      (parsed.data["name"] as string) ?? entry.replace(".md", "");
-    const templateName = findMatchingTemplate(
-      skillName,
-      AVAILABLE_SKILL_TEMPLATES,
-    );
-
-    if (!templateName) {
-      skipped.push(skillName);
-      continue;
-    }
-
-    const templateResult = loadSkillTemplateContent(templateName);
-    if (!templateResult.ok) continue;
-
-    const newContent = templateResult.data.replace(/\{\{name\}\}/g, skillName);
-
-    if (!dryRun) {
-      await fs.writeFile(filePath, newContent + "\n", "utf-8");
-    }
-    updated.push(skillName);
-    log.info(`${dryRun ? "Would update" : "Updated"} skill: ${skillName}`);
-  }
-
-  return { updated, skipped };
-}
-
-async function refreshManagedAgents(
-  configDir: string,
-  dryRun: boolean,
-  log: Logger,
-): Promise<{ updated: string[]; skipped: string[] }> {
-  const agentsDir = path.join(configDir, "agents");
-  const updated: string[] = [];
-  const skipped: string[] = [];
-
-  let entries: string[];
-  try {
-    entries = await fs.readdir(agentsDir);
-  } catch {
-    return { updated, skipped };
-  }
-
-  for (const entry of entries) {
-    if (!entry.endsWith(".md")) continue;
-    const filePath = path.join(agentsDir, entry);
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = matter(raw);
-    const managedBy = parsed.data["managed_by"] as string | undefined;
-
-    if (managedBy !== PROJECT_NAME) {
-      skipped.push(entry.replace(".md", ""));
-      continue;
-    }
-
-    const agentName =
-      (parsed.data["name"] as string) ?? entry.replace(".md", "");
-    const templateName = findMatchingTemplate(
-      agentName,
-      AVAILABLE_AGENT_TEMPLATES,
-    );
-
-    if (!templateName) {
-      skipped.push(agentName);
-      continue;
-    }
-
-    const templateResult = loadAgentTemplate(templateName);
-    if (!templateResult.ok) continue;
-
-    const newContent = templateResult.data.replace(/\{\{name\}\}/g, agentName);
-
-    if (!dryRun) {
-      await fs.writeFile(filePath, newContent + "\n", "utf-8");
-    }
-    updated.push(agentName);
-    log.info(`${dryRun ? "Would update" : "Updated"} agent: ${agentName}`);
-  }
-
-  return { updated, skipped };
-}
-
-async function refreshManagedCommands(
-  configDir: string,
-  dryRun: boolean,
-  log: Logger,
-): Promise<{ updated: string[]; skipped: string[] }> {
-  const commandsDir = path.join(configDir, "commands");
-  const updated: string[] = [];
-  const skipped: string[] = [];
-
-  let entries: string[];
-  try {
-    entries = await fs.readdir(commandsDir);
-  } catch {
-    return { updated, skipped };
-  }
-
-  for (const entry of entries) {
-    if (!entry.endsWith(".md")) continue;
-    const filePath = path.join(commandsDir, entry);
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = matter(raw);
-    const managedBy = parsed.data["managed_by"] as string | undefined;
-
-    if (managedBy !== PROJECT_NAME) {
-      skipped.push(entry.replace(".md", ""));
-      continue;
-    }
-
-    const commandName =
-      (parsed.data["name"] as string) ?? entry.replace(".md", "");
-    const templateName = findMatchingTemplate(
-      commandName,
-      AVAILABLE_COMMAND_TEMPLATES,
-    );
-
-    if (!templateName) {
-      skipped.push(commandName);
-      continue;
-    }
-
-    const templateResult = loadCommandTemplate(templateName);
-    if (!templateResult.ok) continue;
-
-    const newContent = templateResult.data.replace(
-      /\{\{name\}\}/g,
-      commandName,
-    );
-
-    if (!dryRun) {
-      await fs.writeFile(filePath, newContent + "\n", "utf-8");
-    }
-    updated.push(commandName);
-    log.info(`${dryRun ? "Would update" : "Updated"} command: ${commandName}`);
-  }
-
-  return { updated, skipped };
-}
 
 async function refreshManagedMcpServers(
   configDir: string,
@@ -401,8 +241,8 @@ async function pullFromSource(
       repoUrl,
       tmpDir,
     ]);
-  } catch {
-    log.warn(`Failed to clone source repo: ${repo}`);
+  } catch (cause) {
+    log.warn(`Failed to clone source repo: ${repo}`, cause);
     return updated;
   }
 
@@ -575,14 +415,21 @@ export async function updateHandler(
     await fs.writeFile(flagsFile, stringifyYaml(currentFlags), "utf-8");
   }
 
+  const dryRun = options.dryRun ?? false;
+
   let rulesUpdated: string[] = [];
   let rulesSkipped: string[] = [];
   if (options.rules) {
-    const result = await refreshManagedRules(
+    const result = await refreshManagedArtifacts({
       configDir,
-      options.dryRun ?? false,
+      subDir: "rules",
+      label: "rule",
+      dryRun,
       log,
-    );
+      availableTemplates: AVAILABLE_TEMPLATES,
+      loadTemplate,
+      nameMappings: RULE_NAME_MAPPINGS,
+    });
     rulesUpdated = result.updated;
     rulesSkipped = result.skipped;
   }
@@ -590,11 +437,15 @@ export async function updateHandler(
   let skillsUpdated: string[] = [];
   let skillsSkipped: string[] = [];
   if (options.skills) {
-    const result = await refreshManagedSkills(
+    const result = await refreshManagedArtifacts({
       configDir,
-      options.dryRun ?? false,
+      subDir: "skills",
+      label: "skill",
+      dryRun,
       log,
-    );
+      availableTemplates: AVAILABLE_SKILL_TEMPLATES,
+      loadTemplate: loadSkillTemplateContent,
+    });
     skillsUpdated = result.updated;
     skillsSkipped = result.skipped;
   }
@@ -602,11 +453,15 @@ export async function updateHandler(
   let agentsUpdated: string[] = [];
   let agentsSkipped: string[] = [];
   if (options.agents) {
-    const result = await refreshManagedAgents(
+    const result = await refreshManagedArtifacts({
       configDir,
-      options.dryRun ?? false,
+      subDir: "agents",
+      label: "agent",
+      dryRun,
       log,
-    );
+      availableTemplates: AVAILABLE_AGENT_TEMPLATES,
+      loadTemplate: loadAgentTemplate,
+    });
     agentsUpdated = result.updated;
     agentsSkipped = result.skipped;
   }
@@ -614,11 +469,15 @@ export async function updateHandler(
   let commandsUpdated: string[] = [];
   let commandsSkipped: string[] = [];
   if (options.commands) {
-    const result = await refreshManagedCommands(
+    const result = await refreshManagedArtifacts({
       configDir,
-      options.dryRun ?? false,
+      subDir: "commands",
+      label: "command",
+      dryRun,
       log,
-    );
+      availableTemplates: AVAILABLE_COMMAND_TEMPLATES,
+      loadTemplate: loadCommandTemplate,
+    });
     commandsUpdated = result.updated;
     commandsSkipped = result.skipped;
   }
@@ -689,8 +548,8 @@ export async function updateHandler(
           regenerated,
         },
       });
-    } catch {
-      // Best-effort
+    } catch (cause) {
+      log.debug("Ledger write failed during update", cause);
     }
   }
 

@@ -4,6 +4,7 @@ import {
   buildArchitectureSummary,
   buildCommandsTable,
   buildAgentsTable,
+  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
@@ -198,5 +199,81 @@ describe("getEnabledMcpServers", () => {
   it("returns empty servers when input is empty", () => {
     const result = getEnabledMcpServers({ servers: {} });
     expect(Object.keys(result.servers)).toHaveLength(0);
+  });
+});
+
+describe("buildSkillRoutingTable", () => {
+  it("returns null when no skills", () => {
+    const config = createMockConfig({ skills: [] });
+    expect(buildSkillRoutingTable(config)).toBeNull();
+  });
+
+  it("uses intentHints when provided", () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "codi-code-review",
+          description: "Review code",
+          content: "c",
+          intentHints: {
+            taskType: "Code Review",
+            examples: ["Review my PR", "Check code quality"],
+          },
+        },
+      ],
+    });
+    const result = buildSkillRoutingTable(config)!;
+    expect(result).toContain("## Skill Routing");
+    expect(result).toContain("Code Review");
+    expect(result).toContain('"Review my PR"');
+    expect(result).toContain("codi-code-review");
+  });
+
+  it("falls back to name-derived row when no intentHints", () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "codi-security-scan",
+          description:
+            "Security analysis workflow. Use to audit for vulnerabilities.",
+          content: "c",
+        },
+      ],
+    });
+    const result = buildSkillRoutingTable(config)!;
+    expect(result).toContain("Security Scan");
+    expect(result).toContain("codi-security-scan");
+    expect(result).toContain("*Security analysis workflow*");
+  });
+
+  it("excludes brand-category skills", () => {
+    const config = createMockConfig({
+      skills: [
+        { name: "codi-commit", description: "Commit", content: "c" },
+        {
+          name: "my-brand",
+          description: "Brand",
+          content: "c",
+          category: "brand",
+        },
+      ],
+    });
+    const result = buildSkillRoutingTable(config)!;
+    expect(result).toContain("codi-commit");
+    expect(result).not.toContain("my-brand");
+  });
+
+  it("returns null when only brand skills exist", () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand",
+          content: "c",
+          category: "brand",
+        },
+      ],
+    });
+    expect(buildSkillRoutingTable(config)).toBeNull();
   });
 });

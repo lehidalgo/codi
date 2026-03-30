@@ -6,6 +6,11 @@ description: Codebase onboarding workflow. Systematically analyzes a project to 
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Codebase Onboarding
+  examples:
+    - "Help me understand this codebase"
+    - "Generate an onboarding guide"
 ---
 
 # {{name}}

@@ -1,10 +1,7 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import * as p from "@clack/prompts";
+import { execFileAsync } from "../../utils/exec.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import type { Logger } from "../output/logger.js";
-
-const execFileAsync = promisify(execFile);
 
 interface InstallGroup {
   label: string;

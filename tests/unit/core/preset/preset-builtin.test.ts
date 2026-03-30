@@ -13,9 +13,8 @@ describe("isBuiltinPreset", () => {
   });
 
   it("recognizes full built-in presets", () => {
-    expect(isBuiltinPreset(prefixedName("python-web"))).toBe(true);
-    expect(isBuiltinPreset(prefixedName("typescript-fullstack"))).toBe(true);
-    expect(isBuiltinPreset(prefixedName("security-hardened"))).toBe(true);
+    expect(isBuiltinPreset(prefixedName("fullstack"))).toBe(true);
+    expect(isBuiltinPreset(prefixedName("power-user"))).toBe(true);
   });
 
   it("returns false for unknown presets", () => {
@@ -40,24 +39,16 @@ describe("materializeBuiltinPreset", () => {
     }
   });
 
-  it("materializes a full built-in preset with artifacts", () => {
-    const result = materializeBuiltinPreset(prefixedName("python-web"));
+  it("materializes fullstack preset with 8 rules", () => {
+    const result = materializeBuiltinPreset(prefixedName("fullstack"));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.name).toBe(prefixedName("python-web"));
+      expect(result.data.name).toBe(prefixedName("fullstack"));
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
       expect(Object.keys(result.data.flags).length).toBe(18);
-    }
-  });
-
-  it("materializes security-hardened preset", () => {
-    const result = materializeBuiltinPreset(prefixedName("security-hardened"));
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.name).toBe(prefixedName("security-hardened"));
+      expect(result.data.rules.length).toBe(8);
     }
   });
 

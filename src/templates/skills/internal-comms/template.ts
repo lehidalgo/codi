@@ -6,6 +6,11 @@ description: A set of resources to help me write all kinds of internal communica
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Internal Communications
+  examples:
+    - "Write a status report"
+    - "Draft a team update"
 ---
 
 ## When to use this skill

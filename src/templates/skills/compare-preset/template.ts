@@ -15,6 +15,11 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Preset Comparison
+  examples:
+    - "Compare my config to upstream"
+    - "What changed in my preset"
 ---
 
 # {{name}}

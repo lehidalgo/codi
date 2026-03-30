@@ -54,11 +54,13 @@ export async function generate(
     }
 
     if (!options.dryRun) {
-      for (const file of generated) {
-        const fullPath = join(projectRoot, file.path);
-        await mkdir(dirname(fullPath), { recursive: true });
-        await writeFile(fullPath, file.content, "utf-8");
-      }
+      await Promise.all(
+        generated.map(async (file) => {
+          const fullPath = join(projectRoot, file.path);
+          await mkdir(dirname(fullPath), { recursive: true });
+          await writeFile(fullPath, file.content, "utf-8");
+        }),
+      );
     }
 
     files.push(...generated);

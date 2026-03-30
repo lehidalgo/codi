@@ -17,6 +17,11 @@ description: |
   to enforce behavior, set constraints, or establish coding standards.
 category: ${PROJECT_NAME_DISPLAY} Platform
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Rule Creation
+  examples:
+    - "Create a new rule"
+    - "Add a coding convention"
 ---
 
 # Rule Creator

@@ -6,6 +6,11 @@ description: Step-by-step QA testing methodology. Coding agent drives the proces
 category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: QA Testing
+  examples:
+    - "Run QA tests"
+    - "Test this feature step by step"
 ---
 
 # {{name}}

@@ -1,5 +1,13 @@
-import type { NormalizedConfig, McpConfig } from "../types/config.js";
-import { PROJECT_NAME_DISPLAY, PROJECT_URL } from "../constants.js";
+import type {
+  NormalizedConfig,
+  NormalizedSkill,
+  McpConfig,
+} from "../types/config.js";
+import {
+  PROJECT_NAME_DISPLAY,
+  PROJECT_URL,
+  BRAND_CATEGORY,
+} from "../constants.js";
 
 /** Build a project overview section from manifest metadata. */
 export function buildProjectOverview(config: NormalizedConfig): string {
@@ -82,6 +90,52 @@ export function buildAgentsTable(config: NormalizedConfig): string | null {
   }
 
   return lines.join("\n");
+}
+
+/** Build a skill routing table mapping user intents to recommended skills. */
+export function buildSkillRoutingTable(
+  config: NormalizedConfig,
+): string | null {
+  const routableSkills = config.skills.filter(
+    (s) => s.category !== BRAND_CATEGORY,
+  );
+  if (routableSkills.length === 0) return null;
+
+  const lines = [
+    "## Skill Routing",
+    "",
+    "| Task | Examples | Skill | Notes |",
+    "|------|----------|-------|-------|",
+  ];
+
+  for (const skill of routableSkills) {
+    lines.push(buildSkillRow(skill));
+  }
+
+  return lines.join("\n");
+}
+
+function buildSkillRow(skill: NormalizedSkill): string {
+  if (skill.intentHints) {
+    const examples = skill.intentHints.examples.map((e) => `"${e}"`).join(", ");
+    return `| ${skill.intentHints.taskType} | ${examples} | ${skill.name} | |`;
+  }
+  const taskType = deriveTaskType(skill.name);
+  const note = extractFirstSentence(skill.description);
+  return `| ${taskType} | — | ${skill.name} | *${note}* |`;
+}
+
+function deriveTaskType(name: string): string {
+  const stripped = name.replace(/^[a-z]+-/, "");
+  return stripped
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function extractFirstSentence(description: string): string {
+  const first = description.split(/\.\s/)[0] ?? description;
+  return first.length > 80 ? first.slice(0, 77) + "..." : first;
 }
 
 /** Build development notes derived from flags. */

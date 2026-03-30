@@ -14,6 +14,7 @@ import { AVAILABLE_MCP_SERVER_TEMPLATES } from "../core/scaffolder/mcp-template-
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
+import { Logger } from "../core/output/logger.js";
 import { handleOutput, regenerateConfigs } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { runAddWizard } from "./add-wizard.js";
@@ -382,8 +383,8 @@ async function logAddToLedger(
       timestamp: new Date().toISOString(),
       details: { artifactType, name },
     });
-  } catch {
-    // Best-effort
+  } catch (cause) {
+    Logger.getInstance().debug("Ledger write failed during add", cause);
   }
 }
 

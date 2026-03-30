@@ -1,33 +1,34 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileExists } from "../../utils/fs.js";
 
 export interface HookSetup {
-  runner: 'husky' | 'pre-commit' | 'lefthook' | 'none';
+  runner: "husky" | "pre-commit" | "lefthook" | "none";
   version?: string;
   configPath?: string;
 }
 
 interface DetectionRule {
-  runner: HookSetup['runner'];
-  check: (projectRoot: string) => Promise<{ found: boolean; configPath?: string; version?: string }>;
+  runner: HookSetup["runner"];
+  check: (
+    projectRoot: string,
+  ) => Promise<{ found: boolean; configPath?: string; version?: string }>;
 }
 
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function detectHusky(projectRoot: string): Promise<{ found: boolean; configPath?: string; version?: string }> {
-  const huskyDir = path.join(projectRoot, '.husky');
+async function detectHusky(
+  projectRoot: string,
+): Promise<{ found: boolean; configPath?: string; version?: string }> {
+  const huskyDir = path.join(projectRoot, ".husky");
   if (await fileExists(huskyDir)) {
     let version: string | undefined;
     try {
-      const pkgPath = path.join(projectRoot, 'node_modules', 'husky', 'package.json');
-      const raw = await fs.readFile(pkgPath, 'utf-8');
+      const pkgPath = path.join(
+        projectRoot,
+        "node_modules",
+        "husky",
+        "package.json",
+      );
+      const raw = await fs.readFile(pkgPath, "utf-8");
       const pkg = JSON.parse(raw) as { version?: string };
       version = pkg.version;
     } catch {
@@ -38,20 +39,24 @@ async function detectHusky(projectRoot: string): Promise<{ found: boolean; confi
   return { found: false };
 }
 
-async function detectPreCommit(projectRoot: string): Promise<{ found: boolean; configPath?: string }> {
-  const configPath = path.join(projectRoot, '.pre-commit-config.yaml');
+async function detectPreCommit(
+  projectRoot: string,
+): Promise<{ found: boolean; configPath?: string }> {
+  const configPath = path.join(projectRoot, ".pre-commit-config.yaml");
   if (await fileExists(configPath)) {
     return { found: true, configPath };
   }
   return { found: false };
 }
 
-async function detectLefthook(projectRoot: string): Promise<{ found: boolean; configPath?: string }> {
-  const configPath = path.join(projectRoot, '.lefthook.yml');
+async function detectLefthook(
+  projectRoot: string,
+): Promise<{ found: boolean; configPath?: string }> {
+  const configPath = path.join(projectRoot, ".lefthook.yml");
   if (await fileExists(configPath)) {
     return { found: true, configPath };
   }
-  const altPath = path.join(projectRoot, 'lefthook.yml');
+  const altPath = path.join(projectRoot, "lefthook.yml");
   if (await fileExists(altPath)) {
     return { found: true, configPath: altPath };
   }
@@ -59,9 +64,9 @@ async function detectLefthook(projectRoot: string): Promise<{ found: boolean; co
 }
 
 const DETECTION_RULES: DetectionRule[] = [
-  { runner: 'husky', check: detectHusky },
-  { runner: 'pre-commit', check: detectPreCommit },
-  { runner: 'lefthook', check: detectLefthook },
+  { runner: "husky", check: detectHusky },
+  { runner: "pre-commit", check: detectPreCommit },
+  { runner: "lefthook", check: detectLefthook },
 ];
 
 export async function detectHookSetup(projectRoot: string): Promise<HookSetup> {
@@ -75,5 +80,5 @@ export async function detectHookSetup(projectRoot: string): Promise<HookSetup> {
       };
     }
   }
-  return { runner: 'none' };
+  return { runner: "none" };
 }

@@ -105,8 +105,8 @@ export async function revertHandler(
         restoredFiles: restoredFiles.length,
       },
     });
-  } catch {
-    // Best-effort
+  } catch (cause) {
+    log.debug("Ledger write failed during revert", cause);
   }
 
   return createCommandResult({

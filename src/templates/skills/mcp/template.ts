@@ -6,6 +6,11 @@ description: MCP (Model Context Protocol) server usage. Use when configuring MCP
 category: Developer Tools
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: MCP Configuration
+  examples:
+    - "Configure MCP servers"
+    - "Set up MCP tools"
 ---
 
 # {{name}}

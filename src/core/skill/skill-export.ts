@@ -1,9 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { ok, err } from "../../types/result.js";
+import { execFileAsync } from "../../utils/exec.js";
 import type { Result } from "../../types/result.js";
 import type { NormalizedSkill } from "../../types/config.js";
 import type { ProjectError } from "../output/types.js";
@@ -20,8 +19,6 @@ import {
   MAX_PRESET_ZIP_ERROR_BYTES,
   PROJECT_NAME,
 } from "#src/constants.js";
-
-const execFileAsync = promisify(execFile);
 
 export type SkillExportFormat =
   | "standard"

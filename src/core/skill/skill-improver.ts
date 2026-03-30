@@ -3,6 +3,7 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
+import { Logger } from "../output/logger.js";
 import {
   MIN_FEEDBACK_FOR_EVOLVE,
   SKILL_OUTPUT_FILENAME,
@@ -40,8 +41,11 @@ export async function validateEvolveReadiness(
   try {
     await fs.access(skillPath);
     skillExists = true;
-  } catch {
-    // skill does not exist
+  } catch (cause) {
+    Logger.getInstance().debug(
+      "Skill file not found, skipping evolution",
+      cause,
+    );
   }
 
   if (!skillExists) {

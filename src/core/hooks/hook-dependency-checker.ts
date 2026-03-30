@@ -1,10 +1,7 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { execFileAsync } from "../../utils/exec.js";
 import type { HookEntry } from "./hook-registry.js";
-
-const execFileAsync = promisify(execFile);
 
 export interface DependencyCheck {
   name: string;

@@ -1,9 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { ok, err } from "../../types/result.js";
+import { execFileAsync } from "../../utils/exec.js";
 import type { Result } from "../../types/result.js";
 import {
   MAX_PRESET_ZIP_WARN_BYTES,
@@ -15,8 +14,6 @@ import { createError } from "../output/errors.js";
 import type { ProjectError } from "../output/types.js";
 import { validatePreset } from "./preset-validator.js";
 import { copyDir } from "./preset-registry.js";
-
-const execFileAsync = promisify(execFile);
 
 export interface ZipCreateResult {
   outputPath: string;

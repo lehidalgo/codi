@@ -6,6 +6,11 @@ description: "Use this skill any time a spreadsheet file is the primary input or
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Spreadsheets
+  examples:
+    - "Create a spreadsheet"
+    - "Generate an Excel file"
 ---
 
 # Requirements for Outputs

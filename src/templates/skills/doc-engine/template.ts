@@ -7,6 +7,11 @@ category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: ${PROJECT_NAME}
 user-invocable: true
+intentHints:
+  taskType: Document Generation
+  examples:
+    - "Create a report"
+    - "Generate a proposal"
 ---
 
 # {{name}} — Document Engine

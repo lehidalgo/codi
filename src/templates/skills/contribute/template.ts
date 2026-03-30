@@ -13,6 +13,11 @@ description: Guide the user through contributing artifacts back to the ${PROJECT
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Contributing
+  examples:
+    - "Contribute to codi"
+    - "Share my artifacts"
 ---
 
 # {{name}}

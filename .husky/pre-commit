@@ -10,5 +10,5 @@ TSC=$(echo "$STAGED" | grep -E '\.(ts|tsx)$' || true)
 npm test
 [ -n "$STAGED" ] && node .git/hooks/codi-secret-scan.mjs $STAGED
 [ -n "$STAGED" ] && node .git/hooks/codi-file-size-check.mjs $STAGED
-[ -n "$ESLINT" ] && git add $ESLINT || true
-[ -n "$PRETTIER" ] && git add $PRETTIER || true
+[ -n "$ESLINT" ] && git add $ESLINT
+[ -n "$PRETTIER" ] && git add $PRETTIER
