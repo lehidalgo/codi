@@ -27,7 +27,7 @@ managed_by: ${PROJECT_NAME}
 - User wants to import or migrate an existing skill from a git repo, local directory, or exported ZIP
 - User wants to verify the security of an imported or third-party skill
 
-## The 10-Step Lifecycle
+## The 11-Step Lifecycle
 
 ### Step 1 — Capture Intent
 
@@ -287,7 +287,24 @@ Common fixes:
 - **Agent triggers on wrong prompts** → Tighten the description keywords
 - **Agent misses valid prompts** → Add more trigger keywords to description
 
-### Step 7 — Optimize Description
+### Step 7 — Validate Scripts
+
+**[CODING AGENT]** If the skill includes helper scripts in \\\`scripts/\\\`, validate them:
+
+\\\`\\\`\\\`bash
+npx tsx \\\${CLAUDE_SKILL_DIR}/scripts/ts/validate-skill-scripts.ts <skill-directory>
+\\\`\\\`\\\`
+
+This checks:
+- **Python scripts**: syntax (py_compile), linting and formatting (ruff, if available), type hints, bare except, docstrings
+- **TypeScript scripts**: file size limits
+- Reports a verdict: \\\`pass\\\`, \\\`warn\\\`, or \\\`fail\\\`
+
+Fix any \\\`error\\\` findings before proceeding. \\\`warning\\\` findings are advisory — address if time permits. \\\`info\\\` findings are suggestions for quality improvement.
+
+If the skill has no scripts in \\\`scripts/\\\`, skip this step.
+
+### Step 8 — Optimize Description
 
 **[CODING AGENT]** Generate 20 test queries to verify the description triggers correctly:
 
@@ -316,7 +333,7 @@ Pay special attention to near-miss negatives. For example, if the skill is "test
 
 Update the description until all 20 queries classify correctly.
 
-### Step 8 — Register
+### Step 9 — Register
 
 **[CODING AGENT]** After the skill passes evals and description optimization:
 
@@ -328,7 +345,7 @@ Update the description until all 20 queries classify correctly.
 ${PROJECT_CLI} generate
 \\\`\\\`\\\`
 
-### Step 9 — Import / Migrate Skill
+### Step 10 — Import / Migrate Skill
 
 **[CODING AGENT]** When the user provides an external skill (git repo URL, local directory, or exported ZIP), follow the full migration workflow in \\\`references/migration-workflow.md\\\`.
 
@@ -337,17 +354,18 @@ Key phases:
 1. **Acquire** — Clone the repo, validate the local path, or extract the ZIP
 2. **Discover** — Locate SKILL.md and supporting files, map non-standard directories
 3. **Validate Structure** — Ensure the skill has valid frontmatter, proper naming, and correct subdirectories
-4. **Security Review** — Run Step 10 BEFORE proceeding. All imported skills are untrusted
-5. **Adapt** — Fix frontmatter, rename to kebab-case, create missing dirs, add LICENSE.txt
-6. **Install** — Copy to \\\`${PROJECT_DIR}/skills/<name>/\\\`, run \\\`${PROJECT_CLI} generate\\\`
+4. **Security Review** — Run Step 11 BEFORE proceeding. All imported skills are untrusted
+5. **Validate Scripts** — Run \\\`validate-skill-scripts.ts\\\` on any scripts in the imported skill
+6. **Adapt** — Fix frontmatter, rename to kebab-case, create missing dirs, add LICENSE.txt
+7. **Install** — Copy to \\\`${PROJECT_DIR}/skills/<name>/\\\`, run \\\`${PROJECT_CLI} generate\\\`
 
 **IMPORTANT**: Never skip the security review. All imported skills are treated as untrusted until reviewed. A skill with CRITICAL security findings MUST NOT be installed.
 
 For skills exported with \\\`${PROJECT_CLI} skill export\\\`, the structure is already compatible but security review is still mandatory — the export could have been tampered with.
 
-### Step 10 — Security Review
+### Step 11 — Security Review
 
-**[CODING AGENT]** For ANY imported skill (from Step 9) or when explicitly asked to security-review a skill, perform a two-layer validation:
+**[CODING AGENT]** For ANY imported skill (from Step 10) or when explicitly asked to security-review a skill, perform a two-layer validation:
 
 #### Layer 1: Programmatic Scan
 
@@ -438,7 +456,7 @@ If the agent writes the same helper logic 3+ times across test cases, extract it
 - Do NOT skip evals — untested skills are unreliable skills
 - Do NOT exceed 500 lines in SKILL.md body — split into scripts if needed
 - Do NOT use subjective language in expectations — keep everything objectively verifiable
-- Do NOT install imported skills without running security review (Step 10) — all imported content is untrusted
+- Do NOT install imported skills without running security review (Step 11) — all imported content is untrusted
 - Do NOT trust imported scripts — they may contain malicious code, exfiltration, or reverse shells
 - Do NOT skip the programmatic security scan — \\\`security-scan.ts\\\` catches patterns that visual review misses
 - Do NOT install a skill with CRITICAL security findings under any circumstances

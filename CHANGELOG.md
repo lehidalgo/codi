@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Skill script validator** — `validate-skill-scripts.ts` checks Python and TypeScript scripts in skill directories for syntax errors (py_compile), linting (ruff), formatting, type hints, bare except, and LOC limits. Integrated into skill-creator lifecycle (Step 7) and import flow
 - **Dual-language scripts for skill templates** — skills with helper scripts now ship both TypeScript (`scripts/ts/`) and Python (`scripts/python/`) variants; the coding agent detects runtime availability and chooses the appropriate variant. TypeScript is always available via `npx tsx`, Python is used when installed
 - **Skill-creator TypeScript eval pipeline** — 8 TypeScript scripts mirror the Python eval tools: `run-eval.ts`, `run-loop.ts`, `improve-description.ts`, `generate-report.ts`, `aggregate-benchmark.ts`, `package-skill.ts`, `quick-validate.ts`, `utils.ts`
 - **Skill-creator security scanner** — `security-scan.ts` programmatic scanner for imported skills: prompt injection detection, malicious script patterns, data exfiltration checks, magic bytes validation, content size limits
@@ -53,9 +54,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **`presentation` skill template** — replaced by `deck-engine` which adds brand integration, richer component catalog, and full navigation engine
 
+### Removed
+
+- **Python tools from pre-commit hooks** — ruff, pyright, pytest removed from `.husky/pre-commit`. Python template scripts are static assets, not application code. Quality is validated at skill-authoring time via `validate-skill-scripts.ts`
+- **`pyright` devDependency** — no longer needed since Python type-checking moved to skill-creator validation
+
 ### Fixed
 
-- **Skill staticDir resolution in bundled output** — `resolveStaticDir()` utility finds skill template source directories from both dev (tsx) and bundled (tsup) contexts by walking up to package root. Fixes skill init producing empty scripts/, references/, assets/ directories
+- **Skill staticDir resolution in bundled output** — static assets (scripts/, references/, assets/, agents/) are now copied to `dist/templates/skills/` during build via tsup `onSuccess` hook. `resolveStaticDir()` checks two predictable paths: dev (thisDir has template.ts) or bundled (dist/templates/skills/{name}/). Fixes skills having empty directories when installed as npm package
 - **Secret scanner false-positive filter** — line-by-line scanning with `FALSE_POS` regex skips env var placeholders (`${VAR}`, `"your-*"`, `process.env`) while still catching real secrets
 - **Secret scanner covers skill templates** — removed `/src/templates/` exclusion; skills are scanned for credentials. Only `/references/` (documentation examples) excluded
 - **File size hook resource exclusions** — assets, references, office scripts, fonts, PDFs, XSD, and HTML files excluded from LOC check while skill code scripts are still checked
