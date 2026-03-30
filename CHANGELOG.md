@@ -55,6 +55,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Skill staticDir resolution in bundled output** — `resolveStaticDir()` utility finds skill template source directories from both dev (tsx) and bundled (tsup) contexts by walking up to package root. Fixes skill init producing empty scripts/, references/, assets/ directories
+- **Secret scanner false-positive filter** — line-by-line scanning with `FALSE_POS` regex skips env var placeholders (`${VAR}`, `"your-*"`, `process.env`) while still catching real secrets
+- **Secret scanner covers skill templates** — removed `/src/templates/` exclusion; skills are scanned for credentials. Only `/references/` (documentation examples) excluded
+- **File size hook resource exclusions** — assets, references, office scripts, fonts, PDFs, XSD, and HTML files excluded from LOC check while skill code scripts are still checked
 - **Contribution ZIP round-trip** — exported ZIP now includes `preset.yaml` manifest, making it re-importable via `codi init`
 - **PR pathway uses clone+push** — contributions clone official repo, push to user's GitHub, open PR to `develop` (no fork required)
 - **Skill discovery in contribute** — directory-based skills (`skills/{name}/SKILL.md`) are now properly discovered and exported with supporting files

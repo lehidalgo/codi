@@ -122,7 +122,7 @@ Codi reads your `.codi/` directory, resolves configuration through 7 inheritance
 <!-- GENERATED:START:supported_agents -->
 | Agent | Config File | Rules | Skills | Agents | MCP |
 |:------|:-----------|:-----:|:------:|:------:|:---:|
-| **Claude Code** | `CLAUDE.md` | `.claude/rules` | `.claude/skills` | `.claude/agents` | `.claude/mcp.json` |
+| **Claude Code** | `CLAUDE.md` | `.claude/rules` | `.claude/skills` | `.claude/agents` | `.mcp.json` |
 | **Cursor** | `.cursorrules` | `.cursor/rules` | `—` | — | `.cursor/mcp.json` |
 | **Codex** | `AGENTS.md` | `.` | `.agents/skills` | `.codex/agents` | `.codex/mcp.toml` |
 | **Windsurf** | `.windsurfrules` | `.` | `.windsurf/skills` | — | — |
@@ -135,7 +135,7 @@ Codi reads your `.codi/` directory, resolves configuration through 7 inheritance
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 23 |
-| **Skills** | 37 |
+| **Skills** | 40 |
 | **Agents** | 8 |
 | **Commands** | 9 |
 <!-- GENERATED:END:template_counts_compact -->

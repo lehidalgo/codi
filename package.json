@@ -71,6 +71,7 @@
     "eslint": "^10.1.0",
     "husky": "^9.1.7",
     "prettier": "^3.8.1",
+    "pyright": "^1.1.408",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2",
