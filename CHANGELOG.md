@@ -23,15 +23,14 @@ First stable release. All 0.x versions are deprecated.
 
 `init` | `generate` | `status` | `validate` | `verify` | `add` | `update` | `revert` | `clean` | `doctor` | `preset create` | `preset install` | `preset export` | `preset remove` | `preset list` | `preset validate` | `preset edit` | `skill export` | `docs` | `docs-update` | `contribute`
 
-### Templates (120 built-in)
+### Templates (100+ built-in)
 
 | Type | Count | Examples |
 |------|-------|---------|
-| Rules | 28 | security, code-style, testing, architecture, git-workflow, 11 languages/frameworks |
-| Skills | 46 | code-review, documentation, security-scan, test-coverage, deck-engine, doc-engine, content-factory, skill-creator |
-| Agents | 23 | code-reviewer, test-generator, security-analyzer, performance-auditor, api-designer |
-| Commands | 17 | review, test-run, security-scan, refactor, onboard, docs-lookup |
-| Brands | 6 | brand-identity, bbva-brand, rl3-brand, algorithmic-art, canvas-design, theme-factory |
+| Rules | 25+ | security, code-style, testing, architecture, git-workflow, 11 languages/frameworks |
+| Skills | 40+ | code-review, documentation, security-scan, test-coverage, deck-engine, doc-engine, content-factory, skill-creator |
+| Agents | 20+ | code-reviewer, test-generator, security-analyzer, performance-auditor, api-designer, data-science-specialist |
+| Commands | 15+ | review, test-run, security-scan, refactor, onboard, docs-lookup, open-day, close-day |
 
 ### Presets
 

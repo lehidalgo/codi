@@ -32,6 +32,9 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("spring-boot")]: ruleTemplates.springBoot,
   [prefixedName("production-mindset")]: ruleTemplates.productionMindset,
   [prefixedName("simplicity-first")]: ruleTemplates.simplicityFirst,
+  [prefixedName("workflow")]: ruleTemplates.workflow,
+  [prefixedName("spanish-orthography")]: ruleTemplates.spanishOrthography,
+  [prefixedName("agent-usage")]: ruleTemplates.agentUsage,
   [devArtifactName("improvement")]: ruleTemplates.improvement,
 };
 

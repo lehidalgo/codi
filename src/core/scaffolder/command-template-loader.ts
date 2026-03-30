@@ -14,6 +14,13 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("docs-lookup")]: commandTemplates.docsLookup,
   [prefixedName("commit")]: commandTemplates.commit,
   [prefixedName("session-handoff")]: commandTemplates.sessionHandoff,
+  [prefixedName("check")]: commandTemplates.check,
+  [prefixedName("codebase-explore")]: commandTemplates.codebaseExplore,
+  [prefixedName("index-graph")]: commandTemplates.indexGraph,
+  [prefixedName("update-graph")]: commandTemplates.updateGraph,
+  [prefixedName("open-day")]: commandTemplates.openDay,
+  [prefixedName("close-day")]: commandTemplates.closeDay,
+  [prefixedName("roadmap")]: commandTemplates.roadmap,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);
