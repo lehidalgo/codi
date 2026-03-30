@@ -96,10 +96,10 @@ Each `codi generate` run computes a SHA256-based verification token from the man
 
 | Type | Count | Purpose |
 |:-----|------:|:--------|
-| Rules | 27 | Instructions agents follow (code style, security, language conventions) |
-| Skills | 42 | Reusable workflows agents can invoke (code review, testing, document generation) |
-| Agents | 22 | Subagent definitions with specialized tools and models |
-| Commands | 16 | Slash commands users invoke (`/commit`, `/review`, `/test-run`) |
+| Rules | 25+ | Instructions agents follow (code style, security, language conventions) |
+| Skills | 40+ | Reusable workflows agents can invoke (code review, testing, document generation) |
+| Agents | 20+ | Subagent definitions with specialized tools and models |
+| Commands | 15+ | Slash commands users invoke (`/commit`, `/review`, `/test-run`) |
 | Brands | custom | Visual identity tokens (colors, typography, logos, tone of voice) |
 
 ### Rule Templates

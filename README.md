@@ -28,14 +28,14 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 - **Teams using multiple AI agents** — ensure consistent rules across Claude Code, Cursor, Codex, Windsurf, and Cline
 - **Tech leads enforcing standards** — define security policies, coding conventions, and testing requirements once and deploy them to every developer's agent
-- **Individual developers** — get a structured, version-controlled configuration with 90+ built-in templates instead of writing agent configs from scratch
+- **Individual developers** — get a structured, version-controlled configuration with 100+ built-in templates instead of writing agent configs from scratch
 
 ---
 
 ## What You Get
 
 - **5 agents, 1 config** — generate native config files for all supported agents from a single `.codi/` directory
-- **90+ built-in templates** — rules, skills, agents, and commands covering security, testing, 11 languages, and 3 frameworks
+- **100+ built-in templates** — rules, skills, agents, and commands covering security, testing, 11 languages, and 3 frameworks
 - **6 presets** — from minimal to strict, choose your starting point and customize
 - **Pre-commit hooks** — automated testing, secret scanning, type checking, and file size limits
 - **Drift detection** — know instantly when generated files diverge from your source config
