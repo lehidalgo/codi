@@ -6,6 +6,11 @@ description: "Use this skill any time a .pptx file is involved in any way — as
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: PowerPoint
+  examples:
+    - "Create a PowerPoint"
+    - "Generate slides as PPTX"
 ---
 
 # PPTX Skill

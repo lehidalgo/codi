@@ -5,6 +5,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME_DISPLAY,
 } from "../constants.js";
+import { printWelcomeBanner } from "./banner.js";
 import { resolveProjectDir } from "../utils/paths.js";
 import { statusHandler } from "./status.js";
 import { ciHandler } from "./ci.js";
@@ -190,7 +191,7 @@ export function getAvailableActions(hasProject: boolean): HubAction[] {
 export async function runCommandCenter(projectRoot: string): Promise<void> {
   const configDir = resolveProjectDir(projectRoot);
 
-  p.intro(`${PROJECT_CLI} — Command Center`);
+  printWelcomeBanner({ subtitle: "Command Center" });
 
   while (true) {
     const hasProject = await dirExists(configDir);

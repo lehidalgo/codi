@@ -1,4 +1,4 @@
-import type { LogLevel, OutputMode } from './types.js';
+import type { LogLevel, OutputMode } from "./types.js";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -35,8 +35,8 @@ export class Logger {
   static getInstance(): Logger {
     if (!Logger.instance) {
       Logger.instance = new Logger({
-        level: 'info',
-        mode: 'human',
+        level: "info",
+        mode: "human",
         noColor: false,
       });
     }
@@ -52,40 +52,47 @@ export class Logger {
   }
 
   debug(message: string, ...args: unknown[]): void {
-    this.log('debug', message, ...args);
+    this.log("debug", message, ...args);
   }
 
   info(message: string, ...args: unknown[]): void {
-    this.log('info', message, ...args);
+    this.log("info", message, ...args);
   }
 
   warn(message: string, ...args: unknown[]): void {
-    this.log('warn', message, ...args);
+    this.log("warn", message, ...args);
   }
 
   error(message: string, ...args: unknown[]): void {
-    this.log('error', message, ...args);
+    this.log("error", message, ...args);
   }
 
   fatal(message: string, ...args: unknown[]): void {
-    this.log('fatal', message, ...args);
+    this.log("fatal", message, ...args);
   }
 
-  private log(level: LogLevel, message: string, ..._args: unknown[]): void {
-    if (this.mode === 'json') return;
+  private log(level: LogLevel, message: string, ...args: unknown[]): void {
+    if (this.mode === "json") return;
     if (LOG_LEVELS[level] < LOG_LEVELS[this.level]) return;
 
     const prefix = this.formatPrefix(level);
-    process.stderr.write(`${prefix} ${message}\n`);
+    const suffix =
+      args.length > 0
+        ? " " +
+          args
+            .map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
+            .join(" ")
+        : "";
+    process.stderr.write(`${prefix} ${message}${suffix}\n`);
   }
 
   private formatPrefix(level: LogLevel): string {
     const labels: Record<LogLevel, string> = {
-      debug: 'DBG',
-      info: 'INF',
-      warn: 'WRN',
-      error: 'ERR',
-      fatal: 'FTL',
+      debug: "DBG",
+      info: "INF",
+      warn: "WRN",
+      error: "ERR",
+      fatal: "FTL",
     };
     return `[${labels[level]}]`;
   }

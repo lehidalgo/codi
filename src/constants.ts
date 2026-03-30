@@ -9,6 +9,7 @@ export const PROJECT_DIR = `.${PROJECT_NAME}`;
 export const PROJECT_REPO = "lehidalgo/codi";
 export const PROJECT_URL = `https://github.com/${PROJECT_REPO}`;
 export const PROJECT_TARGET_BRANCH = "develop";
+export const PROJECT_TAGLINE = "Unified AI agent configuration";
 
 // --- Artifact naming ---
 /** Prefix a base artifact name with the project name. */
@@ -105,6 +106,29 @@ export const ARTIFACT_TYPES = [
 
 // --- Brand category ---
 export const BRAND_CATEGORY = "brand" as const;
+
+// --- CLI commands (single source of truth for stats) ---
+export const CLI_COMMANDS = [
+  "init",
+  "generate",
+  "validate",
+  "status",
+  "add",
+  "verify",
+  "doctor",
+  "update",
+  "clean",
+  "compliance",
+  "ci",
+  "watch",
+  "revert",
+  "marketplace",
+  "preset",
+  "docs-update",
+  "docs",
+  "contribute",
+  "skill",
+] as const;
 
 // --- Git operations ---
 export const GIT_CLONE_DEPTH = "1";

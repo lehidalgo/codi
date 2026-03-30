@@ -12,6 +12,11 @@ name: {{name}}
 description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, skills, agents, commands, configuration, verification, or troubleshooting ${PROJECT_NAME} setup.
 category: ${PROJECT_NAME_DISPLAY} Platform
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Codi Operations
+  examples:
+    - "Add a rule"
+    - "Manage codi config"
 ---
 
 # ${PROJECT_NAME_DISPLAY} Operations
@@ -91,7 +96,7 @@ ${PROJECT_CLI} update --preset strict      # Enforced + locked
 ${PROJECT_CLI} preset create <name>              # Scaffold a new preset directory
 ${PROJECT_CLI} preset create --interactive       # Interactive preset creation wizard
 ${PROJECT_CLI} preset list                       # List installed presets
-${PROJECT_CLI} preset list --builtin             # Include built-in presets (python-web, typescript-fullstack, security-hardened)
+${PROJECT_CLI} preset list --builtin             # Include built-in presets (minimal, balanced, strict, fullstack, power-user)
 ${PROJECT_CLI} preset validate <name>            # Validate preset structure and schema
 ${PROJECT_CLI} preset export <name> --format zip # Export as ZIP for private distribution
 ${PROJECT_CLI} preset install ./preset.zip       # Install from local ZIP file

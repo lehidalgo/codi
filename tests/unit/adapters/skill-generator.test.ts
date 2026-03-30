@@ -86,6 +86,26 @@ describe("buildSkillMd", () => {
     expect(result).not.toContain("license");
     expect(result).not.toContain("metadata-");
   });
+
+  it("includes intentHints when set", () => {
+    const result = buildSkillMd({
+      ...baseSkill,
+      intentHints: {
+        taskType: "Deployment",
+        examples: ["Deploy to production", "Release the app"],
+      },
+    });
+    expect(result).toContain("intentHints:");
+    expect(result).toContain("  taskType: Deployment");
+    expect(result).toContain("  examples:");
+    expect(result).toContain('    - "Deploy to production"');
+    expect(result).toContain('    - "Release the app"');
+  });
+
+  it("omits intentHints when not set", () => {
+    const result = buildSkillMd(baseSkill);
+    expect(result).not.toContain("intentHints:");
+  });
 });
 
 describe("buildSkillMetadataOnly", () => {

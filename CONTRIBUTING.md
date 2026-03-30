@@ -14,10 +14,32 @@ npm test
 
 **Requirements**: Node.js >= 20 (see `.nvmrc`).
 
+### Running the Local Build
+
+After cloning, use `npm start` to run the **local** build instead of any globally installed version:
+
+```bash
+npm run build          # compile src/ → dist/
+npm start              # runs local dist/cli.js (equivalent to "codi")
+npm start -- init      # runs "codi init" from local build
+npm start -- doctor    # runs "codi doctor" from local build
+```
+
+> **Why not just `codi`?** If you have `codi-cli` installed globally (`npm i -g codi-cli`), running `codi` executes the **published** version, not your local changes. Always use `npm start` (or `node dist/cli.js`) during development to test your local build.
+
+To replace the global binary with your local checkout:
+
+```bash
+npm link               # symlinks global "codi" → your local dist/cli.js
+codi                   # now runs your local build
+npm unlink -g codi-cli # revert when done
+```
+
 ### Scripts
 
 | Script | Description |
 |--------|-------------|
+| `npm start` | Run the local CLI build |
 | `npm run build` | Build with tsup |
 | `npm test` | Run tests (Vitest) |
 | `npm run test:watch` | Watch mode |
@@ -60,7 +82,7 @@ src/
   core/               # Business logic
     audit/            # Audit log (append-only JSONL)
     backup/           # Automatic backup before generate
-    config/           # Config resolution (7-layer merge)
+    config/           # Config resolution (8-layer merge)
     flags/            # Flag catalog, merging, enforcement
     generator/        # Output file generation orchestrator
     hooks/            # Pre-commit hook management
@@ -72,10 +94,10 @@ src/
     version/          # Version enforcement (semver)
   schemas/            # Zod schemas for config, flags, artifacts
   templates/          # Built-in templates
-    rules/            # 23 rule templates
-    skills/           # 19 skill templates
-    agents/           # 8 agent templates
-    commands/         # 9 command templates
+    rules/            # 27 rule templates
+    skills/           # 42 skill templates
+    agents/           # 22 agent templates
+    commands/         # 16 command templates
     hooks/            # 3 hook templates
   types/              # TypeScript type definitions
   utils/              # Shared utilities (logger, errors, hashing)
@@ -210,6 +232,32 @@ and any important context.
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
+
+## Test Coverage
+
+<!-- GENERATED:START:test_coverage -->
+| Metric | Coverage | Threshold | Status |
+|:-------|--------:|--------:|:------:|
+| Statements | 74.2% | 70% | Pass |
+| Branches | 66.4% | 63% | Pass |
+| Functions | 77.6% | 73% | Pass |
+| Lines | 75.8% | 70% | Pass |
+
+**Module thresholds:**
+
+| Module | Stmts | Branch | Funcs | Thresholds (S/B/F) |
+|:-------|------:|-------:|------:|:-------------------|
+| adapters | 94.9% | 92.4% | 100.0% | 93% / 90% / 100% |
+| core/config | 78.2% | 66.3% | 96.1% | 76% / 64% / 94% |
+| core/flags | 92.5% | 87.6% | 100.0% | 90% / 85% / 100% |
+| core/verify | 97.9% | 96.8% | 95.0% | 95% / 94% / 93% |
+| schemas | 100.0% | 100.0% | 100.0% | 100% / 100% / 100% |
+| utils | 97.6% | 94.4% | 100.0% | 95% / 92% / 100% |
+<!-- GENERATED:END:test_coverage -->
+
+## Documentation
+
+When making changes that affect behavior, update the relevant documentation. See [Maintaining Docs](docs/maintaining-docs.md) for guidelines on which files to update and how to keep docs in sync with code.
 
 ## Questions?
 

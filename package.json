@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "0.10.0",
+  "version": "1.0.0",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -31,6 +31,7 @@
     "preversion": "npm run lint && npm run build && npm run test",
     "postversion": "git push",
     "prepublishOnly": "[ \"$CI\" = \"true\" ] || [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build",
+    "start": "node dist/cli.js",
     "docs:generate": "node dist/cli.js docs --generate",
     "docs:validate": "node dist/cli.js docs --validate"
   },
@@ -60,6 +61,7 @@
     "@clack/prompts": "^1.1.0",
     "commander": "^14.0.3",
     "fast-glob": "^3.3.3",
+    "picocolors": "^1.1.0",
     "gray-matter": "^4.0.3",
     "yaml": "^2.8.2",
     "zod": "^4.3.6"

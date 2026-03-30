@@ -3,6 +3,7 @@ import { join, relative, extname } from "node:path";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
+import { Logger } from "../core/output/logger.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import {
   SKILL_OUTPUT_FILENAME,
@@ -80,6 +81,14 @@ export function buildSkillMd(
   if (skill.license) {
     frontmatter.push(`license: ${skill.license}`);
   }
+  if (skill.intentHints) {
+    frontmatter.push("intentHints:");
+    frontmatter.push(`  taskType: ${skill.intentHints.taskType}`);
+    frontmatter.push("  examples:");
+    for (const example of skill.intentHints.examples) {
+      frontmatter.push(`    - "${example}"`);
+    }
+  }
   // Note: managed_by, compatibility, and metadata-* are NOT emitted
   // They are internal fields that consume agent context budget
   frontmatter.push("---");
@@ -104,6 +113,18 @@ export function buildSkillMetadataOnly(
 }
 
 export type ProgressiveLoadingMode = "off" | "metadata" | "full";
+
+const VALID_PL_MODES = new Set<string>(["off", "metadata", "full"]);
+
+export function resolveProgressiveLoading(
+  flags: Record<string, { value: unknown }>,
+): ProgressiveLoadingMode {
+  const raw = flags["progressive_loading"]?.value;
+  if (typeof raw === "string" && VALID_PL_MODES.has(raw)) {
+    return raw as ProgressiveLoadingMode;
+  }
+  return "off";
+}
 
 /**
  * Generate skill files for an agent directory.
@@ -179,7 +200,8 @@ async function collectSupportingFiles(
   const results: SupportingFile[] = [];
   try {
     await access(skillDir);
-  } catch {
+  } catch (cause) {
+    Logger.getInstance().debug("Skill directory not accessible", cause);
     return results;
   }
 

@@ -19,6 +19,11 @@ description: Comprehensive validation of all ${PROJECT_NAME} features. Use when 
 category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: E2E Validation
+  examples:
+    - "Run end-to-end tests"
+    - "Validate the full installation"
 ---
 
 # {{name}}
@@ -140,7 +145,7 @@ Expected: Preset directory created at ${PROJECT_DIR}/presets/test-preset/ with p
 \\\`\\\`\\\`bash
 npx ${PROJECT_CLI} preset list --builtin --json
 \\\`\\\`\\\`
-Expected: Shows 6 built-in presets: minimal, balanced, strict, python-web, typescript-fullstack, security-hardened. Each with [builtin] source tag.
+Expected: Shows 6 built-in presets: minimal, balanced, strict, fullstack, development, power-user. Each with [builtin] source tag.
 
 ### 7c: Validate
 

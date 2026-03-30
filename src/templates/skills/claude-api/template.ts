@@ -6,6 +6,11 @@ description: "Build apps with the Claude API or Anthropic SDK. TRIGGER when: cod
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Claude API Integration
+  examples:
+    - "Use the Claude API"
+    - "Build with Anthropic SDK"
 ---
 
 # Building LLM-Powered Applications with Claude

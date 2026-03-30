@@ -14,11 +14,12 @@ import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
 import {
   generateSkillFiles,
-  type ProgressiveLoadingMode,
+  resolveProgressiveLoading,
 } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildAgentsTable,
+  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
 } from "./section-builder.js";
@@ -96,6 +97,10 @@ export const codexAdapter: AgentAdapter = {
     const agentsTable = buildAgentsTable(config);
     if (agentsTable) sections.push(agentsTable);
 
+    // Skill routing table
+    const routingTable = buildSkillRoutingTable(config);
+    if (routingTable) sections.push(routingTable);
+
     // Development notes from flags
     const devNotes = buildDevelopmentNotes(config);
     if (devNotes) sections.push(devNotes);
@@ -124,8 +129,7 @@ export const codexAdapter: AgentAdapter = {
     });
 
     // Generate .agents/skills/{name}/SKILL.md + supporting files (auto-discovered by Codex)
-    const plMode = ((config.flags.progressive_loading?.value as string) ??
-      "off") as ProgressiveLoadingMode;
+    const plMode = resolveProgressiveLoading(config.flags);
     files.push(
       ...(await generateSkillFiles(
         regularSkills,

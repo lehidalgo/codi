@@ -6,6 +6,11 @@ description: Creating algorithmic art using p5.js with seeded randomness and int
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Generative Art
+  examples:
+    - "Create algorithmic art"
+    - "Build a flow field"
 ---
 
 Algorithmic philosophies are computational aesthetic movements that are then expressed through code. Output .md files (philosophy), .html files (interactive viewer), and .js files (generative algorithms).

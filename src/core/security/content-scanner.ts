@@ -99,6 +99,8 @@ const CODE_EXTENSIONS = new Set([
   ".pl",
 ]);
 
+const CONFIG_EXTENSIONS = new Set([".yaml", ".yml", ".json", ".toml"]);
+
 const BINARY_EXTENSIONS = new Set([
   ".png",
   ".jpg",
@@ -415,6 +417,29 @@ export async function scanDirectory(dir: string): Promise<ScanReport> {
           file.relativePath,
           DEPENDENCY_PATTERNS,
           "suspicious_dependency",
+          false,
+        ),
+      );
+    }
+
+    // Script + exfiltration on config files (YAML/JSON/TOML)
+    // MCP server configs can embed arbitrary commands in command/args fields
+    if (CONFIG_EXTENSIONS.has(ext)) {
+      findings.push(
+        ...matchPatterns(
+          content,
+          file.relativePath,
+          SCRIPT_PATTERNS,
+          "malicious_script",
+          false,
+        ),
+      );
+      findings.push(
+        ...matchPatterns(
+          content,
+          file.relativePath,
+          EXFIL_PATTERNS,
+          "data_exfiltration",
           false,
         ),
       );

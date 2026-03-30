@@ -14,6 +14,11 @@ description: |
   from external sources, or reviewing a skill for security.
 category: ${PROJECT_NAME_DISPLAY} Platform
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Skill Creation
+  examples:
+    - "Create a new skill"
+    - "Build a reusable workflow"
 ---
 
 # Skill Creator
@@ -77,6 +82,11 @@ If the directory already exists, confirm with the user before overwriting.
 name: <skill-name>
 description: <description following the rules below>
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: <concise task label, max 50 chars>
+  examples:
+    - "<example user prompt 1>"
+    - "<example user prompt 2>"
 ---
 \\\`\\\`\\\`
 
@@ -97,6 +107,7 @@ managed_by: ${PROJECT_NAME}
 | \\\`paths\\\` | No | Glob patterns limiting when skill auto-activates |
 | \\\`shell\\\` | No | \\\`bash\\\` or \\\`powershell\\\` for inline shell commands |
 | \\\`managed_by\\\` | No | ${PROJECT_NAME_DISPLAY}-internal: \\\`${PROJECT_NAME}\\\` or \\\`user\\\` (stripped from agent output) |
+| \\\`intentHints\\\` | No | Object with \\\`taskType\\\` (string) and \\\`examples\\\` (string array) — powers the routing table. Include 2-4 example user prompts |
 
 #### Arguments and Substitutions
 
@@ -177,6 +188,30 @@ The description is the MOST IMPORTANT part — it determines when the skill trig
 **GOOD description examples:**
 - "Generates unit, integration, and e2e tests for any codebase. Use when the user asks to write tests, add test coverage, create test files, or verify untested code. Also activate when the user mentions TDD, test-driven development, or wants to know what is untested."
 - "Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings."
+
+#### intentHints Writing Guide
+
+The \\\`intentHints\\\` field powers the skill routing table in generated agent config files. It maps user intents to your skill.
+
+| Field | Constraint | Purpose |
+|-------|-----------|---------|
+| \\\`taskType\\\` | Max 50 chars | Short task label shown in the routing table (e.g., "Code Review", "PDF Operations") |
+| \\\`examples\\\` | 2-4 strings, max 100 chars each | Real user prompts that should trigger this skill |
+
+**Writing good examples:**
+- Write them as a user would naturally type: "Review my PR", not "Invoke code review workflow"
+- Cover different phrasings of the same intent: "Commit my changes" + "Create a commit"
+- Include the most common trigger words from the description
+- Keep them short and natural — these are examples, not documentation
+
+**BAD examples:**
+- "Execute the security scanning workflow" — Too formal, no one types this
+- "Use this skill to scan for vulnerabilities" — Self-referential
+
+**GOOD examples:**
+- "Scan for vulnerabilities"
+- "Find hardcoded secrets"
+- "Run security check"
 
 #### Body Structure
 

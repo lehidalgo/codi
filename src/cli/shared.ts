@@ -6,6 +6,7 @@ import type { CommandResult } from "../core/output/types.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { generate } from "../core/generator/generator.js";
+import { printCompactBanner } from "./banner.js";
 
 export interface GlobalOptions {
   json?: boolean;
@@ -63,18 +64,7 @@ export async function regenerateConfigs(projectRoot: string): Promise<boolean> {
  * Prints the CLI banner with a wizard title.
  */
 export function printBanner(title: string): void {
-  const log = Logger.getInstance();
-  log.info("");
-  log.info(
-    "  \u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E",
-  );
-  log.info("  \u2502        C O D I              \u2502");
-  log.info("  \u2502  Unified Agent Config       \u2502");
-  log.info(
-    "  \u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-  );
-  log.info(`  ${title}`);
-  log.info("");
+  printCompactBanner(title);
 }
 
 /**

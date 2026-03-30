@@ -1,8 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import * as p from "@clack/prompts";
 import { resolveProjectDir } from "../utils/paths.js";
@@ -45,8 +43,7 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loa
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
 import { regenerateConfigs } from "./shared.js";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "../utils/exec.js";
 
 /**
  * Unified install handler: auto-detects source type from the argument.
@@ -305,7 +302,8 @@ export async function presetExportHandler(
   const presetDir = path.join(configDir, "presets", name);
   try {
     await fs.access(path.join(presetDir, PRESET_MANIFEST_FILENAME));
-  } catch {
+  } catch (cause) {
+    log.warn(`Preset manifest not accessible for "${name}"`, cause);
     return createCommandResult({
       success: false,
       command: "preset export",
@@ -404,7 +402,8 @@ export async function presetRemoveHandler(
   try {
     await fs.access(presetDir);
     await fs.rm(presetDir, { recursive: true, force: true });
-  } catch {
+  } catch (cause) {
+    log.warn(`Failed to remove preset "${name}"`, cause);
     return createCommandResult({
       success: false,
       command: "preset remove",
@@ -480,7 +479,8 @@ export async function presetListEnhancedHandler(
           description: (parsed["description"] as string) ?? "",
           sourceType,
         });
-      } catch {
+      } catch (cause) {
+        log.debug(`Failed to parse manifest for preset "${entry.name}"`, cause);
         presets.push({
           name: entry.name,
           description: "(no manifest)",

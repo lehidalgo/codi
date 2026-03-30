@@ -89,6 +89,11 @@ category: Code Quality
 compatibility: [claude-code, cursor]
 user-invocable: true
 managed_by: codi
+intentHints:
+  taskType: Code Review
+  examples:
+    - "Review my PR"
+    - "Check code quality"
 ---
 ```
 
@@ -116,6 +121,7 @@ managed_by: codi
 | `user-invocable` | boolean | No | — | Can be invoked via slash command |
 | `paths` | string[] \| string | No | — | File paths the skill operates on |
 | `shell` | `bash` \| `powershell` | No | — | Shell environment |
+| `intentHints` | object | No | — | Routing table hints: `{ taskType: string, examples: string[] }` |
 <!-- GENERATED:END:skill_fields -->
 
 ### Built-in Skill Templates

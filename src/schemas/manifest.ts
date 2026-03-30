@@ -24,7 +24,7 @@ export const ProjectManifestSchema = z.object({
       requiredVersion: z.string().optional(),
     })
     .optional(),
-  team: z.string().max(MAX_NAME_LENGTH).optional(),
+  team: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH).optional(),
   source: z
     .object({
       repo: z.string(),

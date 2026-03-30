@@ -37,6 +37,7 @@ export async function generateHandler(
   projectRoot: string,
   options: GenerateCommandOptions,
 ): Promise<CommandResult<GenerateSummary>> {
+  const log = Logger.getInstance();
   const configResult = await resolveConfig(projectRoot);
   if (!configResult.ok) {
     return createCommandResult({
@@ -78,8 +79,9 @@ export async function generateHandler(
     const configDir = resolveProjectDir(projectRoot);
     const stateManager = new StateManager(configDir, projectRoot);
 
+    const agentUpdates: Record<string, GeneratedFileState[]> = {};
     for (const agentId of genResult.data.agents) {
-      const agentFiles = (genResult.data.filesByAgent[agentId] ?? []).map(
+      agentUpdates[agentId] = (genResult.data.filesByAgent[agentId] ?? []).map(
         (f): GeneratedFileState => ({
           path: f.path,
           sourceHash: hashContent(f.sources.join(",")),
@@ -88,8 +90,8 @@ export async function generateHandler(
           timestamp: new Date().toISOString(),
         }),
       );
-      await stateManager.updateAgent(agentId, agentFiles);
     }
+    await stateManager.updateAgentsBatch(agentUpdates);
 
     await writeAuditEntry(configDir, {
       type: "generate",
@@ -165,8 +167,8 @@ export async function generateHandler(
           );
         }
       }
-    } catch {
-      // Hook installation is best-effort during generate
+    } catch (cause) {
+      log.debug("Hook installation failed during generate", cause);
     }
   }
 
@@ -194,8 +196,8 @@ export async function generateHandler(
           filesGenerated: genResult.data.files.length,
         },
       });
-    } catch {
-      // Ledger write is best-effort
+    } catch (cause) {
+      log.debug("Ledger write failed during generate", cause);
     }
   }
 

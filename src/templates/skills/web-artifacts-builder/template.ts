@@ -6,6 +6,11 @@ description: Suite of tools for creating elaborate, multi-component claude.ai HT
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Web Artifacts
+  examples:
+    - "Build a complex HTML artifact"
+    - "Create a multi-component app"
 ---
 
 # Web Artifacts Builder

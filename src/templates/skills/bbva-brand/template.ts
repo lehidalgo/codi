@@ -71,13 +71,15 @@ BBVA is a global financial group with a purpose: to bring the age of opportunity
 | **Editorial / Long-form** | Tiempos Text | Regular (400) | Georgia, 'Times New Roman', serif |
 | **Data / Numbers** | BentonSans BBVA | Medium (500) | 'Helvetica Neue', Arial, sans-serif |
 
-**Available font files** (in \`assets/bbva_brand/fonts/\`):
-- \`benton_designers_developers/BentonSansBBVA-Light.ttf\` (300)
-- \`benton_designers_developers/BentonSansBBVA-Book.ttf\` (400)
-- \`benton_designers_developers/BentonSansBBVA-Medium.ttf\` (500)
-- \`benton_designers_developers/BentonSansBBVA-Bold.ttf\` (700)
-- \`BBVATiempos_Web(Developers)/TiemposTextWeb-Regular.woff2\`
-- \`TiemposHeadline/\` (otf, ttf, woff2 formats)
+**Available font files** (in \`assets/fonts/\`):
+- \`BentonSansBBVA-Light.woff2\` (300)
+- \`BentonSansBBVA-Book.woff2\` (400)
+- \`BentonSansBBVA-Medium.woff2\` (500)
+- \`BentonSansBBVA-Bold.woff2\` (700)
+- \`TiemposTextWeb-Regular.woff2\` (400)
+- \`TiemposTextWeb-RegularItalic.woff2\` (400 italic)
+- \`tiempos-headline-bold.woff2\` (700)
+- \`tiempos-headline-bold-italic.woff2\` (700 italic)
 
 **Typography rules**:
 - BentonSans BBVA is the primary typeface for all digital and print materials
@@ -90,10 +92,9 @@ BBVA is a global financial group with a purpose: to bring the age of opportunity
 
 **Primary logo**: The BBVA wordmark in BBVA Blue (#004481) on white backgrounds, or white on dark backgrounds.
 
-**Logo files available** in \`assets/bbva_brand/bbva_blue/\`:
+**Logo files available** in \`assets/\`:
 - \`BBVA_RGB.svg\` — Vector logo (preferred for web)
 - \`BBVA_RGB.png\` — Raster logo (for contexts requiring PNG)
-- \`BBVA_RGB.ai\` — Source file (Adobe Illustrator)
 
 **Logo rules**:
 - Always use the official BBVA wordmark — never recreate or modify
@@ -103,12 +104,14 @@ BBVA is a global financial group with a purpose: to bring the age of opportunity
 
 ### Icon Library
 
-300+ SVG icons available in \`assets/bbva_brand/all_icons/SVG/\`. Key categories include:
-- Finance: account, add-to-cart, atm, advance, card-payment
-- Navigation: arrows, back, collapse, expand, menu
-- Communication: chat, email, notification, phone
-- Status: check, error, warning, info
-- Accessibility: accessible-toilet, accessibility
+A curated subset of 35 commonly-used SVG icons is bundled in \`assets/icons/\`:
+- Finance: account, bank, card, cart, cash, dollar, euro, transfer, wallet
+- Navigation: arrows, menu, search, filter, home, settings, download, upload
+- Communication: chat, email, send, share
+- Status: check, close, info, warning, lock, delete
+- User: my-profile, mobile, calendar, document, edit, favorite, configuration, add
+
+The full 600+ icon library is cataloged in \`references/icon-catalog.md\`. Additional icons can be obtained from the BBVA corporate design portal.
 
 Use these icons consistently across all BBVA-branded interfaces.
 
@@ -154,7 +157,8 @@ When creating **documents** for BBVA:
 - Accent color (BBVA Blue) for highlights and section markers
 
 When creating **presentations** for BBVA:
-- Use the SPHERICA template system (\`assets/bbva_brand/templates/SPHERICA-Plantilla-BBVA-16-9.potx\`)
+- Reference \`references/bbva-deck-reference.html\` for an example of BBVA-branded slide structure and styling
+- The SPHERICA PowerPoint template (SPHERICA-Plantilla-BBVA-16-9.potx) is available from the BBVA corporate design portal
 - Light backgrounds as default (white or light gray)
 - BBVA Blue for titles and key data
 - Aqua for secondary highlights and data visualization
@@ -169,12 +173,24 @@ When creating **web content** for BBVA:
 
 ---
 
+## Bundled Assets
+
+- \`assets/BBVA_RGB.svg\` — Official logo, vector format (preferred for web)
+- \`assets/BBVA_RGB.png\` — Official logo, raster format
+- \`assets/fonts/\` — BentonSans BBVA (4 weights) and Tiempos (4 variants), all in WOFF2
+- \`assets/icons/\` — Curated subset of 35 commonly-used SVG icons
+
 ## Reference Files
 
-- \`assets/bbva_brand/bbva_blue/BBVA_RGB.svg\` — Official logo (vector)
-- \`assets/bbva_brand/fonts/\` — BentonSans and Tiempos font families
-- \`assets/bbva_brand/all_icons/SVG/\` — 300+ SVG icon library
-- \`assets/bbva_brand/all_values/values/\` — Corporate values imagery (ES/EN)
-- \`assets/bbva_brand/templates/SPHERICA-Plantilla-BBVA-16-9.potx\` — PowerPoint template
-- \`assets/bbva_brand/templates/SPHERICA-Plantilla-graficos-tablas.xltx\` — Excel chart template
+- \`references/icon-catalog.md\` — Complete listing of all 600+ icons in the BBVA library
+- \`references/values-imagery.md\` — Corporate values image catalog with descriptions
+- \`references/bbva-deck-reference.html\` — BBVA-branded presentation example (with .css and .js)
+
+## External Resources (BBVA Corporate Design Portal)
+
+- Full 600+ SVG icon library
+- Corporate values imagery (ES/EN, plain and microillustration variants)
+- SPHERICA PowerPoint template (16:9)
+- SPHERICA Excel chart/table template
+- Adobe Illustrator source files
 `;

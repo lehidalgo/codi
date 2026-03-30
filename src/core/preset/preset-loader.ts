@@ -13,6 +13,7 @@ import type {
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
 import { createError } from "../output/errors.js";
+import { Logger } from "../output/logger.js";
 import { PresetManifestSchema } from "../../schemas/preset.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 import {
@@ -224,80 +225,68 @@ async function resolveArtifactsByName(
   return { rules, skills, agents, commands };
 }
 
-function resolveRule(name: string): NormalizedRule | null {
-  const result = loadTemplate(name);
+/** Load a template by name, replace {{name}}, and parse frontmatter. */
+function resolveTemplateArtifact(
+  name: string,
+  loader: (n: string) => Result<string>,
+): { data: Record<string, unknown>; content: string } | null {
+  const result = loader(name);
   if (!result.ok) return null;
   try {
     const replaced = result.data.replace(/\{\{name\}\}/g, name);
-    const { data, content } =
-      parseFrontmatter<Record<string, unknown>>(replaced);
-    return {
-      name,
-      description: (data["description"] as string) ?? "",
-      content,
-      priority: (data["priority"] as "high" | "medium" | "low") ?? "medium",
-      alwaysApply: (data["alwaysApply"] as boolean) ?? true,
-      managedBy: PROJECT_NAME,
-    };
+    return parseFrontmatter<Record<string, unknown>>(replaced);
   } catch {
     return null;
   }
+}
+
+function resolveRule(name: string): NormalizedRule | null {
+  const parsed = resolveTemplateArtifact(name, loadTemplate);
+  if (!parsed) return null;
+  return {
+    name,
+    description: (parsed.data["description"] as string) ?? "",
+    content: parsed.content,
+    priority:
+      (parsed.data["priority"] as "high" | "medium" | "low") ?? "medium",
+    alwaysApply: (parsed.data["alwaysApply"] as boolean) ?? true,
+    managedBy: PROJECT_NAME,
+  };
 }
 
 function resolveSkill(name: string): NormalizedSkill | null {
-  const result = loadSkillTemplateContent(name);
-  if (!result.ok) return null;
-  try {
-    const replaced = result.data.replace(/\{\{name\}\}/g, name);
-    const { data, content } =
-      parseFrontmatter<Record<string, unknown>>(replaced);
-    return {
-      name,
-      description: (data["description"] as string) ?? "",
-      content,
-      managedBy: PROJECT_NAME,
-    };
-  } catch {
-    return null;
-  }
+  const parsed = resolveTemplateArtifact(name, loadSkillTemplateContent);
+  if (!parsed) return null;
+  return {
+    name,
+    description: (parsed.data["description"] as string) ?? "",
+    content: parsed.content,
+    managedBy: PROJECT_NAME,
+  };
 }
 
 function resolveAgent(name: string): NormalizedAgent | null {
-  const result = loadAgentTemplate(name);
-  if (!result.ok) return null;
-  try {
-    const replaced = result.data.replace(/\{\{name\}\}/g, name);
-    const { data, content } =
-      parseFrontmatter<Record<string, unknown>>(replaced);
-    return {
-      name,
-      description: (data["description"] as string) ?? "",
-      content,
-      tools: data["tools"] as string[] | undefined,
-      model: data["model"] as string | undefined,
-      managedBy: PROJECT_NAME,
-    };
-  } catch {
-    return null;
-  }
+  const parsed = resolveTemplateArtifact(name, loadAgentTemplate);
+  if (!parsed) return null;
+  return {
+    name,
+    description: (parsed.data["description"] as string) ?? "",
+    content: parsed.content,
+    tools: parsed.data["tools"] as string[] | undefined,
+    model: parsed.data["model"] as string | undefined,
+    managedBy: PROJECT_NAME,
+  };
 }
 
 function resolveCommand(name: string): NormalizedCommand | null {
-  const result = loadCommandTemplate(name);
-  if (!result.ok) return null;
-  try {
-    const replaced = result.data.replace(/\{\{name\}\}/g, name);
-    const { data, content } =
-      parseFrontmatter<Record<string, unknown>>(replaced);
-    return {
-      name,
-      description: (data["description"] as string) ?? "",
-      content,
-      managedBy: PROJECT_NAME,
-    };
-  } catch {
-    return null;
-  }
+  const parsed = resolveTemplateArtifact(name, loadCommandTemplate);
+  if (!parsed) return null;
+  return {
+    name,
+    description: (parsed.data["description"] as string) ?? "",
+    content: parsed.content,
+    managedBy: PROJECT_NAME,
+  };
 }
 
 async function loadRuleFromDir(
@@ -340,7 +329,11 @@ async function loadSkillFromDir(
       content,
       managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
-  } catch {
+  } catch (cause) {
+    Logger.getInstance().debug(
+      `Failed to load skill "${name}" from directory`,
+      cause,
+    );
     return null;
   }
 }
@@ -363,7 +356,11 @@ async function loadAgentFromDir(
       model: data["model"] as string | undefined,
       managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
-  } catch {
+  } catch (cause) {
+    Logger.getInstance().debug(
+      `Failed to load agent "${name}" from directory`,
+      cause,
+    );
     return null;
   }
 }

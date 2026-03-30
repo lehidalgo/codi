@@ -438,7 +438,7 @@ describe("globToGrepPattern", () => {
 });
 
 describe("buildHuskyCommands", () => {
-  it("generates STAGED variable and per-hook grep filters", () => {
+  it("generates STAGED variable and per-hook grep filters with xargs", () => {
     const hooks: HookEntry[] = [
       {
         name: "eslint",
@@ -451,7 +451,8 @@ describe("buildHuskyCommands", () => {
       "STAGED=$(git diff --cached --name-only --diff-filter=ACMR)",
     );
     expect(result).toContain("grep -E '\\.(ts|tsx|js|jsx)$'");
-    expect(result).toContain("npx eslint --fix $ESLINT");
+    // Files passed safely via xargs to prevent command injection
+    expect(result).toContain("printf '%s\\n' $ESLINT | xargs npx eslint --fix");
   });
 
   it("does not pass files when passFiles is false", () => {
@@ -494,8 +495,8 @@ describe("buildHuskyCommands", () => {
     ];
     const result = buildHuskyCommands(hooks);
 
-    // eslint gets files passed
-    expect(result).toContain("npx eslint --fix $ESLINT");
+    // eslint gets files passed safely via xargs
+    expect(result).toContain("printf '%s\\n' $ESLINT | xargs npx eslint --fix");
     // tsc runs without files
     expect(result).toContain('[ -n "$TSC" ] && npx tsc --noEmit');
     expect(result).not.toContain("npx tsc --noEmit $TSC");
@@ -526,9 +527,13 @@ describe("buildHuskyCommands", () => {
     ];
     const result = buildHuskyCommands(hooks);
 
-    // Formatters should trigger a git add to re-stage
-    expect(result).toContain('[ -n "$ESLINT" ] && git add $ESLINT');
-    expect(result).toContain('[ -n "$PRETTIER" ] && git add $PRETTIER');
+    // Formatters should trigger a git add to re-stage (via xargs for safety)
+    expect(result).toContain(
+      "[ -n \"$ESLINT\" ] && printf '%s\\n' $ESLINT | xargs git add",
+    );
+    expect(result).toContain(
+      "[ -n \"$PRETTIER\" ] && printf '%s\\n' $PRETTIER | xargs git add",
+    );
     // Non-modifying hooks should NOT trigger git add
     expect(result).not.toContain("git add $TSC");
   });

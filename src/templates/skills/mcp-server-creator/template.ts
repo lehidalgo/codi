@@ -13,6 +13,11 @@ description: |
   database, or API as an MCP server for their AI coding agents.
 category: Developer Tools
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: MCP Server Creation
+  examples:
+    - "Create a new MCP server"
+    - "Build an MCP tool"
 ---
 
 # MCP Server Creator

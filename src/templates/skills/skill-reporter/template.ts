@@ -13,6 +13,11 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 user-invocable: false
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Skill Analytics
+  examples:
+    - "Show skill statistics"
+    - "Report on skill usage"
 ---
 
 # {{name}}
