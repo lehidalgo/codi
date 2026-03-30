@@ -134,4 +134,14 @@ If the commit-msg hook rejects your message:
 - Valid types: feat, fix, docs, refactor, test, chore, perf, ci
 - First line must be ≤${GIT_COMMIT_FIRST_LINE_LIMIT} characters
 - Use imperative mood: "add" not "added"
+
+## Available Agents
+
+For pre-commit review, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-code-reviewer** — Review staged changes before committing
+
+## Related Skills
+
+- **codi-code-review** — Full code review workflow for complex changes
+- **codi-test-coverage** — Verify test coverage before committing
 `;

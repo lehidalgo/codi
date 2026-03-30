@@ -142,4 +142,13 @@ After 80%+ of sections are done, re-read the entire document checking for: flow 
 - [ ] No outdated references to removed features
 - [ ] Links work and point to current resources
 - [ ] Diagrams use Mermaid (not ASCII art)
+
+## Available Agents
+
+For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-docs-lookup** — Research API signatures, verify deprecations, find examples
+
+## Related Skills
+
+- **codi-codebase-onboarding** — Understand project structure before writing docs
 `;

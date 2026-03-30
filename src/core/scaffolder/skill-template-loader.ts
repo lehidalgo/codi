@@ -56,6 +56,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("brand-identity")]: skillTemplates.brandIdentity,
   [prefixedName("rl3-brand")]: skillTemplates.rl3Brand,
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrand,
+  [prefixedName("content-factory")]: skillTemplates.contentFactory,
 };
 
 /** Maps template names to their static asset directories (when available). */
@@ -76,6 +77,21 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("xlsx")]: skillTemplates.xlsxStaticDir,
   [prefixedName("rl3-brand")]: skillTemplates.rl3BrandStaticDir,
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrandStaticDir,
+  [prefixedName("content-factory")]: skillTemplates.contentFactoryStaticDir,
+  [prefixedName("code-review")]: skillTemplates.codeReviewStaticDir,
+  [prefixedName("security-scan")]: skillTemplates.securityScanStaticDir,
+  [prefixedName("test-coverage")]: skillTemplates.testCoverageStaticDir,
+  [prefixedName("refactoring")]: skillTemplates.refactoringStaticDir,
+  [prefixedName("codebase-onboarding")]:
+    skillTemplates.codebaseOnboardingStaticDir,
+  [prefixedName("documentation")]: skillTemplates.documentationStaticDir,
+  [prefixedName("commit")]: skillTemplates.commitStaticDir,
+  [prefixedName("e2e-testing")]: skillTemplates.e2eTestingStaticDir,
+  [prefixedName("guided-qa-testing")]: skillTemplates.guidedQaTestingStaticDir,
+  [prefixedName("frontend-design")]: skillTemplates.frontendDesignStaticDir,
+  [prefixedName("doc-engine")]: skillTemplates.docEngineStaticDir,
+  [prefixedName("mcp-server-creator")]:
+    skillTemplates.mcpServerCreatorStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

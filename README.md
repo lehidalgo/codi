@@ -135,7 +135,7 @@ Codi reads your `.codi/` directory, resolves configuration through 7 inheritance
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 23 |
-| **Skills** | 40 |
+| **Skills** | 41 |
 | **Agents** | 8 |
 | **Commands** | 9 |
 <!-- GENERATED:END:template_counts_compact -->
