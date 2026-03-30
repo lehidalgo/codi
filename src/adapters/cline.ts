@@ -15,10 +15,11 @@ import { partitionBrandSkills } from "./brand-filter.js";
 import {
   generateSkillFiles,
   buildSkillCatalog,
-  type ProgressiveLoadingMode,
+  resolveProgressiveLoading,
 } from "./skill-generator.js";
 import {
   buildProjectOverview,
+  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
 } from "./section-builder.js";
@@ -92,6 +93,10 @@ export const clineAdapter: AgentAdapter = {
 
     sections.push(buildWorkflowSection());
 
+    // Skill routing table
+    const routingTable = buildSkillRoutingTable(config);
+    if (routingTable) sections.push(routingTable);
+
     for (const rule of config.rules) {
       sections.push(`# ${rule.name}\n\n${rule.content}`);
     }
@@ -103,8 +108,7 @@ export const clineAdapter: AgentAdapter = {
       sections.push(`# Brand: ${brand.name}\n\n${brand.content}`);
     }
 
-    const plMode = ((config.flags.progressive_loading?.value as string) ??
-      "off") as ProgressiveLoadingMode;
+    const plMode = resolveProgressiveLoading(config.flags);
     if (plMode === "off") {
       for (const skill of regularSkills) {
         sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);

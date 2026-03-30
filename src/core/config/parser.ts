@@ -3,6 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import fg from "fast-glob";
 import { resolveProjectDir } from "../../utils/paths.js";
+import { fileExists } from "../../utils/fs.js";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import type {
@@ -39,15 +40,6 @@ export interface ParsedProjectDir {
   commands: NormalizedCommand[];
   agents: NormalizedAgent[];
   mcp: McpConfig;
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function readYamlFile(filePath: string): Promise<Result<unknown>> {
@@ -120,8 +112,8 @@ export async function scanRules(
   const errors: ReturnType<typeof createError>[] = [];
 
   const files = await collectMarkdownFiles(rulesDir);
-  for (const file of files) {
-    const result = await parseRuleFile(file);
+  const results = await Promise.all(files.map(parseRuleFile));
+  for (const result of results) {
     if (!result.ok) {
       errors.push(...result.errors);
     } else {
@@ -148,8 +140,8 @@ export async function scanSkills(
   const errors: ReturnType<typeof createError>[] = [];
 
   const files = await fg("**/SKILL.md", { cwd: skillsDir, absolute: true });
-  for (const file of files) {
-    const result = await parseSkillFile(file);
+  const results = await Promise.all(files.map(parseSkillFile));
+  for (const result of results) {
     if (!result.ok) {
       errors.push(...result.errors);
     } else {
@@ -171,8 +163,8 @@ async function scanCommands(
   const errors: ReturnType<typeof createError>[] = [];
 
   const files = await collectMarkdownFiles(commandsDir);
-  for (const file of files) {
-    const result = await parseCommandFile(file);
+  const results = await Promise.all(files.map(parseCommandFile));
+  for (const result of results) {
     if (!result.ok) {
       errors.push(...result.errors);
     } else {
@@ -195,7 +187,9 @@ async function parseCommandFile(
       return err(zodToProjectErrors(parsed.error, filePath));
     }
     const fm = parsed.data;
-    const managedBy = (data["managed_by"] as string) ?? undefined;
+    const rawManagedBy = data["managed_by"];
+    const managedBy =
+      typeof rawManagedBy === "string" ? rawManagedBy : undefined;
     return ok({
       name: fm.name,
       description: fm.description,
@@ -222,8 +216,8 @@ async function scanAgents(
   const errors: ReturnType<typeof createError>[] = [];
 
   const files = await collectMarkdownFiles(agentsDir);
-  for (const file of files) {
-    const result = await parseAgentFile(file);
+  const results = await Promise.all(files.map(parseAgentFile));
+  for (const result of results) {
     if (!result.ok) {
       errors.push(...result.errors);
     } else {
@@ -304,9 +298,13 @@ async function parseLegacyBrandFile(
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
-    const name = data["name"] as string | undefined;
-    const description = (data["description"] as string) ?? "";
-    const managedBy = (data["managed_by"] as string) ?? undefined;
+    const rawName = data["name"];
+    const name = typeof rawName === "string" ? rawName : undefined;
+    const rawDesc = data["description"];
+    const description = typeof rawDesc === "string" ? rawDesc : "";
+    const rawManagedBy = data["managed_by"];
+    const managedBy =
+      typeof rawManagedBy === "string" ? rawManagedBy : undefined;
     if (!name) {
       return err([
         createError("E_FRONTMATTER_INVALID", {
@@ -367,6 +365,7 @@ export async function parseSkillFile(
       userInvocable: fm["user-invocable"],
       paths: normalizedPaths,
       shell: fm.shell,
+      intentHints: fm.intentHints,
     });
   } catch (cause) {
     return err([
@@ -417,12 +416,13 @@ async function scanMcpServersDir(
 
   if (!(await fileExists(mcpServersDir))) return servers;
   const files = await fg("*.yaml", { cwd: mcpServersDir, absolute: true });
-  for (const file of files) {
-    const raw = await readYamlFile(file);
+  const results = await Promise.all(files.map(readYamlFile));
+  for (const raw of results) {
     if (!raw.ok) continue;
     const data = raw.data as Record<string, unknown>;
-    const name = data["name"] as string;
-    if (!name) continue;
+    const rawName = data["name"];
+    if (typeof rawName !== "string" || !rawName) continue;
+    const name = rawName;
     const { name: _name, managed_by: _managedBy, ...serverConfig } = data;
     servers[name] = serverConfig;
   }
@@ -468,31 +468,35 @@ export async function scanProjectDir(
     return err([createError("E_CONFIG_NOT_FOUND", { path: configDir })]);
   }
 
+  // Manifest and flags must succeed before proceeding
   const manifestResult = await parseManifest(configDir);
   if (!manifestResult.ok) return manifestResult;
 
   const flagsResult = await parseFlags(configDir);
   if (!flagsResult.ok) return flagsResult;
 
-  const rulesResult = await scanRules(path.join(configDir, "rules"));
+  // All artifact scans are independent — run in parallel
+  const [
+    rulesResult,
+    skillsResult,
+    commandsResult,
+    agentsResult,
+    legacyBrandsResult,
+    mcpResult,
+  ] = await Promise.all([
+    scanRules(path.join(configDir, "rules")),
+    scanSkills(path.join(configDir, "skills")),
+    scanCommands(path.join(configDir, "commands")),
+    scanAgents(path.join(configDir, "agents")),
+    scanLegacyBrands(path.join(configDir, "brands")),
+    parseMcpConfig(configDir),
+  ]);
+
   if (!rulesResult.ok) return rulesResult;
-
-  const skillsResult = await scanSkills(path.join(configDir, "skills"));
   if (!skillsResult.ok) return skillsResult;
-
-  const commandsResult = await scanCommands(path.join(configDir, "commands"));
   if (!commandsResult.ok) return commandsResult;
-
-  const agentsResult = await scanAgents(path.join(configDir, "agents"));
   if (!agentsResult.ok) return agentsResult;
-
-  // Scan legacy brands/ directory and merge as brand-category skills
-  const legacyBrandsResult = await scanLegacyBrands(
-    path.join(configDir, "brands"),
-  );
   if (!legacyBrandsResult.ok) return legacyBrandsResult;
-
-  const mcpResult = await parseMcpConfig(configDir);
   if (!mcpResult.ok) return mcpResult;
 
   return ok({

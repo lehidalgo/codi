@@ -2,8 +2,6 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { stringify as stringifyYaml } from "yaml";
 import * as p from "@clack/prompts";
 import { resolveProjectDir } from "../utils/paths.js";
@@ -27,8 +25,7 @@ import {
   PROJECT_NAME_DISPLAY,
   PROJECT_DIR,
 } from "../constants.js";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "../utils/exec.js";
 
 interface ContributeData {
   action: "pr" | "zip" | "cancelled";
@@ -171,9 +168,9 @@ async function checkGhAuth(log: Logger): Promise<boolean> {
   try {
     await execFileAsync("gh", ["auth", "status"]);
     return true;
-  } catch {
-    log.info("GitHub CLI not authenticated.");
-    log.info("Run: gh auth login");
+  } catch (cause) {
+    log.warn("GitHub CLI not authenticated.", cause);
+    log.warn("Run: gh auth login");
     return false;
   }
 }

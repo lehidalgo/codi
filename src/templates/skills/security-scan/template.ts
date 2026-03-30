@@ -6,6 +6,12 @@ description: Security analysis workflow. Use to audit codebases for vulnerabilit
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Security Audit
+  examples:
+    - "Scan for vulnerabilities"
+    - "Run security check"
+    - "Find hardcoded secrets"
 ---
 
 # {{name}}

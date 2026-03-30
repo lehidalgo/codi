@@ -7,6 +7,11 @@ category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: ${PROJECT_NAME}
 user-invocable: true
+intentHints:
+  taskType: Presentation
+  examples:
+    - "Create a slide deck"
+    - "Build a presentation"
 ---
 
 # {{name}} — Presentation Deck Engine

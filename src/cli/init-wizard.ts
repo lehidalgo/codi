@@ -8,6 +8,7 @@ import {
   handleCustomPath,
   formatLabel,
 } from "./init-wizard-paths.js";
+import { printWelcomeBanner } from "./banner.js";
 
 export interface WizardResult {
   languages: string[];
@@ -36,6 +37,11 @@ export async function runInitWizard(
   detectedAgents: string[],
   allAgents: string[],
 ): Promise<WizardResult | null> {
+  printWelcomeBanner({
+    detectedStack,
+    detectedAgents: allAgents.filter((a) => detectedAgents.includes(a)),
+  });
+
   p.intro(`${PROJECT_CLI} — Project Setup`);
 
   p.note(
@@ -48,10 +54,6 @@ export async function runInitWizard(
     ].join("\n"),
     "Keyboard shortcuts",
   );
-
-  const stackLabel =
-    detectedStack.length > 0 ? detectedStack.join(", ") : "none detected";
-  p.log.step(`Detected stack: ${stackLabel}`);
 
   let step = 0;
   let savedLanguages: string[] | undefined;

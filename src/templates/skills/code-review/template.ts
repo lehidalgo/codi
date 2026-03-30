@@ -6,6 +6,12 @@ description: Structured code review workflow. Use when reviewing PRs, examining 
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Code Review
+  examples:
+    - "Review my PR"
+    - "Check code quality"
+    - "Audit recent changes"
 ---
 
 # {{name}}

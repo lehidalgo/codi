@@ -10,6 +10,11 @@ description: Git commit workflow with conventional commits, pre-commit checks, a
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Git Commit
+  examples:
+    - "Commit my changes"
+    - "Create a commit"
 ---
 
 # {{name}}

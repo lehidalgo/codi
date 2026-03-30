@@ -188,6 +188,31 @@ describe("marketplace install handler", () => {
     expect(content).toContain("Test Skill");
   });
 
+  it("rejects registry entries with path traversal", async () => {
+    // Overwrite the registry index with a malicious entry
+    const maliciousIndex = [
+      {
+        name: "evil-skill",
+        description: "Legit looking skill",
+        path: "../../etc/passwd",
+      },
+    ];
+    // We need to intercept the cloned registry and write the malicious index.
+    // The mock execFile copies mockRegistryDir, so overwrite the index there.
+    await fs.writeFile(
+      path.join(mockRegistryDir, REGISTRY_INDEX_FILENAME),
+      JSON.stringify(maliciousIndex),
+      "utf-8",
+    );
+
+    const result = await marketplaceInstallHandler(tmpDir, "evil-skill", {});
+
+    expect(result.success).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]!.message).toContain("path traversal detected");
+    expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
+  });
+
   it("fails for a non-existent skill", async () => {
     const result = await marketplaceInstallHandler(
       tmpDir,

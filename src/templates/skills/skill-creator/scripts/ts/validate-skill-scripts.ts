@@ -13,7 +13,7 @@
  */
 
 import { readdir, readFile, stat } from "node:fs/promises";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { join, relative, extname } from "node:path";
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ interface ScriptValidationReport {
 
 function isToolAvailable(command: string): boolean {
   try {
-    execSync(`${command} --version`, { stdio: "pipe", timeout: 10_000 });
+    execFileSync(command, ["--version"], { stdio: "pipe", timeout: 10_000 });
     return true;
   } catch {
     return false;
@@ -114,7 +114,7 @@ async function collectScripts(
 
 function checkPythonSyntax(filePath: string): Finding | null {
   try {
-    execSync(`python3 -m py_compile "${filePath}"`, {
+    execFileSync("python3", ["-m", "py_compile", filePath], {
       stdio: "pipe",
       timeout: 15_000,
     });
@@ -138,7 +138,10 @@ function checkRuff(filePath: string): Finding[] {
 
   // Lint check
   try {
-    execSync(`ruff check "${filePath}"`, { stdio: "pipe", timeout: 15_000 });
+    execFileSync("ruff", ["check", filePath], {
+      stdio: "pipe",
+      timeout: 15_000,
+    });
   } catch (err) {
     const output =
       err instanceof Error && "stdout" in err
@@ -156,7 +159,7 @@ function checkRuff(filePath: string): Finding[] {
 
   // Format check
   try {
-    execSync(`ruff format --check "${filePath}"`, {
+    execFileSync("ruff", ["format", "--check", filePath], {
       stdio: "pipe",
       timeout: 15_000,
     });

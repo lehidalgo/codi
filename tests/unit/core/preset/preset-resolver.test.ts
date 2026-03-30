@@ -1,9 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 import {
   parsePresetIdentifier,
   extractPresetName,
+  resolveAndLoadPreset,
 } from "../../../../src/core/preset/preset-resolver.js";
-import { prefixedName } from "../../../../src/constants.js";
+import { prefixedName, PROJECT_NAME } from "../../../../src/constants.js";
 
 describe("parsePresetIdentifier", () => {
   it("identifies builtin presets", () => {
@@ -109,5 +113,57 @@ describe("extractPresetName", () => {
     });
 
     expect(name).toBe(prefixedName("balanced"));
+  });
+});
+
+describe("resolveAndLoadPreset", () => {
+  let tmpDir: string;
+  let presetsDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-res-`),
+    );
+    presetsDir = path.join(tmpDir, "presets");
+    await fs.mkdir(presetsDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("resolves builtin preset by name", async () => {
+    const result = await resolveAndLoadPreset(
+      prefixedName("balanced"),
+      presetsDir,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.name).toBe(prefixedName("balanced"));
+    }
+  });
+
+  it("returns error for non-existent local preset", async () => {
+    const result = await resolveAndLoadPreset("nonexistent-preset", presetsDir);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]!.code).toContain("PRESET_NOT_FOUND");
+    }
+  });
+
+  it("returns error for non-installed zip preset", async () => {
+    const result = await resolveAndLoadPreset("./missing.zip", presetsDir);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]!.code).toContain("PRESET_NOT_FOUND");
+    }
+  });
+
+  it("returns error for non-installed github preset", async () => {
+    const result = await resolveAndLoadPreset("github:org/repo", presetsDir);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]!.code).toContain("PRESET_NOT_FOUND");
+    }
   });
 });

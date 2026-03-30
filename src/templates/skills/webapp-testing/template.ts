@@ -6,6 +6,11 @@ description: Toolkit for interacting with and testing local web applications usi
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Web App Testing
+  examples:
+    - "Test the web UI"
+    - "Take a screenshot of the app"
 ---
 
 # Web Application Testing

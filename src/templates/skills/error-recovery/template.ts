@@ -8,6 +8,11 @@ description: |
   diagnostic report analyzing what went wrong, why, and how to prevent it.
 category: Code Quality
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Error Recovery
+  examples:
+    - "Help me fix this error"
+    - "Debug this failure"
 ---
 
 # {{name}}

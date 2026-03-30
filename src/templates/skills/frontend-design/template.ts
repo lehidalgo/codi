@@ -6,6 +6,11 @@ description: Create distinctive, production-grade frontend interfaces with high 
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Frontend Design
+  examples:
+    - "Build a landing page"
+    - "Design a web component"
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

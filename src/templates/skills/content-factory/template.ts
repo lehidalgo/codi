@@ -7,6 +7,11 @@ category: Content Creation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: ${PROJECT_NAME}
 user-invocable: true
+intentHints:
+  taskType: Content Creation
+  examples:
+    - "Write a blog post"
+    - "Create social media content"
 ---
 
 # {{name}} — Content Factory

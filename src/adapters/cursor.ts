@@ -14,10 +14,11 @@ import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
 import {
   generateSkillFiles,
-  type ProgressiveLoadingMode,
+  resolveProgressiveLoading,
 } from "./skill-generator.js";
 import {
   buildProjectOverview,
+  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
@@ -100,6 +101,11 @@ export const cursorAdapter: AgentAdapter = {
     if (devNotes) sections.push(devNotes);
 
     sections.push(buildWorkflowSection());
+
+    // Skill routing table
+    const routingTable = buildSkillRoutingTable(config);
+    if (routingTable) sections.push(routingTable);
+
     const mainContent = addGeneratedFooter(sections.join("\n\n"));
     files.push({
       path: ".cursorrules",
@@ -127,8 +133,7 @@ export const cursorAdapter: AgentAdapter = {
     const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
 
     // Generate .cursor/skills/{name}/SKILL.md + supporting files
-    const plMode = ((config.flags.progressive_loading?.value as string) ??
-      "off") as ProgressiveLoadingMode;
+    const plMode = resolveProgressiveLoading(config.flags);
     files.push(
       ...(await generateSkillFiles(
         regularSkills,

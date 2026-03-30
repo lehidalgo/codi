@@ -9,6 +9,7 @@ import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
+import { Logger } from "../core/output/logger.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 
@@ -102,8 +103,11 @@ export async function doctorHandler(
         );
       }
     }
-  } catch {
-    // Skip hook check if detection fails
+  } catch (cause) {
+    Logger.getInstance().warn(
+      "Hook detection failed during doctor check",
+      cause,
+    );
   }
 
   return createCommandResult({

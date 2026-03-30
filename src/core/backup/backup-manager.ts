@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isPathSafe } from "../../utils/path-guard.js";
+import { fileExists } from "../../utils/fs.js";
 import {
   MAX_BACKUPS,
   STATE_FILENAME,
@@ -22,15 +23,6 @@ async function dirExists(dirPath: string): Promise<boolean> {
   try {
     const stat = await fs.stat(dirPath);
     return stat.isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
   } catch {
     return false;
   }

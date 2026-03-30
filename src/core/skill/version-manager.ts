@@ -3,6 +3,7 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
+import { Logger } from "../output/logger.js";
 import { VERSIONS_DIR, SKILL_OUTPUT_FILENAME } from "#src/constants.js";
 
 export interface VersionInfo {
@@ -33,7 +34,11 @@ async function getNextVersion(skillDir: string): Promise<number> {
       .map(parseVersionNumber)
       .filter((v): v is number => v !== null);
     return versions.length > 0 ? Math.max(...versions) + 1 : 1;
-  } catch {
+  } catch (cause) {
+    Logger.getInstance().debug(
+      "Versions directory not found, starting at v1",
+      cause,
+    );
     return 1;
   }
 }
@@ -84,7 +89,8 @@ export async function listVersions(
   let entries: string[];
   try {
     entries = await fs.readdir(dir);
-  } catch {
+  } catch (cause) {
+    Logger.getInstance().debug("No version history found", cause);
     return ok([]);
   }
 

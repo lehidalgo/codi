@@ -104,6 +104,20 @@ export class StateManager {
     return this.write(state);
   }
 
+  async updateAgentsBatch(
+    updates: Record<string, GeneratedFileState[]>,
+  ): Promise<Result<void>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const state = stateResult.data;
+    for (const [agentId, files] of Object.entries(updates)) {
+      state.agents[agentId] = files;
+    }
+    state.lastGenerated = new Date().toISOString();
+    return this.write(state);
+  }
+
   async updateHooks(files: GeneratedFileState[]): Promise<Result<void>> {
     const stateResult = await this.read();
     if (!stateResult.ok) return stateResult;

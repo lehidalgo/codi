@@ -24,12 +24,13 @@ export default defineConfig({
         "src/cli/marketplace.ts", // requires network + interactive prompts
         "src/core/preset/preset-zip.ts", // requires zip/unzip binary
         "src/core/preset/preset-source.ts", // type-only file
+        "src/templates/skills/**/scripts/**", // standalone skill runtime scripts with external deps
       ],
       thresholds: {
-        statements: 70,
-        branches: 63,
-        functions: 73,
-        lines: 70,
+        statements: 75,
+        branches: 66,
+        functions: 79,
+        lines: 76,
         "src/adapters/**": {
           statements: 93,
           branches: 90,

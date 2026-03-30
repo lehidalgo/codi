@@ -6,6 +6,11 @@ description: Knowledge and utilities for creating animated GIFs optimized for Sl
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: GIF Creation
+  examples:
+    - "Make a GIF for Slack"
+    - "Create an animated GIF"
 ---
 
 # Slack GIF Creator
