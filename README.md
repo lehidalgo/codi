@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="codi" width="400">
+  <img src="assets/logo.svg" alt="codi-cli" width="560">
 </p>
 
 <p align="center">

@@ -214,7 +214,9 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
   if (modifiedVars.length > 0) {
     const unique = [...new Set(modifiedVars)];
     for (const v of unique) {
-      lines.push(`[ -n "$${v}" ] && printf '%s\\n' $${v} | xargs git add`);
+      lines.push(
+        `[ -n "$${v}" ] && printf '%s\\n' $${v} | xargs git add || true`,
+      );
     }
   }
 
