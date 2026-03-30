@@ -19,6 +19,8 @@ import {
   PROJECT_NAME,
   PROJECT_DIR,
 } from "../constants.js";
+import { scanSkillFile } from "../core/security/content-scanner.js";
+import { promptSecurityFindings } from "../core/security/scan-prompt.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -150,6 +152,31 @@ export async function marketplaceInstallHandler(
     }
 
     const sourcePath = path.join(registryDir, entry.path);
+
+    // Security scan on skill content before installing
+    const content = await fs.readFile(sourcePath, "utf8");
+    const scanReport = scanSkillFile(sourcePath, content);
+    if (scanReport.verdict !== "pass") {
+      const proceed = await promptSecurityFindings(scanReport);
+      if (!proceed) {
+        return createCommandResult({
+          success: false,
+          command: "marketplace install",
+          data: { action: "install" },
+          errors: [
+            {
+              code: "E_SECURITY_SCAN_BLOCKED",
+              message: `Security scan blocked installation of "${skillName}"`,
+              hint: "Review the findings above. Re-run and accept to override.",
+              severity: "error",
+              context: {},
+            },
+          ],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
+    }
+
     const destDir = path.join(configDir, "skills");
     await fs.mkdir(destDir, { recursive: true });
 

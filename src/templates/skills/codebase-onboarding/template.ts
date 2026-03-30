@@ -90,4 +90,13 @@ Use when asked to understand a new codebase, onboard to a project, or create a p
 - Do not duplicate the README — add insights the README does not cover
 - Flag unknowns honestly — say "unclear" rather than guessing
 - Do not generate architecture diagrams unless specifically requested
+
+## Available Agents
+
+For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-onboarding-guide** — Autonomous codebase analysis and guide generation
+
+## Related Skills
+
+- **codi-documentation** — Create and maintain project documentation
 `;

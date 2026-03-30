@@ -411,5 +411,11 @@ Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and a
 - docs/guides/testing-guide.md — full testing procedure
 - docs/guides/user-flows.md — all 30 user flows
 - docs/troubleshooting.md — common issues (including hook troubleshooting)
+
+## Available Agents
+
+For specialized analysis during e2e validation, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-test-generator** — Generate automated tests from e2e findings
+- **codi-security-analyzer** — Security validation of auth flows and data handling
 `;
 }

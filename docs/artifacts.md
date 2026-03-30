@@ -126,6 +126,7 @@ managed_by: codi
 | **brand** | codi-bbva-brand, codi-brand-identity, codi-rl3-brand |
 | **Code Quality** | codi-code-review, codi-e2e-testing, codi-error-recovery, codi-guided-qa-testing, codi-refactoring, codi-security-scan, codi-test-coverage, codi-webapp-testing |
 | **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs-manager, codi-operations, codi-preset-creator, codi-rule-creator, codi-skill-creator |
+| **Content Creation** | codi-content-factory |
 | **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory, codi-web-artifacts-builder |
 | **Developer Tools** | codi-claude-api, codi-codebase-onboarding, codi-commit, codi-documentation, codi-internal-comms, codi-mcp, codi-mcp-server-creator, codi-mobile-development |
 | **Document Generation** | codi-deck-engine, codi-doc-engine |

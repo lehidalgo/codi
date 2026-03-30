@@ -221,4 +221,9 @@ Report structure:
 |------|---------------|
 | **HUMAN** | Approves phase progression, performs HUMAN-only checks, makes fix/defer decisions, provides judgment on UX/visual checks |
 | **CODING AGENT** | Drives AGENT phases autonomously, reads source code for diagnosis, proposes fixes, maintains the QA report document, tracks all results |
+
+## Available Agents
+
+For automated test generation from QA findings, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-test-generator** — Convert QA findings into automated regression tests
 `;

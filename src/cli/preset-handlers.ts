@@ -27,7 +27,7 @@ import {
   extractPresetName,
 } from "../core/preset/preset-resolver.js";
 import {
-  installPresetFromZip,
+  extractPresetZip,
   createPresetZip,
 } from "../core/preset/preset-zip.js";
 import { validatePreset } from "../core/preset/preset-validator.js";
@@ -38,6 +38,8 @@ import {
 import { presetInstallHandler } from "./preset.js";
 import type { PresetData } from "./preset.js";
 import { printBanner } from "./shared.js";
+import { scanDirectory } from "../core/security/content-scanner.js";
+import { promptSecurityFindings } from "../core/security/scan-prompt.js";
 import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
@@ -61,13 +63,15 @@ export async function presetInstallUnifiedHandler(
   try {
     if (descriptor.type === "zip") {
       log.info(`Installing preset from ZIP: ${source}...`);
-      const result = await installPresetFromZip(source, presetsDir);
-      if (!result.ok) {
+
+      // Extract + validate (extractPresetZip calls validatePreset internally)
+      const extractResult = await extractPresetZip(source);
+      if (!extractResult.ok) {
         return createCommandResult({
           success: false,
           command: "preset install",
           data: { action: "install" },
-          errors: result.errors.map((e) => ({
+          errors: extractResult.errors.map((e) => ({
             code: e.code,
             message: e.message,
             hint: e.hint,
@@ -77,23 +81,63 @@ export async function presetInstallUnifiedHandler(
           exitCode: EXIT_CODES.GENERAL_ERROR,
         });
       }
-      const { name } = result.data;
-      const version = await getPresetVersionFromDir(
-        path.join(presetsDir, name),
-      );
+
+      const { extractedDir, presetName } = extractResult.data;
+
+      // Security scan on extracted content before copying
+      const scanReport = await scanDirectory(extractedDir);
+      if (scanReport.verdict !== "pass") {
+        const proceed = await promptSecurityFindings(scanReport);
+        if (!proceed) {
+          const tmpParent = path.dirname(extractedDir);
+          await fs
+            .rm(tmpParent, { recursive: true, force: true })
+            .catch(() => {});
+          return createCommandResult({
+            success: false,
+            command: "preset install",
+            data: { action: "install", name: presetName },
+            errors: [
+              {
+                code: "E_SECURITY_SCAN_BLOCKED",
+                message: `Security scan blocked installation of "${presetName}"`,
+                hint: "Review the findings above. Re-run and accept to override.",
+                severity: "error",
+                context: {},
+              },
+            ],
+            exitCode: EXIT_CODES.GENERAL_ERROR,
+          });
+        }
+      }
+
+      // Copy to final destination
+      const destDir = path.join(presetsDir, presetName);
+      try {
+        await fs.rm(destDir, { recursive: true, force: true });
+        await fs.mkdir(destDir, { recursive: true });
+        await copyDir(extractedDir, destDir);
+      } finally {
+        const tmpParent = path.dirname(extractedDir);
+        await fs
+          .rm(tmpParent, { recursive: true, force: true })
+          .catch(() => {});
+      }
+
+      const version = await getPresetVersionFromDir(destDir);
       const lock = await readLockFile(configDir);
-      lock.presets[name] = {
+      lock.presets[presetName] = {
         version,
         source: `zip:${path.resolve(source)}`,
         sourceType: "zip",
         installedAt: new Date().toISOString(),
       };
       await writeLockFile(configDir, lock);
-      log.info(`Installed preset "${name}" from ZIP.`);
+      log.info(`Installed preset "${presetName}" from ZIP.`);
       return createCommandResult({
         success: true,
         command: "preset install",
-        data: { action: "install", name },
+        data: { action: "install", name: presetName },
         exitCode: EXIT_CODES.SUCCESS,
       });
     }
@@ -151,6 +195,47 @@ async function installFromGithub(
       sourceDir = path.join(tmpDir, name);
     } catch {
       /* Root is the preset */
+    }
+
+    // Validate structure (was missing for GitHub path)
+    const validation = await validatePreset(sourceDir);
+    if (!validation.ok) {
+      return createCommandResult({
+        success: false,
+        command: "preset install",
+        data: { action: "install", name },
+        errors: validation.errors.map((e) => ({
+          code: e.code,
+          message: e.message,
+          hint: e.hint,
+          severity: e.severity as "error",
+          context: e.context,
+        })),
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
+    // Security scan
+    const scanReport = await scanDirectory(sourceDir);
+    if (scanReport.verdict !== "pass") {
+      const proceed = await promptSecurityFindings(scanReport);
+      if (!proceed) {
+        return createCommandResult({
+          success: false,
+          command: "preset install",
+          data: { action: "install", name },
+          errors: [
+            {
+              code: "E_SECURITY_SCAN_BLOCKED",
+              message: `Security scan blocked installation of "${name}": ${scanReport.summary.critical} critical, ${scanReport.summary.high} high findings`,
+              hint: "Review the findings above. Re-run and accept to override.",
+              severity: "error",
+              context: {},
+            },
+          ],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
     }
 
     const destDir = path.join(presetsDir, name);

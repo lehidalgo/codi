@@ -86,4 +86,14 @@ Skip generating tests for:
 - Files still below ${MIN_CODE_COVERAGE_PERCENT}% threshold
 - Remaining gaps that need manual attention (complex logic, integration points)
 - Total tests added and their locations
+
+## Available Agents
+
+For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-test-generator** — Expert test creation with TDD workflow
+- **codi-code-reviewer** — Review generated tests for quality and correctness
+
+## Related Skills
+
+- **codi-refactoring** — Clean up dead code after improving coverage
 `;

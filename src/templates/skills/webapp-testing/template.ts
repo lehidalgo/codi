@@ -106,4 +106,9 @@ with sync_playwright() as p:
   - \\\`element_discovery.py\\\` - Discovering buttons, links, and inputs on a page
   - \\\`static_html_automation.py\\\` - Using file:// URLs for local HTML
   - \\\`console_logging.py\\\` - Capturing console logs during automation
+
+## Available Agents
+
+For test generation from webapp testing results, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-test-generator** — Generate automated tests from webapp testing findings
 `;

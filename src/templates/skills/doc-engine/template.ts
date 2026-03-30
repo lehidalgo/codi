@@ -208,6 +208,16 @@ For tabular data, generate:
 - **HTML table** for formatted presentation
 - User can paste HTML tables directly into Google Sheets
 
+## Available Agents
+
+For content research during document generation, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-docs-lookup** — Research and verify technical content accuracy
+
+## Related Skills
+
+- **codi-theme-factory** — Apply visual themes to generated documents
+- **codi-deck-engine** — Generate slide presentations from document content
+
 ## Step 6: Component Reference
 
 ### Callout Box

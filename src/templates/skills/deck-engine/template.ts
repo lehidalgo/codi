@@ -387,4 +387,9 @@ Generate a single \\\`.html\\\` file with:
 **For PDF export:** Open in browser → File → Print → Save as PDF (the print CSS handles page breaks).
 
 **For Google Slides:** Generate simplified HTML, then copy-paste content slide by slide.
+
+## Related Skills
+
+- **codi-theme-factory** — Apply curated visual themes to the generated deck
+- **codi-doc-engine** — Generate companion documents from deck content
 `;

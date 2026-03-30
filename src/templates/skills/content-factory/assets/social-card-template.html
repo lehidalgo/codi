@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social Cards — Content Factory</title>
+<style>
+  :root {
+    --brand-bg: #0f172a;
+    --brand-text: #e2e8f0;
+    --brand-accent: #60a5fa;
+    --brand-accent-alt: #34d399;
+    --brand-muted: #94a3b8;
+    --brand-surface: #1e293b;
+    --brand-border: #334155;
+    --brand-font: 'JetBrains Mono', 'SF Mono', monospace;
+    --brand-font-body: system-ui, -apple-system, sans-serif;
+    --card-width: 1080px;
+    --card-height: 1080px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a12;
+    font-family: var(--brand-font-body);
+  }
+
+  section[data-index] {
+    width: var(--card-width);
+    height: var(--card-height);
+    background: var(--brand-bg);
+    color: var(--brand-text);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 64px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    font-family: var(--brand-font);
+    font-size: 16px;
+    color: var(--brand-accent);
+  }
+  .card-platform {
+    color: var(--brand-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .card-accent-bar {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 4px;
+    border-radius: 2px;
+    background: var(--brand-accent-alt);
+  }
+
+  h1 { font-size: 44px; line-height: 1.2; text-align: center; font-family: var(--brand-font); color: var(--brand-accent); margin-bottom: 20px; }
+  h2 { font-size: 32px; line-height: 1.3; font-family: var(--brand-font); margin-bottom: 16px; text-align: center; }
+  p { font-size: 18px; line-height: 1.6; color: var(--brand-muted); text-align: center; max-width: 800px; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--brand-muted); margin-bottom: 12px; }
+</style>
+</head>
+<body data-export-width="1080" data-export-height="1080">
+
+<!-- Card 1: LinkedIn -->
+<section data-index="1" data-type="linkedin">
+  <div class="card-header">
+    <span>brand_</span>
+    <span class="card-platform">LinkedIn</span>
+  </div>
+  <span class="label">Key Insight</span>
+  <h1>Card Headline</h1>
+  <p>Supporting text for the LinkedIn post card</p>
+  <div class="card-accent-bar"></div>
+</section>
+
+<!-- Card 2: Instagram -->
+<section data-index="2" data-type="instagram">
+  <div class="card-header">
+    <span>brand_</span>
+    <span class="card-platform">Instagram</span>
+  </div>
+  <span class="label">Visual Story</span>
+  <h1>Card Headline</h1>
+  <p>Supporting text for Instagram</p>
+  <div class="card-accent-bar"></div>
+</section>
+
+<!-- Card 3: Twitter/X -->
+<section data-index="3" data-type="twitter">
+  <div class="card-header">
+    <span>brand_</span>
+    <span class="card-platform">Twitter / X</span>
+  </div>
+  <h2>Thread Hook</h2>
+  <p>First tweet content that hooks the reader</p>
+  <div class="card-accent-bar"></div>
+</section>
+
+<!-- Card 4: OG Image -->
+<section data-index="4" data-type="og">
+  <div class="card-header">
+    <span>brand_</span>
+    <span class="card-platform">OG Image</span>
+  </div>
+  <h1>Blog Post Title</h1>
+  <p>Meta description preview</p>
+  <div class="card-accent-bar"></div>
+</section>
+
+<!-- Agent: Modify cards above with actual content.
+     Each section MUST have data-index and data-type attributes.
+     Inline preview-shell.js and html2canvas before </body>. -->
+
+</body>
+</html>

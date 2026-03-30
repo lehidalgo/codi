@@ -41,6 +41,9 @@ import {
 } from "./preset-handlers.js";
 import { runPresetWizard } from "./preset-wizard.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import { validatePreset } from "../core/preset/preset-validator.js";
+import { scanDirectory } from "../core/security/content-scanner.js";
+import { promptSecurityFindings } from "../core/security/scan-prompt.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -142,6 +145,47 @@ export async function presetInstallHandler(
       sourceDir = presetSource;
     } catch {
       sourceDir = tmpDir;
+    }
+
+    // Validate structure (was missing for legacy --from path)
+    const validation = await validatePreset(sourceDir);
+    if (!validation.ok) {
+      return createCommandResult({
+        success: false,
+        command: "preset install",
+        data: { action: "install", name },
+        errors: validation.errors.map((e) => ({
+          code: e.code,
+          message: e.message,
+          hint: e.hint,
+          severity: e.severity as "error",
+          context: e.context,
+        })),
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
+    // Security scan
+    const scanReport = await scanDirectory(sourceDir);
+    if (scanReport.verdict !== "pass") {
+      const proceed = await promptSecurityFindings(scanReport);
+      if (!proceed) {
+        return createCommandResult({
+          success: false,
+          command: "preset install",
+          data: { action: "install", name },
+          errors: [
+            {
+              code: "E_SECURITY_SCAN_BLOCKED",
+              message: `Security scan blocked installation of "${name}"`,
+              hint: "Review the findings above. Re-run and accept to override.",
+              severity: "error",
+              context: {},
+            },
+          ],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
     }
 
     await fs.mkdir(destDir, { recursive: true });

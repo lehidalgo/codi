@@ -87,4 +87,16 @@ For each finding include:
 - Total findings count by severity
 - Overall assessment: approve, request changes, or needs discussion
 - Files that need the most attention
+
+## Available Agents
+
+For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-code-reviewer** — Severity-ranked review with confidence filtering
+- **codi-security-analyzer** — Deep OWASP vulnerability analysis
+- **codi-performance-auditor** — Performance anti-pattern detection
+
+## Related Skills
+
+- **codi-security-scan** — Dedicated security audits beyond code review scope
+- **codi-test-coverage** — Verify test coverage for reviewed changes
 `;

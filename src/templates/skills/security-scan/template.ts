@@ -126,4 +126,14 @@ For each finding include:
 - Category (secrets, OWASP, dependency, validation)
 - Description of the vulnerability
 - Suggested fix with code example
+
+## Available Agents
+
+For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-security-analyzer** — Deep vulnerability analysis with trust boundary mapping
+- **codi-code-reviewer** — Broader code quality context for security findings
+
+## Related Skills
+
+- **codi-code-review** — Combined quality and security review of changes
 `;

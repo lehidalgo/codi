@@ -193,4 +193,9 @@ Before finishing, verify:
 - Inspector: \\\`npx @modelcontextprotocol/inspector\\\`
 - Transports: StdioServerTransport (local), Streamable HTTP (remote)
 - Capabilities: Tools (actions), Resources (data), Prompts (templates)
+
+## Available Agents
+
+For API design review of MCP server interfaces, delegate to these agents (see \\\`agents/\\\` directory):
+- **codi-api-designer** — Review tool naming, parameters, and error handling
 `;

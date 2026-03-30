@@ -186,6 +186,16 @@ export const ERROR_CATALOG = {
     severity: "error" as const,
     hintTemplate: 'Skill "{name}" is invalid: {reason}',
   },
+  E_SECURITY_SCAN_BLOCKED: {
+    exitCode: EXIT_CODES.PRESET_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Security scan blocked installation: {reason}",
+  },
+  W_SECURITY_FINDINGS: {
+    exitCode: EXIT_CODES.SUCCESS,
+    severity: "warn" as const,
+    hintTemplate: "{message}",
+  },
   E_FEEDBACK_NOT_FOUND: {
     exitCode: EXIT_CODES.GENERAL_ERROR,
     severity: "error" as const,
