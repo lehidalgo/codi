@@ -1,16 +1,17 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: {
-    cli: 'src/cli.ts',
-    index: 'src/index.ts',
+    cli: "src/cli.ts",
+    index: "src/index.ts",
   },
-  format: ['esm'],
+  format: ["esm"],
   dts: true,
   clean: true,
   sourcemap: true,
-  target: 'node20',
+  target: "node20",
   banner: {
-    js: '#!/usr/bin/env node',
+    js: "#!/usr/bin/env node",
   },
+  onSuccess: "node scripts/copy-skill-assets.mjs",
 });
