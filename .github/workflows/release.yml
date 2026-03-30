@@ -38,29 +38,29 @@ jobs:
         id: version
         run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
 
-      - name: Check if tag exists
-        id: tag_check
+      - name: Check if version is published
+        id: publish_check
         run: |
-          if git ls-remote --tags origin | grep -q "refs/tags/v${{ steps.version.outputs.version }}$"; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
+          if npm view codi-cli@${{ steps.version.outputs.version }} version > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
           else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Publish to npm
+        if: steps.publish_check.outputs.published == 'false'
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Create GitHub Release
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.publish_check.outputs.published == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: v${{ steps.version.outputs.version }}
           generate_release_notes: true
 
-      - name: Publish to npm
-        if: steps.tag_check.outputs.exists == 'false'
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Skip (already released)
-        if: steps.tag_check.outputs.exists == 'true'
-        run: echo "Tag v${{ steps.version.outputs.version }} already exists — skipping release"
+        if: steps.publish_check.outputs.published == 'true'
+        run: echo "v${{ steps.version.outputs.version }} already on npm — skipping release"
