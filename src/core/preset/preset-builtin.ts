@@ -1,14 +1,20 @@
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
-import type { NormalizedRule, NormalizedSkill, NormalizedAgent, McpConfig } from '../../types/config.js';
-import type { LoadedPreset } from './preset-loader.js';
-import type { BuiltinPresetDefinition } from '../../templates/presets/types.js';
-import { getBuiltinPresetDefinition } from '../../templates/presets/index.js';
-import { loadTemplate } from '../scaffolder/template-loader.js';
-import { loadSkillTemplate } from '../scaffolder/skill-template-loader.js';
-import { loadAgentTemplate } from '../scaffolder/agent-template-loader.js';
-import { parseFrontmatter } from '../../utils/frontmatter.js';
-import { createError } from '../output/errors.js';
+import { PROJECT_NAME } from "#src/constants.js";
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
+import type {
+  NormalizedRule,
+  NormalizedSkill,
+  NormalizedAgent,
+  McpConfig,
+} from "../../types/config.js";
+import type { LoadedPreset } from "./preset-loader.js";
+import type { BuiltinPresetDefinition } from "../../templates/presets/types.js";
+import { getBuiltinPresetDefinition } from "../../templates/presets/index.js";
+import { loadTemplate } from "../scaffolder/template-loader.js";
+import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
+import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
+import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { createError } from "../output/errors.js";
 
 /**
  * Checks if a name corresponds to a built-in preset.
@@ -24,13 +30,15 @@ export function isBuiltinPreset(name: string): boolean {
 export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
   const definition = getBuiltinPresetDefinition(name);
   if (!definition) {
-    return err([createError('E_PRESET_NOT_FOUND', { name })]);
+    return err([createError("E_PRESET_NOT_FOUND", { name })]);
   }
 
   return materializeDefinition(definition);
 }
 
-function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPreset> {
+function materializeDefinition(
+  def: BuiltinPresetDefinition,
+): Result<LoadedPreset> {
   const mergedFlags = def.flags;
 
   const rules = materializeRules(def.rules);
@@ -64,7 +72,7 @@ function materializeRules(templateNames: string[]): NormalizedRule[] {
 function materializeSkills(templateNames: string[]): NormalizedSkill[] {
   const skills: NormalizedSkill[] = [];
   for (const name of templateNames) {
-    const result = loadSkillTemplate(name);
+    const result = loadSkillTemplateContent(name);
     if (!result.ok) continue;
 
     const skill = parseSkillTemplate(name, result.data);
@@ -85,46 +93,58 @@ function materializeAgents(templateNames: string[]): NormalizedAgent[] {
   return agents;
 }
 
-function parseRuleTemplate(name: string, content: string): NormalizedRule | null {
+function parseRuleTemplate(
+  name: string,
+  content: string,
+): NormalizedRule | null {
   try {
-    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } =
+      parseFrontmatter<Record<string, unknown>>(content);
     return {
-      name: (data['name'] as string) ?? name,
-      description: (data['description'] as string) ?? '',
+      name: (data["name"] as string) ?? name,
+      description: (data["description"] as string) ?? "",
       content: body,
-      priority: (data['priority'] as 'high' | 'medium' | 'low') ?? 'medium',
-      alwaysApply: (data['alwaysApply'] as boolean) ?? true,
-      managedBy: 'codi',
+      priority: (data["priority"] as "high" | "medium" | "low") ?? "medium",
+      alwaysApply: (data["alwaysApply"] as boolean) ?? true,
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
   }
 }
 
-function parseSkillTemplate(name: string, content: string): NormalizedSkill | null {
+function parseSkillTemplate(
+  name: string,
+  content: string,
+): NormalizedSkill | null {
   try {
-    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } =
+      parseFrontmatter<Record<string, unknown>>(content);
     return {
-      name: (data['name'] as string) ?? name,
-      description: (data['description'] as string) ?? '',
+      name: (data["name"] as string) ?? name,
+      description: (data["description"] as string) ?? "",
       content: body,
-      managedBy: 'codi',
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;
   }
 }
 
-function parseAgentTemplate(name: string, content: string): NormalizedAgent | null {
+function parseAgentTemplate(
+  name: string,
+  content: string,
+): NormalizedAgent | null {
   try {
-    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } =
+      parseFrontmatter<Record<string, unknown>>(content);
     return {
-      name: (data['name'] as string) ?? name,
-      description: (data['description'] as string) ?? '',
+      name: (data["name"] as string) ?? name,
+      description: (data["description"] as string) ?? "",
       content: body,
-      tools: data['tools'] as string[] | undefined,
-      model: data['model'] as string | undefined,
-      managedBy: 'codi',
+      tools: data["tools"] as string[] | undefined,
+      model: data["model"] as string | undefined,
+      managedBy: PROJECT_NAME,
     };
   } catch {
     return null;

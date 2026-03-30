@@ -1,14 +1,22 @@
-import type { FlagDefinition } from '../../types/flags.js';
-import { BUILTIN_PRESETS, getBuiltinPresetDefinition } from '../../templates/presets/index.js';
+import type { FlagDefinition } from "../../types/flags.js";
+import { prefixedName } from "#src/constants.js";
+import {
+  BUILTIN_PRESETS,
+  getBuiltinPresetDefinition,
+} from "../../templates/presets/index.js";
 
 /**
  * Thin shim — delegates to the unified preset registry.
  * Preserves the original API for existing consumers.
  */
 
-const BASE_PRESET_NAMES = ['minimal', 'balanced', 'strict'] as const;
+const BASE_PRESET_NAMES = [
+  prefixedName("minimal"),
+  prefixedName("balanced"),
+  prefixedName("strict"),
+] as const;
 
-export type PresetName = typeof BASE_PRESET_NAMES[number];
+export type PresetName = (typeof BASE_PRESET_NAMES)[number];
 
 export function getPreset(name: PresetName): Record<string, FlagDefinition> {
   const def = getBuiltinPresetDefinition(name);
@@ -21,7 +29,10 @@ export function getPresetNames(): PresetName[] {
 }
 
 export const PRESET_DESCRIPTIONS: Record<PresetName, string> = {
-  minimal: BUILTIN_PRESETS['minimal']!.description,
-  balanced: BUILTIN_PRESETS['balanced']!.description,
-  strict: BUILTIN_PRESETS['strict']!.description,
+  [prefixedName("minimal")]:
+    BUILTIN_PRESETS[prefixedName("minimal")]!.description,
+  [prefixedName("balanced")]:
+    BUILTIN_PRESETS[prefixedName("balanced")]!.description,
+  [prefixedName("strict")]:
+    BUILTIN_PRESETS[prefixedName("strict")]!.description,
 };

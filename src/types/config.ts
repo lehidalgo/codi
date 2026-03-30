@@ -1,8 +1,11 @@
-import type { ResolvedFlags } from './flags.js';
+import type { MANAGED_BY_VALUES } from "../constants.js";
+import type { ResolvedFlags } from "./flags.js";
 
-export interface CodiManifest {
+export type ManagedBy = (typeof MANAGED_BY_VALUES)[number];
+
+export interface ProjectManifest {
   name: string;
-  version: '1';
+  version: "1";
   description?: string;
   agents?: string[];
   layers?: {
@@ -11,7 +14,7 @@ export interface CodiManifest {
     commands?: boolean;
     agents?: boolean;
   };
-  codi?: {
+  engine?: {
     requiredVersion?: string;
   };
   team?: string;
@@ -36,10 +39,10 @@ export interface NormalizedRule {
   description: string;
   content: string;
   language?: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   scope?: string[];
   alwaysApply: boolean;
-  managedBy: 'codi' | 'user';
+  managedBy: ManagedBy;
 }
 
 export interface NormalizedSkill {
@@ -51,16 +54,24 @@ export interface NormalizedSkill {
   disableModelInvocation?: boolean;
   argumentHint?: string;
   allowedTools?: string[];
+  category?: string;
   license?: string;
   metadata?: Record<string, string>;
-  managedBy?: 'codi' | 'user';
+  managedBy?: ManagedBy;
+  model?: string;
+  effort?: "low" | "medium" | "high" | "max";
+  context?: "fork";
+  agent?: string;
+  userInvocable?: boolean;
+  paths?: string[];
+  shell?: "bash" | "powershell";
 }
 
 export interface NormalizedCommand {
   name: string;
   description: string;
   content: string;
-  managedBy?: 'codi' | 'user';
+  managedBy?: ManagedBy;
 }
 
 export interface NormalizedAgent {
@@ -69,23 +80,26 @@ export interface NormalizedAgent {
   content: string;
   tools?: string[];
   model?: string;
-  managedBy?: 'codi' | 'user';
+  managedBy?: ManagedBy;
 }
 
 export interface McpConfig {
-  servers: Record<string, {
-    type?: 'stdio' | 'http';
-    command?: string;
-    args?: string[];
-    env?: Record<string, string>;
-    url?: string;
-    headers?: Record<string, string>;
-    enabled?: boolean;
-  }>;
+  servers: Record<
+    string,
+    {
+      type?: "stdio" | "http";
+      command?: string;
+      args?: string[];
+      env?: Record<string, string>;
+      url?: string;
+      headers?: Record<string, string>;
+      enabled?: boolean;
+    }
+  >;
 }
 
 export interface NormalizedConfig {
-  manifest: CodiManifest;
+  manifest: ProjectManifest;
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
   commands: NormalizedCommand[];

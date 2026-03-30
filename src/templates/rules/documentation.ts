@@ -1,12 +1,19 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Documentation standards and practices
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Documentation Standards
+
+## Diataxis Documentation Framework
+- Organize documentation into four types: tutorials (learning by doing), how-to guides (solving specific problems), reference (factual descriptions), explanation (understanding concepts)
+- Do not mix types in one document — a tutorial should not include exhaustive reference tables; a reference page should not include step-by-step instructions
+- Start with reference and how-to guides — these serve the most immediate developer needs
 
 ## Code Documentation
 - Write self-documenting code first — clear names, small functions
@@ -23,6 +30,11 @@ managed_by: codi
 BAD: Abstract descriptions without runnable examples
 GOOD: Copy-pasteable code snippets that work immediately
 
+## Docs-as-Code Workflow
+- Store documentation in the same repository as code — changes to code and docs ship together in the same PR
+- Use CI to validate documentation: check broken links, lint markdown, test code examples
+- Auto-generate API reference from OpenAPI specs or code annotations — hand-written API docs drift from reality
+
 ## Architecture Documentation
 - Document high-level architecture decisions and their rationale — future developers need to understand WHY, not just WHAT
 - Use Architecture Decision Records (ADRs) for significant choices
@@ -34,6 +46,11 @@ GOOD: Copy-pasteable code snippets that work immediately
 - Include example requests and responses — examples are the most-read part of any API doc
 - Document error responses and status codes
 - Version the documentation alongside the API
+
+## Operational Documentation
+- Write runbooks for every production service: how to deploy, how to rollback, how to investigate common alerts
+- Include decision trees for incident response — reduce mean time to recovery by eliminating guesswork
+- Review and test runbooks quarterly — untested runbooks fail when needed most
 
 ## File Naming Convention
 

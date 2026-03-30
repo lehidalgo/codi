@@ -72,10 +72,10 @@ src/
     version/          # Version enforcement (semver)
   schemas/            # Zod schemas for config, flags, artifacts
   templates/          # Built-in templates
-    rules/            # 21 rule templates
-    skills/           # 13 skill templates
+    rules/            # 23 rule templates
+    skills/           # 19 skill templates
     agents/           # 8 agent templates
-    commands/         # 8 command templates
+    commands/         # 9 command templates
     hooks/            # 3 hook templates
   types/              # TypeScript type definitions
   utils/              # Shared utilities (logger, errors, hashing)
@@ -107,7 +107,10 @@ src/
 
 ### Adding a Skill Template
 
-1. Create `src/templates/skills/{name}.ts` exporting a template object
+1. Create a directory `src/templates/skills/{name}/` with:
+   - `template.ts` — exports the SKILL.md content string
+   - `index.ts` — re-exports `{ template }` from `./template.js`
+   - (optional) `assets/`, `references/`, `scripts/` — static files copied during scaffolding
 2. Export from `src/templates/skills/index.ts`
 3. Add to the skill template map in the template loader
 4. Add tests

@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Simplicity-first development — avoid over-engineering, prefer direct solutions, minimize complexity
 priority: high
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Simplicity First
@@ -12,6 +14,10 @@ managed_by: codi
 - The right amount of complexity is the minimum needed for the current task
 - Make it work, make it clear, then — only if needed — make it fast
 - Every abstraction has a cost; justify it with a real (not hypothetical) need
+
+## Gall's Law
+- A complex system that works always evolved from a simple system that worked — never design a complex system from scratch
+- Build the simplest version that solves the problem, then iterate — complexity is earned, not planned
 
 ## YAGNI — You Aren't Gonna Need It
 - Solve the current problem, not imagined future ones
@@ -34,6 +40,11 @@ GOOD: Using \\\`fetch(url)\\\` directly until retry/timeout logic is genuinely n
 - One file per concern is fine; one directory per concern is premature until the concern grows
 - Avoid creating folders with a single file inside
 
+## Boring Technology
+- Choose well-understood, battle-tested technology over novel alternatives — every new technology consumes an "innovation token"
+- Limit the number of novel technologies per project to one or two — the rest should be boring and predictable
+- New does not mean better — evaluate technology by its failure modes, not its feature list
+
 ## Minimal Dependencies
 - Prefer the standard library over third-party packages for simple tasks
 - Every dependency is an upgrade burden, a security surface, and a build-time cost
@@ -52,6 +63,11 @@ GOOD: \\\`UserRepository\\\` class directly — extract the interface when a sec
 - Avoid caching until you prove the computation is expensive
 - Avoid parallelism until you prove the sequential version is too slow
 - Algorithmic simplicity (O(n) is usually fine) beats clever O(log n) with complex setup
+
+## Complexity Budget
+- Distinguish essential complexity (inherent to the problem) from incidental complexity (artifacts of poor design) — eliminate incidental complexity ruthlessly
+- Track cognitive complexity with linter rules — code that scores high is a refactoring candidate
+- Simplification is leverage: reducing complexity pays compounding dividends in fewer bugs, faster onboarding, and easier changes
 
 ## Keep It Readable
 - Prefer explicit over clever — the next reader should understand the code without comments

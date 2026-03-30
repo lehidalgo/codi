@@ -1,0 +1,14 @@
+
+# Codi hooks
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+ESLINT=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' || true)
+[ -n "$ESLINT" ] && npx eslint --fix $ESLINT
+PRETTIER=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' || true)
+[ -n "$PRETTIER" ] && npx prettier --write $PRETTIER
+TSC=$(echo "$STAGED" | grep -E '\.(ts|tsx)$' || true)
+[ -n "$TSC" ] && npx tsc --noEmit
+npm test
+[ -n "$STAGED" ] && node .git/hooks/codi-secret-scan.mjs $STAGED
+[ -n "$STAGED" ] && node .git/hooks/codi-file-size-check.mjs $STAGED
+[ -n "$ESLINT" ] && git add $ESLINT || true
+[ -n "$PRETTIER" ] && git add $PRETTIER || true

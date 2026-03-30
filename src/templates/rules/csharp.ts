@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: C# conventions — records, async patterns, LINQ, nullable types, testing
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: csharp
 ---
 
@@ -67,6 +69,14 @@ try {
 - Use pattern matching for null checks: \`if (value is { } valid)\`
 - Return empty collections instead of null for collection-typed returns
 
+## Primary Constructors (C# 12+)
+- Use primary constructors on service classes to reduce DI boilerplate — parameters are available throughout the class body
+- Capture primary constructor parameters in readonly fields when mutation must be prevented — primary constructor parameters are mutable by default
+
+## Collection Expressions (C# 12+)
+- Use collection expressions (\`[1, 2, 3]\`) for initializing arrays, lists, spans, and immutable collections — unified syntax
+- Use the spread operator (\`..\`) to combine collections: \`[..existing, newItem]\`
+
 ## Dependency Injection
 - Register services in \`Program.cs\` — use the built-in DI container
 - Use constructor injection — never resolve from the container manually
@@ -84,6 +94,25 @@ try {
 - Load secrets via \`IConfiguration\` and the Secret Manager in development
 - Use Azure Key Vault or equivalent in production — never hardcode secrets
 - Validate input with data annotations or FluentValidation at API boundaries
+
+## Native AOT
+- Use Native AOT for microservices and serverless functions — reduces startup time and eliminates JIT overhead
+- Avoid reflection-heavy patterns in AOT targets — use source generators instead
+- Use \`[JsonSerializable]\` source generator for System.Text.Json in AOT contexts — reflection-based serialization does not work
+
+## Source Generators
+- Use source generators instead of runtime reflection for serialization, logging, and DI — required for AOT compatibility
+- Use \`[LoggerMessage]\` source generator for high-performance structured logging — avoids boxing and string interpolation overhead
+
+## High-Performance Patterns
+- Use \`Span<T>\` and \`ReadOnlySpan<T>\` for slicing data without heap allocations — significantly faster for string processing
+- Use \`Memory<T>\` when the buffer must be stored on the heap or passed across async boundaries — \`Span<T>\` is stack-only
+- Prefer \`ArrayPool<T>.Shared\` for reusable buffers in hot paths — reduces allocation churn
+
+## Observability
+- Use OpenTelemetry for distributed tracing, metrics, and structured logging — CNCF standard with first-class .NET support
+- Configure \`ActivitySource\` for custom trace spans and \`Meter\` for custom metrics
+- Use .NET Aspire for cloud-native distributed applications — provides service discovery, health checks, and telemetry out of the box
 
 ## Error Handling
 - Use \`ILogger<T>\` with structured logging — include correlation IDs

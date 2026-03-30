@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Analyze and onboard to a codebase
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Use the codebase-onboarding skill to analyze this project.

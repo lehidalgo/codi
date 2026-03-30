@@ -1,16 +1,18 @@
-import * as p from '@clack/prompts';
-import { DEFAULT_PRESET } from '../constants.js';
-import { getBuiltinPresetDefinition, BUILTIN_PRESETS } from '../templates/presets/index.js';
-import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
-import type { FlagDefinition } from '../types/flags.js';
-import { AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
-import { AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
-import { AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
-import { AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
+import * as p from "@clack/prompts";
+import { PROJECT_CLI } from "../constants.js";
+import { getSupportedLanguages } from "../core/hooks/hook-registry.js";
+import {
+  handleZipPath,
+  handleGithubPath,
+  handlePresetPath,
+  handleCustomPath,
+  formatLabel,
+} from "./init-wizard-paths.js";
 
 export interface WizardResult {
+  languages: string[];
   agents: string[];
-  configMode: 'preset' | 'custom' | 'zip' | 'github';
+  configMode: "preset" | "custom" | "zip" | "github";
   presetName?: string;
   selectedPresetName?: string;
   importSource?: string;
@@ -19,25 +21,14 @@ export interface WizardResult {
   skills: string[];
   agentTemplates: string[];
   commandTemplates: string[];
+  mcpServers: string[];
   preset: string;
-  flags?: Record<string, FlagDefinition>;
+  flags?: Record<string, import("../types/flags.js").FlagDefinition>;
   versionPin: boolean;
 }
 
-function getReservedPresetNames(): Set<string> {
-  return new Set(Object.keys(BUILTIN_PRESETS));
-}
-
-function formatLabel(name: string): string {
-  return name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-}
-
-function buildPresetOptions(): Array<{ label: string; value: string; hint: string }> {
-  return Object.entries(BUILTIN_PRESETS).map(([name, def]) => ({
-    label: name === DEFAULT_PRESET ? `${formatLabel(name)} (recommended)` : formatLabel(name),
-    value: name,
-    hint: def.description,
-  }));
+function isBack<T>(value: T | symbol): value is symbol {
+  return p.isCancel(value);
 }
 
 export async function runInitWizard(
@@ -45,376 +36,128 @@ export async function runInitWizard(
   detectedAgents: string[],
   allAgents: string[],
 ): Promise<WizardResult | null> {
-  p.intro('codi — Project Setup');
+  p.intro(`${PROJECT_CLI} — Project Setup`);
 
   p.note(
     [
-      'space        toggle selection',
-      'a            select / deselect all',
-      'arrow keys   move up / down',
-      'enter        confirm',
-      'ctrl+c       cancel',
-    ].join('\n'),
-    'Keyboard shortcuts',
+      "space        toggle selection",
+      "a            select / deselect all",
+      "arrow keys   move up / down",
+      "enter        confirm",
+      "ctrl+c       go back (exit at first step)",
+    ].join("\n"),
+    "Keyboard shortcuts",
   );
 
-  const stackLabel = detectedStack.length > 0 ? detectedStack.join(', ') : 'none detected';
+  const stackLabel =
+    detectedStack.length > 0 ? detectedStack.join(", ") : "none detected";
   p.log.step(`Detected stack: ${stackLabel}`);
 
-  // Step 1: Select IDE agents
-  p.log.step('Agents');
-  const agents = await p.multiselect({
-    message: 'Select agents to generate config for',
-    options: allAgents.map((id) => ({ label: id, value: id })),
-    initialValues: detectedAgents,
-    required: true,
-  });
+  let step = 0;
+  let savedLanguages: string[] | undefined;
+  let savedAgents: string[] | undefined;
+  let savedConfigMode: WizardResult["configMode"] | undefined;
 
-  if (p.isCancel(agents)) {
-    p.cancel('Operation cancelled.');
-    return null;
-  }
-
-  if (agents.length === 0) return null;
-
-  // Step 2: Choose configuration mode
-  p.log.step('Configuration');
-  const configMode = await p.select({
-    message: 'How do you want to configure?',
-    options: [
-      { label: 'Use a built-in preset', value: 'preset' as const, hint: 'Curated configuration bundles' },
-      { label: 'Import from ZIP file', value: 'zip' as const, hint: 'Load a preset from a .zip package' },
-      { label: 'Import from GitHub', value: 'github' as const, hint: 'Load a preset from a GitHub repository' },
-      { label: 'Custom selection', value: 'custom' as const, hint: 'Pick individual artifacts (searchable)' },
-    ],
-  });
-
-  if (p.isCancel(configMode)) {
-    p.cancel('Operation cancelled.');
-    return null;
-  }
-
-  // Step 3: Import from ZIP
-  if (configMode === 'zip') {
-    const zipPath = await p.text({
-      message: 'Path to preset ZIP file',
-      validate: (v) => {
-        if (!v || !v.endsWith('.zip')) return 'Must be a .zip file';
-      },
-    });
-
-    if (p.isCancel(zipPath)) {
-      p.cancel('Operation cancelled.');
-      return null;
-    }
-
-    p.outro('Importing preset from ZIP.');
-    return {
-      agents,
-      configMode: 'zip' as const,
-      importSource: zipPath,
-      rules: [], skills: [], agentTemplates: [], commandTemplates: [],
-      preset: DEFAULT_PRESET,
-      versionPin: true,
-    };
-  }
-
-  // Step 3: Import from GitHub
-  if (configMode === 'github') {
-    const repo = await p.text({
-      message: 'GitHub repo (e.g., org/preset-name or github:org/repo@v1.0)',
-    });
-
-    if (p.isCancel(repo)) {
-      p.cancel('Operation cancelled.');
-      return null;
-    }
-
-    p.outro('Importing preset from GitHub.');
-    return {
-      agents,
-      configMode: 'github' as const,
-      importSource: repo,
-      rules: [], skills: [], agentTemplates: [], commandTemplates: [],
-      preset: DEFAULT_PRESET,
-      versionPin: true,
-    };
-  }
-
-  // Step 3a: Built-in preset path — show artifacts, editable
-  if (configMode === 'preset') {
-    return handlePresetPath(agents);
-  }
-
-  // Step 3b: Custom selection path
-  return handleCustomPath(agents);
-}
-
-async function editPresetFlags(
-  presetName: string,
-  flags: Record<string, FlagDefinition>,
-): Promise<Record<string, FlagDefinition> | null> {
-  const result = { ...flags };
-
-  // Show locked flags as info
-  const lockedEntries = Object.entries(flags).filter(([, def]) => def.locked);
-  if (lockedEntries.length > 0) {
-    p.log.info(`Locked flags: ${lockedEntries.map(([k, d]) => `${k}=${String(d.value)}`).join(', ')}`);
-  }
-
-  // Boolean flags — multiselect (selected = true, deselected = false)
-  const booleanKeys = Object.keys(flags).filter(
-    k => FLAG_CATALOG[k]?.type === 'boolean' && !flags[k]?.locked,
-  );
-  if (booleanKeys.length > 0) {
-    p.log.step(`Flags in "${presetName}" (modify to customize)`);
-    const selected = await p.multiselect({
-      message: 'Boolean flags (selected = enabled)',
-      options: booleanKeys.map(k => ({
-        label: `${k} — ${FLAG_CATALOG[k]!.description}`,
-        value: k,
-      })),
-      initialValues: booleanKeys.filter(k => flags[k]?.value === true),
-      required: false,
-    });
-    if (p.isCancel(selected)) { p.cancel('Operation cancelled.'); return null; }
-
-    const enabledSet = new Set(selected);
-    for (const key of booleanKeys) {
-      result[key] = { ...result[key]!, value: enabledSet.has(key) };
+  while (step >= 0) {
+    switch (step) {
+      case 0: {
+        p.log.step("Languages");
+        const allLanguages = getSupportedLanguages();
+        const languages = await p.multiselect({
+          message: "Select project languages for pre-commit hooks",
+          options: allLanguages.map((lang) => ({
+            label: formatLabel(lang),
+            value: lang,
+          })),
+          initialValues: savedLanguages ?? detectedStack,
+          required: false,
+        });
+        if (isBack(languages)) {
+          p.cancel("Operation cancelled.");
+          return null;
+        }
+        savedLanguages = languages as string[];
+        step++;
+        break;
+      }
+      case 1: {
+        p.log.step("Agents");
+        const agents = await p.multiselect({
+          message: "Select agents to generate config for",
+          options: allAgents.map((id) => ({ label: id, value: id })),
+          initialValues: savedAgents ?? detectedAgents,
+          required: true,
+        });
+        if (isBack(agents)) {
+          step--;
+          break;
+        }
+        if ((agents as string[]).length === 0) return null;
+        savedAgents = agents as string[];
+        step++;
+        break;
+      }
+      case 2: {
+        p.log.step("Configuration");
+        const configMode = await p.select({
+          message: "How do you want to configure?",
+          options: [
+            {
+              label: "Use a built-in preset",
+              value: "preset" as const,
+              hint: "Curated configuration bundles",
+            },
+            {
+              label: "Import from ZIP file",
+              value: "zip" as const,
+              hint: "Load a preset from a .zip package",
+            },
+            {
+              label: "Import from GitHub",
+              value: "github" as const,
+              hint: "Load a preset from a GitHub repository",
+            },
+            {
+              label: "Custom selection",
+              value: "custom" as const,
+              hint: "Pick individual artifacts (searchable)",
+            },
+          ],
+        });
+        if (isBack(configMode)) {
+          step--;
+          break;
+        }
+        savedConfigMode = configMode as WizardResult["configMode"];
+        step++;
+        break;
+      }
+      case 3: {
+        let result: WizardResult | null | symbol;
+        switch (savedConfigMode) {
+          case "zip":
+            result = await handleZipPath(savedAgents!);
+            break;
+          case "github":
+            result = await handleGithubPath(savedAgents!);
+            break;
+          case "preset":
+            result = await handlePresetPath(savedAgents!);
+            break;
+          default:
+            result = await handleCustomPath(savedAgents!);
+            break;
+        }
+        if (typeof result === "symbol") {
+          step--;
+          break;
+        }
+        if (result) {
+          result.languages = savedLanguages!;
+        }
+        return result;
+      }
     }
   }
-
-  // Enum flags — individual selects
-  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
-    if (spec.type !== 'enum' || !spec.values || flags[key]?.locked || !flags[key]) continue;
-    const current = flags[key]!.value as string;
-    const enumVal = await p.select({
-      message: `${key} — ${spec.description}`,
-      options: spec.values.map(v => ({
-        label: v === current ? `${v} (current)` : v,
-        value: v,
-      })),
-    });
-    if (p.isCancel(enumVal)) { p.cancel('Operation cancelled.'); return null; }
-    result[key] = { ...result[key]!, value: enumVal };
-  }
-
-  // Number flags — text inputs
-  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
-    if (spec.type !== 'number' || flags[key]?.locked || !flags[key]) continue;
-    const current = flags[key]!.value as number;
-    const numVal = await p.text({
-      message: `${key} — ${spec.description}`,
-      initialValue: String(current),
-      validate: (v) => {
-        const n = Number(v);
-        if (isNaN(n) || !Number.isInteger(n)) return 'Must be an integer';
-        if (spec.min !== undefined && n < spec.min) return `Minimum: ${spec.min}`;
-      },
-    });
-    if (p.isCancel(numVal)) { p.cancel('Operation cancelled.'); return null; }
-    result[key] = { ...result[key]!, value: Number(numVal) };
-  }
-
-  return result;
-}
-
-async function handlePresetPath(agents: string[]): Promise<WizardResult | null> {
-  const presetName = await p.select({
-    message: 'Choose a preset',
-    options: buildPresetOptions(),
-  });
-
-  if (p.isCancel(presetName)) {
-    p.cancel('Operation cancelled.');
-    return null;
-  }
-
-  const selectedPreset = presetName as string;
-  const presetDef = getBuiltinPresetDefinition(selectedPreset);
-  const originalFlags = { ...presetDef?.flags ?? {} };
-
-  // Step: Edit flags
-  const editedFlags = await editPresetFlags(selectedPreset, originalFlags);
-  if (!editedFlags) return null;
-
-  // Pre-select the preset's artifacts so user can see and modify
-  const presetRules = new Set(presetDef?.rules ?? []);
-  const presetSkills = new Set(presetDef?.skills ?? []);
-  const presetAgents = new Set(presetDef?.agents ?? []);
-  const presetCommands = new Set(presetDef?.commands ?? []);
-
-  p.log.step(`Artifacts in "${selectedPreset}" (modify to customize)`);
-
-  const userRules = await p.multiselect({
-    message: 'Rules',
-    options: AVAILABLE_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: AVAILABLE_TEMPLATES.filter(t => presetRules.has(t)),
-    required: false,
-  });
-  if (p.isCancel(userRules)) { p.cancel('Operation cancelled.'); return null; }
-
-  const userSkills = await p.multiselect({
-    message: 'Skills',
-    options: AVAILABLE_SKILL_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: AVAILABLE_SKILL_TEMPLATES.filter(t => presetSkills.has(t)),
-    required: false,
-  });
-  if (p.isCancel(userSkills)) { p.cancel('Operation cancelled.'); return null; }
-
-  const userAgentTemplates = await p.multiselect({
-    message: 'Agents',
-    options: AVAILABLE_AGENT_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: AVAILABLE_AGENT_TEMPLATES.filter(t => presetAgents.has(t)),
-    required: false,
-  });
-  if (p.isCancel(userAgentTemplates)) { p.cancel('Operation cancelled.'); return null; }
-
-  const userCommands = await p.multiselect({
-    message: 'Commands',
-    options: AVAILABLE_COMMAND_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: AVAILABLE_COMMAND_TEMPLATES.filter(t => presetCommands.has(t)),
-    required: false,
-  });
-  if (p.isCancel(userCommands)) { p.cancel('Operation cancelled.'); return null; }
-
-  // Check if user modified the preset (artifacts or flags)
-  const flagsChanged = !sameFlagValues(editedFlags, originalFlags);
-  const changed = flagsChanged
-    || !sameArrays(userRules, [...presetRules])
-    || !sameArrays(userSkills, [...presetSkills])
-    || !sameArrays(userAgentTemplates, [...presetAgents])
-    || !sameArrays(userCommands, [...presetCommands]);
-
-  let saveAsPreset: string | undefined;
-  if (changed) {
-    p.log.step('Custom Preset');
-    const customName = await p.text({
-      message: 'You modified the preset. Save as custom preset (name)',
-      initialValue: `${selectedPreset}-custom`,
-      placeholder: `${selectedPreset}-custom`,
-      validate: (v) => {
-        if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case (lowercase letters, numbers, hyphens)';
-        if (getReservedPresetNames().has(v)) return `"${v}" is a built-in preset name — choose a different name`;
-      },
-    });
-    if (p.isCancel(customName)) { p.cancel('Operation cancelled.'); return null; }
-    saveAsPreset = customName;
-  }
-
-  const versionPin = await p.confirm({
-    message: 'Enable version pinning?',
-  });
-  if (p.isCancel(versionPin)) { p.cancel('Operation cancelled.'); return null; }
-
-  p.outro('Configuration complete.');
-  return {
-    agents,
-    configMode: changed ? 'custom' : 'preset',
-    presetName: changed ? undefined : selectedPreset,
-    selectedPresetName: selectedPreset,
-    saveAsPreset,
-    rules: userRules,
-    skills: userSkills,
-    agentTemplates: userAgentTemplates,
-    commandTemplates: userCommands,
-    preset: selectedPreset,
-    flags: editedFlags,
-    versionPin,
-  };
-}
-
-async function handleCustomPath(agents: string[]): Promise<WizardResult | null> {
-  p.log.step('Artifacts');
-
-  const rules = await p.multiselect({
-    message: 'Select rules',
-    options: AVAILABLE_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: [...AVAILABLE_TEMPLATES],
-    required: false,
-  });
-  if (p.isCancel(rules)) { p.cancel('Operation cancelled.'); return null; }
-
-  const skills = await p.multiselect({
-    message: 'Select skills',
-    options: AVAILABLE_SKILL_TEMPLATES.map(t => ({ label: t, value: t })),
-    required: false,
-  });
-  if (p.isCancel(skills)) { p.cancel('Operation cancelled.'); return null; }
-
-  const agentTemplates = await p.multiselect({
-    message: 'Select agent definitions',
-    options: AVAILABLE_AGENT_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: [...AVAILABLE_AGENT_TEMPLATES],
-    required: false,
-  });
-  if (p.isCancel(agentTemplates)) { p.cancel('Operation cancelled.'); return null; }
-
-  const commandTemplates = await p.multiselect({
-    message: 'Select commands',
-    options: AVAILABLE_COMMAND_TEMPLATES.map(t => ({ label: t, value: t })),
-    initialValues: [...AVAILABLE_COMMAND_TEMPLATES],
-    required: false,
-  });
-  if (p.isCancel(commandTemplates)) { p.cancel('Operation cancelled.'); return null; }
-
-  const preset = await p.select({
-    message: 'Choose flag preset',
-    options: [
-      { label: 'Balanced (recommended)', value: 'balanced' as const, hint: BUILTIN_PRESETS['balanced']!.description },
-      { label: 'Minimal', value: 'minimal' as const, hint: BUILTIN_PRESETS['minimal']!.description },
-      { label: 'Strict', value: 'strict' as const, hint: BUILTIN_PRESETS['strict']!.description },
-    ],
-  });
-  if (p.isCancel(preset)) { p.cancel('Operation cancelled.'); return null; }
-
-  // Save as preset?
-  const save = await p.confirm({
-    message: 'Save this selection as a named preset for reuse?',
-    initialValue: false,
-  });
-  if (p.isCancel(save)) { p.cancel('Operation cancelled.'); return null; }
-
-  let saveAsPreset: string | undefined;
-  if (save) {
-    const presetNameInput = await p.text({
-      message: 'Preset name (kebab-case)',
-      placeholder: 'my-team-preset',
-      validate: (v) => {
-        if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case (lowercase letters, numbers, hyphens)';
-        if (getReservedPresetNames().has(v)) return `"${v}" is a built-in preset name — choose a different name`;
-      },
-    });
-    if (p.isCancel(presetNameInput)) { p.cancel('Operation cancelled.'); return null; }
-    saveAsPreset = presetNameInput;
-  }
-
-  const versionPin = await p.confirm({
-    message: 'Enable version pinning?',
-  });
-  if (p.isCancel(versionPin)) { p.cancel('Operation cancelled.'); return null; }
-
-  p.outro('Configuration complete.');
-  return {
-    agents,
-    configMode: 'custom',
-    saveAsPreset,
-    rules,
-    skills,
-    agentTemplates,
-    commandTemplates,
-    preset: (preset ?? DEFAULT_PRESET) as string,
-    versionPin,
-  };
-}
-
-function sameArrays(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  const setA = new Set(a);
-  return b.every(item => setA.has(item));
-}
-
-function sameFlagValues(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return null;
 }

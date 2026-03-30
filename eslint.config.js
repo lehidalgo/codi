@@ -1,0 +1,31 @@
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      ".git/**",
+      "src/templates/skills/*/assets/**",
+      "src/templates/skills/*/references/**",
+      "src/templates/skills/*/scripts/python/**",
+      "src/templates/skills/*/scripts/office/**",
+      "**/*.xsd",
+    ],
+  },
+  ...tseslint.configs.recommended,
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
+);

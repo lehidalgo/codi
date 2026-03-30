@@ -1,13 +1,20 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Kotlin conventions — null safety, sealed classes, coroutines, testing patterns
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: kotlin
 ---
 
 # Kotlin Conventions
+
+## K2 Compiler (Kotlin 2.0+)
+- Enable the K2 compiler — default from Kotlin 2.0, provides 2-4x faster compilation
+- Expect stricter nullability and generic type inference — fix issues instead of suppressing
+- Migrate from KAPT to KSP for annotation processing — KAPT is deprecated and incompatible with K2
 
 ## Formatting & Tooling
 - Run ktfmt or ktlint on every save — enforce consistent formatting
@@ -33,6 +40,11 @@ name?.let { validName ->
     repository.save(validName)
 }
 \`\`\`
+
+## Value Classes
+- Use \`@JvmInline value class\` for type-safe wrappers around single values — zero allocation overhead at runtime
+- Prefer value classes for domain identifiers (UserId, OrderId) — prevents mixing up primitives of the same type
+- Do not use data class for single-field wrappers — value class avoids the object allocation entirely
 
 ## Immutability
 - Prefer \`val\` over \`var\` — use \`var\` only when mutation is required
@@ -67,6 +79,17 @@ fun <T> Result<T>.getOrThrow(): T = when (this) {
 - Use \`withContext(Dispatchers.IO)\` for blocking operations — prevents blocking the main/default dispatcher
 - Test coroutines with \`runTest\` from kotlinx-coroutines-test
 - Set timeouts with \`withTimeout()\` on all external calls
+
+## Coroutines Flow
+- Use \`StateFlow\` for observable state with an initial value — replays the latest value to new collectors
+- Use \`SharedFlow\` for event broadcasting without an initial value — configure replay and buffer sizes explicitly
+- Prefer cold \`Flow\` for one-shot data pipelines — convert to hot flows with \`stateIn\` or \`shareIn\` only when multiple collectors need the same source
+- Collect flows in a lifecycle-aware scope — avoid collecting in \`GlobalScope\`
+
+## Kotlin Multiplatform
+- Use \`expect\`/\`actual\` declarations for platform-specific implementations — keep shared code in \`commonMain\`
+- Prefer multiplatform libraries (Ktor, kotlinx.serialization, SQLDelight) over platform-specific alternatives
+- Test shared code in \`commonTest\` — run tests on all target platforms in CI
 
 ## Testing
 - Use Kotest with spec styles (BehaviorSpec, StringSpec) for expressive tests

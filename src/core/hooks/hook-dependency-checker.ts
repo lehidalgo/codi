@@ -1,6 +1,8 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import type { HookEntry } from './hook-registry.js';
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import type { HookEntry } from "./hook-registry.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -8,66 +10,100 @@ export interface DependencyCheck {
   name: string;
   available: boolean;
   installHint: string;
+  /** Whether this is an npm package resolvable via npx */
+  isNodePackage: boolean;
 }
 
 const INSTALL_HINTS: Record<string, string> = {
-  'eslint': 'npm install -D eslint',
-  'prettier': 'npm install -D prettier',
-  'tsc': 'npm install -D typescript',
-  'ruff': 'pip install ruff',
-  'pyright': 'pip install pyright',
-  'golangci-lint': 'go install github.com/golangci-lint/golangci-lint/cmd/golangci-lint@latest',
-  'gofmt': '(included with Go)',
-  'cargo': '(included with Rust)',
-  'cargo-clippy': 'rustup component add clippy',
-  'cargo-fmt': 'rustup component add rustfmt',
-  'google-java-format': 'brew install google-java-format (or download from GitHub)',
-  'checkstyle': 'brew install checkstyle (or download jar)',
-  'ktfmt': 'brew install ktfmt',
-  'detekt': 'brew install detekt',
-  'swiftformat': 'brew install swiftformat',
-  'swiftlint': 'brew install swiftlint',
-  'dotnet': 'Install .NET SDK from https://dot.net',
-  'clang-format': 'brew install clang-format (or apt install clang-format)',
-  'clang-tidy': 'brew install llvm (or apt install clang-tidy)',
-  'php-cs-fixer': 'composer global require friendsofphp/php-cs-fixer',
-  'phpstan': 'composer global require phpstan/phpstan',
-  'rubocop': 'gem install rubocop',
-  'dart': 'Install Dart SDK from https://dart.dev',
+  eslint: "npm install -D eslint",
+  prettier: "npm install -D prettier",
+  tsc: "npm install -D typescript",
+  ruff: "pip install ruff",
+  pyright: "npm install -D pyright",
+  "golangci-lint":
+    "go install github.com/golangci-lint/golangci-lint/cmd/golangci-lint@latest",
+  gofmt: "(included with Go)",
+  cargo: "(included with Rust)",
+  "cargo-clippy": "rustup component add clippy",
+  "cargo-fmt": "rustup component add rustfmt",
+  "google-java-format":
+    "brew install google-java-format (or download from GitHub)",
+  checkstyle: "brew install checkstyle (or download jar)",
+  ktfmt: "brew install ktfmt",
+  detekt: "brew install detekt",
+  swiftformat: "brew install swiftformat",
+  swiftlint: "brew install swiftlint",
+  dotnet: "Install .NET SDK from https://dot.net",
+  "clang-format": "brew install clang-format (or apt install clang-format)",
+  "clang-tidy": "brew install llvm (or apt install clang-tidy)",
+  "php-cs-fixer": "composer global require friendsofphp/php-cs-fixer",
+  phpstan: "composer global require phpstan/phpstan",
+  rubocop: "gem install rubocop",
+  dart: "Install Dart SDK from https://dart.dev",
 };
 
+/** Tools that are npm packages and can be installed via npm/npx */
+const NODE_PACKAGES = new Set(["eslint", "prettier", "tsc", "pyright"]);
+
 function extractToolName(command: string): string {
-  const firstWord = command.split(/\s+/)[0] ?? command;
-  return firstWord.replace(/^npx\s+/, '');
+  const parts = command.split(/\s+/);
+  // Skip 'npx' prefix to get the actual tool name
+  if (parts[0] === "npx" && parts[1]) {
+    return parts[1];
+  }
+  return parts[0] ?? command;
 }
 
-async function isToolAvailable(tool: string): Promise<boolean> {
+async function isToolOnPath(tool: string): Promise<boolean> {
   try {
-    await execFileAsync('which', [tool]);
+    await execFileAsync("which", [tool]);
     return true;
   } catch {
     return false;
   }
 }
 
-export async function checkHookDependencies(hooks: HookEntry[]): Promise<DependencyCheck[]> {
+function isToolInNodeModules(tool: string, projectRoot: string): boolean {
+  return existsSync(join(projectRoot, "node_modules", ".bin", tool));
+}
+
+export async function checkHookDependencies(
+  hooks: HookEntry[],
+  projectRoot?: string,
+): Promise<DependencyCheck[]> {
+  // Deduplicate tools
   const seen = new Set<string>();
-  const checks: DependencyCheck[] = [];
+  const uniqueTools: { tool: string; isNodePkg: boolean }[] = [];
 
   for (const hook of hooks) {
     const tool = extractToolName(hook.command);
-    if (seen.has(tool) || tool === 'npx') continue;
+    if (seen.has(tool)) continue;
     seen.add(tool);
-
-    const available = await isToolAvailable(tool);
-    if (!available) {
-      checks.push({
-        name: tool,
-        available: false,
-        installHint: INSTALL_HINTS[tool] ?? `Install ${tool}`,
-      });
-    }
+    uniqueTools.push({ tool, isNodePkg: NODE_PACKAGES.has(tool) });
   }
 
-  return checks;
+  // Check all tools in parallel for speed
+  const results = await Promise.all(
+    uniqueTools.map(async ({ tool, isNodePkg }) => {
+      let available = false;
+      if (isNodePkg && projectRoot) {
+        available = isToolInNodeModules(tool, projectRoot);
+      }
+      if (!available) {
+        available = await isToolOnPath(tool);
+      }
+      return { tool, isNodePkg, available };
+    }),
+  );
+
+  return results
+    .filter((r) => !r.available)
+    .map((r) => ({
+      name: r.tool,
+      available: false,
+      installHint: INSTALL_HINTS[r.tool] ?? `Install ${r.tool}`,
+      isNodePackage: r.isNodePkg,
+    }));
 }
+
+export { extractToolName, NODE_PACKAGES };
