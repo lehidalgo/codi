@@ -1,11 +1,11 @@
-import { MAX_FUNCTION_LINES } from '../../constants.js';
+import { MAX_FUNCTION_LINES, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Code Style
@@ -30,15 +30,29 @@ GOOD: Three focused functions: validate(), transform(), persist()
 BAD: \`createUser(name, email, role, team, isActive, notify)\`
 GOOD: \`createUser({ name, email, role, team, isActive, notify })\`
 
+## Control Flow
+- Use early returns and guard clauses to handle edge cases at the top of functions — keeps the happy path at the outer scope and reduces nesting
+- Prefer exhaustive pattern matching (switch/when with sealed types) over if-else chains — the compiler enforces that all cases are handled
+- Avoid deep nesting: if indentation exceeds 3 levels, refactor — use early returns, extract functions, or invert conditions
+
+## Immutability by Default
+- Treat data as immutable unless mutation is explicitly required — create new objects instead of modifying existing ones
+- Use language-level immutability features: const, readonly, frozen, final — mutation should require a conscious choice
+
 ## File Organization
 - One primary export per file where practical — simplifies imports and dependency tracking
-- Group imports: external libraries, internal modules, types
+- Group imports: external libraries, path-aliased modules, relative modules, types
 - Order imports alphabetically within each group
 - Keep files focused on a single concern
+- Never use deep relative imports (3+ levels of \`../\`) — use path aliases (\`#src/*\`, \`@/*\`) instead; deep traversals are fragile and unreadable
 
 ## Type Discipline
 - Treat type errors as design feedback, not noise — fix the design, don't suppress the error
 - Automate type generation in CI where applicable (API schemas, database types, GraphQL)
+
+## Complexity Metrics
+- Track cognitive complexity, not just line count — a 25-line function with 4 levels of nesting is harder to read than a 40-line flat function
+- Configure linters to warn on cognitive complexity thresholds (e.g., SonarQube default of 15)
 
 ## Linting
 - Always fix linting errors before moving to other tasks — never leave broken lint for later
@@ -49,6 +63,10 @@ GOOD: \`createUser({ name, email, role, team, isActive, notify })\`
 - Handle errors at the appropriate level, not everywhere
 - Use typed errors when the language supports them
 - Always clean up resources in finally blocks
+
+## Dead Code
+- Remove unused functions, imports, and variables — dead code misleads readers and increases maintenance burden
+- Remove stale feature flags after rollout is complete — lingering flags accumulate as tech debt
 
 ## No Hardcoding — Single Source of Truth
 - Never hardcode values that are defined or derivable elsewhere — duplicated lists drift and cause bugs

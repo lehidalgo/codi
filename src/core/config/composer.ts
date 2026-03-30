@@ -1,11 +1,19 @@
-import { ok, err } from '../../types/result.js';
-import type { Result } from '../../types/result.js';
-import type { NormalizedConfig } from '../../types/config.js';
-import type { ResolvedFlags, FlagDefinition } from '../../types/flags.js';
-import type { CodiError } from '../output/types.js';
-import { createError } from '../output/errors.js';
+import { ok, err } from "../../types/result.js";
+import type { Result } from "../../types/result.js";
+import type { NormalizedConfig } from "../../types/config.js";
+import type { ResolvedFlags, FlagDefinition } from "../../types/flags.js";
+import type { ProjectError } from "../output/types.js";
+import { createError } from "../output/errors.js";
 
-export type ConfigLayerLevel = 'org' | 'team' | 'preset' | 'repo' | 'lang' | 'framework' | 'agent' | 'user';
+export type ConfigLayerLevel =
+  | "org"
+  | "team"
+  | "preset"
+  | "repo"
+  | "lang"
+  | "framework"
+  | "agent"
+  | "user";
 
 export interface ConfigLayer {
   level: ConfigLayerLevel;
@@ -19,7 +27,7 @@ interface LockedFlag {
 }
 
 const DEFAULT_CONFIG: NormalizedConfig = {
-  manifest: { name: '', version: '1' },
+  manifest: { name: "", version: "1" },
   rules: [],
   skills: [],
   commands: [],
@@ -29,9 +37,9 @@ const DEFAULT_CONFIG: NormalizedConfig = {
 };
 
 export function composeConfig(layers: ConfigLayer[]): Result<NormalizedConfig> {
-  const errors: CodiError[] = [];
+  const errors: ProjectError[] = [];
   const lockedFlags: LockedFlag[] = [];
-  let merged: NormalizedConfig = structuredClone(DEFAULT_CONFIG);
+  const merged: NormalizedConfig = structuredClone(DEFAULT_CONFIG);
 
   for (const layer of layers) {
     const cfg = layer.config;
@@ -53,7 +61,12 @@ export function composeConfig(layers: ConfigLayer[]): Result<NormalizedConfig> {
       merged.agents = [...merged.agents, ...cfg.agents];
     }
     if (cfg.flags) {
-      const flagErrors = mergeFlags(merged.flags, cfg.flags, layer.source, lockedFlags);
+      const flagErrors = mergeFlags(
+        merged.flags,
+        cfg.flags,
+        layer.source,
+        lockedFlags,
+      );
       errors.push(...flagErrors);
     }
 
@@ -73,13 +86,15 @@ function mergeFlags(
   incoming: ResolvedFlags,
   source: string,
   lockedFlags: LockedFlag[],
-): CodiError[] {
-  const errors: CodiError[] = [];
+): ProjectError[] {
+  const errors: ProjectError[] = [];
 
   for (const [key, flag] of Object.entries(incoming)) {
     const locked = lockedFlags.find((l) => l.flag === key);
     if (locked) {
-      errors.push(createError('E_FLAG_LOCKED', { flag: key, source: locked.source }));
+      errors.push(
+        createError("E_FLAG_LOCKED", { flag: key, source: locked.source }),
+      );
       continue;
     }
 

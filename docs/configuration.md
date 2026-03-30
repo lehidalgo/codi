@@ -1,6 +1,6 @@
-# Configuration Guide
+# Configuration
 
-Complete reference for codi's configuration system: directory structure, manifest, flags, presets, and flag-to-instruction mapping.
+Complete reference for Codi's configuration system: directory structure, manifest, flags, and MCP.
 
 ## Directory Structure
 
@@ -9,15 +9,29 @@ Complete reference for codi's configuration system: directory structure, manifes
   codi.yaml                    # Project manifest
   flags.yaml                   # Behavioral flags (18 flags)
   state.json                   # Generation state (auto-managed)
+  mcp.yaml                     # MCP server configuration
   rules/
     generated/
-      common/                  # Auto-generated rules
-    custom/                    # Your custom rules (Markdown)
-  skills/                      # Your custom skills (Markdown)
+      common/                  # Auto-generated rules (managed_by: codi)
+    custom/                    # Your custom rules (managed_by: user)
+  skills/
+    {name}/
+      SKILL.md                 # Skill definition
+      scripts/                 # Skill scripts
+      references/              # Reference materials
+      assets/                  # Static assets
+      evals/                   # Evaluation files
+  agents/                      # Agent definitions (Markdown)
+  commands/                    # Slash commands (Markdown)
+  brands/                      # Brand definitions (BRAND.md + assets)
+  presets/                     # Installed presets
+  backups/                     # Automatic backups (max 5)
   lang/                        # Language-specific flag overrides (*.yaml)
   frameworks/                  # Framework-specific flag overrides (*.yaml)
-  agents/                      # Agent-specific flag overrides (*.yaml)
+  operations-ledger.json       # Audit trail of all CLI operations
 ```
+
+---
 
 ## Manifest (`codi.yaml`)
 
@@ -38,9 +52,9 @@ agents:
 # Reference a team config (loaded from ~/.codi/teams/frontend.yaml)
 team: frontend
 
-# Pin minimum codi version
+# Pin minimum Codi version
 codi:
-  requiredVersion: ">=0.1.0"
+  requiredVersion: ">=0.9.0"
 
 # Remote source for centralized team artifacts (used by codi update --from)
 source:
@@ -48,14 +62,56 @@ source:
   branch: main
   paths: [rules, skills, agents]
 
-# Control which content types are included
+# Control which content types are included in generation
 layers:
-  rules: true
-  skills: true
-  commands: true
-  agents: true
-  context: true
+  rules: true       # default: true
+  skills: true       # default: true
+  commands: true     # default: true
+  agents: true       # default: true
+  context: true      # default: true
+
+# Presets to load (applied in order)
+presets:
+  - balanced
+
+# Marketplace registry for skill search/install
+marketplace:
+  registry: "org/codi-skills-registry"
+  branch: main
 ```
+
+### Manifest Fields
+
+<!-- GENERATED:START:manifest_fields -->
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | Yes | — | Project name (alphanumeric + hyphens) |
+| `version` | `1` | Yes | — | Manifest version (always `1`) |
+| `description` | string | No | — | Project description |
+| `agents` | string[] | No | — | Agent IDs to generate for |
+| `layers` | object | No | — | Toggle content types |
+| `layers.rules` | boolean | Yes | `true` | Include rules in generation |
+| `layers.skills` | boolean | Yes | `true` | Include skills in generation |
+| `layers.commands` | boolean | Yes | `true` | Include commands in generation |
+| `layers.agents` | boolean | Yes | `true` | Include agents in generation |
+| `layers.context` | boolean | Yes | `true` | Include context in generation |
+| `engine` | object | No | — |  |
+| `engine.requiredVersion` | string | No | — |  |
+| `team` | string | No | — | Team name for team-level config |
+| `source` | object | No | — | Remote repo for `codi update --from` |
+| `source.repo` | string | Yes | — | Repository identifier |
+| `source.branch` | string | Yes | `main` | Branch to pull from |
+| `source.paths` | string[] | Yes | `["rules","skills","agents"]` | Artifact paths to sync |
+| `marketplace` | object | No | — | Marketplace registry settings |
+| `marketplace.registry` | string | Yes | — | Registry repository |
+| `marketplace.branch` | string | Yes | `main` | Registry branch |
+| `presetRegistry` | object | No | — | Preset registry settings |
+| `presetRegistry.url` | string | Yes | — | Registry URL |
+| `presetRegistry.branch` | string | Yes | `main` | Registry branch |
+| `presets` | string[] | No | — | Presets to load (order matters) |
+<!-- GENERATED:END:manifest_fields -->
+
+---
 
 ## Flags (`flags.yaml`)
 
@@ -80,33 +136,36 @@ type_checking:
 
 ### All 18 Flags
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `auto_commit` | boolean | `false` | Automatic commits after changes |
-| `test_before_commit` | boolean | `true` | Run tests before commit |
-| `security_scan` | boolean | `true` | Mandatory security scanning |
-| `type_checking` | enum | `strict` | Type checking level (`strict`, `basic`, `off`) |
-| `max_file_lines` | number | `700` | Maximum lines per file |
-| `require_tests` | boolean | `false` | Require tests for new code |
-| `allow_shell_commands` | boolean | `true` | Allow shell command execution |
-| `allow_file_deletion` | boolean | `true` | Allow file deletion |
-| `lint_on_save` | boolean | `true` | Lint files on save |
-| `allow_force_push` | boolean | `false` | Allow force push to remote |
-| `require_pr_review` | boolean | `true` | Require PR review before merge |
-| `mcp_allowed_servers` | string[] | `[]` | Whitelist of allowed MCP servers |
-| `require_documentation` | boolean | `false` | Require documentation for new code |
-| `allowed_languages` | string[] | `["*"]` | Allowed programming languages (`*` = all) |
-| `max_context_tokens` | number | `50000` | Maximum context token window |
-| `progressive_loading` | enum | `metadata` | Loading strategy (`off`, `metadata`, `full`) |
-| `drift_detection` | enum | `warn` | Drift behavior (`off`, `warn`, `error`) |
-| `auto_generate_on_change` | boolean | `false` | Auto-regenerate on config change |
+<!-- GENERATED:START:flags_table -->
+| Flag | Type | Default | Hook | Description |
+|------|------|---------|------|-------------|
+| `auto_commit` | boolean | `false` | — | Automatic commits after changes |
+| `test_before_commit` | boolean | `true` | tests | Run tests before commit |
+| `security_scan` | boolean | `true` | secret-detection | Mandatory security scanning |
+| `type_checking` | enum | `strict` | typecheck | Type checking level |
+| `max_file_lines` | number | `700` | file-size-check | Max lines per file |
+| `require_tests` | boolean | `false` | — | Require tests for new code |
+| `allow_shell_commands` | boolean | `true` | — | Allow shell command execution |
+| `allow_file_deletion` | boolean | `true` | — | Allow file deletion |
+| `lint_on_save` | boolean | `true` | — | Lint files on save |
+| `allow_force_push` | boolean | `false` | — | Allow force push to remote |
+| `require_pr_review` | boolean | `true` | — | Require PR review before merge |
+| `mcp_allowed_servers` | string[] | `` | — | Allowed MCP server names |
+| `require_documentation` | boolean | `false` | — | Require documentation for new code |
+| `allowed_languages` | string[] | `["*"]` | — | Allowed programming languages |
+| `max_context_tokens` | number | `50000` | — | Maximum context token window |
+| `progressive_loading` | enum | `metadata` | — | Progressive loading strategy |
+| `drift_detection` | enum | `warn` | — | Drift detection behavior |
+| `auto_generate_on_change` | boolean | `false` | — | Auto-generate on config change |
+<!-- GENERATED:END:flags_table -->
 
-Flags are translated into natural-language instructions embedded in each agent's config file. For example, `allow_force_push: false` becomes _"Do NOT use force push (--force) on git operations."_
+Flags with a **Hook** value create pre-commit checks that enforce the flag at commit time.
 
 ### Flag Modes
 
-Each flag supports 6 modes that control how it behaves across the inheritance chain:
+Each flag supports 6 modes that control behavior across the inheritance chain:
 
+<!-- GENERATED:START:flag_modes -->
 | Mode | Behavior | Can Override? |
 |------|----------|---------------|
 | `enforced` | Always active, non-negotiable | No (stops resolution) |
@@ -115,8 +174,9 @@ Each flag supports 6 modes that control how it behaves across the inheritance ch
 | `inherited` | Skip — use parent layer's value | Yes |
 | `delegated_to_agent_default` | Use the flag's catalog default | Yes |
 | `conditional` | Apply only if conditions match | Yes |
+<!-- GENERATED:END:flag_modes -->
 
-### Conditional Mode
+### Conditional Flags
 
 The `conditional` mode requires a `conditions` block with at least one key:
 
@@ -135,7 +195,7 @@ All specified conditions must match for the flag to apply.
 
 ### Locking Flags
 
-Flags can be locked at org, team, or repo levels to prevent lower layers from overriding them:
+Flags can be locked at org, team, or repo levels to prevent lower layers from overriding:
 
 ```yaml
 # In ~/.codi/org.yaml — nobody can disable security scanning
@@ -147,137 +207,78 @@ security_scan:
 
 Attempting to override a locked flag at a lower layer produces a validation error.
 
-### Example `flags.yaml` (balanced preset)
-
-This is what `flags.yaml` looks like after running `codi init` with the balanced preset:
-
-```yaml
-auto_commit:
-  mode: enabled
-  value: false
-test_before_commit:
-  mode: enabled
-  value: true
-security_scan:
-  mode: enabled
-  value: true
-type_checking:
-  mode: enabled
-  value: strict
-max_file_lines:
-  mode: enabled
-  value: 700
-allow_force_push:
-  mode: enabled
-  value: false
-require_pr_review:
-  mode: enabled
-  value: true
-drift_detection:
-  mode: enabled
-  value: warn
-# ... and 10 more flags
-```
-
 ### Flag-to-Instruction Mapping
 
-Flags in `flags.yaml` are automatically translated into natural-language instructions in the generated files:
+Flags are automatically translated into natural-language instructions in generated files:
 
-| Flag YAML | Generated Instruction |
-|-----------|----------------------|
-| `allow_force_push: false` | "Do NOT use force push (--force) on git operations." |
-| `max_file_lines: 700` | "Keep source code files under 700 lines. Documentation files have no line limit." |
-| `require_pr_review: true` | "All changes require pull request review before merging." |
-| `require_tests: true` | "Write tests for all new code." |
-| `allow_shell_commands: false` | "Do NOT execute shell commands." |
-| `require_documentation: true` | "Write documentation for all new code and APIs." |
-| `mcp_allowed_servers: [github, jira]` | "Only use these MCP servers: github, jira." |
-| `allowed_languages: [typescript, python]` | "Only use these languages: typescript, python." |
-| `max_context_tokens: 50000` | "Maximum context window: 50000 tokens." |
+<!-- GENERATED:START:flag_instructions -->
+| Flag | Trigger Value | Generated Instruction |
+|------|--------------|----------------------|
+| `allow_shell_commands` | `false` | Do NOT execute shell commands. |
+| `allow_file_deletion` | `false` | Do NOT delete files. |
+| `max_file_lines` | `N` | Keep source code files under N lines. Documentation files have no line limit. |
+| `require_tests` | `true` | Write tests for all new code. |
+| `allow_force_push` | `false` | Do NOT use force push (--force) on git operations. |
+| `require_pr_review` | `true` | All changes require pull request review before merging. |
+| `mcp_allowed_servers` | `[...]` | Only use these MCP servers: {list}. |
+| `require_documentation` | `true` | Write documentation for all new code and APIs. |
+| `allowed_languages` | `[...]` | Only use these languages: {list}. |
+| `max_context_tokens` | `N` | Maximum context window: N tokens. |
+<!-- GENERATED:END:flag_instructions -->
 
-Flags that are operational (like `drift_detection`, `progressive_loading`, `lint_on_save`) don't generate agent instructions — they control codi's behavior instead.
+Operational flags (`drift_detection`, `progressive_loading`, `auto_generate_on_change`) control Codi's behavior and do not generate agent instructions.
 
-## Presets
-
-Presets control the flag strictness level. Choose one during `codi init --preset`:
-
-| Preset | Philosophy |
-|--------|-----------|
-| `minimal` | Permissive — security off, no test requirements, all actions allowed |
-| `balanced` | Recommended — security on, type-checking strict, no force-push |
-| `strict` | Enforced — security locked, tests required, shell/delete restricted |
-
-<details>
-<summary>Preset comparison (click to expand)</summary>
-
-| Flag | Minimal | Balanced | Strict |
-|------|---------|----------|--------|
-| `security_scan` | `false` | `true` | `true` (enforced, locked) |
-| `test_before_commit` | `false` | `true` | `true` (enforced, locked) |
-| `type_checking` | `off` | `strict` | `strict` (enforced, locked) |
-| `max_file_lines` | `1000` | `700` | `500` |
-| `require_tests` | `false` | `false` | `true` (enforced, locked) |
-| `allow_shell_commands` | `true` | `true` | `false` |
-| `allow_file_deletion` | `true` | `true` | `false` |
-| `allow_force_push` | `true` | `false` | `false` (enforced, locked) |
-| `require_pr_review` | `false` | `true` | `true` (enforced, locked) |
-| `require_documentation` | `false` | `false` | `true` |
-| `drift_detection` | `off` | `warn` | `error` |
-| `auto_generate_on_change` | `false` | `false` | `true` |
-
-Flags marked "enforced, locked" in the strict preset cannot be overridden by any lower layer.
-
-</details>
-
-## Artifact Ownership
-
-Rules, skills, and agents all use a `managed_by` field in their frontmatter:
-- **`managed_by: codi`** — created from a template, updated by `codi update --rules`, `--skills`, or `--agents`
-- **`managed_by: user`** — custom artifact, never overwritten by codi
-
-When you run `codi add rule security --template security`, the rule is created with `managed_by: codi`. When you run `codi add rule my-custom-rule` (no template), it's `managed_by: user`. The same applies to skills and agents.
-
-## Commands Directory
-
-```
-.codi/commands/           # Custom slash commands (Markdown)
-```
-
-Commands are Markdown files in `.codi/commands/` with YAML frontmatter:
-
-```markdown
 ---
-name: review
-description: Review recent code changes
----
-[Command instructions...]
-```
 
-Available templates: `review`, `test-run`, `security-scan`, `test-coverage`, `refactor`, `onboard`, `docs-lookup`, `commit`. Create with `codi add command <name> --template <template>`.
+## Layer Overrides
+
+Configuration can be overridden at multiple levels. Files are loaded from your home directory:
+
+| Layer | File Location | Use Case |
+|-------|---------------|----------|
+| **Org** | `~/.codi/orgs/{org}/config.yaml` | Organization-wide policies |
+| **Team** | `~/.codi/teams/{name}.yaml` | Team-specific standards |
+| **User** | `~/.codi/user.yaml` | Personal preferences |
+
+Layer files use the same flag format as `flags.yaml`. See [Architecture](architecture.md) for the full 8-layer resolution order.
+
+---
 
 ## MCP Configuration
 
+Define MCP servers in `.codi/mcp.yaml`:
+
 ```yaml
-# .codi/mcp.yaml
 servers:
   github:
     command: npx
     args: ["-y", "@anthropic-ai/mcp-server-github"]
     env:
       GITHUB_TOKEN: "${GITHUB_TOKEN}"
+
+  docs:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-docs-server"]
+
+  memory:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-memory-server"]
+    enabled: false   # Disable without removing
 ```
+
+### MCP Server Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `"stdio"` or `"http"` | Server transport type |
+| `command` | string | Command to start the server |
+| `args` | string[] | Command arguments |
+| `env` | Record | Environment variables |
+| `url` | string | HTTP URL (for `http` type) |
+| `headers` | Record | HTTP headers (for `http` type) |
+| `enabled` | boolean | Toggle server on/off (default: `true`) |
 
 MCP config is distributed to each agent in its native format:
-- Claude Code: `.claude/mcp.json`
-- Codex: `.codex/mcp.toml`
-- Cursor: `.cursor/mcp.json`
-- Windsurf: `.windsurf/mcp.json`
-
-## Marketplace Configuration
-
-```yaml
-# codi.yaml
-marketplace:
-  registry: "org/codi-skills-registry"
-  branch: main
-```
+- **Claude Code**: `.claude/mcp.json`
+- **Cursor**: `.cursor/mcp.json`
+- **Codex**: `.codex/config.toml`

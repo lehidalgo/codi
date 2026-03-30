@@ -1,7 +1,9 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Summarize the current session and prepare a handoff prompt for a new chat
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 Produce a concise session handoff so a new Claude Code session can continue immediately without context loss.

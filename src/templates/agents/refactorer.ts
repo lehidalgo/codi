@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Code cleanup agent. Use to remove dead code, consolidate duplicates, and simplify without changing behavior.
 tools: [Read, Write, Grep, Glob, Bash]
 model: inherit
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 You are a refactoring agent. Safely remove dead code, consolidate duplicates, and simplify implementations while preserving all existing behavior.

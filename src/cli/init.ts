@@ -1,35 +1,53 @@
-import type { Command } from 'commander';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { stringify as stringifyYaml } from 'yaml';
-import { resolveCodiDir } from '../utils/paths.js';
-import { registerAllAdapters } from '../adapters/index.js';
-import { detectAdapters, getAllAdapters } from '../core/generator/adapter-registry.js';
-import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
-import type { PresetName } from '../core/flags/flag-presets.js';
-import type { FlagDefinition } from '../types/flags.js';
-import { DEFAULT_PRESET, MANIFEST_FILENAME, FLAGS_FILENAME } from '../constants.js';
-import { getBuiltinPresetDefinition } from '../templates/presets/index.js';
-import { resolveConfig } from '../core/config/resolver.js';
-import { generate } from '../core/generator/generator.js';
-import { createRule } from '../core/scaffolder/rule-scaffolder.js';
-import { createSkill } from '../core/scaffolder/skill-scaffolder.js';
-import { createAgent } from '../core/scaffolder/agent-scaffolder.js';
-import { createCommand } from '../core/scaffolder/command-scaffolder.js';
+import type { Command } from "commander";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { stringify as stringifyYaml } from "yaml";
+import { resolveProjectDir } from "../utils/paths.js";
+import { registerAllAdapters } from "../adapters/index.js";
+import {
+  detectAdapters,
+  getAllAdapters,
+} from "../core/generator/adapter-registry.js";
+import { getPreset, getPresetNames } from "../core/flags/flag-presets.js";
+import type { PresetName } from "../core/flags/flag-presets.js";
+import type { FlagDefinition } from "../types/flags.js";
+import {
+  DEFAULT_PRESET,
+  MANIFEST_FILENAME,
+  FLAGS_FILENAME,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  resolveArtifactName,
+} from "../constants.js";
+import {
+  getBuiltinPresetDefinition,
+  getBuiltinPresetNames,
+} from "../templates/presets/index.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { generate } from "../core/generator/generator.js";
+import { createRule } from "../core/scaffolder/rule-scaffolder.js";
+import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
+import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
+import { createCommand } from "../core/scaffolder/command-scaffolder.js";
+import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
+import { generateMitLicense } from "../core/scaffolder/license-generator.js";
 // Preset artifact lookup moved to init-wizard.ts
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import { Logger } from '../core/output/logger.js';
-import type { CommandResult } from '../core/output/types.js';
-import { runInitWizard } from './init-wizard.js';
-import { initFromOptions, handleOutput } from './shared.js';
-import { detectHookSetup } from '../core/hooks/hook-detector.js';
-import { generateHooksConfig } from '../core/hooks/hook-config-generator.js';
-import { installHooks } from '../core/hooks/hook-installer.js';
-import { checkHookDependencies } from '../core/hooks/hook-dependency-checker.js';
-import type { GlobalOptions } from './shared.js';
-import { VERSION } from '../index.js';
-import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import { Logger } from "../core/output/logger.js";
+import type { CommandResult } from "../core/output/types.js";
+import { runInitWizard } from "./init-wizard.js";
+import { initFromOptions, handleOutput } from "./shared.js";
+import { detectHookSetup } from "../core/hooks/hook-detector.js";
+import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
+import { installHooks } from "../core/hooks/hook-installer.js";
+import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
+import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
+import { detectStack } from "../core/hooks/stack-detector.js";
+import type { GlobalOptions } from "./shared.js";
+import { VERSION } from "../index.js";
+import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -39,32 +57,12 @@ interface InitOptions extends GlobalOptions {
 }
 
 interface InitData {
-  codiDir: string;
+  configDir: string;
   agents: string[];
   stack: string[];
   generated: boolean;
   preset: string;
   rules: string[];
-}
-
-const STACK_INDICATORS: Record<string, string> = {
-  'package.json': 'node',
-  'pyproject.toml': 'python',
-  'go.mod': 'go',
-  'Cargo.toml': 'rust',
-};
-
-async function detectStack(projectRoot: string): Promise<string[]> {
-  const detected: string[] = [];
-  for (const [file, stack] of Object.entries(STACK_INDICATORS)) {
-    try {
-      await fs.access(path.join(projectRoot, file));
-      detected.push(stack);
-    } catch {
-      // File not found, skip
-    }
-  }
-  return detected;
 }
 
 function isInteractive(options: InitOptions): boolean {
@@ -76,22 +74,31 @@ export async function initHandler(
   options: InitOptions,
 ): Promise<CommandResult<InitData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
 
   try {
-    await fs.access(codiDir);
+    await fs.access(configDir);
     if (!options.force) {
       return createCommandResult({
         success: false,
-        command: 'init',
-        data: { codiDir, agents: [], stack: [], generated: false, preset: DEFAULT_PRESET, rules: [] },
-        errors: [{
-          code: 'E_CONFIG_INVALID',
-          message: `.codi/ directory already exists. Use --force to reinitialize.`,
-          hint: 'Use --force to reinitialize.',
-          severity: 'error',
-          context: { codiDir },
-        }],
+        command: "init",
+        data: {
+          configDir,
+          agents: [],
+          stack: [],
+          generated: false,
+          preset: DEFAULT_PRESET,
+          rules: [],
+        },
+        errors: [
+          {
+            code: "E_CONFIG_INVALID",
+            message: `${PROJECT_DIR}/ directory already exists. Use --force to reinitialize.`,
+            hint: "Use --force to reinitialize.",
+            severity: "error",
+            context: { configDir },
+          },
+        ],
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
     }
@@ -99,95 +106,187 @@ export async function initHandler(
     // Directory does not exist, proceed
   }
 
-  const stack = await detectStack(projectRoot);
+  let stack = await detectStack(projectRoot);
   if (!isInteractive(options)) {
-    log.info(`Detected stack: ${stack.length > 0 ? stack.join(', ') : 'none'}`);
+    log.info(`Detected stack: ${stack.length > 0 ? stack.join(", ") : "none"}`);
   }
 
   registerAllAdapters();
 
   let agentIds: string[];
-  let presetName: string = (options.preset as string) ?? DEFAULT_PRESET;
+  const rawPreset = options.preset as string | undefined;
+  let presetName: string =
+    (rawPreset
+      ? (resolveArtifactName(rawPreset, getPresetNames() as string[]) ??
+        rawPreset)
+      : undefined) ?? DEFAULT_PRESET;
   let displayPresetName: string = presetName;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
   let commandTemplates: string[] = [];
+  let mcpServerTemplates: string[] = [];
 
   if (isInteractive(options)) {
     const detectedAdapters = await detectAdapters(projectRoot);
     const detectedAgentIds = detectedAdapters.map((a) => a.id);
     const allAgentIds = getAllAdapters().map((a) => a.id);
 
-    const wizardResult = await runInitWizard(stack, detectedAgentIds, allAgentIds);
+    const wizardResult = await runInitWizard(
+      stack,
+      detectedAgentIds,
+      allAgentIds,
+    );
     if (!wizardResult) {
       return createCommandResult({
         success: false,
-        command: 'init',
-        data: { codiDir, agents: [], stack, generated: false, preset: DEFAULT_PRESET, rules: [] },
-        errors: [{ code: 'E_CONFIG_INVALID', message: 'Setup cancelled.', hint: '', severity: 'error', context: {} }],
+        command: "init",
+        data: {
+          configDir,
+          agents: [],
+          stack,
+          generated: false,
+          preset: DEFAULT_PRESET,
+          rules: [],
+        },
+        errors: [
+          {
+            code: "E_CONFIG_INVALID",
+            message: "Setup cancelled.",
+            hint: "",
+            severity: "error",
+            context: {},
+          },
+        ],
         exitCode: EXIT_CODES.GENERAL_ERROR,
       });
     }
 
     agentIds = wizardResult.agents;
     presetName = wizardResult.preset;
-    displayPresetName = wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? presetName;
+    displayPresetName =
+      wizardResult.saveAsPreset ??
+      wizardResult.selectedPresetName ??
+      presetName;
+    // Use wizard language selection for hooks (overrides auto-detection)
+    stack = wizardResult.languages;
 
-    if (wizardResult.configMode === 'zip' || wizardResult.configMode === 'github') {
-      // Import: will be handled after createCodiStructure via preset install
+    if (
+      wizardResult.configMode === "zip" ||
+      wizardResult.configMode === "github"
+    ) {
+      // Import: will be handled after createProjectStructure via preset install
     } else {
       // Preset or custom: wizard always returns the full artifact selections
       ruleTemplates = wizardResult.rules;
       skillTemplates = wizardResult.skills;
       agentTemplates = wizardResult.agentTemplates;
       commandTemplates = wizardResult.commandTemplates;
+      mcpServerTemplates = wizardResult.mcpServers;
     }
 
-    await createCodiStructure(codiDir, agentIds, wizardResult.selectedPresetName ?? presetName, wizardResult.versionPin, wizardResult.flags);
+    await createProjectStructure(
+      configDir,
+      agentIds,
+      wizardResult.selectedPresetName ?? presetName,
+      wizardResult.versionPin,
+      wizardResult.flags,
+    );
 
     // Handle import sources (ZIP/GitHub)
     if (wizardResult.importSource) {
-      const { presetInstallUnifiedHandler } = await import('./preset-handlers.js');
-      const installResult = await presetInstallUnifiedHandler(projectRoot, wizardResult.importSource);
+      const { presetInstallUnifiedHandler } =
+        await import("./preset-handlers.js");
+      const installResult = await presetInstallUnifiedHandler(
+        projectRoot,
+        wizardResult.importSource,
+      );
       if (!installResult.success) {
-        log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? 'unknown error'}`);
+        log.warn(
+          `Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`,
+        );
       }
     }
 
     // Save custom selection as preset if requested
     if (wizardResult.saveAsPreset) {
-      const presetDir = path.join(codiDir, 'presets', wizardResult.saveAsPreset);
+      const presetDir = path.join(
+        configDir,
+        "presets",
+        wizardResult.saveAsPreset,
+      );
       await fs.mkdir(presetDir, { recursive: true });
-      const { stringify } = await import('yaml');
-      await fs.writeFile(path.join(presetDir, 'preset.yaml'), stringify({
-        name: wizardResult.saveAsPreset,
-        version: '1.0.0',
-        artifacts: {
-          rules: wizardResult.rules,
-          skills: wizardResult.skills,
-          agents: wizardResult.agentTemplates,
-          commands: wizardResult.commandTemplates,
-        },
-      }), 'utf8');
-      log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
+      const { stringify } = await import("yaml");
+      await fs.writeFile(
+        path.join(presetDir, "preset.yaml"),
+        stringify({
+          name: wizardResult.saveAsPreset,
+          version: "1.0.0",
+          artifacts: {
+            rules: wizardResult.rules,
+            skills: wizardResult.skills,
+            agents: wizardResult.agentTemplates,
+            commands: wizardResult.commandTemplates,
+            mcpServers: wizardResult.mcpServers,
+          },
+        }),
+        "utf8",
+      );
+      log.info(
+        `Saved custom selection as preset "${wizardResult.saveAsPreset}"`,
+      );
     }
   } else {
+    const knownPresets = getBuiltinPresetNames();
+    if (!knownPresets.includes(presetName)) {
+      return createCommandResult({
+        success: false,
+        command: "init",
+        data: {
+          configDir,
+          agents: [],
+          stack,
+          generated: false,
+          preset: presetName,
+          rules: [],
+        },
+        errors: [
+          {
+            code: "E_CONFIG_INVALID",
+            message: `Unknown preset: "${presetName}". Known: ${knownPresets.join(", ")}`,
+            hint: `Available presets: ${knownPresets.join(", ")}`,
+            severity: "error",
+            context: { unknownPreset: presetName },
+          },
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
     if (options.agents && options.agents.length > 0) {
       const knownIds = new Set(getAllAdapters().map((a) => a.id));
       const unknownAgents = options.agents.filter((id) => !knownIds.has(id));
       if (unknownAgents.length > 0) {
         return createCommandResult({
           success: false,
-          command: 'init',
-          data: { codiDir, agents: [], stack, generated: false, preset: presetName, rules: [] },
-          errors: [{
-            code: 'E_CONFIG_INVALID',
-            message: `Unknown agent(s): ${unknownAgents.join(', ')}. Known: ${[...knownIds].join(', ')}`,
-            hint: `Available agents: ${[...knownIds].join(', ')}`,
-            severity: 'error',
-            context: { unknownAgents },
-          }],
+          command: "init",
+          data: {
+            configDir,
+            agents: [],
+            stack,
+            generated: false,
+            preset: presetName,
+            rules: [],
+          },
+          errors: [
+            {
+              code: "E_CONFIG_INVALID",
+              message: `Unknown agent(s): ${unknownAgents.join(", ")}. Known: ${[...knownIds].join(", ")}`,
+              hint: `Available agents: ${[...knownIds].join(", ")}`,
+              severity: "error",
+              context: { unknownAgents },
+            },
+          ],
           exitCode: EXIT_CODES.GENERAL_ERROR,
         });
       }
@@ -197,35 +296,62 @@ export async function initHandler(
       agentIds = detectedAdapters.map((a) => a.id);
     }
 
-    log.info(`Using agents: ${agentIds.join(', ')}`);
-    await createCodiStructure(codiDir, agentIds, presetName, false);
+    log.info(`Using agents: ${agentIds.join(", ")}`);
+    await createProjectStructure(configDir, agentIds, presetName, false);
   }
 
   for (const template of ruleTemplates) {
-    const result = await createRule({ name: template, codiDir, template });
+    const result = await createRule({ name: template, configDir, template });
     if (!result.ok) {
-      log.warn(`Failed to create rule "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+      log.warn(
+        `Failed to create rule "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
+      );
     }
   }
 
+  const projectName = path.basename(projectRoot);
   for (const template of skillTemplates) {
-    const result = await createSkill({ name: template, codiDir, template });
+    const result = await createSkill({
+      name: template,
+      configDir,
+      template,
+      copyrightHolder: projectName,
+    });
     if (!result.ok) {
-      log.warn(`Failed to create skill "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+      log.warn(
+        `Failed to create skill "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
+      );
     }
   }
 
   for (const template of agentTemplates) {
-    const result = await createAgent({ name: template, codiDir, template });
+    const result = await createAgent({ name: template, configDir, template });
     if (!result.ok) {
-      log.warn(`Failed to create agent "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+      log.warn(
+        `Failed to create agent "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
+      );
     }
   }
 
   for (const template of commandTemplates) {
-    const result = await createCommand({ name: template, codiDir, template });
+    const result = await createCommand({ name: template, configDir, template });
     if (!result.ok) {
-      log.warn(`Failed to create command "${template}": ${result.errors[0]?.message ?? 'unknown error'}`);
+      log.warn(
+        `Failed to create command "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
+      );
+    }
+  }
+
+  for (const template of mcpServerTemplates) {
+    const result = await createMcpServer({
+      name: template,
+      configDir,
+      template,
+    });
+    if (!result.ok) {
+      log.warn(
+        `Failed to create MCP server "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
+      );
     }
   }
 
@@ -235,7 +361,9 @@ export async function initHandler(
     const genResult = await generate(configResult.data, projectRoot);
     generated = genResult.ok;
     if (!genResult.ok) {
-      log.warn('Generation after init failed; you can run `codi generate` later.');
+      log.warn(
+        `Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`,
+      );
     }
   }
 
@@ -261,26 +389,56 @@ export async function initHandler(
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
           hookFiles = hookResult.data.files;
-          log.info(`Pre-commit hooks installed (${hookSetup.runner === 'none' ? 'standalone' : hookSetup.runner})`);
-          const missingDeps = await checkHookDependencies(hooksConfig.hooks);
+          log.info(
+            `Pre-commit hooks installed (${hookSetup.runner === "none" ? "standalone" : hookSetup.runner})`,
+          );
+          const missingDeps = await checkHookDependencies(
+            hooksConfig.hooks,
+            projectRoot,
+          );
           if (missingDeps.length > 0) {
-            log.warn('Missing hook tools — install before committing:');
-            for (const dep of missingDeps) {
-              log.warn(`  ${dep.name}: ${dep.installHint}`);
-            }
+            await installMissingDeps(
+              missingDeps,
+              projectRoot,
+              log,
+              isInteractive(options),
+            );
           }
         } else {
-          log.warn('Hook installation failed; you can set up hooks manually.');
+          log.warn("Hook installation failed; you can set up hooks manually.");
         }
       }
     } catch {
-      log.warn('Hook detection failed; skipping hook installation.');
+      log.warn("Hook detection failed; skipping hook installation.");
     }
+  }
+
+  // Generate HTML documentation site (non-critical)
+  try {
+    const { buildSkillDocsFile } =
+      await import("../core/docs/skill-docs-generator.js");
+    const docsPath = await buildSkillDocsFile(projectRoot);
+    log.info(`Documentation site generated: ${docsPath}`);
+  } catch {
+    log.warn("HTML docs generation skipped.");
+  }
+
+  // Update code-driven documentation sections (non-critical)
+  try {
+    const { injectSections } = await import("../core/docs/docs-generator.js");
+    const result = await injectSections(projectRoot);
+    if (result.ok && result.data.updated.length > 0) {
+      log.info(
+        `Documentation sections updated: ${result.data.updated.join(", ")}`,
+      );
+    }
+  } catch {
+    log.warn("Documentation section generation skipped.");
   }
 
   // Write operations ledger
   try {
-    const ledger = new OperationsLedgerManager(codiDir);
+    const ledger = new OperationsLedgerManager(configDir);
     const now = new Date().toISOString();
     await ledger.setInitialization({
       timestamp: now,
@@ -289,7 +447,13 @@ export async function initHandler(
       stack,
       codiVersion: VERSION,
     });
-    if (ruleTemplates.length > 0 || skillTemplates.length > 0 || agentTemplates.length > 0 || commandTemplates.length > 0) {
+    if (
+      ruleTemplates.length > 0 ||
+      skillTemplates.length > 0 ||
+      agentTemplates.length > 0 ||
+      commandTemplates.length > 0 ||
+      mcpServerTemplates.length > 0
+    ) {
       await ledger.setActivePreset({
         name: displayPresetName,
         installedAt: now,
@@ -298,98 +462,140 @@ export async function initHandler(
           skills: skillTemplates,
           agents: agentTemplates,
           commands: commandTemplates,
+          mcpServers: mcpServerTemplates,
         },
       });
     }
     await ledger.addConfigFiles([
-      { path: '.codi/codi.yaml', type: 'manifest', createdAt: now },
-      { path: '.codi/flags.yaml', type: 'flags', createdAt: now },
-      { path: '.codi/operations.json', type: 'ledger', createdAt: now },
+      {
+        path: `${PROJECT_DIR}/${MANIFEST_FILENAME}`,
+        type: "manifest",
+        createdAt: now,
+      },
+      { path: `${PROJECT_DIR}/flags.yaml`, type: "flags", createdAt: now },
+      {
+        path: `${PROJECT_DIR}/operations.json`,
+        type: "ledger",
+        createdAt: now,
+      },
     ]);
     if (hookFiles.length > 0) {
       const hookSetup = await detectHookSetup(projectRoot);
-      await ledger.addHookFiles(hookFiles.map((f) => ({
-        path: f,
-        framework: hookSetup.runner === 'none' ? 'standalone' as const : hookSetup.runner as 'husky' | 'pre-commit' | 'lefthook',
-        type: inferHookType(f),
-        createdAt: now,
-      })));
+      await ledger.addHookFiles(
+        hookFiles.map((f) => ({
+          path: f,
+          framework:
+            hookSetup.runner === "none"
+              ? ("standalone" as const)
+              : (hookSetup.runner as "husky" | "pre-commit" | "lefthook"),
+          type: inferHookType(f),
+          createdAt: now,
+        })),
+      );
     }
   } catch {
-    log.warn('Operations ledger write failed; this is non-critical.');
+    log.warn("Operations ledger write failed; this is non-critical.");
   }
 
   return createCommandResult({
     success: true,
-    command: 'init',
-    data: { codiDir, agents: agentIds, stack, generated, preset: displayPresetName, rules: ruleTemplates, hooksInstalled },
+    command: "init",
+    data: {
+      configDir,
+      agents: agentIds,
+      stack,
+      generated,
+      preset: displayPresetName,
+      rules: ruleTemplates,
+      hooksInstalled,
+    },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
 
-function inferHookType(filePath: string): 'pre-commit' | 'commit-msg' | 'secret-scan' | 'file-size-check' | 'version-check' {
-  if (filePath.includes('secret-scan')) return 'secret-scan';
-  if (filePath.includes('file-size-check')) return 'file-size-check';
-  if (filePath.includes('version-check')) return 'version-check';
-  if (filePath.includes('commit-msg')) return 'commit-msg';
-  return 'pre-commit';
+function inferHookType(
+  filePath: string,
+):
+  | "pre-commit"
+  | "commit-msg"
+  | "secret-scan"
+  | "file-size-check"
+  | "version-check" {
+  if (filePath.includes("secret-scan")) return "secret-scan";
+  if (filePath.includes("file-size-check")) return "file-size-check";
+  if (filePath.includes("version-check")) return "version-check";
+  if (filePath.includes("commit-msg")) return "commit-msg";
+  return "pre-commit";
 }
 
-async function createCodiStructure(
-  codiDir: string,
+async function createProjectStructure(
+  configDir: string,
   agents: string[],
   presetName: string,
   versionPin: boolean,
   flagOverrides?: Record<string, FlagDefinition>,
 ): Promise<void> {
   const dirs = [
-    codiDir,
-    path.join(codiDir, 'rules', 'generated', 'common'),
-    path.join(codiDir, 'rules', 'custom'),
-    path.join(codiDir, 'skills'),
-    path.join(codiDir, 'frameworks'),
+    configDir,
+    path.join(configDir, "rules"),
+    path.join(configDir, "skills"),
+    path.join(configDir, "mcp-servers"),
+    path.join(configDir, "frameworks"),
   ];
   for (const dir of dirs) {
     await fs.mkdir(dir, { recursive: true });
   }
 
   const manifest: Record<string, unknown> = {
-    name: path.basename(path.dirname(codiDir)),
-    version: '1',
+    name: path.basename(path.dirname(configDir)),
+    version: "1",
     agents,
   };
   if (versionPin) {
-    manifest['codi'] = { requiredVersion: `>=${VERSION}` };
+    manifest[PROJECT_NAME] = { requiredVersion: `>=${VERSION}` };
   }
   await fs.writeFile(
-    path.join(codiDir, MANIFEST_FILENAME),
+    path.join(configDir, MANIFEST_FILENAME),
     stringifyYaml(manifest),
-    'utf-8',
+    "utf-8",
   );
 
   const presetDef = getBuiltinPresetDefinition(presetName);
-  const mergedFlags: Record<string, FlagDefinition> = flagOverrides ?? presetDef?.flags ?? getPreset(DEFAULT_PRESET as PresetName);
+  const mergedFlags: Record<string, FlagDefinition> =
+    flagOverrides ??
+    presetDef?.flags ??
+    getPreset(DEFAULT_PRESET as PresetName);
 
   const flagsObj: Record<string, unknown> = {};
   for (const [key, def] of Object.entries(mergedFlags)) {
     const entry: Record<string, unknown> = { mode: def.mode, value: def.value };
-    if (def.locked) entry['locked'] = true;
+    if (def.locked) entry["locked"] = true;
     flagsObj[key] = entry;
   }
   await fs.writeFile(
-    path.join(codiDir, FLAGS_FILENAME),
+    path.join(configDir, FLAGS_FILENAME),
     stringifyYaml(flagsObj),
-    'utf-8',
+    "utf-8",
+  );
+
+  const projectName = path.basename(path.dirname(configDir));
+  await fs.writeFile(
+    path.join(configDir, "LICENSE.txt"),
+    generateMitLicense(projectName),
+    "utf-8",
   );
 }
 
 export function registerInitCommand(program: Command): void {
   program
-    .command('init')
-    .description('Initialize a new .codi/ configuration directory')
-    .option('--force', 'Reinitialize even if .codi/ exists')
-    .option('--agents <agents...>', 'Specify agent IDs (skips wizard)')
-    .option('--preset <preset>', `Flag preset: ${getPresetNames().join(', ')} (default: ${DEFAULT_PRESET})`)
+    .command("init")
+    .description(`Initialize a new ${PROJECT_DIR}/ configuration directory`)
+    .option("--force", `Reinitialize even if ${PROJECT_DIR}/ exists`)
+    .option("--agents <agents...>", "Specify agent IDs (skips wizard)")
+    .option(
+      "--preset <preset>",
+      `Flag preset: ${getPresetNames().join(", ")} (default: ${DEFAULT_PRESET})`,
+    )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: InitOptions = { ...globalOptions, ...cmdOptions };

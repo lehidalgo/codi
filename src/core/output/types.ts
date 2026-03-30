@@ -1,12 +1,12 @@
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
 
-export type OutputMode = 'human' | 'json';
+export type OutputMode = "human" | "json";
 
-export interface CodiError {
+export interface ProjectError {
   code: string;
   message: string;
   hint: string;
-  severity: 'warn' | 'error' | 'fatal';
+  severity: "warn" | "error" | "fatal";
   context: Record<string, unknown>;
   cause?: Error;
 }
@@ -31,8 +31,8 @@ export interface CommandResult<T> {
   success: boolean;
   command: string;
   data: T;
-  errors: CodiError[];
-  warnings: CodiError[];
+  errors: ProjectError[];
+  warnings: ProjectError[];
   traces?: TraceSpan[];
   exitCode: number;
   timestamp: string;

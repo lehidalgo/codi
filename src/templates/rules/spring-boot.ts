@@ -1,13 +1,20 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Spring Boot conventions — constructor injection, JPA, security, testing, error handling
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: java
 ---
 
 # Spring Boot Conventions
+
+## Virtual Threads (Java 21+)
+- Enable virtual threads with \`spring.threads.virtual.enabled=true\` — eliminates thread-pool sizing for I/O-bound services
+- Virtual threads handle thousands of concurrent requests without platform thread exhaustion
+- Avoid \`synchronized\` blocks in virtual thread apps — use \`ReentrantLock\` instead; synchronized pins the carrier thread
 
 ## Dependency Injection
 - Use constructor injection for all required dependencies — never \`@Autowired\` on fields
@@ -93,9 +100,30 @@ public class GlobalExceptionHandler {
 - Use \`@ConfigurationProperties\` for type-safe configuration binding
 - Validate configuration at startup with \`@Validated\` — fail fast instead of discovering missing config at runtime
 
+## Spring Modulith
+- Use Spring Modulith to enforce module boundaries in monolithic applications — verified with \`ApplicationModules.of(App.class).verify()\`
+- Use application events for inter-module communication — keeps modules decoupled while maintaining transactional guarantees
+- Use \`@ApplicationModuleTest\` for isolated module integration tests
+
+## Observability
+- Use Micrometer for metrics and OpenTelemetry for distributed tracing — Spring Boot auto-configures both
+- Add \`spring-boot-starter-actuator\` and configure OTLP export for production observability
+- Use structured logging (JSON) with correlation IDs in production
+
+## GraalVM Native Images
+- Use \`mvn -Pnative native:compile\` for native images — sub-second startup, reduced memory
+- Declare reflection hints with \`@RegisterReflectionForBinding\` for classes used via reflection
+- Use CDS (Class Data Sharing) as a lighter alternative when native image is too restrictive
+
+## HTTP Clients
+- Use \`RestClient\` for synchronous HTTP calls — replaces \`RestTemplate\` with a fluent, modern API
+- Use \`WebClient\` for reactive/async HTTP calls
+- Configure timeouts and error handling globally via \`RestClient.Builder\`
+
 ## Testing
 - Use \`@SpringBootTest\` for full integration tests with the application context
 - Use \`@WebMvcTest\` for controller-only tests with MockMvc
 - Use \`@DataJpaTest\` for repository tests with an embedded database
+- Use \`@ServiceConnection\` with Testcontainers for integration tests with real databases — replaces embedded databases
 - Mock external dependencies with \`@MockBean\` — do not mock the class under test
 `;

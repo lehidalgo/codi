@@ -1,25 +1,34 @@
-import { access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { access } from "node:fs/promises";
+import { join } from "node:path";
 import type {
   AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
   GenerateOptions,
-} from '../types/agent.js';
-import type { NormalizedConfig } from '../types/config.js';
-import { hashContent } from '../utils/hash.js';
-import { buildFlagInstructions } from './flag-instructions.js';
-import { addGeneratedHeader } from './generated-header.js';
-import { generateSkillFiles, type ProgressiveLoadingMode } from './skill-generator.js';
+} from "../types/agent.js";
+import type { NormalizedConfig } from "../types/config.js";
+import { hashContent } from "../utils/hash.js";
+import { buildFlagInstructions } from "./flag-instructions.js";
+import { addGeneratedFooter } from "./generated-header.js";
+import {
+  generateSkillFiles,
+  type ProgressiveLoadingMode,
+} from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildCommandsTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
-} from './section-builder.js';
-import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME } from '../constants.js';
+} from "./section-builder.js";
+import {
+  CONTEXT_TOKENS_LARGE,
+  MANIFEST_FILENAME,
+  MCP_FILENAME,
+  PROJECT_NAME,
+} from "../constants.js";
+import { partitionBrandSkills } from "./brand-filter.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -31,17 +40,17 @@ async function exists(path: string): Promise<boolean> {
 }
 
 export const claudeCodeAdapter: AgentAdapter = {
-  id: 'claude-code',
-  name: 'Claude Code',
+  id: "claude-code",
+  name: "Claude Code",
 
   paths: {
-    configRoot: '.claude',
-    rules: '.claude/rules',
-    skills: '.claude/skills',
-    commands: '.claude/commands',
-    agents: '.claude/agents',
-    instructionFile: 'CLAUDE.md',
-    mcpConfig: '.claude/mcp.json',
+    configRoot: ".claude",
+    rules: ".claude/rules",
+    skills: ".claude/skills",
+    commands: ".claude/commands",
+    agents: ".claude/agents",
+    instructionFile: "CLAUDE.md",
+    mcpConfig: ".mcp.json",
   } satisfies AgentPaths,
 
   capabilities: {
@@ -56,12 +65,15 @@ export const claudeCodeAdapter: AgentAdapter = {
   } satisfies AgentCapabilities,
 
   async detect(projectRoot: string): Promise<boolean> {
-    const hasFile = await exists(join(projectRoot, 'CLAUDE.md'));
-    const hasDir = await exists(join(projectRoot, '.claude'));
+    const hasFile = await exists(join(projectRoot, "CLAUDE.md"));
+    const hasDir = await exists(join(projectRoot, ".claude"));
     return hasFile || hasDir;
   },
 
-  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+  async generate(
+    config: NormalizedConfig,
+    _options: GenerateOptions,
+  ): Promise<GeneratedFile[]> {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
@@ -73,7 +85,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     if (overview) sections.push(overview);
 
     if (flagText) {
-      sections.push('## Permissions\n\n' + flagText);
+      sections.push("## Permissions\n\n" + flagText);
     }
 
     // Commands table
@@ -87,9 +99,9 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Workflow guidelines
     sections.push(buildWorkflowSection());
 
-    const mainContent = addGeneratedHeader(sections.join('\n\n'));
+    const mainContent = addGeneratedFooter(sections.join("\n\n"));
     files.push({
-      path: 'CLAUDE.md',
+      path: "CLAUDE.md",
       content: mainContent,
       sources: [MANIFEST_FILENAME],
       hash: hashContent(mainContent),
@@ -97,8 +109,10 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/rules/*.md (no frontmatter)
     for (const rule of config.rules) {
-      const ruleContent = addGeneratedHeader(`# ${rule.name}\n\n${rule.content}`);
-      const fileName = rule.name.toLowerCase().replace(/\s+/g, '-') + '.md';
+      const ruleContent = addGeneratedFooter(
+        `# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
+      );
+      const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
         path: `.claude/rules/${fileName}`,
         content: ruleContent,
@@ -107,20 +121,34 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
-    // Generate .claude/skills/{name}/SKILL.md
-    const plMode = (config.flags.progressive_loading?.value as string ?? 'off') as ProgressiveLoadingMode;
-    files.push(...generateSkillFiles(config.skills, '.claude/skills', plMode));
+    // Partition skills into regular and brand-category skills
+    const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
+
+    // Generate .claude/skills/{name}/SKILL.md + supporting files
+    const plMode = ((config.flags.progressive_loading?.value as string) ??
+      "off") as ProgressiveLoadingMode;
+    files.push(
+      ...(await generateSkillFiles(
+        regularSkills,
+        ".claude/skills",
+        plMode,
+        _options.projectRoot,
+        `(${PROJECT_NAME}-skill) `,
+      )),
+    );
 
     // Generate .claude/agents/{name}.md (Claude Code format)
     for (const agent of config.agents) {
-      const lines = ['---'];
+      const lines = ["---"];
       lines.push(`name: ${agent.name}`);
-      lines.push(`description: ${agent.description}`);
-      if (agent.tools) lines.push(`tools: ${agent.tools.join(', ')}`);
+      lines.push(`description: (${PROJECT_NAME}-agent) ${agent.description}`);
+      if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
-      lines.push('---');
-      const agentContent = addGeneratedHeader(`${lines.join('\n')}\n\n${agent.content}`);
-      const fileName = agent.name.toLowerCase().replace(/\s+/g, '-') + '.md';
+      lines.push("---");
+      const agentContent = addGeneratedFooter(
+        `${lines.join("\n")}\n\n${agent.content}`,
+      );
+      const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
         path: `.claude/agents/${fileName}`,
         content: agentContent,
@@ -131,8 +159,10 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/commands/{name}.md
     for (const cmd of config.commands) {
-      const cmdContent = addGeneratedHeader(`---\ndescription: ${cmd.description}\n---\n\n${cmd.content}`);
-      const fileName = cmd.name.toLowerCase().replace(/\s+/g, '-') + '.md';
+      const cmdContent = addGeneratedFooter(
+        `---\ndescription: (${PROJECT_NAME}-cmd) ${cmd.description}\n---\n\n${cmd.content}`,
+      );
+      const fileName = cmd.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
         path: `.claude/commands/${fileName}`,
         content: cmdContent,
@@ -141,12 +171,27 @@ export const claudeCodeAdapter: AgentAdapter = {
       });
     }
 
-    // Generate .claude/mcp.json if MCP servers are configured
+    // Generate .claude/brands/{name}.md from brand-category skills
+    for (const brand of brandSkills) {
+      const brandContent = addGeneratedFooter(
+        `# (${PROJECT_NAME}-brand) ${brand.name}\n\n${brand.content}`,
+      );
+      const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      files.push({
+        path: `.claude/brands/${fileName}`,
+        content: brandContent,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(brandContent),
+      });
+    }
+
+    // Generate .mcp.json (project-scoped MCP for Claude Code)
     const enabledMcp = getEnabledMcpServers(config.mcp);
     if (Object.keys(enabledMcp.servers).length > 0) {
-      const mcpContent = JSON.stringify(enabledMcp, null, 2);
+      const mcpOutput = { mcpServers: enabledMcp.servers };
+      const mcpContent = JSON.stringify(mcpOutput, null, 2);
       files.push({
-        path: '.claude/mcp.json',
+        path: ".mcp.json",
         content: mcpContent,
         sources: [MCP_FILENAME],
         hash: hashContent(mcpContent),
@@ -158,7 +203,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     if (settingsJson) {
       const settingsContent = JSON.stringify(settingsJson, null, 2);
       files.push({
-        path: '.claude/settings.json',
+        path: ".claude/settings.json",
         content: settingsContent,
         sources: [MANIFEST_FILENAME],
         hash: hashContent(settingsContent),
@@ -171,7 +216,6 @@ export const claudeCodeAdapter: AgentAdapter = {
 
 interface ClaudeSettings {
   permissions?: { deny?: string[] };
-  enabledMcpjsonServers?: string[];
   env?: Record<string, string>;
 }
 
@@ -182,34 +226,31 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
   const deny: string[] = [];
   const flagValue = (key: string): unknown => config.flags[key]?.value;
 
-  if (flagValue('allow_force_push') === false) {
-    deny.push('Bash(git push --force *)', 'Bash(git push -f *)');
+  if (flagValue("allow_force_push") === false) {
+    deny.push("Bash(git push --force *)", "Bash(git push -f *)");
   }
-  if (flagValue('allow_shell_commands') === false) {
-    deny.push('Bash');
+  if (flagValue("allow_shell_commands") === false) {
+    deny.push("Bash");
   }
-  if (flagValue('allow_file_deletion') === false) {
-    deny.push('Bash(rm -rf *)', 'Bash(rm -r *)');
+  if (flagValue("allow_file_deletion") === false) {
+    deny.push("Bash(rm -rf *)", "Bash(rm -r *)");
   }
 
   if (deny.length > 0) {
     settings.permissions = { deny };
   }
 
-  // Map mcp_allowed_servers to enabledMcpjsonServers (native MCP allowlist)
-  const mcpServers = flagValue('mcp_allowed_servers');
-  if (Array.isArray(mcpServers) && mcpServers.length > 0) {
-    settings.enabledMcpjsonServers = mcpServers as string[];
-  }
-
   // Map flags to env vars
   const env: Record<string, string> = {};
   const maxTokens = config.flags.max_context_tokens?.value;
-  if (typeof maxTokens === 'number' && maxTokens > 0) {
+  if (typeof maxTokens === "number" && maxTokens > 0) {
     // Convert token limit to autocompact percentage (trigger compaction at ~70% of limit)
-    const pct = Math.min(70, Math.round((maxTokens / CONTEXT_TOKENS_LARGE) * 100));
+    const pct = Math.min(
+      70,
+      Math.round((maxTokens / CONTEXT_TOKENS_LARGE) * 100),
+    );
     if (pct < 100) {
-      env['CLAUDE_AUTOCOMPACT_PCT_OVERRIDE'] = String(pct);
+      env["CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"] = String(pct);
     }
   }
 

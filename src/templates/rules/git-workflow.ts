@@ -1,11 +1,11 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT } from '../../constants.js';
+import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Git workflow and commit conventions
 priority: medium
 alwaysApply: true
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 ---
 
 # Git Workflow
@@ -31,17 +31,31 @@ GOOD: Three separate commits, each reviewable independently
 - Do not commit generated files, build artifacts, or secrets
 - Do not add AI attribution or co-author signatures to commits
 
+## Trunk-Based Development
+- Prefer trunk-based development for teams practicing CI/CD — merge to main at least daily
+- Keep feature branches short-lived (1-3 days maximum) — long-lived branches accumulate merge conflicts and delay integration feedback
+- Use feature flags to merge incomplete work safely — code can be in main without being active in production
+
 ## Branch Strategy
 - Branch from main for all work
 - Use descriptive branch names: feature/, fix/, chore/
-- Keep branches short-lived and focused — long-lived branches accumulate merge conflicts
 - Delete branches after merging
+
+## Pull Request Discipline
+- Keep PRs under 200 lines of changed code — large PRs get superficial reviews and hide bugs
+- One concern per PR — do not bundle a feature, a refactor, and a bug fix in the same PR
+- Require green CI and at least one approval before merge — use merge queues to serialize merges and prevent broken main
 
 ## Safety
 - Never force push to main or shared branches — rewrites shared history and causes data loss
 - Always pull before pushing to avoid unnecessary merge conflicts
 - Resolve merge conflicts carefully — understand both sides
 - Tag releases with semantic versions (vMAJOR.MINOR.PATCH)
+
+## Automation
+- Use semantic-release to automate version bumps and changelog generation from conventional commits — removes human error from the release process
+- Enforce commit message format with commitlint in a pre-commit or commit-msg hook — reject malformed messages before they enter history
+- Sign commits in CI pipelines for supply chain integrity — verify that releases were produced by trusted automation
 
 ## Release Management
 - Never publish without a fresh build — stale dist artifacts cause silent regressions

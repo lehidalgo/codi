@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { NAME_PATTERN } from '../constants.js';
+import { z } from "zod";
+import { NAME_PATTERN, PROJECT_NAME } from "../constants.js";
 
 export const HookDefinitionSchema = z.object({
   name: z.string().regex(NAME_PATTERN),
@@ -9,10 +9,18 @@ export const HookDefinitionSchema = z.object({
 });
 
 export const HooksConfigSchema = z.object({
-  version: z.literal('1'),
-  runner: z.enum(['codi', 'husky', 'pre-commit', 'none']),
-  install_method: z.enum(['git-hooks', 'husky-append', 'pre-commit-append', 'manual']),
-  hooks: z.record(z.string(), z.record(z.string(), z.array(HookDefinitionSchema))),
+  version: z.literal("1"),
+  runner: z.enum([PROJECT_NAME, "husky", "pre-commit", "none"]),
+  install_method: z.enum([
+    "git-hooks",
+    "husky-append",
+    "pre-commit-append",
+    "manual",
+  ]),
+  hooks: z.record(
+    z.string(),
+    z.record(z.string(), z.array(HookDefinitionSchema)),
+  ),
   custom: z.record(z.string(), z.array(HookDefinitionSchema)).default({}),
 });
 

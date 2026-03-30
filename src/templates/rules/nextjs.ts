@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Next.js App Router conventions — server components, ISR, route handlers, middleware, SEO
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: typescript
 ---
 
@@ -40,23 +42,29 @@ export default async function ProductsPage() {
 }
 \`\`\`
 
-## Data Fetching & Caching
-- Fetch data directly in Server Components using \`async/await\` — no \`useEffect\` needed
-- Use ISR with \`revalidate\` for pages that change periodically but benefit from caching
-- Use \`revalidateTag()\` or \`revalidatePath()\` for on-demand revalidation after mutations
-- Deduplicate requests automatically — Next.js memoizes \`fetch\` calls in the same render pass
+## Caching (Next.js 15+)
+- Fetch requests are NOT cached by default — explicitly opt in with \`next: { revalidate: N }\` or \`next: { tags: ['key'] }\`
+- Use \`"use cache"\` directive (Next.js 16+) for explicit caching of pages, components, and functions
+- GET route handlers are uncached by default — use \`export const dynamic = 'force-static'\` to opt into caching
+- Use \`revalidateTag()\` and \`revalidatePath()\` for on-demand cache invalidation after mutations
 
-\`\`\`typescript
-// ISR: revalidate every 60 seconds
-export const revalidate = 60;
+## Partial Prerendering (PPR)
+- Enable PPR via \`ppr: 'incremental'\` in next.config.ts to combine static shells with dynamic streamed content
+- Place \`<Suspense>\` boundaries close to dynamic components — everything outside the boundary prerenders as static
+- PPR eliminates the binary choice between static and dynamic — use for pages with both cached and personalized content
 
-export default async function PricingPage() {
-  const plans = await fetch('https://api.example.com/plans', {
-    next: { tags: ['pricing'] },
-  }).then((r) => r.json());
-  return <PricingTable plans={plans} />;
-}
-\`\`\`
+## Turbopack
+- Use Turbopack for development (stable since Next.js 15) — 2-5x faster compilation than Webpack
+- Use \`next build --turbopack\` (beta in 15.5+) for faster production builds
+
+## Server Actions
+- Use Server Actions for form mutations — define with \`"use server"\` directive, call directly from \`<form action>\`
+- Validate all Server Action inputs server-side — they are public HTTP endpoints despite inline syntax
+- Use \`next/after\` to run code after response streaming completes — for analytics, logging, and cache warming
+
+## Parallel & Intercepting Routes
+- Use \`@slot\` folders for parallel routes — render multiple pages in the same layout simultaneously (dashboards, modals)
+- Use intercepting routes \`(..)\` to show route content in a modal while preserving the URL for deep linking
 
 ## Route Handlers
 - Place API endpoints in \`app/api/.../route.ts\` files

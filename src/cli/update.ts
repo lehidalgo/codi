@@ -1,31 +1,55 @@
-import type { Command } from 'commander';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
-import matter from 'gray-matter';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import os from 'node:os';
-import { resolveCodiDir } from '../utils/paths.js';
-import { FLAG_CATALOG } from '../core/flags/flag-catalog.js';
-import { getPreset, getPresetNames } from '../core/flags/flag-presets.js';
-import type { PresetName } from '../core/flags/flag-presets.js';
-import { FLAGS_FILENAME, GIT_CLONE_DEPTH } from '../constants.js';
-import { registerAllAdapters } from '../adapters/index.js';
-import { resolveConfig } from '../core/config/resolver.js';
-import { generate } from '../core/generator/generator.js';
-import { loadTemplate, AVAILABLE_TEMPLATES } from '../core/scaffolder/template-loader.js';
-import { loadSkillTemplate, AVAILABLE_SKILL_TEMPLATES } from '../core/scaffolder/skill-template-loader.js';
-import { loadAgentTemplate, AVAILABLE_AGENT_TEMPLATES } from '../core/scaffolder/agent-template-loader.js';
-import { loadCommandTemplate, AVAILABLE_COMMAND_TEMPLATES } from '../core/scaffolder/command-template-loader.js';
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import { Logger } from '../core/output/logger.js';
-import { writeAuditEntry } from '../core/audit/audit-log.js';
-import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
-import type { GlobalOptions } from './shared.js';
-import { OperationsLedgerManager } from '../core/audit/operations-ledger.js';
+import type { Command } from "commander";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import matter from "gray-matter";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import os from "node:os";
+import { resolveProjectDir } from "../utils/paths.js";
+import { resolveArtifactName } from "../constants.js";
+import { FLAG_CATALOG } from "../core/flags/flag-catalog.js";
+import { getPreset, getPresetNames } from "../core/flags/flag-presets.js";
+import type { PresetName } from "../core/flags/flag-presets.js";
+import {
+  FLAGS_FILENAME,
+  GIT_CLONE_DEPTH,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  prefixedName,
+} from "../constants.js";
+import { registerAllAdapters } from "../adapters/index.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { generate } from "../core/generator/generator.js";
+import {
+  loadTemplate,
+  AVAILABLE_TEMPLATES,
+} from "../core/scaffolder/template-loader.js";
+import {
+  loadSkillTemplateContent,
+  AVAILABLE_SKILL_TEMPLATES,
+} from "../core/scaffolder/skill-template-loader.js";
+import {
+  loadAgentTemplate,
+  AVAILABLE_AGENT_TEMPLATES,
+} from "../core/scaffolder/agent-template-loader.js";
+import {
+  loadCommandTemplate,
+  AVAILABLE_COMMAND_TEMPLATES,
+} from "../core/scaffolder/command-template-loader.js";
+import {
+  loadMcpServerTemplate,
+  AVAILABLE_MCP_SERVER_TEMPLATES,
+} from "../core/scaffolder/mcp-template-loader.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import { Logger } from "../core/output/logger.js";
+import { writeAuditEntry } from "../core/audit/audit-log.js";
+import type { CommandResult } from "../core/output/types.js";
+import { initFromOptions, handleOutput } from "./shared.js";
+import type { GlobalOptions } from "./shared.js";
+import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -36,6 +60,7 @@ interface UpdateOptions extends GlobalOptions {
   skills?: boolean;
   agents?: boolean;
   commands?: boolean;
+  mcpServers?: boolean;
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
 }
@@ -52,16 +77,18 @@ interface UpdateData {
   agentsSkipped: string[];
   commandsUpdated: string[];
   commandsSkipped: string[];
+  mcpServersUpdated: string[];
+  mcpServersSkipped: string[];
   sourceUpdated: string[];
   regenerated: boolean;
 }
 
 async function refreshManagedRules(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const rulesDir = path.join(codiDir, 'rules', 'custom');
+  const rulesDir = path.join(configDir, "rules");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -73,19 +100,24 @@ async function refreshManagedRules(
   }
 
   for (const entry of entries) {
-    if (!entry.endsWith('.md')) continue;
+    if (!entry.endsWith(".md")) continue;
     const filePath = path.join(rulesDir, entry);
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const parsed = matter(raw);
-    const managedBy = parsed.data['managed_by'] as string | undefined;
+    const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== 'codi') {
-      skipped.push(entry.replace('.md', ''));
+    if (managedBy !== PROJECT_NAME) {
+      skipped.push(entry.replace(".md", ""));
       continue;
     }
 
-    const ruleName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingTemplate(ruleName, AVAILABLE_TEMPLATES, RULE_NAME_MAPPINGS);
+    const ruleName =
+      (parsed.data["name"] as string) ?? entry.replace(".md", "");
+    const templateName = findMatchingTemplate(
+      ruleName,
+      AVAILABLE_TEMPLATES,
+      RULE_NAME_MAPPINGS,
+    );
 
     if (!templateName) {
       skipped.push(ruleName);
@@ -98,31 +130,35 @@ async function refreshManagedRules(
     const newContent = templateResult.data.replace(/\{\{name\}\}/g, ruleName);
 
     if (!dryRun) {
-      await fs.writeFile(filePath, newContent + '\n', 'utf-8');
+      await fs.writeFile(filePath, newContent + "\n", "utf-8");
     }
     updated.push(ruleName);
-    log.info(`${dryRun ? 'Would update' : 'Updated'} rule: ${ruleName}`);
+    log.info(`${dryRun ? "Would update" : "Updated"} rule: ${ruleName}`);
   }
 
   return { updated, skipped };
 }
 
-function findMatchingTemplate(name: string, available: string[], mappings: Record<string, string> = {}): string | null {
+function findMatchingTemplate(
+  name: string,
+  available: string[],
+  mappings: Record<string, string> = {},
+): string | null {
   if (available.includes(name)) return name;
   return mappings[name] ?? null;
 }
 
 const RULE_NAME_MAPPINGS: Record<string, string> = {
-  'code-quality': 'code-style',
-  'testing-standards': 'testing',
+  "code-quality": prefixedName("code-style"),
+  "testing-standards": prefixedName("testing"),
 };
 
 async function refreshManagedSkills(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const skillsDir = path.join(codiDir, 'skills');
+  const skillsDir = path.join(configDir, "skills");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -134,46 +170,50 @@ async function refreshManagedSkills(
   }
 
   for (const entry of entries) {
-    if (!entry.endsWith('.md')) continue;
+    if (!entry.endsWith(".md")) continue;
     const filePath = path.join(skillsDir, entry);
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const parsed = matter(raw);
-    const managedBy = parsed.data['managed_by'] as string | undefined;
+    const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== 'codi') {
-      skipped.push(entry.replace('.md', ''));
+    if (managedBy !== PROJECT_NAME) {
+      skipped.push(entry.replace(".md", ""));
       continue;
     }
 
-    const skillName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingTemplate(skillName, AVAILABLE_SKILL_TEMPLATES);
+    const skillName =
+      (parsed.data["name"] as string) ?? entry.replace(".md", "");
+    const templateName = findMatchingTemplate(
+      skillName,
+      AVAILABLE_SKILL_TEMPLATES,
+    );
 
     if (!templateName) {
       skipped.push(skillName);
       continue;
     }
 
-    const templateResult = loadSkillTemplate(templateName);
+    const templateResult = loadSkillTemplateContent(templateName);
     if (!templateResult.ok) continue;
 
     const newContent = templateResult.data.replace(/\{\{name\}\}/g, skillName);
 
     if (!dryRun) {
-      await fs.writeFile(filePath, newContent + '\n', 'utf-8');
+      await fs.writeFile(filePath, newContent + "\n", "utf-8");
     }
     updated.push(skillName);
-    log.info(`${dryRun ? 'Would update' : 'Updated'} skill: ${skillName}`);
+    log.info(`${dryRun ? "Would update" : "Updated"} skill: ${skillName}`);
   }
 
   return { updated, skipped };
 }
 
 async function refreshManagedAgents(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const agentsDir = path.join(codiDir, 'agents');
+  const agentsDir = path.join(configDir, "agents");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -185,19 +225,23 @@ async function refreshManagedAgents(
   }
 
   for (const entry of entries) {
-    if (!entry.endsWith('.md')) continue;
+    if (!entry.endsWith(".md")) continue;
     const filePath = path.join(agentsDir, entry);
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const parsed = matter(raw);
-    const managedBy = parsed.data['managed_by'] as string | undefined;
+    const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== 'codi') {
-      skipped.push(entry.replace('.md', ''));
+    if (managedBy !== PROJECT_NAME) {
+      skipped.push(entry.replace(".md", ""));
       continue;
     }
 
-    const agentName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingTemplate(agentName, AVAILABLE_AGENT_TEMPLATES);
+    const agentName =
+      (parsed.data["name"] as string) ?? entry.replace(".md", "");
+    const templateName = findMatchingTemplate(
+      agentName,
+      AVAILABLE_AGENT_TEMPLATES,
+    );
 
     if (!templateName) {
       skipped.push(agentName);
@@ -210,21 +254,21 @@ async function refreshManagedAgents(
     const newContent = templateResult.data.replace(/\{\{name\}\}/g, agentName);
 
     if (!dryRun) {
-      await fs.writeFile(filePath, newContent + '\n', 'utf-8');
+      await fs.writeFile(filePath, newContent + "\n", "utf-8");
     }
     updated.push(agentName);
-    log.info(`${dryRun ? 'Would update' : 'Updated'} agent: ${agentName}`);
+    log.info(`${dryRun ? "Would update" : "Updated"} agent: ${agentName}`);
   }
 
   return { updated, skipped };
 }
 
 async function refreshManagedCommands(
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<{ updated: string[]; skipped: string[] }> {
-  const commandsDir = path.join(codiDir, 'commands');
+  const commandsDir = path.join(configDir, "commands");
   const updated: string[] = [];
   const skipped: string[] = [];
 
@@ -236,19 +280,23 @@ async function refreshManagedCommands(
   }
 
   for (const entry of entries) {
-    if (!entry.endsWith('.md')) continue;
+    if (!entry.endsWith(".md")) continue;
     const filePath = path.join(commandsDir, entry);
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     const parsed = matter(raw);
-    const managedBy = parsed.data['managed_by'] as string | undefined;
+    const managedBy = parsed.data["managed_by"] as string | undefined;
 
-    if (managedBy !== 'codi') {
-      skipped.push(entry.replace('.md', ''));
+    if (managedBy !== PROJECT_NAME) {
+      skipped.push(entry.replace(".md", ""));
       continue;
     }
 
-    const commandName = (parsed.data['name'] as string) ?? entry.replace('.md', '');
-    const templateName = findMatchingTemplate(commandName, AVAILABLE_COMMAND_TEMPLATES);
+    const commandName =
+      (parsed.data["name"] as string) ?? entry.replace(".md", "");
+    const templateName = findMatchingTemplate(
+      commandName,
+      AVAILABLE_COMMAND_TEMPLATES,
+    );
 
     if (!templateName) {
       skipped.push(commandName);
@@ -258,13 +306,78 @@ async function refreshManagedCommands(
     const templateResult = loadCommandTemplate(templateName);
     if (!templateResult.ok) continue;
 
-    const newContent = templateResult.data.replace(/\{\{name\}\}/g, commandName);
+    const newContent = templateResult.data.replace(
+      /\{\{name\}\}/g,
+      commandName,
+    );
 
     if (!dryRun) {
-      await fs.writeFile(filePath, newContent + '\n', 'utf-8');
+      await fs.writeFile(filePath, newContent + "\n", "utf-8");
     }
     updated.push(commandName);
-    log.info(`${dryRun ? 'Would update' : 'Updated'} command: ${commandName}`);
+    log.info(`${dryRun ? "Would update" : "Updated"} command: ${commandName}`);
+  }
+
+  return { updated, skipped };
+}
+
+async function refreshManagedMcpServers(
+  configDir: string,
+  dryRun: boolean,
+  log: Logger,
+): Promise<{ updated: string[]; skipped: string[] }> {
+  const mcpDir = path.join(configDir, "mcp-servers");
+  const updated: string[] = [];
+  const skipped: string[] = [];
+
+  let entries: string[];
+  try {
+    entries = await fs.readdir(mcpDir);
+  } catch {
+    return { updated, skipped };
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith(".yaml")) continue;
+    const filePath = path.join(mcpDir, entry);
+    const raw = await fs.readFile(filePath, "utf8");
+    const parsed = parseYaml(raw) as Record<string, unknown>;
+    const managedBy = parsed["managed_by"] as string | undefined;
+
+    if (managedBy !== PROJECT_NAME) {
+      skipped.push(entry.replace(".yaml", ""));
+      continue;
+    }
+
+    const serverName = (parsed["name"] as string) ?? entry.replace(".yaml", "");
+    if (!AVAILABLE_MCP_SERVER_TEMPLATES.includes(serverName)) {
+      skipped.push(serverName);
+      continue;
+    }
+
+    const templateResult = loadMcpServerTemplate(serverName);
+    if (!templateResult.ok) continue;
+
+    const tmpl = templateResult.data;
+    const yamlObj: Record<string, unknown> = {
+      name: tmpl.name,
+      managed_by: PROJECT_NAME,
+      ...(tmpl.type && { type: tmpl.type }),
+      ...(tmpl.command && { command: tmpl.command }),
+      ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
+      ...(tmpl.env && Object.keys(tmpl.env).length > 0 && { env: tmpl.env }),
+      ...(tmpl.url && { url: tmpl.url }),
+      ...(tmpl.headers &&
+        Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
+    };
+
+    if (!dryRun) {
+      await fs.writeFile(filePath, stringifyYaml(yamlObj), "utf-8");
+    }
+    updated.push(serverName);
+    log.info(
+      `${dryRun ? "Would update" : "Updated"} MCP server: ${serverName}`,
+    );
   }
 
   return { updated, skipped };
@@ -272,26 +385,32 @@ async function refreshManagedCommands(
 
 async function pullFromSource(
   repo: string,
-  codiDir: string,
+  configDir: string,
   dryRun: boolean,
   log: Logger,
 ): Promise<string[]> {
   const updated: string[] = [];
-  const tmpDir = path.join(os.tmpdir(), `codi-pull-${Date.now()}`);
+  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
-    await execFileAsync('git', ['clone', '--depth', GIT_CLONE_DEPTH, repoUrl, tmpDir]);
+    await execFileAsync("git", [
+      "clone",
+      "--depth",
+      GIT_CLONE_DEPTH,
+      repoUrl,
+      tmpDir,
+    ]);
   } catch {
     log.warn(`Failed to clone source repo: ${repo}`);
     return updated;
   }
 
-  const sourcePaths = ['rules/custom', 'skills', 'agents'];
+  const sourcePaths = ["rules", "skills", "agents"];
 
   for (const syncPath of sourcePaths) {
-    const sourceDir = path.join(tmpDir, '.codi', syncPath);
-    const localDir = path.join(codiDir, syncPath);
+    const sourceDir = path.join(tmpDir, PROJECT_DIR, syncPath);
+    const localDir = path.join(configDir, syncPath);
 
     let entries: string[];
     try {
@@ -303,22 +422,22 @@ async function pullFromSource(
     await fs.mkdir(localDir, { recursive: true });
 
     for (const entry of entries) {
-      if (!entry.endsWith('.md')) continue;
+      if (!entry.endsWith(".md")) continue;
       const sourceFile = path.join(sourceDir, entry);
       const localFile = path.join(localDir, entry);
 
-      const sourceContent = await fs.readFile(sourceFile, 'utf8');
+      const sourceContent = await fs.readFile(sourceFile, "utf8");
       const parsed = matter(sourceContent);
-      const managedBy = parsed.data['managed_by'] as string | undefined;
+      const managedBy = parsed.data["managed_by"] as string | undefined;
 
-      // Only pull managed_by: codi artifacts
-      if (managedBy !== 'codi') continue;
+      // Only pull managed_by: project-managed artifacts
+      if (managedBy !== PROJECT_NAME) continue;
 
       // Check if local file exists and is user-managed
       try {
-        const localContent = await fs.readFile(localFile, 'utf8');
+        const localContent = await fs.readFile(localFile, "utf8");
         const localParsed = matter(localContent);
-        if (localParsed.data['managed_by'] === 'user') {
+        if (localParsed.data["managed_by"] === "user") {
           log.info(`Skipping ${entry} (local is managed_by: user)`);
           continue;
         }
@@ -327,10 +446,10 @@ async function pullFromSource(
       }
 
       if (!dryRun) {
-        await fs.writeFile(localFile, sourceContent, 'utf-8');
+        await fs.writeFile(localFile, sourceContent, "utf-8");
       }
       updated.push(`${syncPath}/${entry}`);
-      log.info(`${dryRun ? 'Would pull' : 'Pulled'}: ${syncPath}/${entry}`);
+      log.info(`${dryRun ? "Would pull" : "Pulled"}: ${syncPath}/${entry}`);
     }
   }
 
@@ -343,56 +462,99 @@ export async function updateHandler(
   options: UpdateOptions,
 ): Promise<CommandResult<UpdateData>> {
   const log = Logger.getInstance();
-  const codiDir = resolveCodiDir(projectRoot);
-  const flagsFile = path.join(codiDir, FLAGS_FILENAME);
+  const configDir = resolveProjectDir(projectRoot);
+  const flagsFile = path.join(configDir, FLAGS_FILENAME);
 
   let currentFlags: Record<string, unknown>;
   try {
-    const raw = await fs.readFile(flagsFile, 'utf8');
+    const raw = await fs.readFile(flagsFile, "utf8");
     currentFlags = (parseYaml(raw) as Record<string, unknown>) ?? {};
   } catch {
     return createCommandResult({
       success: false,
-      command: 'update',
-      data: { flagsAdded: [], flagsReset: false, preset: null, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], sourceUpdated: [], regenerated: false },
-      errors: [{
-        code: 'E_CONFIG_NOT_FOUND',
-        message: 'No .codi/flags.yaml found. Run `codi init` first.',
-        hint: 'Run `codi init` to create the configuration.',
-        severity: 'error',
-        context: { path: flagsFile },
-      }],
+      command: "update",
+      data: {
+        flagsAdded: [],
+        flagsReset: false,
+        preset: null,
+        rulesUpdated: [],
+        rulesSkipped: [],
+        skillsUpdated: [],
+        skillsSkipped: [],
+        agentsUpdated: [],
+        agentsSkipped: [],
+        commandsUpdated: [],
+        commandsSkipped: [],
+        mcpServersUpdated: [],
+        mcpServersSkipped: [],
+        sourceUpdated: [],
+        regenerated: false,
+      },
+      errors: [
+        {
+          code: "E_CONFIG_NOT_FOUND",
+          message: `No ${PROJECT_DIR}/flags.yaml found. Run \`${PROJECT_CLI} init\` first.`,
+          hint: `Run \`${PROJECT_CLI} init\` to create the configuration.`,
+          severity: "error",
+          context: { path: flagsFile },
+        },
+      ],
       exitCode: EXIT_CODES.CONFIG_NOT_FOUND,
     });
   }
 
   const flagsAdded: string[] = [];
   let flagsReset = false;
-  const presetName = options.preset as PresetName | undefined;
+  const validPresets = getPresetNames() as string[];
+  const presetName = options.preset
+    ? (resolveArtifactName(options.preset, validPresets) as
+        | PresetName
+        | undefined)
+    : undefined;
+
+  if (options.preset && !presetName) {
+    return createCommandResult({
+      success: false,
+      command: "update",
+      data: {
+        flagsAdded: [],
+        flagsReset: false,
+        preset: options.preset,
+        rulesUpdated: [],
+        rulesSkipped: [],
+        skillsUpdated: [],
+        skillsSkipped: [],
+        agentsUpdated: [],
+        agentsSkipped: [],
+        commandsUpdated: [],
+        commandsSkipped: [],
+        mcpServersUpdated: [],
+        mcpServersSkipped: [],
+        sourceUpdated: [],
+        regenerated: false,
+      },
+      errors: [
+        {
+          code: "E_CONFIG_INVALID",
+          message: `Invalid preset "${options.preset}". Available: ${validPresets.join(", ")}`,
+          hint: `Use one of: ${validPresets.join(", ")}`,
+          severity: "error",
+          context: { preset: options.preset },
+        },
+      ],
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
+  }
 
   if (presetName) {
-    const validPresets = getPresetNames() as string[];
-    if (!validPresets.includes(presetName)) {
-      return createCommandResult({
-        success: false,
-        command: 'update',
-        data: { flagsAdded: [], flagsReset: false, preset: presetName, rulesUpdated: [], rulesSkipped: [], skillsUpdated: [], skillsSkipped: [], agentsUpdated: [], agentsSkipped: [], commandsUpdated: [], commandsSkipped: [], sourceUpdated: [], regenerated: false },
-        errors: [{
-          code: 'E_CONFIG_INVALID',
-          message: `Invalid preset "${presetName}". Available: ${validPresets.join(', ')}`,
-          hint: `Use one of: ${validPresets.join(', ')}`,
-          severity: 'error',
-          context: { preset: presetName },
-        }],
-        exitCode: EXIT_CODES.CONFIG_INVALID,
-      });
-    }
-
     const preset = getPreset(presetName);
     const updatedFlags: Record<string, unknown> = {};
     for (const [key, def] of Object.entries(preset)) {
-      const entry: Record<string, unknown> = { mode: def.mode, value: def.value };
-      if (def.locked) entry['locked'] = true;
+      const entry: Record<string, unknown> = {
+        mode: def.mode,
+        value: def.value,
+      };
+      if (def.locked) entry["locked"] = true;
       updatedFlags[key] = entry;
     }
     currentFlags = updatedFlags;
@@ -402,7 +564,7 @@ export async function updateHandler(
     for (const flagName of Object.keys(FLAG_CATALOG)) {
       if (!(flagName in currentFlags)) {
         const spec = FLAG_CATALOG[flagName]!;
-        currentFlags[flagName] = { mode: 'enabled', value: spec.default };
+        currentFlags[flagName] = { mode: "enabled", value: spec.default };
         flagsAdded.push(flagName);
         log.info(`Added missing flag: ${flagName}`);
       }
@@ -410,13 +572,17 @@ export async function updateHandler(
   }
 
   if (!options.dryRun) {
-    await fs.writeFile(flagsFile, stringifyYaml(currentFlags), 'utf-8');
+    await fs.writeFile(flagsFile, stringifyYaml(currentFlags), "utf-8");
   }
 
   let rulesUpdated: string[] = [];
   let rulesSkipped: string[] = [];
   if (options.rules) {
-    const result = await refreshManagedRules(codiDir, options.dryRun ?? false, log);
+    const result = await refreshManagedRules(
+      configDir,
+      options.dryRun ?? false,
+      log,
+    );
     rulesUpdated = result.updated;
     rulesSkipped = result.skipped;
   }
@@ -424,7 +590,11 @@ export async function updateHandler(
   let skillsUpdated: string[] = [];
   let skillsSkipped: string[] = [];
   if (options.skills) {
-    const result = await refreshManagedSkills(codiDir, options.dryRun ?? false, log);
+    const result = await refreshManagedSkills(
+      configDir,
+      options.dryRun ?? false,
+      log,
+    );
     skillsUpdated = result.updated;
     skillsSkipped = result.skipped;
   }
@@ -432,7 +602,11 @@ export async function updateHandler(
   let agentsUpdated: string[] = [];
   let agentsSkipped: string[] = [];
   if (options.agents) {
-    const result = await refreshManagedAgents(codiDir, options.dryRun ?? false, log);
+    const result = await refreshManagedAgents(
+      configDir,
+      options.dryRun ?? false,
+      log,
+    );
     agentsUpdated = result.updated;
     agentsSkipped = result.skipped;
   }
@@ -440,14 +614,35 @@ export async function updateHandler(
   let commandsUpdated: string[] = [];
   let commandsSkipped: string[] = [];
   if (options.commands) {
-    const result = await refreshManagedCommands(codiDir, options.dryRun ?? false, log);
+    const result = await refreshManagedCommands(
+      configDir,
+      options.dryRun ?? false,
+      log,
+    );
     commandsUpdated = result.updated;
     commandsSkipped = result.skipped;
   }
 
+  let mcpServersUpdated: string[] = [];
+  let mcpServersSkipped: string[] = [];
+  if (options.mcpServers) {
+    const result = await refreshManagedMcpServers(
+      configDir,
+      options.dryRun ?? false,
+      log,
+    );
+    mcpServersUpdated = result.updated;
+    mcpServersSkipped = result.skipped;
+  }
+
   let sourceUpdated: string[] = [];
   if (options.from) {
-    sourceUpdated = await pullFromSource(options.from, codiDir, options.dryRun ?? false, log);
+    sourceUpdated = await pullFromSource(
+      options.from,
+      configDir,
+      options.dryRun ?? false,
+      log,
+    );
   }
 
   let regenerated = false;
@@ -461,8 +656,8 @@ export async function updateHandler(
   }
 
   if (!options.dryRun) {
-    await writeAuditEntry(codiDir, {
-      type: 'update',
+    await writeAuditEntry(configDir, {
+      type: "update",
       timestamp: new Date().toISOString(),
       details: {
         flagsAdded,
@@ -472,18 +667,25 @@ export async function updateHandler(
         skillsUpdated,
         agentsUpdated,
         commandsUpdated,
+        mcpServersUpdated,
         regenerated,
       },
     });
 
     try {
-      const ledger = new OperationsLedgerManager(codiDir);
+      const ledger = new OperationsLedgerManager(configDir);
       await ledger.logOperation({
-        type: 'update',
+        type: "update",
         timestamp: new Date().toISOString(),
         details: {
-          flagsAdded, flagsReset, preset: presetName ?? null,
-          rulesUpdated, skillsUpdated, agentsUpdated, commandsUpdated,
+          flagsAdded,
+          flagsReset,
+          preset: presetName ?? null,
+          rulesUpdated,
+          skillsUpdated,
+          agentsUpdated,
+          commandsUpdated,
+          mcpServersUpdated,
           regenerated,
         },
       });
@@ -494,23 +696,54 @@ export async function updateHandler(
 
   return createCommandResult({
     success: true,
-    command: 'update',
-    data: { flagsAdded, flagsReset, preset: presetName ?? null, rulesUpdated, rulesSkipped, skillsUpdated, skillsSkipped, agentsUpdated, agentsSkipped, commandsUpdated, commandsSkipped, sourceUpdated, regenerated },
+    command: "update",
+    data: {
+      flagsAdded,
+      flagsReset,
+      preset: presetName ?? null,
+      rulesUpdated,
+      rulesSkipped,
+      skillsUpdated,
+      skillsSkipped,
+      agentsUpdated,
+      agentsSkipped,
+      commandsUpdated,
+      commandsSkipped,
+      mcpServersUpdated,
+      mcpServersSkipped,
+      sourceUpdated,
+      regenerated,
+    },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
 
 export function registerUpdateCommand(program: Command): void {
   program
-    .command('update')
-    .description('Update flags, rules, skills, agents, and commands to latest versions')
-    .option('--preset <preset>', `Reset flags to preset: ${getPresetNames().join(', ')}`)
-    .option('--from <repo>', 'Pull centralized artifacts from a GitHub repo (e.g., org/team-config)')
-    .option('--rules', 'Refresh template-managed rules to latest versions')
-    .option('--skills', 'Refresh template-managed skills to latest versions')
-    .option('--agents', 'Refresh template-managed agents to latest versions')
-    .option('--commands', 'Refresh template-managed commands to latest versions')
-    .option('--dry-run', 'Show what would change without writing')
+    .command("update")
+    .description(
+      "Update flags, rules, skills, agents, and commands to latest versions",
+    )
+    .option(
+      "--preset <preset>",
+      `Reset flags to preset: ${getPresetNames().join(", ")}`,
+    )
+    .option(
+      "--from <repo>",
+      "Pull centralized artifacts from a GitHub repo (e.g., org/team-config)",
+    )
+    .option("--rules", "Refresh template-managed rules to latest versions")
+    .option("--skills", "Refresh template-managed skills to latest versions")
+    .option("--agents", "Refresh template-managed agents to latest versions")
+    .option(
+      "--commands",
+      "Refresh template-managed commands to latest versions",
+    )
+    .option(
+      "--mcp-servers",
+      "Refresh template-managed MCP servers to latest versions",
+    )
+    .option("--dry-run", "Show what would change without writing")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: UpdateOptions = { ...globalOptions, ...cmdOptions };

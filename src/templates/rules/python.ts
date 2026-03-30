@@ -1,9 +1,11 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
 description: Python-specific conventions — typing, data models, testing, resource management
 priority: medium
 alwaysApply: false
-managed_by: codi
+managed_by: ${PROJECT_NAME}
 language: python
 ---
 
@@ -11,9 +13,11 @@ language: python
 
 ## Type Hints
 - Add type hints to all function signatures — parameters and return types
-- Use \`Optional[T]\` or \`T | None\` (3.10+) for nullable values
+- Use \`T | None\` (3.10+) instead of \`Optional[T]\` — cleaner syntax
 - Use \`TypedDict\` for dictionary shapes, \`Protocol\` for structural typing
+- Use built-in types for annotations: \`list[int]\`, \`dict[str, float]\`, \`tuple[str, int]\` — not their typing module equivalents
 - Run mypy or pyright in CI — treat type errors as bugs; they catch real issues before runtime
+- Use \`@override\` decorator (3.12+) on methods that override a parent — type checkers flag if the parent method is removed or renamed
 
 \`\`\`python
 # BAD: no type hints
@@ -23,6 +27,20 @@ def get_user(id):
 # GOOD: typed signature
 def get_user(user_id: str) -> User | None:
     return db.find(user_id)
+\`\`\`
+
+## Generic Types (Python 3.12+)
+- Use the new type parameter syntax instead of TypeVar for generics — cleaner, less boilerplate
+- Use the \`type\` statement for type aliases: \`type Vector = list[float]\`
+
+\`\`\`python
+# BAD (pre-3.12): manual TypeVar
+from typing import TypeVar, Generic
+T = TypeVar("T")
+class Stack(Generic[T]): ...
+
+# GOOD (3.12+): built-in syntax
+class Stack[T]: ...
 \`\`\`
 
 ## Data Models
@@ -37,11 +55,22 @@ def get_user(user_id: str) -> User | None:
 - Close database connections in finally blocks
 - Use \`contextlib.asynccontextmanager\` for async resources
 
+## Structural Pattern Matching (3.10+)
+- Use match/case for complex branching on data structure shape — cleaner than if/elif chains for type dispatching
+- Use guard clauses (\`case X if condition\`) for conditional matching
+- Prefer match/case over isinstance chains when destructuring dataclasses or tuples
+
 ## Error Handling
 - Define custom exception classes for domain errors
 - Catch specific exceptions — never bare \`except:\`; bare except catches KeyboardInterrupt and SystemExit
 - Use \`logging\` module — never \`print()\` for operational output; logging supports levels, formatting, and routing
 - Include context in error messages: what failed, with what input
+- Use \`except*\` to handle ExceptionGroup (3.11+) — required when using asyncio.TaskGroup, which raises ExceptionGroup on multi-task failures
+
+## Async Patterns
+- Use asyncio.TaskGroup (3.11+) for structured concurrency — tasks are automatically cancelled on failure, unlike gather()
+- Prefer \`async with\` for async resource management (database connections, HTTP sessions)
+- Set timeouts on all async operations with asyncio.timeout()
 
 ## Testing
 - Use pytest with fixtures for test setup and teardown
@@ -49,9 +78,14 @@ def get_user(user_id: str) -> User | None:
 - Use \`parametrize\` for testing multiple inputs against same logic
 - Mock only external dependencies (APIs, databases, file system)
 
+## Package Management
+- Use uv for dependency management — 10-100x faster than pip, handles virtualenvs, lockfiles, and Python versions
+- Prefer pyproject.toml over setup.py/setup.cfg for project metadata and dependency declaration
+
 ## Formatting & Style
+- Use ruff for both linting and formatting — single Rust binary replaces flake8, isort, black, and 50+ other tools
+- Configure ruff in pyproject.toml — one configuration file for all rules
 - Use f-strings for string formatting — no \`%\` or \`.format()\`
-- Follow PEP 8 — enforce with ruff or black; automated formatting eliminates style debates
 - Use pathlib.Path over os.path for file operations — cleaner API and cross-platform by default
 - Prefer list/dict/set comprehensions over manual loops for transformations
 `;

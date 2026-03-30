@@ -1,10 +1,10 @@
 export type FlagMode =
-  | 'enforced'
-  | 'enabled'
-  | 'disabled'
-  | 'inherited'
-  | 'delegated_to_agent_default'
-  | 'conditional';
+  | "enforced"
+  | "enabled"
+  | "disabled"
+  | "inherited"
+  | "delegated_to_agent_default"
+  | "conditional";
 
 export interface FlagDefinition {
   mode: FlagMode;
@@ -21,7 +21,12 @@ export interface FlagConditions {
 }
 
 /** Runtime-accessible keys of FlagConditions — kept in sync with the interface above. */
-export const FLAG_CONDITION_KEYS: ReadonlySet<string> = new Set<string>(['lang', 'framework', 'agent', 'file_pattern']);
+export const FLAG_CONDITION_KEYS: ReadonlySet<string> = new Set<string>([
+  "lang",
+  "framework",
+  "agent",
+  "file_pattern",
+]);
 
 export interface ResolvedFlags {
   [key: string]: ResolvedFlag;
@@ -35,10 +40,12 @@ export interface ResolvedFlag {
 }
 
 export interface FlagSpec {
-  type: 'boolean' | 'number' | 'enum' | 'string[]';
+  type: "boolean" | "number" | "enum" | "string[]";
   default: unknown;
   values?: string[];
   min?: number;
   hook?: string | null;
   description: string;
+  hint?: string;
+  valueHints?: Record<string, string>;
 }

@@ -1,4 +1,5 @@
-import type { VerificationData } from './token.js';
+import type { VerificationData } from "./token.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 export interface VerifyResult {
   tokenMatch: boolean;
@@ -11,10 +12,19 @@ export interface VerifyResult {
   flagsMissing: string[];
 }
 
-const TOKEN_RE = /codi-[a-f0-9]{12}/;
+const TOKEN_RE = new RegExp(`${PROJECT_NAME}-[a-f0-9]{12}`);
 
-const RULE_HEADERS = [/rules?\s*loaded/i, /rules?\s*\(\d+\)/i, /^-?\s*rules?\s*:/i];
-const FLAG_HEADERS = [/flags?\s*active/i, /flags?\s*\(\d+\)/i, /^-?\s*flags?\s*:/i, /permissions?\s*:/i];
+const RULE_HEADERS = [
+  /rules?\s*loaded/i,
+  /rules?\s*\(\d+\)/i,
+  /^-?\s*rules?\s*:/i,
+];
+const FLAG_HEADERS = [
+  /flags?\s*active/i,
+  /flags?\s*\(\d+\)/i,
+  /^-?\s*flags?\s*:/i,
+  /permissions?\s*:/i,
+];
 
 export function checkAgentResponse(
   response: string,
@@ -63,7 +73,7 @@ export function checkAgentResponse(
 }
 
 function extractListItems(text: string, headerPatterns: RegExp[]): string[] {
-  const lines = text.split('\n');
+  const lines = text.split("\n");
   const items: string[] = [];
   let capturing = false;
 
@@ -71,9 +81,17 @@ function extractListItems(text: string, headerPatterns: RegExp[]): string[] {
     const matchedPattern = headerPatterns.find((p) => p.test(line));
     if (matchedPattern) {
       capturing = true;
-      const inline = line.replace(matchedPattern, '').replace(/^[:\s\-()0-9]+/, '').trim();
+      const inline = line
+        .replace(matchedPattern, "")
+        .replace(/^[:\s\-()0-9]+/, "")
+        .trim();
       if (inline) {
-        items.push(...inline.split(/[,;]/).map((s) => s.trim()).filter(Boolean));
+        items.push(
+          ...inline
+            .split(/[,;]/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+        );
       }
       continue;
     }
@@ -82,10 +100,15 @@ function extractListItems(text: string, headerPatterns: RegExp[]): string[] {
       const bullet = line.match(/^\s*[-*]\s+(.+)/);
       if (bullet) {
         items.push(bullet[1]!.trim());
-      } else if (line.trim() === '') {
+      } else if (line.trim() === "") {
         capturing = false;
       } else {
-        items.push(...line.split(/[,;]/).map((s) => s.trim()).filter(Boolean));
+        items.push(
+          ...line
+            .split(/[,;]/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+        );
         capturing = false;
       }
     }
@@ -95,7 +118,10 @@ function extractListItems(text: string, headerPatterns: RegExp[]): string[] {
 }
 
 function normalize(s: string): string {
-  return s.toLowerCase().replace(/[`"'*_[\]]/g, '').trim();
+  return s
+    .toLowerCase()
+    .replace(/[`"'*_[\]]/g, "")
+    .trim();
 }
 
 function fuzzyMatch(a: string, b: string): boolean {

@@ -1,14 +1,15 @@
-import type { Command } from 'commander';
-import { resolveConfig } from '../core/config/resolver.js';
-import { StateManager } from '../core/config/state.js';
-import { runAllChecks } from '../core/version/version-checker.js';
-import { buildVerificationData } from '../core/verify/token.js';
-import { resolveCodiDir } from '../utils/paths.js';
-import { createCommandResult } from '../core/output/formatter.js';
-import { EXIT_CODES } from '../core/output/exit-codes.js';
-import type { CommandResult } from '../core/output/types.js';
-import { initFromOptions, handleOutput } from './shared.js';
-import type { GlobalOptions } from './shared.js';
+import type { Command } from "commander";
+import { PROJECT_CLI, PROJECT_NAME } from "../constants.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { StateManager } from "../core/config/state.js";
+import { runAllChecks } from "../core/version/version-checker.js";
+import { buildVerificationData } from "../core/verify/token.js";
+import { resolveProjectDir } from "../utils/paths.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import type { CommandResult } from "../core/output/types.js";
+import { initFromOptions, handleOutput } from "./shared.js";
+import type { GlobalOptions } from "./shared.js";
 
 interface ComplianceOptions extends GlobalOptions {
   ci?: boolean;
@@ -40,7 +41,7 @@ function formatAge(isoTimestamp: string): string {
   const diffMs = now.getTime() - generated.getTime();
   const diffMinutes = Math.floor(diffMs / 60_000);
 
-  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 1) return "just now";
   if (diffMinutes < 60) return `${diffMinutes} minute(s) ago`;
 
   const diffHours = Math.floor(diffMinutes / 60);
@@ -59,8 +60,8 @@ export async function complianceHandler(
   // Resolve config early to get drift_detection flag
   const configResult = await resolveConfig(projectRoot);
   const driftMode = configResult.ok
-    ? (configResult.data.flags['drift_detection']?.value as string) ?? 'warn'
-    : 'warn';
+    ? ((configResult.data.flags["drift_detection"]?.value as string) ?? "warn")
+    : "warn";
 
   // Run doctor checks
   const doctorResult = await runAllChecks(projectRoot, driftMode);
@@ -70,14 +71,15 @@ export async function complianceHandler(
   if (doctorResult.ok) {
     for (const r of doctorResult.data.results) {
       checks.push({ check: r.check, passed: r.passed, message: r.message });
-      if (r.check === 'codi-directory') configValid = r.passed;
-      if (r.check === 'codi-version' && !r.passed) versionMatch = false;
+      if (r.check === `${PROJECT_NAME}-directory`) configValid = r.passed;
+      if (r.check === `${PROJECT_NAME}-version` && !r.passed)
+        versionMatch = false;
     }
   } else {
     checks.push({
-      check: 'doctor',
+      check: "doctor",
       passed: false,
-      message: 'Doctor checks failed to run.',
+      message: "Doctor checks failed to run.",
     });
   }
 
@@ -86,7 +88,7 @@ export async function complianceHandler(
   let skillCount = 0;
   let agentCount = 0;
   let flagCount = 0;
-  let token = '';
+  let token = "";
 
   if (configResult.ok) {
     const config = configResult.data;
@@ -99,19 +101,19 @@ export async function complianceHandler(
     token = verifyData.token;
   } else {
     checks.push({
-      check: 'config-resolve',
+      check: "config-resolve",
       passed: false,
-      message: 'Could not resolve config.',
+      message: "Could not resolve config.",
     });
   }
 
   // Read state for generation info
-  const codiDir = resolveCodiDir(projectRoot);
-  const stateManager = new StateManager(codiDir, projectRoot);
+  const configDir = resolveProjectDir(projectRoot);
+  const stateManager = new StateManager(configDir, projectRoot);
   const stateResult = await stateManager.read();
 
   let lastGenerated: string | null = null;
-  let generationAge = 'never';
+  let generationAge = "never";
   let hasDrift = false;
 
   if (stateResult.ok && stateResult.data.lastGenerated) {
@@ -119,18 +121,18 @@ export async function complianceHandler(
     generationAge = formatAge(stateResult.data.lastGenerated);
   }
 
-  if (driftMode === 'off') {
+  if (driftMode === "off") {
     checks.push({
-      check: 'drift',
+      check: "drift",
       passed: true,
-      message: 'Drift detection is disabled.',
+      message: "Drift detection is disabled.",
     });
   } else if (stateResult.ok) {
     for (const agentId of Object.keys(stateResult.data.agents)) {
       const driftResult = await stateManager.detectDrift(agentId);
       if (driftResult.ok) {
         const drifted = driftResult.data.files.some(
-          (f) => f.status === 'drifted' || f.status === 'missing',
+          (f) => f.status === "drifted" || f.status === "missing",
         );
         if (drifted) hasDrift = true;
       }
@@ -138,39 +140,39 @@ export async function complianceHandler(
 
     if (hasDrift) {
       checks.push({
-        check: 'drift',
+        check: "drift",
         passed: false,
-        message: 'Generated files have drifted from source.',
+        message: "Generated files have drifted from source.",
       });
     } else {
       checks.push({
-        check: 'drift',
+        check: "drift",
         passed: true,
-        message: 'No drift detected.',
+        message: "No drift detected.",
       });
     }
   }
 
-  if (!stateResult.ok && driftMode !== 'off') {
+  if (!stateResult.ok && driftMode !== "off") {
     // State read failed but drift detection is enabled
     checks.push({
-      check: 'drift',
+      check: "drift",
       passed: true,
-      message: 'No state file found. Run `codi generate` first.',
+      message: `No state file found. Run \`${PROJECT_CLI} generate\` first.`,
     });
   }
 
   const allPassed = checks.every((c) => c.passed);
-  const hasDriftFailures = checks.some(c => !c.passed && c.check === 'drift');
+  const hasDriftFailures = checks.some((c) => !c.passed && c.check === "drift");
   const exitCode = allPassed
     ? EXIT_CODES.SUCCESS
-    : (options.ci || (driftMode === 'error' && hasDriftFailures))
+    : options.ci || (driftMode === "error" && hasDriftFailures)
       ? EXIT_CODES.DOCTOR_FAILED
       : EXIT_CODES.SUCCESS;
 
   return createCommandResult({
     success: allPassed,
-    command: 'compliance',
+    command: "compliance",
     data: {
       configValid,
       versionMatch,
@@ -190,9 +192,9 @@ export async function complianceHandler(
 
 export function registerComplianceCommand(program: Command): void {
   program
-    .command('compliance')
-    .description('Run full compliance report: doctor + status + verification')
-    .option('--ci', 'Exit non-zero on any failure (for CI)')
+    .command("compliance")
+    .description("Run full compliance report: doctor + status + verification")
+    .option("--ci", "Exit non-zero on any failure (for CI)")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: ComplianceOptions = { ...globalOptions, ...cmdOptions };
