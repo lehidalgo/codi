@@ -2,8 +2,6 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { stringify as stringifyYaml } from "yaml";
 import { resolveProjectDir } from "../utils/paths.js";
 import { createCommandResult } from "../core/output/formatter.js";
@@ -44,8 +42,7 @@ import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { validatePreset } from "../core/preset/preset-validator.js";
 import { scanDirectory } from "../core/security/content-scanner.js";
 import { promptSecurityFindings } from "../core/security/scan-prompt.js";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "../utils/exec.js";
 
 export interface PresetData {
   action:

@@ -57,6 +57,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("rl3-brand")]: skillTemplates.rl3Brand,
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrand,
   [prefixedName("content-factory")]: skillTemplates.contentFactory,
+  [prefixedName("skill-reporter")]: skillTemplates.skillReporter,
 };
 
 /** Maps template names to their static asset directories (when available). */

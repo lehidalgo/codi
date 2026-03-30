@@ -157,7 +157,8 @@ describe("codex adapter", () => {
     expect(skillFile!.content).toContain("name: test-skill");
 
     const agentsMd = files.find((f) => f.path === "AGENTS.md");
-    expect(agentsMd!.content).not.toContain("test-skill");
+    // Skill content should not be inlined (routing table may reference the name)
+    expect(agentsMd!.content).not.toContain("Test skill content here");
   });
 
   it("generates multiple skill files", async () => {

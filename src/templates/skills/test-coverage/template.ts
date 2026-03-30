@@ -6,6 +6,12 @@ description: Test coverage analysis workflow. Use to measure coverage, identify 
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Test Coverage
+  examples:
+    - "Check test coverage"
+    - "Find untested code"
+    - "Generate missing tests"
 ---
 
 # {{name}}

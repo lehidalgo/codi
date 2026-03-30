@@ -4,21 +4,40 @@ Presets are bundles of flags, rules, skills, agents, commands, and MCP configura
 
 ## Built-in Presets
 
-Codi ships with 9 presets:
+Codi ships with 6 presets:
 
 <!-- GENERATED:START:preset_table -->
 | Preset | Focus | Description |
 |:-------|:------|:------------|
 | `codi-minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
 | `codi-balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
-| `codi-strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
-| `codi-python-web` | python | Python web development with Django/FastAPI conventions, security, and testing |
-| `codi-typescript-fullstack` | typescript | TypeScript fullstack development with React/Next.js, strict typing, and CI best practices |
-| `codi-security-hardened` | security | Maximum security enforcement with locked flags, mandatory scans, and restricted operations |
+| `codi-strict` | strict | Enforced — security locked, tests required, shell/delete restricted, no force-push |
+| `codi-fullstack` | fullstack | Comprehensive web/app development — broad rules, testing, and security. Language-agnostic. |
 | `codi-dev` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
-| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
-| `codi-data-ml` | data | Data engineering, data science, ML, and AI agent specialists |
+| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, session management, codebase onboarding |
 <!-- GENERATED:END:preset_table -->
+
+## Language Customization
+
+Presets are language-agnostic. Add language-specific rules after choosing a preset:
+
+```bash
+# Python project
+codi add rule python --template python
+codi add rule django --template django
+codi add agent python-expert --template python-expert
+
+# TypeScript project
+codi add rule typescript --template typescript
+codi add rule react --template react
+codi add rule nextjs --template nextjs
+codi add agent nextjs-researcher --template nextjs-researcher
+
+# Data/ML project
+codi add agent ai-engineering-expert --template ai-engineering-expert
+codi add agent data-science-specialist --template data-science-specialist
+codi add agent mlops-engineer --template mlops-engineer
+```
 
 ### Flag Comparison (core presets)
 

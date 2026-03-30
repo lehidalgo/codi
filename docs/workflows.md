@@ -28,7 +28,25 @@ git commit -m "chore: update codi rules"
 
 ### Using the Command Center
 
-Run `codi` (no subcommand) to launch the interactive Command Center. It presents all available actions in a menu and guides you through each one with prompts.
+Run `codi` (no subcommand) to launch the interactive Command Center. It presents all available actions in a menu and guides you through each one with prompts. See [CLI Reference](cli-reference.md) for the full Command Center documentation.
+
+---
+
+## Git and Version Control
+
+| What | Commit? | Why |
+|------|---------|-----|
+| `.codi/codi.yaml` | Yes | Project manifest — source of truth |
+| `.codi/flags.yaml` | Yes | Flag configuration |
+| `.codi/rules/custom/` | Yes | Your custom rules |
+| `.codi/rules/generated/` | Yes | Managed rules (track changes) |
+| `.codi/skills/` | Yes | Your skills |
+| `.codi/agents/` | Yes | Your agent definitions |
+| `.codi/commands/` | Yes | Your slash commands |
+| `.codi/state.json` | Yes | Enables drift detection for your team |
+| Generated files (`CLAUDE.md`, etc.) | Yes | Agents read these from your repo |
+| `~/.codi/user.yaml` | No | Personal preferences, never committed |
+| `~/.codi/org.yaml` | No | Shared via org tooling, not per-repo |
 
 ---
 

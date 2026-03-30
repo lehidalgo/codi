@@ -20,6 +20,21 @@ As you work with this codebase, you are both a consumer and an improver of the r
 skills, and agents installed by ${PROJECT_NAME_DISPLAY}. When you observe patterns that the current
 configuration does not address, propose improvements to the user.
 
+## Your Role
+
+You are the steward of this project's AI configuration. Every interaction is an opportunity
+to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has three designed mechanisms:
+
+1. **Feedback collection** — after using a skill, write structured feedback to \`${PROJECT_DIR}/feedback/\` (the skill-reporter skill defines the JSON schema)
+2. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
+3. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
+
+What makes configuration quality matter:
+- **Better intentHints** = users find the right skill instantly (routing table accuracy)
+- **Better descriptions** = skills trigger at the right time, not the wrong time
+- **Better skill steps** = fewer errors, more consistent outcomes
+- **Better rules** = fewer mistakes, code quality compounds over time
+
 ## When to Propose Improvements
 
 - A rule gives guidance that contradicts what the codebase actually does consistently
@@ -51,6 +66,15 @@ configuration does not address, propose improvements to the user.
 - For rule improvements: create a new custom rule that extends or refines the built-in
 - For skill/agent improvements: create a project-specific version with \`managed_by: user\`
 - The user can later contribute improvements upstream via \`${PROJECT_CLI} contribute\`
+
+## Improving Intent Routing
+
+When you notice a skill should have triggered but didn't, or triggered when it shouldn't have:
+
+1. Check if the skill has \`intentHints\` in its frontmatter
+2. If missing, propose adding \`intentHints\` with \`taskType\` and 2-4 example prompts
+3. If present but incomplete, propose additional examples that match the user's actual phrasing
+4. Run \`${PROJECT_CLI} generate\` after any frontmatter change
 
 ## What NOT to Do
 

@@ -13,11 +13,12 @@ import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import {
   generateSkillFiles,
-  type ProgressiveLoadingMode,
+  resolveProgressiveLoading,
 } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildCommandsTable,
+  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
@@ -92,6 +93,10 @@ export const claudeCodeAdapter: AgentAdapter = {
     const commandsTable = buildCommandsTable(config);
     if (commandsTable) sections.push(commandsTable);
 
+    // Skill routing table
+    const routingTable = buildSkillRoutingTable(config);
+    if (routingTable) sections.push(routingTable);
+
     // Development notes from flags
     const devNotes = buildDevelopmentNotes(config);
     if (devNotes) sections.push(devNotes);
@@ -125,8 +130,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
 
     // Generate .claude/skills/{name}/SKILL.md + supporting files
-    const plMode = ((config.flags.progressive_loading?.value as string) ??
-      "off") as ProgressiveLoadingMode;
+    const plMode = resolveProgressiveLoading(config.flags);
     files.push(
       ...(await generateSkillFiles(
         regularSkills,

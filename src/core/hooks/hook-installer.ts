@@ -184,7 +184,10 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
       if (h.passFiles === false) {
         lines.push(`[ -n "$STAGED" ] && ${h.command}`);
       } else {
-        lines.push(`[ -n "$STAGED" ] && ${h.command} $STAGED`);
+        // Use printf + xargs to safely handle filenames with spaces or special chars
+        lines.push(
+          `[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${h.command}`,
+        );
       }
       if (h.modifiesFiles) modifiedVars.push("STAGED");
       continue;
@@ -198,7 +201,10 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
       // Tool uses project config — run without file args when matching files exist
       lines.push(`[ -n "$${varName}" ] && ${h.command}`);
     } else {
-      lines.push(`[ -n "$${varName}" ] && ${h.command} $${varName}`);
+      // Use printf + xargs to safely handle filenames with spaces or special chars
+      lines.push(
+        `[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${h.command}`,
+      );
     }
 
     if (h.modifiesFiles) modifiedVars.push(varName);
@@ -208,7 +214,9 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
   if (modifiedVars.length > 0) {
     const unique = [...new Set(modifiedVars)];
     for (const v of unique) {
-      lines.push(`[ -n "$${v}" ] && git add $${v}`);
+      lines.push(
+        `[ -n "$${v}" ] && printf '%s\\n' $${v} | xargs git add || true`,
+      );
     }
   }
 

@@ -6,6 +6,11 @@ description: Use this skill whenever the user wants to do anything with PDF file
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: PDF Operations
+  examples:
+    - "Create a PDF"
+    - "Merge these PDFs"
 ---
 
 # PDF Processing Guide

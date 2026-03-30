@@ -14,6 +14,11 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 managed_by: ${PROJECT_NAME}
 user-invocable: true
+intentHints:
+  taskType: Docs Management
+  examples:
+    - "Update the docs"
+    - "Sync documentation"
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager

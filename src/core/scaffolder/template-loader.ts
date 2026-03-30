@@ -1,7 +1,11 @@
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { prefixedName, resolveArtifactName } from "#src/constants.js";
+import {
+  prefixedName,
+  devArtifactName,
+  resolveArtifactName,
+} from "#src/constants.js";
 import * as ruleTemplates from "../../templates/rules/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
@@ -28,6 +32,10 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("spring-boot")]: ruleTemplates.springBoot,
   [prefixedName("production-mindset")]: ruleTemplates.productionMindset,
   [prefixedName("simplicity-first")]: ruleTemplates.simplicityFirst,
+  [prefixedName("workflow")]: ruleTemplates.workflow,
+  [prefixedName("spanish-orthography")]: ruleTemplates.spanishOrthography,
+  [prefixedName("agent-usage")]: ruleTemplates.agentUsage,
+  [devArtifactName("improvement")]: ruleTemplates.improvement,
 };
 
 export const AVAILABLE_TEMPLATES = Object.keys(TEMPLATE_MAP);

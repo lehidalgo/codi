@@ -7,7 +7,7 @@ export const preset: BuiltinPresetDefinition = {
     "Enforced — security locked, tests required, delete restricted, no force-push",
   version: "1.0.0",
   author: PROJECT_NAME,
-  tags: ["strict", "enforced", "security"],
+  tags: ["strict", "enforced", "security", "enterprise", "compliance"],
   compatibility: {
     engine: ">=0.3.0",
     agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
@@ -19,8 +19,8 @@ export const preset: BuiltinPresetDefinition = {
     type_checking: { mode: "enforced", value: "strict", locked: true },
     max_file_lines: { mode: "enabled", value: 500 },
     require_tests: { mode: "enforced", value: true, locked: true },
-    allow_shell_commands: { mode: "enabled", value: true },
-    allow_file_deletion: { mode: "enabled", value: false },
+    allow_shell_commands: { mode: "enforced", value: true, locked: true },
+    allow_file_deletion: { mode: "enforced", value: false, locked: true },
     lint_on_save: { mode: "enabled", value: true },
     allow_force_push: { mode: "enforced", value: false, locked: true },
     require_pr_review: { mode: "enforced", value: true, locked: true },
@@ -38,6 +38,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("error-handling"),
     prefixedName("security"),
     prefixedName("git-workflow"),
+    prefixedName("api-design"),
     devArtifactName("improvement"),
   ],
   skills: [

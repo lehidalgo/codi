@@ -12,6 +12,11 @@ description: Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the us
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Preset Creation
+  examples:
+    - "Create a new preset"
+    - "Package my configuration"
 ---
 
 # {{name}}
@@ -28,7 +33,7 @@ Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable 
 ## Step 1: Define Identity
 
 Ask the user:
-1. **Name**: kebab-case, max ${MAX_NAME_LENGTH} chars (e.g., \`python-web\`, \`org-security\`)
+1. **Name**: kebab-case, max ${MAX_NAME_LENGTH} chars (e.g., \`fullstack\`, \`org-security\`)
 2. **Description**: one sentence describing the preset's purpose
 3. **Version**: semver format (default: \`1.0.0\`)
 4. **Tags**: comma-separated tags for discoverability

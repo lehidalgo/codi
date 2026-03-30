@@ -27,6 +27,12 @@ export const SkillFrontmatterSchema = z.object({
   "user-invocable": z.boolean().optional(),
   paths: z.union([z.array(z.string()), z.string()]).optional(),
   shell: z.enum(["bash", "powershell"]).optional(),
+  intentHints: z
+    .object({
+      taskType: z.string().max(50),
+      examples: z.array(z.string().max(100)).max(4),
+    })
+    .optional(),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

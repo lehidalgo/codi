@@ -6,6 +6,12 @@ description: Safe dead code removal and refactoring workflow. Detects unused cod
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Refactoring
+  examples:
+    - "Remove dead code"
+    - "Clean up unused functions"
+    - "Simplify this module"
 ---
 
 # {{name}}

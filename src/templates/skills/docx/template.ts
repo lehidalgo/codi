@@ -6,6 +6,11 @@ description: "Use this skill whenever the user wants to create, read, edit, or m
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
+intentHints:
+  taskType: Word Documents
+  examples:
+    - "Create a Word document"
+    - "Generate a DOCX"
 ---
 
 # DOCX creation, editing, and analysis

@@ -43,22 +43,22 @@ function makeTmpDir(): Promise<string> {
 
 const sampleEntries: RegistryEntry[] = [
   {
-    name: "python-web",
-    description: "Python web preset",
+    name: "team-backend",
+    description: "Backend API preset",
     version: "1.0.0",
-    tags: ["python", "web"],
+    tags: ["backend", "api"],
   },
   {
-    name: "ts-fullstack",
-    description: "TypeScript fullstack",
+    name: "org-frontend",
+    description: "Frontend web preset",
     version: "2.0.0",
-    tags: ["typescript", "react"],
+    tags: ["frontend", "react"],
   },
   {
-    name: "security-hardened",
-    description: "Security-focused configuration",
+    name: "my-custom-config",
+    description: "Custom project configuration",
     version: "1.2.0",
-    tags: ["security"],
+    tags: ["custom"],
   },
 ];
 
@@ -121,24 +121,24 @@ describe("getRegistryConfig", () => {
 
 describe("filterEntries", () => {
   it("filters by name match", () => {
-    const result = filterEntries(sampleEntries, "python");
+    const result = filterEntries(sampleEntries, "backend");
 
     expect(result).toHaveLength(1);
-    expect(result[0]!.name).toBe("python-web");
+    expect(result[0]!.name).toBe("team-backend");
   });
 
   it("filters by description match", () => {
-    const result = filterEntries(sampleEntries, "fullstack");
+    const result = filterEntries(sampleEntries, "frontend");
 
     expect(result).toHaveLength(1);
-    expect(result[0]!.name).toBe("ts-fullstack");
+    expect(result[0]!.name).toBe("org-frontend");
   });
 
   it("filters by tag match", () => {
     const result = filterEntries(sampleEntries, "react");
 
     expect(result).toHaveLength(1);
-    expect(result[0]!.name).toBe("ts-fullstack");
+    expect(result[0]!.name).toBe("org-frontend");
   });
 
   it("returns empty array for no matches", () => {
@@ -148,10 +148,10 @@ describe("filterEntries", () => {
   });
 
   it("is case-insensitive", () => {
-    const result = filterEntries(sampleEntries, "PYTHON");
+    const result = filterEntries(sampleEntries, "BACKEND");
 
     expect(result).toHaveLength(1);
-    expect(result[0]!.name).toBe("python-web");
+    expect(result[0]!.name).toBe("team-backend");
   });
 
   it("returns multiple matches when query is broad", () => {
@@ -330,7 +330,7 @@ describe("readRegistryIndex", () => {
     const entries = await readRegistryIndex(tmpDir);
 
     expect(entries).toHaveLength(3);
-    expect(entries[0]!.name).toBe("python-web");
+    expect(entries[0]!.name).toBe("team-backend");
   });
 });
 

@@ -1,10 +1,9 @@
 import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import os from "node:os";
 import { resolveProjectDir } from "../utils/paths.js";
+import { isPathSafe } from "../utils/path-guard.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -21,17 +20,19 @@ import {
 } from "../constants.js";
 import { scanSkillFile } from "../core/security/content-scanner.js";
 import { promptSecurityFindings } from "../core/security/scan-prompt.js";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "../utils/exec.js";
+import { z } from "zod";
 
 const DEFAULT_REGISTRY = `https://github.com/${PROJECT_NAME}-registry/skills.git`;
 const DEFAULT_BRANCH = "main";
 
-interface RegistryEntry {
-  name: string;
-  description: string;
-  path: string;
-}
+const MarketplaceEntrySchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  path: z.string(),
+});
+
+type RegistryEntry = z.infer<typeof MarketplaceEntrySchema>;
 
 interface MarketplaceData {
   action: "search" | "install";
@@ -64,7 +65,10 @@ async function readRegistryIndex(
 ): Promise<RegistryEntry[]> {
   const indexPath = path.join(registryDir, REGISTRY_INDEX_FILENAME);
   const raw = await fs.readFile(indexPath, "utf8");
-  return JSON.parse(raw) as RegistryEntry[];
+  const parsed: unknown = JSON.parse(raw);
+  const result = z.array(MarketplaceEntrySchema).safeParse(parsed);
+  if (!result.success) return [];
+  return result.data;
 }
 
 function filterEntries(
@@ -143,6 +147,25 @@ export async function marketplaceInstallHandler(
             code: "E_GENERAL",
             message: `Skill "${skillName}" not found in registry.`,
             hint: `Use \`${PROJECT_CLI} marketplace search <query>\` to find available skills.`,
+            severity: "error",
+            context: {},
+          },
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
+    // Validate entry.path stays within registry directory to prevent path traversal
+    if (!isPathSafe(registryDir, entry.path)) {
+      return createCommandResult({
+        success: false,
+        command: "marketplace install",
+        data: { action: "install" },
+        errors: [
+          {
+            code: "E_GENERAL",
+            message: `Invalid path in registry entry for "${skillName}": path traversal detected.`,
+            hint: "The registry may be compromised. Do not install from this source.",
             severity: "error",
             context: {},
           },

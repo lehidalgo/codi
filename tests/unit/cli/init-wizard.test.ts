@@ -233,7 +233,7 @@ describe("runInitWizard", () => {
   });
 
   it("returns selected preset name directly (no base mapping)", async () => {
-    const presetDef = getBuiltinPresetDefinition(prefixedName("python-web"));
+    const presetDef = getBuiltinPresetDefinition(prefixedName("fullstack"));
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
@@ -241,14 +241,14 @@ describe("runInitWizard", () => {
     const presetMcpServers = presetDef?.mcpServers ?? [];
 
     vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(["python"] as never) // languages
+      .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
     vi.mocked(p.select)
       .mockResolvedValueOnce("preset" as never)
-      .mockResolvedValueOnce(prefixedName("python-web") as never);
+      .mockResolvedValueOnce(prefixedName("fullstack") as never);
 
-    mockFlagEditing(prefixedName("python-web"));
+    mockFlagEditing(prefixedName("fullstack"));
 
     vi.mocked(p.multiselect)
       .mockResolvedValueOnce(presetRules as never)
@@ -262,7 +262,7 @@ describe("runInitWizard", () => {
     const result = await runInitWizard([], [], ["claude-code"]);
 
     expect(result).not.toBeNull();
-    expect(result!.preset).toBe(prefixedName("python-web"));
+    expect(result!.preset).toBe(prefixedName("fullstack"));
   });
 
   it("goes back from agents to languages, then exits on cancel", async () => {
