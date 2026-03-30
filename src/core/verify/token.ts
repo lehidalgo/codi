@@ -9,7 +9,6 @@ export interface VerificationData {
   skillNames: string[];
   agentNames: string[];
   commandNames: string[];
-  brandNames: string[];
   mcpServerNames: string[];
   activeFlags: string[];
   timestamp: string;
@@ -22,7 +21,6 @@ export function buildVerificationData(
   const skillNames = config.skills.map((s) => s.name);
   const agentNames = config.agents.map((a) => a.name);
   const commandNames = config.commands.map((c) => c.name).sort();
-  const brandNames = config.brands.map((b) => b.name).sort();
   const mcpServerNames = Object.keys(config.mcp.servers).sort();
 
   const flagText = buildFlagInstructions(config.flags);
@@ -41,7 +39,6 @@ export function buildVerificationData(
     skillNames.join(","),
     agentNames.join(","),
     commandNames.join(","),
-    brandNames.join(","),
     mcpServerNames.join(","),
     activeFlags.join(","),
   ].join("|");
@@ -56,7 +53,6 @@ export function buildVerificationData(
     skillNames,
     agentNames,
     commandNames,
-    brandNames,
     mcpServerNames,
     activeFlags,
     timestamp,

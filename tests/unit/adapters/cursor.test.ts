@@ -226,8 +226,8 @@ describe("cursor adapter", () => {
     const mcpFile = files.find((f) => f.path === ".cursor/mcp.json");
     expect(mcpFile).toBeDefined();
     const parsed = JSON.parse(mcpFile!.content);
-    expect(parsed.servers["my-server"]).toBeDefined();
-    expect(parsed.servers["my-server"].command).toBe("node");
+    expect(parsed.mcpServers["my-server"]).toBeDefined();
+    expect(parsed.mcpServers["my-server"].command).toBe("node");
     expect(mcpFile!.sources).toContain("mcp.yaml");
   });
 
@@ -257,8 +257,8 @@ describe("cursor adapter", () => {
     const mcpFile = files.find((f) => f.path === ".cursor/mcp.json");
     expect(mcpFile).toBeDefined();
     const parsed = JSON.parse(mcpFile!.content);
-    expect(parsed.servers["enabled-server"]).toBeDefined();
-    expect(parsed.servers["disabled-server"]).toBeUndefined();
+    expect(parsed.mcpServers["enabled-server"]).toBeDefined();
+    expect(parsed.mcpServers["disabled-server"]).toBeUndefined();
   });
 
   // --- generate() produces unique hashes ---

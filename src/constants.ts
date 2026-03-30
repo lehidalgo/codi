@@ -103,6 +103,9 @@ export const ARTIFACT_TYPES = [
   "commands",
 ] as const;
 
+// --- Brand category ---
+export const BRAND_CATEGORY = "brand" as const;
+
 // --- Git operations ---
 export const GIT_CLONE_DEPTH = "1";
 

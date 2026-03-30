@@ -13,7 +13,7 @@ import { FLAG_CATALOG } from "../flags/flag-catalog.js";
 import { AVAILABLE_TEMPLATES } from "../scaffolder/template-loader.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
-  loadSkillTemplate,
+  loadSkillTemplateContent,
 } from "../scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../scaffolder/agent-template-loader.js";
 import { AVAILABLE_COMMAND_TEMPLATES } from "../scaffolder/command-template-loader.js";
@@ -53,7 +53,6 @@ import {
   renderSkillFields,
   renderAgentFields,
   renderCommandFields,
-  renderBrandFields,
   renderManifestFields,
   // Coverage
   renderTestCoverage,
@@ -131,7 +130,6 @@ function generateAllSections(projectRoot: string): Record<string, string> {
     skill_fields: renderSkillFields(),
     agent_fields: renderAgentFields(),
     command_fields: renderCommandFields(),
-    brand_fields: renderBrandFields(),
     manifest_fields: renderManifestFields(),
 
     // --- Testing (1) ---
@@ -146,7 +144,7 @@ function buildSkillCategoryMap(): Record<string, string[]> {
   const categoryMap: Record<string, string[]> = {};
 
   for (const name of AVAILABLE_SKILL_TEMPLATES) {
-    const result = loadSkillTemplate(name);
+    const result = loadSkillTemplateContent(name);
     if (!result.ok) continue;
     const category = extractSkillCategory(result.data);
     if (!categoryMap[category]) {

@@ -110,8 +110,8 @@ describe("generateSkillFiles", () => {
 
   it("generates SKILL.md + skeleton per skill", async () => {
     const files = await generateSkillFiles(skills, ".claude/skills");
-    // Each skill: 1 SKILL.md + 3 .gitkeep (scripts, references, assets)
-    expect(files).toHaveLength(8);
+    // Each skill: 1 SKILL.md + 4 .gitkeep (scripts, references, assets, agents)
+    expect(files).toHaveLength(10);
     const skillMds = files.filter((f) => f.path.endsWith("SKILL.md"));
     expect(skillMds).toHaveLength(2);
     expect(skillMds[0]!.path).toBe(".claude/skills/deploy/SKILL.md");
@@ -121,7 +121,7 @@ describe("generateSkillFiles", () => {
   it("creates skeleton .gitkeep files", async () => {
     const files = await generateSkillFiles(skills, ".claude/skills");
     const gitkeeps = files.filter((f) => f.path.endsWith(".gitkeep"));
-    expect(gitkeeps).toHaveLength(6); // 3 per skill
+    expect(gitkeeps).toHaveLength(8); // 4 per skill
     expect(gitkeeps.some((f) => f.path.includes("scripts/.gitkeep"))).toBe(
       true,
     );
@@ -129,6 +129,7 @@ describe("generateSkillFiles", () => {
       true,
     );
     expect(gitkeeps.some((f) => f.path.includes("assets/.gitkeep"))).toBe(true);
+    expect(gitkeeps.some((f) => f.path.includes("agents/.gitkeep"))).toBe(true);
   });
 
   it("uses full content when progressive loading is off", async () => {

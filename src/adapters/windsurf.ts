@@ -11,6 +11,7 @@ import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
+import { partitionBrandSkills } from "./brand-filter.js";
 import {
   generateSkillFiles,
   buildSkillCatalog,
@@ -93,18 +94,21 @@ export const windsurfAdapter: AgentAdapter = {
       sections.push(`# ${rule.name}\n\n${rule.content}`);
     }
 
-    for (const brand of config.brands) {
+    // Partition skills into regular and brand-category skills
+    const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
+
+    for (const brand of brandSkills) {
       sections.push(`# Brand: ${brand.name}\n\n${brand.content}`);
     }
 
     const plMode = ((config.flags.progressive_loading?.value as string) ??
       "off") as ProgressiveLoadingMode;
     if (plMode === "off") {
-      for (const skill of config.skills) {
+      for (const skill of regularSkills) {
         sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
       }
     } else {
-      const catalog = buildSkillCatalog(config.skills);
+      const catalog = buildSkillCatalog(regularSkills);
       if (catalog) sections.push(catalog);
     }
 

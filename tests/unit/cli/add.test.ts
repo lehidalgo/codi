@@ -116,7 +116,7 @@ describe("add skill command handler", () => {
     expect(result.success).toBe(true);
 
     const skillDir = path.join(tmpDir, PROJECT_DIR, "skills", "test-skill");
-    const dirs = ["evals", "scripts", "references", "assets"];
+    const dirs = ["evals", "scripts", "references", "assets", "agents"];
     for (const dir of dirs) {
       const stat = await fs.stat(path.join(skillDir, dir));
       expect(stat.isDirectory()).toBe(true);
@@ -383,26 +383,27 @@ describe("add brand command handler", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("creates a brand directory with BRAND.md", async () => {
+  it("creates a brand as a skill with SKILL.md", async () => {
     const result = await addBrandHandler(tmpDir, "my-brand");
 
     expect(result.success).toBe(true);
     expect(result.data.name).toBe("my-brand");
-    expect(result.data.path).toContain("BRAND.md");
+    expect(result.data.path).toContain("SKILL.md");
     expect(result.exitCode).toBe(EXIT_CODES.SUCCESS);
 
     const content = await fs.readFile(result.data.path, "utf-8");
     expect(content).toContain("name: my-brand");
+    expect(content).toContain("category: brand");
     expect(content).toContain("Brand Identity");
   });
 
-  it("scaffolds brand subdirectories", async () => {
+  it("scaffolds skill subdirectories for brand", async () => {
     const result = await addBrandHandler(tmpDir, "test-brand");
     expect(result.success).toBe(true);
 
-    const brandDir = path.join(tmpDir, PROJECT_DIR, "brands", "test-brand");
-    for (const sub of ["assets", "references"]) {
-      const stat = await fs.stat(path.join(brandDir, sub));
+    const skillDir = path.join(tmpDir, PROJECT_DIR, "skills", "test-brand");
+    for (const sub of ["assets", "references", "scripts", "evals"]) {
+      const stat = await fs.stat(path.join(skillDir, sub));
       expect(stat.isDirectory()).toBe(true);
     }
   });
@@ -412,7 +413,7 @@ describe("add brand command handler", () => {
     expect(result.success).toBe(false);
   });
 
-  it("fails if brand already exists", async () => {
+  it("fails if brand skill already exists", async () => {
     await addBrandHandler(tmpDir, "dup-brand");
     const result = await addBrandHandler(tmpDir, "dup-brand");
     expect(result.success).toBe(false);

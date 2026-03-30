@@ -24,6 +24,7 @@ export function inline(s: string): string {
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
@@ -66,7 +67,12 @@ export function md2html(md: string): string {
     // Fenced code blocks
     if (line.startsWith("```")) {
       if (inCode) {
-        html += `<pre><code class="language-${esc(codeLang)}">${esc(codeBlock.join("\n"))}</code></pre>\n`;
+        if (codeLang === "mermaid") {
+          const raw = codeBlock.join("\n");
+          html += `<div class="mermaid" data-source="${esc(raw)}">${raw}</div>\n`;
+        } else {
+          html += `<pre><code class="language-${esc(codeLang)}">${esc(codeBlock.join("\n"))}</code></pre>\n`;
+        }
         inCode = false;
         codeBlock.length = 0;
         codeLang = "";
@@ -152,13 +158,28 @@ export function md2html(md: string): string {
       continue;
     }
 
-    // Blockquote
+    // Blockquote (multi-line with nested content support)
     if (line.startsWith(">")) {
       if (inList) {
         html += "</ul>\n";
         inList = false;
       }
-      html += `<blockquote><p>${inline(line.replace(/^>\s*/, ""))}</p></blockquote>\n`;
+      const bqLines: string[] = [];
+      while (i < lines.length && (lines[i] ?? "").startsWith(">")) {
+        bqLines.push((lines[i] ?? "").replace(/^>\s?/, ""));
+        i++;
+      }
+      html += `<blockquote>${md2html(bqLines.join("\n"))}</blockquote>\n`;
+      continue;
+    }
+
+    // HTML passthrough
+    if (/^\s*<[a-z/!]/.test(line)) {
+      if (inList) {
+        html += "</ul>\n";
+        inList = false;
+      }
+      html += line + "\n";
       i++;
       continue;
     }

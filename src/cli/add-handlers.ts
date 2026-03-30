@@ -1,10 +1,10 @@
+import path from "node:path";
 import { resolveProjectDir } from "../utils/paths.js";
-import { resolveArtifactName } from "../constants.js";
+import { resolveArtifactName, prefixedName } from "../constants.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
 import { createCommand } from "../core/scaffolder/command-scaffolder.js";
-import { createBrand } from "../core/scaffolder/brand-scaffolder.js";
 import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
@@ -128,6 +128,7 @@ export async function addSkillHandler(
     name,
     configDir,
     template: resolvedTemplate,
+    copyrightHolder: path.basename(projectRoot),
   });
 
   if (!result.ok) {
@@ -288,7 +289,12 @@ export async function addBrandHandler(
 ): Promise<CommandResult<AddBrandData>> {
   const configDir = resolveProjectDir(projectRoot);
 
-  const result = await createBrand({ name, configDir });
+  const result = await createSkill({
+    name,
+    configDir,
+    template: prefixedName("brand-identity"),
+    copyrightHolder: path.basename(projectRoot),
+  });
 
   if (!result.ok) {
     return createCommandResult({

@@ -21,7 +21,6 @@ export function validateConfig(config: NormalizedConfig): ProjectError[] {
 
   errors.push(...validateAgents(config));
   errors.push(...validateRules(config));
-  errors.push(...validateBrands(config));
   errors.push(...validateFlags(config));
 
   return errors;
@@ -103,18 +102,6 @@ export function validateContentSize(config: NormalizedConfig): ProjectError[] {
     }
   }
 
-  for (const brand of config.brands) {
-    const len = brand.content.length;
-    totalChars += len;
-    if (len > MAX_ARTIFACT_CHARS) {
-      warnings.push(
-        createError("W_CONTENT_SIZE", {
-          message: `Brand "${brand.name}" is ${len.toLocaleString()} chars (limit: ${MAX_ARTIFACT_CHARS.toLocaleString()}).`,
-        }),
-      );
-    }
-  }
-
   if (totalChars > MAX_TOTAL_ARTIFACT_CHARS) {
     warnings.push(
       createError("W_CONTENT_SIZE", {
@@ -166,24 +153,6 @@ function validateRules(config: NormalizedConfig): ProjectError[] {
         }),
       );
     }
-  }
-
-  return errors;
-}
-
-function validateBrands(config: NormalizedConfig): ProjectError[] {
-  const errors: ProjectError[] = [];
-  const names = new Set<string>();
-
-  for (const brand of config.brands) {
-    if (names.has(brand.name)) {
-      errors.push(
-        createError("E_CONFIG_INVALID", {
-          message: `Duplicate brand name: "${brand.name}"`,
-        }),
-      );
-    }
-    names.add(brand.name);
   }
 
   return errors;

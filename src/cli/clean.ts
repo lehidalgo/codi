@@ -82,7 +82,7 @@ const AGENT_SUBDIRS = [
   ".codex/agents",
 ];
 const AGENT_FILES = [
-  ".claude/mcp.json",
+  ".mcp.json",
   ".cursor/mcp.json",
   ".codex/config.toml",
   ".claude/settings.json",

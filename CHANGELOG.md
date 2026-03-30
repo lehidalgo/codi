@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Dual-language scripts for skill templates** — skills with helper scripts now ship both TypeScript (`scripts/ts/`) and Python (`scripts/python/`) variants; the coding agent detects runtime availability and chooses the appropriate variant. TypeScript is always available via `npx tsx`, Python is used when installed
+- **Skill-creator TypeScript eval pipeline** — 8 TypeScript scripts mirror the Python eval tools: `run-eval.ts`, `run-loop.ts`, `improve-description.ts`, `generate-report.ts`, `aggregate-benchmark.ts`, `package-skill.ts`, `quick-validate.ts`, `utils.ts`
+- **Skill-creator security scanner** — `security-scan.ts` programmatic scanner for imported skills: prompt injection detection, malicious script patterns, data exfiltration checks, magic bytes validation, content size limits
+- **Skill-creator security reviewer agent** — `agents/security-reviewer.md` subagent definition for contextual security review of imported skills
+- **Skill migration workflow** — `references/migration-workflow.md` 6-phase import guide: Acquire → Discover → Validate → Security Review → Adapt → Install
+- **Security checklist reference** — `references/security-checklist.md` with 5 categories and severity classification for imported skill review
+- **PDF TypeScript scripts** — 8 TypeScript equivalents using `pdf-lib`, `sharp`, `pdfjs-dist` for form field extraction, filling, validation, and PDF-to-image conversion
+- **Slack GIF Creator TypeScript scripts** — 4 TypeScript equivalents: easing functions (pure math), frame composer (SVG-based), GIF builder (sharp + ImageMagick), validators
+- **Webapp-testing TypeScript script** — `with-server.ts` for spawning dev servers, polling ports, running commands with cleanup
+- **Skill template directory structure** — all 42 skill templates migrated from flat `.ts` files to directory-based structure with `SkillTemplateDescriptor`, `staticDir`, and supporting files (scripts/, references/, assets/, evals/, agents/)
 - **`codi skill export` command** — export skills as Agent Skills standard, Claude Code plugin, Codex plugin, or ZIP bundle for marketplace distribution
 - **Skill export wizard** — interactive wizard with format selection, output directory, and confirmation
 - **Command Center hub** — bare `codi` launches an interactive menu routing to all 17 commands with full option parity

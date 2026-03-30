@@ -29,11 +29,35 @@ Every AI coding agent uses a different configuration format. Claude Code reads `
 
 ### 1. Install
 
+**Global (recommended):**
+
+```bash
+npm install -g codi-cli
+```
+
+This puts `codi` on your PATH so you can run it in any project.
+
+**Or run without installing:**
+
+```bash
+npx codi-cli <command>
+```
+
+**Or as a project dev dependency (for CI / team lockfiles):**
+
 ```bash
 npm install -D codi-cli
 ```
 
+> When installed as a dev dependency, `codi` is not on your PATH.
+> Run commands with `npx codi <command>`, or add shortcuts to `package.json` scripts:
+> ```json
+> { "scripts": { "codi:generate": "codi generate", "codi:status": "codi status" } }
+> ```
+
 Requires **Node.js >= 20**.
+
+> All examples below use `codi` directly (global install). If you installed as a dev dependency, replace `codi` with `npx codi`.
 
 ### 2. Initialize
 
@@ -139,6 +163,8 @@ Create, share, and install presets from ZIP, GitHub, or the registry with `codi 
 ---
 
 ## CLI Reference
+
+> Commands assume `codi` is globally installed. Prefix with `npx` if installed as a dev dependency.
 
 | Command | Description | Key Options |
 |---------|-------------|-------------|
@@ -264,7 +290,7 @@ Yes. Personal preferences go in `~/.codi/user.yaml` (never committed). Org-wide 
 `codi status` will report it as "drifted". Running `codi generate` will overwrite your manual edit. Edit rules in `.codi/rules/custom/` instead.
 
 **Q: How do I add Codi to a CI pipeline?**
-Add `codi doctor --ci` to your CI. It exits non-zero if config is invalid or generated files are stale.
+Install as a dev dependency (`npm install -D codi-cli`) and add `npx codi doctor --ci` to your CI. It exits non-zero if config is invalid or generated files are stale.
 
 **Q: Can I use Codi with only one agent?**
 Yes. Run `codi init --agents claude-code` (or any single agent).

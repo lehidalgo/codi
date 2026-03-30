@@ -286,7 +286,6 @@ describe("scanProjectDir", () => {
     expect(result.data.skills).toEqual([]);
     expect(result.data.commands).toEqual([]);
     expect(result.data.agents).toEqual([]);
-    expect(result.data.brands).toEqual([]);
     expect(result.data.flags).toEqual({});
   });
 

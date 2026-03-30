@@ -31,6 +31,7 @@ import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
 import { createCommand } from "../core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
+import { generateMitLicense } from "../core/scaffolder/license-generator.js";
 // Preset artifact lookup moved to init-wizard.ts
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -308,8 +309,14 @@ export async function initHandler(
     }
   }
 
+  const projectName = path.basename(projectRoot);
   for (const template of skillTemplates) {
-    const result = await createSkill({ name: template, configDir, template });
+    const result = await createSkill({
+      name: template,
+      configDir,
+      template,
+      copyrightHolder: projectName,
+    });
     if (!result.ok) {
       log.warn(
         `Failed to create skill "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -568,6 +575,13 @@ async function createProjectStructure(
   await fs.writeFile(
     path.join(configDir, FLAGS_FILENAME),
     stringifyYaml(flagsObj),
+    "utf-8",
+  );
+
+  const projectName = path.basename(path.dirname(configDir));
+  await fs.writeFile(
+    path.join(configDir, "LICENSE.txt"),
+    generateMitLicense(projectName),
     "utf-8",
   );
 }

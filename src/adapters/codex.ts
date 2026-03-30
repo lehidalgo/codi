@@ -11,6 +11,7 @@ import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
+import { partitionBrandSkills } from "./brand-filter.js";
 import {
   generateSkillFiles,
   type ProgressiveLoadingMode,
@@ -107,8 +108,11 @@ export const codexAdapter: AgentAdapter = {
       sections.push(`## ${rule.name}\n\n${rule.content}`);
     }
 
-    // Inline brands
-    for (const brand of config.brands) {
+    // Partition skills into regular and brand-category skills
+    const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
+
+    // Inline brand-category skills
+    for (const brand of brandSkills) {
       sections.push(`## Brand: ${brand.name}\n\n${brand.content}`);
     }
     const content = addGeneratedFooter(sections.join("\n\n"));
@@ -124,7 +128,7 @@ export const codexAdapter: AgentAdapter = {
       "off") as ProgressiveLoadingMode;
     files.push(
       ...(await generateSkillFiles(
-        config.skills,
+        regularSkills,
         ".agents/skills",
         plMode,
         _options.projectRoot,

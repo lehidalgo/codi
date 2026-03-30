@@ -27,6 +27,7 @@ const PresetArtifactsSchema = z
     skills: z.array(z.string()).optional(),
     agents: z.array(z.string()).optional(),
     commands: z.array(z.string()).optional(),
+    // @deprecated — use skills with category: brand instead
     brands: z.array(z.string()).optional(),
   })
   .optional();

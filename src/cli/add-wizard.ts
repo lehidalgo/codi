@@ -68,7 +68,7 @@ export async function runAddWizard(
     skill: AVAILABLE_SKILL_TEMPLATES,
     agent: AVAILABLE_AGENT_TEMPLATES,
     command: AVAILABLE_COMMAND_TEMPLATES,
-    brand: [],
+    brand: [] as readonly string[],
   };
   const templates = templateMap[type];
 

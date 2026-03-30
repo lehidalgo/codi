@@ -7,7 +7,6 @@ import {
   renderSkillFields,
   renderAgentFields,
   renderCommandFields,
-  renderBrandFields,
   renderManifestFields,
 } from "#src/core/docs/renderers/schema-renderers.js";
 
@@ -129,12 +128,6 @@ describe("per-schema wrappers", () => {
 
   it("renderCommandFields matches CommandFrontmatterSchema field count", () => {
     const result = renderCommandFields();
-    const dataRows = result.split("\n").slice(2);
-    expect(dataRows.length).toBe(3);
-  });
-
-  it("renderBrandFields matches BrandFrontmatterSchema field count", () => {
-    const result = renderBrandFields();
     const dataRows = result.split("\n").slice(2);
     expect(dataRows.length).toBe(3);
   });

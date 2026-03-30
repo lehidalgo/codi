@@ -26,7 +26,6 @@ export interface PresetWizardResult {
   rules: string[];
   skills: string[];
   agents: string[];
-  brands: string[];
   outputFormat: "dir" | "zip" | "github";
 }
 
@@ -157,7 +156,6 @@ export async function runPresetWizard(
     rules,
     skills,
     agents,
-    brands: [],
     outputFormat: format,
   };
 
@@ -189,7 +187,6 @@ async function scaffoldPreset(
       skills: config.skills,
       agents: config.agents,
       commands: [],
-      brands: config.brands,
     },
   };
   if (config.extends) manifest["extends"] = config.extends;
@@ -203,7 +200,7 @@ async function scaffoldPreset(
 
   log.info(`Created preset scaffold at ${PROJECT_DIR}/presets/${config.name}/`);
   log.info(
-    `  Rules: ${config.rules.length}, Skills: ${config.skills.length}, Agents: ${config.agents.length}, Brands: ${config.brands.length}`,
+    `  Rules: ${config.rules.length}, Skills: ${config.skills.length}, Agents: ${config.agents.length}`,
   );
 
   // Handle output format

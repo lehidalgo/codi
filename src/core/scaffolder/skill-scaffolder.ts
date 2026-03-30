@@ -4,7 +4,9 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { loadSkillTemplate } from "./skill-template-loader.js";
+import { generateMitLicense } from "./license-generator.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
+import type { SkillTemplateDescriptor } from "../../templates/skills/types.js";
 
 const DEFAULT_CONTENT = `---
 name: {{name}}
@@ -26,6 +28,7 @@ export interface CreateSkillOptions {
   name: string;
   configDir: string;
   template?: string;
+  copyrightHolder?: string;
 }
 
 export async function createSkill(
@@ -42,10 +45,13 @@ export async function createSkill(
   }
 
   let content: string;
+  let descriptor: SkillTemplateDescriptor | undefined;
+
   if (template) {
     const templateResult = loadSkillTemplate(template);
     if (!templateResult.ok) return templateResult;
-    content = templateResult.data;
+    descriptor = templateResult.data;
+    content = descriptor.template;
   } else {
     content = DEFAULT_CONTENT;
   }
@@ -94,8 +100,14 @@ export async function createSkill(
     ]);
   }
 
-  const scaffoldResult = await scaffoldSkillSubdirs(skillDir, name);
+  const holder = options.copyrightHolder ?? "Contributors";
+  const scaffoldResult = await scaffoldSkillSubdirs(skillDir, name, holder);
   if (!scaffoldResult.ok) return scaffoldResult;
+
+  if (descriptor?.staticDir) {
+    const copyResult = await copyStaticFiles(descriptor.staticDir, skillDir);
+    if (!copyResult.ok) return copyResult;
+  }
 
   return ok(filePath);
 }
@@ -103,6 +115,7 @@ export async function createSkill(
 async function scaffoldSkillSubdirs(
   skillDir: string,
   name: string,
+  copyrightHolder: string,
 ): Promise<Result<string>> {
   const evalsDir = path.join(skillDir, "evals");
   const subDirs = [
@@ -110,6 +123,7 @@ async function scaffoldSkillSubdirs(
     path.join(skillDir, "scripts"),
     path.join(skillDir, "references"),
     path.join(skillDir, "assets"),
+    path.join(skillDir, "agents"),
   ];
 
   for (const dir of subDirs) {
@@ -147,7 +161,7 @@ async function scaffoldSkillSubdirs(
     ]);
   }
 
-  const gitkeepDirs = ["scripts", "references", "assets"];
+  const gitkeepDirs = ["scripts", "references", "assets", "agents"];
   for (const sub of gitkeepDirs) {
     const gitkeepPath = path.join(skillDir, sub, ".gitkeep");
     try {
@@ -165,5 +179,92 @@ async function scaffoldSkillSubdirs(
     }
   }
 
+  const licensePath = path.join(skillDir, "LICENSE.txt");
+  try {
+    await fs.writeFile(
+      licensePath,
+      generateMitLicense(copyrightHolder),
+      "utf-8",
+    );
+  } catch (cause) {
+    return err([
+      createError("E_PERMISSION_DENIED", { path: licensePath }, cause as Error),
+    ]);
+  }
+
   return ok(skillDir);
+}
+
+const STATIC_SUBDIRS = ["assets", "references", "scripts", "agents"] as const;
+
+/**
+ * Copy static files from the template's staticDir into the scaffolded skill directory.
+ * Removes .gitkeep from any subdir that receives real files.
+ */
+async function copyStaticFiles(
+  staticDir: string,
+  skillDir: string,
+): Promise<Result<string>> {
+  for (const sub of STATIC_SUBDIRS) {
+    const srcDir = path.join(staticDir, sub);
+
+    let entries: string[];
+    try {
+      entries = await fs.readdir(srcDir);
+    } catch {
+      continue; // Source subdir doesn't exist — skip
+    }
+
+    const realFiles = entries.filter((f) => !f.startsWith("."));
+    if (realFiles.length === 0) continue;
+
+    const destDir = path.join(skillDir, sub);
+
+    for (const file of realFiles) {
+      const srcPath = path.join(srcDir, file);
+      const destPath = path.join(destDir, file);
+
+      try {
+        const stat = await fs.stat(srcPath);
+        if (stat.isDirectory()) {
+          await copyDir(srcPath, destPath);
+        } else {
+          await fs.copyFile(srcPath, destPath);
+        }
+      } catch (cause) {
+        return err([
+          createError(
+            "E_PERMISSION_DENIED",
+            { path: destPath },
+            cause as Error,
+          ),
+        ]);
+      }
+    }
+
+    // Remove .gitkeep since real files were copied
+    const gitkeepPath = path.join(destDir, ".gitkeep");
+    try {
+      await fs.unlink(gitkeepPath);
+    } catch {
+      // .gitkeep may not exist — ignore
+    }
+  }
+
+  return ok(skillDir);
+}
+
+async function copyDir(src: string, dest: string): Promise<void> {
+  await fs.mkdir(dest, { recursive: true });
+  const entries = await fs.readdir(src);
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry);
+    const destPath = path.join(dest, entry);
+    const stat = await fs.stat(srcPath);
+    if (stat.isDirectory()) {
+      await copyDir(srcPath, destPath);
+    } else {
+      await fs.copyFile(srcPath, destPath);
+    }
+  }
 }

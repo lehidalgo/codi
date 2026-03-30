@@ -141,7 +141,7 @@ export async function generateSkillFiles(
     });
 
     // 2. Create skeleton .gitkeep files
-    for (const subdir of ["scripts", "references", "assets"]) {
+    for (const subdir of ["scripts", "references", "assets", "agents"]) {
       files.push({
         path: `${skillBasePath}/${subdir}/.gitkeep`,
         content: "",

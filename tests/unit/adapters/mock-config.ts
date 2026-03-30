@@ -32,7 +32,6 @@ export function createMockConfig(
     skills: [],
     commands: [],
     agents: [],
-    brands: [],
     context: [],
     flags: {
       allow_shell_commands: {
