@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { detectHookSetup } from "../../../src/core/hooks/hook-detector.js";
-import { PROJECT_NAME } from "../../../src/constants.js";
+import { detectHookSetup } from "#src/core/hooks/hook-detector.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import { cleanupTmpDir } from "../../helpers/fs.js";
 
 let tmpDir: string;

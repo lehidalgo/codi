@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "../../helpers/fs.js";
-import { PROJECT_NAME, PROJECT_DIR } from "../../../src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 vi.mock("@clack/prompts", () => ({
   intro: vi.fn(),
@@ -17,8 +17,8 @@ vi.mock("@clack/prompts", () => ({
 }));
 
 import * as p from "@clack/prompts";
-import { runPresetWizard } from "../../../src/cli/preset-wizard.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { runPresetWizard } from "#src/cli/preset-wizard.js";
+import { Logger } from "#src/core/output/logger.js";
 
 describe("runPresetWizard", () => {
   let tmpDir: string;

@@ -3,14 +3,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "../../helpers/fs.js";
-import { verifyHandler } from "../../../src/cli/verify.js";
-import { initHandler } from "../../../src/cli/init.js";
-import { addRuleHandler } from "../../../src/cli/add.js";
-import { generateHandler } from "../../../src/cli/generate.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
-import { clearAdapters } from "../../../src/core/generator/adapter-registry.js";
-import { prefixedName, PROJECT_NAME } from "../../../src/constants.js";
+import { verifyHandler } from "#src/cli/verify.js";
+import { initHandler } from "#src/cli/init.js";
+import { addRuleHandler } from "#src/cli/add.js";
+import { generateHandler } from "#src/cli/generate.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
+import { clearAdapters } from "#src/core/generator/adapter-registry.js";
+import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 
 let tmpDir: string;
 

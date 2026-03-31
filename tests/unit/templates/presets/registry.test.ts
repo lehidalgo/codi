@@ -3,9 +3,9 @@ import {
   BUILTIN_PRESETS,
   getBuiltinPresetDefinition,
   getBuiltinPresetNames,
-} from "../../../../src/templates/presets/index.js";
-import { FLAG_CATALOG } from "../../../../src/core/flags/flag-catalog.js";
-import { prefixedName, PROJECT_NAME } from "../../../../src/constants.js";
+} from "#src/templates/presets/index.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
+import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 
 const ALL_PRESET_NAMES = [
   prefixedName("minimal"),

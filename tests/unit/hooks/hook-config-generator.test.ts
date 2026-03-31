@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { generateHooksConfig } from "../../../src/core/hooks/hook-config-generator.js";
-import type { ResolvedFlags } from "../../../src/types/flags.js";
+import { generateHooksConfig } from "#src/core/hooks/hook-config-generator.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 
 function makeFlags(
   overrides: Record<string, { value: unknown; mode: string }>,

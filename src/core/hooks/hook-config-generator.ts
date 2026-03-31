@@ -125,10 +125,27 @@ function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
   return flag.value !== false;
 }
 
+// Pre-commit test command for npm projects:
+// If the project defines a "test:pre-commit" script in package.json, run it
+// instead of "npm test". This allows projects to exclude slow E2E tests from
+// pre-commit hooks while keeping the full suite for CI.
+// To use: add "test:pre-commit": "vitest run tests/unit tests/integration"
+// (or equivalent) to your package.json scripts.
+const NPM_PRECOMMIT_TEST =
+  "node -e \"const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)\" 2>/dev/null && npm run test:pre-commit || npm test";
+
 function getTestHooksForLanguages(languages: string[]): HookEntry[] {
   const TEST_COMMANDS: Record<string, HookEntry> = {
-    typescript: { name: "test-ts", command: "npm test", stagedFilter: "" },
-    javascript: { name: "test-js", command: "npm test", stagedFilter: "" },
+    typescript: {
+      name: "test-ts",
+      command: NPM_PRECOMMIT_TEST,
+      stagedFilter: "",
+    },
+    javascript: {
+      name: "test-js",
+      command: NPM_PRECOMMIT_TEST,
+      stagedFilter: "",
+    },
     python: { name: "test-py", command: "pytest", stagedFilter: "" },
     go: { name: "test-go", command: "go test ./...", stagedFilter: "" },
     rust: { name: "test-rs", command: "cargo test", stagedFilter: "" },

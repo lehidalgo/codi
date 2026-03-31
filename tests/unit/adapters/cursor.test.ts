@@ -293,6 +293,28 @@ describe("cursor adapter", () => {
     expect(hash1).not.toBe(hash2);
   });
 
+  // --- generate() with brand-category skills ---
+
+  it("generates brand files from brand-category skills", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand identity",
+          content: "Brand content here",
+          category: "brand",
+        },
+      ],
+    });
+    const files = await cursorAdapter.generate(config, {
+      projectRoot: tmpDir,
+    });
+
+    const brandFile = files.find((f) => f.path.includes("brands/my-brand.md"));
+    expect(brandFile).toBeDefined();
+    expect(brandFile!.content).toContain("Brand content here");
+  });
+
   // --- generate() all files have required fields ---
 
   it("all generated files have path, content, sources, and hash", async () => {

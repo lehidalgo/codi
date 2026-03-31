@@ -6,7 +6,7 @@ import {
   DEPENDENCY_PATTERNS,
   EXECUTABLE_SIGNATURES,
   MAGIC_BYTES,
-} from "../../../../src/core/security/scan-patterns.js";
+} from "#src/core/security/scan-patterns.js";
 
 describe("scan-patterns", () => {
   it("INJECTION_PATTERNS is non-empty with valid entries", () => {

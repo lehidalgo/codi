@@ -2,12 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
-import {
-  checkDocSync,
-  fixDocSync,
-} from "../../../../src/core/docs/doc-sync.js";
-import { collectStats } from "../../../../src/core/docs/stats-collector.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
+import { checkDocSync, fixDocSync } from "#src/core/docs/doc-sync.js";
+import { collectStats } from "#src/core/docs/stats-collector.js";
 
 let tmpDir: string;
 

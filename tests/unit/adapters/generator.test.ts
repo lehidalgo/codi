@@ -5,12 +5,12 @@ import { tmpdir } from "node:os";
 import {
   registerAdapter,
   clearAdapters,
-} from "../../../src/core/generator/adapter-registry.js";
-import { generate } from "../../../src/core/generator/generator.js";
-import { claudeCodeAdapter } from "../../../src/adapters/claude-code.js";
-import { codexAdapter } from "../../../src/adapters/codex.js";
+} from "#src/core/generator/adapter-registry.js";
+import { generate } from "#src/core/generator/generator.js";
+import { claudeCodeAdapter } from "#src/adapters/claude-code.js";
+import { codexAdapter } from "#src/adapters/codex.js";
 import { createMockConfig } from "./mock-config.js";
-import { PROJECT_NAME } from "../../../src/constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 describe("generator", () => {
   const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-generator-` + Date.now());

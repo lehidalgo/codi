@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { Logger } from "../../../../src/core/output/logger.js";
-import { shouldBlockInstall } from "../../../../src/core/security/scan-prompt.js";
-import type { ScanReport } from "../../../../src/core/security/content-scanner.js";
+import { Logger } from "#src/core/output/logger.js";
+import {
+  shouldBlockInstall,
+  promptSecurityFindings,
+} from "#src/core/security/scan-prompt.js";
+import type {
+  ScanReport,
+  ScanFinding,
+} from "#src/core/security/content-scanner.js";
 
 function makeReport(
   verdict: ScanReport["verdict"],
@@ -51,5 +57,97 @@ describe("shouldBlockInstall", () => {
 
   it("returns false for pass verdict", () => {
     expect(shouldBlockInstall(makeReport("pass"))).toBe(false);
+  });
+});
+
+describe("promptSecurityFindings (non-interactive)", () => {
+  let originalIsTTY: boolean | undefined;
+
+  beforeEach(() => {
+    originalIsTTY = process.stdout.isTTY;
+    process.stdout.isTTY = undefined as unknown as boolean;
+  });
+
+  afterEach(() => {
+    process.stdout.isTTY = originalIsTTY as true;
+  });
+
+  const makeFinding = (
+    severity: ScanFinding["severity"],
+    overrides?: Partial<ScanFinding>,
+  ): ScanFinding => ({
+    severity,
+    category: "secrets",
+    file: "config.ts",
+    pattern: "API_KEY",
+    description: "Hardcoded API key",
+    ...overrides,
+  });
+
+  it("blocks on critical findings in non-interactive mode", async () => {
+    const report = makeReport("critical", {
+      findings: [makeFinding("critical")],
+      summary: { critical: 1, high: 0, medium: 0, low: 0 },
+    });
+    const result = await promptSecurityFindings(report);
+    expect(result).toBe(false);
+  });
+
+  it("blocks on high findings in non-interactive mode", async () => {
+    const report = makeReport("high", {
+      findings: [makeFinding("high")],
+      summary: { critical: 0, high: 1, medium: 0, low: 0 },
+    });
+    const result = await promptSecurityFindings(report);
+    expect(result).toBe(false);
+  });
+
+  it("proceeds on medium findings in non-interactive mode", async () => {
+    const report = makeReport("medium", {
+      findings: [makeFinding("medium")],
+      summary: { critical: 0, high: 0, medium: 1, low: 0 },
+    });
+    const result = await promptSecurityFindings(report);
+    expect(result).toBe(true);
+  });
+
+  it("proceeds on low findings in non-interactive mode", async () => {
+    const report = makeReport("low", {
+      findings: [makeFinding("low")],
+      summary: { critical: 0, high: 0, medium: 0, low: 1 },
+    });
+    const result = await promptSecurityFindings(report);
+    expect(result).toBe(true);
+  });
+
+  it("formats findings with line numbers when present", async () => {
+    const warnSpy = vi.spyOn(Logger.getInstance(), "warn");
+    const report = makeReport("medium", {
+      findings: [makeFinding("medium", { line: 42 })],
+      summary: { critical: 0, high: 0, medium: 1, low: 0 },
+    });
+    await promptSecurityFindings(report);
+
+    const findingLog = warnSpy.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("config.ts:42"),
+    );
+    expect(findingLog).toBeDefined();
+  });
+
+  it("formats summary with multiple severity counts", async () => {
+    const warnSpy = vi.spyOn(Logger.getInstance(), "warn");
+    const report = makeReport("medium", {
+      findings: [makeFinding("medium"), makeFinding("low")],
+      summary: { critical: 0, high: 0, medium: 1, low: 1 },
+    });
+    await promptSecurityFindings(report);
+
+    const summaryLog = warnSpy.mock.calls.find(
+      (call) =>
+        typeof call[0] === "string" &&
+        call[0].includes("medium") &&
+        call[0].includes("low"),
+    );
+    expect(summaryLog).toBeDefined();
   });
 });

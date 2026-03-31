@@ -7,7 +7,7 @@ PRETTIER=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' || true)
 [ -n "$PRETTIER" ] && printf '%s\n' $PRETTIER | xargs npx prettier --write
 TSC=$(echo "$STAGED" | grep -E '\.(ts|tsx)$' || true)
 [ -n "$TSC" ] && npx tsc --noEmit
-npm test
+npm run test:pre-commit
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-secret-scan.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-file-size-check.mjs
 TEMPLATES=$(echo "$STAGED" | grep -E '^src/templates/' || true)

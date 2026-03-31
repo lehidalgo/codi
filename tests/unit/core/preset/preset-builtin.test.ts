@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   isBuiltinPreset,
   materializeBuiltinPreset,
-} from "../../../../src/core/preset/preset-builtin.js";
-import { prefixedName } from "../../../../src/constants.js";
+} from "#src/core/preset/preset-builtin.js";
+import { prefixedName } from "#src/constants.js";
 
 describe("isBuiltinPreset", () => {
   it("recognizes flag-only presets (minimal, balanced, strict)", () => {

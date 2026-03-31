@@ -24,7 +24,6 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("test-coverage")]: skillTemplates.testCoverage,
   [prefixedName("refactoring")]: skillTemplates.refactoring,
   [prefixedName("codebase-onboarding")]: skillTemplates.codebaseOnboarding,
-  // presentation: deprecated, replaced by deck-engine
   [prefixedName("mobile-development")]: skillTemplates.mobileDevelopment,
   [prefixedName("commit")]: skillTemplates.commit,
   [prefixedName("preset-creator")]: skillTemplates.presetCreator,

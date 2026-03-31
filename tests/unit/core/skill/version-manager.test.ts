@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { PROJECT_NAME } from "#src/constants.js";
 import {
   saveVersion,

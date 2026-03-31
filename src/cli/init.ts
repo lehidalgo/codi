@@ -45,9 +45,13 @@ import { installHooks } from "../core/hooks/hook-installer.js";
 import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
+import { checkTemplateRegistry } from "../core/scaffolder/template-registry-check.js";
 import type { GlobalOptions } from "./shared.js";
 import { VERSION } from "../index.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import { StateManager } from "../core/config/state.js";
+import type { ArtifactFileState } from "../core/config/state.js";
+import { hashContent } from "../utils/hash.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -74,6 +78,17 @@ export async function initHandler(
   options: InitOptions,
 ): Promise<CommandResult<InitData>> {
   const log = Logger.getInstance();
+
+  const registryErrors = checkTemplateRegistry();
+  if (registryErrors.length > 0) {
+    console.error(`\n[codi] Template registry integrity check failed:`);
+    for (const e of registryErrors) console.error(`  • ${e}`);
+    console.error(
+      `\nThe CLI cannot run with broken templates. This is a bug — please report it.\n`,
+    );
+    process.exit(1);
+  }
+
   const configDir = resolveProjectDir(projectRoot);
 
   try {
@@ -352,6 +367,78 @@ export async function initHandler(
       log.warn(
         `Failed to create MCP server "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
       );
+    }
+  }
+
+  // Record preset artifacts in state for drift detection
+  if (presetName) {
+    try {
+      const stateManager = new StateManager(configDir, projectRoot);
+      const now = new Date().toISOString();
+      const artifactStates: ArtifactFileState[] = [];
+
+      for (const name of ruleTemplates) {
+        const filePath = path.join(configDir, "rules", `${name}.md`);
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+      for (const name of skillTemplates) {
+        const filePath = path.join(configDir, "skills", name, "SKILL.md");
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+      for (const name of agentTemplates) {
+        const filePath = path.join(configDir, "agents", `${name}.md`);
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+      for (const name of commandTemplates) {
+        const filePath = path.join(configDir, "commands", `${name}.md`);
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+
+      if (artifactStates.length > 0) {
+        await stateManager.updatePresetArtifacts(artifactStates);
+      }
+    } catch {
+      log.warn("Preset artifact state tracking failed; this is non-critical.");
     }
   }
 

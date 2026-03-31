@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderTestCoverage } from "../../../../../src/core/docs/renderers/coverage-renderer.js";
+import { renderTestCoverage } from "#src/core/docs/renderers/coverage-renderer.js";
 
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs")>();

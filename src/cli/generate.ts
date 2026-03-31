@@ -1,4 +1,6 @@
 import type { Command } from "commander";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { resolveConfig } from "../core/config/resolver.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import { generate } from "../core/generator/generator.js";
@@ -144,15 +146,24 @@ export async function generateHandler(
             projectRoot,
           );
           const now = new Date().toISOString();
-          await stateManagerHooks.updateHooks(
-            hookResult.data.files.map((f) => ({
+          const hookStates: GeneratedFileState[] = [];
+          for (const f of hookResult.data.files) {
+            let generatedHash = "";
+            try {
+              const content = await readFile(resolve(projectRoot, f), "utf-8");
+              generatedHash = hashContent(content);
+            } catch {
+              // File may not be readable (e.g. binary); store empty hash
+            }
+            hookStates.push({
               path: f,
-              sourceHash: "",
-              generatedHash: "",
+              sourceHash: hashContent(f),
+              generatedHash,
               sources: ["hooks"],
               timestamp: now,
-            })),
-          );
+            });
+          }
+          await stateManagerHooks.updateHooks(hookStates);
 
           const ledger = new OperationsLedgerManager(configDirHooks);
           await ledger.addHookFiles(
