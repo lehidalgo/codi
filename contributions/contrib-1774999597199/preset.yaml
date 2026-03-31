@@ -1,0 +1,15 @@
+name: contrib-1774999597199
+description: Community contribution
+version: 1.0.0
+artifacts:
+  rules:
+    - codi-error-handling
+    - codi-git-workflow
+    - codi-improvement-dev
+  skills:
+    - codi-commit
+    - codi-compare-preset
+    - codi-security-scan
+  commands:
+    - codi-commit
+    - codi-security-scan
