@@ -12,6 +12,7 @@ import {
   FILE_SIZE_CHECK_TEMPLATE,
   COMMIT_MSG_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
+  TEMPLATE_WIRING_CHECK_TEMPLATE,
 } from "./hook-templates.js";
 import {
   PRE_COMMIT_MAX_FILE_LINES,
@@ -39,6 +40,7 @@ export interface InstallOptions {
   secretScan?: boolean;
   fileSizeCheck?: boolean;
   versionCheck?: boolean;
+  templateWiringCheck?: boolean;
 }
 
 function buildRunnerScript(hooks: HookEntry[]): string {
@@ -52,6 +54,10 @@ function buildSecretScanScript(): string {
 
 function buildFileSizeScript(maxLines: number): string {
   return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines));
+}
+
+function buildTemplateWiringScript(): string {
+  return TEMPLATE_WIRING_CHECK_TEMPLATE;
 }
 
 async function writeAuxiliaryScripts(
@@ -84,6 +90,18 @@ async function writeAuxiliaryScripts(
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, versionPath));
+  }
+  if (options.templateWiringCheck) {
+    const wiringPath = path.join(
+      hookDir,
+      `${PROJECT_NAME}-template-wiring-check.mjs`,
+    );
+    const wiringScript = buildTemplateWiringScript();
+    await fs.writeFile(wiringPath, wiringScript, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, wiringPath));
   }
   return files;
 }
@@ -455,6 +473,7 @@ export {
   buildRunnerScript,
   buildSecretScanScript,
   buildFileSizeScript,
+  buildTemplateWiringScript,
   stripGeneratedSection,
   globToGrepPattern,
   buildHuskyCommands,

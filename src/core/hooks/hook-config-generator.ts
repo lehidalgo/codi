@@ -11,6 +11,7 @@ export interface HooksConfig {
   versionCheck: boolean;
   commitMsgValidation: boolean;
   testBeforeCommit: boolean;
+  templateWiringCheck: boolean;
 }
 
 interface FlagHookMapping {
@@ -113,6 +114,7 @@ export function generateHooksConfig(
     versionCheck: hasVersionRequirement,
     commitMsgValidation: true,
     testBeforeCommit,
+    templateWiringCheck: false,
   };
 }
 

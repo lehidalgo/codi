@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Template wiring check hook** — pre-commit hook validates that all artifact template files (rules, skills, agents, commands) are registered in `index.ts` and loader `TEMPLATE_MAP`, preventing silent invisible artifacts
 - **Status diff display** — `codi status --diff` renders colored unified diffs for drifted preset artifacts by reloading the source preset
 - **Preset flag merge on install** — `preset install` (ZIP and GitHub) now writes preset flags to `flags.yaml` with locked-flag protection
 - **Preset remove cleanup** — `preset remove` lists orphaned artifacts and cleans up stale state entries
