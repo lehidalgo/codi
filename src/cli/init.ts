@@ -385,6 +385,7 @@ export async function initHandler(
           secretScan: hooksConfig.secretScan,
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
+          templateWiringCheck: hooksConfig.templateWiringCheck,
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {

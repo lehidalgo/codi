@@ -10,5 +10,7 @@ TSC=$(echo "$STAGED" | grep -E '\.(ts|tsx)$' || true)
 npm test
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-secret-scan.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-file-size-check.mjs
+TEMPLATES=$(echo "$STAGED" | grep -E '^src/templates/' || true)
+[ -n "$TEMPLATES" ] && node .git/hooks/codi-template-wiring-check.mjs
 [ -n "$ESLINT" ] && printf '%s\n' $ESLINT | xargs git add || true
 [ -n "$PRETTIER" ] && printf '%s\n' $PRETTIER | xargs git add || true
