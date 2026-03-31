@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
 import { safeRm } from "../utils/fs.js";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import * as p from "@clack/prompts";
@@ -11,10 +10,8 @@ import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
 import {
   PRESET_MANIFEST_FILENAME,
-  GIT_CLONE_DEPTH,
   PROJECT_CLI,
   PROJECT_DIR,
-  PROJECT_NAME,
 } from "../constants.js";
 import { StateManager } from "../core/config/state.js";
 import {
@@ -23,15 +20,13 @@ import {
   getPresetVersionFromDir,
   copyDir,
 } from "../core/preset/preset-registry.js";
-import {
-  parsePresetIdentifier,
-  extractPresetName,
-} from "../core/preset/preset-resolver.js";
+import { parsePresetIdentifier } from "../core/preset/preset-resolver.js";
 import {
   extractPresetZip,
   createPresetZip,
 } from "../core/preset/preset-zip.js";
 import { validatePreset } from "../core/preset/preset-validator.js";
+import { installFromGithub } from "./preset-github.js";
 import {
   getBuiltinPresetNames,
   BUILTIN_PRESETS,
@@ -46,7 +41,6 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loa
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
 import { regenerateConfigs } from "./shared.js";
-import { execFileAsync } from "../utils/exec.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
@@ -217,6 +211,24 @@ export async function presetInstallUnifiedHandler(
       );
     }
 
+    if (descriptor.type === "builtin") {
+      return createCommandResult({
+        success: false,
+        command: "preset install",
+        data: { action: "install", name: descriptor.identifier },
+        errors: [
+          {
+            code: "E_BUILTIN_NOT_INSTALLABLE",
+            message: `"${descriptor.identifier}" is a built-in preset.`,
+            hint: `Use \`${PROJECT_CLI} init --preset ${descriptor.identifier}\` to install built-in presets.`,
+            severity: "error",
+            context: {},
+          },
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
     // Fallback: treat as registry --from style
     return presetInstallHandler(projectRoot, descriptor.identifier, source);
   } catch (error) {
@@ -235,130 +247,6 @@ export async function presetInstallUnifiedHandler(
       ],
       exitCode: EXIT_CODES.GENERAL_ERROR,
     });
-  }
-}
-
-async function installFromGithub(
-  projectRoot: string,
-  descriptor: ReturnType<typeof parsePresetIdentifier>,
-  presetsDir: string,
-  installOptions: PresetInstallOptions = {},
-): Promise<CommandResult<PresetData>> {
-  const log = Logger.getInstance();
-  const configDir = resolveProjectDir(projectRoot);
-  const repoUrl = `https://github.com/${descriptor.identifier}.git`;
-  const ref = descriptor.ref ?? "main";
-  log.info(`Cloning preset from ${repoUrl} (ref: ${ref})...`);
-
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-preset-gh-${Date.now()}`,
-  );
-  try {
-    const cloneArgs = ["clone", "--depth", GIT_CLONE_DEPTH];
-    if (descriptor.ref) cloneArgs.push("--branch", descriptor.ref);
-    cloneArgs.push(repoUrl, tmpDir);
-    await execFileAsync("git", cloneArgs);
-
-    const name = extractPresetName(descriptor);
-    let sourceDir = tmpDir;
-    try {
-      await fs.access(path.join(tmpDir, name, PRESET_MANIFEST_FILENAME));
-      sourceDir = path.join(tmpDir, name);
-    } catch {
-      /* Root is the preset */
-    }
-
-    // Validate structure (was missing for GitHub path)
-    const validation = await validatePreset(sourceDir);
-    if (!validation.ok) {
-      return createCommandResult({
-        success: false,
-        command: "preset install",
-        data: { action: "install", name },
-        errors: validation.errors.map((e) => ({
-          code: e.code,
-          message: e.message,
-          hint: e.hint,
-          severity: e.severity as "error",
-          context: e.context,
-        })),
-        exitCode: EXIT_CODES.GENERAL_ERROR,
-      });
-    }
-
-    // Security scan
-    const scanReport = await scanDirectory(sourceDir);
-    if (scanReport.verdict !== "pass") {
-      const proceed = await promptSecurityFindings(scanReport);
-      if (!proceed) {
-        return createCommandResult({
-          success: false,
-          command: "preset install",
-          data: { action: "install", name },
-          errors: [
-            {
-              code: "E_SECURITY_SCAN_BLOCKED",
-              message: `Security scan blocked installation of "${name}": ${scanReport.summary.critical} critical, ${scanReport.summary.high} high findings`,
-              hint: "Review the findings above. Re-run and accept to override.",
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-      }
-    }
-
-    const destDir = path.join(presetsDir, name);
-    await safeRm(destDir);
-    await fs.mkdir(destDir, { recursive: true });
-    await copyDir(sourceDir, destDir);
-
-    let commit: string | undefined;
-    try {
-      const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], {
-        cwd: tmpDir,
-      });
-      commit = stdout.trim();
-    } catch {
-      /* ignore */
-    }
-
-    const version = await getPresetVersionFromDir(destDir);
-    const lock = await readLockFile(configDir);
-    lock.presets[name] = {
-      version,
-      source: `github:${descriptor.identifier}${descriptor.ref ? `@${descriptor.ref}` : ""}`,
-      sourceType: "github",
-      commit,
-      installedAt: new Date().toISOString(),
-    };
-    await writeLockFile(configDir, lock);
-    log.info(`Installed preset "${name}" from GitHub.`);
-
-    // Apply preset artifacts and flags to project with conflict resolution
-    const loadResult = await loadPreset(name, presetsDir);
-    if (loadResult.ok) {
-      const applyResult = await applyPresetArtifacts(
-        configDir,
-        loadResult.data,
-        { force: installOptions.force, json: installOptions.json },
-      );
-      log.info(
-        `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped`,
-      );
-      await mergePresetFlags(configDir, loadResult.data, log);
-    }
-
-    return createCommandResult({
-      success: true,
-      command: "preset install",
-      data: { action: "install", name },
-      exitCode: EXIT_CODES.SUCCESS,
-    });
-  } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 

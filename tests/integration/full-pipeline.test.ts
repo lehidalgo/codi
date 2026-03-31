@@ -96,11 +96,11 @@ describe("Full Pipeline Integration", () => {
     // First init
     await initHandler(tmpDir, { json: true });
 
-    // Second init without force fails
-    const failResult = await initHandler(tmpDir, { json: true });
-    expect(failResult.success).toBe(false);
+    // Second init without force succeeds (update flow)
+    const updateResult = await initHandler(tmpDir, { json: true });
+    expect(updateResult.success).toBe(true);
 
-    // Second init with force succeeds
+    // Second init with force also succeeds (full reset)
     const forceResult = await initHandler(tmpDir, { force: true, json: true });
     expect(forceResult.success).toBe(true);
   });

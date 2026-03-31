@@ -15,12 +15,13 @@ export interface CreateMcpServerOptions {
   name: string;
   configDir: string;
   template?: string;
+  force?: boolean;
 }
 
 export async function createMcpServer(
   options: CreateMcpServerOptions,
 ): Promise<Result<string>> {
-  const { name, configDir, template } = options;
+  const { name, configDir, template, force } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
     return err([
@@ -47,15 +48,17 @@ export async function createMcpServer(
     ]);
   }
 
-  try {
-    await fs.access(filePath);
-    return err([
-      createError("E_CONFIG_INVALID", {
-        message: `MCP server file already exists: ${filePath}`,
-      }),
-    ]);
-  } catch {
-    // File does not exist, good to proceed
+  if (!force) {
+    try {
+      await fs.access(filePath);
+      return err([
+        createError("E_CONFIG_INVALID", {
+          message: `MCP server file already exists: ${filePath}`,
+        }),
+      ]);
+    } catch {
+      // File does not exist, good to proceed
+    }
   }
 
   let yamlObj: Record<string, unknown>;
