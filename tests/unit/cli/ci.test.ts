@@ -3,14 +3,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "../../helpers/fs.js";
-import { ciHandler } from "../../../src/cli/ci.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+import { ciHandler } from "#src/cli/ci.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PROJECT_NAME,
   PROJECT_DIR,
   MANIFEST_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 describe("ci command handler", () => {
   let tmpDir: string;

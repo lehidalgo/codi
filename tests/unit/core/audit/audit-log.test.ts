@@ -2,12 +2,9 @@ import { describe, it, expect, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
-import {
-  writeAuditEntry,
-  type AuditEntry,
-} from "../../../../src/core/audit/audit-log.js";
-import { AUDIT_FILENAME, PROJECT_NAME } from "../../../../src/constants.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
+import { writeAuditEntry, type AuditEntry } from "#src/core/audit/audit-log.js";
+import { AUDIT_FILENAME, PROJECT_NAME } from "#src/constants.js";
 
 let tmpDir: string;
 

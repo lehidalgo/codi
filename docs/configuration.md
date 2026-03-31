@@ -86,14 +86,6 @@ marketplace:
 | `layers.context` | boolean | Yes | `true` | Include context in generation |
 | `engine` | object | No | — |  |
 | `engine.requiredVersion` | string | No | — |  |
-| `team` | string | No | — | Team name for team-level config |
-| `source` | object | No | — | Remote repo for `codi update --from` |
-| `source.repo` | string | Yes | — | Repository identifier |
-| `source.branch` | string | Yes | `main` | Branch to pull from |
-| `source.paths` | string[] | Yes | `["rules","skills","agents"]` | Artifact paths to sync |
-| `marketplace` | object | No | — | Marketplace registry settings |
-| `marketplace.registry` | string | Yes | — | Registry repository |
-| `marketplace.branch` | string | Yes | `main` | Registry branch |
 | `presetRegistry` | object | No | — | Preset registry settings |
 | `presetRegistry.url` | string | Yes | — | Registry URL |
 | `presetRegistry.branch` | string | Yes | `main` | Registry branch |

@@ -359,6 +359,26 @@ describe("codex adapter", () => {
     expect(hash1).not.toBe(hash2);
   });
 
+  // --- generate() with brand-category skills ---
+
+  it("inlines brand-category skills in AGENTS.md", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand identity",
+          content: "Brand content here",
+          category: "brand",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+
+    const agentsMd = files.find((f) => f.path === "AGENTS.md");
+    expect(agentsMd!.content).toContain("Brand: my-brand");
+    expect(agentsMd!.content).toContain("Brand content here");
+  });
+
   // --- generate() all files have required fields ---
 
   it("all generated files have path, content, sources, and hash", async () => {

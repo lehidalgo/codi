@@ -25,7 +25,7 @@ The config resolution pipeline reads `.codi/` as the single source of truth. Pre
 <!-- GENERATED:START:layer_order -->
 | # | Layer | Source | Description |
 |---|-------|--------|-------------|
-| 1 | **Preset** | Built-in or installed presets | Applied at install time |
+| 1 | **Preset** | Built-in or installed presets | Bundles of flags + artifacts (applied at install time) |
 | 2 | **Repo** | `.codi/` directory | Project-level configuration (single source of truth) |
 | 3 | **User** | `~/.codi/user.yaml` | Personal preferences (never committed) |
 <!-- GENERATED:END:layer_order -->

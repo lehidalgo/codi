@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { PROJECT_NAME } from "#src/constants.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
@@ -10,8 +10,11 @@ import {
   readFeedbackForSkill,
   writeFeedback,
   pruneFeedback,
+  readRuleFeedback,
+  writeRuleFeedback,
+  pruneRuleFeedback,
 } from "#src/core/skill/feedback-collector.js";
-import type { FeedbackEntry } from "#src/schemas/feedback.js";
+import type { FeedbackEntry, RuleObservation } from "#src/schemas/feedback.js";
 
 let tmpDir: string;
 
@@ -209,5 +212,150 @@ describe("pruneFeedback", () => {
     // All 5 should remain (under 1000 cap)
     const remaining = await readAllFeedback(tmpDir);
     if (remaining.ok) expect(remaining.data).toHaveLength(5);
+  });
+});
+
+// --- Rule observation feedback ---
+
+function makeRuleObservation(
+  overrides: Partial<RuleObservation> = {},
+): RuleObservation {
+  return {
+    id: "d1e2f3a4-b5c6-7890-abcd-ef1234567890",
+    type: "rule-observation",
+    timestamp: new Date().toISOString(),
+    category: "new-pattern",
+    ruleName: "codi-code-style",
+    observation: "Codebase consistently uses 4-space indentation",
+    evidence: ["src/index.ts:10", "src/utils/paths.ts:5"],
+    suggestedChange: "Update indentation rule to 4 spaces",
+    severity: "medium",
+    source: "pattern-detection",
+    resolved: false,
+    ...overrides,
+  };
+}
+
+describe("readRuleFeedback", () => {
+  it("returns empty array when rule feedback dir does not exist", async () => {
+    const result = await readRuleFeedback(tmpDir);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual([]);
+  });
+
+  it("reads valid rule observation files", async () => {
+    const dir = path.join(tmpDir, "feedback", "rules");
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(
+      path.join(dir, "obs1.json"),
+      JSON.stringify(makeRuleObservation()),
+      "utf-8",
+    );
+
+    const result = await readRuleFeedback(tmpDir);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.ruleName).toBe("codi-code-style");
+      expect(result.data[0]!.category).toBe("new-pattern");
+    }
+  });
+
+  it("skips invalid rule observation files", async () => {
+    const dir = path.join(tmpDir, "feedback", "rules");
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, "bad.json"), "not json", "utf-8");
+    await fs.writeFile(
+      path.join(dir, "good.json"),
+      JSON.stringify(makeRuleObservation()),
+      "utf-8",
+    );
+
+    const result = await readRuleFeedback(tmpDir);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toHaveLength(1);
+  });
+});
+
+describe("writeRuleFeedback", () => {
+  it("writes valid observation to rule feedback dir", async () => {
+    const obs = makeRuleObservation();
+    const result = await writeRuleFeedback(tmpDir, obs);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const content = await fs.readFile(result.data, "utf-8");
+      const parsed = JSON.parse(content);
+      expect(parsed.ruleName).toBe("codi-code-style");
+      expect(parsed.type).toBe("rule-observation");
+    }
+  });
+
+  it("creates rule feedback directory if missing", async () => {
+    await writeRuleFeedback(tmpDir, makeRuleObservation());
+    const dir = path.join(tmpDir, "feedback", "rules");
+    const stat = await fs.stat(dir);
+    expect(stat.isDirectory()).toBe(true);
+  });
+
+  it("rejects invalid observation", async () => {
+    const bad = {
+      ...makeRuleObservation(),
+      id: "not-a-uuid",
+    } as RuleObservation;
+    const result = await writeRuleFeedback(tmpDir, bad);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("pruneRuleFeedback", () => {
+  it("removes entries older than max age", async () => {
+    const dir = path.join(tmpDir, "feedback", "rules");
+    await fs.mkdir(dir, { recursive: true });
+
+    const oldObs = makeRuleObservation({
+      timestamp: "2020-01-01T00:00:00.000Z",
+    });
+    const newObs = makeRuleObservation({
+      id: "e1e2f3a4-b5c6-7890-abcd-ef1234567890",
+      timestamp: new Date().toISOString(),
+    });
+
+    await fs.writeFile(path.join(dir, "old.json"), JSON.stringify(oldObs));
+    await fs.writeFile(path.join(dir, "new.json"), JSON.stringify(newObs));
+
+    const result = await pruneRuleFeedback(tmpDir, 30);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toBeGreaterThanOrEqual(1);
+
+    const remaining = await readRuleFeedback(tmpDir);
+    if (remaining.ok) expect(remaining.data).toHaveLength(1);
+  });
+
+  it("removes resolved entries regardless of age", async () => {
+    const dir = path.join(tmpDir, "feedback", "rules");
+    await fs.mkdir(dir, { recursive: true });
+
+    const resolvedObs = makeRuleObservation({
+      resolved: true,
+    });
+
+    await fs.writeFile(
+      path.join(dir, "resolved.json"),
+      JSON.stringify(resolvedObs),
+    );
+
+    const result = await pruneRuleFeedback(tmpDir, 99999);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toBe(1);
+
+    const remaining = await readRuleFeedback(tmpDir);
+    if (remaining.ok) expect(remaining.data).toHaveLength(0);
+  });
+
+  it("returns 0 when no rule feedback exists", async () => {
+    const result = await pruneRuleFeedback(tmpDir);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toBe(0);
   });
 });

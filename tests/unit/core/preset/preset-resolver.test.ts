@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import {
   parsePresetIdentifier,
   extractPresetName,
   resolveAndLoadPreset,
-} from "../../../../src/core/preset/preset-resolver.js";
-import { prefixedName, PROJECT_NAME } from "../../../../src/constants.js";
+} from "#src/core/preset/preset-resolver.js";
+import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 
 describe("parsePresetIdentifier", () => {
   it("identifies builtin presets", () => {

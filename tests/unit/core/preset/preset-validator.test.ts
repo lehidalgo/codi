@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { stringify as yamlStringify } from "yaml";
-import { PROJECT_NAME } from "../../../../src/constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import {
   validatePreset,
   detectCircularExtends,
-} from "../../../../src/core/preset/preset-validator.js";
+} from "#src/core/preset/preset-validator.js";
 
 function makeTmpDir(): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-val-test-`));

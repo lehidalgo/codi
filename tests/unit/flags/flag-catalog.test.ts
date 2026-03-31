@@ -3,8 +3,8 @@ import {
   FLAG_CATALOG,
   buildFlagSchema,
   getDefaultFlags,
-} from "../../../src/core/flags/flag-catalog.js";
-import type { FlagSpec } from "../../../src/types/flags.js";
+} from "#src/core/flags/flag-catalog.js";
+import type { FlagSpec } from "#src/types/flags.js";
 
 /** Synthetic catalog with a number flag for testing number-type schema validation. */
 const testCatalog: Record<string, FlagSpec> = {
@@ -107,6 +107,28 @@ describe("buildFlagSchema", () => {
   it("accepts empty object (all optional)", () => {
     const result = schema.safeParse({});
     expect(result.success).toBe(true);
+  });
+
+  it("skips enum flag with empty values array", () => {
+    const catalog: Record<string, FlagSpec> = {
+      empty_enum: {
+        type: "enum" as const,
+        default: "none",
+        values: [],
+        hook: null,
+        description: "Enum with no values",
+      },
+      keep_bool: {
+        type: "boolean" as const,
+        default: true,
+        hook: null,
+        description: "Boolean flag to keep",
+      },
+    };
+    const s = buildFlagSchema(catalog);
+    // empty_enum should be silently skipped — not present in schema
+    expect(s.safeParse({ keep_bool: true }).success).toBe(true);
+    expect(s.safeParse({ empty_enum: "anything" }).success).toBe(false);
   });
 });
 

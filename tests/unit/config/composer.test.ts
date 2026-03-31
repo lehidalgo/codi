@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { flagsFromDefinitions } from "../../../src/core/config/composer.js";
+import { flagsFromDefinitions } from "#src/core/config/composer.js";
 
 describe("flagsFromDefinitions", () => {
   it("converts flag definitions to resolved flags", () => {

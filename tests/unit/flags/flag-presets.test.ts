@@ -3,9 +3,9 @@ import {
   getPreset,
   getPresetNames,
   PRESET_DESCRIPTIONS,
-} from "../../../src/core/flags/flag-presets.js";
-import { FLAG_CATALOG } from "../../../src/core/flags/flag-catalog.js";
-import { prefixedName } from "../../../src/constants.js";
+} from "#src/core/flags/flag-presets.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
+import { prefixedName } from "#src/constants.js";
 
 describe("flag presets", () => {
   it("has 3 preset names", () => {
@@ -74,6 +74,10 @@ describe("flag presets", () => {
     const b = getPreset(prefixedName("balanced"));
     a["auto_commit"]!.value = true;
     expect(b["auto_commit"]!.value).toBe(false);
+  });
+
+  it("throws on unknown preset name", () => {
+    expect(() => getPreset("nonexistent" as never)).toThrow("Unknown preset");
   });
 
   it("all presets have descriptions", () => {

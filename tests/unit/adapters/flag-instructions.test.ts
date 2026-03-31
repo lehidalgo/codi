@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildFlagInstructions } from "../../../src/adapters/flag-instructions.js";
-import type { ResolvedFlags } from "../../../src/types/flags.js";
+import { buildFlagInstructions } from "#src/adapters/flag-instructions.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 
 function makeFlag(
   value: unknown,

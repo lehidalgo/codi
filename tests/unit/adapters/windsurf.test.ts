@@ -179,6 +179,50 @@ describe("windsurf adapter", () => {
     expect(skillMds).toHaveLength(2);
   });
 
+  // --- generate() with progressive_loading metadata ---
+
+  it("shows skill catalog when progressive_loading is metadata", async () => {
+    const config = createMockConfig({
+      skills: [
+        { name: "deploy", description: "Deploy skill", content: "Run deploy" },
+      ],
+      flags: {
+        progressive_loading: {
+          value: "metadata",
+          mode: "enabled",
+          source: MANIFEST_FILENAME,
+          locked: false,
+        },
+      },
+    });
+    const files = await windsurfAdapter.generate(config, {});
+
+    const mainFile = files.find((f) => f.path === ".windsurfrules");
+    expect(mainFile!.content).toContain("Available Skills");
+    expect(mainFile!.content).not.toContain("# Skill: deploy");
+  });
+
+  // --- generate() with brand-category skills ---
+
+  it("renders brand-category skills in .windsurfrules", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand identity",
+          content: "Brand content here",
+          category: "brand",
+        },
+      ],
+      flags: {},
+    });
+    const files = await windsurfAdapter.generate(config, {});
+
+    const mainFile = files.find((f) => f.path === ".windsurfrules");
+    expect(mainFile!.content).toContain("# Brand: my-brand");
+    expect(mainFile!.content).toContain("Brand content here");
+  });
+
   // --- MCP not supported (Windsurf only reads global MCP config) ---
 
   it("does not generate .windsurf/mcp.json (not supported by Windsurf)", async () => {

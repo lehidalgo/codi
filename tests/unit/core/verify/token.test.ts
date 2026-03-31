@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { PROJECT_NAME } from "../../../../src/constants.js";
-import { buildVerificationData } from "../../../../src/core/verify/token.js";
+import { PROJECT_NAME } from "#src/constants.js";
+import { buildVerificationData } from "#src/core/verify/token.js";
 import { createMockConfig } from "../../adapters/mock-config.js";
 
 describe("buildVerificationData", () => {

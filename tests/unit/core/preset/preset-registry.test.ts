@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { stringify as yamlStringify } from "yaml";
 
 // Mock child_process before importing the module under test
@@ -21,18 +21,18 @@ import {
   readRegistryIndex,
   getPresetVersionFromDir,
   copyDir,
-} from "../../../../src/core/preset/preset-registry.js";
+} from "#src/core/preset/preset-registry.js";
 import type {
   RegistryEntry,
   PresetLock,
   RegistryConfig,
-} from "../../../../src/core/preset/preset-registry.js";
-import type { ProjectManifest } from "../../../../src/types/config.js";
+} from "#src/core/preset/preset-registry.js";
+import type { ProjectManifest } from "#src/types/config.js";
 import {
   PROJECT_NAME,
   PRESET_LOCK_FILENAME,
   REGISTRY_INDEX_FILENAME,
-} from "../../../../src/constants.js";
+} from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

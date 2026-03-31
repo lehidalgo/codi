@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  printWelcomeBanner,
-  printCompactBanner,
-} from "../../../src/cli/banner.js";
+import { printWelcomeBanner, printCompactBanner } from "#src/cli/banner.js";
 
 describe("banner", () => {
   let writeSpy: ReturnType<typeof vi.spyOn>;

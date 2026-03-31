@@ -3,13 +3,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "../../helpers/fs.js";
-import { StateManager } from "../../../src/core/config/state.js";
-import type {
-  StateData,
-  GeneratedFileState,
-} from "../../../src/core/config/state.js";
-import { hashContent } from "../../../src/utils/hash.js";
-import { PROJECT_NAME } from "../../../src/constants.js";
+import { StateManager } from "#src/core/config/state.js";
+import type { StateData, GeneratedFileState } from "#src/core/config/state.js";
+import { hashContent } from "#src/utils/hash.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 let tmpDir: string;
 
@@ -284,6 +281,142 @@ describe("StateManager", () => {
       if (!readResult.ok) return;
       expect(readResult.data.lastGenerated).toBeDefined();
       expect(readResult.data.lastGenerated! >= before).toBe(true);
+    });
+  });
+
+  describe("detectPresetArtifactDrift", () => {
+    it("detects synced preset artifacts", async () => {
+      const mgr = new StateManager(tmpDir);
+      const content = "rule content";
+      const filePath = path.join(tmpDir, "rule.md");
+      await fs.writeFile(filePath, content, "utf-8");
+
+      await mgr.updatePresetArtifacts([
+        {
+          path: filePath,
+          hash: hashContent(content),
+          preset: "balanced",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const result = await mgr.detectPresetArtifactDrift();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.status).toBe("synced");
+    });
+
+    it("detects drifted preset artifacts", async () => {
+      const mgr = new StateManager(tmpDir);
+      const filePath = path.join(tmpDir, "rule.md");
+      await fs.writeFile(filePath, "modified content", "utf-8");
+
+      await mgr.updatePresetArtifacts([
+        {
+          path: filePath,
+          hash: hashContent("original content"),
+          preset: "balanced",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const result = await mgr.detectPresetArtifactDrift();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.status).toBe("drifted");
+      expect(result.data[0]!.expectedHash).toBe(
+        hashContent("original content"),
+      );
+    });
+
+    it("detects missing preset artifacts", async () => {
+      const mgr = new StateManager(tmpDir);
+
+      await mgr.updatePresetArtifacts([
+        {
+          path: "/nonexistent/artifact.md",
+          hash: "abc123",
+          preset: "balanced",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const result = await mgr.detectPresetArtifactDrift();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.status).toBe("missing");
+    });
+  });
+
+  describe("detectHookDrift", () => {
+    it("detects synced hook files", async () => {
+      const mgr = new StateManager(tmpDir);
+      const content = "#!/bin/sh\nnpx vitest";
+      const filePath = path.join(tmpDir, ".husky", "pre-commit");
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, content, "utf-8");
+
+      await mgr.updateHooks([
+        {
+          path: filePath,
+          sourceHash: "src",
+          generatedHash: hashContent(content),
+          sources: ["hooks"],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const result = await mgr.detectHookDrift();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.status).toBe("synced");
+    });
+
+    it("detects drifted hook files", async () => {
+      const mgr = new StateManager(tmpDir);
+      const filePath = path.join(tmpDir, ".husky", "pre-commit");
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, "modified hook", "utf-8");
+
+      await mgr.updateHooks([
+        {
+          path: filePath,
+          sourceHash: "src",
+          generatedHash: hashContent("original hook"),
+          sources: ["hooks"],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const result = await mgr.detectHookDrift();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.status).toBe("drifted");
+    });
+
+    it("detects missing hook files", async () => {
+      const mgr = new StateManager(tmpDir);
+
+      await mgr.updateHooks([
+        {
+          path: "/nonexistent/hook",
+          sourceHash: "src",
+          generatedHash: "abc",
+          sources: ["hooks"],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      const result = await mgr.detectHookDrift();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]!.status).toBe("missing");
     });
   });
 });

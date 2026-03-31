@@ -2,16 +2,16 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
-import { PROJECT_NAME } from "../../../../src/constants.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import {
   scanDirectory,
   scanSkillFile,
   matchPatterns,
   stripCodeFences,
   validateFileType,
-} from "../../../../src/core/security/content-scanner.js";
-import { INJECTION_PATTERNS } from "../../../../src/core/security/scan-patterns.js";
+} from "#src/core/security/content-scanner.js";
+import { INJECTION_PATTERNS } from "#src/core/security/scan-patterns.js";
 
 function makeTmpDir(): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-scan-test-`));

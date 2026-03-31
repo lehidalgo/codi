@@ -3,14 +3,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "../../helpers/fs.js";
-import { revertHandler } from "../../../src/cli/revert.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { revertHandler } from "#src/cli/revert.js";
+import { Logger } from "#src/core/output/logger.js";
 import {
   BACKUPS_DIR,
   BACKUP_MANIFEST_FILENAME,
   PROJECT_NAME,
   PROJECT_DIR,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 vi.mock("../../../src/cli/shared.js", async (importOriginal) => {
   const actual =
