@@ -34,6 +34,8 @@ export interface GenerateOptions {
   agents?: string[];
   dryRun?: boolean;
   force?: boolean;
+  /** Non-interactive mode: skip all conflicting files without prompting. */
+  json?: boolean;
   projectRoot?: string;
 }
 

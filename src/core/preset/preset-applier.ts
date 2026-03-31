@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import * as p from "@clack/prompts";
 import { stringify as stringifyYaml } from "yaml";
-import { renderColoredDiff, countChanges } from "../../utils/diff.js";
+import { countChanges } from "../../utils/diff.js";
 import { hashContent } from "../../utils/hash.js";
-import { Logger } from "../output/logger.js";
+import {
+  resolveConflicts,
+  type ConflictEntry,
+} from "../../utils/conflict-resolver.js";
 import { StateManager } from "../config/state.js";
 import type { ArtifactFileState } from "../config/state.js";
 import type { LoadedPreset } from "./preset-loader.js";
@@ -145,56 +147,6 @@ async function collectArtifacts(
   }
 }
 
-async function resolveConflict(
-  conflict: ConflictFile,
-  result: ApplyResult,
-  acceptAll: boolean,
-): Promise<"accept" | "skip" | "accept_all" | "skip_all"> {
-  if (acceptAll) {
-    await fs.writeFile(conflict.localPath, conflict.incomingContent, "utf-8");
-    result.overwritten.push(`${conflict.type}s/${conflict.name}`);
-    return "accept";
-  }
-
-  const label = `${conflict.type}s/${conflict.name}`;
-  const diff = renderColoredDiff(
-    conflict.currentContent,
-    conflict.incomingContent,
-    label,
-  );
-
-  p.note(diff, `${label}  (+${conflict.additions} -${conflict.removals})`);
-
-  const choice = await p.select({
-    message: `What do you want to do with ${label}?`,
-    options: [
-      { label: "Accept incoming (overwrite local)", value: "accept" as const },
-      { label: "Keep current (skip this file)", value: "skip" as const },
-      {
-        label: "Accept ALL incoming (overwrite all remaining)",
-        value: "accept_all" as const,
-      },
-      {
-        label: "Keep ALL current (skip all remaining)",
-        value: "skip_all" as const,
-      },
-    ],
-  });
-
-  if (p.isCancel(choice)) {
-    result.skipped.push(label);
-    return "skip";
-  }
-
-  if (choice === "accept" || choice === "accept_all") {
-    await fs.writeFile(conflict.localPath, conflict.incomingContent, "utf-8");
-    result.overwritten.push(label);
-  } else {
-    result.skipped.push(label);
-  }
-
-  return choice;
-}
 
 /**
  * Applies preset artifacts to the project .codi/ directory with conflict resolution.
@@ -205,7 +157,6 @@ export async function applyPresetArtifacts(
   preset: LoadedPreset,
   options: ApplyOptions = {},
 ): Promise<ApplyResult> {
-  const log = Logger.getInstance();
   const result: ApplyResult = {
     added: [],
     skipped: [],
@@ -269,47 +220,23 @@ export async function applyPresetArtifacts(
     removals: c.removals,
   }));
 
-  // Force mode: overwrite all without prompting
-  if (options.force) {
-    for (const conflict of conflicts) {
-      await fs.writeFile(conflict.localPath, conflict.incomingContent, "utf-8");
-      result.overwritten.push(`${conflict.type}s/${conflict.name}`);
-    }
-    await recordArtifactHashes(configDir, preset.name, allItems);
-    return result;
+  const conflictEntries: ConflictEntry[] = conflicts.map((c) => ({
+    label: `${c.type}s/${c.name}`,
+    fullPath: c.localPath,
+    currentContent: c.currentContent,
+    incomingContent: c.incomingContent,
+    additions: c.additions,
+    removals: c.removals,
+  }));
+
+  const resolution = await resolveConflicts(conflictEntries, options);
+
+  for (const entry of resolution.accepted) {
+    await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
+    result.overwritten.push(entry.label);
   }
-
-  // JSON mode: keep current by default, no prompts
-  if (options.json) {
-    for (const conflict of conflicts) {
-      result.skipped.push(`${conflict.type}s/${conflict.name}`);
-    }
-    await recordArtifactHashes(configDir, preset.name, allItems);
-    return result;
-  }
-
-  // Interactive mode
-  log.warn(`${conflicts.length} file(s) conflict with your local versions`);
-
-  let acceptAll = false;
-  for (const conflict of conflicts) {
-    if (acceptAll) {
-      await fs.writeFile(conflict.localPath, conflict.incomingContent, "utf-8");
-      result.overwritten.push(`${conflict.type}s/${conflict.name}`);
-      continue;
-    }
-
-    const choice = await resolveConflict(conflict, result, false);
-    if (choice === "accept_all") {
-      acceptAll = true;
-    } else if (choice === "skip_all") {
-      // Skip all remaining
-      const idx = conflicts.indexOf(conflict);
-      for (const remaining of conflicts.slice(idx + 1)) {
-        result.skipped.push(`${remaining.type}s/${remaining.name}`);
-      }
-      break;
-    }
+  for (const entry of resolution.skipped) {
+    result.skipped.push(entry.label);
   }
 
   // Record artifact hashes for drift tracking

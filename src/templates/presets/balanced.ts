@@ -32,14 +32,21 @@ export const preset: BuiltinPresetDefinition = {
   rules: [
     prefixedName("code-style"),
     prefixedName("error-handling"),
+    prefixedName("git-workflow"),
+    prefixedName("testing"),
     devArtifactName("improvement"),
   ],
   skills: [
     prefixedName("code-review"),
+    prefixedName("security-scan"),
     prefixedName("commit"),
     prefixedName("compare-preset"),
   ],
   agents: [prefixedName("code-reviewer")],
-  commands: [prefixedName("review"), prefixedName("commit")],
+  commands: [
+    prefixedName("review"),
+    prefixedName("commit"),
+    prefixedName("security-scan"),
+  ],
   mcpServers: [],
 };

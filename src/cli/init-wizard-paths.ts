@@ -255,7 +255,7 @@ export async function handlePresetPath(
         const presetRules = new Set(presetDef?.rules ?? []);
         p.log.step(`Artifacts in "${selectedPreset}" (modify to customize)`);
         const val = await p.multiselect({
-          message: "Rules",
+          message: `Rules (${AVAILABLE_TEMPLATES.length} total)`,
           options: AVAILABLE_TEMPLATES.map((t) => {
             const tmpl = loadTemplate(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -277,7 +277,7 @@ export async function handlePresetPath(
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetSkills = new Set(presetDef?.skills ?? []);
         const val = await p.multiselect({
-          message: "Skills",
+          message: `Skills (${AVAILABLE_SKILL_TEMPLATES.length} total)`,
           options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
             const tmpl = loadSkillTemplateContent(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -300,7 +300,7 @@ export async function handlePresetPath(
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetAgents = new Set(presetDef?.agents ?? []);
         const val = await p.multiselect({
-          message: "Agents",
+          message: `Agents (${AVAILABLE_AGENT_TEMPLATES.length} total)`,
           options: AVAILABLE_AGENT_TEMPLATES.map((t) => {
             const tmpl = loadAgentTemplate(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -323,7 +323,7 @@ export async function handlePresetPath(
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetCommands = new Set(presetDef?.commands ?? []);
         const val = await p.multiselect({
-          message: "Commands",
+          message: `Commands (${AVAILABLE_COMMAND_TEMPLATES.length} total)`,
           options: AVAILABLE_COMMAND_TEMPLATES.map((t) => {
             const tmpl = loadCommandTemplate(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -346,7 +346,7 @@ export async function handlePresetPath(
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetMcps = new Set(presetDef?.mcpServers ?? []);
         const val = await p.multiselect({
-          message: "MCP Servers",
+          message: `MCP Servers (${AVAILABLE_MCP_SERVER_TEMPLATES.length} total)`,
           options: AVAILABLE_MCP_SERVER_TEMPLATES.map((t) => {
             const tmpl = loadMcpServerTemplate(t);
             const hint = tmpl.ok ? tmpl.data.description : "";
@@ -460,7 +460,7 @@ export async function handleCustomPath(
       case 0: {
         p.log.step("Artifacts");
         const val = await p.multiselect({
-          message: "Select rules",
+          message: `Select rules (${AVAILABLE_TEMPLATES.length} total)`,
           options: AVAILABLE_TEMPLATES.map((t) => {
             const tmpl = loadTemplate(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -476,7 +476,7 @@ export async function handleCustomPath(
       }
       case 1: {
         const val = await p.multiselect({
-          message: "Select skills",
+          message: `Select skills (${AVAILABLE_SKILL_TEMPLATES.length} total)`,
           options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
             const tmpl = loadSkillTemplateContent(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -495,7 +495,7 @@ export async function handleCustomPath(
       }
       case 2: {
         const val = await p.multiselect({
-          message: "Select agent definitions",
+          message: `Select agent definitions (${AVAILABLE_AGENT_TEMPLATES.length} total)`,
           options: AVAILABLE_AGENT_TEMPLATES.map((t) => {
             const tmpl = loadAgentTemplate(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -514,7 +514,7 @@ export async function handleCustomPath(
       }
       case 3: {
         const val = await p.multiselect({
-          message: "Select commands",
+          message: `Select commands (${AVAILABLE_COMMAND_TEMPLATES.length} total)`,
           options: AVAILABLE_COMMAND_TEMPLATES.map((t) => {
             const tmpl = loadCommandTemplate(t);
             const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
@@ -533,7 +533,7 @@ export async function handleCustomPath(
       }
       case 4: {
         const val = await p.multiselect({
-          message: "Select MCP servers",
+          message: `Select MCP servers (${AVAILABLE_MCP_SERVER_TEMPLATES.length} total)`,
           options: AVAILABLE_MCP_SERVER_TEMPLATES.map((t) => {
             const tmpl = loadMcpServerTemplate(t);
             const hint = tmpl.ok ? tmpl.data.description : "";

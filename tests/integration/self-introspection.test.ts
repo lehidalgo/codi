@@ -95,7 +95,7 @@ describe("Self-introspection (dogfooding)", () => {
       expect(validateResult.data.valid).toBe(true);
 
       // 4. Generate
-      const genResult = await generateHandler(tmpDir, {});
+      const genResult = await generateHandler(tmpDir, { force: true });
       expect(genResult.success).toBe(true);
       expect(genResult.data.agents).toEqual(ALL_AGENTS);
       expect(genResult.data.filesGenerated).toBeGreaterThan(0);

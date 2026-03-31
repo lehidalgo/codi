@@ -445,7 +445,10 @@ export async function initHandler(
   let generated = false;
   const configResult = await resolveConfig(projectRoot);
   if (configResult.ok) {
-    const genResult = await generate(configResult.data, projectRoot);
+    const genResult = await generate(configResult.data, projectRoot, {
+      force: options.force,
+      json: options.json,
+    });
     generated = genResult.ok;
     if (!genResult.ok) {
       log.warn(

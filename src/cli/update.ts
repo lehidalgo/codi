@@ -583,7 +583,9 @@ export async function updateHandler(
     registerAllAdapters();
     const configResult = await resolveConfig(projectRoot);
     if (configResult.ok) {
-      const genResult = await generate(configResult.data, projectRoot);
+      const genResult = await generate(configResult.data, projectRoot, {
+        json: options.json,
+      });
       regenerated = genResult.ok;
     }
   }
