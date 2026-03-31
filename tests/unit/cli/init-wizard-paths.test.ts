@@ -4,6 +4,7 @@ import {
   buildPresetOptions,
   handleZipPath,
   handleGithubPath,
+  handleCustomPath,
 } from "#src/cli/init-wizard-paths.js";
 
 vi.mock("@clack/prompts", () => ({
@@ -53,6 +54,9 @@ import * as prompts from "@clack/prompts";
 
 const mockText = vi.mocked(prompts.text);
 const mockIsCancel = vi.mocked(prompts.isCancel);
+const mockMultiselect = vi.mocked(prompts.multiselect);
+const mockSelect = vi.mocked(prompts.select);
+const mockConfirm = vi.mocked(prompts.confirm);
 
 describe("formatLabel", () => {
   it("capitalizes single word", () => {
@@ -149,5 +153,57 @@ describe("handleGithubPath", () => {
     const result = await handleGithubPath(["claude-code"]);
 
     expect(typeof result).toBe("symbol");
+  });
+});
+
+describe("handleCustomPath — multiselect messages include counts", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsCancel.mockReturnValue(false);
+    mockMultiselect
+      .mockResolvedValueOnce([]) // rules
+      .mockResolvedValueOnce([]) // skills
+      .mockResolvedValueOnce([]) // agents
+      .mockResolvedValueOnce([]) // commands
+      .mockResolvedValueOnce([]); // mcps
+    mockSelect.mockResolvedValueOnce("codi-balanced"); // flag preset
+    mockConfirm
+      .mockResolvedValueOnce(false) // save as preset
+      .mockResolvedValueOnce(false); // version pin
+  });
+
+  it("shows rules count in message", async () => {
+    await handleCustomPath(["claude-code"]);
+    expect(mockMultiselect.mock.calls[0]?.[0]?.message).toBe(
+      "Select rules (2 total)",
+    );
+  });
+
+  it("shows skills count in message", async () => {
+    await handleCustomPath(["claude-code"]);
+    expect(mockMultiselect.mock.calls[1]?.[0]?.message).toBe(
+      "Select skills (2 total)",
+    );
+  });
+
+  it("shows agents count in message", async () => {
+    await handleCustomPath(["claude-code"]);
+    expect(mockMultiselect.mock.calls[2]?.[0]?.message).toBe(
+      "Select agent definitions (1 total)",
+    );
+  });
+
+  it("shows commands count in message", async () => {
+    await handleCustomPath(["claude-code"]);
+    expect(mockMultiselect.mock.calls[3]?.[0]?.message).toBe(
+      "Select commands (1 total)",
+    );
+  });
+
+  it("shows MCP servers count in message", async () => {
+    await handleCustomPath(["claude-code"]);
+    expect(mockMultiselect.mock.calls[4]?.[0]?.message).toBe(
+      "Select MCP servers (1 total)",
+    );
   });
 });

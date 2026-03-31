@@ -26,6 +26,7 @@ import { runCommandCenter } from "./cli/hub.js";
 import { Logger } from "./core/output/logger.js";
 import { PROJECT_NAME } from "./constants.js";
 import type { GlobalOptions } from "./cli/shared.js";
+import { checkTemplateRegistry } from "./core/scaffolder/template-registry-check.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -65,6 +66,15 @@ program.action(async () => {
   if (opts.json || opts.quiet) {
     program.help();
     return;
+  }
+  const registryErrors = checkTemplateRegistry();
+  if (registryErrors.length > 0) {
+    console.error(`\n[codi] Template registry integrity check failed:`);
+    for (const e of registryErrors) console.error(`  • ${e}`);
+    console.error(
+      `\nThe CLI cannot run with broken templates. This is a bug — please report it.\n`,
+    );
+    process.exit(1);
   }
   Logger.init({ level: "info", mode: "human", noColor: opts.noColor ?? false });
   await runCommandCenter(process.cwd());

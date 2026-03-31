@@ -31,7 +31,7 @@ async function runGenerate(projectRoot: string, log: Logger): Promise<boolean> {
     return false;
   }
 
-  const genResult = await generate(configResult.data, projectRoot);
+  const genResult = await generate(configResult.data, projectRoot, { force: true });
   if (!genResult.ok) {
     log.warn("Generation failed during watch.");
     return false;

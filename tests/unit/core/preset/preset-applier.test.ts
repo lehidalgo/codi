@@ -255,105 +255,126 @@ describe("applyPresetArtifacts", () => {
     expect(result.conflicts).toHaveLength(0);
   });
 
-  it("interactive mode calls select for each conflict", async () => {
-    vi.mocked(p.select).mockResolvedValue("accept" as never);
+  describe("interactive mode (TTY)", () => {
+    let originalIsTTY: boolean | undefined;
 
-    const rulesDir = path.join(configDir, "rules");
-    await fs.mkdir(rulesDir, { recursive: true });
-    await fs.writeFile(
-      path.join(rulesDir, "rule-a.md"),
-      "---\nname: rule-a\n---\n\nOld A\n",
-      "utf-8",
-    );
-
-    const preset = makePreset({
-      rules: [makeRule("rule-a", "New A from preset")],
+    beforeEach(() => {
+      originalIsTTY = process.stdout.isTTY;
+      Object.defineProperty(process.stdout, "isTTY", {
+        value: true,
+        configurable: true,
+        writable: true,
+      });
     });
 
-    const result = await applyPresetArtifacts(configDir, preset, {});
-
-    expect(p.note).toHaveBeenCalled();
-    expect(p.select).toHaveBeenCalled();
-    expect(result.overwritten).toContain("rules/rule-a");
-  });
-
-  it("interactive skip keeps current file", async () => {
-    vi.mocked(p.select).mockResolvedValue("skip" as never);
-
-    const rulesDir = path.join(configDir, "rules");
-    await fs.mkdir(rulesDir, { recursive: true });
-    await fs.writeFile(
-      path.join(rulesDir, "rule-b.md"),
-      "---\nname: rule-b\n---\n\nKeep me\n",
-      "utf-8",
-    );
-
-    const preset = makePreset({
-      rules: [makeRule("rule-b", "Replace me")],
+    afterEach(() => {
+      Object.defineProperty(process.stdout, "isTTY", {
+        value: originalIsTTY,
+        configurable: true,
+        writable: true,
+      });
     });
 
-    const result = await applyPresetArtifacts(configDir, preset, {});
+    it("interactive mode calls select for each conflict", async () => {
+      vi.mocked(p.select).mockResolvedValue("accept" as never);
 
-    expect(result.skipped).toContain("rules/rule-b");
-    const content = await fs.readFile(
-      path.join(rulesDir, "rule-b.md"),
-      "utf-8",
-    );
-    expect(content).toContain("Keep me");
-  });
+      const rulesDir = path.join(configDir, "rules");
+      await fs.mkdir(rulesDir, { recursive: true });
+      await fs.writeFile(
+        path.join(rulesDir, "rule-a.md"),
+        "---\nname: rule-a\n---\n\nOld A\n",
+        "utf-8",
+      );
 
-  it("interactive accept_all overwrites all remaining conflicts", async () => {
-    vi.mocked(p.select).mockResolvedValueOnce("accept_all" as never);
+      const preset = makePreset({
+        rules: [makeRule("rule-a", "New A from preset")],
+      });
 
-    const rulesDir = path.join(configDir, "rules");
-    await fs.mkdir(rulesDir, { recursive: true });
-    await fs.writeFile(
-      path.join(rulesDir, "rule-1.md"),
-      "---\nname: rule-1\n---\n\nOld 1\n",
-      "utf-8",
-    );
-    await fs.writeFile(
-      path.join(rulesDir, "rule-2.md"),
-      "---\nname: rule-2\n---\n\nOld 2\n",
-      "utf-8",
-    );
+      const result = await applyPresetArtifacts(configDir, preset, {});
 
-    const preset = makePreset({
-      rules: [makeRule("rule-1", "New 1"), makeRule("rule-2", "New 2")],
+      expect(p.note).toHaveBeenCalled();
+      expect(p.select).toHaveBeenCalled();
+      expect(result.overwritten).toContain("rules/rule-a");
     });
 
-    const result = await applyPresetArtifacts(configDir, preset, {});
+    it("interactive skip keeps current file", async () => {
+      vi.mocked(p.select).mockResolvedValue("skip" as never);
 
-    // First conflict prompts, second is auto-accepted
-    expect(p.select).toHaveBeenCalledTimes(1);
-    expect(result.overwritten).toContain("rules/rule-1");
-    expect(result.overwritten).toContain("rules/rule-2");
-  });
+      const rulesDir = path.join(configDir, "rules");
+      await fs.mkdir(rulesDir, { recursive: true });
+      await fs.writeFile(
+        path.join(rulesDir, "rule-b.md"),
+        "---\nname: rule-b\n---\n\nKeep me\n",
+        "utf-8",
+      );
 
-  it("interactive skip_all skips all remaining conflicts", async () => {
-    vi.mocked(p.select).mockResolvedValueOnce("skip_all" as never);
+      const preset = makePreset({
+        rules: [makeRule("rule-b", "Replace me")],
+      });
 
-    const rulesDir = path.join(configDir, "rules");
-    await fs.mkdir(rulesDir, { recursive: true });
-    await fs.writeFile(
-      path.join(rulesDir, "rule-x.md"),
-      "---\nname: rule-x\n---\n\nOld X\n",
-      "utf-8",
-    );
-    await fs.writeFile(
-      path.join(rulesDir, "rule-y.md"),
-      "---\nname: rule-y\n---\n\nOld Y\n",
-      "utf-8",
-    );
+      const result = await applyPresetArtifacts(configDir, preset, {});
 
-    const preset = makePreset({
-      rules: [makeRule("rule-x", "New X"), makeRule("rule-y", "New Y")],
+      expect(result.skipped).toContain("rules/rule-b");
+      const content = await fs.readFile(
+        path.join(rulesDir, "rule-b.md"),
+        "utf-8",
+      );
+      expect(content).toContain("Keep me");
     });
 
-    const result = await applyPresetArtifacts(configDir, preset, {});
+    it("interactive accept_all overwrites all remaining conflicts", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("accept_all" as never);
 
-    expect(p.select).toHaveBeenCalledTimes(1);
-    expect(result.skipped).toContain("rules/rule-x");
-    expect(result.skipped).toContain("rules/rule-y");
+      const rulesDir = path.join(configDir, "rules");
+      await fs.mkdir(rulesDir, { recursive: true });
+      await fs.writeFile(
+        path.join(rulesDir, "rule-1.md"),
+        "---\nname: rule-1\n---\n\nOld 1\n",
+        "utf-8",
+      );
+      await fs.writeFile(
+        path.join(rulesDir, "rule-2.md"),
+        "---\nname: rule-2\n---\n\nOld 2\n",
+        "utf-8",
+      );
+
+      const preset = makePreset({
+        rules: [makeRule("rule-1", "New 1"), makeRule("rule-2", "New 2")],
+      });
+
+      const result = await applyPresetArtifacts(configDir, preset, {});
+
+      // First conflict prompts, second is auto-accepted
+      expect(p.select).toHaveBeenCalledTimes(1);
+      expect(result.overwritten).toContain("rules/rule-1");
+      expect(result.overwritten).toContain("rules/rule-2");
+    });
+
+    it("interactive skip_all skips all remaining conflicts", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("skip_all" as never);
+
+      const rulesDir = path.join(configDir, "rules");
+      await fs.mkdir(rulesDir, { recursive: true });
+      await fs.writeFile(
+        path.join(rulesDir, "rule-x.md"),
+        "---\nname: rule-x\n---\n\nOld X\n",
+        "utf-8",
+      );
+      await fs.writeFile(
+        path.join(rulesDir, "rule-y.md"),
+        "---\nname: rule-y\n---\n\nOld Y\n",
+        "utf-8",
+      );
+
+      const preset = makePreset({
+        rules: [makeRule("rule-x", "New X"), makeRule("rule-y", "New Y")],
+      });
+
+      const result = await applyPresetArtifacts(configDir, preset, {});
+
+      expect(p.select).toHaveBeenCalledTimes(1);
+      expect(result.skipped).toContain("rules/rule-x");
+      expect(result.skipped).toContain("rules/rule-y");
+    });
   });
 });

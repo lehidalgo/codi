@@ -37,6 +37,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("security"),
     prefixedName("git-workflow"),
     prefixedName("api-design"),
+    prefixedName("documentation"),
     devArtifactName("improvement"),
   ],
   skills: [
@@ -45,6 +46,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("commit"),
     prefixedName("test-coverage"),
     prefixedName("error-recovery"),
+    prefixedName("documentation"),
     prefixedName("compare-preset"),
   ],
   agents: [

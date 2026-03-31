@@ -2,6 +2,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   prefixedName,
+  devArtifactName,
 } from "#src/constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
@@ -45,6 +46,10 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("documentation"),
     prefixedName("production-mindset"),
     prefixedName("simplicity-first"),
+    prefixedName("agent-usage"),
+    prefixedName("workflow"),
+    prefixedName("api-design"),
+    devArtifactName("improvement"),
   ],
   skills: [
     prefixedName("code-review"),

@@ -39,7 +39,7 @@ describe("materializeBuiltinPreset", () => {
     }
   });
 
-  it("materializes fullstack preset with 8 rules", () => {
+  it("materializes fullstack preset with 9 rules", () => {
     const result = materializeBuiltinPreset(prefixedName("fullstack"));
 
     expect(result.ok).toBe(true);
@@ -48,7 +48,7 @@ describe("materializeBuiltinPreset", () => {
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
       expect(Object.keys(result.data.flags).length).toBe(16);
-      expect(result.data.rules.length).toBe(8);
+      expect(result.data.rules.length).toBe(9);
     }
   });
 

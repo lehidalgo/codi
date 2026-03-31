@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Template registry integrity guard** — CLI startup checks every registered template loads with non-empty content; exits with a clear error message if any template is broken, preventing silent runtime failures
+- **Shared conflict resolver** — extracted interactive diff/conflict resolution from `preset-applier` into `src/utils/conflict-resolver.ts`; reusable across `init`, `update`, and `preset install` flows
 - **Template wiring check hook** — pre-commit hook validates that all artifact template files (rules, skills, agents, commands) are registered in `index.ts` and loader `TEMPLATE_MAP`, preventing silent invisible artifacts
 - **Status diff display** — `codi status --diff` renders colored unified diffs for drifted preset artifacts by reloading the source preset
 - **Preset flag merge on install** — `preset install` (ZIP and GitHub) now writes preset flags to `flags.yaml` with locked-flag protection
@@ -36,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Default preset artifact gaps** — all default presets now include supporting artifacts for every enabled flag: `balanced` gains `git-workflow`/`testing` rules and `security-scan` skill+command; `strict` gains `documentation` rule+skill; `fullstack` gains `git-workflow` rule, `security-analyzer` agent, and `test-coverage` skill+command; `development` gains `agent-usage`, `workflow`, `api-design`, and `improvement` rules; `power-user` gains `testing` rule, `security-scan` and `refine-rules` skills+commands
 - **Preset artifact drift affects exit code** — `codi status` with `drift_detection: "error"` now returns non-zero exit for drifted preset artifacts, enabling CI enforcement
 - **Skill files always contain full content** — `progressive_loading` flag no longer produces metadata stubs in agent skill directories; flag now only controls whether Windsurf/Cline inline skills in their main config file
 - **Binary assets copied to agent directories** — fonts (.woff2, .ttf), images (.png), PDFs, and archives (.tar.gz) are now properly copied via `fs.copyFile` instead of being skipped
