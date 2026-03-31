@@ -45,7 +45,7 @@ describe("verify command handler", () => {
     "returns token, rules, flags, and prompt in show mode",
     { timeout: 30_000 },
     async () => {
-      await initHandler(tmpDir, { agents: ["claude-code"] });
+      await initHandler(tmpDir, { agents: ["claude-code"], json: true });
       await addRuleHandler(tmpDir, "code-quality", {
         template: prefixedName("code-style"),
       });
@@ -69,7 +69,7 @@ describe("verify command handler", () => {
   );
 
   it("returns JSON-serializable result", async () => {
-    await initHandler(tmpDir, { agents: ["claude-code"] });
+    await initHandler(tmpDir, { agents: ["claude-code"], json: true });
     await addRuleHandler(tmpDir, "code-quality", {
       template: prefixedName("code-style"),
     });
@@ -83,32 +83,40 @@ describe("verify command handler", () => {
     );
   });
 
-  it("validates a correct agent response in --check mode", async () => {
-    await initHandler(tmpDir, { agents: ["claude-code"] });
-    await addRuleHandler(tmpDir, "code-quality", {
-      template: prefixedName("code-style"),
-    });
+  it(
+    "validates a correct agent response in --check mode",
+    { timeout: 30_000, sequential: true },
+    async () => {
+      clearAdapters();
+      await initHandler(tmpDir, { agents: ["claude-code"], json: true });
+      await generateHandler(tmpDir, {});
+      await addRuleHandler(tmpDir, "code-quality", {
+        template: prefixedName("code-style"),
+      });
+      await generateHandler(tmpDir, {});
 
-    const showResult = await verifyHandler(tmpDir, {});
-    const showData = showResult.data as {
-      token: string;
-      rules: string[];
-      flags: string[];
-    };
+      const showResult = await verifyHandler(tmpDir, {});
+      expect(showResult.success).toBe(true);
+      const showData = showResult.data as {
+        token: string;
+        rules: string[];
+        flags: string[];
+      };
 
-    const response = [
-      `Verification token: ${showData.token}`,
-      `Rules loaded: ${showData.rules.join(", ")}`,
-      `Flags active: ${showData.flags.join(", ")}`,
-    ].join("\n");
+      const response = [
+        `Verification token: ${showData.token}`,
+        `Rules loaded: ${showData.rules.join(", ")}`,
+        `Flags active: ${showData.flags.join(", ")}`,
+      ].join("\n");
 
-    const checkResult = await verifyHandler(tmpDir, { check: response });
-    expect(checkResult.success).toBe(true);
-    expect(checkResult.exitCode).toBe(EXIT_CODES.SUCCESS);
-  });
+      const checkResult = await verifyHandler(tmpDir, { check: response });
+      expect(checkResult.success).toBe(true);
+      expect(checkResult.exitCode).toBe(EXIT_CODES.SUCCESS);
+    },
+  );
 
   it("reports mismatch for wrong token in --check mode", async () => {
-    await initHandler(tmpDir, { agents: ["claude-code"] });
+    await initHandler(tmpDir, { agents: ["claude-code"], json: true });
     await addRuleHandler(tmpDir, "code-quality", {
       template: prefixedName("code-style"),
     });

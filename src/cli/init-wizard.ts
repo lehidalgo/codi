@@ -32,10 +32,20 @@ function isBack<T>(value: T | symbol): value is symbol {
   return p.isCancel(value);
 }
 
+export interface ExistingSelections {
+  preset: string;
+  rules: string[];
+  skills: string[];
+  agents: string[];
+  commands: string[];
+  mcpServers: string[];
+}
+
 export async function runInitWizard(
   detectedStack: string[],
   detectedAgents: string[],
   allAgents: string[],
+  existingSelections?: ExistingSelections,
 ): Promise<WizardResult | null> {
   printWelcomeBanner({
     detectedStack,
@@ -144,7 +154,7 @@ export async function runInitWizard(
             result = await handleGithubPath(savedAgents!);
             break;
           case "preset":
-            result = await handlePresetPath(savedAgents!);
+            result = await handlePresetPath(savedAgents!, existingSelections);
             break;
           default:
             result = await handleCustomPath(savedAgents!);

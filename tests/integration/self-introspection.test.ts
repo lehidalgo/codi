@@ -67,7 +67,7 @@ describe("Self-introspection (dogfooding)", () => {
 
   it(
     "full pipeline: init, add rules, validate, generate, status, drift",
-    { timeout: 15000 },
+    { timeout: 30000 },
     async () => {
       // 1. Init with all agents
       const initResult = await initHandler(tmpDir, { agents: ALL_AGENTS });

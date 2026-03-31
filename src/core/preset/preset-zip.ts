@@ -14,6 +14,8 @@ import { createError } from "../output/errors.js";
 import type { ProjectError } from "../output/types.js";
 import { validatePreset } from "./preset-validator.js";
 import { copyDir } from "./preset-registry.js";
+import { scanForPresets } from "./preset-scanner.js";
+import { Logger } from "../output/logger.js";
 
 export interface ZipCreateResult {
   outputPath: string;
@@ -133,15 +135,30 @@ export async function extractPresetZip(
     ]);
   }
 
-  // Find the preset root (may be nested in a single subdirectory)
-  const presetRoot = await findPresetRoot(tmpDir);
-  if (!presetRoot) {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-    return err([
-      createError("E_PRESET_ZIP_FAILED", {
-        reason: `ZIP does not contain a valid preset (no ${PRESET_MANIFEST_FILENAME} found)`,
-      }),
-    ]);
+  // Find presets in subfolders (flat root presets are warned and ignored)
+  const discovered = await scanForPresets(tmpDir);
+  let presetRoot: string;
+  if (discovered.length === 1) {
+    presetRoot = discovered[0]!.dir;
+  } else if (discovered.length > 1) {
+    // ZIP should contain a single preset — use the first and warn
+    const log = Logger.getInstance();
+    log.warn(
+      `ZIP contains ${discovered.length} presets (${discovered.map((p) => p.name).join(", ")}). Installing first: "${discovered[0]!.name}"`,
+    );
+    presetRoot = discovered[0]!.dir;
+  } else {
+    // Fallback: check for legacy root-level preset.yaml
+    const legacyRoot = await findPresetRoot(tmpDir);
+    if (!legacyRoot) {
+      await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      return err([
+        createError("E_PRESET_ZIP_FAILED", {
+          reason: `ZIP does not contain a valid preset (no ${PRESET_MANIFEST_FILENAME} found in any subfolder)`,
+        }),
+      ]);
+    }
+    presetRoot = legacyRoot;
   }
 
   // Validate the extracted preset

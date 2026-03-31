@@ -213,16 +213,17 @@ export async function handleGithubPath(
 
 export async function handlePresetPath(
   agents: string[],
+  existingSelections?: import("./init-wizard.js").ExistingSelections,
 ): Promise<WizardResult | null | symbol> {
   let step = 0;
-  let selectedPreset: string | undefined;
+  let selectedPreset: string | undefined = existingSelections?.preset;
   let editedFlags: Record<string, FlagDefinition> | undefined;
   let originalFlags: Record<string, FlagDefinition> = {};
-  let rules: string[] | undefined;
-  let skills: string[] | undefined;
-  let agentTpls: string[] | undefined;
-  let commands: string[] | undefined;
-  let mcpServers: string[] | undefined;
+  let rules: string[] | undefined = existingSelections?.rules;
+  let skills: string[] | undefined = existingSelections?.skills;
+  let agentTpls: string[] | undefined = existingSelections?.agents;
+  let commands: string[] | undefined = existingSelections?.commands;
+  let mcpServers: string[] | undefined = existingSelections?.mcpServers;
   let saveAsPreset: string | undefined;
 
   while (step >= 0) {

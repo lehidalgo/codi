@@ -27,6 +27,19 @@ import {
 } from "../constants.js";
 import { execFileAsync } from "../utils/exec.js";
 
+async function getGitRepoUrl(repo: string): Promise<string> {
+  try {
+    const { stdout, stderr } = await execFileAsync("gh", ["auth", "status"]);
+    const output = stdout + stderr;
+    if (output.includes("Git operations protocol: ssh")) {
+      return `git@github.com:${repo}.git`;
+    }
+  } catch {
+    // Fall through to HTTPS
+  }
+  return `https://github.com/${repo}.git`;
+}
+
 interface ContributeData {
   action: "pr" | "zip" | "cancelled";
   artifacts?: string[];
@@ -175,36 +188,6 @@ async function checkGhAuth(log: Logger): Promise<boolean> {
   }
 }
 
-function getTemplateDir(type: ArtifactEntry["type"]): string {
-  switch (type) {
-    case "rule":
-      return "src/templates/rules";
-    case "skill":
-      return "src/templates/skills";
-    case "agent":
-      return "src/templates/agents";
-    case "command":
-      return "src/templates/commands";
-  }
-}
-
-/**
- * Reads an artifact's markdown content and wraps it as a TypeScript template export.
- * For skills (directory-based), reads the SKILL.md file.
- */
-async function artifactToTemplate(artifact: ArtifactEntry): Promise<string> {
-  const dirBasedIndex: Record<string, string> = {
-    skill: SKILL_OUTPUT_FILENAME,
-  };
-  const indexFile = dirBasedIndex[artifact.type];
-  const mdPath = indexFile
-    ? path.join(artifact.path, indexFile)
-    : artifact.path;
-  const raw = await fs.readFile(mdPath, "utf8");
-  const escaped = raw.replace(/`/g, "\\`").replace(/\$/g, "\\$");
-  return `export const template = \`${escaped}\`;\n`;
-}
-
 async function createContributionPR(
   artifacts: ArtifactEntry[],
   log: Logger,
@@ -225,15 +208,35 @@ async function createContributionPR(
     const ghUser = userLogin.trim();
     if (!ghUser) throw new Error("Could not determine GitHub username");
 
-    // 2. Clone the official repo
+    // 2. Clone the official repo (respect user's git protocol)
     log.info(`Cloning ${PROJECT_NAME} repository...`);
-    await execFileAsync("git", [
-      "clone",
-      "--depth",
-      "1",
-      `https://github.com/${PROJECT_REPO}.git`,
-      cloneDir,
-    ]);
+    const repoUrl = await getGitRepoUrl(PROJECT_REPO);
+    try {
+      await execFileAsync("git", [
+        "clone",
+        "--depth",
+        "1",
+        "--branch",
+        PROJECT_TARGET_BRANCH,
+        repoUrl,
+        cloneDir,
+      ]);
+    } catch (cloneError) {
+      const msg =
+        cloneError instanceof Error ? cloneError.message : String(cloneError);
+      if (
+        msg.includes("Permission") ||
+        msg.includes("403") ||
+        msg.includes("Authentication")
+      ) {
+        log.error(`Clone failed — authentication error.`);
+        log.info(`Troubleshooting:`);
+        log.info(`  1. Run: gh auth login`);
+        log.info(`  2. Verify access: gh auth status`);
+        log.info(`  3. For private repos, ensure token has 'repo' scope`);
+      }
+      throw cloneError;
+    }
 
     // 3. Ensure user has a repo on their account
     try {
@@ -257,41 +260,60 @@ async function createContributionPR(
     }
 
     // 4. Add user's repo as a remote and create branch
-    await execFileAsync(
-      "git",
-      [
-        "remote",
-        "add",
-        "user",
-        `https://github.com/${ghUser}/${PROJECT_NAME}.git`,
-      ],
-      { cwd: cloneDir },
-    );
+    const userRepoUrl = await getGitRepoUrl(`${ghUser}/${PROJECT_NAME}`);
+    await execFileAsync("git", ["remote", "add", "user", userRepoUrl], {
+      cwd: cloneDir,
+    });
 
     const branchName = `contrib/add-${artifacts[0]?.name ?? "artifacts"}-${Date.now()}`;
     await execFileAsync("git", ["checkout", "-b", branchName], {
       cwd: cloneDir,
     });
 
-    // 5. Convert each artifact to a TypeScript template
-    for (const artifact of artifacts) {
-      const destDir = path.join(cloneDir, getTemplateDir(artifact.type));
-      const destFile = path.join(destDir, `${artifact.name}.ts`);
-      const templateContent = await artifactToTemplate(artifact);
-      await fs.mkdir(destDir, { recursive: true });
-      await fs.writeFile(destFile, templateContent, "utf8");
-    }
+    // 5. Build a preset package with raw .codi/ artifacts
+    const contribDir = path.join(cloneDir, "contributions");
+    await buildPresetPackage(artifacts, `contrib-${Date.now()}`, contribDir);
 
     // 6. Commit and push to user's remote
     await execFileAsync("git", ["add", "."], { cwd: cloneDir });
-    const names = artifacts.map((a) => `${a.type}:${a.name}`).join(", ");
-    await execFileAsync("git", ["commit", "-m", `feat: contribute ${names}`], {
-      cwd: cloneDir,
-    });
 
-    await execFileAsync("git", ["push", "user", branchName], {
-      cwd: cloneDir,
-    });
+    // Group artifacts by type for readable messages
+    const grouped: Record<string, string[]> = {};
+    for (const a of artifacts) {
+      (grouped[a.type] ??= []).push(a.name);
+    }
+    const summary = Object.entries(grouped)
+      .map(([type, names]) => `${names.length} ${type}(s)`)
+      .join(", ");
+    const details = Object.entries(grouped)
+      .map(
+        ([type, names]) =>
+          `### ${type.charAt(0).toUpperCase() + type.slice(1)}s\n${names.map((n) => `- ${n}`).join("\n")}`,
+      )
+      .join("\n\n");
+
+    const commitMsg = `feat: contribute ${summary}\n\n${details}`;
+    await execFileAsync("git", ["commit", "-m", commitMsg], { cwd: cloneDir });
+
+    try {
+      await execFileAsync("git", ["push", "user", branchName], {
+        cwd: cloneDir,
+      });
+    } catch (pushError) {
+      const msg =
+        pushError instanceof Error ? pushError.message : String(pushError);
+      if (msg.includes("Permission") || msg.includes("403")) {
+        log.error(`Git push failed — permission denied.`);
+        log.info(`Troubleshooting:`);
+        log.info(`  1. Check your git protocol: gh auth status`);
+        log.info(`  2. If using SSH, verify your key: ssh -T git@github.com`);
+        log.info(
+          `  3. Ensure you have push access to ${ghUser}/${PROJECT_NAME}`,
+        );
+        log.info(`  4. For private repos, verify token scopes include 'repo'`);
+      }
+      throw pushError;
+    }
 
     // 7. Open PR from user's repo to official develop branch
     const { stdout: prUrl } = await execFileAsync(
@@ -306,9 +328,9 @@ async function createContributionPR(
         "--head",
         `${ghUser}:${branchName}`,
         "--title",
-        `feat: contribute ${names}`,
+        `feat: contribute ${summary}`,
         "--body",
-        `## Contributed Artifacts\n\n${artifacts.map((a) => `- **${a.type}**: ${a.name}`).join("\n")}\n\nGenerated by \`${PROJECT_CLI} contribute\`.`,
+        `## Contributed Artifacts\n\n${details}\n\n---\nGenerated by \`${PROJECT_CLI} contribute\`.`,
       ],
       { cwd: cloneDir },
     );

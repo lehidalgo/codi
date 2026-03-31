@@ -9,6 +9,7 @@ import {
   presetRemoveHandler,
   presetListEnhancedHandler,
   presetExportHandler,
+  presetInstallUnifiedHandler,
 } from "#src/cli/preset-handlers.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
@@ -568,5 +569,31 @@ describe("presetValidateHandler — additional coverage", () => {
     const result = await presetValidateHandler(tmpDir, "ghost");
     expect(result.success).toBe(false);
     expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
+  });
+});
+
+describe("presetInstallUnifiedHandler — builtin rejection", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-builtin-`),
+    );
+    Logger.init({ level: "error", mode: "human", noColor: true });
+  });
+
+  afterEach(async () => {
+    await cleanupTmpDir(tmpDir);
+  });
+
+  it("rejects builtin preset names with helpful error", async () => {
+    const result = await presetInstallUnifiedHandler(tmpDir, "codi-balanced", {
+      force: true,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
+    expect(result.errors![0]!.code).toBe("E_BUILTIN_NOT_INSTALLABLE");
+    expect(result.errors![0]!.hint).toContain("init");
   });
 });

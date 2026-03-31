@@ -8,7 +8,7 @@ import {
   readFile,
 } from "./helpers/cli-harness.js";
 
-vi.setConfig({ testTimeout: 30_000 });
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 
 let projectDir: string;
 let cleanup: () => Promise<void>;

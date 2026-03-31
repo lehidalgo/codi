@@ -1,5 +1,5 @@
-import type { Result } from '../../types/result.js';
-import type { PresetSourceType } from '../../constants.js';
+import type { Result } from "../../types/result.js";
+import type { PresetSourceType } from "../../constants.js";
 
 /**
  * Descriptor identifying where a preset comes from and how to resolve it.
@@ -9,6 +9,7 @@ export interface PresetSourceDescriptor {
   identifier: string;
   version?: string;
   ref?: string; // git tag or branch for github sources
+  path?: string; // subfolder path within a repo or archive
 }
 
 /**
