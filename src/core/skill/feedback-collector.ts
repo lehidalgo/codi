@@ -2,8 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
-import { FeedbackEntrySchema } from "../../schemas/feedback.js";
-import type { FeedbackEntry } from "../../schemas/feedback.js";
+import {
+  FeedbackEntrySchema,
+  RuleObservationSchema,
+} from "../../schemas/feedback.js";
+import type { FeedbackEntry, RuleObservation } from "../../schemas/feedback.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
 import {
@@ -167,6 +170,129 @@ export async function pruneFeedback(
           }
         }
       }
+    }
+  }
+
+  return ok(pruned);
+}
+
+// --- Rule observation feedback ---
+
+const RULES_FEEDBACK_SUBDIR = "rules";
+
+function ruleFeedbackDir(configDir: string): string {
+  return path.join(configDir, FEEDBACK_DIR, RULES_FEEDBACK_SUBDIR);
+}
+
+export async function readRuleFeedback(
+  configDir: string,
+): Promise<Result<RuleObservation[]>> {
+  const dir = ruleFeedbackDir(configDir);
+  const log = Logger.getInstance();
+
+  let files: string[];
+  try {
+    const entries = await fs.readdir(dir);
+    files = entries.filter((f) => f.endsWith(".json")).sort();
+  } catch (cause) {
+    log.debug("Rule feedback directory not readable", cause);
+    return ok([]);
+  }
+
+  const results: RuleObservation[] = [];
+  for (const file of files) {
+    try {
+      const raw = await fs.readFile(path.join(dir, file), "utf-8");
+      const parsed = RuleObservationSchema.safeParse(JSON.parse(raw));
+      if (parsed.success) {
+        results.push(parsed.data);
+      } else {
+        log.warn(`Skipping invalid rule feedback file: ${file}`);
+      }
+    } catch {
+      log.warn(`Skipping unreadable rule feedback file: ${file}`);
+    }
+  }
+
+  return ok(results);
+}
+
+export async function writeRuleFeedback(
+  configDir: string,
+  observation: RuleObservation,
+): Promise<Result<string>> {
+  const dir = ruleFeedbackDir(configDir);
+
+  const parsed = RuleObservationSchema.safeParse(observation);
+  if (!parsed.success) {
+    return err([
+      createError("E_FEEDBACK_INVALID", {
+        reason: parsed.error.message,
+      }),
+    ]);
+  }
+
+  try {
+    await fs.mkdir(dir, { recursive: true });
+  } catch (cause) {
+    return err([
+      createError("E_FEEDBACK_WRITE_FAILED", {
+        reason: `Cannot create rule feedback directory: ${(cause as Error).message}`,
+      }),
+    ]);
+  }
+
+  const ts = observation.timestamp.replace(/[:.]/g, "-");
+  const rulePart = observation.ruleName ?? "general";
+  const filename = `${ts}-${rulePart}.json`;
+  const filePath = path.join(dir, filename);
+  const tmpPath = `${filePath}.tmp.${Date.now()}`;
+
+  try {
+    await fs.writeFile(tmpPath, JSON.stringify(parsed.data, null, 2), "utf-8");
+    await fs.rename(tmpPath, filePath);
+    return ok(filePath);
+  } catch (cause) {
+    await fs.unlink(tmpPath).catch(() => {});
+    return err([
+      createError("E_FEEDBACK_WRITE_FAILED", {
+        reason: (cause as Error).message,
+      }),
+    ]);
+  }
+}
+
+export async function pruneRuleFeedback(
+  configDir: string,
+  maxAgeDays: number = MAX_FEEDBACK_AGE_DAYS,
+): Promise<Result<number>> {
+  const log = Logger.getInstance();
+  const dir = ruleFeedbackDir(configDir);
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+  let pruned = 0;
+
+  let files: string[];
+  try {
+    files = (await fs.readdir(dir)).filter((f) => f.endsWith(".json"));
+  } catch (cause) {
+    log.debug("Rule feedback directory not readable during prune", cause);
+    return ok(0);
+  }
+
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    try {
+      const raw = await fs.readFile(filePath, "utf-8");
+      const parsed = RuleObservationSchema.safeParse(JSON.parse(raw));
+      if (parsed.success) {
+        const entryTime = new Date(parsed.data.timestamp).getTime();
+        if (entryTime < cutoff || parsed.data.resolved) {
+          await fs.unlink(filePath);
+          pruned++;
+        }
+      }
+    } catch (cause) {
+      log.debug("Skipping unreadable rule feedback file", cause);
     }
   }
 

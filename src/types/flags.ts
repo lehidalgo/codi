@@ -14,16 +14,12 @@ export interface FlagDefinition {
 }
 
 export interface FlagConditions {
-  lang?: string[];
-  framework?: string[];
   agent?: string[];
   file_pattern?: string[];
 }
 
 /** Runtime-accessible keys of FlagConditions — kept in sync with the interface above. */
 export const FLAG_CONDITION_KEYS: ReadonlySet<string> = new Set<string>([
-  "lang",
-  "framework",
   "agent",
   "file_pattern",
 ]);

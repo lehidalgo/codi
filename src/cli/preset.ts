@@ -40,9 +40,12 @@ import {
 import { runPresetWizard } from "./preset-wizard.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { validatePreset } from "../core/preset/preset-validator.js";
+import { loadPreset } from "../core/preset/preset-loader.js";
+import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
 import { scanDirectory } from "../core/security/content-scanner.js";
 import { promptSecurityFindings } from "../core/security/scan-prompt.js";
 import { execFileAsync } from "../utils/exec.js";
+import fg from "fast-glob";
 
 export interface PresetData {
   action:
@@ -90,14 +93,27 @@ export async function presetCreateHandler(
     /* doesn't exist, proceed */
   }
 
+  await fs.mkdir(presetDir, { recursive: true });
+
+  // Scan current .codi/ artifacts to snapshot into the preset
+  const artifacts = await snapshotArtifacts(configDir, presetDir);
+
+  // Copy flags.yaml if it exists
+  const flagsPath = path.join(configDir, "flags.yaml");
+  try {
+    await fs.access(flagsPath);
+    await fs.copyFile(flagsPath, path.join(presetDir, "flags.yaml"));
+  } catch {
+    // No flags.yaml — skip
+  }
+
   const manifest = {
     name,
     description: "",
     version: "1.0.0",
-    artifacts: { rules: [], skills: [], agents: [], commands: [] },
+    artifacts,
   };
 
-  await fs.mkdir(presetDir, { recursive: true });
   await fs.writeFile(
     path.join(presetDir, PRESET_MANIFEST_FILENAME),
     stringifyYaml(manifest),
@@ -112,6 +128,69 @@ export async function presetCreateHandler(
     data: { action: "create", name },
     exitCode: EXIT_CODES.SUCCESS,
   });
+}
+
+interface ArtifactNames {
+  rules: string[];
+  skills: string[];
+  agents: string[];
+  commands: string[];
+}
+
+async function snapshotArtifacts(
+  configDir: string,
+  presetDir: string,
+): Promise<ArtifactNames> {
+  const artifacts: ArtifactNames = {
+    rules: [],
+    skills: [],
+    agents: [],
+    commands: [],
+  };
+
+  // Scan rules
+  const ruleFiles = await fg("rules/*.md", { cwd: configDir });
+  for (const rel of ruleFiles) {
+    const name = path.basename(rel, ".md");
+    artifacts.rules.push(name);
+    const dest = path.join(presetDir, "rules");
+    await fs.mkdir(dest, { recursive: true });
+    await fs.copyFile(path.join(configDir, rel), path.join(dest, `${name}.md`));
+  }
+
+  // Scan skills (directory-based)
+  const skillFiles = await fg("skills/*/SKILL.md", { cwd: configDir });
+  for (const rel of skillFiles) {
+    const name = rel.split("/")[1]!;
+    artifacts.skills.push(name);
+    const destDir = path.join(presetDir, "skills", name);
+    await fs.mkdir(destDir, { recursive: true });
+    // Copy entire skill directory
+    const srcDir = path.join(configDir, "skills", name);
+    await copyDir(srcDir, destDir);
+  }
+
+  // Scan agents
+  const agentFiles = await fg("agents/*.md", { cwd: configDir });
+  for (const rel of agentFiles) {
+    const name = path.basename(rel, ".md");
+    artifacts.agents.push(name);
+    const dest = path.join(presetDir, "agents");
+    await fs.mkdir(dest, { recursive: true });
+    await fs.copyFile(path.join(configDir, rel), path.join(dest, `${name}.md`));
+  }
+
+  // Scan commands
+  const commandFiles = await fg("commands/*.md", { cwd: configDir });
+  for (const rel of commandFiles) {
+    const name = path.basename(rel, ".md");
+    artifacts.commands.push(name);
+    const dest = path.join(presetDir, "commands");
+    await fs.mkdir(dest, { recursive: true });
+    await fs.copyFile(path.join(configDir, rel), path.join(dest, `${name}.md`));
+  }
+
+  return artifacts;
 }
 
 export async function presetInstallHandler(
@@ -342,9 +421,26 @@ export async function presetUpdateHandler(
 
         try {
           await fs.access(path.join(presetSourceDir, PRESET_MANIFEST_FILENAME));
+
+          const scanReport = await scanDirectory(presetSourceDir);
+          if (scanReport.verdict !== "pass") {
+            const proceed = await promptSecurityFindings(scanReport);
+            if (!proceed) {
+              log.info(`  ${name}: skipped due to security findings`);
+              continue;
+            }
+          }
+
           await fs.rm(destDir, { recursive: true, force: true });
           await fs.mkdir(destDir, { recursive: true });
           await copyDir(presetSourceDir, destDir);
+
+          // Apply artifacts with conflict resolution
+          const presetsDir = path.join(configDir, "presets");
+          const loadResult = await loadPreset(name, presetsDir);
+          if (loadResult.ok) {
+            await applyPresetArtifacts(configDir, loadResult.data);
+          }
 
           lock.presets[name] = {
             version: registryEntry.version,
@@ -451,36 +547,42 @@ export function registerPresetCommand(program: Command): void {
     .command("install <source>")
     .description("Install a preset (ZIP file, GitHub repo, or registry name)")
     .option("--from <repo>", "Git repository to install from (legacy)")
-    .action(async (source: string, options: { from?: string }) => {
-      const globalOptions = program.opts() as GlobalOptions;
-      initFromOptions(globalOptions);
-      let result;
-      if (options.from) {
-        result = await presetInstallHandler(
-          process.cwd(),
-          source,
-          options.from,
-        );
-      } else {
-        result = await presetInstallUnifiedHandler(process.cwd(), source);
-      }
-      if (result.success) {
-        try {
-          const ledger = new OperationsLedgerManager(
-            resolveProjectDir(process.cwd()),
+    .option("-f, --force", "Overwrite conflicting files without prompting")
+    .action(
+      async (source: string, options: { from?: string; force?: boolean }) => {
+        const globalOptions = program.opts() as GlobalOptions;
+        initFromOptions(globalOptions);
+        let result;
+        if (options.from) {
+          result = await presetInstallHandler(
+            process.cwd(),
+            source,
+            options.from,
           );
-          await ledger.logOperation({
-            type: "preset-install",
-            timestamp: new Date().toISOString(),
-            details: { source, from: options.from ?? null },
+        } else {
+          result = await presetInstallUnifiedHandler(process.cwd(), source, {
+            force: options.force,
+            json: globalOptions.json,
           });
-        } catch {
-          /* best-effort */
         }
-      }
-      handleOutput(result, globalOptions);
-      process.exit(result.exitCode);
-    });
+        if (result.success) {
+          try {
+            const ledger = new OperationsLedgerManager(
+              resolveProjectDir(process.cwd()),
+            );
+            await ledger.logOperation({
+              type: "preset-install",
+              timestamp: new Date().toISOString(),
+              details: { source, from: options.from ?? null },
+            });
+          } catch {
+            /* best-effort */
+          }
+        }
+        handleOutput(result, globalOptions);
+        process.exit(result.exitCode);
+      },
+    );
 
   cmd
     .command("export <name>")

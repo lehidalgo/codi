@@ -22,6 +22,7 @@ import {
   PROJECT_NAME,
   BRAND_CATEGORY,
 } from "#src/constants.js";
+import { detectCircularExtends } from "./preset-validator.js";
 import {
   isBuiltinPreset as checkBuiltin,
   materializeBuiltinPreset,
@@ -62,6 +63,7 @@ export async function loadPresetFromDir(
   name: string,
   presetsDir: string,
 ): Promise<Result<LoadedPreset>> {
+  const log = Logger.getInstance();
   // Check if it's a built-in preset (backward compat for flag-only + full presets)
   if (checkBuiltin(name)) {
     return materializeBuiltinPreset(name);
@@ -98,6 +100,11 @@ export async function loadPresetFromDir(
   let parentMcp: McpConfig = { servers: {} };
 
   if (manifest.extends) {
+    // Guard against circular extends before recursing
+    const circularCheck = await detectCircularExtends(name, presetsDir);
+    if (!circularCheck.ok)
+      return circularCheck as unknown as Result<LoadedPreset>;
+
     const parentResult = await loadPreset(manifest.extends, presetsDir);
     if (parentResult.ok) {
       parentFlags = parentResult.data.flags;
@@ -111,9 +118,10 @@ export async function loadPresetFromDir(
 
   // Resolve artifacts by name from the artifacts field
   // If no artifacts field, treat as flags-only preset (empty artifact lists)
+  // Try preset directory first (for bundled artifacts), fall back to project configDir
   const configDir = path.dirname(presetsDir);
   const resolved = manifest.artifacts
-    ? await resolveArtifactsByName(manifest.artifacts, configDir)
+    ? await resolveArtifactsByName(manifest.artifacts, presetDir, configDir)
     : { rules: [], skills: [], agents: [], commands: [] };
   const { rules, skills, agents, commands } = resolved;
 
@@ -131,11 +139,19 @@ export async function loadPresetFromDir(
     /* no mcp.yaml */
   }
 
-  // Merge: parent first, then child overrides
-  const mergedFlags = {
-    ...parentFlags,
-    ...((manifest.flags ?? {}) as Record<string, FlagDefinition>),
-  };
+  // Merge: parent first, then child overrides (locked parent flags preserved)
+  const childFlags = (manifest.flags ?? {}) as Record<string, FlagDefinition>;
+  const mergedFlags = { ...parentFlags };
+  for (const [key, childDef] of Object.entries(childFlags)) {
+    const parentDef = parentFlags[key];
+    if (parentDef?.locked) {
+      log.debug(
+        `Flag "${key}" is locked by parent preset — child override ignored`,
+      );
+      continue;
+    }
+    mergedFlags[key] = childDef;
+  }
   const mergedRules = mergeArtifacts(parentRules, rules);
   const mergedSkills = mergeArtifacts(parentSkills, skills);
   const mergedAgents = mergeArtifacts(parentAgents, agents);
@@ -183,43 +199,85 @@ interface ResolvedArtifacts {
 
 /**
  * Resolves artifact names to full normalized objects.
- * Tries built-in templates first, then custom files in project canonical dirs.
+ * Tries: preset directory first (for bundled artifacts), then built-in templates,
+ * then custom files in project canonical dirs.
  */
 async function resolveArtifactsByName(
   artifacts: ArtifactNames,
-  configDir: string,
+  primaryDir: string,
+  fallbackDir?: string,
 ): Promise<ResolvedArtifacts> {
+  const log = Logger.getInstance();
+
   const rules: NormalizedRule[] = [];
   for (const name of artifacts.rules ?? []) {
-    const rule = resolveRule(name) ?? (await loadRuleFromDir(name, configDir));
-    if (rule) rules.push(rule);
+    const rule =
+      (await loadRuleFromDir(name, primaryDir)) ??
+      resolveRule(name) ??
+      (fallbackDir ? await loadRuleFromDir(name, fallbackDir) : null);
+    if (rule) {
+      rules.push(rule);
+    } else {
+      log.warn(
+        `Rule "${name}" listed in preset manifest but could not be resolved`,
+      );
+    }
   }
 
   const skills: NormalizedSkill[] = [];
   for (const name of artifacts.skills ?? []) {
     const skill =
-      resolveSkill(name) ?? (await loadSkillFromDir(name, configDir));
-    if (skill) skills.push(skill);
+      (await loadSkillFromDir(name, primaryDir)) ??
+      resolveSkill(name) ??
+      (fallbackDir ? await loadSkillFromDir(name, fallbackDir) : null);
+    if (skill) {
+      skills.push(skill);
+    } else {
+      log.warn(
+        `Skill "${name}" listed in preset manifest but could not be resolved`,
+      );
+    }
   }
 
   const agents: NormalizedAgent[] = [];
   for (const name of artifacts.agents ?? []) {
     const agent =
-      resolveAgent(name) ?? (await loadAgentFromDir(name, configDir));
-    if (agent) agents.push(agent);
+      (await loadAgentFromDir(name, primaryDir)) ??
+      resolveAgent(name) ??
+      (fallbackDir ? await loadAgentFromDir(name, fallbackDir) : null);
+    if (agent) {
+      agents.push(agent);
+    } else {
+      log.warn(
+        `Agent "${name}" listed in preset manifest but could not be resolved`,
+      );
+    }
   }
 
   const commands: NormalizedCommand[] = [];
   for (const name of artifacts.commands ?? []) {
     const cmd =
-      resolveCommand(name) ?? (await loadCommandFromDir(name, configDir));
-    if (cmd) commands.push(cmd);
+      (await loadCommandFromDir(name, primaryDir)) ??
+      resolveCommand(name) ??
+      (fallbackDir ? await loadCommandFromDir(name, fallbackDir) : null);
+    if (cmd) {
+      commands.push(cmd);
+    } else {
+      log.warn(
+        `Command "${name}" listed in preset manifest but could not be resolved`,
+      );
+    }
   }
 
   // Convert deprecated brands field to brand-category skills
   for (const name of artifacts.brands ?? []) {
-    const brand = await loadLegacyBrandFromDir(name, configDir);
-    if (brand) skills.push(brand);
+    const brand = await loadLegacyBrandFromDir(name, primaryDir);
+    if (!brand && fallbackDir) {
+      const fallback = await loadLegacyBrandFromDir(name, fallbackDir);
+      if (fallback) skills.push(fallback);
+    } else if (brand) {
+      skills.push(brand);
+    }
   }
 
   return { rules, skills, agents, commands };

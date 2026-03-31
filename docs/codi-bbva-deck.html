@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codi — One source. Every agent. | BBVA</title>
+<style>
+/* ============================================================
+   BBVA Design Tokens
+   ============================================================ */
+:root {
+  --bbva-blue:        #004481;
+  --bbva-navy:        #072146;
+  --bbva-aqua:        #2DCCCD;
+  --bbva-coral:       #F5835A;
+  --bbva-dark:        #121212;
+  --bbva-white:       #FFFFFF;
+  --bbva-light-gray:  #F4F4F4;
+  --bbva-medium-gray: #BDBDBD;
+  --bbva-text:        #333333;
+  --bbva-text-sec:    #666666;
+  --bbva-font:        'BentonSans BBVA', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: var(--bbva-font);
+  background: var(--bbva-dark);
+  overflow: hidden;
+}
+
+/* ============================================================
+   Deck Shell
+   ============================================================ */
+.deck {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Progress bar */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 4px;
+  background: var(--bbva-aqua);
+  transition: width 0.4s ease;
+  z-index: 100;
+}
+
+/* Slide counter */
+.slide-counter {
+  position: fixed;
+  bottom: 20px; right: 28px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 1px;
+  z-index: 100;
+  font-family: var(--bbva-font);
+}
+
+/* Nav arrows */
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.nav-arrow:hover { background: rgba(255,255,255,0.25); }
+.nav-prev { left: 16px; }
+.nav-next { right: 16px; }
+
+/* ============================================================
+   Slides
+   ============================================================ */
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+  overflow: hidden;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ============================================================
+   Slide Type: title (full bleed hero)
+   ============================================================ */
+.slide-title {
+  background: var(--bbva-navy);
+  justify-content: center;
+  align-items: flex-start;
+  padding: 80px 100px;
+  position: relative;
+}
+.slide-title::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 110% 50%, rgba(0,68,129,0.6) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at -10% 80%, rgba(45,204,205,0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+.slide-title .overline {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--bbva-aqua);
+  margin-bottom: 24px;
+  position: relative;
+}
+.slide-title h1 {
+  font-size: clamp(42px, 5.5vw, 72px);
+  font-weight: 700;
+  color: var(--bbva-white);
+  line-height: 1.1;
+  max-width: 680px;
+  margin-bottom: 28px;
+  position: relative;
+}
+.slide-title h1 span { color: var(--bbva-aqua); }
+.slide-title .subtitle {
+  font-size: clamp(16px, 1.8vw, 22px);
+  font-weight: 300;
+  color: rgba(255,255,255,0.72);
+  max-width: 560px;
+  line-height: 1.55;
+  position: relative;
+}
+.slide-title .bbva-badge {
+  position: absolute;
+  bottom: 52px; right: 80px;
+  display: flex; align-items: center; gap: 12px;
+}
+.slide-title .bbva-logo {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bbva-white);
+  letter-spacing: 2px;
+  border: 2px solid rgba(255,255,255,0.3);
+  padding: 6px 14px;
+  border-radius: 4px;
+}
+.title-accent-line {
+  width: 64px; height: 4px;
+  background: var(--bbva-aqua);
+  border-radius: 2px;
+  margin-bottom: 32px;
+  position: relative;
+}
+.slide-title .cta-commands {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-top: 40px;
+  position: relative;
+}
+.cmd-pill {
+  background: rgba(45,204,205,0.15);
+  border: 1px solid rgba(45,204,205,0.4);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  color: var(--bbva-aqua);
+}
+
+/* ============================================================
+   Slide Type: section (divider)
+   ============================================================ */
+.slide-section {
+  background: var(--bbva-blue);
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.slide-section::before {
+  content: attr(data-num);
+  position: absolute;
+  font-size: clamp(200px, 28vw, 380px);
+  font-weight: 700;
+  color: rgba(255,255,255,0.05);
+  line-height: 1;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  letter-spacing: -10px;
+}
+.slide-section .sec-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 20px;
+}
+.slide-section h2 {
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 700;
+  color: var(--bbva-white);
+  max-width: 700px;
+  line-height: 1.15;
+}
+.slide-section h2 span { color: var(--bbva-aqua); }
+.slide-section .sec-desc {
+  margin-top: 20px;
+  font-size: clamp(15px, 1.6vw, 20px);
+  font-weight: 300;
+  color: rgba(255,255,255,0.65);
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   Shared slide chrome
+   ============================================================ */
+.slide-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bbva-white);
+}
+.slide-header {
+  padding: 36px 72px 0;
+  border-bottom: none;
+}
+.slide-header .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--bbva-blue);
+  margin-bottom: 8px;
+}
+.slide-header h2 {
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 700;
+  color: var(--bbva-navy);
+  line-height: 1.2;
+}
+.slide-header h2 span { color: var(--bbva-blue); }
+.slide-body {
+  flex: 1;
+  padding: 28px 72px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   Slide Type: split
+   ============================================================ */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  flex: 1;
+  align-items: start;
+}
+.split-layout.align-center { align-items: center; }
+.split-col { display: flex; flex-direction: column; gap: 16px; }
+
+/* ============================================================
+   Slide Type: metrics (big number cards)
+   ============================================================ */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  flex: 1;
+}
+.metric-card {
+  border-radius: 12px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+}
+.metric-card.navy { background: var(--bbva-navy); color: #fff; }
+.metric-card.blue { background: var(--bbva-blue); color: #fff; }
+.metric-card.aqua { background: var(--bbva-aqua); color: var(--bbva-navy); }
+.metric-card.coral { background: var(--bbva-coral); color: #fff; }
+.metric-card.light { background: var(--bbva-light-gray); color: var(--bbva-navy); }
+.metric-num {
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 700;
+  line-height: 1;
+}
+.metric-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+.metric-desc {
+  font-size: 13px;
+  opacity: 0.75;
+  line-height: 1.45;
+  margin-top: 12px;
+}
+
+/* ============================================================
+   Slide Type: cards (4-up feature grid)
+   ============================================================ */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  flex: 1;
+}
+.cards-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.feature-card {
+  border: 1.5px solid #E8EDF3;
+  border-radius: 12px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.feature-card:hover { border-color: var(--bbva-blue); box-shadow: 0 4px 16px rgba(0,68,129,0.1); }
+.feature-card .card-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+.icon-navy { background: rgba(7,33,70,0.08); }
+.icon-blue { background: rgba(0,68,129,0.1); }
+.icon-aqua { background: rgba(45,204,205,0.15); }
+.icon-coral { background: rgba(245,131,90,0.12); }
+.feature-card .card-num {
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 700;
+  color: var(--bbva-blue);
+  line-height: 1;
+}
+.feature-card .card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bbva-navy);
+  line-height: 1.3;
+}
+.feature-card .card-desc {
+  font-size: 12px;
+  color: var(--bbva-text-sec);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Slide Type: bullets
+   ============================================================ */
+.bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+.bullet-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: var(--bbva-light-gray);
+  border-left: 4px solid var(--bbva-blue);
+}
+.bullet-item.accent-aqua { border-left-color: var(--bbva-aqua); }
+.bullet-item.accent-coral { border-left-color: var(--bbva-coral); }
+.bullet-item.accent-navy { border-left-color: var(--bbva-navy); }
+.bullet-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.bullet-text {}
+.bullet-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bbva-navy);
+  margin-bottom: 4px;
+}
+.bullet-desc {
+  font-size: 13px;
+  color: var(--bbva-text-sec);
+  line-height: 1.5;
+}
+.bullet-tag {
+  display: inline-block;
+  background: var(--bbva-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.tag-aqua { background: var(--bbva-aqua); color: var(--bbva-navy); }
+.tag-coral { background: var(--bbva-coral); }
+.tag-navy { background: var(--bbva-navy); }
+
+/* ============================================================
+   Flow diagram
+   ============================================================ */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex: 1;
+  flex-wrap: nowrap;
+}
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 120px;
+}
+.flow-box {
+  border-radius: 12px;
+  padding: 18px 22px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.3;
+  min-width: 110px;
+}
+.flow-box.navy { background: var(--bbva-navy); color: #fff; }
+.flow-box.blue { background: var(--bbva-blue); color: #fff; }
+.flow-box.aqua { background: var(--bbva-aqua); color: var(--bbva-navy); }
+.flow-box.light { background: var(--bbva-light-gray); color: var(--bbva-navy); border: 1.5px solid #dde3ec; }
+.flow-box.coral { background: var(--bbva-coral); color: #fff; }
+.flow-label {
+  font-size: 11px;
+  color: var(--bbva-text-sec);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.flow-arrow {
+  width: 36px;
+  height: 2px;
+  background: var(--bbva-medium-gray);
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 4px;
+  align-self: center;
+  margin-bottom: 26px;
+}
+.flow-arrow::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left: 8px solid var(--bbva-medium-gray);
+}
+
+/* ============================================================
+   Code block
+   ============================================================ */
+.code-block {
+  background: var(--bbva-navy);
+  border-radius: 10px;
+  padding: 20px 24px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.88);
+  overflow: auto;
+}
+.code-block .token-comment { color: rgba(255,255,255,0.35); }
+.code-block .token-cmd { color: var(--bbva-aqua); }
+.code-block .token-flag { color: var(--bbva-coral); }
+.code-block .token-path { color: #C3E88D; }
+.code-block .token-ok { color: var(--bbva-aqua); }
+.code-block .token-warn { color: #FFD580; }
+
+/* ============================================================
+   Agent badges
+   ============================================================ */
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--bbva-light-gray);
+}
+.agent-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.agent-name { font-size: 15px; font-weight: 600; color: var(--bbva-navy); min-width: 130px; }
+.agent-file {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--bbva-text-sec);
+  background: rgba(0,0,0,0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.dot-claude   { background: #E8A33A; }
+.dot-cursor   { background: #9B59B6; }
+.dot-codex    { background: #3498DB; }
+.dot-windsurf { background: #1ABC9C; }
+.dot-cline    { background: #E74C3C; }
+
+/* ============================================================
+   Drift indicators
+   ============================================================ */
+.drift-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.drift-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.badge-synced  { background: #D4F5E9; color: #1A7F5A; }
+.badge-drifted { background: #FFF3CD; color: #926D00; }
+.badge-missing { background: #FDDEDE; color: #B91C1C; }
+
+/* ============================================================
+   Journey steps
+   ============================================================ */
+.journey-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.journey-step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  position: relative;
+}
+.journey-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 44px;
+  bottom: -4px;
+  width: 2px;
+  background: #E0E7F0;
+}
+.step-num {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--bbva-blue);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.step-body {
+  padding-top: 8px;
+  padding-bottom: 20px;
+}
+.step-title { font-size: 14px; font-weight: 600; color: var(--bbva-navy); }
+.step-cmd {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--bbva-blue);
+  background: rgba(0,68,129,0.07);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 4px;
+}
+.step-desc { font-size: 12px; color: var(--bbva-text-sec); margin-top: 4px; line-height: 1.45; }
+
+/* ============================================================
+   Preset pills
+   ============================================================ */
+.preset-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.preset-pill {
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid transparent;
+}
+.preset-pill.minimal  { background: #EEF2F8; color: var(--bbva-navy); border-color: #C8D4E3; }
+.preset-pill.basic    { background: rgba(0,68,129,0.1); color: var(--bbva-blue); border-color: var(--bbva-blue); }
+.preset-pill.balanced { background: var(--bbva-blue); color: #fff; }
+.preset-pill.standard { background: var(--bbva-navy); color: #fff; }
+.preset-pill.strict   { background: var(--bbva-coral); color: #fff; }
+.preset-pill.full     { background: var(--bbva-dark); color: #fff; }
+
+/* ============================================================
+   Divider line
+   ============================================================ */
+.h-divider {
+  width: 100%;
+  height: 1px;
+  background: #E0E7F0;
+  margin: 16px 0;
+}
+
+/* ============================================================
+   Print / PDF export
+   ============================================================ */
+@media print {
+  html, body { overflow: visible; background: #fff; }
+  .deck { display: block; height: auto; }
+  .slide {
+    position: relative;
+    opacity: 1;
+    pointer-events: all;
+    page-break-after: always;
+    width: 100%; height: 100vh;
+    break-after: page;
+  }
+  .slide.active { opacity: 1; }
+  .progress-bar, .slide-counter, .nav-arrow { display: none; }
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+.text-aqua { color: var(--bbva-aqua); }
+.text-coral { color: var(--bbva-coral); }
+.text-blue  { color: var(--bbva-blue); }
+.text-navy  { color: var(--bbva-navy); }
+.text-sec   { color: var(--bbva-text-sec); font-size: 13px; line-height: 1.5; }
+.mt-4  { margin-top: 4px; }
+.mt-8  { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-20 { margin-top: 20px; }
+.fw-700 { font-weight: 700; }
+.fs-13  { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="deck">
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="slide-counter" id="slideCounter">1 / 18</div>
+  <button class="nav-arrow nav-prev" id="navPrev" aria-label="Previous">&#8592;</button>
+  <button class="nav-arrow nav-next" id="navNext" aria-label="Next">&#8594;</button>
+
+  <!-- ========================================================
+       SLIDE 1 — Title
+       ======================================================== -->
+  <div class="slide slide-title active">
+    <div class="overline">AI Configuration Management</div>
+    <div class="title-accent-line"></div>
+    <h1>Codi<br><span>One source.</span><br>Every agent.</h1>
+    <p class="subtitle">
+      The unified AI configuration layer for teams using Claude Code,
+      Cursor, Codex, Windsurf, and Cline — without the drift.
+    </p>
+    <div class="cta-commands" style="margin-top:36px;">
+      <div class="cmd-pill">$ npm install -g codi-cli</div>
+      <div class="cmd-pill">$ codi init</div>
+      <div class="cmd-pill">$ codi generate</div>
+    </div>
+    <div class="bbva-badge">
+      <div class="bbva-logo">BBVA</div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 2 — Section: The Problem
+       ======================================================== -->
+  <div class="slide slide-section" data-num="01">
+    <div class="sec-label">Part 1 of 4</div>
+    <h2>The AI Agent<br><span>Fragmentation</span> Crisis</h2>
+    <p class="sec-desc">
+      Your team uses multiple AI coding agents. Each one reads a different config file.
+      Nobody's rules are in sync.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 3 — 5 Agents, 5 Config Files
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">The Problem</div>
+      <h2>5 AI Agents. <span>5 Different Config Files.</span></h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout align-center">
+        <div class="split-col">
+          <div class="agent-list">
+            <div class="agent-row">
+              <div class="agent-dot dot-claude"></div>
+              <div class="agent-name">Claude Code</div>
+              <div class="agent-file">CLAUDE.md</div>
+            </div>
+            <div class="agent-row">
+              <div class="agent-dot dot-cursor"></div>
+              <div class="agent-name">Cursor</div>
+              <div class="agent-file">.cursorrules</div>
+            </div>
+            <div class="agent-row">
+              <div class="agent-dot dot-codex"></div>
+              <div class="agent-name">OpenAI Codex</div>
+              <div class="agent-file">AGENTS.md</div>
+            </div>
+            <div class="agent-row">
+              <div class="agent-dot dot-windsurf"></div>
+              <div class="agent-name">Windsurf</div>
+              <div class="agent-file">.windsurfrules</div>
+            </div>
+            <div class="agent-row">
+              <div class="agent-dot dot-cline"></div>
+              <div class="agent-name">Cline</div>
+              <div class="agent-file">.clinerules</div>
+            </div>
+          </div>
+        </div>
+        <div class="split-col">
+          <div style="background:var(--bbva-light-gray);border-radius:14px;padding:28px;">
+            <div style="font-size:14px;font-weight:700;color:var(--bbva-navy);margin-bottom:16px;">What happens in practice</div>
+            <div class="bullet-list" style="gap:12px;">
+              <div class="bullet-item" style="padding:12px 16px;">
+                <div class="bullet-icon">⚠️</div>
+                <div class="bullet-text">
+                  <div class="bullet-title">Security rule added to CLAUDE.md</div>
+                  <div class="bullet-desc">Cursor, Codex and Windsurf never see it. Your security posture is inconsistent across tools.</div>
+                </div>
+              </div>
+              <div class="bullet-item" style="padding:12px 16px;">
+                <div class="bullet-icon">🔀</div>
+                <div class="bullet-text">
+                  <div class="bullet-title">Dev A uses Claude Code, Dev B uses Cursor</div>
+                  <div class="bullet-desc">Same codebase, different AI behaviors. Reviews become unpredictable.</div>
+                </div>
+              </div>
+              <div class="bullet-item" style="padding:12px 16px;">
+                <div class="bullet-icon">🆕</div>
+                <div class="bullet-text">
+                  <div class="bullet-title">Onboarding a new engineer</div>
+                  <div class="bullet-desc">Which config file should they follow? Nobody knows which one is the source of truth.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 4 — Cost of Fragmentation (metrics)
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">The Problem</div>
+      <h2>The <span>Real Cost</span> of Agent Fragmentation</h2>
+    </div>
+    <div class="slide-body">
+      <div class="metrics-grid">
+        <div class="metric-card navy">
+          <div>
+            <div class="metric-num">5×</div>
+            <div class="metric-label">Manual Maintenance</div>
+          </div>
+          <div class="metric-desc">Every policy update must be manually applied to five separate files — multiplying effort and error risk with every change.</div>
+        </div>
+        <div class="metric-card blue">
+          <div>
+            <div class="metric-num">∞</div>
+            <div class="metric-label">Config Drift</div>
+          </div>
+          <div class="metric-desc">Over time, each agent's config diverges. Bugs, outdated rules, and missing best practices accumulate silently.</div>
+        </div>
+        <div class="metric-card coral">
+          <div>
+            <div class="metric-num">0</div>
+            <div class="metric-label">Audit Trail</div>
+          </div>
+          <div class="metric-desc">No visibility into who changed what, when, or whether security-critical rules are actually present in all configs.</div>
+        </div>
+        <div class="metric-card aqua">
+          <div>
+            <div class="metric-num">?</div>
+            <div class="metric-label" style="color:var(--bbva-navy);">Source of Truth</div>
+          </div>
+          <div class="metric-desc" style="color:var(--bbva-navy);">When configs disagree, which one wins? Teams have no authoritative answer — causing friction and inconsistency.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 5 — Section: The Solution
+       ======================================================== -->
+  <div class="slide slide-section" data-num="02" style="background:var(--bbva-navy);">
+    <div class="sec-label">Part 2 of 4</div>
+    <h2>One <span>Source</span><br>of Truth</h2>
+    <p class="sec-desc">
+      Write your rules, skills, and standards once.
+      Codi generates every agent's config — perfectly in sync, every time.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 6 — How Codi Works (split)
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">The Solution</div>
+      <h2>How <span>Codi</span> Works</h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout align-center">
+        <div class="split-col">
+          <div style="font-size:13px;font-weight:600;color:var(--bbva-text-sec);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Your single source</div>
+          <div class="code-block">
+<span class="token-path">.codi/</span>
+├── <span class="token-path">rules/</span>
+│   ├── security.md        <span class="token-comment"># shared rules</span>
+│   ├── typescript.md
+│   └── testing.md
+├── <span class="token-path">skills/</span>
+│   ├── commit/
+│   └── code-review/
+├── <span class="token-path">agents/</span>
+│   └── code-reviewer.md
+└── codi.json              <span class="token-comment"># config + preset</span>
+          </div>
+          <div class="mt-12" style="font-size:13px;color:var(--bbva-text-sec);">
+            One directory. Committed to your repo. Owned by your team.
+          </div>
+        </div>
+        <div class="split-col">
+          <div style="font-size:13px;font-weight:600;color:var(--bbva-text-sec);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Generated outputs</div>
+          <div class="agent-list">
+            <div class="agent-row" style="border-left:3px solid #E8A33A;">
+              <div class="agent-dot dot-claude"></div>
+              <div class="agent-name">Claude Code</div>
+              <div class="agent-file">CLAUDE.md ✓</div>
+            </div>
+            <div class="agent-row" style="border-left:3px solid #9B59B6;">
+              <div class="agent-dot dot-cursor"></div>
+              <div class="agent-name">Cursor</div>
+              <div class="agent-file">.cursorrules ✓</div>
+            </div>
+            <div class="agent-row" style="border-left:3px solid #3498DB;">
+              <div class="agent-dot dot-codex"></div>
+              <div class="agent-name">OpenAI Codex</div>
+              <div class="agent-file">AGENTS.md ✓</div>
+            </div>
+            <div class="agent-row" style="border-left:3px solid #1ABC9C;">
+              <div class="agent-dot dot-windsurf"></div>
+              <div class="agent-name">Windsurf</div>
+              <div class="agent-file">.windsurfrules ✓</div>
+            </div>
+            <div class="agent-row" style="border-left:3px solid #E74C3C;">
+              <div class="agent-dot dot-cline"></div>
+              <div class="agent-name">Cline</div>
+              <div class="agent-file">.clinerules ✓</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:14px 16px;background:rgba(45,204,205,0.1);border-radius:8px;border-left:3px solid var(--bbva-aqua);">
+            <div style="font-size:13px;font-weight:600;color:var(--bbva-navy);">Run <code style="color:var(--bbva-blue);">codi generate</code></div>
+            <div style="font-size:12px;color:var(--bbva-text-sec);margin-top:4px;">All 5 configs rebuilt from one source. Drift impossible.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 7 — The Codi Pipeline (flow)
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">The Solution</div>
+      <h2>The <span>Codi</span> Pipeline</h2>
+    </div>
+    <div class="slide-body">
+      <div class="flow-diagram" style="gap:0;flex-wrap:nowrap;padding:20px 0;">
+        <div class="flow-node">
+          <div class="flow-box navy">Write<br>Rules &amp; Skills<br>Once</div>
+          <div class="flow-label">.codi/ directory</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node">
+          <div class="flow-box aqua">Choose<br>Preset</div>
+          <div class="flow-label">minimal → strict</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node">
+          <div class="flow-box blue">codi<br>generate</div>
+          <div class="flow-label">single command</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node">
+          <div class="flow-box light" style="padding:14px 16px;">
+            <div style="font-size:12px;line-height:1.8;text-align:left;">
+              📄 CLAUDE.md<br>
+              📄 .cursorrules<br>
+              📄 AGENTS.md<br>
+              📄 .windsurfrules<br>
+              📄 .clinerules
+            </div>
+          </div>
+          <div class="flow-label">5 native configs</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node">
+          <div class="flow-box coral">All Agents<br>In Sync</div>
+          <div class="flow-label">zero drift</div>
+        </div>
+      </div>
+      <div class="h-divider"></div>
+      <div style="display:flex;gap:20px;">
+        <div style="flex:1;padding:14px 18px;background:var(--bbva-light-gray);border-radius:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--bbva-navy);">👁 Watch Mode</div>
+          <div style="font-size:12px;color:var(--bbva-text-sec);margin-top:4px;">Auto-regenerate on every save. 500ms debounce. Real-time sync during development.</div>
+        </div>
+        <div style="flex:1;padding:14px 18px;background:var(--bbva-light-gray);border-radius:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--bbva-navy);">🔍 Drift Detection</div>
+          <div style="font-size:12px;color:var(--bbva-text-sec);margin-top:4px;">Hash-based comparison. CI blocks PRs where configs have drifted from source.</div>
+        </div>
+        <div style="flex:1;padding:14px 18px;background:var(--bbva-light-gray);border-radius:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--bbva-navy);">↩️ Instant Revert</div>
+          <div style="font-size:12px;color:var(--bbva-text-sec);margin-top:4px;">5 timestamped snapshots. One command restores any config to a known-good state.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 8 — Section: Features
+       ======================================================== -->
+  <div class="slide slide-section" data-num="03">
+    <div class="sec-label">Part 3 of 4</div>
+    <h2>What Codi<br><span>Gives You</span></h2>
+    <p class="sec-desc">
+      100+ templates, 6 presets, safety mechanisms, and integrations — all production-ready out of the box.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 9 — Template Library (4-up cards)
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">Features</div>
+      <h2>100+ <span>Battle-Tested Templates</span></h2>
+    </div>
+    <div class="slide-body">
+      <div class="cards-grid">
+        <div class="feature-card">
+          <div>
+            <div class="card-icon icon-blue">📏</div>
+            <div class="card-num">27</div>
+            <div class="card-title">Rule Templates</div>
+          </div>
+          <div class="card-desc">TypeScript, Python, React, Security, Testing, Git, API Design, Performance, and more — covering every major language and concern.</div>
+        </div>
+        <div class="feature-card">
+          <div>
+            <div class="card-icon icon-aqua">⚡</div>
+            <div class="card-num">42</div>
+            <div class="card-title">Skill Templates</div>
+          </div>
+          <div class="card-desc">Reusable AI workflows: commit, code review, security scan, test coverage, documentation, and specialized tools for every team role.</div>
+        </div>
+        <div class="feature-card">
+          <div>
+            <div class="card-icon icon-coral">🤖</div>
+            <div class="card-num">22</div>
+            <div class="card-title">Agent Templates</div>
+          </div>
+          <div class="card-desc">Specialized subagents for security analysis, performance auditing, API design, data engineering, and AI engineering expertise.</div>
+        </div>
+        <div class="feature-card">
+          <div>
+            <div class="card-icon icon-navy">⌨️</div>
+            <div class="card-num">16</div>
+            <div class="card-title">Command Templates</div>
+          </div>
+          <div class="card-desc">Slash commands and cron-style automation: daily standup, PR review, security scans, index graphs, and session handoffs.</div>
+        </div>
+      </div>
+      <div class="h-divider"></div>
+      <div style="display:flex;gap:32px;align-items:center;">
+        <div style="font-size:13px;color:var(--bbva-text-sec);">All templates are <strong>language-aware</strong>, <strong>framework-specific</strong>, and follow current industry standards (2025). Mix and match to compose your team's ideal configuration.</div>
+        <div style="flex-shrink:0;padding:12px 24px;background:var(--bbva-navy);color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-align:center;">100+<br><span style="font-size:11px;font-weight:400;opacity:0.7;">total templates</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 10 — Presets & Flags
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">Features</div>
+      <h2><span>Presets</span> &amp; Behavioral Flags</h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout">
+        <div class="split-col">
+          <div style="font-size:14px;font-weight:600;color:var(--bbva-navy);margin-bottom:12px;">6 Ready-to-Use Presets</div>
+          <div style="font-size:13px;color:var(--bbva-text-sec);margin-bottom:16px;">Choose a starting point — customize from there. Presets are flat and self-contained; no hidden inheritance.</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="preset-pill minimal">minimal</div>
+              <div style="font-size:13px;color:var(--bbva-text-sec);">Bare essentials. Zero noise.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="preset-pill basic">basic</div>
+              <div style="font-size:13px;color:var(--bbva-text-sec);">Core rules for solo developers.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="preset-pill balanced">balanced</div>
+              <div style="font-size:13px;color:var(--bbva-text-sec);">Recommended for most teams.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="preset-pill standard">standard</div>
+              <div style="font-size:13px;color:var(--bbva-text-sec);">Full ruleset with strict defaults.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="preset-pill strict">strict</div>
+              <div style="font-size:13px;color:var(--bbva-text-sec);">Maximum guardrails. Enterprise-grade.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="preset-pill full">full</div>
+              <div style="font-size:13px;color:var(--bbva-text-sec);">Everything enabled. Power users only.</div>
+            </div>
+          </div>
+        </div>
+        <div class="split-col">
+          <div style="font-size:14px;font-weight:600;color:var(--bbva-navy);margin-bottom:12px;">18 Behavioral Flags</div>
+          <div style="font-size:13px;color:var(--bbva-text-sec);margin-bottom:16px;">Fine-tune how agents behave without rewriting rules. Toggle capabilities per environment or team.</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="token-comment"># codi.json — behavioral flags</span>
+{
+  "flags": {
+    <span class="token-cmd">"alwaysApplyRules"</span>: true,
+    <span class="token-cmd">"requireApprovalBeforeCommit"</span>: true,
+    <span class="token-cmd">"humanInTheLoop"</span>: true,
+    <span class="token-cmd">"strictTypeChecking"</span>: true,
+    <span class="token-cmd">"securityScanEnabled"</span>: true,
+    <span class="token-cmd">"watchMode"</span>: false,
+    <span class="token-flag">"maxFileLOC"</span>: 700,
+    <span class="token-flag">"contextWindow"</span>: 300000
+  }
+}
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--bbva-text-sec);">
+            Flags are versioned with your config — no surprises across environments.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 11 — Safety & Trust
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">Features</div>
+      <h2><span>Safety</span> &amp; Trust Mechanisms</h2>
+    </div>
+    <div class="slide-body">
+      <div class="bullet-list">
+        <div class="bullet-item">
+          <div class="bullet-icon">🔍</div>
+          <div class="bullet-text">
+            <div class="bullet-title">
+              Drift Detection
+              <span class="bullet-tag tag-aqua">SHA-256</span>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;">
+              <span class="drift-badge badge-synced">● Synced</span>
+              <span class="drift-badge badge-drifted">● Drifted</span>
+              <span class="drift-badge badge-missing">● Missing</span>
+            </div>
+            <div class="bullet-desc mt-8">Hash-based comparison detects any manual edits to generated files. Run <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">codi status</code> to see the state of all configs at a glance. CI integration blocks PRs with drift.</div>
+          </div>
+        </div>
+        <div class="bullet-item accent-aqua">
+          <div class="bullet-icon">↩️</div>
+          <div class="bullet-text">
+            <div class="bullet-title">
+              Backup &amp; Revert
+              <span class="bullet-tag tag-navy">5 Snapshots</span>
+            </div>
+            <div class="bullet-desc mt-4">Every <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">codi generate</code> saves a timestamped backup. One command restores any config to a previous state — even after accidental manual edits or corrupted files.</div>
+          </div>
+        </div>
+        <div class="bullet-item accent-coral">
+          <div class="bullet-icon">🔐</div>
+          <div class="bullet-text">
+            <div class="bullet-title">
+              Verification Tokens
+              <span class="bullet-tag tag-coral">Tamper-Proof</span>
+            </div>
+            <div class="bullet-desc mt-4">Each generated file contains an embedded SHA-256 verification token. AI agents can verify the config came from Codi — not a rogue manual edit. <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">codi verify</code> validates all tokens.</div>
+          </div>
+        </div>
+        <div class="bullet-item accent-navy">
+          <div class="bullet-icon">📋</div>
+          <div class="bullet-text">
+            <div class="bullet-title">
+              Audit Log
+              <span class="bullet-tag">Append-Only JSONL</span>
+            </div>
+            <div class="bullet-desc mt-4">Every generate, revert, and config change is recorded in an append-only JSONL audit log. Full traceability: who changed what, when, from which version — without a separate service.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 12 — Power Features
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">Features</div>
+      <h2><span>Power</span> Features &amp; Integrations</h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout">
+        <div class="split-col">
+          <div class="bullet-list" style="gap:12px;">
+            <div class="bullet-item" style="padding:14px 16px;">
+              <div class="bullet-icon">👁</div>
+              <div class="bullet-text">
+                <div class="bullet-title">Watch Mode <span class="bullet-tag tag-aqua">500ms debounce</span></div>
+                <div class="bullet-desc">Auto-regenerate all configs on every save to <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">.codi/</code>. Write a rule, save, and every agent sees it within half a second.</div>
+              </div>
+            </div>
+            <div class="bullet-item" style="padding:14px 16px;">
+              <div class="bullet-icon">🔌</div>
+              <div class="bullet-text">
+                <div class="bullet-title">MCP Support <span class="bullet-tag">3 Formats</span></div>
+                <div class="bullet-desc">Generates <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">.mcp.json</code>, <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">.cursor/mcp.json</code>, and <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">.codex/mcp.toml</code> from your MCP server config. One definition, three formats.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="split-col">
+          <div class="bullet-list" style="gap:12px;">
+            <div class="bullet-item" style="padding:14px 16px;">
+              <div class="bullet-icon">🪝</div>
+              <div class="bullet-text">
+                <div class="bullet-title">Pre-commit Hooks <span class="bullet-tag">Auto-generated</span></div>
+                <div class="bullet-desc">Auto-generates hooks for Husky, pre-commit, and Lefthook. CI fails automatically if configs have drifted. No manual hook setup required.</div>
+              </div>
+            </div>
+            <div class="bullet-item" style="padding:14px 16px;">
+              <div class="bullet-icon">⚙️</div>
+              <div class="bullet-text">
+                <div class="bullet-title">CI/CD Integration <span class="bullet-tag tag-navy">GitHub Actions</span></div>
+                <div class="bullet-desc">Drop-in workflow step: <code style="font-size:11px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">codi check</code> returns exit code 1 on drift. Block merges until configs are regenerated and committed.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="h-divider"></div>
+      <div class="code-block" style="font-size:12px;">
+<span class="token-comment"># .github/workflows/codi-check.yml</span>
+- name: Verify Codi config sync
+  run: |
+    <span class="token-cmd">codi check</span>                   <span class="token-comment"># exits 1 if any config has drifted</span>
+    <span class="token-cmd">codi verify</span>                  <span class="token-comment"># validates verification tokens</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 13 — Section: Best Practices / User Journeys
+       ======================================================== -->
+  <div class="slide slide-section" data-num="04" style="background:var(--bbva-navy);">
+    <div class="sec-label">Part 4 of 4</div>
+    <h2>How Teams<br><span>Use Codi</span></h2>
+    <p class="sec-desc">
+      Real workflows for developers, tech leads, and platform teams — from first install to full CI automation.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 14 — Individual Developer Journey
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">User Journey 1</div>
+      <h2>The <span>Individual Developer</span></h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout">
+        <div class="split-col">
+          <div style="font-size:13px;color:var(--bbva-text-sec);margin-bottom:16px;line-height:1.6;">
+            A developer using Claude Code and Cursor wants consistent AI behavior across both tools — without maintaining two config files.
+          </div>
+          <div class="journey-steps">
+            <div class="journey-step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <div class="step-title">Install &amp; initialize</div>
+                <div class="step-cmd">npm install -g codi-cli &amp;&amp; codi init</div>
+                <div class="step-desc">Codi creates the <code>.codi/</code> directory with your chosen preset.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <div class="step-title">Choose a preset</div>
+                <div class="step-cmd">codi init --preset balanced</div>
+                <div class="step-desc">27 rules pre-selected for a balanced developer experience.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <div class="step-title">Generate configs</div>
+                <div class="step-cmd">codi generate</div>
+                <div class="step-desc">CLAUDE.md and .cursorrules created. Identical standards, both tools.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <div class="step-title">Enable watch mode during dev</div>
+                <div class="step-cmd">codi watch</div>
+                <div class="step-desc">Edit a rule → saved → both configs updated in 500ms.</div>
+              </div>
+            </div>
+            <div class="journey-step" style="border-left:none;">
+              <div class="step-num" style="background:var(--bbva-aqua);color:var(--bbva-navy);">5</div>
+              <div class="step-body">
+                <div class="step-title">Commit the source</div>
+                <div class="step-cmd">git add .codi/ &amp;&amp; git commit</div>
+                <div class="step-desc">Config is version-controlled, reviewable, and reproducible.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="split-col" style="gap:12px;">
+          <div style="font-size:14px;font-weight:700;color:var(--bbva-navy);">Best Practices</div>
+          <div class="bullet-list" style="gap:10px;">
+            <div class="bullet-item" style="padding:12px 14px;">
+              <div class="bullet-icon" style="font-size:18px;">✅</div>
+              <div class="bullet-text">
+                <div class="bullet-title">Commit <code style="font-size:11px;">.codi/</code>, not the generated files</div>
+                <div class="bullet-desc">Generated files are build artifacts — add them to <code>.gitignore</code> or commit both. Either way, <code>.codi/</code> is the source.</div>
+              </div>
+            </div>
+            <div class="bullet-item" style="padding:12px 14px;">
+              <div class="bullet-icon" style="font-size:18px;">✅</div>
+              <div class="bullet-text">
+                <div class="bullet-title">Use presets as starting points</div>
+                <div class="bullet-desc">Never edit templates directly. Extend them in <code>.codi/rules/</code> with your project-specific overrides.</div>
+              </div>
+            </div>
+            <div class="bullet-item" style="padding:12px 14px;">
+              <div class="bullet-icon" style="font-size:18px;">✅</div>
+              <div class="bullet-text">
+                <div class="bullet-title">Run <code style="font-size:11px;">codi status</code> before PRs</div>
+                <div class="bullet-desc">Verify all configs are Synced. Makes config health part of your normal workflow.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 15 — Tech Lead Journey
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">User Journey 2</div>
+      <h2>The <span>Tech Lead</span> Rolling Out Team Standards</h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout">
+        <div class="split-col">
+          <div style="font-size:13px;color:var(--bbva-text-sec);margin-bottom:16px;line-height:1.6;">
+            A tech lead wants every engineer on the team to follow the same AI agent standards — enforced automatically, not via wiki pages.
+          </div>
+          <div class="journey-steps">
+            <div class="journey-step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <div class="step-title">Design team standards</div>
+                <div class="step-cmd">codi add rule security</div>
+                <div class="step-desc">Add security, TypeScript, testing, and git workflow rules from the template library.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <div class="step-title">Create a custom preset</div>
+                <div class="step-cmd">codi preset create --name team-standard</div>
+                <div class="step-desc">Package your team's rules into a named preset. Reusable across all repos.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <div class="step-title">Set up CI enforcement</div>
+                <div class="step-cmd">codi check  # in GitHub Actions</div>
+                <div class="step-desc">PRs fail if any generated config has drifted from <code>.codi/</code> source.</div>
+              </div>
+            </div>
+            <div class="journey-step" style="border-left:none;">
+              <div class="step-num" style="background:var(--bbva-aqua);color:var(--bbva-navy);">4</div>
+              <div class="step-body">
+                <div class="step-title">Team adopts — no extra effort</div>
+                <div class="step-cmd">codi generate  # each dev runs once</div>
+                <div class="step-desc">Every engineer gets identical AI behavior regardless of which tool they use.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="split-col">
+          <div style="background:var(--bbva-light-gray);border-radius:12px;padding:24px;">
+            <div style="font-size:14px;font-weight:700;color:var(--bbva-navy);margin-bottom:16px;">Impact at Team Scale</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid #E0E7F0;">
+                <span style="font-size:13px;color:var(--bbva-text-sec);">Config drift incidents</span>
+                <span style="font-size:16px;font-weight:700;color:var(--bbva-coral);">5×/week → 0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid #E0E7F0;">
+                <span style="font-size:13px;color:var(--bbva-text-sec);">Time to onboard new agent</span>
+                <span style="font-size:16px;font-weight:700;color:var(--bbva-blue);">2h → 2min</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid #E0E7F0;">
+                <span style="font-size:13px;color:var(--bbva-text-sec);">Policy propagation</span>
+                <span style="font-size:16px;font-weight:700;color:var(--bbva-aqua);">Instant</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--bbva-text-sec);">Review confidence</span>
+                <span style="font-size:16px;font-weight:700;color:var(--bbva-navy);">+100%</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:14px 16px;background:rgba(0,68,129,0.06);border-radius:8px;border-left:3px solid var(--bbva-blue);">
+            <div style="font-size:13px;font-weight:600;color:var(--bbva-navy);">Pro tip: Contribution loop</div>
+            <div style="font-size:12px;color:var(--bbva-text-sec);margin-top:4px;">Use <code style="font-size:11px;">codi contribute</code> to share your team's custom rules back to the community. Good rules compound over time.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 16 — Multi-Agent Team Journey
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">User Journey 3</div>
+      <h2>The <span>Multi-Agent</span> Team</h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout align-center">
+        <div class="split-col">
+          <div style="font-size:13px;color:var(--bbva-text-sec);margin-bottom:20px;line-height:1.6;">
+            A 12-person team where each developer uses a different AI agent. Some use Claude Code, others Cursor, some Codex. Rules must be identical across all tools.
+          </div>
+          <div style="font-weight:700;font-size:14px;color:var(--bbva-navy);margin-bottom:12px;">Before Codi</div>
+          <div class="code-block" style="font-size:12px;margin-bottom:16px;">
+<span class="token-comment"># Dev A adds a security rule to CLAUDE.md</span>
+<span class="token-warn">⚠ AGENTS.md: rule missing</span>
+<span class="token-warn">⚠ .cursorrules: rule missing</span>
+<span class="token-warn">⚠ .windsurfrules: rule missing</span>
+<span class="token-warn">⚠ .clinerules: rule missing</span>
+<span class="token-comment"># 4 out of 5 agents still have the old config</span>
+          </div>
+          <div style="font-weight:700;font-size:14px;color:var(--bbva-navy);margin-bottom:12px;">After Codi</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="token-comment"># Dev A adds a security rule to .codi/rules/</span>
+$ <span class="token-cmd">codi generate</span>
+<span class="token-ok">✓ CLAUDE.md      synced</span>
+<span class="token-ok">✓ .cursorrules   synced</span>
+<span class="token-ok">✓ AGENTS.md      synced</span>
+<span class="token-ok">✓ .windsurfrules synced</span>
+<span class="token-ok">✓ .clinerules    synced</span>
+<span class="token-comment"># All 5 agents updated in &lt;1 second</span>
+          </div>
+        </div>
+        <div class="split-col">
+          <div style="background:var(--bbva-navy);border-radius:14px;padding:28px;color:#fff;">
+            <div style="font-size:14px;font-weight:700;margin-bottom:20px;">The Golden Rule of Multi-Agent Teams</div>
+            <div style="font-size:28px;font-weight:700;color:var(--bbva-aqua);line-height:1.2;margin-bottom:16px;">"Never edit<br>a generated file."</div>
+            <div style="font-size:13px;opacity:0.75;line-height:1.6;">Every file that Codi generates contains a header warning. If you need to change behavior, change the source in <code style="color:var(--bbva-aqua);">.codi/rules/</code> and regenerate. The generated file is a build artifact — not a config.</div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:12px;">
+            <div style="flex:1;padding:14px;background:var(--bbva-light-gray);border-radius:8px;text-align:center;">
+              <div style="font-size:22px;font-weight:700;color:var(--bbva-blue);">1</div>
+              <div style="font-size:12px;color:var(--bbva-text-sec);">edit to make</div>
+            </div>
+            <div style="flex:1;padding:14px;background:var(--bbva-light-gray);border-radius:8px;text-align:center;">
+              <div style="font-size:22px;font-weight:700;color:var(--bbva-aqua);">5</div>
+              <div style="font-size:12px;color:var(--bbva-text-sec);">agents updated</div>
+            </div>
+            <div style="flex:1;padding:14px;background:var(--bbva-light-gray);border-radius:8px;text-align:center;">
+              <div style="font-size:22px;font-weight:700;color:var(--bbva-coral);">0</div>
+              <div style="font-size:12px;color:var(--bbva-text-sec);">drift possible</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 17 — CI/CD & Watch Mode Journey
+       ======================================================== -->
+  <div class="slide slide-inner">
+    <div class="slide-header">
+      <div class="eyebrow">User Journey 4</div>
+      <h2><span>CI/CD Integration</span> &amp; Daily Workflow</h2>
+    </div>
+    <div class="slide-body">
+      <div class="split-layout">
+        <div class="split-col">
+          <div style="font-size:14px;font-weight:700;color:var(--bbva-navy);margin-bottom:12px;">Daily Developer Workflow</div>
+          <div class="journey-steps">
+            <div class="journey-step">
+              <div class="step-num">☀️</div>
+              <div class="step-body">
+                <div class="step-title">Start of day</div>
+                <div class="step-cmd">codi watch &amp;</div>
+                <div class="step-desc">Watch mode runs in background. All config changes auto-propagate.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">✏️</div>
+              <div class="step-body">
+                <div class="step-title">Tweak a rule mid-session</div>
+                <div class="step-desc">Edit <code>.codi/rules/typescript.md</code> → save → 500ms later, all configs updated. No manual step needed.</div>
+              </div>
+            </div>
+            <div class="journey-step">
+              <div class="step-num">📦</div>
+              <div class="step-body">
+                <div class="step-title">Before pushing</div>
+                <div class="step-cmd">codi status</div>
+                <div class="step-desc">Confirm all configs show <span class="drift-badge badge-synced" style="font-size:10px;">Synced</span> before PR.</div>
+              </div>
+            </div>
+            <div class="journey-step" style="border-left:none;">
+              <div class="step-num">🔁</div>
+              <div class="step-body">
+                <div class="step-title">Incident recovery</div>
+                <div class="step-cmd">codi revert CLAUDE.md</div>
+                <div class="step-desc">Accidentally edited a generated file? Revert from the last snapshot instantly.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="split-col">
+          <div style="font-size:14px;font-weight:700;color:var(--bbva-navy);margin-bottom:12px;">CI/CD Pipeline</div>
+          <div class="code-block" style="font-size:11.5px;line-height:1.8;">
+<span class="token-comment"># .github/workflows/codi.yml</span>
+on: [pull_request]
+
+jobs:
+  codi-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g codi-cli
+
+      <span class="token-comment"># Step 1: Check for config drift</span>
+      - name: Verify config sync
+        run: <span class="token-cmd">codi check</span>
+        <span class="token-comment"># exits 1 if any file has drifted</span>
+
+      <span class="token-comment"># Step 2: Verify tokens</span>
+      - name: Validate integrity
+        run: <span class="token-cmd">codi verify</span>
+        <span class="token-comment"># checks SHA-256 tokens in each file</span>
+          </div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bbva-light-gray);border-radius:8px;">
+              <span style="color:#1A7F5A;font-size:18px;">✓</span>
+              <span style="font-size:13px;color:var(--bbva-navy);">PR blocked until drift resolved</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bbva-light-gray);border-radius:8px;">
+              <span style="color:#1A7F5A;font-size:18px;">✓</span>
+              <span style="font-size:13px;color:var(--bbva-navy);">Zero config in CI — just one command</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bbva-light-gray);border-radius:8px;">
+              <span style="color:#1A7F5A;font-size:18px;">✓</span>
+              <span style="font-size:13px;color:var(--bbva-navy);">Exit codes: 0 (ok), 1 (drift), 25 (verify fail)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 18 — CTA / Close
+       ======================================================== -->
+  <div class="slide slide-title" style="background: linear-gradient(135deg, var(--bbva-navy) 0%, #0a3260 50%, #072146 100%);">
+    <div class="overline">Get Started Today</div>
+    <div class="title-accent-line"></div>
+    <h1>Start in<br><span>3 Commands</span></h1>
+    <p class="subtitle">
+      One source of truth for every AI agent your team uses.
+      No drift. No manual sync. No surprises.
+    </p>
+    <div class="cta-commands" style="margin-top:36px;">
+      <div class="cmd-pill">$ npm install -g codi-cli</div>
+      <div class="cmd-pill">$ codi init --preset balanced</div>
+      <div class="cmd-pill">$ codi generate</div>
+    </div>
+    <div style="position:relative;margin-top:40px;display:flex;gap:32px;flex-wrap:wrap;">
+      <div style="border-left:3px solid var(--bbva-aqua);padding-left:16px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Templates</div>
+        <div style="font-size:24px;font-weight:700;color:#fff;">100+</div>
+      </div>
+      <div style="border-left:3px solid var(--bbva-aqua);padding-left:16px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Agents Supported</div>
+        <div style="font-size:24px;font-weight:700;color:#fff;">5</div>
+      </div>
+      <div style="border-left:3px solid var(--bbva-aqua);padding-left:16px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Presets</div>
+        <div style="font-size:24px;font-weight:700;color:#fff;">6</div>
+      </div>
+      <div style="border-left:3px solid var(--bbva-coral);padding-left:16px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Config Drift</div>
+        <div style="font-size:24px;font-weight:700;color:var(--bbva-coral);">Zero</div>
+      </div>
+    </div>
+    <div class="bbva-badge">
+      <div class="bbva-logo">BBVA</div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  const bar    = document.getElementById('progressBar');
+  const counter= document.getElementById('slideCounter');
+  let current  = 0;
+
+  function goTo(n) {
+    if (n < 0 || n >= total) return;
+    slides[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    bar.style.width = ((current + 1) / total * 100) + '%';
+    counter.textContent = (current + 1) + ' / ' + total;
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  // Keyboard
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); prev(); }
+    if (e.key === 'Home') goTo(0);
+    if (e.key === 'End')  goTo(total - 1);
+  });
+
+  // Scroll wheel
+  let scrollLock = false;
+  document.addEventListener('wheel', function (e) {
+    if (scrollLock) return;
+    e.preventDefault();
+    scrollLock = true;
+    if (e.deltaY > 0) next(); else prev();
+    setTimeout(function () { scrollLock = false; }, 700);
+  }, { passive: false });
+
+  // Touch
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', function (e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      if (dx < 0) next(); else prev();
+    } else if (Math.abs(dy) > 40) {
+      if (dy < 0) next(); else prev();
+    }
+  }, { passive: true });
+
+  // Buttons
+  document.getElementById('navPrev').addEventListener('click', prev);
+  document.getElementById('navNext').addEventListener('click', next);
+
+  // Init
+  goTo(0);
+})();
+</script>
+</body>
+</html>

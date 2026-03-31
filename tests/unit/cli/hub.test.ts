@@ -140,10 +140,6 @@ describe("Command Center hub", () => {
       expect(actionsByValue.get("skill-export")?.group).toBe("build");
     });
 
-    it("marketplace is in build group", () => {
-      expect(actionsByValue.get("marketplace")?.group).toBe("build");
-    });
-
     it("contribute is in build group", () => {
       expect(actionsByValue.get("contribute")?.group).toBe("build");
     });

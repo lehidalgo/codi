@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { Logger } from "#src/core/output/logger.js";
 import { writeFeedback } from "#src/core/skill/feedback-collector.js";
@@ -45,7 +46,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 describe("Skill evolve pipeline (end-to-end)", () => {

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { docsUpdateHandler } from "../../../src/cli/docs-update.js";
 import { Logger } from "../../../src/core/output/logger.js";
 import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
@@ -22,7 +23,7 @@ describe("docs-update command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("succeeds with no docs to fix in an empty project", async () => {

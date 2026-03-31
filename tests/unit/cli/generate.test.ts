@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { stringify as stringifyYaml } from "yaml";
 import { generateHandler } from "#src/cli/generate.js";
 import { Logger } from "#src/core/output/logger.js";
@@ -21,7 +22,7 @@ describe("generate command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`fails when no ${PROJECT_DIR}/ directory exists`, async () => {

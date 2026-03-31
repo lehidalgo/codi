@@ -12,11 +12,7 @@ import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
-import {
-  generateSkillFiles,
-  buildSkillCatalog,
-  resolveProgressiveLoading,
-} from "./skill-generator.js";
+import { generateSkillFiles, buildSkillCatalog } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildSkillRoutingTable,
@@ -108,8 +104,10 @@ export const clineAdapter: AgentAdapter = {
       sections.push(`# Brand: ${brand.name}\n\n${brand.content}`);
     }
 
-    const plMode = resolveProgressiveLoading(config.flags);
-    if (plMode === "off") {
+    // Inline vs catalog: "off" (or unset) inlines full skill content in .clinerules,
+    // "metadata"/"full" show a catalog table (skills are always full in separate files)
+    const plFlag = config.flags["progressive_loading"]?.value ?? "off";
+    if (plFlag === "off") {
       for (const skill of regularSkills) {
         sections.push(`# Skill: ${skill.name}\n\n${skill.content}`);
       }
@@ -128,12 +126,11 @@ export const clineAdapter: AgentAdapter = {
       },
     ];
 
-    // Generate .cline/skills/{name}/SKILL.md + supporting files
+    // Generate .cline/skills/{name}/SKILL.md + supporting files (always full content)
     files.push(
       ...(await generateSkillFiles(
         config.skills,
         ".cline/skills",
-        plMode,
         _options.projectRoot,
       )),
     );

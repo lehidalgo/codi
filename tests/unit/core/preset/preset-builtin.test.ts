@@ -35,7 +35,7 @@ describe("materializeBuiltinPreset", () => {
         "Recommended — security on, type-checking strict, no force-push",
       );
       expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBe(18);
+      expect(Object.keys(result.data.flags).length).toBe(16);
     }
   });
 
@@ -47,7 +47,7 @@ describe("materializeBuiltinPreset", () => {
       expect(result.data.name).toBe(prefixedName("fullstack"));
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBe(18);
+      expect(Object.keys(result.data.flags).length).toBe(16);
       expect(result.data.rules.length).toBe(8);
     }
   });

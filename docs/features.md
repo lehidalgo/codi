@@ -36,13 +36,13 @@ Append-only JSONL log records every generation event with timestamp, artifacts i
 
 Five agents supported via an adapter pattern. Each adapter translates the unified `.codi/` artifacts into the agent's native config format.
 
-| Agent | Config File | Rules | Skills | Agents | Commands | MCP Config | Progressive Loading |
-|:------|:-----------|:-----:|:------:|:------:|:--------:|:----------:|:-------------------:|
+| Agent | Config File | Rules | Skills | Agents | Commands | MCP Config | Skill Files |
+|:------|:-----------|:-----:|:------:|:------:|:--------:|:----------:|:----------:|
 | Claude Code | `CLAUDE.md` | Yes | Yes | Yes | Yes | `.mcp.json` | Yes |
-| Cursor | `.cursorrules` | Yes | -- | -- | -- | `.cursor/mcp.json` | -- |
-| Codex | `AGENTS.md` | Yes | Yes | Yes | -- | `.codex/mcp.toml` | -- |
-| Windsurf | `.windsurfrules` | Yes | Yes | -- | -- | -- | -- |
-| Cline | `.clinerules` | Yes | Yes | -- | -- | -- | -- |
+| Cursor | `.cursorrules` | Yes | Yes | -- | -- | `.cursor/mcp.json` | Yes |
+| Codex | `AGENTS.md` | Yes | Yes | Yes | -- | `.codex/mcp.toml` | Yes |
+| Windsurf | `.windsurfrules` | Yes | Yes | -- | -- | -- | Yes |
+| Cline | `.clinerules` | Yes | Yes | -- | -- | -- | Yes |
 
 ---
 
@@ -232,7 +232,7 @@ Auto-detects and integrates with existing hook frameworks. Generates hook script
 | Test runner | `test_before_commit` | Run test suite before commit |
 | Secret detection | `security_scan` | Scan for leaked secrets and API keys |
 | Type checking | `type_checking` | Run tsc, pyright, or equivalent |
-| File size check | `max_file_lines` | Block files exceeding line limit |
+| File size check | always enabled | Block files exceeding line limit |
 | Linting/formatting | per-language | ESLint, Prettier, ruff, gofmt, etc. |
 
 ### Auto-Restage
@@ -269,7 +269,6 @@ Each project gets a unique token embedded in `codi.yaml`. Agents can echo the to
 | `test_before_commit` | boolean | `true` | Run tests before commit |
 | `security_scan` | boolean | `true` | Mandatory security scanning |
 | `type_checking` | enum | `strict` | Type checking level (`strict` / `basic` / `off`) |
-| `max_file_lines` | number | `700` | Max lines per source file |
 | `require_tests` | boolean | `false` | Require tests for new code |
 | `allow_shell_commands` | boolean | `true` | Allow shell command execution |
 | `allow_file_deletion` | boolean | `true` | Allow file deletion |
@@ -280,7 +279,7 @@ Each project gets a unique token embedded in `codi.yaml`. Agents can echo the to
 | `require_documentation` | boolean | `false` | Require documentation for new code |
 | `allowed_languages` | string[] | `["*"]` | Allowed programming languages |
 | `max_context_tokens` | number | `50000` | Maximum context token window |
-| `progressive_loading` | enum | `metadata` | Progressive loading strategy (`off` / `metadata` / `full`) |
+| `progressive_loading` | enum | `metadata` | Skill inlining for single-file agents — `off`: inline in main file, `metadata`/`full`: catalog table |
 | `drift_detection` | enum | `warn` | Drift detection behavior (`off` / `warn` / `error`) |
 | `auto_generate_on_change` | boolean | `false` | Auto-generate on config change |
 

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   buildSkillMd,
-  buildSkillMetadataOnly,
   generateSkillFiles,
   buildSkillCatalog,
 } from "#src/adapters/skill-generator.js";
@@ -108,20 +107,6 @@ describe("buildSkillMd", () => {
   });
 });
 
-describe("buildSkillMetadataOnly", () => {
-  it("includes only name and description", () => {
-    const result = buildSkillMetadataOnly(baseSkill);
-    expect(result).toContain("name: deploy");
-    expect(result).toContain("description: Deployment skill");
-    expect(result).not.toContain("Run deploy commands");
-  });
-
-  it("includes reference to full skill file", () => {
-    const result = buildSkillMetadataOnly(baseSkill);
-    expect(result).toContain(`${PROJECT_DIR}/skills/deploy/SKILL.md`);
-  });
-});
-
 describe("generateSkillFiles", () => {
   const skills: NormalizedSkill[] = [
     { name: "deploy", description: "Deploy", content: "deploy content" },
@@ -152,17 +137,10 @@ describe("generateSkillFiles", () => {
     expect(gitkeeps.some((f) => f.path.includes("agents/.gitkeep"))).toBe(true);
   });
 
-  it("uses full content when progressive loading is off", async () => {
-    const files = await generateSkillFiles(skills, ".test/skills", "off");
+  it("always generates full skill content in SKILL.md", async () => {
+    const files = await generateSkillFiles(skills, ".test/skills");
     const skillMd = files.find((f) => f.path.endsWith("SKILL.md"));
     expect(skillMd!.content).toContain("deploy content");
-  });
-
-  it("uses metadata only when progressive loading is metadata", async () => {
-    const files = await generateSkillFiles(skills, ".test/skills", "metadata");
-    const skillMd = files.find((f) => f.path.endsWith("SKILL.md"));
-    expect(skillMd!.content).not.toContain("deploy content");
-    expect(skillMd!.content).toContain("Full skill content available");
   });
 
   it("returns empty array for no skills", async () => {

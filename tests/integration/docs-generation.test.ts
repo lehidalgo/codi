@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { initHandler } from "#src/cli/init.js";
 import { docsHandler } from "#src/cli/docs.js";
@@ -28,7 +29,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(path.dirname(tmpDir), { recursive: true, force: true });
+  await cleanupTmpDir(path.dirname(tmpDir));
   clearAdapters();
 });
 

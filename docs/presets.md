@@ -11,10 +11,10 @@ Codi ships with 6 presets:
 |:-------|:------|:------------|
 | `codi-minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
 | `codi-balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
-| `codi-strict` | strict | Enforced — security locked, tests required, shell/delete restricted, no force-push |
+| `codi-strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
 | `codi-fullstack` | fullstack | Comprehensive web/app development — broad rules, testing, and security. Language-agnostic. |
 | `codi-dev` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
-| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, session management, codebase onboarding |
+| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
 <!-- GENERATED:END:preset_table -->
 
 ## Language Customization
@@ -108,9 +108,6 @@ flags:
     mode: enforced
     value: true
     locked: true
-  max_file_lines:
-    mode: enabled
-    value: 500
 rules:
   - security
   - testing

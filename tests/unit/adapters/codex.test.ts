@@ -110,7 +110,7 @@ describe("codex adapter", () => {
     expect(agentsMd).toBeDefined();
     expect(agentsMd!.content).toContain("Do NOT execute shell commands.");
     expect(agentsMd!.content).toContain(
-      "Keep source code files under 500 lines.",
+      "Keep source code files under 700 lines.",
     );
     expect(agentsMd!.content).toContain("Code Style");
     expect(agentsMd!.content).toContain("Testing");

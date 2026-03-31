@@ -26,6 +26,8 @@ export interface GeneratedFile {
   content: string;
   sources: string[];
   hash: string;
+  /** Absolute source path for binary files that must be copied as-is (not text-written). */
+  binarySrc?: string;
 }
 
 export interface GenerateOptions {

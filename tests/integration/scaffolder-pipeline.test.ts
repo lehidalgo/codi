@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
@@ -25,7 +26,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 describe("Scaffolder Pipeline: create → verify → parse", () => {

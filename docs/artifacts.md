@@ -53,7 +53,7 @@ managed_by: codi              # codi (template) | user (custom)
 Create from templates: `codi add rule security --template security`
 
 <!-- GENERATED:START:rule_templates -->
-`codi-api-design`, `codi-architecture`, `codi-code-style`, `codi-csharp`, `codi-django`, `codi-documentation`, `codi-error-handling`, `codi-git-workflow`, `codi-golang`, `codi-java`, `codi-kotlin`, `codi-nextjs`, `codi-performance`, `codi-production-mindset`, `codi-python`, `codi-react`, `codi-rust`, `codi-security`, `codi-simplicity-first`, `codi-spring-boot`, `codi-swift`, `codi-testing`, `codi-typescript`
+`codi-agent-usage`, `codi-api-design`, `codi-architecture`, `codi-code-style`, `codi-csharp`, `codi-django`, `codi-documentation`, `codi-error-handling`, `codi-git-workflow`, `codi-golang`, `codi-improvement-dev`, `codi-java`, `codi-kotlin`, `codi-nextjs`, `codi-performance`, `codi-production-mindset`, `codi-python`, `codi-react`, `codi-rust`, `codi-security`, `codi-simplicity-first`, `codi-spanish-orthography`, `codi-spring-boot`, `codi-swift`, `codi-testing`, `codi-typescript`, `codi-workflow`
 <!-- GENERATED:END:rule_templates -->
 
 ---
@@ -121,7 +121,7 @@ intentHints:
 | `user-invocable` | boolean | No | — | Can be invoked via slash command |
 | `paths` | string[] \| string | No | — | File paths the skill operates on |
 | `shell` | `bash` \| `powershell` | No | — | Shell environment |
-| `intentHints` | object | No | — | Routing table hints: `{ taskType: string, examples: string[] }` |
+| `intentHints` | object | No | — |  |
 <!-- GENERATED:END:skill_fields -->
 
 ### Built-in Skill Templates
@@ -131,21 +131,36 @@ intentHints:
 |----------|--------|
 | **brand** | codi-bbva-brand, codi-brand-identity, codi-rl3-brand |
 | **Code Quality** | codi-code-review, codi-e2e-testing, codi-error-recovery, codi-guided-qa-testing, codi-refactoring, codi-security-scan, codi-test-coverage, codi-webapp-testing |
-| **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs-manager, codi-operations, codi-preset-creator, codi-rule-creator, codi-skill-creator |
+| **codi Platform** | codi-rule-feedback |
+| **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs-manager, codi-operations, codi-preset-creator, codi-rule-creator, codi-skill-creator, codi-skill-reporter |
 | **Content Creation** | codi-content-factory |
 | **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory, codi-web-artifacts-builder |
 | **Developer Tools** | codi-claude-api, codi-codebase-onboarding, codi-commit, codi-documentation, codi-internal-comms, codi-mcp, codi-mcp-server-creator, codi-mobile-development |
 | **Document Generation** | codi-deck-engine, codi-doc-engine |
 | **File Format Tools** | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
+| **Uncategorized** | codi-refine-rules |
 <!-- GENERATED:END:skill_templates -->
 
-### Progressive Loading
+### Progressive Loading — Agent-Native, Not Codi-Managed
 
-Skills support 3-level progressive loading (controlled by the `progressive_loading` flag):
+Unlike other configuration tools that implement their own progressive loading (generating metadata stubs, lazy-fetching content, or tiered caching), **Codi does not manage progressive loading**. Instead, Codi generates **full-content skill files** and relies on each agent's own native loading mechanism.
 
-1. **off** — Load all skill content at once
-2. **metadata** — Load names and descriptions first, full content on demand
-3. **full** — Load everything including bundled resources
+**How it works:**
+
+1. **Codi generates full SKILL.md files** in every agent's skill directory (`.claude/skills/`, `.cursor/skills/`, etc.) — always complete, never stubs
+2. **The agent handles lazy loading at runtime** — Claude Code reads frontmatter (name + description) at session start and loads full skill content only when activated. Cursor follows the same ACS (Anthropic Claude Skills) pattern. This is the agent's built-in behavior, not something Codi controls.
+3. **Codi's only role is to produce correct files** in the right format and location — the agent decides when and how to load them
+
+This means progressive loading quality depends on the agent, not Codi. As agents improve their loading strategies, Codi skills automatically benefit without any configuration changes.
+
+### Skill Inlining (`progressive_loading` flag)
+
+The `progressive_loading` flag controls a separate concern: whether **single-file agents** (Windsurf, Cline) inline skill content directly in their main config file, or show a compact catalog table instead:
+
+- **off** — Inline full skill content in `.windsurfrules` / `.clinerules` (larger file, all skills immediately visible)
+- **metadata** — Show a skill catalog table in the main file; full content lives in separate skill files (smaller main file)
+
+This flag has **no effect** on agents that use separate skill files (Claude Code, Cursor, Codex) — those always get full-content SKILL.md files regardless.
 
 ---
 
@@ -180,7 +195,7 @@ managed_by: codi
 ### Built-in Agent Templates
 
 <!-- GENERATED:START:agent_templates -->
-`codi-api-designer`, `codi-code-reviewer`, `codi-docs-lookup`, `codi-onboarding-guide`, `codi-performance-auditor`, `codi-refactorer`, `codi-security-analyzer`, `codi-test-generator`
+`codi-ai-engineering-expert`, `codi-api-designer`, `codi-code-reviewer`, `codi-codebase-explorer`, `codi-data-analytics-bi-expert`, `codi-data-engineering-expert`, `codi-data-intensive-architect`, `codi-data-science-specialist`, `codi-docs-lookup`, `codi-legal-compliance-eu`, `codi-marketing-seo-specialist`, `codi-mlops-engineer`, `codi-nextjs-researcher`, `codi-onboarding-guide`, `codi-openai-agents-specialist`, `codi-payload-cms-auditor`, `codi-performance-auditor`, `codi-python-expert`, `codi-refactorer`, `codi-scalability-expert`, `codi-security-analyzer`, `codi-test-generator`
 <!-- GENERATED:END:agent_templates -->
 
 ---
@@ -211,7 +226,7 @@ description: Create a well-structured git commit
 ### Built-in Command Templates
 
 <!-- GENERATED:START:command_templates -->
-`codi-commit`, `codi-docs-lookup`, `codi-onboard`, `codi-refactor`, `codi-review`, `codi-security-scan`, `codi-session-handoff`, `codi-test-coverage`, `codi-test-run`
+`codi-check`, `codi-close-day`, `codi-codebase-explore`, `codi-commit`, `codi-docs-lookup`, `codi-index-graph`, `codi-onboard`, `codi-open-day`, `codi-refactor`, `codi-refine-rules`, `codi-review`, `codi-roadmap`, `codi-security-scan`, `codi-session-handoff`, `codi-test-coverage`, `codi-test-run`, `codi-update-graph`
 <!-- GENERATED:END:command_templates -->
 
 ---

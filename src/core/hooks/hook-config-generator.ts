@@ -1,5 +1,5 @@
 import type { ResolvedFlags } from "../../types/flags.js";
-import { DEFAULT_MAX_FILE_LINES, PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "../../types/config.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";
@@ -8,7 +8,6 @@ export interface HooksConfig {
   hooks: HookEntry[];
   secretScan: boolean;
   fileSizeCheck: boolean;
-  maxFileLines: number;
   versionCheck: boolean;
   commitMsgValidation: boolean;
   testBeforeCommit: boolean;
@@ -45,21 +44,6 @@ function isSecurityScanEnabled(flags: ResolvedFlags): boolean {
   if (!flag) return true;
   if (flag.mode === "disabled") return false;
   return flag.value !== false;
-}
-
-function isFileSizeCheckEnabled(flags: ResolvedFlags): boolean {
-  const flag = flags["max_file_lines"];
-  if (!flag) return false;
-  if (flag.mode === "disabled") return false;
-  return typeof flag.value === "number" && flag.value > 0;
-}
-
-function getMaxFileLines(flags: ResolvedFlags): number {
-  const flag = flags["max_file_lines"];
-  if (flag && typeof flag.value === "number") {
-    return flag.value;
-  }
-  return DEFAULT_MAX_FILE_LINES;
 }
 
 export function generateHooksConfig(
@@ -108,14 +92,11 @@ export function generateHooksConfig(
     });
   }
 
-  const fileSizeCheck = isFileSizeCheckEnabled(flags);
-  if (fileSizeCheck) {
-    allHooks.push({
-      name: "file-size-check",
-      command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
-      stagedFilter: "**/*",
-    });
-  }
+  allHooks.push({
+    name: "file-size-check",
+    command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
+    stagedFilter: "**/*",
+  });
 
   if (hasVersionRequirement) {
     allHooks.push({
@@ -128,8 +109,7 @@ export function generateHooksConfig(
   return {
     hooks: allHooks,
     secretScan,
-    fileSizeCheck,
-    maxFileLines: getMaxFileLines(flags),
+    fileSizeCheck: true,
     versionCheck: hasVersionRequirement,
     commitMsgValidation: true,
     testBeforeCommit,

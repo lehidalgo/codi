@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../../helpers/fs.js";
 import { stringify as yamlStringify } from "yaml";
 
 // Mock child_process before importing the module under test
@@ -179,7 +180,7 @@ describe("readLockFile", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty lock when file does not exist", async () => {
@@ -239,7 +240,7 @@ describe("writeLockFile", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("writes valid JSON lock file", async () => {
@@ -311,7 +312,7 @@ describe("readRegistryIndex", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty array when index file does not exist", async () => {
@@ -346,7 +347,7 @@ describe("getPresetVersionFromDir", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("reads version from preset.yaml", async () => {
@@ -396,8 +397,8 @@ describe("copyDir", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(srcDir, { recursive: true, force: true });
-    await fs.rm(destDir, { recursive: true, force: true });
+    await cleanupTmpDir(srcDir);
+    await cleanupTmpDir(destDir);
   });
 
   it("copies files recursively", async () => {

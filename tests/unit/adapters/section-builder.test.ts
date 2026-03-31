@@ -32,14 +32,6 @@ describe("buildProjectOverview", () => {
     const result = buildProjectOverview(config);
     expect(result).toContain("A cool project");
   });
-
-  it("includes team when present", () => {
-    const config = createMockConfig({
-      manifest: { name: "my-proj", version: "1", agents: [], team: "Platform" },
-    });
-    const result = buildProjectOverview(config);
-    expect(result).toContain("**Team:** Platform");
-  });
 });
 
 describe("buildArchitectureSummary", () => {

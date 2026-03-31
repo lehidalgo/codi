@@ -5,6 +5,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import matter from "gray-matter";
 import os from "node:os";
 import { resolveProjectDir } from "../utils/paths.js";
+import { safeRm } from "../utils/fs.js";
 import { resolveArtifactName } from "../constants.js";
 import { FLAG_CATALOG } from "../core/flags/flag-catalog.js";
 import { getPreset, getPresetNames } from "../core/flags/flag-presets.js";
@@ -50,6 +51,9 @@ import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { execFileAsync } from "../utils/exec.js";
+import { readLockFile } from "../core/preset/preset-registry.js";
+import { loadPreset } from "../core/preset/preset-loader.js";
+import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
 
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
@@ -293,7 +297,7 @@ async function pullFromSource(
     }
   }
 
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await safeRm(tmpDir);
   return updated;
 }
 
@@ -345,11 +349,15 @@ export async function updateHandler(
 
   const flagsAdded: string[] = [];
   let flagsReset = false;
-  const validPresets = getPresetNames() as string[];
+
+  // Merge builtin + installed preset names for validation
+  const builtinPresets = getPresetNames() as string[];
+  const lock = await readLockFile(configDir);
+  const installedNames = Object.keys(lock.presets);
+  const validPresets = [...builtinPresets, ...installedNames];
+
   const presetName = options.preset
-    ? (resolveArtifactName(options.preset, validPresets) as
-        | PresetName
-        | undefined)
+    ? resolveArtifactName(options.preset, validPresets)
     : undefined;
 
   if (options.preset && !presetName) {
@@ -387,19 +395,85 @@ export async function updateHandler(
   }
 
   if (presetName) {
-    const preset = getPreset(presetName);
-    const updatedFlags: Record<string, unknown> = {};
-    for (const [key, def] of Object.entries(preset)) {
-      const entry: Record<string, unknown> = {
-        mode: def.mode,
-        value: def.value,
-      };
-      if (def.locked) entry["locked"] = true;
-      updatedFlags[key] = entry;
+    const isBuiltin = builtinPresets.includes(presetName);
+
+    if (isBuiltin) {
+      // Builtin preset: apply flags only
+      const preset = getPreset(presetName as PresetName);
+      const updatedFlags: Record<string, unknown> = {};
+      for (const [key, def] of Object.entries(preset)) {
+        const entry: Record<string, unknown> = {
+          mode: def.mode,
+          value: def.value,
+        };
+        if (def.locked) entry["locked"] = true;
+        updatedFlags[key] = entry;
+      }
+      currentFlags = updatedFlags;
+      flagsReset = true;
+      log.info(`Reset all flags to "${presetName}" preset`);
+    } else {
+      // User-installed preset: apply flags + artifacts
+      const presetsDir = path.join(configDir, "presets");
+      const loadResult = await loadPreset(presetName, presetsDir);
+      if (!loadResult.ok) {
+        return createCommandResult({
+          success: false,
+          command: "update",
+          data: {
+            flagsAdded: [],
+            flagsReset: false,
+            preset: presetName,
+            rulesUpdated: [],
+            rulesSkipped: [],
+            skillsUpdated: [],
+            skillsSkipped: [],
+            agentsUpdated: [],
+            agentsSkipped: [],
+            commandsUpdated: [],
+            commandsSkipped: [],
+            mcpServersUpdated: [],
+            mcpServersSkipped: [],
+            sourceUpdated: [],
+            regenerated: false,
+          },
+          errors: loadResult.errors.map((e) => ({
+            code: e.code,
+            message: e.message,
+            hint: e.hint,
+            severity: e.severity as "error",
+            context: e.context,
+          })),
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
+
+      const loaded = loadResult.data;
+      // Apply flags from user preset
+      const updatedFlags: Record<string, unknown> = {};
+      for (const [key, def] of Object.entries(loaded.flags)) {
+        const entry: Record<string, unknown> = {
+          mode: def.mode,
+          value: def.value,
+        };
+        if (def.locked) entry["locked"] = true;
+        updatedFlags[key] = entry;
+      }
+      currentFlags = updatedFlags;
+      flagsReset = true;
+      log.info(`Reset all flags to "${presetName}" preset`);
+
+      // Apply artifacts with conflict resolution
+      if (!options.dryRun) {
+        const applyResult = await applyPresetArtifacts(configDir, loaded, {
+          force: false,
+          json: options.json,
+        });
+        log.info(
+          `Applied preset artifacts: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped`,
+        );
+      }
     }
-    currentFlags = updatedFlags;
-    flagsReset = true;
-    log.info(`Reset all flags to "${presetName}" preset`);
   } else {
     for (const flagName of Object.keys(FLAG_CATALOG)) {
       if (!(flagName in currentFlags)) {
@@ -587,10 +661,7 @@ export function registerUpdateCommand(program: Command): void {
       "--preset <preset>",
       `Reset flags to preset: ${getPresetNames().join(", ")}`,
     )
-    .option(
-      "--from <repo>",
-      "Pull centralized artifacts from a GitHub repo (e.g., org/team-config)",
-    )
+    .option("--from <repo>", "Pull centralized artifacts from a GitHub repo")
     .option("--rules", "Refresh template-managed rules to latest versions")
     .option("--skills", "Refresh template-managed skills to latest versions")
     .option("--agents", "Refresh template-managed agents to latest versions")

@@ -5,6 +5,7 @@ import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
 import { VERSIONS_DIR, SKILL_OUTPUT_FILENAME } from "#src/constants.js";
+import { buildUnifiedDiff } from "../../utils/diff.js";
 
 export interface VersionInfo {
   version: number;
@@ -194,53 +195,4 @@ export async function diffVersions(
   return ok(diff);
 }
 
-function buildUnifiedDiff(
-  label1: string,
-  label2: string,
-  lines1: string[],
-  lines2: string[],
-): string {
-  const output: string[] = [`--- ${label1}`, `+++ ${label2}`];
-  const maxLen = Math.max(lines1.length, lines2.length);
-
-  let hunkStart = -1;
-
-  const flushHunk = (end: number) => {
-    if (hunkStart < 0) return;
-    const ctxStart = Math.max(0, hunkStart - 3);
-    const ctxEnd = Math.min(maxLen, end + 3);
-
-    const header = `@@ -${ctxStart + 1},${Math.min(lines1.length, ctxEnd) - ctxStart} +${ctxStart + 1},${Math.min(lines2.length, ctxEnd) - ctxStart} @@`;
-    output.push(header);
-
-    for (let i = ctxStart; i < ctxEnd; i++) {
-      const l1 = i < lines1.length ? lines1[i]! : undefined;
-      const l2 = i < lines2.length ? lines2[i]! : undefined;
-
-      if (l1 === l2) {
-        output.push(` ${l1 ?? ""}`);
-      } else {
-        if (l1 !== undefined) output.push(`-${l1}`);
-        if (l2 !== undefined) output.push(`+${l2}`);
-      }
-    }
-
-    hunkStart = -1;
-  };
-
-  for (let i = 0; i < maxLen; i++) {
-    const l1 = i < lines1.length ? lines1[i] : undefined;
-    const l2 = i < lines2.length ? lines2[i] : undefined;
-
-    if (l1 !== l2) {
-      if (hunkStart < 0) hunkStart = i;
-    } else if (hunkStart >= 0 && i - hunkStart > 6) {
-      flushHunk(i - 1);
-    }
-  }
-
-  if (hunkStart >= 0) flushHunk(maxLen);
-
-  if (output.length === 2) return "No differences found.";
-  return output.join("\n");
-}
+// buildUnifiedDiff is now imported from ../../utils/diff.js

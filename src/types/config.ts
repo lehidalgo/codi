@@ -17,16 +17,6 @@ export interface ProjectManifest {
   engine?: {
     requiredVersion?: string;
   };
-  team?: string;
-  source?: {
-    repo: string;
-    branch: string;
-    paths: string[];
-  };
-  marketplace?: {
-    registry: string;
-    branch: string;
-  };
   presetRegistry?: {
     url: string;
     branch: string;

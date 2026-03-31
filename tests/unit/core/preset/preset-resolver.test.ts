@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../../helpers/fs.js";
 import {
   parsePresetIdentifier,
   extractPresetName,
@@ -129,7 +130,7 @@ describe("resolveAndLoadPreset", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("resolves builtin preset by name", async () => {

@@ -111,9 +111,9 @@ Codi reads your `.codi/` directory, resolves configuration through 8 inheritance
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 27 |
-| **Skills** | 42 |
+| **Skills** | 44 |
 | **Agents** | 22 |
-| **Commands** | 16 |
+| **Commands** | 17 |
 <!-- GENERATED:END:template_counts_compact -->
 
 Create your own with `codi add rule|skill|agent|command <name>`, or start from a template with `--template`.
@@ -126,9 +126,9 @@ Create your own with `codi add rule|skill|agent|command <name>`, or start from a
 | `codi-minimal` | minimal | Permissive — security off, no test requirements, all actions allowed |
 | `codi-balanced` | balanced | Recommended — security on, type-checking strict, no force-push |
 | `codi-strict` | strict | Enforced — security locked, tests required, delete restricted, no force-push |
-| `codi-fullstack` | fullstack | Comprehensive web/app development — broad rules, testing, and security. Language-agnostic |
-| `codi-dev` | codi | Preset for developing the Codi CLI itself |
-| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, session management, codebase onboarding |
+| `codi-fullstack` | fullstack | Comprehensive web/app development — broad rules, testing, and security. Language-agnostic. |
+| `codi-dev` | codi | Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling |
+| `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
 <!-- GENERATED:END:preset_table -->
 
 Create, share, and install presets from ZIP, GitHub, or the registry with `codi preset`. See the [Presets Guide](docs/presets.md).

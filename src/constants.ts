@@ -122,7 +122,7 @@ export const CLI_COMMANDS = [
   "ci",
   "watch",
   "revert",
-  "marketplace",
+
   "preset",
   "docs-update",
   "docs",

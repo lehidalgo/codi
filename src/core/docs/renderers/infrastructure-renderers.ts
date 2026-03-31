@@ -132,55 +132,25 @@ export function renderCliReference(commands: CliCommand[]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Layer order (8-layer config resolution)
+// Config resolution order (preset-based)
 // ---------------------------------------------------------------------------
 
 export function renderLayerOrder(): string {
   const layers = [
     [
       "1",
-      "**Org**",
-      `\`~/${PROJECT_DIR}/orgs/{org}/config.yaml\``,
-      "Organization-wide policies",
+      "**Preset**",
+      "Built-in or installed presets",
+      "Bundles of flags + artifacts (applied at install time)",
     ],
     [
       "2",
-      "**Team**",
-      `\`~/${PROJECT_DIR}/teams/{name}.yaml\``,
-      "Team-specific overrides",
+      "**Repo**",
+      `\`${PROJECT_DIR}/\` directory`,
+      "Project-level configuration (single source of truth)",
     ],
     [
       "3",
-      "**Preset**",
-      "Built-in or installed presets",
-      "Bundles of flags + artifacts (multiple, applied in order)",
-    ],
-    [
-      "4",
-      "**Repo**",
-      `\`${PROJECT_DIR}/\` directory`,
-      "Project-level configuration",
-    ],
-    [
-      "5",
-      "**Lang**",
-      `\`${PROJECT_DIR}/lang/*.yaml\``,
-      "Language-specific rules",
-    ],
-    [
-      "6",
-      "**Framework**",
-      `\`${PROJECT_DIR}/frameworks/*.yaml\``,
-      "Framework-specific rules",
-    ],
-    [
-      "7",
-      "**Agent**",
-      `\`${PROJECT_DIR}/agents/*.yaml\``,
-      "Per-agent overrides",
-    ],
-    [
-      "8",
       "**User**",
       `\`~/${PROJECT_DIR}/user.yaml\``,
       "Personal preferences (never committed)",

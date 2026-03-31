@@ -7,6 +7,12 @@ import {
 } from "../constants.js";
 import { printWelcomeBanner } from "./banner.js";
 import { resolveProjectDir } from "../utils/paths.js";
+import { detectStack } from "../core/hooks/stack-detector.js";
+import { registerAllAdapters } from "../adapters/index.js";
+import {
+  detectAdapters,
+  getAllAdapters,
+} from "../core/generator/adapter-registry.js";
 import { statusHandler } from "./status.js";
 import { ciHandler } from "./ci.js";
 import { validateHandler } from "./validate.js";
@@ -22,7 +28,6 @@ import {
   handleCompliance,
   handleRevert,
   handleSkillExport,
-  handleMarketplace,
   handleContribute,
   handlePresetMenu,
   handleDocs,
@@ -72,14 +77,7 @@ export const HUB_ACTIONS: HubAction[] = [
   {
     value: "skill-export",
     label: "Export skill",
-    hint: "Package a skill for marketplace sharing",
-    requiresProject: true,
-    group: "build",
-  },
-  {
-    value: "marketplace",
-    label: "Search marketplace",
-    hint: "Find and install community skills",
+    hint: "Package a skill for sharing",
     requiresProject: true,
     group: "build",
   },
@@ -191,7 +189,17 @@ export function getAvailableActions(hasProject: boolean): HubAction[] {
 export async function runCommandCenter(projectRoot: string): Promise<void> {
   const configDir = resolveProjectDir(projectRoot);
 
-  printWelcomeBanner({ subtitle: "Command Center" });
+  registerAllAdapters();
+  const detectedStack = await detectStack(projectRoot);
+  const detectedAdapters = await detectAdapters(projectRoot);
+  const allAgentIds = getAllAdapters().map((a) => a.id);
+
+  printWelcomeBanner({
+    detectedStack,
+    detectedAgents: allAgentIds.filter((a) =>
+      detectedAdapters.some((d) => d.id === a),
+    ),
+  });
 
   while (true) {
     const hasProject = await dirExists(configDir);
@@ -224,7 +232,13 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
       `Running: ${actions.find((a) => a.value === selected)?.label ?? selected}`,
     );
 
-    await routeAction(selected as string, projectRoot);
+    try {
+      await routeAction(selected as string, projectRoot);
+    } catch (error) {
+      p.log.error(
+        `Action failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }
 
@@ -244,9 +258,6 @@ async function routeAction(action: string, projectRoot: string): Promise<void> {
       break;
     case "skill-export":
       await handleSkillExport(projectRoot);
-      break;
-    case "marketplace":
-      await handleMarketplace(projectRoot);
       break;
     case "contribute":
       await handleContribute(projectRoot);

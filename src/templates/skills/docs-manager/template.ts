@@ -150,7 +150,7 @@ docs/
   artifacts.md           # Rules, skills, agents, commands, brands (9 generated sections)
   configuration.md       # Manifest, flags, modes, layers, MCP (4 generated sections)
   presets.md             # Built-in presets, create/install/export (2 generated sections)
-  workflows.md           # Daily usage, CI/CD, marketplace (manual)
+  workflows.md           # Daily usage, CI/CD (manual)
   migration.md           # Adopting ${PROJECT_NAME_DISPLAY} in existing projects (manual)
   troubleshooting.md     # Common issues and fixes (manual)
   deprecated/            # Archive of old docs (spec, QA, roadmaps, research)

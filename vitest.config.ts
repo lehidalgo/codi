@@ -1,6 +1,12 @@
 import { defineConfig } from "vitest/config";
+import { readFileSync } from "node:fs";
+
+const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
 
 export default defineConfig({
+  define: {
+    __PKG_VERSION__: JSON.stringify(pkg.version),
+  },
   test: {
     globals: true,
     include: ["tests/**/*.test.ts"],
@@ -21,7 +27,7 @@ export default defineConfig({
         "src/cli.ts", // pure Commander wiring
         "src/cli/watch.ts", // long-running file watcher process
         "src/cli/contribute.ts", // requires gh CLI + interactive prompts
-        "src/cli/marketplace.ts", // requires network + interactive prompts
+
         "src/core/preset/preset-zip.ts", // requires zip/unzip binary
         "src/core/preset/preset-source.ts", // type-only file
         "src/templates/skills/**/scripts/**", // standalone skill runtime scripts with external deps

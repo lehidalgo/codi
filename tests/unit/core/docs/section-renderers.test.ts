@@ -29,11 +29,10 @@ const MOCK_FLAGS: Record<string, FlagSpec> = {
     default: false,
     description: "Auto-commit changes",
   },
-  max_file_lines: {
-    type: "number",
-    default: 700,
-    description: "Max lines per file",
-    hook: "file-size-check",
+  security_scan: {
+    type: "boolean",
+    default: true,
+    description: "Run security scans",
   },
 };
 
@@ -108,13 +107,12 @@ describe("section-renderers", () => {
       expect(result).toContain("`auto_commit`");
       expect(result).toContain("boolean");
       expect(result).toContain("`false`");
-      expect(result).toContain("`700`");
+      expect(result).toContain("`true`");
     });
 
-    it("shows hook when present, dash when absent", () => {
+    it("shows dash when hook is absent", () => {
       const result = renderFlagsTable(MOCK_FLAGS);
 
-      expect(result).toContain("file-size-check");
       expect(result).toContain("—");
     });
   });

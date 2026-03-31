@@ -1,7 +1,0 @@
-flags:
-  type_checking:
-    mode: enforced
-    value: strict
-  max_file_lines:
-    mode: enabled
-    value: 500

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { stringify as stringifyYaml } from "yaml";
 import {
   presetValidateHandler,
@@ -29,7 +30,7 @@ describe("presetValidateHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("succeeds for a valid preset with manifest", async () => {
@@ -126,7 +127,7 @@ describe("presetRemoveHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("removes an installed preset and updates lock file", async () => {
@@ -202,7 +203,7 @@ describe("presetListEnhancedHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty list when no presets directory exists", async () => {
@@ -305,7 +306,7 @@ describe("presetExportHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("fails with unsupported format", async () => {
@@ -382,7 +383,7 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("lists multiple installed presets", async () => {
@@ -494,7 +495,7 @@ describe("presetRemoveHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("removes preset even without lock entry", async () => {
@@ -526,7 +527,7 @@ describe("presetValidateHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("reports artifact counts for valid preset", async () => {

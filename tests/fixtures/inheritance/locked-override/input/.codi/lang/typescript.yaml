@@ -1,4 +1,0 @@
-flags:
-  security_scan:
-    mode: disabled
-    value: false

@@ -12,10 +12,7 @@ import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
-import {
-  generateSkillFiles,
-  resolveProgressiveLoading,
-} from "./skill-generator.js";
+import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildSkillRoutingTable,
@@ -133,12 +130,10 @@ export const cursorAdapter: AgentAdapter = {
     const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
 
     // Generate .cursor/skills/{name}/SKILL.md + supporting files
-    const plMode = resolveProgressiveLoading(config.flags);
     files.push(
       ...(await generateSkillFiles(
         regularSkills,
         ".cursor/skills",
-        plMode,
         _options.projectRoot,
       )),
     );
