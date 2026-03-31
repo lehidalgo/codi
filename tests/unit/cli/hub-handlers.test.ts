@@ -81,13 +81,6 @@ vi.mock("../../../src/cli/skill.js", () => ({
   skillExportHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
 }));
 
-vi.mock("../../../src/cli/marketplace.js", () => ({
-  marketplaceSearchHandler: vi
-    .fn()
-    .mockResolvedValue({ exitCode: 0, success: false }),
-  marketplaceInstallHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
 vi.mock("../../../src/cli/preset-handlers.js", () => ({
   presetListEnhancedHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
   presetExportHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import {
   scanForPromptInjection,
   scanForMaliciousScripts,
@@ -227,7 +228,7 @@ describe("validateFileType", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("passes when .png has PNG magic bytes", async () => {
@@ -411,7 +412,7 @@ describe("runSecurityScan (integration)", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("produces a clean report for a safe skill", async () => {

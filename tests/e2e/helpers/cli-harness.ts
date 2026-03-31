@@ -67,7 +67,12 @@ export async function createTempProject(
   return {
     projectDir,
     cleanup: async () => {
-      await fs.rm(base, { recursive: true, force: true });
+      await fs.rm(base, {
+        recursive: true,
+        force: true,
+        maxRetries: 3,
+        retryDelay: 100,
+      });
     },
   };
 }

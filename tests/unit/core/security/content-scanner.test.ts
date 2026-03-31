@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../../helpers/fs.js";
 import { PROJECT_NAME } from "../../../../src/constants.js";
 import {
   scanDirectory,
@@ -127,7 +128,7 @@ describe("scanDirectory", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns pass for empty directory", async () => {
@@ -211,7 +212,7 @@ describe("validateFileType", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("detects ELF executable", async () => {

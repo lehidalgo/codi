@@ -45,3 +45,37 @@ export type FeedbackEntry = z.infer<typeof FeedbackEntrySchema>;
 export type FeedbackAgent = (typeof FEEDBACK_AGENTS)[number];
 export type FeedbackOutcome = (typeof FEEDBACK_OUTCOMES)[number];
 export type IssueCategory = (typeof ISSUE_CATEGORIES)[number];
+
+// --- Rule observation feedback ---
+
+export const RULE_OBSERVATION_CATEGORIES = [
+  "new-pattern",
+  "outdated-rule",
+  "missing-example",
+  "user-correction",
+] as const;
+
+export const RULE_OBSERVATION_SOURCES = [
+  "pattern-detection",
+  "user-correction",
+  "api-deprecation",
+] as const;
+
+export const RuleObservationSchema = z.object({
+  id: z.string().uuid(),
+  type: z.literal("rule-observation"),
+  timestamp: z.string().datetime(),
+  category: z.enum(RULE_OBSERVATION_CATEGORIES),
+  ruleName: z.string().max(MAX_NAME_LENGTH).nullable(),
+  observation: z.string().max(500),
+  evidence: z.array(z.string().max(300)).min(1),
+  suggestedChange: z.string().max(500),
+  severity: z.enum(ISSUE_SEVERITIES),
+  source: z.enum(RULE_OBSERVATION_SOURCES),
+  resolved: z.boolean().default(false),
+});
+
+export type RuleObservation = z.infer<typeof RuleObservationSchema>;
+export type RuleObservationCategory =
+  (typeof RULE_OBSERVATION_CATEGORIES)[number];
+export type RuleObservationSource = (typeof RULE_OBSERVATION_SOURCES)[number];

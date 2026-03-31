@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
 import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 
 describe("agent scaffolder", () => {
   let tmpDir: string;
@@ -16,7 +17,7 @@ describe("agent scaffolder", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates an agent file with default content", async () => {

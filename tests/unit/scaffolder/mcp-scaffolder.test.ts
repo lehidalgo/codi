@@ -5,6 +5,7 @@ import os from "node:os";
 import { parse as parseYaml } from "yaml";
 import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 
 describe("mcp scaffolder", () => {
   let tmpDir: string;
@@ -17,7 +18,7 @@ describe("mcp scaffolder", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a server yaml when no template", async () => {

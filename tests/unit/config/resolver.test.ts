@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { resolveConfig } from "#src/core/config/resolver.js";
 import {
   PROJECT_NAME,
@@ -12,7 +13,7 @@ import {
 const FIXTURES = path.resolve(__dirname, "../../fixtures/inheritance");
 
 describe("resolveConfig", () => {
-  it("resolves basic-merge fixture with layer composition", async () => {
+  it("resolves basic-merge fixture from .codi/ as single source", async () => {
     const projectRoot = path.join(FIXTURES, "basic-merge/input");
     const result = await resolveConfig(projectRoot);
     expect(result.ok).toBe(true);
@@ -24,23 +25,9 @@ describe("resolveConfig", () => {
     expect(result.data.rules).toHaveLength(1);
     expect(result.data.rules[0]!.name).toBe("security");
 
-    // Lang layer overrides repo flag
-    expect(result.data.flags["max_file_lines"]!.value).toBe(500);
-    // Lang layer adds new flag
-    expect(result.data.flags["type_checking"]!.value).toBe("strict");
-    expect(result.data.flags["type_checking"]!.mode).toBe("enforced");
-    // Repo flag preserved
+    // Flags come directly from flags.yaml (no layer merging)
+    expect(result.data.flags["require_tests"]!.value).toBe(false);
     expect(result.data.flags["security_scan"]!.value).toBe(true);
-  });
-
-  it("returns error for locked-override fixture", async () => {
-    const projectRoot = path.join(FIXTURES, "locked-override/input");
-    const result = await resolveConfig(projectRoot);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-
-    const lockedError = result.errors.find((e) => e.code === "E_FLAG_LOCKED");
-    expect(lockedError).toBeDefined();
   });
 
   it("returns error for nonexistent project", async () => {
@@ -61,7 +48,7 @@ describe("resolveConfig — dynamic projects", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("resolves minimal project with only manifest", async () => {
@@ -139,36 +126,25 @@ describe("resolveConfig — dynamic projects", () => {
     expect(result.data.mcp.servers["test-server"]).toBeDefined();
   });
 
-  it("resolves project with lang layer override", async () => {
+  it("reads flags directly from flags.yaml without layer overrides", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
       path.join(configDir, MANIFEST_FILENAME),
-      'name: lang-test\nversion: "1"\nagents:\n  - claude-code\n',
+      'name: flag-test\nversion: "1"\nagents:\n  - claude-code\n',
       "utf-8",
     );
 
-    // Add base flags
     await fs.writeFile(
       path.join(configDir, "flags.yaml"),
-      "max_file_lines:\n  mode: enabled\n  value: 700\n",
-      "utf-8",
-    );
-
-    // Add lang layer that overrides
-    const langDir = path.join(configDir, "lang");
-    await fs.mkdir(langDir, { recursive: true });
-    await fs.writeFile(
-      path.join(langDir, "typescript.yaml"),
-      "flags:\n  max_file_lines:\n    mode: enabled\n    value: 500\n",
+      "type_checking:\n  mode: enabled\n  value: basic\n",
       "utf-8",
     );
 
     const result = await resolveConfig(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    // Lang layer overrides repo layer
-    expect(result.data.flags["max_file_lines"]!.value).toBe(500);
+    expect(result.data.flags["type_checking"]!.value).toBe("basic");
   });
 
   it("resolves project with agents and commands", async () => {

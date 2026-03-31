@@ -13,10 +13,7 @@ import { revertHandler } from "./revert.js";
 import { contributeHandler } from "./contribute.js";
 import { runSkillExportWizard } from "./skill-export-wizard.js";
 import { skillExportHandler } from "./skill.js";
-import {
-  marketplaceSearchHandler,
-  marketplaceInstallHandler,
-} from "./marketplace.js";
+
 import {
   presetListEnhancedHandler,
   presetExportHandler,
@@ -34,7 +31,6 @@ import {
   addBrandHandler,
 } from "./add.js";
 import { getAllAdapters } from "../core/generator/adapter-registry.js";
-import { registerAllAdapters } from "../adapters/index.js";
 import { PROJECT_DIR } from "../constants.js";
 
 // --- Helpers ---
@@ -98,7 +94,6 @@ export async function handleAdd(projectRoot: string): Promise<void> {
 }
 
 export async function handleGenerate(projectRoot: string): Promise<void> {
-  registerAllAdapters();
   const allAgents = getAllAdapters().map((a) => a.id);
 
   const agentFilter = await p.multiselect({
@@ -322,38 +317,6 @@ export async function handleSkillExport(projectRoot: string): Promise<void> {
     wizardResult.outputDir,
   );
   process.stdout.write(formatHuman(result) + "\n");
-}
-
-export async function handleMarketplace(projectRoot: string): Promise<void> {
-  const query = await p.text({
-    message: "Search for skills",
-    placeholder: "e.g., testing, security, react",
-  });
-  if (isCancelled(query) || !query) return;
-
-  const result = await marketplaceSearchHandler(projectRoot, query, {});
-  process.stdout.write(formatHuman(result) + "\n");
-
-  if (
-    result.success &&
-    result.data?.results &&
-    result.data.results.length > 0
-  ) {
-    const install = await p.confirm({
-      message: "Install a skill from the results?",
-    });
-    if (isCancelled(install) || !install) return;
-
-    const skillName = await p.text({ message: "Skill name to install" });
-    if (isCancelled(skillName) || !skillName) return;
-
-    const installResult = await marketplaceInstallHandler(
-      projectRoot,
-      skillName,
-      {},
-    );
-    process.stdout.write(formatHuman(installResult) + "\n");
-  }
 }
 
 export async function handleContribute(projectRoot: string): Promise<void> {

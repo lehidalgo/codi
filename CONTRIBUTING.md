@@ -16,7 +16,26 @@ npm test
 
 ### Running the Local Build
 
-After cloning, use `npm start` to run the **local** build instead of any globally installed version:
+After cloning, you need to understand which code runs when you type `codi`:
+
+#### How binary resolution works
+
+When you install codi globally (`npm i -g codi-cli`), npm creates a symlink:
+
+```
+~/.nvm/.../bin/codi → ~/.nvm/.../lib/node_modules/codi-cli/dist/cli.js
+```
+
+This points to the **published npm package**, not your local source code. So even after you `npm run build` locally, `codi` and `npx codi` still execute the published version.
+
+| Command | Executes | Source |
+|---------|----------|--------|
+| `codi` | Global symlink | Published npm package |
+| `npx codi` | Same as above | Published npm package |
+| `node dist/cli.js` | Local `dist/cli.js` | Your local build |
+| `npm start` | Local `dist/cli.js` | Your local build |
+
+#### Option 1: Use `npm start` (safe, no side effects)
 
 ```bash
 npm run build          # compile src/ → dist/
@@ -25,15 +44,31 @@ npm start -- init      # runs "codi init" from local build
 npm start -- doctor    # runs "codi doctor" from local build
 ```
 
-> **Why not just `codi`?** If you have `codi-cli` installed globally (`npm i -g codi-cli`), running `codi` executes the **published** version, not your local changes. Always use `npm start` (or `node dist/cli.js`) during development to test your local build.
+#### Option 2: Use `npm link` (replaces global binary)
 
-To replace the global binary with your local checkout:
+`npm link` replaces the global symlink to point at your local checkout:
 
 ```bash
 npm link               # symlinks global "codi" → your local dist/cli.js
-codi                   # now runs your local build
-npm unlink -g codi-cli # revert when done
 ```
+
+After linking:
+```
+~/.nvm/.../lib/node_modules/codi-cli → /path/to/your/local/codi
+```
+
+Now `codi` and `npx codi` run your local build. Every time you `npm run build`, changes are reflected immediately — no reinstall needed.
+
+To revert when done:
+
+```bash
+npm unlink -g codi-cli # remove the symlink
+npm i -g codi-cli      # reinstall from npm registry
+```
+
+#### Version injection
+
+The `VERSION` constant is injected at build time from `package.json` via tsup's `define` option — there is no hardcoded version string in the source. When `npm version` bumps `package.json`, the next `npm run build` picks up the new version automatically.
 
 ### Scripts
 

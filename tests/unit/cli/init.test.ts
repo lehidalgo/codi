@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { initHandler } from "#src/cli/init.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
@@ -20,7 +21,7 @@ describe("init command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`creates ${PROJECT_DIR}/ directory structure`, async () => {

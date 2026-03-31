@@ -46,12 +46,6 @@ export function createMockConfig(
         source: MANIFEST_FILENAME,
         locked: false,
       },
-      max_file_lines: {
-        value: 500,
-        mode: "enforced",
-        source: MANIFEST_FILENAME,
-        locked: false,
-      },
       require_tests: {
         value: true,
         mode: "enforced",

@@ -137,7 +137,6 @@ describe("per-schema wrappers", () => {
 
     expect(result).toContain("`layers`");
     expect(result).toContain("`layers.rules`");
-    expect(result).toContain("`source.repo`");
-    expect(result).toContain("`marketplace.registry`");
+    expect(result).toContain("`presetRegistry.url`");
   });
 });

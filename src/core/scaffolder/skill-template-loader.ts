@@ -58,6 +58,8 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrand,
   [prefixedName("content-factory")]: skillTemplates.contentFactory,
   [prefixedName("skill-reporter")]: skillTemplates.skillReporter,
+  [prefixedName("rule-feedback")]: skillTemplates.ruleFeedback,
+  [prefixedName("refine-rules")]: skillTemplates.refineRules,
 };
 
 /** Maps template names to their static asset directories (when available). */

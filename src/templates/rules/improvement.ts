@@ -25,9 +25,11 @@ configuration does not address, propose improvements to the user.
 You are the steward of this project's AI configuration. Every interaction is an opportunity
 to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has three designed mechanisms:
 
-1. **Feedback collection** — after using a skill, write structured feedback to \`${PROJECT_DIR}/feedback/\` (the skill-reporter skill defines the JSON schema)
-2. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
-3. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
+1. **Skill feedback** — after using a skill, write structured feedback to \`${PROJECT_DIR}/feedback/\` (the skill-reporter skill defines the JSON schema)
+2. **Rule feedback** — when you notice patterns, corrections, or outdated practices, write observations to \`${PROJECT_DIR}/feedback/rules/\` (the rule-feedback skill defines the format)
+3. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
+4. **Rule refinement** — use \`/${PROJECT_NAME}-refine-rules\` to review collected rule feedback and propose improvements with human approval
+5. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
 
 What makes configuration quality matter:
 - **Better intentHints** = users find the right skill instantly (routing table accuracy)

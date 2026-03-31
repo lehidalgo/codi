@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../../helpers/fs.js";
 import {
   createBackup,
   listBackups,
@@ -28,7 +29,7 @@ async function setup(): Promise<void> {
 
 afterEach(async () => {
   if (tmpDir) {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   }
 });
 

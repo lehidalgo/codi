@@ -4,8 +4,6 @@ import os from "node:os";
 import {
   resolveProjectDir,
   resolveUserDir,
-  resolveOrgFile,
-  resolveTeamFile,
   normalizePath,
 } from "#src/utils/paths.js";
 import { PROJECT_DIR } from "#src/constants.js";
@@ -21,22 +19,6 @@ describe("resolveUserDir", () => {
   it(`joins homedir with ${PROJECT_DIR}`, () => {
     const result = resolveUserDir();
     expect(result).toBe(path.join(os.homedir(), PROJECT_DIR));
-  });
-});
-
-describe("resolveOrgFile", () => {
-  it("returns path to org.yaml in user dir", () => {
-    const result = resolveOrgFile();
-    expect(result).toBe(path.join(os.homedir(), PROJECT_DIR, "org.yaml"));
-  });
-});
-
-describe("resolveTeamFile", () => {
-  it("returns path to team YAML in teams subdirectory", () => {
-    const result = resolveTeamFile("backend");
-    expect(result).toBe(
-      path.join(os.homedir(), PROJECT_DIR, "teams", "backend.yaml"),
-    );
   });
 });
 

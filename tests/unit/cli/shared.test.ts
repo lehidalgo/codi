@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { Command } from "commander";
 import {
   addGlobalOptions,
@@ -110,7 +111,7 @@ describe("shared CLI utilities", () => {
     });
 
     afterEach(async () => {
-      await fs.rm(tmpDir, { recursive: true, force: true });
+      await cleanupTmpDir(tmpDir);
       clearAdapters();
     });
 

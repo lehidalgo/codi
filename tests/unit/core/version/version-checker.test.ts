@@ -2,12 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../../helpers/fs.js";
 import {
   checkProjectVersion,
   checkGeneratedFreshness,
   checkProjectDirectory,
-  checkOrgConfig,
-  checkTeamConfig,
   runAllChecks,
 } from "../../../../src/core/version/version-checker.js";
 import { hashContent } from "../../../../src/utils/hash.js";
@@ -43,7 +42,7 @@ describe("checkGeneratedFreshness", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("passes when no state file exists", async () => {
@@ -130,7 +129,7 @@ describe("checkProjectDirectory", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`fails when ${PROJECT_DIR} directory does not exist`, async () => {
@@ -152,25 +151,6 @@ describe("checkProjectDirectory", () => {
   });
 });
 
-describe("checkOrgConfig", () => {
-  it("returns a result with check name org-config", async () => {
-    const result = await checkOrgConfig();
-    expect(result.check).toBe("org-config");
-    // Either passes (org config found or not found is optional) or fails
-    expect(typeof result.passed).toBe("boolean");
-    expect(typeof result.message).toBe("string");
-  });
-});
-
-describe("checkTeamConfig", () => {
-  it("fails when team config file does not exist", async () => {
-    const result = await checkTeamConfig("nonexistent-team-xyz-12345");
-    expect(result.check).toBe("team-config");
-    expect(result.passed).toBe(false);
-    expect(result.message).toContain("not found");
-  });
-});
-
 describe("runAllChecks", () => {
   let tmpDir: string;
 
@@ -181,7 +161,7 @@ describe("runAllChecks", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns report with allPassed when everything is valid", async () => {
@@ -235,21 +215,5 @@ describe("runAllChecks", () => {
     expect(freshnessResult).toBeDefined();
     expect(freshnessResult!.passed).toBe(true);
     expect(freshnessResult!.message).toContain("disabled");
-  });
-
-  it("includes org-config check in results", async () => {
-    const configDir = path.join(tmpDir, PROJECT_DIR);
-    await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      `name: test\nversion: "1"\n`,
-    );
-
-    const result = await runAllChecks(tmpDir);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-
-    const orgResult = result.data.results.find((r) => r.check === "org-config");
-    expect(orgResult).toBeDefined();
   });
 });

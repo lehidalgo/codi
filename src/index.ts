@@ -1,1 +1,2 @@
-export const VERSION = '0.3.0';
+declare const __PKG_VERSION__: string;
+export const VERSION: string = __PKG_VERSION__;

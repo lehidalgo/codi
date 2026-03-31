@@ -205,7 +205,7 @@ export function registerSkillCommand(program: Command): void {
 
   cmd
     .command("export [name]")
-    .description("Export a skill for marketplace distribution")
+    .description("Export a skill for distribution")
     .option(
       "--format <format>",
       `Export format (${EXPORT_FORMATS.join(", ")})`,

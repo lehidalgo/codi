@@ -22,7 +22,7 @@ interface SkillOption {
 }
 
 /**
- * Interactive wizard for exporting skills to marketplace formats.
+ * Interactive wizard for exporting skills to distributable formats.
  */
 export async function runSkillExportWizard(
   projectRoot: string,
@@ -69,12 +69,12 @@ export async function runSkillExportWizard(
       {
         label: "Claude Code Plugin",
         value: "claude-plugin" as const,
-        hint: "Marketplace-ready plugin bundle for Claude Code",
+        hint: "Plugin bundle for Claude Code",
       },
       {
         label: "Codex Plugin",
         value: "codex-plugin" as const,
-        hint: "Marketplace-ready plugin bundle for OpenAI Codex",
+        hint: "Plugin bundle for OpenAI Codex",
       },
       {
         label: "ZIP Bundle",

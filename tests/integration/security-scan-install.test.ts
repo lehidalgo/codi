@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
 import { Logger } from "#src/core/output/logger.js";
@@ -22,7 +23,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 // ---------------------------------------------------------------------------
@@ -222,10 +223,10 @@ describe("Integration: scanDirectory on preset directories", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Integration: scanSkillFile on realistic marketplace skills
+// Integration: scanSkillFile on realistic skill files
 // ---------------------------------------------------------------------------
 
-describe("Integration: scanSkillFile on marketplace skills", () => {
+describe("Integration: scanSkillFile on realistic skills", () => {
   it("passes a well-formed skill file", () => {
     const content = [
       "---",
@@ -329,7 +330,7 @@ describe("Integration: ZIP preset extraction + security scan", () => {
 
     // Clean up temp dir
     const tmpParent = path.dirname(extractResult.data.extractedDir);
-    await fs.rm(tmpParent, { recursive: true, force: true });
+    await cleanupTmpDir(tmpParent);
   });
 
   it("extracts malicious ZIP and scan detects threats", async () => {
@@ -355,7 +356,7 @@ describe("Integration: ZIP preset extraction + security scan", () => {
 
     // Clean up temp dir
     const tmpParent = path.dirname(extractResult.data.extractedDir);
-    await fs.rm(tmpParent, { recursive: true, force: true });
+    await cleanupTmpDir(tmpParent);
   });
 
   it("full pipeline: extract, validate, scan, decide", async () => {
@@ -394,6 +395,6 @@ describe("Integration: ZIP preset extraction + security scan", () => {
 
     // Clean up temp dir
     const tmpParent = path.dirname(extractResult.data.extractedDir);
-    await fs.rm(tmpParent, { recursive: true, force: true });
+    await cleanupTmpDir(tmpParent);
   });
 });

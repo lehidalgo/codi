@@ -42,6 +42,10 @@ export async function createRule(
     const templateResult = loadTemplate(template);
     if (!templateResult.ok) return templateResult;
     content = templateResult.data;
+    // Guard: ensure loaded template has valid YAML frontmatter
+    if (!content.trimStart().startsWith("---")) {
+      content = DEFAULT_CONTENT;
+    }
   } else {
     content = DEFAULT_CONTENT;
   }

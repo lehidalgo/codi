@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { cleanHandler } from "../../../src/cli/clean.js";
 import { Logger } from "../../../src/core/output/logger.js";
 import {
@@ -20,7 +21,7 @@ describe("clean command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   async function setupProject(): Promise<void> {
@@ -147,7 +148,7 @@ describe("clean hook files", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   async function setupWithHooks(

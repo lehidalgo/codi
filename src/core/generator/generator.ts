@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { GeneratedFile, GenerateOptions } from "../../types/agent.js";
 import type { NormalizedConfig } from "../../types/config.js";
@@ -58,7 +58,11 @@ export async function generate(
         generated.map(async (file) => {
           const fullPath = join(projectRoot, file.path);
           await mkdir(dirname(fullPath), { recursive: true });
-          await writeFile(fullPath, file.content, "utf-8");
+          if (file.binarySrc) {
+            await copyFile(file.binarySrc, fullPath);
+          } else {
+            await writeFile(fullPath, file.content, "utf-8");
+          }
         }),
       );
     }

@@ -60,6 +60,8 @@ export {
   staticDir as docEngineStaticDir,
 } from "./doc-engine/index.js";
 export { template as skillReporter } from "./skill-reporter/index.js";
+export { template as ruleFeedback } from "./rule-feedback/index.js";
+export { template as refineRules } from "./refine-rules/index.js";
 export {
   template as claudeApi,
   staticDir as claudeApiStaticDir,

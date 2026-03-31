@@ -68,12 +68,6 @@ describe("generated output snapshots", () => {
         source: MANIFEST_FILENAME,
         locked: false,
       },
-      max_file_lines: {
-        value: 500,
-        mode: "enforced",
-        source: MANIFEST_FILENAME,
-        locked: false,
-      },
     },
   });
 

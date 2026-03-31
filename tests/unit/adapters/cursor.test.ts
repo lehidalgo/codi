@@ -282,12 +282,6 @@ describe("cursor adapter", () => {
           source: MANIFEST_FILENAME,
           locked: false,
         },
-        max_file_lines: {
-          value: 1000,
-          mode: "enforced",
-          source: MANIFEST_FILENAME,
-          locked: false,
-        },
       },
     });
 

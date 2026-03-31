@@ -21,6 +21,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("open-day")]: commandTemplates.openDay,
   [prefixedName("close-day")]: commandTemplates.closeDay,
   [prefixedName("roadmap")]: commandTemplates.roadmap,
+  [prefixedName("refine-rules")]: commandTemplates.refineRules,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);

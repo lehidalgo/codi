@@ -16,7 +16,7 @@ describe("flag presets", () => {
     ]);
   });
 
-  it("each preset has all 18 flags", () => {
+  it("each preset has all 16 flags", () => {
     const catalogKeys = Object.keys(FLAG_CATALOG).sort();
     for (const name of getPresetNames()) {
       const preset = getPreset(name);
@@ -56,7 +56,6 @@ describe("flag presets", () => {
     expect(preset["test_before_commit"]!.value).toBe(true);
     expect(preset["allow_force_push"]!.value).toBe(false);
     expect(preset["type_checking"]!.value).toBe("strict");
-    expect(preset["max_file_lines"]!.value).toBe(700);
   });
 
   it("strict preset has enforced flags with locks", () => {

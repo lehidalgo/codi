@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import {
   parseManifest,
   parseFlags,
@@ -42,9 +43,9 @@ describe("parseFlags", () => {
     const result = await parseFlags(BASIC);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data["max_file_lines"]).toBeDefined();
-    expect(result.data["max_file_lines"]!.mode).toBe("enabled");
-    expect(result.data["max_file_lines"]!.value).toBe(700);
+    expect(result.data["require_tests"]).toBeDefined();
+    expect(result.data["require_tests"]!.mode).toBe("enabled");
+    expect(result.data["require_tests"]!.value).toBe(false);
     expect(result.data["security_scan"]!.value).toBe(true);
   });
 
@@ -87,7 +88,7 @@ describe("scanSkills", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty array when skills dir is missing", async () => {
@@ -171,7 +172,7 @@ describe("parseSkillFile", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("parses skill with comma-separated paths", async () => {
@@ -249,7 +250,7 @@ describe("scanProjectDir", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`returns error when ${PROJECT_DIR} directory does not exist`, async () => {

@@ -19,8 +19,8 @@
   "agents": [],
   "context": [],
   "flags": {
-    "max_file_lines": {
-      "value": 500,
+    "require_tests": {
+      "value": true,
       "mode": "enabled",
       "locked": false
     },

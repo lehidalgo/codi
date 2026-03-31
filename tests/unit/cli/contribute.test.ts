@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { parse as parseYaml } from "yaml";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -33,7 +34,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 describe("contributeHandler", () => {
@@ -451,9 +452,6 @@ describe("ZIP round-trip", () => {
     expect(scriptContent).toContain("echo hello");
 
     // Cleanup extracted temp dir
-    await fs.rm(path.dirname(extractedDir), {
-      recursive: true,
-      force: true,
-    });
+    await cleanupTmpDir(path.dirname(extractedDir));
   });
 });

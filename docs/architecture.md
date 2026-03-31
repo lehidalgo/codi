@@ -18,51 +18,31 @@ All public functions return `Result<T>` — either `ok(data)` or `err(errors)`. 
 
 ## Configuration Resolution
 
-The config resolution pipeline composes 8 independent layers in strict precedence order. Later layers override earlier ones unless a flag is `locked: true`.
+The config resolution pipeline reads `.codi/` as the single source of truth. Presets are consumed at install time — they are not loaded during config resolution.
 
 ### Layer Order (lowest to highest priority)
 
 <!-- GENERATED:START:layer_order -->
 | # | Layer | Source | Description |
 |---|-------|--------|-------------|
-| 1 | **Org** | `~/.codi/orgs/{org}/config.yaml` | Organization-wide policies |
-| 2 | **Team** | `~/.codi/teams/{name}.yaml` | Team-specific overrides |
-| 3 | **Preset** | Built-in or installed presets | Bundles of flags + artifacts (multiple, applied in order) |
-| 4 | **Repo** | `.codi/` directory | Project-level configuration |
-| 5 | **Lang** | `.codi/lang/*.yaml` | Language-specific rules |
-| 6 | **Framework** | `.codi/frameworks/*.yaml` | Framework-specific rules |
-| 7 | **Agent** | `.codi/agents/*.yaml` | Per-agent overrides |
-| 8 | **User** | `~/.codi/user.yaml` | Personal preferences (never committed) |
+| 1 | **Preset** | Built-in or installed presets | Applied at install time |
+| 2 | **Repo** | `.codi/` directory | Project-level configuration (single source of truth) |
+| 3 | **User** | `~/.codi/user.yaml` | Personal preferences (never committed) |
 <!-- GENERATED:END:layer_order -->
 
 ### Resolution Flow
 
 ```mermaid
 flowchart TD
-    A["scanCodiDir()"] --> B["Build Layers"]
-    B --> C1["Org Layer"]
-    B --> C2["Team Layer"]
-    B --> C3["Preset Layers"]
-    B --> C4["Repo Layer"]
-    B --> C5["Lang Layers"]
-    B --> C6["Framework Layers"]
-    B --> C7["Agent Layers"]
-    B --> C8["User Layer"]
-    C1 --> D["composeConfig()"]
-    C2 --> D
-    C3 --> D
-    C4 --> D
-    C5 --> D
-    C6 --> D
-    C7 --> D
-    C8 --> D
-    D --> E["validateConfig()"]
-    E --> F["Result&lt;NormalizedConfig&gt;"]
+    A["scanProjectDir()"] --> B["Parse .codi/ directory"]
+    B --> C["flagsFromDefinitions()"]
+    C --> D["validateConfig()"]
+    D --> E["Result&lt;NormalizedConfig&gt;"]
 ```
 
 **Key modules:**
-- `src/core/config/resolver.ts` — Walks the layer chain, applies locking and conditional evaluation
-- `src/core/config/composer.ts` — Merges resolved flags with rules, skills, agents into final config
+- `src/core/config/resolver.ts` — Reads `.codi/` as single source of truth
+- `src/core/config/composer.ts` — Converts flag definitions into resolved flags with source tracking
 - `src/core/config/parser.ts` — Scans `.codi/` directory, parses YAML/Markdown frontmatter
 - `src/core/config/validator.ts` — Semantic validation (duplicates, size limits, adapter existence)
 
@@ -93,9 +73,11 @@ flowchart TD
 2. **Generation** — Adapter produces files (instruction file, rules, skills, agents, MCP config)
 3. **Verification injection** — Append verification token/checksum to instruction file
 4. **Hash computation** — Recalculate hash after content injection
-5. **File writing** — Create directories and write files (skipped in dry-run mode)
+5. **File writing** — Create directories and write files (skipped in dry-run mode). Binary assets (fonts, images, PDFs) are copied via `fs.copyFile` using the `binarySrc` field on `GeneratedFile`.
 
 **Key module:** `src/core/generator/generator.ts`
+
+**Design decision — progressive loading:** Codi always generates full-content skill files. It does not implement metadata stubs or tiered loading. Agents like Claude Code and Cursor handle progressive loading natively at runtime (reading frontmatter first, loading full content on activation). Codi's `progressive_loading` flag only controls whether Windsurf/Cline inline skills in their single main config file or reference separate skill files.
 
 ---
 
@@ -143,7 +125,6 @@ Codi detects the project's existing Git hook runner in priority order:
 | `test_before_commit` | tests | Run tests before commit |
 | `security_scan` | secret-detection | Mandatory security scanning |
 | `type_checking` | typecheck | Type checking level |
-| `max_file_lines` | file-size-check | Max lines per file |
 <!-- GENERATED:END:flag_hooks -->
 
 ### Installation

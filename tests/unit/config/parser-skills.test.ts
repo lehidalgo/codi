@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { scanSkills, scanProjectDir } from "#src/core/config/parser.js";
 import {
   PROJECT_NAME,
@@ -19,7 +20,7 @@ describe("scanSkills", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty array when skills dir does not exist", async () => {
@@ -150,7 +151,7 @@ describe("scanProjectDir with skills", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("includes skills in parsed result", async () => {

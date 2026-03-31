@@ -269,15 +269,7 @@ npx ${PROJECT_CLI} revert --last --json
 \\\`\\\`\\\`
 Expected: Backups from prior generates. Restore succeeds.
 
-## Suite 10: Marketplace
-
-**[SYSTEM]**
-\\\`\\\`\\\`bash
-npx ${PROJECT_CLI} marketplace search test --json
-\\\`\\\`\\\`
-Note: May fail if no registry configured. This is expected.
-
-## Suite 11: Clean & Reinstall
+## Suite 10: Clean & Reinstall
 
 **[SYSTEM]**
 \\\`\\\`\\\`bash

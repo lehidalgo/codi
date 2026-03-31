@@ -12,10 +12,7 @@ import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
-import {
-  generateSkillFiles,
-  resolveProgressiveLoading,
-} from "./skill-generator.js";
+import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildAgentsTable,
@@ -129,12 +126,10 @@ export const codexAdapter: AgentAdapter = {
     });
 
     // Generate .agents/skills/{name}/SKILL.md + supporting files (auto-discovered by Codex)
-    const plMode = resolveProgressiveLoading(config.flags);
     files.push(
       ...(await generateSkillFiles(
         regularSkills,
         ".agents/skills",
-        plMode,
         _options.projectRoot,
       )),
     );
@@ -227,11 +222,6 @@ function buildCodexNativeSettings(
 
   if (flagValue("allow_shell_commands") === false) {
     lines.push("[features]", "shell_tool = false");
-  }
-
-  const maxTokens = flagValue("max_context_tokens");
-  if (typeof maxTokens === "number" && maxTokens > 0) {
-    lines.push(`model_context_window = ${maxTokens}`);
   }
 
   return lines.length > 0 ? lines : null;

@@ -1,15 +1,9 @@
-import fs from "node:fs/promises";
-import { parse as parseYaml } from "yaml";
 import { ok } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { satisfiesVersion } from "../../utils/semver.js";
 import { StateManager } from "../config/state.js";
 import { scanProjectDir } from "../config/parser.js";
-import {
-  resolveProjectDir,
-  resolveOrgFile,
-  resolveTeamFile,
-} from "../../utils/paths.js";
+import { resolveProjectDir } from "../../utils/paths.js";
 import {
   PROJECT_CLI,
   PROJECT_DIR,
@@ -129,60 +123,6 @@ export async function checkProjectDirectory(
   };
 }
 
-export async function checkOrgConfig(): Promise<VersionCheckResult> {
-  const orgFile = resolveOrgFile();
-  try {
-    const raw = await fs.readFile(orgFile, "utf8");
-    const parsed = parseYaml(raw);
-    if (parsed && typeof parsed === "object") {
-      return {
-        check: "org-config",
-        passed: true,
-        message: `Org config found at ${orgFile}.`,
-      };
-    }
-    return {
-      check: "org-config",
-      passed: false,
-      message: `Org config at ${orgFile} is not valid YAML.`,
-    };
-  } catch {
-    return {
-      check: "org-config",
-      passed: true,
-      message: "No org config found (optional).",
-    };
-  }
-}
-
-export async function checkTeamConfig(
-  teamName: string,
-): Promise<VersionCheckResult> {
-  const teamFile = resolveTeamFile(teamName);
-  try {
-    const raw = await fs.readFile(teamFile, "utf8");
-    const parsed = parseYaml(raw);
-    if (parsed && typeof parsed === "object") {
-      return {
-        check: "team-config",
-        passed: true,
-        message: `Team config "${teamName}" found at ${teamFile}.`,
-      };
-    }
-    return {
-      check: "team-config",
-      passed: false,
-      message: `Team config at ${teamFile} is not valid YAML.`,
-    };
-  } catch {
-    return {
-      check: "team-config",
-      passed: false,
-      message: `Team "${teamName}" referenced in manifest but not found at ${teamFile}.`,
-    };
-  }
-}
-
 export async function runAllChecks(
   projectRoot: string,
   driftMode: string = "warn",
@@ -200,16 +140,6 @@ export async function runAllChecks(
       configResult.data.manifest.engine.requiredVersion,
     );
     results.push(versionCheck);
-  }
-
-  // Check org config
-  const orgCheck = await checkOrgConfig();
-  results.push(orgCheck);
-
-  // Check team config if referenced in manifest
-  if (configResult.ok && configResult.data.manifest.team) {
-    const teamCheck = await checkTeamConfig(configResult.data.manifest.team);
-    results.push(teamCheck);
   }
 
   // Check generated files freshness

@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveProjectDir } from "../utils/paths.js";
 import { isPathSafe } from "../utils/path-guard.js";
-import { fileExists } from "../utils/fs.js";
+import { fileExists, safeRm } from "../utils/fs.js";
 import { StateManager } from "../core/config/state.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { createCommandResult } from "../core/output/formatter.js";
@@ -41,12 +41,7 @@ async function safeDelete(filePath: string): Promise<boolean> {
 }
 
 async function safeRmDir(dirPath: string): Promise<boolean> {
-  try {
-    await fs.rm(dirPath, { recursive: true, force: true });
-    return true;
-  } catch {
-    return false;
-  }
+  return safeRm(dirPath);
 }
 
 async function isDirEmpty(dirPath: string): Promise<boolean> {

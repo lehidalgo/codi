@@ -40,6 +40,9 @@ export const PresetManifestSchema = z.object({
   author: z.string().optional(),
   license: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  category: z
+    .enum(["engineering", "design", "data", "platform", "security", "custom"])
+    .optional(),
   compatibility: PresetCompatibilitySchema,
   dependencies: z.array(z.string()).optional(),
   artifacts: PresetArtifactsSchema,

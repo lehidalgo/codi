@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import {
   addRuleHandler,
   addSkillHandler,
@@ -24,7 +25,7 @@ describe("add rule command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a rule file without template", async () => {
@@ -95,7 +96,7 @@ describe("add skill command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a skill directory with SKILL.md", async () => {
@@ -189,7 +190,7 @@ describe("add agent command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates an agent file without template", async () => {
@@ -255,7 +256,7 @@ describe("add command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a command file without template", async () => {
@@ -314,7 +315,7 @@ describe("add mcp-server command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates an MCP server file without template", async () => {
@@ -380,7 +381,7 @@ describe("add brand command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a brand as a skill with SKILL.md", async () => {
@@ -433,7 +434,7 @@ describe("add handler shared behaviors", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("all handlers reject names exceeding max length", async () => {

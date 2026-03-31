@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { stringify as stringifyYaml, parse as parseYaml } from "yaml";
 import { updateHandler } from "#src/cli/update.js";
 import { Logger } from "#src/core/output/logger.js";
@@ -31,7 +32,7 @@ describe("update command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("adds missing flags from catalog", async () => {
@@ -106,7 +107,7 @@ describe("update command handler", () => {
     const result = await updateHandler(emptyDir, { json: true });
     expect(result.success).toBe(false);
     expect(result.errors[0]!.code).toBe("E_CONFIG_NOT_FOUND");
-    await fs.rm(emptyDir, { recursive: true, force: true });
+    await cleanupTmpDir(emptyDir);
   });
 
   it("rejects invalid preset name", async () => {
@@ -174,10 +175,7 @@ describe("update command handler", () => {
       "utf-8",
     );
     // Remove the custom rules dir
-    await fs.rm(path.join(configDir, "rules"), {
-      recursive: true,
-      force: true,
-    });
+    await cleanupTmpDir(path.join(configDir, "rules"));
 
     const result = await updateHandler(tmpDir, { json: true, rules: true });
     expect(result.success).toBe(true);

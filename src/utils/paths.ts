@@ -10,14 +10,6 @@ export function resolveUserDir(): string {
   return path.join(os.homedir(), PROJECT_DIR);
 }
 
-export function resolveOrgFile(): string {
-  return path.join(os.homedir(), PROJECT_DIR, "org.yaml");
-}
-
-export function resolveTeamFile(teamName: string): string {
-  return path.join(os.homedir(), PROJECT_DIR, "teams", `${teamName}.yaml`);
-}
-
 export function normalizePath(p: string): string {
   return p.split(path.sep).join("/");
 }

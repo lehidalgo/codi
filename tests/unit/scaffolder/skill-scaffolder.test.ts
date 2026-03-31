@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
 import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 
 describe("skill scaffolder", () => {
   let tmpDir: string;
@@ -16,7 +17,7 @@ describe("skill scaffolder", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a skill file with default content", async () => {
