@@ -3,7 +3,7 @@
  */
 import type { AgentAdapter } from "#src/types/agent.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
-import type { HubAction } from "#src/cli/hub.js";
+import type { HubAction, HubTopLevelEntry } from "#src/cli/hub.js";
 import { PROJECT_CLI, PROJECT_DIR } from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
@@ -75,10 +75,25 @@ export function renderErrorCatalog(
 // Hub actions
 // ---------------------------------------------------------------------------
 
-export function renderHubActions(actions: HubAction[]): string {
-  const rows = actions.map((a) => {
-    return `| ${a.label} | ${a.hint} | \`${a.group}\` |`;
-  });
+export function renderHubActions(
+  topLevel: HubTopLevelEntry[],
+  subMenus: Record<string, HubAction[]>,
+): string {
+  const rows: string[] = [];
+
+  for (const entry of topLevel) {
+    const items = subMenus[entry.value];
+    if (items) {
+      rows.push(`| **${entry.label}** | ${entry.hint} | — |`);
+      for (const item of items) {
+        rows.push(
+          `| \u00A0\u00A0${item.label} | ${item.hint} | \`${entry.value}\` |`,
+        );
+      }
+    } else {
+      rows.push(`| **${entry.label}** | ${entry.hint} | — |`);
+    }
+  }
 
   return [
     "| Action | Description | Group |",
@@ -132,55 +147,25 @@ export function renderCliReference(commands: CliCommand[]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Layer order (8-layer config resolution)
+// Config resolution order (preset-based)
 // ---------------------------------------------------------------------------
 
 export function renderLayerOrder(): string {
   const layers = [
     [
       "1",
-      "**Org**",
-      `\`~/${PROJECT_DIR}/orgs/{org}/config.yaml\``,
-      "Organization-wide policies",
+      "**Preset**",
+      "Built-in or installed presets",
+      "Bundles of flags + artifacts (applied at install time)",
     ],
     [
       "2",
-      "**Team**",
-      `\`~/${PROJECT_DIR}/teams/{name}.yaml\``,
-      "Team-specific overrides",
+      "**Repo**",
+      `\`${PROJECT_DIR}/\` directory`,
+      "Project-level configuration (single source of truth)",
     ],
     [
       "3",
-      "**Preset**",
-      "Built-in or installed presets",
-      "Bundles of flags + artifacts (multiple, applied in order)",
-    ],
-    [
-      "4",
-      "**Repo**",
-      `\`${PROJECT_DIR}/\` directory`,
-      "Project-level configuration",
-    ],
-    [
-      "5",
-      "**Lang**",
-      `\`${PROJECT_DIR}/lang/*.yaml\``,
-      "Language-specific rules",
-    ],
-    [
-      "6",
-      "**Framework**",
-      `\`${PROJECT_DIR}/frameworks/*.yaml\``,
-      "Framework-specific rules",
-    ],
-    [
-      "7",
-      "**Agent**",
-      `\`${PROJECT_DIR}/agents/*.yaml\``,
-      "Per-agent overrides",
-    ],
-    [
-      "8",
       "**User**",
       `\`~/${PROJECT_DIR}/user.yaml\``,
       "Personal preferences (never committed)",

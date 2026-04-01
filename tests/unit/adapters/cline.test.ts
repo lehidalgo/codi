@@ -206,6 +206,50 @@ describe("cline adapter", () => {
     ).toBeDefined();
   });
 
+  // --- generate() with progressive_loading metadata ---
+
+  it("shows skill catalog when progressive_loading is metadata", async () => {
+    const config = createMockConfig({
+      skills: [
+        { name: "deploy", description: "Deploy skill", content: "Run deploy" },
+      ],
+      flags: {
+        progressive_loading: {
+          value: "metadata",
+          mode: "enabled",
+          source: MANIFEST_FILENAME,
+          locked: false,
+        },
+      },
+    });
+    const files = await clineAdapter.generate(config, {});
+
+    const mainFile = files.find((f) => f.path === ".clinerules");
+    expect(mainFile!.content).toContain("Available Skills");
+    expect(mainFile!.content).not.toContain("# Skill: deploy");
+  });
+
+  // --- generate() with brand-category skills ---
+
+  it("renders brand-category skills in .clinerules", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand identity",
+          content: "Brand content here",
+          category: "brand",
+        },
+      ],
+      flags: {},
+    });
+    const files = await clineAdapter.generate(config, {});
+
+    const mainFile = files.find((f) => f.path === ".clinerules");
+    expect(mainFile!.content).toContain("# Brand: my-brand");
+    expect(mainFile!.content).toContain("Brand content here");
+  });
+
   // --- Cline does NOT support MCP ---
 
   it("does not generate any MCP config files", async () => {

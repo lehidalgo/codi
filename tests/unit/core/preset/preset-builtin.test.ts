@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   isBuiltinPreset,
   materializeBuiltinPreset,
-} from "../../../../src/core/preset/preset-builtin.js";
-import { prefixedName } from "../../../../src/constants.js";
+} from "#src/core/preset/preset-builtin.js";
+import { prefixedName } from "#src/constants.js";
 
 describe("isBuiltinPreset", () => {
   it("recognizes flag-only presets (minimal, balanced, strict)", () => {
@@ -35,11 +35,11 @@ describe("materializeBuiltinPreset", () => {
         "Recommended — security on, type-checking strict, no force-push",
       );
       expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBe(18);
+      expect(Object.keys(result.data.flags).length).toBe(16);
     }
   });
 
-  it("materializes fullstack preset with 8 rules", () => {
+  it("materializes fullstack preset with 9 rules", () => {
     const result = materializeBuiltinPreset(prefixedName("fullstack"));
 
     expect(result.ok).toBe(true);
@@ -47,8 +47,8 @@ describe("materializeBuiltinPreset", () => {
       expect(result.data.name).toBe(prefixedName("fullstack"));
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBe(18);
-      expect(result.data.rules.length).toBe(8);
+      expect(Object.keys(result.data.flags).length).toBe(16);
+      expect(result.data.rules.length).toBe(9);
     }
   });
 

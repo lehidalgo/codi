@@ -8,7 +8,7 @@ Adopt codi in projects that already use AI agents with manual config files.
 # 1. Initialize — codi auto-detects existing agent config files
 codi init
 
-# 2. Move your existing rules into .codi/rules/custom/ as Markdown files
+# 2. Move your existing rules into .codi/rules/ as Markdown files
 # Each rule needs YAML frontmatter (name, description, priority)
 
 # 3. Regenerate — now all agents get the same rules
@@ -24,7 +24,7 @@ Your existing `CLAUDE.md`, `.cursorrules`, etc. will be overwritten by codi's ge
 
 ### Rule Format
 
-When moving existing rules into `.codi/rules/custom/`, each file must be a Markdown file with YAML frontmatter:
+When moving existing rules into `.codi/rules/`, each file must be a Markdown file with YAML frontmatter:
 
 ```markdown
 ---
@@ -58,9 +58,9 @@ If you have a hand-written `CLAUDE.md` with inline instructions for Claude Code.
 
 | Source (CLAUDE.md section) | Destination |
 |----------------------------|-------------|
-| Coding guidelines | `.codi/rules/custom/code-style.md` |
-| Security rules | `.codi/rules/custom/security.md` |
-| Testing standards | `.codi/rules/custom/testing.md` |
+| Coding guidelines | `.codi/rules/code-style.md` |
+| Security rules | `.codi/rules/security.md` |
+| Testing standards | `.codi/rules/testing.md` |
 | Skill descriptions | `.codi/skills/<name>.md` |
 | Agent definitions | `.codi/agents/<name>.md` |
 
@@ -91,13 +91,13 @@ If you have a single `.cursorrules` file with all instructions for Cursor.
 
 **What to move**:
 - Split the monolithic file into individual rule files by topic
-- Each rule becomes a focused Markdown file in `.codi/rules/custom/`
+- Each rule becomes a focused Markdown file in `.codi/rules/`
 
 **Where it goes**:
 
 | Source (.cursorrules section) | Destination |
 |-------------------------------|-------------|
-| All inline rules | `.codi/rules/custom/<topic>.md` (one per topic) |
+| All inline rules | `.codi/rules/<topic>.md` (one per topic) |
 
 **Commands**:
 ```bash
@@ -129,7 +129,7 @@ If you have a `.windsurfrules` file for Windsurf.
 
 | Source (.windsurfrules section) | Destination |
 |---------------------------------|-------------|
-| All inline rules | `.codi/rules/custom/<topic>.md` (one per topic) |
+| All inline rules | `.codi/rules/<topic>.md` (one per topic) |
 
 **Commands**:
 ```bash
@@ -158,7 +158,7 @@ If you have a `.clinerules` file for Cline.
 
 | Source (.clinerules section) | Destination |
 |-------------------------------|-------------|
-| All inline rules | `.codi/rules/custom/<topic>.md` (one per topic) |
+| All inline rules | `.codi/rules/<topic>.md` (one per topic) |
 
 **Commands**:
 ```bash
@@ -181,7 +181,7 @@ codi generate
 If you have an `AGENTS.md` file with inline agent definitions for OpenAI Codex.
 
 **What to move**:
-- Inline rules become `.codi/rules/custom/*.md`
+- Inline rules become `.codi/rules/*.md`
 - Agent definitions become `.codi/agents/*.md`
 - Skill descriptions become `.codi/skills/*.md`
 
@@ -189,7 +189,7 @@ If you have an `AGENTS.md` file with inline agent definitions for OpenAI Codex.
 
 | Source (AGENTS.md section) | Destination |
 |----------------------------|-------------|
-| Coding rules/guidelines | `.codi/rules/custom/<topic>.md` |
+| Coding rules/guidelines | `.codi/rules/<topic>.md` |
 | Agent definitions | `.codi/agents/<name>.md` |
 | Skill/tool descriptions | `.codi/skills/<name>.md` |
 
@@ -231,7 +231,7 @@ flowchart LR
     end
 
     subgraph ".codi/ structure"
-        H["rules/custom/*.md"]
+        H["rules/<topic>.md"]
         I["skills/*.md"]
         J["agents/*.md"]
     end
@@ -278,7 +278,7 @@ After migration, all agents share the same rules from a single source of truth i
 Once migrated, use the standard daily workflow:
 
 ```bash
-# Edit rules in .codi/rules/custom/
+# Edit rules in .codi/rules/<topic>.md
 # Regenerate with: codi generate
 # Check drift with: codi status
 # Commit both .codi/ and generated files

@@ -16,7 +16,6 @@ export const preset: BuiltinPresetDefinition = {
     test_before_commit: { mode: "enabled", value: true },
     security_scan: { mode: "enabled", value: true },
     type_checking: { mode: "enabled", value: "strict" },
-    max_file_lines: { mode: "enabled", value: 700 },
     require_tests: { mode: "enabled", value: false },
     allow_shell_commands: { mode: "enabled", value: true },
     allow_file_deletion: { mode: "enabled", value: true },
@@ -26,7 +25,6 @@ export const preset: BuiltinPresetDefinition = {
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: false },
     allowed_languages: { mode: "enabled", value: ["*"] },
-    max_context_tokens: { mode: "enabled", value: 50000 },
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "warn" },
     auto_generate_on_change: { mode: "enabled", value: false },
@@ -34,14 +32,21 @@ export const preset: BuiltinPresetDefinition = {
   rules: [
     prefixedName("code-style"),
     prefixedName("error-handling"),
+    prefixedName("git-workflow"),
+    prefixedName("testing"),
     devArtifactName("improvement"),
   ],
   skills: [
     prefixedName("code-review"),
+    prefixedName("security-scan"),
     prefixedName("commit"),
     prefixedName("compare-preset"),
   ],
   agents: [prefixedName("code-reviewer")],
-  commands: [prefixedName("review"), prefixedName("commit")],
+  commands: [
+    prefixedName("review"),
+    prefixedName("commit"),
+    prefixedName("security-scan"),
+  ],
   mcpServers: [],
 };

@@ -2,22 +2,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { Command } from "commander";
 import {
   addGlobalOptions,
   initFromOptions,
   handleOutput,
   regenerateConfigs,
-} from "../../../src/cli/shared.js";
-import { createCommandResult } from "../../../src/core/output/formatter.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { clearAdapters } from "../../../src/core/generator/adapter-registry.js";
+} from "#src/cli/shared.js";
+import { createCommandResult } from "#src/core/output/formatter.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
+import { Logger } from "#src/core/output/logger.js";
+import { clearAdapters } from "#src/core/generator/adapter-registry.js";
 import {
   PROJECT_NAME,
   PROJECT_DIR,
   MANIFEST_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 describe("shared CLI utilities", () => {
   describe("addGlobalOptions", () => {
@@ -110,7 +111,7 @@ describe("shared CLI utilities", () => {
     });
 
     afterEach(async () => {
-      await fs.rm(tmpDir, { recursive: true, force: true });
+      await cleanupTmpDir(tmpDir);
       clearAdapters();
     });
 

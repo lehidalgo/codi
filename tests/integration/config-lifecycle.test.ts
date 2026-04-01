@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
 import { resolveConfig } from "#src/core/config/resolver.js";
@@ -11,8 +12,7 @@ import {
   scanRules,
   scanSkills,
 } from "#src/core/config/parser.js";
-import { composeConfig } from "#src/core/config/composer.js";
-import type { ConfigLayer } from "#src/core/config/composer.js";
+import { flagsFromDefinitions } from "#src/core/config/composer.js";
 import { validateConfig } from "#src/core/config/validator.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
@@ -31,7 +31,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 async function createTestProject(config: {
@@ -183,7 +183,7 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
     await createTestProject({
       flags: {
         security_scan: { mode: "enforced", value: true },
-        max_file_lines: { mode: "enabled", value: 500 },
+        require_tests: { mode: "enabled", value: true },
       },
     });
 
@@ -192,35 +192,21 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
     if (!result.ok) return;
 
     expect(result.data.flags["security_scan"]?.value).toBe(true);
-    expect(result.data.flags["max_file_lines"]?.value).toBe(500);
+    expect(result.data.flags["require_tests"]?.value).toBe(true);
   });
 
-  it("lang layer overrides repo flags", async () => {
+  it("reads flags only from flags.yaml (no layer overrides)", async () => {
     await createTestProject({
       flags: {
-        max_file_lines: { mode: "enabled", value: 700 },
+        type_checking: { mode: "enabled", value: "basic" },
       },
     });
-
-    // Add lang layer
-    const langDir = path.join(tmpDir, PROJECT_DIR, "lang");
-    await fs.mkdir(langDir, { recursive: true });
-    await fs.writeFile(
-      path.join(langDir, "typescript.yaml"),
-      stringifyYaml({
-        flags: {
-          max_file_lines: { mode: "enabled", value: 400 },
-        },
-      }),
-      "utf-8",
-    );
 
     const result = await resolveConfig(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    // Lang layer should override repo value
-    expect(result.data.flags["max_file_lines"]?.value).toBe(400);
+    expect(result.data.flags["type_checking"]?.value).toBe("basic");
   });
 });
 
@@ -263,47 +249,19 @@ describe("Config Lifecycle: individual parse steps", () => {
   });
 });
 
-describe("Config Lifecycle: compose and validate", () => {
-  it("composeConfig merges multiple layers correctly", () => {
-    const layers: ConfigLayer[] = [
-      {
-        level: "repo",
-        source: "repo",
-        config: {
-          manifest: { name: "test", version: "1" },
-          rules: [
-            {
-              name: "r1",
-              description: "",
-              content: "Rule one.",
-              managedBy: PROJECT_NAME,
-            },
-          ],
-          flags: {},
-          mcp: { servers: {} },
-        },
+describe("Config Lifecycle: resolve and validate", () => {
+  it("flagsFromDefinitions converts raw flags to resolved flags", () => {
+    const defs = {
+      type_checking: {
+        mode: "enabled" as const,
+        value: "strict",
+        locked: true,
       },
-      {
-        level: "lang",
-        source: "lang.yaml",
-        config: {
-          flags: {
-            max_file_lines: {
-              value: 500,
-              mode: "enabled",
-              source: "lang.yaml",
-            },
-          },
-        },
-      },
-    ];
-
-    const result = composeConfig(layers);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.manifest.name).toBe("test");
-    expect(result.data.rules).toHaveLength(1);
-    expect(result.data.flags["max_file_lines"]?.value).toBe(500);
+    };
+    const resolved = flagsFromDefinitions(defs, "flags.yaml");
+    expect(resolved["type_checking"]!.value).toBe("strict");
+    expect(resolved["type_checking"]!.source).toBe("flags.yaml");
+    expect(resolved["type_checking"]!.locked).toBe(true);
   });
 
   it("validateConfig returns no errors for valid config", async () => {

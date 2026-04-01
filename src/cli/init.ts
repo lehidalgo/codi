@@ -38,6 +38,7 @@ import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
 import { runInitWizard } from "./init-wizard.js";
+import type { ExistingSelections } from "./init-wizard.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
@@ -45,9 +46,14 @@ import { installHooks } from "../core/hooks/hook-installer.js";
 import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
+import { checkTemplateRegistry } from "../core/scaffolder/template-registry-check.js";
 import type { GlobalOptions } from "./shared.js";
 import { VERSION } from "../index.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import { StateManager } from "../core/config/state.js";
+import type { ArtifactFileState } from "../core/config/state.js";
+import { hashContent } from "../utils/hash.js";
+import { readLockFile, writeLockFile } from "../core/preset/preset-registry.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -74,36 +80,43 @@ export async function initHandler(
   options: InitOptions,
 ): Promise<CommandResult<InitData>> {
   const log = Logger.getInstance();
+
+  const registryErrors = checkTemplateRegistry();
+  if (registryErrors.length > 0) {
+    console.error(`\n[codi] Template registry integrity check failed:`);
+    for (const e of registryErrors) console.error(`  • ${e}`);
+    console.error(
+      `\nThe CLI cannot run with broken templates. This is a bug — please report it.\n`,
+    );
+    process.exit(1);
+  }
+
   const configDir = resolveProjectDir(projectRoot);
 
+  let isUpdate = false;
+  let existingSelections: ExistingSelections | undefined;
   try {
     await fs.access(configDir);
     if (!options.force) {
-      return createCommandResult({
-        success: false,
-        command: "init",
-        data: {
-          configDir,
-          agents: [],
-          stack: [],
-          generated: false,
-          preset: DEFAULT_PRESET,
-          rules: [],
-        },
-        errors: [
-          {
-            code: "E_CONFIG_INVALID",
-            message: `${PROJECT_DIR}/ directory already exists. Use --force to reinitialize.`,
-            hint: "Use --force to reinitialize.",
-            severity: "error",
-            context: { configDir },
-          },
-        ],
-        exitCode: EXIT_CODES.GENERAL_ERROR,
-      });
+      isUpdate = true;
+      const ledger = new OperationsLedgerManager(configDir);
+      const ledgerResult = await ledger.read();
+      const activePreset = ledgerResult.ok
+        ? ledgerResult.data.activePreset
+        : null;
+      if (activePreset?.artifactSelection) {
+        existingSelections = {
+          preset: activePreset.name,
+          rules: activePreset.artifactSelection.rules,
+          skills: activePreset.artifactSelection.skills,
+          agents: activePreset.artifactSelection.agents,
+          commands: activePreset.artifactSelection.commands,
+          mcpServers: activePreset.artifactSelection.mcpServers ?? [],
+        };
+      }
     }
   } catch {
-    // Directory does not exist, proceed
+    // Directory does not exist, proceed as fresh install
   }
 
   let stack = await detectStack(projectRoot);
@@ -136,6 +149,7 @@ export async function initHandler(
       stack,
       detectedAgentIds,
       allAgentIds,
+      existingSelections,
     );
     if (!wizardResult) {
       return createCommandResult({
@@ -185,13 +199,15 @@ export async function initHandler(
       mcpServerTemplates = wizardResult.mcpServers;
     }
 
-    await createProjectStructure(
-      configDir,
-      agentIds,
-      wizardResult.selectedPresetName ?? presetName,
-      wizardResult.versionPin,
-      wizardResult.flags,
-    );
+    if (!isUpdate) {
+      await createProjectStructure(
+        configDir,
+        agentIds,
+        wizardResult.selectedPresetName ?? presetName,
+        wizardResult.versionPin,
+        wizardResult.flags,
+      );
+    }
 
     // Handle import sources (ZIP/GitHub)
     if (wizardResult.importSource) {
@@ -297,11 +313,26 @@ export async function initHandler(
     }
 
     log.info(`Using agents: ${agentIds.join(", ")}`);
-    await createProjectStructure(configDir, agentIds, presetName, false);
+    if (!isUpdate) {
+      await createProjectStructure(configDir, agentIds, presetName, false);
+    }
+
+    const presetDef = getBuiltinPresetDefinition(presetName);
+    if (presetDef) {
+      ruleTemplates = [...presetDef.rules];
+      skillTemplates = [...presetDef.skills];
+      agentTemplates = [...presetDef.agents];
+      commandTemplates = [...presetDef.commands];
+    }
   }
 
   for (const template of ruleTemplates) {
-    const result = await createRule({ name: template, configDir, template });
+    const result = await createRule({
+      name: template,
+      configDir,
+      template,
+      force: options.force,
+    });
     if (!result.ok) {
       log.warn(
         `Failed to create rule "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -316,6 +347,7 @@ export async function initHandler(
       configDir,
       template,
       copyrightHolder: projectName,
+      force: options.force,
     });
     if (!result.ok) {
       log.warn(
@@ -325,7 +357,12 @@ export async function initHandler(
   }
 
   for (const template of agentTemplates) {
-    const result = await createAgent({ name: template, configDir, template });
+    const result = await createAgent({
+      name: template,
+      configDir,
+      template,
+      force: options.force,
+    });
     if (!result.ok) {
       log.warn(
         `Failed to create agent "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -334,7 +371,12 @@ export async function initHandler(
   }
 
   for (const template of commandTemplates) {
-    const result = await createCommand({ name: template, configDir, template });
+    const result = await createCommand({
+      name: template,
+      configDir,
+      template,
+      force: options.force,
+    });
     if (!result.ok) {
       log.warn(
         `Failed to create command "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
@@ -347,6 +389,7 @@ export async function initHandler(
       name: template,
       configDir,
       template,
+      force: options.force,
     });
     if (!result.ok) {
       log.warn(
@@ -355,10 +398,101 @@ export async function initHandler(
     }
   }
 
+  // Record preset artifacts in state for drift detection
+  if (presetName) {
+    try {
+      const stateManager = new StateManager(configDir, projectRoot);
+      const now = new Date().toISOString();
+      const artifactStates: ArtifactFileState[] = [];
+
+      for (const name of ruleTemplates) {
+        const filePath = path.join(configDir, "rules", `${name}.md`);
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+      for (const name of skillTemplates) {
+        const filePath = path.join(configDir, "skills", name, "SKILL.md");
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+      for (const name of agentTemplates) {
+        const filePath = path.join(configDir, "agents", `${name}.md`);
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+      for (const name of commandTemplates) {
+        const filePath = path.join(configDir, "commands", `${name}.md`);
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          artifactStates.push({
+            path: path.relative(projectRoot, filePath),
+            hash: hashContent(content),
+            preset: presetName,
+            timestamp: now,
+          });
+        } catch {
+          /* file may not exist if scaffolding failed */
+        }
+      }
+
+      if (artifactStates.length > 0) {
+        await stateManager.updatePresetArtifacts(artifactStates);
+      }
+    } catch {
+      log.warn("Preset artifact state tracking failed; this is non-critical.");
+    }
+  }
+
+  // Record installed preset in lock file
+  if (presetName) {
+    try {
+      const lock = await readLockFile(configDir);
+      lock.presets[presetName] = {
+        version: "builtin",
+        source: presetName,
+        sourceType: "builtin",
+        installedAt: new Date().toISOString(),
+      };
+      await writeLockFile(configDir, lock);
+    } catch {
+      log.warn("Failed to write preset lock file; this is non-critical.");
+    }
+  }
+
   let generated = false;
   const configResult = await resolveConfig(projectRoot);
   if (configResult.ok) {
-    const genResult = await generate(configResult.data, projectRoot);
+    const genResult = await generate(configResult.data, projectRoot, {
+      force: options.force,
+      json: options.json,
+    });
     generated = genResult.ok;
     if (!genResult.ok) {
       log.warn(
@@ -385,6 +519,7 @@ export async function initHandler(
           secretScan: hooksConfig.secretScan,
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
+          templateWiringCheck: hooksConfig.templateWiringCheck,
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
@@ -547,7 +682,13 @@ async function createProjectStructure(
   }
 
   const manifest: Record<string, unknown> = {
-    name: path.basename(path.dirname(configDir)),
+    name:
+      path
+        .basename(path.dirname(configDir))
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .replace(/-{2,}/g, "-") || "project",
     version: "1",
     agents,
   };

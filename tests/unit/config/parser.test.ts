@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import {
   parseManifest,
   parseFlags,
@@ -42,9 +43,9 @@ describe("parseFlags", () => {
     const result = await parseFlags(BASIC);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data["max_file_lines"]).toBeDefined();
-    expect(result.data["max_file_lines"]!.mode).toBe("enabled");
-    expect(result.data["max_file_lines"]!.value).toBe(700);
+    expect(result.data["require_tests"]).toBeDefined();
+    expect(result.data["require_tests"]!.mode).toBe("enabled");
+    expect(result.data["require_tests"]!.value).toBe(false);
     expect(result.data["security_scan"]!.value).toBe(true);
   });
 
@@ -87,7 +88,7 @@ describe("scanSkills", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty array when skills dir is missing", async () => {
@@ -171,7 +172,7 @@ describe("parseSkillFile", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("parses skill with comma-separated paths", async () => {
@@ -249,7 +250,7 @@ describe("scanProjectDir", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`returns error when ${PROJECT_DIR} directory does not exist`, async () => {
@@ -323,6 +324,109 @@ describe("scanProjectDir", () => {
     expect(result.data.rules[0]!.name).toBe("testing");
     expect(result.data.skills.length).toBe(1);
     expect(result.data.skills[0]!.name).toBe("commit");
+  });
+
+  it("parses commands from commands directory", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
+    await fs.writeFile(
+      path.join(configDir, MANIFEST_FILENAME),
+      'name: cmd-test\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+
+    const commandsDir = path.join(configDir, "commands");
+    await fs.mkdir(commandsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(commandsDir, "deploy.md"),
+      `---\nname: deploy\ndescription: Deploy the app\nmanaged_by: ${PROJECT_NAME}\n---\nRun the deploy script.`,
+      "utf-8",
+    );
+
+    const result = await scanProjectDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.commands).toHaveLength(1);
+    expect(result.data.commands[0]!.name).toBe("deploy");
+    expect(result.data.commands[0]!.description).toBe("Deploy the app");
+    expect(result.data.commands[0]!.content).toContain(
+      "Run the deploy script.",
+    );
+    expect(result.data.commands[0]!.managedBy).toBe(PROJECT_NAME);
+  });
+
+  it("parses agents from agents directory", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
+    await fs.writeFile(
+      path.join(configDir, MANIFEST_FILENAME),
+      'name: agent-test\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+
+    const agentsDir = path.join(configDir, "agents");
+    await fs.mkdir(agentsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(agentsDir, "reviewer.md"),
+      `---\nname: reviewer\ndescription: Code reviewer\ntools:\n  - Read\n  - Grep\n---\nReview code carefully.`,
+      "utf-8",
+    );
+
+    const result = await scanProjectDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.agents).toHaveLength(1);
+    expect(result.data.agents[0]!.name).toBe("reviewer");
+    expect(result.data.agents[0]!.tools).toEqual(["Read", "Grep"]);
+    expect(result.data.agents[0]!.content).toContain("Review code carefully.");
+  });
+
+  it("parses legacy brands from brands directory", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
+    await fs.writeFile(
+      path.join(configDir, MANIFEST_FILENAME),
+      'name: brand-test\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+
+    const brandDir = path.join(configDir, "brands", "acme");
+    await fs.mkdir(brandDir, { recursive: true });
+    await fs.writeFile(
+      path.join(brandDir, "BRAND.md"),
+      `---\nname: acme\ndescription: Acme Corp brand\nmanaged_by: user\n---\nUse Acme blue (#0066cc).`,
+      "utf-8",
+    );
+
+    const result = await scanProjectDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Legacy brands are merged into skills with category "brand"
+    const brandSkill = result.data.skills.find((s) => s.name === "acme");
+    expect(brandSkill).toBeDefined();
+    expect(brandSkill!.category).toBe("brand");
+    expect(brandSkill!.content).toContain("Acme blue");
+    expect(brandSkill!.managedBy).toBe("user");
+  });
+
+  it("parses MCP config from legacy mcp.yaml file", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.mkdir(configDir, { recursive: true });
+    await fs.writeFile(
+      path.join(configDir, MANIFEST_FILENAME),
+      'name: mcp-yaml-test\nversion: "1"\nagents:\n  - claude-code\n',
+      "utf-8",
+    );
+    await fs.writeFile(
+      path.join(configDir, "mcp.yaml"),
+      "servers:\n  my-server:\n    command: node\n    args:\n      - server.js\n",
+      "utf-8",
+    );
+
+    const result = await scanProjectDir(tmpDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.mcp.servers["my-server"]).toBeDefined();
   });
 
   it("returns error for invalid manifest YAML", async () => {

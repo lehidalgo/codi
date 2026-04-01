@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { PROJECT_NAME, PROJECT_DIR } from "../../../../src/constants.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 import {
   OperationsLedgerManager,
   type LedgerInitialization,
@@ -12,7 +13,7 @@ import {
   type LedgerConfigFile,
   type LedgerOperation,
   type OperationsLedgerData,
-} from "../../../../src/core/audit/operations-ledger.js";
+} from "#src/core/audit/operations-ledger.js";
 
 let tmpDir: string;
 let manager: OperationsLedgerManager;
@@ -23,7 +24,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────

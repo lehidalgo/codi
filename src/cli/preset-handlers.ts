@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
+import { safeRm } from "../utils/fs.js";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import * as p from "@clack/prompts";
 import { resolveProjectDir } from "../utils/paths.js";
@@ -10,25 +10,23 @@ import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
 import {
   PRESET_MANIFEST_FILENAME,
-  GIT_CLONE_DEPTH,
   PROJECT_CLI,
-  PROJECT_NAME,
+  PROJECT_DIR,
 } from "../constants.js";
+import { StateManager } from "../core/config/state.js";
 import {
   readLockFile,
   writeLockFile,
   getPresetVersionFromDir,
   copyDir,
 } from "../core/preset/preset-registry.js";
-import {
-  parsePresetIdentifier,
-  extractPresetName,
-} from "../core/preset/preset-resolver.js";
+import { parsePresetIdentifier } from "../core/preset/preset-resolver.js";
 import {
   extractPresetZip,
   createPresetZip,
 } from "../core/preset/preset-zip.js";
 import { validatePreset } from "../core/preset/preset-validator.js";
+import { installFromGithub } from "./preset-github.js";
 import {
   getBuiltinPresetNames,
   BUILTIN_PRESETS,
@@ -43,14 +41,64 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loa
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
 import { regenerateConfigs } from "./shared.js";
-import { execFileAsync } from "../utils/exec.js";
+import { loadPreset } from "../core/preset/preset-loader.js";
+import type { LoadedPreset } from "../core/preset/preset-loader.js";
+import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
+import { FLAGS_FILENAME } from "../constants.js";
+
+/**
+ * Merges a loaded preset's flags into the project's flags.yaml.
+ * Existing flags not in the preset are preserved. Locked existing flags are not overwritten.
+ */
+async function mergePresetFlags(
+  configDir: string,
+  preset: LoadedPreset,
+  log: Logger,
+): Promise<void> {
+  if (Object.keys(preset.flags).length === 0) return;
+
+  const flagsFile = path.join(configDir, FLAGS_FILENAME);
+  let currentFlags: Record<string, unknown> = {};
+  try {
+    const raw = await fs.readFile(flagsFile, "utf8");
+    currentFlags = (parseYaml(raw) as Record<string, unknown>) ?? {};
+  } catch {
+    // No existing flags file — will create
+  }
+
+  let merged = 0;
+  for (const [key, def] of Object.entries(preset.flags)) {
+    const existing = currentFlags[key] as Record<string, unknown> | undefined;
+    if (existing?.["locked"]) {
+      log.debug(`Flag "${key}" is locked locally — preset value skipped`);
+      continue;
+    }
+    const entry: Record<string, unknown> = { mode: def.mode, value: def.value };
+    if (def.locked) entry["locked"] = true;
+    currentFlags[key] = entry;
+    merged++;
+  }
+
+  await fs.writeFile(flagsFile, stringifyYaml(currentFlags), "utf-8");
+  if (merged > 0) {
+    log.info(
+      `Merged ${merged} flag(s) from preset "${preset.name}" into flags.yaml`,
+    );
+  }
+}
 
 /**
  * Unified install handler: auto-detects source type from the argument.
  */
+export interface PresetInstallOptions {
+  force?: boolean;
+  json?: boolean;
+}
+
 export async function presetInstallUnifiedHandler(
   projectRoot: string,
   source: string,
+  installOptions: PresetInstallOptions = {},
 ): Promise<CommandResult<PresetData>> {
   const log = Logger.getInstance();
   const configDir = resolveProjectDir(projectRoot);
@@ -111,7 +159,7 @@ export async function presetInstallUnifiedHandler(
       // Copy to final destination
       const destDir = path.join(presetsDir, presetName);
       try {
-        await fs.rm(destDir, { recursive: true, force: true });
+        await safeRm(destDir);
         await fs.mkdir(destDir, { recursive: true });
         await copyDir(extractedDir, destDir);
       } finally {
@@ -131,6 +179,21 @@ export async function presetInstallUnifiedHandler(
       };
       await writeLockFile(configDir, lock);
       log.info(`Installed preset "${presetName}" from ZIP.`);
+
+      // Apply preset artifacts and flags to project with conflict resolution
+      const loadResult = await loadPreset(presetName, presetsDir);
+      if (loadResult.ok) {
+        const applyResult = await applyPresetArtifacts(
+          configDir,
+          loadResult.data,
+          { force: installOptions.force, json: installOptions.json },
+        );
+        log.info(
+          `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped`,
+        );
+        await mergePresetFlags(configDir, loadResult.data, log);
+      }
+
       return createCommandResult({
         success: true,
         command: "preset install",
@@ -140,7 +203,30 @@ export async function presetInstallUnifiedHandler(
     }
 
     if (descriptor.type === "github") {
-      return installFromGithub(projectRoot, descriptor, presetsDir);
+      return installFromGithub(
+        projectRoot,
+        descriptor,
+        presetsDir,
+        installOptions,
+      );
+    }
+
+    if (descriptor.type === "builtin") {
+      return createCommandResult({
+        success: false,
+        command: "preset install",
+        data: { action: "install", name: descriptor.identifier },
+        errors: [
+          {
+            code: "E_BUILTIN_NOT_INSTALLABLE",
+            message: `"${descriptor.identifier}" is a built-in preset.`,
+            hint: `Use \`${PROJECT_CLI} init --preset ${descriptor.identifier}\` to install built-in presets.`,
+            severity: "error",
+            context: {},
+          },
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
     }
 
     // Fallback: treat as registry --from style
@@ -161,114 +247,6 @@ export async function presetInstallUnifiedHandler(
       ],
       exitCode: EXIT_CODES.GENERAL_ERROR,
     });
-  }
-}
-
-async function installFromGithub(
-  projectRoot: string,
-  descriptor: ReturnType<typeof parsePresetIdentifier>,
-  presetsDir: string,
-): Promise<CommandResult<PresetData>> {
-  const log = Logger.getInstance();
-  const configDir = resolveProjectDir(projectRoot);
-  const repoUrl = `https://github.com/${descriptor.identifier}.git`;
-  const ref = descriptor.ref ?? "main";
-  log.info(`Cloning preset from ${repoUrl} (ref: ${ref})...`);
-
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-preset-gh-${Date.now()}`,
-  );
-  try {
-    const cloneArgs = ["clone", "--depth", GIT_CLONE_DEPTH];
-    if (descriptor.ref) cloneArgs.push("--branch", descriptor.ref);
-    cloneArgs.push(repoUrl, tmpDir);
-    await execFileAsync("git", cloneArgs);
-
-    const name = extractPresetName(descriptor);
-    let sourceDir = tmpDir;
-    try {
-      await fs.access(path.join(tmpDir, name, PRESET_MANIFEST_FILENAME));
-      sourceDir = path.join(tmpDir, name);
-    } catch {
-      /* Root is the preset */
-    }
-
-    // Validate structure (was missing for GitHub path)
-    const validation = await validatePreset(sourceDir);
-    if (!validation.ok) {
-      return createCommandResult({
-        success: false,
-        command: "preset install",
-        data: { action: "install", name },
-        errors: validation.errors.map((e) => ({
-          code: e.code,
-          message: e.message,
-          hint: e.hint,
-          severity: e.severity as "error",
-          context: e.context,
-        })),
-        exitCode: EXIT_CODES.GENERAL_ERROR,
-      });
-    }
-
-    // Security scan
-    const scanReport = await scanDirectory(sourceDir);
-    if (scanReport.verdict !== "pass") {
-      const proceed = await promptSecurityFindings(scanReport);
-      if (!proceed) {
-        return createCommandResult({
-          success: false,
-          command: "preset install",
-          data: { action: "install", name },
-          errors: [
-            {
-              code: "E_SECURITY_SCAN_BLOCKED",
-              message: `Security scan blocked installation of "${name}": ${scanReport.summary.critical} critical, ${scanReport.summary.high} high findings`,
-              hint: "Review the findings above. Re-run and accept to override.",
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-      }
-    }
-
-    const destDir = path.join(presetsDir, name);
-    await fs.rm(destDir, { recursive: true, force: true });
-    await fs.mkdir(destDir, { recursive: true });
-    await copyDir(sourceDir, destDir);
-
-    let commit: string | undefined;
-    try {
-      const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], {
-        cwd: tmpDir,
-      });
-      commit = stdout.trim();
-    } catch {
-      /* ignore */
-    }
-
-    const version = await getPresetVersionFromDir(destDir);
-    const lock = await readLockFile(configDir);
-    lock.presets[name] = {
-      version,
-      source: `github:${descriptor.identifier}${descriptor.ref ? `@${descriptor.ref}` : ""}`,
-      sourceType: "github",
-      commit,
-      installedAt: new Date().toISOString(),
-    };
-    await writeLockFile(configDir, lock);
-    log.info(`Installed preset "${name}" from GitHub.`);
-    return createCommandResult({
-      success: true,
-      command: "preset install",
-      data: { action: "install", name },
-      exitCode: EXIT_CODES.SUCCESS,
-    });
-  } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -401,7 +379,7 @@ export async function presetRemoveHandler(
 
   try {
     await fs.access(presetDir);
-    await fs.rm(presetDir, { recursive: true, force: true });
+    await safeRm(presetDir);
   } catch (cause) {
     log.warn(`Failed to remove preset "${name}"`, cause);
     return createCommandResult({
@@ -425,6 +403,31 @@ export async function presetRemoveHandler(
   delete lock.presets[name];
   await writeLockFile(configDir, lock);
 
+  // Clean up state entries for the removed preset and inform about orphaned artifacts
+  const stateManager = new StateManager(configDir, projectRoot);
+  const stateResult = await stateManager.read();
+  if (stateResult.ok && stateResult.data.presetArtifacts) {
+    const orphaned = stateResult.data.presetArtifacts.filter(
+      (a) => a.preset === name,
+    );
+    if (orphaned.length > 0) {
+      log.info(
+        `${orphaned.length} artifact(s) from "${name}" remain in ${PROJECT_DIR}/:`,
+      );
+      for (const a of orphaned) {
+        log.info(`  ${a.path}`);
+      }
+      log.info(
+        "These files are not deleted — remove them manually if no longer needed.",
+      );
+    }
+    // Remove stale state entries for this preset
+    stateResult.data.presetArtifacts = stateResult.data.presetArtifacts.filter(
+      (a) => a.preset !== name,
+    );
+    await stateManager.write(stateResult.data);
+  }
+
   log.info(`Removed preset "${name}".`);
   return createCommandResult({
     success: true,
@@ -447,6 +450,7 @@ export async function presetListEnhancedHandler(
     name: string;
     description: string;
     sourceType?: string;
+    category?: string;
   }> = [];
 
   if (showBuiltin) {
@@ -478,6 +482,7 @@ export async function presetListEnhancedHandler(
           name: entry.name,
           description: (parsed["description"] as string) ?? "",
           sourceType,
+          category: (parsed["category"] as string) ?? undefined,
         });
       } catch (cause) {
         log.debug(`Failed to parse manifest for preset "${entry.name}"`, cause);
@@ -497,7 +502,13 @@ export async function presetListEnhancedHandler(
   } else {
     for (const pr of presets) {
       const tag = pr.sourceType ? `[${pr.sourceType}]` : "";
-      log.info(`  ${pr.name} ${tag} — ${pr.description || "(no description)"}`);
+      const cat = pr.category ? `(${pr.category})` : "";
+      log.info(
+        `  ${pr.name} ${tag} ${cat} — ${pr.description || "(no description)"}`.replace(
+          /  +/g,
+          " ",
+        ),
+      );
     }
   }
 

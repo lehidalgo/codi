@@ -11,10 +11,7 @@ import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
-import {
-  generateSkillFiles,
-  resolveProgressiveLoading,
-} from "./skill-generator.js";
+import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildCommandsTable,
@@ -130,12 +127,10 @@ export const claudeCodeAdapter: AgentAdapter = {
     const { regularSkills, brandSkills } = partitionBrandSkills(config.skills);
 
     // Generate .claude/skills/{name}/SKILL.md + supporting files
-    const plMode = resolveProgressiveLoading(config.flags);
     files.push(
       ...(await generateSkillFiles(
         regularSkills,
         ".claude/skills",
-        plMode,
         _options.projectRoot,
         `(${PROJECT_NAME}-skill) `,
       )),
@@ -220,7 +215,6 @@ export const claudeCodeAdapter: AgentAdapter = {
 
 interface ClaudeSettings {
   permissions?: { deny?: string[] };
-  env?: Record<string, string>;
 }
 
 function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
@@ -242,24 +236,6 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
 
   if (deny.length > 0) {
     settings.permissions = { deny };
-  }
-
-  // Map flags to env vars
-  const env: Record<string, string> = {};
-  const maxTokens = config.flags.max_context_tokens?.value;
-  if (typeof maxTokens === "number" && maxTokens > 0) {
-    // Convert token limit to autocompact percentage (trigger compaction at ~70% of limit)
-    const pct = Math.min(
-      70,
-      Math.round((maxTokens / CONTEXT_TOKENS_LARGE) * 100),
-    );
-    if (pct < 100) {
-      env["CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"] = String(pct);
-    }
-  }
-
-  if (Object.keys(env).length > 0) {
-    settings.env = env;
   }
 
   // Only return if there's content to write

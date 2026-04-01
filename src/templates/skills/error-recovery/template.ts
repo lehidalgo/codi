@@ -1,4 +1,4 @@
-import { PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -139,6 +139,8 @@ For each error you made, record:
 - **API hallucinations** → propose a rule to always query the code graph before referencing functions
 
 Use \\\`${PROJECT_CLI} add rule <name>\\\` to scaffold the rule if the user approves.
+
+**Also write rule feedback:** If the error pattern was caused by a missing or incorrect rule, write a structured observation to \\\`${PROJECT_DIR}/feedback/rules/\\\` (see the rule-feedback skill for the JSON format). This ensures the pattern is captured for future \\\`/codi-refine-rules\\\` review even if the user doesn't create a rule now.
 
 ## Important Notes
 

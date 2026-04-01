@@ -12,7 +12,7 @@ import {
 } from "../constants.js";
 
 // Directories to skip when propagating skills to agent dirs
-export const SKIP_DIRS = new Set(["evals", "versions"]);
+export const SKIP_DIRS = new Set(["evals", "versions", "__pycache__"]);
 export const SKIP_FILES = new Set([".gitkeep", "evals.json"]);
 
 // Binary extensions to skip — these corrupt when read as UTF-8
@@ -96,41 +96,11 @@ export function buildSkillMd(
   return `${frontmatter.join("\n")}\n\n${skill.content}`;
 }
 
-/** Build a metadata-only SKILL.md (Tier 1 — name + description only). */
-export function buildSkillMetadataOnly(
-  skill: NormalizedSkill,
-  descriptionPrefix = "",
-): string {
-  const lines = [
-    "---",
-    `name: ${skill.name}`,
-    `description: ${descriptionPrefix}${flattenDescription(skill.description)}`,
-    "---",
-    "",
-    `Full skill content available at: ${PROJECT_DIR}/skills/${skill.name}/SKILL.md`,
-  ];
-  return lines.join("\n");
-}
-
-export type ProgressiveLoadingMode = "off" | "metadata" | "full";
-
-const VALID_PL_MODES = new Set<string>(["off", "metadata", "full"]);
-
-export function resolveProgressiveLoading(
-  flags: Record<string, { value: unknown }>,
-): ProgressiveLoadingMode {
-  const raw = flags["progressive_loading"]?.value;
-  if (typeof raw === "string" && VALID_PL_MODES.has(raw)) {
-    return raw as ProgressiveLoadingMode;
-  }
-  return "off";
-}
-
 /**
  * Generate skill files for an agent directory.
  *
  * For each skill:
- * 1. Generates SKILL.md from template content
+ * 1. Generates SKILL.md with full content (agents read their own directories)
  * 2. Creates the full skill skeleton (scripts/, references/, assets/ with .gitkeep)
  * 3. Scans skill directory for user-added supporting files
  * 4. Copies supporting files (scripts, references, assets, sibling .md)
@@ -139,7 +109,6 @@ export function resolveProgressiveLoading(
 export async function generateSkillFiles(
   skills: NormalizedSkill[],
   basePath: string,
-  progressiveLoading: ProgressiveLoadingMode = "off",
   projectRoot?: string,
   descriptionPrefix = "",
 ): Promise<GeneratedFile[]> {
@@ -148,11 +117,8 @@ export async function generateSkillFiles(
     const dirName = skill.name.toLowerCase().replace(/\s+/g, "-");
     const skillBasePath = `${basePath}/${dirName}`;
 
-    // 1. Generate SKILL.md
-    const raw =
-      progressiveLoading === "off"
-        ? buildSkillMd(skill, descriptionPrefix)
-        : buildSkillMetadataOnly(skill, descriptionPrefix);
+    // 1. Generate SKILL.md — always full content
+    const raw = buildSkillMd(skill, descriptionPrefix);
     const content = addGeneratedFooter(raw);
     files.push({
       path: `${skillBasePath}/${SKILL_OUTPUT_FILENAME}`,
@@ -181,6 +147,7 @@ export async function generateSkillFiles(
           content: sf.content,
           sources: [MANIFEST_FILENAME],
           hash: hashContent(sf.content),
+          ...(sf.binarySrc ? { binarySrc: sf.binarySrc } : {}),
         });
       }
     }
@@ -191,6 +158,8 @@ export async function generateSkillFiles(
 interface SupportingFile {
   relativePath: string;
   content: string;
+  /** Absolute source path for binary files (copied as-is, not read as text). */
+  binarySrc?: string;
 }
 
 /** Scan a skill directory for supporting files to propagate. */
@@ -232,11 +201,16 @@ async function scanDir(
       continue;
     }
 
-    // Skip SKILL.md (generated from template), .gitkeep, evals, binary files
+    // Skip SKILL.md (generated from template), .gitkeep, evals
     if (entry.name === SKILL_OUTPUT_FILENAME) continue;
     if (SKIP_FILES.has(entry.name)) continue;
     if (topDir === "evals") continue;
-    if (BINARY_EXTENSIONS.has(extname(entry.name).toLowerCase())) continue;
+
+    // Binary files: record source path for copy (not text-readable)
+    if (BINARY_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
+      results.push({ relativePath, content: "", binarySrc: fullPath });
+      continue;
+    }
 
     try {
       const content = await readFile(fullPath, "utf-8");

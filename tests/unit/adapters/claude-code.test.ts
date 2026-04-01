@@ -89,7 +89,7 @@ describe("claude-code adapter", () => {
       expect(mainFile.content).toContain("Do NOT execute shell commands.");
       expect(mainFile.content).toContain("Do NOT delete files.");
       expect(mainFile.content).toContain(
-        "Keep source code files under 500 lines.",
+        "Keep source code files under 700 lines.",
       );
       expect(mainFile.content).toContain("Write tests for all new code.");
     });
@@ -467,92 +467,6 @@ describe("claude-code adapter", () => {
   // ── generate() — settings.json ─────────────────────────────────────
 
   describe("generate() — settings.json (buildSettingsJson)", () => {
-    it("produces .claude/settings.json when max_context_tokens flag is set", async () => {
-      const config = createMockConfig({
-        flags: {
-          max_context_tokens: {
-            value: 50_000,
-            mode: "enforced",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      );
-      expect(settingsFile).toBeDefined();
-
-      const parsed = JSON.parse(settingsFile!.content);
-      expect(parsed.env).toBeDefined();
-      expect(parsed.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE).toBeDefined();
-    });
-
-    it("maps max_context_tokens to correct autocompact percentage", async () => {
-      // 50,000 / 200,000 * 100 = 25%
-      const config = createMockConfig({
-        flags: {
-          max_context_tokens: {
-            value: 50_000,
-            mode: "enforced",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      )!;
-      const parsed = JSON.parse(settingsFile.content);
-
-      expect(parsed.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE).toBe("25");
-    });
-
-    it("caps autocompact percentage at 70%", async () => {
-      // 180,000 / 200,000 * 100 = 90%, but should be capped at 70
-      const config = createMockConfig({
-        flags: {
-          max_context_tokens: {
-            value: 180_000,
-            mode: "enforced",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      )!;
-      const parsed = JSON.parse(settingsFile.content);
-
-      expect(parsed.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE).toBe("70");
-    });
-
-    it("caps at 70% even when max_context_tokens equals CONTEXT_TOKENS_LARGE", async () => {
-      const config = createMockConfig({
-        flags: {
-          max_context_tokens: {
-            value: CONTEXT_TOKENS_LARGE,
-            mode: "enforced",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      )!;
-      const parsed = JSON.parse(settingsFile.content);
-
-      // 200,000 / 200,000 * 100 = 100%, capped at 70%
-      expect(parsed.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE).toBe("70");
-    });
-
     it("returns null (no settings.json) when no relevant flags are set", async () => {
       const config = createMockConfig({
         flags: {
@@ -613,44 +527,6 @@ describe("claude-code adapter", () => {
       expect(parsed.permissions.deny).toContain("Bash");
     });
 
-    it("returns null when max_context_tokens is zero", async () => {
-      const config = createMockConfig({
-        flags: {
-          max_context_tokens: {
-            value: 0,
-            mode: "enforced",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      );
-      expect(settingsFile).toBeUndefined();
-    });
-
-    it("returns null when max_context_tokens is not a number", async () => {
-      const config = createMockConfig({
-        flags: {
-          max_context_tokens: {
-            value: "auto",
-            mode: "enforced",
-            source: MANIFEST_FILENAME,
-            locked: false,
-          },
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-
-      const settingsFile = files.find(
-        (f) => f.path === ".claude/settings.json",
-      );
-      expect(settingsFile).toBeUndefined();
-    });
-
     it("returns null when flags object is empty", async () => {
       const config = createMockConfig({ flags: {} });
       const files = await claudeCodeAdapter.generate(config, {});
@@ -684,6 +560,28 @@ describe("claude-code adapter", () => {
     it("does not use frontmatter", () => {
       expect(claudeCodeAdapter.capabilities.frontmatter).toBe(false);
     });
+  });
+
+  // ── generate() — brand-category skills ──────────────────────────────
+
+  it("generates brand files from brand-category skills", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand identity",
+          content: "Brand content here",
+          category: "brand",
+        },
+      ],
+    });
+    const files = await claudeCodeAdapter.generate(config, {
+      projectRoot: tmpDir,
+    });
+
+    const brandFile = files.find((f) => f.path.includes("brands/my-brand.md"));
+    expect(brandFile).toBeDefined();
+    expect(brandFile!.content).toContain("Brand content here");
   });
 
   // ── generate() — paths ─────────────────────────────────────────────

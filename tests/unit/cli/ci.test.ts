@@ -2,14 +2,15 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { ciHandler } from "../../../src/cli/ci.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
+import { ciHandler } from "#src/cli/ci.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PROJECT_NAME,
   PROJECT_DIR,
   MANIFEST_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 describe("ci command handler", () => {
   let tmpDir: string;
@@ -20,7 +21,7 @@ describe("ci command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`fails when no ${PROJECT_DIR}/ directory exists`, async () => {

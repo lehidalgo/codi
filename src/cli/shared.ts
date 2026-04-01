@@ -52,7 +52,7 @@ export async function regenerateConfigs(projectRoot: string): Promise<boolean> {
       log.warn("Auto-generate skipped: config resolution failed.");
       return false;
     }
-    const genResult = await generate(configResult.data, projectRoot);
+    const genResult = await generate(configResult.data, projectRoot, { force: true });
     return genResult.ok;
   } catch {
     log.warn(`Auto-generate failed. Run \`${PROJECT_CLI} generate\` manually.`);

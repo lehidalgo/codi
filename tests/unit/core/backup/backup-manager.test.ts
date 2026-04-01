@@ -2,18 +2,19 @@ import { describe, it, expect, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import {
   createBackup,
   listBackups,
   restoreBackup,
-} from "../../../../src/core/backup/backup-manager.js";
+} from "#src/core/backup/backup-manager.js";
 import {
   STATE_FILENAME,
   BACKUPS_DIR,
   BACKUP_MANIFEST_FILENAME,
   PROJECT_NAME,
   PROJECT_DIR,
-} from "../../../../src/constants.js";
+} from "#src/constants.js";
 
 let tmpDir: string;
 let projectRoot: string;
@@ -28,7 +29,7 @@ async function setup(): Promise<void> {
 
 afterEach(async () => {
   if (tmpDir) {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   }
 });
 

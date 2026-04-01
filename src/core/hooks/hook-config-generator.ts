@@ -1,5 +1,5 @@
 import type { ResolvedFlags } from "../../types/flags.js";
-import { DEFAULT_MAX_FILE_LINES, PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "../../types/config.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";
@@ -8,10 +8,10 @@ export interface HooksConfig {
   hooks: HookEntry[];
   secretScan: boolean;
   fileSizeCheck: boolean;
-  maxFileLines: number;
   versionCheck: boolean;
   commitMsgValidation: boolean;
   testBeforeCommit: boolean;
+  templateWiringCheck: boolean;
 }
 
 interface FlagHookMapping {
@@ -45,21 +45,6 @@ function isSecurityScanEnabled(flags: ResolvedFlags): boolean {
   if (!flag) return true;
   if (flag.mode === "disabled") return false;
   return flag.value !== false;
-}
-
-function isFileSizeCheckEnabled(flags: ResolvedFlags): boolean {
-  const flag = flags["max_file_lines"];
-  if (!flag) return false;
-  if (flag.mode === "disabled") return false;
-  return typeof flag.value === "number" && flag.value > 0;
-}
-
-function getMaxFileLines(flags: ResolvedFlags): number {
-  const flag = flags["max_file_lines"];
-  if (flag && typeof flag.value === "number") {
-    return flag.value;
-  }
-  return DEFAULT_MAX_FILE_LINES;
 }
 
 export function generateHooksConfig(
@@ -108,14 +93,11 @@ export function generateHooksConfig(
     });
   }
 
-  const fileSizeCheck = isFileSizeCheckEnabled(flags);
-  if (fileSizeCheck) {
-    allHooks.push({
-      name: "file-size-check",
-      command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
-      stagedFilter: "**/*",
-    });
-  }
+  allHooks.push({
+    name: "file-size-check",
+    command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
+    stagedFilter: "**/*",
+  });
 
   if (hasVersionRequirement) {
     allHooks.push({
@@ -128,11 +110,11 @@ export function generateHooksConfig(
   return {
     hooks: allHooks,
     secretScan,
-    fileSizeCheck,
-    maxFileLines: getMaxFileLines(flags),
+    fileSizeCheck: true,
     versionCheck: hasVersionRequirement,
     commitMsgValidation: true,
     testBeforeCommit,
+    templateWiringCheck: false,
   };
 }
 
@@ -143,10 +125,27 @@ function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
   return flag.value !== false;
 }
 
+// Pre-commit test command for npm projects:
+// If the project defines a "test:pre-commit" script in package.json, run it
+// instead of "npm test". This allows projects to exclude slow E2E tests from
+// pre-commit hooks while keeping the full suite for CI.
+// To use: add "test:pre-commit": "vitest run tests/unit tests/integration"
+// (or equivalent) to your package.json scripts.
+const NPM_PRECOMMIT_TEST =
+  "node -e \"const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)\" 2>/dev/null && npm run test:pre-commit || npm test";
+
 function getTestHooksForLanguages(languages: string[]): HookEntry[] {
   const TEST_COMMANDS: Record<string, HookEntry> = {
-    typescript: { name: "test-ts", command: "npm test", stagedFilter: "" },
-    javascript: { name: "test-js", command: "npm test", stagedFilter: "" },
+    typescript: {
+      name: "test-ts",
+      command: NPM_PRECOMMIT_TEST,
+      stagedFilter: "",
+    },
+    javascript: {
+      name: "test-js",
+      command: NPM_PRECOMMIT_TEST,
+      stagedFilter: "",
+    },
     python: { name: "test-py", command: "pytest", stagedFilter: "" },
     go: { name: "test-go", command: "go test ./...", stagedFilter: "" },
     rust: { name: "test-rs", command: "cargo test", stagedFilter: "" },

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { FlagSpec } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
 import type { AgentAdapter } from "#src/types/agent.js";
-import type { HubAction } from "#src/cli/hub.js";
+import type { HubAction, HubTopLevelEntry } from "#src/cli/hub.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
 import { PROJECT_CLI } from "#src/constants.js";
 import {
@@ -29,11 +29,10 @@ const MOCK_FLAGS: Record<string, FlagSpec> = {
     default: false,
     description: "Auto-commit changes",
   },
-  max_file_lines: {
-    type: "number",
-    default: 700,
-    description: "Max lines per file",
-    hook: "file-size-check",
+  security_scan: {
+    type: "boolean",
+    default: true,
+    description: "Run security scans",
   },
 };
 
@@ -108,13 +107,12 @@ describe("section-renderers", () => {
       expect(result).toContain("`auto_commit`");
       expect(result).toContain("boolean");
       expect(result).toContain("`false`");
-      expect(result).toContain("`700`");
+      expect(result).toContain("`true`");
     });
 
-    it("shows hook when present, dash when absent", () => {
+    it("shows dash when hook is absent", () => {
       const result = renderFlagsTable(MOCK_FLAGS);
 
-      expect(result).toContain("file-size-check");
       expect(result).toContain("—");
     });
   });
@@ -276,17 +274,28 @@ describe("section-renderers", () => {
 
   describe("renderHubActions", () => {
     it("renders action rows", () => {
-      const actions: HubAction[] = [
+      const topLevel: HubTopLevelEntry[] = [
         {
-          label: "Generate",
-          hint: "Build configs",
-          group: "build",
-          value: "generate",
+          value: "build-share",
+          label: "Build & share",
+          hint: "Export skills, contribute",
+          requiresProject: true,
         },
       ];
-      const result = renderHubActions(actions);
+      const subMenus: Record<string, HubAction[]> = {
+        "build-share": [
+          {
+            label: "Generate",
+            hint: "Build configs",
+            value: "generate",
+          },
+        ],
+      };
+      const result = renderHubActions(topLevel, subMenus);
 
-      expect(result).toContain("| Generate | Build configs | `build` |");
+      expect(result).toContain("Build & share");
+      expect(result).toContain("Generate");
+      expect(result).toContain("Build configs");
     });
   });
 

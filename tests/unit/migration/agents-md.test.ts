@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { importAgentsMd } from "#src/core/migration/agents-md.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 
 const FIXTURE_DIR = path.join(
   __dirname,
@@ -22,7 +23,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 describe("importAgentsMd", () => {
@@ -83,7 +84,7 @@ describe("importAgentsMd", () => {
     if (!result.ok) {
       expect(result.errors[0]!.code).toBe("E_MIGRATION_FAILED");
     }
-    await fs.rm(emptyDir, { recursive: true, force: true });
+    await cleanupTmpDir(emptyDir);
   });
 
   it("preserves 90%+ of original content", async () => {

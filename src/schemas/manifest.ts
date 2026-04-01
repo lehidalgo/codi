@@ -24,20 +24,6 @@ export const ProjectManifestSchema = z.object({
       requiredVersion: z.string().optional(),
     })
     .optional(),
-  team: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH).optional(),
-  source: z
-    .object({
-      repo: z.string(),
-      branch: z.string().default("main"),
-      paths: z.array(z.string()).default(["rules", "skills", "agents"]),
-    })
-    .optional(),
-  marketplace: z
-    .object({
-      registry: z.string(),
-      branch: z.string().default("main"),
-    })
-    .optional(),
   presetRegistry: z
     .object({
       url: z.string(),

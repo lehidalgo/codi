@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { initHandler } from "#src/cli/init.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
@@ -20,7 +21,7 @@ describe("init command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it(`creates ${PROJECT_DIR}/ directory structure`, async () => {
@@ -49,13 +50,22 @@ describe("init command handler", () => {
     expect(rulesDir.isDirectory()).toBe(true);
   });
 
-  it(`fails if ${PROJECT_DIR}/ already exists without --force`, async () => {
-    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
+  it(`proceeds as update if ${PROJECT_DIR}/ already exists without --force`, async () => {
+    // First init
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
 
-    const result = await initHandler(tmpDir, { json: true });
-    expect(result.success).toBe(false);
-    expect(result.errors.length).toBeGreaterThan(0);
-    expect(result.errors[0]!.message).toContain("already exists");
+    // Second init (update) — should succeed, not reject
+    const result = await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.rules.length).toBeGreaterThan(0);
   });
 
   it("reinitializes with --force", async () => {
@@ -170,5 +180,48 @@ describe("init command handler", () => {
     expect(ledger.initialized).toBeDefined();
     expect(ledger.initialized.timestamp).toBeDefined();
     expect(Array.isArray(ledger.initialized.stack)).toBe(true);
+  });
+
+  it("sanitizes uppercase directory names in manifest", async () => {
+    const badDir = await fs.mkdtemp(path.join(os.tmpdir(), "MyProject-ABC-"));
+    try {
+      const result = await initHandler(badDir, { json: true });
+      expect(result.success).toBe(true);
+
+      const manifest = await fs.readFile(
+        path.join(badDir, PROJECT_DIR, MANIFEST_FILENAME),
+        "utf-8",
+      );
+      expect(manifest).toMatch(/name: [a-z0-9-]+/);
+      expect(manifest).not.toMatch(/[A-Z]/);
+    } finally {
+      await cleanupTmpDir(badDir);
+    }
+  });
+
+  it("scaffolds preset artifacts in non-interactive mode", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.rules.length).toBeGreaterThan(0);
+
+    const rules = await fs.readdir(path.join(tmpDir, PROJECT_DIR, "rules"));
+    expect(rules.filter((f) => f.endsWith(".md")).length).toBeGreaterThan(0);
+  });
+
+  it("writes preset-lock.json with sourceType builtin", async () => {
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
+
+    const lockPath = path.join(tmpDir, PROJECT_DIR, "preset-lock.json");
+    const lock = JSON.parse(await fs.readFile(lockPath, "utf-8"));
+    expect(lock.presets[prefixedName("balanced")]).toBeDefined();
+    expect(lock.presets[prefixedName("balanced")]!.sourceType).toBe("builtin");
   });
 });

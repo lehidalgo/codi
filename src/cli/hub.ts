@@ -1,188 +1,150 @@
 import * as p from "@clack/prompts";
 import fs from "node:fs/promises";
-import {
-  PROJECT_CLI,
-  PROJECT_DIR,
-  PROJECT_NAME_DISPLAY,
-} from "../constants.js";
+import { PROJECT_DIR, PROJECT_NAME_DISPLAY } from "../constants.js";
 import { printWelcomeBanner } from "./banner.js";
 import { resolveProjectDir } from "../utils/paths.js";
-import { statusHandler } from "./status.js";
-import { ciHandler } from "./ci.js";
-import { validateHandler } from "./validate.js";
-import { docsUpdateHandler } from "./docs-update.js";
+import { detectStack } from "../core/hooks/stack-detector.js";
+import { registerAllAdapters } from "../adapters/index.js";
+import {
+  detectAdapters,
+  getAllAdapters,
+} from "../core/generator/adapter-registry.js";
 import {
   handleInit,
-  handleAdd,
-  handleGenerate,
-  handleDoctor,
-  handleClean,
-  handleUpdate,
-  handleVerify,
-  handleCompliance,
-  handleRevert,
-  handleSkillExport,
-  handleMarketplace,
-  handleContribute,
-  handlePresetMenu,
-  handleDocs,
-  printResult,
-  showCliOnly,
+  handleCreateConfigureMenu,
+  handleBuildShareMenu,
+  handleDiagnosticsMenu,
+  handleMaintenanceMenu,
 } from "./hub-handlers.js";
 
 export interface HubAction {
   value: string;
   label: string;
   hint: string;
-  requiresProject: boolean;
-  group: "setup" | "build" | "monitor";
 }
 
-export const HUB_ACTIONS: HubAction[] = [
-  // Setup & Config
+export interface HubTopLevelEntry {
+  value: string;
+  label: string;
+  hint: string;
+  requiresProject: boolean;
+}
+
+/** Top-level menu entries displayed in the Command Center. */
+export const TOP_LEVEL_MENU: HubTopLevelEntry[] = [
   {
     value: "init",
     label: "Initialize project",
     hint: `Set up ${PROJECT_DIR}/ with agents, presets, and rules`,
     requiresProject: false,
-    group: "setup",
   },
   {
-    value: "add",
-    label: "Add artifact",
-    hint: "Create a rule, skill, agent, or command",
+    value: "create-configure",
+    label: "Create & configure",
+    hint: "Add artifacts, manage presets, generate configs",
     requiresProject: true,
-    group: "setup",
   },
   {
-    value: "generate",
-    label: "Generate configs",
-    hint: "Rebuild all agent configuration files",
+    value: "build-share",
+    label: "Build & share",
+    hint: "Export skills, contribute, generate docs",
     requiresProject: true,
-    group: "setup",
   },
   {
-    value: "preset",
-    label: "Manage presets",
-    hint: "List, create, install, or export presets",
+    value: "diagnostics",
+    label: "Diagnostics",
+    hint: "Health check, status, validate, verify, compliance",
     requiresProject: true,
-    group: "setup",
-  },
-  // Build & Share
-  {
-    value: "skill-export",
-    label: "Export skill",
-    hint: "Package a skill for marketplace sharing",
-    requiresProject: true,
-    group: "build",
   },
   {
-    value: "marketplace",
-    label: "Search marketplace",
-    hint: "Find and install community skills",
+    value: "maintenance",
+    label: "Maintenance",
+    hint: "Clean, update, revert",
     requiresProject: true,
-    group: "build",
-  },
-  {
-    value: "contribute",
-    label: "Contribute to community",
-    hint: `Share your artifacts with the ${PROJECT_NAME_DISPLAY} project`,
-    requiresProject: true,
-    group: "build",
-  },
-  {
-    value: "docs",
-    label: "Generate documentation",
-    hint: "Build HTML skill catalog site",
-    requiresProject: true,
-    group: "build",
-  },
-  // Monitor & Maintain
-  {
-    value: "status",
-    label: "Project status",
-    hint: "Check drift and sync state",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "doctor",
-    label: "Health check",
-    hint: "Diagnose project issues",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "validate",
-    label: "Validate config",
-    hint: `Check ${PROJECT_DIR}/ configuration is valid`,
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "verify",
-    label: "Verify agent awareness",
-    hint: "Check if agents loaded their configs",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "compliance",
-    label: "Compliance report",
-    hint: "Full check: doctor + status + verification",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "ci",
-    label: "CI checks",
-    hint: "Run all validation checks for CI pipelines",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "clean",
-    label: "Clean generated files",
-    hint: "Remove agent config files",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "update",
-    label: "Update templates",
-    hint: "Update rules, skills, and agents to latest",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "revert",
-    label: "Revert to backup",
-    hint: "Restore generated files from a previous backup",
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "watch",
-    label: "Watch for changes",
-    hint: `Auto-regenerate on ${PROJECT_DIR}/ changes (long-running)`,
-    requiresProject: true,
-    group: "monitor",
-  },
-  {
-    value: "docs-update",
-    label: "Update docs counts",
-    hint: "Sync documentation counts with templates",
-    requiresProject: true,
-    group: "monitor",
   },
 ];
 
-/**
- * Returns actions available based on whether a project exists.
- */
-export function getAvailableActions(hasProject: boolean): HubAction[] {
-  return HUB_ACTIONS.filter((a) => !a.requiresProject || hasProject);
-}
+/** Sub-menu items grouped by category. */
+export const SUB_MENUS: Record<string, HubAction[]> = {
+  "create-configure": [
+    {
+      value: "add",
+      label: "Add artifact",
+      hint: "Create a rule, skill, agent, command, or brand",
+    },
+    {
+      value: "generate",
+      label: "Generate configs",
+      hint: "Rebuild all agent configuration files",
+    },
+    {
+      value: "preset",
+      label: "Manage presets",
+      hint: "List, create, install, or export presets",
+    },
+  ],
+  "build-share": [
+    {
+      value: "skill-export",
+      label: "Export skill",
+      hint: "Package a skill for sharing",
+    },
+    {
+      value: "contribute",
+      label: "Contribute to community",
+      hint: `Share your artifacts with the ${PROJECT_NAME_DISPLAY} project`,
+    },
+    {
+      value: "docs",
+      label: "Generate documentation",
+      hint: "Build HTML skill catalog site",
+    },
+  ],
+  diagnostics: [
+    {
+      value: "doctor",
+      label: "Health check",
+      hint: "Diagnose project issues",
+    },
+    {
+      value: "status",
+      label: "Project status",
+      hint: "Check if generated files are up to date",
+    },
+    {
+      value: "validate",
+      label: "Validate config",
+      hint: `Check ${PROJECT_DIR}/ configuration is valid`,
+    },
+    {
+      value: "verify",
+      label: "Verify agent awareness",
+      hint: "Test if your AI agent received its instructions",
+    },
+    {
+      value: "compliance",
+      label: "Compliance report",
+      hint: "Full check: doctor + status + verification",
+    },
+  ],
+  maintenance: [
+    {
+      value: "clean",
+      label: "Clean generated files",
+      hint: "Remove agent config files",
+    },
+    {
+      value: "update",
+      label: "Update templates",
+      hint: "Update rules, skills, and agents to latest",
+    },
+    {
+      value: "revert",
+      label: "Revert to backup",
+      hint: "Restore generated files from a previous backup",
+    },
+  ],
+};
 
 /**
  * Interactive Command Center — launched when user runs bare command.
@@ -191,7 +153,17 @@ export function getAvailableActions(hasProject: boolean): HubAction[] {
 export async function runCommandCenter(projectRoot: string): Promise<void> {
   const configDir = resolveProjectDir(projectRoot);
 
-  printWelcomeBanner({ subtitle: "Command Center" });
+  registerAllAdapters();
+  const detectedStack = await detectStack(projectRoot);
+  const detectedAdapters = await detectAdapters(projectRoot);
+  const allAgentIds = getAllAdapters().map((a) => a.id);
+
+  printWelcomeBanner({
+    detectedStack,
+    detectedAgents: allAgentIds.filter((a) =>
+      detectedAdapters.some((d) => d.id === a),
+    ),
+  });
 
   while (true) {
     const hasProject = await dirExists(configDir);
@@ -202,14 +174,17 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
       );
     }
 
-    const actions = getAvailableActions(hasProject);
+    const entries = TOP_LEVEL_MENU.filter(
+      (e) => !e.requiresProject || hasProject,
+    );
+
     const selected = await p.select({
       message: "What would you like to do?",
       options: [
-        ...actions.map((a) => ({
-          label: a.label,
-          value: a.value,
-          hint: a.hint,
+        ...entries.map((e) => ({
+          label: e.label,
+          value: e.value,
+          hint: e.hint,
         })),
         { label: "Exit", value: "_exit", hint: "Leave Command Center" },
       ],
@@ -220,11 +195,13 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
       return;
     }
 
-    p.log.step(
-      `Running: ${actions.find((a) => a.value === selected)?.label ?? selected}`,
-    );
-
-    await routeAction(selected as string, projectRoot);
+    try {
+      await routeAction(selected as string, projectRoot);
+    } catch (error) {
+      p.log.error(
+        `Action failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }
 
@@ -233,59 +210,17 @@ async function routeAction(action: string, projectRoot: string): Promise<void> {
     case "init":
       await handleInit(projectRoot);
       break;
-    case "add":
-      await handleAdd(projectRoot);
+    case "create-configure":
+      await handleCreateConfigureMenu(projectRoot);
       break;
-    case "generate":
-      await handleGenerate(projectRoot);
+    case "build-share":
+      await handleBuildShareMenu(projectRoot);
       break;
-    case "preset":
-      await handlePresetMenu(projectRoot);
+    case "diagnostics":
+      await handleDiagnosticsMenu(projectRoot);
       break;
-    case "skill-export":
-      await handleSkillExport(projectRoot);
-      break;
-    case "marketplace":
-      await handleMarketplace(projectRoot);
-      break;
-    case "contribute":
-      await handleContribute(projectRoot);
-      break;
-    case "docs":
-      await handleDocs(projectRoot);
-      break;
-    case "status":
-      await printResult(statusHandler(projectRoot));
-      break;
-    case "doctor":
-      await handleDoctor(projectRoot);
-      break;
-    case "validate":
-      await printResult(validateHandler(projectRoot));
-      break;
-    case "verify":
-      await handleVerify(projectRoot);
-      break;
-    case "compliance":
-      await handleCompliance(projectRoot);
-      break;
-    case "ci":
-      await printResult(ciHandler(projectRoot));
-      break;
-    case "clean":
-      await handleClean(projectRoot);
-      break;
-    case "update":
-      await handleUpdate(projectRoot);
-      break;
-    case "revert":
-      await handleRevert(projectRoot);
-      break;
-    case "watch":
-      showCliOnly("watch", `${PROJECT_CLI} watch`);
-      break;
-    case "docs-update":
-      await printResult(docsUpdateHandler(projectRoot));
+    case "maintenance":
+      await handleMaintenanceMenu(projectRoot);
       break;
   }
 }

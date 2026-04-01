@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { stringify as yamlStringify } from "yaml";
-import { PROJECT_NAME } from "../../../../src/constants.js";
+import { PROJECT_NAME } from "#src/constants.js";
 import {
   validatePreset,
   detectCircularExtends,
-} from "../../../../src/core/preset/preset-validator.js";
+} from "#src/core/preset/preset-validator.js";
 
 function makeTmpDir(): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-val-test-`));
@@ -21,7 +22,7 @@ describe("validatePreset", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("valid preset passes validation", async () => {
@@ -150,6 +151,56 @@ describe("validatePreset", () => {
 
     expect(result.ok).toBe(true);
   });
+
+  it("accepts valid category field", async () => {
+    const manifest = { name: "with-category", category: "engineering" };
+    await fs.writeFile(
+      path.join(tmpDir, "preset.yaml"),
+      yamlStringify(manifest),
+      "utf-8",
+    );
+
+    const result = await validatePreset(tmpDir);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.manifest.category).toBe("engineering");
+    }
+  });
+
+  it("rejects invalid category value", async () => {
+    const manifest = { name: "bad-category", category: "invalid-category" };
+    await fs.writeFile(
+      path.join(tmpDir, "preset.yaml"),
+      yamlStringify(manifest),
+      "utf-8",
+    );
+
+    const result = await validatePreset(tmpDir);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("reports error for rule with broken YAML frontmatter", async () => {
+    const manifest = { name: "bad-rules" };
+    await fs.writeFile(
+      path.join(tmpDir, "preset.yaml"),
+      yamlStringify(manifest),
+      "utf-8",
+    );
+
+    const rulesDir = path.join(tmpDir, "rules");
+    await fs.mkdir(rulesDir, { recursive: true });
+    await fs.writeFile(
+      path.join(rulesDir, "broken.md"),
+      "---\n{{invalid yaml: [}\n---\nContent",
+      "utf-8",
+    );
+
+    const result = await validatePreset(tmpDir);
+
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe("detectCircularExtends", () => {
@@ -160,7 +211,7 @@ describe("detectCircularExtends", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns ok for preset without extends", async () => {

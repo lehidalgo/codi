@@ -24,7 +24,6 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("test-coverage")]: skillTemplates.testCoverage,
   [prefixedName("refactoring")]: skillTemplates.refactoring,
   [prefixedName("codebase-onboarding")]: skillTemplates.codebaseOnboarding,
-  // presentation: deprecated, replaced by deck-engine
   [prefixedName("mobile-development")]: skillTemplates.mobileDevelopment,
   [prefixedName("commit")]: skillTemplates.commit,
   [prefixedName("preset-creator")]: skillTemplates.presetCreator,
@@ -58,6 +57,8 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrand,
   [prefixedName("content-factory")]: skillTemplates.contentFactory,
   [prefixedName("skill-reporter")]: skillTemplates.skillReporter,
+  [prefixedName("rule-feedback")]: skillTemplates.ruleFeedback,
+  [prefixedName("refine-rules")]: skillTemplates.refineRules,
 };
 
 /** Maps template names to their static asset directories (when available). */

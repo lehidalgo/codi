@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { statusHandler } from "../../../src/cli/status.js";
-import { StateManager } from "../../../src/core/config/state.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
-import { hashContent } from "../../../src/utils/hash.js";
-import { PROJECT_NAME, PROJECT_DIR } from "../../../src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
+import { statusHandler } from "#src/cli/status.js";
+import { StateManager } from "#src/core/config/state.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
+import { hashContent } from "#src/utils/hash.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 describe("status command handler", () => {
   let tmpDir: string;
@@ -20,7 +21,7 @@ describe("status command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("reports empty state when no state.json exists", async () => {

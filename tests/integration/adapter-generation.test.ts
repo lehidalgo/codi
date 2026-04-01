@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
 import { resolveConfig } from "#src/core/config/resolver.js";
@@ -36,7 +37,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(path.dirname(tmpDir), { recursive: true, force: true });
+  await cleanupTmpDir(path.dirname(tmpDir));
   clearAdapters();
 });
 

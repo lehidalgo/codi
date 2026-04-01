@@ -2,6 +2,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   prefixedName,
+  devArtifactName,
 } from "#src/constants.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
@@ -20,7 +21,6 @@ export const preset: BuiltinPresetDefinition = {
     test_before_commit: { mode: "enforced", value: true },
     security_scan: { mode: "enforced", value: true },
     type_checking: { mode: "enforced", value: "strict" },
-    max_file_lines: { mode: "enforced", value: 500 },
     require_tests: { mode: "enforced", value: true },
     allow_shell_commands: { mode: "enabled", value: true },
     allow_file_deletion: { mode: "enabled", value: false },
@@ -30,7 +30,6 @@ export const preset: BuiltinPresetDefinition = {
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: true },
     allowed_languages: { mode: "enabled", value: ["*"] },
-    max_context_tokens: { mode: "enabled", value: 50000 },
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "error" },
     auto_generate_on_change: { mode: "enabled", value: true },
@@ -47,6 +46,10 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("documentation"),
     prefixedName("production-mindset"),
     prefixedName("simplicity-first"),
+    prefixedName("agent-usage"),
+    prefixedName("workflow"),
+    prefixedName("api-design"),
+    devArtifactName("improvement"),
   ],
   skills: [
     prefixedName("code-review"),

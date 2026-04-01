@@ -7,13 +7,10 @@ Complete reference for Codi's configuration system: directory structure, manifes
 ```
 .codi/
   codi.yaml                    # Project manifest
-  flags.yaml                   # Behavioral flags (18 flags)
+  flags.yaml                   # Behavioral flags (16 flags)
   state.json                   # Generation state (auto-managed)
   mcp.yaml                     # MCP server configuration
-  rules/
-    generated/
-      common/                  # Auto-generated rules (managed_by: codi)
-    custom/                    # Your custom rules (managed_by: user)
+  rules/                       # All rules (managed_by: codi or user)
   skills/
     {name}/
       SKILL.md                 # Skill definition
@@ -26,8 +23,6 @@ Complete reference for Codi's configuration system: directory structure, manifes
   brands/                      # Brand definitions (BRAND.md + assets)
   presets/                     # Installed presets
   backups/                     # Automatic backups (max 5)
-  lang/                        # Language-specific flag overrides (*.yaml)
-  frameworks/                  # Framework-specific flag overrides (*.yaml)
   operations-ledger.json       # Audit trail of all CLI operations
 ```
 
@@ -49,18 +44,9 @@ agents:
   - windsurf
   - cline
 
-# Reference a team config (loaded from ~/.codi/teams/frontend.yaml)
-team: frontend
-
 # Pin minimum Codi version
 codi:
-  requiredVersion: ">=0.9.0"
-
-# Remote source for centralized team artifacts (used by codi update --from)
-source:
-  repo: "org/team-codi-config"
-  branch: main
-  paths: [rules, skills, agents]
+  requiredVersion: ">=2.0.0"
 
 # Control which content types are included in generation
 layers:
@@ -73,11 +59,6 @@ layers:
 # Presets to load (applied in order)
 presets:
   - balanced
-
-# Marketplace registry for skill search/install
-marketplace:
-  registry: "org/codi-skills-registry"
-  branch: main
 ```
 
 ### Manifest Fields
@@ -97,17 +78,6 @@ marketplace:
 | `layers.context` | boolean | Yes | `true` | Include context in generation |
 | `engine` | object | No | — |  |
 | `engine.requiredVersion` | string | No | — |  |
-| `team` | string | No | — | Team name for team-level config |
-| `source` | object | No | — | Remote repo for `codi update --from` |
-| `source.repo` | string | Yes | — | Repository identifier |
-| `source.branch` | string | Yes | `main` | Branch to pull from |
-| `source.paths` | string[] | Yes | `["rules","skills","agents"]` | Artifact paths to sync |
-| `marketplace` | object | No | — | Marketplace registry settings |
-| `marketplace.registry` | string | Yes | — | Registry repository |
-| `marketplace.branch` | string | Yes | `main` | Registry branch |
-| `presetRegistry` | object | No | — | Preset registry settings |
-| `presetRegistry.url` | string | Yes | — | Registry URL |
-| `presetRegistry.branch` | string | Yes | `main` | Registry branch |
 | `presets` | string[] | No | — | Presets to load (order matters) |
 <!-- GENERATED:END:manifest_fields -->
 
@@ -121,20 +91,17 @@ Flags control how AI agents behave in your project. Each flag has a **mode** and
 security_scan:
   mode: enforced
   value: true
-  locked: true          # Prevents lower layers from overriding
-
-max_file_lines:
-  mode: enabled
-  value: 500
+  locked: true          # Prevents overriding
 
 type_checking:
   mode: conditional
   value: strict
   conditions:
-    lang: [typescript]   # Only apply when language is TypeScript
+    agent: [claude-code]       # Only apply for this agent
+    file_pattern: ["src/**/*.ts"]  # Only apply to these files
 ```
 
-### All 18 Flags
+### All 16 Flags
 
 <!-- GENERATED:START:flags_table -->
 | Flag | Type | Default | Hook | Description |
@@ -143,7 +110,6 @@ type_checking:
 | `test_before_commit` | boolean | `true` | tests | Run tests before commit |
 | `security_scan` | boolean | `true` | secret-detection | Mandatory security scanning |
 | `type_checking` | enum | `strict` | typecheck | Type checking level |
-| `max_file_lines` | number | `700` | file-size-check | Max lines per file |
 | `require_tests` | boolean | `false` | — | Require tests for new code |
 | `allow_shell_commands` | boolean | `true` | — | Allow shell command execution |
 | `allow_file_deletion` | boolean | `true` | — | Allow file deletion |
@@ -153,8 +119,7 @@ type_checking:
 | `mcp_allowed_servers` | string[] | `` | — | Allowed MCP server names |
 | `require_documentation` | boolean | `false` | — | Require documentation for new code |
 | `allowed_languages` | string[] | `["*"]` | — | Allowed programming languages |
-| `max_context_tokens` | number | `50000` | — | Maximum context token window |
-| `progressive_loading` | enum | `metadata` | — | Progressive loading strategy |
+| `progressive_loading` | enum | `metadata` | — | Skill inlining strategy for single-file agents |
 | `drift_detection` | enum | `warn` | — | Drift detection behavior |
 | `auto_generate_on_change` | boolean | `false` | — | Auto-generate on config change |
 <!-- GENERATED:END:flags_table -->
@@ -185,8 +150,6 @@ require_tests:
   mode: conditional
   value: true
   conditions:
-    lang: [typescript, python]     # Match by language
-    framework: [react, nextjs]     # Match by framework
     agent: [claude-code]           # Match by agent
     file_pattern: ["src/**/*.ts"]  # Match by file glob
 ```
@@ -195,17 +158,17 @@ All specified conditions must match for the flag to apply.
 
 ### Locking Flags
 
-Flags can be locked at org, team, or repo levels to prevent lower layers from overriding:
+Flags can be locked at the repo level to prevent overrides:
 
 ```yaml
-# In ~/.codi/org.yaml — nobody can disable security scanning
+# In .codi/flags.yaml — prevent overriding security scanning
 security_scan:
   mode: enforced
   value: true
   locked: true
 ```
 
-Attempting to override a locked flag at a lower layer produces a validation error.
+Attempting to override a locked flag produces a validation error.
 
 ### Flag-to-Instruction Mapping
 
@@ -216,31 +179,29 @@ Flags are automatically translated into natural-language instructions in generat
 |------|--------------|----------------------|
 | `allow_shell_commands` | `false` | Do NOT execute shell commands. |
 | `allow_file_deletion` | `false` | Do NOT delete files. |
-| `max_file_lines` | `N` | Keep source code files under N lines. Documentation files have no line limit. |
 | `require_tests` | `true` | Write tests for all new code. |
 | `allow_force_push` | `false` | Do NOT use force push (--force) on git operations. |
 | `require_pr_review` | `true` | All changes require pull request review before merging. |
 | `mcp_allowed_servers` | `[...]` | Only use these MCP servers: {list}. |
 | `require_documentation` | `true` | Write documentation for all new code and APIs. |
 | `allowed_languages` | `[...]` | Only use these languages: {list}. |
-| `max_context_tokens` | `N` | Maximum context window: N tokens. |
 <!-- GENERATED:END:flag_instructions -->
 
 Operational flags (`drift_detection`, `progressive_loading`, `auto_generate_on_change`) control Codi's behavior and do not generate agent instructions.
 
 ---
 
-## Layer Overrides
+## Configuration Layers
 
-Configuration can be overridden at multiple levels. Files are loaded from your home directory:
+Configuration is resolved from presets and the project's `.codi/` directory:
 
-| Layer | File Location | Use Case |
-|-------|---------------|----------|
-| **Org** | `~/.codi/orgs/{org}/config.yaml` | Organization-wide policies |
-| **Team** | `~/.codi/teams/{name}.yaml` | Team-specific standards |
-| **User** | `~/.codi/user.yaml` | Personal preferences |
+| Layer | Source | Description |
+|-------|--------|-------------|
+| **Preset** | Built-in or installed presets | Applied at install time |
+| **Repo** | `.codi/` directory | Project-level configuration (source of truth) |
+| **User** | `~/.codi/user.yaml` | Personal preferences (never committed) |
 
-Layer files use the same flag format as `flags.yaml`. See [Architecture](architecture.md) for the full 8-layer resolution order.
+See [Architecture](architecture.md) for the full resolution order.
 
 ---
 

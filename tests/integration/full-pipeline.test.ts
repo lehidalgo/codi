@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -16,14 +17,6 @@ import { regenerateConfigs } from "#src/cli/shared.js";
 import { parse as parseYaml } from "yaml";
 import { Logger } from "#src/core/output/logger.js";
 import { clearAdapters } from "#src/core/generator/adapter-registry.js";
-import { resolveFlags } from "#src/core/flags/flag-resolver.js";
-import type {
-  FlagLayer,
-  ResolutionContext,
-} from "#src/core/flags/flag-resolver.js";
-import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
-import { validateFlags } from "#src/core/flags/flag-validator.js";
-import { getDefaultFlags } from "#src/core/flags/flag-catalog.js";
 import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
@@ -62,7 +55,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   // Remove the parent temp dir (which contains test-project)
-  await fs.rm(path.dirname(tmpDir), { recursive: true, force: true });
+  await cleanupTmpDir(path.dirname(tmpDir));
   clearAdapters();
 });
 
@@ -103,11 +96,11 @@ describe("Full Pipeline Integration", () => {
     // First init
     await initHandler(tmpDir, { json: true });
 
-    // Second init without force fails
-    const failResult = await initHandler(tmpDir, { json: true });
-    expect(failResult.success).toBe(false);
+    // Second init without force succeeds (update flow)
+    const updateResult = await initHandler(tmpDir, { json: true });
+    expect(updateResult.success).toBe(true);
 
-    // Second init with force succeeds
+    // Second init with force also succeeds (full reset)
     const forceResult = await initHandler(tmpDir, { force: true, json: true });
     expect(forceResult.success).toBe(true);
   });
@@ -147,13 +140,13 @@ describe("Full Pipeline Integration", () => {
     expect(stat.isDirectory()).toBe(true);
   });
 
-  it("init generates all 18 flags in flags.yaml", async () => {
+  it("init generates all 16 flags in flags.yaml", async () => {
     await initHandler(tmpDir, { json: true });
     const flagsContent = await fs.readFile(
       path.join(tmpDir, PROJECT_DIR, "flags.yaml"),
       "utf-8",
     );
-    // All 18 flags should be present
+    // All 16 flags should be present
     expect(flagsContent).toContain("auto_commit");
     expect(flagsContent).toContain("lint_on_save");
     expect(flagsContent).toContain("allow_force_push");
@@ -161,127 +154,6 @@ describe("Full Pipeline Integration", () => {
     expect(flagsContent).toContain("progressive_loading");
     expect(flagsContent).toContain("drift_detection");
     expect(flagsContent).toContain("auto_generate_on_change");
-  });
-});
-
-describe("7-Layer Governance Integration", () => {
-  const emptyContext: ResolutionContext = {
-    languages: [],
-    frameworks: [],
-    agents: [],
-  };
-  const tsContext: ResolutionContext = {
-    languages: ["typescript"],
-    frameworks: ["nextjs"],
-    agents: ["claude"],
-  };
-
-  function layer(
-    level: string,
-    flags: FlagLayer["flags"],
-    source?: string,
-  ): FlagLayer {
-    return { level, source: source ?? `${level}.yaml`, flags };
-  }
-
-  it("org enforced+locked prevents all lower overrides", () => {
-    const layers = [
-      layer("org", {
-        security_scan: { mode: "enforced", value: true, locked: true },
-      }),
-      layer("team", { security_scan: { mode: "enabled", value: false } }),
-      layer("repo", { security_scan: { mode: "disabled" } }),
-      layer("user", { security_scan: { mode: "enabled", value: false } }),
-    ];
-    const result = resolveFlags(layers, emptyContext, FLAG_CATALOG);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors.every((e) => e.code === "E_FLAG_LOCKED")).toBe(true);
-      expect(result.errors).toHaveLength(3);
-    }
-  });
-
-  it("team conditional flag with framework match", () => {
-    const layers = [
-      layer("org", { max_file_lines: { mode: "enabled", value: 700 } }),
-      layer("team", {
-        require_tests: {
-          mode: "conditional",
-          value: true,
-          conditions: { framework: ["nextjs", "react"] },
-        },
-      }),
-      layer("repo", {}),
-    ];
-    const result = resolveFlags(layers, tsContext, FLAG_CATALOG);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data["require_tests"]!.value).toBe(true);
-      expect(result.data["max_file_lines"]!.value).toBe(700);
-    }
-  });
-
-  it("all 18 flags have defaults when no layers provided", () => {
-    const result = resolveFlags([], emptyContext, FLAG_CATALOG);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(Object.keys(result.data)).toHaveLength(18);
-      expect(result.data["lint_on_save"]!.value).toBe(true);
-      expect(result.data["allow_force_push"]!.value).toBe(false);
-      expect(result.data["mcp_allowed_servers"]!.value).toEqual([]);
-      expect(result.data["allowed_languages"]!.value).toEqual(["*"]);
-      expect(result.data["progressive_loading"]!.value).toBe("metadata");
-      expect(result.data["drift_detection"]!.value).toBe("warn");
-    }
-  });
-
-  it("string array flags override correctly across layers", () => {
-    const layers = [
-      layer("org", {
-        mcp_allowed_servers: { mode: "enabled", value: ["github"] },
-      }),
-      layer("team", {
-        mcp_allowed_servers: { mode: "enabled", value: ["github", "jira"] },
-      }),
-    ];
-    const result = resolveFlags(layers, emptyContext, FLAG_CATALOG);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data["mcp_allowed_servers"]!.value).toEqual([
-        "github",
-        "jira",
-      ]);
-      expect(result.data["mcp_allowed_servers"]!.source).toBe("team.yaml");
-    }
-  });
-
-  it("backward compatibility: project without org/team/framework works", async () => {
-    await initHandler(tmpDir, { json: true });
-    const result = await validateHandler(tmpDir);
-    expect(result.success).toBe(true);
-  });
-
-  it("validation rejects locked at framework level", () => {
-    const layers = [
-      layer("framework", {
-        auto_commit: { mode: "enforced", value: true, locked: true },
-      }),
-    ];
-    const errors = validateFlags(layers, getDefaultFlags(), FLAG_CATALOG);
-    expect(errors.some((e) => e.code === "E_FLAG_LOCKED_LEVEL")).toBe(true);
-  });
-
-  it("validation accepts locked at org and team levels", () => {
-    const layers = [
-      layer("org", {
-        security_scan: { mode: "enforced", value: true, locked: true },
-      }),
-      layer("team", {
-        allow_force_push: { mode: "enforced", value: false, locked: true },
-      }),
-    ];
-    const errors = validateFlags(layers, getDefaultFlags(), FLAG_CATALOG);
-    expect(errors).toHaveLength(0);
   });
 });
 

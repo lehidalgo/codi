@@ -3,9 +3,9 @@ import {
   BUILTIN_PRESETS,
   getBuiltinPresetDefinition,
   getBuiltinPresetNames,
-} from "../../../../src/templates/presets/index.js";
-import { FLAG_CATALOG } from "../../../../src/core/flags/flag-catalog.js";
-import { prefixedName, PROJECT_NAME } from "../../../../src/constants.js";
+} from "#src/templates/presets/index.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
+import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 
 const ALL_PRESET_NAMES = [
   prefixedName("minimal"),
@@ -44,7 +44,7 @@ describe("unified preset registry", () => {
 });
 
 describe("flat preset flags", () => {
-  it("each preset has all 18 flags inline", () => {
+  it("each preset has all 16 flags inline", () => {
     for (const name of ALL_PRESET_NAMES) {
       const def = BUILTIN_PRESETS[name]!;
       expect(Object.keys(def.flags).sort()).toEqual(catalogKeys);

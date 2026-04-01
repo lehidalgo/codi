@@ -1,10 +1,13 @@
+import fs from "node:fs/promises";
 import * as p from "@clack/prompts";
 import { formatHuman } from "../core/output/formatter.js";
 import { regenerateConfigs } from "./shared.js";
+import { resolveProjectDir } from "../utils/paths.js";
 import { initHandler } from "./init.js";
 import { generateHandler } from "./generate.js";
 import { docsHandler } from "./docs.js";
 import { doctorHandler } from "./doctor.js";
+import { statusHandler } from "./status.js";
 import { cleanHandler } from "./clean.js";
 import { updateHandler } from "./update.js";
 import { verifyHandler } from "./verify.js";
@@ -13,10 +16,7 @@ import { revertHandler } from "./revert.js";
 import { contributeHandler } from "./contribute.js";
 import { runSkillExportWizard } from "./skill-export-wizard.js";
 import { skillExportHandler } from "./skill.js";
-import {
-  marketplaceSearchHandler,
-  marketplaceInstallHandler,
-} from "./marketplace.js";
+
 import {
   presetListEnhancedHandler,
   presetExportHandler,
@@ -34,8 +34,9 @@ import {
   addBrandHandler,
 } from "./add.js";
 import { getAllAdapters } from "../core/generator/adapter-registry.js";
-import { registerAllAdapters } from "../adapters/index.js";
+import { validateHandler } from "./validate.js";
 import { PROJECT_DIR } from "../constants.js";
+import { SUB_MENUS } from "./hub.js";
 
 // --- Helpers ---
 
@@ -50,24 +51,30 @@ export async function printResult(
   process.stdout.write(formatHuman(result as never) + "\n");
 }
 
-export function showCliOnly(command: string, usage: string): void {
-  p.log.info(
-    `"${command}" is a long-running process. Run it directly from the CLI:`,
-  );
-  p.log.info(`  ${usage}`);
-  p.log.info("Use the CLI command above.");
-}
-
 // --- Route Handlers ---
 
 export async function handleInit(projectRoot: string): Promise<void> {
-  const force = await p.confirm({
-    message: `Force reinitialize if ${PROJECT_DIR}/ already exists?`,
-    initialValue: false,
-  });
-  if (isCancelled(force)) return;
+  let force: boolean | undefined;
 
-  const result = await initHandler(projectRoot, { force: force || undefined });
+  const configDir = resolveProjectDir(projectRoot);
+  const projectExists = await fs
+    .access(configDir)
+    .then(() => true)
+    .catch(() => false);
+
+  if (projectExists) {
+    const confirm = await p.select({
+      message: `${PROJECT_DIR}/ already exists. Force reinitialize?`,
+      options: [
+        { value: false, label: "No", hint: "keep existing configuration" },
+        { value: true, label: "Yes", hint: "wipe and start fresh" },
+      ],
+    });
+    if (isCancelled(confirm)) return;
+    force = confirm || undefined;
+  }
+
+  const result = await initHandler(projectRoot, { force });
   process.stdout.write(formatHuman(result) + "\n");
 }
 
@@ -98,7 +105,6 @@ export async function handleAdd(projectRoot: string): Promise<void> {
 }
 
 export async function handleGenerate(projectRoot: string): Promise<void> {
-  registerAllAdapters();
   const allAgents = getAllAdapters().map((a) => a.id);
 
   const agentFilter = await p.multiselect({
@@ -142,26 +148,40 @@ export async function handleGenerate(projectRoot: string): Promise<void> {
 }
 
 export async function handleDoctor(projectRoot: string): Promise<void> {
-  const ci = await p.confirm({
-    message: "CI mode? (exit non-zero on any failure)",
-    initialValue: false,
-  });
-  if (isCancelled(ci)) return;
+  await printResult(doctorHandler(projectRoot, {}));
+}
 
-  const result = await doctorHandler(projectRoot, { ci: ci || undefined });
-  process.stdout.write(formatHuman(result) + "\n");
+export async function handleStatus(projectRoot: string): Promise<void> {
+  const showDiff = await p.select({
+    message: "Show diffs for drifted files?",
+    options: [
+      { value: false, label: "No", hint: "show summary only" },
+      { value: true, label: "Yes", hint: "display line-by-line changes" },
+    ],
+  });
+  if (isCancelled(showDiff)) return;
+
+  await printResult(
+    statusHandler(projectRoot, { diff: showDiff || undefined }),
+  );
 }
 
 export async function handleClean(projectRoot: string): Promise<void> {
-  const cleanAll = await p.confirm({
-    message: `Remove everything including ${PROJECT_DIR}/? (full uninstall)`,
-    initialValue: false,
+  const cleanAll = await p.select({
+    message: `Remove everything including ${PROJECT_DIR}/?`,
+    options: [
+      { value: false, label: "No", hint: "only remove generated agent files" },
+      { value: true, label: "Yes", hint: "full uninstall, remove all config" },
+    ],
   });
   if (isCancelled(cleanAll)) return;
 
-  const dryRun = await p.confirm({
-    message: "Dry run? (show what would be deleted without deleting)",
-    initialValue: false,
+  const dryRun = await p.select({
+    message: "Dry run?",
+    options: [
+      { value: false, label: "No", hint: "delete files for real" },
+      { value: true, label: "Yes", hint: "preview what would be deleted" },
+    ],
   });
   if (isCancelled(dryRun)) return;
 
@@ -169,8 +189,12 @@ export async function handleClean(projectRoot: string): Promise<void> {
     const target = cleanAll
       ? `${PROJECT_DIR}/ and all generated files`
       : "generated agent config files";
-    const confirmed = await p.confirm({
+    const confirmed = await p.select({
       message: `This will remove ${target}. Continue?`,
+      options: [
+        { value: false, label: "No", hint: "cancel, keep files" },
+        { value: true, label: "Yes", hint: "proceed with deletion" },
+      ],
     });
     if (isCancelled(confirmed) || !confirmed) {
       p.log.info("Clean cancelled.");
@@ -201,9 +225,12 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
   });
   if (isCancelled(layers)) return;
 
-  const dryRun = await p.confirm({
-    message: "Dry run? (show changes without writing)",
-    initialValue: false,
+  const dryRun = await p.select({
+    message: "Dry run?",
+    options: [
+      { value: false, label: "No", hint: "apply changes to disk" },
+      { value: true, label: "Yes", hint: "preview changes without writing" },
+    ],
   });
   if (isCancelled(dryRun)) return;
 
@@ -213,6 +240,7 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
     skills: layerSet.has("skills") || undefined,
     agents: layerSet.has("agents") || undefined,
     commands: layerSet.has("commands") || undefined,
+    mcpServers: layerSet.has("mcp-servers") || undefined,
     dryRun: dryRun || undefined,
   });
   process.stdout.write(formatHuman(result) + "\n");
@@ -250,14 +278,7 @@ export async function handleVerify(projectRoot: string): Promise<void> {
 }
 
 export async function handleCompliance(projectRoot: string): Promise<void> {
-  const ci = await p.confirm({
-    message: "CI mode? (exit non-zero on any failure)",
-    initialValue: false,
-  });
-  if (isCancelled(ci)) return;
-
-  const result = await complianceHandler(projectRoot, { ci: ci || undefined });
-  process.stdout.write(formatHuman(result) + "\n");
+  await printResult(complianceHandler(projectRoot, {}));
 }
 
 export async function handleRevert(projectRoot: string): Promise<void> {
@@ -290,9 +311,16 @@ export async function handleRevert(projectRoot: string): Promise<void> {
       break;
     }
     case "last": {
-      const confirmed = await p.confirm({
-        message:
-          "Restore from most recent backup? This overwrites current generated files.",
+      const confirmed = await p.select({
+        message: "Restore from most recent backup?",
+        options: [
+          { value: false, label: "No", hint: "cancel, keep current state" },
+          {
+            value: true,
+            label: "Yes",
+            hint: "overwrite current generated files",
+          },
+        ],
       });
       if (isCancelled(confirmed) || !confirmed) return;
       const result = await revertHandler(projectRoot, { last: true });
@@ -324,38 +352,6 @@ export async function handleSkillExport(projectRoot: string): Promise<void> {
   process.stdout.write(formatHuman(result) + "\n");
 }
 
-export async function handleMarketplace(projectRoot: string): Promise<void> {
-  const query = await p.text({
-    message: "Search for skills",
-    placeholder: "e.g., testing, security, react",
-  });
-  if (isCancelled(query) || !query) return;
-
-  const result = await marketplaceSearchHandler(projectRoot, query, {});
-  process.stdout.write(formatHuman(result) + "\n");
-
-  if (
-    result.success &&
-    result.data?.results &&
-    result.data.results.length > 0
-  ) {
-    const install = await p.confirm({
-      message: "Install a skill from the results?",
-    });
-    if (isCancelled(install) || !install) return;
-
-    const skillName = await p.text({ message: "Skill name to install" });
-    if (isCancelled(skillName) || !skillName) return;
-
-    const installResult = await marketplaceInstallHandler(
-      projectRoot,
-      skillName,
-      {},
-    );
-    process.stdout.write(formatHuman(installResult) + "\n");
-  }
-}
-
 export async function handleContribute(projectRoot: string): Promise<void> {
   const result = await contributeHandler(projectRoot);
   process.stdout.write(formatHuman(result) + "\n");
@@ -364,6 +360,88 @@ export async function handleContribute(projectRoot: string): Promise<void> {
 export async function handleDocs(projectRoot: string): Promise<void> {
   const result = await docsHandler(projectRoot, {});
   process.stdout.write(formatHuman(result) + "\n");
+}
+
+// --- Sub-Menu Handlers ---
+
+async function runSubMenu(
+  groupKey: string,
+  title: string,
+  projectRoot: string,
+  dispatch: Record<string, (root: string) => Promise<void>>,
+): Promise<void> {
+  const items = SUB_MENUS[groupKey];
+  if (!items) return;
+
+  while (true) {
+    const selected = await p.select({
+      message: title,
+      options: [
+        ...items.map((item) => ({
+          label: item.label,
+          value: item.value,
+          hint: item.hint,
+        })),
+        {
+          label: "Back to main menu",
+          value: "_back",
+          hint: "Return to Command Center",
+        },
+      ],
+    });
+    if (isCancelled(selected) || selected === "_back") return;
+
+    const handler = dispatch[selected as string];
+    if (handler) {
+      try {
+        await handler(projectRoot);
+      } catch (error) {
+        p.log.error(
+          `Action failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+}
+
+export async function handleCreateConfigureMenu(
+  projectRoot: string,
+): Promise<void> {
+  await runSubMenu("create-configure", "Create & configure", projectRoot, {
+    add: handleAdd,
+    generate: handleGenerate,
+    preset: handlePresetMenu,
+  });
+}
+
+export async function handleBuildShareMenu(projectRoot: string): Promise<void> {
+  await runSubMenu("build-share", "Build & share", projectRoot, {
+    "skill-export": handleSkillExport,
+    contribute: handleContribute,
+    docs: handleDocs,
+  });
+}
+
+export async function handleDiagnosticsMenu(
+  projectRoot: string,
+): Promise<void> {
+  await runSubMenu("diagnostics", "Diagnostics", projectRoot, {
+    doctor: handleDoctor,
+    status: handleStatus,
+    validate: (root) => printResult(validateHandler(root)),
+    verify: handleVerify,
+    compliance: handleCompliance,
+  });
+}
+
+export async function handleMaintenanceMenu(
+  projectRoot: string,
+): Promise<void> {
+  await runSubMenu("maintenance", "Maintenance", projectRoot, {
+    clean: handleClean,
+    update: handleUpdate,
+    revert: handleRevert,
+  });
 }
 
 export async function handlePresetMenu(projectRoot: string): Promise<void> {
@@ -412,9 +490,16 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
 
     switch (action) {
       case "list": {
-        const includeBuiltin = await p.confirm({
+        const includeBuiltin = await p.select({
           message: "Include built-in presets?",
-          initialValue: true,
+          options: [
+            {
+              value: true,
+              label: "Yes",
+              hint: "show built-in and custom presets",
+            },
+            { value: false, label: "No", hint: "show only custom presets" },
+          ],
         });
         if (isCancelled(includeBuiltin)) break;
         const result = await presetListEnhancedHandler(
@@ -441,11 +526,6 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
       case "export": {
         const name = await p.text({ message: "Preset name to export" });
         if (isCancelled(name) || !name) break;
-        const format = await p.select({
-          message: "Export format",
-          options: [{ label: "ZIP", value: "zip" }],
-        });
-        if (isCancelled(format)) break;
         const output = await p.text({
           message: "Output path",
           defaultValue: ".",
@@ -455,7 +535,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
         const result = await presetExportHandler(
           projectRoot,
           name,
-          format,
+          "zip",
           output ?? ".",
         );
         process.stdout.write(formatHuman(result) + "\n");

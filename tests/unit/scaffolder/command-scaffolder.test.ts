@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { createCommand } from "#src/core/scaffolder/command-scaffolder.js";
 import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 
 describe("command scaffolder", () => {
   let tmpDir: string;
@@ -16,7 +17,7 @@ describe("command scaffolder", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates a command file with default content", async () => {

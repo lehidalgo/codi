@@ -17,9 +17,9 @@ export interface VerificationData {
 export function buildVerificationData(
   config: NormalizedConfig,
 ): VerificationData {
-  const ruleNames = config.rules.map((r) => r.name);
-  const skillNames = config.skills.map((s) => s.name);
-  const agentNames = config.agents.map((a) => a.name);
+  const ruleNames = config.rules.map((r) => r.name).sort();
+  const skillNames = config.skills.map((s) => s.name).sort();
+  const agentNames = config.agents.map((a) => a.name).sort();
   const commandNames = config.commands.map((c) => c.name).sort();
   const mcpServerNames = Object.keys(config.mcp.servers).sort();
 
@@ -29,7 +29,8 @@ export function buildVerificationData(
     : [];
 
   const sortedManifestAgents = [...(config.manifest.agents ?? [])].sort();
-  const ruleEntries = config.rules
+  const ruleEntries = [...config.rules]
+    .sort((a, b) => a.name.localeCompare(b.name))
     .map((r) => `${r.name}:${r.content}`)
     .join(",");
   const raw = [

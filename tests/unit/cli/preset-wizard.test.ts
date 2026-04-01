@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { PROJECT_NAME, PROJECT_DIR } from "../../../src/constants.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
+import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 vi.mock("@clack/prompts", () => ({
   intro: vi.fn(),
@@ -16,8 +17,8 @@ vi.mock("@clack/prompts", () => ({
 }));
 
 import * as p from "@clack/prompts";
-import { runPresetWizard } from "../../../src/cli/preset-wizard.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { runPresetWizard } from "#src/cli/preset-wizard.js";
+import { Logger } from "#src/core/output/logger.js";
 
 describe("runPresetWizard", () => {
   let tmpDir: string;
@@ -33,7 +34,7 @@ describe("runPresetWizard", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates preset directory and manifest for dir output", async () => {

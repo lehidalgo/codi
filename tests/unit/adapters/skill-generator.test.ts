@@ -1,11 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdir, writeFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   buildSkillMd,
-  buildSkillMetadataOnly,
   generateSkillFiles,
   buildSkillCatalog,
 } from "#src/adapters/skill-generator.js";
 import {
+  PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   PROJECT_DIR,
   MANIFEST_FILENAME,
@@ -108,20 +111,6 @@ describe("buildSkillMd", () => {
   });
 });
 
-describe("buildSkillMetadataOnly", () => {
-  it("includes only name and description", () => {
-    const result = buildSkillMetadataOnly(baseSkill);
-    expect(result).toContain("name: deploy");
-    expect(result).toContain("description: Deployment skill");
-    expect(result).not.toContain("Run deploy commands");
-  });
-
-  it("includes reference to full skill file", () => {
-    const result = buildSkillMetadataOnly(baseSkill);
-    expect(result).toContain(`${PROJECT_DIR}/skills/deploy/SKILL.md`);
-  });
-});
-
 describe("generateSkillFiles", () => {
   const skills: NormalizedSkill[] = [
     { name: "deploy", description: "Deploy", content: "deploy content" },
@@ -152,17 +141,10 @@ describe("generateSkillFiles", () => {
     expect(gitkeeps.some((f) => f.path.includes("agents/.gitkeep"))).toBe(true);
   });
 
-  it("uses full content when progressive loading is off", async () => {
-    const files = await generateSkillFiles(skills, ".test/skills", "off");
+  it("always generates full skill content in SKILL.md", async () => {
+    const files = await generateSkillFiles(skills, ".test/skills");
     const skillMd = files.find((f) => f.path.endsWith("SKILL.md"));
     expect(skillMd!.content).toContain("deploy content");
-  });
-
-  it("uses metadata only when progressive loading is metadata", async () => {
-    const files = await generateSkillFiles(skills, ".test/skills", "metadata");
-    const skillMd = files.find((f) => f.path.endsWith("SKILL.md"));
-    expect(skillMd!.content).not.toContain("deploy content");
-    expect(skillMd!.content).toContain("Full skill content available");
   });
 
   it("returns empty array for no skills", async () => {
@@ -176,6 +158,93 @@ describe("generateSkillFiles", () => {
       expect(file.hash).toBeDefined();
       expect(file.sources).toContain(MANIFEST_FILENAME);
     }
+  });
+});
+
+describe("generateSkillFiles with projectRoot (supporting files)", () => {
+  let tmpDir: string;
+  const skillName = "deploy";
+
+  beforeEach(async () => {
+    tmpDir = join(
+      tmpdir(),
+      `${PROJECT_NAME}-test-skillgen-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+    const skillDir = join(tmpDir, PROJECT_DIR, "skills", skillName);
+    await mkdir(skillDir, { recursive: true });
+
+    // Text supporting file
+    await writeFile(join(skillDir, "helper.sh"), "#!/bin/bash\necho hi");
+
+    // Binary file (should get binarySrc, not content)
+    await writeFile(join(skillDir, "logo.png"), Buffer.from([0x89, 0x50]));
+
+    // Files that should be skipped
+    await writeFile(join(skillDir, ".gitkeep"), "");
+    await writeFile(join(skillDir, "SKILL.md"), "# skip me");
+
+    // Evals subdir (should be skipped)
+    const evalsDir = join(skillDir, "evals");
+    await mkdir(evalsDir, { recursive: true });
+    await writeFile(join(evalsDir, "eval1.json"), "{}");
+
+    // Nested subdir with a file
+    const nested = join(skillDir, "scripts");
+    await mkdir(nested, { recursive: true });
+    await writeFile(join(nested, "run.sh"), "#!/bin/bash\nrun");
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("collects text supporting files from projectRoot", async () => {
+    const skills: NormalizedSkill[] = [
+      { name: skillName, description: "Deploy", content: "deploy content" },
+    ];
+    const files = await generateSkillFiles(skills, ".claude/skills", tmpDir);
+
+    const helperFile = files.find((f) => f.path.includes("helper.sh"));
+    expect(helperFile).toBeDefined();
+    expect(helperFile!.content).toContain("echo hi");
+  });
+
+  it("marks binary files with binarySrc instead of reading content", async () => {
+    const skills: NormalizedSkill[] = [
+      { name: skillName, description: "Deploy", content: "deploy content" },
+    ];
+    const files = await generateSkillFiles(skills, ".claude/skills", tmpDir);
+
+    const binaryFile = files.find((f) => f.path.includes("logo.png"));
+    expect(binaryFile).toBeDefined();
+    expect(binaryFile!.binarySrc).toBeTruthy();
+    expect(binaryFile!.content).toBe("");
+  });
+
+  it("skips SKILL.md, .gitkeep, and evals directory", async () => {
+    const skills: NormalizedSkill[] = [
+      { name: skillName, description: "Deploy", content: "deploy content" },
+    ];
+    const files = await generateSkillFiles(skills, ".claude/skills", tmpDir);
+
+    const paths = files.map((f) => f.path);
+    // Should NOT find the evals file or the duplicated SKILL.md/gitkeep
+    const evalsFile = paths.find((p) => p.includes("eval1.json"));
+    expect(evalsFile).toBeUndefined();
+    // SKILL.md should exist (generated from template), but only one
+    const skillMds = paths.filter((p) => p.endsWith("SKILL.md"));
+    expect(skillMds).toHaveLength(1);
+  });
+
+  it("collects files from nested subdirectories", async () => {
+    const skills: NormalizedSkill[] = [
+      { name: skillName, description: "Deploy", content: "deploy content" },
+    ];
+    const files = await generateSkillFiles(skills, ".claude/skills", tmpDir);
+
+    const nestedFile = files.find((f) => f.path.includes("scripts/run.sh"));
+    expect(nestedFile).toBeDefined();
+    expect(nestedFile!.content).toContain("run");
   });
 });
 

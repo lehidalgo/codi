@@ -2,11 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { isGitRepo, getGitRoot } from "../../../src/utils/git.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { PROJECT_NAME } from "../../../src/constants.js";
+import { isGitRepo, getGitRoot } from "#src/utils/git.js";
+import { Logger } from "#src/core/output/logger.js";
+import { PROJECT_NAME } from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -19,7 +20,7 @@ describe("git utilities", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   describe("isGitRepo", () => {

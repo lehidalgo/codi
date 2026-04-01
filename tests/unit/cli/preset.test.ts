@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { parse as parseYaml } from "yaml";
 import { presetCreateHandler } from "#src/cli/preset.js";
 import { Logger } from "#src/core/output/logger.js";
@@ -24,7 +25,7 @@ describe("presetCreateHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("creates preset directory with manifest", async () => {
@@ -120,7 +121,7 @@ describe("presetUpdateHandler — empty lock file", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("handles empty lock file (no presets to update)", async () => {
@@ -210,7 +211,7 @@ describe("presetCreateHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns correct exit code on success", async () => {

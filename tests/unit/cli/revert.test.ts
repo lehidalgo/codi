@@ -2,14 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { revertHandler } from "../../../src/cli/revert.js";
-import { Logger } from "../../../src/core/output/logger.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
+import { revertHandler } from "#src/cli/revert.js";
+import { Logger } from "#src/core/output/logger.js";
 import {
   BACKUPS_DIR,
   BACKUP_MANIFEST_FILENAME,
   PROJECT_NAME,
   PROJECT_DIR,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 vi.mock("../../../src/cli/shared.js", async (importOriginal) => {
   const actual =
@@ -31,7 +32,7 @@ describe("revert command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   async function createBackupEntry(

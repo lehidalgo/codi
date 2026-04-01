@@ -17,7 +17,6 @@ export const preset: BuiltinPresetDefinition = {
     test_before_commit: { mode: "enforced", value: true, locked: true },
     security_scan: { mode: "enforced", value: true, locked: true },
     type_checking: { mode: "enforced", value: "strict", locked: true },
-    max_file_lines: { mode: "enabled", value: 500 },
     require_tests: { mode: "enforced", value: true, locked: true },
     allow_shell_commands: { mode: "enforced", value: true, locked: true },
     allow_file_deletion: { mode: "enforced", value: false, locked: true },
@@ -27,7 +26,6 @@ export const preset: BuiltinPresetDefinition = {
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: true },
     allowed_languages: { mode: "enabled", value: ["*"] },
-    max_context_tokens: { mode: "enabled", value: 50000 },
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "error" },
     auto_generate_on_change: { mode: "enabled", value: true },
@@ -39,6 +37,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("security"),
     prefixedName("git-workflow"),
     prefixedName("api-design"),
+    prefixedName("documentation"),
     devArtifactName("improvement"),
   ],
   skills: [
@@ -47,6 +46,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("commit"),
     prefixedName("test-coverage"),
     prefixedName("error-recovery"),
+    prefixedName("documentation"),
     prefixedName("compare-preset"),
   ],
   agents: [

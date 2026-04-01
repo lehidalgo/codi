@@ -28,8 +28,6 @@ export {
   template as codebaseOnboarding,
   staticDir as codebaseOnboardingStaticDir,
 } from "./codebase-onboarding/index.js";
-// Deprecated: replaced by deck-engine. File kept for backwards compatibility.
-// export { template as presentation } from "./presentation/index.js";
 export { template as mobileDevelopment } from "./mobile-development/index.js";
 export {
   template as commit,
@@ -60,6 +58,8 @@ export {
   staticDir as docEngineStaticDir,
 } from "./doc-engine/index.js";
 export { template as skillReporter } from "./skill-reporter/index.js";
+export { template as ruleFeedback } from "./rule-feedback/index.js";
+export { template as refineRules } from "./refine-rules/index.js";
 export {
   template as claudeApi,
   staticDir as claudeApiStaticDir,

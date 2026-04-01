@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
 import { loadPreset } from "#src/core/preset/preset-loader.js";
@@ -27,7 +28,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 describe("Preset Workflow: load all builtin presets", () => {
@@ -203,7 +204,7 @@ describe("Preset Workflow: custom preset from directory", () => {
         description: "Flags only",
         version: "1.0.0",
         flags: {
-          max_file_lines: { mode: "enforced", value: 300 },
+          security_scan: { mode: "enforced", value: true },
         },
       }),
       "utf-8",
@@ -213,7 +214,7 @@ describe("Preset Workflow: custom preset from directory", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.data.flags["max_file_lines"]?.value).toBe(300);
+    expect(result.data.flags["security_scan"]?.value).toBe(true);
     expect(result.data.rules).toEqual([]);
     expect(result.data.skills).toEqual([]);
   });

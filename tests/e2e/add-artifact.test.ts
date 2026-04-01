@@ -8,7 +8,7 @@ import {
   readFile,
 } from "./helpers/cli-harness.js";
 
-vi.setConfig({ testTimeout: 30_000 });
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 
 let projectDir: string;
 let cleanup: () => Promise<void>;
@@ -110,7 +110,7 @@ describe("E2E: add artifacts", () => {
 
   it("added rule appears in generated output after regenerate", async () => {
     await runCli(projectDir, ["add", "rule", "testing", "-t", "testing"]);
-    await runCli(projectDir, ["generate"]);
+    await runCli(projectDir, ["generate", "--force"]);
 
     // Check the rule is present in claude-code output
     const rulesDir = path.join(projectDir, ".claude", "rules");

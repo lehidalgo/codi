@@ -62,11 +62,6 @@ export function renderFlagInstructions(): string {
   const mapping = [
     ["allow_shell_commands", "false", "Do NOT execute shell commands."],
     ["allow_file_deletion", "false", "Do NOT delete files."],
-    [
-      "max_file_lines",
-      "N",
-      "Keep source code files under N lines. Documentation files have no line limit.",
-    ],
     ["require_tests", "true", "Write tests for all new code."],
     [
       "allow_force_push",
@@ -85,7 +80,6 @@ export function renderFlagInstructions(): string {
       "Write documentation for all new code and APIs.",
     ],
     ["allowed_languages", "[...]", "Only use these languages: {list}."],
-    ["max_context_tokens", "N", "Maximum context window: N tokens."],
   ];
 
   const rows = mapping.map(

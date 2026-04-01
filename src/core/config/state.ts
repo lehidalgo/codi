@@ -14,11 +14,19 @@ export interface GeneratedFileState {
   timestamp: string;
 }
 
+export interface ArtifactFileState {
+  path: string;
+  hash: string;
+  preset: string;
+  timestamp: string;
+}
+
 export interface StateData {
   version: "1";
   lastGenerated: string;
   agents: Record<string, GeneratedFileState[]>;
   hooks: GeneratedFileState[];
+  presetArtifacts?: ArtifactFileState[];
 }
 
 export interface DriftFile {
@@ -162,6 +170,83 @@ export class StateManager {
     }
 
     return ok({ agentId, files: driftFiles });
+  }
+  async updatePresetArtifacts(
+    files: ArtifactFileState[],
+  ): Promise<Result<void>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const state = stateResult.data;
+    // Merge: update existing entries by path, add new ones
+    const existing = new Map(
+      (state.presetArtifacts ?? []).map((f) => [f.path, f]),
+    );
+    for (const file of files) {
+      existing.set(file.path, file);
+    }
+    state.presetArtifacts = [...existing.values()];
+    return this.write(state);
+  }
+
+  async detectPresetArtifactDrift(): Promise<Result<DriftFile[]>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const stored = stateResult.data.presetArtifacts ?? [];
+    const driftFiles: DriftFile[] = [];
+
+    for (const entry of stored) {
+      try {
+        const fullPath = path.resolve(this.projectRoot, entry.path);
+        const content = await fs.readFile(fullPath, "utf8");
+        const currentHash = hashContent(content);
+        if (currentHash === entry.hash) {
+          driftFiles.push({ path: entry.path, status: "synced" });
+        } else {
+          driftFiles.push({
+            path: entry.path,
+            status: "drifted",
+            expectedHash: entry.hash,
+            currentHash,
+          });
+        }
+      } catch {
+        driftFiles.push({ path: entry.path, status: "missing" });
+      }
+    }
+
+    return ok(driftFiles);
+  }
+
+  async detectHookDrift(): Promise<Result<DriftFile[]>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const storedHooks = stateResult.data.hooks;
+    const driftFiles: DriftFile[] = [];
+
+    for (const stored of storedHooks) {
+      try {
+        const fullPath = path.resolve(this.projectRoot, stored.path);
+        const content = await fs.readFile(fullPath, "utf8");
+        const currentHash = hashContent(content);
+        if (currentHash === stored.generatedHash) {
+          driftFiles.push({ path: stored.path, status: "synced" });
+        } else {
+          driftFiles.push({
+            path: stored.path,
+            status: "drifted",
+            expectedHash: stored.generatedHash,
+            currentHash,
+          });
+        }
+      } catch {
+        driftFiles.push({ path: stored.path, status: "missing" });
+      }
+    }
+
+    return ok(driftFiles);
   }
 }
 

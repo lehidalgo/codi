@@ -37,14 +37,6 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
       off: "No type checking — fastest builds but no compile-time safety",
     },
   },
-  max_file_lines: {
-    type: "number",
-    default: 700,
-    min: 1,
-    hook: "file-size-check",
-    description: "Max lines per file",
-    hint: "Pre-commit hook blocks files exceeding this limit (recommended: 300-700)",
-  },
   require_tests: {
     type: "boolean",
     default: false,
@@ -108,25 +100,18 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     description: "Allowed programming languages",
     hint: "Restrict which languages the agent can write (* = all)",
   },
-  max_context_tokens: {
-    type: "number",
-    default: 50000,
-    min: 1000,
-    hook: null,
-    description: "Maximum context token window",
-    hint: "Limits how much context is loaded into the agent (recommended: 32000-200000)",
-  },
   progressive_loading: {
     type: "enum",
     default: "metadata",
     values: ["off", "metadata", "full"],
     hook: null,
-    description: "Progressive loading strategy",
-    hint: "Controls how artifacts are loaded to stay within context limits",
+    description: "Skill inlining strategy for single-file agents",
+    hint: "Controls whether Windsurf/Cline inline skills in their main config file. Skill files always contain full content.",
     valueHints: {
-      off: "Load all artifact content at once — uses more context",
-      metadata: "Load names and descriptions first, full content on demand",
-      full: "Load everything including content — maximum context usage",
+      off: "Inline full skill content in .windsurfrules/.clinerules",
+      metadata:
+        "Show skill catalog table in main file; full content in separate skill files",
+      full: "Same as metadata — full content always in separate files",
     },
   },
   drift_detection: {

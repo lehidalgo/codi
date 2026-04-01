@@ -20,9 +20,6 @@ export function buildProjectOverview(config: NormalizedConfig): string {
   }
 
   lines.push(`**Project:** ${manifest.name}`);
-  if (manifest.team) {
-    lines.push(`**Team:** ${manifest.team}`);
-  }
   lines.push(`**Managed by:** [${PROJECT_NAME_DISPLAY}](${PROJECT_URL})`);
 
   return lines.join("\n");

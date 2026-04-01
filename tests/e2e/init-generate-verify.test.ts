@@ -76,8 +76,8 @@ describe("E2E: init → generate → verify lifecycle", () => {
   it("init with --force reinitializes existing project", async () => {
     await runCli(projectDir, ["init"]);
 
-    const failResult = await runCli(projectDir, ["init"]);
-    expect(failResult.exitCode).not.toBe(0);
+    const updateResult = await runCli(projectDir, ["init"]);
+    expect(updateResult.exitCode).toBe(0);
 
     const forceResult = await runCli(projectDir, ["init", "--force"]);
     expect(forceResult.exitCode).toBe(0);

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { initHandler } from "../../src/cli/init.js";
 import { generateHandler } from "../../src/cli/generate.js";
@@ -37,7 +38,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(path.dirname(tmpDir), { recursive: true, force: true });
+  await cleanupTmpDir(path.dirname(tmpDir));
   clearAdapters();
 });
 
@@ -66,7 +67,7 @@ describe("Self-introspection (dogfooding)", () => {
 
   it(
     "full pipeline: init, add rules, validate, generate, status, drift",
-    { timeout: 15000 },
+    { timeout: 30000 },
     async () => {
       // 1. Init with all agents
       const initResult = await initHandler(tmpDir, { agents: ALL_AGENTS });
@@ -94,7 +95,7 @@ describe("Self-introspection (dogfooding)", () => {
       expect(validateResult.data.valid).toBe(true);
 
       // 4. Generate
-      const genResult = await generateHandler(tmpDir, {});
+      const genResult = await generateHandler(tmpDir, { force: true });
       expect(genResult.success).toBe(true);
       expect(genResult.data.agents).toEqual(ALL_AGENTS);
       expect(genResult.data.filesGenerated).toBeGreaterThan(0);

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isPathSafe } from "../../utils/path-guard.js";
-import { fileExists } from "../../utils/fs.js";
+import { fileExists, safeRm } from "../../utils/fs.js";
 import {
   MAX_BACKUPS,
   STATE_FILENAME,
@@ -69,7 +69,7 @@ export async function createBackup(
   }
 
   if (backedUpFiles.length === 0) {
-    await fs.rm(backupDir, { recursive: true, force: true });
+    await safeRm(backupDir);
     return null;
   }
 
@@ -157,10 +157,7 @@ async function cleanupOldBackups(backupsDir: string): Promise<void> {
   while (dirs.length > MAX_BACKUPS) {
     const oldest = dirs.shift();
     if (!oldest) break;
-    await fs.rm(path.join(backupsDir, oldest), {
-      recursive: true,
-      force: true,
-    });
+    await safeRm(path.join(backupsDir, oldest));
   }
 }
 

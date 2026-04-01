@@ -8,8 +8,8 @@ import {
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
-} from "../../../src/adapters/section-builder.js";
-import { MANIFEST_FILENAME } from "../../../src/constants.js";
+} from "#src/adapters/section-builder.js";
+import { MANIFEST_FILENAME } from "#src/constants.js";
 import { createMockConfig } from "./mock-config.js";
 
 describe("buildProjectOverview", () => {
@@ -31,14 +31,6 @@ describe("buildProjectOverview", () => {
     });
     const result = buildProjectOverview(config);
     expect(result).toContain("A cool project");
-  });
-
-  it("includes team when present", () => {
-    const config = createMockConfig({
-      manifest: { name: "my-proj", version: "1", agents: [], team: "Platform" },
-    });
-    const result = buildProjectOverview(config);
-    expect(result).toContain("**Team:** Platform");
   });
 });
 
@@ -62,6 +54,17 @@ describe("buildArchitectureSummary", () => {
     expect(result).not.toContain("Skills");
     expect(result).not.toContain("Agents");
     expect(result).not.toContain("Commands");
+  });
+
+  it("omits rules section when no rules", () => {
+    const config = createMockConfig({
+      rules: [],
+      skills: [],
+      agents: [],
+      commands: [],
+    });
+    const result = buildArchitectureSummary(config);
+    expect(result).not.toContain("Rules");
   });
 });
 
@@ -244,6 +247,17 @@ describe("buildSkillRoutingTable", () => {
     expect(result).toContain("Security Scan");
     expect(result).toContain("codi-security-scan");
     expect(result).toContain("*Security analysis workflow*");
+  });
+
+  it("truncates long descriptions to 80 chars with ellipsis", () => {
+    const longDesc =
+      "This is an extremely long description that exceeds eighty characters and should be truncated with an ellipsis appended at the end";
+    const config = createMockConfig({
+      skills: [{ name: "codi-long-desc", description: longDesc, content: "c" }],
+    });
+    const result = buildSkillRoutingTable(config)!;
+    expect(result).toContain("...");
+    expect(result).not.toContain(longDesc);
   });
 
   it("excludes brand-category skills", () => {

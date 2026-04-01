@@ -2,14 +2,15 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { doctorHandler } from "../../../src/cli/doctor.js";
-import { Logger } from "../../../src/core/output/logger.js";
-import { EXIT_CODES } from "../../../src/core/output/exit-codes.js";
+import { cleanupTmpDir } from "../../helpers/fs.js";
+import { doctorHandler } from "#src/cli/doctor.js";
+import { Logger } from "#src/core/output/logger.js";
+import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import {
   PROJECT_NAME,
   PROJECT_DIR,
   MANIFEST_FILENAME,
-} from "../../../src/constants.js";
+} from "#src/constants.js";
 
 describe("doctor command handler", () => {
   let tmpDir: string;
@@ -22,7 +23,7 @@ describe("doctor command handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("passes with valid project", async () => {

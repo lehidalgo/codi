@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import {
   injectSections,
   validateSections,
@@ -16,7 +17,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
+  await cleanupTmpDir(tmpDir);
 });
 
 // ---------------------------------------------------------------------------

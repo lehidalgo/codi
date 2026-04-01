@@ -41,7 +41,7 @@ export function printWelcomeBanner(options: WelcomeBannerOptions): void {
 
   lines.push("");
   lines.push(
-    `  ${pc.dim(PROJECT_TAGLINE)}${" ".repeat(Math.max(1, cols - PROJECT_TAGLINE.length - 12))}${pc.dim(`v${VERSION}`)}`,
+    `  ${pc.dim(PROJECT_TAGLINE)}${" ".repeat(Math.max(1, 50 - PROJECT_TAGLINE.length))}${pc.dim(`v${VERSION}`)}`,
   );
   const hasStatus = options.detectedStack || options.detectedAgents;
   if (hasStatus) {

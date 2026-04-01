@@ -86,7 +86,7 @@ export async function validateSkillForExport(
     return err([
       createError("E_SKILL_INVALID", {
         name,
-        reason: "Description is required for marketplace export.",
+        reason: "Description is required for export.",
       }),
     ]);
   }

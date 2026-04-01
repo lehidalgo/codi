@@ -2,12 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { cleanupTmpDir } from "../../helpers/fs.js";
 import { stringify as stringifyYaml } from "yaml";
 import {
   presetValidateHandler,
   presetRemoveHandler,
   presetListEnhancedHandler,
   presetExportHandler,
+  presetInstallUnifiedHandler,
 } from "#src/cli/preset-handlers.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
@@ -29,7 +31,7 @@ describe("presetValidateHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("succeeds for a valid preset with manifest", async () => {
@@ -126,7 +128,7 @@ describe("presetRemoveHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("removes an installed preset and updates lock file", async () => {
@@ -202,7 +204,7 @@ describe("presetListEnhancedHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("returns empty list when no presets directory exists", async () => {
@@ -305,7 +307,7 @@ describe("presetExportHandler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("fails with unsupported format", async () => {
@@ -382,7 +384,7 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("lists multiple installed presets", async () => {
@@ -494,7 +496,7 @@ describe("presetRemoveHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("removes preset even without lock entry", async () => {
@@ -526,7 +528,7 @@ describe("presetValidateHandler — additional coverage", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await cleanupTmpDir(tmpDir);
   });
 
   it("reports artifact counts for valid preset", async () => {
@@ -567,5 +569,31 @@ describe("presetValidateHandler — additional coverage", () => {
     const result = await presetValidateHandler(tmpDir, "ghost");
     expect(result.success).toBe(false);
     expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
+  });
+});
+
+describe("presetInstallUnifiedHandler — builtin rejection", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-builtin-`),
+    );
+    Logger.init({ level: "error", mode: "human", noColor: true });
+  });
+
+  afterEach(async () => {
+    await cleanupTmpDir(tmpDir);
+  });
+
+  it("rejects builtin preset names with helpful error", async () => {
+    const result = await presetInstallUnifiedHandler(tmpDir, "codi-balanced", {
+      force: true,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
+    expect(result.errors![0]!.code).toBe("E_BUILTIN_NOT_INSTALLABLE");
+    expect(result.errors![0]!.hint).toContain("init");
   });
 });

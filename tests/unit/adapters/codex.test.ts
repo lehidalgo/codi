@@ -110,7 +110,7 @@ describe("codex adapter", () => {
     expect(agentsMd).toBeDefined();
     expect(agentsMd!.content).toContain("Do NOT execute shell commands.");
     expect(agentsMd!.content).toContain(
-      "Keep source code files under 500 lines.",
+      "Keep source code files under 700 lines.",
     );
     expect(agentsMd!.content).toContain("Code Style");
     expect(agentsMd!.content).toContain("Testing");
@@ -357,6 +357,26 @@ describe("codex adapter", () => {
     const hash1 = files1.find((f) => f.path === "AGENTS.md")!.hash;
     const hash2 = files2.find((f) => f.path === "AGENTS.md")!.hash;
     expect(hash1).not.toBe(hash2);
+  });
+
+  // --- generate() with brand-category skills ---
+
+  it("inlines brand-category skills in AGENTS.md", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "my-brand",
+          description: "Brand identity",
+          content: "Brand content here",
+          category: "brand",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+
+    const agentsMd = files.find((f) => f.path === "AGENTS.md");
+    expect(agentsMd!.content).toContain("Brand: my-brand");
+    expect(agentsMd!.content).toContain("Brand content here");
   });
 
   // --- generate() all files have required fields ---

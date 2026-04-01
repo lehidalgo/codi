@@ -95,33 +95,48 @@ function isGithubUrl(id: string): boolean {
 }
 
 function extractGithubRepoPath(url: string): string {
+  // https://github.com/org/repo/tree/branch/path
+  const treeMatch = url.match(
+    /github\.com\/([^/]+\/[^/]+)\/tree\/([^/]+)(?:\/(.+))?$/,
+  );
+  if (treeMatch && treeMatch[1] && treeMatch[2]) {
+    const base = treeMatch[3]
+      ? `${treeMatch[1]}/${treeMatch[3]}`
+      : treeMatch[1];
+    return `${base}#${treeMatch[2]}`;
+  }
   const match = url.match(/github\.com\/(.+?)(?:\.git)?$/);
   return match?.[1] ?? url;
 }
 
 function parseGithubIdentifier(raw: string): PresetSourceDescriptor {
-  // Handle @tag notation: org/repo@v1.0
+  // Handle @tag notation: org/repo[/path]@v1.0
   const tagMatch = raw.match(/^(.+?)@(.+)$/);
   if (tagMatch && tagMatch[1] && tagMatch[2]) {
-    return {
-      type: "github",
-      identifier: tagMatch[1],
-      version: tagMatch[2],
-      ref: tagMatch[2],
-    };
+    return splitRepoAndPath(tagMatch[1], tagMatch[2], tagMatch[2]);
   }
 
-  // Handle #branch notation: org/repo#branch
+  // Handle #branch notation: org/repo[/path]#branch
   const branchMatch = raw.match(/^(.+?)#(.+)$/);
   if (branchMatch && branchMatch[1] && branchMatch[2]) {
-    return {
-      type: "github",
-      identifier: branchMatch[1],
-      ref: branchMatch[2],
-    };
+    return splitRepoAndPath(branchMatch[1], undefined, branchMatch[2]);
   }
 
-  return { type: "github", identifier: raw };
+  return splitRepoAndPath(raw);
+}
+
+function splitRepoAndPath(
+  raw: string,
+  version?: string,
+  ref?: string,
+): PresetSourceDescriptor {
+  const parts = raw.split("/");
+  if (parts.length > 2) {
+    const identifier = parts.slice(0, 2).join("/");
+    const presetPath = parts.slice(2).join("/");
+    return { type: "github", identifier, path: presetPath, version, ref };
+  }
+  return { type: "github", identifier: raw, version, ref };
 }
 
 async function loadBuiltinPreset(
@@ -178,6 +193,9 @@ export function extractPresetName(descriptor: PresetSourceDescriptor): string {
       return basename;
     }
     case "github": {
+      if (descriptor.path) {
+        return path.basename(descriptor.path);
+      }
       const parts = descriptor.identifier.split("/");
       return parts[parts.length - 1] ?? descriptor.identifier;
     }

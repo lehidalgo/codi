@@ -16,6 +16,12 @@ vi.mock("@clack/prompts", () => ({
   },
 }));
 
+vi.mock("node:fs/promises", () => ({
+  default: {
+    access: vi.fn().mockRejectedValue(new Error("ENOENT")),
+  },
+}));
+
 vi.mock("../../../src/core/output/formatter.js", () => ({
   formatHuman: vi.fn().mockReturnValue("formatted output"),
 }));
@@ -81,13 +87,6 @@ vi.mock("../../../src/cli/skill.js", () => ({
   skillExportHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
 }));
 
-vi.mock("../../../src/cli/marketplace.js", () => ({
-  marketplaceSearchHandler: vi
-    .fn()
-    .mockResolvedValue({ exitCode: 0, success: false }),
-  marketplaceInstallHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
 vi.mock("../../../src/cli/preset-handlers.js", () => ({
   presetListEnhancedHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
   presetExportHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
@@ -108,16 +107,15 @@ vi.mock("../../../src/adapters/index.js", () => ({
   registerAllAdapters: vi.fn(),
 }));
 
+import fs from "node:fs/promises";
 import * as p from "@clack/prompts";
 import {
   isCancelled,
   handleInit,
   handleAdd,
   handlePresetMenu,
-  showCliOnly,
 } from "#src/cli/hub-handlers.js";
 import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
-import { PROJECT_CLI } from "#src/constants.js";
 
 describe("hub-handlers", () => {
   beforeEach(() => {
@@ -138,25 +136,17 @@ describe("hub-handlers", () => {
     });
   });
 
-  describe("showCliOnly", () => {
-    it("displays CLI usage information", () => {
-      showCliOnly("watch", `${PROJECT_CLI} watch`);
-      expect(p.log.info).toHaveBeenCalledTimes(3);
-    });
-  });
-
   describe("handleInit", () => {
-    it("returns when cancelled", async () => {
-      vi.mocked(p.confirm).mockResolvedValueOnce(Symbol("cancel") as never);
+    it("returns when cancelled on existing project", async () => {
+      vi.mocked(fs.access).mockResolvedValueOnce(undefined);
+      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
       vi.mocked(p.isCancel).mockReturnValueOnce(true);
 
       await handleInit("/tmp/test");
       expect(process.stdout.write).not.toHaveBeenCalled();
     });
 
-    it("runs init handler with force option", async () => {
-      vi.mocked(p.confirm).mockResolvedValueOnce(true as never);
-
+    it("runs init handler when no project exists", async () => {
       await handleInit("/tmp/test");
       expect(process.stdout.write).toHaveBeenCalled();
     });
