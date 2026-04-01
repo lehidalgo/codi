@@ -20,7 +20,7 @@
 | [Feature Inventory](features.md) | Complete catalog of capabilities, templates, and flags |
 | [CLI Reference](cli-reference.md) | All 20 commands, Command Center, init wizard, options |
 | [Architecture](architecture.md) | Config resolution pipeline, adapter pattern, generation stages |
-| [Configuration](configuration.md) | Manifest schema, 18 flags, 8 layers, MCP servers |
+| [Configuration](configuration.md) | Manifest schema, 16 flags, 3 layers, MCP servers |
 | [Artifacts](artifacts.md) | Rules, skills, agents, commands, brands — formats and templates |
 | [Presets](presets.md) | 6 built-in presets, create, install, export, share |
 | [Workflows](workflows.md) | Daily usage, CI/CD integration, team patterns, import/export |

@@ -3,7 +3,7 @@
  */
 import type { AgentAdapter } from "#src/types/agent.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
-import type { HubAction } from "#src/cli/hub.js";
+import type { HubAction, HubTopLevelEntry } from "#src/cli/hub.js";
 import { PROJECT_CLI, PROJECT_DIR } from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
@@ -75,10 +75,25 @@ export function renderErrorCatalog(
 // Hub actions
 // ---------------------------------------------------------------------------
 
-export function renderHubActions(actions: HubAction[]): string {
-  const rows = actions.map((a) => {
-    return `| ${a.label} | ${a.hint} | \`${a.group}\` |`;
-  });
+export function renderHubActions(
+  topLevel: HubTopLevelEntry[],
+  subMenus: Record<string, HubAction[]>,
+): string {
+  const rows: string[] = [];
+
+  for (const entry of topLevel) {
+    const items = subMenus[entry.value];
+    if (items) {
+      rows.push(`| **${entry.label}** | ${entry.hint} | — |`);
+      for (const item of items) {
+        rows.push(
+          `| \u00A0\u00A0${item.label} | ${item.hint} | \`${entry.value}\` |`,
+        );
+      }
+    } else {
+      rows.push(`| **${entry.label}** | ${entry.hint} | — |`);
+    }
+  }
 
   return [
     "| Action | Description | Group |",

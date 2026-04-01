@@ -9,7 +9,7 @@ Run `codi` with no arguments to launch the interactive Command Center. It uses `
 The menu loops until you select **Exit** or press **Ctrl+C**. Actions that require a `.codi/` directory are hidden until you initialize a project.
 
 **Setup:** Initialize project, Add artifact, Generate configs, Manage presets
-**Build:** Export skill, Search marketplace, Contribute to community, Generate documentation
+**Build:** Export skill, Contribute to community, Generate documentation
 **Monitor:** Project status, Health check, Validate config, Verify agent awareness, Compliance report, CI checks, Clean generated files, Update templates, Revert to backup, Watch for changes, Update docs counts
 
 ---
@@ -125,7 +125,6 @@ Manage configuration presets.
 | `validate <name>` | `codi preset validate my-setup` | Validate structure and schema |
 | `remove <name>` | `codi preset remove my-setup` | Remove an installed preset |
 | `edit <name>` | `codi preset edit my-setup` | Interactively edit artifact selection |
-| `search <query>` | `codi preset search typescript` | Search the preset registry |
 | `update` | `codi preset update --dry-run` | Update installed presets to latest |
 
 **`create` options:**
@@ -177,7 +176,11 @@ Show drift status for generated agent files. Reports in-sync, drifted, and missi
 codi status
 ```
 
-No command-specific options. Uses the global `--json` flag for machine-readable output.
+| Option | Description |
+|--------|-------------|
+| `--diff` | Show colored unified diffs for drifted preset artifacts |
+
+Also uses the global `--json` flag for machine-readable output.
 
 ---
 
@@ -399,22 +402,6 @@ Manage skills: export, feedback, stats, evolve, versions.
 ---
 
 ### Community Commands
-
-#### `codi marketplace <subcommand>`
-
-Search and install skills from the community registry.
-
-| Subcommand | Synopsis | Description |
-|------------|----------|-------------|
-| `search <query>` | `codi marketplace search testing` | Search for skills |
-| `install <name>` | `codi marketplace install my-skill` | Install a skill |
-
-```sh
-codi marketplace search "code review"
-codi marketplace install community-linter
-```
-
----
 
 #### `codi contribute`
 

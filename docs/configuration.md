@@ -7,13 +7,10 @@ Complete reference for Codi's configuration system: directory structure, manifes
 ```
 .codi/
   codi.yaml                    # Project manifest
-  flags.yaml                   # Behavioral flags (18 flags)
+  flags.yaml                   # Behavioral flags (16 flags)
   state.json                   # Generation state (auto-managed)
   mcp.yaml                     # MCP server configuration
-  rules/
-    generated/
-      common/                  # Auto-generated rules (managed_by: codi)
-    custom/                    # Your custom rules (managed_by: user)
+  rules/                       # All rules (managed_by: codi or user)
   skills/
     {name}/
       SKILL.md                 # Skill definition
@@ -49,7 +46,7 @@ agents:
 
 # Pin minimum Codi version
 codi:
-  requiredVersion: ">=0.9.0"
+  requiredVersion: ">=2.0.0"
 
 # Control which content types are included in generation
 layers:
@@ -62,11 +59,6 @@ layers:
 # Presets to load (applied in order)
 presets:
   - balanced
-
-# Marketplace registry for skill search/install
-marketplace:
-  registry: "org/codi-skills-registry"
-  branch: main
 ```
 
 ### Manifest Fields
@@ -86,9 +78,6 @@ marketplace:
 | `layers.context` | boolean | Yes | `true` | Include context in generation |
 | `engine` | object | No | — |  |
 | `engine.requiredVersion` | string | No | — |  |
-| `presetRegistry` | object | No | — | Preset registry settings |
-| `presetRegistry.url` | string | Yes | — | Registry URL |
-| `presetRegistry.branch` | string | Yes | `main` | Registry branch |
 | `presets` | string[] | No | — | Presets to load (order matters) |
 <!-- GENERATED:END:manifest_fields -->
 
@@ -102,16 +91,17 @@ Flags control how AI agents behave in your project. Each flag has a **mode** and
 security_scan:
   mode: enforced
   value: true
-  locked: true          # Prevents lower layers from overriding
+  locked: true          # Prevents overriding
 
 type_checking:
   mode: conditional
   value: strict
   conditions:
-    lang: [typescript]   # Only apply when language is TypeScript
+    agent: [claude-code]       # Only apply for this agent
+    file_pattern: ["src/**/*.ts"]  # Only apply to these files
 ```
 
-### All 18 Flags
+### All 16 Flags
 
 <!-- GENERATED:START:flags_table -->
 | Flag | Type | Default | Hook | Description |

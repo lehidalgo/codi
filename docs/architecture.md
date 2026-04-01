@@ -142,7 +142,7 @@ Auxiliary scripts (secret scan, file size check, version check) are written as `
 
 ## Flag System
 
-Codi has 18 behavioral flags defined in `src/core/flags/flag-catalog.ts`. Each flag has a type, default value, and optional hook mapping.
+Codi has 16 behavioral flags defined in `src/core/flags/flag-catalog.ts`. Each flag has a type, default value, and optional hook mapping.
 
 ### Flag Modes
 
@@ -166,7 +166,7 @@ Each flag resolves to:
 {
   value: <the flag's value>,
   mode: "enabled" | "disabled",
-  source: "default" | "org" | "team" | "preset" | "repo" | ...,
+  source: "default" | "preset" | "repo",
   locked: boolean
 }
 ```
@@ -195,7 +195,7 @@ Helper functions: `ok(data)`, `err(errors)`, `isOk(result)`, `isErr(result)`.
 
 ## Error Handling
 
-- **25 error codes** defined in `src/core/output/error-catalog.ts`
+- **29 error codes** defined in `src/core/output/error-catalog.ts`
 - **13 exit codes** for CLI process termination in `src/core/output/exit-codes.ts`
 
 Error format:
@@ -227,7 +227,7 @@ sequenceDiagram
 
     U->>C: Edit rules, flags, or artifacts
     U->>G: Run codi generate
-    G->>R: Resolve config (8 layers)
+    G->>R: Resolve config
     R-->>G: Merged NormalizedConfig
     G->>A: Pass config to each adapter
     A->>O: Write agent-specific files

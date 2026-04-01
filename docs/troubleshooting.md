@@ -86,7 +86,7 @@ codi update --rules --skills --agents --commands
 
 ### Generated file overwritten manually
 
-If you need persistent changes, edit the source in `.codi/rules/custom/` instead of the generated file. Running `codi generate` always overwrites generated output.
+If you need persistent changes, edit the source in `.codi/rules/` instead of the generated file. Running `codi generate` always overwrites generated output.
 
 ## Verification Issues
 
@@ -139,7 +139,7 @@ The watcher uses debouncing to batch rapid changes. If saving multiple files at 
 
 Check that the preset directory exists at `.codi/presets/{name}/` with a `preset.yaml` file.
 
-For built-in presets, use one of: `minimal`, `balanced`, `strict`.
+For built-in presets, use one of: `minimal`, `balanced`, `strict`, `fullstack`, `development`, `power-user`.
 
 ### Preset install fails
 

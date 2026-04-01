@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-04-01
+
+Breaking release. All 0.x and 1.x versions are deprecated.
+
 ### Changed
 
 - **Simplified config resolution** — removed 8-layer composition system (org, team, preset, repo, lang, framework, agent, user). `.codi/` is now the single source of truth; `codi generate` reads only from `.codi/` and writes agent config files
@@ -30,6 +34,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Missing artifact warnings** — preset loader logs warnings when artifacts listed in `preset.yaml` cannot be resolved
 - **Cross-skill Related Skills sections** — added to 7 skills to improve discoverability of complementary workflows
 - **Orphaned helper scripts documented** — `add_slide.py`, `clean.py` (pptx), and 25 skill-creator scripts now referenced in SKILL.md
+- **Smart pre-commit test command** — hooks now detect `test:pre-commit` npm script and use it instead of the full test suite; falls back to `npm test` when not available
+- **Multi-preset repository support** — `preset install` from GitHub now discovers multiple presets in subdirectories and presents interactive selection when the repository contains more than one preset
+- **GitHub preset subfolder support** — `preset install github:org/repo/subfolder` syntax for installing a specific preset from a multi-preset repository
+- **Preset flag merge on GitHub install** — GitHub preset installation now merges preset flags into `flags.yaml` with locked-flag protection, matching ZIP install behavior
+- **Scaffolder preset source tracking** — scaffolders now record preset source metadata in generated artifacts for traceability
 
 ### Removed
 
@@ -45,9 +54,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Skill resource path fixes** — fixed broken references in 8 skills (wrong directory names, missing prefixes, hardcoded paths)
 - **`__pycache__` excluded from skill propagation** — Python bytecode cache no longer copied to agent directories
 
-## [1.0.0] - 2026-03-30
+## [1.0.0] - 2026-03-30 [DEPRECATED]
 
-First stable release. All 0.x versions are deprecated.
+Deprecated — superseded by 2.0.0. All 0.x and 1.x versions are deprecated.
 
 ### Core
 

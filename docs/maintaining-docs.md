@@ -86,7 +86,7 @@ Signs of stale documentation:
 | Version references outdated | Search for old version numbers in docs |
 | STATUS.md metrics stale | Compare with `npm test -- --coverage` output |
 | Dead links | `grep -r '](docs/' README.md docs/` and verify targets exist |
-| Layer count inconsistent | Search for "layer" across all docs — should all say "8" |
+| Layer count inconsistent | Search for "layer" across all docs — should all say "3" |
 
 ### Periodic Maintenance
 

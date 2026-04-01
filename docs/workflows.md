@@ -1,6 +1,6 @@
 # Workflows
 
-Operational guides for common Codi tasks: daily usage, import/export, CI/CD, marketplace, and contributing.
+Operational guides for common Codi tasks: daily usage, import/export, CI/CD, and contributing.
 
 ## Daily Workflow
 
@@ -13,7 +13,7 @@ flowchart LR
 
 ```bash
 # 1. Edit your rules, skills, or flags
-vim .codi/rules/custom/security.md
+vim .codi/rules/security.md
 
 # 2. Regenerate all agent configs
 codi generate
@@ -38,15 +38,13 @@ Run `codi` (no subcommand) to launch the interactive Command Center. It presents
 |------|---------|-----|
 | `.codi/codi.yaml` | Yes | Project manifest — source of truth |
 | `.codi/flags.yaml` | Yes | Flag configuration |
-| `.codi/rules/custom/` | Yes | Your custom rules |
-| `.codi/rules/generated/` | Yes | Managed rules (track changes) |
+| `.codi/rules/` | Yes | All rules (managed and custom) |
 | `.codi/skills/` | Yes | Your skills |
 | `.codi/agents/` | Yes | Your agent definitions |
 | `.codi/commands/` | Yes | Your slash commands |
 | `.codi/state.json` | Yes | Enables drift detection for your team |
 | Generated files (`CLAUDE.md`, etc.) | Yes | Agents read these from your repo |
 | `~/.codi/user.yaml` | No | Personal preferences, never committed |
-| `~/.codi/org.yaml` | No | Shared via org tooling, not per-repo |
 
 ---
 
@@ -68,7 +66,7 @@ The ZIP contains the preset manifest, flags, and all bundled artifacts (rules, s
 
 ### Export a skill
 
-Package a single skill for marketplace sharing:
+Package a single skill for sharing:
 
 ```bash
 codi skill export my-skill
@@ -115,46 +113,6 @@ codi update --from org/team-config
 ```
 
 This updates only `managed_by: codi` artifacts. User-authored artifacts (`managed_by: user`) are never overwritten.
-
-Configure the default remote in `codi.yaml`:
-
-```yaml
-source:
-  repo: "org/team-codi-config"
-  branch: main
-  paths: [rules, skills, agents]
-```
-
----
-
-## Marketplace
-
-The marketplace lets you search for and install community-shared skills.
-
-### Search for skills
-
-```bash
-codi marketplace search "testing"
-```
-
-### Install a skill
-
-```bash
-codi marketplace install security-scan
-```
-
-### Configure marketplace registry
-
-```yaml
-# In codi.yaml
-marketplace:
-  registry: "org/codi-skills-registry"
-  branch: main
-```
-
-### Via Command Center
-
-Run `codi` and select "Search marketplace" for an interactive search and install flow.
 
 ---
 

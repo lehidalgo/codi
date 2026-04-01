@@ -7,19 +7,14 @@ Complete inventory of Codi capabilities.
 ### Single Source of Truth
 All AI agent configurations originate from a single `.codi/` directory. Rules, skills, agents, commands, flags, and MCP settings are defined once and generated into agent-specific formats.
 
-### 8-Layer Config Resolution
-Flags resolve through an ordered precedence chain, where each layer can override the previous. Conditional flags can target specific languages, frameworks, or agents.
+### 3-Layer Config Resolution
+Flags resolve through an ordered precedence chain, where each layer can override the previous. Conditional flags can target specific agents or file patterns.
 
 | Layer | Source | Example |
 |:------|:-------|:--------|
-| 1. Organization | Org-wide defaults | Company security policy |
-| 2. Team | Team overrides | Frontend team relaxes file limits |
-| 3. Preset | Built-in or custom preset | `codi-strict` enforces locked flags |
-| 4. Repository | `flags.yaml` in `.codi/` | Project-specific settings |
-| 5. Language | Conditional on `lang` | Python enables `pyright` |
-| 6. Framework | Conditional on `framework` | Next.js settings |
-| 7. Agent | Conditional on `agent` | Claude-only features |
-| 8. User | User-level overrides | Personal preferences |
+| 1. Preset | Built-in or custom preset | `codi-strict` enforces locked flags |
+| 2. Repository | `flags.yaml` in `.codi/` | Project-specific settings |
+| 3. User | User-level overrides | Personal preferences |
 
 ### Drift Detection
 Hash-based tracking in `state.json` detects when generated config files diverge from `.codi/` source artifacts. Configurable via the `drift_detection` flag: `off`, `warn` (default), or `error`.
@@ -96,10 +91,10 @@ Each `codi generate` run computes a SHA256-based verification token from the man
 
 | Type | Count | Purpose |
 |:-----|------:|:--------|
-| Rules | 25+ | Instructions agents follow (code style, security, language conventions) |
-| Skills | 40+ | Reusable workflows agents can invoke (code review, testing, document generation) |
-| Agents | 20+ | Subagent definitions with specialized tools and models |
-| Commands | 15+ | Slash commands users invoke (`/commit`, `/review`, `/test-run`) |
+| Rules | 27 | Instructions agents follow (code style, security, language conventions) |
+| Skills | 44 | Reusable workflows agents can invoke (code review, testing, document generation) |
+| Agents | 22 | Subagent definitions with specialized tools and models |
+| Commands | 17 | Slash commands users invoke (`/commit`, `/review`, `/test-run`) |
 | Brands | custom | Visual identity tokens (colors, typography, logos, tone of voice) |
 
 ### Rule Templates
@@ -168,7 +163,7 @@ The routing table maps user intents to recommended skills. It appears in all 5 g
 | power-user | Workflow | Daily workflow -- graph exploration, day tracking, session management, codebase onboarding |
 
 ### Preset Operations
-Create, list, install, export, validate, remove, and edit presets. Distribution supports GitHub repositories, ZIP files, and a preset registry with lockfile tracking (`presets.lock.json`).
+Create, list, install, export, validate, remove, and edit presets. Distribution supports GitHub repositories and ZIP files with lockfile tracking (`preset-lock.json`).
 
 ---
 
@@ -194,8 +189,7 @@ Create, list, install, export, validate, remove, and edit presets. Distribution 
 | | `clean` | Remove generated config files |
 | | `revert` | Restore from timestamped backup |
 | | `skill` | Manage skills (evolve, export, stats) |
-| **Community** | `marketplace` | Search and install community skills |
-| | `contribute` | Share artifacts via GitHub PR or ZIP export |
+| **Community** | `contribute` | Share artifacts via GitHub PR or ZIP export |
 | | `docs` | Open documentation |
 
 ---
@@ -261,7 +255,7 @@ Each project gets a unique token embedded in `codi.yaml`. Agents can echo the to
 
 ## Flag System
 
-18 behavioral flags control agent permissions, code quality gates, and generation behavior.
+16 behavioral flags control agent permissions, code quality gates, and generation behavior.
 
 | Flag | Type | Default | Description |
 |:-----|:-----|:--------|:------------|
@@ -278,7 +272,6 @@ Each project gets a unique token embedded in `codi.yaml`. Agents can echo the to
 | `mcp_allowed_servers` | string[] | `[]` | Allowed MCP server names |
 | `require_documentation` | boolean | `false` | Require documentation for new code |
 | `allowed_languages` | string[] | `["*"]` | Allowed programming languages |
-| `max_context_tokens` | number | `50000` | Maximum context token window |
 | `progressive_loading` | enum | `metadata` | Skill inlining for single-file agents — `off`: inline in main file, `metadata`/`full`: catalog table |
 | `drift_detection` | enum | `warn` | Drift detection behavior (`off` / `warn` / `error`) |
 | `auto_generate_on_change` | boolean | `false` | Auto-generate on config change |
@@ -303,7 +296,7 @@ MCP configuration is generated into each agent's native format: `.mcp.json` for 
 
 ---
 
-## Community and Marketplace
+## Community
 
 ### Skill Export
 Package skills for distribution in four formats.
@@ -314,9 +307,6 @@ Package skills for distribution in four formats.
 | `claude-plugin` | Claude Code plugin format |
 | `codex-plugin` | Codex plugin format |
 | `zip` | Portable ZIP archive |
-
-### Marketplace
-Search and install community skills from a registry. Filter by name, description, or tags. Installed skills are tracked in the preset lockfile.
 
 ### Contribution
 Share artifacts back to the community via GitHub PR workflow or ZIP export. The `codi contribute` command guides through the process.
