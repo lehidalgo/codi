@@ -69,7 +69,7 @@ Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, and other agent files are generat
 
 ```mermaid
 flowchart LR
-    A[".codi/ directory"] --> B["Config Resolution\n(8 layers)"]
+    A[".codi/ directory"] --> B["Config Resolution\n(3 layers)"]
     B --> C["Adapters"]
     C --> D["CLAUDE.md"]
     C --> E[".cursorrules"]
@@ -78,7 +78,7 @@ flowchart LR
     C --> H[".clinerules"]
 ```
 
-Codi reads your `.codi/` directory, resolves configuration through 8 inheritance layers (org → team → preset → repo → language → framework → agent → user), and passes the result through agent-specific adapters that produce each platform's native format. Flags with `locked: true` cannot be overridden by later layers.
+Codi reads your `.codi/` directory, resolves configuration through 3 layers (preset → repo → user), and passes the result through agent-specific adapters that produce each platform's native format. Flags with `locked: true` cannot be overridden by later layers.
 
 ---
 
@@ -88,7 +88,7 @@ Codi reads your `.codi/` directory, resolves configuration through 8 inheritance
 |:--------|:-----------|:-----------|
 | **Artifacts** | Rules, skills, agents, commands, brands — the building blocks of your config | [Artifacts Guide](docs/artifacts.md) |
 | **Presets** | Bundles of flags + artifacts for quick setup (6 built-in) | [Presets Guide](docs/presets.md) |
-| **Flags** | 18 behavioral switches controlling security, testing, permissions, and context | [Configuration](docs/configuration.md) |
+| **Flags** | 16 behavioral switches controlling security, testing, permissions, and generation | [Configuration](docs/configuration.md) |
 | **Adapters** | Translators that convert your config to each agent's native format | [Architecture](docs/architecture.md) |
 
 ---
@@ -131,7 +131,7 @@ Create your own with `codi add rule|skill|agent|command <name>`, or start from a
 | `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
 <!-- GENERATED:END:preset_table -->
 
-Create, share, and install presets from ZIP, GitHub, or the registry with `codi preset`. See the [Presets Guide](docs/presets.md).
+Create, share, and install presets from ZIP or GitHub with `codi preset`. See the [Presets Guide](docs/presets.md).
 
 ---
 
@@ -161,16 +161,16 @@ Create, share, and install presets from ZIP, GitHub, or the registry with `codi 
 ## FAQ
 
 **Q: Will Codi overwrite my existing `CLAUDE.md`?**
-Yes. Back up your existing files first, then move your rules into `.codi/rules/custom/` and run `codi generate`.
+Yes. Back up your existing files first, then move your rules into `.codi/rules/` and run `codi generate`.
 
 **Q: Do I commit generated files?**
 Yes. Agents read these files from your repo. Commit both `.codi/` (source) and generated files (output).
 
 **Q: What happens if I edit a generated file manually?**
-`codi status` reports it as "drifted". Running `codi generate` overwrites the edit. Modify rules in `.codi/rules/custom/` instead.
+`codi status` reports it as "drifted". Running `codi generate` overwrites the edit. Modify rules in `.codi/rules/` instead.
 
 **Q: Can different team members use different settings?**
-Yes. Personal preferences go in `~/.codi/user.yaml` (never committed). Org-wide policies go in `~/.codi/org.yaml` with `locked: true`.
+Yes. Personal preferences go in `~/.codi/user.yaml` (never committed). Team-wide policies are enforced via presets with `locked: true` flags.
 
 **Q: How do I add Codi to CI?**
 Install as a dev dependency and add `npx codi doctor --ci` to your pipeline. It exits non-zero on issues.

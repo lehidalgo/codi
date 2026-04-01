@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { FlagSpec } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
 import type { AgentAdapter } from "#src/types/agent.js";
-import type { HubAction } from "#src/cli/hub.js";
+import type { HubAction, HubTopLevelEntry } from "#src/cli/hub.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
 import { PROJECT_CLI } from "#src/constants.js";
 import {
@@ -274,17 +274,28 @@ describe("section-renderers", () => {
 
   describe("renderHubActions", () => {
     it("renders action rows", () => {
-      const actions: HubAction[] = [
+      const topLevel: HubTopLevelEntry[] = [
         {
-          label: "Generate",
-          hint: "Build configs",
-          group: "build",
-          value: "generate",
+          value: "build-share",
+          label: "Build & share",
+          hint: "Export skills, contribute",
+          requiresProject: true,
         },
       ];
-      const result = renderHubActions(actions);
+      const subMenus: Record<string, HubAction[]> = {
+        "build-share": [
+          {
+            label: "Generate",
+            hint: "Build configs",
+            value: "generate",
+          },
+        ],
+      };
+      const result = renderHubActions(topLevel, subMenus);
 
-      expect(result).toContain("| Generate | Build configs | `build` |");
+      expect(result).toContain("Build & share");
+      expect(result).toContain("Generate");
+      expect(result).toContain("Build configs");
     });
   });
 

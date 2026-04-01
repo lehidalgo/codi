@@ -84,10 +84,8 @@ After initialization, your project has a new `.codi/` directory:
 ```
 .codi/
   codi.yaml          # Project manifest — agents, preset, languages
-  flags.yaml         # 18 behavioral switches (file limits, security, etc.)
-  rules/
-    managed/         # Rules pulled from your preset (read-only)
-    custom/          # Your own rules (editable)
+  flags.yaml         # 16 behavioral switches (security, testing, permissions, etc.)
+  rules/             # All rules (preset-managed and custom)
   skills/            # Reusable workflows agents can invoke
   agents/            # Subagent definitions (code reviewer, test generator, etc.)
   commands/          # Slash commands (/commit, /review, etc.)
@@ -100,8 +98,7 @@ Here is what each piece does:
 |:-----------------|:--------|
 | `codi.yaml` | Declares which agents to generate for, which preset to use, and project metadata |
 | `flags.yaml` | Controls agent behavior: max file length, force push policy, security scanning, etc. |
-| `rules/managed/` | Rules from your preset. Updated automatically when you run `codi update` |
-| `rules/custom/` | Your project-specific rules. These always take priority over managed rules |
+| `rules/` | All rules — preset-managed rules (`managed_by: codi`) are updated by `codi update`; custom rules (`managed_by: user`) are never overwritten |
 | `skills/` | Step-by-step workflows agents can follow (code review, commit, testing, etc.) |
 | `agents/` | Specialized subagent roles with focused responsibilities |
 | `commands/` | Slash commands your team can invoke inside the agent |
@@ -164,7 +161,7 @@ Preset rules cover common conventions, but every project has its own standards. 
 codi add rule my-conventions
 ```
 
-This creates `.codi/rules/custom/my-conventions.md` with a starter template. Open it and add your project-specific instructions:
+This creates `.codi/rules/my-conventions.md` with a starter template. Open it and add your project-specific instructions:
 
 ```markdown
 # (codi-rule) my-conventions
@@ -233,7 +230,7 @@ Once set up, the typical workflow is:
 
 ```bash
 # Edit rules, skills, or flags in .codi/
-vim .codi/rules/custom/my-conventions.md
+vim .codi/rules/my-conventions.md
 
 # Regenerate
 codi generate

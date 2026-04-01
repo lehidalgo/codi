@@ -110,14 +110,13 @@ src/
     watch.ts          # codi watch
     ci.ts             # codi ci
     revert.ts         # codi revert
-    marketplace.ts    # codi marketplace
     preset.ts         # codi preset
     shared.ts         # Shared CLI utilities
   cli.ts              # Command registration and entry point
   core/               # Business logic
     audit/            # Audit log (append-only JSONL)
     backup/           # Automatic backup before generate
-    config/           # Config resolution (8-layer merge)
+    config/           # Config resolution
     flags/            # Flag catalog, merging, enforcement
     generator/        # Output file generation orchestrator
     hooks/            # Pre-commit hook management
@@ -130,9 +129,9 @@ src/
   schemas/            # Zod schemas for config, flags, artifacts
   templates/          # Built-in templates
     rules/            # 27 rule templates
-    skills/           # 42 skill templates
+    skills/           # 44 skill templates
     agents/           # 22 agent templates
-    commands/         # 16 command templates
+    commands/         # 17 command templates
     hooks/            # 3 hook templates
   types/              # TypeScript type definitions
   utils/              # Shared utilities (logger, errors, hashing)
@@ -200,7 +199,7 @@ src/
      description: 'What this flag controls',
    },
    ```
-2. Add to all 3 presets in `src/core/flags/flag-presets.ts` (minimal, balanced, strict)
+2. Add to all 6 presets in `src/templates/presets/` (minimal, balanced, strict, fullstack, power-user, development)
 3. If the flag should generate agent instructions, add to `src/adapters/flag-instructions.ts`
 4. Update the flag count in tests (`tests/unit/flags/flag-catalog.test.ts`)
 5. Run `npm test`

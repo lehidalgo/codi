@@ -6,7 +6,7 @@ Artifacts are the building blocks of Codi configuration. There are 5 types: **ru
 
 | Artifact | Purpose | Location | Detection |
 |----------|---------|----------|-----------|
-| **Rule** | Instructions agents follow | `.codi/rules/{generated,custom}/*.md` | `*.md` files |
+| **Rule** | Instructions agents follow | `.codi/rules/*.md` | `*.md` files |
 | **Skill** | Reusable workflows agents invoke | `.codi/skills/{name}/SKILL.md` | `**/SKILL.md` glob |
 | **Agent** | Subagent definitions | `.codi/agents/*.md` | `*.md` files |
 | **Command** | Slash commands | `.codi/commands/*.md` | `*.md` files |
