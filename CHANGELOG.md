@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Interactive conflict merge** — new "Merge (interactive)" option resolves each conflict hunk in the terminal via per-hunk accept/keep/both prompts, no external editor needed
+- **Editor-based conflict merge** — new "Merge in editor" and "Merge (auto)" options open `$EDITOR` with git-style conflict markers for manual resolution
+- **VS Code auto-detection** — conflict editor defaults to `code --wait` when VS Code is detected (via `TERM_PROGRAM` or PATH), with async spinner so the terminal stays responsive
+- **Contribute to any GitHub repo** — `codi contribute --repo owner/repo --branch branch` opens PRs to any GitHub repository, not just the official codi repo
+- **Preset resource round-trip** — skill resources (scripts, assets, references) are preserved during ZIP export and re-import
+
+### Fixed
+
+- **False conflict detection on fresh import** — eliminated double `generate()` call during `codi init` that caused spurious conflicts
+- **Version pinning key mismatch** — fixed manifest key from `codi` to `engine` so version checks work correctly
+- **Custom preset lock recording** — custom preset names are now saved to the lock file
+
 ## [2.0.0] - 2026-04-01
 
 Breaking release. All 0.x and 1.x versions are deprecated.

@@ -157,13 +157,18 @@ function parseRuleTemplate(
   try {
     const { data, content: body } =
       parseFrontmatter<Record<string, unknown>>(content);
+    const d = data as Record<string, unknown>;
     return {
-      name: (data["name"] as string) ?? name,
-      description: (data["description"] as string) ?? "",
+      name: (d["name"] as string) ?? name,
+      description: (d["description"] as string) ?? "",
       content: body,
-      priority: (data["priority"] as "high" | "medium" | "low") ?? "medium",
-      alwaysApply: (data["alwaysApply"] as boolean) ?? true,
+      priority: (d["priority"] as "high" | "medium" | "low") ?? "medium",
+      alwaysApply: (d["alwaysApply"] as boolean) ?? true,
       managedBy: PROJECT_NAME,
+      ...(d["language"] !== undefined && {
+        language: d["language"] as string,
+      }),
+      ...(d["scope"] !== undefined && { scope: d["scope"] as string[] }),
     };
   } catch {
     return null;
@@ -177,11 +182,54 @@ function parseSkillTemplate(
   try {
     const { data, content: body } =
       parseFrontmatter<Record<string, unknown>>(content);
+    const d = data as Record<string, unknown>;
     return {
-      name: (data["name"] as string) ?? name,
-      description: (data["description"] as string) ?? "",
+      name: (d["name"] as string) ?? name,
+      description: (d["description"] as string) ?? "",
       content: body,
       managedBy: PROJECT_NAME,
+      ...(d["category"] !== undefined && { category: d["category"] as string }),
+      ...(d["model"] !== undefined && { model: d["model"] as string }),
+      ...(d["license"] !== undefined && { license: d["license"] as string }),
+      ...(d["tools"] !== undefined && { tools: d["tools"] as string[] }),
+      ...(d["compatibility"] !== undefined && {
+        compatibility: d["compatibility"] as string[],
+      }),
+      ...(d["disable-model-invocation"] !== undefined && {
+        disableModelInvocation: d["disable-model-invocation"] as boolean,
+      }),
+      ...(d["argument-hint"] !== undefined && {
+        argumentHint: d["argument-hint"] as string,
+      }),
+      ...(d["allowed-tools"] !== undefined && {
+        allowedTools:
+          d["allowed-tools"] instanceof Array
+            ? (d["allowed-tools"] as string[])
+            : String(d["allowed-tools"])
+                .split(",")
+                .map((s) => s.trim()),
+      }),
+      ...(d["effort"] !== undefined && {
+        effort: d["effort"] as "low" | "medium" | "high" | "max",
+      }),
+      ...(d["context"] !== undefined && { context: d["context"] as "fork" }),
+      ...(d["agent"] !== undefined && { agent: d["agent"] as string }),
+      ...(d["user-invocable"] !== undefined && {
+        userInvocable: d["user-invocable"] as boolean,
+      }),
+      ...(d["paths"] !== undefined && { paths: d["paths"] as string[] }),
+      ...(d["shell"] !== undefined && {
+        shell: d["shell"] as "bash" | "powershell",
+      }),
+      ...(d["metadata"] !== undefined && {
+        metadata: d["metadata"] as Record<string, string>,
+      }),
+      ...(d["intentHints"] !== undefined && {
+        intentHints: d["intentHints"] as {
+          taskType: string;
+          examples: string[];
+        },
+      }),
     };
   } catch {
     return null;

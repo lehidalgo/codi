@@ -85,7 +85,10 @@ describe("generateHooksConfig", () => {
   it("returns only global hooks for unknown language", () => {
     const config = generateHooksConfig(makeFlags({}), ["cobol"]);
     const langHooks = config.hooks.filter(
-      (h) => h.name !== "secret-scan" && h.name !== "file-size-check",
+      (h) =>
+        h.name !== "secret-scan" &&
+        h.name !== "file-size-check" &&
+        h.name !== "artifact-validate",
     );
     expect(langHooks).toHaveLength(0);
   });

@@ -12,7 +12,7 @@ import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput, printSection } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
-import { copyDir } from "../core/preset/preset-registry.js";
+import { copyDir, readLockFile } from "../core/preset/preset-registry.js";
 import {
   SKILL_OUTPUT_FILENAME,
   PRESET_MANIFEST_FILENAME,
@@ -22,29 +22,104 @@ import {
   PROJECT_TARGET_BRANCH,
   PROJECT_CLI,
   PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
   PROJECT_DIR,
 } from "../constants.js";
 import { execFileAsync } from "../utils/exec.js";
-
-async function getGitRepoUrl(repo: string): Promise<string> {
-  try {
-    const { stdout, stderr } = await execFileAsync("gh", ["auth", "status"]);
-    const output = stdout + stderr;
-    if (output.includes("Git operations protocol: ssh")) {
-      return `git@github.com:${repo}.git`;
-    }
-  } catch {
-    // Fall through to HTTPS
-  }
-  return `https://github.com/${repo}.git`;
-}
+import { getGitRepoUrl, detectDefaultBranch } from "./contribute-git.js";
 
 interface ContributeData {
   action: "pr" | "zip" | "cancelled";
   artifacts?: string[];
   prUrl?: string;
   zipPath?: string;
+}
+
+interface ContributionTarget {
+  repo: string; // e.g. "lehidalgo/codi" or "myorg/presets"
+  branch: string; // e.g. "develop" or "main"
+}
+
+async function resolveContributionTarget(
+  configDir: string,
+  cliRepo?: string,
+  cliBranch?: string,
+): Promise<ContributionTarget | symbol> {
+  // CLI flags take precedence — skip interactive prompt
+  if (cliRepo) {
+    const branch =
+      cliBranch ??
+      (cliRepo === PROJECT_REPO
+        ? PROJECT_TARGET_BRANCH
+        : await detectDefaultBranch(cliRepo));
+    return { repo: cliRepo, branch };
+  }
+
+  // Build options: always include official repo, then lock file suggestions
+  type RepoOption = { label: string; value: string; hint: string };
+  const options: RepoOption[] = [
+    {
+      label: `${PROJECT_NAME} (official)`,
+      value: PROJECT_REPO,
+      hint: `targets ${PROJECT_TARGET_BRANCH} branch`,
+    },
+  ];
+
+  try {
+    const lock = await readLockFile(configDir);
+    const seen = new Set<string>([PROJECT_REPO]);
+    for (const entry of Object.values(lock.presets)) {
+      if (entry.sourceType === "github" && entry.source.startsWith("github:")) {
+        const repoSlug = entry.source.slice("github:".length);
+        if (!seen.has(repoSlug)) {
+          seen.add(repoSlug);
+          options.push({
+            label: repoSlug,
+            value: repoSlug,
+            hint: "from installed preset",
+          });
+        }
+      }
+    }
+  } catch {
+    // Lock file may not exist — continue with default options
+  }
+
+  options.push({
+    label: "Other repository",
+    value: "__other__",
+    hint: "enter owner/repo manually",
+  });
+
+  const selected = await p.select({
+    message: "Select target GitHub repository",
+    options,
+  });
+
+  if (p.isCancel(selected)) return selected;
+
+  let repoSlug = selected as string;
+  if (repoSlug === "__other__") {
+    const custom = await p.text({
+      message: "Enter target repository",
+      placeholder: "owner/repo",
+      validate: (val = "") => {
+        if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(val)) {
+          return "Must be in owner/repo format";
+        }
+        return undefined;
+      },
+    });
+    if (p.isCancel(custom)) return custom;
+    repoSlug = custom as string;
+  }
+
+  const branch =
+    cliBranch ??
+    (repoSlug === PROJECT_REPO
+      ? PROJECT_TARGET_BRANCH
+      : await detectDefaultBranch(repoSlug));
+
+  return { repo: repoSlug, branch };
 }
 
 export interface ArtifactEntry {
@@ -128,11 +203,7 @@ export async function discoverArtifacts(
   return artifacts;
 }
 
-/**
- * Builds a valid preset package directory from selected artifacts.
- * The resulting directory contains preset.yaml + artifact files,
- * compatible with the ZIP import flow.
- */
+/** Builds a valid preset package directory from selected artifacts (preset.yaml + artifact files). */
 export async function buildPresetPackage(
   artifacts: ArtifactEntry[],
   presetName: string,
@@ -190,11 +261,14 @@ async function checkGhAuth(log: Logger): Promise<boolean> {
 
 async function createContributionPR(
   artifacts: ArtifactEntry[],
+  target: ContributionTarget,
+  presetName: string,
   log: Logger,
 ): Promise<string | null> {
+  const repoName = target.repo.split("/")[1] ?? "contribution";
   const cloneDir = path.join(
     os.tmpdir(),
-    `${PROJECT_NAME}-contribute-${Date.now()}`,
+    `${repoName}-contribute-${Date.now()}`,
   );
 
   try {
@@ -208,16 +282,16 @@ async function createContributionPR(
     const ghUser = userLogin.trim();
     if (!ghUser) throw new Error("Could not determine GitHub username");
 
-    // 2. Clone the official repo (respect user's git protocol)
-    log.info(`Cloning ${PROJECT_NAME} repository...`);
-    const repoUrl = await getGitRepoUrl(PROJECT_REPO);
+    // 2. Clone the target repo (respect user's git protocol)
+    log.info(`Cloning ${target.repo}...`);
+    const repoUrl = await getGitRepoUrl(target.repo);
     try {
       await execFileAsync("git", [
         "clone",
         "--depth",
         "1",
         "--branch",
-        PROJECT_TARGET_BRANCH,
+        target.branch,
         repoUrl,
         cloneDir,
       ]);
@@ -238,29 +312,15 @@ async function createContributionPR(
       throw cloneError;
     }
 
-    // 3. Ensure user has a repo on their account
+    // 3. Fork the target repo (idempotent — no-op if fork exists or user owns it)
     try {
-      await execFileAsync("gh", [
-        "repo",
-        "view",
-        `${ghUser}/${PROJECT_NAME}`,
-        "--json",
-        "name",
-      ]);
+      await execFileAsync("gh", ["repo", "fork", target.repo, "--clone=false"]);
     } catch {
-      log.info(`Creating ${ghUser}/${PROJECT_NAME} on GitHub...`);
-      await execFileAsync("gh", [
-        "repo",
-        "create",
-        `${ghUser}/${PROJECT_NAME}`,
-        "--public",
-        "--description",
-        `${PROJECT_NAME_DISPLAY} contributions`,
-      ]);
+      // Fork may already exist or user owns the repo — continue
     }
 
-    // 4. Add user's repo as a remote and create branch
-    const userRepoUrl = await getGitRepoUrl(`${ghUser}/${PROJECT_NAME}`);
+    // 4. Add user's fork as a remote and create branch
+    const userRepoUrl = await getGitRepoUrl(`${ghUser}/${repoName}`);
     await execFileAsync("git", ["remote", "add", "user", userRepoUrl], {
       cwd: cloneDir,
     });
@@ -270,11 +330,10 @@ async function createContributionPR(
       cwd: cloneDir,
     });
 
-    // 5. Build a preset package with raw .codi/ artifacts
-    const contribDir = path.join(cloneDir, "contributions");
-    await buildPresetPackage(artifacts, `contrib-${Date.now()}`, contribDir);
+    // 5. Build a preset package with raw .codi/ artifacts at repo root
+    await buildPresetPackage(artifacts, presetName, cloneDir);
 
-    // 6. Commit and push to user's remote
+    // 6. Commit and push to user's fork
     await execFileAsync("git", ["add", "."], { cwd: cloneDir });
 
     // Group artifacts by type for readable messages
@@ -307,24 +366,22 @@ async function createContributionPR(
         log.info(`Troubleshooting:`);
         log.info(`  1. Check your git protocol: gh auth status`);
         log.info(`  2. If using SSH, verify your key: ssh -T git@github.com`);
-        log.info(
-          `  3. Ensure you have push access to ${ghUser}/${PROJECT_NAME}`,
-        );
+        log.info(`  3. Ensure you have push access to ${ghUser}/${repoName}`);
         log.info(`  4. For private repos, verify token scopes include 'repo'`);
       }
       throw pushError;
     }
 
-    // 7. Open PR from user's repo to official develop branch
+    // 7. Open PR from user's fork to target repo's branch
     const { stdout: prUrl } = await execFileAsync(
       "gh",
       [
         "pr",
         "create",
         "--repo",
-        PROJECT_REPO,
+        target.repo,
         "--base",
-        PROJECT_TARGET_BRANCH,
+        target.branch,
         "--head",
         `${ghUser}:${branchName}`,
         "--title",
@@ -366,12 +423,12 @@ function cancelResult(): CommandResult<ContributeData> {
 
 export async function contributeHandler(
   projectRoot: string,
+  cliRepo?: string,
+  cliBranch?: string,
 ): Promise<CommandResult<ContributeData>> {
   const log = Logger.getInstance();
   const configDir = resolveProjectDir(projectRoot);
-  p.intro(
-    `${PROJECT_CLI} — Contribute to ${PROJECT_NAME_DISPLAY.toUpperCase()}`,
-  );
+  p.intro(`${PROJECT_CLI} — Contribute Artifacts`);
 
   // Step 1: Discover all artifacts
   const allArtifacts = await discoverArtifacts(configDir);
@@ -439,9 +496,9 @@ export async function contributeHandler(
     message: "How do you want to contribute?",
     options: [
       {
-        label: `Open PR to ${PROJECT_NAME} repository`,
+        label: "Open PR to a GitHub repository",
         value: "pr" as const,
-        hint: `Requires gh CLI — PR targets ${PROJECT_TARGET_BRANCH} branch`,
+        hint: "Requires gh CLI — fork and PR workflow",
       },
       {
         label: "Export as ZIP",
@@ -476,8 +533,45 @@ export async function contributeHandler(
       });
     }
 
-    log.info(`Contributing ${selectedArtifacts.length} artifact(s) via PR...`);
-    const prUrl = await createContributionPR(selectedArtifacts, log);
+    printSection("Target Repository");
+    const target = await resolveContributionTarget(
+      configDir,
+      cliRepo,
+      cliBranch,
+    );
+    if (p.isCancel(target)) {
+      p.cancel("Operation cancelled.");
+      return cancelResult();
+    }
+
+    printSection("Preset Name");
+    const prPresetNameInput = await p.text({
+      message: "Preset name for the contributed package",
+      placeholder: "my-preset",
+      validate: (val = "") => {
+        if (!NAME_PATTERN_STRICT.test(val))
+          return "Must be lowercase kebab-case starting with a letter";
+        if (val.length > MAX_NAME_LENGTH)
+          return `Max ${MAX_NAME_LENGTH} characters`;
+        return undefined;
+      },
+    });
+
+    if (p.isCancel(prPresetNameInput)) {
+      p.cancel("Operation cancelled.");
+      return cancelResult();
+    }
+    const prPresetName = prPresetNameInput as string;
+
+    log.info(
+      `Contributing ${selectedArtifacts.length} artifact(s) via PR to ${target.repo}...`,
+    );
+    const prUrl = await createContributionPR(
+      selectedArtifacts,
+      target,
+      prPresetName,
+      log,
+    );
 
     if (prUrl) {
       log.info(`PR created: ${prUrl}`);
@@ -564,13 +658,17 @@ export async function contributeHandler(
 export function registerContributeCommand(program: Command): void {
   program
     .command("contribute")
-    .description(
-      `Contribute artifacts as a preset to the ${PROJECT_NAME} community`,
-    )
-    .action(async () => {
+    .description("Contribute artifacts as a preset via PR or ZIP")
+    .option("--repo <owner/name>", "Target GitHub repository for PR")
+    .option("--branch <name>", "Target branch for the PR")
+    .action(async (options: { repo?: string; branch?: string }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await contributeHandler(process.cwd());
+      const result = await contributeHandler(
+        process.cwd(),
+        options.repo,
+        options.branch,
+      );
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

@@ -9,7 +9,7 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Guide the user through contributing artifacts back to the ${PROJECT_NAME} project. Covers GitHub CLI setup, GitHub MCP configuration, PR creation, ZIP export, and manual workflows.
+description: Guide the user through contributing artifacts to GitHub repositories or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation to any repo, ZIP export, and manual workflows.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
@@ -28,7 +28,8 @@ Help the user contribute their custom artifacts (rules, skills, agents, commands
 
 - User wants to contribute a rule, skill, agent, or command back to the ${PROJECT_NAME} project
 - User asks how to share artifacts with the community or their team
-- User wants to open a pull request to the ${PROJECT_NAME} repository
+- User wants to open a pull request to the ${PROJECT_NAME} repository or any other GitHub repo
+- User wants to contribute presets to a custom or team GitHub repository
 - User asks to export artifacts as a ZIP for private sharing
 - User needs help setting up GitHub CLI or GitHub MCP for contributions
 
@@ -98,14 +99,28 @@ The wizard will:
 1. Discover all artifacts in \\\`${PROJECT_DIR}/\\\`
 2. Present a multi-select list for choosing which to contribute
 3. Offer two distribution methods:
-   - **Open PR to ${PROJECT_NAME} repository** — requires GitHub CLI auth, targets the \\\`develop\\\` branch
+   - **Open PR to a GitHub repository** — requires GitHub CLI auth
    - **Export as ZIP** — creates a re-importable preset package
 
-For the PR method, the wizard:
-- Clones the official ${PROJECT_NAME} repository
-- Creates a repo on the user's GitHub account (if needed)
-- Converts artifacts to TypeScript templates in \\\`src/templates/\\\`
-- Pushes a branch and opens a PR to \\\`develop\\\`
+For the PR method, the wizard asks which repo to target:
+- The official ${PROJECT_NAME} repository (default)
+- Repos detected from installed presets (contribute back to source)
+- Any custom repository via free text input
+
+To skip the interactive prompt, pass flags directly:
+
+\\\`\\\`\\\`bash
+# Contribute to the official codi repo (default)
+${PROJECT_CLI} contribute --repo ${PROJECT_REPO} --branch develop
+
+# Contribute to a custom or team repository
+${PROJECT_CLI} contribute --repo myorg/shared-presets
+
+# Contribute to a specific branch
+${PROJECT_CLI} contribute --repo myorg/shared-presets --branch main
+\\\`\\\`\\\`
+
+The PR method forks the target repo (if needed), pushes a branch, and opens a PR.
 
 ### Option B: Manual PR (Advanced Users)
 

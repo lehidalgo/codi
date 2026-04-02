@@ -13,6 +13,7 @@ import {
   COMMIT_MSG_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
   TEMPLATE_WIRING_CHECK_TEMPLATE,
+  ARTIFACT_VALIDATE_TEMPLATE,
 } from "./hook-templates.js";
 import {
   PRE_COMMIT_MAX_FILE_LINES,
@@ -41,6 +42,7 @@ export interface InstallOptions {
   fileSizeCheck?: boolean;
   versionCheck?: boolean;
   templateWiringCheck?: boolean;
+  artifactValidation?: boolean;
 }
 
 function buildRunnerScript(hooks: HookEntry[]): string {
@@ -58,6 +60,10 @@ function buildFileSizeScript(maxLines: number): string {
 
 function buildTemplateWiringScript(): string {
   return TEMPLATE_WIRING_CHECK_TEMPLATE;
+}
+
+function buildArtifactValidateScript(): string {
+  return ARTIFACT_VALIDATE_TEMPLATE;
 }
 
 async function writeAuxiliaryScripts(
@@ -102,6 +108,18 @@ async function writeAuxiliaryScripts(
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, wiringPath));
+  }
+  if (options.artifactValidation) {
+    const artifactPath = path.join(
+      hookDir,
+      `${PROJECT_NAME}-artifact-validate.mjs`,
+    );
+    const artifactScript = buildArtifactValidateScript();
+    await fs.writeFile(artifactPath, artifactScript, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, artifactPath));
   }
   return files;
 }

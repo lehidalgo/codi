@@ -1,23 +1,18 @@
 import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { stringify as stringifyYaml } from "yaml";
 import { resolveProjectDir } from "../utils/paths.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import {
   detectAdapters,
   getAllAdapters,
 } from "../core/generator/adapter-registry.js";
-import { getPreset, getPresetNames } from "../core/flags/flag-presets.js";
-import type { PresetName } from "../core/flags/flag-presets.js";
-import type { FlagDefinition } from "../types/flags.js";
+import { getPresetNames } from "../core/flags/flag-presets.js";
 import {
   DEFAULT_PRESET,
   MANIFEST_FILENAME,
-  FLAGS_FILENAME,
   PROJECT_CLI,
   PROJECT_DIR,
-  PROJECT_NAME,
   resolveArtifactName,
 } from "../constants.js";
 import {
@@ -31,7 +26,6 @@ import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
 import { createCommand } from "../core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
-import { generateMitLicense } from "../core/scaffolder/license-generator.js";
 // Preset artifact lookup moved to init-wizard.ts
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -40,6 +34,7 @@ import type { CommandResult } from "../core/output/types.js";
 import { runInitWizard } from "./init-wizard.js";
 import type { ExistingSelections } from "./init-wizard.js";
 import { initFromOptions, handleOutput } from "./shared.js";
+import { inferHookType, createProjectStructure } from "./init-helpers.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
@@ -127,6 +122,7 @@ export async function initHandler(
   registerAllAdapters();
 
   let agentIds: string[];
+  let importRegenerated = false;
   const rawPreset = options.preset as string | undefined;
   let presetName: string =
     (rawPreset
@@ -210,6 +206,8 @@ export async function initHandler(
     }
 
     // Handle import sources (ZIP/GitHub)
+    // presetInstallUnifiedHandler calls regenerateConfigs internally,
+    // so we track success to skip the duplicate generate() call later.
     if (wizardResult.importSource) {
       const { presetInstallUnifiedHandler } =
         await import("./preset-handlers.js");
@@ -221,6 +219,12 @@ export async function initHandler(
         log.warn(
           `Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`,
         );
+      } else {
+        importRegenerated = true;
+        if (installResult.data?.name) {
+          presetName = installResult.data.name;
+          displayPresetName = installResult.data.name;
+        }
       }
     }
 
@@ -480,15 +484,24 @@ export async function initHandler(
         sourceType: "builtin",
         installedAt: new Date().toISOString(),
       };
+      // Also record the custom preset if the user saved one
+      if (displayPresetName !== presetName) {
+        lock.presets[displayPresetName] = {
+          version: "1.0.0",
+          source: `local:${displayPresetName}`,
+          sourceType: "local",
+          installedAt: new Date().toISOString(),
+        };
+      }
       await writeLockFile(configDir, lock);
     } catch {
       log.warn("Failed to write preset lock file; this is non-critical.");
     }
   }
 
-  let generated = false;
+  let generated = importRegenerated;
   const configResult = await resolveConfig(projectRoot);
-  if (configResult.ok) {
+  if (!importRegenerated && configResult.ok) {
     const genResult = await generate(configResult.data, projectRoot, {
       force: options.force,
       json: options.json,
@@ -520,6 +533,7 @@ export async function initHandler(
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
+          artifactValidation: hooksConfig.artifactValidation,
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
@@ -646,85 +660,6 @@ export async function initHandler(
     },
     exitCode: EXIT_CODES.SUCCESS,
   });
-}
-
-function inferHookType(
-  filePath: string,
-):
-  | "pre-commit"
-  | "commit-msg"
-  | "secret-scan"
-  | "file-size-check"
-  | "version-check" {
-  if (filePath.includes("secret-scan")) return "secret-scan";
-  if (filePath.includes("file-size-check")) return "file-size-check";
-  if (filePath.includes("version-check")) return "version-check";
-  if (filePath.includes("commit-msg")) return "commit-msg";
-  return "pre-commit";
-}
-
-async function createProjectStructure(
-  configDir: string,
-  agents: string[],
-  presetName: string,
-  versionPin: boolean,
-  flagOverrides?: Record<string, FlagDefinition>,
-): Promise<void> {
-  const dirs = [
-    configDir,
-    path.join(configDir, "rules"),
-    path.join(configDir, "skills"),
-    path.join(configDir, "mcp-servers"),
-    path.join(configDir, "frameworks"),
-  ];
-  for (const dir of dirs) {
-    await fs.mkdir(dir, { recursive: true });
-  }
-
-  const manifest: Record<string, unknown> = {
-    name:
-      path
-        .basename(path.dirname(configDir))
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .replace(/-{2,}/g, "-") || "project",
-    version: "1",
-    agents,
-  };
-  if (versionPin) {
-    manifest[PROJECT_NAME] = { requiredVersion: `>=${VERSION}` };
-  }
-  await fs.writeFile(
-    path.join(configDir, MANIFEST_FILENAME),
-    stringifyYaml(manifest),
-    "utf-8",
-  );
-
-  const presetDef = getBuiltinPresetDefinition(presetName);
-  const mergedFlags: Record<string, FlagDefinition> =
-    flagOverrides ??
-    presetDef?.flags ??
-    getPreset(DEFAULT_PRESET as PresetName);
-
-  const flagsObj: Record<string, unknown> = {};
-  for (const [key, def] of Object.entries(mergedFlags)) {
-    const entry: Record<string, unknown> = { mode: def.mode, value: def.value };
-    if (def.locked) entry["locked"] = true;
-    flagsObj[key] = entry;
-  }
-  await fs.writeFile(
-    path.join(configDir, FLAGS_FILENAME),
-    stringifyYaml(flagsObj),
-    "utf-8",
-  );
-
-  const projectName = path.basename(path.dirname(configDir));
-  await fs.writeFile(
-    path.join(configDir, "LICENSE.txt"),
-    generateMitLicense(projectName),
-    "utf-8",
-  );
 }
 
 export function registerInitCommand(program: Command): void {
