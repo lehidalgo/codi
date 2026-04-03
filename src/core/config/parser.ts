@@ -338,6 +338,7 @@ export async function parseSkillFile(filePath: string): Promise<Result<Normalize
       paths: normalizedPaths,
       shell: fm.shell,
       intentHints: fm.intentHints,
+      hooks: fm.hooks,
     });
   } catch (cause) {
     return err([

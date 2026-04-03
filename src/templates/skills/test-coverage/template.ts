@@ -1,10 +1,14 @@
-import { MIN_CODE_COVERAGE_PERCENT, PROJECT_NAME } from "#src/constants.js";
+import {
+  MIN_CODE_COVERAGE_PERCENT,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Test coverage analysis workflow. Use when measuring coverage, identifying gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.
 category: Code Quality
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Test Coverage
@@ -12,6 +16,7 @@ intentHints:
     - "Check test coverage"
     - "Find untested code"
     - "Generate missing tests"
+version: 1
 ---
 
 # {{name}}

@@ -1,4 +1,10 @@
-import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -8,6 +14,7 @@ description: |
   evals, skill testing, description optimization, skill packaging, importing skills
   from external sources, or reviewing a skill for security.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Skill Creation
@@ -15,6 +22,7 @@ intentHints:
     - "Create a new skill"
     - "Build a reusable workflow"
     - "Import a skill from GitHub"
+version: 1
 ---
 
 # Skill Creator

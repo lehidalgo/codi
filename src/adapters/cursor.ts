@@ -128,7 +128,13 @@ export const cursorAdapter: AgentAdapter = {
 
     // Generate .cursor/skills/{name}/SKILL.md + supporting files
     files.push(
-      ...(await generateSkillFiles(regularSkills, ".cursor/skills", _options.projectRoot)),
+      ...(await generateSkillFiles(
+        regularSkills,
+        ".cursor/skills",
+        _options.projectRoot,
+        "",
+        "cursor",
+      )),
     );
 
     // Generate .cursor/brands/{name}.md from brand-category skills

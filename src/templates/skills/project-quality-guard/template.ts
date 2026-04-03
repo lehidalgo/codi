@@ -1,13 +1,18 @@
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+
 export const template = `---
-name: project-quality-guard
+name: {{name}}
 description: Use when setting up a new project, auditing project quality infrastructure, or checking for missing CI/CD, pre-commit hooks, linting, testing, security scanning, Docker, or environment config.
-category: quality
+category: Code Quality
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Project Quality Audit
   examples:
     - "Audit this project's quality infrastructure"
     - "Set up CI/CD and pre-commit hooks"
     - "Check what's missing in our project config"
+version: 1
 ---
 
 ## When to Activate

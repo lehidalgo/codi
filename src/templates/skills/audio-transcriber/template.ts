@@ -1,13 +1,18 @@
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+
 export const template = `---
-name: audio-transcriber
+name: {{name}}
 description: Use when transcribing audio or video files to text using OpenAI Whisper. Launches a local web interface with file upload, concurrent chunk processing, copy/download transcript, and optional Google Sheets output.
-category: productivity
+category: Productivity
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Audio Transcription
   examples:
     - "Transcribe this audio file"
     - "Convert this video to text"
     - "Transcribe and save to Google Sheets"
+version: 1
 ---
 
 ## When to Activate

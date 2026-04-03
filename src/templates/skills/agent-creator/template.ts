@@ -6,6 +6,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
@@ -15,6 +16,7 @@ description: |
   a specialized agent. Also activate when the user wants to add a code reviewer,
   security analyzer, test generator, or any autonomous worker role.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Agent Creation
@@ -22,6 +24,7 @@ intentHints:
     - "Create a new agent"
     - "Build a specialized subagent"
     - "Add a code reviewer agent"
+version: 1
 ---
 
 # Agent Creator

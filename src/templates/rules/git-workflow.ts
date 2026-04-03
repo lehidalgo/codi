@@ -6,6 +6,7 @@ description: Git workflow and commit conventions
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Git Workflow

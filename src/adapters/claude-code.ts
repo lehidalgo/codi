@@ -30,6 +30,22 @@ import {
 } from "../constants.js";
 import { partitionBrandSkills } from "./brand-filter.js";
 
+/**
+ * Maps the `language` field on a rule to Claude Code `paths:` glob patterns.
+ * Used to preserve the intent of `alwaysApply: false` for language-specific rules —
+ * Claude Code has no alwaysApply concept, only path scoping.
+ */
+const LANGUAGE_GLOB_PATTERNS: Record<string, string[]> = {
+  typescript: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  python: ["**/*.py"],
+  golang: ["**/*.go"],
+  rust: ["**/*.rs"],
+  java: ["**/*.java"],
+  kotlin: ["**/*.kt", "**/*.kts"],
+  csharp: ["**/*.cs"],
+  swift: ["**/*.swift"],
+};
+
 async function exists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -114,10 +130,15 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     // Generate .claude/rules/*.md (with paths frontmatter for scoped rules)
     for (const rule of config.rules) {
-      const header =
-        rule.scope && rule.scope.length > 0
-          ? `---\npaths:\n${rule.scope.map((s) => `  - "${s}"`).join("\n")}\n---\n\n`
-          : "";
+      // Explicit scope takes priority; fall back to language-derived patterns
+      // for alwaysApply: false rules (Claude Code has no alwaysApply concept).
+      let pathPatterns: string[] | undefined = rule.scope?.length ? rule.scope : undefined;
+      if (!pathPatterns && !rule.alwaysApply && rule.language) {
+        pathPatterns = LANGUAGE_GLOB_PATTERNS[rule.language];
+      }
+      const header = pathPatterns?.length
+        ? `---\npaths:\n${pathPatterns.map((s) => `  - "${s}"`).join("\n")}\n---\n\n`
+        : "";
       const ruleContent = addGeneratedFooter(
         `${header}# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
       );
@@ -139,7 +160,7 @@ export const claudeCodeAdapter: AgentAdapter = {
         regularSkills,
         ".claude/skills",
         _options.projectRoot,
-        `(${PROJECT_NAME}-skill) `,
+        "",
         "claude-code",
       )),
     );
@@ -148,7 +169,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     for (const agent of config.agents) {
       const lines = ["---"];
       lines.push(`name: ${agent.name}`);
-      lines.push(`description: (${PROJECT_NAME}-agent) ${agent.description}`);
+      lines.push(`description: ${agent.description}`);
       if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
       if (agent.disallowedTools) lines.push(`disallowedTools: ${agent.disallowedTools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);

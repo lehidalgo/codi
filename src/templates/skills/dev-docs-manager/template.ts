@@ -1,4 +1,9 @@
-import { PROJECT_CLI, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import {
+  PROJECT_CLI,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -8,6 +13,7 @@ description: |
   docs freshness, stale documentation, building the docs site, or generating
   the skill catalog HTML page.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 intentHints:
@@ -16,6 +22,7 @@ intentHints:
     - "Update the docs"
     - "Sync documentation"
     - "Build the HTML docs site"
+version: 1
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager

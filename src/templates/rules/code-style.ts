@@ -6,6 +6,7 @@ description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Code Style

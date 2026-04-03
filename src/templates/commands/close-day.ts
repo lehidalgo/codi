@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Log daily work summary to the control file
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Update docs/CONTROL.json with a summary of the day's work.

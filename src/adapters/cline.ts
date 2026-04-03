@@ -19,10 +19,7 @@ import {
   buildDevelopmentNotes,
   buildWorkflowSection,
 } from "./section-builder.js";
-import {
-  extractDenyRules,
-  buildStrongTextRestrictions,
-} from "./permission-builder.js";
+import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME } from "../constants.js";
 
 async function exists(path: string): Promise<boolean> {
@@ -65,10 +62,7 @@ export const clineAdapter: AgentAdapter = {
     return hasFile || hasDir;
   },
 
-  async generate(
-    config: NormalizedConfig,
-    _options: GenerateOptions,
-  ): Promise<GeneratedFile[]> {
+  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const flagText = buildFlagInstructions(config.flags);
     const sections: string[] = [];
 
@@ -79,9 +73,7 @@ export const clineAdapter: AgentAdapter = {
       sections.push(flagText);
     }
 
-    const restrictions = buildStrongTextRestrictions(
-      extractDenyRules(config.flags),
-    );
+    const restrictions = buildStrongTextRestrictions(extractDenyRules(config.flags));
     if (restrictions) sections.push(restrictions);
 
     const devNotes = buildDevelopmentNotes(config);
@@ -132,6 +124,8 @@ export const clineAdapter: AgentAdapter = {
         config.skills,
         ".cline/skills",
         _options.projectRoot,
+        "",
+        "cline",
       )),
     );
 

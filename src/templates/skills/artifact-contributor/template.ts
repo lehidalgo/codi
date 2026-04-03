@@ -5,13 +5,14 @@ import {
   PROJECT_NAME_DISPLAY,
   PROJECT_REPO,
   PROJECT_URL,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Guide the user through contributing artifacts to GitHub repositories or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation to any repo, ZIP export, and manual workflows.
 category: ${PROJECT_NAME_DISPLAY} Platform
-compatibility: [claude-code, cursor, codex, windsurf, cline]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Contributing
@@ -19,6 +20,7 @@ intentHints:
     - "Contribute my skill to GitHub"
     - "Share my artifacts as ZIP"
     - "Open a PR with my rule"
+version: 1
 ---
 
 # {{name}}

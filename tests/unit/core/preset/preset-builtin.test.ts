@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  isBuiltinPreset,
-  materializeBuiltinPreset,
-} from "#src/core/preset/preset-builtin.js";
+import { isBuiltinPreset, materializeBuiltinPreset } from "#src/core/preset/preset-builtin.js";
 import { prefixedName } from "#src/constants.js";
 
 describe("isBuiltinPreset", () => {
@@ -39,7 +36,7 @@ describe("materializeBuiltinPreset", () => {
     }
   });
 
-  it("materializes fullstack preset with 9 rules", () => {
+  it("materializes fullstack preset with 10 rules", () => {
     const result = materializeBuiltinPreset(prefixedName("fullstack"));
 
     expect(result.ok).toBe(true);
@@ -48,7 +45,7 @@ describe("materializeBuiltinPreset", () => {
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
       expect(Object.keys(result.data.flags).length).toBe(16);
-      expect(result.data.rules.length).toBe(9);
+      expect(result.data.rules.length).toBe(10);
     }
   });
 

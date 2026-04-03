@@ -1,9 +1,4 @@
-import {
-  PROJECT_CLI,
-  PROJECT_DIR,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -11,6 +6,7 @@ description: Continuous artifact improvement — observe patterns, propose rule/
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Continuous Artifact Improvement

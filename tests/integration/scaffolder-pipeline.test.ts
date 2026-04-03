@@ -17,9 +17,7 @@ let tmpDir: string;
 let configDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-scaff-pipe-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-scaff-pipe-`));
   configDir = path.join(tmpDir, PROJECT_DIR);
   await fs.mkdir(configDir, { recursive: true });
   Logger.init({ level: "error", mode: "human", noColor: true });
@@ -143,8 +141,7 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
 
     const content = await fs.readFile(result.data, "utf-8");
     expect(content).toContain("name: test-brand");
-    expect(content).toContain("category: brand");
-    expect(content).toContain("Brand Identity");
+    expect(content).toContain("category: Brand Identity");
 
     const skillDir = path.join(configDir, "skills", "test-brand");
     for (const sub of ["assets", "references", "scripts", "evals"]) {
@@ -231,17 +228,9 @@ describe("Scaffolder Pipeline: error paths", () => {
     const invalidName = "INVALID_NAME!";
 
     expect((await createRule({ name: invalidName, configDir })).ok).toBe(false);
-    expect((await createSkill({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createAgent({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createCommand({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createMcpServer({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
+    expect((await createSkill({ name: invalidName, configDir })).ok).toBe(false);
+    expect((await createAgent({ name: invalidName, configDir })).ok).toBe(false);
+    expect((await createCommand({ name: invalidName, configDir })).ok).toBe(false);
+    expect((await createMcpServer({ name: invalidName, configDir })).ok).toBe(false);
   });
 });

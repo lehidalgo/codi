@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Diagnose errors and problems using MCP servers and structured reasoning
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Follow this workflow every time you hit an error or problem:

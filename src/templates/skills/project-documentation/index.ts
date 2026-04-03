@@ -2,4 +2,4 @@ import { resolveStaticDir } from "../resolve-static-dir.js";
 
 export { template } from "./template.js";
 
-export const staticDir = resolveStaticDir("documentation", import.meta.url);
+export const staticDir = resolveStaticDir("project-documentation", import.meta.url);

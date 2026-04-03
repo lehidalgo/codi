@@ -59,6 +59,7 @@ export interface NormalizedSkill {
     taskType: string;
     examples: string[];
   };
+  hooks?: unknown;
 }
 
 export interface NormalizedCommand {

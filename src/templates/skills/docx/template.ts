@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Use when the user wants to create, edit, or work with Word documents (.docx). Also activate when extracting content, adding tracked changes or comments, inserting images, or producing reports, memos, or letters as .docx. Do NOT activate for PDFs, spreadsheets, or tasks unrelated to document generation."
 category: File Format Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Word Documents
@@ -12,6 +12,7 @@ intentHints:
     - "Create a Word document"
     - "Generate a DOCX"
     - "Add tracked changes to a document"
+version: 1
 ---
 
 # DOCX creation, editing, and analysis

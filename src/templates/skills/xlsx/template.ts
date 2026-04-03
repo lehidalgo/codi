@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Use when the user wants to work with a spreadsheet file (.xlsx, .xlsm, .csv, or .tsv). Also activate when cleaning messy tabular data, creating financial models, or converting between tabular formats. Do NOT activate when the deliverable is a Word doc, HTML report, standalone script, or Google Sheets API integration."
 category: File Format Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Spreadsheets
@@ -12,6 +12,7 @@ intentHints:
     - "Create a spreadsheet"
     - "Generate an Excel file"
     - "Fix formula errors in Excel"
+version: 1
 ---
 
 ## When to Activate

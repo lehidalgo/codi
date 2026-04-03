@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Coding agent drives automatable phases, flags human-only phases, and tracks all results in a living QA report document.
 category: Code Quality
-compatibility: [claude-code, cursor, codex, windsurf, cline]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: QA Testing
@@ -12,6 +12,7 @@ intentHints:
     - "Run QA tests"
     - "Test this feature step by step"
     - "Validate this release"
+version: 1
 ---
 
 # {{name}}

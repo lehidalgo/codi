@@ -6,6 +6,7 @@ description: Security best practices and vulnerability prevention
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Security Rules

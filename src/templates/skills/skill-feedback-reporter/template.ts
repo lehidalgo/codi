@@ -1,4 +1,9 @@
-import { PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import {
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -7,6 +12,7 @@ description: |
   After completing a task that used a skill, write a structured JSON feedback
   file so ${PROJECT_NAME_DISPLAY} can aggregate skill health metrics and drive improvements.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 managed_by: ${PROJECT_NAME}
 intentHints:
@@ -14,6 +20,7 @@ intentHints:
   examples:
     - "Show skill statistics"
     - "Report on skill usage"
+version: 1
 ---
 
 # {{name}}

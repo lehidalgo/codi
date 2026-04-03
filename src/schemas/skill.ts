@@ -33,6 +33,7 @@ export const SkillFrontmatterSchema = z.object({
       examples: z.array(z.string().max(100)).max(4),
     })
     .optional(),
+  hooks: z.unknown().optional(),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

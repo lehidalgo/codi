@@ -108,11 +108,7 @@ async function readFileIfExists(filePath: string): Promise<string | null> {
   }
 }
 
-function checkCountChecks(
-  content: string,
-  file: string,
-  stats: ProjectStats,
-): DocSyncIssue[] {
+function checkCountChecks(content: string, file: string, stats: ProjectStats): DocSyncIssue[] {
   const issues: DocSyncIssue[] = [];
   for (const check of COUNT_CHECKS) {
     if (check.file !== file) continue;
@@ -130,11 +126,7 @@ function checkCountChecks(
   return issues;
 }
 
-function checkInlineCounts(
-  content: string,
-  file: string,
-  stats: ProjectStats,
-): DocSyncIssue[] {
+function checkInlineCounts(content: string, file: string, stats: ProjectStats): DocSyncIssue[] {
   const issues: DocSyncIssue[] = [];
   const match = content.match(INLINE_COUNT_PATTERN);
   if (match) {
@@ -188,11 +180,7 @@ function checkMissingTemplateEntries(
   return issues;
 }
 
-function checkExpectedCounts(
-  content: string,
-  file: string,
-  stats: ProjectStats,
-): DocSyncIssue[] {
+function checkExpectedCounts(content: string, file: string, stats: ProjectStats): DocSyncIssue[] {
   const pattern =
     /Expected:\s*(\d+)\s*rules,\s*(\d+)\s*skills,\s*(\d+)\s*agents,\s*(\d+)\s*commands/;
   const match = content.match(pattern);
@@ -218,9 +206,7 @@ function checkExpectedCounts(
   return [];
 }
 
-export async function checkDocSync(
-  projectRoot: string,
-): Promise<DocSyncIssue[]> {
+export async function checkDocSync(projectRoot: string): Promise<DocSyncIssue[]> {
   const stats = collectStats();
   const issues: DocSyncIssue[] = [];
 
@@ -228,8 +214,8 @@ export async function checkDocSync(
     "STATUS.md",
     "CONTRIBUTING.md",
     "docs/guides/writing-rules.md",
-    "src/templates/skills/e2e-testing.ts",
-    `${PROJECT_DIR}/skills/e2e-testing.md`,
+    "src/templates/skills/dev-e2e-testing.ts",
+    `${PROJECT_DIR}/skills/dev-e2e-testing.md`,
   ];
 
   for (const file of filesToCheck) {

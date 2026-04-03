@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Build apps with the Claude API or Anthropic SDK. TRIGGER when: code imports anthropic/@anthropic-ai/sdk/claude_agent_sdk, or user asks to use Claude API, Anthropic SDKs, or Agent SDK. DO NOT TRIGGER when: code imports openai/other AI SDK, general programming, or ML/data-science tasks."
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Claude API Integration
@@ -12,6 +12,7 @@ intentHints:
     - "Use the Claude API"
     - "Build with Anthropic SDK"
     - "Integrate the Agent SDK"
+version: 1
 ---
 
 # Building LLM-Powered Applications with Claude

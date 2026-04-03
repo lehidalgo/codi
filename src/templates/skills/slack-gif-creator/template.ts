@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to create animated GIFs optimized for Slack. Provides Slack size constraints, validation tools, easing functions, and animation concept guides.
 category: Creative and Design
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: GIF Creation
@@ -12,6 +12,7 @@ intentHints:
     - "Make a GIF for Slack"
     - "Create an animated GIF"
     - "Build a bouncing emoji GIF"
+version: 1
 ---
 
 ## When to Activate

@@ -1,4 +1,4 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -8,7 +8,7 @@ description: |
   print-to-PDF support. Also activate for pitch decks, technical presentations,
   or any slide content that should use project brand tokens.
 category: Document Generation
-compatibility: [claude-code, cursor, codex, cline, windsurf]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 intentHints:
@@ -17,6 +17,7 @@ intentHints:
     - "Create a slide deck"
     - "Build a presentation"
     - "Generate a pitch deck"
+version: 1
 ---
 
 # {{name}} — Presentation Deck Engine

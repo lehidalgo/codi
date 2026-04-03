@@ -109,6 +109,129 @@ describe("buildSkillMd", () => {
     const result = buildSkillMd(baseSkill);
     expect(result).not.toContain("intentHints:");
   });
+
+  it("emits hooks block as YAML when set", () => {
+    const hooks = {
+      PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "./check.sh" }] }],
+    };
+    const result = buildSkillMd({ ...baseSkill, hooks });
+    expect(result).toContain("hooks:");
+    expect(result).toContain("PreToolUse:");
+    expect(result).toContain("command: ./check.sh");
+  });
+
+  it("omits hooks when not set", () => {
+    const result = buildSkillMd(baseSkill);
+    expect(result).not.toContain("hooks:");
+  });
+
+  it("does not emit hooks for non-claude-code platforms", () => {
+    const hooks = {
+      PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "./check.sh" }] }],
+    };
+    const result = buildSkillMd({ ...baseSkill, hooks }, "", "cursor");
+    expect(result).not.toContain("hooks:");
+  });
+});
+
+describe("buildSkillMd — platform-aware field filtering", () => {
+  const richSkill: NormalizedSkill = {
+    ...baseSkill,
+    model: "sonnet",
+    effort: "high",
+    context: "fork",
+    agent: "Explore",
+    userInvocable: false,
+    disableModelInvocation: true,
+    argumentHint: "filename",
+    allowedTools: ["Read", "Bash"],
+    paths: ["src/**"],
+    shell: "bash",
+    license: "MIT",
+    intentHints: { taskType: "Deployment", examples: ["Deploy to prod"] },
+  };
+
+  it("claude-code emits all supported fields", () => {
+    const result = buildSkillMd(richSkill, "", "claude-code");
+    expect(result).toContain("model: sonnet");
+    expect(result).toContain("effort: high");
+    expect(result).toContain("context: fork");
+    expect(result).toContain("agent: Explore");
+    expect(result).toContain("user-invocable: false");
+    expect(result).toContain("disable-model-invocation: true");
+    expect(result).toContain('argument-hint: "filename"');
+    expect(result).toContain("allowed-tools: Read, Bash");
+    expect(result).toContain("paths: src/**");
+    expect(result).toContain("shell: bash");
+    expect(result).toContain("license: MIT");
+    expect(result).toContain("intentHints:");
+    expect(result).toContain("  taskType: Deployment");
+  });
+
+  it("codex emits only name, description, license, allowed-tools, metadata", () => {
+    const result = buildSkillMd(richSkill, "", "codex");
+    expect(result).toContain("name: deploy");
+    expect(result).toContain("description:");
+    expect(result).toContain("license: MIT");
+    expect(result).toContain("allowed-tools: Read, Bash");
+    // intentHints mapped to metadata
+    expect(result).toContain("metadata:");
+    expect(result).toContain('  task-type: "Deployment"');
+    // claude-code-specific fields must NOT appear
+    expect(result).not.toContain("model:");
+    expect(result).not.toContain("effort:");
+    expect(result).not.toContain("context:");
+    expect(result).not.toContain("agent:");
+    expect(result).not.toContain("user-invocable:");
+    expect(result).not.toContain("disable-model-invocation:");
+    expect(result).not.toContain("argument-hint:");
+    expect(result).not.toContain("paths:");
+    expect(result).not.toContain("shell:");
+    expect(result).not.toContain("intentHints:");
+  });
+
+  it("codex emits no metadata block when intentHints is absent", () => {
+    const result = buildSkillMd(baseSkill, "", "codex");
+    expect(result).not.toContain("metadata:");
+    expect(result).not.toContain("intentHints:");
+  });
+
+  it("cursor emits only name, description, user-invocable, allowed-tools", () => {
+    const result = buildSkillMd(richSkill, "", "cursor");
+    expect(result).toContain("user-invocable: false");
+    expect(result).toContain("allowed-tools: Read, Bash");
+    expect(result).not.toContain("model:");
+    expect(result).not.toContain("effort:");
+    expect(result).not.toContain("intentHints:");
+    expect(result).not.toContain("disable-model-invocation:");
+    expect(result).not.toContain("argument-hint:");
+    expect(result).not.toContain("license:");
+  });
+
+  it("windsurf emits only name and description", () => {
+    const result = buildSkillMd(richSkill, "", "windsurf");
+    expect(result).toContain("name: deploy");
+    expect(result).toContain("description:");
+    expect(result).not.toContain("model:");
+    expect(result).not.toContain("user-invocable:");
+    expect(result).not.toContain("allowed-tools:");
+    expect(result).not.toContain("intentHints:");
+    expect(result).not.toContain("license:");
+  });
+
+  it("cline emits only name and description", () => {
+    const result = buildSkillMd(richSkill, "", "cline");
+    expect(result).toContain("name: deploy");
+    expect(result).toContain("description:");
+    expect(result).not.toContain("model:");
+    expect(result).not.toContain("intentHints:");
+  });
+
+  it("defaults to claude-code behavior when no platformId given", () => {
+    const full = buildSkillMd(richSkill, "", "claude-code");
+    const def = buildSkillMd(richSkill);
+    expect(def).toBe(full);
+  });
 });
 
 describe("generateSkillFiles", () => {
@@ -131,12 +254,8 @@ describe("generateSkillFiles", () => {
     const files = await generateSkillFiles(skills, ".claude/skills");
     const gitkeeps = files.filter((f) => f.path.endsWith(".gitkeep"));
     expect(gitkeeps).toHaveLength(8); // 4 per skill
-    expect(gitkeeps.some((f) => f.path.includes("scripts/.gitkeep"))).toBe(
-      true,
-    );
-    expect(gitkeeps.some((f) => f.path.includes("references/.gitkeep"))).toBe(
-      true,
-    );
+    expect(gitkeeps.some((f) => f.path.includes("scripts/.gitkeep"))).toBe(true);
+    expect(gitkeeps.some((f) => f.path.includes("references/.gitkeep"))).toBe(true);
     expect(gitkeeps.some((f) => f.path.includes("assets/.gitkeep"))).toBe(true);
     expect(gitkeeps.some((f) => f.path.includes("agents/.gitkeep"))).toBe(true);
   });

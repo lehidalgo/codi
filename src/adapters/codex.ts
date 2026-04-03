@@ -125,7 +125,13 @@ export const codexAdapter: AgentAdapter = {
 
     // Generate .agents/skills/{name}/SKILL.md + supporting files (auto-discovered by Codex)
     files.push(
-      ...(await generateSkillFiles(regularSkills, ".agents/skills", _options.projectRoot)),
+      ...(await generateSkillFiles(
+        regularSkills,
+        ".agents/skills",
+        _options.projectRoot,
+        "",
+        "codex",
+      )),
     );
 
     // Generate .codex/agents/{name}.toml (Codex TOML format)
@@ -135,6 +141,11 @@ export const codexAdapter: AgentAdapter = {
       lines.push(`description = "${agent.description}"`);
       lines.push(`developer_instructions = ${toTomlBasicString(agent.content)}`);
       if (agent.model) lines.push(`model = "${agent.model}"`);
+      if (agent.effort) {
+        // Codex accepts "low"|"medium"|"high" — clamp "max" to "high"
+        const codexEffort = agent.effort === "max" ? "high" : agent.effort;
+        lines.push(`model_reasoning_effort = "${codexEffort}"`);
+      }
       const tomlContent = addGeneratedFooter(lines.join("\n"), "toml");
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".toml";
       files.push({

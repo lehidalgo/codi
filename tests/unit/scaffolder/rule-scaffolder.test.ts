@@ -47,6 +47,22 @@ describe("rule scaffolder", () => {
     expect(content).toContain("project-security");
   });
 
+  it("creates a rule from the output-discipline template", async () => {
+    const result = await createRule({
+      name: "my-output-discipline",
+      configDir,
+      template: prefixedName("output-discipline"),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const content = await fs.readFile(result.data, "utf-8");
+    expect(content).toContain("my-output-discipline");
+    expect(content).not.toContain("{{name}}");
+    expect(content).toContain("Output Discipline");
+  });
+
   it("replaces {{name}} placeholder in template content", async () => {
     const result = await createRule({
       name: "custom-style",

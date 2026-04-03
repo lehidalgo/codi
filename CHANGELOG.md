@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Platform-aware SKILL.md generation** — `buildSkillMd` filters frontmatter fields per target platform; cursor, codex, windsurf, and cline receive only fields their format supports
+- **`SUPPORTED_PLATFORMS` constant** — single source of truth for platform IDs, used in skill `compatibility` frontmatter
+- **Skill catalog reorganization** — 8 skills renamed for clarity: `contribute` → `artifact-contributor`, `documentation` → `project-documentation`, `e2e-testing` → `dev-e2e-testing`, `operations` → `dev-operations`, `docs-manager` → `dev-docs-manager`, `error-recovery` → `session-recovery`, `skill-reporter` → `skill-feedback-reporter`
+- **`version: 1` field in all agent and rule templates** — explicit version for tracking and upgrade detection
+- **Commands migrated to skills** — 9 unique command templates converted to 7 skills (`test-run`, `diagnostics`, `session-handoff`, `codebase-explore`, `graph-sync`, `daily-log`, `roadmap`); 8 redundant commands deleted
+
+### Removed
+
+- **`(codi-skill) ` prefix** in Claude Code skill file headers — skills no longer receive this annotation prefix
+- **`createVersionMap` helper** removed from `artifact-version` module
+
 - **Artifact version tracking** — built-in templates carry an `artifactVersion` stamp; `codi update` detects outdated, new, and user-modified artifacts and offers per-artifact upgrade choices
 - **Installed artifact inventory** — classifies each `.codi/` artifact as original, modified, new, removed, or user-managed by comparing content hashes against the registry baseline
 - **Grouped multi-select UI** — grouped multi-select replaces flat lists for rule/skill/agent/command/MCP selection in `init` and `update` wizards

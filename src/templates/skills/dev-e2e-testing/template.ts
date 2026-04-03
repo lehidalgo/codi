@@ -3,6 +3,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 import type { TemplateCounts } from "../types.js";
 
@@ -20,7 +21,7 @@ description: |
   or audit the full ${PROJECT_NAME} feature set — artifacts, presets, hooks, verification,
   and commit workflow — in a clean test project.
 category: Code Quality
-compatibility: [claude-code, cursor, codex, windsurf, cline]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: E2E Validation
@@ -28,6 +29,7 @@ intentHints:
     - "Run end-to-end tests"
     - "Validate the full installation"
     - "Audit codi end-to-end"
+version: 1
 ---
 
 # {{name}}

@@ -6,6 +6,7 @@ description: Production-grade standards — no shortcuts, observability, reliabi
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Production Mindset

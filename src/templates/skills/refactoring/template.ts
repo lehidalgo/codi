@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Safe dead code removal and refactoring workflow. Use when removing unused code, consolidating duplicates, or simplifying a module without changing behavior. Classifies safety level and verifies tests after each deletion.
 category: Code Quality
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Refactoring
@@ -12,6 +12,7 @@ intentHints:
     - "Remove dead code"
     - "Clean up unused functions"
     - "Simplify this module"
+version: 1
 ---
 
 # {{name}}

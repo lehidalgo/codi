@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Create a structured roadmap todo list in JSON format
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Create a structured roadmap/todo list as a JSON file in docs/roadmaps/.

@@ -3,8 +3,7 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { loadCommandTemplate, getCommandTemplateVersion } from "./command-template-loader.js";
-import { injectFrontmatterVersion } from "../version/artifact-version.js";
+import { loadCommandTemplate } from "./command-template-loader.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 
 const DEFAULT_CONTENT = `---
@@ -38,11 +37,7 @@ export async function createCommand(options: CreateCommandOptions): Promise<Resu
   if (template) {
     const templateResult = loadCommandTemplate(template);
     if (!templateResult.ok) return templateResult;
-    const version = getCommandTemplateVersion(template);
-    content =
-      version !== undefined
-        ? injectFrontmatterVersion(templateResult.data, version)
-        : templateResult.data;
+    content = templateResult.data;
   } else {
     content = DEFAULT_CONTENT;
   }

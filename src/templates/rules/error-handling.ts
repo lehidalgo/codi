@@ -6,6 +6,7 @@ description: Error handling, resilience patterns, and observability integration
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Error Handling

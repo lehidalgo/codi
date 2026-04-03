@@ -114,7 +114,7 @@ export function buildUpgradeMap(
   return map;
 }
 
-/** Returns a human-readable version transition string, e.g. "v2.0.0 → v2.1.0". */
+/** Returns a human-readable version transition string, e.g. "v1 → v2". */
 export function formatVersionTransition(info: ArtifactUpgradeInfo): string {
   const from =
     info.installedVersion && info.installedVersion !== "unknown"
