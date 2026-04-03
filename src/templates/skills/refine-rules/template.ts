@@ -1,4 +1,10 @@
-import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -7,6 +13,8 @@ description: |
   ${PROJECT_DIR}/feedback/rules/, groups by rule, shows evidence, and proposes changes
   one at a time with human approval. Use when asked to "improve rules", "refine rules",
   or "review rule feedback".
+category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Rule Refinement
@@ -15,6 +23,7 @@ intentHints:
     - "Review rule feedback"
     - "Refine rules based on feedback"
     - "Update rules from observations"
+version: 1
 ---
 
 # Rule Refinement

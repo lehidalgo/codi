@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.
 category: File Format Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: PDF Operations
@@ -12,6 +12,7 @@ intentHints:
     - "Create a PDF"
     - "Merge these PDFs"
     - "Extract tables from a PDF"
+version: 1
 ---
 
 # PDF Processing Guide

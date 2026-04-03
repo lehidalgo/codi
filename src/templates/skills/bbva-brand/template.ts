@@ -1,13 +1,18 @@
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+
 export const template = `---
-name: codi-bbva-brand
+name: {{name}}
 description: Apply BBVA brand identity to any content creation task. Use when creating branded materials for BBVA — presentations, documents, reports, dashboards, or any visual/written deliverable that needs BBVA branding.
-category: brand
+category: Brand Identity
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: BBVA Branding
   examples:
     - "Create a BBVA presentation"
     - "Build a BBVA-branded report"
     - "Make a BBVA dashboard"
+version: 1
 ---
 
 ## When to Activate

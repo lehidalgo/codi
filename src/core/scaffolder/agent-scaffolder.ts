@@ -3,8 +3,7 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { loadAgentTemplate, getAgentTemplateVersion } from "./agent-template-loader.js";
-import { injectFrontmatterVersion } from "../version/artifact-version.js";
+import { loadAgentTemplate } from "./agent-template-loader.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 
 const DEFAULT_CONTENT = `---
@@ -42,11 +41,7 @@ export async function createAgent(options: CreateAgentOptions): Promise<Result<s
   if (template) {
     const templateResult = loadAgentTemplate(template);
     if (!templateResult.ok) return templateResult;
-    const version = getAgentTemplateVersion(template);
-    content =
-      version !== undefined
-        ? injectFrontmatterVersion(templateResult.data, version)
-        : templateResult.data;
+    content = templateResult.data;
   } else {
     content = DEFAULT_CONTENT;
   }

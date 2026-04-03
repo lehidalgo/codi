@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Full re-index of the code knowledge graph via graph-code MCP
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Perform a FULL re-index of the code knowledge graph for the current project.

@@ -6,6 +6,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
@@ -15,6 +16,7 @@ description: |
   a slash command. Also activate when the user wants to add a custom CLI action,
   shortcut, or automation triggered by a slash prefix.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Command Creation
@@ -22,6 +24,7 @@ intentHints:
     - "Create a slash command"
     - "Add a new command"
     - "Automate my lint workflow"
+version: 1
 ---
 
 # Command Creator

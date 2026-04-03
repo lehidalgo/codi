@@ -1,13 +1,18 @@
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+
 export const template = `---
-name: codi-rl3-brand
+name: {{name}}
 description: Apply RL3 AI Agency brand identity to any content creation task. Use when creating branded materials for RL3 — presentations, documents, landing pages, proposals, or any visual/written deliverable that needs RL3 branding.
-category: brand
+category: Brand Identity
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: RL3 Branding
   examples:
     - "Create a branded proposal"
     - "Build an RL3 landing page"
     - "Make an RL3 slide deck"
+version: 1
 ---
 
 ## When to Activate

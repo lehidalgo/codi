@@ -1,10 +1,10 @@
-import { PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_DIR, PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.
 category: Code Quality
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Code Review
@@ -12,6 +12,7 @@ intentHints:
     - "Review my PR"
     - "Check code quality"
     - "Audit recent changes"
+version: 1
 ---
 
 # {{name}}

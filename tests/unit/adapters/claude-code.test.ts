@@ -142,6 +142,87 @@ describe("claude-code adapter", () => {
       expect(testingRule.content).toContain('- "**/*.test.ts"');
     });
 
+    it("alwaysApply: false + language derives paths frontmatter for Claude Code", async () => {
+      const config = createMockConfig({
+        rules: [
+          {
+            name: "typescript-conventions",
+            description: "TS rules",
+            content: "Use strict mode.",
+            language: "typescript",
+            priority: "medium",
+            scope: [],
+            alwaysApply: false,
+            managedBy: "user",
+          },
+        ],
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const ruleFile = files.find((f) => f.path === ".claude/rules/typescript-conventions.md")!;
+      expect(ruleFile.content).toContain('- "**/*.ts"');
+      expect(ruleFile.content).toContain('- "**/*.tsx"');
+    });
+
+    it("alwaysApply: false without language or scope emits no frontmatter", async () => {
+      const config = createMockConfig({
+        rules: [
+          {
+            name: "agent-usage",
+            description: "Agent guidelines",
+            content: "Use agents wisely.",
+            priority: "medium",
+            scope: [],
+            alwaysApply: false,
+            managedBy: "user",
+          },
+        ],
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const ruleFile = files.find((f) => f.path === ".claude/rules/agent-usage.md")!;
+      expect(ruleFile.content).not.toMatch(/^---/);
+    });
+
+    it("explicit scope takes priority over language-derived paths", async () => {
+      const config = createMockConfig({
+        rules: [
+          {
+            name: "python-conventions",
+            description: "Python rules",
+            content: "Follow PEP8.",
+            language: "python",
+            priority: "medium",
+            scope: ["src/**/*.py"],
+            alwaysApply: false,
+            managedBy: "user",
+          },
+        ],
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const ruleFile = files.find((f) => f.path === ".claude/rules/python-conventions.md")!;
+      expect(ruleFile.content).toContain('"src/**/*.py"');
+      expect(ruleFile.content).not.toContain('"**/*.py"');
+    });
+
+    it("alwaysApply: true with language emits no frontmatter", async () => {
+      const config = createMockConfig({
+        rules: [
+          {
+            name: "golang-conventions",
+            description: "Go rules",
+            content: "Use gofmt.",
+            language: "golang",
+            priority: "medium",
+            scope: [],
+            alwaysApply: true,
+            managedBy: "user",
+          },
+        ],
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const ruleFile = files.find((f) => f.path === ".claude/rules/golang-conventions.md")!;
+      expect(ruleFile.content).not.toMatch(/^---/);
+    });
+
     it("rule files contain their name as heading and content", async () => {
       const config = createMockConfig();
       const files = await claudeCodeAdapter.generate(config, {});
@@ -226,9 +307,7 @@ describe("claude-code adapter", () => {
       const agentFile = files.find((f) => f.path.startsWith(".claude/agents/"))!;
 
       expect(agentFile.content).toContain("name: security-scanner");
-      expect(agentFile.content).toContain(
-        `description: (${PROJECT_NAME}-agent) Scans for vulnerabilities`,
-      );
+      expect(agentFile.content).toContain(`description: Scans for vulnerabilities`);
       expect(agentFile.content).toContain("tools: Bash, Read");
       expect(agentFile.content).toContain("model: claude-sonnet-4-20250514");
       expect(agentFile.content).toContain("Run SAST and DAST scans.");

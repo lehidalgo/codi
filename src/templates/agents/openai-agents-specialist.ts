@@ -6,6 +6,7 @@ description: Use when building with the OpenAI Agents SDK. Covers agent orchestr
 tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are an OpenAI Agents SDK Specialist with deep expertise in designing, implementing, and debugging agentic systems.

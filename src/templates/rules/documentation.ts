@@ -6,6 +6,7 @@ description: Documentation standards and practices
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Documentation Standards

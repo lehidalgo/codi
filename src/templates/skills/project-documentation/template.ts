@@ -1,4 +1,4 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -9,7 +9,7 @@ description: |
   mentions writing docs, drafting specs, creating proposals, or any structured
   content authoring task.
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Documentation
@@ -17,6 +17,7 @@ intentHints:
     - "Write documentation"
     - "Generate API docs"
     - "Write an ADR"
+version: 1
 ---
 
 # {{name}}

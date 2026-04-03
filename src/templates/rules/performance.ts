@@ -6,6 +6,7 @@ description: Performance optimization, Core Web Vitals, and observability-driven
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Performance Guidelines

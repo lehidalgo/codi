@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Summarize the current session and prepare a handoff prompt for a new chat
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Produce a concise session handoff so a new Claude Code session can continue immediately without context loss.

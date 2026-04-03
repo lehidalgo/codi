@@ -1,31 +1,24 @@
 import { hashContent } from "../../utils/hash.js";
 import { stringify as stringifyYaml } from "yaml";
-import {
-  AVAILABLE_TEMPLATES,
-  loadTemplate,
-  getTemplateVersion,
-} from "../scaffolder/template-loader.js";
+import { AVAILABLE_TEMPLATES, loadTemplate } from "../scaffolder/template-loader.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
-  getSkillTemplateVersion,
 } from "../scaffolder/skill-template-loader.js";
 import {
   AVAILABLE_AGENT_TEMPLATES,
   loadAgentTemplate,
-  getAgentTemplateVersion,
 } from "../scaffolder/agent-template-loader.js";
 import {
   AVAILABLE_COMMAND_TEMPLATES,
   loadCommandTemplate,
-  getCommandTemplateVersion,
 } from "../scaffolder/command-template-loader.js";
 import {
   AVAILABLE_MCP_SERVER_TEMPLATES,
   BUILTIN_MCP_SERVERS,
   getMcpServerTemplateVersion,
 } from "../scaffolder/mcp-template-loader.js";
-import { injectFrontmatterVersion } from "./artifact-version.js";
+import { parseVersionFromFrontmatter } from "./artifact-version.js";
 
 export type ArtifactType = "rule" | "skill" | "agent" | "command" | "mcp-server";
 
@@ -61,60 +54,48 @@ function buildRegistry(): TemplateHashRegistry {
 
   for (const name of AVAILABLE_TEMPLATES) {
     const result = loadTemplate(name);
-    const version = getTemplateVersion(name);
     if (result.ok) {
       templates[name] = {
         name,
         type: "rule",
-        contentHash: hashContent(
-          version !== undefined ? injectFrontmatterVersion(result.data, version) : result.data,
-        ),
-        artifactVersion: version ?? 1,
+        contentHash: hashContent(result.data),
+        artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }
   }
 
   for (const name of AVAILABLE_SKILL_TEMPLATES) {
     const result = loadSkillTemplateContent(name);
-    const version = getSkillTemplateVersion(name);
     if (result.ok) {
       templates[name] = {
         name,
         type: "skill",
-        contentHash: hashContent(
-          version !== undefined ? injectFrontmatterVersion(result.data, version) : result.data,
-        ),
-        artifactVersion: version ?? 1,
+        contentHash: hashContent(result.data),
+        artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }
   }
 
   for (const name of AVAILABLE_AGENT_TEMPLATES) {
     const result = loadAgentTemplate(name);
-    const version = getAgentTemplateVersion(name);
     if (result.ok) {
       templates[name] = {
         name,
         type: "agent",
-        contentHash: hashContent(
-          version !== undefined ? injectFrontmatterVersion(result.data, version) : result.data,
-        ),
-        artifactVersion: version ?? 1,
+        contentHash: hashContent(result.data),
+        artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }
   }
 
   for (const name of AVAILABLE_COMMAND_TEMPLATES) {
     const result = loadCommandTemplate(name);
-    const version = getCommandTemplateVersion(name);
     if (result.ok) {
       templates[name] = {
         name,
         type: "command",
-        contentHash: hashContent(
-          version !== undefined ? injectFrontmatterVersion(result.data, version) : result.data,
-        ),
-        artifactVersion: version ?? 1,
+        contentHash: hashContent(result.data),
+        artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }
   }

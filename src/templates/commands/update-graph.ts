@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Incremental update of the code knowledge graph for changed files
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Incrementally update the code knowledge graph, processing only files that changed since the last index.

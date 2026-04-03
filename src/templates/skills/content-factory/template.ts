@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with interactive browser preview and PNG export.
 category: Content Creation
-compatibility: [claude-code, cursor, codex, cline, windsurf]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 intentHints:
@@ -13,6 +13,7 @@ intentHints:
     - "Write a blog post"
     - "Create social media content"
     - "Repurpose this post for Instagram"
+version: 1
 ---
 
 # {{name}} — Content Factory

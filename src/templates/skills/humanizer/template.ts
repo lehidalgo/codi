@@ -17,6 +17,7 @@ intentHints:
     - "remove AI patterns from this content"
     - "this sounds too robotic, fix it"
     - "clean up this AI-generated text"
+version: 1
 ---
 
 # {{name}} — Content Humanizer

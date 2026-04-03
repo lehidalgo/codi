@@ -1,4 +1,9 @@
-import { PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import {
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -8,6 +13,7 @@ description: |
   and user corrections. Writes observations to ${PROJECT_DIR}/feedback/rules/ for
   later review via /codi-refine-rules. Does NOT modify rules directly.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 managed_by: ${PROJECT_NAME}
 intentHints:
@@ -15,6 +21,7 @@ intentHints:
   examples:
     - "This rule seems outdated"
     - "The codebase always does X but the rule says Y"
+version: 1
 ---
 
 # Rule Feedback Collector

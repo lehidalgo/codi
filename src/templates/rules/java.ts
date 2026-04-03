@@ -7,6 +7,7 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: java
+version: 1
 ---
 
 # Java Conventions

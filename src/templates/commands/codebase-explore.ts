@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Explore and understand the codebase using the code graph knowledge graph
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Explore and understand the codebase using the graph-code MCP knowledge graph.

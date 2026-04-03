@@ -2,7 +2,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
-import { createVersionMap } from "../version/artifact-version.js";
+import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
 import * as agentTemplates from "../../templates/agents/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
@@ -31,7 +31,6 @@ const TEMPLATE_MAP: Record<string, string> = {
 };
 
 export const AVAILABLE_AGENT_TEMPLATES = Object.keys(TEMPLATE_MAP);
-const TEMPLATE_VERSIONS = createVersionMap(AVAILABLE_AGENT_TEMPLATES);
 
 export function loadAgentTemplate(templateName: string): Result<string> {
   const content = TEMPLATE_MAP[templateName];
@@ -46,5 +45,6 @@ export function loadAgentTemplate(templateName: string): Result<string> {
 }
 
 export function getAgentTemplateVersion(templateName: string): number | undefined {
-  return TEMPLATE_VERSIONS[templateName];
+  const result = loadAgentTemplate(templateName);
+  return result.ok ? parseVersionFromFrontmatter(result.data) : undefined;
 }

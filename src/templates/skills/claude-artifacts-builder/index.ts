@@ -2,7 +2,4 @@ import { resolveStaticDir } from "../resolve-static-dir.js";
 
 export { template } from "./template.js";
 
-export const staticDir = resolveStaticDir(
-  "web-artifacts-builder",
-  import.meta.url,
-);
+export const staticDir = resolveStaticDir("claude-artifacts-builder", import.meta.url);

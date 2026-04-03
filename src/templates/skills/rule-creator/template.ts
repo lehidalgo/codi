@@ -7,6 +7,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   devArtifactName,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
@@ -16,6 +17,7 @@ description: |
   a coding rule, standard, or convention. Also activate when the user wants
   to enforce behavior, set constraints, or establish coding standards.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Rule Creation
@@ -23,6 +25,7 @@ intentHints:
     - "Create a new rule"
     - "Add a coding convention"
     - "Enforce TypeScript strict mode"
+version: 1
 ---
 
 # Rule Creator

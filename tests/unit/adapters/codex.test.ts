@@ -258,6 +258,57 @@ describe("codex adapter", () => {
     expect(agentFile).toBeDefined();
   });
 
+  it("emits model_reasoning_effort in agent TOML when effort is set", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "thinker",
+          description: "A reasoning agent",
+          content: "Think carefully.",
+          effort: "medium",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+    const agentFile = files.find((f) => f.path === ".codex/agents/thinker.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).toContain('model_reasoning_effort = "medium"');
+  });
+
+  it("clamps effort 'max' to 'high' for Codex model_reasoning_effort", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "heavy-thinker",
+          description: "Max effort agent",
+          content: "Think as hard as possible.",
+          effort: "max",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+    const agentFile = files.find((f) => f.path === ".codex/agents/heavy-thinker.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).toContain('model_reasoning_effort = "high"');
+    expect(agentFile!.content).not.toContain('model_reasoning_effort = "max"');
+  });
+
+  it("omits model_reasoning_effort from agent TOML when effort is not set", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "basic-agent",
+          description: "No effort specified",
+          content: "Do your best.",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+    const agentFile = files.find((f) => f.path === ".codex/agents/basic-agent.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).not.toContain("model_reasoning_effort");
+  });
+
   // --- generate() with MCP servers ---
 
   it("generates .codex/config.toml with MCP servers", async () => {

@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Codebase onboarding workflow. Use when exploring an unfamiliar project or creating an onboarding guide. Analyzes architecture, conventions, and key files to produce a concise guide for new team members or AI agents.
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Codebase Onboarding
@@ -12,6 +12,7 @@ intentHints:
     - "Help me understand this codebase"
     - "Generate an onboarding guide"
     - "What are the key files here"
+version: 1
 ---
 
 # {{name}}

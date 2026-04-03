@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user asks to create a poster, visual art, or a static design piece as a .png or .pdf. Creates original visual designs through a two-step philosophy + canvas approach. Never copies existing artists' work.
 category: Creative and Design
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Visual Design
@@ -12,6 +12,7 @@ intentHints:
     - "Create a poster"
     - "Design visual art"
     - "Make a minimalist poster"
+version: 1
 ---
 
 ## When to Activate

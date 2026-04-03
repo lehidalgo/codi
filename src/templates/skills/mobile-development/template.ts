@@ -1,4 +1,4 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -8,7 +8,7 @@ description: |
   Use when building, reviewing, or architecting mobile apps. Also activate for
   mobile testing strategy, accessibility, app store guidelines, or platform-specific patterns.
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Mobile Development
@@ -16,6 +16,7 @@ intentHints:
     - "Build a SwiftUI screen"
     - "Android Compose best practices"
     - "React Native architecture"
+version: 1
 ---
 
 # {{name}}

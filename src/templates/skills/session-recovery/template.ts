@@ -1,4 +1,9 @@
-import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -7,6 +12,7 @@ description: |
   your own mistakes 2 or more times in the current conversation. Produces a
   diagnostic report analyzing what went wrong, why, and how to prevent it.
 category: Code Quality
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: false
 intentHints:
@@ -14,6 +20,7 @@ intentHints:
   examples:
     - "I keep making the same mistake"
     - "Something keeps going wrong"
+version: 1
 ---
 
 # {{name}}

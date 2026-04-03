@@ -3,11 +3,10 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { loadSkillTemplate, getSkillTemplateVersion } from "./skill-template-loader.js";
+import { loadSkillTemplate } from "./skill-template-loader.js";
 import { generateMitLicense } from "./license-generator.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 import type { SkillTemplateDescriptor } from "../../templates/skills/types.js";
-import { injectFrontmatterVersion } from "../version/artifact-version.js";
 
 const DEFAULT_CONTENT = `---
 name: {{name}}
@@ -52,11 +51,7 @@ export async function createSkill(options: CreateSkillOptions): Promise<Result<s
     const templateResult = loadSkillTemplate(template);
     if (!templateResult.ok) return templateResult;
     descriptor = templateResult.data;
-    const version = getSkillTemplateVersion(template);
-    content =
-      version !== undefined
-        ? injectFrontmatterVersion(descriptor.template, version)
-        : descriptor.template;
+    content = descriptor.template;
   } else {
     content = DEFAULT_CONTENT;
   }

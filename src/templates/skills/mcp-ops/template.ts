@@ -17,6 +17,7 @@ intentHints:
     - "Debug MCP connection error"
     - "Create a new MCP server"
     - "Call an MCP tool"
+version: 1
 ---
 
 # {{name}}

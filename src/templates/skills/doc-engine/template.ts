@@ -1,10 +1,10 @@
-import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
 category: Document Generation
-compatibility: [claude-code, cursor, codex, cline, windsurf]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 intentHints:
@@ -13,6 +13,7 @@ intentHints:
     - "Create a report"
     - "Generate a proposal"
     - "Write a one-pager"
+version: 1
 ---
 
 # {{name}} — Document Engine

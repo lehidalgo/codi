@@ -1,10 +1,15 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
+import {
+  GIT_COMMIT_FIRST_LINE_LIMIT,
+  PROJECT_CLI,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code changes.
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Git Commit
@@ -12,6 +17,7 @@ intentHints:
     - "Commit my changes"
     - "Create a commit"
     - "Fix pre-commit hook failure"
+version: 1
 ---
 
 # {{name}}

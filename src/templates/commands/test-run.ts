@@ -4,6 +4,7 @@ export const template = `---
 name: {{name}}
 description: Run the project test suite and report results
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 Run the project's test suite:

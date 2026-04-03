@@ -66,7 +66,7 @@ describe("skill scaffolder", () => {
     const result = await createSkill({
       name: "docs",
       configDir,
-      template: prefixedName("documentation"),
+      template: prefixedName("project-documentation"),
     });
 
     expect(result.ok).toBe(true);

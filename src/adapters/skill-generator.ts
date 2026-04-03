@@ -1,5 +1,6 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import { join, relative, extname } from "node:path";
+import { stringify as stringifyYaml } from "yaml";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
@@ -9,7 +10,38 @@ import {
   SKILL_OUTPUT_FILENAME,
   MANIFEST_FILENAME,
   PROJECT_DIR,
+  SUPPORTED_PLATFORMS,
 } from "../constants.js";
+
+export type PlatformId = (typeof SUPPORTED_PLATFORMS)[number];
+
+/**
+ * Frontmatter fields each platform supports in SKILL.md files.
+ * Claude Code is the canonical (richest) format; others are subsets.
+ */
+const PLATFORM_SKILL_FIELDS: Record<PlatformId, Set<string>> = {
+  "claude-code": new Set([
+    "name",
+    "description",
+    "user-invocable",
+    "disable-model-invocation",
+    "argument-hint",
+    "allowed-tools",
+    "model",
+    "effort",
+    "context",
+    "agent",
+    "paths",
+    "shell",
+    "license",
+    "intentHints",
+    "hooks",
+  ]),
+  cursor: new Set(["name", "description", "user-invocable", "allowed-tools"]),
+  codex: new Set(["name", "description", "license", "allowed-tools", "metadata"]),
+  windsurf: new Set(["name", "description"]),
+  cline: new Set(["name", "description"]),
+};
 
 // Directories to skip when propagating skills to agent dirs
 export const SKIP_DIRS = new Set(["evals", "versions", "__pycache__"]);
@@ -42,46 +74,49 @@ function flattenDescription(desc: string): string {
 export function buildSkillMd(
   skill: NormalizedSkill,
   descriptionPrefix = "",
+  platformId: PlatformId = "claude-code",
 ): string {
+  const allowed = PLATFORM_SKILL_FIELDS[platformId];
   const frontmatter: string[] = ["---"];
+
+  // name and description are required on all platforms
   frontmatter.push(`name: ${skill.name}`);
-  frontmatter.push(
-    `description: ${descriptionPrefix}${flattenDescription(skill.description)}`,
-  );
-  if (skill.disableModelInvocation) {
+  frontmatter.push(`description: ${descriptionPrefix}${flattenDescription(skill.description)}`);
+
+  if (allowed.has("disable-model-invocation") && skill.disableModelInvocation) {
     frontmatter.push("disable-model-invocation: true");
   }
-  if (skill.userInvocable === false) {
+  if (allowed.has("user-invocable") && skill.userInvocable === false) {
     frontmatter.push("user-invocable: false");
   }
-  if (skill.argumentHint) {
+  if (allowed.has("argument-hint") && skill.argumentHint) {
     frontmatter.push(`argument-hint: "${skill.argumentHint}"`);
   }
-  if (skill.allowedTools && skill.allowedTools.length > 0) {
+  if (allowed.has("allowed-tools") && skill.allowedTools && skill.allowedTools.length > 0) {
     frontmatter.push(`allowed-tools: ${skill.allowedTools.join(", ")}`);
   }
-  if (skill.model) {
+  if (allowed.has("model") && skill.model) {
     frontmatter.push(`model: ${skill.model}`);
   }
-  if (skill.effort) {
+  if (allowed.has("effort") && skill.effort) {
     frontmatter.push(`effort: ${skill.effort}`);
   }
-  if (skill.context) {
+  if (allowed.has("context") && skill.context) {
     frontmatter.push(`context: ${skill.context}`);
   }
-  if (skill.agent) {
+  if (allowed.has("agent") && skill.agent) {
     frontmatter.push(`agent: ${skill.agent}`);
   }
-  if (skill.paths && skill.paths.length > 0) {
+  if (allowed.has("paths") && skill.paths && skill.paths.length > 0) {
     frontmatter.push(`paths: ${skill.paths.join(", ")}`);
   }
-  if (skill.shell) {
+  if (allowed.has("shell") && skill.shell) {
     frontmatter.push(`shell: ${skill.shell}`);
   }
-  if (skill.license) {
+  if (allowed.has("license") && skill.license) {
     frontmatter.push(`license: ${skill.license}`);
   }
-  if (skill.intentHints) {
+  if (allowed.has("intentHints") && skill.intentHints) {
     frontmatter.push("intentHints:");
     frontmatter.push(`  taskType: ${skill.intentHints.taskType}`);
     frontmatter.push("  examples:");
@@ -89,8 +124,19 @@ export function buildSkillMd(
       frontmatter.push(`    - "${example}"`);
     }
   }
-  // Note: managed_by, compatibility, and metadata-* are NOT emitted
-  // They are internal fields that consume agent context budget
+  // Codex: map intentHints → metadata so routing info isn't lost
+  if (allowed.has("metadata") && skill.intentHints) {
+    frontmatter.push("metadata:");
+    frontmatter.push(`  task-type: "${skill.intentHints.taskType}"`);
+  }
+  if (allowed.has("hooks") && skill.hooks !== undefined) {
+    const hooksYaml = stringifyYaml({ hooks: skill.hooks }).trimEnd();
+    for (const line of hooksYaml.split("\n")) {
+      frontmatter.push(line);
+    }
+  }
+  // Note: managed_by, compatibility, category, version are never emitted —
+  // they are Codi-internal fields that consume agent context budget
   frontmatter.push("---");
 
   return `${frontmatter.join("\n")}\n\n${skill.content}`;
@@ -111,14 +157,15 @@ export async function generateSkillFiles(
   basePath: string,
   projectRoot?: string,
   descriptionPrefix = "",
+  platformId: PlatformId = "claude-code",
 ): Promise<GeneratedFile[]> {
   const files: GeneratedFile[] = [];
   for (const skill of skills) {
     const dirName = skill.name.toLowerCase().replace(/\s+/g, "-");
     const skillBasePath = `${basePath}/${dirName}`;
 
-    // 1. Generate SKILL.md — always full content
-    const raw = buildSkillMd(skill, descriptionPrefix);
+    // 1. Generate SKILL.md — filtered to platform-supported fields
+    const raw = buildSkillMd(skill, descriptionPrefix, platformId);
     const content = addGeneratedFooter(raw);
     files.push({
       path: `${skillBasePath}/${SKILL_OUTPUT_FILENAME}`,
@@ -163,9 +210,7 @@ interface SupportingFile {
 }
 
 /** Scan a skill directory for supporting files to propagate. */
-async function collectSupportingFiles(
-  skillDir: string,
-): Promise<SupportingFile[]> {
+async function collectSupportingFiles(skillDir: string): Promise<SupportingFile[]> {
   const results: SupportingFile[] = [];
   try {
     await access(skillDir);
@@ -224,12 +269,7 @@ async function scanDir(
 /** Build an inline skill catalog for agents without separate file discovery. */
 export function buildSkillCatalog(skills: NormalizedSkill[]): string | null {
   if (skills.length === 0) return null;
-  const lines = [
-    "## Available Skills",
-    "",
-    "| Skill | Description |",
-    "|-------|-------------|",
-  ];
+  const lines = ["## Available Skills", "", "| Skill | Description |", "|-------|-------------|"];
   for (const skill of skills) {
     const desc = skill.description.split("\n")[0]?.trim() ?? "";
     lines.push(`| ${skill.name} | ${desc} |`);

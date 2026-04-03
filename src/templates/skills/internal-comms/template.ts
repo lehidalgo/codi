@@ -1,10 +1,10 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user needs to write internal communications such as status reports, 3P updates, leadership updates, newsletters, FAQs, or incident reports.
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Internal Communications
@@ -12,6 +12,7 @@ intentHints:
     - "Write a status report"
     - "Draft a team update"
     - "Write a company newsletter"
+version: 1
 ---
 
 ## When to Activate

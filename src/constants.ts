@@ -92,6 +92,12 @@ export const ARTIFACT_MANIFEST_FILENAME = "artifact-manifest.json";
 export const REGISTRY_INDEX_FILENAME = "index.json";
 export const BACKUPS_DIR = "backups";
 
+// --- Supported platforms ---
+/** Agent platform IDs — single source of truth for compatibility fields. */
+export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline"] as const;
+/** YAML-ready inline list for template interpolation. */
+export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
+
 // --- Artifact types ---
 export const ARTIFACT_TYPES = ["rules", "skills", "agents", "commands"] as const;
 

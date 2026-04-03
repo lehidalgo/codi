@@ -4,6 +4,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   PROJECT_URL,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
@@ -13,7 +14,7 @@ description: |
   to see what they have customized, check for upstream updates, or prepare to
   contribute improvements back to ${PROJECT_NAME_DISPLAY}. Also activate on /${PROJECT_NAME}-compare-preset.
 category: ${PROJECT_NAME_DISPLAY} Platform
-compatibility: [claude-code, cursor, codex, windsurf, cline]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Preset Comparison
@@ -21,6 +22,7 @@ intentHints:
     - "Compare my config to upstream"
     - "What changed in my preset"
     - "Check for upstream updates"
+version: 1
 ---
 
 # {{name}}

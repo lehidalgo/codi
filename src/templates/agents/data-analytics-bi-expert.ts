@@ -6,6 +6,7 @@ description: Use when designing dashboards, KPI frameworks, or analytical SQL. C
 tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are a Data Analytics and Business Intelligence specialist with deep expertise in dashboard design, data visualization, metric frameworks, and analytical reporting.
