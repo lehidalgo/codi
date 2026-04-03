@@ -8,6 +8,7 @@ import {
   handleCustomPath,
   formatLabel,
 } from "./init-wizard-paths.js";
+import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
 import { printWelcomeBanner } from "./banner.js";
 
 export interface WizardResult {
@@ -41,11 +42,16 @@ export interface ExistingSelections {
   mcpServers: string[];
 }
 
+export interface ExistingInstallContext {
+  selections: ExistingSelections;
+  inventory: InstalledArtifactInventoryEntry[];
+}
+
 export async function runInitWizard(
   detectedStack: string[],
   detectedAgents: string[],
   allAgents: string[],
-  existingSelections?: ExistingSelections,
+  existingInstall?: ExistingInstallContext,
 ): Promise<WizardResult | null> {
   printWelcomeBanner({
     detectedStack,
@@ -69,10 +75,43 @@ export async function runInitWizard(
   let savedLanguages: string[] | undefined;
   let savedAgents: string[] | undefined;
   let savedConfigMode: WizardResult["configMode"] | undefined;
+  let installMode: "modify" | "fresh" = existingInstall ? "modify" : "fresh";
 
   while (step >= 0) {
     switch (step) {
       case 0: {
+        if (existingInstall) {
+          p.log.step("Existing Installation");
+          const action = await p.select({
+            message: `${PROJECT_CLI} is already installed. What do you want to do?`,
+            options: [
+              {
+                label: "Modify current installation",
+                value: "modify" as const,
+                hint: "Reuse current artifacts and show installed, modified, and local-only entries",
+              },
+              {
+                label: "Create a fresh installation",
+                value: "fresh" as const,
+                hint: "Start from builtin presets/custom selection without inheriting the current install",
+              },
+              {
+                label: "Cancel",
+                value: "cancel" as const,
+                hint: "Exit setup",
+              },
+            ],
+          });
+          if (isBack(action) || action === "cancel") {
+            p.cancel("Operation cancelled.");
+            return null;
+          }
+          installMode = action as "modify" | "fresh";
+        }
+        step++;
+        break;
+      }
+      case 1: {
         p.log.step("Languages");
         const allLanguages = getSupportedLanguages();
         const languages = await p.multiselect({
@@ -92,7 +131,7 @@ export async function runInitWizard(
         step++;
         break;
       }
-      case 1: {
+      case 2: {
         p.log.step("Agents");
         const agents = await p.multiselect({
           message: "Select agents to generate config for",
@@ -109,7 +148,12 @@ export async function runInitWizard(
         step++;
         break;
       }
-      case 2: {
+      case 3: {
+        if (installMode === "modify") {
+          savedConfigMode = "custom";
+          step++;
+          break;
+        }
         p.log.step("Configuration");
         const configMode = await p.select({
           message: "How do you want to configure?",
@@ -144,7 +188,7 @@ export async function runInitWizard(
         step++;
         break;
       }
-      case 3: {
+      case 4: {
         let result: WizardResult | null | symbol;
         switch (savedConfigMode) {
           case "zip":
@@ -154,14 +198,20 @@ export async function runInitWizard(
             result = await handleGithubPath(savedAgents!);
             break;
           case "preset":
-            result = await handlePresetPath(savedAgents!, existingSelections);
+            result = await handlePresetPath(
+              savedAgents!,
+              installMode === "modify" ? existingInstall : undefined,
+            );
             break;
           default:
-            result = await handleCustomPath(savedAgents!);
+            result = await handleCustomPath(
+              savedAgents!,
+              installMode === "modify" ? existingInstall : undefined,
+            );
             break;
         }
         if (typeof result === "symbol") {
-          step--;
+          step -= installMode === "modify" ? 2 : 1;
           break;
         }
         if (result) {

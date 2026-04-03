@@ -1,23 +1,10 @@
-import {
-  AVAILABLE_TEMPLATES,
-  loadTemplate,
-} from "./template-loader.js";
-import {
-  AVAILABLE_SKILL_TEMPLATES,
-  loadSkillTemplateContent,
-} from "./skill-template-loader.js";
-import {
-  AVAILABLE_AGENT_TEMPLATES,
-  loadAgentTemplate,
-} from "./agent-template-loader.js";
-import {
-  AVAILABLE_COMMAND_TEMPLATES,
-  loadCommandTemplate,
-} from "./command-template-loader.js";
-import {
-  AVAILABLE_MCP_SERVER_TEMPLATES,
-  loadMcpServerTemplate,
-} from "./mcp-template-loader.js";
+import { AVAILABLE_TEMPLATES, loadTemplate } from "./template-loader.js";
+import { AVAILABLE_SKILL_TEMPLATES, loadSkillTemplateContent } from "./skill-template-loader.js";
+import { AVAILABLE_AGENT_TEMPLATES, loadAgentTemplate } from "./agent-template-loader.js";
+import { AVAILABLE_COMMAND_TEMPLATES, loadCommandTemplate } from "./command-template-loader.js";
+import { AVAILABLE_MCP_SERVER_TEMPLATES, loadMcpServerTemplate } from "./mcp-template-loader.js";
+import { buildTemplateHashRegistry } from "../version/template-hash-registry.js";
+import { checkArtifactVersionBaseline } from "../version/artifact-version-baseline.js";
 
 /**
  * Verifies every registered template can be loaded with non-empty content.
@@ -60,6 +47,8 @@ export function checkTemplateRegistry(): string[] {
       errors.push(`mcp "${name}": failed to load`);
     }
   }
+
+  errors.push(...checkArtifactVersionBaseline(buildTemplateHashRegistry()));
 
   return errors;
 }

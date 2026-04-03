@@ -24,18 +24,22 @@ import { generate } from "../core/generator/generator.js";
 import {
   loadTemplate,
   AVAILABLE_TEMPLATES,
+  getTemplateVersion,
 } from "../core/scaffolder/template-loader.js";
 import {
   loadSkillTemplateContent,
   AVAILABLE_SKILL_TEMPLATES,
+  getSkillTemplateVersion,
 } from "../core/scaffolder/skill-template-loader.js";
 import {
   loadAgentTemplate,
   AVAILABLE_AGENT_TEMPLATES,
+  getAgentTemplateVersion,
 } from "../core/scaffolder/agent-template-loader.js";
 import {
   loadCommandTemplate,
   AVAILABLE_COMMAND_TEMPLATES,
+  getCommandTemplateVersion,
 } from "../core/scaffolder/command-template-loader.js";
 import {
   loadMcpServerTemplate,
@@ -54,6 +58,8 @@ import { execFileAsync } from "../utils/exec.js";
 import { readLockFile } from "../core/preset/preset-registry.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
+import { syncManifestOnUpdate } from "../core/version/artifact-manifest.js";
+import { injectFrontmatterVersion } from "../core/version/artifact-version.js";
 
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
@@ -91,6 +97,7 @@ interface RefreshArtifactOptions {
   label: string;
   availableTemplates: string[];
   loadTemplate: (name: string) => Result<string>;
+  getTemplateVersion: (name: string) => number | undefined;
   nameMappings?: Record<string, string>;
   dryRun: boolean;
   log: Logger;
@@ -123,11 +130,7 @@ async function refreshManagedArtifacts(
     }
 
     const name = (parsed.data["name"] as string) ?? entry.replace(".md", "");
-    const templateName = findMatchingTemplate(
-      name,
-      opts.availableTemplates,
-      opts.nameMappings,
-    );
+    const templateName = findMatchingTemplate(name, opts.availableTemplates, opts.nameMappings);
 
     if (!templateName) {
       skipped.push(name);
@@ -136,16 +139,18 @@ async function refreshManagedArtifacts(
 
     const templateResult = opts.loadTemplate(templateName);
     if (!templateResult.ok) continue;
-
-    const newContent = templateResult.data.replace(/\{\{name\}\}/g, name);
+    const version = opts.getTemplateVersion(templateName);
+    const newContent = (
+      version !== undefined
+        ? injectFrontmatterVersion(templateResult.data, version)
+        : templateResult.data
+    ).replace(/\{\{name\}\}/g, name);
 
     if (!opts.dryRun) {
       await fs.writeFile(filePath, newContent + "\n", "utf-8");
     }
     updated.push(name);
-    opts.log.info(
-      `${opts.dryRun ? "Would update" : "Updated"} ${opts.label}: ${name}`,
-    );
+    opts.log.info(`${opts.dryRun ? "Would update" : "Updated"} ${opts.label}: ${name}`);
   }
 
   return { updated, skipped };
@@ -205,23 +210,21 @@ async function refreshManagedMcpServers(
     const tmpl = templateResult.data;
     const yamlObj: Record<string, unknown> = {
       name: tmpl.name,
+      version: tmpl.version,
       managed_by: PROJECT_NAME,
       ...(tmpl.type && { type: tmpl.type }),
       ...(tmpl.command && { command: tmpl.command }),
       ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
       ...(tmpl.env && Object.keys(tmpl.env).length > 0 && { env: tmpl.env }),
       ...(tmpl.url && { url: tmpl.url }),
-      ...(tmpl.headers &&
-        Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
+      ...(tmpl.headers && Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
     };
 
     if (!dryRun) {
       await fs.writeFile(filePath, stringifyYaml(yamlObj), "utf-8");
     }
     updated.push(serverName);
-    log.info(
-      `${dryRun ? "Would update" : "Updated"} MCP server: ${serverName}`,
-    );
+    log.info(`${dryRun ? "Would update" : "Updated"} MCP server: ${serverName}`);
   }
 
   return { updated, skipped };
@@ -238,13 +241,7 @@ async function pullFromSource(
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
-    await execFileAsync("git", [
-      "clone",
-      "--depth",
-      GIT_CLONE_DEPTH,
-      repoUrl,
-      tmpDir,
-    ]);
+    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, tmpDir]);
   } catch (cause) {
     log.warn(`Failed to clone source repo: ${repo}`, cause);
     return updated;
@@ -356,9 +353,7 @@ export async function updateHandler(
   const installedNames = Object.keys(lock.presets);
   const validPresets = [...builtinPresets, ...installedNames];
 
-  const presetName = options.preset
-    ? resolveArtifactName(options.preset, validPresets)
-    : undefined;
+  const presetName = options.preset ? resolveArtifactName(options.preset, validPresets) : undefined;
 
   if (options.preset && !presetName) {
     return createCommandResult({
@@ -502,6 +497,7 @@ export async function updateHandler(
       log,
       availableTemplates: AVAILABLE_TEMPLATES,
       loadTemplate,
+      getTemplateVersion,
       nameMappings: RULE_NAME_MAPPINGS,
     });
     rulesUpdated = result.updated;
@@ -519,6 +515,7 @@ export async function updateHandler(
       log,
       availableTemplates: AVAILABLE_SKILL_TEMPLATES,
       loadTemplate: loadSkillTemplateContent,
+      getTemplateVersion: getSkillTemplateVersion,
     });
     skillsUpdated = result.updated;
     skillsSkipped = result.skipped;
@@ -535,6 +532,7 @@ export async function updateHandler(
       log,
       availableTemplates: AVAILABLE_AGENT_TEMPLATES,
       loadTemplate: loadAgentTemplate,
+      getTemplateVersion: getAgentTemplateVersion,
     });
     agentsUpdated = result.updated;
     agentsSkipped = result.skipped;
@@ -551,6 +549,7 @@ export async function updateHandler(
       log,
       availableTemplates: AVAILABLE_COMMAND_TEMPLATES,
       loadTemplate: loadCommandTemplate,
+      getTemplateVersion: getCommandTemplateVersion,
     });
     commandsUpdated = result.updated;
     commandsSkipped = result.skipped;
@@ -559,23 +558,14 @@ export async function updateHandler(
   let mcpServersUpdated: string[] = [];
   let mcpServersSkipped: string[] = [];
   if (options.mcpServers) {
-    const result = await refreshManagedMcpServers(
-      configDir,
-      options.dryRun ?? false,
-      log,
-    );
+    const result = await refreshManagedMcpServers(configDir, options.dryRun ?? false, log);
     mcpServersUpdated = result.updated;
     mcpServersSkipped = result.skipped;
   }
 
   let sourceUpdated: string[] = [];
   if (options.from) {
-    sourceUpdated = await pullFromSource(
-      options.from,
-      configDir,
-      options.dryRun ?? false,
-      log,
-    );
+    sourceUpdated = await pullFromSource(options.from, configDir, options.dryRun ?? false, log);
   }
 
   let regenerated = false;
@@ -588,6 +578,17 @@ export async function updateHandler(
       });
       regenerated = genResult.ok;
     }
+  }
+
+  // Sync artifact manifest for refreshed artifacts
+  if (!options.dryRun) {
+    await syncManifestOnUpdate(configDir, {
+      rules: rulesUpdated,
+      skills: skillsUpdated,
+      agents: agentsUpdated,
+      commands: commandsUpdated,
+      mcpServers: mcpServersUpdated,
+    }).catch((e: unknown) => log.debug("Artifact manifest sync failed; non-critical.", e));
   }
 
   if (!options.dryRun) {
@@ -656,25 +657,14 @@ export async function updateHandler(
 export function registerUpdateCommand(program: Command): void {
   program
     .command("update")
-    .description(
-      "Update flags, rules, skills, agents, and commands to latest versions",
-    )
-    .option(
-      "--preset <preset>",
-      `Reset flags to preset: ${getPresetNames().join(", ")}`,
-    )
+    .description("Update flags, rules, skills, agents, and commands to latest versions")
+    .option("--preset <preset>", `Reset flags to preset: ${getPresetNames().join(", ")}`)
     .option("--from <repo>", "Pull centralized artifacts from a GitHub repo")
     .option("--rules", "Refresh template-managed rules to latest versions")
     .option("--skills", "Refresh template-managed skills to latest versions")
     .option("--agents", "Refresh template-managed agents to latest versions")
-    .option(
-      "--commands",
-      "Refresh template-managed commands to latest versions",
-    )
-    .option(
-      "--mcp-servers",
-      "Refresh template-managed MCP servers to latest versions",
-    )
+    .option("--commands", "Refresh template-managed commands to latest versions")
+    .option("--mcp-servers", "Refresh template-managed MCP servers to latest versions")
     .option("--dry-run", "Show what would change without writing")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;

@@ -64,12 +64,7 @@ export const MANAGED_BY_VALUES = [PROJECT_NAME, "user"] as const;
 export const DEFAULT_PRESET = prefixedName("balanced");
 
 // --- Preset source types ---
-export const PRESET_SOURCE_TYPES = [
-  "builtin",
-  "zip",
-  "github",
-  "local",
-] as const;
+export const PRESET_SOURCE_TYPES = ["builtin", "zip", "github", "local"] as const;
 export type PresetSourceType = (typeof PRESET_SOURCE_TYPES)[number];
 
 // --- Preset size limits ---
@@ -93,16 +88,12 @@ export const PRESET_MANIFEST_FILENAME = "preset.yaml";
 export const BACKUP_MANIFEST_FILENAME = "backup-manifest.json";
 export const PRESET_LOCK_FILENAME = "preset-lock.json";
 export const OPERATIONS_LEDGER_FILENAME = "operations.json";
+export const ARTIFACT_MANIFEST_FILENAME = "artifact-manifest.json";
 export const REGISTRY_INDEX_FILENAME = "index.json";
 export const BACKUPS_DIR = "backups";
 
 // --- Artifact types ---
-export const ARTIFACT_TYPES = [
-  "rules",
-  "skills",
-  "agents",
-  "commands",
-] as const;
+export const ARTIFACT_TYPES = ["rules", "skills", "agents", "commands"] as const;
 
 // --- Brand category ---
 export const BRAND_CATEGORY = "brand" as const;

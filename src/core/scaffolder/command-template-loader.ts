@@ -2,6 +2,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
+import { createVersionMap } from "../version/artifact-version.js";
 import * as commandTemplates from "../../templates/commands/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
@@ -25,6 +26,7 @@ const TEMPLATE_MAP: Record<string, string> = {
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);
+const TEMPLATE_VERSIONS = createVersionMap(AVAILABLE_COMMAND_TEMPLATES);
 
 export function loadCommandTemplate(templateName: string): Result<string> {
   const content = TEMPLATE_MAP[templateName];
@@ -36,4 +38,8 @@ export function loadCommandTemplate(templateName: string): Result<string> {
     ]);
   }
   return ok(content);
+}
+
+export function getCommandTemplateVersion(templateName: string): number | undefined {
+  return TEMPLATE_VERSIONS[templateName];
 }

@@ -3,13 +3,15 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { loadCommandTemplate } from "./command-template-loader.js";
+import { loadCommandTemplate, getCommandTemplateVersion } from "./command-template-loader.js";
+import { injectFrontmatterVersion } from "../version/artifact-version.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 
 const DEFAULT_CONTENT = `---
 name: {{name}}
 description: Custom command
 managed_by: user
+version: 1
 ---
 
 Add your command instructions here.`;
@@ -21,9 +23,7 @@ export interface CreateCommandOptions {
   force?: boolean;
 }
 
-export async function createCommand(
-  options: CreateCommandOptions,
-): Promise<Result<string>> {
+export async function createCommand(options: CreateCommandOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
@@ -38,7 +38,11 @@ export async function createCommand(
   if (template) {
     const templateResult = loadCommandTemplate(template);
     if (!templateResult.ok) return templateResult;
-    content = templateResult.data;
+    const version = getCommandTemplateVersion(template);
+    content =
+      version !== undefined
+        ? injectFrontmatterVersion(templateResult.data, version)
+        : templateResult.data;
   } else {
     content = DEFAULT_CONTENT;
   }

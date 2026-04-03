@@ -3,7 +3,8 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { loadAgentTemplate } from "./agent-template-loader.js";
+import { loadAgentTemplate, getAgentTemplateVersion } from "./agent-template-loader.js";
+import { injectFrontmatterVersion } from "../version/artifact-version.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 
 const DEFAULT_CONTENT = `---
@@ -12,6 +13,7 @@ description: Custom agent
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: user
+version: 1
 ---
 
 # {{name}}
@@ -25,9 +27,7 @@ export interface CreateAgentOptions {
   force?: boolean;
 }
 
-export async function createAgent(
-  options: CreateAgentOptions,
-): Promise<Result<string>> {
+export async function createAgent(options: CreateAgentOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
@@ -42,7 +42,11 @@ export async function createAgent(
   if (template) {
     const templateResult = loadAgentTemplate(template);
     if (!templateResult.ok) return templateResult;
-    content = templateResult.data;
+    const version = getAgentTemplateVersion(template);
+    content =
+      version !== undefined
+        ? injectFrontmatterVersion(templateResult.data, version)
+        : templateResult.data;
   } else {
     content = DEFAULT_CONTENT;
   }

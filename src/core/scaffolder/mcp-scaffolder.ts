@@ -5,11 +5,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { loadMcpServerTemplate } from "./mcp-template-loader.js";
-import {
-  MAX_NAME_LENGTH,
-  NAME_PATTERN_STRICT,
-  PROJECT_NAME,
-} from "#src/constants.js";
+import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT, PROJECT_NAME } from "#src/constants.js";
 
 export interface CreateMcpServerOptions {
   name: string;
@@ -18,9 +14,7 @@ export interface CreateMcpServerOptions {
   force?: boolean;
 }
 
-export async function createMcpServer(
-  options: CreateMcpServerOptions,
-): Promise<Result<string>> {
+export async function createMcpServer(options: CreateMcpServerOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
@@ -70,18 +64,19 @@ export async function createMcpServer(
 
     yamlObj = {
       name: tmpl.name,
+      version: tmpl.version,
       managed_by: PROJECT_NAME,
       ...(tmpl.type && { type: tmpl.type }),
       ...(tmpl.command && { command: tmpl.command }),
       ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
       ...(tmpl.env && Object.keys(tmpl.env).length > 0 && { env: tmpl.env }),
       ...(tmpl.url && { url: tmpl.url }),
-      ...(tmpl.headers &&
-        Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
+      ...(tmpl.headers && Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
     };
   } else {
     yamlObj = {
       name,
+      version: 1,
       managed_by: "user",
       command: "",
       args: [],
