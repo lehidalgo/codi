@@ -3,7 +3,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 export const template = `---
 name: {{name}}
 description: Use when optimizing for search or planning content strategy. Researches current SEO best practices, keyword strategies, technical SEO for Next.js, and conversion optimization.
-tools: [Read, Grep, Glob, Bash]
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

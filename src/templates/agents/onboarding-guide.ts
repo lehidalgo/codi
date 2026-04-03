@@ -3,7 +3,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 export const template = `---
 name: {{name}}
 description: Use when onboarding new developers. Explores the codebase and produces a concise guide covering architecture, key modules, conventions, and local setup steps.
-tools: [Read, Grep, Glob]
+tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

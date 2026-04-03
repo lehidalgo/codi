@@ -3,7 +3,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 export const template = `---
 name: {{name}}
 description: Use when designing dashboards, KPI frameworks, or analytical SQL. Covers data visualization best practices, metric definitions, and BI tool selection.
-tools: [Read, Grep, Glob, Bash]
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

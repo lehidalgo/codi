@@ -3,7 +3,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 export const template = `---
 name: {{name}}
 description: Use when deploying models or building ML infrastructure. Designs deployment architectures, monitors drift, selects MLOps platforms, and sets up ML CI/CD pipelines.
-tools: [Read, Grep, Glob, Bash]
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---
