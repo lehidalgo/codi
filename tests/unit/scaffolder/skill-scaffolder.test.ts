@@ -33,11 +33,11 @@ describe("skill scaffolder", () => {
     expect(content).toContain("Describe when this skill should activate");
   });
 
-  it("creates a skill file with mcp template", async () => {
+  it("creates a skill file with mcp-ops template", async () => {
     const result = await createSkill({
       name: "mcp-usage",
       configDir,
-      template: prefixedName("mcp"),
+      template: prefixedName("mcp-ops"),
     });
 
     expect(result.ok).toBe(true);
@@ -45,7 +45,7 @@ describe("skill scaffolder", () => {
 
     const content = await fs.readFile(result.data, "utf-8");
     expect(content).toContain("name: mcp-usage");
-    expect(content).toContain("MCP (Model Context Protocol) server usage");
+    expect(content).toContain("MCP (Model Context Protocol) operations");
   });
 
   it("creates a skill file with code-review template", async () => {
@@ -123,13 +123,7 @@ describe("skill scaffolder", () => {
     expect(parsed.evals).toEqual([]);
 
     for (const sub of ["scripts", "references", "assets", "agents"]) {
-      const gitkeep = path.join(
-        configDir,
-        "skills",
-        "flat-test",
-        sub,
-        ".gitkeep",
-      );
+      const gitkeep = path.join(configDir, "skills", "flat-test", sub, ".gitkeep");
       await expect(fs.access(gitkeep)).resolves.toBeUndefined();
     }
   });
@@ -144,12 +138,7 @@ describe("skill scaffolder", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const licensePath = path.join(
-      configDir,
-      "skills",
-      "licensed-skill",
-      "LICENSE.txt",
-    );
+    const licensePath = path.join(configDir, "skills", "licensed-skill", "LICENSE.txt");
     const content = await fs.readFile(licensePath, "utf-8");
     expect(content).toContain("MIT License");
     expect(content).toContain("test-project");
@@ -161,12 +150,7 @@ describe("skill scaffolder", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const licensePath = path.join(
-      configDir,
-      "skills",
-      "default-holder",
-      "LICENSE.txt",
-    );
+    const licensePath = path.join(configDir, "skills", "default-holder", "LICENSE.txt");
     const content = await fs.readFile(licensePath, "utf-8");
     expect(content).toContain("Contributors");
   });
@@ -221,13 +205,7 @@ describe("skill scaffolder", () => {
     const content = await fs.readFile(result.data, "utf-8");
     expect(content).toContain("BBVA");
 
-    const logo = path.join(
-      configDir,
-      "skills",
-      "test-bbva",
-      "assets",
-      "BBVA_RGB.svg",
-    );
+    const logo = path.join(configDir, "skills", "test-bbva", "assets", "BBVA_RGB.svg");
     await expect(fs.access(logo)).resolves.toBeUndefined();
   });
 });

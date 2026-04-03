@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/fonts that you can apply to any artifact that has been creating, or can generate a new theme on-the-fly.
+description: Use when the user wants to apply a visual theme to slides, documents, HTML artifacts, or other deliverables. Provides 10 pre-set themes with color palettes and font pairings, or generates a custom theme on demand.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,10 +11,17 @@ intentHints:
   examples:
     - "Apply a theme to my document"
     - "Style this artifact"
+    - "Create a custom theme for my deck"
 ---
 
-
 # Theme Factory Skill
+
+## When to Activate
+
+- User wants to apply a consistent visual theme to a slide deck, document, or HTML artifact
+- User asks to change colors or fonts on an existing output
+- User wants to browse available themes and pick one
+- User needs a custom theme generated from a description
 
 This skill provides a curated collection of professional font and color themes themes, each with carefully selected color palettes and font pairings. Once a theme is chosen, it can be applied to any artifact.
 

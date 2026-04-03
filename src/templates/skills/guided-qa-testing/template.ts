@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Step-by-step QA testing methodology. Coding agent drives the process one phase at a time — executing automatable checks, flagging human-only phases, planning bug fixes collaboratively, and tracking all results in a living QA report document.
+description: Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Coding agent drives automatable phases, flags human-only phases, and tracks all results in a living QA report document.
 category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
@@ -11,6 +11,7 @@ intentHints:
   examples:
     - "Run QA tests"
     - "Test this feature step by step"
+    - "Validate this release"
 ---
 
 # {{name}}
@@ -231,4 +232,9 @@ Report structure:
 
 For automated test generation from QA findings, delegate to these agents (see \\\`agents/\\\` directory):
 - **codi-test-generator** — Convert QA findings into automated regression tests
+
+## Related Skills
+
+- **codi-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
+- **codi-test-coverage** — Measure and improve test coverage after QA
 `;

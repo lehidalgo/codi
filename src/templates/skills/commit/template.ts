@@ -1,8 +1,4 @@
-import {
-  GIT_COMMIT_FIRST_LINE_LIMIT,
-  PROJECT_CLI,
-  PROJECT_NAME,
-} from "#src/constants.js";
+import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -15,13 +11,10 @@ intentHints:
   examples:
     - "Commit my changes"
     - "Create a commit"
+    - "Fix pre-commit hook failure"
 ---
 
 # {{name}}
-
-## When to Use
-
-Use when asked to commit, or after completing a feature/fix/refactor.
 
 ## When to Activate
 

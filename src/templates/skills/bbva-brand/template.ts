@@ -1,8 +1,22 @@
 export const template = `---
 name: codi-bbva-brand
-description: "Apply BBVA brand identity to any content creation task. Use this skill whenever creating branded materials for BBVA — including presentations, documents, reports, dashboards, HTML pages, React components, emails, or any visual/written deliverable that needs BBVA branding. Also use when the user mentions 'BBVA', 'banco', 'marca BBVA', 'identidad corporativa BBVA', 'estilo BBVA', or asks to create any BBVA-branded material. Covers corporate colors, typography (BentonSans + Tiempos), logo usage, icon library, corporate values, and tone of voice."
+description: Apply BBVA brand identity to any content creation task. Use when creating branded materials for BBVA — presentations, documents, reports, dashboards, or any visual/written deliverable that needs BBVA branding.
 category: brand
+intentHints:
+  taskType: BBVA Branding
+  examples:
+    - "Create a BBVA presentation"
+    - "Build a BBVA-branded report"
+    - "Make a BBVA dashboard"
 ---
+
+## When to Activate
+
+- User mentions 'BBVA', 'marca BBVA', or asks for BBVA-branded output
+- User needs a client-facing or internal deliverable (presentation, report, dashboard) for BBVA
+- User is creating any document or visual that should carry the BBVA corporate identity
+
+
 
 # BBVA — Brand Identity System
 

@@ -12,9 +12,7 @@ let tmpDir: string;
 let scriptPath: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-wiring-check-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-wiring-check-`));
   scriptPath = path.join(tmpDir, "wiring-check.mjs");
   await fs.writeFile(scriptPath, TEMPLATE_WIRING_CHECK_TEMPLATE, {
     mode: 0o755,
@@ -48,10 +46,7 @@ async function createAlignedRulesFixture(root: string): Promise<void> {
   await fs.mkdir(loaderDir, { recursive: true });
 
   // Template file
-  await fs.writeFile(
-    path.join(templateDir, "security.ts"),
-    'export const template = "rule";',
-  );
+  await fs.writeFile(path.join(templateDir, "security.ts"), 'export const template = "rule";');
 
   // Index file with export
   await fs.writeFile(
@@ -73,26 +68,23 @@ const TEMPLATE_MAP = {
 async function createAlignedSkillsFixture(root: string): Promise<void> {
   const templateDir = path.join(root, "src/templates/skills");
   const loaderDir = path.join(root, "src/core/scaffolder");
-  await fs.mkdir(path.join(templateDir, "mcp"), { recursive: true });
+  await fs.mkdir(path.join(templateDir, "mcp-ops"), { recursive: true });
   await fs.mkdir(loaderDir, { recursive: true });
 
   // Skill directory with index
   await fs.writeFile(
-    path.join(templateDir, "mcp/index.ts"),
+    path.join(templateDir, "mcp-ops/index.ts"),
     'export const template = "skill";',
   );
 
   // Utility files that should be excluded
   await fs.writeFile(path.join(templateDir, "types.ts"), "export type T = {};");
-  await fs.writeFile(
-    path.join(templateDir, "resolve-static-dir.ts"),
-    "export function f() {}",
-  );
+  await fs.writeFile(path.join(templateDir, "resolve-static-dir.ts"), "export function f() {}");
 
   // Index file
   await fs.writeFile(
     path.join(templateDir, "index.ts"),
-    'export { template as mcp } from "./mcp/index.js";',
+    'export { template as mcpOps } from "./mcp-ops/index.js";',
   );
 
   // Loader
@@ -100,7 +92,7 @@ async function createAlignedSkillsFixture(root: string): Promise<void> {
     path.join(loaderDir, "skill-template-loader.ts"),
     `import { prefixedName } from "#src/constants.js";
 const TEMPLATE_MAP = {
-  [prefixedName("mcp")]: skillTemplates.mcp,
+  [prefixedName("mcp-ops")]: skillTemplates.mcpOps,
 };`,
   );
 }
@@ -125,18 +117,9 @@ describe("template wiring check script", () => {
     }
     // Create minimal index and loader files for skills, agents, commands
     for (const [indexPath, loaderPath] of [
-      [
-        "src/templates/skills/index.ts",
-        "src/core/scaffolder/skill-template-loader.ts",
-      ],
-      [
-        "src/templates/agents/index.ts",
-        "src/core/scaffolder/agent-template-loader.ts",
-      ],
-      [
-        "src/templates/commands/index.ts",
-        "src/core/scaffolder/command-template-loader.ts",
-      ],
+      ["src/templates/skills/index.ts", "src/core/scaffolder/skill-template-loader.ts"],
+      ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
+      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       // Only write if not already present
       try {
@@ -167,18 +150,9 @@ describe("template wiring check script", () => {
 
     // Create empty stubs for other types
     for (const [indexPath, loaderPath] of [
-      [
-        "src/templates/skills/index.ts",
-        "src/core/scaffolder/skill-template-loader.ts",
-      ],
-      [
-        "src/templates/agents/index.ts",
-        "src/core/scaffolder/agent-template-loader.ts",
-      ],
-      [
-        "src/templates/commands/index.ts",
-        "src/core/scaffolder/command-template-loader.ts",
-      ],
+      ["src/templates/skills/index.ts", "src/core/scaffolder/skill-template-loader.ts"],
+      ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
+      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,
@@ -212,10 +186,7 @@ describe("template wiring check script", () => {
     await fs.mkdir(loaderDir, { recursive: true });
 
     // File on disk
-    await fs.writeFile(
-      path.join(templateDir, "security.ts"),
-      'export const template = "rule";',
-    );
+    await fs.writeFile(path.join(templateDir, "security.ts"), 'export const template = "rule";');
     // Exported in index
     await fs.writeFile(
       path.join(templateDir, "index.ts"),
@@ -226,18 +197,9 @@ describe("template wiring check script", () => {
 
     // Empty stubs for other types
     for (const [indexPath, loaderPath] of [
-      [
-        "src/templates/skills/index.ts",
-        "src/core/scaffolder/skill-template-loader.ts",
-      ],
-      [
-        "src/templates/agents/index.ts",
-        "src/core/scaffolder/agent-template-loader.ts",
-      ],
-      [
-        "src/templates/commands/index.ts",
-        "src/core/scaffolder/command-template-loader.ts",
-      ],
+      ["src/templates/skills/index.ts", "src/core/scaffolder/skill-template-loader.ts"],
+      ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
+      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,
@@ -287,18 +249,9 @@ describe("template wiring check script", () => {
 
     // Empty stubs for other types
     for (const [indexPath, loaderPath] of [
-      [
-        "src/templates/rules/index.ts",
-        "src/core/scaffolder/template-loader.ts",
-      ],
-      [
-        "src/templates/agents/index.ts",
-        "src/core/scaffolder/agent-template-loader.ts",
-      ],
-      [
-        "src/templates/commands/index.ts",
-        "src/core/scaffolder/command-template-loader.ts",
-      ],
+      ["src/templates/rules/index.ts", "src/core/scaffolder/template-loader.ts"],
+      ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
+      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,
@@ -328,18 +281,9 @@ describe("template wiring check script", () => {
 
     // Create empty stubs for other types
     for (const [indexPath, loaderPath] of [
-      [
-        "src/templates/rules/index.ts",
-        "src/core/scaffolder/template-loader.ts",
-      ],
-      [
-        "src/templates/agents/index.ts",
-        "src/core/scaffolder/agent-template-loader.ts",
-      ],
-      [
-        "src/templates/commands/index.ts",
-        "src/core/scaffolder/command-template-loader.ts",
-      ],
+      ["src/templates/rules/index.ts", "src/core/scaffolder/template-loader.ts"],
+      ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
+      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,

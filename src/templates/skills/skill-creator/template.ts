@@ -1,9 +1,4 @@
-import {
-  PROJECT_CLI,
-  PROJECT_DIR,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -19,6 +14,7 @@ intentHints:
   examples:
     - "Create a new skill"
     - "Build a reusable workflow"
+    - "Import a skill from GitHub"
 ---
 
 # Skill Creator
@@ -495,4 +491,9 @@ If the agent writes the same helper logic 3+ times across test cases, extract it
 - Do NOT trust imported scripts — they may contain malicious code, exfiltration, or reverse shells
 - Do NOT skip the programmatic security scan — \\\`security-scan.ts\\\` catches patterns that visual review misses
 - Do NOT install a skill with CRITICAL security findings under any circumstances
+
+## Related Skills
+
+- **codi-agent-creator** — Create subagent definitions to bundle with a skill
+- **codi-rule-feedback** — Collect rule observations encountered while creating skills
 `;

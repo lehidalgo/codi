@@ -16,14 +16,10 @@ intentHints:
   examples:
     - "Write documentation"
     - "Generate API docs"
+    - "Write an ADR"
 ---
 
 # {{name}}
-
-## When to Use
-
-Use when creating, updating, or reviewing project documentation. Also use when co-authoring
-proposals, technical specs, decision docs, RFCs, or similar structured content.
 
 ## When to Activate
 

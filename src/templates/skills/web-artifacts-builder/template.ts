@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui). Use for complex artifacts requiring state management, routing, or shadcn/ui components - not for simple single-file HTML/JSX artifacts.
+description: Use when the user needs a complex, multi-component claude.ai HTML artifact built with React, Tailwind CSS, and shadcn/ui. Do NOT activate for simple single-file HTML or JSX artifacts.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,9 +11,17 @@ intentHints:
   examples:
     - "Build a complex HTML artifact"
     - "Create a multi-component app"
+    - "Add shadcn/ui components to my artifact"
 ---
 
 # Web Artifacts Builder
+
+## When to Activate
+
+- User needs a multi-component claude.ai HTML artifact with state management or routing
+- User wants to use shadcn/ui or Radix UI components in an artifact
+- User asks to build a complex React app that bundles to a single HTML file
+- Do NOT activate for simple single-file HTML or JSX artifacts
 
 To build powerful frontend claude.ai artifacts, follow these steps:
 1. Initialize the frontend repo using \\\`scripts/init-artifact.sh\\\`

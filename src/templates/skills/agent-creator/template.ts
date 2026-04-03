@@ -21,6 +21,7 @@ intentHints:
   examples:
     - "Create a new agent"
     - "Build a specialized subagent"
+    - "Add a code reviewer agent"
 ---
 
 # Agent Creator
@@ -224,4 +225,8 @@ Run \\\`${PROJECT_CLI} add agent --all\\\` to list all templates. Major categori
 - Do NOT create agents without confidence filtering — unfiltered output is noisy
 - Do NOT skip severity definitions — findings without severity are not actionable
 - Keep agent body under 100 lines (excluding frontmatter)
+
+## Related Skills
+
+- **codi-skill-creator** — Create a skill that coordinates multiple agents in a workflow
 `;

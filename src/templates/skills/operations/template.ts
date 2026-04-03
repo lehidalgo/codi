@@ -1,9 +1,4 @@
-import {
-  PROJECT_CLI,
-  PROJECT_DIR,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { TemplateCounts } from "../types.js";
 
 export function getTemplate(counts: TemplateCounts): string {
@@ -17,9 +12,17 @@ intentHints:
   examples:
     - "Add a rule"
     - "Manage codi config"
+    - "Check codi installation health"
 ---
 
 # ${PROJECT_NAME_DISPLAY} Operations
+
+## When to Activate
+
+- User wants to add, update, or remove rules, skills, agents, or commands
+- User needs to configure flags, presets, or MCP servers
+- User asks to verify, diagnose, or troubleshoot the ${PROJECT_NAME} installation
+- User asks about drift, backups, or regenerating agent config files
 
 ## Artifact Lifecycle
 
@@ -153,5 +156,10 @@ ${PROJECT_CLI} watch                 # Auto-regenerate on ${PROJECT_DIR}/ change
 **Update didn't change anything:** Check \`managed_by\` field — only \`${PROJECT_NAME}\` artifacts are updated.
 
 **Backup needed:** Backups are automatic before each generate. Use \`${PROJECT_CLI} revert --list\` to see history.
+
+## Related Skills
+
+- **codi-compare-preset** — Compare local artifacts against upstream templates
+- **codi-error-recovery** — Recover from repeated agent mistakes during operations
 `;
 }

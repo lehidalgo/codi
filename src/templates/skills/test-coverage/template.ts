@@ -2,7 +2,7 @@ import { MIN_CODE_COVERAGE_PERCENT, PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Test coverage analysis workflow. Use to measure coverage, identify gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, and generate missing tests. Detects framework automatically and produces before/after comparison.
+description: Test coverage analysis workflow. Use when measuring coverage, identifying gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -15,10 +15,6 @@ intentHints:
 ---
 
 # {{name}}
-
-## When to Use
-
-Use when asked to measure test coverage, find untested code, or generate missing tests.
 
 ## When to Activate
 
