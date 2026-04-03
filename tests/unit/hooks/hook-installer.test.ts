@@ -378,7 +378,7 @@ describe("buildSecretScanScript", () => {
 
     expect(script).toContain("#!/usr/bin/env node");
     expect(script).toContain("PATTERNS");
-    expect(script).toContain("Potential secret found");
+    expect(script).toContain("potential secret(s) found");
   });
 });
 

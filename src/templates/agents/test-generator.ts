@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Generates comprehensive unit tests. Use when writing tests, improving coverage, or creating test suites for new code.
-tools: [Read, Write, Grep, Glob, Bash]
+description: Use when writing tests or improving coverage. Generates unit, integration, and E2E tests with meaningful assertions, edge cases, and test doubles where needed.
+tools: [Read, Write, Edit, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

@@ -14,6 +14,7 @@ import { addGeneratedFooter } from "./generated-header.js";
 import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
+  buildAgentsTable,
   buildCommandsTable,
   buildSkillRoutingTable,
   buildDevelopmentNotes,
@@ -68,10 +69,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     return hasFile || hasDir;
   },
 
-  async generate(
-    config: NormalizedConfig,
-    _options: GenerateOptions,
-  ): Promise<GeneratedFile[]> {
+  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
@@ -89,6 +87,10 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Commands table
     const commandsTable = buildCommandsTable(config);
     if (commandsTable) sections.push(commandsTable);
+
+    // Agents table
+    const agentsTable = buildAgentsTable(config);
+    if (agentsTable) sections.push(agentsTable);
 
     // Skill routing table
     const routingTable = buildSkillRoutingTable(config);
@@ -144,9 +146,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
       lines.push("---");
-      const agentContent = addGeneratedFooter(
-        `${lines.join("\n")}\n\n${agent.content}`,
-      );
+      const agentContent = addGeneratedFooter(`${lines.join("\n")}\n\n${agent.content}`);
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
         path: `.claude/agents/${fileName}`,

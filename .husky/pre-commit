@@ -1,16 +1,17 @@
 
 # Codi hooks
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+# — typescript —
 ESLINT=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' || true)
 [ -n "$ESLINT" ] && printf '%s\n' $ESLINT | xargs npx eslint --fix
 PRETTIER=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' || true)
 [ -n "$PRETTIER" ] && printf '%s\n' $PRETTIER | xargs npx prettier --write
 TSC=$(echo "$STAGED" | grep -E '\.(ts|tsx)$' || true)
 [ -n "$TSC" ] && npx tsc --noEmit
-npm run test:pre-commit
+# — global —
+node -e "const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)" 2>/dev/null && npm run test:pre-commit || npm test
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-secret-scan.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-file-size-check.mjs
-TEMPLATES=$(echo "$STAGED" | grep -E '^src/templates/' || true)
-[ -n "$TEMPLATES" ] && node .git/hooks/codi-template-wiring-check.mjs
+[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-artifact-validate.mjs
 [ -n "$ESLINT" ] && printf '%s\n' $ESLINT | xargs git add || true
 [ -n "$PRETTIER" ] && printf '%s\n' $PRETTIER | xargs git add || true

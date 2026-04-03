@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: "Use this skill any time a .pptx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates, layouts, speaker notes, or comments. Trigger whenever the user mentions \\"deck,\\" \\"slides,\\" \\"presentation,\\" or references a .pptx filename, regardless of what they plan to do with the content afterward. If a .pptx file needs to be opened, created, or touched, use this skill."
+description: "Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations."
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,9 +11,18 @@ intentHints:
   examples:
     - "Create a PowerPoint"
     - "Generate slides as PPTX"
+    - "Extract text from a presentation"
 ---
 
 # PPTX Skill
+
+## When to Activate
+
+- User wants to create, edit, or read a \\\`.pptx\\\` file
+- User mentions 'deck', 'slides', 'presentation', or a \\\`.pptx\\\` filename
+- User needs to extract text, speaker notes, or content from a presentation
+- User needs to combine, split, or convert slide files
+
 
 ## Quick Reference
 

@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: EU regulatory compliance specialist. Use for GDPR review, data protection impact assessments, privacy-by-design, cross-border data transfers, or EU AI Act requirements.
-tools: [Read, Grep, Glob, Bash]
+description: Use when building EU-facing features. Reviews GDPR compliance, conducts DPIAs, evaluates lawful bases, data retention policies, and EU AI Act requirements.
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

@@ -9,15 +9,16 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Guide the user through contributing artifacts back to the ${PROJECT_NAME} project. Covers GitHub CLI setup, GitHub MCP configuration, PR creation, ZIP export, and manual workflows.
+description: Guide the user through contributing artifacts to GitHub repositories or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation to any repo, ZIP export, and manual workflows.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Contributing
   examples:
-    - "Contribute to codi"
-    - "Share my artifacts"
+    - "Contribute my skill to GitHub"
+    - "Share my artifacts as ZIP"
+    - "Open a PR with my rule"
 ---
 
 # {{name}}
@@ -28,11 +29,14 @@ Help the user contribute their custom artifacts (rules, skills, agents, commands
 
 - User wants to contribute a rule, skill, agent, or command back to the ${PROJECT_NAME} project
 - User asks how to share artifacts with the community or their team
-- User wants to open a pull request to the ${PROJECT_NAME} repository
+- User wants to open a pull request to the ${PROJECT_NAME} repository or any other GitHub repo
+- User wants to contribute presets to a custom or team GitHub repository
 - User asks to export artifacts as a ZIP for private sharing
 - User needs help setting up GitHub CLI or GitHub MCP for contributions
 
 ## Step 1: Prerequisites
+
+**[CODING AGENT]** Check prerequisites before proceeding.
 
 ### GitHub CLI Authentication
 
@@ -75,7 +79,7 @@ The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://git
 
 ## Step 2: Identify What to Contribute
 
-List the user's custom artifacts:
+**[CODING AGENT]** List the user's custom artifacts:
 
 \\\`\\\`\\\`bash
 ls ${PROJECT_DIR}/rules/ ${PROJECT_DIR}/skills/ ${PROJECT_DIR}/agents/ ${PROJECT_DIR}/commands/ 2>/dev/null
@@ -88,6 +92,8 @@ Help the user identify:
 
 ## Step 3: Choose Contribution Method
 
+**[CODING AGENT]** Present options and execute the chosen method.
+
 ### Option A: Interactive CLI (Recommended)
 
 \\\`\\\`\\\`bash
@@ -98,14 +104,28 @@ The wizard will:
 1. Discover all artifacts in \\\`${PROJECT_DIR}/\\\`
 2. Present a multi-select list for choosing which to contribute
 3. Offer two distribution methods:
-   - **Open PR to ${PROJECT_NAME} repository** — requires GitHub CLI auth, targets the \\\`develop\\\` branch
+   - **Open PR to a GitHub repository** — requires GitHub CLI auth
    - **Export as ZIP** — creates a re-importable preset package
 
-For the PR method, the wizard:
-- Clones the official ${PROJECT_NAME} repository
-- Creates a repo on the user's GitHub account (if needed)
-- Converts artifacts to TypeScript templates in \\\`src/templates/\\\`
-- Pushes a branch and opens a PR to \\\`develop\\\`
+For the PR method, the wizard asks which repo to target:
+- The official ${PROJECT_NAME} repository (default)
+- Repos detected from installed presets (contribute back to source)
+- Any custom repository via free text input
+
+To skip the interactive prompt, pass flags directly:
+
+\\\`\\\`\\\`bash
+# Contribute to the official codi repo (default)
+${PROJECT_CLI} contribute --repo ${PROJECT_REPO} --branch develop
+
+# Contribute to a custom or team repository
+${PROJECT_CLI} contribute --repo myorg/shared-presets
+
+# Contribute to a specific branch
+${PROJECT_CLI} contribute --repo myorg/shared-presets --branch main
+\\\`\\\`\\\`
+
+The PR method forks the target repo (if needed), pushes a branch, and opens a PR.
 
 ### Option B: Manual PR (Advanced Users)
 
@@ -176,7 +196,7 @@ If the GitHub MCP server is configured, you can assist the contribution directly
 
 ## Step 4: Quality Checklist
 
-Before contributing, verify the artifact:
+**[CODING AGENT]** Before contributing, verify the artifact:
 
 - [ ] Has valid YAML frontmatter: \\\`name\\\`, \\\`description\\\`, \\\`managed_by\\\`
 - [ ] Uses clear, actionable language with concrete examples
@@ -187,6 +207,8 @@ Before contributing, verify the artifact:
 - [ ] Skills include all skeleton directories: scripts/, references/, assets/, evals/
 
 ## Step 5: Troubleshooting
+
+**[CODING AGENT]** Diagnose and fix based on the symptom below.
 
 ### GitHub CLI not authenticated
 \\\`\\\`\\\`bash
@@ -210,4 +232,8 @@ git push user contrib/my-branch --force-with-lease
 
 ### ZIP import fails
 Ensure the ZIP was created by \\\`${PROJECT_CLI} contribute\\\` — it must contain a \\\`preset.yaml\\\` manifest at the root or one level deep.
+
+## Related Skills
+
+- **codi-preset-creator** — Create and package a preset before contributing it
 `;

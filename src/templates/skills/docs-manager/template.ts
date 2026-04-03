@@ -1,8 +1,4 @@
-import {
-  PROJECT_CLI,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PROJECT_CLI, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -19,6 +15,7 @@ intentHints:
   examples:
     - "Update the docs"
     - "Sync documentation"
+    - "Build the HTML docs site"
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager
@@ -72,7 +69,7 @@ If stale sections are detected, regenerate them:
 npx ${PROJECT_CLI} docs --generate
 \\\`\\\`\\\`
 
-This automatically updates all 21 data tables from their source-of-truth code structures.
+This automatically updates all 20 data tables from their source-of-truth code structures.
 No manual editing is needed for generated sections.
 
 Present the results to the user: which files were updated and which sections changed.
@@ -163,4 +160,9 @@ This skill does NOT:
 - Replace the \\\`doc-engine\\\` skill (which produces branded reports and proposals)
 - Modify source code — it only reads code to check doc freshness
 - Auto-commit changes — all edits require user approval
+
+## Related Skills
+
+- **codi-documentation** — Document user project code, READMEs, and ADRs
+- **codi-doc-engine** — Generate branded reports and proposals
 `;

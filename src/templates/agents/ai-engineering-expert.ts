@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: AI engineering architect. Use for RAG design, embeddings, LLM integration, prompt engineering, guardrails, evaluation frameworks, or cost optimization.
-tools: [Read, Grep, Glob, Bash]
+description: Use when integrating LLMs into products. Covers RAG systems, embeddings, prompt engineering, guardrails, evaluation frameworks, multi-agent orchestration, and cost optimization.
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

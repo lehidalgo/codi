@@ -30,6 +30,7 @@ import { loadPreset } from "../core/preset/preset-loader.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
 import type { PresetInstallOptions } from "./preset-handlers.js";
+import { regenerateConfigs } from "./shared.js";
 import type { PresetData } from "./preset.js";
 import type { parsePresetIdentifier } from "../core/preset/preset-resolver.js";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
@@ -263,9 +264,10 @@ export async function installFromGithub(
         { force: installOptions.force, json: installOptions.json },
       );
       log.info(
-        `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped`,
+        `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
       );
       await mergePresetFlagsFromGithub(configDir, loadResult.data, log);
+      await regenerateConfigs(projectRoot);
     }
 
     return createCommandResult({

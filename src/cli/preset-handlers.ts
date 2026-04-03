@@ -189,9 +189,10 @@ export async function presetInstallUnifiedHandler(
           { force: installOptions.force, json: installOptions.json },
         );
         log.info(
-          `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped`,
+          `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
         );
         await mergePresetFlags(configDir, loadResult.data, log);
+        await regenerateConfigs(projectRoot);
       }
 
       return createCommandResult({

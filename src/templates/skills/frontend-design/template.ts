@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+description: Use when the user asks to build web components, pages, or UI interfaces. Also activate when styling or beautifying any web application. Generates distinctive, production-grade frontends and avoids generic AI aesthetics.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,7 +11,15 @@ intentHints:
   examples:
     - "Build a landing page"
     - "Design a web component"
+    - "Style this app with a distinctive aesthetic"
 ---
+
+## When to Activate
+
+- User asks to build a website, landing page, dashboard, or React/HTML component
+- User wants to style or beautify an existing web interface
+- User needs a visually distinctive frontend artifact or poster
+- User asks to avoid generic or "AI slop" aesthetics
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 

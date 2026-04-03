@@ -2,22 +2,23 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Mobile development patterns and guidelines. Covers iOS (SwiftUI/UIKit), Android (Compose/XML), and cross-platform (KMP, React Native, Flutter) with architecture, testing, and platform-specific best practices.
+description: |
+  Mobile development patterns and guidelines for iOS (SwiftUI/UIKit), Android
+  (Jetpack Compose/XML), and cross-platform (KMP, React Native, Flutter).
+  Use when building, reviewing, or architecting mobile apps. Also activate for
+  mobile testing strategy, accessibility, app store guidelines, or platform-specific patterns.
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Mobile Development
   examples:
-    - "Build a mobile app"
-    - "iOS or Android patterns"
+    - "Build a SwiftUI screen"
+    - "Android Compose best practices"
+    - "React Native architecture"
 ---
 
 # {{name}}
-
-## When to Use
-
-Use when building mobile applications, reviewing mobile code, or making architectural decisions for iOS, Android, or cross-platform projects.
 
 ## When to Activate
 
@@ -126,4 +127,8 @@ Use when building mobile applications, reviewing mobile code, or making architec
 - Performance: 60fps scrolling, fast app launch (<2s cold start)
 - Battery: minimize background work, use efficient networking
 - Permissions: request only when needed, explain why to the user
+
+## Related Skills
+
+- **codi-e2e-testing** — End-to-end testing strategy for mobile flows
 `;

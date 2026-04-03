@@ -22,6 +22,7 @@ intentHints:
   examples:
     - "Create a new rule"
     - "Add a coding convention"
+    - "Enforce TypeScript strict mode"
 ---
 
 # Rule Creator
@@ -195,4 +196,9 @@ Run \\\`${PROJECT_CLI} add rule --all\\\` to list all templates. Major categorie
 - Do NOT exceed the ${MAX_ARTIFACT_CHARS.toLocaleString()} char limit — split into multiple rules if needed
 - Do NOT skip rationale annotations — rules without reasons get ignored
 - Do NOT create overly broad rules — narrow scope is better than wide scope
+
+## Related Skills
+
+- **codi-rule-feedback** — Get feedback on an existing rule's quality and trigger precision
+- **codi-refine-rules** — Batch-refine multiple rules for consistency and clarity
 `;

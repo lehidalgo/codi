@@ -78,6 +78,9 @@ presets:
 | `layers.context` | boolean | Yes | `true` | Include context in generation |
 | `engine` | object | No | — |  |
 | `engine.requiredVersion` | string | No | — |  |
+| `presetRegistry` | object | No | — | Preset registry settings |
+| `presetRegistry.url` | string | Yes | — | Registry URL |
+| `presetRegistry.branch` | string | Yes | `main` | Registry branch |
 | `presets` | string[] | No | — | Presets to load (order matters) |
 <!-- GENERATED:END:manifest_fields -->
 

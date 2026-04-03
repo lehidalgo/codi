@@ -1,0 +1,20 @@
+title = "Gitleaks config"
+
+[allowlist]
+paths = [
+  '''\.env\.example$''',
+  '''\.venv[/\\]''',
+  '''node_modules[/\\]''',
+  '''__pycache__[/\\]''',
+  # Skill templates — contain example patterns and references, not real secrets
+  '''src/templates/skills[/\\]''',
+  # Reference docs and new-skills dev folder
+  '''references[/\\]''',
+  '''new-skills[/\\]''',
+  # Test files
+  '''tests?[/\\]''',
+  '''\.test\.[jt]sx?$''',
+  '''\.spec\.[jt]sx?$''',
+  # Markdown docs
+  '''\.md$''',
+]

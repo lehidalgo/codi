@@ -1,8 +1,4 @@
-import {
-  PROJECT_DIR,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -143,4 +139,8 @@ ${PROJECT_DIR}/feedback/2026-03-28T21-30-00-000Z-commit.json
 - Only report genuine issues — do not fabricate problems
 - If the skill worked perfectly, report \`success\` with empty issues
 - Write the file AFTER completing the task, not during
+
+## Related Skills
+
+- **codi-rule-feedback** — Write structured feedback on a specific rule (same feedback loop, rule-scoped)
 `;

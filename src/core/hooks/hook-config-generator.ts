@@ -12,6 +12,7 @@ export interface HooksConfig {
   commitMsgValidation: boolean;
   testBeforeCommit: boolean;
   templateWiringCheck: boolean;
+  artifactValidation: boolean;
 }
 
 interface FlagHookMapping {
@@ -25,6 +26,11 @@ const FLAG_HOOK_MAPPINGS: FlagHookMapping[] = [
     flagName: "type_checking",
     hookNames: ["tsc", "pyright"],
     check: (flag) => flag.value !== "off" && flag.mode !== "disabled",
+  },
+  {
+    flagName: "security_scan",
+    hookNames: ["bandit", "gosec", "brakeman", "phpcs-security"],
+    check: (flag) => flag.value !== false && flag.mode !== "disabled",
   },
 ];
 
@@ -107,6 +113,12 @@ export function generateHooksConfig(
     });
   }
 
+  allHooks.push({
+    name: "artifact-validate",
+    command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
+    stagedFilter: ".codi/**",
+  });
+
   return {
     hooks: allHooks,
     secretScan,
@@ -115,6 +127,7 @@ export function generateHooksConfig(
     commitMsgValidation: true,
     testBeforeCommit,
     templateWiringCheck: false,
+    artifactValidation: true,
   };
 }
 

@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use this when users request creating art using code, generative art, algorithmic art, flow fields, or particle systems. Create original algorithmic art rather than copying existing artists' work to avoid copyright violations.
+description: Use when the user wants to create generative art, algorithmic art, flow fields, or particle systems using p5.js with seeded randomness. Creates original computational art with interactive parameter exploration.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,7 +11,15 @@ intentHints:
   examples:
     - "Create algorithmic art"
     - "Build a flow field"
+    - "Generate a particle system"
 ---
+
+## When to Activate
+
+- User wants to create generative or algorithmic art using code
+- User mentions flow fields, particle systems, noise functions, or p5.js
+- User asks for an interactive generative artwork with seed-based variation
+- User wants an art piece based on a mathematical or philosophical concept
 
 Algorithmic philosophies are computational aesthetic movements that are then expressed through code. Output .md files (philosophy), .html files (interactive viewer), and .js files (generative algorithms).
 
