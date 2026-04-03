@@ -3,8 +3,7 @@ import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
   name: prefixedName("minimal"),
-  description:
-    "Permissive — security off, no test requirements, all actions allowed",
+  description: "Permissive — security off, no test requirements, all actions allowed",
   version: "1.0.0",
   author: PROJECT_NAME,
   tags: ["minimal", "permissive", "starter"],
@@ -33,6 +32,5 @@ export const preset: BuiltinPresetDefinition = {
   rules: [],
   skills: [],
   agents: [],
-  commands: [],
   mcpServers: [],
 };

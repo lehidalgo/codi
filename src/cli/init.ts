@@ -322,7 +322,7 @@ export async function initHandler(
       ruleTemplates = [...presetDef.rules];
       skillTemplates = [...presetDef.skills];
       agentTemplates = [...presetDef.agents];
-      commandTemplates = [...presetDef.commands];
+      commandTemplates = [...(presetDef.commands ?? [])];
     }
   }
 

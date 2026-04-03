@@ -40,15 +40,13 @@ export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
   return materializeDefinition(definition);
 }
 
-function materializeDefinition(
-  def: BuiltinPresetDefinition,
-): Result<LoadedPreset> {
+function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPreset> {
   const mergedFlags = def.flags;
 
   const rules = materializeRules(def.rules);
   const skills = materializeSkills(def.skills);
   const agents = materializeAgents(def.agents);
-  const commands = materializeCommands(def.commands);
+  const commands = materializeCommands(def.commands ?? []);
   const mcp = materializeMcpServers(def.mcpServers ?? []);
 
   return ok({
@@ -143,20 +141,15 @@ function materializeMcpServers(templateNames: string[]): McpConfig {
       ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
       ...(tmpl.env && Object.keys(tmpl.env).length > 0 && { env: tmpl.env }),
       ...(tmpl.url && { url: tmpl.url }),
-      ...(tmpl.headers &&
-        Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
+      ...(tmpl.headers && Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
     };
   }
   return { servers } as McpConfig;
 }
 
-function parseRuleTemplate(
-  name: string,
-  content: string,
-): NormalizedRule | null {
+function parseRuleTemplate(name: string, content: string): NormalizedRule | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     const d = data as Record<string, unknown>;
     return {
       name: (d["name"] as string) ?? name,
@@ -175,13 +168,9 @@ function parseRuleTemplate(
   }
 }
 
-function parseSkillTemplate(
-  name: string,
-  content: string,
-): NormalizedSkill | null {
+function parseSkillTemplate(name: string, content: string): NormalizedSkill | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     const d = data as Record<string, unknown>;
     return {
       name: (d["name"] as string) ?? name,
@@ -236,13 +225,9 @@ function parseSkillTemplate(
   }
 }
 
-function parseAgentTemplate(
-  name: string,
-  content: string,
-): NormalizedAgent | null {
+function parseAgentTemplate(name: string, content: string): NormalizedAgent | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     return {
       name: (data["name"] as string) ?? name,
       description: (data["description"] as string) ?? "",
@@ -256,13 +241,9 @@ function parseAgentTemplate(
   }
 }
 
-function parseCommandTemplate(
-  name: string,
-  content: string,
-): NormalizedCommand | null {
+function parseCommandTemplate(name: string, content: string): NormalizedCommand | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     return {
       name: (data["name"] as string) ?? name,
       description: (data["description"] as string) ?? "",
