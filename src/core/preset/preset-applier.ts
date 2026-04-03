@@ -3,19 +3,11 @@ import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import { countChanges } from "../../utils/diff.js";
 import { hashContent } from "../../utils/hash.js";
-import {
-  resolveConflicts,
-  type ConflictEntry,
-} from "../../utils/conflict-resolver.js";
+import { resolveConflicts, type ConflictEntry } from "../../utils/conflict-resolver.js";
 import { StateManager } from "../config/state.js";
 import type { ArtifactFileState } from "../config/state.js";
 import type { LoadedPreset } from "./preset-loader.js";
-import type {
-  NormalizedRule,
-  NormalizedSkill,
-  NormalizedAgent,
-  NormalizedCommand,
-} from "../../types/config.js";
+import type { NormalizedRule, NormalizedSkill, NormalizedAgent } from "../../types/config.js";
 import { SKIP_DIRS, SKIP_FILES } from "../../adapters/skill-generator.js";
 
 export interface ApplyOptions {
@@ -48,7 +40,7 @@ interface ConflictFile {
   removals: number;
 }
 
-type ArtifactType = "rule" | "skill" | "agent" | "command" | "mcp-server";
+type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
 
 /**
  * Serializes a frontmatter string value safely.
@@ -86,22 +78,15 @@ export function reconstructSkillContent(skill: NormalizedSkill): string {
   if (skill.context) fm.push(`context: ${skill.context}`);
   if (skill.agent) fm.push(`agent: ${skill.agent}`);
   if (skill.license) fm.push(`license: ${fmStr(skill.license)}`);
-  if (skill.userInvocable !== undefined)
-    fm.push(`user-invocable: ${skill.userInvocable}`);
+  if (skill.userInvocable !== undefined) fm.push(`user-invocable: ${skill.userInvocable}`);
   if (skill.disableModelInvocation !== undefined)
     fm.push(`disable-model-invocation: ${skill.disableModelInvocation}`);
-  if (skill.argumentHint)
-    fm.push(`argument-hint: ${fmStr(skill.argumentHint)}`);
-  if (skill.allowedTools?.length)
-    fm.push(`allowed-tools: ${skill.allowedTools.join(", ")}`);
-  if (skill.tools?.length)
-    fm.push(`tools:\n${skill.tools.map((t) => `  - ${t}`).join("\n")}`);
+  if (skill.argumentHint) fm.push(`argument-hint: ${fmStr(skill.argumentHint)}`);
+  if (skill.allowedTools?.length) fm.push(`allowed-tools: ${skill.allowedTools.join(", ")}`);
+  if (skill.tools?.length) fm.push(`tools:\n${skill.tools.map((t) => `  - ${t}`).join("\n")}`);
   if (skill.compatibility?.length)
-    fm.push(
-      `compatibility:\n${skill.compatibility.map((c) => `  - ${c}`).join("\n")}`,
-    );
-  if (skill.paths?.length)
-    fm.push(`paths:\n${skill.paths.map((p) => `  - ${p}`).join("\n")}`);
+    fm.push(`compatibility:\n${skill.compatibility.map((c) => `  - ${c}`).join("\n")}`);
+  if (skill.paths?.length) fm.push(`paths:\n${skill.paths.map((p) => `  - ${p}`).join("\n")}`);
   if (skill.shell) fm.push(`shell: ${skill.shell}`);
   if (skill.intentHints) {
     fm.push(`intentHints:\n  taskType: ${fmStr(skill.intentHints.taskType)}`);
@@ -125,26 +110,13 @@ export function reconstructAgentContent(agent: NormalizedAgent): string {
   const fm: string[] = ["---", `name: ${agent.name}`];
   fm.push(`description: ${fmStr(agent.description)}`);
   if (agent.model) fm.push(`model: ${agent.model}`);
-  if (agent.tools?.length)
-    fm.push(`tools:\n${agent.tools.map((t) => `  - ${t}`).join("\n")}`);
+  if (agent.tools?.length) fm.push(`tools:\n${agent.tools.map((t) => `  - ${t}`).join("\n")}`);
   if (agent.managedBy) fm.push(`managed_by: ${agent.managedBy}`);
   fm.push("---");
   return fm.join("\n") + "\n\n" + agent.content.trim() + "\n";
 }
 
-export function reconstructCommandContent(cmd: NormalizedCommand): string {
-  const fm: string[] = ["---", `name: ${cmd.name}`];
-  fm.push(`description: ${fmStr(cmd.description)}`);
-  if (cmd.managedBy) fm.push(`managed_by: ${cmd.managedBy}`);
-  fm.push("---");
-  return fm.join("\n") + "\n\n" + cmd.content.trim() + "\n";
-}
-
-function getArtifactPath(
-  configDir: string,
-  type: ArtifactType,
-  name: string,
-): string {
+function getArtifactPath(configDir: string, type: ArtifactType, name: string): string {
   switch (type) {
     case "rule":
       return path.join(configDir, "rules", `${name}.md`);
@@ -152,8 +124,6 @@ function getArtifactPath(
       return path.join(configDir, "skills", name, "SKILL.md");
     case "agent":
       return path.join(configDir, "agents", `${name}.md`);
-    case "command":
-      return path.join(configDir, "commands", `${name}.md`);
     case "mcp-server":
       return path.join(configDir, "mcp-servers", `${name}.yaml`);
   }
@@ -186,18 +156,12 @@ async function readOriginalArtifact(
       return readFileOrNull(path.join(presetDir, "skills", name, "SKILL.md"));
     case "agent":
       return readFileOrNull(path.join(presetDir, "agents", `${name}.md`));
-    case "command":
-      return readFileOrNull(path.join(presetDir, "commands", `${name}.md`));
     default:
       return null;
   }
 }
 
-async function copyResourceTree(
-  srcDir: string,
-  destDir: string,
-  force: boolean,
-): Promise<number> {
+async function copyResourceTree(srcDir: string, destDir: string, force: boolean): Promise<number> {
   let copied = 0;
   let entries;
   try {
@@ -323,40 +287,22 @@ export async function applyPresetArtifacts(
         reconstructAgentContent(a),
     })),
   );
-  const commandItems = await Promise.all(
-    preset.commands.map(async (c) => ({
-      name: c.name,
-      content:
-        (await readOriginalArtifact(
-          configDir,
-          preset.name,
-          "command",
-          c.name,
-        )) ?? reconstructCommandContent(c),
-    })),
-  );
-
-  const mcpItems = Object.entries(preset.mcp.servers).map(
-    ([name, serverConfig]) => ({
-      name,
-      content: stringifyYaml({ name, ...serverConfig }).trimEnd() + "\n",
-    }),
-  );
+  const mcpItems = Object.entries(preset.mcp.servers).map(([name, serverConfig]) => ({
+    name,
+    content: stringifyYaml({ name, ...serverConfig }).trimEnd() + "\n",
+  }));
 
   // Track all items for drift recording
-  const allItems: Array<{ type: ArtifactType; name: string; content: string }> =
-    [
-      ...ruleItems.map((i) => ({ type: "rule" as const, ...i })),
-      ...skillItems.map((i) => ({ type: "skill" as const, ...i })),
-      ...agentItems.map((i) => ({ type: "agent" as const, ...i })),
-      ...commandItems.map((i) => ({ type: "command" as const, ...i })),
-      ...mcpItems.map((i) => ({ type: "mcp-server" as const, ...i })),
-    ];
+  const allItems: Array<{ type: ArtifactType; name: string; content: string }> = [
+    ...ruleItems.map((i) => ({ type: "rule" as const, ...i })),
+    ...skillItems.map((i) => ({ type: "skill" as const, ...i })),
+    ...agentItems.map((i) => ({ type: "agent" as const, ...i })),
+    ...mcpItems.map((i) => ({ type: "mcp-server" as const, ...i })),
+  ];
 
   await collectArtifacts(configDir, "rule", ruleItems, result, conflicts);
   await collectArtifacts(configDir, "skill", skillItems, result, conflicts);
   await collectArtifacts(configDir, "agent", agentItems, result, conflicts);
-  await collectArtifacts(configDir, "command", commandItems, result, conflicts);
   await collectArtifacts(configDir, "mcp-server", mcpItems, result, conflicts);
 
   // Copy skill resource files (scripts, assets, references, agents, LICENSE.txt)

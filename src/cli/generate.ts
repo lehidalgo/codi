@@ -110,10 +110,7 @@ export async function generateHandler(
     try {
       const hookSetup = await detectHookSetup(projectRoot);
       const languages = await detectStack(projectRoot);
-      const hooksConfig = generateHooksConfig(
-        configResult.data.flags,
-        languages,
-      );
+      const hooksConfig = generateHooksConfig(configResult.data.flags, languages);
       if (hooksConfig.hooks.length > 0) {
         const hookResult = await installHooks({
           projectRoot,
@@ -128,10 +125,7 @@ export async function generateHandler(
           artifactValidation: hooksConfig.artifactValidation,
         });
         if (hookResult.ok) {
-          const missingDeps = await checkHookDependencies(
-            hooksConfig.hooks,
-            projectRoot,
-          );
+          const missingDeps = await checkHookDependencies(hooksConfig.hooks, projectRoot);
           if (missingDeps.length > 0) {
             const log = Logger.getInstance();
             log.warn("Missing hook tools — install before committing:");
@@ -142,10 +136,7 @@ export async function generateHandler(
         }
         if (hookResult.ok && hookResult.data.files.length > 0) {
           const configDirHooks = resolveProjectDir(projectRoot);
-          const stateManagerHooks = new StateManager(
-            configDirHooks,
-            projectRoot,
-          );
+          const stateManagerHooks = new StateManager(configDirHooks, projectRoot);
           const now = new Date().toISOString();
           const hookStates: GeneratedFileState[] = [];
           for (const f of hookResult.data.files) {
@@ -228,12 +219,7 @@ export async function generateHandler(
 
 function inferHookFileType(
   filePath: string,
-):
-  | "pre-commit"
-  | "commit-msg"
-  | "secret-scan"
-  | "file-size-check"
-  | "version-check" {
+): "pre-commit" | "commit-msg" | "secret-scan" | "file-size-check" | "version-check" {
   if (filePath.includes("secret-scan")) return "secret-scan";
   if (filePath.includes("file-size-check")) return "file-size-check";
   if (filePath.includes("version-check")) return "version-check";
@@ -243,13 +229,11 @@ function inferHookFileType(
 
 function inferGeneratedFileType(
   filePath: string,
-): "instruction" | "rule" | "skill" | "command" | "agent" | "mcp" | "settings" {
+): "instruction" | "rule" | "skill" | "agent" | "mcp" | "settings" {
   if (filePath.includes("/rules/")) return "rule";
   if (filePath.includes("/skills/")) return "skill";
-  if (filePath.includes("/commands/")) return "command";
   if (filePath.includes("/agents/")) return "agent";
-  if (filePath.includes("mcp.json") || filePath.includes("mcp.toml"))
-    return "mcp";
+  if (filePath.includes("mcp.json") || filePath.includes("mcp.toml")) return "mcp";
   if (filePath.includes("settings.json")) return "settings";
   return "instruction";
 }

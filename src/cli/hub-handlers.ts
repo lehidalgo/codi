@@ -26,13 +26,7 @@ import {
 } from "./preset-handlers.js";
 import { runPresetWizard } from "./preset-wizard.js";
 import { selectArtifactType, runAddWizard } from "./add-wizard.js";
-import {
-  addRuleHandler,
-  addSkillHandler,
-  addAgentHandler,
-  addCommandHandler,
-  addBrandHandler,
-} from "./add.js";
+import { addRuleHandler, addSkillHandler, addAgentHandler, addBrandHandler } from "./add.js";
 import { getAllAdapters } from "../core/generator/adapter-registry.js";
 import { validateHandler } from "./validate.js";
 import { PROJECT_DIR } from "../constants.js";
@@ -44,9 +38,7 @@ export function isCancelled<T>(value: T | symbol): value is symbol {
   return p.isCancel(value);
 }
 
-export async function printResult(
-  promise: Promise<{ exitCode: number }>,
-): Promise<void> {
+export async function printResult(promise: Promise<{ exitCode: number }>): Promise<void> {
   const result = await promise;
   process.stdout.write(formatHuman(result as never) + "\n");
 }
@@ -89,7 +81,6 @@ export async function handleAdd(projectRoot: string): Promise<void> {
     rule: addRuleHandler,
     skill: addSkillHandler,
     agent: addAgentHandler,
-    command: addCommandHandler,
     brand: addBrandHandler,
   };
 
@@ -137,8 +128,7 @@ export async function handleGenerate(projectRoot: string): Promise<void> {
   });
   if (isCancelled(mode)) return;
 
-  const selectedAgents =
-    agentFilter.length === allAgents.length ? undefined : agentFilter;
+  const selectedAgents = agentFilter.length === allAgents.length ? undefined : agentFilter;
   const result = await generateHandler(projectRoot, {
     agent: selectedAgents,
     dryRun: mode === "dry-run" || undefined,
@@ -161,9 +151,7 @@ export async function handleStatus(projectRoot: string): Promise<void> {
   });
   if (isCancelled(showDiff)) return;
 
-  await printResult(
-    statusHandler(projectRoot, { diff: showDiff || undefined }),
-  );
+  await printResult(statusHandler(projectRoot, { diff: showDiff || undefined }));
 }
 
 export async function handleClean(projectRoot: string): Promise<void> {
@@ -217,10 +205,9 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
       { label: "Rules", value: "rules" },
       { label: "Skills", value: "skills" },
       { label: "Agents", value: "agents" },
-      { label: "Commands", value: "commands" },
       { label: "MCP servers", value: "mcp-servers" },
     ],
-    initialValues: ["rules", "skills", "agents", "commands", "mcp-servers"],
+    initialValues: ["rules", "skills", "agents", "mcp-servers"],
     required: true,
   });
   if (isCancelled(layers)) return;
@@ -239,7 +226,6 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
     rules: layerSet.has("rules") || undefined,
     skills: layerSet.has("skills") || undefined,
     agents: layerSet.has("agents") || undefined,
-    commands: layerSet.has("commands") || undefined,
     mcpServers: layerSet.has("mcp-servers") || undefined,
     dryRun: dryRun || undefined,
   });
@@ -396,17 +382,13 @@ async function runSubMenu(
       try {
         await handler(projectRoot);
       } catch (error) {
-        p.log.error(
-          `Action failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        p.log.error(`Action failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
 }
 
-export async function handleCreateConfigureMenu(
-  projectRoot: string,
-): Promise<void> {
+export async function handleCreateConfigureMenu(projectRoot: string): Promise<void> {
   await runSubMenu("create-configure", "Create & configure", projectRoot, {
     add: handleAdd,
     generate: handleGenerate,
@@ -422,9 +404,7 @@ export async function handleBuildShareMenu(projectRoot: string): Promise<void> {
   });
 }
 
-export async function handleDiagnosticsMenu(
-  projectRoot: string,
-): Promise<void> {
+export async function handleDiagnosticsMenu(projectRoot: string): Promise<void> {
   await runSubMenu("diagnostics", "Diagnostics", projectRoot, {
     doctor: handleDoctor,
     status: handleStatus,
@@ -434,9 +414,7 @@ export async function handleDiagnosticsMenu(
   });
 }
 
-export async function handleMaintenanceMenu(
-  projectRoot: string,
-): Promise<void> {
+export async function handleMaintenanceMenu(projectRoot: string): Promise<void> {
   await runSubMenu("maintenance", "Maintenance", projectRoot, {
     clean: handleClean,
     update: handleUpdate,
@@ -502,10 +480,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
           ],
         });
         if (isCancelled(includeBuiltin)) break;
-        const result = await presetListEnhancedHandler(
-          projectRoot,
-          includeBuiltin,
-        );
+        const result = await presetListEnhancedHandler(projectRoot, includeBuiltin);
         process.stdout.write(formatHuman(result) + "\n");
         break;
       }
@@ -515,8 +490,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
       }
       case "install": {
         const source = await p.text({
-          message:
-            "Preset source (ZIP path, github:org/repo, or registry name)",
+          message: "Preset source (ZIP path, github:org/repo, or registry name)",
         });
         if (isCancelled(source) || !source) break;
         const result = await presetInstallUnifiedHandler(projectRoot, source);
@@ -532,12 +506,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
           placeholder: ".",
         });
         if (isCancelled(output)) break;
-        const result = await presetExportHandler(
-          projectRoot,
-          name,
-          "zip",
-          output ?? ".",
-        );
+        const result = await presetExportHandler(projectRoot, name, "zip", output ?? ".");
         process.stdout.write(formatHuman(result) + "\n");
         break;
       }

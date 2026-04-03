@@ -12,10 +12,6 @@ vi.mock("#src/core/scaffolder/agent-template-loader.js", () => ({
   AVAILABLE_AGENT_TEMPLATES: ["codi-code-reviewer"],
   loadAgentTemplate: vi.fn(),
 }));
-vi.mock("#src/core/scaffolder/command-template-loader.js", () => ({
-  AVAILABLE_COMMAND_TEMPLATES: ["codi-commit"],
-  loadCommandTemplate: vi.fn(),
-}));
 vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
   AVAILABLE_MCP_SERVER_TEMPLATES: ["github"],
   loadMcpServerTemplate: vi.fn(),
@@ -34,20 +30,17 @@ vi.mock("#src/core/version/artifact-version-baseline.js", () => ({
 import { loadTemplate } from "#src/core/scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "#src/core/scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "#src/core/scaffolder/agent-template-loader.js";
-import { loadCommandTemplate } from "#src/core/scaffolder/command-template-loader.js";
 import { loadMcpServerTemplate } from "#src/core/scaffolder/mcp-template-loader.js";
 
 const mockLoadTemplate = vi.mocked(loadTemplate);
 const mockLoadSkill = vi.mocked(loadSkillTemplateContent);
 const mockLoadAgent = vi.mocked(loadAgentTemplate);
-const mockLoadCommand = vi.mocked(loadCommandTemplate);
 const mockLoadMcp = vi.mocked(loadMcpServerTemplate);
 
 function allOk() {
   mockLoadTemplate.mockReturnValue({ ok: true, data: "# rule content" });
   mockLoadSkill.mockReturnValue({ ok: true, data: "# skill content" });
   mockLoadAgent.mockReturnValue({ ok: true, data: "# agent content" });
-  mockLoadCommand.mockReturnValue({ ok: true, data: "# command content" });
   mockLoadMcp.mockReturnValue({
     ok: true,
     data: {
@@ -142,26 +135,6 @@ describe("checkTemplateRegistry", () => {
     expect(errors[0]).toMatch(/agent.*codi-code-reviewer/);
   });
 
-  it("returns error when a command template fails to load", async () => {
-    allOk();
-    mockLoadCommand.mockReturnValueOnce({
-      ok: false,
-      errors: [
-        {
-          code: "E_CONFIG_NOT_FOUND",
-          message: "not found",
-          severity: "error",
-          hint: "",
-        },
-      ],
-    });
-    const { checkTemplateRegistry } =
-      await import("#src/core/scaffolder/template-registry-check.js");
-    const errors = checkTemplateRegistry();
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatch(/command.*codi-commit/);
-  });
-
   it("returns error when an MCP template fails to load", async () => {
     allOk();
     mockLoadMcp.mockReturnValueOnce({
@@ -196,7 +169,6 @@ describe("checkTemplateRegistry", () => {
         },
       ],
     });
-    mockLoadCommand.mockReturnValue({ ok: true, data: "# ok" });
     mockLoadMcp.mockReturnValue({
       ok: true,
       data: { name: "github", description: "", version: 1, command: "npx", args: [] },

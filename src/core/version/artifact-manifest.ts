@@ -16,7 +16,7 @@ import type { InstalledArtifactVersion } from "./artifact-version.js";
 
 const ArtifactEntrySchema = z.object({
   name: z.string(),
-  type: z.enum(["rule", "skill", "agent", "command", "mcp-server"]),
+  type: z.enum(["rule", "skill", "agent", "mcp-server"]),
   contentHash: z.string(),
   installedArtifactVersion: z.union([z.number().int().positive(), z.literal("unknown")]),
   installedAt: z.string(),
@@ -141,12 +141,6 @@ export async function bootstrapManifestFromState(
     { names: existingSelections.skills, type: "skill", dirName: "skills", fileName: "SKILL.md" },
     { names: existingSelections.agents, type: "agent", dirName: "agents", fileName: undefined },
     {
-      names: existingSelections.commands,
-      type: "command",
-      dirName: "commands",
-      fileName: undefined,
-    },
-    {
       names: existingSelections.mcpServers ?? [],
       type: "mcp-server",
       dirName: "mcp-servers",
@@ -203,7 +197,6 @@ export async function syncManifestOnUpdate(
     rules: string[];
     skills: string[];
     agents: string[];
-    commands: string[];
     mcpServers: string[];
   },
 ): Promise<void> {
@@ -222,11 +215,6 @@ export async function syncManifestOnUpdate(
       names: updated.agents,
       type: "agent",
       fileFn: (n) => path.join(configDir, "agents", `${n}.md`),
-    },
-    {
-      names: updated.commands,
-      type: "command",
-      fileFn: (n) => path.join(configDir, "commands", `${n}.md`),
     },
     {
       names: updated.mcpServers,

@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   buildProjectOverview,
   buildArchitectureSummary,
-  buildCommandsTable,
   buildAgentsTable,
   buildSkillRoutingTable,
   buildDevelopmentNotes,
@@ -37,25 +36,22 @@ describe("buildProjectOverview", () => {
 });
 
 describe("buildArchitectureSummary", () => {
-  it("lists rules, skills, agents, commands", () => {
+  it("lists rules, skills, agents", () => {
     const config = createMockConfig({
       skills: [{ name: "deploy", description: "d", content: "c" }],
       agents: [{ name: "reviewer", description: "r", content: "c" }],
-      commands: [{ name: "test", description: "t", content: "c" }],
     });
     const result = buildArchitectureSummary(config);
     expect(result).toContain("**Rules** (2)");
     expect(result).toContain("**Skills** (1)");
     expect(result).toContain("**Agents** (1)");
-    expect(result).toContain("**Commands** (1)");
   });
 
   it("omits empty categories", () => {
-    const config = createMockConfig({ skills: [], agents: [], commands: [] });
+    const config = createMockConfig({ skills: [], agents: [] });
     const result = buildArchitectureSummary(config);
     expect(result).not.toContain("Skills");
     expect(result).not.toContain("Agents");
-    expect(result).not.toContain("Commands");
   });
 
   it("omits rules section when no rules", () => {
@@ -63,31 +59,9 @@ describe("buildArchitectureSummary", () => {
       rules: [],
       skills: [],
       agents: [],
-      commands: [],
     });
     const result = buildArchitectureSummary(config);
     expect(result).not.toContain("Rules");
-  });
-});
-
-describe("buildCommandsTable", () => {
-  it("returns null when no commands", () => {
-    const config = createMockConfig({ commands: [] });
-    expect(buildCommandsTable(config)).toBeNull();
-  });
-
-  it("builds markdown table with commands", () => {
-    const config = createMockConfig({
-      commands: [
-        { name: "deploy", description: "Deploy the app", content: "c" },
-        { name: "test", description: "Run tests", content: "c" },
-      ],
-    });
-    const result = buildCommandsTable(config)!;
-    expect(result).toContain("## Key Commands");
-    expect(result).toContain("`/deploy`");
-    expect(result).toContain("`/test`");
-    expect(result).toContain("Deploy the app");
   });
 });
 

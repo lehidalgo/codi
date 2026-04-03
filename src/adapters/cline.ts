@@ -39,7 +39,6 @@ export const clineAdapter: AgentAdapter = {
     configRoot: ".cline",
     rules: ".cline",
     skills: ".cline/skills",
-    commands: null,
     agents: null,
     instructionFile: ".clinerules",
     mcpConfig: null,
@@ -48,7 +47,6 @@ export const clineAdapter: AgentAdapter = {
   capabilities: {
     rules: true,
     skills: true,
-    commands: false,
     mcp: false,
     frontmatter: false,
     progressiveLoading: false,

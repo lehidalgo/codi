@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import path from "node:path";
 import { PROJECT_DIR } from "#src/constants.js";
-import {
-  runCli,
-  createTempProject,
-  fileExists,
-  readFile,
-} from "./helpers/cli-harness.js";
+import { runCli, createTempProject, fileExists, readFile } from "./helpers/cli-harness.js";
 
 vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 
@@ -39,13 +34,7 @@ describe("E2E: add artifacts", () => {
   });
 
   it("adds a rule with template", async () => {
-    const result = await runCli(projectDir, [
-      "add",
-      "rule",
-      "sec-rule",
-      "-t",
-      "security",
-    ]);
+    const result = await runCli(projectDir, ["add", "rule", "sec-rule", "-t", "security"]);
     expect(result.exitCode).toBe(0);
 
     const rulePath = path.join(projectDir, PROJECT_DIR, "rules", "sec-rule.md");
@@ -69,36 +58,18 @@ describe("E2E: add artifacts", () => {
     const result = await runCli(projectDir, ["add", "agent", "my-agent"]);
     expect(result.exitCode).toBe(0);
 
-    const agentPath = path.join(
-      projectDir,
-      PROJECT_DIR,
-      "agents",
-      "my-agent.md",
-    );
+    const agentPath = path.join(projectDir, PROJECT_DIR, "agents", "my-agent.md");
     expect(await fileExists(agentPath)).toBe(true);
 
     const content = await readFile(agentPath);
     expect(content).toContain("name: my-agent");
   });
 
-  it("adds a command", async () => {
-    const result = await runCli(projectDir, ["add", "command", "my-cmd"]);
-    expect(result.exitCode).toBe(0);
-
-    const cmdPath = path.join(projectDir, PROJECT_DIR, "commands", "my-cmd.md");
-    expect(await fileExists(cmdPath)).toBe(true);
-  });
-
   it("adds an MCP server", async () => {
     const result = await runCli(projectDir, ["add", "mcp-server", "my-server"]);
     expect(result.exitCode).toBe(0);
 
-    const mcpPath = path.join(
-      projectDir,
-      PROJECT_DIR,
-      "mcp-servers",
-      "my-server.yaml",
-    );
+    const mcpPath = path.join(projectDir, PROJECT_DIR, "mcp-servers", "my-server.yaml");
     expect(await fileExists(mcpPath)).toBe(true);
   });
 

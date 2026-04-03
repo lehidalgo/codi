@@ -181,29 +181,6 @@ describe("loadPresetFromDir", () => {
     expect(result.data.agents[0]!.name).toBe(prefixedName("code-reviewer"));
   });
 
-  it("resolves commands from builtin templates by name", async () => {
-    const presetDir = path.join(presetsDir, "with-commands");
-    await fs.mkdir(presetDir, { recursive: true });
-    await fs.writeFile(
-      path.join(presetDir, "preset.yaml"),
-      [
-        "name: with-commands",
-        "description: Preset with commands",
-        "version: 1.0.0",
-        "artifacts:",
-        "  commands:",
-        `    - ${prefixedName("test-run")}`,
-      ].join("\n"),
-      "utf-8",
-    );
-
-    const result = await loadPresetFromDir("with-commands", presetsDir);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.commands.length).toBe(1);
-    expect(result.data.commands[0]!.name).toBe(prefixedName("test-run"));
-  });
-
   it("loads MCP config from preset directory", async () => {
     const presetDir = path.join(presetsDir, "with-mcp");
     await fs.mkdir(presetDir, { recursive: true });
@@ -279,12 +256,9 @@ describe("loadPreset — builtin presets", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.name).toBe(prefixedName("minimal"));
-    // Minimal preset has rules, skills, agents, or commands
+    // Minimal preset has rules, skills, or agents
     const totalArtifacts =
-      result.data.rules.length +
-      result.data.skills.length +
-      result.data.agents.length +
-      result.data.commands.length;
+      result.data.rules.length + result.data.skills.length + result.data.agents.length;
     expect(totalArtifacts).toBeGreaterThanOrEqual(0);
   });
 

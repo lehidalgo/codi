@@ -10,7 +10,7 @@ import type { TemplateCounts } from "../types.js";
 export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
-description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, skills, agents, commands, configuration, verification, or troubleshooting ${PROJECT_NAME} setup.
+description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, skills, agents, configuration, verification, or troubleshooting ${PROJECT_NAME} setup.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
@@ -20,28 +20,27 @@ intentHints:
     - "Add a rule"
     - "Manage codi config"
     - "Check codi installation health"
-version: 1
+version: 2
 ---
 
 # ${PROJECT_NAME_DISPLAY} Operations
 
 ## When to Activate
 
-- User wants to add, update, or remove rules, skills, agents, or commands
+- User wants to add, update, or remove rules, skills, or agents
 - User needs to configure flags, presets, or MCP servers
 - User asks to verify, diagnose, or troubleshoot the ${PROJECT_NAME} installation
 - User asks about drift, backups, or regenerating agent config files
 
 ## Artifact Lifecycle
 
-${PROJECT_NAME_DISPLAY} manages 4 artifact types with identical lifecycle:
+${PROJECT_NAME_DISPLAY} manages 3 artifact types with identical lifecycle:
 
 | Type | Location | Create | Templates |
 |------|----------|--------|-----------|
 | Rules | ${PROJECT_DIR}/rules/ | ${PROJECT_CLI} add rule | ${counts.rules} templates |
 | Skills | ${PROJECT_DIR}/skills/ | ${PROJECT_CLI} add skill | ${counts.skills} templates |
 | Agents | ${PROJECT_DIR}/agents/ | ${PROJECT_CLI} add agent | ${counts.agents} templates |
-| Commands | ${PROJECT_DIR}/commands/ | ${PROJECT_CLI} add command | ${counts.commands} templates |
 
 ### Creating Artifacts
 
@@ -51,7 +50,7 @@ ${PROJECT_CLI} add rule <name>                          # Blank skeleton (manage
 ${PROJECT_CLI} add rule --all                           # All templates at once
 \`\`\`
 
-Same pattern for skill, agent, command.
+Same pattern for skill, agent.
 
 ### Ownership (managed_by)
 

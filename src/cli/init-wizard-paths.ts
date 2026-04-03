@@ -13,10 +13,6 @@ import {
   loadAgentTemplate,
 } from "../core/scaffolder/agent-template-loader.js";
 import {
-  AVAILABLE_COMMAND_TEMPLATES,
-  loadCommandTemplate,
-} from "../core/scaffolder/command-template-loader.js";
-import {
   AVAILABLE_MCP_SERVER_TEMPLATES,
   loadMcpServerTemplate,
 } from "../core/scaffolder/mcp-template-loader.js";
@@ -25,7 +21,6 @@ import { groupMultiselect } from "./group-multiselect.js";
 import {
   RULE_CATEGORIES,
   AGENT_CATEGORIES,
-  COMMAND_CATEGORIES,
   MCP_SERVER_CATEGORIES,
   buildSkillCategoryMap,
   buildGroupedInventoryOptions,
@@ -164,7 +159,6 @@ export async function handleZipPath(agents: string[]): Promise<WizardResult | nu
     rules: [],
     skills: [],
     agentTemplates: [],
-    commandTemplates: [],
     mcpServers: [],
     preset: DEFAULT_PRESET,
     versionPin: true,
@@ -186,7 +180,6 @@ export async function handleGithubPath(agents: string[]): Promise<WizardResult |
     rules: [],
     skills: [],
     agentTemplates: [],
-    commandTemplates: [],
     mcpServers: [],
     preset: DEFAULT_PRESET,
     versionPin: true,
@@ -206,7 +199,6 @@ export async function handlePresetPath(
   let rules: string[] | undefined = existingSelections?.rules;
   let skills: string[] | undefined = existingSelections?.skills;
   let agentTpls: string[] | undefined = existingSelections?.agents;
-  let commands: string[] | undefined = existingSelections?.commands;
   let mcpServers: string[] | undefined = existingSelections?.mcpServers;
   let saveAsPreset: string | undefined;
 
@@ -317,33 +309,6 @@ export async function handlePresetPath(
       }
       case 5: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
-        const presetCommands = new Set(presetDef?.commands ?? []);
-        const commandInventory = inventory
-          ? filterInventoryByType(inventory, "command")
-          : undefined;
-        const val = await groupMultiselect({
-          message: `Commands (${getOptionCount(commandInventory?.length, AVAILABLE_COMMAND_TEMPLATES.length)} total)`,
-          options: commandInventory
-            ? buildGroupedInventoryOptions(commandInventory, COMMAND_CATEGORIES)
-            : buildGroupedBasicOptions(AVAILABLE_COMMAND_TEMPLATES, COMMAND_CATEGORIES, (t) =>
-                loadCommandTemplate(t),
-              ),
-          initialValues:
-            commands ?? AVAILABLE_COMMAND_TEMPLATES.filter((t) => presetCommands.has(t)),
-          required: false,
-          selectableGroups: true,
-        });
-        if (isBack(val)) {
-          step--;
-          break;
-        }
-        commands = val as string[];
-        p.log.info(`Selected ${commands.length} / ${AVAILABLE_COMMAND_TEMPLATES.length} commands`);
-        step++;
-        break;
-      }
-      case 6: {
-        const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetMcps = new Set(presetDef?.mcpServers ?? []);
         const mcpInventory = inventory ? filterInventoryByType(inventory, "mcp-server") : undefined;
         const val = await groupMultiselect({
@@ -374,7 +339,7 @@ export async function handlePresetPath(
         step++;
         break;
       }
-      case 7: {
+      case 6: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const flagsChanged = !sameFlagValues(editedFlags!, originalFlags);
         const changed =
@@ -382,7 +347,6 @@ export async function handlePresetPath(
           !sameArrays(rules!, [...(presetDef?.rules ?? [])]) ||
           !sameArrays(skills!, [...(presetDef?.skills ?? [])]) ||
           !sameArrays(agentTpls!, [...(presetDef?.agents ?? [])]) ||
-          !sameArrays(commands!, [...(presetDef?.commands ?? [])]) ||
           !sameArrays(mcpServers!, [...(presetDef?.mcpServers ?? [])]);
 
         if (changed) {
@@ -405,7 +369,7 @@ export async function handlePresetPath(
         step++;
         break;
       }
-      case 8: {
+      case 7: {
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
@@ -417,28 +381,26 @@ export async function handlePresetPath(
           break;
         }
 
-        const presetDef = getBuiltinPresetDefinition(selectedPreset!);
-        const flagsChanged = !sameFlagValues(editedFlags!, originalFlags);
-        const changed =
-          flagsChanged ||
-          !sameArrays(rules!, [...(presetDef?.rules ?? [])]) ||
-          !sameArrays(skills!, [...(presetDef?.skills ?? [])]) ||
-          !sameArrays(agentTpls!, [...(presetDef?.agents ?? [])]) ||
-          !sameArrays(commands!, [...(presetDef?.commands ?? [])]) ||
-          !sameArrays(mcpServers!, [...(presetDef?.mcpServers ?? [])]);
+        const presetDef2 = getBuiltinPresetDefinition(selectedPreset!);
+        const flagsChanged2 = !sameFlagValues(editedFlags!, originalFlags);
+        const changed2 =
+          flagsChanged2 ||
+          !sameArrays(rules!, [...(presetDef2?.rules ?? [])]) ||
+          !sameArrays(skills!, [...(presetDef2?.skills ?? [])]) ||
+          !sameArrays(agentTpls!, [...(presetDef2?.agents ?? [])]) ||
+          !sameArrays(mcpServers!, [...(presetDef2?.mcpServers ?? [])]);
 
         p.outro("Configuration complete.");
         return {
           agents,
-          configMode: changed ? "custom" : "preset",
-          presetName: changed ? undefined : selectedPreset,
+          configMode: changed2 ? "custom" : "preset",
+          presetName: changed2 ? undefined : selectedPreset,
           selectedPresetName: selectedPreset,
           saveAsPreset,
           languages: [],
           rules: rules!,
           skills: skills!,
           agentTemplates: agentTpls!,
-          commandTemplates: commands!,
           mcpServers: mcpServers!,
           preset: selectedPreset!,
           flags: editedFlags,
@@ -460,7 +422,6 @@ export async function handleCustomPath(
   let rules: string[] | undefined;
   let skills: string[] | undefined;
   let agentTpls: string[] | undefined;
-  let commandTpls: string[] | undefined;
   let mcpServers: string[] | undefined;
   let preset: string | undefined;
   let saveAsPreset: string | undefined;
@@ -535,33 +496,6 @@ export async function handleCustomPath(
         break;
       }
       case 3: {
-        const commandInventory = inventory
-          ? filterInventoryByType(inventory, "command")
-          : undefined;
-        const val = await groupMultiselect({
-          message: `Select commands (${getOptionCount(commandInventory?.length, AVAILABLE_COMMAND_TEMPLATES.length)} total)`,
-          options: commandInventory
-            ? buildGroupedInventoryOptions(commandInventory, COMMAND_CATEGORIES)
-            : buildGroupedBasicOptions(AVAILABLE_COMMAND_TEMPLATES, COMMAND_CATEGORIES, (t) =>
-                loadCommandTemplate(t),
-              ),
-          initialValues: commandTpls ??
-            existingSelections?.commands ?? [...AVAILABLE_COMMAND_TEMPLATES],
-          required: false,
-          selectableGroups: true,
-        });
-        if (isBack(val)) {
-          step--;
-          break;
-        }
-        commandTpls = val as string[];
-        p.log.info(
-          `Selected ${commandTpls.length} / ${AVAILABLE_COMMAND_TEMPLATES.length} commands`,
-        );
-        step++;
-        break;
-      }
-      case 4: {
         const mcpInventory = inventory ? filterInventoryByType(inventory, "mcp-server") : undefined;
         const val = await groupMultiselect({
           message: `Select MCP servers (${getOptionCount(mcpInventory?.length, AVAILABLE_MCP_SERVER_TEMPLATES.length)} total)`,
@@ -590,7 +524,7 @@ export async function handleCustomPath(
         step++;
         break;
       }
-      case 5: {
+      case 4: {
         const val = await p.select({
           message: "Choose flag preset",
           options: [
@@ -619,7 +553,7 @@ export async function handleCustomPath(
         step++;
         break;
       }
-      case 6: {
+      case 5: {
         const save = await p.confirm({
           message: "Save this selection as a named preset for reuse?",
           initialValue: false,
@@ -649,7 +583,7 @@ export async function handleCustomPath(
         step++;
         break;
       }
-      case 7: {
+      case 6: {
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
@@ -670,7 +604,6 @@ export async function handleCustomPath(
           rules: rules!,
           skills: skills!,
           agentTemplates: agentTpls!,
-          commandTemplates: commandTpls!,
           mcpServers: mcpServers!,
           preset: (preset ?? DEFAULT_PRESET) as string,
           versionPin: versionPin as boolean,

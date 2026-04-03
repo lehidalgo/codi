@@ -11,7 +11,6 @@ export function getTemplate(counts: TemplateCounts): string {
   const RULE_TEMPLATE_COUNT = counts.rules;
   const SKILL_TEMPLATE_COUNT = counts.skills;
   const AGENT_TEMPLATE_COUNT = counts.agents;
-  const COMMAND_TEMPLATE_COUNT = counts.commands;
   const FLAG_COUNT = counts.flags;
 
   return `---
@@ -29,7 +28,7 @@ intentHints:
     - "Run end-to-end tests"
     - "Validate the full installation"
     - "Audit codi end-to-end"
-version: 1
+version: 2
 ---
 
 # {{name}}
@@ -81,9 +80,8 @@ Expected: Both files exist (pre-commit runner + commit message validator).
 npx ${PROJECT_CLI} add rule --all --json
 npx ${PROJECT_CLI} add skill --all --json
 npx ${PROJECT_CLI} add agent --all --json
-npx ${PROJECT_CLI} add command --all --json
 \\\`\\\`\\\`
-Expected: ${RULE_TEMPLATE_COUNT} rules, ${SKILL_TEMPLATE_COUNT} skills, ${AGENT_TEMPLATE_COUNT} agents, ${COMMAND_TEMPLATE_COUNT} commands. All managed_by: ${PROJECT_NAME}.
+Expected: ${RULE_TEMPLATE_COUNT} rules, ${SKILL_TEMPLATE_COUNT} skills, ${AGENT_TEMPLATE_COUNT} agents. All managed_by: ${PROJECT_NAME}.
 
 **[SYSTEM]** Add custom artifacts:
 \\\`\\\`\\\`bash
@@ -134,7 +132,7 @@ Expected: Strict shows restricted instructions. Balanced restores defaults.
 
 **[SYSTEM]** Artifact refresh:
 \\\`\\\`\\\`bash
-npx ${PROJECT_CLI} update --rules --skills --agents --commands --dry-run --json
+npx ${PROJECT_CLI} update --rules --skills --agents --dry-run --json
 \\\`\\\`\\\`
 Expected: Managed artifacts listed. Custom (managed_by: user) skipped.
 
@@ -147,7 +145,7 @@ Expected: Managed artifacts listed. Custom (managed_by: user) skipped.
 npx ${PROJECT_CLI} preset create test-preset --json
 npx ${PROJECT_CLI} preset list --json
 \\\`\\\`\\\`
-Expected: Preset directory created at ${PROJECT_DIR}/presets/test-preset/ with preset.yaml and subdirs (rules/, skills/, agents/, commands/). Visible in list.
+Expected: Preset directory created at ${PROJECT_DIR}/presets/test-preset/ with preset.yaml and subdirs (rules/, skills/, agents/). Visible in list.
 
 ### 7b: Built-in Presets
 
@@ -163,7 +161,7 @@ Expected: Shows 6 built-in presets: minimal, balanced, strict, fullstack, develo
 \\\`\\\`\\\`bash
 npx ${PROJECT_CLI} preset validate test-preset --json
 \\\`\\\`\\\`
-Expected: Preset "test-preset" is valid. Reports version, artifact counts (rules: 0, skills: 0, agents: 0, commands: 0).
+Expected: Preset "test-preset" is valid. Reports version, artifact counts (rules: 0, skills: 0, agents: 0).
 
 ### 7d: Export as ZIP
 

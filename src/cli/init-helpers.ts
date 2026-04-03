@@ -92,7 +92,6 @@ export interface ArtifactSelections {
   rules: string[];
   skills: string[];
   agents: string[];
-  commands: string[];
   mcpServers: string[];
 }
 
@@ -115,7 +114,6 @@ export async function removeDeselectedArtifacts(
   }> = [
     { type: "rules", dirName: "rules" },
     { type: "agents", dirName: "agents" },
-    { type: "commands", dirName: "commands" },
     { type: "mcpServers", dirName: "mcp-servers" },
     { type: "skills", dirName: "skills", isDir: true },
   ];
@@ -179,7 +177,6 @@ export async function syncManifestOnInit(
   ruleTemplates: string[],
   skillTemplates: string[],
   agentTemplates: string[],
-  commandTemplates: string[],
   mcpServerTemplates: string[],
   prevSelections?: ArtifactSelections,
 ): Promise<void> {
@@ -190,7 +187,6 @@ export async function syncManifestOnInit(
       rules: ruleTemplates,
       skills: skillTemplates,
       agents: agentTemplates,
-      commands: commandTemplates,
       mcpServers: mcpServerTemplates,
     };
     const removed = await removeDeselectedArtifacts(configDir, prevSelections, nextSelections);
@@ -201,7 +197,7 @@ export async function syncManifestOnInit(
 
   const reads: Array<{
     names: string[];
-    type: "rule" | "skill" | "agent" | "command" | "mcp-server";
+    type: "rule" | "skill" | "agent" | "mcp-server";
     fileFn: (name: string) => string;
   }> = [
     { names: ruleTemplates, type: "rule", fileFn: (n) => path.join(configDir, "rules", `${n}.md`) },
@@ -216,11 +212,6 @@ export async function syncManifestOnInit(
       fileFn: (n) => path.join(configDir, "agents", `${n}.md`),
     },
     {
-      names: commandTemplates,
-      type: "command",
-      fileFn: (n) => path.join(configDir, "commands", `${n}.md`),
-    },
-    {
       names: mcpServerTemplates,
       type: "mcp-server",
       fileFn: (n) => path.join(configDir, "mcp-servers", `${n}.yaml`),
@@ -229,7 +220,7 @@ export async function syncManifestOnInit(
 
   const artifactData: Array<{
     name: string;
-    type: "rule" | "skill" | "agent" | "command" | "mcp-server";
+    type: "rule" | "skill" | "agent" | "mcp-server";
     content: string;
     managedBy: "codi" | "user";
     artifactVersion: number | "unknown";

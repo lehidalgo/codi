@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   RULE_CATEGORIES,
   AGENT_CATEGORIES,
-  COMMAND_CATEGORIES,
   MCP_SERVER_CATEGORIES,
   buildSkillCategoryMap,
   buildGroupedOptions,
@@ -20,7 +19,6 @@ import {
   loadSkillTemplateContent,
 } from "#src/core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "#src/core/scaffolder/command-template-loader.js";
 import { AVAILABLE_MCP_SERVER_TEMPLATES } from "#src/core/scaffolder/mcp-template-loader.js";
 
 // --- formatLabel ---
@@ -129,27 +127,6 @@ describe("AGENT_CATEGORIES", () => {
   it("has no duplicate template names", () => {
     const seen = new Set<string>();
     for (const names of Object.values(AGENT_CATEGORIES)) {
-      for (const name of names) {
-        expect(seen.has(name)).toBe(false);
-        seen.add(name);
-      }
-    }
-  });
-});
-
-// --- COMMAND_CATEGORIES coverage ---
-
-describe("COMMAND_CATEGORIES", () => {
-  it("covers all AVAILABLE_COMMAND_TEMPLATES", () => {
-    const allCategorized = new Set(Object.values(COMMAND_CATEGORIES).flat());
-    for (const name of AVAILABLE_COMMAND_TEMPLATES) {
-      expect(allCategorized.has(name)).toBe(true);
-    }
-  });
-
-  it("has no duplicate template names", () => {
-    const seen = new Set<string>();
-    for (const names of Object.values(COMMAND_CATEGORIES)) {
       for (const name of names) {
         expect(seen.has(name)).toBe(false);
         seen.add(name);
@@ -273,7 +250,7 @@ describe("buildGroupedUpgradeOptions", () => {
         "codi-commit",
         {
           name: "codi-commit",
-          type: "command" as const,
+          type: "skill" as const,
           status: "outdated" as const,
           installedVersion: 1,
           availableVersion: 2,
@@ -300,7 +277,7 @@ describe("buildGroupedUpgradeOptions", () => {
         "codi-commit",
         {
           name: "codi-commit",
-          type: "command" as const,
+          type: "skill" as const,
           status: "up-to-date" as const,
           installedVersion: 2,
           availableVersion: 2,
@@ -326,28 +303,28 @@ describe("buildGroupedInventoryOptions", () => {
     const result = buildGroupedInventoryOptions(
       [
         {
-          name: "codi-commit",
-          type: "command",
+          name: "codi-code-reviewer",
+          type: "agent",
           status: "builtin-original",
           installed: true,
           managedBy: "codi",
           installedArtifactVersion: 1,
-          hint: "Commit workflow",
+          hint: "Code reviewer",
         },
         {
-          name: "my-local-command",
-          type: "command",
+          name: "my-local-agent",
+          type: "agent",
           status: "custom-user",
           installed: true,
           managedBy: "user",
           installedArtifactVersion: null,
-          hint: "Local command",
+          hint: "Local agent",
         },
       ],
-      COMMAND_CATEGORIES,
+      AGENT_CATEGORIES,
     );
 
-    expect(result["Daily Workflow"]?.[0]?.label).toContain("[installed]");
+    expect(result["Code Quality"]?.[0]?.label).toContain("[installed]");
     expect(result["Installed Custom"]?.[0]?.label).toContain("[user]");
     expect(result["Installed Custom"]?.[0]?.hint).toContain("user-managed local artifact");
   });
@@ -356,20 +333,20 @@ describe("buildGroupedInventoryOptions", () => {
     const result = buildGroupedInventoryOptions(
       [
         {
-          name: "codi-commit",
-          type: "command",
+          name: "codi-code-reviewer",
+          type: "agent",
           status: "builtin-modified",
           installed: true,
           managedBy: "codi",
           installedArtifactVersion: 1,
-          hint: "Commit workflow",
+          hint: "Code reviewer",
         },
       ],
-      COMMAND_CATEGORIES,
+      AGENT_CATEGORIES,
     );
 
-    const option = result["Daily Workflow"]?.[0];
+    const option = result["Code Quality"]?.[0];
     expect(option?.label).toContain("[modified]");
-    expect(option?.hint).toBe("modified locally | Commit workflow");
+    expect(option?.hint).toBe("modified locally | Code reviewer");
   });
 });

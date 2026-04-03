@@ -183,7 +183,6 @@ describe("update command handler", () => {
     expect(result.data.rulesUpdated).toEqual([]);
     expect(result.data.skillsUpdated).toEqual([]);
     expect(result.data.agentsUpdated).toEqual([]);
-    expect(result.data.commandsUpdated).toEqual([]);
   });
 
   it("refreshes managed skills with --skills", async () => {
@@ -249,28 +248,6 @@ describe("update command handler", () => {
     const result = await updateHandler(tmpDir, { json: true, agents: true });
     expect(result.success).toBe(true);
     expect(result.data.agentsUpdated).toContain(agentName);
-  });
-
-  it("refreshes managed commands with --commands", async () => {
-    const configDir = path.join(tmpDir, PROJECT_DIR);
-    await fs.writeFile(
-      path.join(configDir, "flags.yaml"),
-      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
-      "utf-8",
-    );
-
-    const commandsDir = path.join(configDir, "commands");
-    await fs.mkdir(commandsDir, { recursive: true });
-    const cmdName = prefixedName("test-run");
-    await fs.writeFile(
-      path.join(commandsDir, `${cmdName}.md`),
-      `---\nname: ${cmdName}\nmanaged_by: ${PROJECT_NAME}\n---\nold command content`,
-      "utf-8",
-    );
-
-    const result = await updateHandler(tmpDir, { json: true, commands: true });
-    expect(result.success).toBe(true);
-    expect(result.data.commandsUpdated).toContain(cmdName);
   });
 
   it("refreshes managed MCP servers with --mcp-servers", async () => {

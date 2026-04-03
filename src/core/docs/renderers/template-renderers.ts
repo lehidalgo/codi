@@ -13,8 +13,6 @@ interface TemplateCounts {
   skillNames: string[];
   agents: number;
   agentNames: string[];
-  commands: number;
-  commandNames: string[];
 }
 
 export function renderTemplateCounts(counts: TemplateCounts): string {
@@ -24,7 +22,6 @@ export function renderTemplateCounts(counts: TemplateCounts): string {
     `| **Rules** | ${counts.rules} | ${counts.ruleNames.join(", ")} |`,
     `| **Skills** | ${counts.skills} | ${counts.skillNames.join(", ")} |`,
     `| **Agents** | ${counts.agents} | ${counts.agentNames.join(", ")} |`,
-    `| **Commands** | ${counts.commands} | ${counts.commandNames.join(", ")} |`,
   ].join("\n");
 }
 
@@ -35,7 +32,6 @@ export function renderTemplateCountsCompact(counts: TemplateCounts): string {
     `| **Rules** | ${counts.rules} |`,
     `| **Skills** | ${counts.skills} |`,
     `| **Agents** | ${counts.agents} |`,
-    `| **Commands** | ${counts.commands} |`,
   ].join("\n");
 }
 
@@ -52,9 +48,7 @@ export function renderRuleTemplateList(names: string[]): string {
 // Skill templates by category
 // ---------------------------------------------------------------------------
 
-export function renderSkillTemplatesByCategory(
-  categoryMap: Record<string, string[]>,
-): string {
+export function renderSkillTemplatesByCategory(categoryMap: Record<string, string[]>): string {
   const rows = Object.entries(categoryMap)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([category, skills]) => {
@@ -78,15 +72,6 @@ export function extractSkillCategory(content: string): string {
 // ---------------------------------------------------------------------------
 
 export function renderAgentTemplateList(names: string[]): string {
-  const sorted = [...names].sort();
-  return sorted.map((n) => `\`${n}\``).join(", ");
-}
-
-// ---------------------------------------------------------------------------
-// Command template list
-// ---------------------------------------------------------------------------
-
-export function renderCommandTemplateList(names: string[]): string {
   const sorted = [...names].sort();
   return sorted.map((n) => `\`${n}\``).join(", ");
 }

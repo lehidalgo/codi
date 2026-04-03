@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  MAX_NAME_LENGTH,
-  MAX_DESCRIPTION_LENGTH,
-  NAME_PATTERN,
-} from "../constants.js";
+import { MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH, NAME_PATTERN } from "../constants.js";
 
 export const ProjectManifestSchema = z.object({
   name: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH),
@@ -14,7 +10,6 @@ export const ProjectManifestSchema = z.object({
     .object({
       rules: z.boolean().default(true),
       skills: z.boolean().default(true),
-      commands: z.boolean().default(true),
       agents: z.boolean().default(true),
       context: z.boolean().default(true),
     })

@@ -124,12 +124,12 @@
     "hash": "e3b81fe6b98b6f01f3ee580d95d6d612ec1ca2b46616081173cb3afc8d67511b"
   },
   "codi-dev-operations": {
-    "version": 1,
-    "hash": "d2dae30e8ad1d88ef1c8c2d2d5f75c725976701ba2c5eac8e3930efe62ea5aac"
+    "version": 2,
+    "hash": "713343cadb2da0492fabb7f031c29ce7a5d3305bb3c8a61aaec5ebee239bb731"
   },
   "codi-dev-e2e-testing": {
-    "version": 1,
-    "hash": "f9f391acbecbb5676792281f52c2263cd6d66001ac95e90ce7fc6757f84a6f98"
+    "version": 2,
+    "hash": "c42dbb210ebaf52525b622a312ba3949a7226d33ecda3b38fc5fdc31b66bdffa"
   },
   "codi-security-scan": {
     "version": 1,
@@ -174,10 +174,6 @@
   "codi-agent-creator": {
     "version": 1,
     "hash": "6414bcf98b159b4024bde0011b563a819905384f64e4b95f1db0746060424484"
-  },
-  "codi-command-creator": {
-    "version": 1,
-    "hash": "cd8988429ee071d3c44a05be38488aedc0231746ca7cbd5429b8ee11004e94d2"
   },
   "codi-compare-preset": {
     "version": 1,
@@ -297,7 +293,7 @@
   },
   "codi-test-run": {
     "version": 1,
-    "hash": "64df2dcb4eab78726447ae6c7ef38ab9e1f7a8b040566aec577066799ee9c347"
+    "hash": "9f54ea218c380d556be9ff530ccd2e008d8c3b636d709e75a9f528972d2c1e80"
   },
   "codi-diagnostics": {
     "version": 1,
@@ -305,11 +301,11 @@
   },
   "codi-session-handoff": {
     "version": 1,
-    "hash": "57c528eb4cd3c6bf862122950b0c7b326d53013ee2731f2db8bcc1e932227b91"
+    "hash": "9b2b8ea3f2374555dc65d959230494eb1c1336f06a4e5e65c8cedb1d9a0f5c0e"
   },
   "codi-codebase-explore": {
     "version": 1,
-    "hash": "ea90d9cf1d68f5f05b408c69a26efa7917831b5388f4ef6bd486b67719eb7e51"
+    "hash": "ac3fa00159bf0c953e2c63da16b786bf4a3a808e2396c0970cfcc839bc80a373"
   },
   "codi-graph-sync": {
     "version": 1,
@@ -321,7 +317,7 @@
   },
   "codi-roadmap": {
     "version": 1,
-    "hash": "a4cea4fda07d225ef75b4c2c8ace4d15bc037189d19c7fa366c090b92fa0a3eb"
+    "hash": "f2c2cf9c3b1413a623889065744c57f976155967a43b950c78b04d461006a009"
   },
   "codi-code-reviewer": {
     "version": 1,
@@ -410,26 +406,6 @@
   "codi-scalability-expert": {
     "version": 1,
     "hash": "6a9e725784c62bf8ee2dca7221f7e7fcdb6fd3f759ccee859ad216c1d228feb1"
-  },
-  "codi-check": {
-    "version": 1,
-    "hash": "0fa30b7b0fa0cfbbe4530f342c124f110073a528d422c6e3d9de9c998eab47a6"
-  },
-  "codi-index-graph": {
-    "version": 1,
-    "hash": "303bef1ccdec01d2bc7970363647574d227f835bb5ccd02f4e3f9b143bd89245"
-  },
-  "codi-update-graph": {
-    "version": 1,
-    "hash": "93d90459feeff47bd220dd82bd1a4f230a645d272623de081ef46968e3903e82"
-  },
-  "codi-open-day": {
-    "version": 1,
-    "hash": "8c9a62128e9c7da3c5fa74972e6272b84c0ae4c90d528a342d63829b80a41517"
-  },
-  "codi-close-day": {
-    "version": 1,
-    "hash": "340b1c26a8805f771906ab3095c0b20efdcc7f8f583f0e38c759960d5aea0657"
   },
   "github": {
     "version": 1,

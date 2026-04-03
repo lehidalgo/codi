@@ -1,22 +1,13 @@
 import { describe, it, expect } from "vitest";
-import {
-  validateConfig,
-  validateContentSize,
-} from "#src/core/config/validator.js";
+import { validateConfig, validateContentSize } from "#src/core/config/validator.js";
 import type { NormalizedConfig } from "#src/types/config.js";
-import {
-  MAX_ARTIFACT_CHARS,
-  MAX_TOTAL_ARTIFACT_CHARS,
-} from "#src/constants.js";
+import { MAX_ARTIFACT_CHARS, MAX_TOTAL_ARTIFACT_CHARS } from "#src/constants.js";
 
-function makeConfig(
-  overrides: Partial<NormalizedConfig> = {},
-): NormalizedConfig {
+function makeConfig(overrides: Partial<NormalizedConfig> = {}): NormalizedConfig {
   return {
     manifest: { name: "test", version: "1", agents: ["claude-code"] },
     rules: [],
     skills: [],
-    commands: [],
     agents: [],
     flags: {},
     mcp: { servers: {} },
@@ -121,9 +112,7 @@ describe("validateContentSize", () => {
       ],
     });
     const warnings = validateContentSize(config);
-    expect(warnings.some((w) => w.message.includes('Skill "big-skill"'))).toBe(
-      true,
-    );
+    expect(warnings.some((w) => w.message.includes('Skill "big-skill"'))).toBe(true);
   });
 
   it("warns when a single agent exceeds 6000 chars", () => {
@@ -137,25 +126,7 @@ describe("validateContentSize", () => {
       ],
     });
     const warnings = validateContentSize(config);
-    expect(warnings.some((w) => w.message.includes('Agent "big-agent"'))).toBe(
-      true,
-    );
-  });
-
-  it("warns when a single command exceeds 6000 chars", () => {
-    const config = makeConfig({
-      commands: [
-        {
-          name: "big-cmd",
-          description: "desc",
-          content: "x".repeat(MAX_ARTIFACT_CHARS + 1000),
-        },
-      ],
-    });
-    const warnings = validateContentSize(config);
-    expect(warnings.some((w) => w.message.includes('Command "big-cmd"'))).toBe(
-      true,
-    );
+    expect(warnings.some((w) => w.message.includes('Agent "big-agent"'))).toBe(true);
   });
 
   it("warns when total combined content exceeds MAX_TOTAL_ARTIFACT_CHARS", () => {
@@ -182,9 +153,7 @@ describe("validateContentSize", () => {
       skills: [{ name: "s1", description: "desc", content: "x".repeat(half) }],
     });
     const warnings = validateContentSize(config);
-    expect(
-      warnings.some((w) => w.message.includes("Total artifact content")),
-    ).toBe(true);
+    expect(warnings.some((w) => w.message.includes("Total artifact content"))).toBe(true);
   });
 
   it("does not warn when total is under MAX_TOTAL_ARTIFACT_CHARS", () => {

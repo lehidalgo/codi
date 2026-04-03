@@ -5,7 +5,6 @@ import type {
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
-  NormalizedCommand,
   McpConfig,
 } from "../../types/config.js";
 import type { LoadedPreset } from "./preset-loader.js";
@@ -14,7 +13,6 @@ import { getBuiltinPresetDefinition } from "../../templates/presets/index.js";
 import { loadTemplate } from "../scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
-import { loadCommandTemplate } from "../scaffolder/command-template-loader.js";
 import { loadMcpServerTemplate } from "../scaffolder/mcp-template-loader.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 import { createError } from "../output/errors.js";
@@ -46,7 +44,6 @@ function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPrese
   const rules = materializeRules(def.rules);
   const skills = materializeSkills(def.skills);
   const agents = materializeAgents(def.agents);
-  const commands = materializeCommands(def.commands ?? []);
   const mcp = materializeMcpServers(def.mcpServers ?? []);
 
   return ok({
@@ -56,7 +53,6 @@ function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPrese
     rules,
     skills,
     agents,
-    commands,
     mcp,
   });
 }
@@ -107,22 +103,6 @@ function materializeAgents(templateNames: string[]): NormalizedAgent[] {
     if (agent) agents.push(agent);
   }
   return agents;
-}
-
-function materializeCommands(templateNames: string[]): NormalizedCommand[] {
-  const log = Logger.getInstance();
-  const commands: NormalizedCommand[] = [];
-  for (const name of templateNames) {
-    const result = loadCommandTemplate(name);
-    if (!result.ok) {
-      log.debug(`Skipped command template "${name}": load failed`);
-      continue;
-    }
-
-    const cmd = parseCommandTemplate(name, result.data);
-    if (cmd) commands.push(cmd);
-  }
-  return commands;
 }
 
 function materializeMcpServers(templateNames: string[]): McpConfig {
@@ -234,20 +214,6 @@ function parseAgentTemplate(name: string, content: string): NormalizedAgent | nu
       content: body,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,
-      managedBy: PROJECT_NAME,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function parseCommandTemplate(name: string, content: string): NormalizedCommand | null {
-  try {
-    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
-    return {
-      name: (data["name"] as string) ?? name,
-      description: (data["description"] as string) ?? "",
-      content: body,
       managedBy: PROJECT_NAME,
     };
   } catch {

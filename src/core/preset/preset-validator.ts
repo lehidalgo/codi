@@ -6,10 +6,7 @@ import type { Result } from "../../types/result.js";
 import type { ProjectError } from "../output/types.js";
 import { PresetManifestSchema } from "../../schemas/preset.js";
 import type { PresetManifest } from "../../schemas/preset.js";
-import {
-  PRESET_MANIFEST_FILENAME,
-  SKILL_OUTPUT_FILENAME,
-} from "#src/constants.js";
+import { PRESET_MANIFEST_FILENAME, SKILL_OUTPUT_FILENAME } from "#src/constants.js";
 import { createError } from "../output/errors.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
 
@@ -20,7 +17,6 @@ export interface PresetValidationResult {
     rules: number;
     skills: number;
     agents: number;
-    commands: number;
     brands: number;
   };
 }
@@ -34,9 +30,7 @@ export interface PresetValidationResult {
  * 3. No circular extends (shallow check - single level)
  * 4. Version format is semver-like
  */
-export async function validatePreset(
-  presetDir: string,
-): Promise<Result<PresetValidationResult>> {
+export async function validatePreset(presetDir: string): Promise<Result<PresetValidationResult>> {
   const errors: ProjectError[] = [];
   const warnings: ProjectError[] = [];
 
@@ -96,30 +90,17 @@ export async function validatePreset(
   }
 
   // 4. Count and validate artifacts in each directory
-  const artifactDirs = [
-    "rules",
-    "skills",
-    "agents",
-    "commands",
-    "brands",
-  ] as const;
+  const artifactDirs = ["rules", "skills", "agents", "brands"] as const;
   const artifactCounts = {
     rules: 0,
     skills: 0,
     agents: 0,
-    commands: 0,
     brands: 0,
   };
 
   for (const dir of artifactDirs) {
     const dirPath = path.join(presetDir, dir);
-    const count = await validateArtifactDir(
-      dirPath,
-      dir,
-      manifest.name,
-      errors,
-      warnings,
-    );
+    const count = await validateArtifactDir(dirPath, dir, manifest.name, errors, warnings);
     artifactCounts[dir] = count;
   }
 
@@ -211,11 +192,7 @@ export async function detectCircularExtends(
 
   visited.add(presetName);
 
-  const manifestPath = path.join(
-    presetsDir,
-    presetName,
-    PRESET_MANIFEST_FILENAME,
-  );
+  const manifestPath = path.join(presetsDir, presetName, PRESET_MANIFEST_FILENAME);
   try {
     const raw = await fs.readFile(manifestPath, "utf8");
     const parsed = parseYaml(raw) as Record<string, unknown>;

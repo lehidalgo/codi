@@ -12,11 +12,7 @@ import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
-import {
-  PROJECT_DIR,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "../constants.js";
+import { PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "../constants.js";
 
 interface CleanOptions extends GlobalOptions {
   all?: boolean;
@@ -53,9 +49,7 @@ async function isDirEmpty(dirPath: string): Promise<boolean> {
   }
 }
 
-function collectGeneratedFiles(
-  stateAgents: Record<string, Array<{ path: string }>>,
-): string[] {
+function collectGeneratedFiles(stateAgents: Record<string, Array<{ path: string }>>): string[] {
   const files = new Set<string>();
   for (const agentFiles of Object.values(stateAgents)) {
     for (const file of agentFiles) {
@@ -67,7 +61,6 @@ function collectGeneratedFiles(
 
 const AGENT_SUBDIRS = [
   ".claude/rules",
-  ".claude/commands",
   ".claude/skills",
   ".cursor/rules",
   ".cursor/skills",
@@ -84,14 +77,7 @@ const AGENT_FILES = [
   ".claude/settings.json",
   ".cursor/hooks.json",
 ];
-const AGENT_PARENT_DIRS = [
-  ".claude",
-  ".cursor",
-  ".cline",
-  ".windsurf",
-  ".agents",
-  ".codex",
-];
+const AGENT_PARENT_DIRS = [".claude", ".cursor", ".cline", ".windsurf", ".agents", ".codex"];
 
 const GENERATED_HOOK_MARKER = `# ${PROJECT_NAME_DISPLAY} hooks`;
 
@@ -110,9 +96,7 @@ async function fileContainsGeneratedMarker(filePath: string): Promise<boolean> {
   }
 }
 
-async function removeGeneratedSectionFromFile(
-  filePath: string,
-): Promise<boolean> {
+async function removeGeneratedSectionFromFile(filePath: string): Promise<boolean> {
   try {
     const content = await fs.readFile(filePath, "utf-8");
     if (!content.includes(GENERATED_HOOK_MARKER)) return false;
@@ -264,8 +248,7 @@ export async function cleanHandler(
   const stateManager = new StateManager(configDir, projectRoot);
   const stateResult = await stateManager.read();
 
-  const hasStateFiles =
-    stateResult.ok && Object.keys(stateResult.data.agents).length > 0;
+  const hasStateFiles = stateResult.ok && Object.keys(stateResult.data.agents).length > 0;
 
   if (hasStateFiles) {
     const generatedFiles = collectGeneratedFiles(stateResult.data.agents);
@@ -288,13 +271,7 @@ export async function cleanHandler(
     }
   } else if (!hasStateFiles) {
     log.warn("No state file found. Cleaning known generated files.");
-    const knownFiles = [
-      "CLAUDE.md",
-      "AGENTS.md",
-      ".cursorrules",
-      ".windsurfrules",
-      ".clinerules",
-    ];
+    const knownFiles = ["CLAUDE.md", "AGENTS.md", ".cursorrules", ".windsurfrules", ".clinerules"];
     for (const file of knownFiles) {
       if (!isPathSafe(projectRoot, file)) {
         log.warn(`Skipping unsafe path: ${file}`);
@@ -341,8 +318,7 @@ export async function cleanHandler(
   // Clean hook files only on full uninstall (--all) — preserves safety hooks on regular clean
   let hooksDeleted: string[] = [];
   if (options.all) {
-    const stateHooks =
-      stateResult.ok && stateResult.data.hooks ? stateResult.data.hooks : [];
+    const stateHooks = stateResult.ok && stateResult.data.hooks ? stateResult.data.hooks : [];
     hooksDeleted = await cleanHookFiles(projectRoot, stateHooks, options, log);
   }
 
@@ -425,13 +401,8 @@ export async function cleanHandler(
 export function registerCleanCommand(program: Command): void {
   program
     .command("clean")
-    .description(
-      `Remove generated files and optionally the ${PROJECT_DIR}/ directory`,
-    )
-    .option(
-      "--all",
-      `Remove everything including ${PROJECT_DIR}/ (full uninstall)`,
-    )
+    .description(`Remove generated files and optionally the ${PROJECT_DIR}/ directory`)
+    .option("--all", `Remove everything including ${PROJECT_DIR}/ (full uninstall)`)
     .option("--dry-run", "Show what would be deleted without deleting")
     .option("--force", "Skip confirmation")
     .action(async (cmdOptions: Record<string, unknown>) => {

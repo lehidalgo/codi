@@ -6,7 +6,6 @@ import {
   renderRuleFields,
   renderSkillFields,
   renderAgentFields,
-  renderCommandFields,
   renderManifestFields,
 } from "#src/core/docs/renderers/schema-renderers.js";
 
@@ -124,12 +123,6 @@ describe("per-schema wrappers", () => {
     const result = renderAgentFields();
     const dataRows = result.split("\n").slice(2);
     expect(dataRows.length).toBe(8);
-  });
-
-  it("renderCommandFields matches CommandFrontmatterSchema field count", () => {
-    const result = renderCommandFields();
-    const dataRows = result.split("\n").slice(2);
-    expect(dataRows.length).toBe(3);
   });
 
   it("renderManifestFields includes nested fields with dot notation", () => {

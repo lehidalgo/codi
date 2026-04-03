@@ -2,7 +2,7 @@ import type { ArtifactUpgradeInfo } from "../core/version/upgrade-detector.js";
 import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
 import { MCP_SERVER_GROUPS } from "../templates/mcp-servers/index.js";
 
-// Static category maps for rules, agents, and commands.
+// Static category maps for rules and agents.
 // Each array lists the fully-prefixed artifact names that belong to that group.
 // Any name not present in the map will fall into an "Other" catch-all group.
 
@@ -71,25 +71,6 @@ export const AGENT_CATEGORIES: Record<string, string[]> = {
     "codi-python-expert",
   ],
   "Exploration & Docs": ["codi-docs-lookup", "codi-onboarding-guide"],
-};
-
-export const COMMAND_CATEGORIES: Record<string, string[]> = {
-  "Code Quality": [
-    "codi-review",
-    "codi-test-run",
-    "codi-security-scan",
-    "codi-test-coverage",
-    "codi-refactor",
-  ],
-  "Exploration & Docs": ["codi-onboard", "codi-docs-lookup", "codi-codebase-explore", "codi-check"],
-  "Daily Workflow": [
-    "codi-commit",
-    "codi-session-handoff",
-    "codi-open-day",
-    "codi-close-day",
-    "codi-roadmap",
-  ],
-  "Codi Platform": ["codi-index-graph", "codi-update-graph", "codi-refine-rules"],
 };
 
 // MCP server categories derived from the grouped registry in the template index.

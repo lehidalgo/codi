@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- **Command artifact type** — entire command infrastructure removed (`command-scaffolder`, `command-template-loader`, `NormalizedCommand`, `AVAILABLE_COMMAND_TEMPLATES`, `MAX_COMMAND_LINES`); `codi add command`, `--commands` flag, and `.claude/commands/` generation no longer exist
 - **`(codi-skill) ` prefix** in Claude Code skill file headers — skills no longer receive this annotation prefix
 - **`createVersionMap` helper** removed from `artifact-version` module
 

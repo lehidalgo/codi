@@ -124,7 +124,6 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce([prefixedName("security")] as never) // rules
       .mockResolvedValueOnce([prefixedName("code-review")] as never) // skills
       .mockResolvedValueOnce([]) // agent templates
-      .mockResolvedValueOnce([prefixedName("commit")] as never) // commands
       .mockResolvedValueOnce(["github"] as never); // MCP servers
 
     vi.mocked(p.select)
@@ -141,7 +140,6 @@ describe("runInitWizard", () => {
     expect(result!.configMode).toBe("custom");
     expect(result!.rules).toEqual([prefixedName("security")]);
     expect(result!.skills).toEqual([prefixedName("code-review")]);
-    expect(result!.commandTemplates).toEqual([prefixedName("commit")]);
     expect(result!.preset).toBe(prefixedName("balanced"));
     expect(result!.versionPin).toBe(true);
   });
@@ -151,7 +149,6 @@ describe("runInitWizard", () => {
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
-    const presetCommands = presetDef?.commands ?? [];
     const presetMcpServers = presetDef?.mcpServers ?? [];
 
     // Step 0: language selection + Step 1: agent selection
@@ -172,7 +169,6 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce(presetRules as never)
       .mockResolvedValueOnce(presetSkills as never)
       .mockResolvedValueOnce(presetAgents as never)
-      .mockResolvedValueOnce(presetCommands as never)
       .mockResolvedValueOnce(presetMcpServers as never);
 
     // Step 5: version pin

@@ -2,14 +2,9 @@ import * as p from "@clack/prompts";
 import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
-import {
-  NAME_PATTERN_STRICT,
-  MAX_NAME_LENGTH,
-  PROJECT_CLI,
-} from "../constants.js";
+import { NAME_PATTERN_STRICT, MAX_NAME_LENGTH, PROJECT_CLI } from "../constants.js";
 
-export type ArtifactType = "rule" | "skill" | "agent" | "command" | "brand";
+export type ArtifactType = "rule" | "skill" | "agent" | "brand";
 
 export interface AddWizardResult {
   names: string[];
@@ -39,11 +34,6 @@ export async function selectArtifactType(): Promise<ArtifactType | null> {
         hint: "Create a specialized subagent",
       },
       {
-        label: "Command",
-        value: "command" as const,
-        hint: "Add a slash command",
-      },
-      {
         label: "Brand",
         value: "brand" as const,
         hint: "Define a brand identity",
@@ -60,14 +50,11 @@ export async function selectArtifactType(): Promise<ArtifactType | null> {
 }
 
 /** When user runs the add command with a type but no name. */
-export async function runAddWizard(
-  type: ArtifactType,
-): Promise<AddWizardResult | null> {
+export async function runAddWizard(type: ArtifactType): Promise<AddWizardResult | null> {
   const templateMap: Record<ArtifactType, readonly string[]> = {
     rule: AVAILABLE_TEMPLATES,
     skill: AVAILABLE_SKILL_TEMPLATES,
     agent: AVAILABLE_AGENT_TEMPLATES,
-    command: AVAILABLE_COMMAND_TEMPLATES,
     brand: [] as readonly string[],
   };
   const templates = templateMap[type];
@@ -125,8 +112,7 @@ export async function runAddWizard(
     message: `${type} name (kebab-case)`,
     validate: (value) => {
       if (!value) return "Name is required";
-      if (value.length > MAX_NAME_LENGTH)
-        return `Max ${MAX_NAME_LENGTH} characters`;
+      if (value.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
       if (!NAME_PATTERN_STRICT.test(value))
         return "Use lowercase letters, numbers, and hyphens (must start with letter)";
     },

@@ -4,7 +4,6 @@ export interface AgentPaths {
   configRoot: string;
   rules: string;
   skills: string | null;
-  commands: string | null;
   agents: string | null;
   instructionFile: string;
   mcpConfig: string | null;
@@ -13,7 +12,6 @@ export interface AgentPaths {
 export interface AgentCapabilities {
   rules: boolean;
   skills: boolean;
-  commands: boolean;
   mcp: boolean;
   frontmatter: boolean;
   progressiveLoading: boolean;
@@ -39,12 +37,7 @@ export interface GenerateOptions {
   projectRoot?: string;
 }
 
-export type FileStatus =
-  | "created"
-  | "updated"
-  | "unchanged"
-  | "deleted"
-  | "error";
+export type FileStatus = "created" | "updated" | "unchanged" | "deleted" | "error";
 
 export interface AgentFileStatus {
   path: string;
@@ -64,8 +57,5 @@ export interface AgentAdapter {
   detect(projectRoot: string): Promise<boolean>;
   paths: AgentPaths;
   capabilities: AgentCapabilities;
-  generate(
-    config: NormalizedConfig,
-    options: GenerateOptions,
-  ): Promise<GeneratedFile[]>;
+  generate(config: NormalizedConfig, options: GenerateOptions): Promise<GeneratedFile[]>;
 }

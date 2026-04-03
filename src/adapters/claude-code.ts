@@ -15,7 +15,6 @@ import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildAgentsTable,
-  buildCommandsTable,
   buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
@@ -63,7 +62,6 @@ export const claudeCodeAdapter: AgentAdapter = {
     configRoot: ".claude",
     rules: ".claude/rules",
     skills: ".claude/skills",
-    commands: ".claude/commands",
     agents: ".claude/agents",
     instructionFile: "CLAUDE.md",
     mcpConfig: ".mcp.json",
@@ -72,7 +70,6 @@ export const claudeCodeAdapter: AgentAdapter = {
   capabilities: {
     rules: true,
     skills: true,
-    commands: true,
     mcp: true,
     frontmatter: false,
     progressiveLoading: true,
@@ -100,10 +97,6 @@ export const claudeCodeAdapter: AgentAdapter = {
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);
     }
-
-    // Commands table
-    const commandsTable = buildCommandsTable(config);
-    if (commandsTable) sections.push(commandsTable);
 
     // Agents table
     const agentsTable = buildAgentsTable(config);
@@ -183,20 +176,6 @@ export const claudeCodeAdapter: AgentAdapter = {
         content: agentContent,
         sources: [MANIFEST_FILENAME],
         hash: hashContent(agentContent),
-      });
-    }
-
-    // Generate .claude/commands/{name}.md
-    for (const cmd of config.commands) {
-      const cmdContent = addGeneratedFooter(
-        `---\ndescription: (${PROJECT_NAME}-cmd) ${cmd.description}\n---\n\n${cmd.content}`,
-      );
-      const fileName = cmd.name.toLowerCase().replace(/\s+/g, "-") + ".md";
-      files.push({
-        path: `.claude/commands/${fileName}`,
-        content: cmdContent,
-        sources: [MANIFEST_FILENAME],
-        hash: hashContent(cmdContent),
       });
     }
 

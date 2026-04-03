@@ -146,8 +146,6 @@ describe("section-renderers", () => {
       skillNames: ["x", "y"],
       agents: 1,
       agentNames: ["z"],
-      commands: 0,
-      commandNames: [],
     };
 
     it("shows correct counts", () => {
@@ -156,7 +154,6 @@ describe("section-renderers", () => {
       expect(result).toContain("| **Rules** | 3 |");
       expect(result).toContain("| **Skills** | 2 |");
       expect(result).toContain("| **Agents** | 1 |");
-      expect(result).toContain("| **Commands** | 0 |");
     });
 
     it("includes template names", () => {

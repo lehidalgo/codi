@@ -22,7 +22,6 @@ export interface WizardResult {
   rules: string[];
   skills: string[];
   agentTemplates: string[];
-  commandTemplates: string[];
   mcpServers: string[];
   preset: string;
   flags?: Record<string, import("../types/flags.js").FlagDefinition>;
@@ -38,7 +37,6 @@ export interface ExistingSelections {
   rules: string[];
   skills: string[];
   agents: string[];
-  commands: string[];
   mcpServers: string[];
 }
 
