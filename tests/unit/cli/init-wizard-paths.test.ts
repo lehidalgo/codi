@@ -38,10 +38,6 @@ vi.mock("#src/core/scaffolder/agent-template-loader.js", () => ({
   AVAILABLE_AGENT_TEMPLATES: ["code-reviewer"],
   loadAgentTemplate: vi.fn().mockReturnValue({ ok: true, data: "description: test" }),
 }));
-vi.mock("#src/core/scaffolder/command-template-loader.js", () => ({
-  AVAILABLE_COMMAND_TEMPLATES: ["commit"],
-  loadCommandTemplate: vi.fn().mockReturnValue({ ok: true, data: "description: test" }),
-}));
 vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
   AVAILABLE_MCP_SERVER_TEMPLATES: ["memory"],
   loadMcpServerTemplate: vi.fn().mockReturnValue({ ok: true, data: { description: "test" } }),

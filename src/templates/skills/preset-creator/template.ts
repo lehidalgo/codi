@@ -19,7 +19,7 @@ intentHints:
     - "Create a new preset"
     - "Package my configuration"
     - "Export my preset as a ZIP"
-version: 1
+version: 2
 ---
 
 # {{name}}
@@ -50,7 +50,6 @@ Ask the user which to include in the preset:
 - **Rules**: list rules from \`${PROJECT_DIR}/rules/\` and built-in templates
 - **Skills**: list skills from \`${PROJECT_DIR}/skills/\` and built-in templates
 - **Agents**: list agents from \`${PROJECT_DIR}/agents/\`
-- **Commands**: list commands from \`${PROJECT_DIR}/commands/\`
 
 ## Step 3: Configure Flags
 
@@ -77,9 +76,8 @@ Then populate the generated directory:
 2. Copy selected rules to \`rules/\`
 3. Copy selected skills to \`skills/\`
 4. Copy selected agents to \`agents/\`
-5. Copy selected commands to \`commands/\`
-6. Write \`flags.yaml\` with the configured overrides
-7. Write \`mcp.yaml\` if MCP servers were selected
+5. Write \`flags.yaml\` with the configured overrides
+6. Write \`mcp.yaml\` if MCP servers were selected
 
 ## Step 6: Choose Output Format
 

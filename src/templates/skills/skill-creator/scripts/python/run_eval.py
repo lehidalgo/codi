@@ -42,7 +42,7 @@ def run_single_query(
 ) -> bool:
     """Run a single query and return whether the skill was triggered.
 
-    Creates a command file in .claude/commands/ so it appears in Claude's
+    Creates a skill directory in .claude/skills/ so it appears in Claude's
     available_skills list, then runs `claude -p` with the raw query.
     Uses --include-partial-messages to detect triggering early from
     stream events (content_block_start) rather than waiting for the
@@ -50,11 +50,12 @@ def run_single_query(
     """
     unique_id = uuid.uuid4().hex[:8]
     clean_name = f"{skill_name}-skill-{unique_id}"
-    project_commands_dir = Path(project_root) / ".claude" / "commands"
-    command_file = project_commands_dir / f"{clean_name}.md"
+    project_skills_dir = Path(project_root) / ".claude" / "skills"
+    skill_dir = project_skills_dir / clean_name
+    skill_file = skill_dir / "SKILL.md"
 
     try:
-        project_commands_dir.mkdir(parents=True, exist_ok=True)
+        skill_dir.mkdir(parents=True, exist_ok=True)
         # Use YAML block scalar to avoid breaking on quotes in description
         indented_desc = "\n  ".join(skill_description.split("\n"))
         command_content = (
@@ -65,7 +66,7 @@ def run_single_query(
             f"# {skill_name}\n\n"
             f"This skill handles: {skill_description}\n"
         )
-        command_file.write_text(command_content)
+        skill_file.write_text(command_content)
 
         cmd = [
             "claude",
@@ -177,8 +178,9 @@ def run_single_query(
 
         return triggered
     finally:
-        if command_file.exists():
-            command_file.unlink()
+        if skill_dir.exists():
+            import shutil
+            shutil.rmtree(skill_dir, ignore_errors=True)
 
 
 def run_eval(

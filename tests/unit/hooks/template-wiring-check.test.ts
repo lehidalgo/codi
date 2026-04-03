@@ -107,19 +107,13 @@ describe("template wiring check script", () => {
     const root = path.join(tmpDir, "aligned");
     await createAlignedRulesFixture(root);
     // Create empty dirs for other artifact types so the script doesn't fail
-    for (const dir of [
-      "src/templates/skills",
-      "src/templates/agents",
-      "src/templates/commands",
-      "src/core/scaffolder",
-    ]) {
+    for (const dir of ["src/templates/skills", "src/templates/agents", "src/core/scaffolder"]) {
       await fs.mkdir(path.join(root, dir), { recursive: true });
     }
     // Create minimal index and loader files for skills, agents, commands
     for (const [indexPath, loaderPath] of [
       ["src/templates/skills/index.ts", "src/core/scaffolder/skill-template-loader.ts"],
       ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
-      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       // Only write if not already present
       try {
@@ -152,7 +146,6 @@ describe("template wiring check script", () => {
     for (const [indexPath, loaderPath] of [
       ["src/templates/skills/index.ts", "src/core/scaffolder/skill-template-loader.ts"],
       ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
-      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,
@@ -199,7 +192,6 @@ describe("template wiring check script", () => {
     for (const [indexPath, loaderPath] of [
       ["src/templates/skills/index.ts", "src/core/scaffolder/skill-template-loader.ts"],
       ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
-      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,
@@ -251,7 +243,6 @@ describe("template wiring check script", () => {
     for (const [indexPath, loaderPath] of [
       ["src/templates/rules/index.ts", "src/core/scaffolder/template-loader.ts"],
       ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
-      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,
@@ -283,7 +274,6 @@ describe("template wiring check script", () => {
     for (const [indexPath, loaderPath] of [
       ["src/templates/rules/index.ts", "src/core/scaffolder/template-loader.ts"],
       ["src/templates/agents/index.ts", "src/core/scaffolder/agent-template-loader.ts"],
-      ["src/templates/commands/index.ts", "src/core/scaffolder/command-template-loader.ts"],
     ]) {
       await fs.mkdir(path.join(root, path.dirname(indexPath)), {
         recursive: true,

@@ -20,7 +20,7 @@ intentHints:
     - "Contribute my skill to GitHub"
     - "Share my artifacts as ZIP"
     - "Open a PR with my rule"
-version: 1
+version: 2
 ---
 
 # {{name}}
@@ -84,11 +84,11 @@ The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://git
 **[CODING AGENT]** List the user's custom artifacts:
 
 \\\`\\\`\\\`bash
-ls ${PROJECT_DIR}/rules/ ${PROJECT_DIR}/skills/ ${PROJECT_DIR}/agents/ ${PROJECT_DIR}/commands/ 2>/dev/null
+ls ${PROJECT_DIR}/rules/ ${PROJECT_DIR}/skills/ ${PROJECT_DIR}/agents/ 2>/dev/null
 \\\`\\\`\\\`
 
 Help the user identify:
-- Custom rules, skills, agents, or commands they created or improved
+- Custom rules, skills, or agents they created or improved
 - Artifacts with \\\`managed_by: user\\\` (user-created) or \\\`managed_by: ${PROJECT_NAME}\\\` (improved built-in)
 - Artifacts that have been tested and proven useful in real workflows
 
@@ -146,7 +146,6 @@ The PR method forks the target repo (if needed), pushes a branch, and opens a PR
    - Rules go in \\\`src/templates/rules/{name}.ts\\\`
    - Skills go in \\\`src/templates/skills/{name}.ts\\\`
    - Agents go in \\\`src/templates/agents/{name}.ts\\\`
-   - Commands go in \\\`src/templates/commands/{name}.ts\\\`
 
 4. Export as a template string:
    \\\`\\\`\\\`typescript

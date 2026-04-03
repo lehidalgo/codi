@@ -413,8 +413,6 @@ export async function updateHandler(
             skillsSkipped: [],
             agentsUpdated: [],
             agentsSkipped: [],
-            commandsUpdated: [],
-            commandsSkipped: [],
             mcpServersUpdated: [],
             mcpServersSkipped: [],
             sourceUpdated: [],

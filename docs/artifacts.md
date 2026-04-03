@@ -1,6 +1,6 @@
 # Artifacts
 
-Artifacts are the building blocks of Codi configuration. There are 5 types: **rules**, **skills**, **agents**, **commands**, and **brands**. All are Markdown files with YAML frontmatter stored in `.codi/`.
+Artifacts are the building blocks of Codi configuration. There are 4 types: **rules**, **skills**, **agents**, and **brands**. All are Markdown files with YAML frontmatter stored in `.codi/`.
 
 ## Overview
 
@@ -9,7 +9,6 @@ Artifacts are the building blocks of Codi configuration. There are 5 types: **ru
 | **Rule** | Instructions agents follow | `.codi/rules/*.md` | `*.md` files |
 | **Skill** | Reusable workflows agents invoke | `.codi/skills/{name}/SKILL.md` | `**/SKILL.md` glob |
 | **Agent** | Subagent definitions | `.codi/agents/*.md` | `*.md` files |
-| **Command** | Slash commands | `.codi/commands/*.md` | `*.md` files |
 | **Brand** | Visual identity assets | `.codi/brands/{name}/BRAND.md` | `**/BRAND.md` glob |
 
 ---
@@ -202,37 +201,6 @@ managed_by: codi
 
 ---
 
-## Commands
-
-Commands are slash commands that users can invoke in their AI coding assistant.
-
-### Frontmatter
-
-```yaml
----
-name: commit
-description: Create a well-structured git commit
----
-```
-
-### Fields
-
-<!-- GENERATED:START:command_fields -->
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | string | Yes | — | Command name (strict alphanumeric + hyphens) |
-| `description` | string | Yes | `` | One-line description |
-| `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
-<!-- GENERATED:END:command_fields -->
-
-### Built-in Command Templates
-
-<!-- GENERATED:START:command_templates -->
-`codi-check`, `codi-close-day`, `codi-codebase-explore`, `codi-commit`, `codi-docs-lookup`, `codi-index-graph`, `codi-onboard`, `codi-open-day`, `codi-refactor`, `codi-refine-rules`, `codi-review`, `codi-roadmap`, `codi-security-scan`, `codi-session-handoff`, `codi-test-coverage`, `codi-test-run`, `codi-update-graph`
-<!-- GENERATED:END:command_templates -->
-
----
-
 ## Brands
 
 Brands define visual identity for generated outputs (presentations, documents, etc.).
@@ -294,7 +262,6 @@ codi add skill --all
 codi add rule my-rule
 codi add skill my-workflow
 codi add agent my-agent
-codi add command my-command
 ```
 
 ### Via the Command Center
@@ -311,6 +278,5 @@ Templates are registered in `TEMPLATE_MAP` objects:
 - Rules: `src/core/scaffolder/template-loader.ts`
 - Skills: `src/core/scaffolder/skill-template-loader.ts`
 - Agents: `src/core/scaffolder/agent-template-loader.ts`
-- Commands: `src/core/scaffolder/command-template-loader.ts`
 
 The `{{name}}` placeholder in templates is replaced with the artifact name at creation time.
