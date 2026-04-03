@@ -21,6 +21,8 @@ export function validateConfig(config: NormalizedConfig): ProjectError[] {
 
   errors.push(...validateAgents(config));
   errors.push(...validateRules(config));
+  errors.push(...validateSkills(config));
+  errors.push(...validateCommandsAndAgents(config));
   errors.push(...validateFlags(config));
 
   return errors;
@@ -150,6 +152,78 @@ function validateRules(config: NormalizedConfig): ProjectError[] {
       errors.push(
         createError("E_CONFIG_INVALID", {
           message: `Rule "${rule.name}" has empty content`,
+        }),
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateSkills(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
+  const names = new Set<string>();
+
+  for (const skill of config.skills) {
+    if (names.has(skill.name)) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Duplicate skill name: "${skill.name}"`,
+        }),
+      );
+    }
+    names.add(skill.name);
+
+    if (!skill.content.trim()) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Skill "${skill.name}" has empty content`,
+        }),
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateCommandsAndAgents(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
+  const commandNames = new Set<string>();
+
+  for (const cmd of config.commands) {
+    if (commandNames.has(cmd.name)) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Duplicate command name: "${cmd.name}"`,
+        }),
+      );
+    }
+    commandNames.add(cmd.name);
+
+    if (!cmd.content.trim()) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Command "${cmd.name}" has empty content`,
+        }),
+      );
+    }
+  }
+
+  const agentNames = new Set<string>();
+  for (const agent of config.agents) {
+    if (agentNames.has(agent.name)) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Duplicate agent name: "${agent.name}"`,
+        }),
+      );
+    }
+    agentNames.add(agent.name);
+
+    if (!agent.content.trim()) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Agent "${agent.name}" has empty content`,
         }),
       );
     }

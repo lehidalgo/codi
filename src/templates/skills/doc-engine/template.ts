@@ -2,7 +2,7 @@ import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Document generation engine for creating branded reports, proposals, one-pagers, and case studies. Outputs HTML with print CSS for PDF export, with optional pandoc conversion to DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
+description: Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
 category: Document Generation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: ${PROJECT_NAME}
@@ -12,6 +12,7 @@ intentHints:
   examples:
     - "Create a report"
     - "Generate a proposal"
+    - "Write a one-pager"
 ---
 
 # {{name}} — Document Engine

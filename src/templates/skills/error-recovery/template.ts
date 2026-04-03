@@ -8,11 +8,12 @@ description: |
   diagnostic report analyzing what went wrong, why, and how to prevent it.
 category: Code Quality
 managed_by: ${PROJECT_NAME}
+user-invocable: false
 intentHints:
   taskType: Error Recovery
   examples:
-    - "Help me fix this error"
-    - "Debug this failure"
+    - "I keep making the same mistake"
+    - "Something keeps going wrong"
 ---
 
 # {{name}}
@@ -148,4 +149,8 @@ Use \\\`${PROJECT_CLI} add rule <name>\\\` to scaffold the rule if the user appr
 - Do not skip this skill to "save time" — contaminated context costs more time than the report
 - The report should be honest and specific — vague reports like "I made a mistake" are not useful
 - If you're unsure whether to activate, activate — false positives are cheap, false negatives are expensive
+
+## Related Skills
+
+- **codi-rule-creator** — Create a preventive rule if the error pattern suggests a systemic fix
 `;

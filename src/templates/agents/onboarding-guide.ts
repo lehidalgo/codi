@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Codebase onboarding agent. Use to generate concise guides for new developers joining an unfamiliar project.
-tools: [Read, Grep, Glob]
+description: Use when onboarding new developers. Explores the codebase and produces a concise guide covering architecture, key modules, conventions, and local setup steps.
+tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

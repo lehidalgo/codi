@@ -120,7 +120,7 @@ export async function generate(
       });
 
       await Promise.all(
-        resolution.accepted.map(async (entry) => {
+        [...resolution.accepted, ...resolution.merged].map(async (entry) => {
           await mkdir(dirname(entry.fullPath), { recursive: true });
           await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
         }),

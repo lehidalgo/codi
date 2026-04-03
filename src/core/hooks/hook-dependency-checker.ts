@@ -37,6 +37,10 @@ const INSTALL_HINTS: Record<string, string> = {
   phpstan: "composer global require phpstan/phpstan",
   rubocop: "gem install rubocop",
   dart: "Install Dart SDK from https://dart.dev",
+  bandit: "pip install bandit",
+  gosec: "go install github.com/securego/gosec/v2/cmd/gosec@latest",
+  brakeman: "gem install brakeman",
+  "phpcs-security": "composer global require pheromone/phpcs-security-audit",
 };
 
 /** Tools that are npm packages and can be installed via npm/npx */

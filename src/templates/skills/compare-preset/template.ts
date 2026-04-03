@@ -20,6 +20,7 @@ intentHints:
   examples:
     - "Compare my config to upstream"
     - "What changed in my preset"
+    - "Check for upstream updates"
 ---
 
 # {{name}}
@@ -156,4 +157,9 @@ If upstream clone fails, present a local-only report:
 - List all \`managed_by: user\` skills and agents
 - Note that upstream comparison is unavailable
 - Suggest retrying when network is available
+
+## Related Skills
+
+- **codi-preset-creator** — Create or package a preset before comparing it
+- **codi-contribute** — Contribute local improvements found during comparison back upstream
 `;

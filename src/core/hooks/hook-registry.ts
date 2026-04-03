@@ -8,6 +8,8 @@ export interface HookEntry {
   passFiles?: boolean;
   /** When true, the hook modifies files (formatters/fixers). Modified files are re-staged automatically after the hook runs. */
   modifiesFiles?: boolean;
+  /** Language this hook belongs to (e.g. "python", "typescript"). Used for grouping in generated hook scripts. */
+  language?: string;
 }
 
 const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
@@ -64,6 +66,11 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       stagedFilter: "**/*.py",
       passFiles: false,
     },
+    {
+      name: "bandit",
+      command: "bandit -c pyproject.toml -r",
+      stagedFilter: "**/*.py",
+    },
   ],
   go: [
     {
@@ -77,6 +84,12 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       command: "gofmt -w",
       stagedFilter: "**/*.go",
       modifiesFiles: true,
+    },
+    {
+      name: "gosec",
+      command: "gosec",
+      stagedFilter: "**/*.go",
+      passFiles: false,
     },
   ],
   rust: [
@@ -163,6 +176,11 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       stagedFilter: "**/*.php",
       passFiles: false,
     },
+    {
+      name: "phpcs-security",
+      command: "phpcs --standard=Security",
+      stagedFilter: "**/*.php",
+    },
   ],
   ruby: [
     {
@@ -170,6 +188,12 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       command: "rubocop -a",
       stagedFilter: "**/*.rb",
       modifiesFiles: true,
+    },
+    {
+      name: "brakeman",
+      command: "brakeman --no-pager -q",
+      stagedFilter: "**/*.rb",
+      passFiles: false,
     },
   ],
   dart: [
@@ -201,7 +225,8 @@ export function getDoctorHook(): HookEntry {
 
 export function getHooksForLanguage(language: string): HookEntry[] {
   const normalized = language.toLowerCase();
-  return LANGUAGE_HOOKS[normalized] ?? [];
+  const hooks = LANGUAGE_HOOKS[normalized] ?? [];
+  return hooks.map((h) => ({ ...h, language: normalized }));
 }
 
 export function getSupportedLanguages(): string[] {

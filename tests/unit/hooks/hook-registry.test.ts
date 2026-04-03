@@ -23,11 +23,12 @@ describe("getHooksForLanguage", () => {
 
   it("returns python hooks", () => {
     const hooks = getHooksForLanguage("python");
-    expect(hooks).toHaveLength(3);
+    expect(hooks).toHaveLength(4);
     expect(hooks.map((h) => h.name)).toEqual([
       "ruff-check",
       "ruff-format",
       "pyright",
+      "bandit",
     ]);
     expect(hooks[0]!.command).toBe("ruff check --fix");
     expect(hooks[2]!.command).toBe("npx pyright");
@@ -35,8 +36,12 @@ describe("getHooksForLanguage", () => {
 
   it("returns go hooks", () => {
     const hooks = getHooksForLanguage("go");
-    expect(hooks).toHaveLength(2);
-    expect(hooks.map((h) => h.name)).toEqual(["golangci-lint", "gofmt"]);
+    expect(hooks).toHaveLength(3);
+    expect(hooks.map((h) => h.name)).toEqual([
+      "golangci-lint",
+      "gofmt",
+      "gosec",
+    ]);
   });
 
   it("returns rust hooks", () => {
@@ -52,7 +57,7 @@ describe("getHooksForLanguage", () => {
 
   it("is case-insensitive", () => {
     const hooks = getHooksForLanguage("Python");
-    expect(hooks).toHaveLength(3);
+    expect(hooks).toHaveLength(4);
   });
 });
 

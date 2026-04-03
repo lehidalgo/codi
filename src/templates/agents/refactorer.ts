@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Code cleanup agent. Use to remove dead code, consolidate duplicates, and simplify without changing behavior.
-tools: [Read, Write, Grep, Glob, Bash]
+description: Use when cleaning up code without changing behavior. Removes dead code, consolidates duplicates, reduces cyclomatic complexity, and preserves test coverage.
+tools: [Read, Write, Edit, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

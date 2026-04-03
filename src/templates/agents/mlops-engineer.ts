@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: MLOps engineer. Use for ML deployment pipelines, model monitoring, drift detection, feature stores, CI/CD for ML, or experiment tracking infrastructure.
-tools: [Read, Grep, Glob, Bash]
+description: Use when deploying models or building ML infrastructure. Designs deployment architectures, monitors drift, selects MLOps platforms, and sets up ML CI/CD pipelines.
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---

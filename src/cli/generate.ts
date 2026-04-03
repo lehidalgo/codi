@@ -125,6 +125,7 @@ export async function generateHandler(
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
+          artifactValidation: hooksConfig.artifactValidation,
         });
         if (hookResult.ok) {
           const missingDeps = await checkHookDependencies(

@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.
+description: Use when the user wants to test, debug, or automate a local web application using Playwright. Supports verifying frontend functionality, capturing screenshots, and reading browser logs.
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,7 +11,15 @@ intentHints:
   examples:
     - "Test the web UI"
     - "Take a screenshot of the app"
+    - "Debug browser console errors"
 ---
+
+## When to Activate
+
+- User wants to test, verify, or automate a local web application
+- User needs a browser screenshot of a running app
+- User wants to check browser console logs or network requests
+- User needs to interact with UI elements programmatically
 
 # Web Application Testing
 

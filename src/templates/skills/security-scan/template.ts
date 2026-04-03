@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Security analysis workflow. Use to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.
+description: Security analysis workflow. Use when the user wants to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -15,10 +15,6 @@ intentHints:
 ---
 
 # {{name}}
-
-## When to Use
-
-Use when asked to perform a security audit, scan for vulnerabilities, or check for hardcoded secrets.
 
 ## When to Activate
 

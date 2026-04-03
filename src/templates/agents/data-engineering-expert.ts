@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Data engineering architect. Use for ETL/ELT pipeline design, data warehouse/lakehouse architecture, orchestration tool selection, or data quality frameworks.
-tools: [Read, Grep, Glob, Bash]
+description: Use when designing ETL/ELT pipelines, lakehouse/warehouse architecture, or data orchestration. Produces architecture reports with Airflow/Dagster/dbt recommendations.
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---
