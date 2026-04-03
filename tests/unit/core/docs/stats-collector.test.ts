@@ -26,10 +26,7 @@ describe("collectStats", () => {
   it("rules count matches AVAILABLE_TEMPLATES", () => {
     expect(stats.rules.count).toBe(AVAILABLE_TEMPLATES.length);
     expect(stats.rules.names).toEqual(
-      expect.arrayContaining([
-        prefixedName("security"),
-        prefixedName("testing"),
-      ]),
+      expect.arrayContaining([prefixedName("security"), prefixedName("testing")]),
     );
   });
 
@@ -40,16 +37,12 @@ describe("collectStats", () => {
 
   it("agents count matches AVAILABLE_AGENT_TEMPLATES", () => {
     expect(stats.agents.count).toBe(AVAILABLE_AGENT_TEMPLATES.length);
-    expect(stats.agents.names).toEqual(
-      expect.arrayContaining([prefixedName("code-reviewer")]),
-    );
+    expect(stats.agents.names).toEqual(expect.arrayContaining([prefixedName("code-reviewer")]));
   });
 
   it("commands count matches AVAILABLE_COMMAND_TEMPLATES", () => {
     expect(stats.commands.count).toBe(AVAILABLE_COMMAND_TEMPLATES.length);
-    expect(stats.commands.names).toEqual(
-      expect.arrayContaining([prefixedName("commit")]),
-    );
+    expect(stats.commands.names).toEqual(expect.arrayContaining([prefixedName("test-run")]));
   });
 
   it("flags count matches FLAG_CATALOG keys", () => {

@@ -3,10 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "#tests/helpers/fs.js";
-import {
-  loadPreset,
-  loadPresetFromDir,
-} from "#src/core/preset/preset-loader.js";
+import { loadPreset, loadPresetFromDir } from "#src/core/preset/preset-loader.js";
 import { PROJECT_NAME, PROJECT_DIR, prefixedName } from "#src/constants.js";
 
 describe("loadPresetFromDir", () => {
@@ -15,9 +12,7 @@ describe("loadPresetFromDir", () => {
   let presetsDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-loader-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-loader-`));
     configDir = path.join(tmpDir, PROJECT_DIR);
     presetsDir = path.join(configDir, "presets");
     await fs.mkdir(presetsDir, { recursive: true });
@@ -99,11 +94,7 @@ describe("loadPresetFromDir", () => {
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, "preset.yaml"),
-      [
-        "name: flags-only",
-        "description: Flags only preset",
-        "version: 1.0.0",
-      ].join("\n"),
+      ["name: flags-only", "description: Flags only preset", "version: 1.0.0"].join("\n"),
       "utf-8",
     );
 
@@ -125,11 +116,7 @@ describe("loadPresetFromDir", () => {
   it("returns error for invalid manifest YAML", async () => {
     const presetDir = path.join(presetsDir, "bad-yaml");
     await fs.mkdir(presetDir, { recursive: true });
-    await fs.writeFile(
-      path.join(presetDir, "preset.yaml"),
-      "{ broken yaml [[[",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(presetDir, "preset.yaml"), "{ broken yaml [[[", "utf-8");
 
     // YAML parser throws on malformed input — loadPresetFromDir does not catch it
     await expect(loadPresetFromDir("bad-yaml", presetsDir)).rejects.toThrow();
@@ -138,11 +125,7 @@ describe("loadPresetFromDir", () => {
   it("returns error for manifest missing required fields", async () => {
     const presetDir = path.join(presetsDir, "no-name");
     await fs.mkdir(presetDir, { recursive: true });
-    await fs.writeFile(
-      path.join(presetDir, "preset.yaml"),
-      "version: 1.0.0\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(presetDir, "preset.yaml"), "version: 1.0.0\n", "utf-8");
 
     const result = await loadPresetFromDir("no-name", presetsDir);
     expect(result.ok).toBe(false);
@@ -209,7 +192,7 @@ describe("loadPresetFromDir", () => {
         "version: 1.0.0",
         "artifacts:",
         "  commands:",
-        `    - ${prefixedName("commit")}`,
+        `    - ${prefixedName("test-run")}`,
       ].join("\n"),
       "utf-8",
     );
@@ -218,7 +201,7 @@ describe("loadPresetFromDir", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.commands.length).toBe(1);
-    expect(result.data.commands[0]!.name).toBe(prefixedName("commit"));
+    expect(result.data.commands[0]!.name).toBe(prefixedName("test-run"));
   });
 
   it("loads MCP config from preset directory", async () => {
@@ -226,9 +209,7 @@ describe("loadPresetFromDir", () => {
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, "preset.yaml"),
-      ["name: with-mcp", "description: Preset with MCP", "version: 1.0.0"].join(
-        "\n",
-      ),
+      ["name: with-mcp", "description: Preset with MCP", "version: 1.0.0"].join("\n"),
       "utf-8",
     );
     await fs.writeFile(

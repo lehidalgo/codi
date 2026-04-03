@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  loadTemplate,
-  AVAILABLE_TEMPLATES,
-} from "#src/core/scaffolder/template-loader.js";
+import { loadTemplate, AVAILABLE_TEMPLATES } from "#src/core/scaffolder/template-loader.js";
 import {
   loadAgentTemplate,
   AVAILABLE_AGENT_TEMPLATES,
@@ -56,12 +53,12 @@ describe("agent-template-loader", () => {
 describe("command-template-loader", () => {
   it("has available templates", () => {
     expect(AVAILABLE_COMMAND_TEMPLATES.length).toBeGreaterThan(0);
-    expect(AVAILABLE_COMMAND_TEMPLATES).toContain(prefixedName("commit"));
-    expect(AVAILABLE_COMMAND_TEMPLATES).toContain(prefixedName("review"));
+    expect(AVAILABLE_COMMAND_TEMPLATES).toContain(prefixedName("test-run"));
+    expect(AVAILABLE_COMMAND_TEMPLATES).toContain(prefixedName("check"));
   });
 
   it("loads a known template", () => {
-    const result = loadCommandTemplate(prefixedName("commit"));
+    const result = loadCommandTemplate(prefixedName("test-run"));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.length).toBeGreaterThan(0);

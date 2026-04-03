@@ -35,23 +35,23 @@ describe("command scaffolder", () => {
 
   it("creates a command from a known template", async () => {
     const result = await createCommand({
-      name: "my-review",
+      name: "my-test-run",
       configDir,
-      template: prefixedName("review"),
+      template: prefixedName("test-run"),
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     const content = await fs.readFile(result.data, "utf-8");
-    expect(content).toContain("my-review");
+    expect(content).toContain("my-test-run");
   });
 
   it("replaces {{name}} placeholder in template content", async () => {
     const result = await createCommand({
       name: "custom-cmd",
       configDir,
-      template: prefixedName("commit"),
+      template: prefixedName("test-run"),
     });
 
     expect(result.ok).toBe(true);

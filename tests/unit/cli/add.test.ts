@@ -88,9 +88,7 @@ describe("add skill command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-skill-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-skill-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -127,14 +125,7 @@ describe("add skill command handler", () => {
   it("creates evals.json in evals directory", async () => {
     await addSkillHandler(tmpDir, "eval-skill", {});
 
-    const evalsPath = path.join(
-      tmpDir,
-      PROJECT_DIR,
-      "skills",
-      "eval-skill",
-      "evals",
-      "evals.json",
-    );
+    const evalsPath = path.join(tmpDir, PROJECT_DIR, "skills", "eval-skill", "evals", "evals.json");
     const content = JSON.parse(await fs.readFile(evalsPath, "utf-8"));
     expect(content.skill_name).toBe("eval-skill");
     expect(content.evals).toEqual([]);
@@ -182,9 +173,7 @@ describe("add agent command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-agent-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-agent-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -248,9 +237,7 @@ describe("add command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-cmd-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-cmd-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -291,15 +278,15 @@ describe("add command handler", () => {
     expect(result.errors[0]!.message).toContain("already exists");
   });
 
-  it("creates a command file with commit template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-commit", {
-      template: prefixedName("commit"),
+  it("creates a command file with test-run template", async () => {
+    const result = await addCommandHandler(tmpDir, "my-test-run", {
+      template: prefixedName("test-run"),
     });
 
     expect(result.success).toBe(true);
-    expect(result.data.template).toBe(prefixedName("commit"));
+    expect(result.data.template).toBe(prefixedName("test-run"));
     const content = await fs.readFile(result.data.path, "utf-8");
-    expect(content).toContain("name: my-commit");
+    expect(content).toContain("name: my-test-run");
   });
 });
 
@@ -307,9 +294,7 @@ describe("add mcp-server command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-mcp-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-mcp-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -373,9 +358,7 @@ describe("add brand command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-brand-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-brand-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -394,8 +377,7 @@ describe("add brand command handler", () => {
 
     const content = await fs.readFile(result.data.path, "utf-8");
     expect(content).toContain("name: my-brand");
-    expect(content).toContain("category: brand");
-    expect(content).toContain("Brand Identity");
+    expect(content).toContain("category: Brand Identity");
   });
 
   it("scaffolds skill subdirectories for brand", async () => {
@@ -426,9 +408,7 @@ describe("add handler shared behaviors", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-shared-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-shared-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });

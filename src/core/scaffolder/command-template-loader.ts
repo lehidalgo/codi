@@ -2,18 +2,11 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
-import { createVersionMap } from "../version/artifact-version.js";
+import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
 import * as commandTemplates from "../../templates/commands/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
-  [prefixedName("review")]: commandTemplates.review,
   [prefixedName("test-run")]: commandTemplates.testRun,
-  [prefixedName("security-scan")]: commandTemplates.securityScan,
-  [prefixedName("test-coverage")]: commandTemplates.testCoverage,
-  [prefixedName("refactor")]: commandTemplates.refactor,
-  [prefixedName("onboard")]: commandTemplates.onboard,
-  [prefixedName("docs-lookup")]: commandTemplates.docsLookup,
-  [prefixedName("commit")]: commandTemplates.commit,
   [prefixedName("session-handoff")]: commandTemplates.sessionHandoff,
   [prefixedName("check")]: commandTemplates.check,
   [prefixedName("codebase-explore")]: commandTemplates.codebaseExplore,
@@ -22,11 +15,9 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("open-day")]: commandTemplates.openDay,
   [prefixedName("close-day")]: commandTemplates.closeDay,
   [prefixedName("roadmap")]: commandTemplates.roadmap,
-  [prefixedName("refine-rules")]: commandTemplates.refineRules,
 };
 
 export const AVAILABLE_COMMAND_TEMPLATES = Object.keys(TEMPLATE_MAP);
-const TEMPLATE_VERSIONS = createVersionMap(AVAILABLE_COMMAND_TEMPLATES);
 
 export function loadCommandTemplate(templateName: string): Result<string> {
   const content = TEMPLATE_MAP[templateName];
@@ -41,5 +32,6 @@ export function loadCommandTemplate(templateName: string): Result<string> {
 }
 
 export function getCommandTemplateVersion(templateName: string): number | undefined {
-  return TEMPLATE_VERSIONS[templateName];
+  const result = loadCommandTemplate(templateName);
+  return result.ok ? parseVersionFromFrontmatter(result.data) : undefined;
 }
