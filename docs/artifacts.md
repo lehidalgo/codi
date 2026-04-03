@@ -53,7 +53,7 @@ managed_by: codi              # codi (template) | user (custom)
 Create from templates: `codi add rule security --template security`
 
 <!-- GENERATED:START:rule_templates -->
-`codi-agent-usage`, `codi-api-design`, `codi-architecture`, `codi-code-style`, `codi-csharp`, `codi-django`, `codi-documentation`, `codi-error-handling`, `codi-git-workflow`, `codi-golang`, `codi-improvement-dev`, `codi-java`, `codi-kotlin`, `codi-nextjs`, `codi-performance`, `codi-production-mindset`, `codi-python`, `codi-react`, `codi-rust`, `codi-security`, `codi-simplicity-first`, `codi-spanish-orthography`, `codi-spring-boot`, `codi-swift`, `codi-testing`, `codi-typescript`, `codi-workflow`
+`codi-agent-usage`, `codi-api-design`, `codi-architecture`, `codi-code-style`, `codi-csharp`, `codi-django`, `codi-documentation`, `codi-error-handling`, `codi-git-workflow`, `codi-golang`, `codi-improvement-dev`, `codi-java`, `codi-kotlin`, `codi-nextjs`, `codi-output-discipline`, `codi-performance`, `codi-production-mindset`, `codi-python`, `codi-react`, `codi-rust`, `codi-security`, `codi-simplicity-first`, `codi-spanish-orthography`, `codi-spring-boot`, `codi-swift`, `codi-testing`, `codi-typescript`, `codi-workflow`
 <!-- GENERATED:END:rule_templates -->
 
 ---
@@ -133,6 +133,7 @@ intentHints:
 | **Code Quality** | codi-code-review, codi-e2e-testing, codi-error-recovery, codi-guided-qa-testing, codi-refactoring, codi-security-scan, codi-test-coverage, codi-webapp-testing |
 | **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs-manager, codi-operations, codi-preset-creator, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-reporter |
 | **Content Creation** | codi-content-factory |
+| **Content Refinement** | codi-humanizer |
 | **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory, codi-web-artifacts-builder |
 | **Developer Tools** | codi-claude-api, codi-codebase-onboarding, codi-commit, codi-documentation, codi-internal-comms, codi-mcp-ops, codi-mobile-development |
 | **Document Generation** | codi-deck-engine, codi-doc-engine |

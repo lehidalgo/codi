@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Artifact version tracking** — built-in templates carry an `artifactVersion` stamp; `codi update` detects outdated, new, and user-modified artifacts and offers per-artifact upgrade choices
+- **Installed artifact inventory** — classifies each `.codi/` artifact as original, modified, new, removed, or user-managed by comparing content hashes against the registry baseline
+- **Grouped multi-select UI** — grouped multi-select replaces flat lists for rule/skill/agent/command/MCP selection in `init` and `update` wizards
+- **Humanizer skill** — `codi-humanizer` rewrites AI-generated text into natural human prose
+- **MCP server templates per-file** — 33 servers now live in individual files under `official/`, `vendor/`, `community/`; 5 new servers added: graph-code, chrome-devtools, openai-developer-docs, neon-cloud, anthropic-docs
+- **MCP env var docs** — generated MCP config includes `_instructions` (JSON) or inline comments (TOML) explaining env var setup, plus a companion `.mcp.env.example` listing all required variables
+- **Output discipline rule** — `codi-output-discipline` enforces concise, scope-disciplined, formatting-safe AI responses
 - **Security analysis hooks** — `bandit` (Python), `gosec` (Go), `brakeman` (Ruby), and `phpcs-security` (PHP) added as pre-commit hooks, gated on the `security_scan` flag
 - **Language-group comments in hook scripts** — husky and standalone hook scripts now group hooks under `# — language —` section headers for readability in multi-language projects
 - **Robust secret scanner** — pre-commit secret scan now uses Shannon entropy filtering, excludes `templates/` and `docs/` dirs, adds more token patterns (Slack, AWS, fine-grained GitHub PATs), and reports file:line for each finding
