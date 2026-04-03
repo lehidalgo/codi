@@ -6,20 +6,13 @@ import { cleanupTmpDir } from "../../helpers/fs.js";
 import { stringify as stringifyYaml, parse as parseYaml } from "yaml";
 import { updateHandler } from "#src/cli/update.js";
 import { Logger } from "#src/core/output/logger.js";
-import {
-  prefixedName,
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("update command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-update-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-update-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
 
     const configDir = path.join(tmpDir, PROJECT_DIR);
@@ -93,17 +86,12 @@ describe("update command handler", () => {
     });
     expect(result.success).toBe(true);
 
-    const afterContent = await fs.readFile(
-      path.join(configDir, "flags.yaml"),
-      "utf-8",
-    );
+    const afterContent = await fs.readFile(path.join(configDir, "flags.yaml"), "utf-8");
     expect(afterContent).toBe(original);
   });
 
   it(`fails if no ${PROJECT_DIR}/ exists`, async () => {
-    const emptyDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-empty-`),
-    );
+    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-empty-`));
     const result = await updateHandler(emptyDir, { json: true });
     expect(result.success).toBe(false);
     expect(result.errors[0]!.code).toBe("E_CONFIG_NOT_FOUND");
@@ -273,7 +261,7 @@ describe("update command handler", () => {
 
     const commandsDir = path.join(configDir, "commands");
     await fs.mkdir(commandsDir, { recursive: true });
-    const cmdName = prefixedName("commit");
+    const cmdName = prefixedName("test-run");
     await fs.writeFile(
       path.join(commandsDir, `${cmdName}.md`),
       `---\nname: ${cmdName}\nmanaged_by: ${PROJECT_NAME}\n---\nold command content`,
