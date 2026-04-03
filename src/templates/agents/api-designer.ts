@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: API design agent. Use to design REST or GraphQL APIs following best practices for naming, pagination, error handling, and documentation.
+description: Use when designing REST or GraphQL APIs. Reviews naming conventions, pagination patterns, error handling, versioning, and produces OpenAPI-compatible documentation.
 tools: [Read, Write, Grep, Glob]
 model: inherit
 managed_by: ${PROJECT_NAME}

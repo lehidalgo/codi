@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: OpenAI Agents SDK specialist. Use for agent orchestration, tool design, handoff patterns, guardrails, sessions, tracing, or multi-agent system implementation.
+description: Use when building with the OpenAI Agents SDK. Covers agent orchestration, tool design, handoff patterns, guardrails, sessions, tracing, and multi-agent architectures.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

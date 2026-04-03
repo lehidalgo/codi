@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Data science specialist. Use for ML model design, feature engineering, statistical analysis, experiment design, model evaluation, or interpretability.
+description: Use when designing ML pipelines, feature engineering, or model evaluation. Researches best practices for experiment tracking, hypothesis testing, and interpretability.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

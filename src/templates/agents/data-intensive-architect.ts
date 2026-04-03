@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Distributed systems architect. Use for database selection, replication strategies, partitioning schemes, consistency models, or data-intensive application design.
+description: Use when choosing databases or designing for scale. Evaluates storage engines, replication, partitioning, and consistency trade-offs for high-throughput workloads.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

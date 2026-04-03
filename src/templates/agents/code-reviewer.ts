@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Expert code reviewer. Use when reviewing PRs, examining code changes, or auditing code quality and security.
+description: Use when reviewing PRs or code changes. Provides severity-ranked findings (CRITICAL/HIGH/MEDIUM/LOW) with confidence filtering across multiple files in parallel.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

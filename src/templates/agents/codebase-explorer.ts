@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Codebase exploration agent. Use to understand code structure, trace dependencies, find function callers, or navigate unfamiliar code via knowledge graph.
+description: Use when navigating an unfamiliar codebase. Traces call graphs, maps dependencies, finds callers, and produces architecture overviews using a code knowledge graph.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
