@@ -9,7 +9,6 @@ import {
 import { AVAILABLE_TEMPLATES } from "#src/core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "#src/core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "#src/core/scaffolder/command-template-loader.js";
 import { AVAILABLE_MCP_SERVER_TEMPLATES } from "#src/core/scaffolder/mcp-template-loader.js";
 
 describe("getCLIVersion", () => {
@@ -55,13 +54,6 @@ describe("buildTemplateHashRegistry", () => {
   it("covers all agent templates by name", () => {
     const registry = buildTemplateHashRegistry();
     for (const name of AVAILABLE_AGENT_TEMPLATES) {
-      expect(registry.templates[name]).toBeDefined();
-    }
-  });
-
-  it("covers all command templates by name", () => {
-    const registry = buildTemplateHashRegistry();
-    for (const name of AVAILABLE_COMMAND_TEMPLATES) {
       expect(registry.templates[name]).toBeDefined();
     }
   });
@@ -142,7 +134,7 @@ describe("getAllFingerprints", () => {
       expect(fp.name).toBeTruthy();
       expect(fp.contentHash).toBeTruthy();
       expect(fp.artifactVersion).toBeGreaterThan(0);
-      expect(["rule", "skill", "agent", "command", "mcp-server"]).toContain(fp.type);
+      expect(["rule", "skill", "agent", "mcp-server"]).toContain(fp.type);
     }
   });
 });

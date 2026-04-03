@@ -30,7 +30,6 @@ describe("codex adapter", () => {
     expect(codexAdapter.capabilities).toEqual({
       rules: true,
       skills: true,
-      commands: false,
       mcp: true,
       frontmatter: false,
       progressiveLoading: false,
@@ -45,7 +44,6 @@ describe("codex adapter", () => {
     expect(codexAdapter.paths.configRoot).toBe(".codex");
     expect(codexAdapter.paths.rules).toBe(".");
     expect(codexAdapter.paths.skills).toBe(".agents/skills");
-    expect(codexAdapter.paths.commands).toBeNull();
     expect(codexAdapter.paths.agents).toBe(".codex/agents");
     expect(codexAdapter.paths.instructionFile).toBe("AGENTS.md");
     expect(codexAdapter.paths.mcpConfig).toBe(".codex/mcp.toml");

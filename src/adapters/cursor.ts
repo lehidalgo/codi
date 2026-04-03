@@ -56,7 +56,6 @@ export const cursorAdapter: AgentAdapter = {
     configRoot: ".cursor",
     rules: ".cursor/rules",
     skills: null,
-    commands: null,
     agents: null,
     instructionFile: ".cursorrules",
     mcpConfig: ".cursor/mcp.json",
@@ -65,7 +64,6 @@ export const cursorAdapter: AgentAdapter = {
   capabilities: {
     rules: true,
     skills: true,
-    commands: false,
     mcp: true,
     frontmatter: true,
     progressiveLoading: true,

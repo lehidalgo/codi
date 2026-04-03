@@ -1,9 +1,0 @@
-export { template as testRun } from "./test-run.js";
-export { template as sessionHandoff } from "./session-handoff.js";
-export { template as check } from "./check.js";
-export { template as codebaseExplore } from "./codebase-explore.js";
-export { template as indexGraph } from "./index-graph.js";
-export { template as updateGraph } from "./update-graph.js";
-export { template as openDay } from "./open-day.js";
-export { template as closeDay } from "./close-day.js";
-export { template as roadmap } from "./roadmap.js";

@@ -10,17 +10,13 @@ import {
   loadAgentTemplate,
 } from "../scaffolder/agent-template-loader.js";
 import {
-  AVAILABLE_COMMAND_TEMPLATES,
-  loadCommandTemplate,
-} from "../scaffolder/command-template-loader.js";
-import {
   AVAILABLE_MCP_SERVER_TEMPLATES,
   BUILTIN_MCP_SERVERS,
   getMcpServerTemplateVersion,
 } from "../scaffolder/mcp-template-loader.js";
 import { parseVersionFromFrontmatter } from "./artifact-version.js";
 
-export type ArtifactType = "rule" | "skill" | "agent" | "command" | "mcp-server";
+export type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
 
 export interface TemplateFingerprint {
   name: string;
@@ -82,18 +78,6 @@ function buildRegistry(): TemplateHashRegistry {
       templates[name] = {
         name,
         type: "agent",
-        contentHash: hashContent(result.data),
-        artifactVersion: parseVersionFromFrontmatter(result.data),
-      };
-    }
-  }
-
-  for (const name of AVAILABLE_COMMAND_TEMPLATES) {
-    const result = loadCommandTemplate(name);
-    if (result.ok) {
-      templates[name] = {
-        name,
-        type: "command",
         contentHash: hashContent(result.data),
         artifactVersion: parseVersionFromFrontmatter(result.data),
       };

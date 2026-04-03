@@ -99,7 +99,7 @@ export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf"
 export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
 
 // --- Artifact types ---
-export const ARTIFACT_TYPES = ["rules", "skills", "agents", "commands"] as const;
+export const ARTIFACT_TYPES = ["rules", "skills", "agents"] as const;
 
 // --- Brand category ---
 export const BRAND_CATEGORY = "brand" as const;
@@ -137,7 +137,6 @@ export const PRE_COMMIT_MAX_FILE_LINES = 800;
 // --- Per-layer line limits (ACS recommendations) ---
 export const MAX_CONTEXT_LINES = 300;
 export const MAX_SKILL_LINES = 500;
-export const MAX_COMMAND_LINES = 100;
 export const MAX_AGENT_LINES = 200;
 
 // --- Git commit standards ---

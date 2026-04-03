@@ -13,9 +13,7 @@ import { FLAGS_FILENAME } from "#src/constants.js";
  * All artifacts (rules, skills, agents, commands), flags, and MCP configs come from .codi/.
  * Presets are consumed at install time — they are not loaded during config resolution.
  */
-export async function resolveConfig(
-  projectRoot: string,
-): Promise<Result<NormalizedConfig>> {
+export async function resolveConfig(projectRoot: string): Promise<Result<NormalizedConfig>> {
   const configDir = resolveProjectDir(projectRoot);
   const scanResult = await scanProjectDir(projectRoot);
   if (!scanResult.ok) return scanResult;
@@ -25,12 +23,8 @@ export async function resolveConfig(
     manifest: parsed.manifest,
     rules: parsed.rules,
     skills: parsed.skills,
-    commands: parsed.commands,
     agents: parsed.agents,
-    flags: flagsFromDefinitions(
-      parsed.flags,
-      path.join(configDir, FLAGS_FILENAME),
-    ),
+    flags: flagsFromDefinitions(parsed.flags, path.join(configDir, FLAGS_FILENAME)),
     mcp: parsed.mcp,
   };
 

@@ -32,7 +32,6 @@ export {
 } from "./skill-creator/index.js";
 export { template as ruleCreator } from "./rule-creator/index.js";
 export { template as agentCreator } from "./agent-creator/index.js";
-export { template as commandCreator } from "./command-creator/index.js";
 export {
   template as guidedQaTesting,
   staticDir as guidedQaTestingStaticDir,

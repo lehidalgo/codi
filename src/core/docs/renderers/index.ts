@@ -8,10 +8,7 @@ export {
   renderFlagHooks,
 } from "./flag-renderers.js";
 
-export {
-  renderPresetTable,
-  renderPresetFlagComparison,
-} from "./preset-renderers.js";
+export { renderPresetTable, renderPresetFlagComparison } from "./preset-renderers.js";
 
 export {
   renderTemplateCounts,
@@ -20,7 +17,6 @@ export {
   renderSkillTemplatesByCategory,
   extractSkillCategory,
   renderAgentTemplateList,
-  renderCommandTemplateList,
 } from "./template-renderers.js";
 
 export {
@@ -39,7 +35,6 @@ export {
   renderRuleFields,
   renderSkillFields,
   renderAgentFields,
-  renderCommandFields,
   renderManifestFields,
 } from "./schema-renderers.js";
 

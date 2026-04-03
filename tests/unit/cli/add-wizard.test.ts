@@ -45,10 +45,7 @@ describe("runAddWizard", () => {
 
   it("returns templates selection when mode is templates", async () => {
     vi.mocked(p.select).mockResolvedValueOnce("templates" as never);
-    vi.mocked(p.multiselect).mockResolvedValueOnce([
-      "security",
-      "testing",
-    ] as never);
+    vi.mocked(p.multiselect).mockResolvedValueOnce(["security", "testing"] as never);
     vi.mocked(p.confirm).mockResolvedValueOnce(true as never);
 
     const result = await runAddWizard("rule");
@@ -100,7 +97,7 @@ describe("runAddWizard", () => {
     vi.mocked(p.multiselect).mockResolvedValueOnce(Symbol("cancel") as never);
     vi.mocked(p.isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true);
 
-    const result = await runAddWizard("command");
+    const result = await runAddWizard("agent");
     expect(result).toBeNull();
     expect(p.cancel).toHaveBeenCalled();
   });

@@ -18,7 +18,6 @@ import { generate } from "../core/generator/generator.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
-import { createCommand } from "../core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
 // Preset artifact lookup moved to init-wizard.ts
 import { createCommandResult } from "../core/output/formatter.js";
@@ -75,7 +74,6 @@ function hasSelections(selections: ExistingSelections): boolean {
     selections.rules.length > 0 ||
     selections.skills.length > 0 ||
     selections.agents.length > 0 ||
-    selections.commands.length > 0 ||
     selections.mcpServers.length > 0
   );
 }
@@ -117,7 +115,6 @@ export async function initHandler(
             rules: activePreset.artifactSelection.rules,
             skills: activePreset.artifactSelection.skills,
             agents: activePreset.artifactSelection.agents,
-            commands: activePreset.artifactSelection.commands,
             mcpServers: activePreset.artifactSelection.mcpServers ?? [],
           };
         }
@@ -149,7 +146,6 @@ export async function initHandler(
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
-  let commandTemplates: string[] = [];
   let mcpServerTemplates: string[] = [];
 
   if (isInteractive(options)) {
@@ -196,7 +192,6 @@ export async function initHandler(
       ruleTemplates = wizardResult.rules;
       skillTemplates = wizardResult.skills;
       agentTemplates = wizardResult.agentTemplates;
-      commandTemplates = wizardResult.commandTemplates;
       mcpServerTemplates = wizardResult.mcpServers;
     }
 
@@ -244,7 +239,6 @@ export async function initHandler(
             rules: wizardResult.rules,
             skills: wizardResult.skills,
             agents: wizardResult.agentTemplates,
-            commands: wizardResult.commandTemplates,
             mcpServers: wizardResult.mcpServers,
           },
         }),
@@ -322,7 +316,6 @@ export async function initHandler(
       ruleTemplates = [...presetDef.rules];
       skillTemplates = [...presetDef.skills];
       agentTemplates = [...presetDef.agents];
-      commandTemplates = [...(presetDef.commands ?? [])];
     }
   }
 
@@ -366,20 +359,6 @@ export async function initHandler(
     if (!result.ok) {
       log.warn(
         `Failed to create agent "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
-      );
-    }
-  }
-
-  for (const template of commandTemplates) {
-    const result = await createCommand({
-      name: template,
-      configDir,
-      template,
-      force: options.force,
-    });
-    if (!result.ok) {
-      log.warn(
-        `Failed to create command "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
       );
     }
   }
@@ -447,21 +426,6 @@ export async function initHandler(
           /* file may not exist if scaffolding failed */
         }
       }
-      for (const name of commandTemplates) {
-        const filePath = path.join(configDir, "commands", `${name}.md`);
-        try {
-          const content = await fs.readFile(filePath, "utf-8");
-          artifactStates.push({
-            path: path.relative(projectRoot, filePath),
-            hash: hashContent(content),
-            preset: presetName,
-            timestamp: now,
-          });
-        } catch {
-          /* file may not exist if scaffolding failed */
-        }
-      }
-
       if (artifactStates.length > 0) {
         await stateManager.updatePresetArtifacts(artifactStates);
       }
@@ -476,7 +440,6 @@ export async function initHandler(
     ruleTemplates,
     skillTemplates,
     agentTemplates,
-    commandTemplates,
     mcpServerTemplates,
     isUpdate ? existingSelections : undefined,
   ).catch(() => log.warn("Artifact manifest sync failed; this is non-critical."));
@@ -576,7 +539,6 @@ export async function initHandler(
       ruleTemplates.length > 0 ||
       skillTemplates.length > 0 ||
       agentTemplates.length > 0 ||
-      commandTemplates.length > 0 ||
       mcpServerTemplates.length > 0
     ) {
       await ledger.setActivePreset({
@@ -586,7 +548,6 @@ export async function initHandler(
           rules: ruleTemplates,
           skills: skillTemplates,
           agents: agentTemplates,
-          commands: commandTemplates,
           mcpServers: mcpServerTemplates,
         },
       });

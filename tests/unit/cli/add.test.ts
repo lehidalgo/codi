@@ -7,7 +7,6 @@ import {
   addRuleHandler,
   addSkillHandler,
   addAgentHandler,
-  addCommandHandler,
   addMcpServerHandler,
   addBrandHandler,
 } from "#src/cli/add.js";
@@ -233,63 +232,6 @@ describe("add agent command handler", () => {
   });
 });
 
-describe("add command handler", () => {
-  let tmpDir: string;
-
-  beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-cmd-`));
-    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
-    Logger.init({ level: "error", mode: "human", noColor: true });
-  });
-
-  afterEach(async () => {
-    await cleanupTmpDir(tmpDir);
-  });
-
-  it("creates a command file without template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-command", {});
-
-    expect(result.success).toBe(true);
-    expect(result.data.name).toBe("my-command");
-    expect(result.data.path).toContain("my-command.md");
-
-    const content = await fs.readFile(result.data.path, "utf-8");
-    expect(content).toContain("name: my-command");
-    expect(content).toContain("managed_by: user");
-  });
-
-  it("fails with invalid command name", async () => {
-    const result = await addCommandHandler(tmpDir, "has spaces", {});
-    expect(result.success).toBe(false);
-  });
-
-  it("fails with unknown template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-cmd", {
-      template: "bogus",
-    });
-    expect(result.success).toBe(false);
-    expect(result.errors[0]!.message).toContain("Unknown command template");
-  });
-
-  it("fails if command already exists", async () => {
-    await addCommandHandler(tmpDir, "dup-cmd", {});
-    const result = await addCommandHandler(tmpDir, "dup-cmd", {});
-    expect(result.success).toBe(false);
-    expect(result.errors[0]!.message).toContain("already exists");
-  });
-
-  it("creates a command file with test-run template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-test-run", {
-      template: prefixedName("test-run"),
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.data.template).toBe(prefixedName("test-run"));
-    const content = await fs.readFile(result.data.path, "utf-8");
-    expect(content).toContain("name: my-test-run");
-  });
-});
-
 describe("add mcp-server command handler", () => {
   let tmpDir: string;
 
@@ -429,9 +371,6 @@ describe("add handler shared behaviors", () => {
     const agentResult = await addAgentHandler(tmpDir, longName, {});
     expect(agentResult.success).toBe(false);
 
-    const commandResult = await addCommandHandler(tmpDir, longName, {});
-    expect(commandResult.success).toBe(false);
-
     const mcpResult = await addMcpServerHandler(tmpDir, longName, {});
     expect(mcpResult.success).toBe(false);
 
@@ -461,9 +400,6 @@ describe("add handler shared behaviors", () => {
 
     const agentResult = await addAgentHandler(tmpDir, "agent-a", {});
     expect(agentResult.exitCode).toBe(EXIT_CODES.SUCCESS);
-
-    const commandResult = await addCommandHandler(tmpDir, "cmd-a", {});
-    expect(commandResult.exitCode).toBe(EXIT_CODES.SUCCESS);
 
     const mcpResult = await addMcpServerHandler(tmpDir, "mcp-a", {});
     expect(mcpResult.exitCode).toBe(EXIT_CODES.SUCCESS);

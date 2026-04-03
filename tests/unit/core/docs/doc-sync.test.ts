@@ -22,7 +22,6 @@ describe("collectStats", () => {
     expect(stats.rules.count).toBeGreaterThan(0);
     expect(stats.skills.count).toBeGreaterThan(0);
     expect(stats.agents.count).toBeGreaterThan(0);
-    expect(stats.commands.count).toBeGreaterThan(0);
     expect(stats.flags.count).toBeGreaterThan(0);
     expect(stats.errorCodes).toBeGreaterThan(0);
     expect(stats.cliCommands).toBeGreaterThan(0);
@@ -34,7 +33,6 @@ describe("collectStats", () => {
     expect(stats.rules.names).toHaveLength(stats.rules.count);
     expect(stats.skills.names).toHaveLength(stats.skills.count);
     expect(stats.agents.names).toHaveLength(stats.agents.count);
-    expect(stats.commands.names).toHaveLength(stats.commands.count);
   });
 });
 
@@ -47,7 +45,6 @@ describe("checkDocSync", () => {
         `| Rule templates | ${stats.rules.count} |`,
         `| Skill templates | ${stats.skills.count} |`,
         `| Agent templates | ${stats.agents.count} |`,
-        `| Command templates | ${stats.commands.count} |`,
         `| Error codes | ${stats.errorCodes} |`,
         `| Flags | ${stats.flags.count} |`,
         `| Adapters | ${stats.adapters} |`,

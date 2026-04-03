@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { clineAdapter } from "#src/adapters/cline.js";
 import { createMockConfig } from "./mock-config.js";
-import {
-  CONTEXT_TOKENS_LARGE,
-  PROJECT_NAME,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { CONTEXT_TOKENS_LARGE, PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("cline adapter", () => {
   const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-cline-` + Date.now());
@@ -34,7 +30,6 @@ describe("cline adapter", () => {
     expect(clineAdapter.capabilities).toEqual({
       rules: true,
       skills: true,
-      commands: false,
       mcp: false,
       frontmatter: false,
       progressiveLoading: false,
@@ -49,7 +44,6 @@ describe("cline adapter", () => {
     expect(clineAdapter.paths.configRoot).toBe(".cline");
     expect(clineAdapter.paths.rules).toBe(".cline");
     expect(clineAdapter.paths.skills).toBe(".cline/skills");
-    expect(clineAdapter.paths.commands).toBeNull();
     expect(clineAdapter.paths.agents).toBeNull();
     expect(clineAdapter.paths.instructionFile).toBe(".clinerules");
     expect(clineAdapter.paths.mcpConfig).toBeNull();
@@ -166,9 +160,7 @@ describe("cline adapter", () => {
 
   it("generates skill files in .cline/skills/", async () => {
     const config = createMockConfig({
-      skills: [
-        { name: "review", description: "Code review", content: "Review code" },
-      ],
+      skills: [{ name: "review", description: "Code review", content: "Review code" }],
       flags: {},
     });
     const files = await clineAdapter.generate(config, {});
@@ -195,24 +187,16 @@ describe("cline adapter", () => {
       (f) => f.path.startsWith(".cline/skills/") && f.path.endsWith("SKILL.md"),
     );
     expect(skillMds).toHaveLength(3);
-    expect(
-      skillMds.find((f) => f.path === ".cline/skills/alpha/SKILL.md"),
-    ).toBeDefined();
-    expect(
-      skillMds.find((f) => f.path === ".cline/skills/beta/SKILL.md"),
-    ).toBeDefined();
-    expect(
-      skillMds.find((f) => f.path === ".cline/skills/gamma/SKILL.md"),
-    ).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".cline/skills/alpha/SKILL.md")).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".cline/skills/beta/SKILL.md")).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".cline/skills/gamma/SKILL.md")).toBeDefined();
   });
 
   // --- generate() with progressive_loading metadata ---
 
   it("shows skill catalog when progressive_loading is metadata", async () => {
     const config = createMockConfig({
-      skills: [
-        { name: "deploy", description: "Deploy skill", content: "Run deploy" },
-      ],
+      skills: [{ name: "deploy", description: "Deploy skill", content: "Run deploy" }],
       flags: {
         progressive_loading: {
           value: "metadata",

@@ -1,8 +1,4 @@
-import {
-  GIT_COMMIT_FIRST_LINE_LIMIT,
-  PROJECT_CLI,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_CLI, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 // These are template strings for generated hook scripts.
 // They are written to disk as standalone Node.js scripts, not executed in this process.
@@ -207,15 +203,6 @@ const ARTIFACT_TYPES = [
     templateDir: 'src/templates/agents',
     indexFile: 'src/templates/agents/index.ts',
     loaderFile: 'src/core/scaffolder/agent-template-loader.ts',
-    excludeFiles: [],
-    deprecated: [],
-    useDirs: false,
-  },
-  {
-    name: 'commands',
-    templateDir: 'src/templates/commands',
-    indexFile: 'src/templates/commands/index.ts',
-    loaderFile: 'src/core/scaffolder/command-template-loader.ts',
     excludeFiles: [],
     deprecated: [],
     useDirs: false,

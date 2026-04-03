@@ -18,9 +18,7 @@ describe("presetCreateHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-create-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-create-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -54,7 +52,6 @@ describe("presetCreateHandler", () => {
       rules: [],
       skills: [],
       agents: [],
-      commands: [],
     });
   });
 
@@ -114,9 +111,7 @@ describe("presetUpdateHandler — empty lock file", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-update-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-update-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -204,9 +199,7 @@ describe("presetCreateHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-create2-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-create2-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 

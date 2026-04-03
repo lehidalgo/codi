@@ -11,11 +11,7 @@ import {
   scanProjectDir,
   parseSkillFile,
 } from "#src/core/config/parser.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 const FIXTURES = path.resolve(__dirname, "../../fixtures/inheritance");
 const BASIC = path.join(FIXTURES, "basic-merge/input/.codi");
@@ -82,9 +78,7 @@ describe("scanSkills", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-parser-skills-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-parser-skills-`));
   });
 
   afterEach(async () => {
@@ -166,9 +160,7 @@ describe("parseSkillFile", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-parse-skill-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-parse-skill-`));
   });
 
   afterEach(async () => {
@@ -244,9 +236,7 @@ describe("scanProjectDir", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-scan-dir-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-scan-dir-`));
   });
 
   afterEach(async () => {
@@ -285,7 +275,6 @@ describe("scanProjectDir", () => {
     expect(result.data.manifest.name).toBe("test");
     expect(result.data.rules).toEqual([]);
     expect(result.data.skills).toEqual([]);
-    expect(result.data.commands).toEqual([]);
     expect(result.data.agents).toEqual([]);
     expect(result.data.flags).toEqual({});
   });
@@ -324,35 +313,6 @@ describe("scanProjectDir", () => {
     expect(result.data.rules[0]!.name).toBe("testing");
     expect(result.data.skills.length).toBe(1);
     expect(result.data.skills[0]!.name).toBe("commit");
-  });
-
-  it("parses commands from commands directory", async () => {
-    const configDir = path.join(tmpDir, PROJECT_DIR);
-    await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      'name: cmd-test\nversion: "1"\nagents:\n  - claude-code\n',
-      "utf-8",
-    );
-
-    const commandsDir = path.join(configDir, "commands");
-    await fs.mkdir(commandsDir, { recursive: true });
-    await fs.writeFile(
-      path.join(commandsDir, "deploy.md"),
-      `---\nname: deploy\ndescription: Deploy the app\nmanaged_by: ${PROJECT_NAME}\n---\nRun the deploy script.`,
-      "utf-8",
-    );
-
-    const result = await scanProjectDir(tmpDir);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.commands).toHaveLength(1);
-    expect(result.data.commands[0]!.name).toBe("deploy");
-    expect(result.data.commands[0]!.description).toBe("Deploy the app");
-    expect(result.data.commands[0]!.content).toContain(
-      "Run the deploy script.",
-    );
-    expect(result.data.commands[0]!.managedBy).toBe(PROJECT_NAME);
   });
 
   it("parses agents from agents directory", async () => {
@@ -432,11 +392,7 @@ describe("scanProjectDir", () => {
   it("returns error for invalid manifest YAML", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      "{ broken yaml [[[",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), "{ broken yaml [[[", "utf-8");
 
     const result = await scanProjectDir(tmpDir);
     expect(result.ok).toBe(false);

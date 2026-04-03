@@ -11,7 +11,6 @@ import type {
   ManagedBy,
   NormalizedRule,
   NormalizedSkill,
-  NormalizedCommand,
   NormalizedAgent,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
@@ -20,7 +19,6 @@ import { FlagDefinitionSchema } from "../../schemas/flag.js";
 import { RuleFrontmatterSchema } from "../../schemas/rule.js";
 import { SkillFrontmatterSchema } from "../../schemas/skill.js";
 import { AgentFrontmatterSchema } from "../../schemas/agent.js";
-import { CommandFrontmatterSchema } from "../../schemas/command.js";
 import { McpConfigSchema } from "../../schemas/mcp.js";
 import { createError, zodToProjectErrors } from "../output/errors.js";
 import { parseFrontmatter } from "../../utils/frontmatter.js";
@@ -32,7 +30,6 @@ export interface ParsedProjectDir {
   flags: Record<string, FlagDefinition>;
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
-  commands: NormalizedCommand[];
   agents: NormalizedAgent[];
   mcp: McpConfig;
 }
@@ -138,54 +135,6 @@ export async function scanSkills(skillsDir: string): Promise<Result<NormalizedSk
 
   if (errors.length > 0) return err(errors);
   return ok(skills);
-}
-
-async function scanCommands(commandsDir: string): Promise<Result<NormalizedCommand[]>> {
-  if (!(await fileExists(commandsDir))) {
-    return ok([]);
-  }
-  const commands: NormalizedCommand[] = [];
-  const errors: ReturnType<typeof createError>[] = [];
-
-  const files = await collectMarkdownFiles(commandsDir);
-  const results = await Promise.all(files.map(parseCommandFile));
-  for (const result of results) {
-    if (!result.ok) {
-      errors.push(...result.errors);
-    } else {
-      commands.push(result.data);
-    }
-  }
-
-  if (errors.length > 0) return err(errors);
-  return ok(commands);
-}
-
-async function parseCommandFile(filePath: string): Promise<Result<NormalizedCommand>> {
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
-    const parsed = CommandFrontmatterSchema.safeParse(data);
-    if (!parsed.success) {
-      return err(zodToProjectErrors(parsed.error, filePath));
-    }
-    const fm = parsed.data;
-    const rawManagedBy = data["managed_by"];
-    const managedBy = typeof rawManagedBy === "string" ? rawManagedBy : undefined;
-    return ok({
-      name: fm.name,
-      description: fm.description,
-      content,
-      managedBy: managedBy as ManagedBy | undefined,
-    });
-  } catch (cause) {
-    return err([
-      createError("E_FRONTMATTER_INVALID", {
-        file: filePath,
-        message: (cause as Error).message,
-      }),
-    ]);
-  }
 }
 
 async function scanAgents(agentsDir: string): Promise<Result<NormalizedAgent[]>> {
@@ -445,11 +394,10 @@ export async function scanProjectDir(projectRoot: string): Promise<Result<Parsed
   if (!flagsResult.ok) return flagsResult;
 
   // All artifact scans are independent — run in parallel
-  const [rulesResult, skillsResult, commandsResult, agentsResult, legacyBrandsResult, mcpResult] =
+  const [rulesResult, skillsResult, agentsResult, legacyBrandsResult, mcpResult] =
     await Promise.all([
       scanRules(path.join(configDir, "rules")),
       scanSkills(path.join(configDir, "skills")),
-      scanCommands(path.join(configDir, "commands")),
       scanAgents(path.join(configDir, "agents")),
       scanLegacyBrands(path.join(configDir, "brands")),
       parseMcpConfig(configDir),
@@ -457,7 +405,6 @@ export async function scanProjectDir(projectRoot: string): Promise<Result<Parsed
 
   if (!rulesResult.ok) return rulesResult;
   if (!skillsResult.ok) return skillsResult;
-  if (!commandsResult.ok) return commandsResult;
   if (!agentsResult.ok) return agentsResult;
   if (!legacyBrandsResult.ok) return legacyBrandsResult;
   if (!mcpResult.ok) return mcpResult;
@@ -467,7 +414,6 @@ export async function scanProjectDir(projectRoot: string): Promise<Result<Parsed
     flags: flagsResult.data,
     rules: rulesResult.data,
     skills: [...skillsResult.data, ...legacyBrandsResult.data],
-    commands: commandsResult.data,
     agents: agentsResult.data,
     mcp: mcpResult.data,
   });

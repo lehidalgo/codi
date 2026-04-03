@@ -3,7 +3,6 @@ export interface TemplateCounts {
   rules: number;
   skills: number;
   agents: number;
-  commands: number;
   flags: number;
 }
 

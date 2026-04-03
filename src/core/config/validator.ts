@@ -7,7 +7,6 @@ import {
   MAX_ARTIFACT_CHARS,
   MAX_TOTAL_ARTIFACT_CHARS,
   MAX_SKILL_LINES,
-  MAX_COMMAND_LINES,
   MAX_AGENT_LINES,
 } from "#src/constants.js";
 
@@ -22,7 +21,7 @@ export function validateConfig(config: NormalizedConfig): ProjectError[] {
   errors.push(...validateAgents(config));
   errors.push(...validateRules(config));
   errors.push(...validateSkills(config));
-  errors.push(...validateCommandsAndAgents(config));
+  errors.push(...validateAgentArtifacts(config));
   errors.push(...validateFlags(config));
 
   return errors;
@@ -79,26 +78,6 @@ export function validateContentSize(config: NormalizedConfig): ProjectError[] {
       warnings.push(
         createError("W_CONTENT_SIZE", {
           message: `Agent "${agent.name}" is ${lines} lines (ACS recommendation: ≤${MAX_AGENT_LINES}). Consider simplifying.`,
-        }),
-      );
-    }
-  }
-
-  for (const command of config.commands) {
-    const len = command.content.length;
-    const lines = command.content.split("\n").length;
-    totalChars += len;
-    if (len > MAX_ARTIFACT_CHARS) {
-      warnings.push(
-        createError("W_CONTENT_SIZE", {
-          message: `Command "${command.name}" is ${len.toLocaleString()} chars (limit: ${MAX_ARTIFACT_CHARS.toLocaleString()}).`,
-        }),
-      );
-    }
-    if (lines > MAX_COMMAND_LINES) {
-      warnings.push(
-        createError("W_CONTENT_SIZE", {
-          message: `Command "${command.name}" is ${lines} lines (ACS recommendation: ≤${MAX_COMMAND_LINES}).`,
         }),
       );
     }
@@ -186,28 +165,8 @@ function validateSkills(config: NormalizedConfig): ProjectError[] {
   return errors;
 }
 
-function validateCommandsAndAgents(config: NormalizedConfig): ProjectError[] {
+function validateAgentArtifacts(config: NormalizedConfig): ProjectError[] {
   const errors: ProjectError[] = [];
-  const commandNames = new Set<string>();
-
-  for (const cmd of config.commands) {
-    if (commandNames.has(cmd.name)) {
-      errors.push(
-        createError("E_CONFIG_INVALID", {
-          message: `Duplicate command name: "${cmd.name}"`,
-        }),
-      );
-    }
-    commandNames.add(cmd.name);
-
-    if (!cmd.content.trim()) {
-      errors.push(
-        createError("E_CONFIG_INVALID", {
-          message: `Command "${cmd.name}" has empty content`,
-        }),
-      );
-    }
-  }
 
   const agentNames = new Set<string>();
   for (const agent of config.agents) {

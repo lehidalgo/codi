@@ -33,9 +33,7 @@ export interface PresetWizardResult {
  * Interactive preset creation wizard.
  * Guides the user through defining and packaging a preset.
  */
-export async function runPresetWizard(
-  projectRoot: string,
-): Promise<PresetWizardResult | null> {
+export async function runPresetWizard(projectRoot: string): Promise<PresetWizardResult | null> {
   p.intro(`${PROJECT_CLI} — Preset Creator`);
 
   // Step 1: Identity
@@ -43,10 +41,8 @@ export async function runPresetWizard(
     message: "Preset name (kebab-case)",
     validate: (v) => {
       if (!v) return "Name is required";
-      if (v.length > MAX_NAME_LENGTH)
-        return `Max ${MAX_NAME_LENGTH} characters`;
-      if (!NAME_PATTERN_STRICT.test(v))
-        return "Must be kebab-case, start with a letter";
+      if (v.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
+      if (!NAME_PATTERN_STRICT.test(v)) return "Must be kebab-case, start with a letter";
     },
   });
   if (p.isCancel(name)) {
@@ -166,10 +162,7 @@ export async function runPresetWizard(
   return result;
 }
 
-async function scaffoldPreset(
-  projectRoot: string,
-  config: PresetWizardResult,
-): Promise<void> {
+async function scaffoldPreset(projectRoot: string, config: PresetWizardResult): Promise<void> {
   const log = Logger.getInstance();
   const configDir = resolveProjectDir(projectRoot);
   const presetDir = path.join(configDir, "presets", config.name);
@@ -186,7 +179,6 @@ async function scaffoldPreset(
       rules: config.rules,
       skills: config.skills,
       agents: config.agents,
-      commands: [],
     },
   };
   if (config.extends) manifest["extends"] = config.extends;
@@ -209,23 +201,15 @@ async function scaffoldPreset(
     if (zipResult.ok) {
       log.info(`Exported to ${zipResult.data.outputPath}`);
     } else {
-      log.info(
-        `Failed to create ZIP. You can export later with: ${PROJECT_CLI} preset export`,
-      );
+      log.info(`Failed to create ZIP. You can export later with: ${PROJECT_CLI} preset export`);
     }
   } else if (config.outputFormat === "github") {
     log.info("");
     log.info("To create a GitHub repository:");
-    log.info(
-      `  1. Copy ${PROJECT_DIR}/presets/${config.name}/ to a new directory`,
-    );
-    log.info(
-      '  2. Run: git init && git add . && git commit -m "Initial preset"',
-    );
+    log.info(`  1. Copy ${PROJECT_DIR}/presets/${config.name}/ to a new directory`);
+    log.info('  2. Run: git init && git add . && git commit -m "Initial preset"');
     log.info("  3. Push to GitHub");
-    log.info(
-      `  4. Others install with: ${PROJECT_CLI} preset install github:org/${config.name}`,
-    );
+    log.info(`  4. Others install with: ${PROJECT_CLI} preset install github:org/${config.name}`);
   }
 
   log.info("");

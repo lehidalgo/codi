@@ -50,7 +50,6 @@ export const codexAdapter: AgentAdapter = {
     configRoot: ".codex",
     rules: ".",
     skills: ".agents/skills",
-    commands: null,
     agents: ".codex/agents",
     instructionFile: "AGENTS.md",
     mcpConfig: ".codex/mcp.toml",
@@ -59,7 +58,6 @@ export const codexAdapter: AgentAdapter = {
   capabilities: {
     rules: true,
     skills: true,
-    commands: false,
     mcp: true,
     frontmatter: false,
     progressiveLoading: false,

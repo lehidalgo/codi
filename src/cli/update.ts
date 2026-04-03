@@ -37,11 +37,6 @@ import {
   getAgentTemplateVersion,
 } from "../core/scaffolder/agent-template-loader.js";
 import {
-  loadCommandTemplate,
-  AVAILABLE_COMMAND_TEMPLATES,
-  getCommandTemplateVersion,
-} from "../core/scaffolder/command-template-loader.js";
-import {
   loadMcpServerTemplate,
   AVAILABLE_MCP_SERVER_TEMPLATES,
 } from "../core/scaffolder/mcp-template-loader.js";
@@ -67,7 +62,6 @@ interface UpdateOptions extends GlobalOptions {
   rules?: boolean;
   skills?: boolean;
   agents?: boolean;
-  commands?: boolean;
   mcpServers?: boolean;
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
@@ -83,8 +77,6 @@ interface UpdateData {
   skillsSkipped: string[];
   agentsUpdated: string[];
   agentsSkipped: string[];
-  commandsUpdated: string[];
-  commandsSkipped: string[];
   mcpServersUpdated: string[];
   mcpServersSkipped: string[];
   sourceUpdated: string[];
@@ -324,8 +316,6 @@ export async function updateHandler(
         skillsSkipped: [],
         agentsUpdated: [],
         agentsSkipped: [],
-        commandsUpdated: [],
-        commandsSkipped: [],
         mcpServersUpdated: [],
         mcpServersSkipped: [],
         sourceUpdated: [],
@@ -369,8 +359,6 @@ export async function updateHandler(
         skillsSkipped: [],
         agentsUpdated: [],
         agentsSkipped: [],
-        commandsUpdated: [],
-        commandsSkipped: [],
         mcpServersUpdated: [],
         mcpServersSkipped: [],
         sourceUpdated: [],
@@ -538,23 +526,6 @@ export async function updateHandler(
     agentsSkipped = result.skipped;
   }
 
-  let commandsUpdated: string[] = [];
-  let commandsSkipped: string[] = [];
-  if (options.commands) {
-    const result = await refreshManagedArtifacts({
-      configDir,
-      subDir: "commands",
-      label: "command",
-      dryRun,
-      log,
-      availableTemplates: AVAILABLE_COMMAND_TEMPLATES,
-      loadTemplate: loadCommandTemplate,
-      getTemplateVersion: getCommandTemplateVersion,
-    });
-    commandsUpdated = result.updated;
-    commandsSkipped = result.skipped;
-  }
-
   let mcpServersUpdated: string[] = [];
   let mcpServersSkipped: string[] = [];
   if (options.mcpServers) {
@@ -586,7 +557,6 @@ export async function updateHandler(
       rules: rulesUpdated,
       skills: skillsUpdated,
       agents: agentsUpdated,
-      commands: commandsUpdated,
       mcpServers: mcpServersUpdated,
     }).catch((e: unknown) => log.debug("Artifact manifest sync failed; non-critical.", e));
   }
@@ -602,7 +572,6 @@ export async function updateHandler(
         rulesUpdated,
         skillsUpdated,
         agentsUpdated,
-        commandsUpdated,
         mcpServersUpdated,
         regenerated,
       },
@@ -620,7 +589,6 @@ export async function updateHandler(
           rulesUpdated,
           skillsUpdated,
           agentsUpdated,
-          commandsUpdated,
           mcpServersUpdated,
           regenerated,
         },
@@ -643,8 +611,6 @@ export async function updateHandler(
       skillsSkipped,
       agentsUpdated,
       agentsSkipped,
-      commandsUpdated,
-      commandsSkipped,
       mcpServersUpdated,
       mcpServersSkipped,
       sourceUpdated,
@@ -657,13 +623,12 @@ export async function updateHandler(
 export function registerUpdateCommand(program: Command): void {
   program
     .command("update")
-    .description("Update flags, rules, skills, agents, and commands to latest versions")
+    .description("Update flags, rules, skills, agents, and MCP servers to latest versions")
     .option("--preset <preset>", `Reset flags to preset: ${getPresetNames().join(", ")}`)
     .option("--from <repo>", "Pull centralized artifacts from a GitHub repo")
     .option("--rules", "Refresh template-managed rules to latest versions")
     .option("--skills", "Refresh template-managed skills to latest versions")
     .option("--agents", "Refresh template-managed agents to latest versions")
-    .option("--commands", "Refresh template-managed commands to latest versions")
     .option("--mcp-servers", "Refresh template-managed MCP servers to latest versions")
     .option("--dry-run", "Show what would change without writing")
     .action(async (cmdOptions: Record<string, unknown>) => {

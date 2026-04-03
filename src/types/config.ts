@@ -11,7 +11,6 @@ export interface ProjectManifest {
   layers?: {
     rules?: boolean;
     skills?: boolean;
-    commands?: boolean;
     agents?: boolean;
   };
   engine?: {
@@ -62,13 +61,6 @@ export interface NormalizedSkill {
   hooks?: unknown;
 }
 
-export interface NormalizedCommand {
-  name: string;
-  description: string;
-  content: string;
-  managedBy?: ManagedBy;
-}
-
 export interface NormalizedAgent {
   name: string;
   description: string;
@@ -100,7 +92,6 @@ export interface NormalizedConfig {
   manifest: ProjectManifest;
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
-  commands: NormalizedCommand[];
   agents: NormalizedAgent[];
   flags: ResolvedFlags;
   mcp: McpConfig;

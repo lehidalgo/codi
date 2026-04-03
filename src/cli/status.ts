@@ -2,11 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Command } from "commander";
 import { StateManager } from "../core/config/state.js";
-import type {
-  DriftReport,
-  DriftFile,
-  ArtifactFileState,
-} from "../core/config/state.js";
+import type { DriftReport, DriftFile, ArtifactFileState } from "../core/config/state.js";
 import { resolveProjectDir } from "../utils/paths.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { createCommandResult } from "../core/output/formatter.js";
@@ -20,7 +16,6 @@ import {
   reconstructRuleContent,
   reconstructSkillContent,
   reconstructAgentContent,
-  reconstructCommandContent,
 } from "../core/preset/preset-applier.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
 import { Logger } from "../core/output/logger.js";
@@ -42,7 +37,7 @@ interface StatusOptions {
  */
 function parseArtifactPath(
   relPath: string,
-): { type: "rule" | "skill" | "agent" | "command"; name: string } | null {
+): { type: "rule" | "skill" | "agent"; name: string } | null {
   const parts = relPath.replace(/\\/g, "/").split("/");
   // Expected: .codi/{type}/{name}.md or .codi/skills/{name}/SKILL.md
   const typeDir = parts[1];
@@ -57,20 +52,13 @@ function parseArtifactPath(
   if (typeDir === "agents" && parts[2]) {
     return { type: "agent", name: path.basename(parts[2], ".md") };
   }
-  if (typeDir === "commands" && parts[2]) {
-    return { type: "command", name: path.basename(parts[2], ".md") };
-  }
   return null;
 }
 
 /**
  * Reconstructs the expected content for an artifact from its source preset.
  */
-function findExpectedContent(
-  preset: LoadedPreset,
-  type: string,
-  name: string,
-): string | null {
+function findExpectedContent(preset: LoadedPreset, type: string, name: string): string | null {
   switch (type) {
     case "rule": {
       const rule = preset.rules.find((r) => r.name === name);
@@ -83,10 +71,6 @@ function findExpectedContent(
     case "agent": {
       const agent = preset.agents.find((a) => a.name === name);
       return agent ? reconstructAgentContent(agent) : null;
-    }
-    case "command": {
-      const cmd = preset.commands.find((c) => c.name === name);
-      return cmd ? reconstructCommandContent(cmd) : null;
     }
     default:
       return null;
@@ -106,10 +90,7 @@ async function renderDriftDiffs(
   const presetsDir = path.join(configDir, "presets");
 
   // Group drifted files by source preset
-  const byPreset = new Map<
-    string,
-    Array<{ drift: DriftFile; state: ArtifactFileState }>
-  >();
+  const byPreset = new Map<string, Array<{ drift: DriftFile; state: ArtifactFileState }>>();
   for (const drift of driftedFiles) {
     if (drift.status !== "drifted") continue;
     const state = artifactStates.find((s) => s.path === drift.path);
@@ -123,9 +104,7 @@ async function renderDriftDiffs(
   for (const [presetName, entries] of byPreset) {
     const loadResult = await loadPreset(presetName, presetsDir);
     if (!loadResult.ok) {
-      log.warn(
-        `Cannot load preset "${presetName}" for diff — showing hash info only`,
-      );
+      log.warn(`Cannot load preset "${presetName}" for diff — showing hash info only`);
       for (const { drift } of entries) {
         log.info(
           `  ${drift.path}: drifted (expected ${drift.expectedHash?.slice(0, 8)}… got ${drift.currentHash?.slice(0, 8)}…)`,
@@ -141,18 +120,13 @@ async function renderDriftDiffs(
 
       const expected = findExpectedContent(preset, parsed.type, parsed.name);
       if (!expected) {
-        log.info(
-          `  ${drift.path}: drifted (artifact not found in preset "${presetName}")`,
-        );
+        log.info(`  ${drift.path}: drifted (artifact not found in preset "${presetName}")`);
         continue;
       }
 
       let current: string;
       try {
-        current = await fs.readFile(
-          path.resolve(projectRoot, drift.path),
-          "utf8",
-        );
+        current = await fs.readFile(path.resolve(projectRoot, drift.path), "utf8");
       } catch {
         log.info(`  ${drift.path}: missing`);
         continue;
@@ -256,9 +230,7 @@ export async function statusHandler(
   }
 
   const exitCode =
-    hasDrift && driftMode === "error"
-      ? EXIT_CODES.DRIFT_DETECTED
-      : EXIT_CODES.SUCCESS;
+    hasDrift && driftMode === "error" ? EXIT_CODES.DRIFT_DETECTED : EXIT_CODES.SUCCESS;
 
   return createCommandResult({
     success: true,

@@ -10,7 +10,6 @@ import type { InstalledArtifactVersion } from "../core/version/artifact-version.
 import { loadTemplate } from "../core/scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "../core/scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../core/scaffolder/agent-template-loader.js";
-import { loadCommandTemplate } from "../core/scaffolder/command-template-loader.js";
 import { loadMcpServerTemplate } from "../core/scaffolder/mcp-template-loader.js";
 import { extractTemplateHint } from "./artifact-categories.js";
 import type { ExistingSelections } from "./init-wizard.js";
@@ -68,10 +67,6 @@ function getBuiltinHint(name: string, type: ArtifactType): string {
       const result = loadAgentTemplate(name);
       return result.ok ? extractTemplateHint(result.data) : "";
     }
-    case "command": {
-      const result = loadCommandTemplate(name);
-      return result.ok ? extractTemplateHint(result.data) : "";
-    }
     case "mcp-server": {
       const result = loadMcpServerTemplate(name);
       return result.ok ? result.data.description : "";
@@ -81,7 +76,7 @@ function getBuiltinHint(name: string, type: ArtifactType): string {
 
 async function readMarkdownArtifacts(
   dir: string,
-  type: Extract<ArtifactType, "rule" | "agent" | "command">,
+  type: Extract<ArtifactType, "rule" | "agent">,
 ): Promise<InstalledArtifactFile[]> {
   try {
     const entries = await fs.readdir(dir);
@@ -168,14 +163,13 @@ async function readMcpArtifacts(configDir: string): Promise<InstalledArtifactFil
 }
 
 async function scanInstalledArtifacts(configDir: string): Promise<InstalledArtifactFile[]> {
-  const [rules, skills, agents, commands, mcpServers] = await Promise.all([
+  const [rules, skills, agents, mcpServers] = await Promise.all([
     readMarkdownArtifacts(path.join(configDir, "rules"), "rule"),
     readSkillArtifacts(configDir),
     readMarkdownArtifacts(path.join(configDir, "agents"), "agent"),
-    readMarkdownArtifacts(path.join(configDir, "commands"), "command"),
     readMcpArtifacts(configDir),
   ]);
-  return [...rules, ...skills, ...agents, ...commands, ...mcpServers];
+  return [...rules, ...skills, ...agents, ...mcpServers];
 }
 
 function buildSelections(entries: InstalledArtifactInventoryEntry[]): ExistingSelections {
@@ -185,7 +179,6 @@ function buildSelections(entries: InstalledArtifactInventoryEntry[]): ExistingSe
     rules: installed.filter((entry) => entry.type === "rule").map((entry) => entry.name),
     skills: installed.filter((entry) => entry.type === "skill").map((entry) => entry.name),
     agents: installed.filter((entry) => entry.type === "agent").map((entry) => entry.name),
-    commands: installed.filter((entry) => entry.type === "command").map((entry) => entry.name),
     mcpServers: installed.filter((entry) => entry.type === "mcp-server").map((entry) => entry.name),
   };
 }

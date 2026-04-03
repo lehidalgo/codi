@@ -6,7 +6,6 @@ import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
 import type { TemplateCounts, SkillTemplateDescriptor } from "../../templates/skills/types.js";
 import { AVAILABLE_TEMPLATES } from "./template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "./agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "./command-template-loader.js";
 import { FLAG_CATALOG } from "../flags/flag-catalog.js";
 import * as skillTemplates from "../../templates/skills/index.js";
 
@@ -29,7 +28,6 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("skill-creator")]: skillTemplates.skillCreator,
   [prefixedName("rule-creator")]: skillTemplates.ruleCreator,
   [prefixedName("agent-creator")]: skillTemplates.agentCreator,
-  [prefixedName("command-creator")]: skillTemplates.commandCreator,
   [prefixedName("compare-preset")]: skillTemplates.comparePreset,
   [prefixedName("guided-qa-testing")]: skillTemplates.guidedQaTesting,
   [prefixedName("session-recovery")]: skillTemplates.sessionRecovery,
@@ -110,7 +108,6 @@ function getTemplateCounts(): TemplateCounts {
     rules: AVAILABLE_TEMPLATES.length,
     skills: AVAILABLE_SKILL_TEMPLATES.length,
     agents: AVAILABLE_AGENT_TEMPLATES.length,
-    commands: AVAILABLE_COMMAND_TEMPLATES.length,
     flags: Object.keys(FLAG_CATALOG).length,
   };
 }

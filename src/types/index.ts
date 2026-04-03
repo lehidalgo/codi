@@ -14,7 +14,6 @@ export type {
   ProjectManifest,
   NormalizedRule,
   NormalizedSkill,
-  NormalizedCommand,
   NormalizedAgent,
   McpConfig,
   NormalizedConfig,

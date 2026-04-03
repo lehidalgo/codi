@@ -34,24 +34,6 @@ export function buildArchitectureSummary(config: NormalizedConfig): string {
       `**Agents** (${config.agents.length}): ${config.agents.map((a) => a.name).join(", ")}`,
     );
   }
-  if (config.commands.length > 0) {
-    lines.push(
-      `**Commands** (${config.commands.length}): ${config.commands.map((c) => c.name).join(", ")}`,
-    );
-  }
-
-  return lines.join("\n");
-}
-
-/** Build a commands table for agents that support commands. */
-export function buildCommandsTable(config: NormalizedConfig): string | null {
-  if (config.commands.length === 0) return null;
-
-  const lines = ["## Key Commands", "", "| Command | Description |", "|---------|-------------|"];
-
-  for (const cmd of config.commands) {
-    lines.push(`| \`/${cmd.name}\` | ${cmd.description} |`);
-  }
 
   return lines.join("\n");
 }

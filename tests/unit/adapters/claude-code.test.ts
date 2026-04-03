@@ -362,70 +362,6 @@ describe("claude-code adapter", () => {
     });
   });
 
-  // ── generate() — command files ─────────────────────────────────────
-
-  describe("generate() — command files", () => {
-    it("produces command files in .claude/commands/", async () => {
-      const config = createMockConfig({
-        commands: [
-          {
-            name: "deploy",
-            description: "Deploy to production",
-            content: "Run the deployment pipeline.",
-          },
-        ],
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-
-      const cmdFiles = files.filter((f) => f.path.startsWith(".claude/commands/"));
-      expect(cmdFiles).toHaveLength(1);
-      expect(cmdFiles[0]!.path).toBe(".claude/commands/deploy.md");
-    });
-
-    it("command files contain frontmatter with description", async () => {
-      const config = createMockConfig({
-        commands: [
-          {
-            name: "deploy",
-            description: "Deploy to production",
-            content: "Run the deployment pipeline.",
-          },
-        ],
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const cmdFile = files.find((f) => f.path.startsWith(".claude/commands/"))!;
-
-      expect(cmdFile.content).toContain(`description: (${PROJECT_NAME}-cmd) Deploy to production`);
-      expect(cmdFile.content).toContain("Run the deployment pipeline.");
-    });
-
-    it("CLAUDE.md includes commands table when commands exist", async () => {
-      const config = createMockConfig({
-        commands: [
-          {
-            name: "deploy",
-            description: "Deploy to production",
-            content: "Run the deployment pipeline.",
-          },
-        ],
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const mainFile = files.find((f) => f.path === "CLAUDE.md")!;
-
-      expect(mainFile.content).toContain("## Key Commands");
-      expect(mainFile.content).toContain("`/deploy`");
-      expect(mainFile.content).toContain("Deploy to production");
-    });
-
-    it("produces no command files when commands array is empty", async () => {
-      const config = createMockConfig({ commands: [] });
-      const files = await claudeCodeAdapter.generate(config, {});
-
-      const cmdFiles = files.filter((f) => f.path.startsWith(".claude/commands/"));
-      expect(cmdFiles).toHaveLength(0);
-    });
-  });
-
   // ── generate() — MCP config ────────────────────────────────────────
 
   describe("generate() — MCP config", () => {
@@ -597,10 +533,9 @@ describe("claude-code adapter", () => {
       expect(claudeCodeAdapter.capabilities.maxContextTokens).toBe(200_000);
     });
 
-    it("supports rules, skills, commands, mcp, agents, and progressiveLoading", () => {
+    it("supports rules, skills, mcp, agents, and progressiveLoading", () => {
       expect(claudeCodeAdapter.capabilities.rules).toBe(true);
       expect(claudeCodeAdapter.capabilities.skills).toBe(true);
-      expect(claudeCodeAdapter.capabilities.commands).toBe(true);
       expect(claudeCodeAdapter.capabilities.mcp).toBe(true);
       expect(claudeCodeAdapter.capabilities.agents).toBe(true);
       expect(claudeCodeAdapter.capabilities.progressiveLoading).toBe(true);
@@ -640,7 +575,6 @@ describe("claude-code adapter", () => {
       expect(claudeCodeAdapter.paths.configRoot).toBe(".claude");
       expect(claudeCodeAdapter.paths.rules).toBe(".claude/rules");
       expect(claudeCodeAdapter.paths.skills).toBe(".claude/skills");
-      expect(claudeCodeAdapter.paths.commands).toBe(".claude/commands");
       expect(claudeCodeAdapter.paths.agents).toBe(".claude/agents");
       expect(claudeCodeAdapter.paths.instructionFile).toBe("CLAUDE.md");
       expect(claudeCodeAdapter.paths.mcpConfig).toBe(".mcp.json");

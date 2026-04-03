@@ -39,7 +39,6 @@ export const windsurfAdapter: AgentAdapter = {
     configRoot: ".",
     rules: ".",
     skills: ".windsurf/skills",
-    commands: null,
     agents: null,
     instructionFile: ".windsurfrules",
     mcpConfig: null,
@@ -48,7 +47,6 @@ export const windsurfAdapter: AgentAdapter = {
   capabilities: {
     rules: true,
     skills: true,
-    commands: false,
     mcp: false,
     frontmatter: false,
     progressiveLoading: false,

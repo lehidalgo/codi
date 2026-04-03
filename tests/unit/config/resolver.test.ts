@@ -4,11 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "../../helpers/fs.js";
 import { resolveConfig } from "#src/core/config/resolver.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 const FIXTURES = path.resolve(__dirname, "../../fixtures/inheritance");
 
@@ -42,9 +38,7 @@ describe("resolveConfig — dynamic projects", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-resolver-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-resolver-`));
   });
 
   afterEach(async () => {
@@ -147,50 +141,10 @@ describe("resolveConfig — dynamic projects", () => {
     expect(result.data.flags["type_checking"]!.value).toBe("basic");
   });
 
-  it("resolves project with agents and commands", async () => {
-    const configDir = path.join(tmpDir, PROJECT_DIR);
-    await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      'name: full-proj\nversion: "1"\nagents:\n  - claude-code\n',
-      "utf-8",
-    );
-
-    // Add agent
-    const agentArtifactsDir = path.join(configDir, "agents");
-    await fs.mkdir(agentArtifactsDir, { recursive: true });
-    await fs.writeFile(
-      path.join(agentArtifactsDir, "reviewer.md"),
-      `---\nname: reviewer\ndescription: Code reviewer\ntools:\n  - Read\n  - Grep\nmanaged_by: ${PROJECT_NAME}\n---\nReview code.`,
-      "utf-8",
-    );
-
-    // Add command
-    const commandsDir = path.join(configDir, "commands");
-    await fs.mkdir(commandsDir, { recursive: true });
-    await fs.writeFile(
-      path.join(commandsDir, "commit.md"),
-      "---\nname: commit\ndescription: Commit changes\n---\nCommit content.",
-      "utf-8",
-    );
-
-    const result = await resolveConfig(tmpDir);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.agents.length).toBe(1);
-    expect(result.data.agents[0]!.name).toBe("reviewer");
-    expect(result.data.commands.length).toBe(1);
-    expect(result.data.commands[0]!.name).toBe("commit");
-  });
-
   it("returns error for invalid manifest schema", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      "invalid_field: true\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), "invalid_field: true\n", "utf-8");
 
     const result = await resolveConfig(tmpDir);
     expect(result.ok).toBe(false);

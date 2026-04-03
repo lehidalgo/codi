@@ -8,7 +8,6 @@ import type {
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
-  NormalizedCommand,
   McpConfig,
 } from "../../types/config.js";
 import type { FlagDefinition } from "../../types/flags.js";
@@ -23,14 +22,10 @@ import {
   BRAND_CATEGORY,
 } from "#src/constants.js";
 import { detectCircularExtends } from "./preset-validator.js";
-import {
-  isBuiltinPreset as checkBuiltin,
-  materializeBuiltinPreset,
-} from "./preset-builtin.js";
+import { isBuiltinPreset as checkBuiltin, materializeBuiltinPreset } from "./preset-builtin.js";
 import { loadTemplate } from "../scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
-import { loadCommandTemplate } from "../scaffolder/command-template-loader.js";
 
 export interface LoadedPreset {
   name: string;
@@ -39,14 +34,10 @@ export interface LoadedPreset {
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
-  commands: NormalizedCommand[];
   mcp: McpConfig;
 }
 
-export async function loadPreset(
-  name: string,
-  presetsDir: string,
-): Promise<Result<LoadedPreset>> {
+export async function loadPreset(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {
   if (checkBuiltin(name)) {
     return materializeBuiltinPreset(name);
   }
@@ -96,14 +87,12 @@ export async function loadPresetFromDir(
   let parentRules: NormalizedRule[] = [];
   let parentSkills: NormalizedSkill[] = [];
   let parentAgents: NormalizedAgent[] = [];
-  let parentCommands: NormalizedCommand[] = [];
   let parentMcp: McpConfig = { servers: {} };
 
   if (manifest.extends) {
     // Guard against circular extends before recursing
     const circularCheck = await detectCircularExtends(name, presetsDir);
-    if (!circularCheck.ok)
-      return circularCheck as unknown as Result<LoadedPreset>;
+    if (!circularCheck.ok) return circularCheck as unknown as Result<LoadedPreset>;
 
     const parentResult = await loadPreset(manifest.extends, presetsDir);
     if (parentResult.ok) {
@@ -111,7 +100,6 @@ export async function loadPresetFromDir(
       parentRules = parentResult.data.rules;
       parentSkills = parentResult.data.skills;
       parentAgents = parentResult.data.agents;
-      parentCommands = parentResult.data.commands;
       parentMcp = parentResult.data.mcp;
     }
   }
@@ -122,15 +110,12 @@ export async function loadPresetFromDir(
   const configDir = path.dirname(presetsDir);
   const resolved = manifest.artifacts
     ? await resolveArtifactsByName(manifest.artifacts, presetDir, configDir)
-    : { rules: [], skills: [], agents: [], commands: [] };
-  const { rules, skills, agents, commands } = resolved;
+    : { rules: [], skills: [], agents: [] };
+  const { rules, skills, agents } = resolved;
 
   let mcp: McpConfig = { servers: {} };
   try {
-    const mcpRaw = await fs.readFile(
-      path.join(presetDir, MCP_FILENAME),
-      "utf8",
-    );
+    const mcpRaw = await fs.readFile(path.join(presetDir, MCP_FILENAME), "utf8");
     const mcpParsed = parseYaml(mcpRaw) as Record<string, unknown>;
     if (mcpParsed && mcpParsed["servers"]) {
       mcp = mcpParsed as unknown as McpConfig;
@@ -145,9 +130,7 @@ export async function loadPresetFromDir(
   for (const [key, childDef] of Object.entries(childFlags)) {
     const parentDef = parentFlags[key];
     if (parentDef?.locked) {
-      log.debug(
-        `Flag "${key}" is locked by parent preset — child override ignored`,
-      );
+      log.debug(`Flag "${key}" is locked by parent preset — child override ignored`);
       continue;
     }
     mergedFlags[key] = childDef;
@@ -155,7 +138,6 @@ export async function loadPresetFromDir(
   const mergedRules = mergeArtifacts(parentRules, rules);
   const mergedSkills = mergeArtifacts(parentSkills, skills);
   const mergedAgents = mergeArtifacts(parentAgents, agents);
-  const mergedCommands = mergeArtifacts(parentCommands, commands);
   const mergedMcp: McpConfig = {
     servers: { ...parentMcp.servers, ...mcp.servers },
   };
@@ -167,15 +149,11 @@ export async function loadPresetFromDir(
     rules: mergedRules,
     skills: mergedSkills,
     agents: mergedAgents,
-    commands: mergedCommands,
     mcp: mergedMcp,
   });
 }
 
-function mergeArtifacts<T extends { name: string }>(
-  parent: T[],
-  child: T[],
-): T[] {
+function mergeArtifacts<T extends { name: string }>(parent: T[], child: T[]): T[] {
   const childNames = new Set(child.map((c) => c.name));
   const fromParent = parent.filter((p) => !childNames.has(p.name));
   return [...fromParent, ...child];
@@ -185,7 +163,6 @@ interface ArtifactNames {
   rules?: string[];
   skills?: string[];
   agents?: string[];
-  commands?: string[];
   // @deprecated — use skills with category: brand instead
   brands?: string[];
 }
@@ -194,7 +171,6 @@ interface ResolvedArtifacts {
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
-  commands: NormalizedCommand[];
 }
 
 /**
@@ -218,9 +194,7 @@ async function resolveArtifactsByName(
     if (rule) {
       rules.push(rule);
     } else {
-      log.warn(
-        `Rule "${name}" listed in preset manifest but could not be resolved`,
-      );
+      log.warn(`Rule "${name}" listed in preset manifest but could not be resolved`);
     }
   }
 
@@ -233,9 +207,7 @@ async function resolveArtifactsByName(
     if (skill) {
       skills.push(skill);
     } else {
-      log.warn(
-        `Skill "${name}" listed in preset manifest but could not be resolved`,
-      );
+      log.warn(`Skill "${name}" listed in preset manifest but could not be resolved`);
     }
   }
 
@@ -248,24 +220,7 @@ async function resolveArtifactsByName(
     if (agent) {
       agents.push(agent);
     } else {
-      log.warn(
-        `Agent "${name}" listed in preset manifest but could not be resolved`,
-      );
-    }
-  }
-
-  const commands: NormalizedCommand[] = [];
-  for (const name of artifacts.commands ?? []) {
-    const cmd =
-      (await loadCommandFromDir(name, primaryDir)) ??
-      resolveCommand(name) ??
-      (fallbackDir ? await loadCommandFromDir(name, fallbackDir) : null);
-    if (cmd) {
-      commands.push(cmd);
-    } else {
-      log.warn(
-        `Command "${name}" listed in preset manifest but could not be resolved`,
-      );
+      log.warn(`Agent "${name}" listed in preset manifest but could not be resolved`);
     }
   }
 
@@ -280,7 +235,7 @@ async function resolveArtifactsByName(
     }
   }
 
-  return { rules, skills, agents, commands };
+  return { rules, skills, agents };
 }
 
 /** Load a template by name, replace {{name}}, and parse frontmatter. */
@@ -305,8 +260,7 @@ function resolveRule(name: string): NormalizedRule | null {
     name,
     description: (parsed.data["description"] as string) ?? "",
     content: parsed.content,
-    priority:
-      (parsed.data["priority"] as "high" | "medium" | "low") ?? "medium",
+    priority: (parsed.data["priority"] as "high" | "medium" | "low") ?? "medium",
     alwaysApply: (parsed.data["alwaysApply"] as boolean) ?? true,
     managedBy: PROJECT_NAME,
   };
@@ -336,21 +290,7 @@ function resolveAgent(name: string): NormalizedAgent | null {
   };
 }
 
-function resolveCommand(name: string): NormalizedCommand | null {
-  const parsed = resolveTemplateArtifact(name, loadCommandTemplate);
-  if (!parsed) return null;
-  return {
-    name,
-    description: (parsed.data["description"] as string) ?? "",
-    content: parsed.content,
-    managedBy: PROJECT_NAME,
-  };
-}
-
-async function loadRuleFromDir(
-  name: string,
-  configDir: string,
-): Promise<NormalizedRule | null> {
+async function loadRuleFromDir(name: string, configDir: string): Promise<NormalizedRule | null> {
   const paths = [path.join(configDir, "rules", `${name}.md`)];
   for (const p of paths) {
     try {
@@ -376,15 +316,9 @@ async function loadRuleFromDir(
   return null;
 }
 
-async function loadSkillFromDir(
-  name: string,
-  configDir: string,
-): Promise<NormalizedSkill | null> {
+async function loadSkillFromDir(name: string, configDir: string): Promise<NormalizedSkill | null> {
   try {
-    const raw = await fs.readFile(
-      path.join(configDir, "skills", name, "SKILL.md"),
-      "utf8",
-    );
+    const raw = await fs.readFile(path.join(configDir, "skills", name, "SKILL.md"), "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     const d = data as Record<string, unknown>;
     return {
@@ -440,23 +374,14 @@ async function loadSkillFromDir(
       }),
     };
   } catch (cause) {
-    Logger.getInstance().debug(
-      `Failed to load skill "${name}" from directory`,
-      cause,
-    );
+    Logger.getInstance().debug(`Failed to load skill "${name}" from directory`, cause);
     return null;
   }
 }
 
-async function loadAgentFromDir(
-  name: string,
-  configDir: string,
-): Promise<NormalizedAgent | null> {
+async function loadAgentFromDir(name: string, configDir: string): Promise<NormalizedAgent | null> {
   try {
-    const raw = await fs.readFile(
-      path.join(configDir, "agents", `${name}.md`),
-      "utf8",
-    );
+    const raw = await fs.readFile(path.join(configDir, "agents", `${name}.md`), "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     return {
       name,
@@ -467,31 +392,7 @@ async function loadAgentFromDir(
       managedBy: (data["managed_by"] as ManagedBy) ?? "user",
     };
   } catch (cause) {
-    Logger.getInstance().debug(
-      `Failed to load agent "${name}" from directory`,
-      cause,
-    );
-    return null;
-  }
-}
-
-async function loadCommandFromDir(
-  name: string,
-  configDir: string,
-): Promise<NormalizedCommand | null> {
-  try {
-    const raw = await fs.readFile(
-      path.join(configDir, "commands", `${name}.md`),
-      "utf8",
-    );
-    const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
-    return {
-      name,
-      description: (data["description"] as string) ?? "",
-      content,
-      managedBy: (data["managed_by"] as ManagedBy) ?? "user",
-    };
-  } catch {
+    Logger.getInstance().debug(`Failed to load agent "${name}" from directory`, cause);
     return null;
   }
 }
@@ -501,10 +402,7 @@ async function loadLegacyBrandFromDir(
   configDir: string,
 ): Promise<NormalizedSkill | null> {
   try {
-    const raw = await fs.readFile(
-      path.join(configDir, "brands", name, "BRAND.md"),
-      "utf8",
-    );
+    const raw = await fs.readFile(path.join(configDir, "brands", name, "BRAND.md"), "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
     return {
       name,

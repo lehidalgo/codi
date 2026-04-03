@@ -13,7 +13,7 @@ describe("registerAddCommand", () => {
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
-  it("registers add command with rule/skill/agent/command subcommands", async () => {
+  it("registers add command with rule/skill/agent/mcp-server subcommands", async () => {
     const { registerAddCommand } = await import("../../../src/cli/add.js");
     const program = new Command();
     program.option("-j, --json");
@@ -26,7 +26,7 @@ describe("registerAddCommand", () => {
     expect(subNames).toContain("rule");
     expect(subNames).toContain("skill");
     expect(subNames).toContain("agent");
-    expect(subNames).toContain("command");
+    expect(subNames).toContain("mcp-server");
   }, 15000);
 });
 
@@ -36,8 +36,7 @@ describe("registerPresetCommand", () => {
   });
 
   it("registers preset command with all subcommands", async () => {
-    const { registerPresetCommand } =
-      await import("../../../src/cli/preset.js");
+    const { registerPresetCommand } = await import("../../../src/cli/preset.js");
     const program = new Command();
     program.option("-j, --json");
     registerPresetCommand(program);
@@ -64,8 +63,7 @@ describe("registerUpdateCommand", () => {
   });
 
   it("registers update command with expected options", async () => {
-    const { registerUpdateCommand } =
-      await import("../../../src/cli/update.js");
+    const { registerUpdateCommand } = await import("../../../src/cli/update.js");
     const program = new Command();
     program.option("-j, --json");
     registerUpdateCommand(program);
@@ -83,8 +81,7 @@ describe("registerUpdateCommand", () => {
 
 describe("registerRevertCommand", () => {
   it("registers revert command with --list, --last, --backup options", async () => {
-    const { registerRevertCommand } =
-      await import("../../../src/cli/revert.js");
+    const { registerRevertCommand } = await import("../../../src/cli/revert.js");
     const program = new Command();
     program.option("-j, --json");
     registerRevertCommand(program);

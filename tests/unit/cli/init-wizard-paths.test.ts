@@ -184,7 +184,6 @@ describe("handleCustomPath — groupMultiselect messages include counts", () => 
       .mockResolvedValueOnce([]) // rules
       .mockResolvedValueOnce([]) // skills
       .mockResolvedValueOnce([]) // agents
-      .mockResolvedValueOnce([]) // commands
       .mockResolvedValueOnce([]); // mcps
     mockSelect.mockResolvedValueOnce("codi-balanced"); // flag preset
     mockConfirm
@@ -209,14 +208,9 @@ describe("handleCustomPath — groupMultiselect messages include counts", () => 
     );
   });
 
-  it("shows commands count in message", async () => {
-    await handleCustomPath(["claude-code"]);
-    expect(mockGroupMultiselect.mock.calls[3]?.[0]?.message).toBe("Select commands (1 total)");
-  });
-
   it("shows MCP servers count in message", async () => {
     await handleCustomPath(["claude-code"]);
-    expect(mockGroupMultiselect.mock.calls[4]?.[0]?.message).toBe("Select MCP servers (1 total)");
+    expect(mockGroupMultiselect.mock.calls[3]?.[0]?.message).toBe("Select MCP servers (1 total)");
   });
 
   it("uses existing install selections and inventory counts in modify mode", async () => {
