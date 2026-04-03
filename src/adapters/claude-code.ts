@@ -112,10 +112,14 @@ export const claudeCodeAdapter: AgentAdapter = {
       hash: hashContent(mainContent),
     });
 
-    // Generate .claude/rules/*.md (no frontmatter)
+    // Generate .claude/rules/*.md (with paths frontmatter for scoped rules)
     for (const rule of config.rules) {
+      const header =
+        rule.scope && rule.scope.length > 0
+          ? `---\npaths:\n${rule.scope.map((s) => `  - "${s}"`).join("\n")}\n---\n\n`
+          : "";
       const ruleContent = addGeneratedFooter(
-        `# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
+        `${header}# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
       );
       const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
@@ -136,6 +140,7 @@ export const claudeCodeAdapter: AgentAdapter = {
         ".claude/skills",
         _options.projectRoot,
         `(${PROJECT_NAME}-skill) `,
+        "claude-code",
       )),
     );
 
