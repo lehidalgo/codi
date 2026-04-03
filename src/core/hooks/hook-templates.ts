@@ -26,10 +26,16 @@ function getStagedFiles(filter) {
 }
 
 let exitCode = 0;
+let lastLang = '';
 for (const hook of hooks) {
   const files = getStagedFiles(hook.stagedFilter);
   if (files.length === 0) continue;
-  console.log(\`Running \${hook.name}...\`);
+  const hookLang = hook.language ?? '';
+  if (hookLang !== lastLang) {
+    console.log(hookLang ? \`\\n[\${hookLang}]\` : \`\\n[global]\`);
+    lastLang = hookLang;
+  }
+  console.log(\`  Running \${hook.name}...\`);
   const [bin, ...baseArgs] = hook.command.split(/\\s+/);
   const args = hook.passFiles === false ? baseArgs : [...baseArgs, ...files];
   try {
@@ -56,29 +62,85 @@ const PATTERNS = [
   /(?:token|bearer)\\s*[:=]\\s*['"][^'"]{8,}/i,
   /-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----/,
   /ghp_[a-zA-Z0-9]{36}/,
+  /gho_[a-zA-Z0-9]{36}/,
+  /github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}/,
   /sk-[a-zA-Z0-9]{32,}/,
+  /xox[bpors]-[a-zA-Z0-9-]{10,}/,
+  /AKIA[0-9A-Z]{16}/,
 ];
-const FALSE_POS = /['"](?:your-|\\\\*\\$\\{|process\\.env|os\\.environ)/;
-const EXCLUDED = [/tests?\\//, /\\.test\\.[jt]sx?$/, /\\.spec\\.[jt]sx?$/, /__tests__\\//, /\\/references\\//];
+
+// Lines matching any of these are safe (env var refs, placeholders, examples)
+const FALSE_POS = [
+  /['"](?:your-|example-|test-|dummy-|fake-|placeholder)/i,
+  /\\\\*\\$\\{/,
+  /process\\.env/,
+  /os\\.environ/,
+  /import\\.meta\\.env/,
+  /\\bgetenv\\b/,
+  /['"](?:changeme|replace.?me|xxx+|\\*{3,}|TODO|FIXME)/i,
+  /sk-[a-z]{3,6}\\d{2,4}(?:\\.\\.\\.|\\*)/,
+];
+
+const EXCLUDED = [
+  /tests?\\//,
+  /\\.test\\.[jt]sx?$/,
+  /\\.spec\\.[jt]sx?$/,
+  /__tests__\\//,
+  /\\/references\\//,
+  /\\/templates\\//,
+  /docs\\//,
+  /\\.md$/,
+];
+
+/**
+ * Shannon entropy: real secrets have high entropy (>3.5),
+ * env var names and placeholders have low entropy.
+ */
+function entropy(s) {
+  if (s.length === 0) return 0;
+  const freq = {};
+  for (const c of s) freq[c] = (freq[c] || 0) + 1;
+  let e = 0;
+  for (const k in freq) {
+    const p = freq[k] / s.length;
+    e -= p * Math.log2(p);
+  }
+  return e;
+}
+
+/** Extract the quoted value from a matched line */
+function extractQuotedValue(line) {
+  const m = line.match(/[:=]\\s*['"]([^'"]{8,})['"]/);
+  return m ? m[1] : null;
+}
+
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
-let found = false;
+const findings = [];
 for (const file of files) {
   try {
     const content = fs.readFileSync(file, 'utf-8');
     const lines = content.split('\\n');
-    for (const pattern of PATTERNS) {
-      for (const line of lines) {
-        if (pattern.test(line) && !FALSE_POS.test(line)) {
-          console.error(\`Potential secret found in \${file}\`);
-          found = true;
-          break;
-        }
-      }
-      if (found) break;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const matchedPattern = PATTERNS.find(p => p.test(line));
+      if (!matchedPattern) continue;
+      if (FALSE_POS.some(fp => fp.test(line))) continue;
+
+      // For key=value patterns, check entropy of the value
+      const val = extractQuotedValue(line);
+      if (val && entropy(val) < 3.0) continue;
+
+      findings.push({ file, line: i + 1, text: line.trim().substring(0, 80) });
     }
   } catch {}
 }
-if (found) process.exit(1);
+if (findings.length > 0) {
+  for (const f of findings) {
+    console.error(\`[secret-scan] \${f.file}:\${f.line}  \${f.text}\`);
+  }
+  console.error(\`\\n\${findings.length} potential secret(s) found. If these are false positives, move them to a file excluded by the scanner (tests/, templates/, references/, docs/).\`);
+  process.exit(1);
+}
 `;
 
 export const VERSION_CHECK_TEMPLATE = `#!/usr/bin/env node

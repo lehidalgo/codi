@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Security analysis hooks** — `bandit` (Python), `gosec` (Go), `brakeman` (Ruby), and `phpcs-security` (PHP) added as pre-commit hooks, gated on the `security_scan` flag
+- **Language-group comments in hook scripts** — husky and standalone hook scripts now group hooks under `# — language —` section headers for readability in multi-language projects
+- **Robust secret scanner** — pre-commit secret scan now uses Shannon entropy filtering, excludes `templates/` and `docs/` dirs, adds more token patterns (Slack, AWS, fine-grained GitHub PATs), and reports file:line for each finding
 - **Interactive conflict merge** — new "Merge (interactive)" option resolves each conflict hunk in the terminal via per-hunk accept/keep/both prompts, no external editor needed
 - **Editor-based conflict merge** — new "Merge in editor" and "Merge (auto)" options open `$EDITOR` with git-style conflict markers for manual resolution
 - **VS Code auto-detection** — conflict editor defaults to `code --wait` when VS Code is detected (via `TERM_PROGRAM` or PATH), with async spinner so the terminal stays responsive

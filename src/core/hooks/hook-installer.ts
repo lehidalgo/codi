@@ -204,8 +204,16 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
 
   // Track which variable names hold files modified by formatters
   const modifiedVars: string[] = [];
+  let lastLanguage: string | undefined;
 
   for (const h of hooks) {
+    // Insert a language-group comment whenever the language changes
+    const currentLang = h.language ?? "";
+    if (currentLang !== lastLanguage) {
+      lines.push(currentLang ? `# — ${currentLang} —` : `# — global —`);
+      lastLanguage = currentLang;
+    }
+
     if (!h.stagedFilter) {
       // Global hook (no filter) — always runs
       lines.push(h.command);

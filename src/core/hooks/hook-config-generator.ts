@@ -27,6 +27,11 @@ const FLAG_HOOK_MAPPINGS: FlagHookMapping[] = [
     hookNames: ["tsc", "pyright"],
     check: (flag) => flag.value !== "off" && flag.mode !== "disabled",
   },
+  {
+    flagName: "security_scan",
+    hookNames: ["bandit", "gosec", "brakeman", "phpcs-security"],
+    check: (flag) => flag.value !== false && flag.mode !== "disabled",
+  },
 ];
 
 function isHookEnabled(hookName: string, flags: ResolvedFlags): boolean {

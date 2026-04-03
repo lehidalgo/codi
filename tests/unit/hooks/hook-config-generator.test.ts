@@ -99,4 +99,34 @@ describe("generateHooksConfig", () => {
     expect(names).toContain("eslint");
     expect(names).toContain("ruff-check");
   });
+
+  it("includes bandit for python when security_scan is enabled", () => {
+    const config = generateHooksConfig(makeFlags({}), ["python"]);
+    expect(config.hooks.map((h) => h.name)).toContain("bandit");
+  });
+
+  it("excludes bandit when security_scan is disabled", () => {
+    const flags = makeFlags({
+      security_scan: { value: false, mode: "disabled" },
+    });
+    const config = generateHooksConfig(flags, ["python"]);
+    expect(config.hooks.map((h) => h.name)).not.toContain("bandit");
+  });
+
+  it("includes gosec for go when security_scan is enabled", () => {
+    const config = generateHooksConfig(makeFlags({}), ["go"]);
+    expect(config.hooks.map((h) => h.name)).toContain("gosec");
+  });
+
+  it("stamps language field on language hooks", () => {
+    const config = generateHooksConfig(makeFlags({}), ["python"]);
+    const ruff = config.hooks.find((h) => h.name === "ruff-check");
+    expect(ruff?.language).toBe("python");
+  });
+
+  it("language field is undefined on global hooks", () => {
+    const config = generateHooksConfig(makeFlags({}), ["python"]);
+    const secretScan = config.hooks.find((h) => h.name === "secret-scan");
+    expect(secretScan?.language).toBeUndefined();
+  });
 });
