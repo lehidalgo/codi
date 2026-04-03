@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Next.js best practices researcher. Use for Next.js architecture decisions, rendering strategy selection (SSR/SSG/ISR), performance optimization, caching, or scaling patterns.
+description: Use when making Next.js architecture decisions. Researches current best practices for rendering strategy (SSR/SSG/ISR), caching, performance, and production deployment.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

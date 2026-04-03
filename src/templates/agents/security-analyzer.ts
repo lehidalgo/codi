@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Security vulnerability analyzer. Use for security-critical code like auth, payments, data handling, or when auditing for vulnerabilities.
+description: Use when reviewing auth, payments, or data handling code. Runs OWASP-based vulnerability analysis with trust boundary mapping and produces a remediation plan.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

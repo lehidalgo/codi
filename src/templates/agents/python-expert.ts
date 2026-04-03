@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Python senior developer. Use for Python performance optimization, concurrency patterns (asyncio/threading/multiprocessing), GIL analysis, scalable architecture, or production Python systems.
+description: Use when optimizing Python systems. Covers asyncio/threading/multiprocessing trade-offs, GIL implications, Numba/C extensions, and enterprise-grade Python workflows.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

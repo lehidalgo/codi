@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Data analytics and BI specialist. Use for dashboard design, data visualization, KPI frameworks, metric definitions, or analytical SQL optimization.
+description: Use when designing dashboards, KPI frameworks, or analytical SQL. Covers data visualization best practices, metric definitions, and BI tool selection.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

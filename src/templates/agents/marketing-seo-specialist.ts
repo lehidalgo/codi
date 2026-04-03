@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Marketing and SEO specialist. Use for SEO audits, content strategy, keyword research, technical SEO, conversion optimization, or growth marketing research.
+description: Use when optimizing for search or planning content strategy. Researches current SEO best practices, keyword strategies, technical SEO for Next.js, and conversion optimization.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

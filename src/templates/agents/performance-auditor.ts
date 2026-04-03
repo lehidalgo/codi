@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Performance analysis agent. Use to profile bottlenecks, detect anti-patterns, and recommend optimizations.
+description: Use when diagnosing performance problems. Profiles bottlenecks, detects N+1 queries, bundle size issues, memory leaks, and Core Web Vitals regressions.
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}

@@ -2,8 +2,8 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Research agent that searches documentation before coding. Use to verify API signatures, check deprecations, and find working examples.
-tools: [Read, Grep, Glob]
+description: Use before coding to verify API signatures, check deprecations, and find working examples. Searches official docs and returns authoritative references, not guesses.
+tools: [Read, Grep, Glob, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 ---
