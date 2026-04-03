@@ -7,6 +7,7 @@ import { cleanupTmpDir } from "../../helpers/fs.js";
 
 vi.mock("#src/core/scaffolder/template-loader.js", () => ({
   loadTemplate: vi.fn(),
+  getTemplateVersion: vi.fn(),
 }));
 
 import { loadTemplate } from "#src/core/scaffolder/template-loader.js";
@@ -18,9 +19,7 @@ describe("rule scaffolder frontmatter guard", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-rule-guard-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-rule-guard-`));
     configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
   });

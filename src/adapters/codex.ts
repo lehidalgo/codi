@@ -20,10 +20,7 @@ import {
   buildDevelopmentNotes,
   buildWorkflowSection,
 } from "./section-builder.js";
-import {
-  extractDenyRules,
-  buildStrongTextRestrictions,
-} from "./permission-builder.js";
+import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import {
   CONTEXT_TOKENS_LARGE,
   MANIFEST_FILENAME,
@@ -39,6 +36,10 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function toTomlBasicString(value: string): string {
+  return JSON.stringify(value);
 }
 
 export const codexAdapter: AgentAdapter = {
@@ -72,10 +73,7 @@ export const codexAdapter: AgentAdapter = {
     return hasFile || hasDir;
   },
 
-  async generate(
-    config: NormalizedConfig,
-    _options: GenerateOptions,
-  ): Promise<GeneratedFile[]> {
+  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
@@ -127,11 +125,7 @@ export const codexAdapter: AgentAdapter = {
 
     // Generate .agents/skills/{name}/SKILL.md + supporting files (auto-discovered by Codex)
     files.push(
-      ...(await generateSkillFiles(
-        regularSkills,
-        ".agents/skills",
-        _options.projectRoot,
-      )),
+      ...(await generateSkillFiles(regularSkills, ".agents/skills", _options.projectRoot)),
     );
 
     // Generate .codex/agents/{name}.toml (Codex TOML format)
@@ -139,7 +133,7 @@ export const codexAdapter: AgentAdapter = {
       const lines: string[] = [];
       lines.push(`name = "${agent.name}"`);
       lines.push(`description = "${agent.description}"`);
-      lines.push(`developer_instructions = """\n${agent.content}\n"""`);
+      lines.push(`developer_instructions = ${toTomlBasicString(agent.content)}`);
       if (agent.model) lines.push(`model = "${agent.model}"`);
       const tomlContent = addGeneratedFooter(lines.join("\n"), "toml");
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".toml";
@@ -170,24 +164,26 @@ export const codexAdapter: AgentAdapter = {
       }
 
       if (restrictions) {
-        configLines.push(
-          "",
-          `developer_instructions = """`,
-          restrictions,
-          `"""`,
-        );
+        configLines.push("", `developer_instructions = """`, restrictions, `"""`);
       }
 
       if (hasMcp) {
+        configLines.push(
+          "",
+          "# MCP server environment variables use ${VAR_NAME} syntax.",
+          "# Set required values in your project .env file or shell environment.",
+        );
         for (const [name, server] of enabledServers) {
           configLines.push("", `[mcp_servers.${name}]`);
           if (server.command) configLines.push(`command = "${server.command}"`);
           if (server.args)
-            configLines.push(
-              `args = [${server.args.map((a) => `"${a}"`).join(", ")}]`,
-            );
+            configLines.push(`args = [${server.args.map((a) => `"${a}"`).join(", ")}]`);
           if (server.url) configLines.push(`url = "${server.url}"`);
           if (server.env) {
+            const envKeys = Object.keys(server.env);
+            if (envKeys.length > 0) {
+              configLines.push(`# Required env vars: ${envKeys.join(", ")}`);
+            }
             for (const [k, v] of Object.entries(server.env)) {
               configLines.push(`env.${k} = "${v}"`);
             }
@@ -214,9 +210,7 @@ export const codexAdapter: AgentAdapter = {
 };
 
 /** Build native Codex config.toml settings from flags. */
-function buildCodexNativeSettings(
-  flags: NormalizedConfig["flags"],
-): string[] | null {
+function buildCodexNativeSettings(flags: NormalizedConfig["flags"]): string[] | null {
   const lines: string[] = [];
   const flagValue = (key: string): unknown => flags[key]?.value;
 
@@ -228,8 +222,6 @@ function buildCodexNativeSettings(
 }
 
 /** Build command restriction instructions from flags for Codex developer_instructions. */
-function buildFlagRestrictions(
-  flags: NormalizedConfig["flags"],
-): string | null {
+function buildFlagRestrictions(flags: NormalizedConfig["flags"]): string | null {
   return buildStrongTextRestrictions(extractDenyRules(flags));
 }

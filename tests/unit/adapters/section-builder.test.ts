@@ -8,6 +8,8 @@ import {
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
+  collectMcpEnvVars,
+  buildMcpEnvExample,
 } from "#src/adapters/section-builder.js";
 import { MANIFEST_FILENAME } from "#src/constants.js";
 import { createMockConfig } from "./mock-config.js";
@@ -205,6 +207,73 @@ describe("getEnabledMcpServers", () => {
   });
 });
 
+describe("collectMcpEnvVars", () => {
+  it("extracts env var names from env fields", () => {
+    const result = collectMcpEnvVars({
+      github: { command: "npx", env: { GITHUB_TOKEN: "${GITHUB_TOKEN}" } },
+    });
+    expect(result).toEqual(["GITHUB_TOKEN"]);
+  });
+
+  it("extracts env var names from headers fields", () => {
+    const result = collectMcpEnvVars({
+      neon: {
+        type: "http",
+        url: "https://mcp.neon.tech/mcp",
+        headers: { Authorization: "Bearer ${NEON_API_KEY}" },
+      },
+    });
+    expect(result).toEqual(["NEON_API_KEY"]);
+  });
+
+  it("deduplicates and sorts var names across servers", () => {
+    const result = collectMcpEnvVars({
+      slack: {
+        command: "npx",
+        env: { SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}", SLACK_TEAM_ID: "${SLACK_TEAM_ID}" },
+      },
+      github: { command: "npx", env: { GITHUB_TOKEN: "${GITHUB_TOKEN}" } },
+    });
+    expect(result).toEqual(["GITHUB_TOKEN", "SLACK_BOT_TOKEN", "SLACK_TEAM_ID"]);
+  });
+
+  it("returns empty array when no env vars", () => {
+    const result = collectMcpEnvVars({
+      memory: { command: "npx" },
+    });
+    expect(result).toEqual([]);
+  });
+});
+
+describe("buildMcpEnvExample", () => {
+  it("returns null when no env vars required", () => {
+    const result = buildMcpEnvExample({ memory: { command: "npx" } });
+    expect(result).toBeNull();
+  });
+
+  it("generates .env.example content with server attribution", () => {
+    const result = buildMcpEnvExample({
+      github: { command: "npx", env: { GITHUB_TOKEN: "${GITHUB_TOKEN}" } },
+    });
+    expect(result).toContain("GITHUB_TOKEN=");
+    expect(result).toContain("Required by: github");
+  });
+
+  it("lists multiple servers for a shared var", () => {
+    const result = buildMcpEnvExample({
+      "neon-a": { command: "npx", env: { NEON_API_KEY: "${NEON_API_KEY}" } },
+      "neon-b": {
+        type: "http",
+        url: "https://x",
+        headers: { Authorization: "Bearer ${NEON_API_KEY}" },
+      },
+    });
+    expect(result).toContain("neon-a");
+    expect(result).toContain("neon-b");
+    expect(result).toContain("NEON_API_KEY=");
+  });
+});
+
 describe("buildSkillRoutingTable", () => {
   it("returns null when no skills", () => {
     const config = createMockConfig({ skills: [] });
@@ -237,8 +306,7 @@ describe("buildSkillRoutingTable", () => {
       skills: [
         {
           name: "codi-security-scan",
-          description:
-            "Security analysis workflow. Use to audit for vulnerabilities.",
+          description: "Security analysis workflow. Use to audit for vulnerabilities.",
           content: "c",
         },
       ],

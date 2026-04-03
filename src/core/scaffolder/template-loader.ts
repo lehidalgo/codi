@@ -1,11 +1,8 @@
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import {
-  prefixedName,
-  devArtifactName,
-  resolveArtifactName,
-} from "#src/constants.js";
+import { prefixedName, devArtifactName, resolveArtifactName } from "#src/constants.js";
+import { createVersionMap } from "../version/artifact-version.js";
 import * as ruleTemplates from "../../templates/rules/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
@@ -35,10 +32,12 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("workflow")]: ruleTemplates.workflow,
   [prefixedName("spanish-orthography")]: ruleTemplates.spanishOrthography,
   [prefixedName("agent-usage")]: ruleTemplates.agentUsage,
+  [prefixedName("output-discipline")]: ruleTemplates.outputDiscipline,
   [devArtifactName("improvement")]: ruleTemplates.improvement,
 };
 
 export const AVAILABLE_TEMPLATES = Object.keys(TEMPLATE_MAP);
+const TEMPLATE_VERSIONS = createVersionMap(AVAILABLE_TEMPLATES);
 
 export function loadTemplate(templateName: string): Result<string> {
   const resolved = resolveArtifactName(templateName, AVAILABLE_TEMPLATES);
@@ -50,4 +49,9 @@ export function loadTemplate(templateName: string): Result<string> {
     ]);
   }
   return ok(TEMPLATE_MAP[resolved]!);
+}
+
+export function getTemplateVersion(templateName: string): number | undefined {
+  const resolved = resolveArtifactName(templateName, AVAILABLE_TEMPLATES);
+  return resolved ? TEMPLATE_VERSIONS[resolved] : undefined;
 }
