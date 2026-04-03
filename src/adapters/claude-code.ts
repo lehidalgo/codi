@@ -150,7 +150,10 @@ export const claudeCodeAdapter: AgentAdapter = {
       lines.push(`name: ${agent.name}`);
       lines.push(`description: (${PROJECT_NAME}-agent) ${agent.description}`);
       if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
+      if (agent.disallowedTools) lines.push(`disallowedTools: ${agent.disallowedTools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
+      if (agent.maxTurns) lines.push(`maxTurns: ${agent.maxTurns}`);
+      if (agent.effort) lines.push(`effort: ${agent.effort}`);
       lines.push("---");
       const agentContent = addGeneratedFooter(`${lines.join("\n")}\n\n${agent.content}`);
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";

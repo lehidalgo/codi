@@ -123,7 +123,7 @@ describe("per-schema wrappers", () => {
   it("renderAgentFields matches AgentFrontmatterSchema field count", () => {
     const result = renderAgentFields();
     const dataRows = result.split("\n").slice(2);
-    expect(dataRows.length).toBe(5);
+    expect(dataRows.length).toBe(8);
   });
 
   it("renderCommandFields matches CommandFrontmatterSchema field count", () => {

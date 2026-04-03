@@ -251,6 +251,29 @@ describe("claude-code adapter", () => {
       expect(agentFile.content).not.toContain("model:");
     });
 
+    it("agent files emit disallowedTools, maxTurns, and effort when specified", async () => {
+      const config = createMockConfig({
+        agents: [
+          {
+            name: "safe-agent",
+            description: "A safety-bounded agent",
+            content: "Act with caution.",
+            tools: ["Read", "Grep"],
+            disallowedTools: ["Bash", "Write"],
+            model: "claude-haiku-4-5-20251001",
+            maxTurns: 10,
+            effort: "low",
+          },
+        ],
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const agentFile = files.find((f) => f.path.startsWith(".claude/agents/"))!;
+
+      expect(agentFile.content).toContain("disallowedTools: Bash, Write");
+      expect(agentFile.content).toContain("maxTurns: 10");
+      expect(agentFile.content).toContain("effort: low");
+    });
+
     it("produces no agent files when agents array is empty", async () => {
       const config = createMockConfig({ agents: [] });
       const files = await claudeCodeAdapter.generate(config, {});

@@ -73,7 +73,10 @@ export interface NormalizedAgent {
   description: string;
   content: string;
   tools?: string[];
+  disallowedTools?: string[];
   model?: string;
+  maxTurns?: number;
+  effort?: "low" | "medium" | "high" | "max";
   managedBy?: ManagedBy;
 }
 
