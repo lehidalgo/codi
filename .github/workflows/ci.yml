@@ -47,7 +47,7 @@ jobs:
         run: find src/templates -name "*.sh" -exec shellcheck {} +
 
   version-check:
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
