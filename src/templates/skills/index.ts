@@ -1,14 +1,14 @@
 export { template as mcpOps, staticDir as mcpOpsStaticDir } from "./mcp-ops/index.js";
 export { template as codeReview, staticDir as codeReviewStaticDir } from "./code-review/index.js";
 export {
-  template as documentation,
-  staticDir as documentationStaticDir,
-} from "./documentation/index.js";
-export { getTemplate as getOperationsTemplate } from "./operations/index.js";
+  template as projectDocumentation,
+  staticDir as projectDocumentationStaticDir,
+} from "./project-documentation/index.js";
+export { getTemplate as getCodidevOperationsTemplate } from "./dev-operations/index.js";
 export {
-  getTemplate as getE2eTestingTemplate,
-  staticDir as e2eTestingStaticDir,
-} from "./e2e-testing/index.js";
+  getTemplate as getCodidevE2eTestingTemplate,
+  staticDir as devE2eTestingStaticDir,
+} from "./dev-e2e-testing/index.js";
 export {
   template as securityScan,
   staticDir as securityScanStaticDir,
@@ -25,7 +25,7 @@ export {
 export { template as mobileDevelopment } from "./mobile-development/index.js";
 export { template as commit, staticDir as commitStaticDir } from "./commit/index.js";
 export { template as presetCreator } from "./preset-creator/index.js";
-export { template as contribute } from "./contribute/index.js";
+export { template as artifactContributor } from "./artifact-contributor/index.js";
 export {
   template as skillCreator,
   staticDir as skillCreatorStaticDir,
@@ -38,10 +38,10 @@ export {
   staticDir as guidedQaTestingStaticDir,
 } from "./guided-qa-testing/index.js";
 export { template as comparePreset } from "./compare-preset/index.js";
-export { template as errorRecovery } from "./error-recovery/index.js";
+export { template as sessionRecovery } from "./session-recovery/index.js";
 export { template as deckEngine, staticDir as deckEngineStaticDir } from "./deck-engine/index.js";
 export { template as docEngine, staticDir as docEngineStaticDir } from "./doc-engine/index.js";
-export { template as skillReporter } from "./skill-reporter/index.js";
+export { template as skillFeedbackReporter } from "./skill-feedback-reporter/index.js";
 export { template as ruleFeedback } from "./rule-feedback/index.js";
 export { template as refineRules } from "./refine-rules/index.js";
 export { template as claudeApi, staticDir as claudeApiStaticDir } from "./claude-api/index.js";
@@ -62,9 +62,9 @@ export {
   staticDir as themeFactoryStaticDir,
 } from "./theme-factory/index.js";
 export {
-  template as webArtifactsBuilder,
-  staticDir as webArtifactsBuilderStaticDir,
-} from "./web-artifacts-builder/index.js";
+  template as claudeArtifactsBuilder,
+  staticDir as claudeArtifactsBuilderStaticDir,
+} from "./claude-artifacts-builder/index.js";
 export {
   template as algorithmicArt,
   staticDir as algorithmicArtStaticDir,
@@ -81,7 +81,7 @@ export {
   template as slackGifCreator,
   staticDir as slackGifCreatorStaticDir,
 } from "./slack-gif-creator/index.js";
-export { template as docsManager } from "./docs-manager/index.js";
+export { template as devDocsManager } from "./dev-docs-manager/index.js";
 export { template as brandIdentity } from "./brand-identity/index.js";
 export { template as rl3Brand, staticDir as rl3BrandStaticDir } from "./rl3-brand/index.js";
 export { template as bbvaBrand, staticDir as bbvaBrandStaticDir } from "./bbva-brand/index.js";
@@ -98,3 +98,10 @@ export {
   staticDir as audioTranscriberStaticDir,
 } from "./audio-transcriber/index.js";
 export { template as humanizer } from "./humanizer/index.js";
+export { template as testRun } from "./test-run/index.js";
+export { template as diagnostics } from "./diagnostics/index.js";
+export { template as sessionHandoff } from "./session-handoff/index.js";
+export { template as codebaseExplore } from "./codebase-explore/index.js";
+export { template as graphSync } from "./graph-sync/index.js";
+export { template as dailyLog } from "./daily-log/index.js";
+export { template as roadmap } from "./roadmap/index.js";

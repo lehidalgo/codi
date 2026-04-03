@@ -2,7 +2,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
-import { createVersionMap } from "../version/artifact-version.js";
+import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
 import type { TemplateCounts, SkillTemplateDescriptor } from "../../templates/skills/types.js";
 import { AVAILABLE_TEMPLATES } from "./template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "./agent-template-loader.js";
@@ -15,9 +15,9 @@ type TemplateEntry = string | ((counts: TemplateCounts) => string);
 const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("mcp-ops")]: skillTemplates.mcpOps,
   [prefixedName("code-review")]: skillTemplates.codeReview,
-  [prefixedName("documentation")]: skillTemplates.documentation,
-  [prefixedName("operations")]: skillTemplates.getOperationsTemplate,
-  [prefixedName("e2e-testing")]: skillTemplates.getE2eTestingTemplate,
+  [prefixedName("project-documentation")]: skillTemplates.projectDocumentation,
+  [prefixedName("dev-operations")]: skillTemplates.getCodidevOperationsTemplate,
+  [prefixedName("dev-e2e-testing")]: skillTemplates.getCodidevE2eTestingTemplate,
   [prefixedName("security-scan")]: skillTemplates.securityScan,
   [prefixedName("test-coverage")]: skillTemplates.testCoverage,
   [prefixedName("refactoring")]: skillTemplates.refactoring,
@@ -25,14 +25,14 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("mobile-development")]: skillTemplates.mobileDevelopment,
   [prefixedName("commit")]: skillTemplates.commit,
   [prefixedName("preset-creator")]: skillTemplates.presetCreator,
-  [prefixedName("contribute")]: skillTemplates.contribute,
+  [prefixedName("artifact-contributor")]: skillTemplates.artifactContributor,
   [prefixedName("skill-creator")]: skillTemplates.skillCreator,
   [prefixedName("rule-creator")]: skillTemplates.ruleCreator,
   [prefixedName("agent-creator")]: skillTemplates.agentCreator,
   [prefixedName("command-creator")]: skillTemplates.commandCreator,
   [prefixedName("compare-preset")]: skillTemplates.comparePreset,
   [prefixedName("guided-qa-testing")]: skillTemplates.guidedQaTesting,
-  [prefixedName("error-recovery")]: skillTemplates.errorRecovery,
+  [prefixedName("session-recovery")]: skillTemplates.sessionRecovery,
   [prefixedName("deck-engine")]: skillTemplates.deckEngine,
   [prefixedName("doc-engine")]: skillTemplates.docEngine,
   [prefixedName("claude-api")]: skillTemplates.claudeApi,
@@ -43,22 +43,29 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("pptx")]: skillTemplates.pptx,
   [prefixedName("frontend-design")]: skillTemplates.frontendDesign,
   [prefixedName("theme-factory")]: skillTemplates.themeFactory,
-  [prefixedName("web-artifacts-builder")]: skillTemplates.webArtifactsBuilder,
+  [prefixedName("claude-artifacts-builder")]: skillTemplates.claudeArtifactsBuilder,
   [prefixedName("algorithmic-art")]: skillTemplates.algorithmicArt,
   [prefixedName("canvas-design")]: skillTemplates.canvasDesign,
   [prefixedName("internal-comms")]: skillTemplates.internalComms,
   [prefixedName("slack-gif-creator")]: skillTemplates.slackGifCreator,
-  [prefixedName("docs-manager")]: skillTemplates.docsManager,
+  [prefixedName("dev-docs-manager")]: skillTemplates.devDocsManager,
   [prefixedName("brand-identity")]: skillTemplates.brandIdentity,
   [prefixedName("rl3-brand")]: skillTemplates.rl3Brand,
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrand,
   [prefixedName("content-factory")]: skillTemplates.contentFactory,
   [prefixedName("project-quality-guard")]: skillTemplates.projectQualityGuard,
   [prefixedName("audio-transcriber")]: skillTemplates.audioTranscriber,
-  [prefixedName("skill-reporter")]: skillTemplates.skillReporter,
+  [prefixedName("skill-feedback-reporter")]: skillTemplates.skillFeedbackReporter,
   [prefixedName("rule-feedback")]: skillTemplates.ruleFeedback,
   [prefixedName("refine-rules")]: skillTemplates.refineRules,
   [prefixedName("humanizer")]: skillTemplates.humanizer,
+  [prefixedName("test-run")]: skillTemplates.testRun,
+  [prefixedName("diagnostics")]: skillTemplates.diagnostics,
+  [prefixedName("session-handoff")]: skillTemplates.sessionHandoff,
+  [prefixedName("codebase-explore")]: skillTemplates.codebaseExplore,
+  [prefixedName("graph-sync")]: skillTemplates.graphSync,
+  [prefixedName("daily-log")]: skillTemplates.dailyLog,
+  [prefixedName("roadmap")]: skillTemplates.roadmap,
 };
 
 /** Maps template names to their static asset directories (when available). */
@@ -73,7 +80,7 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("skill-creator")]: skillTemplates.skillCreatorStaticDir,
   [prefixedName("slack-gif-creator")]: skillTemplates.slackGifCreatorStaticDir,
   [prefixedName("theme-factory")]: skillTemplates.themeFactoryStaticDir,
-  [prefixedName("web-artifacts-builder")]: skillTemplates.webArtifactsBuilderStaticDir,
+  [prefixedName("claude-artifacts-builder")]: skillTemplates.claudeArtifactsBuilderStaticDir,
   [prefixedName("webapp-testing")]: skillTemplates.webappTestingStaticDir,
   [prefixedName("xlsx")]: skillTemplates.xlsxStaticDir,
   [prefixedName("rl3-brand")]: skillTemplates.rl3BrandStaticDir,
@@ -86,9 +93,9 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("test-coverage")]: skillTemplates.testCoverageStaticDir,
   [prefixedName("refactoring")]: skillTemplates.refactoringStaticDir,
   [prefixedName("codebase-onboarding")]: skillTemplates.codebaseOnboardingStaticDir,
-  [prefixedName("documentation")]: skillTemplates.documentationStaticDir,
+  [prefixedName("project-documentation")]: skillTemplates.projectDocumentationStaticDir,
   [prefixedName("commit")]: skillTemplates.commitStaticDir,
-  [prefixedName("e2e-testing")]: skillTemplates.e2eTestingStaticDir,
+  [prefixedName("dev-e2e-testing")]: skillTemplates.devE2eTestingStaticDir,
   [prefixedName("guided-qa-testing")]: skillTemplates.guidedQaTestingStaticDir,
   [prefixedName("frontend-design")]: skillTemplates.frontendDesignStaticDir,
   [prefixedName("doc-engine")]: skillTemplates.docEngineStaticDir,
@@ -97,7 +104,6 @@ const STATIC_DIR_MAP: Record<string, string> = {
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
-const TEMPLATE_VERSIONS = createVersionMap(AVAILABLE_SKILL_TEMPLATES);
 
 function getTemplateCounts(): TemplateCounts {
   return {
@@ -150,5 +156,6 @@ export function loadSkillTemplateContent(templateName: string): Result<string> {
 }
 
 export function getSkillTemplateVersion(templateName: string): number | undefined {
-  return TEMPLATE_VERSIONS[templateName];
+  const result = loadSkillTemplateContent(templateName);
+  return result.ok ? parseVersionFromFrontmatter(result.data) : undefined;
 }

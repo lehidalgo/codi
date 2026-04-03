@@ -125,11 +125,11 @@
   },
   "codi-dev-operations": {
     "version": 1,
-    "hash": "b7538c1192085f307a334243351a03703028ac4dfced2b2ecaa0770a9469e025"
+    "hash": "d2dae30e8ad1d88ef1c8c2d2d5f75c725976701ba2c5eac8e3930efe62ea5aac"
   },
   "codi-dev-e2e-testing": {
     "version": 1,
-    "hash": "094d76df8fc27710cd1c238f3fc55cf25e8a956a5fb27d32bf5145e5d93b693d"
+    "hash": "f9f391acbecbb5676792281f52c2263cd6d66001ac95e90ce7fc6757f84a6f98"
   },
   "codi-security-scan": {
     "version": 1,
@@ -295,6 +295,34 @@
     "version": 1,
     "hash": "c3032580acca577fadee89292e7ae58a9fed6b24b97b19dbacb7628a68280dfc"
   },
+  "codi-test-run": {
+    "version": 1,
+    "hash": "64df2dcb4eab78726447ae6c7ef38ab9e1f7a8b040566aec577066799ee9c347"
+  },
+  "codi-diagnostics": {
+    "version": 1,
+    "hash": "ff03a26cf4e0b382dc82c956e10d021742000e5bab7d7514f80051e64dbcb207"
+  },
+  "codi-session-handoff": {
+    "version": 1,
+    "hash": "57c528eb4cd3c6bf862122950b0c7b326d53013ee2731f2db8bcc1e932227b91"
+  },
+  "codi-codebase-explore": {
+    "version": 1,
+    "hash": "ea90d9cf1d68f5f05b408c69a26efa7917831b5388f4ef6bd486b67719eb7e51"
+  },
+  "codi-graph-sync": {
+    "version": 1,
+    "hash": "c75b69e32bcdce49604ff4a540127669b1837312e640dc29c118e921ca591e5d"
+  },
+  "codi-daily-log": {
+    "version": 1,
+    "hash": "2761fdde09927e00139b6d1e3bb7fd2949d6829de8b8449f2accabae23bdaa3d"
+  },
+  "codi-roadmap": {
+    "version": 1,
+    "hash": "a4cea4fda07d225ef75b4c2c8ace4d15bc037189d19c7fa366c090b92fa0a3eb"
+  },
   "codi-code-reviewer": {
     "version": 1,
     "hash": "27296d795c25f91dac6e458ac93df376346555dc1870fe3e04936213dcd62b8e"
@@ -383,21 +411,9 @@
     "version": 1,
     "hash": "6a9e725784c62bf8ee2dca7221f7e7fcdb6fd3f759ccee859ad216c1d228feb1"
   },
-  "codi-test-run": {
-    "version": 1,
-    "hash": "64df2dcb4eab78726447ae6c7ef38ab9e1f7a8b040566aec577066799ee9c347"
-  },
-  "codi-session-handoff": {
-    "version": 1,
-    "hash": "57c528eb4cd3c6bf862122950b0c7b326d53013ee2731f2db8bcc1e932227b91"
-  },
   "codi-check": {
     "version": 1,
     "hash": "0fa30b7b0fa0cfbbe4530f342c124f110073a528d422c6e3d9de9c998eab47a6"
-  },
-  "codi-codebase-explore": {
-    "version": 1,
-    "hash": "ea90d9cf1d68f5f05b408c69a26efa7917831b5388f4ef6bd486b67719eb7e51"
   },
   "codi-index-graph": {
     "version": 1,
@@ -414,10 +430,6 @@
   "codi-close-day": {
     "version": 1,
     "hash": "340b1c26a8805f771906ab3095c0b20efdcc7f8f583f0e38c759960d5aea0657"
-  },
-  "codi-roadmap": {
-    "version": 1,
-    "hash": "a4cea4fda07d225ef75b4c2c8ace4d15bc037189d19c7fa366c090b92fa0a3eb"
   },
   "github": {
     "version": 1,
