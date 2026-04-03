@@ -3,7 +3,8 @@ import path from "node:path";
 import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
-import { loadTemplate } from "./template-loader.js";
+import { loadTemplate, getTemplateVersion } from "./template-loader.js";
+import { injectFrontmatterVersion } from "../version/artifact-version.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 
 const DEFAULT_CONTENT = `---
@@ -12,6 +13,7 @@ description: Custom rule
 priority: medium
 alwaysApply: false
 managed_by: user
+version: 1
 ---
 
 # {{name}}
@@ -25,9 +27,7 @@ export interface CreateRuleOptions {
   force?: boolean;
 }
 
-export async function createRule(
-  options: CreateRuleOptions,
-): Promise<Result<string>> {
+export async function createRule(options: CreateRuleOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
@@ -42,7 +42,11 @@ export async function createRule(
   if (template) {
     const templateResult = loadTemplate(template);
     if (!templateResult.ok) return templateResult;
-    content = templateResult.data;
+    const version = getTemplateVersion(template);
+    content =
+      version !== undefined
+        ? injectFrontmatterVersion(templateResult.data, version)
+        : templateResult.data;
     // Guard: ensure loaded template has valid YAML frontmatter
     if (!content.trimStart().startsWith("---")) {
       content = DEFAULT_CONTENT;

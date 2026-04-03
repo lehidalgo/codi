@@ -2,6 +2,7 @@ import { ok, err } from "../../types/result.js";
 import type { Result } from "../../types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
+import { createVersionMap } from "../version/artifact-version.js";
 import type { TemplateCounts, SkillTemplateDescriptor } from "../../templates/skills/types.js";
 import { AVAILABLE_TEMPLATES } from "./template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "./agent-template-loader.js";
@@ -57,6 +58,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("skill-reporter")]: skillTemplates.skillReporter,
   [prefixedName("rule-feedback")]: skillTemplates.ruleFeedback,
   [prefixedName("refine-rules")]: skillTemplates.refineRules,
+  [prefixedName("humanizer")]: skillTemplates.humanizer,
 };
 
 /** Maps template names to their static asset directories (when available). */
@@ -95,6 +97,7 @@ const STATIC_DIR_MAP: Record<string, string> = {
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
+const TEMPLATE_VERSIONS = createVersionMap(AVAILABLE_SKILL_TEMPLATES);
 
 function getTemplateCounts(): TemplateCounts {
   return {
@@ -144,4 +147,8 @@ export function loadSkillTemplateContent(templateName: string): Result<string> {
     ]);
   }
   return ok(resolveTemplate(entry));
+}
+
+export function getSkillTemplateVersion(templateName: string): number | undefined {
+  return TEMPLATE_VERSIONS[templateName];
 }

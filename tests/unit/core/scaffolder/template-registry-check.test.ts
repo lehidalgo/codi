@@ -20,6 +20,16 @@ vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
   AVAILABLE_MCP_SERVER_TEMPLATES: ["github"],
   loadMcpServerTemplate: vi.fn(),
 }));
+vi.mock("#src/core/version/template-hash-registry.js", () => ({
+  buildTemplateHashRegistry: vi.fn(() => ({
+    cliVersion: "2.1.0",
+    generatedAt: new Date().toISOString(),
+    templates: {},
+  })),
+}));
+vi.mock("#src/core/version/artifact-version-baseline.js", () => ({
+  checkArtifactVersionBaseline: vi.fn(() => []),
+}));
 
 import { loadTemplate } from "#src/core/scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "#src/core/scaffolder/skill-template-loader.js";
@@ -43,6 +53,7 @@ function allOk() {
     data: {
       name: "github",
       description: "GitHub MCP",
+      version: 1,
       command: "npx",
       args: [],
     },
@@ -56,9 +67,8 @@ describe("checkTemplateRegistry", () => {
 
   it("returns empty array when all templates load successfully", async () => {
     allOk();
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     expect(checkTemplateRegistry()).toEqual([]);
   });
 
@@ -75,9 +85,8 @@ describe("checkTemplateRegistry", () => {
         },
       ],
     });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/rule.*codi-security/);
@@ -86,9 +95,8 @@ describe("checkTemplateRegistry", () => {
   it("returns error when a rule template has empty content", async () => {
     allOk();
     mockLoadTemplate.mockReturnValueOnce({ ok: true, data: "   " });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/rule.*codi-security/);
@@ -107,9 +115,8 @@ describe("checkTemplateRegistry", () => {
         },
       ],
     });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/skill.*codi-pdf/);
@@ -128,9 +135,8 @@ describe("checkTemplateRegistry", () => {
         },
       ],
     });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/agent.*codi-code-reviewer/);
@@ -149,9 +155,8 @@ describe("checkTemplateRegistry", () => {
         },
       ],
     });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/command.*codi-commit/);
@@ -170,9 +175,8 @@ describe("checkTemplateRegistry", () => {
         },
       ],
     });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/mcp.*github/);
@@ -195,11 +199,10 @@ describe("checkTemplateRegistry", () => {
     mockLoadCommand.mockReturnValue({ ok: true, data: "# ok" });
     mockLoadMcp.mockReturnValue({
       ok: true,
-      data: { name: "github", description: "", command: "npx", args: [] },
+      data: { name: "github", description: "", version: 1, command: "npx", args: [] },
     });
-    const { checkTemplateRegistry } = await import(
-      "#src/core/scaffolder/template-registry-check.js"
-    );
+    const { checkTemplateRegistry } =
+      await import("#src/core/scaffolder/template-registry-check.js");
     const errors = checkTemplateRegistry();
     // 2 rules (empty) + 1 agent (load failure)
     expect(errors).toHaveLength(3);
