@@ -111,7 +111,7 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 27 |
-| **Skills** | 44 |
+| **Skills** | 45 |
 | **Agents** | 22 |
 | **Commands** | 17 |
 <!-- GENERATED:END:template_counts_compact -->
