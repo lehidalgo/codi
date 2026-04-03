@@ -48,9 +48,7 @@ async function resolveContributionTarget(
   if (cliRepo) {
     const branch =
       cliBranch ??
-      (cliRepo === PROJECT_REPO
-        ? PROJECT_TARGET_BRANCH
-        : await detectDefaultBranch(cliRepo));
+      (cliRepo === PROJECT_REPO ? PROJECT_TARGET_BRANCH : await detectDefaultBranch(cliRepo));
     return { repo: cliRepo, branch };
   }
 
@@ -115,28 +113,24 @@ async function resolveContributionTarget(
 
   const branch =
     cliBranch ??
-    (repoSlug === PROJECT_REPO
-      ? PROJECT_TARGET_BRANCH
-      : await detectDefaultBranch(repoSlug));
+    (repoSlug === PROJECT_REPO ? PROJECT_TARGET_BRANCH : await detectDefaultBranch(repoSlug));
 
   return { repo: repoSlug, branch };
 }
 
 export interface ArtifactEntry {
   name: string;
-  type: "rule" | "skill" | "agent" | "command";
+  type: "rule" | "skill" | "agent";
   managedBy: string;
   path: string;
 }
 
 /**
  * Discovers all artifacts in the project config directory.
- * Handles both flat .md files (rules, agents, commands) and
+ * Handles both flat .md files (rules, agents) and
  * directory-based skills (skills/{name}/SKILL.md).
  */
-export async function discoverArtifacts(
-  configDir: string,
-): Promise<ArtifactEntry[]> {
+export async function discoverArtifacts(configDir: string): Promise<ArtifactEntry[]> {
   const artifacts: ArtifactEntry[] = [];
 
   const scanFlatDir = async (dir: string, type: ArtifactEntry["type"]) => {
@@ -163,11 +157,7 @@ export async function discoverArtifacts(
     }
   };
 
-  const scanDirBased = async (
-    dir: string,
-    type: ArtifactEntry["type"],
-    indexFile: string,
-  ) => {
+  const scanDirBased = async (dir: string, type: ArtifactEntry["type"], indexFile: string) => {
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
@@ -192,13 +182,8 @@ export async function discoverArtifacts(
   };
 
   await scanFlatDir(path.join(configDir, "rules"), "rule");
-  await scanDirBased(
-    path.join(configDir, "skills"),
-    "skill",
-    SKILL_OUTPUT_FILENAME,
-  );
+  await scanDirBased(path.join(configDir, "skills"), "skill", SKILL_OUTPUT_FILENAME);
   await scanFlatDir(path.join(configDir, "agents"), "agent");
-  await scanFlatDir(path.join(configDir, "commands"), "command");
 
   return artifacts;
 }
@@ -222,10 +207,7 @@ export async function buildPresetPackage(
       await fs.mkdir(destSkillDir, { recursive: true });
       await copyDir(artifact.path, destSkillDir);
     } else {
-      await fs.copyFile(
-        artifact.path,
-        path.join(typeDir, path.basename(artifact.path)),
-      );
+      await fs.copyFile(artifact.path, path.join(typeDir, path.basename(artifact.path)));
     }
 
     (artifactNames[typeKey] ??= []).push(artifact.name);
@@ -235,9 +217,7 @@ export async function buildPresetPackage(
     name: presetName,
     description: "Community contribution",
     version: "1.0.0",
-    artifacts: Object.fromEntries(
-      Object.entries(artifactNames).filter(([, v]) => v.length > 0),
-    ),
+    artifacts: Object.fromEntries(Object.entries(artifactNames).filter(([, v]) => v.length > 0)),
   };
   await fs.writeFile(
     path.join(presetDir, PRESET_MANIFEST_FILENAME),
@@ -266,19 +246,11 @@ async function createContributionPR(
   log: Logger,
 ): Promise<string | null> {
   const repoName = target.repo.split("/")[1] ?? "contribution";
-  const cloneDir = path.join(
-    os.tmpdir(),
-    `${repoName}-contribute-${Date.now()}`,
-  );
+  const cloneDir = path.join(os.tmpdir(), `${repoName}-contribute-${Date.now()}`);
 
   try {
     // 1. Get the authenticated GitHub username
-    const { stdout: userLogin } = await execFileAsync("gh", [
-      "api",
-      "user",
-      "--jq",
-      ".login",
-    ]);
+    const { stdout: userLogin } = await execFileAsync("gh", ["api", "user", "--jq", ".login"]);
     const ghUser = userLogin.trim();
     if (!ghUser) throw new Error("Could not determine GitHub username");
 
@@ -296,13 +268,8 @@ async function createContributionPR(
         cloneDir,
       ]);
     } catch (cloneError) {
-      const msg =
-        cloneError instanceof Error ? cloneError.message : String(cloneError);
-      if (
-        msg.includes("Permission") ||
-        msg.includes("403") ||
-        msg.includes("Authentication")
-      ) {
+      const msg = cloneError instanceof Error ? cloneError.message : String(cloneError);
+      if (msg.includes("Permission") || msg.includes("403") || msg.includes("Authentication")) {
         log.error(`Clone failed — authentication error.`);
         log.info(`Troubleshooting:`);
         log.info(`  1. Run: gh auth login`);
@@ -359,8 +326,7 @@ async function createContributionPR(
         cwd: cloneDir,
       });
     } catch (pushError) {
-      const msg =
-        pushError instanceof Error ? pushError.message : String(pushError);
+      const msg = pushError instanceof Error ? pushError.message : String(pushError);
       if (msg.includes("Permission") || msg.includes("403")) {
         log.error(`Git push failed — permission denied.`);
         log.info(`Troubleshooting:`);
@@ -394,9 +360,7 @@ async function createContributionPR(
 
     return prUrl.trim();
   } catch (error) {
-    log.info(
-      `PR creation failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    log.info(`PR creation failed: ${error instanceof Error ? error.message : String(error)}`);
     return null;
   } finally {
     await fs.rm(cloneDir, { recursive: true, force: true }).catch(() => {});
@@ -486,9 +450,7 @@ export async function contributeHandler(
     });
   }
 
-  const selectedArtifacts = allArtifacts.filter((a) =>
-    selected.includes(a.name),
-  );
+  const selectedArtifacts = allArtifacts.filter((a) => selected.includes(a.name));
 
   // Step 3: Choose contribution method
   printSection("Distribution");
@@ -534,11 +496,7 @@ export async function contributeHandler(
     }
 
     printSection("Target Repository");
-    const target = await resolveContributionTarget(
-      configDir,
-      cliRepo,
-      cliBranch,
-    );
+    const target = await resolveContributionTarget(configDir, cliRepo, cliBranch);
     if (p.isCancel(target)) {
       p.cancel("Operation cancelled.");
       return cancelResult();
@@ -551,8 +509,7 @@ export async function contributeHandler(
       validate: (val = "") => {
         if (!NAME_PATTERN_STRICT.test(val))
           return "Must be lowercase kebab-case starting with a letter";
-        if (val.length > MAX_NAME_LENGTH)
-          return `Max ${MAX_NAME_LENGTH} characters`;
+        if (val.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
         return undefined;
       },
     });
@@ -563,15 +520,8 @@ export async function contributeHandler(
     }
     const prPresetName = prPresetNameInput as string;
 
-    log.info(
-      `Contributing ${selectedArtifacts.length} artifact(s) via PR to ${target.repo}...`,
-    );
-    const prUrl = await createContributionPR(
-      selectedArtifacts,
-      target,
-      prPresetName,
-      log,
-    );
+    log.info(`Contributing ${selectedArtifacts.length} artifact(s) via PR to ${target.repo}...`);
+    const prUrl = await createContributionPR(selectedArtifacts, target, prPresetName, log);
 
     if (prUrl) {
       log.info(`PR created: ${prUrl}`);
@@ -613,8 +563,7 @@ export async function contributeHandler(
     validate: (val = "") => {
       if (!NAME_PATTERN_STRICT.test(val))
         return "Must be lowercase kebab-case starting with a letter";
-      if (val.length > MAX_NAME_LENGTH)
-        return `Max ${MAX_NAME_LENGTH} characters`;
+      if (val.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
       return undefined;
     },
   });
@@ -625,10 +574,7 @@ export async function contributeHandler(
   }
   const presetName = presetNameInput as string;
 
-  const stagingDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-contrib-${Date.now()}`,
-  );
+  const stagingDir = path.join(os.tmpdir(), `${PROJECT_NAME}-contrib-${Date.now()}`);
   await fs.mkdir(stagingDir, { recursive: true });
 
   await buildPresetPackage(selectedArtifacts, presetName, stagingDir);
@@ -664,11 +610,7 @@ export function registerContributeCommand(program: Command): void {
     .action(async (options: { repo?: string; branch?: string }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await contributeHandler(
-        process.cwd(),
-        options.repo,
-        options.branch,
-      );
+      const result = await contributeHandler(process.cwd(), options.repo, options.branch);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

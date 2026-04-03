@@ -360,13 +360,12 @@ Expected: No doc-sync warnings.
 
 ## Suite 15: Commit Workflow
 
-**[SYSTEM]** Add commit skill and command:
+**[SYSTEM]** Add commit skill:
 \\\`\\\`\\\`bash
 npx ${PROJECT_CLI} add skill commit --template commit --json
-npx ${PROJECT_CLI} add command commit --template commit --json
 npx ${PROJECT_CLI} generate --json
 \\\`\\\`\\\`
-Expected: Commit skill and command created. Generated for all agents.
+Expected: Commit skill created. Generated for all agents.
 
 **[CODING AGENT]** Verify the commit skill content includes:
 - Conventional commits format (feat, fix, docs, refactor, test, chore)

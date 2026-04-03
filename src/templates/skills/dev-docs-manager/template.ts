@@ -22,7 +22,7 @@ intentHints:
     - "Update the docs"
     - "Sync documentation"
     - "Build the HTML docs site"
-version: 1
+version: 2
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager
@@ -47,7 +47,7 @@ flag catalogs, adapter definitions) and injects rendered Markdown tables between
 Everything outside markers is preserved exactly as written.
 
 **20 generated sections** across 4 doc files:
-- **artifacts.md** (8): rule_fields, skill_fields, agent_fields, command_fields, rule_templates, skill_templates, agent_templates, command_templates
+- **artifacts.md** (6): rule_fields, skill_fields, agent_fields, rule_templates, skill_templates, agent_templates
 - **configuration.md** (4): flags_table, flag_modes, manifest_fields, flag_instructions
 - **architecture.md** (3): adapter_table, layer_order, flag_hooks
 - **presets.md** (2): preset_table, preset_flag_comparison

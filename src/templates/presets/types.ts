@@ -21,8 +21,6 @@ export interface BuiltinPresetDefinition {
   skills: string[];
   /** Agent template names to include (from src/templates/agents/) */
   agents: string[];
-  /** @deprecated Commands are migrated to skills. Use skills instead. */
-  commands?: string[];
   /** Brand names to include (user-defined, no built-in templates) */
   brands?: string[];
   /** MCP server template names to include (from src/templates/mcp-servers/) */

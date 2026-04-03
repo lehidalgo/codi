@@ -101,7 +101,7 @@ src/
     generate.ts       # codi generate
     validate.ts       # codi validate
     status.ts         # codi status
-    add.ts            # codi add rule/skill/agent/command
+    add.ts            # codi add rule/skill/agent
     verify.ts         # codi verify
     doctor.ts         # codi doctor
     update.ts         # codi update
@@ -129,9 +129,8 @@ src/
   schemas/            # Zod schemas for config, flags, artifacts
   templates/          # Built-in templates
     rules/            # 27 rule templates
-    skills/           # 44 skill templates
+    skills/           # 53 skill templates
     agents/           # 22 agent templates
-    commands/         # 17 command templates
     hooks/            # 3 hook templates
   types/              # TypeScript type definitions
   utils/              # Shared utilities (logger, errors, hashing)
@@ -179,14 +178,6 @@ src/
 3. Add to the agent template map in the template loader
 4. Add tests
 5. Run `npm test`
-
-### Adding a Command Template
-
-1. Create `src/templates/commands/{name}.ts` exporting a `template` string
-2. Export from `src/templates/commands/index.ts`
-3. Add to `TEMPLATE_MAP` in `src/core/scaffolder/command-template-loader.ts`
-4. Run `npm test`
-5. Submit PR
 
 ### Adding a New Flag
 
