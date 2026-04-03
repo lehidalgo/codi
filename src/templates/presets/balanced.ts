@@ -43,10 +43,5 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("compare-preset"),
   ],
   agents: [prefixedName("code-reviewer")],
-  commands: [
-    prefixedName("review"),
-    prefixedName("commit"),
-    prefixedName("security-scan"),
-  ],
   mcpServers: [],
 };
