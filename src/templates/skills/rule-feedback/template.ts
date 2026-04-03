@@ -1,4 +1,4 @@
-import { PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -7,7 +7,7 @@ description: |
   during coding sessions — pattern detection, outdated practices, missing examples,
   and user corrections. Writes observations to ${PROJECT_DIR}/feedback/rules/ for
   later review via /codi-refine-rules. Does NOT modify rules directly.
-category: ${PROJECT_NAME} Platform
+category: ${PROJECT_NAME_DISPLAY} Platform
 user-invocable: false
 managed_by: ${PROJECT_NAME}
 intentHints:

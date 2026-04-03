@@ -15,7 +15,10 @@ export function getTemplate(counts: TemplateCounts): string {
 
   return `---
 name: {{name}}
-description: Comprehensive validation of all ${PROJECT_NAME} features. Use when asked to test, audit, or verify the ${PROJECT_NAME} installation end-to-end. Covers 16 commands, 7 artifact types, preset management (create, validate, export, install, remove), pre-commit hooks, doc-sync, and commit workflow.
+description: |
+  End-to-end validation of the ${PROJECT_NAME} installation. Use when asked to test
+  or audit the full ${PROJECT_NAME} feature set — artifacts, presets, hooks, verification,
+  and commit workflow — in a clean test project.
 category: Code Quality
 compatibility: [claude-code, cursor, codex, windsurf, cline]
 managed_by: ${PROJECT_NAME}
@@ -24,11 +27,16 @@ intentHints:
   examples:
     - "Run end-to-end tests"
     - "Validate the full installation"
+    - "Audit codi end-to-end"
 ---
 
 # {{name}}
 
-## Overview
+## When to Activate
+
+- User asks to run end-to-end tests or audit the full ${PROJECT_NAME} installation
+- User wants to validate artifacts, presets, hooks, and verification in a clean project
+- User is preparing a release and needs a full feature sweep
 
 This skill guides systematic validation of ALL ${PROJECT_NAME} features in a test project. Each step is labeled:
 - **[SYSTEM]** — run this CLI command
@@ -414,5 +422,10 @@ Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and a
 For specialized analysis during e2e validation, delegate to these agents (see \\\`agents/\\\` directory):
 - **codi-test-generator** — Generate automated tests from e2e findings
 - **codi-security-analyzer** — Security validation of auth flows and data handling
+
+## Related Skills
+
+- **codi-operations** — Day-to-day ${PROJECT_NAME} management (not full e2e validation)
+- **codi-security-scan** — Dedicated security audit for the test project
 `;
 }

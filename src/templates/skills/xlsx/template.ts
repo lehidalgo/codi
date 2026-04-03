@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: "Use this skill any time a spreadsheet file is the primary input or output. This means any task where the user wants to: open, read, edit, or fix an existing .xlsx, .xlsm, .csv, or .tsv file (e.g., adding columns, computing formulas, formatting, charting, cleaning messy data); create a new spreadsheet from scratch or from other data sources; or convert between tabular file formats. Trigger especially when the user references a spreadsheet file by name or path — even casually (like \\"the xlsx in my downloads\\") — and wants something done to it or produced from it. Also trigger for cleaning or restructuring messy tabular data files (malformed rows, misplaced headers, junk data) into proper spreadsheets. The deliverable must be a spreadsheet file. Do NOT trigger when the primary deliverable is a Word document, HTML report, standalone Python script, database pipeline, or Google Sheets API integration, even if tabular data is involved."
+description: "Use when the user wants to work with a spreadsheet file (.xlsx, .xlsm, .csv, or .tsv). Also activate when cleaning messy tabular data, creating financial models, or converting between tabular formats. Do NOT activate when the deliverable is a Word doc, HTML report, standalone script, or Google Sheets API integration."
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,7 +11,15 @@ intentHints:
   examples:
     - "Create a spreadsheet"
     - "Generate an Excel file"
+    - "Fix formula errors in Excel"
 ---
+
+## When to Activate
+
+- User wants to create, edit, read, or fix a \\\`.xlsx\\\`, \\\`.xlsm\\\`, \\\`.csv\\\`, or \\\`.tsv\\\` file
+- User needs to clean or restructure messy tabular data
+- User wants to build a financial model with formulas and color coding
+- User needs to convert between tabular file formats
 
 # Requirements for Outputs
 

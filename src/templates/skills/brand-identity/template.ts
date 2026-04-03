@@ -5,6 +5,7 @@ name: {{name}}
 description: Brand identity for {{name}}. Provides design tokens, typography, logo guidance, and tone of voice for ${PROJECT_NAME_DISPLAY} document and presentation skills.
 category: brand
 managed_by: user
+user-invocable: false
 ---
 
 # {{name}} — Brand Identity

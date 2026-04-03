@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: "Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files). Triggers include: any mention of 'Word doc', 'word document', '.docx', or requests to produce professional documents with formatting like tables of contents, headings, page numbers, or letterheads. Also use when extracting or reorganizing content from .docx files, inserting or replacing images in documents, performing find-and-replace in Word files, working with tracked changes or comments, or converting content into a polished Word document. If the user asks for a 'report', 'memo', 'letter', 'template', or similar deliverable as a Word or .docx file, use this skill. Do NOT use for PDFs, spreadsheets, Google Docs, or general coding tasks unrelated to document generation."
+description: "Use when the user wants to create, edit, or work with Word documents (.docx). Also activate when extracting content, adding tracked changes or comments, inserting images, or producing reports, memos, or letters as .docx. Do NOT activate for PDFs, spreadsheets, or tasks unrelated to document generation."
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,11 +11,17 @@ intentHints:
   examples:
     - "Create a Word document"
     - "Generate a DOCX"
+    - "Add tracked changes to a document"
 ---
 
 # DOCX creation, editing, and analysis
 
-## Overview
+## When to Activate
+
+- User wants to create, edit, read, or manipulate a \\\`.docx\\\` file
+- User mentions 'Word doc', 'Word document', or \\\`.docx\\\`
+- User needs tracked changes, comments, or images in a document
+- User wants a report, memo, letter, or template as a Word file
 
 A .docx file is a ZIP archive containing XML files.
 

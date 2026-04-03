@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Safe dead code removal and refactoring workflow. Detects unused code, classifies safety level, and deletes with test verification after each change. Stops immediately if tests fail.
+description: Safe dead code removal and refactoring workflow. Use when removing unused code, consolidating duplicates, or simplifying a module without changing behavior. Classifies safety level and verifies tests after each deletion.
 category: Code Quality
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -15,10 +15,6 @@ intentHints:
 ---
 
 # {{name}}
-
-## When to Use
-
-Use when asked to clean up dead code, remove unused exports, or refactor for simplicity.
 
 ## When to Activate
 

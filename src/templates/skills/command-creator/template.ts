@@ -21,6 +21,7 @@ intentHints:
   examples:
     - "Create a slash command"
     - "Add a new command"
+    - "Automate my lint workflow"
 ---
 
 # Command Creator
@@ -178,4 +179,9 @@ Run \\\`${PROJECT_CLI} add command --all\\\` to list all templates. Categories i
 - Do NOT create commands without exact bash commands for executable steps
 - Do NOT include complex branching logic — split into separate commands instead
 - Commands are currently **Claude Code only** — note this in the description if relevant
+
+## Related Skills
+
+- **codi-rule-creator** — Create a rule to enforce conventions (complementary to commands)
+- **codi-skill-creator** — Create a skill when the workflow needs multi-step agent logic
 `;

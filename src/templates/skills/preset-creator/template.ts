@@ -17,6 +17,7 @@ intentHints:
   examples:
     - "Create a new preset"
     - "Package my configuration"
+    - "Export my preset as a ZIP"
 ---
 
 # {{name}}
@@ -32,7 +33,7 @@ Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable 
 
 ## Step 1: Define Identity
 
-Ask the user:
+**[CODING AGENT]** Ask the user:
 1. **Name**: kebab-case, max ${MAX_NAME_LENGTH} chars (e.g., \`fullstack\`, \`org-security\`)
 2. **Description**: one sentence describing the preset's purpose
 3. **Version**: semver format (default: \`1.0.0\`)
@@ -41,7 +42,7 @@ Ask the user:
 
 ## Step 2: Select Artifacts
 
-List available artifacts from the current project and built-in templates.
+**[CODING AGENT]** List available artifacts from the current project and built-in templates.
 
 Ask the user which to include in the preset:
 - **Rules**: list rules from \`${PROJECT_DIR}/rules/\` and built-in templates
@@ -51,20 +52,20 @@ Ask the user which to include in the preset:
 
 ## Step 3: Configure Flags
 
-Show the current flag configuration. Ask the user:
+**[CODING AGENT]** Show the current flag configuration. Ask the user:
 - Which flags should the preset override?
 - What values and modes? (enabled, enforced, disabled)
 - Should any flags be locked? (prevents downstream overrides)
 
 ## Step 4: MCP Configuration
 
-Ask if any MCP server configurations should be included:
+**[CODING AGENT]** Ask if any MCP server configurations should be included:
 - List current MCP servers from \`mcp.yaml\`
 - User selects which to include
 
 ## Step 5: Create the Scaffold
 
-Run:
+**[CODING AGENT]** Run:
 \\\`\\\`\\\`bash
 ${PROJECT_CLI} preset create <name>
 \\\`\\\`\\\`
@@ -80,7 +81,7 @@ Then populate the generated directory:
 
 ## Step 6: Choose Output Format
 
-Ask the user how they want to distribute the preset:
+**[CODING AGENT]** Ask the user how they want to distribute the preset:
 
 ### Option A: Local directory (default)
 The preset stays in \`${PROJECT_DIR}/presets/<name>/\`. Reference it in \`${PROJECT_NAME}.yaml\`:
@@ -114,7 +115,7 @@ ${PROJECT_CLI} preset install github:org/repo-name
 
 ## Step 7: Validate
 
-Run validation to ensure the preset is well-formed:
+**[CODING AGENT]** Run validation to ensure the preset is well-formed:
 \\\`\\\`\\\`bash
 ${PROJECT_CLI} preset validate <name>
 \\\`\\\`\\\`
@@ -127,4 +128,8 @@ Report any errors or warnings to the user.
 - Presets are flat and self-contained — no inheritance. To customize a built-in preset, copy its artifacts into a new preset and modify them directly
 - The preset manifest (\`preset.yaml\`) must include at minimum: \`name\`, \`description\`, \`version\`
 - All \`.md\` files in artifact directories must have valid YAML frontmatter
+
+## Related Skills
+
+- **codi-compare-preset** — Compare two presets or audit the active preset configuration
 `;

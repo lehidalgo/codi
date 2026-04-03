@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates, company newsletters, FAQs, incident reports, project updates, etc.).
+description: Use when the user needs to write internal communications such as status reports, 3P updates, leadership updates, newsletters, FAQs, or incident reports.
 category: Developer Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,17 +11,14 @@ intentHints:
   examples:
     - "Write a status report"
     - "Draft a team update"
+    - "Write a company newsletter"
 ---
 
-## When to use this skill
-To write internal communications, use this skill for:
-- 3P updates (Progress, Plans, Problems)
-- Company newsletters
-- FAQ responses
-- Status reports
-- Leadership updates
-- Project updates
-- Incident reports
+## When to Activate
+
+- User needs to write a status report, 3P update, or leadership update
+- User asks to draft a team newsletter, FAQ response, or incident report
+- User needs any structured internal communication document
 
 ## How to use this skill
 
@@ -36,7 +33,4 @@ To write any internal communication:
 3. **Follow the specific instructions** in that file for formatting, tone, and content gathering
 
 If the communication type doesn't match any existing guideline, ask for clarification or more context about the desired format.
-
-## Keywords
-3P updates, company newsletter, company comms, weekly update, faqs, common questions, updates, internal comms
 `;

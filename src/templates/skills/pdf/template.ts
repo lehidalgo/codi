@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Use this skill whenever the user wants to do anything with PDF files. This includes reading or extracting text/tables from PDFs, combining or merging multiple PDFs into one, splitting PDFs apart, rotating pages, adding watermarks, creating new PDFs, filling PDF forms, encrypting/decrypting PDFs, extracting images, and OCR on scanned PDFs to make them searchable. If the user mentions a .pdf file or asks to produce one, use this skill.
+description: Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.
 category: File Format Tools
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,11 +11,17 @@ intentHints:
   examples:
     - "Create a PDF"
     - "Merge these PDFs"
+    - "Extract tables from a PDF"
 ---
 
 # PDF Processing Guide
 
-## Overview
+## When to Activate
+
+- User mentions a .pdf file or asks to create, read, edit, or convert one
+- User needs to merge, split, rotate, watermark, or encrypt PDF files
+- User wants to extract text, tables, or images from a PDF
+- User needs to fill out a PDF form or make a scanned PDF searchable (OCR)
 
 This guide covers essential PDF processing operations using Python libraries and command-line tools. For advanced features, JavaScript libraries, and detailed examples, see REFERENCE.md. If you need to fill out a PDF form, read FORMS.md and follow its instructions.
 
@@ -330,4 +336,9 @@ Check availability: \\\`which python3 > /dev/null 2>&1\\\` — if Python is not 
 - For JavaScript libraries (pdf-lib), see REFERENCE.md
 - If you need to fill out a PDF form, follow the instructions in FORMS.md
 - For troubleshooting guides, see REFERENCE.md
+
+## Related Skills
+
+- **codi-docx** — Create or edit Word documents
+- **codi-xlsx** — Create or edit Excel spreadsheets
 `;

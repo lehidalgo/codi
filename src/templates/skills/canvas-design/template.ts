@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, design, or other static piece. Create original visual designs, never copying existing artists' work to avoid copyright violations.
+description: Use when the user asks to create a poster, visual art, or a static design piece as a .png or .pdf. Creates original visual designs through a two-step philosophy + canvas approach. Never copies existing artists' work.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,7 +11,15 @@ intentHints:
   examples:
     - "Create a poster"
     - "Design visual art"
+    - "Make a minimalist poster"
 ---
+
+## When to Activate
+
+- User asks to create a poster, piece of art, or other static visual design
+- User wants output as a .png or .pdf file
+- User needs a visually sophisticated design piece for print or digital use
+- Do NOT activate for animated content (use algorithmic-art or slack-gif-creator instead)
 
 These are instructions for creating design philosophies - aesthetic movements that are then EXPRESSED VISUALLY. Output only .md files, .pdf files, and .png files.
 

@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Knowledge and utilities for creating animated GIFs optimized for Slack. Provides constraints, validation tools, and animation concepts. Use when users request animated GIFs for Slack like "make me a GIF of X doing Y for Slack."
+description: Use when the user wants to create animated GIFs optimized for Slack. Provides Slack size constraints, validation tools, easing functions, and animation concept guides.
 category: Creative and Design
 compatibility: [claude-code, cursor, codex]
 managed_by: ${PROJECT_NAME}
@@ -11,7 +11,14 @@ intentHints:
   examples:
     - "Make a GIF for Slack"
     - "Create an animated GIF"
+    - "Build a bouncing emoji GIF"
 ---
+
+## When to Activate
+
+- User wants to create an animated GIF for Slack (emoji or message)
+- User asks to animate an uploaded image or concept for Slack
+- User needs a GIF that meets Slack's size and format constraints
 
 # Slack GIF Creator
 

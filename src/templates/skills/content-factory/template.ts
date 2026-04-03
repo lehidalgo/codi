@@ -2,7 +2,7 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Transforms rough ideas into polished blog posts and repurposes them across platforms (LinkedIn, Instagram, TikTok, Medium, Substack) with branded visual assets. Includes an interactive browser preview with aspect ratio switching, PNG export, and a chat panel for visual feedback.
+description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with interactive browser preview and PNG export.
 category: Content Creation
 compatibility: [claude-code, cursor, codex, cline, windsurf]
 managed_by: ${PROJECT_NAME}
@@ -12,6 +12,7 @@ intentHints:
   examples:
     - "Write a blog post"
     - "Create social media content"
+    - "Repurpose this post for Instagram"
 ---
 
 # {{name}} — Content Factory

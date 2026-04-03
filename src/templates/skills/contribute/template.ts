@@ -16,8 +16,9 @@ managed_by: ${PROJECT_NAME}
 intentHints:
   taskType: Contributing
   examples:
-    - "Contribute to codi"
-    - "Share my artifacts"
+    - "Contribute my skill to GitHub"
+    - "Share my artifacts as ZIP"
+    - "Open a PR with my rule"
 ---
 
 # {{name}}
@@ -34,6 +35,8 @@ Help the user contribute their custom artifacts (rules, skills, agents, commands
 - User needs help setting up GitHub CLI or GitHub MCP for contributions
 
 ## Step 1: Prerequisites
+
+**[CODING AGENT]** Check prerequisites before proceeding.
 
 ### GitHub CLI Authentication
 
@@ -76,7 +79,7 @@ The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://git
 
 ## Step 2: Identify What to Contribute
 
-List the user's custom artifacts:
+**[CODING AGENT]** List the user's custom artifacts:
 
 \\\`\\\`\\\`bash
 ls ${PROJECT_DIR}/rules/ ${PROJECT_DIR}/skills/ ${PROJECT_DIR}/agents/ ${PROJECT_DIR}/commands/ 2>/dev/null
@@ -88,6 +91,8 @@ Help the user identify:
 - Artifacts that have been tested and proven useful in real workflows
 
 ## Step 3: Choose Contribution Method
+
+**[CODING AGENT]** Present options and execute the chosen method.
 
 ### Option A: Interactive CLI (Recommended)
 
@@ -191,7 +196,7 @@ If the GitHub MCP server is configured, you can assist the contribution directly
 
 ## Step 4: Quality Checklist
 
-Before contributing, verify the artifact:
+**[CODING AGENT]** Before contributing, verify the artifact:
 
 - [ ] Has valid YAML frontmatter: \\\`name\\\`, \\\`description\\\`, \\\`managed_by\\\`
 - [ ] Uses clear, actionable language with concrete examples
@@ -202,6 +207,8 @@ Before contributing, verify the artifact:
 - [ ] Skills include all skeleton directories: scripts/, references/, assets/, evals/
 
 ## Step 5: Troubleshooting
+
+**[CODING AGENT]** Diagnose and fix based on the symptom below.
 
 ### GitHub CLI not authenticated
 \\\`\\\`\\\`bash
@@ -225,4 +232,8 @@ git push user contrib/my-branch --force-with-lease
 
 ### ZIP import fails
 Ensure the ZIP was created by \\\`${PROJECT_CLI} contribute\\\` — it must contain a \\\`preset.yaml\\\` manifest at the root or one level deep.
+
+## Related Skills
+
+- **codi-preset-creator** — Create and package a preset before contributing it
 `;

@@ -16,10 +16,6 @@ intentHints:
 
 # {{name}}
 
-## When to Use
-
-Use when asked to review code, examine a PR, or audit code quality.
-
 ## When to Activate
 
 - User asks to review a pull request or specific code changes
