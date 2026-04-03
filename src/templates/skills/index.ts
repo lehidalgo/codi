@@ -97,3 +97,4 @@ export {
   template as audioTranscriber,
   staticDir as audioTranscriberStaticDir,
 } from "./audio-transcriber/index.js";
+export { template as humanizer } from "./humanizer/index.js";

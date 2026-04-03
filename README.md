@@ -47,7 +47,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 ```bash
 # 1. Install
-npm install -g codi-cli
+npm install -g codi-cli@latest
 
 # 2. Initialize (interactive wizard)
 codi init
@@ -110,8 +110,8 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 <!-- GENERATED:START:template_counts_compact -->
 | Artifact | Count |
 |:---------|:-----:|
-| **Rules** | 27 |
-| **Skills** | 45 |
+| **Rules** | 28 |
+| **Skills** | 46 |
 | **Agents** | 22 |
 | **Commands** | 17 |
 <!-- GENERATED:END:template_counts_compact -->
