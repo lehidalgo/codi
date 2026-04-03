@@ -1,13 +1,32 @@
 version: 2
 updates:
-  # npm dependencies
+  # npm dependencies — group patch/minor into single weekly PR
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      prod-dependencies:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+    ignore:
+      # Skip major version bumps — these need manual migration
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions versions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
