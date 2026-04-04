@@ -1,0 +1,66 @@
+{
+  "skillName": "codi-verification",
+  "cases": [
+    {
+      "id": "pre-completion-check",
+      "description": "Work completion claim triggers systematic verification",
+      "prompt": "I've finished implementing the feature. can we verify everything is working?",
+      "expectations": [
+        "Runs the test suite to verify all tests pass",
+        "Checks that all acceptance criteria are met",
+        "Verifies no unintended regressions",
+        "Produces a pass/fail report before marking work complete"
+      ]
+    },
+    {
+      "id": "are-we-done",
+      "description": "Direct done-check activates verification workflow",
+      "prompt": "are we done? can I close this task?",
+      "expectations": [
+        "Does NOT just say 'yes' without verifying",
+        "Checks the original task requirements against current state",
+        "Runs tests if applicable",
+        "Confirms no TODOs or incomplete steps remain"
+      ]
+    },
+    {
+      "id": "before-pr-merge",
+      "description": "Pre-merge gate check triggers verification",
+      "prompt": "verify everything is good before I create the pull request",
+      "expectations": [
+        "Runs the test suite",
+        "Checks that the implementation matches the requirements",
+        "Verifies no debug code or temporary files are present",
+        "Produces a clear YES/NO verdict with evidence"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-verification activates the skill",
+      "prompt": "/codi-verification",
+      "expectations": [
+        "Activates the verification skill",
+        "Runs available checks (tests, lint, type checks)"
+      ]
+    },
+    {
+      "id": "negative-run-tests-only",
+      "description": "Running tests without a completion claim should trigger test-run, not verification",
+      "prompt": "run the test suite and show me the results",
+      "expectations": [
+        "Does NOT invoke the verification skill",
+        "Does NOT check completion criteria",
+        "Simply runs the tests and reports results"
+      ]
+    },
+    {
+      "id": "negative-add-feature",
+      "description": "Adding new functionality should NOT trigger verification",
+      "prompt": "add input validation to the login form",
+      "expectations": [
+        "Does NOT invoke the verification skill",
+        "Does NOT run a completion verification workflow"
+      ]
+    }
+  ]
+}
