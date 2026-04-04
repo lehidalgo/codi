@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
-import { countChanges } from "../../utils/diff.js";
-import { hashContent } from "../../utils/hash.js";
-import { resolveConflicts, type ConflictEntry } from "../../utils/conflict-resolver.js";
+import { countChanges } from "#src/utils/diff.js";
+import { hashContent } from "#src/utils/hash.js";
+import { resolveConflicts, type ConflictEntry } from "#src/utils/conflict-resolver.js";
 import { StateManager } from "../config/state.js";
 import type { ArtifactFileState } from "../config/state.js";
 import type { LoadedPreset } from "./preset-loader.js";
-import type { NormalizedRule, NormalizedSkill, NormalizedAgent } from "../../types/config.js";
-import { SKIP_DIRS, SKIP_FILES } from "../../adapters/skill-generator.js";
+import type { NormalizedRule, NormalizedSkill, NormalizedAgent } from "#src/types/config.js";
+import { SKIP_DIRS, SKIP_FILES } from "#src/adapters/skill-generator.js";
 
 export interface ApplyOptions {
   force?: boolean;

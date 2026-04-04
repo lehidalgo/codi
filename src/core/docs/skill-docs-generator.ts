@@ -1,12 +1,12 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
 } from "../scaffolder/skill-template-loader.js";
 import { renderSkillDocsPage } from "./skill-docs-template.js";
-import { ALL_SKILL_CATEGORIES } from "../../constants.js";
+import { ALL_SKILL_CATEGORIES } from "#src/constants.js";
 
 export interface SkillDocEntry {
   name: string;

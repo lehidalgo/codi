@@ -1,13 +1,13 @@
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
 import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
-import type { TemplateCounts, SkillTemplateDescriptor } from "../../templates/skills/types.js";
+import type { TemplateCounts, SkillTemplateDescriptor } from "#src/templates/skills/types.js";
 import { AVAILABLE_TEMPLATES } from "./template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "./agent-template-loader.js";
 import { FLAG_CATALOG } from "../flags/flag-catalog.js";
-import * as skillTemplates from "../../templates/skills/index.js";
+import * as skillTemplates from "#src/templates/skills/index.js";
 
 type TemplateEntry = string | ((counts: TemplateCounts) => string);
 

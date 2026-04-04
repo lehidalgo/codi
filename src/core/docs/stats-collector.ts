@@ -3,8 +3,8 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../scaffolder/skill-template-loader.j
 import { AVAILABLE_AGENT_TEMPLATES } from "../scaffolder/agent-template-loader.js";
 import { FLAG_CATALOG } from "../flags/flag-catalog.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
-import { getBuiltinPresetNames } from "../../templates/presets/index.js";
-import { ALL_ADAPTERS } from "../../adapters/index.js";
+import { getBuiltinPresetNames } from "#src/templates/presets/index.js";
+import { ALL_ADAPTERS } from "#src/adapters/index.js";
 import { CLI_COMMANDS } from "#src/constants.js";
 
 export interface ProjectStats {

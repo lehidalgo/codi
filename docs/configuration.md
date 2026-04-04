@@ -118,6 +118,7 @@ type_checking:
 | `require_pr_review` | boolean | `true` | — | Require PR review before merge |
 | `mcp_allowed_servers` | string[] | `` | — | Allowed MCP server names |
 | `require_documentation` | boolean | `false` | — | Require documentation for new code |
+| `doc_protected_branches` | string[] | `["main","develop","release/*"]` | — | Branch patterns that require documentation verification before push |
 | `allowed_languages` | string[] | `["*"]` | — | Allowed programming languages |
 | `progressive_loading` | enum | `metadata` | — | Skill inlining strategy for single-file agents |
 | `drift_detection` | enum | `warn` | — | Drift detection behavior |

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
-import { PRESET_MANIFEST_FILENAME } from "../../constants.js";
+import { PRESET_MANIFEST_FILENAME } from "#src/constants.js";
 import { Logger } from "../output/logger.js";
 
 export interface DiscoveredPreset {

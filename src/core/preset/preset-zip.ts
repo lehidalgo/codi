@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { ok, err } from "../../types/result.js";
-import { execFileAsync } from "../../utils/exec.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import { execFileAsync } from "#src/utils/exec.js";
+import type { Result } from "#src/types/result.js";
 import {
   MAX_PRESET_ZIP_WARN_BYTES,
   MAX_PRESET_ZIP_ERROR_BYTES,
@@ -90,9 +90,7 @@ export async function createPresetZip(
 /**
  * Extracts a ZIP preset to a temporary directory and validates it.
  */
-export async function extractPresetZip(
-  zipPath: string,
-): Promise<Result<ZipExtractResult>> {
+export async function extractPresetZip(zipPath: string): Promise<Result<ZipExtractResult>> {
   const warnings: ProjectError[] = [];
   const resolvedZipPath = path.resolve(zipPath);
 
@@ -118,10 +116,7 @@ export async function extractPresetZip(
   }
 
   // Extract to temp dir
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-preset-zip-${Date.now()}`,
-  );
+  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-zip-${Date.now()}`);
   await fs.mkdir(tmpDir, { recursive: true });
 
   try {
@@ -224,16 +219,10 @@ async function findPresetRoot(extractDir: string): Promise<string | null> {
 
   // Check one level of subdirectories
   const entries = await fs.readdir(extractDir, { withFileTypes: true });
-  const dirs = entries.filter(
-    (e) => e.isDirectory() && !e.name.startsWith("."),
-  );
+  const dirs = entries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
 
   for (const dir of dirs) {
-    const subManifest = path.join(
-      extractDir,
-      dir.name,
-      PRESET_MANIFEST_FILENAME,
-    );
+    const subManifest = path.join(extractDir, dir.name, PRESET_MANIFEST_FILENAME);
     try {
       await fs.access(subManifest);
       return path.join(extractDir, dir.name);

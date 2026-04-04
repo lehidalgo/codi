@@ -1,18 +1,18 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { GeneratedFile, GenerateOptions } from "../../types/agent.js";
-import type { NormalizedConfig } from "../../types/config.js";
-import type { Result } from "../../types/result.js";
-import { ok, err } from "../../types/result.js";
+import type { GeneratedFile, GenerateOptions } from "#src/types/agent.js";
+import type { NormalizedConfig } from "#src/types/config.js";
+import type { Result } from "#src/types/result.js";
+import { ok, err } from "#src/types/result.js";
 import { getAdapter } from "./adapter-registry.js";
 import { buildVerificationData } from "../verify/token.js";
 import { buildVerificationSection } from "../verify/section-builder.js";
-import { hashContent } from "../../utils/hash.js";
+import { hashContent } from "#src/utils/hash.js";
 import {
   resolveConflicts,
   makeConflictEntry,
   type ConflictEntry,
-} from "../../utils/conflict-resolver.js";
+} from "#src/utils/conflict-resolver.js";
 
 export interface GenerationResult {
   files: GeneratedFile[];
@@ -94,9 +94,7 @@ export async function generate(
         if (existing === null || existing.trim() === file.content.trim()) {
           directWrites.push(file);
         } else {
-          potentialConflicts.push(
-            makeConflictEntry(file.path, fullPath, existing, file.content),
-          );
+          potentialConflicts.push(makeConflictEntry(file.path, fullPath, existing, file.content));
         }
       }
     }

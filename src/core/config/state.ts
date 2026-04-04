@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
-import { hashContent } from "../../utils/hash.js";
+import { hashContent } from "#src/utils/hash.js";
 import { STATE_FILENAME } from "#src/constants.js";
 
 export interface GeneratedFileState {
@@ -99,10 +99,7 @@ export class StateManager {
     }
   }
 
-  async updateAgent(
-    agentId: string,
-    files: GeneratedFileState[],
-  ): Promise<Result<void>> {
+  async updateAgent(agentId: string, files: GeneratedFileState[]): Promise<Result<void>> {
     const stateResult = await this.read();
     if (!stateResult.ok) return stateResult;
 
@@ -112,9 +109,7 @@ export class StateManager {
     return this.write(state);
   }
 
-  async updateAgentsBatch(
-    updates: Record<string, GeneratedFileState[]>,
-  ): Promise<Result<void>> {
+  async updateAgentsBatch(updates: Record<string, GeneratedFileState[]>): Promise<Result<void>> {
     const stateResult = await this.read();
     if (!stateResult.ok) return stateResult;
 
@@ -171,17 +166,13 @@ export class StateManager {
 
     return ok({ agentId, files: driftFiles });
   }
-  async updatePresetArtifacts(
-    files: ArtifactFileState[],
-  ): Promise<Result<void>> {
+  async updatePresetArtifacts(files: ArtifactFileState[]): Promise<Result<void>> {
     const stateResult = await this.read();
     if (!stateResult.ok) return stateResult;
 
     const state = stateResult.data;
     // Merge: update existing entries by path, add new ones
-    const existing = new Map(
-      (state.presetArtifacts ?? []).map((f) => [f.path, f]),
-    );
+    const existing = new Map((state.presetArtifacts ?? []).map((f) => [f.path, f]));
     for (const file of files) {
       existing.set(file.path, file);
     }

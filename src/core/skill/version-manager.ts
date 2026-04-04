@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
 import { VERSIONS_DIR, SKILL_OUTPUT_FILENAME } from "#src/constants.js";
-import { buildUnifiedDiff } from "../../utils/diff.js";
+import { buildUnifiedDiff } from "#src/utils/diff.js";
 
 export interface VersionInfo {
   version: number;
@@ -31,15 +31,10 @@ async function getNextVersion(skillDir: string): Promise<number> {
   const dir = versionsDir(skillDir);
   try {
     const entries = await fs.readdir(dir);
-    const versions = entries
-      .map(parseVersionNumber)
-      .filter((v): v is number => v !== null);
+    const versions = entries.map(parseVersionNumber).filter((v): v is number => v !== null);
     return versions.length > 0 ? Math.max(...versions) + 1 : 1;
   } catch (cause) {
-    Logger.getInstance().debug(
-      "Versions directory not found, starting at v1",
-      cause,
-    );
+    Logger.getInstance().debug("Versions directory not found, starting at v1", cause);
     return 1;
   }
 }
@@ -82,9 +77,7 @@ export async function saveVersion(
   }
 }
 
-export async function listVersions(
-  skillDir: string,
-): Promise<Result<VersionInfo[]>> {
+export async function listVersions(skillDir: string): Promise<Result<VersionInfo[]>> {
   const dir = versionsDir(skillDir);
 
   let entries: string[];
@@ -113,14 +106,8 @@ export async function listVersions(
   return ok(versions.sort((a, b) => a.version - b.version));
 }
 
-export async function restoreVersion(
-  skillDir: string,
-  version: number,
-): Promise<Result<void>> {
-  const versionPath = path.join(
-    versionsDir(skillDir),
-    versionFilename(version),
-  );
+export async function restoreVersion(skillDir: string, version: number): Promise<Result<void>> {
+  const versionPath = path.join(versionsDir(skillDir), versionFilename(version));
   const skillPath = path.join(skillDir, SKILL_OUTPUT_FILENAME);
 
   let content: string;
@@ -185,12 +172,7 @@ export async function diffVersions(
 
   const lines1 = content1.split("\n");
   const lines2 = content2.split("\n");
-  const diff = buildUnifiedDiff(
-    `v${v1}.SKILL.md`,
-    `v${v2}.SKILL.md`,
-    lines1,
-    lines2,
-  );
+  const diff = buildUnifiedDiff(`v${v1}.SKILL.md`, `v${v2}.SKILL.md`, lines1, lines2);
 
   return ok(diff);
 }

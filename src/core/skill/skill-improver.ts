@@ -1,18 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
-import {
-  MIN_FEEDBACK_FOR_EVOLVE,
-  SKILL_OUTPUT_FILENAME,
-} from "#src/constants.js";
+import { MIN_FEEDBACK_FOR_EVOLVE, SKILL_OUTPUT_FILENAME } from "#src/constants.js";
 import { readFeedbackForSkill } from "./feedback-collector.js";
 import { aggregateStats } from "./skill-stats.js";
 import type { SkillStatsResult } from "./skill-stats.js";
 import { getEvalsSummary } from "./evals-manager.js";
-import type { FeedbackEntry } from "../../schemas/feedback.js";
+import type { FeedbackEntry } from "#src/schemas/feedback.js";
 
 export interface ImproveOptions {
   skillName: string;
@@ -42,10 +39,7 @@ export async function validateEvolveReadiness(
     await fs.access(skillPath);
     skillExists = true;
   } catch (cause) {
-    Logger.getInstance().debug(
-      "Skill file not found, skipping evolution",
-      cause,
-    );
+    Logger.getInstance().debug("Skill file not found, skipping evolution", cause);
   }
 
   if (!skillExists) {
@@ -79,9 +73,7 @@ export async function validateEvolveReadiness(
   });
 }
 
-export async function generateImprovementPrompt(
-  options: ImproveOptions,
-): Promise<Result<string>> {
+export async function generateImprovementPrompt(options: ImproveOptions): Promise<Result<string>> {
   const { skillName, skillContent, stats, entries, evalsSummary } = options;
 
   const sections: string[] = [];
@@ -125,10 +117,7 @@ function buildPerformanceSummary(stats: SkillStatsResult): string {
   return lines.join("\n");
 }
 
-function buildIssuesSection(
-  stats: SkillStatsResult,
-  entries: FeedbackEntry[],
-): string | null {
+function buildIssuesSection(stats: SkillStatsResult, entries: FeedbackEntry[]): string | null {
   if (stats.topIssues.length === 0) return null;
 
   const lines = ["## Top Issues (fix these)", ""];
@@ -156,19 +145,11 @@ function buildSuggestionsSection(entries: FeedbackEntry[]): string | null {
   if (allSuggestions.length === 0) return null;
 
   const unique = [...new Set(allSuggestions)].slice(0, 10);
-  const lines = [
-    "## Agent Suggestions (consider these)",
-    "",
-    ...unique.map((s) => `- "${s}"`),
-  ];
+  const lines = ["## Agent Suggestions (consider these)", "", ...unique.map((s) => `- "${s}"`)];
   return lines.join("\n");
 }
 
-function buildEvalsSection(summary: {
-  total: number;
-  passed: number;
-  failed: number;
-}): string {
+function buildEvalsSection(summary: { total: number; passed: number; failed: number }): string {
   return [
     "## Eval Results",
     "",

@@ -1,20 +1,20 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import type {
   ManagedBy,
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
   McpConfig,
-} from "../../types/config.js";
-import type { FlagDefinition } from "../../types/flags.js";
+} from "#src/types/config.js";
+import type { FlagDefinition } from "#src/types/flags.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
-import { PresetManifestSchema } from "../../schemas/preset.js";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { PresetManifestSchema } from "#src/schemas/preset.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
   MCP_FILENAME,
   PRESET_MANIFEST_FILENAME,

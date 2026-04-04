@@ -1,4 +1,4 @@
-import type { FlagDefinition } from "../../types/flags.js";
+import type { FlagDefinition } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 import { prefixedName, devArtifactName, PROJECT_NAME } from "#src/constants.js";
 

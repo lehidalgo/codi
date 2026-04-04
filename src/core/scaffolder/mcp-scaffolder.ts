@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { loadMcpServerTemplate } from "./mcp-template-loader.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT, PROJECT_NAME } from "#src/constants.js";

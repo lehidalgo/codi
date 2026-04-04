@@ -3,8 +3,8 @@ import path from "node:path";
 import os from "node:os";
 import { z } from "zod";
 import { parse as parseYaml } from "yaml";
-import { execFileAsync } from "../../utils/exec.js";
-import type { ProjectManifest } from "../../types/config.js";
+import { execFileAsync } from "#src/utils/exec.js";
+import type { ProjectManifest } from "#src/types/config.js";
 import {
   PRESET_MANIFEST_FILENAME,
   PRESET_LOCK_FILENAME,
@@ -44,9 +44,7 @@ export interface PresetLock {
   presets: Record<string, PresetLockEntry>;
 }
 
-export function getRegistryConfig(
-  manifest: ProjectManifest | null,
-): RegistryConfig {
+export function getRegistryConfig(manifest: ProjectManifest | null): RegistryConfig {
   if (manifest?.presetRegistry) {
     return {
       url: manifest.presetRegistry.url,
@@ -66,19 +64,13 @@ export async function readLockFile(configDir: string): Promise<PresetLock> {
   }
 }
 
-export async function writeLockFile(
-  configDir: string,
-  lock: PresetLock,
-): Promise<void> {
+export async function writeLockFile(configDir: string, lock: PresetLock): Promise<void> {
   const lockPath = path.join(configDir, PRESET_LOCK_FILENAME);
   await fs.writeFile(lockPath, JSON.stringify(lock, null, 2), "utf-8");
 }
 
 export async function cloneRegistry(config: RegistryConfig): Promise<string> {
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-registry-${Date.now()}`,
-  );
+  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-registry-${Date.now()}`);
   await execFileAsync("git", [
     "clone",
     "--depth",
@@ -91,9 +83,7 @@ export async function cloneRegistry(config: RegistryConfig): Promise<string> {
   return tmpDir;
 }
 
-export async function readRegistryIndex(
-  registryDir: string,
-): Promise<RegistryEntry[]> {
+export async function readRegistryIndex(registryDir: string): Promise<RegistryEntry[]> {
   const indexPath = path.join(registryDir, REGISTRY_INDEX_FILENAME);
   try {
     const raw = await fs.readFile(indexPath, "utf8");
@@ -105,24 +95,17 @@ export async function readRegistryIndex(
   }
 }
 
-export function filterEntries(
-  entries: RegistryEntry[],
-  query: string,
-): RegistryEntry[] {
+export function filterEntries(entries: RegistryEntry[], query: string): RegistryEntry[] {
   const lowerQuery = query.toLowerCase();
   return entries.filter((entry) => {
     const nameMatch = entry.name.toLowerCase().includes(lowerQuery);
     const descMatch = entry.description.toLowerCase().includes(lowerQuery);
-    const tagMatch = entry.tags.some((t) =>
-      t.toLowerCase().includes(lowerQuery),
-    );
+    const tagMatch = entry.tags.some((t) => t.toLowerCase().includes(lowerQuery));
     return nameMatch || descMatch || tagMatch;
   });
 }
 
-export async function getPresetVersionFromDir(
-  presetDir: string,
-): Promise<string> {
+export async function getPresetVersionFromDir(presetDir: string): Promise<string> {
   const manifestPath = path.join(presetDir, PRESET_MANIFEST_FILENAME);
   try {
     const raw = await fs.readFile(manifestPath, "utf8");

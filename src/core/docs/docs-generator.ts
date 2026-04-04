@@ -6,8 +6,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import fg from "fast-glob";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 
 import { FLAG_CATALOG } from "../flags/flag-catalog.js";
 import { AVAILABLE_TEMPLATES } from "../scaffolder/template-loader.js";
@@ -16,11 +16,11 @@ import {
   loadSkillTemplateContent,
 } from "../scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../scaffolder/agent-template-loader.js";
-import { BUILTIN_PRESETS } from "../../templates/presets/index.js";
-import { BUILTIN_MCP_SERVERS } from "../../templates/mcp-servers/index.js";
+import { BUILTIN_PRESETS } from "#src/templates/presets/index.js";
+import { BUILTIN_MCP_SERVERS } from "#src/templates/mcp-servers/index.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
-import { ALL_ADAPTERS } from "../../adapters/index.js";
-import { NORMAL_MENU, ADVANCED_MENU } from "../../cli/hub.js";
+import { ALL_ADAPTERS } from "#src/adapters/index.js";
+import { NORMAL_MENU, ADVANCED_MENU } from "#src/cli/hub.js";
 import { PROJECT_CLI } from "#src/constants.js";
 
 import {

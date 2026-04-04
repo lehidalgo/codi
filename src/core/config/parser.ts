@@ -2,27 +2,27 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import fg from "fast-glob";
-import { resolveProjectDir } from "../../utils/paths.js";
-import { fileExists } from "../../utils/fs.js";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { resolveProjectDir } from "#src/utils/paths.js";
+import { fileExists } from "#src/utils/fs.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import type {
   ProjectManifest,
   ManagedBy,
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
-} from "../../types/config.js";
-import type { FlagDefinition } from "../../types/flags.js";
-import { ProjectManifestSchema } from "../../schemas/manifest.js";
-import { FlagDefinitionSchema } from "../../schemas/flag.js";
-import { RuleFrontmatterSchema } from "../../schemas/rule.js";
-import { SkillFrontmatterSchema } from "../../schemas/skill.js";
-import { AgentFrontmatterSchema } from "../../schemas/agent.js";
-import { McpConfigSchema } from "../../schemas/mcp.js";
+} from "#src/types/config.js";
+import type { FlagDefinition } from "#src/types/flags.js";
+import { ProjectManifestSchema } from "#src/schemas/manifest.js";
+import { FlagDefinitionSchema } from "#src/schemas/flag.js";
+import { RuleFrontmatterSchema } from "#src/schemas/rule.js";
+import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
+import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
+import { McpConfigSchema } from "#src/schemas/mcp.js";
 import { createError, zodToProjectErrors } from "../output/errors.js";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
-import type { McpConfig } from "../../types/config.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
+import type { McpConfig } from "#src/types/config.js";
 import { MANIFEST_FILENAME, FLAGS_FILENAME, MCP_FILENAME, BRAND_CATEGORY } from "#src/constants.js";
 
 export interface ParsedProjectDir {

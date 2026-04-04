@@ -1,4 +1,4 @@
-import { VERSION } from "../../index.js";
+import { VERSION } from "#src/index.js";
 import type { ProjectError, CommandResult } from "./types.js";
 
 export function formatHuman(result: CommandResult<unknown>): string {
@@ -23,9 +23,7 @@ export function formatHuman(result: CommandResult<unknown>): string {
 
   if (result.data !== null && result.data !== undefined) {
     const dataStr =
-      typeof result.data === "string"
-        ? result.data
-        : JSON.stringify(result.data, null, 2);
+      typeof result.data === "string" ? result.data : JSON.stringify(result.data, null, 2);
     if (dataStr) {
       lines.push(dataStr);
     }
