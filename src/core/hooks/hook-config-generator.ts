@@ -1,6 +1,6 @@
-import type { ResolvedFlags } from "../../types/flags.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 import { PROJECT_NAME } from "#src/constants.js";
-import type { ProjectManifest } from "../../types/config.js";
+import type { ProjectManifest } from "#src/types/config.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";
 
@@ -13,6 +13,7 @@ export interface HooksConfig {
   testBeforeCommit: boolean;
   templateWiringCheck: boolean;
   artifactValidation: boolean;
+  importDepthCheck: boolean;
   docCheck: boolean;
   docProtectedBranches: string[];
 }
@@ -119,6 +120,12 @@ export function generateHooksConfig(
     stagedFilter: ".codi/**",
   });
 
+  allHooks.push({
+    name: "import-depth-check",
+    command: `node .git/hooks/${PROJECT_NAME}-import-depth-check.mjs`,
+    stagedFilter: "**/*.{ts,tsx,js,jsx,mts,mjs}",
+  });
+
   const docCheck = isDocCheckEnabled(flags);
   const docProtectedBranches = getDocProtectedBranches(flags);
 
@@ -131,6 +138,7 @@ export function generateHooksConfig(
     testBeforeCommit,
     templateWiringCheck: false,
     artifactValidation: true,
+    importDepthCheck: true,
     docCheck,
     docProtectedBranches,
   };

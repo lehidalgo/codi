@@ -42,13 +42,14 @@ function parse(data: unknown): string {
 - Use \`import type\` for type-only imports — keeps runtime bundle clean
 - Do not use index.ts barrel files for re-exporting — they break tree-shaking, inflate bundles, and slow down HMR and test runners
 - Import directly from the source module, not through a barrel
-- Never use deep relative imports (3+ levels of \`../\`) — they are fragile, unreadable, and break on file moves
+- Never use deep relative imports (2+ levels of \`../\`) — they are fragile, unreadable, and break on file moves; use path aliases instead
+- Never use \`require()\` in TypeScript — use ESM \`import\` or \`createRequire\` from \`node:module\` when dynamic require is unavoidable
 
 ## Path Aliases — Eliminate Deep Relative Imports
 - Use Node.js subpath imports (\`#src/*\`) for projects using \`moduleResolution: "NodeNext"\` — native, zero-dependency, works at runtime without build tools
 - Use \`@/*\` path aliases for projects using \`moduleResolution: "Bundler"\` (Vite, Next.js, webpack 5) — requires bundler to resolve at build time
 - Configure aliases in both \`package.json\` (\`"imports"\` field) and \`tsconfig.json\` (\`"paths"\`) — ensures runtime resolution and IDE/type-checker support
-- Keep relative imports (\`./\`, \`../\`) for same-directory and immediate-neighbor files — aliases add noise for truly local references
+- Keep relative imports (\`./\`, \`../\`) only for same-directory siblings — one \`../\` level is the maximum for relative imports
 
 \`\`\`jsonc
 // package.json — Node.js subpath imports (NodeNext)
@@ -60,13 +61,20 @@ function parse(data: unknown): string {
 
 \`\`\`typescript
 // BAD: deep relative import — fragile and unreadable
-import { UserSchema } from "../../../schemas/user.js";
+import { UserSchema } from "../../schemas/user.js";
+
+// BAD: require() in TypeScript
+const pkg = require("./package.json");
 
 // GOOD: subpath import — clear, stable, refactor-proof
 import { UserSchema } from "#src/schemas/user.js";
 
-// GOOD: relative import for nearby sibling — locality is clear
-import { validate } from "../validation/rules.js";
+// GOOD: createRequire when dynamic require is unavoidable
+import { createRequire } from "node:module";
+const esmRequire = createRequire(import.meta.url);
+
+// GOOD: relative import for same-directory sibling
+import { validate } from "./validation.js";
 \`\`\`
 
 ## Module Configuration

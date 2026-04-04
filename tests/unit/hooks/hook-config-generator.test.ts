@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { generateHooksConfig } from "#src/core/hooks/hook-config-generator.js";
 import type { ResolvedFlags } from "#src/types/flags.js";
 
-function makeFlags(
-  overrides: Record<string, { value: unknown; mode: string }>,
-): ResolvedFlags {
+function makeFlags(overrides: Record<string, { value: unknown; mode: string }>): ResolvedFlags {
   const base: ResolvedFlags = {
     security_scan: {
       value: true,
@@ -74,10 +72,7 @@ describe("generateHooksConfig", () => {
   });
 
   it("deduplicates hooks across languages", () => {
-    const config = generateHooksConfig(makeFlags({}), [
-      "typescript",
-      "javascript",
-    ]);
+    const config = generateHooksConfig(makeFlags({}), ["typescript", "javascript"]);
     const eslintCount = config.hooks.filter((h) => h.name === "eslint").length;
     expect(eslintCount).toBe(1);
   });
@@ -88,7 +83,8 @@ describe("generateHooksConfig", () => {
       (h) =>
         h.name !== "secret-scan" &&
         h.name !== "file-size-check" &&
-        h.name !== "artifact-validate",
+        h.name !== "artifact-validate" &&
+        h.name !== "import-depth-check",
     );
     expect(langHooks).toHaveLength(0);
   });
