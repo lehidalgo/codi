@@ -6,12 +6,6 @@ description: Use when the user needs a complex, multi-component claude.ai HTML a
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Web Artifacts
-  examples:
-    - "Build a complex HTML artifact"
-    - "Create a multi-component app"
-    - "Add shadcn/ui components to my artifact"
 version: 1
 ---
 

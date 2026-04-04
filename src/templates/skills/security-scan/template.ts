@@ -6,12 +6,6 @@ description: Security analysis workflow. Use when the user wants to audit codeba
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Security Audit
-  examples:
-    - "Scan for vulnerabilities"
-    - "Run security check"
-    - "Find hardcoded secrets"
 version: 1
 ---
 
@@ -133,10 +127,10 @@ For each finding include:
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-security-analyzer** — Deep vulnerability analysis with trust boundary mapping
-- **codi-code-reviewer** — Broader code quality context for security findings
+- **${PROJECT_NAME}-security-analyzer** — Deep vulnerability analysis with trust boundary mapping
+- **${PROJECT_NAME}-code-reviewer** — Broader code quality context for security findings
 
 ## Related Skills
 
-- **codi-code-review** — Combined quality and security review of changes
+- **${PROJECT_NAME}-code-review** — Combined quality and security review of changes
 `;

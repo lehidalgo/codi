@@ -56,12 +56,7 @@ export function buildSkillRoutingTable(config: NormalizedConfig): string | null 
   const routableSkills = config.skills.filter((s) => s.category !== BRAND_CATEGORY);
   if (routableSkills.length === 0) return null;
 
-  const lines = [
-    "## Skill Routing",
-    "",
-    "| Task | Examples | Skill | Notes |",
-    "|------|----------|-------|-------|",
-  ];
+  const lines = ["## Skill Routing", "", "| Skill | When to use |", "|-------|-------------|"];
 
   for (const skill of routableSkills) {
     lines.push(buildSkillRow(skill));
@@ -71,26 +66,17 @@ export function buildSkillRoutingTable(config: NormalizedConfig): string | null 
 }
 
 function buildSkillRow(skill: NormalizedSkill): string {
-  if (skill.intentHints) {
-    const examples = skill.intentHints.examples.map((e) => `"${e}"`).join(", ");
-    return `| ${skill.intentHints.taskType} | ${examples} | ${skill.name} | |`;
+  const summary = extractRoutingSummary(skill.description);
+  return `| ${skill.name} | ${summary} |`;
+}
+
+function extractRoutingSummary(description: string): string {
+  const sentences = description.split(/\.\s/);
+  let summary = sentences[0] ?? description;
+  if (sentences[1] !== undefined && (summary + ". " + sentences[1]).length <= 200) {
+    summary = summary + ". " + sentences[1];
   }
-  const taskType = deriveTaskType(skill.name);
-  const note = extractFirstSentence(skill.description);
-  return `| ${taskType} | — | ${skill.name} | *${note}* |`;
-}
-
-function deriveTaskType(name: string): string {
-  const stripped = name.replace(/^[a-z]+-/, "");
-  return stripped
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-function extractFirstSentence(description: string): string {
-  const first = description.split(/\.\s/)[0] ?? description;
-  return first.length > 80 ? first.slice(0, 77) + "..." : first;
+  return summary.length > 200 ? summary.slice(0, 197) + "..." : summary;
 }
 
 /** Build development notes derived from flags. */

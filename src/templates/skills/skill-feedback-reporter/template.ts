@@ -7,19 +7,11 @@ import {
 
 export const template = `---
 name: {{name}}
-description: |
-  Internal meta-skill that instructs you to report feedback on skill usage.
-  After completing a task that used a skill, write a structured JSON feedback
-  file so ${PROJECT_NAME_DISPLAY} can aggregate skill health metrics and drive improvements.
+description: Internal meta-skill. Activates after completing a task that used a skill. Writes structured JSON feedback to .codi/feedback/ for skill health metrics. Not for direct user invocation — fires automatically after substantive skill usage.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Skill Analytics
-  examples:
-    - "Show skill statistics"
-    - "Report on skill usage"
 version: 1
 ---
 
@@ -149,5 +141,5 @@ ${PROJECT_DIR}/feedback/2026-03-28T21-30-00-000Z-commit.json
 
 ## Related Skills
 
-- **codi-rule-feedback** — Write structured feedback on a specific rule (same feedback loop, rule-scoped)
+- **${PROJECT_NAME}-rule-feedback** — Write structured feedback on a specific rule (same feedback loop, rule-scoped)
 `;

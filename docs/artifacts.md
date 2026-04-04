@@ -47,6 +47,8 @@ managed_by: codi              # codi (template) | user (custom)
 | `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
 <!-- GENERATED:END:rule_fields -->
 
+> **Scoped rules in Claude Code**: Rules with a `scope` field emit a `paths:` frontmatter block in the generated `.claude/rules/*.md` file. Claude Code reads this to load the rule only when matching files are active in the conversation.
+
 ### Built-in Rule Templates
 
 Create from templates: `codi add rule security --template security`
@@ -75,7 +77,7 @@ Each skill lives in its own directory with a standard layout:
   agents/               # Skill-specific subagents
 ```
 
-All subdirectories are always created (even if empty) to maintain a consistent structure.
+All subdirectories are always created (even if empty) to maintain a consistent structure. Tier 1 skill templates include pre-written `evals/evals.json` with 5-7 eval cases each — these override the empty stub during `codi init`.
 
 ### Frontmatter
 
@@ -88,11 +90,6 @@ category: Code Quality
 compatibility: [claude-code, cursor]
 user-invocable: true
 managed_by: codi
-intentHints:
-  taskType: Code Review
-  examples:
-    - "Review my PR"
-    - "Check code quality"
 ---
 ```
 
@@ -120,7 +117,7 @@ intentHints:
 | `user-invocable` | boolean | No | — | Can be invoked via slash command |
 | `paths` | string[] \| string | No | — | File paths the skill operates on |
 | `shell` | `bash` \| `powershell` | No | — | Shell environment |
-| `intentHints` | object | No | — |  |
+| `hooks` | unknown | No | — |  |
 <!-- GENERATED:END:skill_fields -->
 
 ### Built-in Skill Templates
@@ -128,18 +125,20 @@ intentHints:
 <!-- GENERATED:START:skill_templates -->
 | Category | Skills |
 |----------|--------|
-| **brand** | codi-bbva-brand, codi-brand-identity, codi-rl3-brand |
-| **Code Quality** | codi-code-review, codi-e2e-testing, codi-error-recovery, codi-guided-qa-testing, codi-refactoring, codi-security-scan, codi-test-coverage, codi-webapp-testing |
-| **Codi Platform** | codi-agent-creator, codi-command-creator, codi-compare-preset, codi-contribute, codi-docs-manager, codi-operations, codi-preset-creator, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-reporter |
+| **Brand Identity** | codi-bbva-brand, codi-brand-identity, codi-rl3-brand |
+| **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-test-coverage, codi-webapp-testing |
+| **Codi Platform** | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-feedback-reporter |
 | **Content Creation** | codi-content-factory |
 | **Content Refinement** | codi-humanizer |
-| **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory, codi-web-artifacts-builder |
-| **Developer Tools** | codi-claude-api, codi-codebase-onboarding, codi-commit, codi-documentation, codi-internal-comms, codi-mcp-ops, codi-mobile-development |
+| **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory |
+| **Developer Tools** | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-diagnostics, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
+| **Developer Workflow** | codi-brainstorming, codi-branch-finish, codi-debugging, codi-plan-executor, codi-plan-writer, codi-subagent-dev, codi-tdd, codi-verification, codi-worktrees |
 | **Document Generation** | codi-deck-engine, codi-doc-engine |
 | **File Format Tools** | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
-| **productivity** | codi-audio-transcriber |
-| **quality** | codi-project-quality-guard |
-| **Uncategorized** | codi-refine-rules |
+| **Planning** | codi-roadmap |
+| **Productivity** | codi-audio-transcriber |
+| **Testing** | codi-test-run |
+| **Workflow** | codi-daily-log, codi-session-handoff |
 <!-- GENERATED:END:skill_templates -->
 
 ### Progressive Loading — Agent-Native, Not Codi-Managed
@@ -189,7 +188,10 @@ managed_by: codi
 | `name` | string | Yes | — | Agent name (strict alphanumeric + hyphens) |
 | `description` | string | Yes | `` | Agent description |
 | `tools` | string[] | No | — | Tools this agent can use |
+| `disallowedTools` | string[] | No | — |  |
 | `model` | string | No | — | AI model for this agent |
+| `maxTurns` | number | No | — |  |
+| `effort` | `low` \| `medium` \| `high` \| `max` | No | — |  |
 | `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
 <!-- GENERATED:END:agent_fields -->
 

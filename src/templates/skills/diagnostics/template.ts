@@ -2,17 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Diagnose errors and problems using MCP servers and structured reasoning.
+description: MCP-powered diagnosis for escalated errors. Use when standard debugging has not resolved the issue, or when structured MCP analysis is needed. Not the first-line debugging tool — start with codi-debugging.
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Error Diagnosis
-  examples:
-    - "Diagnose this error"
-    - "Help me debug this problem"
-    - "Figure out why this is failing"
-    - "Check what's wrong"
 version: 1
 ---
 

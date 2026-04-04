@@ -246,6 +246,8 @@ export async function handlePresetPath(
           initialValues: rules ?? AVAILABLE_TEMPLATES.filter((t) => presetRules.has(t)),
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
@@ -273,6 +275,8 @@ export async function handlePresetPath(
           initialValues: skills ?? AVAILABLE_SKILL_TEMPLATES.filter((t) => presetSkills.has(t)),
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
@@ -297,6 +301,8 @@ export async function handlePresetPath(
           initialValues: agentTpls ?? AVAILABLE_AGENT_TEMPLATES.filter((t) => presetAgents.has(t)),
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
@@ -327,6 +333,8 @@ export async function handlePresetPath(
             mcpServers ?? AVAILABLE_MCP_SERVER_TEMPLATES.filter((t) => presetMcps.has(t)),
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
@@ -441,6 +449,8 @@ export async function handleCustomPath(
           initialValues: rules ?? existingSelections?.rules ?? [...AVAILABLE_TEMPLATES],
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) return BACK;
         rules = val as string[];
@@ -463,6 +473,8 @@ export async function handleCustomPath(
           initialValues: skills ?? existingSelections?.skills,
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
@@ -485,6 +497,8 @@ export async function handleCustomPath(
           initialValues: agentTpls ?? existingSelections?.agents ?? [...AVAILABLE_AGENT_TEMPLATES],
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
@@ -512,6 +526,8 @@ export async function handleCustomPath(
           initialValues: mcpServers ?? existingSelections?.mcpServers ?? [],
           required: false,
           selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;

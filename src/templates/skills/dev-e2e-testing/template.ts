@@ -22,12 +22,7 @@ description: |
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: E2E Validation
-  examples:
-    - "Run end-to-end tests"
-    - "Validate the full installation"
-    - "Audit codi end-to-end"
+user-invocable: false
 version: 2
 ---
 
@@ -419,12 +414,12 @@ Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and a
 ## Available Agents
 
 For specialized analysis during e2e validation, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Generate automated tests from e2e findings
-- **codi-security-analyzer** — Security validation of auth flows and data handling
+- **${PROJECT_NAME}-test-generator** — Generate automated tests from e2e findings
+- **${PROJECT_NAME}-security-analyzer** — Security validation of auth flows and data handling
 
 ## Related Skills
 
-- **codi-operations** — Day-to-day ${PROJECT_NAME} management (not full e2e validation)
-- **codi-security-scan** — Dedicated security audit for the test project
+- **${PROJECT_NAME}-operations** — Day-to-day ${PROJECT_NAME} management (not full e2e validation)
+- **${PROJECT_NAME}-security-scan** — Dedicated security audit for the test project
 `;
 }

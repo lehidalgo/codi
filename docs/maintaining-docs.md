@@ -147,7 +147,7 @@ docs/
   cli-reference.md           All commands, wizard, Command Center
   architecture.md            Internal design, resolution pipeline
   configuration.md           Manifest, flags, layers, MCP
-  artifacts.md               Rules, skills, agents, commands, brands
+  artifacts.md               Rules, skills, agents, brands
   presets.md                 Built-in and custom presets
   workflows.md               Daily usage, CI/CD, team patterns
   migration.md               Adopting Codi in existing projects

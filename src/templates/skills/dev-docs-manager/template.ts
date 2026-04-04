@@ -7,21 +7,11 @@ import {
 
 export const template = `---
 name: {{name}}
-description: |
-  ${PROJECT_NAME_DISPLAY} self-documentation skill. Use when the user asks to build, update,
-  or check the ${PROJECT_NAME_DISPLAY} project documentation. Also activate when the user mentions
-  docs freshness, stale documentation, building the docs site, or generating
-  the skill catalog HTML page.
+description: ${PROJECT_NAME_DISPLAY} self-documentation skill. Use when building, updating, or checking ${PROJECT_NAME_DISPLAY} docs. Also activate for stale documentation, docs site builds, or skill catalog HTML generation.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-user-invocable: true
-intentHints:
-  taskType: Docs Management
-  examples:
-    - "Update the docs"
-    - "Sync documentation"
-    - "Build the HTML docs site"
+user-invocable: false
 version: 2
 ---
 
@@ -116,7 +106,7 @@ npx ${PROJECT_CLI} docs --html
 npx ${PROJECT_CLI} docs --json
 \\\`\\\`\\\`
 
-This produces \\\`docs/_site/index.html\\\` — a self-contained HTML file with:
+This produces \\\`docs/codi_docs/index.html\\\` — a self-contained HTML file with:
 - Skill catalog grouped by category with descriptions
 - Client-side search across all skills
 - Dark/light mode support
@@ -170,6 +160,6 @@ This skill does NOT:
 
 ## Related Skills
 
-- **codi-documentation** — Document user project code, READMEs, and ADRs
-- **codi-doc-engine** — Generate branded reports and proposals
+- **${PROJECT_NAME}-documentation** — Document user project code, READMEs, and ADRs
+- **${PROJECT_NAME}-doc-engine** — Generate branded reports and proposals
 `;

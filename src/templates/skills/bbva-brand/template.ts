@@ -6,12 +6,6 @@ description: Apply BBVA brand identity to any content creation task. Use when cr
 category: Brand Identity
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: BBVA Branding
-  examples:
-    - "Create a BBVA presentation"
-    - "Build a BBVA-branded report"
-    - "Make a BBVA dashboard"
 version: 1
 ---
 

@@ -7,12 +7,6 @@ category: Document Generation
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-intentHints:
-  taskType: Document Generation
-  examples:
-    - "Create a report"
-    - "Generate a proposal"
-    - "Write a one-pager"
 version: 1
 ---
 
@@ -218,12 +212,12 @@ For tabular data, generate:
 ## Available Agents
 
 For content research during document generation, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-docs-lookup** — Research and verify technical content accuracy
+- **${PROJECT_NAME}-docs-lookup** — Research and verify technical content accuracy
 
 ## Related Skills
 
-- **codi-theme-factory** — Apply visual themes to generated documents
-- **codi-deck-engine** — Generate slide presentations from document content
+- **${PROJECT_NAME}-theme-factory** — Apply visual themes to generated documents
+- **${PROJECT_NAME}-deck-engine** — Generate slide presentations from document content
 
 ## Step 6: Component Reference
 

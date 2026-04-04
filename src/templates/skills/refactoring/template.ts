@@ -6,12 +6,6 @@ description: Safe dead code removal and refactoring workflow. Use when removing 
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Refactoring
-  examples:
-    - "Remove dead code"
-    - "Clean up unused functions"
-    - "Simplify this module"
 version: 1
 ---
 
@@ -117,11 +111,11 @@ Stop the refactoring process if:
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-refactorer** — Autonomous dead code removal with classification system
-- **codi-test-generator** — Generate tests for refactored code
+- **${PROJECT_NAME}-refactorer** — Autonomous dead code removal with classification system
+- **${PROJECT_NAME}-test-generator** — Generate tests for refactored code
 
 ## Related Skills
 
-- **codi-test-coverage** — Verify coverage after refactoring changes
-- **codi-code-review** — Review refactored code for quality
+- **${PROJECT_NAME}-test-coverage** — Verify coverage after refactoring changes
+- **${PROJECT_NAME}-code-review** — Review refactored code for quality
 `;

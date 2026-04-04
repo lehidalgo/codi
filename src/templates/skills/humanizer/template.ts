@@ -1,22 +1,12 @@
+import { PROJECT_NAME } from "#src/constants.js";
+
 export const template = `---
 name: {{name}}
-description: |
-  Remove AI writing patterns from generated content. Use when text sounds robotic,
-  formulaic, or obviously AI-generated. Applies a two-pass rewrite to eliminate 29
-  documented AI tells. Also activate when the user says text is too stiff, wants
-  it to sound more natural, or asks to remove AI patterns.
+description: "Remove AI writing patterns from generated content. Use when text sounds robotic, formulaic, or AI-generated. Applies a two-pass rewrite to eliminate documented AI tells. Also activate when the user wants text to sound more natural or less stiff."
 category: Content Refinement
 compatibility: [claude-code]
 managed_by: user
 user-invocable: true
-intentHints:
-  taskType: Content Refinement
-  examples:
-    - "humanize this text"
-    - "make this sound more natural"
-    - "remove AI patterns from this content"
-    - "this sounds too robotic, fix it"
-    - "clean up this AI-generated text"
 version: 1
 ---
 
@@ -138,8 +128,8 @@ If the user wants to iterate, accept feedback and revise — do not restart the 
 
 ## Related Skills
 
-- **codi-content-factory** — Generate blog posts and social media content (includes opt-in humanizer step)
-- **codi-doc-engine** — Generate branded reports and proposals (includes opt-in humanizer step)
-- **codi-deck-engine** — Generate HTML slide decks (includes opt-in humanizer step)
-- **codi-documentation** — Write technical documentation (includes opt-in humanizer step)
+- **${PROJECT_NAME}-content-factory** — Generate blog posts and social media content (includes opt-in humanizer step)
+- **${PROJECT_NAME}-doc-engine** — Generate branded reports and proposals (includes opt-in humanizer step)
+- **${PROJECT_NAME}-deck-engine** — Generate HTML slide decks (includes opt-in humanizer step)
+- **${PROJECT_NAME}-documentation** — Write technical documentation (includes opt-in humanizer step)
 `;

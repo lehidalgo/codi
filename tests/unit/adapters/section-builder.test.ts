@@ -254,28 +254,25 @@ describe("buildSkillRoutingTable", () => {
     expect(buildSkillRoutingTable(config)).toBeNull();
   });
 
-  it("uses intentHints when provided", () => {
+  it("uses skill name and routing summary in 2-column table", () => {
     const config = createMockConfig({
       skills: [
         {
           name: "codi-code-review",
-          description: "Review code",
+          description: "Review code quality and find issues.",
           content: "c",
-          intentHints: {
-            taskType: "Code Review",
-            examples: ["Review my PR", "Check code quality"],
-          },
         },
       ],
     });
     const result = buildSkillRoutingTable(config)!;
     expect(result).toContain("## Skill Routing");
-    expect(result).toContain("Code Review");
-    expect(result).toContain('"Review my PR"');
+    expect(result).toContain("| Skill | When to use |");
     expect(result).toContain("codi-code-review");
+    expect(result).toContain("Review code quality and find issues");
+    expect(result).not.toContain("Examples");
   });
 
-  it("falls back to name-derived row when no intentHints", () => {
+  it("includes two sentences when both fit within 200 chars", () => {
     const config = createMockConfig({
       skills: [
         {
@@ -286,14 +283,14 @@ describe("buildSkillRoutingTable", () => {
       ],
     });
     const result = buildSkillRoutingTable(config)!;
-    expect(result).toContain("Security Scan");
     expect(result).toContain("codi-security-scan");
-    expect(result).toContain("*Security analysis workflow*");
+    expect(result).toContain("Security analysis workflow. Use to audit for vulnerabilities");
+    expect(result).not.toContain("Security Scan");
   });
 
-  it("truncates long descriptions to 80 chars with ellipsis", () => {
+  it("truncates descriptions exceeding 200 chars with ellipsis", () => {
     const longDesc =
-      "This is an extremely long description that exceeds eighty characters and should be truncated with an ellipsis appended at the end";
+      "This is an extremely long description that goes well beyond two hundred characters and should absolutely be truncated with an ellipsis appended at the end to signal the content was cut off intentionally";
     const config = createMockConfig({
       skills: [{ name: "codi-long-desc", description: longDesc, content: "c" }],
     });

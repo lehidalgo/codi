@@ -104,6 +104,37 @@ export const ARTIFACT_TYPES = ["rules", "skills", "agents"] as const;
 // --- Brand category ---
 export const BRAND_CATEGORY = "brand" as const;
 
+// --- Skill categories (single source of truth) ---
+export const SKILL_CATEGORIES = [
+  "Brand Identity",
+  "Code Quality",
+  "Content Creation",
+  "Content Refinement",
+  "Creative and Design",
+  "Developer Tools",
+  "Developer Workflow",
+  "Document Generation",
+  "File Format Tools",
+  "Planning",
+  "Productivity",
+  "Testing",
+  "Workflow",
+] as const;
+
+export type SkillCategory = (typeof SKILL_CATEGORIES)[number];
+
+/** Platform category — derived from PROJECT_NAME_DISPLAY to stay in sync. */
+export const PLATFORM_CATEGORY = `${PROJECT_NAME_DISPLAY} Platform`;
+
+/** All valid skill categories including the dynamic platform category. */
+export const ALL_SKILL_CATEGORIES = [...SKILL_CATEGORIES, PLATFORM_CATEGORY] as const;
+export type AnySkillCategory = (typeof ALL_SKILL_CATEGORIES)[number];
+
+/** Returns true if the value is a known built-in skill category. */
+export function isKnownSkillCategory(v: string): v is AnySkillCategory {
+  return (ALL_SKILL_CATEGORIES as readonly string[]).includes(v);
+}
+
 // --- CLI commands (single source of truth for stats) ---
 export const CLI_COMMANDS = [
   "init",
@@ -127,6 +158,7 @@ export const CLI_COMMANDS = [
   "docs-check",
   "contribute",
   "skill",
+  "onboard",
 ] as const;
 
 // --- Git operations ---

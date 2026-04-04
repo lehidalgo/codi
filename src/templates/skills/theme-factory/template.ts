@@ -6,12 +6,6 @@ description: Use when the user wants to apply a visual theme to slides, document
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Theme Styling
-  examples:
-    - "Apply a theme to my document"
-    - "Style this artifact"
-    - "Create a custom theme for my deck"
 version: 1
 ---
 
@@ -77,7 +71,7 @@ To handle cases where none of the existing themes work for an artifact, create a
 
 ## Related Skills
 
-- **codi-deck-engine** — Presentation engine whose output can be themed
-- **codi-doc-engine** — Document engine whose output can be themed
-- **codi-frontend-design** — Frontend interfaces that can use theme tokens
+- **${PROJECT_NAME}-deck-engine** — Presentation engine whose output can be themed
+- **${PROJECT_NAME}-doc-engine** — Document engine whose output can be themed
+- **${PROJECT_NAME}-frontend-design** — Frontend interfaces that can use theme tokens
 `;

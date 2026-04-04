@@ -54,10 +54,6 @@ export interface NormalizedSkill {
   userInvocable?: boolean;
   paths?: string[];
   shell?: "bash" | "powershell";
-  intentHints?: {
-    taskType: string;
-    examples: string[];
-  };
   hooks?: unknown;
 }
 

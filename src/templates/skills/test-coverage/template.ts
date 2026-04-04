@@ -10,12 +10,6 @@ description: Test coverage analysis workflow. Use when measuring coverage, ident
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Test Coverage
-  examples:
-    - "Check test coverage"
-    - "Find untested code"
-    - "Generate missing tests"
 version: 1
 ---
 
@@ -97,10 +91,10 @@ Skip generating tests for:
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Expert test creation with TDD workflow
-- **codi-code-reviewer** — Review generated tests for quality and correctness
+- **${PROJECT_NAME}-test-generator** — Expert test creation with TDD workflow
+- **${PROJECT_NAME}-code-reviewer** — Review generated tests for quality and correctness
 
 ## Related Skills
 
-- **codi-refactoring** — Clean up dead code after improving coverage
+- **${PROJECT_NAME}-refactoring** — Clean up dead code after improving coverage
 `;

@@ -6,12 +6,6 @@ description: Use when transcribing audio or video files to text using OpenAI Whi
 category: Productivity
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Audio Transcription
-  examples:
-    - "Transcribe this audio file"
-    - "Convert this video to text"
-    - "Transcribe and save to Google Sheets"
 version: 1
 ---
 

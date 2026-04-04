@@ -6,12 +6,6 @@ description: Use when the user asks to create a poster, visual art, or a static 
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Visual Design
-  examples:
-    - "Create a poster"
-    - "Design visual art"
-    - "Make a minimalist poster"
 version: 1
 ---
 

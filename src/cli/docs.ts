@@ -1,14 +1,8 @@
 import type { Command } from "commander";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import {
-  exportSkillCatalogJson,
-  buildSkillDocsFile,
-} from "../core/docs/skill-docs-generator.js";
-import {
-  injectSections,
-  validateSections,
-} from "../core/docs/docs-generator.js";
+import { exportSkillCatalogJson, buildSkillDocsFile } from "../core/docs/skill-docs-generator.js";
+import { injectSections, validateSections } from "../core/docs/docs-generator.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
@@ -114,7 +108,7 @@ export async function docsHandler(
   // Also write JSON catalog alongside if no custom output specified
   if (!options.output) {
     const catalog = exportSkillCatalogJson();
-    const jsonPath = join(projectRoot, "docs", "_site", "skill-catalog.json");
+    const jsonPath = join(projectRoot, "docs", "codi_docs", "skill-catalog.json");
     await mkdir(dirname(jsonPath), { recursive: true });
     await writeFile(jsonPath, catalog, "utf-8");
   }

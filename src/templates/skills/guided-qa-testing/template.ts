@@ -6,12 +6,6 @@ description: Step-by-step QA testing methodology. Use when the user wants to tes
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: QA Testing
-  examples:
-    - "Run QA tests"
-    - "Test this feature step by step"
-    - "Validate this release"
 version: 1
 ---
 
@@ -232,10 +226,10 @@ Report structure:
 ## Available Agents
 
 For automated test generation from QA findings, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Convert QA findings into automated regression tests
+- **${PROJECT_NAME}-test-generator** — Convert QA findings into automated regression tests
 
 ## Related Skills
 
-- **codi-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
-- **codi-test-coverage** — Measure and improve test coverage after QA
+- **${PROJECT_NAME}-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
+- **${PROJECT_NAME}-test-coverage** — Measure and improve test coverage after QA
 `;

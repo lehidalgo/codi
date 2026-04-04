@@ -28,8 +28,7 @@ to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has three desi
 5. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
 
 What makes configuration quality matter:
-- **Better intentHints** = users find the right skill instantly (routing table accuracy)
-- **Better descriptions** = skills trigger at the right time, not the wrong time
+- **Better descriptions** = users find the right skill instantly (routing table accuracy) and skills trigger at the right time
 - **Better skill steps** = fewer errors, more consistent outcomes
 - **Better rules** = fewer mistakes, code quality compounds over time
 
@@ -69,10 +68,9 @@ What makes configuration quality matter:
 
 When you notice a skill should have triggered but didn't, or triggered when it shouldn't have:
 
-1. Check if the skill has \`intentHints\` in its frontmatter
-2. If missing, propose adding \`intentHints\` with \`taskType\` and 2-4 example prompts
-3. If present but incomplete, propose additional examples that match the user's actual phrasing
-4. Run \`${PROJECT_CLI} generate\` after any frontmatter change
+1. Check the skill's \`description\` — it is what Claude uses to decide when to activate a skill
+2. If too vague, propose a more specific description with explicit trigger keywords and "Use when..." phrases
+3. Run \`${PROJECT_CLI} generate\` after any frontmatter change
 
 ## What NOT to Do
 

@@ -6,12 +6,6 @@ description: Use when the user wants to create animated GIFs optimized for Slack
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: GIF Creation
-  examples:
-    - "Make a GIF for Slack"
-    - "Create an animated GIF"
-    - "Build a bouncing emoji GIF"
 version: 1
 ---
 

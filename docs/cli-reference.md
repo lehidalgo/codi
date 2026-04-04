@@ -25,7 +25,7 @@ Launched by `codi init` (interactive mode) or from the Command Center. Guides yo
 | 1. Languages | Multiselect | Choose project languages for pre-commit hooks. Pre-selects detected stack. |
 | 2. Agents | Multiselect | Target agents: `claude-code`, `cursor`, `codex`, `windsurf`, `cline`. Pre-selects detected agents. |
 | 3. Config Mode | Select one | `preset` / `custom` / `zip` import / `github` import |
-| 4. Artifacts | Conditional | Preset: choose a built-in preset. Custom: select individual rules, skills, agents, commands, MCP servers. |
+| 4. Artifacts | Conditional | Preset: choose a built-in preset. Custom: select individual rules, skills, agents, MCP servers. |
 
 ### Keyboard Shortcuts
 
@@ -69,7 +69,7 @@ codi init --agents claude-code cursor --preset balanced
 
 #### `codi add <type> [name]`
 
-Add resources to the `.codi/` configuration. Supported types: `rule`, `skill`, `agent`, `command`, `brand`, `mcp-server`.
+Add resources to the `.codi/` configuration. Supported types: `rule`, `skill`, `agent`, `brand`, `mcp-server`.
 
 ```
 codi add <type> [name] [options]
@@ -293,6 +293,8 @@ codi watch --once
 
 Update flags and template-managed artifacts to latest versions. Always auto-regenerates after update.
 
+Each built-in template carries an `artifactVersion` stamp. `codi update` compares installed artifact content hashes against the registry baseline and classifies each artifact as original, modified, new, removed, or user-managed. It presents per-artifact upgrade choices and skips user-modified files unless explicitly overridden.
+
 ```
 codi update [options]
 ```
@@ -304,7 +306,6 @@ codi update [options]
 | `--rules` | Refresh template-managed rules |
 | `--skills` | Refresh template-managed skills |
 | `--agents` | Refresh template-managed agents |
-| `--commands` | Refresh template-managed commands |
 | `--mcp-servers` | Refresh template-managed MCP servers |
 | `--dry-run` | Show what would change without writing |
 
@@ -401,17 +402,57 @@ Manage skills: export, feedback, stats, evolve, versions.
 
 ---
 
+### Onboarding
+
+#### `codi onboard`
+
+Print an AI-guided onboarding guide to stdout. The guide contains three sections: a full artifact catalog (all rules, skills, agents grouped by category), a built-in presets reference, and a step-by-step agent playbook.
+
+The intended workflow: tell your coding agent to run `codi onboard`, and the agent reads the output, explores your codebase, recommends a preset and artifact selection, iterates with you until approved, then executes `codi init` + `codi add` + `codi generate` to install everything.
+
+```
+codi onboard
+```
+
+No command-specific options. Output goes to stdout so the coding agent can read it.
+
+```sh
+# Let your coding agent run this and follow the instructions
+codi onboard
+```
+
+---
+
 ### Community Commands
 
 #### `codi contribute`
 
-Interactive wizard to share artifacts with the Codi community. Choose artifacts, then either open a PR (requires `gh` CLI) or export as a ZIP preset package.
+Interactive wizard to share artifacts via GitHub PR or ZIP export. Select artifacts, pick a target repository, then choose to open a PR or export a ZIP preset package.
 
 ```
-codi contribute
+codi contribute [--repo <owner/repo>] [--branch <name>]
 ```
 
-No command-specific options. Fully interactive.
+| Option | Description |
+|--------|-------------|
+| `--repo <owner/repo>` | Target GitHub repository (accepts `owner/repo` or full HTTPS URL). Skips the repo selection prompt. |
+| `--branch <name>` | Target branch for the PR base. If omitted, Codi detects the repo's default branch automatically. |
+
+**Behavior by repo state:**
+
+| Repo state | Method |
+|-----------|--------|
+| Has commits | Fork the target repo, push a `contrib/add-<name>` branch to your fork, open a PR |
+| Empty (no commits) | Push an initial commit directly to the target branch - no fork or PR needed |
+
+**Private repo prerequisites:**
+
+- Authenticate: `gh auth login`
+- Ensure `repo` scope: `gh auth refresh -s repo`
+- Verify access: `gh repo view owner/repo`
+- For SSH: confirm your key with `ssh -T git@github.com`
+
+Requires the `gh` CLI for the PR workflow. ZIP export has no extra requirements.
 
 ---
 

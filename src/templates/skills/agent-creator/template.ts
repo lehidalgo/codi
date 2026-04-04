@@ -18,12 +18,6 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Agent Creation
-  examples:
-    - "Create a new agent"
-    - "Build a specialized subagent"
-    - "Add a code reviewer agent"
 version: 1
 ---
 
@@ -231,5 +225,5 @@ Run \\\`${PROJECT_CLI} add agent --all\\\` to list all templates. Major categori
 
 ## Related Skills
 
-- **codi-skill-creator** — Create a skill that coordinates multiple agents in a workflow
+- **${PROJECT_NAME}-skill-creator** — Create a skill that coordinates multiple agents in a workflow
 `;

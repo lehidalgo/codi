@@ -19,7 +19,6 @@ Complete reference for Codi's configuration system: directory structure, manifes
       assets/                  # Static assets
       evals/                   # Evaluation files
   agents/                      # Agent definitions (Markdown)
-  commands/                    # Slash commands (Markdown)
   brands/                      # Brand definitions (BRAND.md + assets)
   presets/                     # Installed presets
   backups/                     # Automatic backups (max 5)
@@ -51,10 +50,9 @@ codi:
 # Control which content types are included in generation
 layers:
   rules: true       # default: true
-  skills: true       # default: true
-  commands: true     # default: true
-  agents: true       # default: true
-  context: true      # default: true
+  skills: true      # default: true
+  agents: true      # default: true
+  context: true     # default: true
 
 # Presets to load (applied in order)
 presets:
@@ -73,7 +71,6 @@ presets:
 | `layers` | object | No | — | Toggle content types |
 | `layers.rules` | boolean | Yes | `true` | Include rules in generation |
 | `layers.skills` | boolean | Yes | `true` | Include skills in generation |
-| `layers.commands` | boolean | Yes | `true` | Include commands in generation |
 | `layers.agents` | boolean | Yes | `true` | Include agents in generation |
 | `layers.context` | boolean | Yes | `true` | Include context in generation |
 | `engine` | object | No | — |  |
@@ -241,6 +238,28 @@ servers:
 | `url` | string | HTTP URL (for `http` type) |
 | `headers` | Record | HTTP headers (for `http` type) |
 | `enabled` | boolean | Toggle server on/off (default: `true`) |
+
+### Built-in MCP Server Templates
+
+33 server templates are available via `codi add mcp-server <name>`, organized into three categories:
+
+| Category | Examples |
+|:---------|:---------|
+| `official` | github, anthropic-docs, memory, filesystem, fetch |
+| `vendor` | neon-cloud (HTTP), graph-code, chrome-devtools, openai-developer-docs |
+| `community` | Various community-contributed servers |
+
+Install a server template: `codi add mcp-server github --template github`
+
+### Environment Variable Documentation
+
+Generated MCP configs include environment variable instructions so developers know exactly which variables to set:
+
+- **Claude Code / Cursor** (JSON): `_instructions` object listing each required env var with a description
+- **Codex** (TOML): Inline comments above each `env` entry
+- **`.mcp.env.example`**: Generated alongside MCP config files, listing all required environment variables as `VAR_NAME=` entries for use with `.env` tooling
+
+### Output Locations
 
 MCP config is distributed to each agent in its native format:
 - **Claude Code**: `.claude/mcp.json`

@@ -2,16 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: "Use when the user wants to work with a spreadsheet file (.xlsx, .xlsm, .csv, or .tsv). Also activate when cleaning messy tabular data, creating financial models, or converting between tabular formats. Do NOT activate when the deliverable is a Word doc, HTML report, standalone script, or Google Sheets API integration."
+description: "Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations."
 category: File Format Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Spreadsheets
-  examples:
-    - "Create a spreadsheet"
-    - "Generate an Excel file"
-    - "Fix formula errors in Excel"
 version: 1
 ---
 

@@ -6,12 +6,6 @@ description: Apply RL3 AI Agency brand identity to any content creation task. Us
 category: Brand Identity
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: RL3 Branding
-  examples:
-    - "Create a branded proposal"
-    - "Build an RL3 landing page"
-    - "Make an RL3 slide deck"
 version: 1
 ---
 
@@ -311,9 +305,9 @@ Expected: \\\`ALL TESTS PASSED - 3 runs, 0 errors, SHA-256 deterministic\\\`
 
 For automated brand quality evaluation (see \\\`agents/\\\` directory):
 
-- **codi-rl3-grader** — Evaluates branded outputs against RL3 brand expectations. Runs a core brand checklist (logo baseline, gold usage, dark mode, fonts, no em dashes, no banned phrases, correct cycle name "Iterar" not "Aprender", section label format) and grades each expectation pass/fail with evidence.
-- **codi-rl3-comparator** — Blind A/B comparison of two branded outputs across 6 weighted dimensions: Logo Integrity, Color Fidelity, Typography, Tone & Copy, Layout & Motion, Overall Brand Coherence. Flags critical violations that override scores.
-- **codi-rl3-analyzer** — Root-cause analysis of why one output outperformed another. Identifies failures by category (missing/ambiguous/buried instruction, missing example/warning) and generates concrete SKILL.md improvement suggestions with priority levels.
+- **${PROJECT_NAME}-rl3-grader** — Evaluates branded outputs against RL3 brand expectations. Runs a core brand checklist (logo baseline, gold usage, dark mode, fonts, no em dashes, no banned phrases, correct cycle name "Iterar" not "Aprender", section label format) and grades each expectation pass/fail with evidence.
+- **${PROJECT_NAME}-rl3-comparator** — Blind A/B comparison of two branded outputs across 6 weighted dimensions: Logo Integrity, Color Fidelity, Typography, Tone & Copy, Layout & Motion, Overall Brand Coherence. Flags critical violations that override scores.
+- **${PROJECT_NAME}-rl3-analyzer** — Root-cause analysis of why one output outperformed another. Identifies failures by category (missing/ambiguous/buried instruction, missing example/warning) and generates concrete SKILL.md improvement suggestions with priority levels.
 
 ---
 

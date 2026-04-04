@@ -7,20 +7,11 @@ import {
 
 export const template = `---
 name: {{name}}
-description: |
-  Background rule observation skill. Collects structured feedback about rules
-  during coding sessions — pattern detection, outdated practices, missing examples,
-  and user corrections. Writes observations to ${PROJECT_DIR}/feedback/rules/ for
-  later review via /codi-refine-rules. Does NOT modify rules directly.
+description: "Background rule observation skill. Collects structured feedback about rules during coding sessions -- pattern detection, outdated practices, missing examples, and corrections. Writes observations to feedback/rules/ for review. Does NOT modify rules."
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Rule Improvement
-  examples:
-    - "This rule seems outdated"
-    - "The codebase always does X but the rule says Y"
 version: 1
 ---
 
@@ -89,10 +80,10 @@ The user corrects your behavior in a way that contradicts or extends a rule.
 
 ## What Happens Next
 
-Collected feedback is reviewed when the user runs \\\`/codi-refine-rules\\\`. That skill reads all observations, groups them by rule, and proposes changes one at a time with human approval.
+Collected feedback is reviewed when the user runs \\\`/${PROJECT_NAME}-refine-rules\\\`. That skill reads all observations, groups them by rule, and proposes changes one at a time with human approval.
 
 ## Related Skills
 
-- **codi-refine-rules** — Review and apply collected rule feedback
-- **codi-skill-reporter** — Similar feedback system for skills (not rules)
+- **${PROJECT_NAME}-refine-rules** — Review and apply collected rule feedback
+- **${PROJECT_NAME}-skill-reporter** — Similar feedback system for skills (not rules)
 `;

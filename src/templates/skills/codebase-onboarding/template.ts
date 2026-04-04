@@ -6,12 +6,6 @@ description: Codebase onboarding workflow. Use when exploring an unfamiliar proj
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Codebase Onboarding
-  examples:
-    - "Help me understand this codebase"
-    - "Generate an onboarding guide"
-    - "What are the key files here"
 version: 1
 ---
 
@@ -97,9 +91,9 @@ version: 1
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-onboarding-guide** — Autonomous codebase analysis and guide generation
+- **${PROJECT_NAME}-onboarding-guide** — Autonomous codebase analysis and guide generation
 
 ## Related Skills
 
-- **codi-documentation** — Create and maintain project documentation
+- **${PROJECT_NAME}-documentation** — Create and maintain project documentation
 `;

@@ -2,17 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Create a structured roadmap todo list as a JSON file in docs/roadmaps/.
+description: Create a structured roadmap or todo list as a JSON file in docs/roadmaps/. Use when planning features, tracking milestones, or organizing implementation phases. Also activate when the user says 'create a roadmap' or 'plan next steps'.
 category: Planning
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Roadmap Creation
-  examples:
-    - "Create a roadmap"
-    - "Make a todo list for this feature"
-    - "Plan out the next steps"
-    - "Generate a project roadmap"
 version: 1
 ---
 

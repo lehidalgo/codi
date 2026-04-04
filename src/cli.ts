@@ -24,6 +24,7 @@ import { registerDocsStampCommand } from "./cli/docs-stamp.js";
 import { registerDocsCheckCommand } from "./cli/docs-check.js";
 import { registerContributeCommand } from "./cli/contribute.js";
 import { registerSkillCommand } from "./cli/skill.js";
+import { registerOnboardCommand } from "./cli/onboard.js";
 import { runCommandCenter } from "./cli/hub.js";
 import { Logger } from "./core/output/logger.js";
 import { PROJECT_NAME } from "./constants.js";
@@ -63,6 +64,7 @@ registerDocsStampCommand(program);
 registerDocsCheckCommand(program);
 registerContributeCommand(program);
 registerSkillCommand(program);
+registerOnboardCommand(program);
 
 // Bare command (no subcommand) → launch Command Center
 program.action(async () => {

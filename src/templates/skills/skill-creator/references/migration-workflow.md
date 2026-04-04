@@ -163,7 +163,7 @@ Create the standard skeleton:
 - Create missing subdirectories with `.gitkeep`
 - Create `evals/evals.json` stub if missing:
   ```json
-  { "skill_name": "<name>", "evals": [] }
+  { "skillName": "<name>", "cases": [] }
   ```
 
 ### LICENSE.txt

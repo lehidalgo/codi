@@ -10,16 +10,11 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Guide the user through contributing artifacts to GitHub repositories or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation to any repo, ZIP export, and manual workflows.
+description: Use when contributing artifacts to GitHub or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation, ZIP export, and manual workflows. Also activate when the user says 'share my skill', 'contribute to Codi', or 'open a PR with my rule'.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Contributing
-  examples:
-    - "Contribute my skill to GitHub"
-    - "Share my artifacts as ZIP"
-    - "Open a PR with my rule"
+user-invocable: false
 version: 2
 ---
 
@@ -236,5 +231,5 @@ Ensure the ZIP was created by \\\`${PROJECT_CLI} contribute\\\` — it must cont
 
 ## Related Skills
 
-- **codi-preset-creator** — Create and package a preset before contributing it
+- **${PROJECT_NAME}-preset-creator** — Create and package a preset before contributing it
 `;

@@ -165,11 +165,16 @@ src/
 1. Create a directory `src/templates/skills/{name}/` with:
    - `template.ts` — exports the SKILL.md content string
    - `index.ts` — re-exports `{ template }` from `./template.js`
-   - (optional) `assets/`, `references/`, `scripts/` — static files copied during scaffolding
+   - (optional) `assets/`, `evals/`, `references/`, `scripts/`, `agents/` — static files copied during scaffolding
 2. Export from `src/templates/skills/index.ts`
-3. Add to the skill template map in the template loader
-4. Add tests
-5. Run `npm test`
+3. Add to the skill template map in `skill-template-loader.ts`
+4. If the skill has static files (any of the optional dirs above):
+   - Add `export const staticDir = resolveStaticDir("{name}", import.meta.url);` to `index.ts`
+   - Export `staticDir` from `src/templates/skills/index.ts` (e.g., `staticDir as mySkillStaticDir`)
+   - Register in `STATIC_DIR_MAP` in `src/core/scaffolder/skill-template-loader.ts`
+5. If adding evals, create `evals/evals.json` with at least 5 cases (3 positive, 2 negative). See `src/templates/skills/skill-creator/references/schemas.md` for the schema.
+6. Add tests
+7. Run `pnpm test`
 
 ### Adding an Agent Template
 

@@ -7,3 +7,4 @@ export { isPathSafe } from "./path-guard.js";
 export { fileExists, safeRm } from "./fs.js";
 export { execFileAsync } from "./exec.js";
 export { buildUnifiedDiff, renderColoredDiff, countChanges } from "./diff.js";
+export { normalizeGithubRepo } from "./github.js";

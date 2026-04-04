@@ -116,7 +116,7 @@ describe("per-schema wrappers", () => {
   it("renderSkillFields matches SkillFrontmatterSchema field count", () => {
     const result = renderSkillFields();
     const dataRows = result.split("\n").slice(2);
-    expect(dataRows.length).toBe(21);
+    expect(dataRows.length).toBe(20);
   });
 
   it("renderAgentFields matches AgentFrontmatterSchema field count", () => {

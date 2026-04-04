@@ -6,12 +6,6 @@ description: Use when the user wants to create generative art, algorithmic art, 
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Generative Art
-  examples:
-    - "Create algorithmic art"
-    - "Build a flow field"
-    - "Generate a particle system"
 version: 1
 ---
 

@@ -2,21 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: |
-  Documentation creation and maintenance workflows. Use when writing docs, updating
-  README, generating API documentation, creating architecture decision records, or
-  co-authoring proposals, specs, and decision docs. Also activate when the user
-  mentions writing docs, drafting specs, creating proposals, or any structured
-  content authoring task.
+description: "Documentation creation and maintenance workflows. Use when writing docs, updating README, generating API docs, creating ADRs, drafting specs, proposals, or decision docs. Also activate when the user mentions writing or structured content authoring."
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Documentation
-  examples:
-    - "Write documentation"
-    - "Generate API docs"
-    - "Write an ADR"
 version: 1
 ---
 
@@ -148,9 +137,9 @@ After 80%+ of sections are done, re-read the entire document checking for: flow 
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-docs-lookup** — Research API signatures, verify deprecations, find examples
+- **${PROJECT_NAME}-docs-lookup** — Research API signatures, verify deprecations, find examples
 
 ## Related Skills
 
-- **codi-codebase-onboarding** — Understand project structure before writing docs
+- **${PROJECT_NAME}-codebase-onboarding** — Understand project structure before writing docs
 `;

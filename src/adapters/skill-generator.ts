@@ -1,6 +1,6 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import { join, relative, extname } from "node:path";
-import { stringify as stringifyYaml } from "yaml";
+import { stringify as stringifyYaml, parse as yamlParse } from "yaml";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
@@ -34,7 +34,7 @@ const PLATFORM_SKILL_FIELDS: Record<PlatformId, Set<string>> = {
     "paths",
     "shell",
     "license",
-    "intentHints",
+    "metadata",
     "hooks",
   ]),
   cursor: new Set(["name", "description", "user-invocable", "allowed-tools"]),
@@ -71,6 +71,14 @@ function flattenDescription(desc: string): string {
   return desc.replace(/\n\s*/g, " ").trim();
 }
 
+/** Serialize YAML scalar values safely for frontmatter output. */
+function fmStr(value: string): string {
+  if (/[\n\r:#\[\]{},&*?|>'"]/.test(value) || value.startsWith(" ")) {
+    return JSON.stringify(value);
+  }
+  return value;
+}
+
 export function buildSkillMd(
   skill: NormalizedSkill,
   descriptionPrefix = "",
@@ -80,8 +88,10 @@ export function buildSkillMd(
   const frontmatter: string[] = ["---"];
 
   // name and description are required on all platforms
-  frontmatter.push(`name: ${skill.name}`);
-  frontmatter.push(`description: ${descriptionPrefix}${flattenDescription(skill.description)}`);
+  frontmatter.push(`name: ${fmStr(skill.name)}`);
+  frontmatter.push(
+    `description: ${fmStr(descriptionPrefix + flattenDescription(skill.description))}`,
+  );
 
   if (allowed.has("disable-model-invocation") && skill.disableModelInvocation) {
     frontmatter.push("disable-model-invocation: true");
@@ -90,7 +100,7 @@ export function buildSkillMd(
     frontmatter.push("user-invocable: false");
   }
   if (allowed.has("argument-hint") && skill.argumentHint) {
-    frontmatter.push(`argument-hint: "${skill.argumentHint}"`);
+    frontmatter.push(`argument-hint: ${fmStr(skill.argumentHint)}`);
   }
   if (allowed.has("allowed-tools") && skill.allowedTools && skill.allowedTools.length > 0) {
     frontmatter.push(`allowed-tools: ${skill.allowedTools.join(", ")}`);
@@ -114,20 +124,7 @@ export function buildSkillMd(
     frontmatter.push(`shell: ${skill.shell}`);
   }
   if (allowed.has("license") && skill.license) {
-    frontmatter.push(`license: ${skill.license}`);
-  }
-  if (allowed.has("intentHints") && skill.intentHints) {
-    frontmatter.push("intentHints:");
-    frontmatter.push(`  taskType: ${skill.intentHints.taskType}`);
-    frontmatter.push("  examples:");
-    for (const example of skill.intentHints.examples) {
-      frontmatter.push(`    - "${example}"`);
-    }
-  }
-  // Codex: map intentHints → metadata so routing info isn't lost
-  if (allowed.has("metadata") && skill.intentHints) {
-    frontmatter.push("metadata:");
-    frontmatter.push(`  task-type: "${skill.intentHints.taskType}"`);
+    frontmatter.push(`license: ${fmStr(skill.license)}`);
   }
   if (allowed.has("hooks") && skill.hooks !== undefined) {
     const hooksYaml = stringifyYaml({ hooks: skill.hooks }).trimEnd();
@@ -138,6 +135,17 @@ export function buildSkillMd(
   // Note: managed_by, compatibility, category, version are never emitted —
   // they are Codi-internal fields that consume agent context budget
   frontmatter.push("---");
+
+  // Validate generated frontmatter is valid YAML before writing to disk.
+  // Guards against regressions in fmStr() or edge cases in hook/metadata serialization.
+  const fmInner = frontmatter.slice(1, -1).join("\n");
+  try {
+    yamlParse(fmInner);
+  } catch (err) {
+    throw new Error(
+      `Invalid YAML frontmatter for skill "${skill.name}" (platform: ${platformId}): ${String(err)}`,
+    );
+  }
 
   return `${frontmatter.join("\n")}\n\n${skill.content}`;
 }

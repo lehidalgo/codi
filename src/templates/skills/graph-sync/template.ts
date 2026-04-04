@@ -2,17 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Synchronize the code knowledge graph — full re-index or incremental update.
+description: Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Choose full re-index for major changes or incremental update for recent edits.
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Code Graph Sync
-  examples:
-    - "Sync the code graph"
-    - "Update the code index"
-    - "Re-index the repository"
-    - "Refresh the graph after my changes"
 version: 1
 ---
 

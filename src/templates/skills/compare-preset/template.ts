@@ -9,19 +9,11 @@ import {
 
 export const template = `---
 name: {{name}}
-description: |
-  Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream templates. Use when the user wants
-  to see what they have customized, check for upstream updates, or prepare to
-  contribute improvements back to ${PROJECT_NAME_DISPLAY}. Also activate on /${PROJECT_NAME}-compare-preset.
+description: Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream templates. Use when checking customizations, reviewing upstream updates, or preparing to contribute improvements. Also activate on /${PROJECT_NAME}-compare-preset.
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Preset Comparison
-  examples:
-    - "Compare my config to upstream"
-    - "What changed in my preset"
-    - "Check for upstream updates"
+user-invocable: false
 version: 1
 ---
 
@@ -162,6 +154,6 @@ If upstream clone fails, present a local-only report:
 
 ## Related Skills
 
-- **codi-preset-creator** — Create or package a preset before comparing it
-- **codi-contribute** — Contribute local improvements found during comparison back upstream
+- **${PROJECT_NAME}-preset-creator** — Create or package a preset before comparing it
+- **${PROJECT_NAME}-contribute** — Contribute local improvements found during comparison back upstream
 `;
