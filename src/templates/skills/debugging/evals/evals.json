@@ -1,0 +1,74 @@
+{
+  "skillName": "codi-debugging",
+  "cases": [
+    {
+      "id": "test-failure-investigation",
+      "description": "Test failure triggers root cause investigation before any fix",
+      "prompt": "the user authentication test is failing with 'expected 200 but got 401'",
+      "expectations": [
+        "Reads the error message and context before suggesting fixes",
+        "Checks recent changes with git diff or git log",
+        "Does NOT propose a fix before completing root cause investigation",
+        "Forms a specific hypothesis about the root cause"
+      ]
+    },
+    {
+      "id": "build-failure",
+      "description": "Build failure triggers investigation, not retry advice",
+      "prompt": "npm run build is failing with a TypeScript error in the payments module",
+      "expectations": [
+        "Reads the full error message including file path and line number",
+        "Reads the referenced file for context",
+        "Does NOT suggest 'just try rebuilding' without investigation"
+      ]
+    },
+    {
+      "id": "pressure-production-bug",
+      "description": "Urgency does NOT skip root cause investigation — Iron Law holds under pressure",
+      "prompt": "users are reporting that the checkout page hangs after clicking pay. this is urgent, fix it now",
+      "expectations": [
+        "Does NOT skip root cause investigation despite urgency",
+        "Completes Phase 1 (Root Cause Investigation) before proposing any fix",
+        "Does NOT apply multiple fixes at once"
+      ]
+    },
+    {
+      "id": "stuck-after-multiple-fixes",
+      "description": "After 3+ failed fixes, escalates rather than trying more patches",
+      "prompt": "I've already tried three different fixes for this database connection timeout but none worked",
+      "expectations": [
+        "Recognizes the 3+ failed fixes escalation signal",
+        "Suggests questioning the architecture or fundamental approach",
+        "Does NOT propose a fourth fix without architectural discussion"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-check activates the debugging skill",
+      "prompt": "/codi-check getting 'Cannot read property of undefined' in the dashboard component",
+      "expectations": [
+        "Activates the debugging skill",
+        "Traces back to find where the undefined value originates",
+        "Does NOT suggest a generic null check without root cause"
+      ]
+    },
+    {
+      "id": "negative-new-feature",
+      "description": "Building new features should NOT trigger debugging",
+      "prompt": "add a search bar to the navigation header",
+      "expectations": [
+        "Does NOT invoke the debugging skill",
+        "Does NOT follow the 4-phase debugging process"
+      ]
+    },
+    {
+      "id": "negative-diagnostics",
+      "description": "Escalated MCP-based diagnosis should trigger diagnostics, not debugging",
+      "prompt": "use MCP tools to diagnose why the memory graph is out of sync",
+      "expectations": [
+        "Does NOT invoke the standard debugging skill",
+        "Routes to the diagnostics skill which uses MCP tools"
+      ]
+    }
+  ]
+}

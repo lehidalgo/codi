@@ -1,0 +1,78 @@
+{
+  "skillName": "codi-tdd",
+  "cases": [
+    {
+      "id": "new-feature-tdd-cycle",
+      "description": "New feature triggers RED-GREEN-REFACTOR cycle with test-first",
+      "prompt": "add a function that validates email addresses",
+      "expectations": [
+        "Writes a test BEFORE writing the implementation",
+        "Runs the test and verifies it fails (RED phase)",
+        "Writes minimal implementation to make the test pass (GREEN phase)",
+        "Does NOT add features beyond what the test requires"
+      ]
+    },
+    {
+      "id": "bug-fix-reproduces-first",
+      "description": "Bug fix starts with a failing test that reproduces the bug",
+      "prompt": "there's a bug where empty strings pass our email validation. fix it",
+      "expectations": [
+        "Writes a test that reproduces the bug before any fix",
+        "Runs the test and confirms it fails for the expected reason",
+        "Writes minimal code to fix the bug and make the test pass",
+        "Runs the full test suite to check for regressions"
+      ]
+    },
+    {
+      "id": "explicit-test-writing",
+      "description": "Direct test writing request triggers TDD methodology",
+      "prompt": "write tests for the UserService class",
+      "expectations": [
+        "Creates test file(s) for UserService",
+        "Each test has a clear descriptive name",
+        "Tests cover multiple behaviors, not just one happy path"
+      ]
+    },
+    {
+      "id": "refactor-with-behavior-change",
+      "description": "Behavior-changing refactor requires TDD",
+      "prompt": "refactor the payment module to use async processing instead of sync",
+      "expectations": [
+        "Writes tests for the new async behavior BEFORE refactoring",
+        "Verifies tests fail before writing implementation",
+        "Implements the refactor to make new tests pass",
+        "Verifies existing tests still pass (no regressions)"
+      ]
+    },
+    {
+      "id": "iron-law-enforcement",
+      "description": "Test-first is enforced even when adding simple functionality",
+      "prompt": "implement a retry mechanism with exponential backoff",
+      "expectations": [
+        "Starts with a failing test for retry behavior",
+        "Verifies the test fails before writing implementation",
+        "Does NOT add exponential backoff until a test requires it"
+      ]
+    },
+    {
+      "id": "negative-config-change",
+      "description": "Config file changes should NOT trigger TDD (TDD exception: no executable logic)",
+      "prompt": "update the tsconfig.json to enable strict mode",
+      "expectations": [
+        "Does NOT invoke the tdd skill",
+        "Does NOT write a failing test for a config change",
+        "Directly modifies the configuration file"
+      ]
+    },
+    {
+      "id": "negative-test-run",
+      "description": "Running existing tests should trigger test-run, not tdd",
+      "prompt": "run the test suite and show me what passes",
+      "expectations": [
+        "Does NOT invoke the tdd skill",
+        "Does NOT start a RED-GREEN-REFACTOR cycle",
+        "Executes the existing test suite"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "skillName": "codi-refactoring",
+  "cases": [
+    {
+      "id": "remove-dead-code",
+      "description": "Dead code removal triggers the skill with safety analysis",
+      "prompt": "remove all unused exports from the utils module",
+      "expectations": [
+        "Checks git history or tests to verify each export is truly unused",
+        "Lists all code to be deleted before deleting",
+        "Runs tests after deletion to verify nothing breaks",
+        "Does NOT delete code that has callers in another file without verification"
+      ]
+    },
+    {
+      "id": "reduce-duplication",
+      "description": "Duplicate code consolidation with safety checks",
+      "prompt": "there are three copies of the same validation logic in different files. consolidate them",
+      "expectations": [
+        "Identifies all instances of the duplicated logic",
+        "Creates a shared function before removing duplicates",
+        "Runs tests after each removal step",
+        "Does NOT remove a copy until the shared function is confirmed working"
+      ]
+    },
+    {
+      "id": "simplify-complexity",
+      "description": "Complex code simplification without behavior change",
+      "prompt": "the processOrder function has cyclomatic complexity of 15. simplify it",
+      "expectations": [
+        "Runs tests before making any changes to establish baseline",
+        "Refactors structure without changing behavior",
+        "Runs tests after each refactor step",
+        "Does NOT add new features while simplifying"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-refactoring activates the skill",
+      "prompt": "/codi-refactoring clean up the legacy payment code",
+      "expectations": [
+        "Activates the refactoring skill",
+        "Identifies what to clean up before making changes",
+        "Verifies behavior is preserved after changes"
+      ]
+    },
+    {
+      "id": "negative-new-feature",
+      "description": "Adding new functionality should NOT trigger refactoring skill",
+      "prompt": "add dark mode support to the settings page",
+      "expectations": [
+        "Does NOT invoke the refactoring skill",
+        "Does NOT remove existing code without adding the feature first"
+      ]
+    },
+    {
+      "id": "negative-code-review",
+      "description": "Reviewing code quality should trigger code-review, not refactoring",
+      "prompt": "review the auth module for any issues",
+      "expectations": [
+        "Does NOT invoke the refactoring skill",
+        "Does NOT make code changes during a review"
+      ]
+    }
+  ]
+}
