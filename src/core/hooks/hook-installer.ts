@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Result } from "../../types/result.js";
-import { ok, err } from "../../types/result.js";
+import type { Result } from "#src/types/result.js";
+import { ok, err } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import type { HookSetup } from "./hook-detector.js";
 import type { HookEntry } from "./hook-registry.js";
-import type { ResolvedFlags } from "../../types/flags.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 import {
   RUNNER_TEMPLATE,
   SECRET_SCAN_TEMPLATE,
@@ -15,6 +15,7 @@ import {
   TEMPLATE_WIRING_CHECK_TEMPLATE,
   ARTIFACT_VALIDATE_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
+  IMPORT_DEPTH_CHECK_TEMPLATE,
 } from "./hook-templates.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
@@ -40,6 +41,7 @@ export interface InstallOptions {
   versionCheck?: boolean;
   templateWiringCheck?: boolean;
   artifactValidation?: boolean;
+  importDepthCheck?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
 }
@@ -110,6 +112,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, artifactPath));
+  }
+  if (options.importDepthCheck) {
+    const importDepthPath = path.join(hookDir, `${PROJECT_NAME}-import-depth-check.mjs`);
+    await fs.writeFile(importDepthPath, IMPORT_DEPTH_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, importDepthPath));
   }
   return files;
 }

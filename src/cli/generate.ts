@@ -131,6 +131,7 @@ export async function generateHandler(
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
           artifactValidation: hooksConfig.artifactValidation,
+          importDepthCheck: hooksConfig.importDepthCheck,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });

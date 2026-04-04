@@ -434,3 +434,48 @@ if (firstLine.length > ${GIT_COMMIT_FIRST_LINE_LIMIT}) {
 }
 HOOK_SCRIPT
 `;
+
+export const IMPORT_DEPTH_CHECK_TEMPLATE = `#!/usr/bin/env node
+// ${PROJECT_NAME_DISPLAY} import depth checker
+// Blocks commits that introduce ../../ relative imports — use #src/* path aliases instead.
+import fs from 'fs';
+
+// Regex matches real import/export from statements with ../../ paths
+const IMPORT_RE = /^\\s*(?:import|export)(?:[^'"\\n]*from)?\\s+['"](\\.\\.\\/\\.\\.\\/[^'"]*)['"]/m;
+
+const EXCLUDED = [
+  /\\.d\\.ts$/,
+  /\\/references\\//,
+  /\\/scripts\\//,
+  /\\.md$/,
+];
+
+const files = process.argv.slice(2).filter(f =>
+  /\\.(ts|tsx|js|jsx|mts|mjs)$/.test(f) && !EXCLUDED.some(p => p.test(f))
+);
+
+const findings = [];
+
+for (const file of files) {
+  let content;
+  try { content = fs.readFileSync(file, 'utf-8'); } catch { continue; }
+  const lines = content.split('\\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!IMPORT_RE.test(line)) continue;
+    // Skip lines inside template literals (doc examples) — they are indented with backtick context
+    const trimmed = line.trimStart();
+    if (!trimmed.startsWith('import') && !trimmed.startsWith('export') && !trimmed.startsWith('} from')) continue;
+    findings.push({ file, line: i + 1, text: trimmed.substring(0, 100) });
+  }
+}
+
+if (findings.length > 0) {
+  console.error('[import-depth] Deep relative imports found — use #src/* path aliases instead:');
+  for (const f of findings) {
+    console.error(\`  \${f.file}:\${f.line}  \${f.text}\`);
+  }
+  console.error('\\nFix: replace ../../ with #src/ (e.g. "../../types/result.js" → "#src/types/result.js")');
+  process.exit(1);
+}
+`;
