@@ -1,4 +1,5 @@
-import { hashContent } from "../../utils/hash.js";
+import { createRequire } from "node:module";
+import { hashContent } from "#src/utils/hash.js";
 import { stringify as stringifyYaml } from "yaml";
 import { AVAILABLE_TEMPLATES, loadTemplate } from "../scaffolder/template-loader.js";
 import {
@@ -36,8 +37,8 @@ let _registry: TemplateHashRegistry | null = null;
 export function getCLIVersion(): string {
   // Resolved at build time via tsup — falls back to "0.0.0" in tests
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pkg = require("../../../package.json") as { version: string };
+    const esmRequire = createRequire(import.meta.url);
+    const pkg = esmRequire("../../../package.json") as { version: string };
     return pkg.version;
   } catch {
     return "0.0.0";

@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { execFileAsync } from "../../utils/exec.js";
+import { execFileAsync } from "#src/utils/exec.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import type { Logger } from "../output/logger.js";
 
@@ -81,9 +81,7 @@ export async function installMissingDeps(
     });
 
     if (p.isCancel(shouldInstall)) {
-      log.warn(
-        "Skipped dependency installation. Install manually before committing.",
-      );
+      log.warn("Skipped dependency installation. Install manually before committing.");
       return;
     }
 

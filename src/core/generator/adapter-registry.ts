@@ -1,4 +1,4 @@
-import type { AgentAdapter } from '../../types/agent.js';
+import type { AgentAdapter } from "#src/types/agent.js";
 
 const adapters = new Map<string, AgentAdapter>();
 

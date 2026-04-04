@@ -1,27 +1,18 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
-import {
-  FeedbackEntrySchema,
-  RuleObservationSchema,
-} from "../../schemas/feedback.js";
-import type { FeedbackEntry, RuleObservation } from "../../schemas/feedback.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
+import { FeedbackEntrySchema, RuleObservationSchema } from "#src/schemas/feedback.js";
+import type { FeedbackEntry, RuleObservation } from "#src/schemas/feedback.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
-import {
-  FEEDBACK_DIR,
-  MAX_FEEDBACK_AGE_DAYS,
-  MAX_FEEDBACK_ENTRIES,
-} from "#src/constants.js";
+import { FEEDBACK_DIR, MAX_FEEDBACK_AGE_DAYS, MAX_FEEDBACK_ENTRIES } from "#src/constants.js";
 
 function feedbackDir(configDir: string): string {
   return path.join(configDir, FEEDBACK_DIR);
 }
 
-export async function readAllFeedback(
-  configDir: string,
-): Promise<Result<FeedbackEntry[]>> {
+export async function readAllFeedback(configDir: string): Promise<Result<FeedbackEntry[]>> {
   const dir = feedbackDir(configDir);
   const log = Logger.getInstance();
 
@@ -155,8 +146,7 @@ export async function pruneFeedback(
     for (const [, entries] of bySkill) {
       if (entries.length > MAX_FEEDBACK_ENTRIES) {
         const sorted = entries.sort(
-          (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
         const toRemove = sorted.slice(0, sorted.length - MAX_FEEDBACK_ENTRIES);
         for (const e of toRemove) {
@@ -184,9 +174,7 @@ function ruleFeedbackDir(configDir: string): string {
   return path.join(configDir, FEEDBACK_DIR, RULES_FEEDBACK_SUBDIR);
 }
 
-export async function readRuleFeedback(
-  configDir: string,
-): Promise<Result<RuleObservation[]>> {
+export async function readRuleFeedback(configDir: string): Promise<Result<RuleObservation[]>> {
   const dir = ruleFeedbackDir(configDir);
   const log = Logger.getInstance();
 

@@ -1,4 +1,4 @@
-import type { FlagDefinition } from "../../types/flags.js";
+import type { FlagDefinition } from "#src/types/flags.js";
 
 /**
  * Definition of a built-in preset that ships with the CLI npm package.

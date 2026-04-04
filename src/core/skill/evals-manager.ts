@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
-import { EvalsDataSchema } from "../../schemas/evals.js";
-import type { EvalsData } from "../../schemas/evals.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
+import { EvalsDataSchema } from "#src/schemas/evals.js";
+import type { EvalsData } from "#src/schemas/evals.js";
 import { createError } from "../output/errors.js";
 import { EVALS_FILENAME } from "#src/constants.js";
 
@@ -37,10 +37,7 @@ export async function readEvals(skillDir: string): Promise<Result<EvalsData>> {
   }
 }
 
-export async function writeEvals(
-  skillDir: string,
-  data: EvalsData,
-): Promise<Result<void>> {
+export async function writeEvals(skillDir: string, data: EvalsData): Promise<Result<void>> {
   const filePath = evalsPath(skillDir);
   const dir = path.dirname(filePath);
   const tmpPath = `${filePath}.tmp.${Date.now()}`;
@@ -48,11 +45,7 @@ export async function writeEvals(
   try {
     await fs.mkdir(dir, { recursive: true });
     const withTimestamp = { ...data, lastUpdated: new Date().toISOString() };
-    await fs.writeFile(
-      tmpPath,
-      JSON.stringify(withTimestamp, null, 2),
-      "utf-8",
-    );
+    await fs.writeFile(tmpPath, JSON.stringify(withTimestamp, null, 2), "utf-8");
     await fs.rename(tmpPath, filePath);
     return ok(undefined);
   } catch (cause) {

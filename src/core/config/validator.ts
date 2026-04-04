@@ -1,8 +1,8 @@
-import type { NormalizedConfig } from "../../types/config.js";
+import type { NormalizedConfig } from "#src/types/config.js";
 import type { ProjectError } from "../output/types.js";
 import { createError } from "../output/errors.js";
 import { getAllAdapters } from "../generator/adapter-registry.js";
-import { ALL_ADAPTERS } from "../../adapters/index.js";
+import { ALL_ADAPTERS } from "#src/adapters/index.js";
 import {
   MAX_ARTIFACT_CHARS,
   MAX_TOTAL_ARTIFACT_CHARS,

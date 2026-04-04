@@ -1,20 +1,20 @@
 import { PROJECT_NAME } from "#src/constants.js";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import type {
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
   McpConfig,
-} from "../../types/config.js";
+} from "#src/types/config.js";
 import type { LoadedPreset } from "./preset-loader.js";
-import type { BuiltinPresetDefinition } from "../../templates/presets/types.js";
-import { getBuiltinPresetDefinition } from "../../templates/presets/index.js";
+import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
+import { getBuiltinPresetDefinition } from "#src/templates/presets/index.js";
 import { loadTemplate } from "../scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
 import { loadMcpServerTemplate } from "../scaffolder/mcp-template-loader.js";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
 

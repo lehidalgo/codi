@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileExists } from "../../utils/fs.js";
+import { fileExists } from "#src/utils/fs.js";
 
 export interface HookSetup {
   runner: "husky" | "pre-commit" | "lefthook" | "none";
@@ -22,12 +22,7 @@ async function detectHusky(
   if (await fileExists(huskyDir)) {
     let version: string | undefined;
     try {
-      const pkgPath = path.join(
-        projectRoot,
-        "node_modules",
-        "husky",
-        "package.json",
-      );
+      const pkgPath = path.join(projectRoot, "node_modules", "husky", "package.json");
       const raw = await fs.readFile(pkgPath, "utf-8");
       const pkg = JSON.parse(raw) as { version?: string };
       version = pkg.version;

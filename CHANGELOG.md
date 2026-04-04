@@ -35,9 +35,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Evals propagation via scaffolder** — `evals/` added to `STATIC_SUBDIRS` so template evals override the empty stub during `codi init`
 - **Built-in eval cases for Tier 1 skills** — 14 skill templates (commit, debugging, tdd, code-review, verification, brainstorming, plan-writer, plan-executor, subagent-dev, session-handoff, skill-creator, refactoring, security-scan, test-coverage) ship with 5-7 eval cases each, including positive triggers, negative cross-cluster cases, and objectively verifiable expectations
 - **`staticDir` for verification, plan-executor, session-handoff** — these three skills now export static directories to support bundled evals and future resource files
+- **`import-depth-check` pre-commit hook** — blocks commits that introduce `../../` relative imports in TS/JS files; always enabled for TypeScript/JavaScript projects
+- **`#src/*` path aliases across all core modules** — all `../../` relative imports in `src/core/` and `src/templates/presets/` converted to `#src/*` subpath aliases
 
 ### Changed
 
+- **Import depth rule tightened to 2+ levels** — `codi-typescript` and `codi-code-style` rules now prohibit `../../` imports; only single-level `../` is allowed; use `#src/*` path aliases for cross-module imports
+- **`require()` prohibited in TypeScript** — rules updated with `createRequire` guidance and updated BAD/GOOD examples
 - **Routing-focused agent descriptions** — all 22 agent templates rewritten with trigger-oriented descriptions for better skill routing
 - **Baseline drift check moved to pre-push** — template content drift checks no longer block commits; they run at push time via the `pre-push` hook instead
 - **Agent tools audit** — missing tools added to all agent templates based on each agent's purpose

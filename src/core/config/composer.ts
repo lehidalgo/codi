@@ -1,4 +1,4 @@
-import type { ResolvedFlags, FlagDefinition } from "../../types/flags.js";
+import type { ResolvedFlags, FlagDefinition } from "#src/types/flags.js";
 
 /**
  * Converts raw flag definitions into resolved flags with source tracking.

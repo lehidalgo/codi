@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { DOC_PROJECT_DIR, DOC_STAMP_FILENAME } from "#src/constants.js";
-import { execFileAsync } from "../../utils/exec.js";
+import { execFileAsync } from "#src/utils/exec.js";
 
 export interface DocStamp {
   commit: string;

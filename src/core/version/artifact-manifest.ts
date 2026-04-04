@@ -2,14 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
-import { hashContent } from "../../utils/hash.js";
+import { hashContent } from "#src/utils/hash.js";
 import { ARTIFACT_MANIFEST_FILENAME } from "#src/constants.js";
 import { getTemplateFingerprint } from "./template-hash-registry.js";
 import type { ArtifactType } from "./template-hash-registry.js";
-import type { ExistingSelections } from "../../cli/init-wizard.js";
+import type { ExistingSelections } from "#src/cli/init-wizard.js";
 import type { InstalledArtifactVersion } from "./artifact-version.js";
 
 // --- Schema ---

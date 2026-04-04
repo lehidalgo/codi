@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import type { ProjectError } from "../output/types.js";
-import { PresetManifestSchema } from "../../schemas/preset.js";
-import type { PresetManifest } from "../../schemas/preset.js";
+import { PresetManifestSchema } from "#src/schemas/preset.js";
+import type { PresetManifest } from "#src/schemas/preset.js";
 import { PRESET_MANIFEST_FILENAME, SKILL_OUTPUT_FILENAME } from "#src/constants.js";
 import { createError } from "../output/errors.js";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 
 export interface PresetValidationResult {
   manifest: PresetManifest;

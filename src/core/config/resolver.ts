@@ -1,8 +1,8 @@
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
-import type { NormalizedConfig } from "../../types/config.js";
-import { resolveProjectDir } from "../../utils/paths.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
+import type { NormalizedConfig } from "#src/types/config.js";
+import { resolveProjectDir } from "#src/utils/paths.js";
 import { scanProjectDir } from "./parser.js";
 import { flagsFromDefinitions } from "./composer.js";
 import { validateConfig } from "./validator.js";

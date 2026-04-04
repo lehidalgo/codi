@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { FlagSpec, ResolvedFlags } from "../../types/flags.js";
+import type { FlagSpec, ResolvedFlags } from "#src/types/flags.js";
 import { PROJECT_DIR } from "#src/constants.js";
 
 export const FLAG_CATALOG: Record<string, FlagSpec> = {

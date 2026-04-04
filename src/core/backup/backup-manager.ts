@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { isPathSafe } from "../../utils/path-guard.js";
-import { fileExists, safeRm } from "../../utils/fs.js";
+import { isPathSafe } from "#src/utils/path-guard.js";
+import { fileExists, safeRm } from "#src/utils/fs.js";
 import {
   MAX_BACKUPS,
   STATE_FILENAME,
@@ -28,10 +28,7 @@ async function dirExists(dirPath: string): Promise<boolean> {
   }
 }
 
-export async function createBackup(
-  projectRoot: string,
-  configDir: string,
-): Promise<string | null> {
+export async function createBackup(projectRoot: string, configDir: string): Promise<string | null> {
   const statePath = path.join(configDir, STATE_FILENAME);
   if (!(await fileExists(statePath))) {
     return null;
@@ -99,11 +96,7 @@ export async function listBackups(configDir: string): Promise<BackupInfo[]> {
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const manifestPath = path.join(
-      backupsRoot,
-      entry.name,
-      BACKUP_MANIFEST_FILENAME,
-    );
+    const manifestPath = path.join(backupsRoot, entry.name, BACKUP_MANIFEST_FILENAME);
     if (!(await fileExists(manifestPath))) continue;
 
     try {
@@ -161,9 +154,7 @@ async function cleanupOldBackups(backupsDir: string): Promise<void> {
   }
 }
 
-function collectFilesFromState(
-  agents: Record<string, Array<{ path: string }>>,
-): string[] {
+function collectFilesFromState(agents: Record<string, Array<{ path: string }>>): string[] {
   const files = new Set<string>();
   for (const agentFiles of Object.values(agents)) {
     for (const file of agentFiles) {
