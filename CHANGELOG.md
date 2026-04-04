@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **`branch-finish` skill** — deterministic branch completion workflow: verify tests, choose merge/PR/keep/discard, clean up worktrees
+- **`worktrees` skill** — evaluates isolation strategy (worktree vs simple branch) and sets up the workspace before plan execution
+- **`codi onboard` command** — prints a structured AI onboarding guide with the full artifact catalog (rules, skills, agents, presets) for the current installation
+- **`normalizeGithubRepo` utility** — parses `owner/repo`, full GitHub URLs, and `.git` suffixes into a canonical slug
+- **`.mcp.env.example`** — companion file listing all env vars required by configured MCP servers
+
 - **Platform-aware SKILL.md generation** — `buildSkillMd` filters frontmatter fields per target platform; cursor, codex, windsurf, and cline receive only fields their format supports
 - **`SUPPORTED_PLATFORMS` constant** — single source of truth for platform IDs, used in skill `compatibility` frontmatter
 - **Skill catalog reorganization** — 8 skills renamed for clarity: `contribute` → `artifact-contributor`, `documentation` → `project-documentation`, `e2e-testing` → `dev-e2e-testing`, `operations` → `dev-operations`, `docs-manager` → `dev-docs-manager`, `error-recovery` → `session-recovery`, `skill-reporter` → `skill-feedback-reporter`
