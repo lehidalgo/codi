@@ -123,6 +123,8 @@ export const CLI_COMMANDS = [
   "preset",
   "docs-update",
   "docs",
+  "docs-stamp",
+  "docs-check",
   "contribute",
   "skill",
 ] as const;
@@ -141,6 +143,10 @@ export const MAX_AGENT_LINES = 200;
 
 // --- Git commit standards ---
 export const GIT_COMMIT_FIRST_LINE_LIMIT = 72;
+
+// --- Documentation management ---
+export const DOC_PROJECT_DIR = "docs/project";
+export const DOC_STAMP_FILENAME = ".doc-stamp";
 
 // --- Skill feedback & evolution ---
 export const FEEDBACK_DIR = "feedback";

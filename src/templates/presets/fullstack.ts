@@ -26,6 +26,7 @@ export const preset: BuiltinPresetDefinition = {
     require_pr_review: { mode: "enabled", value: true },
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: false },
+    doc_protected_branches: { mode: "enabled", value: ["main", "develop", "release/*"] },
     allowed_languages: { mode: "enabled", value: ["*"] },
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "warn" },
