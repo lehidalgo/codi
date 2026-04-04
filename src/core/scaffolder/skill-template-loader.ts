@@ -64,6 +64,13 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("graph-sync")]: skillTemplates.graphSync,
   [prefixedName("daily-log")]: skillTemplates.dailyLog,
   [prefixedName("roadmap")]: skillTemplates.roadmap,
+  [prefixedName("verification")]: skillTemplates.verification,
+  [prefixedName("plan-executor")]: skillTemplates.planExecutor,
+  [prefixedName("brainstorming")]: skillTemplates.brainstorming,
+  [prefixedName("debugging")]: skillTemplates.debugging,
+  [prefixedName("plan-writer")]: skillTemplates.planWriter,
+  [prefixedName("subagent-dev")]: skillTemplates.subagentDev,
+  [prefixedName("tdd")]: skillTemplates.tdd,
 };
 
 /** Maps template names to their static asset directories (when available). */

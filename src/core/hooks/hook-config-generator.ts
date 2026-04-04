@@ -13,6 +13,8 @@ export interface HooksConfig {
   testBeforeCommit: boolean;
   templateWiringCheck: boolean;
   artifactValidation: boolean;
+  docCheck: boolean;
+  docProtectedBranches: string[];
 }
 
 interface FlagHookMapping {
@@ -81,9 +83,7 @@ export function generateHooksConfig(
   if (testBeforeCommit) {
     const testHooks = getTestHooksForLanguages(languages);
     for (const hook of testHooks) {
-      const alreadyAdded = allHooks.some(
-        (h) => h.name === hook.name || h.command === hook.command,
-      );
+      const alreadyAdded = allHooks.some((h) => h.name === hook.name || h.command === hook.command);
       if (!alreadyAdded) {
         allHooks.push(hook);
       }
@@ -119,6 +119,9 @@ export function generateHooksConfig(
     stagedFilter: ".codi/**",
   });
 
+  const docCheck = isDocCheckEnabled(flags);
+  const docProtectedBranches = getDocProtectedBranches(flags);
+
   return {
     hooks: allHooks,
     secretScan,
@@ -128,7 +131,26 @@ export function generateHooksConfig(
     testBeforeCommit,
     templateWiringCheck: false,
     artifactValidation: true,
+    docCheck,
+    docProtectedBranches,
   };
+}
+
+function isDocCheckEnabled(flags: ResolvedFlags): boolean {
+  const flag = flags["require_documentation"];
+  if (!flag) return false;
+  if (flag.mode === "disabled") return false;
+  return flag.value === true;
+}
+
+function getDocProtectedBranches(flags: ResolvedFlags): string[] {
+  const flag = flags["doc_protected_branches"];
+  if (!flag || flag.mode === "disabled") return ["main", "develop", "release/*"];
+  const val = flag.value;
+  if (Array.isArray(val) && val.every((v) => typeof v === "string")) {
+    return val as string[];
+  }
+  return ["main", "develop", "release/*"];
 }
 
 function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {

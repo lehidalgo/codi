@@ -14,12 +14,9 @@ import {
   VERSION_CHECK_TEMPLATE,
   TEMPLATE_WIRING_CHECK_TEMPLATE,
   ARTIFACT_VALIDATE_TEMPLATE,
+  PRE_PUSH_DOC_CHECK_TEMPLATE,
 } from "./hook-templates.js";
-import {
-  PRE_COMMIT_MAX_FILE_LINES,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 
 /** Internal result type for helper functions (no dep checks) */
@@ -43,6 +40,8 @@ export interface InstallOptions {
   versionCheck?: boolean;
   templateWiringCheck?: boolean;
   artifactValidation?: boolean;
+  docCheck?: boolean;
+  docProtectedBranches?: string[];
 }
 
 function buildRunnerScript(hooks: HookEntry[]): string {
@@ -66,10 +65,7 @@ function buildArtifactValidateScript(): string {
   return ARTIFACT_VALIDATE_TEMPLATE;
 }
 
-async function writeAuxiliaryScripts(
-  hookDir: string,
-  options: InstallOptions,
-): Promise<string[]> {
+async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
   const files: string[] = [];
   if (options.secretScan) {
     const secretPath = path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`);
@@ -98,10 +94,7 @@ async function writeAuxiliaryScripts(
     files.push(path.relative(options.projectRoot, versionPath));
   }
   if (options.templateWiringCheck) {
-    const wiringPath = path.join(
-      hookDir,
-      `${PROJECT_NAME}-template-wiring-check.mjs`,
-    );
+    const wiringPath = path.join(hookDir, `${PROJECT_NAME}-template-wiring-check.mjs`);
     const wiringScript = buildTemplateWiringScript();
     await fs.writeFile(wiringPath, wiringScript, {
       encoding: "utf-8",
@@ -110,10 +103,7 @@ async function writeAuxiliaryScripts(
     files.push(path.relative(options.projectRoot, wiringPath));
   }
   if (options.artifactValidation) {
-    const artifactPath = path.join(
-      hookDir,
-      `${PROJECT_NAME}-artifact-validate.mjs`,
-    );
+    const artifactPath = path.join(hookDir, `${PROJECT_NAME}-artifact-validate.mjs`);
     const artifactScript = buildArtifactValidateScript();
     await fs.writeFile(artifactPath, artifactScript, {
       encoding: "utf-8",
@@ -198,9 +188,7 @@ function globToGrepPattern(glob: string): string {
 }
 
 function buildHuskyCommands(hooks: HookEntry[]): string {
-  const lines: string[] = [
-    `STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`,
-  ];
+  const lines: string[] = [`STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`];
 
   // Track which variable names hold files modified by formatters
   const modifiedVars: string[] = [];
@@ -229,26 +217,20 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
         lines.push(`[ -n "$STAGED" ] && ${h.command}`);
       } else {
         // Use printf + xargs to safely handle filenames with spaces or special chars
-        lines.push(
-          `[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${h.command}`,
-        );
+        lines.push(`[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${h.command}`);
       }
       if (h.modifiesFiles) modifiedVars.push("STAGED");
       continue;
     }
 
-    lines.push(
-      `${varName}=$(echo "$STAGED" | grep -E '${grepPattern}' || true)`,
-    );
+    lines.push(`${varName}=$(echo "$STAGED" | grep -E '${grepPattern}' || true)`);
 
     if (h.passFiles === false) {
       // Tool uses project config — run without file args when matching files exist
       lines.push(`[ -n "$${varName}" ] && ${h.command}`);
     } else {
       // Use printf + xargs to safely handle filenames with spaces or special chars
-      lines.push(
-        `[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${h.command}`,
-      );
+      lines.push(`[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${h.command}`);
     }
 
     if (h.modifiesFiles) modifiedVars.push(varName);
@@ -258,9 +240,7 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
   if (modifiedVars.length > 0) {
     const unique = [...new Set(modifiedVars)];
     for (const v of unique) {
-      lines.push(
-        `[ -n "$${v}" ] && printf '%s\\n' $${v} | xargs git add || true`,
-      );
+      lines.push(`[ -n "$${v}" ] && printf '%s\\n' $${v} | xargs git add || true`);
     }
   }
 
@@ -370,14 +350,10 @@ async function installCommitMsgHook(
   if (runner === "husky") {
     const huskyFile = path.join(projectRoot, ".husky", "commit-msg");
     try {
-      await fs.writeFile(
-        huskyFile,
-        `# ${PROJECT_NAME_DISPLAY} hooks\n${COMMIT_MSG_TEMPLATE}`,
-        {
-          encoding: "utf-8",
-          mode: 0o755,
-        },
-      );
+      await fs.writeFile(huskyFile, `# ${PROJECT_NAME_DISPLAY} hooks\n${COMMIT_MSG_TEMPLATE}`, {
+        encoding: "utf-8",
+        mode: 0o755,
+      });
       return ok({ files: [path.relative(projectRoot, huskyFile)] });
     } catch (cause) {
       return err([
@@ -391,18 +367,62 @@ async function installCommitMsgHook(
   return ok({ files: [] });
 }
 
+async function installPrePushHook(
+  projectRoot: string,
+  runner: string,
+  protectedBranches: string[],
+): Promise<Result<HookFileResult>> {
+  const script = PRE_PUSH_DOC_CHECK_TEMPLATE.replace(
+    "{{PROTECTED_BRANCHES}}",
+    protectedBranches.join(" "),
+  );
+
+  if (runner === "husky") {
+    const huskyFile = path.join(projectRoot, ".husky", "pre-push");
+    try {
+      await fs.writeFile(huskyFile, script, { encoding: "utf-8", mode: 0o755 });
+      return ok({ files: [path.relative(projectRoot, huskyFile)] });
+    } catch (cause) {
+      return err([
+        createError("E_HOOK_FAILED", {
+          hook: "pre-push",
+          reason: `Failed to write husky pre-push: ${(cause as Error).message}`,
+        }),
+      ]);
+    }
+  }
+
+  // standalone, lefthook, pre-commit framework: write directly to .git/hooks/pre-push
+  const hookDir = path.join(projectRoot, ".git", "hooks");
+  try {
+    await fs.mkdir(hookDir, { recursive: true });
+    const hookPath = path.join(hookDir, "pre-push");
+    await fs.writeFile(hookPath, script, { encoding: "utf-8", mode: 0o755 });
+    return ok({ files: [path.relative(projectRoot, hookPath)] });
+  } catch (cause) {
+    return err([
+      createError("E_HOOK_FAILED", {
+        hook: "pre-push",
+        reason: `Failed to write pre-push hook: ${(cause as Error).message}`,
+      }),
+    ]);
+  }
+}
+
 async function cleanStaleHooksFromOtherRunner(
   projectRoot: string,
   activeRunner: string,
 ): Promise<void> {
   const PRE_COMMIT_MARKER = `${PROJECT_NAME_DISPLAY} pre-commit hook runner`;
   const COMMIT_MSG_MARKER = `${PROJECT_NAME_DISPLAY} commit message validator`;
+  const PRE_PUSH_MARKER = `${PROJECT_NAME_DISPLAY} documentation checkpoint`;
 
   if (activeRunner === "husky") {
     // Clean stale standalone hooks in .git/hooks/ — husky doesn't use them
     for (const [file, marker] of [
       ["pre-commit", PRE_COMMIT_MARKER],
       ["commit-msg", COMMIT_MSG_MARKER],
+      ["pre-push", PRE_PUSH_MARKER],
     ] as const) {
       const hookPath = path.join(projectRoot, ".git", "hooks", file);
       try {
@@ -414,12 +434,11 @@ async function cleanStaleHooksFromOtherRunner(
     }
   } else if (activeRunner === "none") {
     // Clean stale husky hooks — standalone doesn't use them
-    for (const file of ["pre-commit", "commit-msg"]) {
+    for (const file of ["pre-commit", "commit-msg", "pre-push"]) {
       const huskyPath = path.join(projectRoot, ".husky", file);
       try {
         const content = await fs.readFile(huskyPath, "utf-8");
-        if (content.includes(`# ${PROJECT_NAME_DISPLAY} hooks`))
-          await fs.unlink(huskyPath);
+        if (content.includes(`# ${PROJECT_NAME_DISPLAY} hooks`)) await fs.unlink(huskyPath);
       } catch {
         /* doesn't exist */
       }
@@ -427,12 +446,10 @@ async function cleanStaleHooksFromOtherRunner(
   }
 }
 
-export async function installHooks(
-  options: InstallOptions,
-): Promise<Result<HookInstallResult>> {
+export async function installHooks(options: InstallOptions): Promise<Result<HookInstallResult>> {
   const { projectRoot, runner, hooks, flags } = options;
 
-  if (hooks.length === 0) {
+  if (hooks.length === 0 && !options.docCheck) {
     return ok({ files: [], missingDeps: [] });
   }
 
@@ -440,6 +457,17 @@ export async function installHooks(
   await cleanStaleHooksFromOtherRunner(projectRoot, runner);
 
   const allFiles: string[] = [];
+
+  if (options.docCheck) {
+    const branches = options.docProtectedBranches ?? ["main", "develop", "release/*"];
+    const prePushResult = await installPrePushHook(projectRoot, runner, branches);
+    if (!prePushResult.ok) return prePushResult;
+    allFiles.push(...prePushResult.data.files);
+  }
+
+  if (hooks.length === 0) {
+    return ok({ files: allFiles, missingDeps: [] });
+  }
 
   if (options.commitMsgValidation) {
     const msgResult = await installCommitMsgHook(projectRoot, runner);
@@ -450,12 +478,7 @@ export async function installHooks(
   let runnerResult: Result<HookFileResult>;
   switch (runner) {
     case "none":
-      runnerResult = await installStandalone(
-        projectRoot,
-        hooks,
-        flags,
-        options,
-      );
+      runnerResult = await installStandalone(projectRoot, hooks, flags, options);
       break;
     case "husky":
       runnerResult = await installHusky(projectRoot, hooks);
@@ -464,12 +487,7 @@ export async function installHooks(
       runnerResult = await installPreCommitFramework(projectRoot, hooks);
       break;
     case "lefthook":
-      runnerResult = await installStandalone(
-        projectRoot,
-        hooks,
-        flags,
-        options,
-      );
+      runnerResult = await installStandalone(projectRoot, hooks, flags, options);
       break;
     default:
       return err([

@@ -93,6 +93,13 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     description: "Require documentation for new code",
     hint: "Agent must update docs (README, CHANGELOG) when adding features",
   },
+  doc_protected_branches: {
+    type: "string[]",
+    default: ["main", "develop", "release/*"],
+    hook: null,
+    description: "Branch patterns that require documentation verification before push",
+    hint: "Pushes to these branches are blocked if docs/project/.doc-stamp is outdated",
+  },
   allowed_languages: {
     type: "string[]",
     default: ["*"],
@@ -109,8 +116,7 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     hint: "Controls whether Windsurf/Cline inline skills in their main config file. Skill files always contain full content.",
     valueHints: {
       off: "Inline full skill content in .windsurfrules/.clinerules",
-      metadata:
-        "Show skill catalog table in main file; full content in separate skill files",
+      metadata: "Show skill catalog table in main file; full content in separate skill files",
       full: "Same as metadata — full content always in separate files",
     },
   },

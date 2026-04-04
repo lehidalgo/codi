@@ -111,7 +111,15 @@ export async function generateHandler(
       const hookSetup = await detectHookSetup(projectRoot);
       const languages = await detectStack(projectRoot);
       const hooksConfig = generateHooksConfig(configResult.data.flags, languages);
-      if (hooksConfig.hooks.length > 0) {
+      if (hooksConfig.hooks.length > 0 || hooksConfig.docCheck) {
+        if (hooksConfig.docCheck) {
+          try {
+            const { ensureDocProjectDir } = await import("../core/docs/doc-stamp.js");
+            await ensureDocProjectDir(projectRoot);
+          } catch {
+            /* non-critical */
+          }
+        }
         const hookResult = await installHooks({
           projectRoot,
           runner: hookSetup.runner,
@@ -123,6 +131,8 @@ export async function generateHandler(
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
           artifactValidation: hooksConfig.artifactValidation,
+          docCheck: hooksConfig.docCheck,
+          docProtectedBranches: hooksConfig.docProtectedBranches,
         });
         if (hookResult.ok) {
           const missingDeps = await checkHookDependencies(hooksConfig.hooks, projectRoot);

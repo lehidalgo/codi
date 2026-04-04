@@ -464,6 +464,30 @@ export async function initHandler(
     }
   }
 
+  // Create docs/project/ directory and initial stamp when documentation check is enabled
+  if (configResult.ok) {
+    const requireDoc = configResult.data.flags["require_documentation"];
+    const docCheckEnabled = requireDoc?.mode !== "disabled" && requireDoc?.value === true;
+    if (docCheckEnabled) {
+      try {
+        const { ensureDocProjectDir, writeStamp } = await import("../core/docs/doc-stamp.js");
+        await ensureDocProjectDir(projectRoot);
+        const stampPath = `docs/project/.doc-stamp`;
+        const fs = await import("node:fs/promises");
+        const stampExists = await fs
+          .access(`${projectRoot}/${stampPath}`)
+          .then(() => true)
+          .catch(() => false);
+        if (!stampExists) {
+          await writeStamp(projectRoot, "human");
+          log.info(`Documentation checkpoint initialised: ${stampPath}`);
+        }
+      } catch {
+        log.warn("Documentation directory setup skipped (not a git repository?).");
+      }
+    }
+  }
+
   // Install pre-commit hooks
   let hooksInstalled = false;
   let hookFiles: string[] = [];
@@ -472,7 +496,7 @@ export async function initHandler(
       const hookSetup = await detectHookSetup(projectRoot);
       const resolvedFlags = configResult.data.flags;
       const hooksConfig = generateHooksConfig(resolvedFlags, stack);
-      if (hooksConfig.hooks.length > 0) {
+      if (hooksConfig.hooks.length > 0 || hooksConfig.docCheck) {
         const hookResult = await installHooks({
           projectRoot,
           runner: hookSetup.runner,
@@ -484,6 +508,8 @@ export async function initHandler(
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
           artifactValidation: hooksConfig.artifactValidation,
+          docCheck: hooksConfig.docCheck,
+          docProtectedBranches: hooksConfig.docProtectedBranches,
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
