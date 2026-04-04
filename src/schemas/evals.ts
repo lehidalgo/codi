@@ -3,10 +3,12 @@ import { z } from "zod";
 export const EvalCaseSchema = z.object({
   id: z.string(),
   description: z.string(),
-  input: z.string().optional(),
-  expectedOutput: z.string().optional(),
+  prompt: z.string(),
+  expectations: z.array(z.string()).default([]),
+  files: z.array(z.string()).default([]),
   passed: z.boolean().optional(),
   lastRunAt: z.string().datetime().optional(),
+  passRate: z.number().optional(),
 });
 
 export const EvalsDataSchema = z.object({

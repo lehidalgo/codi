@@ -6,12 +6,6 @@ description: Use when setting up a new project, auditing project quality infrast
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Project Quality Audit
-  examples:
-    - "Audit this project's quality infrastructure"
-    - "Set up CI/CD and pre-commit hooks"
-    - "Check what's missing in our project config"
 version: 1
 ---
 

@@ -2,17 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Explore and understand the codebase using the code graph knowledge graph.
+description: Explore and understand the codebase using the code graph. Use when exploring structure, tracing dependencies, finding callers, or navigating unfamiliar code. Also activate before refactoring or when asked how something works.
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Codebase Exploration
-  examples:
-    - "Explore the codebase"
-    - "Show me how this module is connected"
-    - "Who calls this function?"
-    - "Understand the architecture of this project"
 version: 1
 ---
 

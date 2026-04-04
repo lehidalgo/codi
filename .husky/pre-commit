@@ -1,7 +1,6 @@
 
 # Codi hooks
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
-GIT_HOOKS_DIR=$(git rev-parse --git-common-dir)/hooks
 # — typescript —
 ESLINT=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' || true)
 [ -n "$ESLINT" ] && printf '%s\n' $ESLINT | xargs npx eslint --fix
@@ -11,8 +10,8 @@ TSC=$(echo "$STAGED" | grep -E '\.(ts|tsx)$' || true)
 [ -n "$TSC" ] && npx tsc --noEmit
 # — global —
 node -e "const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)" 2>/dev/null && npm run test:pre-commit || npm test
-[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node "$GIT_HOOKS_DIR/codi-secret-scan.mjs"
-[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node "$GIT_HOOKS_DIR/codi-file-size-check.mjs"
-[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node "$GIT_HOOKS_DIR/codi-artifact-validate.mjs"
+[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-secret-scan.mjs
+[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-file-size-check.mjs
+[ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-artifact-validate.mjs
 [ -n "$ESLINT" ] && printf '%s\n' $ESLINT | xargs git add || true
 [ -n "$PRETTIER" ] && printf '%s\n' $PRETTIER | xargs git add || true

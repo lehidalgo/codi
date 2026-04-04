@@ -6,12 +6,6 @@ description: Use when the user mentions a .pdf file or asks to work with PDFs. H
 category: File Format Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: PDF Operations
-  examples:
-    - "Create a PDF"
-    - "Merge these PDFs"
-    - "Extract tables from a PDF"
 version: 1
 ---
 
@@ -340,6 +334,6 @@ Check availability: \\\`which python3 > /dev/null 2>&1\\\` — if Python is not 
 
 ## Related Skills
 
-- **codi-docx** — Create or edit Word documents
-- **codi-xlsx** — Create or edit Excel spreadsheets
+- **${PROJECT_NAME}-docx** — Create or edit Word documents
+- **${PROJECT_NAME}-xlsx** — Create or edit Excel spreadsheets
 `;

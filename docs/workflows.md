@@ -41,7 +41,6 @@ Run `codi` (no subcommand) to launch the interactive Command Center. It presents
 | `.codi/rules/` | Yes | All rules (managed and custom) |
 | `.codi/skills/` | Yes | Your skills |
 | `.codi/agents/` | Yes | Your agent definitions |
-| `.codi/commands/` | Yes | Your slash commands |
 | `.codi/state.json` | Yes | Enables drift detection for your team |
 | Generated files (`CLAUDE.md`, etc.) | Yes | Agents read these from your repo |
 | `~/.codi/user.yaml` | No | Personal preferences, never committed |
@@ -62,7 +61,7 @@ codi preset export my-setup --format zip
 codi preset export my-setup --format zip --output ./exports/
 ```
 
-The ZIP contains the preset manifest, flags, and all bundled artifacts (rules, skills, agents, commands).
+The ZIP contains the preset manifest, flags, and all bundled artifacts (rules, skills, agents).
 
 ### Export a skill
 
@@ -239,27 +238,56 @@ Validates the token against the expected value from your current configuration.
 
 ---
 
-## Contributing to Codi
+## Contributing Artifacts
 
-Share your artifacts with the Codi community:
+Share your artifacts with any GitHub repository - the official Codi repo, a team preset repo, or your own private collection.
 
 ```bash
+# Interactive - select repo via prompts
 codi contribute
+
+# Non-interactive - target a specific repo and branch
+codi contribute --repo owner/repo --branch main
 ```
 
-This packages your custom artifacts and prepares them for contribution to the main Codi repository. The Command Center also offers this under "Contribute to community".
+The Command Center also offers this under "Contribute to community".
 
 ### Contribution workflow
 
-1. Create your artifacts in `.codi/` (rules, skills, agents, commands)
-2. Run `codi contribute` to package and validate
-3. Follow the prompts to create a pull request
+Codi checks repo access first, then picks the right strategy:
+
+| Repo state | Strategy |
+|-----------|---------|
+| Has commits | Fork target repo, push `contrib/add-<name>` branch to your fork, open PR to default branch |
+| Empty repo | Push initial commit directly to target branch (no fork needed) |
+
+**Steps:**
+
+1. Create artifacts in `.codi/` (rules, skills, agents)
+2. Run `codi contribute`
+3. Select artifacts to include
+4. Choose "Open PR to a GitHub repository" or "Export as ZIP"
+5. Enter the target repo (or use `--repo` to skip the prompt)
+6. Follow the prompts to name the preset and confirm
+
+### Private repo access
+
+Before targeting a private repo, verify your setup:
+
+```bash
+gh auth status                          # check current auth
+gh auth refresh -s repo                 # add repo scope if missing
+gh repo view owner/repo                 # confirm you can access it
+ssh -T git@github.com                   # verify SSH key (if using SSH)
+```
+
+If access fails, Codi shows step-by-step troubleshooting and exits before attempting the clone.
 
 ### Writing new templates
 
 If you want to add a built-in template to Codi:
 
-1. Create the template in `src/templates/` (rules, skills, agents, or commands)
+1. Create the template in `src/templates/` (rules, skills, or agents)
 2. Register it in the corresponding `TEMPLATE_MAP`
 3. Export it from the template's `index.ts`
 4. Write tests for the template

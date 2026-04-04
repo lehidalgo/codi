@@ -1,6 +1,6 @@
 # Presets
 
-Presets are bundles of flags, rules, skills, agents, commands, and MCP configuration packaged for reuse. They provide a one-command way to set up a project with a specific configuration profile.
+Presets are bundles of flags, rules, skills, agents, and MCP configuration packaged for reuse. They provide a one-command way to set up a project with a specific configuration profile.
 
 ## Built-in Presets
 
@@ -82,7 +82,7 @@ Multiple presets can be listed — they are applied in order, with later presets
 codi preset create my-setup
 ```
 
-The wizard guides you through selecting flags, rules, skills, agents, and commands.
+The wizard guides you through selecting flags, rules, skills, and agents.
 
 ### Preset structure
 
@@ -94,7 +94,6 @@ my-setup/
   rules/                # Bundled rules (Markdown)
   skills/               # Bundled skills
   agents/               # Bundled agents
-  commands/             # Bundled commands
 ```
 
 ### Preset manifest (`preset.yaml`)

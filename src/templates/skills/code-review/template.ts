@@ -6,12 +6,6 @@ description: Structured code review workflow. Use when reviewing PRs, examining 
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Code Review
-  examples:
-    - "Review my PR"
-    - "Check code quality"
-    - "Audit recent changes"
 version: 1
 ---
 
@@ -94,12 +88,62 @@ For each finding include:
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-code-reviewer** — Severity-ranked review with confidence filtering
-- **codi-security-analyzer** — Deep OWASP vulnerability analysis
-- **codi-performance-auditor** — Performance anti-pattern detection
+- **${PROJECT_NAME}-code-reviewer** — Severity-ranked review with confidence filtering
+- **${PROJECT_NAME}-security-analyzer** — Deep OWASP vulnerability analysis
+- **${PROJECT_NAME}-performance-auditor** — Performance anti-pattern detection
+
+## Requesting a Review
+
+Code reviews are not optional. Request a review after each implementation task completes (in ${PROJECT_NAME}-subagent-dev workflow), after completing a major feature, and always before merging to main.
+
+**When to request:**
+- After ${PROJECT_NAME}-subagent-dev completes all tasks — dispatch a full-changeset review
+- After completing a significant feature or bug fix
+- Before invoking ${PROJECT_NAME}-branch-finish
+
+**What to provide to the reviewer:**
+- Starting commit SHA: \\\`git log --oneline | tail -1 | awk '{print $1}'\\\`
+- Current commit SHA: \\\`git rev-parse HEAD\\\`
+- Implementation summary: what was built and why
+- Reference to the design spec (docs/ path)
+- Specific areas of concern if any
+
+**Acting on feedback:**
+- CRITICAL/HIGH: fix immediately, do not proceed to ${PROJECT_NAME}-branch-finish
+- MEDIUM: fix before merge; document in PR if deferring
+- LOW: note in PR description; fix if trivial
+
+## Receiving a Code Review
+
+**The one rule: verify before implementing.**
+
+Read each piece of feedback and check it against the actual code before doing anything. Reviewers can be wrong. The test is technical correctness for this specific codebase, not whether the reviewer sounds authoritative.
+
+**What not to say:**
+- "You're absolutely right!" (performative, means nothing)
+- "Great point!" (sycophantic, skips verification)
+- "I'll fix that right away!" (before checking if the fix is actually correct)
+
+**What to say instead:**
+- State what you verified: "Checked — the function at line 42 does lack error handling. Fixed."
+- Ask for specifics if unclear: "Can you clarify which edge case you mean? I see X but not Y."
+- Push back with evidence when the reviewer is wrong: "This pattern is intentional — see the design spec section 3. Changing it would break [X]."
+
+**When to push back:**
+- The suggested change breaks existing functionality
+- The reviewer lacks context about a deliberate design decision
+- The change violates YAGNI (adds scope not in the spec)
+- The suggestion contradicts the ${PROJECT_NAME}-architecture or ${PROJECT_NAME}-testing rules
+- The reviewer is correct about a style preference but wrong about it being a bug
+
+**Acknowledging valid feedback tersely:**
+"Fixed" or "Good catch on [issue]. Fixed at [location]." Let the corrected code demonstrate understanding — no extended apology or praise needed.
 
 ## Related Skills
 
-- **codi-security-scan** — Dedicated security audits beyond code review scope
-- **codi-test-coverage** — Verify test coverage for reviewed changes
+- **${PROJECT_NAME}-security-scan** — Dedicated security audits beyond code review scope
+- **${PROJECT_NAME}-test-coverage** — Verify test coverage for reviewed changes
+- **${PROJECT_NAME}-brainstorming** — Design before the code being reviewed was written
+- **${PROJECT_NAME}-subagent-dev** — Requests reviews after each task via this skill
+- **${PROJECT_NAME}-branch-finish** — Runs a final review before merge options
 `;

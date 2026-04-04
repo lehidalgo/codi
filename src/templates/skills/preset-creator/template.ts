@@ -13,12 +13,6 @@ description: Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the us
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Preset Creation
-  examples:
-    - "Create a new preset"
-    - "Package my configuration"
-    - "Export my preset as a ZIP"
 version: 2
 ---
 
@@ -131,5 +125,5 @@ Report any errors or warnings to the user.
 
 ## Related Skills
 
-- **codi-compare-preset** — Compare two presets or audit the active preset configuration
+- **${PROJECT_NAME}-compare-preset** — Compare two presets or audit the active preset configuration
 `;

@@ -366,12 +366,6 @@ async function loadSkillFromDir(name: string, configDir: string): Promise<Normal
       ...(d["metadata"] !== undefined && {
         metadata: d["metadata"] as Record<string, string>,
       }),
-      ...(d["intentHints"] !== undefined && {
-        intentHints: d["intentHints"] as {
-          taskType: string;
-          examples: string[];
-        },
-      }),
     };
   } catch (cause) {
     Logger.getInstance().debug(`Failed to load skill "${name}" from directory`, cause);

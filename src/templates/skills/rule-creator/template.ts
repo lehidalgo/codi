@@ -19,12 +19,6 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Rule Creation
-  examples:
-    - "Create a new rule"
-    - "Add a coding convention"
-    - "Enforce TypeScript strict mode"
 version: 1
 ---
 
@@ -202,6 +196,6 @@ Run \\\`${PROJECT_CLI} add rule --all\\\` to list all templates. Major categorie
 
 ## Related Skills
 
-- **codi-rule-feedback** — Get feedback on an existing rule's quality and trigger precision
-- **codi-refine-rules** — Batch-refine multiple rules for consistency and clarity
+- **${PROJECT_NAME}-rule-feedback** — Get feedback on an existing rule's quality and trigger precision
+- **${PROJECT_NAME}-refine-rules** — Batch-refine multiple rules for consistency and clarity
 `;

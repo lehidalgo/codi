@@ -7,12 +7,6 @@ category: Content Creation
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-intentHints:
-  taskType: Content Creation
-  examples:
-    - "Write a blog post"
-    - "Create social media content"
-    - "Repurpose this post for Instagram"
 version: 1
 ---
 

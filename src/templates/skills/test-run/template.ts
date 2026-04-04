@@ -2,17 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Detect and run the project test suite, then report results with failure diagnosis.
+description: Detect and run the project test suite, then report results with failure diagnosis. Use when running tests, checking if tests pass, or diagnosing test failures. Also activate when the user says 'run tests' or 'are tests passing'.
 category: Testing
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Test Execution
-  examples:
-    - "Run the tests"
-    - "Execute the test suite"
-    - "Run all tests and show results"
-    - "Check if tests pass"
 version: 1
 ---
 

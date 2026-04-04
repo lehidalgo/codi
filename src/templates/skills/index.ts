@@ -99,15 +99,32 @@ export {
 export { template as humanizer } from "./humanizer/index.js";
 export { template as testRun } from "./test-run/index.js";
 export { template as diagnostics } from "./diagnostics/index.js";
-export { template as sessionHandoff } from "./session-handoff/index.js";
+export {
+  template as sessionHandoff,
+  staticDir as sessionHandoffStaticDir,
+} from "./session-handoff/index.js";
 export { template as codebaseExplore } from "./codebase-explore/index.js";
 export { template as graphSync } from "./graph-sync/index.js";
 export { template as dailyLog } from "./daily-log/index.js";
 export { template as roadmap } from "./roadmap/index.js";
-export { template as verification } from "./verification/index.js";
-export { template as planExecutor } from "./plan-executor/index.js";
-export { template as brainstorming } from "./brainstorming/index.js";
-export { template as debugging } from "./debugging/index.js";
-export { template as planWriter } from "./plan-writer/index.js";
-export { template as subagentDev } from "./subagent-dev/index.js";
-export { template as tdd } from "./tdd/index.js";
+export {
+  template as verification,
+  staticDir as verificationStaticDir,
+} from "./verification/index.js";
+export { template as tdd, staticDir as tddStaticDir } from "./tdd/index.js";
+export { template as debugging, staticDir as debuggingStaticDir } from "./debugging/index.js";
+export {
+  template as brainstorming,
+  staticDir as brainstormingStaticDir,
+} from "./brainstorming/index.js";
+export { template as planWriter, staticDir as planWriterStaticDir } from "./plan-writer/index.js";
+export { template as worktrees } from "./worktrees/index.js";
+export { template as branchFinish } from "./branch-finish/index.js";
+export {
+  template as subagentDev,
+  staticDir as subagentDevStaticDir,
+} from "./subagent-dev/index.js";
+export {
+  template as planExecutor,
+  staticDir as planExecutorStaticDir,
+} from "./plan-executor/index.js";

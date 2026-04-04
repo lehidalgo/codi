@@ -164,10 +164,10 @@ describe("buildSkillCategoryMap", () => {
     expect(map["Codi Platform"]).toEqual(["ops-skill"]);
   });
 
-  it("normalises informal brand label", () => {
+  it("passes through unknown category values as-is", () => {
     const loadFn = () => ({ ok: true, data: "category: brand" });
     const map = buildSkillCategoryMap(["brand-skill"], loadFn);
-    expect(map["Brand"]).toEqual(["brand-skill"]);
+    expect(map["brand"]).toEqual(["brand-skill"]);
   });
 
   it("places skill without category in Other group", () => {

@@ -2,18 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Resume daily work context from the control log, or log today's work summary.
+description: Resume daily work context or log today's work summary. Use when starting a new session, checking what was worked on, or recording end-of-day progress. Also activate on /open_day or /close_day.
 category: Workflow
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Daily Log
-  examples:
-    - "Open my day"
-    - "What was I working on?"
-    - "Log today's work"
-    - "Close out the day"
-    - "Resume context from yesterday"
 version: 1
 ---
 

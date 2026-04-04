@@ -2,21 +2,10 @@ import { MAX_NAME_LENGTH, PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/co
 
 export const template = `---
 name: {{name}}
-description: |
-  MCP (Model Context Protocol) operations: configure servers, call tools, debug connections,
-  create new server configs, and build custom MCP servers. Use when the user asks to set up,
-  use, debug, create, or build anything MCP-related. Also activate when the user mentions
-  MCP tools, mcp.yaml, Model Context Protocol, or connecting external APIs to AI agents.
+description: "MCP (Model Context Protocol) operations. Use when setting up, calling, debugging, or building MCP servers. Also activate when the user mentions mcp.yaml, MCP tools, Model Context Protocol, or connecting external APIs to Claude agents."
 category: Developer Tools
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: MCP Operations
-  examples:
-    - "Configure an MCP server"
-    - "Debug MCP connection error"
-    - "Create a new MCP server"
-    - "Call an MCP tool"
 version: 1
 ---
 
@@ -201,5 +190,5 @@ Before finishing, verify:
 ## Available Agents
 
 For API design review of MCP server interfaces, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-api-designer** — Review tool naming, parameters, and error handling
+- **${PROJECT_NAME}-api-designer** — Review tool naming, parameters, and error handling
 `;

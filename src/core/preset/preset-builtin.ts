@@ -193,12 +193,6 @@ function parseSkillTemplate(name: string, content: string): NormalizedSkill | nu
       ...(d["metadata"] !== undefined && {
         metadata: d["metadata"] as Record<string, string>,
       }),
-      ...(d["intentHints"] !== undefined && {
-        intentHints: d["intentHints"] as {
-          taskType: string;
-          examples: string[];
-        },
-      }),
     };
   } catch {
     return null;

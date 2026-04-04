@@ -6,12 +6,6 @@ description: "Use when the user wants to create, edit, or read a .pptx file. Als
 category: File Format Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: PowerPoint
-  examples:
-    - "Create a PowerPoint"
-    - "Generate slides as PPTX"
-    - "Extract text from a presentation"
 version: 1
 ---
 

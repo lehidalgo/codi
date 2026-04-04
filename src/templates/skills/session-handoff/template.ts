@@ -2,17 +2,10 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Summarize the current session and prepare a handoff prompt for a new chat.
+description: Summarize the current session and prepare a handoff prompt for a new chat. Use when the context window is filling up, switching to a new conversation, or handing off work. Also activate on /session-handoff.
 category: Workflow
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Session Handoff
-  examples:
-    - "Hand off this session"
-    - "Prepare a handoff for the next session"
-    - "Summarize what we did so I can start a new chat"
-    - "Create a session summary"
 version: 1
 ---
 

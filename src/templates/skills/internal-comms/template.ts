@@ -6,12 +6,6 @@ description: Use when the user needs to write internal communications such as st
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Internal Communications
-  examples:
-    - "Write a status report"
-    - "Draft a team update"
-    - "Write a company newsletter"
 version: 1
 ---
 

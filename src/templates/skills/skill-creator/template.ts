@@ -8,20 +8,10 @@ import {
 
 export const template = `---
 name: {{name}}
-description: |
-  Skill creation, improvement, and migration workflow. Use when the user asks to create,
-  build, write, or improve a skill. Also activate when the user mentions
-  evals, skill testing, description optimization, skill packaging, importing skills
-  from external sources, or reviewing a skill for security.
+description: "Skill creation, improvement, and migration workflow. Use when creating, building, or improving a skill. Also activate when the user mentions evals, skill testing, description optimization, skill packaging, or importing skills from external sources."
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Skill Creation
-  examples:
-    - "Create a new skill"
-    - "Build a reusable workflow"
-    - "Import a skill from GitHub"
 version: 1
 ---
 
@@ -86,11 +76,6 @@ If the directory already exists, confirm with the user before overwriting.
 name: <skill-name>
 description: <description following the rules below>
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: <concise task label, max 50 chars>
-  examples:
-    - "<example user prompt 1>"
-    - "<example user prompt 2>"
 ---
 \\\`\\\`\\\`
 
@@ -111,7 +96,6 @@ intentHints:
 | \\\`paths\\\` | No | Glob patterns limiting when skill auto-activates |
 | \\\`shell\\\` | No | \\\`bash\\\` or \\\`powershell\\\` for inline shell commands |
 | \\\`managed_by\\\` | No | ${PROJECT_NAME_DISPLAY}-internal: \\\`${PROJECT_NAME}\\\` or \\\`user\\\` (stripped from agent output) |
-| \\\`intentHints\\\` | No | Object with \\\`taskType\\\` (string) and \\\`examples\\\` (string array) — powers the routing table. Include 2-4 example user prompts |
 
 #### Arguments and Substitutions
 
@@ -193,30 +177,6 @@ The description is the MOST IMPORTANT part — it determines when the skill trig
 - "Generates unit, integration, and e2e tests for any codebase. Use when the user asks to write tests, add test coverage, create test files, or verify untested code. Also activate when the user mentions TDD, test-driven development, or wants to know what is untested."
 - "Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings."
 
-#### intentHints Writing Guide
-
-The \\\`intentHints\\\` field powers the skill routing table in generated agent config files. It maps user intents to your skill.
-
-| Field | Constraint | Purpose |
-|-------|-----------|---------|
-| \\\`taskType\\\` | Max 50 chars | Short task label shown in the routing table (e.g., "Code Review", "PDF Operations") |
-| \\\`examples\\\` | 2-4 strings, max 100 chars each | Real user prompts that should trigger this skill |
-
-**Writing good examples:**
-- Write them as a user would naturally type: "Review my PR", not "Invoke code review workflow"
-- Cover different phrasings of the same intent: "Commit my changes" + "Create a commit"
-- Include the most common trigger words from the description
-- Keep them short and natural — these are examples, not documentation
-
-**BAD examples:**
-- "Execute the security scanning workflow" — Too formal, no one types this
-- "Use this skill to scan for vulnerabilities" — Self-referential
-
-**GOOD examples:**
-- "Scan for vulnerabilities"
-- "Find hardcoded secrets"
-- "Run security check"
-
 #### Body Structure
 
 The SKILL.md body should follow this pattern:
@@ -247,26 +207,31 @@ The SKILL.md body should follow this pattern:
 #### Evals Format
 
 \\\`\\\`\\\`json
-[
-  {
-    "id": "creates-test-file",
-    "prompt": "Write unit tests for the UserService class",
-    "expectations": [
-      "Creates a file ending in .test.ts or .spec.ts",
-      "File contains at least one describe block",
-      "File imports UserService from the source module",
-      "Each test has a descriptive name starting with should"
-    ]
-  },
-  {
-    "id": "negative-no-false-trigger",
-    "prompt": "What is the weather today?",
-    "expectations": [
-      "Does NOT create any test files",
-      "Does NOT invoke the skill"
-    ]
-  }
-]
+{
+  "skillName": "<skill-name>",
+  "cases": [
+    {
+      "id": "creates-test-file",
+      "description": "Verify skill creates a test file with correct structure",
+      "prompt": "Write unit tests for the UserService class",
+      "expectations": [
+        "Creates a file ending in .test.ts or .spec.ts",
+        "File contains at least one describe block",
+        "File imports UserService from the source module",
+        "Each test has a descriptive name starting with should"
+      ]
+    },
+    {
+      "id": "negative-no-false-trigger",
+      "description": "Skill does not trigger for unrelated queries",
+      "prompt": "What is the weather today?",
+      "expectations": [
+        "Does NOT create any test files",
+        "Does NOT invoke the skill"
+      ]
+    }
+  ]
+}
 \\\`\\\`\\\`
 
 #### Eval Writing Rules
@@ -502,6 +467,6 @@ If the agent writes the same helper logic 3+ times across test cases, extract it
 
 ## Related Skills
 
-- **codi-agent-creator** — Create subagent definitions to bundle with a skill
-- **codi-rule-feedback** — Collect rule observations encountered while creating skills
+- **${PROJECT_NAME}-agent-creator** — Create subagent definitions to bundle with a skill
+- **${PROJECT_NAME}-rule-feedback** — Collect rule observations encountered while creating skills
 `;

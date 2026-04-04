@@ -6,12 +6,6 @@ description: Use when the user wants to test, debug, or automate a local web app
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Web App Testing
-  examples:
-    - "Test the web UI"
-    - "Take a screenshot of the app"
-    - "Debug browser console errors"
 version: 1
 ---
 
@@ -124,5 +118,5 @@ with sync_playwright() as p:
 ## Available Agents
 
 For test generation from webapp testing results, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Generate automated tests from webapp testing findings
+- **${PROJECT_NAME}-test-generator** — Generate automated tests from webapp testing findings
 `;

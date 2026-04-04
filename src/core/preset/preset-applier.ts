@@ -88,12 +88,6 @@ export function reconstructSkillContent(skill: NormalizedSkill): string {
     fm.push(`compatibility:\n${skill.compatibility.map((c) => `  - ${c}`).join("\n")}`);
   if (skill.paths?.length) fm.push(`paths:\n${skill.paths.map((p) => `  - ${p}`).join("\n")}`);
   if (skill.shell) fm.push(`shell: ${skill.shell}`);
-  if (skill.intentHints) {
-    fm.push(`intentHints:\n  taskType: ${fmStr(skill.intentHints.taskType)}`);
-    fm.push(
-      `  examples:\n${skill.intentHints.examples.map((e) => `    - ${fmStr(e)}`).join("\n")}`,
-    );
-  }
   if (skill.metadata && Object.keys(skill.metadata).length > 0) {
     fm.push(
       `metadata:\n${Object.entries(skill.metadata)

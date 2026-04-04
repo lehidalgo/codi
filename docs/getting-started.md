@@ -10,6 +10,8 @@ A hands-on tutorial to set up Codi in a project in under 5 minutes.
 4. Customize a rule and a skill
 5. Commit everything to version control
 
+> **Prefer an AI-guided setup?** Skip steps 2-4 and run `codi onboard` instead. Your coding agent reads the output, explores your project, recommends the right artifacts, and runs all the setup commands for you. See [Step 2](#step-2-initialize-your-project) for details.
+
 By the end, your project will have a `.codi/` directory (source of truth) and generated config files (`CLAUDE.md`, `.cursorrules`, etc.) ready for your AI agents.
 
 ---
@@ -75,6 +77,16 @@ Skip the wizard entirely:
 codi init --agents claude-code cursor --preset balanced
 ```
 
+### AI-Guided Alternative
+
+Let your coding agent do the thinking. Tell it to run:
+
+```bash
+codi onboard
+```
+
+The command prints a full guide to stdout — artifact catalog, preset reference, and a step-by-step playbook. Your agent reads the output, explores the codebase, proposes the best preset and artifact selection with per-artifact rationale, iterates with you until approved, then runs all the setup commands automatically. At the end it creates a `docs/YYYYMMDD_HHMMSS_[PLAN]_codi-init.md` summary documenting what was installed and why.
+
 ---
 
 ## Step 3: Explore What Was Created
@@ -88,7 +100,6 @@ After initialization, your project has a new `.codi/` directory:
   rules/             # All rules (preset-managed and custom)
   skills/            # Reusable workflows agents can invoke
   agents/            # Subagent definitions (code reviewer, test generator, etc.)
-  commands/          # Slash commands (/commit, /review, etc.)
   state.json         # File tracking — auto-managed, do not edit
 ```
 
@@ -101,7 +112,6 @@ Here is what each piece does:
 | `rules/` | All rules — preset-managed rules (`managed_by: codi`) are updated by `codi update`; custom rules (`managed_by: user`) are never overwritten |
 | `skills/` | Step-by-step workflows agents can follow (code review, commit, testing, etc.) |
 | `agents/` | Specialized subagent roles with focused responsibilities |
-| `commands/` | Slash commands your team can invoke inside the agent |
 | `state.json` | Tracks generated file hashes for drift detection. Auto-managed |
 
 ---
@@ -122,7 +132,7 @@ You will see output like:
  2 agents processed, 14 files generated
 ```
 
-Codi reads `.codi/`, resolves all layers (preset, flags, rules, skills, agents, commands), and produces the native config file for each agent you selected.
+Codi reads `.codi/`, resolves all layers (preset, flags, rules, skills, agents), and produces the native config file for each agent you selected.
 
 The generated files are ready to use immediately. Open your AI agent and it will pick up the new configuration.
 
@@ -252,7 +262,7 @@ If someone on your team changes `.codi/` and you pull their changes, just run `c
 | Want to... | Read... |
 |:-----------|:--------|
 | See all CLI commands and options | [CLI Reference](cli-reference.md) |
-| Understand rules, skills, agents, commands | [Artifacts Guide](artifacts.md) |
+| Understand rules, skills, agents | [Artifacts Guide](artifacts.md) |
 | Choose a different preset | [Presets Guide](presets.md) |
 | Configure flags and layers | [Configuration](configuration.md) |
 | Set up CI/CD integration | [Workflows](workflows.md) |

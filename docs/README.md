@@ -21,7 +21,7 @@
 | [CLI Reference](cli-reference.md) | All 20 commands, Command Center, init wizard, options |
 | [Architecture](architecture.md) | Config resolution pipeline, adapter pattern, generation stages |
 | [Configuration](configuration.md) | Manifest schema, 16 flags, 3 layers, MCP servers |
-| [Artifacts](artifacts.md) | Rules, skills, agents, commands, brands — formats and templates |
+| [Artifacts](artifacts.md) | Rules, skills, agents, brands — formats and templates |
 | [Presets](presets.md) | 6 built-in presets, create, install, export, share |
 | [Workflows](workflows.md) | Daily usage, CI/CD integration, team patterns, import/export |
 | [Migration](migration.md) | Adopting Codi in an existing project with agent configs |

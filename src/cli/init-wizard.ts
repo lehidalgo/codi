@@ -58,17 +58,6 @@ export async function runInitWizard(
 
   p.intro(`${PROJECT_CLI} — Project Setup`);
 
-  p.note(
-    [
-      "space        toggle selection",
-      "a            select / deselect all",
-      "arrow keys   move up / down",
-      "enter        confirm",
-      "ctrl+c       go back (exit at first step)",
-    ].join("\n"),
-    "Keyboard shortcuts",
-  );
-
   let step = 0;
   let savedLanguages: string[] | undefined;
   let savedAgents: string[] | undefined;

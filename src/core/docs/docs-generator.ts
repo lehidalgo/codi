@@ -20,7 +20,7 @@ import { BUILTIN_PRESETS } from "../../templates/presets/index.js";
 import { BUILTIN_MCP_SERVERS } from "../../templates/mcp-servers/index.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
 import { ALL_ADAPTERS } from "../../adapters/index.js";
-import { TOP_LEVEL_MENU, SUB_MENUS } from "../../cli/hub.js";
+import { NORMAL_MENU, ADVANCED_MENU } from "../../cli/hub.js";
 import { PROJECT_CLI } from "#src/constants.js";
 
 import {
@@ -110,7 +110,7 @@ function generateAllSections(projectRoot: string): Record<string, string> {
     error_catalog: renderErrorCatalog(
       ERROR_CATALOG as Record<string, { exitCode: number; severity: string; hintTemplate: string }>,
     ),
-    hub_actions: renderHubActions(TOP_LEVEL_MENU, SUB_MENUS),
+    hub_actions: renderHubActions(NORMAL_MENU, ADVANCED_MENU),
     mcp_servers: renderMcpServers(BUILTIN_MCP_SERVERS),
 
     // --- Schema fields (6) ---

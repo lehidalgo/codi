@@ -65,12 +65,14 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("daily-log")]: skillTemplates.dailyLog,
   [prefixedName("roadmap")]: skillTemplates.roadmap,
   [prefixedName("verification")]: skillTemplates.verification,
-  [prefixedName("plan-executor")]: skillTemplates.planExecutor,
-  [prefixedName("brainstorming")]: skillTemplates.brainstorming,
   [prefixedName("debugging")]: skillTemplates.debugging,
-  [prefixedName("plan-writer")]: skillTemplates.planWriter,
-  [prefixedName("subagent-dev")]: skillTemplates.subagentDev,
   [prefixedName("tdd")]: skillTemplates.tdd,
+  [prefixedName("brainstorming")]: skillTemplates.brainstorming,
+  [prefixedName("plan-writer")]: skillTemplates.planWriter,
+  [prefixedName("worktrees")]: skillTemplates.worktrees,
+  [prefixedName("branch-finish")]: skillTemplates.branchFinish,
+  [prefixedName("subagent-dev")]: skillTemplates.subagentDev,
+  [prefixedName("plan-executor")]: skillTemplates.planExecutor,
 };
 
 /** Maps template names to their static asset directories (when available). */
@@ -106,6 +108,14 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("doc-engine")]: skillTemplates.docEngineStaticDir,
   [prefixedName("mcp-ops")]: skillTemplates.mcpOpsStaticDir,
   [prefixedName("deck-engine")]: skillTemplates.deckEngineStaticDir,
+  [prefixedName("debugging")]: skillTemplates.debuggingStaticDir,
+  [prefixedName("tdd")]: skillTemplates.tddStaticDir,
+  [prefixedName("subagent-dev")]: skillTemplates.subagentDevStaticDir,
+  [prefixedName("brainstorming")]: skillTemplates.brainstormingStaticDir,
+  [prefixedName("plan-writer")]: skillTemplates.planWriterStaticDir,
+  [prefixedName("verification")]: skillTemplates.verificationStaticDir,
+  [prefixedName("plan-executor")]: skillTemplates.planExecutorStaticDir,
+  [prefixedName("session-handoff")]: skillTemplates.sessionHandoffStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

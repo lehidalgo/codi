@@ -14,12 +14,7 @@ description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, 
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Codi Operations
-  examples:
-    - "Add a rule"
-    - "Manage codi config"
-    - "Check codi installation health"
+user-invocable: false
 version: 2
 ---
 
@@ -166,7 +161,7 @@ ${PROJECT_CLI} watch                 # Auto-regenerate on ${PROJECT_DIR}/ change
 
 ## Related Skills
 
-- **codi-compare-preset** — Compare local artifacts against upstream templates
-- **codi-error-recovery** — Recover from repeated agent mistakes during operations
+- **${PROJECT_NAME}-compare-preset** — Compare local artifacts against upstream templates
+- **${PROJECT_NAME}-error-recovery** — Recover from repeated agent mistakes during operations
 `;
 }

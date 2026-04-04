@@ -144,7 +144,7 @@ async function scaffoldSkillSubdirs(
     }
   }
 
-  const evalsJson = JSON.stringify({ skill_name: name, evals: [] }, null, 2);
+  const evalsJson = JSON.stringify({ skillName: name, cases: [] }, null, 2);
   try {
     await fs.writeFile(path.join(evalsDir, "evals.json"), evalsJson + "\n", "utf-8");
   } catch (cause) {
@@ -187,7 +187,7 @@ async function scaffoldSkillSubdirs(
   return ok(skillDir);
 }
 
-const STATIC_SUBDIRS = ["assets", "references", "scripts", "agents"] as const;
+const STATIC_SUBDIRS = ["assets", "evals", "references", "scripts", "agents"] as const;
 
 /**
  * Copy static files from the template's staticDir into the scaffolded skill directory.

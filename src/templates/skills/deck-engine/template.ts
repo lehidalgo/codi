@@ -2,21 +2,11 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: |
-  HTML slide deck generator with brand token integration. Use when the user
-  needs a self-contained HTML presentation with navigation, animations, and
-  print-to-PDF support. Also activate for pitch decks, technical presentations,
-  or any slide content that should use project brand tokens.
+description: "HTML slide deck generator with brand token integration. Use when the user needs a self-contained HTML presentation with navigation, animations, and PDF export. Also activate for pitch decks or technical presentations needing brand tokens."
 category: Document Generation
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-intentHints:
-  taskType: Presentation
-  examples:
-    - "Create a slide deck"
-    - "Build a presentation"
-    - "Generate a pitch deck"
 version: 1
 ---
 
@@ -244,6 +234,6 @@ The \\\`.deck\\\` wrapper fills the screen. The \\\`.deck__viewport\\\` maintain
 
 ## Related Skills
 
-- **codi-theme-factory** — Apply curated visual themes to the generated deck
-- **codi-doc-engine** — Generate companion documents from deck content
+- **${PROJECT_NAME}-theme-factory** — Apply curated visual themes to the generated deck
+- **${PROJECT_NAME}-doc-engine** — Generate companion documents from deck content
 `;

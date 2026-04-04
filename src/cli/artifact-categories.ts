@@ -1,6 +1,7 @@
 import type { ArtifactUpgradeInfo } from "../core/version/upgrade-detector.js";
 import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
 import { MCP_SERVER_GROUPS } from "../templates/mcp-servers/index.js";
+import { ALL_SKILL_CATEGORIES, PLATFORM_CATEGORY } from "../constants.js";
 
 // Static category maps for rules and agents.
 // Each array lists the fully-prefixed artifact names that belong to that group.
@@ -36,7 +37,7 @@ export const RULE_CATEGORIES: Record<string, string[]> = {
     "codi-spanish-orthography",
     "codi-output-discipline",
   ],
-  "Codi Platform": ["codi-agent-usage", "codi-improvement-dev"],
+  [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev"],
 };
 
 export const AGENT_CATEGORIES: Record<string, string[]> = {
@@ -81,25 +82,22 @@ export const MCP_SERVER_CATEGORIES: Record<string, string[]> = MCP_SERVER_GROUPS
 
 const SKILL_CATEGORY_PATTERN = /^category:\s*(.+)$/m;
 const PLATFORM_PLACEHOLDER = /\$\{[^}]+\}/g;
-const PLATFORM_LABEL = "Codi Platform";
 
 function resolveSkillCategory(raw: string): string {
   // Template strings may contain interpolation tokens like ${PROJECT_NAME_DISPLAY}.
-  // Treat any value containing a placeholder as the Codi Platform category.
-  if (PLATFORM_PLACEHOLDER.test(raw)) return PLATFORM_LABEL;
-  const trimmed = raw.trim();
-  // Normalise known informal labels.
-  if (trimmed === "brand") return "Brand";
-  if (trimmed === "quality") return "Code Quality";
-  if (trimmed === "productivity") return "Productivity";
-  return trimmed;
+  // Treat any value containing a placeholder as the platform category.
+  if (PLATFORM_PLACEHOLDER.test(raw)) return PLATFORM_CATEGORY;
+  return raw.trim();
 }
 
 export function buildSkillCategoryMap(
   templates: string[],
   loadFn: (name: string) => { ok: boolean; data?: string },
 ): Record<string, string[]> {
-  const groups: Record<string, string[]> = {};
+  // Pre-seed known categories in canonical order so CLI wizard groups are stable.
+  const groups: Record<string, string[]> = Object.fromEntries(
+    ALL_SKILL_CATEGORIES.map((cat) => [cat, [] as string[]]),
+  );
 
   for (const name of templates) {
     const result = loadFn(name);
@@ -107,6 +105,11 @@ export function buildSkillCategoryMap(
     const match = SKILL_CATEGORY_PATTERN.exec(content);
     const category = match ? resolveSkillCategory(match[1]!) : "Other";
     (groups[category] ??= []).push(name);
+  }
+
+  // Remove empty known-category buckets (no skills assigned).
+  for (const cat of ALL_SKILL_CATEGORIES) {
+    if (groups[cat]?.length === 0) delete groups[cat];
   }
 
   return groups;

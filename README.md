@@ -35,7 +35,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 ## What You Get
 
 - **5 agents, 1 config** — generate native config files for all supported agents from a single `.codi/` directory
-- **100+ built-in templates** — rules, skills, agents, and commands covering security, testing, 11 languages, and 3 frameworks
+- **100+ built-in templates** — rules, skills, and agents covering security, testing, 11 languages, and 3 frameworks
 - **6 presets** — from minimal to strict, choose your starting point and customize
 - **Pre-commit hooks** — automated testing, secret scanning, type checking, and file size limits
 - **Drift detection** — know instantly when generated files diverge from your source config
@@ -51,6 +51,9 @@ npm install -g codi-cli@latest
 
 # 2. Initialize (interactive wizard)
 codi init
+
+# OR using a coding agent (Claude Code, Codex, etc)
+"run codi onboard in the terminal and follow instructions"
 
 # 3. Generate agent configs
 codi generate
@@ -86,7 +89,7 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 
 | Concept | What It Is | Learn More |
 |:--------|:-----------|:-----------|
-| **Artifacts** | Rules, skills, agents, commands, brands — the building blocks of your config | [Artifacts Guide](docs/artifacts.md) |
+| **Artifacts** | Rules, skills, agents, brands — the building blocks of your config | [Artifacts Guide](docs/artifacts.md) |
 | **Presets** | Bundles of flags + artifacts for quick setup (6 built-in) | [Presets Guide](docs/presets.md) |
 | **Flags** | 16 behavioral switches controlling security, testing, permissions, and generation | [Configuration](docs/configuration.md) |
 | **Adapters** | Translators that convert your config to each agent's native format | [Architecture](docs/architecture.md) |
@@ -111,12 +114,11 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 28 |
-| **Skills** | 46 |
+| **Skills** | 61 |
 | **Agents** | 22 |
-| **Commands** | 17 |
 <!-- GENERATED:END:template_counts_compact -->
 
-Create your own with `codi add rule|skill|agent|command <name>`, or start from a template with `--template`.
+Create your own with `codi add rule|skill|agent <name>`, or start from a template with `--template`.
 
 ## Presets
 
@@ -142,15 +144,16 @@ Create, share, and install presets from ZIP or GitHub with `codi preset`. See th
 | `codi` | Launch interactive Command Center |
 | `codi init` | Initialize `.codi/` configuration |
 | `codi generate` | Generate agent config files |
-| `codi add <type> <name>` | Add a rule, skill, agent, command, or brand |
+| `codi add <type> <name>` | Add a rule, skill, agent, or brand |
 | `codi status` | Show drift status |
 | `codi doctor` | Check project health |
 | `codi validate` | Validate configuration |
 | `codi preset <sub>` | Manage presets (create, install, export, etc.) |
 | `codi watch` | Auto-regenerate on file changes |
 | `codi compliance` | Full health + drift + verification check |
+| `codi onboard` | AI-guided setup — agent explores codebase and recommends artifacts |
 
-> **Full reference**: See [CLI Reference](docs/cli-reference.md) for all 20 commands with options, examples, and the Command Center / init wizard documentation.
+> **Full reference**: See [CLI Reference](docs/cli-reference.md) for all commands with options, examples, and the Command Center / init wizard documentation.
 
 ### Global Options
 
@@ -188,7 +191,7 @@ Install as a dev dependency and add `npx codi doctor --ci` to your pipeline. It 
 | [CLI Reference](docs/cli-reference.md) | All commands, Command Center, init wizard |
 | [Architecture](docs/architecture.md) | Config resolution, adapters, generation pipeline |
 | [Configuration](docs/configuration.md) | Manifest, flags, layers, MCP |
-| [Artifacts](docs/artifacts.md) | Rules, skills, agents, commands, brands |
+| [Artifacts](docs/artifacts.md) | Rules, skills, agents, brands |
 | [Presets](docs/presets.md) | Built-in and custom presets |
 | [Workflows](docs/workflows.md) | Daily usage, CI/CD, team patterns |
 | [Migration](docs/migration.md) | Adopt Codi in existing projects |

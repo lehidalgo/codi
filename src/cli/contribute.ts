@@ -25,7 +25,16 @@ import {
   PROJECT_DIR,
 } from "../constants.js";
 import { execFileAsync } from "../utils/exec.js";
-import { getGitRepoUrl, detectDefaultBranch } from "./contribute-git.js";
+import {
+  getGitRepoUrl,
+  detectDefaultBranch,
+  detectClonedBranch,
+  checkRepoAccess,
+  logCloneAccessError,
+  logPushAccessError,
+  pushToEmptyRepo,
+} from "./contribute-git.js";
+import { normalizeGithubRepo } from "../utils/github.js";
 
 interface ContributeData {
   action: "pr" | "zip" | "cancelled";
@@ -46,10 +55,15 @@ async function resolveContributionTarget(
 ): Promise<ContributionTarget | symbol> {
   // CLI flags take precedence — skip interactive prompt
   if (cliRepo) {
+    const repo = normalizeGithubRepo(cliRepo);
+    if (!repo) {
+      p.log.error("--repo must be owner/repo or a GitHub URL (https://github.com/owner/repo)");
+      return Symbol("cancel");
+    }
     const branch =
       cliBranch ??
-      (cliRepo === PROJECT_REPO ? PROJECT_TARGET_BRANCH : await detectDefaultBranch(cliRepo));
-    return { repo: cliRepo, branch };
+      (repo === PROJECT_REPO ? PROJECT_TARGET_BRANCH : await detectDefaultBranch(repo));
+    return { repo, branch };
   }
 
   // Build options: always include official repo, then lock file suggestions
@@ -99,16 +113,16 @@ async function resolveContributionTarget(
   if (repoSlug === "__other__") {
     const custom = await p.text({
       message: "Enter target repository",
-      placeholder: "owner/repo",
+      placeholder: "owner/repo or https://github.com/owner/repo",
       validate: (val = "") => {
-        if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(val)) {
-          return "Must be in owner/repo format";
+        if (!normalizeGithubRepo(val)) {
+          return "Must be owner/repo or a GitHub URL (https://github.com/owner/repo)";
         }
         return undefined;
       },
     });
     if (p.isCancel(custom)) return custom;
-    repoSlug = custom as string;
+    repoSlug = normalizeGithubRepo(custom as string) ?? (custom as string);
   }
 
   const branch =
@@ -254,9 +268,34 @@ async function createContributionPR(
     const ghUser = userLogin.trim();
     if (!ghUser) throw new Error("Could not determine GitHub username");
 
-    // 2. Clone the target repo (respect user's git protocol)
-    log.info(`Cloning ${target.repo}...`);
+    // 2. Verify access to the target repo before attempting clone
+    log.info(`Checking access to ${target.repo}...`);
+    const access = await checkRepoAccess(target.repo);
+    if (!access.ok) {
+      log.error(access.message);
+      for (const hint of access.hints) log.info(`  ${hint}`);
+      throw new Error(access.message);
+    }
+
     const repoUrl = await getGitRepoUrl(target.repo);
+
+    // 3. Handle empty repos: push initial commit directly (no fork/PR possible)
+    if (access.empty) {
+      return await pushToEmptyRepo({
+        artifacts,
+        targetRepo: target.repo,
+        targetBranch: target.branch,
+        presetName,
+        repoUrl,
+        cloneDir,
+        buildPackage: (dir) => buildPresetPackage(artifacts, presetName, dir).then(() => {}),
+        log,
+      });
+    }
+
+    // 4. Clone the target repo (respect user's git protocol)
+    log.info(`Cloning ${target.repo}...`);
+    let effectiveBranch = target.branch;
     try {
       await execFileAsync("git", [
         "clone",
@@ -269,24 +308,33 @@ async function createContributionPR(
       ]);
     } catch (cloneError) {
       const msg = cloneError instanceof Error ? cloneError.message : String(cloneError);
-      if (msg.includes("Permission") || msg.includes("403") || msg.includes("Authentication")) {
-        log.error(`Clone failed — authentication error.`);
-        log.info(`Troubleshooting:`);
-        log.info(`  1. Run: gh auth login`);
-        log.info(`  2. Verify access: gh auth status`);
-        log.info(`  3. For private repos, ensure token has 'repo' scope`);
+      if (
+        msg.includes("Remote branch") ||
+        msg.includes("not found in upstream") ||
+        msg.includes("did not match any file(s) known to git")
+      ) {
+        // Branch name was wrong — clone without --branch to use the remote's default
+        log.warn(`Branch '${target.branch}' not found — cloning remote default branch instead.`);
+        await execFileAsync("git", ["clone", "--depth", "1", repoUrl, cloneDir]);
+        effectiveBranch = await detectClonedBranch(cloneDir);
+        log.info(`Using default branch: ${effectiveBranch}`);
+      } else {
+        logCloneAccessError(log, msg, target.repo);
+        throw cloneError;
       }
-      throw cloneError;
     }
 
-    // 3. Fork the target repo (idempotent — no-op if fork exists or user owns it)
+    // 5. Fork the target repo (idempotent — no-op if fork exists or user owns it)
     try {
       await execFileAsync("gh", ["repo", "fork", target.repo, "--clone=false"]);
-    } catch {
-      // Fork may already exist or user owns the repo — continue
+    } catch (forkError) {
+      const msg = forkError instanceof Error ? forkError.message : String(forkError);
+      if (msg.includes("not fork") || msg.includes("forbidden") || msg.includes("403")) {
+        log.warn(`Could not fork ${target.repo} — you may be the owner or forking is restricted.`);
+      }
     }
 
-    // 4. Add user's fork as a remote and create branch
+    // 6. Add user's fork as a remote and create branch
     const userRepoUrl = await getGitRepoUrl(`${ghUser}/${repoName}`);
     await execFileAsync("git", ["remote", "add", "user", userRepoUrl], {
       cwd: cloneDir,
@@ -297,27 +345,11 @@ async function createContributionPR(
       cwd: cloneDir,
     });
 
-    // 5. Build a preset package with raw .codi/ artifacts at repo root
+    // 7. Build preset package, commit, and push
     await buildPresetPackage(artifacts, presetName, cloneDir);
-
-    // 6. Commit and push to user's fork
     await execFileAsync("git", ["add", "."], { cwd: cloneDir });
 
-    // Group artifacts by type for readable messages
-    const grouped: Record<string, string[]> = {};
-    for (const a of artifacts) {
-      (grouped[a.type] ??= []).push(a.name);
-    }
-    const summary = Object.entries(grouped)
-      .map(([type, names]) => `${names.length} ${type}(s)`)
-      .join(", ");
-    const details = Object.entries(grouped)
-      .map(
-        ([type, names]) =>
-          `### ${type.charAt(0).toUpperCase() + type.slice(1)}s\n${names.map((n) => `- ${n}`).join("\n")}`,
-      )
-      .join("\n\n");
-
+    const { summary, details } = formatArtifactSummary(artifacts);
     const commitMsg = `feat: contribute ${summary}\n\n${details}`;
     await execFileAsync("git", ["commit", "-m", commitMsg], { cwd: cloneDir });
 
@@ -327,18 +359,11 @@ async function createContributionPR(
       });
     } catch (pushError) {
       const msg = pushError instanceof Error ? pushError.message : String(pushError);
-      if (msg.includes("Permission") || msg.includes("403")) {
-        log.error(`Git push failed — permission denied.`);
-        log.info(`Troubleshooting:`);
-        log.info(`  1. Check your git protocol: gh auth status`);
-        log.info(`  2. If using SSH, verify your key: ssh -T git@github.com`);
-        log.info(`  3. Ensure you have push access to ${ghUser}/${repoName}`);
-        log.info(`  4. For private repos, verify token scopes include 'repo'`);
-      }
+      logPushAccessError(log, msg, ghUser, repoName);
       throw pushError;
     }
 
-    // 7. Open PR from user's fork to target repo's branch
+    // 8. Open PR from user's fork to target repo's effective base branch
     const { stdout: prUrl } = await execFileAsync(
       "gh",
       [
@@ -347,7 +372,7 @@ async function createContributionPR(
         "--repo",
         target.repo,
         "--base",
-        target.branch,
+        effectiveBranch,
         "--head",
         `${ghUser}:${branchName}`,
         "--title",
@@ -360,7 +385,7 @@ async function createContributionPR(
 
     return prUrl.trim();
   } catch (error) {
-    log.info(`PR creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    log.error(`PR creation failed: ${error instanceof Error ? error.message : String(error)}`);
     return null;
   } finally {
     await fs.rm(cloneDir, { recursive: true, force: true }).catch(() => {});
@@ -383,6 +408,23 @@ function cancelResult(): CommandResult<ContributeData> {
     ],
     exitCode: EXIT_CODES.GENERAL_ERROR,
   });
+}
+
+function formatArtifactSummary(artifacts: ArtifactEntry[]): { summary: string; details: string } {
+  const grouped: Record<string, string[]> = {};
+  for (const a of artifacts) {
+    (grouped[a.type] ??= []).push(a.name);
+  }
+  const summary = Object.entries(grouped)
+    .map(([type, names]) => `${names.length} ${type}(s)`)
+    .join(", ");
+  const details = Object.entries(grouped)
+    .map(
+      ([type, names]) =>
+        `### ${type.charAt(0).toUpperCase() + type.slice(1)}s\n${names.map((n) => `- ${n}`).join("\n")}`,
+    )
+    .join("\n\n");
+  return { summary, details };
 }
 
 export async function contributeHandler(
@@ -605,7 +647,7 @@ export function registerContributeCommand(program: Command): void {
   program
     .command("contribute")
     .description("Contribute artifacts as a preset via PR or ZIP")
-    .option("--repo <owner/name>", "Target GitHub repository for PR")
+    .option("--repo <repo>", "Target GitHub repository (owner/repo or full URL)")
     .option("--branch <name>", "Target branch for the PR")
     .action(async (options: { repo?: string; branch?: string }) => {
       const globalOptions = program.opts() as GlobalOptions;

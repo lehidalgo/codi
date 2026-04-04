@@ -126,8 +126,8 @@ describe("add skill command handler", () => {
 
     const evalsPath = path.join(tmpDir, PROJECT_DIR, "skills", "eval-skill", "evals", "evals.json");
     const content = JSON.parse(await fs.readFile(evalsPath, "utf-8"));
-    expect(content.skill_name).toBe("eval-skill");
-    expect(content.evals).toEqual([]);
+    expect(content.skillName).toBe("eval-skill");
+    expect(content.cases).toEqual([]);
   });
 
   it("fails with invalid skill name", async () => {

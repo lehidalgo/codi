@@ -6,12 +6,6 @@ description: Use when the user asks to build web components, pages, or UI interf
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Frontend Design
-  examples:
-    - "Build a landing page"
-    - "Design a web component"
-    - "Style this app with a distinctive aesthetic"
 version: 1
 ---
 
@@ -62,5 +56,5 @@ Remember: Claude is capable of extraordinary creative work. Don't hold back, sho
 ## Available Agents
 
 For performance validation of frontend implementations, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-performance-auditor** — Core Web Vitals and rendering performance analysis
+- **${PROJECT_NAME}-performance-auditor** — Core Web Vitals and rendering performance analysis
 `;

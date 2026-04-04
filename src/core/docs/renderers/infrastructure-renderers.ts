@@ -3,7 +3,7 @@
  */
 import type { AgentAdapter } from "#src/types/agent.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
-import type { HubAction, HubTopLevelEntry } from "#src/cli/hub.js";
+import type { HubTopLevelEntry } from "#src/cli/hub.js";
 import { PROJECT_CLI, PROJECT_DIR } from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
@@ -56,19 +56,15 @@ interface ErrorEntry {
   hintTemplate: string;
 }
 
-export function renderErrorCatalog(
-  catalog: Record<string, ErrorEntry>,
-): string {
+export function renderErrorCatalog(catalog: Record<string, ErrorEntry>): string {
   const rows = Object.entries(catalog).map(([code, entry]) => {
     const hint = entry.hintTemplate.replace(/\{[^}]+\}/g, "...").slice(0, 80);
     return `| \`${code}\` | ${entry.severity} | ${entry.exitCode} | ${hint} |`;
   });
 
-  return [
-    "| Code | Severity | Exit | Hint |",
-    "|------|----------|------|------|",
-    ...rows,
-  ].join("\n");
+  return ["| Code | Severity | Exit | Hint |", "|------|----------|------|------|", ...rows].join(
+    "\n",
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -76,29 +72,17 @@ export function renderErrorCatalog(
 // ---------------------------------------------------------------------------
 
 export function renderHubActions(
-  topLevel: HubTopLevelEntry[],
-  subMenus: Record<string, HubAction[]>,
+  normalMenu: HubTopLevelEntry[],
+  advancedMenu: HubTopLevelEntry[],
 ): string {
-  const rows: string[] = [];
-
-  for (const entry of topLevel) {
-    const items = subMenus[entry.value];
-    if (items) {
-      rows.push(`| **${entry.label}** | ${entry.hint} | — |`);
-      for (const item of items) {
-        rows.push(
-          `| \u00A0\u00A0${item.label} | ${item.hint} | \`${entry.value}\` |`,
-        );
-      }
-    } else {
-      rows.push(`| **${entry.label}** | ${entry.hint} | — |`);
-    }
-  }
+  const normalRows = normalMenu.map((e) => `| ${e.label} | ${e.hint} | Normal |`);
+  const advancedRows = advancedMenu.map((e) => `| ${e.label} | ${e.hint} | Advanced |`);
 
   return [
-    "| Action | Description | Group |",
-    "|--------|-------------|-------|",
-    ...rows,
+    "| Action | Description | Mode |",
+    "|--------|-------------|------|",
+    ...normalRows,
+    ...advancedRows,
   ].join("\n");
 }
 
@@ -106,14 +90,10 @@ export function renderHubActions(
 // MCP servers
 // ---------------------------------------------------------------------------
 
-export function renderMcpServers(
-  servers: Record<string, McpServerTemplate>,
-): string {
+export function renderMcpServers(servers: Record<string, McpServerTemplate>): string {
   const rows = Object.entries(servers).map(([key, srv]) => {
     const type = srv.type ?? "stdio";
-    const cmd = srv.command
-      ? `\`${srv.command} ${(srv.args ?? []).join(" ")}\``
-      : (srv.url ?? "—");
+    const cmd = srv.command ? `\`${srv.command} ${(srv.args ?? []).join(" ")}\`` : (srv.url ?? "—");
     return `| \`${key}\` | ${srv.description} | ${type} | ${cmd} |`;
   });
 
@@ -164,12 +144,7 @@ export function renderLayerOrder(): string {
       `\`${PROJECT_DIR}/\` directory`,
       "Project-level configuration (single source of truth)",
     ],
-    [
-      "3",
-      "**User**",
-      `\`~/${PROJECT_DIR}/user.yaml\``,
-      "Personal preferences (never committed)",
-    ],
+    ["3", "**User**", `\`~/${PROJECT_DIR}/user.yaml\``, "Personal preferences (never committed)"],
   ];
 
   const rows = layers.map(
