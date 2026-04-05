@@ -16,6 +16,7 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loa
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { getBuiltinPresetNames } from "../templates/presets/index.js";
 import { createPresetZip } from "../core/preset/preset-zip.js";
+import { printLegend } from "./wizard-legend.js";
 
 export interface PresetWizardResult {
   name: string;
@@ -35,6 +36,7 @@ export interface PresetWizardResult {
  */
 export async function runPresetWizard(projectRoot: string): Promise<PresetWizardResult | null> {
   p.intro(`${PROJECT_CLI} — Preset Creator`);
+  printLegend();
 
   // Step 1: Identity
   const name = await p.text({
