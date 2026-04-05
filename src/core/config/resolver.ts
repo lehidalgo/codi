@@ -1,8 +1,8 @@
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
-import type { NormalizedConfig } from "../../types/config.js";
-import { resolveProjectDir } from "../../utils/paths.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
+import type { NormalizedConfig } from "#src/types/config.js";
+import { resolveProjectDir } from "#src/utils/paths.js";
 import { scanProjectDir } from "./parser.js";
 import { flagsFromDefinitions } from "./composer.js";
 import { validateConfig } from "./validator.js";
@@ -13,9 +13,7 @@ import { FLAGS_FILENAME } from "#src/constants.js";
  * All artifacts (rules, skills, agents, commands), flags, and MCP configs come from .codi/.
  * Presets are consumed at install time — they are not loaded during config resolution.
  */
-export async function resolveConfig(
-  projectRoot: string,
-): Promise<Result<NormalizedConfig>> {
+export async function resolveConfig(projectRoot: string): Promise<Result<NormalizedConfig>> {
   const configDir = resolveProjectDir(projectRoot);
   const scanResult = await scanProjectDir(projectRoot);
   if (!scanResult.ok) return scanResult;
@@ -25,12 +23,8 @@ export async function resolveConfig(
     manifest: parsed.manifest,
     rules: parsed.rules,
     skills: parsed.skills,
-    commands: parsed.commands,
     agents: parsed.agents,
-    flags: flagsFromDefinitions(
-      parsed.flags,
-      path.join(configDir, FLAGS_FILENAME),
-    ),
+    flags: flagsFromDefinitions(parsed.flags, path.join(configDir, FLAGS_FILENAME)),
     mcp: parsed.mcp,
   };
 

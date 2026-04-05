@@ -1,18 +1,14 @@
-import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
 category: Document Generation
-compatibility: [claude-code, cursor, codex, cline, windsurf]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-intentHints:
-  taskType: Document Generation
-  examples:
-    - "Create a report"
-    - "Generate a proposal"
-    - "Write a one-pager"
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}} — Document Engine
@@ -217,12 +213,12 @@ For tabular data, generate:
 ## Available Agents
 
 For content research during document generation, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-docs-lookup** — Research and verify technical content accuracy
+- **${PROJECT_NAME}-docs-lookup** — Research and verify technical content accuracy
 
 ## Related Skills
 
-- **codi-theme-factory** — Apply visual themes to generated documents
-- **codi-deck-engine** — Generate slide presentations from document content
+- **${PROJECT_NAME}-theme-factory** — Apply visual themes to generated documents
+- **${PROJECT_NAME}-deck-engine** — Generate slide presentations from document content
 
 ## Step 6: Component Reference
 

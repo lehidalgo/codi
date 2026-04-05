@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { windsurfAdapter } from "#src/adapters/windsurf.js";
 import { createMockConfig } from "./mock-config.js";
-import {
-  CONTEXT_TOKENS_SMALL,
-  PROJECT_NAME,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { CONTEXT_TOKENS_SMALL, PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("windsurf adapter", () => {
   const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-windsurf-` + Date.now());
@@ -34,7 +30,6 @@ describe("windsurf adapter", () => {
     expect(windsurfAdapter.capabilities).toEqual({
       rules: true,
       skills: true,
-      commands: false,
       mcp: false,
       frontmatter: false,
       progressiveLoading: false,
@@ -49,7 +44,6 @@ describe("windsurf adapter", () => {
     expect(windsurfAdapter.paths.configRoot).toBe(".");
     expect(windsurfAdapter.paths.rules).toBe(".");
     expect(windsurfAdapter.paths.skills).toBe(".windsurf/skills");
-    expect(windsurfAdapter.paths.commands).toBeNull();
     expect(windsurfAdapter.paths.agents).toBeNull();
     expect(windsurfAdapter.paths.instructionFile).toBe(".windsurfrules");
     expect(windsurfAdapter.paths.mcpConfig).toBeNull();
@@ -133,9 +127,7 @@ describe("windsurf adapter", () => {
 
   it("inlines skills when progressive_loading is off", async () => {
     const config = createMockConfig({
-      skills: [
-        { name: "deploy", description: "Deploy skill", content: "Run deploy" },
-      ],
+      skills: [{ name: "deploy", description: "Deploy skill", content: "Run deploy" }],
       flags: {},
     });
     const files = await windsurfAdapter.generate(config, {});
@@ -147,16 +139,13 @@ describe("windsurf adapter", () => {
 
   it("generates skill files in .windsurf/skills/", async () => {
     const config = createMockConfig({
-      skills: [
-        { name: "alpha", description: "Alpha skill", content: "Alpha content" },
-      ],
+      skills: [{ name: "alpha", description: "Alpha skill", content: "Alpha content" }],
       flags: {},
     });
     const files = await windsurfAdapter.generate(config, {});
 
     const skillMds = files.filter(
-      (f) =>
-        f.path.startsWith(".windsurf/skills/") && f.path.endsWith("SKILL.md"),
+      (f) => f.path.startsWith(".windsurf/skills/") && f.path.endsWith("SKILL.md"),
     );
     expect(skillMds).toHaveLength(1);
     expect(skillMds[0]!.path).toBe(".windsurf/skills/alpha/SKILL.md");
@@ -173,8 +162,7 @@ describe("windsurf adapter", () => {
     const files = await windsurfAdapter.generate(config, {});
 
     const skillMds = files.filter(
-      (f) =>
-        f.path.startsWith(".windsurf/skills/") && f.path.endsWith("SKILL.md"),
+      (f) => f.path.startsWith(".windsurf/skills/") && f.path.endsWith("SKILL.md"),
     );
     expect(skillMds).toHaveLength(2);
   });
@@ -183,9 +171,7 @@ describe("windsurf adapter", () => {
 
   it("shows skill catalog when progressive_loading is metadata", async () => {
     const config = createMockConfig({
-      skills: [
-        { name: "deploy", description: "Deploy skill", content: "Run deploy" },
-      ],
+      skills: [{ name: "deploy", description: "Deploy skill", content: "Run deploy" }],
       flags: {
         progressive_loading: {
           value: "metadata",

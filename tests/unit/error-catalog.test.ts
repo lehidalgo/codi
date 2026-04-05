@@ -12,8 +12,8 @@ describe("ERROR_CATALOG", () => {
     expect(unique.size).toBe(codes.length);
   });
 
-  it("has 33 entries", () => {
-    expect(Object.keys(ERROR_CATALOG)).toHaveLength(33);
+  it("has 34 entries", () => {
+    expect(Object.keys(ERROR_CATALOG)).toHaveLength(34);
   });
 
   it("all entries have required fields", () => {
@@ -29,11 +29,9 @@ describe("ERROR_CATALOG", () => {
   it("all exit codes reference valid EXIT_CODES", () => {
     const validCodes = new Set(Object.values(EXIT_CODES));
     for (const entry of Object.values(ERROR_CATALOG)) {
-      expect(
-        validCodes.has(
-          entry.exitCode as (typeof EXIT_CODES)[keyof typeof EXIT_CODES],
-        ),
-      ).toBe(true);
+      expect(validCodes.has(entry.exitCode as (typeof EXIT_CODES)[keyof typeof EXIT_CODES])).toBe(
+        true,
+      );
     }
   });
 });
@@ -54,11 +52,7 @@ describe("createError", () => {
 
   it("includes cause when provided", () => {
     const cause = new Error("original");
-    const error = createError(
-      "E_GENERATION_FAILED",
-      { agent: "claude", reason: "timeout" },
-      cause,
-    );
+    const error = createError("E_GENERATION_FAILED", { agent: "claude", reason: "timeout" }, cause);
     expect(error.cause).toBe(cause);
   });
 

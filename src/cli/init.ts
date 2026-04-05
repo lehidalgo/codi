@@ -3,10 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveProjectDir } from "../utils/paths.js";
 import { registerAllAdapters } from "../adapters/index.js";
-import {
-  detectAdapters,
-  getAllAdapters,
-} from "../core/generator/adapter-registry.js";
+import { detectAdapters, getAllAdapters } from "../core/generator/adapter-registry.js";
 import { getPresetNames } from "../core/flags/flag-presets.js";
 import {
   DEFAULT_PRESET,
@@ -15,16 +12,12 @@ import {
   PROJECT_DIR,
   resolveArtifactName,
 } from "../constants.js";
-import {
-  getBuiltinPresetDefinition,
-  getBuiltinPresetNames,
-} from "../templates/presets/index.js";
+import { getBuiltinPresetDefinition, getBuiltinPresetNames } from "../templates/presets/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { generate } from "../core/generator/generator.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
-import { createCommand } from "../core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
 // Preset artifact lookup moved to init-wizard.ts
 import { createCommandResult } from "../core/output/formatter.js";
@@ -33,8 +26,14 @@ import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
 import { runInitWizard } from "./init-wizard.js";
 import type { ExistingSelections } from "./init-wizard.js";
+import type { ExistingInstallContext } from "./init-wizard.js";
 import { initFromOptions, handleOutput } from "./shared.js";
-import { inferHookType, createProjectStructure } from "./init-helpers.js";
+import {
+  inferHookType,
+  createProjectStructure,
+  syncManifestOnInit,
+  recordPresetLock,
+} from "./init-helpers.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
@@ -48,7 +47,7 @@ import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { StateManager } from "../core/config/state.js";
 import type { ArtifactFileState } from "../core/config/state.js";
 import { hashContent } from "../utils/hash.js";
-import { readLockFile, writeLockFile } from "../core/preset/preset-registry.js";
+import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -68,6 +67,15 @@ interface InitData {
 
 function isInteractive(options: InitOptions): boolean {
   return !options.json && !options.quiet && !options.agents;
+}
+
+function hasSelections(selections: ExistingSelections): boolean {
+  return (
+    selections.rules.length > 0 ||
+    selections.skills.length > 0 ||
+    selections.agents.length > 0 ||
+    selections.mcpServers.length > 0
+  );
 }
 
 export async function initHandler(
@@ -90,25 +98,31 @@ export async function initHandler(
 
   let isUpdate = false;
   let existingSelections: ExistingSelections | undefined;
+  let existingInstall: ExistingInstallContext | undefined;
   try {
     await fs.access(configDir);
     if (!options.force) {
       isUpdate = true;
-      const ledger = new OperationsLedgerManager(configDir);
-      const ledgerResult = await ledger.read();
-      const activePreset = ledgerResult.ok
-        ? ledgerResult.data.activePreset
-        : null;
-      if (activePreset?.artifactSelection) {
-        existingSelections = {
-          preset: activePreset.name,
-          rules: activePreset.artifactSelection.rules,
-          skills: activePreset.artifactSelection.skills,
-          agents: activePreset.artifactSelection.agents,
-          commands: activePreset.artifactSelection.commands,
-          mcpServers: activePreset.artifactSelection.mcpServers ?? [],
-        };
+      const inventory = await buildInstalledArtifactInventory(configDir);
+      existingSelections = inventory.selections;
+      if (!hasSelections(existingSelections)) {
+        const ledger = new OperationsLedgerManager(configDir);
+        const ledgerResult = await ledger.read();
+        const activePreset = ledgerResult.ok ? ledgerResult.data.activePreset : null;
+        if (activePreset?.artifactSelection) {
+          existingSelections = {
+            preset: activePreset.name,
+            rules: activePreset.artifactSelection.rules,
+            skills: activePreset.artifactSelection.skills,
+            agents: activePreset.artifactSelection.agents,
+            mcpServers: activePreset.artifactSelection.mcpServers ?? [],
+          };
+        }
       }
+      existingInstall = {
+        selections: existingSelections,
+        inventory: inventory.entries,
+      };
     }
   } catch {
     // Directory does not exist, proceed as fresh install
@@ -126,14 +140,12 @@ export async function initHandler(
   const rawPreset = options.preset as string | undefined;
   let presetName: string =
     (rawPreset
-      ? (resolveArtifactName(rawPreset, getPresetNames() as string[]) ??
-        rawPreset)
+      ? (resolveArtifactName(rawPreset, getPresetNames() as string[]) ?? rawPreset)
       : undefined) ?? DEFAULT_PRESET;
   let displayPresetName: string = presetName;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
-  let commandTemplates: string[] = [];
   let mcpServerTemplates: string[] = [];
 
   if (isInteractive(options)) {
@@ -141,12 +153,7 @@ export async function initHandler(
     const detectedAgentIds = detectedAdapters.map((a) => a.id);
     const allAgentIds = getAllAdapters().map((a) => a.id);
 
-    const wizardResult = await runInitWizard(
-      stack,
-      detectedAgentIds,
-      allAgentIds,
-      existingSelections,
-    );
+    const wizardResult = await runInitWizard(stack, detectedAgentIds, allAgentIds, existingInstall);
     if (!wizardResult) {
       return createCommandResult({
         success: false,
@@ -174,24 +181,17 @@ export async function initHandler(
 
     agentIds = wizardResult.agents;
     presetName = wizardResult.preset;
-    displayPresetName =
-      wizardResult.saveAsPreset ??
-      wizardResult.selectedPresetName ??
-      presetName;
+    displayPresetName = wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? presetName;
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 
-    if (
-      wizardResult.configMode === "zip" ||
-      wizardResult.configMode === "github"
-    ) {
+    if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
       // Import: will be handled after createProjectStructure via preset install
     } else {
       // Preset or custom: wizard always returns the full artifact selections
       ruleTemplates = wizardResult.rules;
       skillTemplates = wizardResult.skills;
       agentTemplates = wizardResult.agentTemplates;
-      commandTemplates = wizardResult.commandTemplates;
       mcpServerTemplates = wizardResult.mcpServers;
     }
 
@@ -209,16 +209,13 @@ export async function initHandler(
     // presetInstallUnifiedHandler calls regenerateConfigs internally,
     // so we track success to skip the duplicate generate() call later.
     if (wizardResult.importSource) {
-      const { presetInstallUnifiedHandler } =
-        await import("./preset-handlers.js");
+      const { presetInstallUnifiedHandler } = await import("./preset-handlers.js");
       const installResult = await presetInstallUnifiedHandler(
         projectRoot,
         wizardResult.importSource,
       );
       if (!installResult.success) {
-        log.warn(
-          `Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`,
-        );
+        log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`);
       } else {
         importRegenerated = true;
         if (installResult.data?.name) {
@@ -230,11 +227,7 @@ export async function initHandler(
 
     // Save custom selection as preset if requested
     if (wizardResult.saveAsPreset) {
-      const presetDir = path.join(
-        configDir,
-        "presets",
-        wizardResult.saveAsPreset,
-      );
+      const presetDir = path.join(configDir, "presets", wizardResult.saveAsPreset);
       await fs.mkdir(presetDir, { recursive: true });
       const { stringify } = await import("yaml");
       await fs.writeFile(
@@ -246,15 +239,12 @@ export async function initHandler(
             rules: wizardResult.rules,
             skills: wizardResult.skills,
             agents: wizardResult.agentTemplates,
-            commands: wizardResult.commandTemplates,
             mcpServers: wizardResult.mcpServers,
           },
         }),
         "utf8",
       );
-      log.info(
-        `Saved custom selection as preset "${wizardResult.saveAsPreset}"`,
-      );
+      log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
     }
   } else {
     const knownPresets = getBuiltinPresetNames();
@@ -326,7 +316,6 @@ export async function initHandler(
       ruleTemplates = [...presetDef.rules];
       skillTemplates = [...presetDef.skills];
       agentTemplates = [...presetDef.agents];
-      commandTemplates = [...presetDef.commands];
     }
   }
 
@@ -370,20 +359,6 @@ export async function initHandler(
     if (!result.ok) {
       log.warn(
         `Failed to create agent "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
-      );
-    }
-  }
-
-  for (const template of commandTemplates) {
-    const result = await createCommand({
-      name: template,
-      configDir,
-      template,
-      force: options.force,
-    });
-    if (!result.ok) {
-      log.warn(
-        `Failed to create command "${template}": ${result.errors[0]?.message ?? "unknown error"}`,
       );
     }
   }
@@ -451,21 +426,6 @@ export async function initHandler(
           /* file may not exist if scaffolding failed */
         }
       }
-      for (const name of commandTemplates) {
-        const filePath = path.join(configDir, "commands", `${name}.md`);
-        try {
-          const content = await fs.readFile(filePath, "utf-8");
-          artifactStates.push({
-            path: path.relative(projectRoot, filePath),
-            hash: hashContent(content),
-            preset: presetName,
-            timestamp: now,
-          });
-        } catch {
-          /* file may not exist if scaffolding failed */
-        }
-      }
-
       if (artifactStates.length > 0) {
         await stateManager.updatePresetArtifacts(artifactStates);
       }
@@ -474,29 +434,21 @@ export async function initHandler(
     }
   }
 
+  // Sync artifact manifest: remove deselected, record installed
+  await syncManifestOnInit(
+    configDir,
+    ruleTemplates,
+    skillTemplates,
+    agentTemplates,
+    mcpServerTemplates,
+    isUpdate ? existingSelections : undefined,
+  ).catch(() => log.warn("Artifact manifest sync failed; this is non-critical."));
+
   // Record installed preset in lock file
   if (presetName) {
-    try {
-      const lock = await readLockFile(configDir);
-      lock.presets[presetName] = {
-        version: "builtin",
-        source: presetName,
-        sourceType: "builtin",
-        installedAt: new Date().toISOString(),
-      };
-      // Also record the custom preset if the user saved one
-      if (displayPresetName !== presetName) {
-        lock.presets[displayPresetName] = {
-          version: "1.0.0",
-          source: `local:${displayPresetName}`,
-          sourceType: "local",
-          installedAt: new Date().toISOString(),
-        };
-      }
-      await writeLockFile(configDir, lock);
-    } catch {
-      log.warn("Failed to write preset lock file; this is non-critical.");
-    }
+    await recordPresetLock(configDir, presetName, displayPresetName).catch(() =>
+      log.warn("Failed to write preset lock file; this is non-critical."),
+    );
   }
 
   let generated = importRegenerated;
@@ -508,9 +460,31 @@ export async function initHandler(
     });
     generated = genResult.ok;
     if (!genResult.ok) {
-      log.warn(
-        `Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`,
-      );
+      log.warn(`Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`);
+    }
+  }
+
+  // Create docs/project/ directory and initial stamp when documentation check is enabled
+  if (configResult.ok) {
+    const requireDoc = configResult.data.flags["require_documentation"];
+    const docCheckEnabled = requireDoc?.mode !== "disabled" && requireDoc?.value === true;
+    if (docCheckEnabled) {
+      try {
+        const { ensureDocProjectDir, writeStamp } = await import("../core/docs/doc-stamp.js");
+        await ensureDocProjectDir(projectRoot);
+        const stampPath = `docs/project/.doc-stamp`;
+        const fs = await import("node:fs/promises");
+        const stampExists = await fs
+          .access(`${projectRoot}/${stampPath}`)
+          .then(() => true)
+          .catch(() => false);
+        if (!stampExists) {
+          await writeStamp(projectRoot, "human");
+          log.info(`Documentation checkpoint initialised: ${stampPath}`);
+        }
+      } catch {
+        log.warn("Documentation directory setup skipped (not a git repository?).");
+      }
     }
   }
 
@@ -522,7 +496,7 @@ export async function initHandler(
       const hookSetup = await detectHookSetup(projectRoot);
       const resolvedFlags = configResult.data.flags;
       const hooksConfig = generateHooksConfig(resolvedFlags, stack);
-      if (hooksConfig.hooks.length > 0) {
+      if (hooksConfig.hooks.length > 0 || hooksConfig.docCheck) {
         const hookResult = await installHooks({
           projectRoot,
           runner: hookSetup.runner,
@@ -533,7 +507,14 @@ export async function initHandler(
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
+          docNamingCheck: hooksConfig.docNamingCheck,
+          versionBump: hooksConfig.versionBump,
           artifactValidation: hooksConfig.artifactValidation,
+          importDepthCheck: hooksConfig.importDepthCheck,
+          skillYamlValidation: hooksConfig.skillYamlValidation,
+          skillResourceCheck: hooksConfig.skillResourceCheck,
+          docCheck: hooksConfig.docCheck,
+          docProtectedBranches: hooksConfig.docProtectedBranches,
         });
         hooksInstalled = hookResult.ok;
         if (hookResult.ok) {
@@ -541,17 +522,9 @@ export async function initHandler(
           log.info(
             `Pre-commit hooks installed (${hookSetup.runner === "none" ? "standalone" : hookSetup.runner})`,
           );
-          const missingDeps = await checkHookDependencies(
-            hooksConfig.hooks,
-            projectRoot,
-          );
+          const missingDeps = await checkHookDependencies(hooksConfig.hooks, projectRoot);
           if (missingDeps.length > 0) {
-            await installMissingDeps(
-              missingDeps,
-              projectRoot,
-              log,
-              isInteractive(options),
-            );
+            await installMissingDeps(missingDeps, projectRoot, log, isInteractive(options));
           }
         } else {
           log.warn("Hook installation failed; you can set up hooks manually.");
@@ -564,8 +537,7 @@ export async function initHandler(
 
   // Generate HTML documentation site (non-critical)
   try {
-    const { buildSkillDocsFile } =
-      await import("../core/docs/skill-docs-generator.js");
+    const { buildSkillDocsFile } = await import("../core/docs/skill-docs-generator.js");
     const docsPath = await buildSkillDocsFile(projectRoot);
     log.info(`Documentation site generated: ${docsPath}`);
   } catch {
@@ -577,9 +549,7 @@ export async function initHandler(
     const { injectSections } = await import("../core/docs/docs-generator.js");
     const result = await injectSections(projectRoot);
     if (result.ok && result.data.updated.length > 0) {
-      log.info(
-        `Documentation sections updated: ${result.data.updated.join(", ")}`,
-      );
+      log.info(`Documentation sections updated: ${result.data.updated.join(", ")}`);
     }
   } catch {
     log.warn("Documentation section generation skipped.");
@@ -600,7 +570,6 @@ export async function initHandler(
       ruleTemplates.length > 0 ||
       skillTemplates.length > 0 ||
       agentTemplates.length > 0 ||
-      commandTemplates.length > 0 ||
       mcpServerTemplates.length > 0
     ) {
       await ledger.setActivePreset({
@@ -610,7 +579,6 @@ export async function initHandler(
           rules: ruleTemplates,
           skills: skillTemplates,
           agents: agentTemplates,
-          commands: commandTemplates,
           mcpServers: mcpServerTemplates,
         },
       });
@@ -678,6 +646,12 @@ export function registerInitCommand(program: Command): void {
       initFromOptions(options);
       const result = await initHandler(process.cwd(), options);
       handleOutput(result, options);
+      if (result.success && !options.json && !options.quiet) {
+        console.log(
+          "\nNext step: run /codi-codebase-onboarding inside your coding agent\n" +
+            "to add project-specific context to your configuration files.\n",
+        );
+      }
       process.exit(result.exitCode);
     });
 }

@@ -6,20 +6,21 @@ This document defines the JSON schemas used by skill-creator.
 
 ## evals.json
 
-Defines the evals for a skill. Located at `evals/evals.json` within the skill directory.
+Defines the eval cases for a skill. Located at `evals/evals.json` within the skill directory.
 
 ```json
 {
-  "skill_name": "example-skill",
-  "evals": [
+  "skillName": "example-skill",
+  "cases": [
     {
-      "id": 1,
-      "prompt": "User's example prompt",
-      "expected_output": "Description of expected result",
+      "id": "extracts-names",
+      "description": "Verify skill extracts all person names from a PDF",
+      "prompt": "Extract all names from the uploaded document",
       "files": ["evals/files/sample1.pdf"],
       "expectations": [
-        "The output includes X",
-        "The skill used script Y"
+        "Output includes 'John Smith'",
+        "Output includes 'Sarah Johnson'",
+        "Creates a names.json file with an array of strings"
       ]
     }
   ]
@@ -27,12 +28,18 @@ Defines the evals for a skill. Located at `evals/evals.json` within the skill di
 ```
 
 **Fields:**
-- `skill_name`: Name matching the skill's frontmatter
-- `evals[].id`: Unique integer identifier
-- `evals[].prompt`: The task to execute
-- `evals[].expected_output`: Human-readable description of success
-- `evals[].files`: Optional list of input file paths (relative to skill root)
-- `evals[].expectations`: List of verifiable statements
+- `skillName`: Name matching the skill's frontmatter (camelCase)
+- `cases[].id`: Unique string identifier, kebab-case
+- `cases[].description`: Human-readable description of what this case tests
+- `cases[].prompt`: The exact task to execute, as a user would type it
+- `cases[].files`: Optional list of input file paths (relative to skill root)
+- `cases[].expectations`: List of objectively verifiable statements — each must be checkable by an external grader without subjective judgment
+
+**Tracking fields** (set by the eval runner, not by the author — omit when writing evals):
+- `cases[].passed`: Boolean result from the last run
+- `cases[].lastRunAt`: ISO datetime of the last run
+- `cases[].passRate`: Fraction of expectations that passed (0.0–1.0)
+- `lastUpdated`: ISO datetime when the file was last written
 
 ---
 

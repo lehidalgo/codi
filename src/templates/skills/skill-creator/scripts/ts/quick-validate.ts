@@ -17,15 +17,22 @@ interface ValidationResult {
 const ALLOWED_PROPERTIES = new Set([
   "name",
   "description",
+  "version",
+  "type",
   "license",
+  "tools",
+  "hooks",
   "allowed-tools",
+  "allowedTools",
   "metadata",
   "compatibility",
   "managed_by",
   "category",
   "disable-model-invocation",
+  "disableModelInvocation",
   "user-invocable",
   "argument-hint",
+  "argumentHint",
   "model",
   "effort",
   "context",
@@ -84,10 +91,7 @@ export function validateSkill(skillPath: string): ValidationResult {
   if (name && !/^[a-z0-9-]+$/.test(name)) {
     return { valid: false, message: `Name '${name}' should be kebab-case` };
   }
-  if (
-    name &&
-    (name.startsWith("-") || name.endsWith("-") || name.includes("--"))
-  ) {
+  if (name && (name.startsWith("-") || name.endsWith("-") || name.includes("--"))) {
     return {
       valid: false,
       message: `Name '${name}' cannot start/end with hyphen or contain consecutive hyphens`,
@@ -111,6 +115,32 @@ export function validateSkill(skillPath: string): ValidationResult {
     return {
       valid: false,
       message: `Description is too long (${desc.length} characters). Maximum is 1024.`,
+    };
+  }
+
+  // Validate category value against the centralized registry.
+  // Kept in sync with ALL_SKILL_CATEGORIES in src/constants.ts.
+  const VALID_CATEGORIES = [
+    "Brand Identity",
+    "Code Quality",
+    "Content Creation",
+    "Content Refinement",
+    "Creative and Design",
+    "Developer Tools",
+    "Developer Workflow",
+    "Document Generation",
+    "File Format Tools",
+    "Planning",
+    "Productivity",
+    "Testing",
+    "Workflow",
+    "Codi Platform",
+  ];
+  const category = keys.get("category")?.replace(/^["']|["']$/g, "");
+  if (category && !VALID_CATEGORIES.includes(category)) {
+    return {
+      valid: false,
+      message: `Category '${category}' is not recognized. Valid categories: ${VALID_CATEGORIES.join(", ")}`,
     };
   }
 

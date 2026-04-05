@@ -18,17 +18,15 @@ function makeEvalsData(overrides: Partial<EvalsData> = {}): EvalsData {
   return {
     skillName: "commit",
     cases: [
-      { id: "c1", description: "Conventional format" },
-      { id: "c2", description: "Has scope", passed: true },
+      { id: "c1", description: "Conventional format", prompt: "Commit my staged changes" },
+      { id: "c2", description: "Has scope", prompt: "Commit the auth changes", passed: true },
     ],
     ...overrides,
   };
 }
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-evals-test-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-evals-test-`));
 });
 
 afterEach(async () => {
@@ -52,11 +50,7 @@ describe("readEvals", () => {
     const skillDir = path.join(tmpDir, "commit");
     const evalsDir = path.join(skillDir, "evals");
     await fs.mkdir(evalsDir, { recursive: true });
-    await fs.writeFile(
-      path.join(evalsDir, "evals.json"),
-      JSON.stringify(makeEvalsData()),
-      "utf-8",
-    );
+    await fs.writeFile(path.join(evalsDir, "evals.json"), JSON.stringify(makeEvalsData()), "utf-8");
 
     const result = await readEvals(skillDir);
     expect(result.ok).toBe(true);
@@ -145,9 +139,9 @@ describe("getEvalsSummary", () => {
     await writeEvals(skillDir, {
       skillName: "summary",
       cases: [
-        { id: "c1", description: "Pass", passed: true },
-        { id: "c2", description: "Fail", passed: false },
-        { id: "c3", description: "Not run" },
+        { id: "c1", description: "Pass", prompt: "Run tests", passed: true },
+        { id: "c2", description: "Fail", prompt: "Run tests wrong", passed: false },
+        { id: "c3", description: "Not run", prompt: "Run something" },
       ],
     });
 

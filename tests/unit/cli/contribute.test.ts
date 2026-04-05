@@ -6,11 +6,7 @@ import { cleanupTmpDir } from "../../helpers/fs.js";
 import { parse as parseYaml } from "yaml";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import {
-  contributeHandler,
-  discoverArtifacts,
-  buildPresetPackage,
-} from "#src/cli/contribute.js";
+import { contributeHandler, discoverArtifacts, buildPresetPackage } from "#src/cli/contribute.js";
 import type { ArtifactEntry } from "#src/cli/contribute.js";
 import { extractPresetZip } from "#src/core/preset/preset-zip.js";
 import { Logger } from "#src/core/output/logger.js";
@@ -27,9 +23,7 @@ const execFileAsync = promisify(execFile);
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-contrib-test-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-contrib-test-`));
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -54,7 +48,6 @@ describe("contributeHandler", () => {
     await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
     await fs.mkdir(path.join(configDir, "skills"), { recursive: true });
     await fs.mkdir(path.join(configDir, "agents"), { recursive: true });
-    await fs.mkdir(path.join(configDir, "commands"), { recursive: true });
 
     const result = await contributeHandler(tmpDir);
 
@@ -93,11 +86,7 @@ describe("discoverArtifacts", () => {
       "utf8",
     );
     // Add a supporting file
-    await fs.writeFile(
-      path.join(skillDir, "helper.sh"),
-      "#!/bin/sh\necho hello",
-      "utf8",
-    );
+    await fs.writeFile(path.join(skillDir, "helper.sh"), "#!/bin/sh\necho hello", "utf8");
 
     const artifacts = await discoverArtifacts(configDir);
 
@@ -123,23 +112,6 @@ describe("discoverArtifacts", () => {
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0]!.name).toBe("reviewer");
     expect(artifacts[0]!.type).toBe("agent");
-  });
-
-  it("discovers flat .md commands", async () => {
-    const configDir = path.join(tmpDir, PROJECT_DIR);
-    const commandsDir = path.join(configDir, "commands");
-    await fs.mkdir(commandsDir, { recursive: true });
-    await fs.writeFile(
-      path.join(commandsDir, "deploy.md"),
-      "---\nname: deploy\ntype: command\n---\nDeploy content",
-      "utf8",
-    );
-
-    const artifacts = await discoverArtifacts(configDir);
-
-    expect(artifacts).toHaveLength(1);
-    expect(artifacts[0]!.name).toBe("deploy");
-    expect(artifacts[0]!.type).toBe("command");
   });
 
   it("discovers multiple artifact types in a polyglot project", async () => {
@@ -191,9 +163,7 @@ describe("discoverArtifacts", () => {
   });
 
   it("returns empty array for nonexistent config directory", async () => {
-    const artifacts = await discoverArtifacts(
-      path.join(tmpDir, `${PROJECT_DIR}-nonexistent`),
-    );
+    const artifacts = await discoverArtifacts(path.join(tmpDir, `${PROJECT_DIR}-nonexistent`));
     expect(artifacts).toEqual([]);
   });
 
@@ -225,22 +195,14 @@ describe("buildPresetPackage", () => {
       },
     ];
     // Create the source file
-    await fs.writeFile(
-      artifacts[0]!.path,
-      "---\nname: my-rule\n---\nContent",
-      "utf8",
-    );
+    await fs.writeFile(artifacts[0]!.path, "---\nname: my-rule\n---\nContent", "utf8");
 
     const stagingDir = path.join(tmpDir, "staging");
     await fs.mkdir(stagingDir, { recursive: true });
 
     await buildPresetPackage(artifacts, "test-preset", stagingDir);
 
-    const manifestPath = path.join(
-      stagingDir,
-      "test-preset",
-      PRESET_MANIFEST_FILENAME,
-    );
+    const manifestPath = path.join(stagingDir, "test-preset", PRESET_MANIFEST_FILENAME);
     const raw = await fs.readFile(manifestPath, "utf8");
     const manifest = parseYaml(raw) as Record<string, unknown>;
 
@@ -290,11 +252,7 @@ describe("buildPresetPackage", () => {
     );
     await fs.writeFile(path.join(skillDir, "helper.sh"), "#!/bin/sh", "utf8");
     await fs.mkdir(path.join(skillDir, "scripts"), { recursive: true });
-    await fs.writeFile(
-      path.join(skillDir, "scripts", "run.sh"),
-      "echo run",
-      "utf8",
-    );
+    await fs.writeFile(path.join(skillDir, "scripts", "run.sh"), "echo run", "utf8");
 
     const artifacts: ArtifactEntry[] = [
       { name: "my-skill", type: "skill", managedBy: "user", path: skillDir },
@@ -306,22 +264,13 @@ describe("buildPresetPackage", () => {
 
     // Check skill directory was copied recursively
     const destSkillDir = path.join(stagingDir, "pkg", "skills", "my-skill");
-    const skillMd = await fs.readFile(
-      path.join(destSkillDir, SKILL_OUTPUT_FILENAME),
-      "utf8",
-    );
+    const skillMd = await fs.readFile(path.join(destSkillDir, SKILL_OUTPUT_FILENAME), "utf8");
     expect(skillMd).toContain("Skill");
 
-    const helper = await fs.readFile(
-      path.join(destSkillDir, "helper.sh"),
-      "utf8",
-    );
+    const helper = await fs.readFile(path.join(destSkillDir, "helper.sh"), "utf8");
     expect(helper).toBe("#!/bin/sh");
 
-    const script = await fs.readFile(
-      path.join(destSkillDir, "scripts", "run.sh"),
-      "utf8",
-    );
+    const script = await fs.readFile(path.join(destSkillDir, "scripts", "run.sh"), "utf8");
     expect(script).toBe("echo run");
   });
 
@@ -349,7 +298,6 @@ describe("buildPresetPackage", () => {
     expect(arts.rules).toEqual(["only-rule"]);
     expect(arts.skills).toBeUndefined();
     expect(arts.agents).toBeUndefined();
-    expect(arts.commands).toBeUndefined();
   });
 
   it("handles multiple artifacts of the same type", async () => {
@@ -367,10 +315,7 @@ describe("buildPresetPackage", () => {
     await fs.mkdir(stagingDir, { recursive: true });
     await buildPresetPackage(artifacts, "multi", stagingDir);
 
-    const raw = await fs.readFile(
-      path.join(stagingDir, "multi", PRESET_MANIFEST_FILENAME),
-      "utf8",
-    );
+    const raw = await fs.readFile(path.join(stagingDir, "multi", PRESET_MANIFEST_FILENAME), "utf8");
     const manifest = parseYaml(raw) as Record<string, unknown>;
     const arts = manifest.artifacts as Record<string, string[]>;
 
@@ -397,11 +342,7 @@ describe("ZIP round-trip", () => {
       "---\nname: my-skill\ntype: skill\ndescription: test\n---\nSkill content",
       "utf8",
     );
-    await fs.writeFile(
-      path.join(skillDir, "scripts", "run.sh"),
-      "#!/bin/sh\necho hello",
-      "utf8",
-    );
+    await fs.writeFile(path.join(skillDir, "scripts", "run.sh"), "#!/bin/sh\necho hello", "utf8");
 
     // 2. Discover artifacts
     const artifacts = await discoverArtifacts(configDir);
@@ -431,10 +372,7 @@ describe("ZIP round-trip", () => {
     const extractedDir = extractResult.data.extractedDir;
 
     // Rule survived
-    const ruleContent = await fs.readFile(
-      path.join(extractedDir, "rules", "my-rule.md"),
-      "utf8",
-    );
+    const ruleContent = await fs.readFile(path.join(extractedDir, "rules", "my-rule.md"), "utf8");
     expect(ruleContent).toContain("Rule content here");
 
     // Skill directory survived with SKILL.md

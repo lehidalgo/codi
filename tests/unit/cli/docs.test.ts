@@ -23,14 +23,8 @@ vi.mock("#src/cli/shared.js", () => ({
   handleOutput: vi.fn(),
 }));
 
-import {
-  validateSections,
-  injectSections,
-} from "#src/core/docs/docs-generator.js";
-import {
-  exportSkillCatalogJson,
-  buildSkillDocsFile,
-} from "#src/core/docs/skill-docs-generator.js";
+import { validateSections, injectSections } from "#src/core/docs/docs-generator.js";
+import { exportSkillCatalogJson, buildSkillDocsFile } from "#src/core/docs/skill-docs-generator.js";
 
 const mockValidateSections = vi.mocked(validateSections);
 const mockInjectSections = vi.mocked(injectSections);
@@ -114,9 +108,7 @@ describe("docsHandler", () => {
   it("outputs JSON catalog to stdout with --json", async () => {
     const catalog = JSON.stringify({ totalSkills: 5, groups: [] });
     mockExportJson.mockReturnValue(catalog);
-    const stdoutSpy = vi
-      .spyOn(process.stdout, "write")
-      .mockImplementation(() => true);
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     const result = await docsHandler("/tmp/project", { json: true });
 
@@ -129,16 +121,14 @@ describe("docsHandler", () => {
   });
 
   it("generates HTML docs by default", async () => {
-    mockBuildDocs.mockResolvedValue("/tmp/project/docs/_site/index.html");
-    mockExportJson.mockReturnValue(
-      JSON.stringify({ totalSkills: 3, groups: [] }),
-    );
+    mockBuildDocs.mockResolvedValue("/tmp/project/docs/codi_docs/index.html");
+    mockExportJson.mockReturnValue(JSON.stringify({ totalSkills: 3, groups: [] }));
 
     const result = await docsHandler("/tmp/project", {});
 
     expect(result.success).toBe(true);
     expect(result.exitCode).toBe(EXIT_CODES.SUCCESS);
-    expect(result.data.outputPath).toBe("/tmp/project/docs/_site/index.html");
+    expect(result.data.outputPath).toBe("/tmp/project/docs/codi_docs/index.html");
     expect(result.data.totalSkills).toBe(3);
     expect(mockBuildDocs).toHaveBeenCalledWith("/tmp/project");
   });
@@ -146,9 +136,7 @@ describe("docsHandler", () => {
   it("skips JSON sidecar when --output is specified", async () => {
     const { writeFile: mockWriteFile } = await import("node:fs/promises");
     mockBuildDocs.mockResolvedValue("/custom/path/index.html");
-    mockExportJson.mockReturnValue(
-      JSON.stringify({ totalSkills: 2, groups: [] }),
-    );
+    mockExportJson.mockReturnValue(JSON.stringify({ totalSkills: 2, groups: [] }));
 
     await docsHandler("/tmp/project", { output: "/custom/path" });
 

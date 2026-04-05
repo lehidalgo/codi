@@ -1,13 +1,5 @@
-import type {
-  NormalizedConfig,
-  NormalizedSkill,
-  McpConfig,
-} from "../types/config.js";
-import {
-  PROJECT_NAME_DISPLAY,
-  PROJECT_URL,
-  BRAND_CATEGORY,
-} from "../constants.js";
+import type { NormalizedConfig, NormalizedSkill, McpConfig } from "../types/config.js";
+import { PROJECT_NAME_DISPLAY, PROJECT_URL, BRAND_CATEGORY } from "../constants.js";
 
 /** Build a project overview section from manifest metadata. */
 export function buildProjectOverview(config: NormalizedConfig): string {
@@ -30,9 +22,7 @@ export function buildArchitectureSummary(config: NormalizedConfig): string {
   const lines = ["## Architecture", ""];
 
   if (config.rules.length > 0) {
-    lines.push(
-      `**Rules** (${config.rules.length}): ${config.rules.map((r) => r.name).join(", ")}`,
-    );
+    lines.push(`**Rules** (${config.rules.length}): ${config.rules.map((r) => r.name).join(", ")}`);
   }
   if (config.skills.length > 0) {
     lines.push(
@@ -44,29 +34,6 @@ export function buildArchitectureSummary(config: NormalizedConfig): string {
       `**Agents** (${config.agents.length}): ${config.agents.map((a) => a.name).join(", ")}`,
     );
   }
-  if (config.commands.length > 0) {
-    lines.push(
-      `**Commands** (${config.commands.length}): ${config.commands.map((c) => c.name).join(", ")}`,
-    );
-  }
-
-  return lines.join("\n");
-}
-
-/** Build a commands table for agents that support commands. */
-export function buildCommandsTable(config: NormalizedConfig): string | null {
-  if (config.commands.length === 0) return null;
-
-  const lines = [
-    "## Key Commands",
-    "",
-    "| Command | Description |",
-    "|---------|-------------|",
-  ];
-
-  for (const cmd of config.commands) {
-    lines.push(`| \`/${cmd.name}\` | ${cmd.description} |`);
-  }
 
   return lines.join("\n");
 }
@@ -75,12 +42,7 @@ export function buildCommandsTable(config: NormalizedConfig): string | null {
 export function buildAgentsTable(config: NormalizedConfig): string | null {
   if (config.agents.length === 0) return null;
 
-  const lines = [
-    "## Available Agents",
-    "",
-    "| Agent | Purpose |",
-    "|-------|---------|",
-  ];
+  const lines = ["## Available Agents", "", "| Agent | Purpose |", "|-------|---------|"];
 
   for (const agent of config.agents) {
     lines.push(`| ${agent.name} | ${agent.description} |`);
@@ -90,20 +52,11 @@ export function buildAgentsTable(config: NormalizedConfig): string | null {
 }
 
 /** Build a skill routing table mapping user intents to recommended skills. */
-export function buildSkillRoutingTable(
-  config: NormalizedConfig,
-): string | null {
-  const routableSkills = config.skills.filter(
-    (s) => s.category !== BRAND_CATEGORY,
-  );
+export function buildSkillRoutingTable(config: NormalizedConfig): string | null {
+  const routableSkills = config.skills.filter((s) => s.category !== BRAND_CATEGORY);
   if (routableSkills.length === 0) return null;
 
-  const lines = [
-    "## Skill Routing",
-    "",
-    "| Task | Examples | Skill | Notes |",
-    "|------|----------|-------|-------|",
-  ];
+  const lines = ["## Skill Routing", "", "| Skill | When to use |", "|-------|-------------|"];
 
   for (const skill of routableSkills) {
     lines.push(buildSkillRow(skill));
@@ -113,26 +66,17 @@ export function buildSkillRoutingTable(
 }
 
 function buildSkillRow(skill: NormalizedSkill): string {
-  if (skill.intentHints) {
-    const examples = skill.intentHints.examples.map((e) => `"${e}"`).join(", ");
-    return `| ${skill.intentHints.taskType} | ${examples} | ${skill.name} | |`;
+  const summary = extractRoutingSummary(skill.description);
+  return `| ${skill.name} | ${summary} |`;
+}
+
+function extractRoutingSummary(description: string): string {
+  const sentences = description.split(/\.\s/);
+  let summary = sentences[0] ?? description;
+  if (sentences[1] !== undefined && (summary + ". " + sentences[1]).length <= 200) {
+    summary = summary + ". " + sentences[1];
   }
-  const taskType = deriveTaskType(skill.name);
-  const note = extractFirstSentence(skill.description);
-  return `| ${taskType} | — | ${skill.name} | *${note}* |`;
-}
-
-function deriveTaskType(name: string): string {
-  const stripped = name.replace(/^[a-z]+-/, "");
-  return stripped
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-function extractFirstSentence(description: string): string {
-  const first = description.split(/\.\s/)[0] ?? description;
-  return first.length > 80 ? first.slice(0, 77) + "..." : first;
+  return summary.length > 200 ? summary.slice(0, 197) + "..." : summary;
 }
 
 /** Build development notes derived from flags. */
@@ -196,4 +140,63 @@ export function getEnabledMcpServers(mcp: McpConfig): McpConfig {
     filtered.servers[name] = rest;
   }
   return filtered;
+}
+
+const ENV_PLACEHOLDER = /\$\{([^}]+)\}/g;
+
+/**
+ * Collect all environment variable names referenced in MCP server configs.
+ * Scans both `env` values and `headers` values for ${VAR_NAME} placeholders.
+ * Returns a deduplicated, sorted list of variable names.
+ */
+export function collectMcpEnvVars(servers: McpConfig["servers"]): string[] {
+  const vars = new Set<string>();
+  for (const server of Object.values(servers)) {
+    for (const value of Object.values(server.env ?? {})) {
+      for (const match of value.matchAll(ENV_PLACEHOLDER)) {
+        if (match[1]) vars.add(match[1]);
+      }
+    }
+    for (const value of Object.values(server.headers ?? {})) {
+      for (const match of value.matchAll(ENV_PLACEHOLDER)) {
+        if (match[1]) vars.add(match[1]);
+      }
+    }
+  }
+  return [...vars].sort();
+}
+
+/**
+ * Build a .env.example file listing all env vars required by the enabled MCP servers.
+ * Each line is commented with the server name(s) that require it.
+ */
+export function buildMcpEnvExample(servers: McpConfig["servers"]): string | null {
+  const varToServers = new Map<string, string[]>();
+  for (const [name, server] of Object.entries(servers)) {
+    const sources = [...Object.values(server.env ?? {}), ...Object.values(server.headers ?? {})];
+    for (const value of sources) {
+      for (const match of value.matchAll(ENV_PLACEHOLDER)) {
+        if (!match[1]) continue;
+        const existing = varToServers.get(match[1]) ?? [];
+        existing.push(name);
+        varToServers.set(match[1], existing);
+      }
+    }
+  }
+  if (varToServers.size === 0) return null;
+
+  const lines = [
+    "# MCP server environment variables",
+    "# Set these values before running: codi generate",
+    "# Required by the MCP servers configured in .codi/mcp-servers/",
+    "",
+  ];
+  for (const [varName, serverNames] of [...varToServers.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    lines.push(`# Required by: ${serverNames.join(", ")}`);
+    lines.push(`${varName}=`);
+    lines.push("");
+  }
+  return lines.join("\n");
 }

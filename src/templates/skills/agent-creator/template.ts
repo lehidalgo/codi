@@ -6,6 +6,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
@@ -15,13 +16,11 @@ description: |
   a specialized agent. Also activate when the user wants to add a code reviewer,
   security analyzer, test generator, or any autonomous worker role.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Agent Creation
-  examples:
-    - "Create a new agent"
-    - "Build a specialized subagent"
-    - "Add a code reviewer agent"
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # Agent Creator
@@ -64,10 +63,11 @@ This creates \\\`${PROJECT_DIR}/agents/<name>.md\\\` with a blank skeleton.
 ---
 name: <kebab-case, max ${MAX_NAME_LENGTH} chars>
 description: <max ${MAX_DESCRIPTION_LENGTH} chars — see description rules below>
+version: 1
 tools: [Read, Grep, Glob, Bash]  # only include tools the agent needs
 model: inherit                    # or sonnet, opus
 managed_by: user
----
+user-invocable: true---
 \\\`\\\`\\\`
 
 #### Description Writing Rules
@@ -193,11 +193,14 @@ Adapt the severity levels and criteria to match the agent's domain.
 - [ ] Approval criteria have concrete thresholds
 - [ ] \\\`name\\\` in frontmatter matches the filename
 
+Run \\\`${PROJECT_CLI} validate\\\` to check Zod schema compliance (name pattern, description length, version, managed_by). Fix any errors before registering.
+
 ### Step 9 — Register
 
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
+${PROJECT_CLI} validate
 ${PROJECT_CLI} generate
 ${PROJECT_CLI} doctor
 \\\`\\\`\\\`
@@ -228,5 +231,5 @@ Run \\\`${PROJECT_CLI} add agent --all\\\` to list all templates. Major categori
 
 ## Related Skills
 
-- **codi-skill-creator** — Create a skill that coordinates multiple agents in a workflow
+- **${PROJECT_NAME}-skill-creator** — Create a skill that coordinates multiple agents in a workflow
 `;

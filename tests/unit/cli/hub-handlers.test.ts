@@ -43,7 +43,6 @@ vi.mock("../../../src/cli/add.js", () => ({
   addRuleHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
   addSkillHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
   addAgentHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  addCommandHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
   addBrandHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
 }));
 
@@ -109,12 +108,7 @@ vi.mock("../../../src/adapters/index.js", () => ({
 
 import fs from "node:fs/promises";
 import * as p from "@clack/prompts";
-import {
-  isCancelled,
-  handleInit,
-  handleAdd,
-  handlePresetMenu,
-} from "#src/cli/hub-handlers.js";
+import { isCancelled, handleInit, handleAdd, handlePresetMenu } from "#src/cli/hub-handlers.js";
 import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
 
 describe("hub-handlers", () => {

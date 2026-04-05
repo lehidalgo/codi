@@ -3,10 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "#tests/helpers/fs.js";
-import {
-  loadPreset,
-  loadPresetFromDir,
-} from "#src/core/preset/preset-loader.js";
+import { loadPreset, loadPresetFromDir } from "#src/core/preset/preset-loader.js";
 import { PROJECT_NAME, PROJECT_DIR, prefixedName } from "#src/constants.js";
 
 describe("loadPresetFromDir", () => {
@@ -15,9 +12,7 @@ describe("loadPresetFromDir", () => {
   let presetsDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-loader-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-loader-`));
     configDir = path.join(tmpDir, PROJECT_DIR);
     presetsDir = path.join(configDir, "presets");
     await fs.mkdir(presetsDir, { recursive: true });
@@ -68,6 +63,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.skills).toHaveLength(1);
     expect(result.data.skills[0]!.name).toBe("my-skill");
     expect(result.data.skills[0]!.description).toBe("A test skill");
+    expect(result.data.skills[0]!.version).toBe(1);
   });
 
   it("returns empty skills when skill file does not exist", async () => {
@@ -99,11 +95,7 @@ describe("loadPresetFromDir", () => {
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, "preset.yaml"),
-      [
-        "name: flags-only",
-        "description: Flags only preset",
-        "version: 1.0.0",
-      ].join("\n"),
+      ["name: flags-only", "description: Flags only preset", "version: 1.0.0"].join("\n"),
       "utf-8",
     );
 
@@ -125,11 +117,7 @@ describe("loadPresetFromDir", () => {
   it("returns error for invalid manifest YAML", async () => {
     const presetDir = path.join(presetsDir, "bad-yaml");
     await fs.mkdir(presetDir, { recursive: true });
-    await fs.writeFile(
-      path.join(presetDir, "preset.yaml"),
-      "{ broken yaml [[[",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(presetDir, "preset.yaml"), "{ broken yaml [[[", "utf-8");
 
     // YAML parser throws on malformed input — loadPresetFromDir does not catch it
     await expect(loadPresetFromDir("bad-yaml", presetsDir)).rejects.toThrow();
@@ -138,11 +126,7 @@ describe("loadPresetFromDir", () => {
   it("returns error for manifest missing required fields", async () => {
     const presetDir = path.join(presetsDir, "no-name");
     await fs.mkdir(presetDir, { recursive: true });
-    await fs.writeFile(
-      path.join(presetDir, "preset.yaml"),
-      "version: 1.0.0\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(presetDir, "preset.yaml"), "version: 1.0.0\n", "utf-8");
 
     const result = await loadPresetFromDir("no-name", presetsDir);
     expect(result.ok).toBe(false);
@@ -173,6 +157,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.rules.length).toBe(2);
     const names = result.data.rules.map((r) => r.name).sort();
     expect(names).toEqual([prefixedName("security"), prefixedName("testing")]);
+    expect(result.data.rules.every((rule) => rule.version > 0)).toBe(true);
   });
 
   it("resolves agents from builtin templates by name", async () => {
@@ -196,29 +181,7 @@ describe("loadPresetFromDir", () => {
     if (!result.ok) return;
     expect(result.data.agents.length).toBe(1);
     expect(result.data.agents[0]!.name).toBe(prefixedName("code-reviewer"));
-  });
-
-  it("resolves commands from builtin templates by name", async () => {
-    const presetDir = path.join(presetsDir, "with-commands");
-    await fs.mkdir(presetDir, { recursive: true });
-    await fs.writeFile(
-      path.join(presetDir, "preset.yaml"),
-      [
-        "name: with-commands",
-        "description: Preset with commands",
-        "version: 1.0.0",
-        "artifacts:",
-        "  commands:",
-        `    - ${prefixedName("commit")}`,
-      ].join("\n"),
-      "utf-8",
-    );
-
-    const result = await loadPresetFromDir("with-commands", presetsDir);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.commands.length).toBe(1);
-    expect(result.data.commands[0]!.name).toBe(prefixedName("commit"));
+    expect(result.data.agents[0]!.version).toBe(1);
   });
 
   it("loads MCP config from preset directory", async () => {
@@ -226,9 +189,7 @@ describe("loadPresetFromDir", () => {
     await fs.mkdir(presetDir, { recursive: true });
     await fs.writeFile(
       path.join(presetDir, "preset.yaml"),
-      ["name: with-mcp", "description: Preset with MCP", "version: 1.0.0"].join(
-        "\n",
-      ),
+      ["name: with-mcp", "description: Preset with MCP", "version: 1.0.0"].join("\n"),
       "utf-8",
     );
     await fs.writeFile(
@@ -289,6 +250,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.rules.length).toBe(1);
     expect(result.data.rules[0]!.name).toBe("my-custom");
     expect(result.data.rules[0]!.managedBy).toBe("user");
+    expect(result.data.rules[0]!.version).toBe(1);
   });
 });
 
@@ -298,12 +260,9 @@ describe("loadPreset — builtin presets", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.name).toBe(prefixedName("minimal"));
-    // Minimal preset has rules, skills, agents, or commands
+    // Minimal preset has rules, skills, or agents
     const totalArtifacts =
-      result.data.rules.length +
-      result.data.skills.length +
-      result.data.agents.length +
-      result.data.commands.length;
+      result.data.rules.length + result.data.skills.length + result.data.agents.length;
     expect(totalArtifacts).toBeGreaterThanOrEqual(0);
   });
 

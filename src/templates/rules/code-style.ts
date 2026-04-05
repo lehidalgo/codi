@@ -6,6 +6,7 @@ description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Code Style
@@ -44,7 +45,7 @@ GOOD: \`createUser({ name, email, role, team, isActive, notify })\`
 - Group imports: external libraries, path-aliased modules, relative modules, types
 - Order imports alphabetically within each group
 - Keep files focused on a single concern
-- Never use deep relative imports (3+ levels of \`../\`) — use path aliases (\`#src/*\`, \`@/*\`) instead; deep traversals are fragile and unreadable
+- Never use deep relative imports (2+ levels of \`../\`) — use path aliases (\`#src/*\`, \`@/*\`) instead; deep traversals are fragile and unreadable
 
 ## Type Discipline
 - Treat type errors as design feedback, not noise — fix the design, don't suppress the error

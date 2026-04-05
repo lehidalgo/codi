@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to test, debug, or automate a local web application using Playwright. Supports verifying frontend functionality, capturing screenshots, and reading browser logs.
 category: Code Quality
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Web App Testing
-  examples:
-    - "Test the web UI"
-    - "Take a screenshot of the app"
-    - "Debug browser console errors"
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 ## When to Activate
@@ -26,8 +23,8 @@ intentHints:
 To test local web applications, write native Python Playwright scripts.
 
 **Helper Scripts Available** (TypeScript and Python — use whichever runtime is available):
-- TypeScript: \\\`scripts/ts/with-server.ts\\\` — Manages server lifecycle (supports multiple servers)
-- Python: \\\`scripts/python/with_server.py\\\` — Same functionality, Python variant
+- TypeScript: \\\`\${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]]\\\` — Manages server lifecycle (supports multiple servers)
+- Python: \\\`\${CLAUDE_SKILL_DIR}[[/scripts/python/with_server.py]]\\\` — Same functionality, Python variant
 
 Use TypeScript by default (\\\`npx tsx\\\`). Use Python when \\\`python3\\\` is available and the project prefers it.
 
@@ -42,7 +39,7 @@ User task → Is it static HTML?
     │         └─ Fails/Incomplete → Treat as dynamic (below)
     │
     └─ No (dynamic webapp) → Is the server already running?
-        ├─ No → Run: npx tsx scripts/ts/with-server.ts --help
+        ├─ No → Run: npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]] --help
         │        Then use the helper + write simplified Playwright script
         │
         └─ Yes → Reconnaissance-then-action:
@@ -58,17 +55,17 @@ To start a server, run \\\`--help\\\` first, then use the helper:
 
 **Single server (TypeScript):**
 \\\`\\\`\\\`bash
-npx tsx scripts/ts/with-server.ts --server "npm run dev" --port 5173 -- node your_automation.js
+npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]] --server "npm run dev" --port 5173 -- node your_automation.js
 \\\`\\\`\\\`
 
 **Single server (Python):**
 \\\`\\\`\\\`bash
-python3 scripts/python/with_server.py --server "npm run dev" --port 5173 -- python3 your_automation.py
+python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/with_server.py]] --server "npm run dev" --port 5173 -- python3 your_automation.py
 \\\`\\\`\\\`
 
 **Multiple servers (e.g., backend + frontend):**
 \\\`\\\`\\\`bash
-npx tsx scripts/ts/with-server.ts \\\\
+npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]] \\\\
   --server "cd backend && node server.js" --port 3000 \\\\
   --server "cd frontend && npm run dev" --port 5173 \\\\
   -- node your_automation.js
@@ -115,13 +112,13 @@ with sync_playwright() as p:
 
 ## Reference Files
 
-- **examples/** - Examples showing common patterns:
-  - \\\`element_discovery.py\\\` - Discovering buttons, links, and inputs on a page
-  - \\\`static_html_automation.py\\\` - Using file:// URLs for local HTML
-  - \\\`console_logging.py\\\` - Capturing console logs during automation
+- **references/** - Examples showing common patterns:
+  - \\\`\${CLAUDE_SKILL_DIR}[[/references/element_discovery.py]]\\\` - Discovering buttons, links, and inputs on a page
+  - \\\`\${CLAUDE_SKILL_DIR}[[/references/static_html_automation.py]]\\\` - Using file:// URLs for local HTML
+  - \\\`\${CLAUDE_SKILL_DIR}[[/references/console_logging.py]]\\\` - Capturing console logs during automation
 
 ## Available Agents
 
 For test generation from webapp testing results, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Generate automated tests from webapp testing findings
+- **${PROJECT_NAME}-test-generator** — Generate automated tests from webapp testing findings
 `;

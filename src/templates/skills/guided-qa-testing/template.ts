@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Coding agent drives automatable phases, flags human-only phases, and tracks all results in a living QA report document.
 category: Code Quality
-compatibility: [claude-code, cursor, codex, windsurf, cline]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: QA Testing
-  examples:
-    - "Run QA tests"
-    - "Test this feature step by step"
-    - "Validate this release"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}
@@ -231,10 +228,10 @@ Report structure:
 ## Available Agents
 
 For automated test generation from QA findings, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Convert QA findings into automated regression tests
+- **${PROJECT_NAME}-test-generator** — Convert QA findings into automated regression tests
 
 ## Related Skills
 
-- **codi-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
-- **codi-test-coverage** — Measure and improve test coverage after QA
+- **${PROJECT_NAME}-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
+- **${PROJECT_NAME}-test-coverage** — Measure and improve test coverage after QA
 `;

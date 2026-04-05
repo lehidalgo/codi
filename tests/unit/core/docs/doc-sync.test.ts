@@ -22,7 +22,6 @@ describe("collectStats", () => {
     expect(stats.rules.count).toBeGreaterThan(0);
     expect(stats.skills.count).toBeGreaterThan(0);
     expect(stats.agents.count).toBeGreaterThan(0);
-    expect(stats.commands.count).toBeGreaterThan(0);
     expect(stats.flags.count).toBeGreaterThan(0);
     expect(stats.errorCodes).toBeGreaterThan(0);
     expect(stats.cliCommands).toBeGreaterThan(0);
@@ -34,7 +33,6 @@ describe("collectStats", () => {
     expect(stats.rules.names).toHaveLength(stats.rules.count);
     expect(stats.skills.names).toHaveLength(stats.skills.count);
     expect(stats.agents.names).toHaveLength(stats.agents.count);
-    expect(stats.commands.names).toHaveLength(stats.commands.count);
   });
 });
 
@@ -47,7 +45,6 @@ describe("checkDocSync", () => {
         `| Rule templates | ${stats.rules.count} |`,
         `| Skill templates | ${stats.skills.count} |`,
         `| Agent templates | ${stats.agents.count} |`,
-        `| Command templates | ${stats.commands.count} |`,
         `| Error codes | ${stats.errorCodes} |`,
         `| Flags | ${stats.flags.count} |`,
         `| Adapters | ${stats.adapters} |`,
@@ -60,38 +57,27 @@ describe("checkDocSync", () => {
   });
 
   it("detects stale rule template count in STATUS.md", async () => {
-    await fs.writeFile(
-      path.join(tmpDir, "STATUS.md"),
-      "| Rule templates | 9 |",
-    );
+    await fs.writeFile(path.join(tmpDir, "STATUS.md"), "| Rule templates | 9 |");
     const issues = await checkDocSync(tmpDir);
-    expect(
-      issues.some((i) => i.fixable && i.description.includes("Rule templates")),
-    ).toBe(true);
+    expect(issues.some((i) => i.fixable && i.description.includes("Rule templates"))).toBe(true);
   });
 
   it("detects stale error code count in STATUS.md", async () => {
     await fs.writeFile(path.join(tmpDir, "STATUS.md"), "| Error codes | 5 |");
     const issues = await checkDocSync(tmpDir);
-    expect(
-      issues.some((i) => i.fixable && i.description.includes("Error codes")),
-    ).toBe(true);
+    expect(issues.some((i) => i.fixable && i.description.includes("Error codes"))).toBe(true);
   });
 
   it("detects stale flag count in STATUS.md", async () => {
     await fs.writeFile(path.join(tmpDir, "STATUS.md"), "| Flags | 10 |");
     const issues = await checkDocSync(tmpDir);
-    expect(
-      issues.some((i) => i.fixable && i.description.includes("Flags")),
-    ).toBe(true);
+    expect(issues.some((i) => i.fixable && i.description.includes("Flags"))).toBe(true);
   });
 
   it("detects stale CLI command count", async () => {
     await fs.writeFile(path.join(tmpDir, "STATUS.md"), "| CLI commands | 5 |");
     const issues = await checkDocSync(tmpDir);
-    expect(
-      issues.some((i) => i.fixable && i.description.includes("CLI commands")),
-    ).toBe(true);
+    expect(issues.some((i) => i.fixable && i.description.includes("CLI commands"))).toBe(true);
   });
 
   it("detects stale CONTRIBUTING.md counts", async () => {
@@ -100,9 +86,7 @@ describe("checkDocSync", () => {
       "    rules/            # 9 rule templates",
     );
     const issues = await checkDocSync(tmpDir);
-    expect(issues.some((i) => i.fixable && i.file === "CONTRIBUTING.md")).toBe(
-      true,
-    );
+    expect(issues.some((i) => i.fixable && i.file === "CONTRIBUTING.md")).toBe(true);
   });
 
   it("detects stale inline counts", async () => {
@@ -111,9 +95,7 @@ describe("checkDocSync", () => {
       "- 9 rule templates, 5 skill templates, 3 agent templates, 2 command templates",
     );
     const issues = await checkDocSync(tmpDir);
-    expect(
-      issues.some((i) => i.fixable && i.description.includes("9 rules")),
-    ).toBe(true);
+    expect(issues.some((i) => i.fixable && i.description.includes("9 rules"))).toBe(true);
   });
 
   it("detects missing template in writing-rules.md with action prompt", async () => {
@@ -129,18 +111,16 @@ describe("checkDocSync", () => {
     expect(missing[0].action).toContain("detailed description");
   });
 
-  it("detects stale e2e-testing expected counts", async () => {
+  it("detects stale dev-e2e-testing expected counts", async () => {
     await fs.mkdir(path.join(tmpDir, "src/templates/skills"), {
       recursive: true,
     });
     await fs.writeFile(
-      path.join(tmpDir, "src/templates/skills/e2e-testing.ts"),
+      path.join(tmpDir, "src/templates/skills/dev-e2e-testing.ts"),
       "Expected: 9 rules, 5 skills, 3 agents, 2 commands.",
     );
     const issues = await checkDocSync(tmpDir);
-    expect(
-      issues.some((i) => !i.fixable && i.file.includes("e2e-testing")),
-    ).toBe(true);
+    expect(issues.some((i) => !i.fixable && i.file.includes("dev-e2e-testing"))).toBe(true);
   });
 
   it("returns no issues when files do not exist", async () => {
@@ -188,19 +168,13 @@ describe("fixDocSync", () => {
     expect(fixed).toContain("CONTRIBUTING.md");
 
     const stats = collectStats();
-    const content = await fs.readFile(
-      path.join(tmpDir, "CONTRIBUTING.md"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(tmpDir, "CONTRIBUTING.md"), "utf-8");
     expect(content).toContain(`# ${stats.rules.count} rule templates`);
   });
 
   it("returns empty when nothing to fix", async () => {
     const stats = collectStats();
-    await fs.writeFile(
-      path.join(tmpDir, "STATUS.md"),
-      `| Rule templates | ${stats.rules.count} |`,
-    );
+    await fs.writeFile(path.join(tmpDir, "STATUS.md"), `| Rule templates | ${stats.rules.count} |`);
     const fixed = await fixDocSync(tmpDir);
     expect(fixed).toHaveLength(0);
   });

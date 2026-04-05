@@ -1,0 +1,65 @@
+{
+  "skillName": "codi-plan-executor",
+  "cases": [
+    {
+      "id": "execute-existing-plan",
+      "description": "Execution of a written plan triggers step-by-step execution with checkpoints",
+      "prompt": "execute the implementation plan we wrote",
+      "expectations": [
+        "Reads the plan document before starting",
+        "Executes steps in sequence, one at a time",
+        "Reports completion of each step before proceeding",
+        "Stops and reports if a step fails rather than skipping it"
+      ]
+    },
+    {
+      "id": "follow-plan-steps",
+      "description": "Following plan steps triggers sequential execution",
+      "prompt": "follow the steps in the plan file to implement the feature",
+      "expectations": [
+        "Reads the plan file to understand all steps",
+        "Executes each step in the defined order",
+        "Verifies each step's completion before moving on"
+      ]
+    },
+    {
+      "id": "continue-interrupted-plan",
+      "description": "Resuming an interrupted plan continues from the last incomplete step",
+      "prompt": "continue executing the plan from where we left off",
+      "expectations": [
+        "Reads the plan to identify completed and pending steps",
+        "Identifies the first incomplete step",
+        "Continues execution from that step"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-plan-executor activates the skill",
+      "prompt": "/codi-plan-executor",
+      "expectations": [
+        "Activates the plan-executor skill",
+        "Reads the current plan file"
+      ]
+    },
+    {
+      "id": "negative-write-plan",
+      "description": "Writing a plan should trigger plan-writer, not plan-executor",
+      "prompt": "write a plan for implementing the notification system",
+      "expectations": [
+        "Does NOT invoke the plan-executor skill",
+        "Does NOT start executing steps",
+        "Writes a new plan document"
+      ]
+    },
+    {
+      "id": "negative-subagent-dev",
+      "description": "Parallel subagent execution should trigger subagent-dev, not plan-executor",
+      "prompt": "dispatch multiple agents to implement different parts of the system in parallel",
+      "expectations": [
+        "Does NOT invoke the plan-executor skill",
+        "Does NOT execute steps sequentially",
+        "Routes to subagent-dev for parallel execution"
+      ]
+    }
+  ]
+}

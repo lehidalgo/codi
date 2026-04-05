@@ -6,6 +6,7 @@ description: Use when integrating LLMs into products. Covers RAG systems, embedd
 tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are a Senior AI Engineering Architect with deep expertise in integrating Large Language Models into production systems.

@@ -1,18 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with interactive browser preview and PNG export.
 category: Content Creation
-compatibility: [claude-code, cursor, codex, cline, windsurf]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-intentHints:
-  taskType: Content Creation
-  examples:
-    - "Write a blog post"
-    - "Create social media content"
-    - "Repurpose this post for Instagram"
+disable-model-invocation: false
+version: 7
 ---
 
 # {{name}} — Content Factory
@@ -30,11 +26,11 @@ This skill ships with reusable assets in the \`assets/\` directory:
 
 | Asset | Purpose |
 |-------|---------|
-| \`preview-shell.js\` | Interactive preview UI: toolbar, aspect ratio switching, CSS scale-to-fit, PNG export, resizable chat panel, DOM event storage |
-| \`carousel-template.html\` | HTML skeleton for multi-slide carousels with \`data-index\`/\`data-type\` attributes |
-| \`social-card-template.html\` | HTML skeleton for social media cards |
-| \`blog-export-template.html\` | HTML skeleton for blog post layouts |
-| \`vendor/html2canvas.min.js\` | Client-side PNG export library (v1.4.1, 198KB) |
+| \`\${CLAUDE_SKILL_DIR}[[/assets/preview-shell.js]]\` | Interactive preview UI: toolbar, aspect ratio switching, CSS scale-to-fit, PNG export, resizable chat panel, DOM event storage |
+| \`\${CLAUDE_SKILL_DIR}[[/assets/carousel-template.html]]\` | HTML skeleton for multi-slide carousels with \`data-index\`/\`data-type\` attributes |
+| \`\${CLAUDE_SKILL_DIR}[[/assets/social-card-template.html]]\` | HTML skeleton for social media cards |
+| \`\${CLAUDE_SKILL_DIR}[[/assets/blog-export-template.html]]\` | HTML skeleton for blog post layouts |
+| \`\${CLAUDE_SKILL_DIR}[[/assets/vendor/html2canvas.min.js]]\` | Client-side PNG export library (v1.4.1, 198KB) |
 
 ## Step 1: Gather Requirements
 
@@ -53,7 +49,7 @@ This skill ships with reusable assets in the \`assets/\` directory:
 **[CODING AGENT]** Run the scaffold script:
 
 \`\`\`bash
-bash ./${PROJECT_NAME}/skills/{{name}}/scripts/scaffold-session.sh <session-name>
+bash \${CLAUDE_SKILL_DIR}[[/scripts/scaffold-session.sh]] <session-name>
 \`\`\`
 
 This creates:

@@ -7,6 +7,7 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: csharp
+version: 1
 ---
 
 # C# Conventions

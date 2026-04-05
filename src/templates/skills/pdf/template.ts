@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.
 category: File Format Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: PDF Operations
-  examples:
-    - "Create a PDF"
-    - "Merge these PDFs"
-    - "Extract tables from a PDF"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # PDF Processing Guide
@@ -339,6 +336,6 @@ Check availability: \\\`which python3 > /dev/null 2>&1\\\` — if Python is not 
 
 ## Related Skills
 
-- **codi-docx** — Create or edit Word documents
-- **codi-xlsx** — Create or edit Excel spreadsheets
+- **${PROJECT_NAME}-docx** — Create or edit Word documents
+- **${PROJECT_NAME}-xlsx** — Create or edit Excel spreadsheets
 `;

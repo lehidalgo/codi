@@ -4,12 +4,10 @@ import {
   renderSkillTemplatesByCategory,
   extractSkillCategory,
   renderAgentTemplateList,
-  renderCommandTemplateList,
 } from "#src/core/docs/renderers/template-renderers.js";
 import { AVAILABLE_TEMPLATES } from "#src/core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "#src/core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "#src/core/scaffolder/command-template-loader.js";
 
 describe("renderRuleTemplateList", () => {
   it("includes all rule template names", () => {
@@ -31,15 +29,6 @@ describe("renderAgentTemplateList", () => {
   it("includes all agent template names", () => {
     const result = renderAgentTemplateList(AVAILABLE_AGENT_TEMPLATES);
     for (const name of AVAILABLE_AGENT_TEMPLATES) {
-      expect(result).toContain(`\`${name}\``);
-    }
-  });
-});
-
-describe("renderCommandTemplateList", () => {
-  it("includes all command template names", () => {
-    const result = renderCommandTemplateList(AVAILABLE_COMMAND_TEMPLATES);
-    for (const name of AVAILABLE_COMMAND_TEMPLATES) {
       expect(result).toContain(`\`${name}\``);
     }
   });
@@ -95,12 +84,5 @@ describe("template counts match source arrays", () => {
     const result = renderAgentTemplateList(AVAILABLE_AGENT_TEMPLATES);
     const backtickPairs = (result.match(/`[^`]+`/g) ?? []).length;
     expect(backtickPairs).toBe(AVAILABLE_AGENT_TEMPLATES.length);
-  });
-
-  it("command templates count", () => {
-    expect(AVAILABLE_COMMAND_TEMPLATES.length).toBeGreaterThan(0);
-    const result = renderCommandTemplateList(AVAILABLE_COMMAND_TEMPLATES);
-    const backtickPairs = (result.match(/`[^`]+`/g) ?? []).length;
-    expect(backtickPairs).toBe(AVAILABLE_COMMAND_TEMPLATES.length);
   });
 });

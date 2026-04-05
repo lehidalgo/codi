@@ -11,7 +11,6 @@ export interface ProjectManifest {
   layers?: {
     rules?: boolean;
     skills?: boolean;
-    commands?: boolean;
     agents?: boolean;
   };
   engine?: {
@@ -27,6 +26,7 @@ export interface ProjectManifest {
 export interface NormalizedRule {
   name: string;
   description: string;
+  version: number;
   content: string;
   language?: string;
   priority: "high" | "medium" | "low";
@@ -38,6 +38,7 @@ export interface NormalizedRule {
 export interface NormalizedSkill {
   name: string;
   description: string;
+  version: number;
   content: string;
   compatibility?: string[];
   tools?: string[];
@@ -55,26 +56,28 @@ export interface NormalizedSkill {
   userInvocable?: boolean;
   paths?: string[];
   shell?: "bash" | "powershell";
-  intentHints?: {
-    taskType: string;
-    examples: string[];
-  };
-}
-
-export interface NormalizedCommand {
-  name: string;
-  description: string;
-  content: string;
-  managedBy?: ManagedBy;
+  hooks?: unknown;
 }
 
 export interface NormalizedAgent {
   name: string;
   description: string;
+  version: number;
   content: string;
   tools?: string[];
+  disallowedTools?: string[];
   model?: string;
+  maxTurns?: number;
+  effort?: "low" | "medium" | "high" | "max";
   managedBy?: ManagedBy;
+  // Claude Code-specific agent fields
+  permissionMode?: "unrestricted" | "readonly" | "limited";
+  mcpServers?: string[];
+  skills?: string[];
+  memory?: "user" | "project" | "none";
+  background?: boolean;
+  isolation?: string;
+  color?: string;
 }
 
 export interface McpConfig {
@@ -96,7 +99,6 @@ export interface NormalizedConfig {
   manifest: ProjectManifest;
   rules: NormalizedRule[];
   skills: NormalizedSkill[];
-  commands: NormalizedCommand[];
   agents: NormalizedAgent[];
   flags: ResolvedFlags;
   mcp: McpConfig;

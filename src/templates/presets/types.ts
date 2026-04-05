@@ -1,4 +1,4 @@
-import type { FlagDefinition } from "../../types/flags.js";
+import type { FlagDefinition } from "#src/types/flags.js";
 
 /**
  * Definition of a built-in preset that ships with the CLI npm package.
@@ -21,8 +21,6 @@ export interface BuiltinPresetDefinition {
   skills: string[];
   /** Agent template names to include (from src/templates/agents/) */
   agents: string[];
-  /** Command template names to include (from src/templates/commands/) */
-  commands: string[];
   /** Brand names to include (user-defined, no built-in templates) */
   brands?: string[];
   /** MCP server template names to include (from src/templates/mcp-servers/) */

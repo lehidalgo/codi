@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: "Use when the user wants to work with a spreadsheet file (.xlsx, .xlsm, .csv, or .tsv). Also activate when cleaning messy tabular data, creating financial models, or converting between tabular formats. Do NOT activate when the deliverable is a Word doc, HTML report, standalone script, or Google Sheets API integration."
+description: "Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations."
 category: File Format Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Spreadsheets
-  examples:
-    - "Create a spreadsheet"
-    - "Generate an Excel file"
-    - "Fix formula errors in Excel"
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 ## When to Activate
@@ -88,7 +85,7 @@ A user may ask you to create, edit, or analyze the contents of an .xlsx file. Yo
 
 ## Important Requirements
 
-**LibreOffice Required for Formula Recalculation**: You can assume LibreOffice is installed for recalculating formula values using the \\\`scripts/recalc.py\\\` script. The script automatically configures LibreOffice on first run, including in sandboxed environments where Unix sockets are restricted (handled by \\\`scripts/office/soffice.py\\\`)
+**LibreOffice Required for Formula Recalculation**: You can assume LibreOffice is installed for recalculating formula values using the \\\`\${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]]\\\` script. The script automatically configures LibreOffice on first run, including in sandboxed environments where Unix sockets are restricted (handled by \\\`\${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]]\\\`)
 
 ## Reading and analyzing data
 
@@ -151,9 +148,9 @@ This applies to ALL calculations - totals, percentages, ratios, differences, etc
 2. **Create/Load**: Create new workbook or load existing file
 3. **Modify**: Add/edit data, formulas, and formatting
 4. **Save**: Write to file
-5. **Recalculate formulas (MANDATORY IF USING FORMULAS)**: Use the scripts/recalc.py script
+5. **Recalculate formulas (MANDATORY IF USING FORMULAS)**: Use the \${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]] script
    \\\`\\\`\\\`bash
-   python scripts/recalc.py output.xlsx
+   python \${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]] output.xlsx
    \\\`\\\`\\\`
 6. **Verify and fix any errors**:
    - The script returns JSON with error details
@@ -223,15 +220,15 @@ wb.save('modified.xlsx')
 
 ## Recalculating formulas
 
-Excel files created or modified by openpyxl contain formulas as strings but not calculated values. Use the provided \\\`scripts/recalc.py\\\` script to recalculate formulas:
+Excel files created or modified by openpyxl contain formulas as strings but not calculated values. Use the provided \\\`\${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]]\\\` script to recalculate formulas:
 
 \\\`\\\`\\\`bash
-python scripts/recalc.py <excel_file> [timeout_seconds]
+python \${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]] <excel_file> [timeout_seconds]
 \\\`\\\`\\\`
 
 Example:
 \\\`\\\`\\\`bash
-python scripts/recalc.py output.xlsx 30
+python \${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]] output.xlsx 30
 \\\`\\\`\\\`
 
 The script:
@@ -263,7 +260,7 @@ Quick checks to ensure formulas work correctly:
 - [ ] **Verify dependencies**: Check all cells referenced in formulas exist
 - [ ] **Test edge cases**: Include zero, negative, and very large values
 
-### Interpreting scripts/recalc.py Output
+### Interpreting \\\`\${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]]\\\` Output
 The script returns JSON with error details:
 \\\`\\\`\\\`json
 {
@@ -290,7 +287,7 @@ The script returns JSON with error details:
 - Use \\\`data_only=True\\\` to read calculated values: \\\`load_workbook('file.xlsx', data_only=True)\\\`
 - **Warning**: If opened with \\\`data_only=True\\\` and saved, formulas are replaced with values and permanently lost
 - For large files: Use \\\`read_only=True\\\` for reading or \\\`write_only=True\\\` for writing
-- Formulas are preserved but not evaluated - use scripts/recalc.py to update values
+- Formulas are preserved but not evaluated - use \\\`\${CLAUDE_SKILL_DIR}[[/scripts/recalc.py]]\\\` to update values
 
 ### Working with pandas
 - Specify data types to avoid inference issues: \\\`pd.read_excel('file.xlsx', dtype={'id': str})\\\`

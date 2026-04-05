@@ -1,17 +1,19 @@
-import { GIT_COMMIT_FIRST_LINE_LIMIT, PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
+import {
+  GIT_COMMIT_FIRST_LINE_LIMIT,
+  PROJECT_CLI,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code changes.
+description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code, creating a commit, or fixing a pre-commit hook failure. Also activate on /commit.
 category: Developer Tools
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Git Commit
-  examples:
-    - "Commit my changes"
-    - "Create a commit"
-    - "Fix pre-commit hook failure"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}
@@ -136,10 +138,10 @@ If the commit-msg hook rejects your message:
 ## Available Agents
 
 For pre-commit review, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-code-reviewer** — Review staged changes before committing
+- **${PROJECT_NAME}-code-reviewer** — Review staged changes before committing
 
 ## Related Skills
 
-- **codi-code-review** — Full code review workflow for complex changes
-- **codi-test-coverage** — Verify test coverage before committing
+- **${PROJECT_NAME}-code-review** — Full code review workflow for complex changes
+- **${PROJECT_NAME}-test-coverage** — Verify test coverage before committing
 `;

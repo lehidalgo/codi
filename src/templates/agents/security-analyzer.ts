@@ -3,9 +3,10 @@ import { PROJECT_NAME } from "#src/constants.js";
 export const template = `---
 name: {{name}}
 description: Use when reviewing auth, payments, or data handling code. Runs OWASP-based vulnerability analysis with trust boundary mapping and produces a remediation plan.
-tools: [Read, Grep, Glob, Bash]
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are an expert security analyst identifying vulnerabilities and security issues.

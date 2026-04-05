@@ -64,12 +64,7 @@ export const MANAGED_BY_VALUES = [PROJECT_NAME, "user"] as const;
 export const DEFAULT_PRESET = prefixedName("balanced");
 
 // --- Preset source types ---
-export const PRESET_SOURCE_TYPES = [
-  "builtin",
-  "zip",
-  "github",
-  "local",
-] as const;
+export const PRESET_SOURCE_TYPES = ["builtin", "zip", "github", "local"] as const;
 export type PresetSourceType = (typeof PRESET_SOURCE_TYPES)[number];
 
 // --- Preset size limits ---
@@ -93,19 +88,52 @@ export const PRESET_MANIFEST_FILENAME = "preset.yaml";
 export const BACKUP_MANIFEST_FILENAME = "backup-manifest.json";
 export const PRESET_LOCK_FILENAME = "preset-lock.json";
 export const OPERATIONS_LEDGER_FILENAME = "operations.json";
+export const ARTIFACT_MANIFEST_FILENAME = "artifact-manifest.json";
 export const REGISTRY_INDEX_FILENAME = "index.json";
 export const BACKUPS_DIR = "backups";
 
+// --- Supported platforms ---
+/** Agent platform IDs — single source of truth for compatibility fields. */
+export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline"] as const;
+/** YAML-ready inline list for template interpolation. */
+export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
+
 // --- Artifact types ---
-export const ARTIFACT_TYPES = [
-  "rules",
-  "skills",
-  "agents",
-  "commands",
-] as const;
+export const ARTIFACT_TYPES = ["rules", "skills", "agents"] as const;
 
 // --- Brand category ---
 export const BRAND_CATEGORY = "brand" as const;
+
+// --- Skill categories (single source of truth) ---
+export const SKILL_CATEGORIES = [
+  "Brand Identity",
+  "Code Quality",
+  "Content Creation",
+  "Content Refinement",
+  "Creative and Design",
+  "Developer Tools",
+  "Developer Workflow",
+  "Document Generation",
+  "File Format Tools",
+  "Planning",
+  "Productivity",
+  "Testing",
+  "Workflow",
+] as const;
+
+export type SkillCategory = (typeof SKILL_CATEGORIES)[number];
+
+/** Platform category — derived from PROJECT_NAME_DISPLAY to stay in sync. */
+export const PLATFORM_CATEGORY = `${PROJECT_NAME_DISPLAY} Platform`;
+
+/** All valid skill categories including the dynamic platform category. */
+export const ALL_SKILL_CATEGORIES = [...SKILL_CATEGORIES, PLATFORM_CATEGORY] as const;
+export type AnySkillCategory = (typeof ALL_SKILL_CATEGORIES)[number];
+
+/** Returns true if the value is a known built-in skill category. */
+export function isKnownSkillCategory(v: string): v is AnySkillCategory {
+  return (ALL_SKILL_CATEGORIES as readonly string[]).includes(v);
+}
 
 // --- CLI commands (single source of truth for stats) ---
 export const CLI_COMMANDS = [
@@ -126,8 +154,11 @@ export const CLI_COMMANDS = [
   "preset",
   "docs-update",
   "docs",
+  "docs-stamp",
+  "docs-check",
   "contribute",
   "skill",
+  "onboard",
 ] as const;
 
 // --- Git operations ---
@@ -140,11 +171,14 @@ export const PRE_COMMIT_MAX_FILE_LINES = 800;
 // --- Per-layer line limits (ACS recommendations) ---
 export const MAX_CONTEXT_LINES = 300;
 export const MAX_SKILL_LINES = 500;
-export const MAX_COMMAND_LINES = 100;
 export const MAX_AGENT_LINES = 200;
 
 // --- Git commit standards ---
 export const GIT_COMMIT_FIRST_LINE_LIMIT = 72;
+
+// --- Documentation management ---
+export const DOC_PROJECT_DIR = "docs/project";
+export const DOC_STAMP_FILENAME = ".doc-stamp";
 
 // --- Skill feedback & evolution ---
 export const FEEDBACK_DIR = "feedback";
@@ -158,3 +192,7 @@ export const MIN_FEEDBACK_FOR_EVOLVE = 3;
 export const MIN_CODE_COVERAGE_PERCENT = 80;
 export const MAX_FUNCTION_LINES = 30;
 export const MAX_COMPONENT_LINES = 150;
+
+// --- Project context injection markers ---
+export const PROJECT_CONTEXT_START = "<!-- codi:project-context:start -->";
+export const PROJECT_CONTEXT_END = "<!-- codi:project-context:end -->";

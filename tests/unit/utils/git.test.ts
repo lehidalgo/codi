@@ -11,6 +11,13 @@ import { PROJECT_NAME } from "#src/constants.js";
 
 const execFileAsync = promisify(execFile);
 
+// Strip git hook env vars so test git commands are not affected by the caller's
+// git context (e.g., when run from a pre-commit hook that sets GIT_DIR).
+const cleanEnv: NodeJS.ProcessEnv = { ...process.env };
+delete cleanEnv["GIT_DIR"];
+delete cleanEnv["GIT_WORK_TREE"];
+delete cleanEnv["GIT_INDEX_FILE"];
+
 describe("git utilities", () => {
   let tmpDir: string;
 
@@ -26,7 +33,7 @@ describe("git utilities", () => {
   describe("isGitRepo", () => {
     it("returns true for a git-initialized directory", async () => {
       // Arrange
-      await execFileAsync("git", ["init", tmpDir]);
+      await execFileAsync("git", ["init", tmpDir], { env: cleanEnv });
 
       // Act
       const result = await isGitRepo(tmpDir);
@@ -53,7 +60,7 @@ describe("git utilities", () => {
 
     it("returns true for a subdirectory within a git repo", async () => {
       // Arrange
-      await execFileAsync("git", ["init", tmpDir]);
+      await execFileAsync("git", ["init", tmpDir], { env: cleanEnv });
       const subDir = path.join(tmpDir, "nested", "deep");
       await fs.mkdir(subDir, { recursive: true });
 
@@ -68,7 +75,7 @@ describe("git utilities", () => {
   describe("getGitRoot", () => {
     it("returns root path for a git repo", async () => {
       // Arrange
-      await execFileAsync("git", ["init", tmpDir]);
+      await execFileAsync("git", ["init", tmpDir], { env: cleanEnv });
 
       // Act
       const root = await getGitRoot(tmpDir);
@@ -88,7 +95,7 @@ describe("git utilities", () => {
 
     it("returns repo root from a subdirectory", async () => {
       // Arrange
-      await execFileAsync("git", ["init", tmpDir]);
+      await execFileAsync("git", ["init", tmpDir], { env: cleanEnv });
       const subDir = path.join(tmpDir, "src", "lib");
       await fs.mkdir(subDir, { recursive: true });
 

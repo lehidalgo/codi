@@ -1,7 +1,8 @@
 dist/
 node_modules/
+.worktrees/
 coverage/
-docs/_site/
+docs/codi_docs/
 *.tsbuildinfo
 .DS_Store
 projs/
@@ -21,8 +22,10 @@ AGENTS.md
 .cursorrules
 .windsurfrules
 .clinerules
+.mcp.json
+.mcp.env.example
 .husky/
 .playwright-mcp/
 .superpowers/
 .deprecated/
-superpowers/
+superpowers/.mcp.env.example

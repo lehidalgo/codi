@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to apply a visual theme to slides, documents, HTML artifacts, or other deliverables. Provides 10 pre-set themes with color palettes and font pairings, or generates a custom theme on demand.
 category: Creative and Design
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Theme Styling
-  examples:
-    - "Apply a theme to my document"
-    - "Style this artifact"
-    - "Create a custom theme for my deck"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # Theme Factory Skill
@@ -76,7 +73,7 @@ To handle cases where none of the existing themes work for an artifact, create a
 
 ## Related Skills
 
-- **codi-deck-engine** — Presentation engine whose output can be themed
-- **codi-doc-engine** — Document engine whose output can be themed
-- **codi-frontend-design** — Frontend interfaces that can use theme tokens
+- **${PROJECT_NAME}-deck-engine** — Presentation engine whose output can be themed
+- **${PROJECT_NAME}-doc-engine** — Document engine whose output can be themed
+- **${PROJECT_NAME}-frontend-design** — Frontend interfaces that can use theme tokens
 `;

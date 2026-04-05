@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { cleanHandler } from "#src/cli/clean.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
@@ -62,17 +62,9 @@ describe("clean command handler", () => {
     );
 
     await fs.writeFile(path.join(tmpDir, "CLAUDE.md"), "# Generated", "utf-8");
-    await fs.writeFile(
-      path.join(tmpDir, ".cursorrules"),
-      "# Generated",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".cursorrules"), "# Generated", "utf-8");
     await fs.mkdir(path.join(tmpDir, ".claude", "rules"), { recursive: true });
-    await fs.writeFile(
-      path.join(tmpDir, ".claude", "rules", "test.md"),
-      "rule",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".claude", "rules", "test.md"), "rule", "utf-8");
   }
 
   it("removes generated files from state", async () => {
@@ -84,9 +76,7 @@ describe("clean command handler", () => {
     expect(result.data.filesDeleted).toContain(".cursorrules");
 
     await expect(fs.access(path.join(tmpDir, "CLAUDE.md"))).rejects.toThrow();
-    await expect(
-      fs.access(path.join(tmpDir, ".cursorrules")),
-    ).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".cursorrules"))).rejects.toThrow();
   });
 
   it("removes agent rule directories", async () => {
@@ -94,9 +84,7 @@ describe("clean command handler", () => {
 
     const result = await cleanHandler(tmpDir, { json: true });
     expect(result.data.dirsDeleted).toContain(".claude/rules");
-    await expect(
-      fs.access(path.join(tmpDir, ".claude", "rules")),
-    ).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".claude", "rules"))).rejects.toThrow();
   });
 
   it(`--all removes ${PROJECT_DIR}/ directory`, async () => {
@@ -130,10 +118,12 @@ describe("clean command handler", () => {
 
   it("handles missing state gracefully", async () => {
     await fs.writeFile(path.join(tmpDir, "CLAUDE.md"), "# Generated", "utf-8");
+    await fs.writeFile(path.join(tmpDir, ".mcp.env.example"), "API_KEY=\n", "utf-8");
 
     const result = await cleanHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
     expect(result.data.filesDeleted).toContain("CLAUDE.md");
+    expect(result.data.filesDeleted).toContain(".mcp.env.example");
   });
 });
 
@@ -141,9 +131,7 @@ describe("clean hook files", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-clean-hooks-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-clean-hooks-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -151,9 +139,7 @@ describe("clean hook files", () => {
     await cleanupTmpDir(tmpDir);
   });
 
-  async function setupWithHooks(
-    stateHooks: Array<{ path: string }>,
-  ): Promise<void> {
+  async function setupWithHooks(stateHooks: Array<{ path: string }>): Promise<void> {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
@@ -188,18 +174,14 @@ describe("clean hook files", () => {
       "utf-8",
     );
 
-    await setupWithHooks([
-      { path: `.git/hooks/${PROJECT_NAME}-secret-scan.mjs` },
-    ]);
+    await setupWithHooks([{ path: `.git/hooks/${PROJECT_NAME}-secret-scan.mjs` }]);
 
     const result = await cleanHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
     expect(result.data.hooksDeleted).toEqual([]);
 
     // Hook file still exists
-    const stat = await fs.stat(
-      path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`),
-    );
+    const stat = await fs.stat(path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`));
     expect(stat.isFile()).toBe(true);
   });
 
@@ -216,10 +198,7 @@ describe("clean hook files", () => {
     const result = await cleanHandler(tmpDir, { json: true });
     expect(result.data.hooksDeleted).toEqual([]);
 
-    const content = await fs.readFile(
-      path.join(huskyDir, "pre-commit"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(huskyDir, "pre-commit"), "utf-8");
     expect(content).toContain(`${PROJECT_NAME_DISPLAY} hooks`);
   });
 
@@ -232,15 +211,11 @@ describe("clean hook files", () => {
       "utf-8",
     );
 
-    await setupWithHooks([
-      { path: `.git/hooks/${PROJECT_NAME}-secret-scan.mjs` },
-    ]);
+    await setupWithHooks([{ path: `.git/hooks/${PROJECT_NAME}-secret-scan.mjs` }]);
 
     const result = await cleanHandler(tmpDir, { json: true, all: true });
     expect(result.success).toBe(true);
-    expect(result.data.hooksDeleted).toContain(
-      `.git/hooks/${PROJECT_NAME}-secret-scan.mjs`,
-    );
+    expect(result.data.hooksDeleted).toContain(`.git/hooks/${PROJECT_NAME}-secret-scan.mjs`);
     await expect(
       fs.access(path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`)),
     ).rejects.toThrow();
@@ -263,12 +238,8 @@ describe("clean hook files", () => {
     await setupWithHooks([]);
 
     const result = await cleanHandler(tmpDir, { json: true, all: true });
-    expect(result.data.hooksDeleted).toContain(
-      `.git/hooks/${PROJECT_NAME}-secret-scan.mjs`,
-    );
-    expect(result.data.hooksDeleted).toContain(
-      `.git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
-    );
+    expect(result.data.hooksDeleted).toContain(`.git/hooks/${PROJECT_NAME}-secret-scan.mjs`);
+    expect(result.data.hooksDeleted).toContain(`.git/hooks/${PROJECT_NAME}-file-size-check.mjs`);
   });
 
   it("removes managed section from husky pre-commit with --all", async () => {
@@ -284,10 +255,7 @@ describe("clean hook files", () => {
     const result = await cleanHandler(tmpDir, { json: true, all: true });
     expect(result.data.hooksDeleted).toContain(".husky/pre-commit");
 
-    const content = await fs.readFile(
-      path.join(huskyDir, "pre-commit"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(huskyDir, "pre-commit"), "utf-8");
     expect(content).toContain("npm run lint");
     expect(content).toContain("npm run other");
     expect(content).not.toContain(`${PROJECT_NAME_DISPLAY} hooks`);
@@ -304,9 +272,7 @@ describe("clean hook files", () => {
     await setupWithHooks([]);
 
     await cleanHandler(tmpDir, { json: true, all: true });
-    await expect(
-      fs.access(path.join(huskyDir, "commit-msg")),
-    ).rejects.toThrow();
+    await expect(fs.access(path.join(huskyDir, "commit-msg"))).rejects.toThrow();
   });
 
   it("removes standalone .git/hooks/pre-commit with managed marker on --all", async () => {
@@ -326,20 +292,13 @@ describe("clean hook files", () => {
   it("preserves .git/hooks/pre-commit without managed marker even with --all", async () => {
     const hookDir = path.join(tmpDir, ".git", "hooks");
     await fs.mkdir(hookDir, { recursive: true });
-    await fs.writeFile(
-      path.join(hookDir, "pre-commit"),
-      "#!/bin/sh\necho user hook",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(hookDir, "pre-commit"), "#!/bin/sh\necho user hook", "utf-8");
     await setupWithHooks([]);
 
     const result = await cleanHandler(tmpDir, { json: true, all: true });
     expect(result.data.hooksDeleted).not.toContain(".git/hooks/pre-commit");
 
-    const content = await fs.readFile(
-      path.join(hookDir, "pre-commit"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(hookDir, "pre-commit"), "utf-8");
     expect(content).toContain("echo user hook");
   });
 
@@ -358,13 +317,9 @@ describe("clean hook files", () => {
       dryRun: true,
       all: true,
     });
-    expect(result.data.hooksDeleted).toContain(
-      `.git/hooks/${PROJECT_NAME}-secret-scan.mjs`,
-    );
+    expect(result.data.hooksDeleted).toContain(`.git/hooks/${PROJECT_NAME}-secret-scan.mjs`);
 
-    const stat = await fs.stat(
-      path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`),
-    );
+    const stat = await fs.stat(path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`));
     expect(stat.isFile()).toBe(true);
   });
 
@@ -373,8 +328,6 @@ describe("clean hook files", () => {
 
     const result = await cleanHandler(tmpDir, { json: true, all: true });
     expect(result.success).toBe(true);
-    expect(result.data.hooksDeleted).not.toContain(
-      ".git/hooks/nonexistent.mjs",
-    );
+    expect(result.data.hooksDeleted).not.toContain(".git/hooks/nonexistent.mjs");
   });
 });

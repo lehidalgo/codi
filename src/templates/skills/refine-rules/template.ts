@@ -1,20 +1,20 @@
-import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
+import {
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: |
-  Review collected rule feedback and propose improvements. Reads observations from
-  ${PROJECT_DIR}/feedback/rules/, groups by rule, shows evidence, and proposes changes
-  one at a time with human approval. Use when asked to "improve rules", "refine rules",
-  or "review rule feedback".
+description: Review collected rule feedback and propose targeted improvements one at a time with human approval. Use when asked to improve rules, refine rules, or review rule feedback. Reads observations from ${PROJECT_DIR}/feedback/rules/.
+category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Rule Refinement
-  examples:
-    - "Improve my rules"
-    - "Review rule feedback"
-    - "Refine rules based on feedback"
-    - "Update rules from observations"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # Rule Refinement
@@ -47,8 +47,8 @@ Present a summary table:
 
 | Rule | Observations | Highest Severity | Top Category |
 |------|-------------|-----------------|--------------|
-| codi-testing | 3 | high | user-correction |
-| codi-typescript | 2 | medium | outdated-rule |
+| ${PROJECT_NAME}-testing | 3 | high | user-correction |
+| ${PROJECT_NAME}-typescript | 2 | medium | outdated-rule |
 | (no rule) | 1 | low | new-pattern |
 
 ### Step 3 — Review One at a Time
@@ -107,7 +107,7 @@ Check the current rule content against the suggestion. If already addressed, mar
 
 ## Related Skills
 
-- **codi-rule-feedback** — Collects the observations this skill reviews
-- **codi-rule-creator** — Create entirely new rules (when observations suggest gaps)
-- **codi-operations** — General artifact management including rules
+- **${PROJECT_NAME}-rule-feedback** — Collects the observations this skill reviews
+- **${PROJECT_NAME}-rule-creator** — Create entirely new rules (when observations suggest gaps)
+- **${PROJECT_NAME}-operations** — General artifact management including rules
 `;

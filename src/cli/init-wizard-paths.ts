@@ -1,15 +1,9 @@
 import * as p from "@clack/prompts";
 import { DEFAULT_PRESET, prefixedName, PROJECT_CLI } from "../constants.js";
-import {
-  getBuiltinPresetDefinition,
-  BUILTIN_PRESETS,
-} from "../templates/presets/index.js";
+import { getBuiltinPresetDefinition, BUILTIN_PRESETS } from "../templates/presets/index.js";
 import { FLAG_CATALOG } from "../core/flags/flag-catalog.js";
 import type { FlagDefinition } from "../types/flags.js";
-import {
-  AVAILABLE_TEMPLATES,
-  loadTemplate,
-} from "../core/scaffolder/template-loader.js";
+import { AVAILABLE_TEMPLATES, loadTemplate } from "../core/scaffolder/template-loader.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
@@ -19,14 +13,22 @@ import {
   loadAgentTemplate,
 } from "../core/scaffolder/agent-template-loader.js";
 import {
-  AVAILABLE_COMMAND_TEMPLATES,
-  loadCommandTemplate,
-} from "../core/scaffolder/command-template-loader.js";
-import {
   AVAILABLE_MCP_SERVER_TEMPLATES,
   loadMcpServerTemplate,
 } from "../core/scaffolder/mcp-template-loader.js";
 import type { WizardResult } from "./init-wizard.js";
+import { groupMultiselect } from "./group-multiselect.js";
+import {
+  RULE_CATEGORIES,
+  AGENT_CATEGORIES,
+  MCP_SERVER_CATEGORIES,
+  buildSkillCategoryMap,
+  buildGroupedInventoryOptions,
+  buildGroupedBasicOptions,
+  formatLabel as _formatLabel,
+} from "./artifact-categories.js";
+import { filterInventoryByType } from "./installed-artifact-inventory.js";
+import type { ExistingInstallContext } from "./init-wizard.js";
 
 const BACK = Symbol("back");
 
@@ -38,20 +40,12 @@ function getReservedPresetNames(): Set<string> {
   return new Set(Object.keys(BUILTIN_PRESETS));
 }
 
-export function formatLabel(name: string): string {
-  return name
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+function getOptionCount(inventoryCount: number | undefined, builtinCount: number): number {
+  return inventoryCount ?? builtinCount;
 }
 
-function extractTemplateHint(templateContent: string): string {
-  const multiLine = templateContent.match(/^description:\s*\|\s*\n\s+(.+)/m);
-  if (multiLine?.[1]) return multiLine[1].trim();
-  const singleLine = templateContent.match(/^description:\s*(.+)$/m);
-  if (singleLine?.[1]) return singleLine[1].trim();
-  return "";
-}
+// Re-exported for backward compatibility (tested in init-wizard-paths.test.ts)
+export const formatLabel = _formatLabel;
 
 export function buildPresetOptions(): Array<{
   label: string;
@@ -59,10 +53,7 @@ export function buildPresetOptions(): Array<{
   hint: string;
 }> {
   return Object.entries(BUILTIN_PRESETS).map(([name, def]) => ({
-    label:
-      name === DEFAULT_PRESET
-        ? `${formatLabel(name)} (recommended)`
-        : formatLabel(name),
+    label: name === DEFAULT_PRESET ? `${formatLabel(name)} (recommended)` : formatLabel(name),
     value: name,
     hint: def.description,
   }));
@@ -74,10 +65,7 @@ function sameArrays(a: string[], b: string[]): boolean {
   return b.every((item) => setA.has(item));
 }
 
-function sameFlagValues(
-  a: Record<string, unknown>,
-  b: Record<string, unknown>,
-): boolean {
+function sameFlagValues(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
@@ -118,13 +106,7 @@ async function editPresetFlags(
   }
 
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
-    if (
-      spec.type !== "enum" ||
-      !spec.values ||
-      flags[key]?.locked ||
-      !flags[key]
-    )
-      continue;
+    if (spec.type !== "enum" || !spec.values || flags[key]?.locked || !flags[key]) continue;
     const current = flags[key]!.value as string;
     const enumVal = await p.select({
       message: `${key} — ${spec.description}`,
@@ -149,8 +131,7 @@ async function editPresetFlags(
       validate: (v) => {
         const n = Number(v);
         if (isNaN(n) || !Number.isInteger(n)) return "Must be an integer";
-        if (spec.min !== undefined && n < spec.min)
-          return `Minimum: ${spec.min}`;
+        if (spec.min !== undefined && n < spec.min) return `Minimum: ${spec.min}`;
       },
     });
     if (p.isCancel(numVal)) return null;
@@ -160,9 +141,7 @@ async function editPresetFlags(
   return result;
 }
 
-export async function handleZipPath(
-  agents: string[],
-): Promise<WizardResult | null | symbol> {
+export async function handleZipPath(agents: string[]): Promise<WizardResult | null | symbol> {
   const zipPath = await p.text({
     message: "Path to preset ZIP file",
     validate: (v) => {
@@ -180,16 +159,13 @@ export async function handleZipPath(
     rules: [],
     skills: [],
     agentTemplates: [],
-    commandTemplates: [],
     mcpServers: [],
     preset: DEFAULT_PRESET,
     versionPin: true,
   };
 }
 
-export async function handleGithubPath(
-  agents: string[],
-): Promise<WizardResult | null | symbol> {
+export async function handleGithubPath(agents: string[]): Promise<WizardResult | null | symbol> {
   const repo = await p.text({
     message: "GitHub repo (e.g., org/preset-name or github:org/repo@v1.0)",
   });
@@ -204,7 +180,6 @@ export async function handleGithubPath(
     rules: [],
     skills: [],
     agentTemplates: [],
-    commandTemplates: [],
     mcpServers: [],
     preset: DEFAULT_PRESET,
     versionPin: true,
@@ -213,16 +188,17 @@ export async function handleGithubPath(
 
 export async function handlePresetPath(
   agents: string[],
-  existingSelections?: import("./init-wizard.js").ExistingSelections,
+  existingInstall?: ExistingInstallContext,
 ): Promise<WizardResult | null | symbol> {
   let step = 0;
+  const existingSelections = existingInstall?.selections;
+  const inventory = existingInstall?.inventory;
   let selectedPreset: string | undefined = existingSelections?.preset;
   let editedFlags: Record<string, FlagDefinition> | undefined;
   let originalFlags: Record<string, FlagDefinition> = {};
   let rules: string[] | undefined = existingSelections?.rules;
   let skills: string[] | undefined = existingSelections?.skills;
   let agentTpls: string[] | undefined = existingSelections?.agents;
-  let commands: string[] | undefined = existingSelections?.commands;
   let mcpServers: string[] | undefined = existingSelections?.mcpServers;
   let saveAsPreset: string | undefined;
 
@@ -254,119 +230,124 @@ export async function handlePresetPath(
       case 2: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetRules = new Set(presetDef?.rules ?? []);
-        p.log.step(`Artifacts in "${selectedPreset}" (modify to customize)`);
-        const val = await p.multiselect({
-          message: `Rules (${AVAILABLE_TEMPLATES.length} total)`,
-          options: AVAILABLE_TEMPLATES.map((t) => {
-            const tmpl = loadTemplate(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues:
-            rules ?? AVAILABLE_TEMPLATES.filter((t) => presetRules.has(t)),
+        const ruleInventory = inventory ? filterInventoryByType(inventory, "rule") : undefined;
+        p.log.step(
+          existingInstall
+            ? "Rules in current installation (installed entries are preselected)"
+            : `Artifacts in "${selectedPreset}" (modify to customize)`,
+        );
+        const val = await groupMultiselect({
+          message: `Rules (${getOptionCount(ruleInventory?.length, AVAILABLE_TEMPLATES.length)} total)`,
+          options: ruleInventory
+            ? buildGroupedInventoryOptions(ruleInventory, RULE_CATEGORIES)
+            : buildGroupedBasicOptions(AVAILABLE_TEMPLATES, RULE_CATEGORIES, (t) =>
+                loadTemplate(t),
+              ),
+          initialValues: rules ?? AVAILABLE_TEMPLATES.filter((t) => presetRules.has(t)),
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         rules = val as string[];
+        p.log.info(`Selected ${rules.length} / ${AVAILABLE_TEMPLATES.length} rules`);
         step++;
         break;
       }
       case 3: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetSkills = new Set(presetDef?.skills ?? []);
-        const val = await p.multiselect({
-          message: `Skills (${AVAILABLE_SKILL_TEMPLATES.length} total)`,
-          options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
-            const tmpl = loadSkillTemplateContent(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues:
-            skills ??
-            AVAILABLE_SKILL_TEMPLATES.filter((t) => presetSkills.has(t)),
+        const skillCategories = buildSkillCategoryMap(AVAILABLE_SKILL_TEMPLATES, (t) =>
+          loadSkillTemplateContent(t),
+        );
+        const skillInventory = inventory ? filterInventoryByType(inventory, "skill") : undefined;
+        const val = await groupMultiselect({
+          message: `Skills (${getOptionCount(skillInventory?.length, AVAILABLE_SKILL_TEMPLATES.length)} total)`,
+          options: skillInventory
+            ? buildGroupedInventoryOptions(skillInventory, skillCategories)
+            : buildGroupedBasicOptions(AVAILABLE_SKILL_TEMPLATES, skillCategories, (t) =>
+                loadSkillTemplateContent(t),
+              ),
+          initialValues: skills ?? AVAILABLE_SKILL_TEMPLATES.filter((t) => presetSkills.has(t)),
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         skills = val as string[];
+        p.log.info(`Selected ${skills.length} / ${AVAILABLE_SKILL_TEMPLATES.length} skills`);
         step++;
         break;
       }
       case 4: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetAgents = new Set(presetDef?.agents ?? []);
-        const val = await p.multiselect({
-          message: `Agents (${AVAILABLE_AGENT_TEMPLATES.length} total)`,
-          options: AVAILABLE_AGENT_TEMPLATES.map((t) => {
-            const tmpl = loadAgentTemplate(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues:
-            agentTpls ??
-            AVAILABLE_AGENT_TEMPLATES.filter((t) => presetAgents.has(t)),
+        const agentInventory = inventory ? filterInventoryByType(inventory, "agent") : undefined;
+        const val = await groupMultiselect({
+          message: `Agents (${getOptionCount(agentInventory?.length, AVAILABLE_AGENT_TEMPLATES.length)} total)`,
+          options: agentInventory
+            ? buildGroupedInventoryOptions(agentInventory, AGENT_CATEGORIES)
+            : buildGroupedBasicOptions(AVAILABLE_AGENT_TEMPLATES, AGENT_CATEGORIES, (t) =>
+                loadAgentTemplate(t),
+              ),
+          initialValues: agentTpls ?? AVAILABLE_AGENT_TEMPLATES.filter((t) => presetAgents.has(t)),
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         agentTpls = val as string[];
+        p.log.info(`Selected ${agentTpls.length} / ${AVAILABLE_AGENT_TEMPLATES.length} agents`);
         step++;
         break;
       }
       case 5: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
-        const presetCommands = new Set(presetDef?.commands ?? []);
-        const val = await p.multiselect({
-          message: `Commands (${AVAILABLE_COMMAND_TEMPLATES.length} total)`,
-          options: AVAILABLE_COMMAND_TEMPLATES.map((t) => {
-            const tmpl = loadCommandTemplate(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues:
-            commands ??
-            AVAILABLE_COMMAND_TEMPLATES.filter((t) => presetCommands.has(t)),
-          required: false,
-        });
-        if (isBack(val)) {
-          step--;
-          break;
-        }
-        commands = val as string[];
-        step++;
-        break;
-      }
-      case 6: {
-        const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const presetMcps = new Set(presetDef?.mcpServers ?? []);
-        const val = await p.multiselect({
-          message: `MCP Servers (${AVAILABLE_MCP_SERVER_TEMPLATES.length} total)`,
-          options: AVAILABLE_MCP_SERVER_TEMPLATES.map((t) => {
-            const tmpl = loadMcpServerTemplate(t);
-            const hint = tmpl.ok ? tmpl.data.description : "";
-            return { label: t, value: t, hint };
-          }),
+        const mcpInventory = inventory ? filterInventoryByType(inventory, "mcp-server") : undefined;
+        const val = await groupMultiselect({
+          message: `MCP Servers (${getOptionCount(mcpInventory?.length, AVAILABLE_MCP_SERVER_TEMPLATES.length)} total)`,
+          options: mcpInventory
+            ? buildGroupedInventoryOptions(mcpInventory, MCP_SERVER_CATEGORIES)
+            : buildGroupedBasicOptions(
+                AVAILABLE_MCP_SERVER_TEMPLATES,
+                MCP_SERVER_CATEGORIES,
+                (t) => {
+                  const tmpl = loadMcpServerTemplate(t);
+                  return { ok: tmpl.ok, data: tmpl.ok ? tmpl.data.description : undefined };
+                },
+              ),
           initialValues:
-            mcpServers ??
-            AVAILABLE_MCP_SERVER_TEMPLATES.filter((t) => presetMcps.has(t)),
+            mcpServers ?? AVAILABLE_MCP_SERVER_TEMPLATES.filter((t) => presetMcps.has(t)),
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         mcpServers = val as string[];
+        p.log.info(
+          `Selected ${mcpServers.length} / ${AVAILABLE_MCP_SERVER_TEMPLATES.length} MCP servers`,
+        );
         step++;
         break;
       }
-      case 7: {
+      case 6: {
         const presetDef = getBuiltinPresetDefinition(selectedPreset!);
         const flagsChanged = !sameFlagValues(editedFlags!, originalFlags);
         const changed =
@@ -374,7 +355,6 @@ export async function handlePresetPath(
           !sameArrays(rules!, [...(presetDef?.rules ?? [])]) ||
           !sameArrays(skills!, [...(presetDef?.skills ?? [])]) ||
           !sameArrays(agentTpls!, [...(presetDef?.agents ?? [])]) ||
-          !sameArrays(commands!, [...(presetDef?.commands ?? [])]) ||
           !sameArrays(mcpServers!, [...(presetDef?.mcpServers ?? [])]);
 
         if (changed) {
@@ -384,10 +364,8 @@ export async function handlePresetPath(
             initialValue: saveAsPreset ?? `${selectedPreset}-custom`,
             placeholder: `${selectedPreset}-custom`,
             validate: (v) => {
-              if (!v || !/^[a-z][a-z0-9-]*$/.test(v))
-                return "Must be kebab-case";
-              if (getReservedPresetNames().has(v))
-                return `"${v}" is a built-in preset name`;
+              if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return "Must be kebab-case";
+              if (getReservedPresetNames().has(v)) return `"${v}" is a built-in preset name`;
             },
           });
           if (isBack(customName)) {
@@ -399,7 +377,7 @@ export async function handlePresetPath(
         step++;
         break;
       }
-      case 8: {
+      case 7: {
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
@@ -411,28 +389,26 @@ export async function handlePresetPath(
           break;
         }
 
-        const presetDef = getBuiltinPresetDefinition(selectedPreset!);
-        const flagsChanged = !sameFlagValues(editedFlags!, originalFlags);
-        const changed =
-          flagsChanged ||
-          !sameArrays(rules!, [...(presetDef?.rules ?? [])]) ||
-          !sameArrays(skills!, [...(presetDef?.skills ?? [])]) ||
-          !sameArrays(agentTpls!, [...(presetDef?.agents ?? [])]) ||
-          !sameArrays(commands!, [...(presetDef?.commands ?? [])]) ||
-          !sameArrays(mcpServers!, [...(presetDef?.mcpServers ?? [])]);
+        const presetDef2 = getBuiltinPresetDefinition(selectedPreset!);
+        const flagsChanged2 = !sameFlagValues(editedFlags!, originalFlags);
+        const changed2 =
+          flagsChanged2 ||
+          !sameArrays(rules!, [...(presetDef2?.rules ?? [])]) ||
+          !sameArrays(skills!, [...(presetDef2?.skills ?? [])]) ||
+          !sameArrays(agentTpls!, [...(presetDef2?.agents ?? [])]) ||
+          !sameArrays(mcpServers!, [...(presetDef2?.mcpServers ?? [])]);
 
         p.outro("Configuration complete.");
         return {
           agents,
-          configMode: changed ? "custom" : "preset",
-          presetName: changed ? undefined : selectedPreset,
+          configMode: changed2 ? "custom" : "preset",
+          presetName: changed2 ? undefined : selectedPreset,
           selectedPresetName: selectedPreset,
           saveAsPreset,
           languages: [],
           rules: rules!,
           skills: skills!,
           agentTemplates: agentTpls!,
-          commandTemplates: commands!,
           mcpServers: mcpServers!,
           preset: selectedPreset!,
           flags: editedFlags,
@@ -446,12 +422,14 @@ export async function handlePresetPath(
 
 export async function handleCustomPath(
   agents: string[],
+  existingInstall?: ExistingInstallContext,
 ): Promise<WizardResult | null | symbol> {
   let step = 0;
+  const existingSelections = existingInstall?.selections;
+  const inventory = existingInstall?.inventory;
   let rules: string[] | undefined;
   let skills: string[] | undefined;
   let agentTpls: string[] | undefined;
-  let commandTpls: string[] | undefined;
   let mcpServers: string[] | undefined;
   let preset: string | undefined;
   let saveAsPreset: string | undefined;
@@ -460,98 +438,109 @@ export async function handleCustomPath(
     switch (step) {
       case 0: {
         p.log.step("Artifacts");
-        const val = await p.multiselect({
-          message: `Select rules (${AVAILABLE_TEMPLATES.length} total)`,
-          options: AVAILABLE_TEMPLATES.map((t) => {
-            const tmpl = loadTemplate(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues: rules ?? [...AVAILABLE_TEMPLATES],
+        const ruleInventory = inventory ? filterInventoryByType(inventory, "rule") : undefined;
+        const val = await groupMultiselect({
+          message: `Select rules (${getOptionCount(ruleInventory?.length, AVAILABLE_TEMPLATES.length)} total)`,
+          options: ruleInventory
+            ? buildGroupedInventoryOptions(ruleInventory, RULE_CATEGORIES)
+            : buildGroupedBasicOptions(AVAILABLE_TEMPLATES, RULE_CATEGORIES, (t) =>
+                loadTemplate(t),
+              ),
+          initialValues: rules ?? existingSelections?.rules ?? [...AVAILABLE_TEMPLATES],
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) return BACK;
         rules = val as string[];
+        p.log.info(`Selected ${rules.length} / ${AVAILABLE_TEMPLATES.length} rules`);
         step++;
         break;
       }
       case 1: {
-        const val = await p.multiselect({
-          message: `Select skills (${AVAILABLE_SKILL_TEMPLATES.length} total)`,
-          options: AVAILABLE_SKILL_TEMPLATES.map((t) => {
-            const tmpl = loadSkillTemplateContent(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues: skills,
+        const skillCategories = buildSkillCategoryMap(AVAILABLE_SKILL_TEMPLATES, (t) =>
+          loadSkillTemplateContent(t),
+        );
+        const skillInventory = inventory ? filterInventoryByType(inventory, "skill") : undefined;
+        const val = await groupMultiselect({
+          message: `Select skills (${getOptionCount(skillInventory?.length, AVAILABLE_SKILL_TEMPLATES.length)} total)`,
+          options: skillInventory
+            ? buildGroupedInventoryOptions(skillInventory, skillCategories)
+            : buildGroupedBasicOptions(AVAILABLE_SKILL_TEMPLATES, skillCategories, (t) =>
+                loadSkillTemplateContent(t),
+              ),
+          initialValues: skills ?? existingSelections?.skills,
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         skills = val as string[];
+        p.log.info(`Selected ${skills.length} / ${AVAILABLE_SKILL_TEMPLATES.length} skills`);
         step++;
         break;
       }
       case 2: {
-        const val = await p.multiselect({
-          message: `Select agent definitions (${AVAILABLE_AGENT_TEMPLATES.length} total)`,
-          options: AVAILABLE_AGENT_TEMPLATES.map((t) => {
-            const tmpl = loadAgentTemplate(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues: agentTpls ?? [...AVAILABLE_AGENT_TEMPLATES],
+        const agentInventory = inventory ? filterInventoryByType(inventory, "agent") : undefined;
+        const val = await groupMultiselect({
+          message: `Select agent definitions (${getOptionCount(agentInventory?.length, AVAILABLE_AGENT_TEMPLATES.length)} total)`,
+          options: agentInventory
+            ? buildGroupedInventoryOptions(agentInventory, AGENT_CATEGORIES)
+            : buildGroupedBasicOptions(AVAILABLE_AGENT_TEMPLATES, AGENT_CATEGORIES, (t) =>
+                loadAgentTemplate(t),
+              ),
+          initialValues: agentTpls ?? existingSelections?.agents ?? [...AVAILABLE_AGENT_TEMPLATES],
           required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         agentTpls = val as string[];
+        p.log.info(`Selected ${agentTpls.length} / ${AVAILABLE_AGENT_TEMPLATES.length} agents`);
         step++;
         break;
       }
       case 3: {
-        const val = await p.multiselect({
-          message: `Select commands (${AVAILABLE_COMMAND_TEMPLATES.length} total)`,
-          options: AVAILABLE_COMMAND_TEMPLATES.map((t) => {
-            const tmpl = loadCommandTemplate(t);
-            const hint = tmpl.ok ? extractTemplateHint(tmpl.data) : "";
-            return { label: formatLabel(t), value: t, hint };
-          }),
-          initialValues: commandTpls ?? [...AVAILABLE_COMMAND_TEMPLATES],
+        const mcpInventory = inventory ? filterInventoryByType(inventory, "mcp-server") : undefined;
+        const val = await groupMultiselect({
+          message: `Select MCP servers (${getOptionCount(mcpInventory?.length, AVAILABLE_MCP_SERVER_TEMPLATES.length)} total)`,
+          options: mcpInventory
+            ? buildGroupedInventoryOptions(mcpInventory, MCP_SERVER_CATEGORIES)
+            : buildGroupedBasicOptions(
+                AVAILABLE_MCP_SERVER_TEMPLATES,
+                MCP_SERVER_CATEGORIES,
+                (t) => {
+                  const tmpl = loadMcpServerTemplate(t);
+                  return { ok: tmpl.ok, data: tmpl.ok ? tmpl.data.description : undefined };
+                },
+              ),
+          initialValues: mcpServers ?? existingSelections?.mcpServers ?? [],
           required: false,
-        });
-        if (isBack(val)) {
-          step--;
-          break;
-        }
-        commandTpls = val as string[];
-        step++;
-        break;
-      }
-      case 4: {
-        const val = await p.multiselect({
-          message: `Select MCP servers (${AVAILABLE_MCP_SERVER_TEMPLATES.length} total)`,
-          options: AVAILABLE_MCP_SERVER_TEMPLATES.map((t) => {
-            const tmpl = loadMcpServerTemplate(t);
-            const hint = tmpl.ok ? tmpl.data.description : "";
-            return { label: t, value: t, hint };
-          }),
-          initialValues: mcpServers ?? [],
-          required: false,
+          selectableGroups: true,
+          withGuide: true,
+          initialCollapsed: true,
         });
         if (isBack(val)) {
           step--;
           break;
         }
         mcpServers = val as string[];
+        p.log.info(
+          `Selected ${mcpServers.length} / ${AVAILABLE_MCP_SERVER_TEMPLATES.length} MCP servers`,
+        );
         step++;
         break;
       }
-      case 5: {
+      case 4: {
         const val = await p.select({
           message: "Choose flag preset",
           options: [
@@ -580,7 +569,7 @@ export async function handleCustomPath(
         step++;
         break;
       }
-      case 6: {
+      case 5: {
         const save = await p.confirm({
           message: "Save this selection as a named preset for reuse?",
           initialValue: false,
@@ -595,10 +584,8 @@ export async function handleCustomPath(
             placeholder: "my-team-preset",
             initialValue: saveAsPreset,
             validate: (v) => {
-              if (!v || !/^[a-z][a-z0-9-]*$/.test(v))
-                return "Must be kebab-case";
-              if (getReservedPresetNames().has(v))
-                return `"${v}" is a built-in preset name`;
+              if (!v || !/^[a-z][a-z0-9-]*$/.test(v)) return "Must be kebab-case";
+              if (getReservedPresetNames().has(v)) return `"${v}" is a built-in preset name`;
             },
           });
           if (isBack(nameInput)) {
@@ -612,7 +599,7 @@ export async function handleCustomPath(
         step++;
         break;
       }
-      case 7: {
+      case 6: {
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
@@ -633,7 +620,6 @@ export async function handleCustomPath(
           rules: rules!,
           skills: skills!,
           agentTemplates: agentTpls!,
-          commandTemplates: commandTpls!,
           mcpServers: mcpServers!,
           preset: (preset ?? DEFAULT_PRESET) as string,
           versionPin: versionPin as boolean,

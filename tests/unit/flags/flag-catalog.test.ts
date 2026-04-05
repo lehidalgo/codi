@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  FLAG_CATALOG,
-  buildFlagSchema,
-  getDefaultFlags,
-} from "#src/core/flags/flag-catalog.js";
+import { FLAG_CATALOG, buildFlagSchema, getDefaultFlags } from "#src/core/flags/flag-catalog.js";
 import type { FlagSpec } from "#src/types/flags.js";
 
 /** Synthetic catalog with a number flag for testing number-type schema validation. */
@@ -19,8 +15,8 @@ const testCatalog: Record<string, FlagSpec> = {
 };
 
 describe("FLAG_CATALOG", () => {
-  it("has exactly 16 entries", () => {
-    expect(Object.keys(FLAG_CATALOG)).toHaveLength(16);
+  it("has exactly 17 entries", () => {
+    expect(Object.keys(FLAG_CATALOG)).toHaveLength(17);
   });
 
   it("contains all expected flag names", () => {
@@ -37,6 +33,7 @@ describe("FLAG_CATALOG", () => {
       "require_pr_review",
       "mcp_allowed_servers",
       "require_documentation",
+      "doc_protected_branches",
       "allowed_languages",
       "progressive_loading",
       "drift_detection",
@@ -135,8 +132,8 @@ describe("buildFlagSchema", () => {
 describe("getDefaultFlags", () => {
   const defaults = getDefaultFlags();
 
-  it("returns all 16 flags", () => {
-    expect(Object.keys(defaults)).toHaveLength(16);
+  it("returns all 17 flags", () => {
+    expect(Object.keys(defaults)).toHaveLength(17);
   });
 
   it("auto_commit defaults to false", () => {

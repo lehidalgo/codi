@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { FlagSpec } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
 import type { AgentAdapter } from "#src/types/agent.js";
-import type { HubAction, HubTopLevelEntry } from "#src/cli/hub.js";
+import type { HubTopLevelEntry } from "#src/cli/hub.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
 import { PROJECT_CLI } from "#src/constants.js";
 import {
@@ -146,8 +146,6 @@ describe("section-renderers", () => {
       skillNames: ["x", "y"],
       agents: 1,
       agentNames: ["z"],
-      commands: 0,
-      commandNames: [],
     };
 
     it("shows correct counts", () => {
@@ -156,7 +154,6 @@ describe("section-renderers", () => {
       expect(result).toContain("| **Rules** | 3 |");
       expect(result).toContain("| **Skills** | 2 |");
       expect(result).toContain("| **Agents** | 1 |");
-      expect(result).toContain("| **Commands** | 0 |");
     });
 
     it("includes template names", () => {
@@ -273,29 +270,30 @@ describe("section-renderers", () => {
   });
 
   describe("renderHubActions", () => {
-    it("renders action rows", () => {
-      const topLevel: HubTopLevelEntry[] = [
+    it("renders normal and advanced action rows", () => {
+      const normalMenu: HubTopLevelEntry[] = [
         {
-          value: "build-share",
-          label: "Build & share",
-          hint: "Export skills, contribute",
+          value: "generate",
+          label: "Generate configs",
+          hint: "Rebuild all agent configuration files",
           requiresProject: true,
         },
       ];
-      const subMenus: Record<string, HubAction[]> = {
-        "build-share": [
-          {
-            label: "Generate",
-            hint: "Build configs",
-            value: "generate",
-          },
-        ],
-      };
-      const result = renderHubActions(topLevel, subMenus);
+      const advancedMenu: HubTopLevelEntry[] = [
+        {
+          value: "doctor",
+          label: "Health check",
+          hint: "Diagnose project issues",
+          requiresProject: true,
+        },
+      ];
+      const result = renderHubActions(normalMenu, advancedMenu);
 
-      expect(result).toContain("Build & share");
-      expect(result).toContain("Generate");
-      expect(result).toContain("Build configs");
+      expect(result).toContain("Generate configs");
+      expect(result).toContain("Rebuild all agent configuration files");
+      expect(result).toContain("Normal");
+      expect(result).toContain("Health check");
+      expect(result).toContain("Advanced");
     });
   });
 

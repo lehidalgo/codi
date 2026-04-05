@@ -20,8 +20,11 @@ import { registerRevertCommand } from "./cli/revert.js";
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
 import { registerDocsCommand } from "./cli/docs.js";
+import { registerDocsStampCommand } from "./cli/docs-stamp.js";
+import { registerDocsCheckCommand } from "./cli/docs-check.js";
 import { registerContributeCommand } from "./cli/contribute.js";
 import { registerSkillCommand } from "./cli/skill.js";
+import { registerOnboardCommand } from "./cli/onboard.js";
 import { runCommandCenter } from "./cli/hub.js";
 import { Logger } from "./core/output/logger.js";
 import { PROJECT_NAME } from "./constants.js";
@@ -29,9 +32,9 @@ import type { GlobalOptions } from "./cli/shared.js";
 import { checkTemplateRegistry } from "./core/scaffolder/template-registry-check.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(
-  readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
-) as { version: string };
+const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8")) as {
+  version: string;
+};
 
 const program = new Command();
 program
@@ -57,8 +60,11 @@ registerRevertCommand(program);
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);
 registerDocsCommand(program);
+registerDocsStampCommand(program);
+registerDocsCheckCommand(program);
 registerContributeCommand(program);
 registerSkillCommand(program);
+registerOnboardCommand(program);
 
 // Bare command (no subcommand) → launch Command Center
 program.action(async () => {

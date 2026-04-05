@@ -35,7 +35,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 ## What You Get
 
 - **5 agents, 1 config** — generate native config files for all supported agents from a single `.codi/` directory
-- **100+ built-in templates** — rules, skills, agents, and commands covering security, testing, 11 languages, and 3 frameworks
+- **100+ built-in templates** — rules, skills, and agents covering security, testing, 11 languages, and 3 frameworks
 - **6 presets** — from minimal to strict, choose your starting point and customize
 - **Pre-commit hooks** — automated testing, secret scanning, type checking, and file size limits
 - **Drift detection** — know instantly when generated files diverge from your source config
@@ -47,10 +47,13 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 ```bash
 # 1. Install
-npm install -g codi-cli
+npm install -g codi-cli@latest
 
 # 2. Initialize (interactive wizard)
 codi init
+
+# OR using a coding agent (Claude Code, Codex, etc)
+"run codi onboard in the terminal and follow instructions"
 
 # 3. Generate agent configs
 codi generate
@@ -61,7 +64,7 @@ codi status
 
 Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, and other agent files are generated and ready to commit.
 
-> **No global install?** Use `npx codi-cli <command>` or install as a dev dependency with `npm install -D codi-cli`. Requires **Node.js >= 20**. See the [Getting Started tutorial](docs/getting-started.md) for detailed setup options.
+> **No global install?** Use `npx codi-cli <command>` or install as a dev dependency with `npm install -D codi-cli`. Requires **Node.js >= 20**. See the [Getting Started tutorial](docs/project/getting-started.md) for detailed setup options.
 
 ---
 
@@ -69,16 +72,20 @@ Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, and other agent files are generat
 
 ```mermaid
 flowchart LR
-    A[".codi/ directory"] --> B["Config Resolution\n(3 layers)"]
-    B --> C["Adapters"]
-    C --> D["CLAUDE.md"]
-    C --> E[".cursorrules"]
-    C --> F["AGENTS.md"]
-    C --> G[".windsurfrules"]
-    C --> H[".clinerules"]
+    A["Built-in templates and presets"] --> B["Scaffold or install into .codi/"]
+    B --> C[".codi/ directory\n(runtime source of truth)"]
+    C --> D["Config Resolution\n(3 layers)"]
+    D --> E["Adapters"]
+    E --> F["CLAUDE.md"]
+    E --> G[".cursorrules"]
+    E --> H["AGENTS.md"]
+    E --> I[".windsurfrules"]
+    E --> J[".clinerules"]
 ```
 
-Codi reads your `.codi/` directory, resolves configuration through 3 layers (preset → repo → user), and passes the result through agent-specific adapters that produce each platform's native format. Flags with `locked: true` cannot be overridden by later layers.
+Codi uses a two-stage lifecycle. First, built-in templates and presets are consumed by commands like `codi init` and `codi add` to scaffold concrete files into `.codi/`. After that, `codi generate` reads `.codi/`, resolves configuration through 3 layers (preset defaults at install time -> repo -> user), and passes the result through agent-specific adapters that produce each platform's native format. Flags with `locked: true` cannot be overridden by later layers.
+
+At generate time, Codi does not read from `src/templates/` directly. `.codi/` is the runtime source of truth.
 
 ---
 
@@ -86,10 +93,10 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 
 | Concept | What It Is | Learn More |
 |:--------|:-----------|:-----------|
-| **Artifacts** | Rules, skills, agents, commands, brands — the building blocks of your config | [Artifacts Guide](docs/artifacts.md) |
-| **Presets** | Bundles of flags + artifacts for quick setup (6 built-in) | [Presets Guide](docs/presets.md) |
-| **Flags** | 16 behavioral switches controlling security, testing, permissions, and generation | [Configuration](docs/configuration.md) |
-| **Adapters** | Translators that convert your config to each agent's native format | [Architecture](docs/architecture.md) |
+| **Artifacts** | Rules, skills, agents, brands — the building blocks of your config | [Artifacts Guide](docs/project/artifacts.md) |
+| **Presets** | Bundles of flags + artifacts for quick setup (6 built-in) | [Presets Guide](docs/project/presets.md) |
+| **Flags** | 16 behavioral switches controlling security, testing, permissions, and generation | [Configuration](docs/project/configuration.md) |
+| **Adapters** | Translators that convert your config to each agent's native format | [Architecture](docs/project/architecture.md) |
 
 ---
 
@@ -100,7 +107,7 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 |:------|:-----------|:-----:|:------:|:------:|:---:|
 | **Claude Code** | `CLAUDE.md` | `.claude/rules` | `.claude/skills` | `.claude/agents` | `.mcp.json` |
 | **Cursor** | `.cursorrules` | `.cursor/rules` | `—` | — | `.cursor/mcp.json` |
-| **Codex** | `AGENTS.md` | `.` | `.agents/skills` | `.codex/agents` | `.codex/mcp.toml` |
+| **Codex** | `AGENTS.md` | `.` | `.agents/skills` | `.codex/agents` | `.codex/config.toml` |
 | **Windsurf** | `.windsurfrules` | `.` | `.windsurf/skills` | — | — |
 | **Cline** | `.clinerules` | `.cline` | `.cline/skills` | — | — |
 <!-- GENERATED:END:supported_agents -->
@@ -110,13 +117,12 @@ Codi reads your `.codi/` directory, resolves configuration through 3 layers (pre
 <!-- GENERATED:START:template_counts_compact -->
 | Artifact | Count |
 |:---------|:-----:|
-| **Rules** | 27 |
-| **Skills** | 45 |
+| **Rules** | 28 |
+| **Skills** | 66 |
 | **Agents** | 22 |
-| **Commands** | 17 |
 <!-- GENERATED:END:template_counts_compact -->
 
-Create your own with `codi add rule|skill|agent|command <name>`, or start from a template with `--template`.
+Create your own with `codi add rule|skill|agent <name>`, or start from a template with `--template`.
 
 ## Presets
 
@@ -131,7 +137,7 @@ Create your own with `codi add rule|skill|agent|command <name>`, or start from a
 | `codi-power-user` | workflow | Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits |
 <!-- GENERATED:END:preset_table -->
 
-Create, share, and install presets from ZIP or GitHub with `codi preset`. See the [Presets Guide](docs/presets.md).
+Create, share, and install presets from ZIP or GitHub with `codi preset`. See the [Presets Guide](docs/project/presets.md).
 
 ---
 
@@ -142,15 +148,16 @@ Create, share, and install presets from ZIP or GitHub with `codi preset`. See th
 | `codi` | Launch interactive Command Center |
 | `codi init` | Initialize `.codi/` configuration |
 | `codi generate` | Generate agent config files |
-| `codi add <type> <name>` | Add a rule, skill, agent, command, or brand |
+| `codi add <type> <name>` | Add a rule, skill, agent, or brand |
 | `codi status` | Show drift status |
 | `codi doctor` | Check project health |
 | `codi validate` | Validate configuration |
 | `codi preset <sub>` | Manage presets (create, install, export, etc.) |
 | `codi watch` | Auto-regenerate on file changes |
 | `codi compliance` | Full health + drift + verification check |
+| `codi onboard` | AI-guided setup — agent explores codebase and recommends artifacts |
 
-> **Full reference**: See [CLI Reference](docs/cli-reference.md) for all 20 commands with options, examples, and the Command Center / init wizard documentation.
+> **Full reference**: See [CLI Reference](docs/project/cli-reference.md) for all commands with options, examples, and the Command Center / init wizard documentation.
 
 ### Global Options
 
@@ -175,7 +182,7 @@ Yes. Personal preferences go in `~/.codi/user.yaml` (never committed). Team-wide
 **Q: How do I add Codi to CI?**
 Install as a dev dependency and add `npx codi doctor --ci` to your pipeline. It exits non-zero on issues.
 
-> More questions? See [Troubleshooting](docs/troubleshooting.md).
+> More questions? See [Troubleshooting](docs/project/troubleshooting.md).
 
 ---
 
@@ -183,17 +190,17 @@ Install as a dev dependency and add `npx codi doctor --ci` to your pipeline. It 
 
 | Guide | Description |
 |:------|:------------|
-| [Getting Started](docs/getting-started.md) | Hands-on tutorial for new users |
-| [Feature Inventory](docs/features.md) | Complete list of everything Codi does |
-| [CLI Reference](docs/cli-reference.md) | All commands, Command Center, init wizard |
-| [Architecture](docs/architecture.md) | Config resolution, adapters, generation pipeline |
-| [Configuration](docs/configuration.md) | Manifest, flags, layers, MCP |
-| [Artifacts](docs/artifacts.md) | Rules, skills, agents, commands, brands |
-| [Presets](docs/presets.md) | Built-in and custom presets |
-| [Workflows](docs/workflows.md) | Daily usage, CI/CD, team patterns |
-| [Migration](docs/migration.md) | Adopt Codi in existing projects |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
-| [Maintaining Docs](docs/maintaining-docs.md) | Documentation maintenance guidelines |
+| [Getting Started](docs/project/getting-started.md) | Hands-on tutorial for new users |
+| [Feature Inventory](docs/project/features.md) | Complete list of everything Codi does |
+| [CLI Reference](docs/project/cli-reference.md) | All commands, Command Center, init wizard |
+| [Architecture](docs/project/architecture.md) | Config resolution, adapters, generation pipeline |
+| [Configuration](docs/project/configuration.md) | Manifest, flags, layers, MCP |
+| [Artifacts](docs/project/artifacts.md) | Rules, skills, agents, brands |
+| [Presets](docs/project/presets.md) | Built-in and custom presets |
+| [Workflows](docs/project/workflows.md) | Daily usage, CI/CD, team patterns |
+| [Migration](docs/project/migration.md) | Adopt Codi in existing projects |
+| [Troubleshooting](docs/project/troubleshooting.md) | Common issues and fixes |
+| [Maintaining Docs](docs/project/maintaining-docs.md) | Documentation maintenance guidelines |
 
 ---
 

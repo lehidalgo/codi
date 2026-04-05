@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { codexAdapter } from "#src/adapters/codex.js";
 import { createMockConfig } from "./mock-config.js";
-import {
-  CONTEXT_TOKENS_LARGE,
-  PROJECT_NAME,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { CONTEXT_TOKENS_LARGE, PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("codex adapter", () => {
   const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-codex-` + Date.now());
@@ -34,7 +30,6 @@ describe("codex adapter", () => {
     expect(codexAdapter.capabilities).toEqual({
       rules: true,
       skills: true,
-      commands: false,
       mcp: true,
       frontmatter: false,
       progressiveLoading: false,
@@ -49,10 +44,9 @@ describe("codex adapter", () => {
     expect(codexAdapter.paths.configRoot).toBe(".codex");
     expect(codexAdapter.paths.rules).toBe(".");
     expect(codexAdapter.paths.skills).toBe(".agents/skills");
-    expect(codexAdapter.paths.commands).toBeNull();
     expect(codexAdapter.paths.agents).toBe(".codex/agents");
     expect(codexAdapter.paths.instructionFile).toBe("AGENTS.md");
-    expect(codexAdapter.paths.mcpConfig).toBe(".codex/mcp.toml");
+    expect(codexAdapter.paths.mcpConfig).toBe(".codex/config.toml");
   });
 
   // --- Detection ---
@@ -109,9 +103,7 @@ describe("codex adapter", () => {
     const agentsMd = files.find((f) => f.path === "AGENTS.md");
     expect(agentsMd).toBeDefined();
     expect(agentsMd!.content).toContain("Do NOT execute shell commands.");
-    expect(agentsMd!.content).toContain(
-      "Keep source code files under 700 lines.",
-    );
+    expect(agentsMd!.content).toContain("Keep source code files under 700 lines.");
     expect(agentsMd!.content).toContain("Code Style");
     expect(agentsMd!.content).toContain("Testing");
     expect(agentsMd!.hash).toBeTruthy();
@@ -171,16 +163,11 @@ describe("codex adapter", () => {
     const files = await codexAdapter.generate(config, {});
 
     const skillMds = files.filter(
-      (f) =>
-        f.path.startsWith(".agents/skills/") && f.path.endsWith("SKILL.md"),
+      (f) => f.path.startsWith(".agents/skills/") && f.path.endsWith("SKILL.md"),
     );
     expect(skillMds).toHaveLength(2);
-    expect(
-      skillMds.find((f) => f.path === ".agents/skills/alpha/SKILL.md"),
-    ).toBeDefined();
-    expect(
-      skillMds.find((f) => f.path === ".agents/skills/beta/SKILL.md"),
-    ).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".agents/skills/alpha/SKILL.md")).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".agents/skills/beta/SKILL.md")).toBeDefined();
   });
 
   // --- generate() with agents ---
@@ -198,9 +185,7 @@ describe("codex adapter", () => {
     });
     const files = await codexAdapter.generate(config, {});
 
-    const agentFile = files.find(
-      (f) => f.path === ".codex/agents/reviewer.toml",
-    );
+    const agentFile = files.find((f) => f.path === ".codex/agents/reviewer.toml");
     expect(agentFile).toBeDefined();
     expect(agentFile!.content).toContain('name = "reviewer"');
     expect(agentFile!.content).toContain('description = "Code reviewer agent"');
@@ -226,6 +211,35 @@ describe("codex adapter", () => {
     expect(agentFile!.content).not.toContain("model =");
   });
 
+  it("escapes agent developer instructions for TOML safely", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "tester",
+          description: "desc",
+          content: [
+            "Run \\`npm test\\` before merging.",
+            "",
+            "```ts",
+            'console.log("hello");',
+            "```",
+            "",
+            "Path: C:\\temp\\agent-output",
+          ].join("\n"),
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+
+    const agentFile = files.find((f) => f.path === ".codex/agents/tester.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).toContain('developer_instructions = "');
+    expect(agentFile!.content).not.toContain('developer_instructions = """');
+    expect(agentFile!.content).toContain("Run \\\\`npm test\\\\`");
+    expect(agentFile!.content).toContain("Path: C:\\\\temp\\\\agent-output");
+    expect(agentFile!.content).toContain("\\n\\n```ts\\n");
+  });
+
   it("normalizes agent names with spaces to kebab-case filenames", async () => {
     const config = createMockConfig({
       agents: [
@@ -238,10 +252,59 @@ describe("codex adapter", () => {
     });
     const files = await codexAdapter.generate(config, {});
 
-    const agentFile = files.find(
-      (f) => f.path === ".codex/agents/my-agent.toml",
-    );
+    const agentFile = files.find((f) => f.path === ".codex/agents/my-agent.toml");
     expect(agentFile).toBeDefined();
+  });
+
+  it("emits model_reasoning_effort in agent TOML when effort is set", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "thinker",
+          description: "A reasoning agent",
+          content: "Think carefully.",
+          effort: "medium",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+    const agentFile = files.find((f) => f.path === ".codex/agents/thinker.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).toContain('model_reasoning_effort = "medium"');
+  });
+
+  it("clamps effort 'max' to 'high' for Codex model_reasoning_effort", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "heavy-thinker",
+          description: "Max effort agent",
+          content: "Think as hard as possible.",
+          effort: "max",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+    const agentFile = files.find((f) => f.path === ".codex/agents/heavy-thinker.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).toContain('model_reasoning_effort = "high"');
+    expect(agentFile!.content).not.toContain('model_reasoning_effort = "max"');
+  });
+
+  it("omits model_reasoning_effort from agent TOML when effort is not set", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "basic-agent",
+          description: "No effort specified",
+          content: "Do your best.",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+    const agentFile = files.find((f) => f.path === ".codex/agents/basic-agent.toml");
+    expect(agentFile).toBeDefined();
+    expect(agentFile!.content).not.toContain("model_reasoning_effort");
   });
 
   // --- generate() with MCP servers ---
@@ -286,9 +349,7 @@ describe("codex adapter", () => {
     const configFile = files.find((f) => f.path === ".codex/config.toml");
     expect(configFile).toBeDefined();
     expect(configFile!.content).toContain('url = "https://mcp.example.com"');
-    expect(configFile!.content).toContain(
-      'http_headers.Authorization = "Bearer token123"',
-    );
+    expect(configFile!.content).toContain('http_headers.Authorization = "Bearer token123"');
   });
 
   it("excludes disabled MCP servers from config.toml", async () => {

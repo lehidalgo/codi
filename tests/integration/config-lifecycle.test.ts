@@ -15,18 +15,12 @@ import {
 import { flagsFromDefinitions } from "#src/core/config/composer.js";
 import { validateConfig } from "#src/core/config/validator.js";
 import { Logger } from "#src/core/output/logger.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-config-lifecycle-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-config-lifecycle-`));
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -45,7 +39,6 @@ async function createTestProject(config: {
   }>;
   skills?: Array<{ name: string; content: string }>;
   agents?: Array<{ name: string; content: string; tools?: string[] }>;
-  commands?: Array<{ name: string; content: string }>;
 }): Promise<string> {
   const configDir = path.join(tmpDir, PROJECT_DIR);
   await fs.mkdir(configDir, { recursive: true });
@@ -55,18 +48,10 @@ async function createTestProject(config: {
     version: "1",
     agents: ["claude-code"],
   };
-  await fs.writeFile(
-    path.join(configDir, MANIFEST_FILENAME),
-    stringifyYaml(manifest),
-    "utf-8",
-  );
+  await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), stringifyYaml(manifest), "utf-8");
 
   if (config.flags) {
-    await fs.writeFile(
-      path.join(configDir, "flags.yaml"),
-      stringifyYaml(config.flags),
-      "utf-8",
-    );
+    await fs.writeFile(path.join(configDir, "flags.yaml"), stringifyYaml(config.flags), "utf-8");
   }
 
   if (config.rules) {
@@ -83,11 +68,7 @@ async function createTestProject(config: {
         "",
         rule.content,
       ].join("\n");
-      await fs.writeFile(
-        path.join(rulesDir, `${rule.name}.md`),
-        frontmatter,
-        "utf-8",
-      );
+      await fs.writeFile(path.join(rulesDir, `${rule.name}.md`), frontmatter, "utf-8");
     }
   }
 
@@ -106,24 +87,7 @@ async function createTestProject(config: {
     for (const agent of config.agents) {
       const tools = agent.tools ?? ["Read", "Grep"];
       const frontmatter = `---\nname: ${agent.name}\ndescription: ${agent.name} agent\ntools:\n${tools.map((t) => `  - ${t}`).join("\n")}\nmanaged_by: user\n---\n\n${agent.content}`;
-      await fs.writeFile(
-        path.join(agentsDir, `${agent.name}.md`),
-        frontmatter,
-        "utf-8",
-      );
-    }
-  }
-
-  if (config.commands) {
-    const commandsDir = path.join(configDir, "commands");
-    await fs.mkdir(commandsDir, { recursive: true });
-    for (const cmd of config.commands) {
-      const frontmatter = `---\nname: ${cmd.name}\ndescription: ${cmd.name} command\n---\n\n${cmd.content}`;
-      await fs.writeFile(
-        path.join(commandsDir, `${cmd.name}.md`),
-        frontmatter,
-        "utf-8",
-      );
+      await fs.writeFile(path.join(agentsDir, `${agent.name}.md`), frontmatter, "utf-8");
     }
   }
 
@@ -161,7 +125,6 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
           tools: ["Read", "Grep", "Glob"],
         },
       ],
-      commands: [{ name: "deploy", content: "Deploy instructions." }],
     });
 
     const result = await resolveConfig(tmpDir);
@@ -171,11 +134,8 @@ describe("Config Lifecycle: parse → compose → validate → resolve", () => {
     expect(result.data.rules).toHaveLength(2);
     expect(result.data.skills).toHaveLength(1);
     expect(result.data.agents).toHaveLength(1);
-    expect(result.data.commands).toHaveLength(1);
 
-    expect(result.data.rules.find((r) => r.name === "security")?.priority).toBe(
-      "high",
-    );
+    expect(result.data.rules.find((r) => r.name === "security")?.priority).toBe("high");
     expect(result.data.agents[0]!.tools).toContain("Read");
   });
 

@@ -1,0 +1,73 @@
+{
+  "skillName": "codi-code-review",
+  "cases": [
+    {
+      "id": "review-pr-request",
+      "description": "PR review triggers full workflow with severity-ranked findings",
+      "prompt": "review my pull request",
+      "expectations": [
+        "Runs git diff to identify changed files",
+        "Reads full files for context, not just diffs",
+        "Produces findings organized by severity: Critical, Warning, Suggestion",
+        "Ends with a summary including total findings count"
+      ]
+    },
+    {
+      "id": "review-specific-file",
+      "description": "Single file review produces line-level findings",
+      "prompt": "can you review src/services/payment.ts for any issues?",
+      "expectations": [
+        "Reads the full file at the specified path",
+        "Produces severity-ranked findings with file path and line numbers",
+        "Includes suggested fixes for each finding"
+      ]
+    },
+    {
+      "id": "review-security-focus",
+      "description": "Auth code triggers security-specific checks with Critical severity",
+      "prompt": "review the auth changes in my latest commits for security issues",
+      "expectations": [
+        "Checks for secrets exposure, input validation, and injection risks",
+        "Any security vulnerability is classified as Critical severity",
+        "Findings include file path and line number"
+      ]
+    },
+    {
+      "id": "review-before-merge",
+      "description": "Pre-merge review checks against project rules",
+      "prompt": "check this code against our project rules before I merge to main",
+      "expectations": [
+        "Reads project rules if they exist",
+        "Produces an overall assessment: approve or request changes",
+        "Identifies files needing the most attention"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-code-review activates the skill",
+      "prompt": "/codi-code-review",
+      "expectations": [
+        "Activates the code review workflow",
+        "Runs git diff to identify changes to review"
+      ]
+    },
+    {
+      "id": "negative-run-tests",
+      "description": "Running tests is NOT a code review — should NOT trigger this skill",
+      "prompt": "run the test suite and tell me if anything fails",
+      "expectations": [
+        "Does NOT invoke the code-review skill",
+        "Does NOT produce severity-ranked findings"
+      ]
+    },
+    {
+      "id": "negative-refactoring",
+      "description": "Dead code removal should trigger refactoring, not code-review",
+      "prompt": "remove all unused exports from the utils module",
+      "expectations": [
+        "Does NOT invoke the code-review skill",
+        "Does NOT produce a code review report"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { FeedbackEntry, IssueCategory } from "../../schemas/feedback.js";
+import type { FeedbackEntry, IssueCategory } from "#src/schemas/feedback.js";
 
 export type HealthGrade = "A" | "B" | "C" | "D" | "F";
 export type Trend = "improving" | "stable" | "declining";
@@ -77,9 +77,7 @@ export function aggregateStats(entries: FeedbackEntry[]): SkillStatsResult {
   };
 }
 
-export function aggregateAllStats(
-  entries: FeedbackEntry[],
-): SkillStatsResult[] {
+export function aggregateAllStats(entries: FeedbackEntry[]): SkillStatsResult[] {
   const bySkill = new Map<string, FeedbackEntry[]>();
   for (const entry of entries) {
     const list = bySkill.get(entry.skillName) ?? [];
@@ -102,9 +100,7 @@ export function formatStatsTable(stats: SkillStatsResult[]): string {
 
   for (const s of stats) {
     const topIssue =
-      s.topIssues.length > 0
-        ? `${s.topIssues[0]!.category} (${s.topIssues[0]!.count})`
-        : "—";
+      s.topIssues.length > 0 ? `${s.topIssues[0]!.category} (${s.topIssues[0]!.count})` : "—";
     lines.push(
       `| ${s.skillName} | ${s.totalEntries} | ${s.successRate}% | ${s.healthGrade} | ${s.trend} | ${topIssue} |`,
     );

@@ -3,6 +3,7 @@ updates:
   # npm dependencies — group patch/minor into single weekly PR
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -23,6 +24,7 @@ updates:
   # GitHub Actions versions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3

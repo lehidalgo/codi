@@ -1,6 +1,7 @@
-import type { ResolvedFlags } from "../../types/flags.js";
+import { existsSync } from "node:fs";
+import type { ResolvedFlags } from "#src/types/flags.js";
 import { PROJECT_NAME } from "#src/constants.js";
-import type { ProjectManifest } from "../../types/config.js";
+import type { ProjectManifest } from "#src/types/config.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";
 
@@ -12,7 +13,14 @@ export interface HooksConfig {
   commitMsgValidation: boolean;
   testBeforeCommit: boolean;
   templateWiringCheck: boolean;
+  docNamingCheck: boolean;
   artifactValidation: boolean;
+  importDepthCheck: boolean;
+  skillYamlValidation: boolean;
+  skillResourceCheck: boolean;
+  versionBump: boolean;
+  docCheck: boolean;
+  docProtectedBranches: string[];
 }
 
 interface FlagHookMapping {
@@ -77,13 +85,21 @@ export function generateHooksConfig(
     }
   }
 
+  const versionBump = hasVersionBump();
+  if (versionBump) {
+    allHooks.push({
+      name: "version-bump",
+      command: `node .git/hooks/${PROJECT_NAME}-version-bump.mjs`,
+      stagedFilter: "src/templates/**",
+      passFiles: false,
+    });
+  }
+
   const testBeforeCommit = isTestBeforeCommitEnabled(flags);
   if (testBeforeCommit) {
     const testHooks = getTestHooksForLanguages(languages);
     for (const hook of testHooks) {
-      const alreadyAdded = allHooks.some(
-        (h) => h.name === hook.name || h.command === hook.command,
-      );
+      const alreadyAdded = allHooks.some((h) => h.name === hook.name || h.command === hook.command);
       if (!alreadyAdded) {
         allHooks.push(hook);
       }
@@ -119,6 +135,47 @@ export function generateHooksConfig(
     stagedFilter: ".codi/**",
   });
 
+  allHooks.push({
+    name: "import-depth-check",
+    command: `node .git/hooks/${PROJECT_NAME}-import-depth-check.mjs`,
+    stagedFilter: "**/*.{ts,tsx,js,jsx,mts,mjs}",
+  });
+
+  allHooks.push({
+    name: "skill-yaml-validate",
+    command: `node .git/hooks/${PROJECT_NAME}-skill-yaml-validate.mjs`,
+    stagedFilter: "**/SKILL.md",
+  });
+
+  allHooks.push({
+    name: "skill-resource-check",
+    command: `node .git/hooks/${PROJECT_NAME}-skill-resource-check.mjs`,
+    stagedFilter: "**/{SKILL.md,template.ts,*.md}",
+  });
+
+  const templateWiringCheck = hasTemplateWiringCheck();
+
+  if (templateWiringCheck) {
+    allHooks.push({
+      name: "template-wiring-check",
+      command: `node .git/hooks/${PROJECT_NAME}-template-wiring-check.mjs`,
+      stagedFilter: "src/templates/**",
+    });
+  }
+
+  const docNamingCheck = hasDocNamingCheck();
+
+  if (docNamingCheck) {
+    allHooks.push({
+      name: "doc-naming-check",
+      command: `node .git/hooks/${PROJECT_NAME}-doc-naming-check.mjs`,
+      stagedFilter: "docs/**",
+    });
+  }
+
+  const docCheck = isDocCheckEnabled(flags);
+  const docProtectedBranches = getDocProtectedBranches(flags);
+
   return {
     hooks: allHooks,
     secretScan,
@@ -126,9 +183,50 @@ export function generateHooksConfig(
     versionCheck: hasVersionRequirement,
     commitMsgValidation: true,
     testBeforeCommit,
-    templateWiringCheck: false,
+    templateWiringCheck,
+    docNamingCheck,
     artifactValidation: true,
+    importDepthCheck: true,
+    skillYamlValidation: true,
+    skillResourceCheck: true,
+    versionBump,
+    docCheck,
+    docProtectedBranches,
   };
+}
+
+function hasTemplateWiringCheck(): boolean {
+  // Only enable for projects that have a src/templates/ directory (codi contributors)
+  return existsSync("src/templates");
+}
+
+function hasDocNamingCheck(): boolean {
+  // Only enable for projects that have a validate-docs.py script (codi contributors)
+  return existsSync("scripts/validate-docs.py");
+}
+
+function hasVersionBump(): boolean {
+  // Only enable for projects that have templates + a baseline to compare against
+  return (
+    existsSync("src/templates") && existsSync("src/core/version/artifact-version-baseline.json")
+  );
+}
+
+function isDocCheckEnabled(flags: ResolvedFlags): boolean {
+  const flag = flags["require_documentation"];
+  if (!flag) return false;
+  if (flag.mode === "disabled") return false;
+  return flag.value === true;
+}
+
+function getDocProtectedBranches(flags: ResolvedFlags): string[] {
+  const flag = flags["doc_protected_branches"];
+  if (!flag || flag.mode === "disabled") return ["main", "develop", "release/*"];
+  const val = flag.value;
+  if (Array.isArray(val) && val.every((v) => typeof v === "string")) {
+    return val as string[];
+  }
+  return ["main", "develop", "release/*"];
 }
 
 function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {

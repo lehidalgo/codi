@@ -6,7 +6,6 @@ import os from "node:os";
 import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
-import { createCommand } from "#src/core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
 import { scanRules, scanSkills } from "#src/core/config/parser.js";
 import { Logger } from "#src/core/output/logger.js";
@@ -17,9 +16,7 @@ let tmpDir: string;
 let configDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-scaff-pipe-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-scaff-pipe-`));
   configDir = path.join(tmpDir, PROJECT_DIR);
   await fs.mkdir(configDir, { recursive: true });
   Logger.init({ level: "error", mode: "human", noColor: true });
@@ -98,17 +95,6 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
     expect(Array.isArray(data["tools"])).toBe(true);
   });
 
-  it("scaffolded command has valid frontmatter", async () => {
-    const result = await createCommand({ name: "test-cmd", configDir });
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-
-    const content = await fs.readFile(result.data, "utf-8");
-    const { data } = parseFrontmatter<Record<string, unknown>>(content);
-    expect(data["name"]).toBe("test-cmd");
-    expect(data["managed_by"]).toBe("user");
-  });
-
   it("scaffolded MCP server produces valid YAML", async () => {
     const result = await createMcpServer({ name: "test-mcp", configDir });
     expect(result.ok).toBe(true);
@@ -143,8 +129,7 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
 
     const content = await fs.readFile(result.data, "utf-8");
     expect(content).toContain("name: test-brand");
-    expect(content).toContain("category: brand");
-    expect(content).toContain("Brand Identity");
+    expect(content).toContain("category: Brand Identity");
 
     const skillDir = path.join(configDir, "skills", "test-brand");
     for (const sub of ["assets", "references", "scripts", "evals"]) {
@@ -201,12 +186,6 @@ describe("Scaffolder Pipeline: error paths", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("rejects duplicate command", async () => {
-    await createCommand({ name: "dup", configDir });
-    const result = await createCommand({ name: "dup", configDir });
-    expect(result.ok).toBe(false);
-  });
-
   it("rejects duplicate MCP server", async () => {
     await createMcpServer({ name: "dup", configDir });
     const result = await createMcpServer({ name: "dup", configDir });
@@ -231,17 +210,8 @@ describe("Scaffolder Pipeline: error paths", () => {
     const invalidName = "INVALID_NAME!";
 
     expect((await createRule({ name: invalidName, configDir })).ok).toBe(false);
-    expect((await createSkill({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createAgent({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createCommand({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
-    expect((await createMcpServer({ name: invalidName, configDir })).ok).toBe(
-      false,
-    );
+    expect((await createSkill({ name: invalidName, configDir })).ok).toBe(false);
+    expect((await createAgent({ name: invalidName, configDir })).ok).toBe(false);
+    expect((await createMcpServer({ name: invalidName, configDir })).ok).toBe(false);
   });
 });

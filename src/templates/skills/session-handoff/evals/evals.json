@@ -1,0 +1,67 @@
+{
+  "skillName": "codi-session-handoff",
+  "cases": [
+    {
+      "id": "end-of-day-handoff",
+      "description": "End-of-session context save triggers full handoff summary",
+      "prompt": "I'm done for today. save the context for next session",
+      "expectations": [
+        "Summarizes what was accomplished in the current session",
+        "Documents the current state of work in progress",
+        "Records any pending tasks or open decisions",
+        "Saves context to a file or session document"
+      ]
+    },
+    {
+      "id": "context-limit-handoff",
+      "description": "Context limit approaching triggers proactive handoff",
+      "prompt": "we're approaching the context limit. prepare a handoff for the next session",
+      "expectations": [
+        "Identifies which tasks are complete and which are in progress",
+        "Documents the exact state of in-progress work",
+        "Records file paths and line numbers of active changes",
+        "Provides a clear 'next steps' list for the following session"
+      ]
+    },
+    {
+      "id": "team-handoff",
+      "description": "Handing work off to another engineer triggers structured summary",
+      "prompt": "I need to hand this off to another developer. create a handoff document",
+      "expectations": [
+        "Documents the feature or bug being worked on",
+        "Lists all files modified with a brief description of changes",
+        "Describes any known issues or gotchas",
+        "Provides clear instructions for continuing the work"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-session-handoff activates the skill",
+      "prompt": "/codi-session-handoff",
+      "expectations": [
+        "Activates the session-handoff skill",
+        "Produces a session summary document"
+      ]
+    },
+    {
+      "id": "negative-session-recovery",
+      "description": "Recovering from errors should trigger session-recovery, not handoff",
+      "prompt": "I'm stuck in a loop. help me recover and get back on track",
+      "expectations": [
+        "Does NOT invoke the session-handoff skill",
+        "Does NOT generate a handoff document",
+        "Routes to session-recovery for error diagnosis"
+      ]
+    },
+    {
+      "id": "negative-resume-work",
+      "description": "Resuming work should not trigger handoff",
+      "prompt": "what were we working on yesterday? let's continue",
+      "expectations": [
+        "Does NOT invoke the session-handoff skill",
+        "Does NOT generate a new handoff document",
+        "Reads existing context to resume work"
+      ]
+    }
+  ]
+}

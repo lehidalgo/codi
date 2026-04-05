@@ -5,7 +5,10 @@ import {
   handleZipPath,
   handleGithubPath,
   handleCustomPath,
+  handlePresetPath,
 } from "#src/cli/init-wizard-paths.js";
+import { getBuiltinPresetDefinition } from "#src/templates/presets/index.js";
+import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
 
 vi.mock("@clack/prompts", () => ({
   intro: vi.fn(),
@@ -19,44 +22,57 @@ vi.mock("@clack/prompts", () => ({
   log: { info: vi.fn(), step: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock("#src/cli/group-multiselect.js", () => ({
+  groupMultiselect: vi.fn(),
+}));
+
 vi.mock("#src/core/scaffolder/template-loader.js", () => ({
   AVAILABLE_TEMPLATES: ["typescript", "python"],
-  loadTemplate: vi
-    .fn()
-    .mockReturnValue({ ok: true, data: "description: test" }),
+  loadTemplate: vi.fn().mockReturnValue({ ok: true, data: "description: test" }),
 }));
 vi.mock("#src/core/scaffolder/skill-template-loader.js", () => ({
   AVAILABLE_SKILL_TEMPLATES: ["pdf", "frontend-design"],
-  loadSkillTemplateContent: vi
-    .fn()
-    .mockReturnValue({ ok: true, data: "description: test" }),
+  loadSkillTemplateContent: vi.fn().mockReturnValue({ ok: true, data: "description: test" }),
 }));
 vi.mock("#src/core/scaffolder/agent-template-loader.js", () => ({
   AVAILABLE_AGENT_TEMPLATES: ["code-reviewer"],
-  loadAgentTemplate: vi
-    .fn()
-    .mockReturnValue({ ok: true, data: "description: test" }),
-}));
-vi.mock("#src/core/scaffolder/command-template-loader.js", () => ({
-  AVAILABLE_COMMAND_TEMPLATES: ["commit"],
-  loadCommandTemplate: vi
-    .fn()
-    .mockReturnValue({ ok: true, data: "description: test" }),
+  loadAgentTemplate: vi.fn().mockReturnValue({ ok: true, data: "description: test" }),
 }));
 vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
   AVAILABLE_MCP_SERVER_TEMPLATES: ["memory"],
-  loadMcpServerTemplate: vi
-    .fn()
-    .mockReturnValue({ ok: true, data: { description: "test" } }),
+  loadMcpServerTemplate: vi.fn().mockReturnValue({ ok: true, data: { description: "test" } }),
 }));
 
 import * as prompts from "@clack/prompts";
+import { groupMultiselect } from "#src/cli/group-multiselect.js";
 
 const mockText = vi.mocked(prompts.text);
 const mockIsCancel = vi.mocked(prompts.isCancel);
-const mockMultiselect = vi.mocked(prompts.multiselect);
+const mockGroupMultiselect = vi.mocked(groupMultiselect);
 const mockSelect = vi.mocked(prompts.select);
 const mockConfirm = vi.mocked(prompts.confirm);
+
+function mockFlagEditing(presetName: string): void {
+  const presetDef = getBuiltinPresetDefinition(presetName);
+  const flags = presetDef?.flags ?? {};
+
+  const booleanTrueKeys = Object.keys(flags).filter(
+    (k) => FLAG_CATALOG[k]?.type === "boolean" && !flags[k]?.locked && flags[k]?.value === true,
+  );
+  vi.mocked(prompts.multiselect).mockResolvedValueOnce(booleanTrueKeys as never);
+
+  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
+    if (spec.type !== "enum" || !spec.values || flags[key]?.locked || !flags[key]) {
+      continue;
+    }
+    mockSelect.mockResolvedValueOnce(flags[key]!.value as never);
+  }
+
+  for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
+    if (spec.type !== "number" || flags[key]?.locked || !flags[key]) continue;
+    mockText.mockResolvedValueOnce(String(flags[key]!.value) as never);
+  }
+}
 
 describe("formatLabel", () => {
   it("capitalizes single word", () => {
@@ -156,15 +172,14 @@ describe("handleGithubPath", () => {
   });
 });
 
-describe("handleCustomPath — multiselect messages include counts", () => {
+describe("handleCustomPath — groupMultiselect messages include counts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsCancel.mockReturnValue(false);
-    mockMultiselect
+    mockGroupMultiselect
       .mockResolvedValueOnce([]) // rules
       .mockResolvedValueOnce([]) // skills
       .mockResolvedValueOnce([]) // agents
-      .mockResolvedValueOnce([]) // commands
       .mockResolvedValueOnce([]); // mcps
     mockSelect.mockResolvedValueOnce("codi-balanced"); // flag preset
     mockConfirm
@@ -174,36 +189,118 @@ describe("handleCustomPath — multiselect messages include counts", () => {
 
   it("shows rules count in message", async () => {
     await handleCustomPath(["claude-code"]);
-    expect(mockMultiselect.mock.calls[0]?.[0]?.message).toBe(
-      "Select rules (2 total)",
-    );
+    expect(mockGroupMultiselect.mock.calls[0]?.[0]?.message).toBe("Select rules (2 total)");
   });
 
   it("shows skills count in message", async () => {
     await handleCustomPath(["claude-code"]);
-    expect(mockMultiselect.mock.calls[1]?.[0]?.message).toBe(
-      "Select skills (2 total)",
-    );
+    expect(mockGroupMultiselect.mock.calls[1]?.[0]?.message).toBe("Select skills (2 total)");
   });
 
   it("shows agents count in message", async () => {
     await handleCustomPath(["claude-code"]);
-    expect(mockMultiselect.mock.calls[2]?.[0]?.message).toBe(
+    expect(mockGroupMultiselect.mock.calls[2]?.[0]?.message).toBe(
       "Select agent definitions (1 total)",
-    );
-  });
-
-  it("shows commands count in message", async () => {
-    await handleCustomPath(["claude-code"]);
-    expect(mockMultiselect.mock.calls[3]?.[0]?.message).toBe(
-      "Select commands (1 total)",
     );
   });
 
   it("shows MCP servers count in message", async () => {
     await handleCustomPath(["claude-code"]);
-    expect(mockMultiselect.mock.calls[4]?.[0]?.message).toBe(
-      "Select MCP servers (1 total)",
-    );
+    expect(mockGroupMultiselect.mock.calls[3]?.[0]?.message).toBe("Select MCP servers (1 total)");
+  });
+
+  it("uses existing install selections and inventory counts in modify mode", async () => {
+    await handleCustomPath(["claude-code"], {
+      selections: {
+        preset: "current-install",
+        rules: ["typescript", "legacy-rule"],
+        skills: ["pdf"],
+        agents: ["code-reviewer"],
+        commands: ["commit"],
+        mcpServers: ["memory"],
+      },
+      inventory: [
+        {
+          name: "typescript",
+          type: "rule",
+          status: "builtin-original",
+          installed: true,
+          managedBy: "codi",
+          installedArtifactVersion: 1,
+          hint: "TypeScript",
+        },
+        {
+          name: "legacy-rule",
+          type: "rule",
+          status: "builtin-removed",
+          installed: true,
+          managedBy: "codi",
+          installedArtifactVersion: 1,
+          hint: "Legacy",
+        },
+      ],
+    });
+
+    expect(mockGroupMultiselect.mock.calls[0]?.[0]?.message).toBe("Select rules (2 total)");
+    expect(mockGroupMultiselect.mock.calls[0]?.[0]?.initialValues).toEqual([
+      "typescript",
+      "legacy-rule",
+    ]);
+  });
+});
+
+describe("handlePresetPath", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsCancel.mockReturnValue(false);
+  });
+
+  it("uses current installation selections when modifying an existing install", async () => {
+    mockSelect.mockResolvedValueOnce("codi-balanced");
+    mockFlagEditing("codi-balanced");
+    mockGroupMultiselect
+      .mockResolvedValueOnce(["typescript", "legacy-rule"])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    mockConfirm.mockResolvedValueOnce(false);
+
+    await handlePresetPath(["claude-code"], {
+      selections: {
+        preset: "current-install",
+        rules: ["typescript", "legacy-rule"],
+        skills: [],
+        agents: [],
+        commands: [],
+        mcpServers: [],
+      },
+      inventory: [
+        {
+          name: "typescript",
+          type: "rule",
+          status: "builtin-original",
+          installed: true,
+          managedBy: "codi",
+          installedArtifactVersion: 1,
+          hint: "TypeScript",
+        },
+        {
+          name: "legacy-rule",
+          type: "rule",
+          status: "builtin-removed",
+          installed: true,
+          managedBy: "codi",
+          installedArtifactVersion: 1,
+          hint: "Legacy",
+        },
+      ],
+    });
+
+    expect(mockGroupMultiselect.mock.calls[0]?.[0]?.initialValues).toEqual([
+      "typescript",
+      "legacy-rule",
+    ]);
+    expect(mockGroupMultiselect.mock.calls[0]?.[0]?.message).toBe("Rules (2 total)");
   });
 });

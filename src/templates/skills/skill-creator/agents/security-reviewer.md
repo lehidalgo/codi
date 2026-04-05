@@ -6,7 +6,7 @@ Review an imported or third-party skill for security vulnerabilities and malicio
 
 The Security Reviewer examines all files in a skill directory and produces a structured security assessment. This agent is designed to be **conservative** — false positives are acceptable, false negatives are not. When in doubt, flag it.
 
-This agent complements the programmatic `scripts/security-scan.ts` scanner. The script catches known regex patterns deterministically. This agent catches subtle, contextual, and obfuscated threats that regex cannot.
+This agent complements the programmatic `[[/scripts/ts/security-scan.ts]]` scanner. The script catches known regex patterns deterministically. This agent catches subtle, contextual, and obfuscated threats that regex cannot.
 
 ## Inputs
 

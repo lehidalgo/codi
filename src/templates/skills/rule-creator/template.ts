@@ -7,6 +7,7 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   devArtifactName,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
@@ -16,13 +17,11 @@ description: |
   a coding rule, standard, or convention. Also activate when the user wants
   to enforce behavior, set constraints, or establish coding standards.
 category: ${PROJECT_NAME_DISPLAY} Platform
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Rule Creation
-  examples:
-    - "Create a new rule"
-    - "Add a coding convention"
-    - "Enforce TypeScript strict mode"
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # Rule Creator
@@ -86,10 +85,11 @@ This creates \\\`${PROJECT_DIR}/rules/<name>.md\\\` with a blank skeleton.
 ---
 name: <kebab-case, max ${MAX_NAME_LENGTH} chars>
 description: <max ${MAX_DESCRIPTION_LENGTH} chars, specific about when the rule applies>
+version: 1
 priority: high | medium | low
 alwaysApply: true | false
 managed_by: user
-language: typescript        # optional — omit for universal rules
+user-invocable: truelanguage: typescript        # optional — omit for universal rules
 scope: [src/api/**]         # optional — omit for universal rules
 ---
 \\\`\\\`\\\`
@@ -155,11 +155,14 @@ app.post('/users', (req, res) => {
 - [ ] Rules are grouped under clear h2 headings
 - [ ] File stays under 50 lines of body content (excluding frontmatter)
 
+Run \\\`${PROJECT_CLI} validate\\\` to check Zod schema compliance (name pattern, description length, version, managed_by). Fix any errors before registering.
+
 ## Step 7 — Register
 
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
+${PROJECT_CLI} validate
 ${PROJECT_CLI} generate
 ${PROJECT_CLI} doctor
 \\\`\\\`\\\`
@@ -199,6 +202,6 @@ Run \\\`${PROJECT_CLI} add rule --all\\\` to list all templates. Major categorie
 
 ## Related Skills
 
-- **codi-rule-feedback** — Get feedback on an existing rule's quality and trigger precision
-- **codi-refine-rules** — Batch-refine multiple rules for consistency and clarity
+- **${PROJECT_NAME}-rule-feedback** — Get feedback on an existing rule's quality and trigger precision
+- **${PROJECT_NAME}-refine-rules** — Batch-refine multiple rules for consistency and clarity
 `;

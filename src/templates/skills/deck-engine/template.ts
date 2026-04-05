@@ -1,22 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: |
-  HTML slide deck generator with brand token integration. Use when the user
-  needs a self-contained HTML presentation with navigation, animations, and
-  print-to-PDF support. Also activate for pitch decks, technical presentations,
-  or any slide content that should use project brand tokens.
+description: "HTML slide deck generator with brand token integration. Use when the user needs a self-contained HTML presentation with navigation, animations, and PDF export. Also activate for pitch decks or technical presentations needing brand tokens."
 category: Document Generation
-compatibility: [claude-code, cursor, codex, cline, windsurf]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-intentHints:
-  taskType: Presentation
-  examples:
-    - "Create a slide deck"
-    - "Build a presentation"
-    - "Generate a pitch deck"
+disable-model-invocation: false
+version: 7
 ---
 
 # {{name}} — Presentation Deck Engine
@@ -174,19 +166,19 @@ function example() {
 
 **[CODING AGENT]** Copy the CSS and JS reference files into the generated deck:
 
-- CSS foundation: \\\`references/deck-engine.css\\\` — brand token integration, layout, components, animations, print styles
-- JS navigation engine: \\\`references/deck-engine.js\\\` — keyboard, wheel, touch, and hash navigation
+- CSS foundation: \\\`\${CLAUDE_SKILL_DIR}[[/references/deck-engine.css]]\\\` — brand token integration, layout, components, animations, print styles
+- JS navigation engine: \\\`\${CLAUDE_SKILL_DIR}[[/references/deck-engine.js]]\\\` — keyboard, wheel, touch, and hash navigation
 
 Embed both inline in the output HTML (no external dependencies):
 
 \\\`\\\`\\\`html
 <style>
-  /* paste contents of references/deck-engine.css here */
+  /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.css]] here */
   /* then override brand tokens from the active brand skill */
 </style>
 ...slides...
 <script>
-  /* paste contents of references/deck-engine.js here */
+  /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.js]] here */
 </script>
 \\\`\\\`\\\`
 
@@ -212,7 +204,7 @@ Generate a single \\\`.html\\\` file using this exact scaffold:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Presentation Title</title>
   <style>
-    /* paste contents of references/deck-engine.css here */
+    /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.css]] here */
     /* then override brand tokens if a brand skill is active */
   </style>
 </head>
@@ -229,7 +221,7 @@ Generate a single \\\`.html\\\` file using this exact scaffold:
     </div>
   </div>
   <script>
-    /* paste contents of references/deck-engine.js here */
+    /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.js]] here */
   </script>
 </body>
 </html>
@@ -243,6 +235,6 @@ The \\\`.deck\\\` wrapper fills the screen. The \\\`.deck__viewport\\\` maintain
 
 ## Related Skills
 
-- **codi-theme-factory** — Apply curated visual themes to the generated deck
-- **codi-doc-engine** — Generate companion documents from deck content
+- **${PROJECT_NAME}-theme-factory** — Apply curated visual themes to the generated deck
+- **${PROJECT_NAME}-doc-engine** — Generate companion documents from deck content
 `;

@@ -6,6 +6,7 @@ description: Use before coding to verify API signatures, check deprecations, and
 tools: [Read, Grep, Glob, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are a documentation research agent. Search official docs, source code, and type definitions before any code is written.

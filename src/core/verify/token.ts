@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { NormalizedConfig } from "../../types/config.js";
-import { buildFlagInstructions } from "../../adapters/flag-instructions.js";
+import type { NormalizedConfig } from "#src/types/config.js";
+import { buildFlagInstructions } from "#src/adapters/flag-instructions.js";
 import { TOKEN_HASH_LENGTH, TOKEN_PREFIX } from "#src/constants.js";
 
 export interface VerificationData {
@@ -8,25 +8,19 @@ export interface VerificationData {
   ruleNames: string[];
   skillNames: string[];
   agentNames: string[];
-  commandNames: string[];
   mcpServerNames: string[];
   activeFlags: string[];
   timestamp: string;
 }
 
-export function buildVerificationData(
-  config: NormalizedConfig,
-): VerificationData {
+export function buildVerificationData(config: NormalizedConfig): VerificationData {
   const ruleNames = config.rules.map((r) => r.name).sort();
   const skillNames = config.skills.map((s) => s.name).sort();
   const agentNames = config.agents.map((a) => a.name).sort();
-  const commandNames = config.commands.map((c) => c.name).sort();
   const mcpServerNames = Object.keys(config.mcp.servers).sort();
 
   const flagText = buildFlagInstructions(config.flags);
-  const activeFlags = flagText
-    ? flagText.split("\n").filter((line) => line.trim().length > 0)
-    : [];
+  const activeFlags = flagText ? flagText.split("\n").filter((line) => line.trim().length > 0) : [];
 
   const sortedManifestAgents = [...(config.manifest.agents ?? [])].sort();
   const ruleEntries = [...config.rules]
@@ -39,7 +33,6 @@ export function buildVerificationData(
     ruleEntries,
     skillNames.join(","),
     agentNames.join(","),
-    commandNames.join(","),
     mcpServerNames.join(","),
     activeFlags.join(","),
   ].join("|");
@@ -53,7 +46,6 @@ export function buildVerificationData(
     ruleNames,
     skillNames,
     agentNames,
-    commandNames,
     mcpServerNames,
     activeFlags,
     timestamp,

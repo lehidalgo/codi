@@ -10,6 +10,7 @@ export {
   buildSecretScanScript,
   buildFileSizeScript,
   buildTemplateWiringScript,
+  buildVersionBumpScript,
 } from "./hook-installer.js";
 export type { InstallOptions } from "./hook-installer.js";
 

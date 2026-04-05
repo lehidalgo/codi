@@ -1,18 +1,19 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { GeneratedFile, GenerateOptions } from "../../types/agent.js";
-import type { NormalizedConfig } from "../../types/config.js";
-import type { Result } from "../../types/result.js";
-import { ok, err } from "../../types/result.js";
+import type { GeneratedFile, GenerateOptions } from "#src/types/agent.js";
+import type { NormalizedConfig } from "#src/types/config.js";
+import type { Result } from "#src/types/result.js";
+import { ok, err } from "#src/types/result.js";
 import { getAdapter } from "./adapter-registry.js";
 import { buildVerificationData } from "../verify/token.js";
 import { buildVerificationSection } from "../verify/section-builder.js";
-import { hashContent } from "../../utils/hash.js";
+import { hashContent } from "#src/utils/hash.js";
 import {
   resolveConflicts,
   makeConflictEntry,
   type ConflictEntry,
-} from "../../utils/conflict-resolver.js";
+} from "#src/utils/conflict-resolver.js";
+import { extractProjectContext, injectProjectContext } from "#src/utils/project-context-preserv.js";
 
 export interface GenerationResult {
   files: GeneratedFile[];
@@ -61,6 +62,23 @@ export async function generate(
     for (const file of generated) {
       if (file.path === adapter.paths.instructionFile) {
         file.content = file.content + "\n\n" + verifySection;
+
+        // Preserve any user-written project-context block from the existing file.
+        // This prevents codi generate from overwriting the context the agent wrote.
+        const fullPath = join(projectRoot, file.path);
+        let existingContent: string | null = null;
+        try {
+          existingContent = await readFile(fullPath, "utf-8");
+        } catch {
+          // File does not exist yet — nothing to preserve
+        }
+        if (existingContent) {
+          const block = extractProjectContext(existingContent);
+          if (block) {
+            file.content = injectProjectContext(file.content, block);
+          }
+        }
+
         file.hash = hashContent(file.content);
       }
     }
@@ -94,9 +112,7 @@ export async function generate(
         if (existing === null || existing.trim() === file.content.trim()) {
           directWrites.push(file);
         } else {
-          potentialConflicts.push(
-            makeConflictEntry(file.path, fullPath, existing, file.content),
-          );
+          potentialConflicts.push(makeConflictEntry(file.path, fullPath, existing, file.content));
         }
       }
     }

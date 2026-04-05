@@ -6,6 +6,7 @@ description: API design conventions, multi-protocol guidance, and schema-first d
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # API Design

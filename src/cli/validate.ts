@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { resolveConfig } from "../core/config/resolver.js";
-import { validateConfig } from "../core/config/validator.js";
+import { validateConfig, validateContentSize } from "../core/config/validator.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { ProjectError, CommandResult } from "../core/output/types.js";
@@ -14,9 +14,7 @@ interface ValidateData {
   errors: ProjectError[];
 }
 
-export async function validateHandler(
-  projectRoot: string,
-): Promise<CommandResult<ValidateData>> {
+export async function validateHandler(projectRoot: string): Promise<CommandResult<ValidateData>> {
   const configResult = await resolveConfig(projectRoot);
 
   if (!configResult.ok) {
@@ -37,6 +35,8 @@ export async function validateHandler(
   }
 
   const validationErrors = validateConfig(configResult.data);
+  const sizeWarnings = validateContentSize(configResult.data);
+
   if (validationErrors.length > 0) {
     return createCommandResult({
       success: false,
@@ -47,6 +47,7 @@ export async function validateHandler(
         errors: validationErrors,
       },
       errors: validationErrors,
+      warnings: sizeWarnings,
       exitCode: EXIT_CODES.CONFIG_INVALID,
     });
   }
@@ -55,6 +56,7 @@ export async function validateHandler(
     success: true,
     command: "validate",
     data: { valid: true, errorCount: 0, errors: [] },
+    warnings: sizeWarnings,
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
