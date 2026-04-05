@@ -4,11 +4,13 @@ import {
   MAX_SKILL_DESCRIPTION_LENGTH,
   NAME_PATTERN,
   MANAGED_BY_VALUES,
+  ALL_SKILL_CATEGORIES,
 } from "../constants.js";
 
 export const SkillFrontmatterSchema = z.object({
   name: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH),
   description: z.string().max(MAX_SKILL_DESCRIPTION_LENGTH),
+  version: z.number().int().positive().default(1),
   type: z.literal("skill").default("skill"),
   compatibility: z.array(z.string()).optional(),
   tools: z.array(z.string()).optional(),
@@ -17,7 +19,7 @@ export const SkillFrontmatterSchema = z.object({
   disableModelInvocation: z.boolean().optional(),
   argumentHint: z.string().optional(),
   allowedTools: z.array(z.string()).optional(),
-  category: z.string().optional(),
+  category: z.enum([...ALL_SKILL_CATEGORIES] as [string, ...string[]]).optional(),
   license: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
   // Official Claude Code frontmatter fields

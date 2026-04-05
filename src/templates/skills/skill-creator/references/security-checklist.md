@@ -1,7 +1,7 @@
 # Security Checklist for Imported Skills
 
 Reference checklist for reviewing imported or third-party skills before installation.
-Use this alongside the programmatic `scripts/security-scan.ts` scanner for defense-in-depth.
+Use this alongside the programmatic `[[/scripts/ts/security-scan.ts]]` scanner for defense-in-depth.
 
 ## Severity Classification
 
@@ -211,7 +211,7 @@ These are not inherently dangerous but the packages should be reviewed.
 ## Review Process Summary
 
 ```
-1. Run programmatic scan:   npx tsx scripts/ts/security-scan.ts <dir>
+1. Run programmatic scan:   npx tsx [[/scripts/ts/security-scan.ts]] <dir>
 2. Parse JSON report:        Check verdict and findings
 3. Manual review:            Follow this checklist for items regex misses
 4. Decision:

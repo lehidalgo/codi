@@ -46,7 +46,7 @@ describe("codex adapter", () => {
     expect(codexAdapter.paths.skills).toBe(".agents/skills");
     expect(codexAdapter.paths.agents).toBe(".codex/agents");
     expect(codexAdapter.paths.instructionFile).toBe("AGENTS.md");
-    expect(codexAdapter.paths.mcpConfig).toBe(".codex/mcp.toml");
+    expect(codexAdapter.paths.mcpConfig).toBe(".codex/config.toml");
   });
 
   // --- Detection ---

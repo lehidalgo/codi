@@ -128,3 +128,8 @@ export {
   template as planExecutor,
   staticDir as planExecutorStaticDir,
 } from "./plan-executor/index.js";
+export { template as notebooklm, staticDir as notebooklmStaticDir } from "./notebooklm/index.js";
+export { template as evidenceGathering } from "./evidence-gathering/index.js";
+export { template as stepDocumenter } from "./step-documenter/index.js";
+export { template as auditFix } from "./audit-fix/index.js";
+export { template as guidedExecution } from "./guided-execution/index.js";

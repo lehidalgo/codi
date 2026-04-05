@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type { ResolvedFlags } from "#src/types/flags.js";
 import { PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "#src/types/config.js";
@@ -12,8 +13,12 @@ export interface HooksConfig {
   commitMsgValidation: boolean;
   testBeforeCommit: boolean;
   templateWiringCheck: boolean;
+  docNamingCheck: boolean;
   artifactValidation: boolean;
   importDepthCheck: boolean;
+  skillYamlValidation: boolean;
+  skillResourceCheck: boolean;
+  versionBump: boolean;
   docCheck: boolean;
   docProtectedBranches: string[];
 }
@@ -80,6 +85,16 @@ export function generateHooksConfig(
     }
   }
 
+  const versionBump = hasVersionBump();
+  if (versionBump) {
+    allHooks.push({
+      name: "version-bump",
+      command: `node .git/hooks/${PROJECT_NAME}-version-bump.mjs`,
+      stagedFilter: "src/templates/**",
+      passFiles: false,
+    });
+  }
+
   const testBeforeCommit = isTestBeforeCommitEnabled(flags);
   if (testBeforeCommit) {
     const testHooks = getTestHooksForLanguages(languages);
@@ -126,6 +141,38 @@ export function generateHooksConfig(
     stagedFilter: "**/*.{ts,tsx,js,jsx,mts,mjs}",
   });
 
+  allHooks.push({
+    name: "skill-yaml-validate",
+    command: `node .git/hooks/${PROJECT_NAME}-skill-yaml-validate.mjs`,
+    stagedFilter: "**/SKILL.md",
+  });
+
+  allHooks.push({
+    name: "skill-resource-check",
+    command: `node .git/hooks/${PROJECT_NAME}-skill-resource-check.mjs`,
+    stagedFilter: "**/{SKILL.md,template.ts,*.md}",
+  });
+
+  const templateWiringCheck = hasTemplateWiringCheck();
+
+  if (templateWiringCheck) {
+    allHooks.push({
+      name: "template-wiring-check",
+      command: `node .git/hooks/${PROJECT_NAME}-template-wiring-check.mjs`,
+      stagedFilter: "src/templates/**",
+    });
+  }
+
+  const docNamingCheck = hasDocNamingCheck();
+
+  if (docNamingCheck) {
+    allHooks.push({
+      name: "doc-naming-check",
+      command: `node .git/hooks/${PROJECT_NAME}-doc-naming-check.mjs`,
+      stagedFilter: "docs/**",
+    });
+  }
+
   const docCheck = isDocCheckEnabled(flags);
   const docProtectedBranches = getDocProtectedBranches(flags);
 
@@ -136,12 +183,33 @@ export function generateHooksConfig(
     versionCheck: hasVersionRequirement,
     commitMsgValidation: true,
     testBeforeCommit,
-    templateWiringCheck: false,
+    templateWiringCheck,
+    docNamingCheck,
     artifactValidation: true,
     importDepthCheck: true,
+    skillYamlValidation: true,
+    skillResourceCheck: true,
+    versionBump,
     docCheck,
     docProtectedBranches,
   };
+}
+
+function hasTemplateWiringCheck(): boolean {
+  // Only enable for projects that have a src/templates/ directory (codi contributors)
+  return existsSync("src/templates");
+}
+
+function hasDocNamingCheck(): boolean {
+  // Only enable for projects that have a validate-docs.py script (codi contributors)
+  return existsSync("scripts/validate-docs.py");
+}
+
+function hasVersionBump(): boolean {
+  // Only enable for projects that have templates + a baseline to compare against
+  return (
+    existsSync("src/templates") && existsSync("src/core/version/artifact-version-baseline.json")
+  );
 }
 
 function isDocCheckEnabled(flags: ResolvedFlags): boolean {

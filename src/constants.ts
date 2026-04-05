@@ -192,3 +192,7 @@ export const MIN_FEEDBACK_FOR_EVOLVE = 3;
 export const MIN_CODE_COVERAGE_PERCENT = 80;
 export const MAX_FUNCTION_LINES = 30;
 export const MAX_COMPONENT_LINES = 150;
+
+// --- Project context injection markers ---
+export const PROJECT_CONTEXT_START = "<!-- codi:project-context:start -->";
+export const PROJECT_CONTEXT_END = "<!-- codi:project-context:end -->";

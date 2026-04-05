@@ -9,7 +9,7 @@ description: |
 category: Developer Workflow
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # {{name}}
@@ -133,7 +133,7 @@ After writing the complete plan, look at it with fresh eyes. This is a checklist
 
 If you find issues, fix them inline. If you find a spec requirement with no task, add the task.
 
-After self-review passes, dispatch a subagent with \\\`references/plan-document-reviewer-prompt.md\\\` to do a final check before presenting the plan to the user.
+After self-review passes, dispatch a subagent with \\\`\${CLAUDE_SKILL_DIR}[[/references/plan-document-reviewer-prompt.md]]\\\` to do a final check before presenting the plan to the user.
 
 ## Execution Options
 

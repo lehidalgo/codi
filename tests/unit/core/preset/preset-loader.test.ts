@@ -63,6 +63,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.skills).toHaveLength(1);
     expect(result.data.skills[0]!.name).toBe("my-skill");
     expect(result.data.skills[0]!.description).toBe("A test skill");
+    expect(result.data.skills[0]!.version).toBe(1);
   });
 
   it("returns empty skills when skill file does not exist", async () => {
@@ -156,6 +157,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.rules.length).toBe(2);
     const names = result.data.rules.map((r) => r.name).sort();
     expect(names).toEqual([prefixedName("security"), prefixedName("testing")]);
+    expect(result.data.rules.every((rule) => rule.version > 0)).toBe(true);
   });
 
   it("resolves agents from builtin templates by name", async () => {
@@ -179,6 +181,7 @@ describe("loadPresetFromDir", () => {
     if (!result.ok) return;
     expect(result.data.agents.length).toBe(1);
     expect(result.data.agents[0]!.name).toBe(prefixedName("code-reviewer"));
+    expect(result.data.agents[0]!.version).toBe(1);
   });
 
   it("loads MCP config from preset directory", async () => {
@@ -247,6 +250,7 @@ describe("loadPresetFromDir", () => {
     expect(result.data.rules.length).toBe(1);
     expect(result.data.rules[0]!.name).toBe("my-custom");
     expect(result.data.rules[0]!.managedBy).toBe("user");
+    expect(result.data.rules[0]!.version).toBe(1);
   });
 });
 

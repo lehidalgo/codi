@@ -253,12 +253,18 @@ function resolveTemplateArtifact(
   }
 }
 
+function getArtifactVersion(data: Record<string, unknown>): number {
+  const version = data["version"];
+  return typeof version === "number" && Number.isInteger(version) && version > 0 ? version : 1;
+}
+
 function resolveRule(name: string): NormalizedRule | null {
   const parsed = resolveTemplateArtifact(name, loadTemplate);
   if (!parsed) return null;
   return {
     name,
     description: (parsed.data["description"] as string) ?? "",
+    version: getArtifactVersion(parsed.data),
     content: parsed.content,
     priority: (parsed.data["priority"] as "high" | "medium" | "low") ?? "medium",
     alwaysApply: (parsed.data["alwaysApply"] as boolean) ?? true,
@@ -272,6 +278,7 @@ function resolveSkill(name: string): NormalizedSkill | null {
   return {
     name,
     description: (parsed.data["description"] as string) ?? "",
+    version: getArtifactVersion(parsed.data),
     content: parsed.content,
     managedBy: PROJECT_NAME,
   };
@@ -283,6 +290,7 @@ function resolveAgent(name: string): NormalizedAgent | null {
   return {
     name,
     description: (parsed.data["description"] as string) ?? "",
+    version: getArtifactVersion(parsed.data),
     content: parsed.content,
     tools: parsed.data["tools"] as string[] | undefined,
     model: parsed.data["model"] as string | undefined,
@@ -300,6 +308,7 @@ async function loadRuleFromDir(name: string, configDir: string): Promise<Normali
       return {
         name,
         description: (d["description"] as string) ?? "",
+        version: getArtifactVersion(d),
         content,
         priority: (d["priority"] as "high" | "medium" | "low") ?? "medium",
         alwaysApply: (d["alwaysApply"] as boolean) ?? true,
@@ -324,6 +333,7 @@ async function loadSkillFromDir(name: string, configDir: string): Promise<Normal
     return {
       name,
       description: (d["description"] as string) ?? "",
+      version: getArtifactVersion(d),
       content,
       managedBy: (d["managed_by"] as ManagedBy) ?? "user",
       ...(d["category"] !== undefined && {
@@ -380,6 +390,7 @@ async function loadAgentFromDir(name: string, configDir: string): Promise<Normal
     return {
       name,
       description: (data["description"] as string) ?? "",
+      version: getArtifactVersion(data),
       content,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,
@@ -401,6 +412,7 @@ async function loadLegacyBrandFromDir(
     return {
       name,
       description: (data["description"] as string) ?? "",
+      version: getArtifactVersion(data),
       content,
       category: BRAND_CATEGORY,
       managedBy: (data["managed_by"] as ManagedBy) ?? "user",

@@ -158,6 +158,61 @@ describe("buildSkillMd", () => {
   });
 });
 
+describe("buildSkillMd — [[/path]] marker stripping and ${CLAUDE_SKILL_DIR} resolution", () => {
+  const skillWithRefs: NormalizedSkill = {
+    name: "audio",
+    description: "Audio skill",
+    content:
+      "Run `${CLAUDE_SKILL_DIR}[[/scripts/run.py]]`\nSee `${CLAUDE_SKILL_DIR}[[/references/setup.md]]`",
+  };
+
+  it("strips [[/path]] markers for claude-code and preserves ${CLAUDE_SKILL_DIR}", () => {
+    const result = buildSkillMd(skillWithRefs, "", "claude-code");
+    expect(result).toContain("${CLAUDE_SKILL_DIR}/scripts/run.py");
+    expect(result).toContain("${CLAUDE_SKILL_DIR}/references/setup.md");
+    expect(result).not.toContain("[[");
+    expect(result).not.toContain("]]");
+  });
+
+  it("preserves [[]] markers and strips ${CLAUDE_SKILL_DIR} for codex", () => {
+    const result = buildSkillMd(skillWithRefs, "", "codex");
+    expect(result).toContain("[[/scripts/run.py]]");
+    expect(result).toContain("[[/references/setup.md]]");
+    expect(result).not.toContain("CLAUDE_SKILL_DIR");
+  });
+
+  it("normalizes spaced [[ /path ]] markers for codex", () => {
+    const result = buildSkillMd(
+      {
+        ...skillWithRefs,
+        content: "Run `${CLAUDE_SKILL_DIR}[[ /scripts/run.py ]]`",
+      },
+      "",
+      "codex",
+    );
+    expect(result).toContain("[[/scripts/run.py]]");
+    expect(result).not.toContain("CLAUDE_SKILL_DIR");
+  });
+
+  it("preserves [[]] markers and strips ${CLAUDE_SKILL_DIR} for cursor", () => {
+    const result = buildSkillMd(skillWithRefs, "", "cursor");
+    expect(result).toContain("[[/scripts/run.py]]");
+    expect(result).not.toContain("CLAUDE_SKILL_DIR");
+  });
+
+  it("preserves [[]] markers and strips ${CLAUDE_SKILL_DIR} for windsurf", () => {
+    const result = buildSkillMd(skillWithRefs, "", "windsurf");
+    expect(result).toContain("[[/scripts/run.py]]");
+    expect(result).not.toContain("CLAUDE_SKILL_DIR");
+  });
+
+  it("preserves [[]] markers and strips ${CLAUDE_SKILL_DIR} for cline", () => {
+    const result = buildSkillMd(skillWithRefs, "", "cline");
+    expect(result).toContain("[[/scripts/run.py]]");
+    expect(result).not.toContain("CLAUDE_SKILL_DIR");
+  });
+});
+
 describe("buildSkillMd — platform-aware field filtering", () => {
   const richSkill: NormalizedSkill = {
     ...baseSkill,

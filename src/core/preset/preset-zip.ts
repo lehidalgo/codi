@@ -116,7 +116,10 @@ export async function extractPresetZip(zipPath: string): Promise<Result<ZipExtra
   }
 
   // Extract to temp dir
-  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-zip-${Date.now()}`);
+  const tmpDir = path.join(
+    os.tmpdir(),
+    `${PROJECT_NAME}-preset-zip-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  );
   await fs.mkdir(tmpDir, { recursive: true });
 
   try {

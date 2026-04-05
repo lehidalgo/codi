@@ -52,7 +52,7 @@ export const codexAdapter: AgentAdapter = {
     skills: ".agents/skills",
     agents: ".codex/agents",
     instructionFile: "AGENTS.md",
-    mcpConfig: ".codex/mcp.toml",
+    mcpConfig: ".codex/config.toml",
   } satisfies AgentPaths,
 
   capabilities: {

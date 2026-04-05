@@ -12,6 +12,7 @@ import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput, printSection } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
+import { parseSkillFile, parseAgentFile, parseRuleFile } from "../core/config/parser.js";
 import { copyDir, readLockFile } from "../core/preset/preset-registry.js";
 import {
   SKILL_OUTPUT_FILENAME,
@@ -493,6 +494,40 @@ export async function contributeHandler(
   }
 
   const selectedArtifacts = allArtifacts.filter((a) => selected.includes(a.name));
+
+  // Step 2b: Validate selected artifacts against Zod schemas before packaging
+  const validationFailures: string[] = [];
+  for (const artifact of selectedArtifacts) {
+    const parseResult =
+      artifact.type === "skill"
+        ? await parseSkillFile(artifact.path)
+        : artifact.type === "agent"
+          ? await parseAgentFile(artifact.path)
+          : await parseRuleFile(artifact.path);
+    if (!parseResult.ok) {
+      const msgs = parseResult.errors.map((e) => e.message).join("; ");
+      validationFailures.push(`${artifact.type} "${artifact.name}": ${msgs}`);
+    }
+  }
+  if (validationFailures.length > 0) {
+    p.log.error("Artifact validation failed — fix these before contributing:");
+    for (const f of validationFailures) {
+      p.log.error(`  - ${f}`);
+    }
+    return createCommandResult({
+      success: false,
+      command: "contribute",
+      data: { action: "cancelled" },
+      errors: validationFailures.map((msg) => ({
+        code: "E_CONFIG_INVALID" as const,
+        message: msg,
+        hint: "Fix the frontmatter and run codi validate before contributing.",
+        severity: "error" as const,
+        context: {},
+      })),
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
+  }
 
   // Step 3: Choose contribution method
   printSection("Distribution");

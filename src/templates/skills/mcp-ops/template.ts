@@ -6,7 +6,7 @@ description: "MCP (Model Context Protocol) operations. Use when setting up, call
 category: Developer Tools
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 6
 ---
 
 # {{name}}
@@ -123,7 +123,7 @@ The name must be:
 
 **[CODING AGENT]** Verify the server works:
 
-1. Run \\\`${PROJECT_CLI} generate\\\` — produces agent-specific configs (\\\`.claude/mcp.json\\\`, etc.)
+1. Run \\\`${PROJECT_CLI} generate\\\` — produces agent-specific configs (\\\`.mcp.json\\\`, \\\`.cursor/mcp.json\\\`, \\\`.codex/config.toml\\\`, etc.)
 2. For stdio servers: verify the command runs (\\\`npx -y <package> --help\\\`)
 3. For http servers: verify the URL is reachable
 4. Use the MCP Inspector for interactive testing:
@@ -133,7 +133,7 @@ The name must be:
 
 ## Building Custom MCP Servers
 
-When the user needs to build a server from scratch (not just configure an existing one), read the full guide at \\\`references/building-custom-servers.md\\\` in this skill's directory.
+When the user needs to build a server from scratch (not just configure an existing one), read the full guide at \\\`\${CLAUDE_SKILL_DIR}[[/references/building-custom-servers.md]]\\\` in this skill's directory.
 
 Key phases:
 1. **Research and Plan** — Study the MCP protocol, load SDK docs, plan tool selection

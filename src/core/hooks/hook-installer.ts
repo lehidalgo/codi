@@ -10,13 +10,19 @@ import {
   RUNNER_TEMPLATE,
   SECRET_SCAN_TEMPLATE,
   FILE_SIZE_CHECK_TEMPLATE,
-  COMMIT_MSG_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
   TEMPLATE_WIRING_CHECK_TEMPLATE,
+  DOC_NAMING_CHECK_TEMPLATE,
   ARTIFACT_VALIDATE_TEMPLATE,
+  SKILL_RESOURCE_CHECK_TEMPLATE,
+} from "./hook-templates.js";
+import {
+  COMMIT_MSG_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
   IMPORT_DEPTH_CHECK_TEMPLATE,
-} from "./hook-templates.js";
+  SKILL_YAML_VALIDATE_TEMPLATE,
+} from "./hook-policy-templates.js";
+import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 
@@ -40,8 +46,12 @@ export interface InstallOptions {
   fileSizeCheck?: boolean;
   versionCheck?: boolean;
   templateWiringCheck?: boolean;
+  docNamingCheck?: boolean;
   artifactValidation?: boolean;
   importDepthCheck?: boolean;
+  skillYamlValidation?: boolean;
+  skillResourceCheck?: boolean;
+  versionBump?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
 }
@@ -65,6 +75,10 @@ function buildTemplateWiringScript(): string {
 
 function buildArtifactValidateScript(): string {
   return ARTIFACT_VALIDATE_TEMPLATE;
+}
+
+function buildVersionBumpScript(): string {
+  return VERSION_BUMP_TEMPLATE;
 }
 
 async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
@@ -104,6 +118,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
     });
     files.push(path.relative(options.projectRoot, wiringPath));
   }
+  if (options.docNamingCheck) {
+    const docNamingPath = path.join(hookDir, `${PROJECT_NAME}-doc-naming-check.mjs`);
+    await fs.writeFile(docNamingPath, DOC_NAMING_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, docNamingPath));
+  }
   if (options.artifactValidation) {
     const artifactPath = path.join(hookDir, `${PROJECT_NAME}-artifact-validate.mjs`);
     const artifactScript = buildArtifactValidateScript();
@@ -120,6 +142,31 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, importDepthPath));
+  }
+  if (options.skillYamlValidation) {
+    const skillYamlPath = path.join(hookDir, `${PROJECT_NAME}-skill-yaml-validate.mjs`);
+    await fs.writeFile(skillYamlPath, SKILL_YAML_VALIDATE_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, skillYamlPath));
+  }
+  if (options.skillResourceCheck) {
+    const resourceCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-resource-check.mjs`);
+    await fs.writeFile(resourceCheckPath, SKILL_RESOURCE_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, resourceCheckPath));
+  }
+  if (options.versionBump) {
+    const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);
+    const versionBumpScript = buildVersionBumpScript();
+    await fs.writeFile(versionBumpPath, versionBumpScript, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, versionBumpPath));
   }
   return files;
 }
@@ -528,6 +575,7 @@ export {
   buildSecretScanScript,
   buildFileSizeScript,
   buildTemplateWiringScript,
+  buildVersionBumpScript,
   stripGeneratedSection,
   globToGrepPattern,
   buildHuskyCommands,

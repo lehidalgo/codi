@@ -26,6 +26,7 @@ export interface ProjectManifest {
 export interface NormalizedRule {
   name: string;
   description: string;
+  version: number;
   content: string;
   language?: string;
   priority: "high" | "medium" | "low";
@@ -37,6 +38,7 @@ export interface NormalizedRule {
 export interface NormalizedSkill {
   name: string;
   description: string;
+  version: number;
   content: string;
   compatibility?: string[];
   tools?: string[];
@@ -60,6 +62,7 @@ export interface NormalizedSkill {
 export interface NormalizedAgent {
   name: string;
   description: string;
+  version: number;
   content: string;
   tools?: string[];
   disallowedTools?: string[];

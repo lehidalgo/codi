@@ -507,8 +507,12 @@ export async function initHandler(
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
+          docNamingCheck: hooksConfig.docNamingCheck,
+          versionBump: hooksConfig.versionBump,
           artifactValidation: hooksConfig.artifactValidation,
           importDepthCheck: hooksConfig.importDepthCheck,
+          skillYamlValidation: hooksConfig.skillYamlValidation,
+          skillResourceCheck: hooksConfig.skillResourceCheck,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });
@@ -642,6 +646,12 @@ export function registerInitCommand(program: Command): void {
       initFromOptions(options);
       const result = await initHandler(process.cwd(), options);
       handleOutput(result, options);
+      if (result.success && !options.json && !options.quiet) {
+        console.log(
+          "\nNext step: run /codi-codebase-onboarding inside your coding agent\n" +
+            "to add project-specific context to your configuration files.\n",
+        );
+      }
       process.exit(result.exitCode);
     });
 }

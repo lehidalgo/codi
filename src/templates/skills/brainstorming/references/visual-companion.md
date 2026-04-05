@@ -283,5 +283,5 @@ If the session used `--project-dir`, mockup files persist in `.codi/brainstorm/`
 
 ## Reference
 
-- Frame template (CSS reference): `scripts/frame-template.html`
-- Helper script (client-side): `scripts/helper.js`
+- Frame template (CSS reference): `[[/scripts/frame-template.html]]`
+- Helper script (client-side): `[[/scripts/helper.js]]`

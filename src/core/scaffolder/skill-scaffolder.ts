@@ -204,7 +204,7 @@ async function copyStaticFiles(staticDir: string, skillDir: string): Promise<Res
       continue; // Source subdir doesn't exist — skip
     }
 
-    const realFiles = entries.filter((f) => !f.startsWith("."));
+    const realFiles = entries.filter((f) => f !== ".gitkeep");
     if (realFiles.length === 0) continue;
 
     const destDir = path.join(skillDir, sub);

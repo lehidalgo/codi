@@ -9,7 +9,7 @@ description: |
 category: Developer Workflow
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # {{name}}
@@ -172,9 +172,9 @@ Wait for the user's response before continuing. If they decline, proceed with te
 
 A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question - use the terminal. "Which wizard layout works better?" is a visual question - use the browser.
 
-If the user agrees to the companion, read the detailed guide before proceeding: \\\`references/visual-companion.md\\\`
+If the user agrees to the companion, read the detailed guide before proceeding: \\\`\${CLAUDE_SKILL_DIR}[[/references/visual-companion.md]]\\\`
 
 ## Spec Review Subagent
 
-Before presenting the spec to the user, dispatch a subagent with \\\`references/spec-document-reviewer-prompt.md\\\` to review for completeness, consistency, and clarity. Fix any issues the subagent reports inline before asking the user to review.
+Before presenting the spec to the user, dispatch a subagent with \\\`\${CLAUDE_SKILL_DIR}[[/references/spec-document-reviewer-prompt.md]]\\\` to review for completeness, consistency, and clarity. Fix any issues the subagent reports inline before asking the user to review.
 `;

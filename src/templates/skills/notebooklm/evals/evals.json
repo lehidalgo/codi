@@ -1,0 +1,78 @@
+{
+  "skillName": "codi-notebooklm",
+  "cases": [
+    {
+      "id": "check-auth-before-query",
+      "description": "Runs auth status check before attempting to query",
+      "prompt": "Ask my NotebookLM notebook: what are the key findings?",
+      "expectations": [
+        "Runs `python run.py auth_manager.py status` before querying",
+        "If not authenticated, runs `python run.py auth_manager.py setup`",
+        "Always uses the run.py wrapper — never calls scripts directly"
+      ]
+    },
+    {
+      "id": "query-with-notebook-id",
+      "description": "Queries a specific notebook by library ID",
+      "prompt": "Ask my API docs notebook: how does authentication work?",
+      "expectations": [
+        "Runs `python run.py ask_question.py --question '...' --notebook-id api-docs`",
+        "If notebook ID is unknown, checks library with `notebook_manager.py list` first",
+        "Uses the run.py wrapper"
+      ]
+    },
+    {
+      "id": "query-with-url",
+      "description": "Queries a notebook using a direct URL",
+      "prompt": "Ask this notebook https://notebooklm.google.com/notebook/abc123 what topics it covers",
+      "expectations": [
+        "Runs `python run.py ask_question.py --question '...' --notebook-url 'https://notebooklm.google.com/notebook/abc123'",
+        "Uses the run.py wrapper",
+        "Checks auth status first"
+      ]
+    },
+    {
+      "id": "smart-add-notebook",
+      "description": "Uses Smart Add to discover notebook content before adding to library",
+      "prompt": "Add this notebook to my library: https://notebooklm.google.com/notebook/xyz789",
+      "expectations": [
+        "First queries the notebook with 'What is the content of this notebook? What topics are covered?'",
+        "Uses the discovered information to fill --name, --description, and --topics",
+        "Runs `notebook_manager.py add` with complete metadata — not generic placeholders",
+        "Never guesses notebook content"
+      ]
+    },
+    {
+      "id": "follow-up-mechanism",
+      "description": "Asks follow-up questions after receiving a response with the follow-up reminder",
+      "prompt": "Use my NotebookLM to research how the payment system handles refunds",
+      "expectations": [
+        "Runs initial ask_question.py query",
+        "After receiving the answer + follow-up reminder, analyzes if gaps exist",
+        "Asks at least one follow-up question if the answer was incomplete",
+        "Synthesizes all answers before responding to the user",
+        "Does not immediately respond after the first answer"
+      ]
+    },
+    {
+      "id": "neg-jupyter-notebook",
+      "description": "Does not trigger for Jupyter notebook requests",
+      "prompt": "Create a Jupyter notebook for data analysis with pandas",
+      "expectations": [
+        "Does NOT run auth_manager.py or any NotebookLM scripts",
+        "Does NOT navigate to notebooklm.google.com",
+        "Treats this as a standard Jupyter notebook task"
+      ]
+    },
+    {
+      "id": "neg-generic-docs-question",
+      "description": "Does not trigger for generic documentation questions",
+      "prompt": "Can you explain how OAuth works?",
+      "expectations": [
+        "Does NOT run any NotebookLM scripts",
+        "Answers from general knowledge",
+        "Does NOT ask the user for a notebook URL"
+      ]
+    }
+  ]
+}

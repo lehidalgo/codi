@@ -19,7 +19,7 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # Rule Creator
@@ -83,6 +83,7 @@ This creates \\\`${PROJECT_DIR}/rules/<name>.md\\\` with a blank skeleton.
 ---
 name: <kebab-case, max ${MAX_NAME_LENGTH} chars>
 description: <max ${MAX_DESCRIPTION_LENGTH} chars, specific about when the rule applies>
+version: 1
 priority: high | medium | low
 alwaysApply: true | false
 managed_by: user
@@ -152,11 +153,14 @@ app.post('/users', (req, res) => {
 - [ ] Rules are grouped under clear h2 headings
 - [ ] File stays under 50 lines of body content (excluding frontmatter)
 
+Run \\\`${PROJECT_CLI} validate\\\` to check Zod schema compliance (name pattern, description length, version, managed_by). Fix any errors before registering.
+
 ## Step 7 — Register
 
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
+${PROJECT_CLI} validate
 ${PROJECT_CLI} generate
 ${PROJECT_CLI} doctor
 \\\`\\\`\\\`
