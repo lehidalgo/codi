@@ -38,10 +38,33 @@ const PLATFORM_SKILL_FIELDS: Record<PlatformId, Set<string>> = {
     "metadata",
     "hooks",
   ]),
-  cursor: new Set(["name", "description", "user-invocable", "allowed-tools"]),
+  cursor: new Set([
+    "name",
+    "description",
+    "user-invocable",
+    "disable-model-invocation",
+    "allowed-tools",
+    "model",
+    "license",
+    "metadata",
+  ]),
   codex: new Set(["name", "description", "license", "allowed-tools", "metadata"]),
-  windsurf: new Set(["name", "description"]),
-  cline: new Set(["name", "description"]),
+  windsurf: new Set([
+    "name",
+    "description",
+    "disable-model-invocation",
+    "allowed-tools",
+    "license",
+    "metadata",
+  ]),
+  cline: new Set([
+    "name",
+    "description",
+    "disable-model-invocation",
+    "allowed-tools",
+    "license",
+    "metadata",
+  ]),
 };
 
 // Directories to skip when propagating skills to agent dirs
@@ -69,7 +92,10 @@ const BINARY_EXTENSIONS = new Set([
 
 /** Collapse multiline descriptions to a single line for frontmatter. */
 function flattenDescription(desc: string): string {
-  return desc.replace(/\n\s*/g, " ").trim();
+  return desc
+    .replace(/\n\s*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 /**
@@ -80,6 +106,32 @@ function flattenDescription(desc: string): string {
  * strip ${CLAUDE_SKILL_DIR} prefix so paths stay relative to the skill directory.
  * Inner whitespace is normalized in both cases: [[ /path ]] → [[/path]] or /path.
  */
+function warnStrippedFields(skill: NormalizedSkill, platformId: PlatformId): void {
+  const allowed = PLATFORM_SKILL_FIELDS[platformId];
+  const lossy = (
+    [
+      skill.model && "model",
+      skill.effort && "effort",
+      skill.context && "context",
+      skill.agent && "agent",
+      skill.paths?.length && "paths",
+      skill.shell && "shell",
+      skill.hooks !== undefined && "hooks",
+      skill.argumentHint && "argument-hint",
+      skill.disableModelInvocation && "disable-model-invocation",
+      skill.allowedTools?.length && "allowed-tools",
+      skill.license && "license",
+      skill.metadata && Object.keys(skill.metadata).length > 0 && "metadata",
+    ] as (string | false | undefined)[]
+  ).filter((f): f is string => typeof f === "string" && !allowed.has(f));
+
+  if (lossy.length > 0) {
+    Logger.getInstance().warn(
+      `Skill "${skill.name}" (${platformId}): stripping unsupported fields: ${lossy.join(", ")}`,
+    );
+  }
+}
+
 function resolveSkillRefsForPlatform(content: string, platformId: PlatformId): string {
   if (platformId === "claude-code") {
     return content.replace(/\[\[\s*(\/[^\]]+?)\s*\]\]/g, "$1");
@@ -95,6 +147,7 @@ export function buildSkillMd(
   platformId: PlatformId = "claude-code",
 ): string {
   const allowed = PLATFORM_SKILL_FIELDS[platformId];
+  warnStrippedFields(skill, platformId);
   const frontmatter: string[] = ["---"];
 
   // name and description are required on all platforms
@@ -207,6 +260,20 @@ export async function generateSkillFiles(
         content: "",
         sources: [MANIFEST_FILENAME],
         hash: hashContent(""),
+      });
+    }
+
+    // 2b. Codex sidecar: agents/openai.yaml
+    // Maps CC's disable-model-invocation to Codex's policy.allow_implicit_invocation (inverted).
+    // Always emitted for Codex skills so the policy is explicit regardless of Codex defaults.
+    if (platformId === "codex") {
+      const allowImplicit = skill.disableModelInvocation !== true;
+      const sidecarContent = `policy:\n  allow_implicit_invocation: ${allowImplicit}\n`;
+      files.push({
+        path: `${skillBasePath}/agents/openai.yaml`,
+        content: sidecarContent,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(sidecarContent),
       });
     }
 

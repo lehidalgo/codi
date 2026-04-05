@@ -7,7 +7,8 @@ category: Content Creation
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 5
+disable-model-invocation: false
+version: 7
 ---
 
 # {{name}} — Content Factory

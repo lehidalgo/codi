@@ -10,9 +10,10 @@ name: {{name}}
 description: "Background rule observation skill. Collects structured feedback about rules during coding sessions -- pattern detection, outdated practices, missing examples, and corrections. Writes observations to feedback/rules/ for review. Does NOT modify rules."
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
-user-invocable: false
+user-invocable: true
+disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 3
 ---
 
 # Rule Feedback Collector

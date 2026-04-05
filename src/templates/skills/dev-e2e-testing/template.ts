@@ -22,8 +22,9 @@ description: |
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-user-invocable: false
-version: 6
+user-invocable: true
+disable-model-invocation: false
+version: 8
 ---
 
 # {{name}}

@@ -7,7 +7,8 @@ category: Document Generation
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 1
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}} — Document Engine

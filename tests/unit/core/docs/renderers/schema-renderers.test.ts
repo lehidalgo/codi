@@ -122,7 +122,8 @@ describe("per-schema wrappers", () => {
   it("renderAgentFields matches AgentFrontmatterSchema field count", () => {
     const result = renderAgentFields();
     const dataRows = result.split("\n").slice(2);
-    expect(dataRows.length).toBe(9);
+    // 9 original fields + 7 CC-specific fields (permissionMode, mcpServers, skills, memory, background, isolation, color)
+    expect(dataRows.length).toBe(16);
   });
 
   it("renderManifestFields includes nested fields with dot notation", () => {

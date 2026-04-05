@@ -6,7 +6,9 @@ description: Create a structured roadmap or todo list as a JSON file in docs/roa
 category: Planning
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}

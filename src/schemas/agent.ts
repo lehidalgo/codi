@@ -16,6 +16,14 @@ export const AgentFrontmatterSchema = z.object({
   maxTurns: z.number().int().positive().optional(),
   effort: z.enum(["low", "medium", "high", "max"]).optional(),
   managed_by: z.enum(MANAGED_BY_VALUES).default("user"),
+  // Claude Code-specific agent fields
+  permissionMode: z.enum(["unrestricted", "readonly", "limited"]).optional(),
+  mcpServers: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  memory: z.enum(["user", "project", "none"]).optional(),
+  background: z.boolean().optional(),
+  isolation: z.string().optional(),
+  color: z.string().optional(),
 });
 
 export type AgentFrontmatterInput = z.input<typeof AgentFrontmatterSchema>;

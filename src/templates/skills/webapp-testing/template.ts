@@ -6,7 +6,9 @@ description: Use when the user wants to test, debug, or automate a local web app
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 ## When to Activate

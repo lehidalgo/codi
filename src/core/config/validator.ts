@@ -10,7 +10,10 @@ import {
   MAX_AGENT_LINES,
   ALL_SKILL_CATEGORIES,
   isKnownSkillCategory,
+  SUPPORTED_PLATFORMS,
 } from "#src/constants.js";
+
+type SupportedPlatform = (typeof SUPPORTED_PLATFORMS)[number];
 
 function getKnownAdapterIds(): string[] {
   const registered = getAllAdapters().map((a) => a.id);
@@ -26,6 +29,7 @@ export function validateConfig(config: NormalizedConfig): ProjectError[] {
   errors.push(...validateAgentArtifacts(config));
   errors.push(...validateFlags(config));
   errors.push(...validateMetadata(config));
+  errors.push(...validateSkillPlatformCompatibility(config));
 
   return errors;
 }
@@ -159,6 +163,7 @@ function validateRules(config: NormalizedConfig): ProjectError[] {
 function validateSkills(config: NormalizedConfig): ProjectError[] {
   const errors: ProjectError[] = [];
   const names = new Set<string>();
+  const knownAgentNames = new Set(config.agents.map((a) => a.name));
 
   for (const skill of config.skills) {
     if (names.has(skill.name)) {
@@ -174,6 +179,14 @@ function validateSkills(config: NormalizedConfig): ProjectError[] {
       errors.push(
         createError("E_CONFIG_INVALID", {
           message: `Skill "${skill.name}" has empty content`,
+        }),
+      );
+    }
+
+    if (skill.agent && !knownAgentNames.has(skill.agent)) {
+      errors.push(
+        createError("E_CONFIG_INVALID", {
+          message: `Skill "${skill.name}" references unknown agent "${skill.agent}". Known agents: ${knownAgentNames.size > 0 ? [...knownAgentNames].join(", ") : "(none defined)"}`,
         }),
       );
     }
@@ -206,6 +219,48 @@ function validateAgentArtifacts(config: NormalizedConfig): ProjectError[] {
   }
 
   return errors;
+}
+
+/**
+ * Warn when a skill declares compatibility with non-CC platforms but uses
+ * Claude Code-only fields that will be silently stripped on those platforms.
+ */
+function validateSkillPlatformCompatibility(config: NormalizedConfig): ProjectError[] {
+  const warnings: ProjectError[] = [];
+  const manifestAgents = new Set(config.manifest.agents ?? []);
+  const nonCcPlatforms = (SUPPORTED_PLATFORMS as readonly SupportedPlatform[]).filter(
+    (p) => p !== "claude-code",
+  );
+
+  for (const skill of config.skills) {
+    const declaredCompat = skill.compatibility;
+
+    // Determine effective target platforms:
+    // explicit compatibility list > manifest agents > assume CC-only
+    const targets: string[] =
+      declaredCompat && declaredCompat.length > 0 ? declaredCompat : [...manifestAgents];
+
+    const nonCcSet = new Set<string>(nonCcPlatforms);
+    const hasNonCcTarget = targets.some((t) => nonCcSet.has(t));
+    if (!hasNonCcTarget) continue;
+
+    const strippedFields: string[] = [];
+    if (skill.effort) strippedFields.push("effort");
+    if (skill.context) strippedFields.push("context");
+    if (skill.paths?.length) strippedFields.push("paths");
+    if (skill.shell) strippedFields.push("shell");
+
+    if (strippedFields.length > 0) {
+      const nonCcTargets = targets.filter((t) => nonCcSet.has(t));
+      warnings.push(
+        createError("W_CONTENT_SIZE", {
+          message: `Skill "${skill.name}" uses Claude Code-only fields (${strippedFields.join(", ")}) that will be stripped when generating for [${nonCcTargets.join(", ")}].`,
+        }),
+      );
+    }
+  }
+
+  return warnings;
 }
 
 function validateFlags(config: NormalizedConfig): ProjectError[] {

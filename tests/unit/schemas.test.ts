@@ -110,7 +110,7 @@ describe("SkillFrontmatterSchema", () => {
     const result = SkillFrontmatterSchema.safeParse({
       name: "test-skill",
       description: "A skill",
-      compatibility: ["claude", "cursor"],
+      compatibility: ["claude-code", "cursor"],
       tools: ["read", "write"],
       model: "gpt-4",
     });

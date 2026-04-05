@@ -18,7 +18,9 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # Agent Creator
@@ -65,7 +67,7 @@ version: 1
 tools: [Read, Grep, Glob, Bash]  # only include tools the agent needs
 model: inherit                    # or sonnet, opus
 managed_by: user
----
+user-invocable: true---
 \\\`\\\`\\\`
 
 #### Description Writing Rules

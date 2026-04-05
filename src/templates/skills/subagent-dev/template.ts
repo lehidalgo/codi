@@ -6,7 +6,9 @@ description: Subagent-driven plan execution. Use after ${PROJECT_NAME}-plan-writ
 category: Developer Workflow
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
-version: 4
+user-invocable: true
+disable-model-invocation: false
+version: 6
 ---
 
 # {{name}}

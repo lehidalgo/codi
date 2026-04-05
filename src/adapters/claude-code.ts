@@ -168,6 +168,13 @@ export const claudeCodeAdapter: AgentAdapter = {
       if (agent.model) lines.push(`model: ${agent.model}`);
       if (agent.maxTurns) lines.push(`maxTurns: ${agent.maxTurns}`);
       if (agent.effort) lines.push(`effort: ${agent.effort}`);
+      if (agent.permissionMode) lines.push(`permissionMode: ${agent.permissionMode}`);
+      if (agent.mcpServers?.length) lines.push(`mcpServers: [${agent.mcpServers.join(", ")}]`);
+      if (agent.skills?.length) lines.push(`skills: [${agent.skills.join(", ")}]`);
+      if (agent.memory) lines.push(`memory: ${agent.memory}`);
+      if (agent.background) lines.push(`background: true`);
+      if (agent.isolation) lines.push(`isolation: ${agent.isolation}`);
+      if (agent.color) lines.push(`color: ${agent.color}`);
       lines.push("---");
       const agentContent = addGeneratedFooter(`${lines.join("\n")}\n\n${agent.content}`);
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";

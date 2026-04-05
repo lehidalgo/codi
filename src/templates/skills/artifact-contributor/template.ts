@@ -14,8 +14,9 @@ description: Use when contributing artifacts to GitHub or sharing them as ZIP pa
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-user-invocable: false
-version: 2
+user-invocable: true
+disable-model-invocation: false
+version: 4
 ---
 
 # {{name}}

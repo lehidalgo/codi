@@ -114,7 +114,7 @@ managed_by: codi
 | `description` | string | Yes | — | One-line description |
 | `version` | number | Yes | `1` |  |
 | `type` | `"skill"` | Yes | `skill` | Always `skill` |
-| `compatibility` | string[] | No | — | Compatible agent IDs |
+| `compatibility` | `claude-code` \| `cursor` \| `codex` \| `windsurf` \| `cline`[] | No | — | Compatible agent IDs |
 | `tools` | string[] | No | — | Required MCP tools |
 | `model` | string | No | — | Preferred AI model |
 | `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
@@ -130,7 +130,7 @@ managed_by: codi
 | `user-invocable` | boolean | No | — | Can be invoked via slash command |
 | `paths` | string[] \| string | No | — | File paths the skill operates on |
 | `shell` | `bash` \| `powershell` | No | — | Shell environment |
-| `hooks` | unknown | No | — |  |
+| `hooks` | Record<string, string> | No | — |  |
 <!-- GENERATED:END:skill_fields -->
 
 ### Built-in Skill Templates
@@ -207,6 +207,13 @@ managed_by: codi
 | `maxTurns` | number | No | — |  |
 | `effort` | `low` \| `medium` \| `high` \| `max` | No | — |  |
 | `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
+| `permissionMode` | `unrestricted` \| `readonly` \| `limited` | No | — |  |
+| `mcpServers` | string[] | No | — |  |
+| `skills` | string[] | No | — |  |
+| `memory` | `user` \| `project` \| `none` | No | — |  |
+| `background` | boolean | No | — |  |
+| `isolation` | string | No | — |  |
+| `color` | string | No | — |  |
 <!-- GENERATED:END:agent_fields -->
 
 ### Built-in Agent Templates

@@ -6,7 +6,9 @@ description: "Build apps with the Claude API or Anthropic SDK. TRIGGER when code
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # Building LLM-Powered Applications with Claude

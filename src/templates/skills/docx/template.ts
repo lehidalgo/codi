@@ -6,7 +6,9 @@ description: "Use when creating, editing, or working with Word documents (.docx)
 category: File Format Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # DOCX creation, editing, and analysis

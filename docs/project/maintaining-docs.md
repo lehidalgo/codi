@@ -18,23 +18,36 @@ Several documentation files contain auto-generated sections marked with HTML com
 
 | File | Section | Source |
 |------|---------|--------|
-| `README.md` | `supported_agents` | Adapter registry |
 | `README.md` | `template_counts_compact` | Template registries |
 | `README.md` | `preset_table` | Preset registry |
-| `README.md` | `test_coverage` | Vitest coverage output |
-| `docs/architecture.md` | `layer_order` | Config resolution pipeline |
+| `README.md` | `supported_agents` | Adapter registry |
+| `docs/project/artifacts.md` | `rule_fields` | Zod rule schema |
+| `docs/project/artifacts.md` | `skill_fields` | Zod skill schema |
+| `docs/project/artifacts.md` | `agent_fields` | Zod agent schema |
+| `docs/project/artifacts.md` | `rule_templates` | Rule template registry |
+| `docs/project/artifacts.md` | `skill_templates` | Skill template registry |
+| `docs/project/artifacts.md` | `agent_templates` | Agent template registry |
+| `docs/project/configuration.md` | `flags_table` | Flag catalog |
+| `docs/project/configuration.md` | `flag_modes` | Flag mode definitions |
+| `docs/project/configuration.md` | `manifest_fields` | Manifest Zod schema |
+| `docs/project/configuration.md` | `flag_instructions` | Flag-to-instruction map |
+| `docs/project/architecture.md` | `adapter_table` | Adapter registry |
+| `docs/project/architecture.md` | `layer_order` | Config resolution pipeline |
+| `docs/project/architecture.md` | `flag_hooks` | Hook-flag binding map |
+| `docs/project/presets.md` | `preset_table` | Preset registry |
+| `docs/project/presets.md` | `preset_flag_comparison` | Per-preset flag values |
 
 ### Regenerating
 
 ```bash
 # Update all generated sections
-codi docs-update
+npx codi docs --generate
 
-# Verify counts match templates
-codi validate
+# Verify docs are in sync with code
+npx codi docs --validate
 ```
 
-Run `codi docs-update` after adding templates, presets, or adapters.
+Run `npx codi docs --generate` after adding templates, presets, or adapters.
 
 ---
 
@@ -44,14 +57,14 @@ Use this checklist when making code changes:
 
 | Change | Update |
 |--------|--------|
-| New CLI command | `docs/cli-reference.md` + `README.md` CLI table |
-| New flag | `docs/features.md` flag table + `docs/configuration.md` |
-| New template (rule/skill/agent/command) | `docs/features.md` counts + `docs/artifacts.md` catalog |
-| New preset | `docs/features.md` preset table + `docs/presets.md` |
-| New agent adapter | `docs/features.md` capability matrix + `README.md` agent table |
-| Changed wizard flow | `docs/cli-reference.md` wizard section + `docs/getting-started.md` |
-| New artifact type | `docs/artifacts.md` + `docs/features.md` |
-| Breaking config change | `CHANGELOG.md` + `docs/migration.md` |
+| New CLI command | `docs/project/cli-reference.md` + `README.md` CLI table |
+| New flag | `docs/project/features.md` flag table + `docs/project/configuration.md` |
+| New template (rule/skill/agent) | `docs/project/features.md` counts + `docs/project/artifacts.md` catalog |
+| New preset | `docs/project/features.md` preset table + `docs/project/presets.md` |
+| New agent adapter | `docs/project/features.md` capability matrix + `README.md` agent table |
+| Changed wizard flow | `docs/project/cli-reference.md` wizard section + `docs/project/getting-started.md` |
+| New artifact type | `docs/project/artifacts.md` + `docs/project/features.md` |
+| Breaking config change | `CHANGELOG.md` + `docs/project/migration.md` |
 
 ---
 
@@ -84,33 +97,28 @@ Signs of stale documentation:
 |--------|-------------|
 | Template counts wrong | Compare `README.md` counts vs `src/templates/*/index.ts` exports |
 | Version references outdated | Search for old version numbers in docs |
-| STATUS.md metrics stale | Compare with `npm test -- --coverage` output |
-| Dead links | `grep -r '](docs/' README.md docs/` and verify targets exist |
+| Dead links | `grep -r '](docs/project/' README.md docs/project/` and verify targets exist |
 | Layer count inconsistent | Search for "layer" across all docs — should all say "3" |
 
 ### Periodic Maintenance
 
 Every release:
 
-1. Run `codi docs-update` to sync generated sections
+1. Run `npx codi docs --generate` to sync generated sections
 2. Update `CHANGELOG.md` with release notes
-3. Verify template counts in `docs/features.md`
-4. Check `STATUS.md` is current (or remove if redundant with `codi status`)
+3. Verify template counts in `docs/project/features.md`
+4. Run `npx codi docs-stamp` to mark docs as verified at the current commit
 
 ---
 
 ## File Naming Conventions
 
-Documentation files in `docs/`:
+| Location | Convention | Example |
+|----------|-----------|---------|
+| `docs/project/` | Lowercase kebab-case, no date prefix — evergreen guides | `cli-reference.md`, `getting-started.md` |
+| `docs/` root | Timestamped format: `YYYYMMDD_HHMMSS_[CATEGORY]_name.md` — enforced by pre-commit hook | `20260405_093000_[AUDIT]_security-review.md` |
 
-| Convention | Example |
-|-----------|---------|
-| Lowercase kebab-case | `cli-reference.md`, `getting-started.md` |
-| No adjectives | `features.md` not `comprehensive-features.md` |
-| No date prefixes | Guide docs are evergreen, not timestamped |
-| Agent-generated docs (reports, audits) | Use `YYYYMMDD_HHMM_CATEGORY_name.md` format |
-
-Only users create subdirectories in `docs/`. Agent-generated documents go in `docs/` root.
+The pre-commit `doc-naming-check` hook rejects any file placed directly in `docs/` that does not match the timestamped format.
 
 ---
 
@@ -139,26 +147,32 @@ flowchart LR
 ## Documentation Structure
 
 ```
-README.md                    Landing page (marketing + quick start)
+README.md                        Landing page (marketing + quick start)
 docs/
-  README.md                  Navigation hub with reading paths
-  getting-started.md         Tutorial for new users
-  features.md                Complete feature inventory
-  cli-reference.md           All commands, wizard, Command Center
-  architecture.md            Internal design, resolution pipeline
-  configuration.md           Manifest, flags, layers, MCP
-  artifacts.md               Rules, skills, agents, brands
-  presets.md                 Built-in and custom presets
-  workflows.md               Daily usage, CI/CD, team patterns
-  migration.md               Adopting Codi in existing projects
-  troubleshooting.md         Common issues and fixes
-  maintaining-docs.md        This file
+  project/                       Codi project documentation
+    index.md                     Navigation hub with reading paths
+    README.md                    Quick-start index
+    getting-started.md           Tutorial for new users
+    features.md                  Complete feature inventory
+    cli-reference.md             All commands, wizard, Command Center
+    architecture.md              Internal design, resolution pipeline
+    configuration.md             Manifest, flags, layers, MCP
+    artifacts.md                 Rules, skills, agents
+    presets.md                   Built-in and custom presets
+    workflows.md                 Daily usage, CI/CD, team patterns
+    migration.md                 Adopting Codi in existing projects
+    troubleshooting.md           Common issues and fixes
+    maintaining-docs.md          This file
+  codi_docs/                     Generated HTML/JSON skill catalog
+    index.html                   Self-contained browsable skill catalog
+    skill-catalog.json           Machine-readable skill list
+  YYYYMMDD_HHMMSS_[CAT]_*.md    Timestamped audit/plan/report files
 ```
 
 ### Reading Paths
 
-- **New to Codi?** → `getting-started.md` → `features.md` → `presets.md`
-- **Setting up a project?** → `configuration.md` → `artifacts.md` → `workflows.md`
-- **Looking for a command?** → `cli-reference.md`
-- **Understanding internals?** → `architecture.md`
-- **Having issues?** → `troubleshooting.md` → `migration.md`
+- **New to Codi?** → `docs/project/getting-started.md` → `docs/project/features.md` → `docs/project/presets.md`
+- **Setting up a project?** → `docs/project/configuration.md` → `docs/project/artifacts.md` → `docs/project/workflows.md`
+- **Looking for a command?** → `docs/project/cli-reference.md`
+- **Understanding internals?** → `docs/project/architecture.md`
+- **Having issues?** → `docs/project/troubleshooting.md` → `docs/project/migration.md`

@@ -12,7 +12,7 @@ description: "Skill creation, improvement, and migration workflow. Use when crea
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 6
+version: 9
 ---
 
 # Skill Creator
@@ -37,18 +37,23 @@ version: 6
 3. **What output should it produce?** — A file? Terminal output? A structured report?
 4. **What tools does it need?** — Read, Write, Edit, Bash, Glob, Grep, or external MCP tools?
 5. **Are there existing skills to reference?** — Check \\\`${PROJECT_DIR}/skills/\\\` for similar skills to learn from.
+6. **Project skill or built-in template?**
+   - **(a) Project skill** — installs to \\\`${PROJECT_DIR}/skills/\\\`. Available immediately in this project. Default for most users.
+   - **(b) Built-in template** — installs to \\\`src/templates/skills/\\\`. Becomes available to all codi users after a build. Choose only if contributing to the codi source.
 
-Do NOT proceed until you have clear answers for at least questions 1-3.
+Do NOT proceed until you have clear answers for at least questions 1-3 and 6.
 
 ### Step 2 — Scaffold
 
-**[CODING AGENT]** Run the scaffolding command:
+**[CODING AGENT]** Scaffold based on the destination chosen in Step 1.
+
+**Path (a) — project skill:**
 
 \\\`\\\`\\\`bash
 ${PROJECT_CLI} add skill <name>
 \\\`\\\`\\\`
 
-This creates the following structure:
+This creates:
 
 \\\`\\\`\\\`
 ${PROJECT_DIR}/skills/<name>/
@@ -62,6 +67,23 @@ ${PROJECT_DIR}/skills/<name>/
 \\\`\\\`\\\`
 
 If the directory already exists, confirm with the user before overwriting.
+
+**Path (b) — built-in template (contributors only):**
+
+Create the template directory and file manually:
+
+\\\`\\\`\\\`
+src/templates/skills/<name>/
+├── template.ts     # TypeScript template literal wrapping SKILL.md content
+├── evals/
+│   └── evals.json
+├── scripts/
+├── references/
+├── assets/
+└── agents/
+\\\`\\\`\\\`
+
+The \\\`template.ts\\\` file must export a \\\`template\\\` string constant. Use an existing template (e.g. \\\`src/templates/skills/commit/template.ts\\\`) as a reference for the correct module structure, imports, and interpolation syntax. Set \\\`managed_by: ${PROJECT_NAME}\\\` in the frontmatter.
 
 **Script runtime**: Helper scripts are available in both TypeScript (\\\`scripts/ts/\\\`) and Python (\\\`scripts/python/\\\`). Use TypeScript by default (always available via \\\`npx tsx\\\`). Use Python when the project prefers it and \\\`python3\\\` is available.
 
@@ -391,15 +413,28 @@ Update the description until all 20 queries classify correctly.
 
 ### Step 9 — Register
 
-**[CODING AGENT]** After the skill passes evals and description optimization:
+**[CODING AGENT]** After the skill passes evals and description optimization, register based on the destination chosen in Step 1.
 
-1. Run \\\`${PROJECT_CLI} generate\\\` to distribute the skill to all configured agents
-2. Verify the skill appears in the generated agent configuration
-3. Confirm with the user that the skill is ready
+**Path (a) — project skill:**
 
 \\\`\\\`\\\`bash
 ${PROJECT_CLI} generate
 \\\`\\\`\\\`
+
+Verify the skill appears in the generated agent configuration, then confirm with the user.
+
+**Path (b) — built-in template (contributors only):**
+
+1. Export the template in \\\`src/templates/skills/index.ts\\\`
+2. Register it in \\\`src/core/scaffolder/skill-template-loader.ts\\\` TEMPLATE_MAP
+3. Run build and generate:
+
+\\\`\\\`\\\`bash
+npm run build && ${PROJECT_CLI} generate
+\\\`\\\`\\\`
+
+4. Verify with \\\`${PROJECT_CLI} add skill <name>\\\` — it should appear in the skill catalog
+5. Confirm with the user that the skill is ready
 
 ### Step 10 — Import / Migrate Skill
 
