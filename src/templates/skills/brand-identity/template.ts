@@ -1,14 +1,14 @@
-import { SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Brand identity for {{name}}. Use when applying design tokens, typography, logo, or tone of voice to any deliverable. Provides the visual system used by doc-engine, deck-engine, and content-factory. Also activate for brand guidelines or style guides.
-category: Brand Identity
+category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}} — Brand Identity

@@ -252,24 +252,24 @@
     "hash": "00db93cdc1a6bd62048a33c0393f0e8a3c90e0679a508f15a957764df0c1e8df"
   },
   "codi-brand-identity": {
-    "version": 3,
-    "hash": "3a6ead292ac0320e8d175de7b6602844c051f8740da4131faead060efbda380c"
+    "version": 4,
+    "hash": "a9fa4393bfcf201ff9074cd261bb22224ddc208126736c09084a07f58b80a96a"
   },
   "codi-codi-brand": {
-    "version": 2,
-    "hash": "e5ac2a45c946a2ef4815d0ebe5f711a19fc27b7ebeab2f0afec44750db415cb3"
+    "version": 3,
+    "hash": "77efc4f0c9fc85140976b204fd787cdb76b53a798b31bb00de11bb973257590b"
   },
   "codi-rl3-brand": {
-    "version": 7,
-    "hash": "80d9053d72710fb539b9617144e5b357186110b1f37224c4cdb446e4e501cf7d"
+    "version": 8,
+    "hash": "208859d4ea68c51865b11ce9282e469394c389fe200b61b929dd7fee7fbd5c9e"
   },
   "codi-bbva-brand": {
-    "version": 6,
-    "hash": "3011974b9197dcdd9091ca7e2bd280f1b9d22e6b24e6662f126839d39bfdb676"
+    "version": 7,
+    "hash": "3fd2866e9055fd421cd2925d3966be53b0a6cb45589766fdca8d07531ea29dd2"
   },
   "codi-content-factory": {
-    "version": 7,
-    "hash": "d890ef616c5f56b46d9dbe360ca75242629ff33031c718c62b0298c357806d3c"
+    "version": 8,
+    "hash": "a45264da3bb1e79bf0108c06e45c26b088991e7c4ce9efaf966c2705991d8f51"
   },
   "codi-project-quality-guard": {
     "version": 7,
@@ -292,8 +292,8 @@
     "hash": "55ec9b7fcf5280d6d31d9c6af1b4c43645b73e3eaa01db196f5f9f314ee181b0"
   },
   "codi-humanizer": {
-    "version": 3,
-    "hash": "526d45b896dea7acfc80f0800f6e4c39da971f49ac9ba453b051782bf59c7904"
+    "version": 4,
+    "hash": "1c4b94a5fb9c7d69dcf5fb42a24af8cdd4f123c8f20d3307011a82d3babb24a5"
   },
   "codi-test-run": {
     "version": 3,
