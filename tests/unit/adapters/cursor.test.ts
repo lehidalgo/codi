@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { cursorAdapter } from "#src/adapters/cursor.js";
 import { createMockConfig } from "./mock-config.js";
-import {
-  CONTEXT_TOKENS_SMALL,
-  PROJECT_NAME,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { CONTEXT_TOKENS_SMALL, PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("cursor adapter", () => {
   const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-cursor-` + Date.now());
@@ -34,7 +30,6 @@ describe("cursor adapter", () => {
     expect(cursorAdapter.capabilities).toEqual({
       rules: true,
       skills: true,
-      commands: false,
       mcp: true,
       frontmatter: true,
       progressiveLoading: true,
@@ -49,7 +44,6 @@ describe("cursor adapter", () => {
     expect(cursorAdapter.paths.configRoot).toBe(".cursor");
     expect(cursorAdapter.paths.rules).toBe(".cursor/rules");
     expect(cursorAdapter.paths.skills).toBeNull();
-    expect(cursorAdapter.paths.commands).toBeNull();
     expect(cursorAdapter.paths.agents).toBeNull();
     expect(cursorAdapter.paths.instructionFile).toBe(".cursorrules");
     expect(cursorAdapter.paths.mcpConfig).toBe(".cursor/mcp.json");
@@ -144,9 +138,7 @@ describe("cursor adapter", () => {
     });
     const files = await cursorAdapter.generate(config, {});
 
-    const ruleFile = files.find(
-      (f) => f.path === ".cursor/rules/global-rule.mdc",
-    );
+    const ruleFile = files.find((f) => f.path === ".cursor/rules/global-rule.mdc");
     expect(ruleFile).toBeDefined();
     expect(ruleFile!.content).toContain("alwaysApply: true");
     expect(ruleFile!.content).not.toContain("globs:");
@@ -194,16 +186,11 @@ describe("cursor adapter", () => {
     const files = await cursorAdapter.generate(config, {});
 
     const skillMds = files.filter(
-      (f) =>
-        f.path.startsWith(".cursor/skills/") && f.path.endsWith("SKILL.md"),
+      (f) => f.path.startsWith(".cursor/skills/") && f.path.endsWith("SKILL.md"),
     );
     expect(skillMds).toHaveLength(2);
-    expect(
-      skillMds.find((f) => f.path === ".cursor/skills/deploy/SKILL.md"),
-    ).toBeDefined();
-    expect(
-      skillMds.find((f) => f.path === ".cursor/skills/review/SKILL.md"),
-    ).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".cursor/skills/deploy/SKILL.md")).toBeDefined();
+    expect(skillMds.find((f) => f.path === ".cursor/skills/review/SKILL.md")).toBeDefined();
   });
 
   // --- generate() with MCP servers ---

@@ -3,8 +3,7 @@ import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
   name: prefixedName("minimal"),
-  description:
-    "Permissive — security off, no test requirements, all actions allowed",
+  description: "Permissive — security off, no test requirements, all actions allowed",
   version: "1.0.0",
   author: PROJECT_NAME,
   tags: ["minimal", "permissive", "starter"],
@@ -25,6 +24,7 @@ export const preset: BuiltinPresetDefinition = {
     require_pr_review: { mode: "enabled", value: false },
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: false },
+    doc_protected_branches: { mode: "enabled", value: ["main", "develop", "release/*"] },
     allowed_languages: { mode: "enabled", value: ["*"] },
     progressive_loading: { mode: "enabled", value: "off" },
     drift_detection: { mode: "enabled", value: "off" },
@@ -33,6 +33,5 @@ export const preset: BuiltinPresetDefinition = {
   rules: [],
   skills: [],
   agents: [],
-  commands: [],
   mcpServers: [],
 };

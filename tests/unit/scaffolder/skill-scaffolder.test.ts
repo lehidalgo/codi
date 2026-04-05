@@ -66,7 +66,7 @@ describe("skill scaffolder", () => {
     const result = await createSkill({
       name: "docs",
       configDir,
-      template: prefixedName("documentation"),
+      template: prefixedName("project-documentation"),
     });
 
     expect(result.ok).toBe(true);
@@ -119,8 +119,8 @@ describe("skill scaffolder", () => {
       "utf-8",
     );
     const parsed = JSON.parse(evalsJson);
-    expect(parsed.skill_name).toBe("flat-test");
-    expect(parsed.evals).toEqual([]);
+    expect(parsed.skillName).toBe("flat-test");
+    expect(parsed.cases).toEqual([]);
 
     for (const sub of ["scripts", "references", "assets", "agents"]) {
       const gitkeep = path.join(configDir, "skills", "flat-test", sub, ".gitkeep");

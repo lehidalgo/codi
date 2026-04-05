@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { execFileAsync } from "../../utils/exec.js";
+import { execFileAsync } from "#src/utils/exec.js";
 import type { HookEntry } from "./hook-registry.js";
 
 export interface DependencyCheck {
@@ -17,14 +17,12 @@ const INSTALL_HINTS: Record<string, string> = {
   tsc: "npm install -D typescript",
   ruff: "pip install ruff",
   pyright: "npm install -D pyright",
-  "golangci-lint":
-    "go install github.com/golangci-lint/golangci-lint/cmd/golangci-lint@latest",
+  "golangci-lint": "go install github.com/golangci-lint/golangci-lint/cmd/golangci-lint@latest",
   gofmt: "(included with Go)",
   cargo: "(included with Rust)",
   "cargo-clippy": "rustup component add clippy",
   "cargo-fmt": "rustup component add rustfmt",
-  "google-java-format":
-    "brew install google-java-format (or download from GitHub)",
+  "google-java-format": "brew install google-java-format (or download from GitHub)",
   checkstyle: "brew install checkstyle (or download jar)",
   ktfmt: "brew install ktfmt",
   detekt: "brew install detekt",

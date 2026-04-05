@@ -1,22 +1,20 @@
 import { PROJECT_NAME } from "#src/constants.js";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import type {
   NormalizedRule,
   NormalizedSkill,
   NormalizedAgent,
-  NormalizedCommand,
   McpConfig,
-} from "../../types/config.js";
+} from "#src/types/config.js";
 import type { LoadedPreset } from "./preset-loader.js";
-import type { BuiltinPresetDefinition } from "../../templates/presets/types.js";
-import { getBuiltinPresetDefinition } from "../../templates/presets/index.js";
+import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
+import { getBuiltinPresetDefinition } from "#src/templates/presets/index.js";
 import { loadTemplate } from "../scaffolder/template-loader.js";
 import { loadSkillTemplateContent } from "../scaffolder/skill-template-loader.js";
 import { loadAgentTemplate } from "../scaffolder/agent-template-loader.js";
-import { loadCommandTemplate } from "../scaffolder/command-template-loader.js";
 import { loadMcpServerTemplate } from "../scaffolder/mcp-template-loader.js";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import { createError } from "../output/errors.js";
 import { Logger } from "../output/logger.js";
 
@@ -40,15 +38,12 @@ export function materializeBuiltinPreset(name: string): Result<LoadedPreset> {
   return materializeDefinition(definition);
 }
 
-function materializeDefinition(
-  def: BuiltinPresetDefinition,
-): Result<LoadedPreset> {
+function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPreset> {
   const mergedFlags = def.flags;
 
   const rules = materializeRules(def.rules);
   const skills = materializeSkills(def.skills);
   const agents = materializeAgents(def.agents);
-  const commands = materializeCommands(def.commands);
   const mcp = materializeMcpServers(def.mcpServers ?? []);
 
   return ok({
@@ -58,7 +53,6 @@ function materializeDefinition(
     rules,
     skills,
     agents,
-    commands,
     mcp,
   });
 }
@@ -111,22 +105,6 @@ function materializeAgents(templateNames: string[]): NormalizedAgent[] {
   return agents;
 }
 
-function materializeCommands(templateNames: string[]): NormalizedCommand[] {
-  const log = Logger.getInstance();
-  const commands: NormalizedCommand[] = [];
-  for (const name of templateNames) {
-    const result = loadCommandTemplate(name);
-    if (!result.ok) {
-      log.debug(`Skipped command template "${name}": load failed`);
-      continue;
-    }
-
-    const cmd = parseCommandTemplate(name, result.data);
-    if (cmd) commands.push(cmd);
-  }
-  return commands;
-}
-
 function materializeMcpServers(templateNames: string[]): McpConfig {
   const log = Logger.getInstance();
   const servers: Record<string, unknown> = {};
@@ -143,24 +121,25 @@ function materializeMcpServers(templateNames: string[]): McpConfig {
       ...(tmpl.args && tmpl.args.length > 0 && { args: tmpl.args }),
       ...(tmpl.env && Object.keys(tmpl.env).length > 0 && { env: tmpl.env }),
       ...(tmpl.url && { url: tmpl.url }),
-      ...(tmpl.headers &&
-        Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
+      ...(tmpl.headers && Object.keys(tmpl.headers).length > 0 && { headers: tmpl.headers }),
     };
   }
   return { servers } as McpConfig;
 }
 
-function parseRuleTemplate(
-  name: string,
-  content: string,
-): NormalizedRule | null {
+function getArtifactVersion(data: Record<string, unknown>): number {
+  const version = data["version"];
+  return typeof version === "number" && Number.isInteger(version) && version > 0 ? version : 1;
+}
+
+function parseRuleTemplate(name: string, content: string): NormalizedRule | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     const d = data as Record<string, unknown>;
     return {
       name: (d["name"] as string) ?? name,
       description: (d["description"] as string) ?? "",
+      version: getArtifactVersion(d),
       content: body,
       priority: (d["priority"] as "high" | "medium" | "low") ?? "medium",
       alwaysApply: (d["alwaysApply"] as boolean) ?? true,
@@ -175,17 +154,14 @@ function parseRuleTemplate(
   }
 }
 
-function parseSkillTemplate(
-  name: string,
-  content: string,
-): NormalizedSkill | null {
+function parseSkillTemplate(name: string, content: string): NormalizedSkill | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     const d = data as Record<string, unknown>;
     return {
       name: (d["name"] as string) ?? name,
       description: (d["description"] as string) ?? "",
+      version: getArtifactVersion(d),
       content: body,
       managedBy: PROJECT_NAME,
       ...(d["category"] !== undefined && { category: d["category"] as string }),
@@ -224,49 +200,22 @@ function parseSkillTemplate(
       ...(d["metadata"] !== undefined && {
         metadata: d["metadata"] as Record<string, string>,
       }),
-      ...(d["intentHints"] !== undefined && {
-        intentHints: d["intentHints"] as {
-          taskType: string;
-          examples: string[];
-        },
-      }),
     };
   } catch {
     return null;
   }
 }
 
-function parseAgentTemplate(
-  name: string,
-  content: string,
-): NormalizedAgent | null {
+function parseAgentTemplate(name: string, content: string): NormalizedAgent | null {
   try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
+    const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
     return {
       name: (data["name"] as string) ?? name,
       description: (data["description"] as string) ?? "",
+      version: getArtifactVersion(data),
       content: body,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,
-      managedBy: PROJECT_NAME,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function parseCommandTemplate(
-  name: string,
-  content: string,
-): NormalizedCommand | null {
-  try {
-    const { data, content: body } =
-      parseFrontmatter<Record<string, unknown>>(content);
-    return {
-      name: (data["name"] as string) ?? name,
-      description: (data["description"] as string) ?? "",
-      content: body,
       managedBy: PROJECT_NAME,
     };
   } catch {

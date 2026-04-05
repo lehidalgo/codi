@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ProjectManifestSchema,
+  AgentFrontmatterSchema,
   RuleFrontmatterSchema,
   SkillFrontmatterSchema,
   FlagModeSchema,
@@ -10,7 +11,11 @@ import {
   HookDefinitionSchema,
   HooksConfigSchema,
 } from "../../src/schemas/index.js";
-import { PROJECT_NAME } from "../../src/constants.js";
+import { PROJECT_NAME, ALL_SKILL_CATEGORIES, isKnownSkillCategory } from "#src/constants.js";
+import {
+  AVAILABLE_SKILL_TEMPLATES,
+  loadSkillTemplateContent,
+} from "../../src/core/scaffolder/skill-template-loader.js";
 
 describe("ProjectManifestSchema", () => {
   it("accepts valid manifest", () => {
@@ -105,7 +110,7 @@ describe("SkillFrontmatterSchema", () => {
     const result = SkillFrontmatterSchema.safeParse({
       name: "test-skill",
       description: "A skill",
-      compatibility: ["claude", "cursor"],
+      compatibility: ["claude-code", "cursor"],
       tools: ["read", "write"],
       model: "gpt-4",
     });
@@ -243,5 +248,252 @@ describe("HooksConfigSchema", () => {
       },
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("skill template categories", () => {
+  it("ALL_SKILL_CATEGORIES has no duplicate values", () => {
+    const unique = new Set(ALL_SKILL_CATEGORIES);
+    expect(unique.size).toBe(ALL_SKILL_CATEGORIES.length);
+  });
+
+  it("isKnownSkillCategory returns true for all built-in categories", () => {
+    for (const cat of ALL_SKILL_CATEGORIES) {
+      expect(isKnownSkillCategory(cat)).toBe(true);
+    }
+  });
+
+  it("isKnownSkillCategory returns false for unknown values", () => {
+    expect(isKnownSkillCategory("")).toBe(false);
+    expect(isKnownSkillCategory("Random Category")).toBe(false);
+  });
+
+  it("every built-in skill template has a known category", () => {
+    const CATEGORY_PATTERN = /^category:\s*(.+)$/m;
+    const HAS_PLACEHOLDER = /\$\{[^}]+\}/;
+    const unknown: string[] = [];
+
+    for (const name of AVAILABLE_SKILL_TEMPLATES) {
+      const loaded = loadSkillTemplateContent(name);
+      if (!loaded.ok || !loaded.data) continue;
+      const m = loaded.data.match(CATEGORY_PATTERN);
+      if (!m) continue;
+      const raw = m[1]!.trim();
+      // Template interpolation tokens resolve to the platform category at runtime.
+      if (HAS_PLACEHOLDER.test(raw)) continue;
+      if (!isKnownSkillCategory(raw)) {
+        unknown.push(`${name}: "${raw}"`);
+      }
+    }
+
+    expect(unknown).toEqual([]);
+  });
+});
+
+describe("category field — SkillFrontmatterSchema", () => {
+  it("accepts a valid category", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      category: "Code Quality",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts omitted category (optional)", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.category).toBeUndefined();
+  });
+
+  it("accepts all known categories", () => {
+    const validCategories = [
+      "Brand Identity",
+      "Code Quality",
+      "Content Creation",
+      "Content Refinement",
+      "Creative and Design",
+      "Developer Tools",
+      "Developer Workflow",
+      "Document Generation",
+      "File Format Tools",
+      "Planning",
+      "Productivity",
+      "Testing",
+      "Workflow",
+    ];
+    for (const category of validCategories) {
+      const result = SkillFrontmatterSchema.safeParse({
+        name: "my-skill",
+        description: "A skill",
+        category,
+      });
+      expect(result.success, `Expected category "${category}" to be valid`).toBe(true);
+    }
+  });
+
+  it("rejects unknown category string", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      category: "Invalid Category XYZ",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty string category", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      category: "",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("version field — SkillFrontmatterSchema", () => {
+  it("accepts version: 1", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      version: 1,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.version).toBe(1);
+  });
+
+  it("defaults version to 1 when omitted", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.version).toBe(1);
+  });
+
+  it("rejects version: 0", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      version: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects version: -1", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      version: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects version: '1' (string)", () => {
+    const result = SkillFrontmatterSchema.safeParse({
+      name: "my-skill",
+      description: "A skill",
+      version: "1",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("version field — AgentFrontmatterSchema", () => {
+  it("accepts version: 1", () => {
+    const result = AgentFrontmatterSchema.safeParse({
+      name: "my-agent",
+      description: "An agent",
+      version: 1,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.version).toBe(1);
+  });
+
+  it("defaults version to 1 when omitted", () => {
+    const result = AgentFrontmatterSchema.safeParse({
+      name: "my-agent",
+      description: "An agent",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.version).toBe(1);
+  });
+
+  it("rejects version: 0", () => {
+    const result = AgentFrontmatterSchema.safeParse({
+      name: "my-agent",
+      description: "An agent",
+      version: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects version: -1", () => {
+    const result = AgentFrontmatterSchema.safeParse({
+      name: "my-agent",
+      description: "An agent",
+      version: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects version: '1' (string)", () => {
+    const result = AgentFrontmatterSchema.safeParse({
+      name: "my-agent",
+      description: "An agent",
+      version: "1",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("version field — RuleFrontmatterSchema", () => {
+  it("accepts version: 1", () => {
+    const result = RuleFrontmatterSchema.safeParse({
+      name: "my-rule",
+      description: "A rule",
+      version: 1,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.version).toBe(1);
+  });
+
+  it("defaults version to 1 when omitted", () => {
+    const result = RuleFrontmatterSchema.safeParse({
+      name: "my-rule",
+      description: "A rule",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.version).toBe(1);
+  });
+
+  it("rejects version: 0", () => {
+    const result = RuleFrontmatterSchema.safeParse({
+      name: "my-rule",
+      description: "A rule",
+      version: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects version: -1", () => {
+    const result = RuleFrontmatterSchema.safeParse({
+      name: "my-rule",
+      description: "A rule",
+      version: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects version: '1' (string)", () => {
+    const result = RuleFrontmatterSchema.safeParse({
+      name: "my-rule",
+      description: "A rule",
+      version: "1",
+    });
+    expect(result.success).toBe(false);
   });
 });

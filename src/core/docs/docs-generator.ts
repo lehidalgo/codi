@@ -6,8 +6,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import fg from "fast-glob";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 
 import { FLAG_CATALOG } from "../flags/flag-catalog.js";
 import { AVAILABLE_TEMPLATES } from "../scaffolder/template-loader.js";
@@ -16,12 +16,11 @@ import {
   loadSkillTemplateContent,
 } from "../scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../scaffolder/command-template-loader.js";
-import { BUILTIN_PRESETS } from "../../templates/presets/index.js";
-import { BUILTIN_MCP_SERVERS } from "../../templates/mcp-servers/index.js";
+import { BUILTIN_PRESETS } from "#src/templates/presets/index.js";
+import { BUILTIN_MCP_SERVERS } from "#src/templates/mcp-servers/index.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
-import { ALL_ADAPTERS } from "../../adapters/index.js";
-import { TOP_LEVEL_MENU, SUB_MENUS } from "../../cli/hub.js";
+import { ALL_ADAPTERS } from "#src/adapters/index.js";
+import { NORMAL_MENU, ADVANCED_MENU } from "#src/cli/hub.js";
 import { PROJECT_CLI } from "#src/constants.js";
 
 import {
@@ -40,7 +39,6 @@ import {
   renderSkillTemplatesByCategory,
   extractSkillCategory,
   renderAgentTemplateList,
-  renderCommandTemplateList,
   // Infrastructure
   renderAdapterTable,
   renderSupportedAgents,
@@ -52,7 +50,6 @@ import {
   renderRuleFields,
   renderSkillFields,
   renderAgentFields,
-  renderCommandFields,
   renderManifestFields,
   // Coverage
   renderTestCoverage,
@@ -86,8 +83,6 @@ function generateAllSections(projectRoot: string): Record<string, string> {
     skillNames: [...AVAILABLE_SKILL_TEMPLATES].sort(),
     agents: AVAILABLE_AGENT_TEMPLATES.length,
     agentNames: [...AVAILABLE_AGENT_TEMPLATES].sort(),
-    commands: AVAILABLE_COMMAND_TEMPLATES.length,
-    commandNames: [...AVAILABLE_COMMAND_TEMPLATES].sort(),
   };
 
   return {
@@ -103,33 +98,25 @@ function generateAllSections(projectRoot: string): Record<string, string> {
     rule_templates: renderRuleTemplateList(AVAILABLE_TEMPLATES),
     skill_templates: renderSkillTemplatesByCategory(buildSkillCategoryMap()),
     agent_templates: renderAgentTemplateList(AVAILABLE_AGENT_TEMPLATES),
-    command_templates: renderCommandTemplateList(AVAILABLE_COMMAND_TEMPLATES),
 
     // --- Presets (2) ---
     preset_table: renderPresetTable(BUILTIN_PRESETS),
-    preset_flag_comparison: renderPresetFlagComparison(
-      BUILTIN_PRESETS,
-      FLAG_CATALOG,
-    ),
+    preset_flag_comparison: renderPresetFlagComparison(BUILTIN_PRESETS, FLAG_CATALOG),
 
     // --- Infrastructure (5) ---
     adapter_table: renderAdapterTable(ALL_ADAPTERS),
     supported_agents: renderSupportedAgents(ALL_ADAPTERS),
     layer_order: renderLayerOrder(),
     error_catalog: renderErrorCatalog(
-      ERROR_CATALOG as Record<
-        string,
-        { exitCode: number; severity: string; hintTemplate: string }
-      >,
+      ERROR_CATALOG as Record<string, { exitCode: number; severity: string; hintTemplate: string }>,
     ),
-    hub_actions: renderHubActions(TOP_LEVEL_MENU, SUB_MENUS),
+    hub_actions: renderHubActions(NORMAL_MENU, ADVANCED_MENU),
     mcp_servers: renderMcpServers(BUILTIN_MCP_SERVERS),
 
     // --- Schema fields (6) ---
     rule_fields: renderRuleFields(),
     skill_fields: renderSkillFields(),
     agent_fields: renderAgentFields(),
-    command_fields: renderCommandFields(),
     manifest_fields: renderManifestFields(),
 
     // --- Testing (1) ---
@@ -160,8 +147,7 @@ function buildSkillCategoryMap(): Record<string, string[]> {
 // Marker regex
 // ---------------------------------------------------------------------------
 
-const MARKER_RE =
-  /<!-- GENERATED:START:(\w+) -->\n[\s\S]*?<!-- GENERATED:END:\1 -->/g;
+const MARKER_RE = /<!-- GENERATED:START:(\w+) -->\n[\s\S]*?<!-- GENERATED:END:\1 -->/g;
 
 function injectIntoContent(
   content: string,
@@ -191,9 +177,7 @@ function injectIntoContent(
  * Inject all code-driven sections into doc files.
  * Replaces content between markers; preserves everything else.
  */
-export async function injectSections(
-  projectRoot: string,
-): Promise<Result<InjectionReport>> {
+export async function injectSections(projectRoot: string): Promise<Result<InjectionReport>> {
   try {
     const sections = generateAllSections(projectRoot);
     const docFiles = await findDocFiles(projectRoot);
@@ -215,10 +199,7 @@ export async function injectSections(
       // Reset regex lastIndex (it's stateful with /g flag)
       MARKER_RE.lastIndex = 0;
 
-      const { result, injected, missing } = injectIntoContent(
-        content,
-        sections,
-      );
+      const { result, injected, missing } = injectIntoContent(content, sections);
 
       report.missing.push(...missing.map((s) => `${file}:${s}`));
 
@@ -248,9 +229,7 @@ export async function injectSections(
  * Validate that all code-driven sections are in sync.
  * Returns ok if everything matches, err if any section is stale.
  */
-export async function validateSections(
-  projectRoot: string,
-): Promise<Result<ValidationReport>> {
+export async function validateSections(projectRoot: string): Promise<Result<ValidationReport>> {
   try {
     const sections = generateAllSections(projectRoot);
     const docFiles = await findDocFiles(projectRoot);

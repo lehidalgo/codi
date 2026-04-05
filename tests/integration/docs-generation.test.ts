@@ -14,9 +14,7 @@ import { clearAdapters } from "#src/core/generator/adapter-registry.js";
 let tmpDir: string;
 
 beforeEach(async () => {
-  const base = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-docs-gen-`),
-  );
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-docs-gen-`));
   tmpDir = path.join(base, "test-project");
   await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(
@@ -42,15 +40,13 @@ describe("docs generation pipeline", () => {
     expect(result.success).toBe(true);
     expect(result.exitCode).toBe(EXIT_CODES.SUCCESS);
     expect(result.data.outputPath).toContain("index.html");
-    expect(result.data.totalSkills).toBeGreaterThanOrEqual(0);
+    expect(result.data.totalSkills).toBeGreaterThan(0);
   });
 
   it("exports JSON catalog to stdout", async () => {
     await initHandler(tmpDir, { agents: ["claude-code"] });
 
-    const stdoutSpy = vi
-      .spyOn(process.stdout, "write")
-      .mockImplementation(() => true);
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     const result = await docsHandler(tmpDir, { json: true });
 
@@ -60,7 +56,7 @@ describe("docs generation pipeline", () => {
 
     const output = stdoutSpy.mock.calls[0]![0] as string;
     const parsed = JSON.parse(output);
-    expect(parsed.totalSkills).toBeGreaterThanOrEqual(0);
+    expect(parsed.totalSkills).toBeGreaterThan(0);
 
     stdoutSpy.mockRestore();
   });

@@ -6,31 +6,36 @@ describe("EvalCaseSchema", () => {
     const result = EvalCaseSchema.safeParse({
       id: "case-1",
       description: "Check commit message format",
-      input: "feat: add login",
-      expectedOutput: "valid",
+      prompt: "Commit my staged changes",
+      expectations: ["Creates a conventional commit", "Includes a scope"],
+      files: ["evals/files/sample.ts"],
       passed: true,
       lastRunAt: "2026-03-28T12:00:00.000Z",
+      passRate: 1.0,
     });
     expect(result.success).toBe(true);
   });
 
-  it("accepts minimal eval case (id + description only)", () => {
+  it("accepts minimal eval case (id + description + prompt)", () => {
     const result = EvalCaseSchema.safeParse({
       id: "case-2",
       description: "Minimal case",
+      prompt: "Do the thing",
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.input).toBeUndefined();
-      expect(result.data.expectedOutput).toBeUndefined();
+      expect(result.data.expectations).toEqual([]);
+      expect(result.data.files).toEqual([]);
       expect(result.data.passed).toBeUndefined();
       expect(result.data.lastRunAt).toBeUndefined();
+      expect(result.data.passRate).toBeUndefined();
     }
   });
 
   it("rejects missing id", () => {
     const result = EvalCaseSchema.safeParse({
       description: "No id",
+      prompt: "Do the thing",
     });
     expect(result.success).toBe(false);
   });
@@ -38,14 +43,24 @@ describe("EvalCaseSchema", () => {
   it("rejects missing description", () => {
     const result = EvalCaseSchema.safeParse({
       id: "case-3",
+      prompt: "Do the thing",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects missing prompt", () => {
+    const result = EvalCaseSchema.safeParse({
+      id: "case-4",
+      description: "No prompt",
     });
     expect(result.success).toBe(false);
   });
 
   it("rejects invalid lastRunAt datetime", () => {
     const result = EvalCaseSchema.safeParse({
-      id: "case-4",
+      id: "case-5",
       description: "Bad datetime",
+      prompt: "Do the thing",
       lastRunAt: "not-a-date",
     });
     expect(result.success).toBe(false);
@@ -56,8 +71,8 @@ describe("EvalsDataSchema", () => {
   const validData = {
     skillName: "commit",
     cases: [
-      { id: "c1", description: "Test case 1" },
-      { id: "c2", description: "Test case 2", passed: true },
+      { id: "c1", description: "Test case 1", prompt: "Commit staged changes" },
+      { id: "c2", description: "Test case 2", prompt: "Commit auth changes", passed: true },
     ],
     lastUpdated: "2026-03-28T12:00:00.000Z",
   };
@@ -92,7 +107,7 @@ describe("EvalsDataSchema", () => {
   it("rejects invalid case in cases array", () => {
     const result = EvalsDataSchema.safeParse({
       skillName: "commit",
-      cases: [{ id: "c1" }], // missing description
+      cases: [{ id: "c1" }], // missing description and prompt
     });
     expect(result.success).toBe(false);
   });

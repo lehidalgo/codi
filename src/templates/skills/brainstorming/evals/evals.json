@@ -1,0 +1,67 @@
+{
+  "skillName": "codi-brainstorming",
+  "cases": [
+    {
+      "id": "design-before-build",
+      "description": "Architecture design request triggers brainstorming before implementation",
+      "prompt": "let's think about how to build a real-time notification system",
+      "expectations": [
+        "Asks clarifying questions before proposing a design",
+        "Proposes multiple approaches with trade-offs",
+        "Does NOT jump straight to implementation",
+        "Produces a design summary before recommending a direction"
+      ]
+    },
+    {
+      "id": "explore-approaches",
+      "description": "Approach exploration for a complex problem triggers the skill",
+      "prompt": "what's the best way to handle authentication in our API? I see a few options",
+      "expectations": [
+        "Presents multiple authentication approaches (JWT, sessions, OAuth, etc.)",
+        "Analyzes trade-offs for each approach in context",
+        "Does NOT implement any approach without user direction",
+        "Ends with a recommendation and rationale"
+      ]
+    },
+    {
+      "id": "architectural-decision",
+      "description": "System architecture decision triggers structured exploration",
+      "prompt": "we need to decide between a monolith and microservices for the new platform",
+      "expectations": [
+        "Analyzes both options with concrete trade-offs",
+        "Asks about team size, scale requirements, and existing constraints",
+        "Does NOT make the decision unilaterally",
+        "Produces a comparison with a recommendation"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-brainstorming activates the skill",
+      "prompt": "/codi-brainstorming how should we design the caching layer?",
+      "expectations": [
+        "Activates the brainstorming skill",
+        "Explores caching options before recommending one"
+      ]
+    },
+    {
+      "id": "negative-implement-it",
+      "description": "Direct implementation request should NOT trigger brainstorming",
+      "prompt": "implement JWT authentication for the API",
+      "expectations": [
+        "Does NOT invoke the brainstorming skill",
+        "Does NOT produce a multi-option exploration",
+        "Proceeds with implementation"
+      ]
+    },
+    {
+      "id": "negative-plan-writer",
+      "description": "Writing an implementation plan should trigger plan-writer, not brainstorming",
+      "prompt": "write an implementation plan for the payment integration",
+      "expectations": [
+        "Does NOT invoke the brainstorming skill",
+        "Does NOT produce a design exploration with trade-offs",
+        "Produces a sequential implementation plan"
+      ]
+    }
+  ]
+}

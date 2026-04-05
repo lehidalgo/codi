@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user asks to build web components, pages, or UI interfaces. Also activate when styling or beautifying any web application. Generates distinctive, production-grade frontends and avoids generic AI aesthetics.
 category: Creative and Design
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Frontend Design
-  examples:
-    - "Build a landing page"
-    - "Design a web component"
-    - "Style this app with a distinctive aesthetic"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 ## When to Activate
@@ -61,5 +58,5 @@ Remember: Claude is capable of extraordinary creative work. Don't hold back, sho
 ## Available Agents
 
 For performance validation of frontend implementations, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-performance-auditor** — Core Web Vitals and rendering performance analysis
+- **${PROJECT_NAME}-performance-auditor** — Core Web Vitals and rendering performance analysis
 `;

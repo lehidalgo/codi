@@ -1,13 +1,14 @@
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+
 export const template = `---
-name: audio-transcriber
+name: {{name}}
 description: Use when transcribing audio or video files to text using OpenAI Whisper. Launches a local web interface with file upload, concurrent chunk processing, copy/download transcript, and optional Google Sheets output.
-category: productivity
-intentHints:
-  taskType: Audio Transcription
-  examples:
-    - "Transcribe this audio file"
-    - "Convert this video to text"
-    - "Transcribe and save to Google Sheets"
+category: Productivity
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 ## When to Activate
@@ -45,13 +46,13 @@ sudo apt-get install ffmpeg
 ### 2. Install Python packages
 
 \\\`\\\`\\\`bash
-pip install -r \${CLAUDE_SKILL_DIR}/scripts/requirements.txt
+pip install -r \${CLAUDE_SKILL_DIR}[[/scripts/requirements.txt]]
 \\\`\\\`\\\`
 
 ### 3. Start the server
 
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/server.py
+python \${CLAUDE_SKILL_DIR}[[/scripts/server.py]]
 \\\`\\\`\\\`
 
 ### 4. Open the UI
@@ -74,7 +75,7 @@ Navigate to **http://localhost:8765** in your browser.
 
 To enable saving transcripts to a Google Sheet:
 
-1. Follow the one-time setup in \\\`references/google-sheets-setup.md\\\`
+1. Follow the one-time setup in \\\`\${CLAUDE_SKILL_DIR}[[/references/google-sheets-setup.md]]\\\`
 2. Click **Connect Google Account** — a browser tab opens for authorization
 3. Paste the **Spreadsheet URL** and click **Load sheets**
 4. Select a worksheet → **Save to Sheet**
@@ -87,12 +88,12 @@ Each saved row contains: timestamp, source file, duration, cost estimate, full t
 
 | File | Purpose |
 |------|---------|
-| \\\`scripts/server.py\\\` | Flask server on port 8765, all API routes |
-| \\\`scripts/transcriber.py\\\` | Chunking + concurrent Whisper API calls |
-| \\\`scripts/sheets_handler.py\\\` | gspread OAuth + spreadsheet read/write |
-| \\\`scripts/index.html\\\` | Single-page UI (served by Flask) |
-| \\\`scripts/requirements.txt\\\` | Python dependencies |
-| \\\`references/google-sheets-setup.md\\\` | One-time Google Cloud setup guide |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/server.py]]\\\` | Flask server on port 8765, all API routes |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/transcriber.py]]\\\` | Chunking + concurrent Whisper API calls |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/sheets_handler.py]]\\\` | gspread OAuth + spreadsheet read/write |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/index.html]]\\\` | Single-page UI (served by Flask) |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/requirements.txt]]\\\` | Python dependencies |
+| \\\`\${CLAUDE_SKILL_DIR}[[/references/google-sheets-setup.md]]\\\` | One-time Google Cloud setup guide |
 
 ### Chunking logic
 
@@ -107,7 +108,7 @@ this provides a significant speedup over sequential processing.
 Environment variable overrides:
 
 \\\`\\\`\\\`bash
-PORT=9000 python \${CLAUDE_SKILL_DIR}/scripts/server.py
+PORT=9000 python \${CLAUDE_SKILL_DIR}[[/scripts/server.py]]
 \\\`\\\`\\\`
 
 Code-level defaults (in \\\`transcriber.py\\\`):
@@ -139,6 +140,6 @@ Video files have their audio track extracted automatically before transcription.
 | \\\`ffmpeg not found\\\` | Install ffmpeg (see Quick Start above) |
 | \\\`Module not found\\\` | Run \\\`pip install -r requirements.txt\\\` |
 | File too large / timeout | Reduce \\\`DEFAULT_MAX_DIRECT_MB\\\` or check network connection |
-| Google Sheets auth fails | See \\\`references/google-sheets-setup.md\\\` |
+| Google Sheets auth fails | See \\\`\${CLAUDE_SKILL_DIR}[[/references/google-sheets-setup.md]]\\\` |
 | Port 8765 already in use | Run with \\\`PORT=9000 python server.py\\\` |
 `;

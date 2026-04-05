@@ -134,18 +134,13 @@ interface ArtifactNames {
   rules: string[];
   skills: string[];
   agents: string[];
-  commands: string[];
 }
 
-async function snapshotArtifacts(
-  configDir: string,
-  presetDir: string,
-): Promise<ArtifactNames> {
+async function snapshotArtifacts(configDir: string, presetDir: string): Promise<ArtifactNames> {
   const artifacts: ArtifactNames = {
     rules: [],
     skills: [],
     agents: [],
-    commands: [],
   };
 
   // Scan rules
@@ -180,16 +175,6 @@ async function snapshotArtifacts(
     await fs.copyFile(path.join(configDir, rel), path.join(dest, `${name}.md`));
   }
 
-  // Scan commands
-  const commandFiles = await fg("commands/*.md", { cwd: configDir });
-  for (const rel of commandFiles) {
-    const name = path.basename(rel, ".md");
-    artifacts.commands.push(name);
-    const dest = path.join(presetDir, "commands");
-    await fs.mkdir(dest, { recursive: true });
-    await fs.copyFile(path.join(configDir, rel), path.join(dest, `${name}.md`));
-  }
-
   return artifacts;
 }
 
@@ -205,13 +190,7 @@ export async function presetInstallHandler(
   const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-${Date.now()}`);
   try {
     log.info(`Cloning preset from ${from}...`);
-    await execFileAsync("git", [
-      "clone",
-      "--depth",
-      GIT_CLONE_DEPTH,
-      from,
-      tmpDir,
-    ]);
+    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, from, tmpDir]);
 
     const presetSource = path.join(tmpDir, name);
     let sourceDir: string;
@@ -328,9 +307,7 @@ export async function presetSearchHandler(
       log.info(`Found ${results.length} preset(s) matching "${query}":`);
       for (const entry of results) {
         const tags = entry.tags.length > 0 ? ` [${entry.tags.join(", ")}]` : "";
-        log.info(
-          `  ${entry.name}@${entry.version} — ${entry.description}${tags}`,
-        );
+        log.info(`  ${entry.name}@${entry.version} — ${entry.description}${tags}`);
       }
     }
 
@@ -466,9 +443,7 @@ export async function presetUpdateHandler(
     if (updated.length === 0) {
       log.info("All presets are up to date.");
     } else if (dryRun) {
-      log.info(
-        `Would update ${updated.length} preset(s). Run without --dry-run to apply.`,
-      );
+      log.info(`Would update ${updated.length} preset(s). Run without --dry-run to apply.`);
     } else {
       log.info(`Updated ${updated.length} preset(s).`);
     }
@@ -503,30 +478,26 @@ export async function presetUpdateHandler(
 }
 
 export function registerPresetCommand(program: Command): void {
-  const cmd = program
-    .command("preset")
-    .description("Manage configuration presets");
+  const cmd = program.command("preset").description("Manage configuration presets");
 
   cmd
     .command("create [name]")
     .description("Create a new preset scaffold")
     .option("--interactive", "Launch interactive creation wizard")
-    .action(
-      async (name: string | undefined, options: { interactive?: boolean }) => {
-        const globalOptions = program.opts() as GlobalOptions;
-        initFromOptions(globalOptions);
-        if (options.interactive || !name) {
-          const wizardResult = await runPresetWizard(process.cwd());
-          if (!wizardResult) {
-            process.exit(1);
-          }
-          process.exit(0);
+    .action(async (name: string | undefined, options: { interactive?: boolean }) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      if (options.interactive || !name) {
+        const wizardResult = await runPresetWizard(process.cwd());
+        if (!wizardResult) {
+          process.exit(1);
         }
-        const result = await presetCreateHandler(process.cwd(), name);
-        handleOutput(result, globalOptions);
-        process.exit(result.exitCode);
-      },
-    );
+        process.exit(0);
+      }
+      const result = await presetCreateHandler(process.cwd(), name);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
 
   cmd
     .command("list")
@@ -535,10 +506,7 @@ export function registerPresetCommand(program: Command): void {
     .action(async (options: { builtin?: boolean }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await presetListEnhancedHandler(
-        process.cwd(),
-        options.builtin ?? false,
-      );
+      const result = await presetListEnhancedHandler(process.cwd(), options.builtin ?? false);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
@@ -548,61 +516,46 @@ export function registerPresetCommand(program: Command): void {
     .description("Install a preset (ZIP file, GitHub repo, or registry name)")
     .option("--from <repo>", "Git repository to install from (legacy)")
     .option("-f, --force", "Overwrite conflicting files without prompting")
-    .action(
-      async (source: string, options: { from?: string; force?: boolean }) => {
-        const globalOptions = program.opts() as GlobalOptions;
-        initFromOptions(globalOptions);
-        let result;
-        if (options.from) {
-          result = await presetInstallHandler(
-            process.cwd(),
-            source,
-            options.from,
-          );
-        } else {
-          result = await presetInstallUnifiedHandler(process.cwd(), source, {
-            force: options.force,
-            json: globalOptions.json,
+    .action(async (source: string, options: { from?: string; force?: boolean }) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      let result;
+      if (options.from) {
+        result = await presetInstallHandler(process.cwd(), source, options.from);
+      } else {
+        result = await presetInstallUnifiedHandler(process.cwd(), source, {
+          force: options.force,
+          json: globalOptions.json,
+        });
+      }
+      if (result.success) {
+        try {
+          const ledger = new OperationsLedgerManager(resolveProjectDir(process.cwd()));
+          await ledger.logOperation({
+            type: "preset-install",
+            timestamp: new Date().toISOString(),
+            details: { source, from: options.from ?? null },
           });
+        } catch {
+          /* best-effort */
         }
-        if (result.success) {
-          try {
-            const ledger = new OperationsLedgerManager(
-              resolveProjectDir(process.cwd()),
-            );
-            await ledger.logOperation({
-              type: "preset-install",
-              timestamp: new Date().toISOString(),
-              details: { source, from: options.from ?? null },
-            });
-          } catch {
-            /* best-effort */
-          }
-        }
-        handleOutput(result, globalOptions);
-        process.exit(result.exitCode);
-      },
-    );
+      }
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
 
   cmd
     .command("export <name>")
     .description("Export a preset as a ZIP file")
     .option("--format <format>", "Export format (zip)", "zip")
     .option("--output <path>", "Output path", ".")
-    .action(
-      async (name: string, options: { format: string; output: string }) => {
-        const globalOptions = program.opts() as GlobalOptions;
-        initFromOptions(globalOptions);
-        const result = await presetExportHandler(
-          process.cwd(),
-          name,
-          options.format,
-          options.output,
-        );
-        handleOutput(result, globalOptions);
-        process.exit(result.exitCode);
-      },
-    );
+    .action(async (name: string, options: { format: string; output: string }) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const result = await presetExportHandler(process.cwd(), name, options.format, options.output);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
 
   cmd
     .command("validate <name>")
@@ -624,9 +577,7 @@ export function registerPresetCommand(program: Command): void {
       const result = await presetRemoveHandler(process.cwd(), name);
       if (result.success) {
         try {
-          const ledger = new OperationsLedgerManager(
-            resolveProjectDir(process.cwd()),
-          );
+          const ledger = new OperationsLedgerManager(resolveProjectDir(process.cwd()));
           await ledger.logOperation({
             type: "preset-remove",
             timestamp: new Date().toISOString(),
@@ -669,10 +620,7 @@ export function registerPresetCommand(program: Command): void {
     .action(async (options: { dryRun?: boolean }) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
-      const result = await presetUpdateHandler(
-        process.cwd(),
-        options.dryRun ?? false,
-      );
+      const result = await presetUpdateHandler(process.cwd(), options.dryRun ?? false);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

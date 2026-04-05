@@ -1,16 +1,11 @@
-import { ok } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
-import { satisfiesVersion } from "../../utils/semver.js";
+import { ok } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
+import { satisfiesVersion } from "#src/utils/semver.js";
 import { StateManager } from "../config/state.js";
 import { scanProjectDir } from "../config/parser.js";
-import { resolveProjectDir } from "../../utils/paths.js";
-import {
-  PROJECT_CLI,
-  PROJECT_DIR,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
-import { VERSION } from "../../index.js";
+import { resolveProjectDir } from "#src/utils/paths.js";
+import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { VERSION } from "#src/index.js";
 
 export interface VersionCheckResult {
   check: string;
@@ -23,9 +18,7 @@ export interface DoctorReport {
   allPassed: boolean;
 }
 
-export function checkProjectVersion(
-  requiredVersion: string,
-): VersionCheckResult {
+export function checkProjectVersion(requiredVersion: string): VersionCheckResult {
   const currentVersion = VERSION;
   const passed = satisfiesVersion(currentVersion, requiredVersion);
   return {
@@ -110,9 +103,7 @@ export async function checkGeneratedFreshness(
   return results;
 }
 
-export async function checkProjectDirectory(
-  projectRoot: string,
-): Promise<VersionCheckResult> {
+export async function checkProjectDirectory(projectRoot: string): Promise<VersionCheckResult> {
   const result = await scanProjectDir(projectRoot);
   return {
     check: `${PROJECT_NAME}-directory`,
@@ -136,17 +127,12 @@ export async function runAllChecks(
   // Check version requirement from manifest
   const configResult = await scanProjectDir(projectRoot);
   if (configResult.ok && configResult.data.manifest.engine?.requiredVersion) {
-    const versionCheck = checkProjectVersion(
-      configResult.data.manifest.engine.requiredVersion,
-    );
+    const versionCheck = checkProjectVersion(configResult.data.manifest.engine.requiredVersion);
     results.push(versionCheck);
   }
 
   // Check generated files freshness
-  const freshnessResults = await checkGeneratedFreshness(
-    projectRoot,
-    driftMode,
-  );
+  const freshnessResults = await checkGeneratedFreshness(projectRoot, driftMode);
   results.push(...freshnessResults);
 
   const allPassed = results.every((r) => r.passed);

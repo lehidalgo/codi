@@ -26,17 +26,9 @@ import {
 } from "./preset-handlers.js";
 import { runPresetWizard } from "./preset-wizard.js";
 import { selectArtifactType, runAddWizard } from "./add-wizard.js";
-import {
-  addRuleHandler,
-  addSkillHandler,
-  addAgentHandler,
-  addCommandHandler,
-  addBrandHandler,
-} from "./add.js";
+import { addRuleHandler, addSkillHandler, addAgentHandler, addBrandHandler } from "./add.js";
 import { getAllAdapters } from "../core/generator/adapter-registry.js";
-import { validateHandler } from "./validate.js";
 import { PROJECT_DIR } from "../constants.js";
-import { SUB_MENUS } from "./hub.js";
 
 // --- Helpers ---
 
@@ -44,9 +36,7 @@ export function isCancelled<T>(value: T | symbol): value is symbol {
   return p.isCancel(value);
 }
 
-export async function printResult(
-  promise: Promise<{ exitCode: number }>,
-): Promise<void> {
+export async function printResult(promise: Promise<{ exitCode: number }>): Promise<void> {
   const result = await promise;
   process.stdout.write(formatHuman(result as never) + "\n");
 }
@@ -89,7 +79,6 @@ export async function handleAdd(projectRoot: string): Promise<void> {
     rule: addRuleHandler,
     skill: addSkillHandler,
     agent: addAgentHandler,
-    command: addCommandHandler,
     brand: addBrandHandler,
   };
 
@@ -137,8 +126,7 @@ export async function handleGenerate(projectRoot: string): Promise<void> {
   });
   if (isCancelled(mode)) return;
 
-  const selectedAgents =
-    agentFilter.length === allAgents.length ? undefined : agentFilter;
+  const selectedAgents = agentFilter.length === allAgents.length ? undefined : agentFilter;
   const result = await generateHandler(projectRoot, {
     agent: selectedAgents,
     dryRun: mode === "dry-run" || undefined,
@@ -161,9 +149,7 @@ export async function handleStatus(projectRoot: string): Promise<void> {
   });
   if (isCancelled(showDiff)) return;
 
-  await printResult(
-    statusHandler(projectRoot, { diff: showDiff || undefined }),
-  );
+  await printResult(statusHandler(projectRoot, { diff: showDiff || undefined }));
 }
 
 export async function handleClean(projectRoot: string): Promise<void> {
@@ -217,10 +203,9 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
       { label: "Rules", value: "rules" },
       { label: "Skills", value: "skills" },
       { label: "Agents", value: "agents" },
-      { label: "Commands", value: "commands" },
       { label: "MCP servers", value: "mcp-servers" },
     ],
-    initialValues: ["rules", "skills", "agents", "commands", "mcp-servers"],
+    initialValues: ["rules", "skills", "agents", "mcp-servers"],
     required: true,
   });
   if (isCancelled(layers)) return;
@@ -239,7 +224,6 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
     rules: layerSet.has("rules") || undefined,
     skills: layerSet.has("skills") || undefined,
     agents: layerSet.has("agents") || undefined,
-    commands: layerSet.has("commands") || undefined,
     mcpServers: layerSet.has("mcp-servers") || undefined,
     dryRun: dryRun || undefined,
   });
@@ -362,86 +346,60 @@ export async function handleDocs(projectRoot: string): Promise<void> {
   process.stdout.write(formatHuman(result) + "\n");
 }
 
-// --- Sub-Menu Handlers ---
+export async function handleImport(projectRoot: string): Promise<void> {
+  const sourceType = await p.select({
+    message: "Import from",
+    options: [
+      { value: "zip", label: "ZIP file", hint: "Local .zip archive with codi config" },
+      { value: "github", label: "GitHub repository", hint: "Full GitHub repository URL" },
+    ],
+  });
+  if (isCancelled(sourceType)) return;
 
-async function runSubMenu(
-  groupKey: string,
-  title: string,
-  projectRoot: string,
-  dispatch: Record<string, (root: string) => Promise<void>>,
-): Promise<void> {
-  const items = SUB_MENUS[groupKey];
-  if (!items) return;
+  const placeholder = sourceType === "zip" ? "/path/to/config.zip" : "https://github.com/org/repo";
 
-  while (true) {
-    const selected = await p.select({
-      message: title,
-      options: [
-        ...items.map((item) => ({
-          label: item.label,
-          value: item.value,
-          hint: item.hint,
-        })),
-        {
-          label: "Back to main menu",
-          value: "_back",
-          hint: "Return to Command Center",
-        },
-      ],
-    });
-    if (isCancelled(selected) || selected === "_back") return;
+  const source = await p.text({
+    message: "Source path or identifier",
+    placeholder,
+  });
+  if (isCancelled(source) || !source) return;
 
-    const handler = dispatch[selected as string];
-    if (handler) {
-      try {
-        await handler(projectRoot);
-      } catch (error) {
-        p.log.error(
-          `Action failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+  const result = await presetInstallUnifiedHandler(projectRoot, source);
+  process.stdout.write(formatHuman(result) + "\n");
+}
+
+export async function handleExport(projectRoot: string): Promise<void> {
+  const what = await p.select({
+    message: "What to export",
+    options: [
+      { value: "skill", label: "Export a skill", hint: "Package as ZIP or plugin format" },
+      { value: "preset", label: "Export a preset", hint: "Package as ZIP for sharing" },
+      { value: "contribute", label: "Contribute to GitHub", hint: "Submit artifacts via PR" },
+    ],
+  });
+  if (isCancelled(what)) return;
+
+  switch (what) {
+    case "skill":
+      await handleSkillExport(projectRoot);
+      break;
+    case "preset": {
+      const name = await p.text({ message: "Preset name to export" });
+      if (isCancelled(name) || !name) return;
+      const output = await p.text({
+        message: "Output path",
+        defaultValue: ".",
+        placeholder: ".",
+      });
+      if (isCancelled(output)) return;
+      const result = await presetExportHandler(projectRoot, name, "zip", output ?? ".");
+      process.stdout.write(formatHuman(result) + "\n");
+      break;
     }
+    case "contribute":
+      await handleContribute(projectRoot);
+      break;
   }
-}
-
-export async function handleCreateConfigureMenu(
-  projectRoot: string,
-): Promise<void> {
-  await runSubMenu("create-configure", "Create & configure", projectRoot, {
-    add: handleAdd,
-    generate: handleGenerate,
-    preset: handlePresetMenu,
-  });
-}
-
-export async function handleBuildShareMenu(projectRoot: string): Promise<void> {
-  await runSubMenu("build-share", "Build & share", projectRoot, {
-    "skill-export": handleSkillExport,
-    contribute: handleContribute,
-    docs: handleDocs,
-  });
-}
-
-export async function handleDiagnosticsMenu(
-  projectRoot: string,
-): Promise<void> {
-  await runSubMenu("diagnostics", "Diagnostics", projectRoot, {
-    doctor: handleDoctor,
-    status: handleStatus,
-    validate: (root) => printResult(validateHandler(root)),
-    verify: handleVerify,
-    compliance: handleCompliance,
-  });
-}
-
-export async function handleMaintenanceMenu(
-  projectRoot: string,
-): Promise<void> {
-  await runSubMenu("maintenance", "Maintenance", projectRoot, {
-    clean: handleClean,
-    update: handleUpdate,
-    revert: handleRevert,
-  });
 }
 
 export async function handlePresetMenu(projectRoot: string): Promise<void> {
@@ -502,10 +460,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
           ],
         });
         if (isCancelled(includeBuiltin)) break;
-        const result = await presetListEnhancedHandler(
-          projectRoot,
-          includeBuiltin,
-        );
+        const result = await presetListEnhancedHandler(projectRoot, includeBuiltin);
         process.stdout.write(formatHuman(result) + "\n");
         break;
       }
@@ -515,8 +470,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
       }
       case "install": {
         const source = await p.text({
-          message:
-            "Preset source (ZIP path, github:org/repo, or registry name)",
+          message: "Preset source (ZIP path, github:org/repo, or registry name)",
         });
         if (isCancelled(source) || !source) break;
         const result = await presetInstallUnifiedHandler(projectRoot, source);
@@ -532,12 +486,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
           placeholder: ".",
         });
         if (isCancelled(output)) break;
-        const result = await presetExportHandler(
-          projectRoot,
-          name,
-          "zip",
-          output ?? ".",
-        );
+        const result = await presetExportHandler(projectRoot, name, "zip", output ?? ".");
         process.stdout.write(formatHuman(result) + "\n");
         break;
       }

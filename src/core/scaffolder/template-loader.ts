@@ -1,12 +1,9 @@
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
-import {
-  prefixedName,
-  devArtifactName,
-  resolveArtifactName,
-} from "#src/constants.js";
-import * as ruleTemplates from "../../templates/rules/index.js";
+import { prefixedName, devArtifactName, resolveArtifactName } from "#src/constants.js";
+import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
+import * as ruleTemplates from "#src/templates/rules/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("security")]: ruleTemplates.security,
@@ -35,6 +32,7 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("workflow")]: ruleTemplates.workflow,
   [prefixedName("spanish-orthography")]: ruleTemplates.spanishOrthography,
   [prefixedName("agent-usage")]: ruleTemplates.agentUsage,
+  [prefixedName("output-discipline")]: ruleTemplates.outputDiscipline,
   [devArtifactName("improvement")]: ruleTemplates.improvement,
 };
 
@@ -50,4 +48,9 @@ export function loadTemplate(templateName: string): Result<string> {
     ]);
   }
   return ok(TEMPLATE_MAP[resolved]!);
+}
+
+export function getTemplateVersion(templateName: string): number | undefined {
+  const result = loadTemplate(templateName);
+  return result.ok ? parseVersionFromFrontmatter(result.data) : undefined;
 }

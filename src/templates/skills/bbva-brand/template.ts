@@ -1,13 +1,14 @@
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+
 export const template = `---
-name: codi-bbva-brand
+name: {{name}}
 description: Apply BBVA brand identity to any content creation task. Use when creating branded materials for BBVA — presentations, documents, reports, dashboards, or any visual/written deliverable that needs BBVA branding.
-category: brand
-intentHints:
-  taskType: BBVA Branding
-  examples:
-    - "Create a BBVA presentation"
-    - "Build a BBVA-branded report"
-    - "Make a BBVA dashboard"
+category: Brand Identity
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
+user-invocable: true
+disable-model-invocation: false
+version: 6
 ---
 
 ## When to Activate
@@ -85,7 +86,7 @@ BBVA is a global financial group with a purpose: to bring the age of opportunity
 | **Editorial / Long-form** | Tiempos Text | Regular (400) | Georgia, 'Times New Roman', serif |
 | **Data / Numbers** | BentonSans BBVA | Medium (500) | 'Helvetica Neue', Arial, sans-serif |
 
-**Available font files** (in \`assets/fonts/\`):
+**Available font files** (in \`\${CLAUDE_SKILL_DIR}[[/assets/fonts/]]\`):
 - \`BentonSansBBVA-Light.woff2\` (300)
 - \`BentonSansBBVA-Book.woff2\` (400)
 - \`BentonSansBBVA-Medium.woff2\` (500)
@@ -106,9 +107,9 @@ BBVA is a global financial group with a purpose: to bring the age of opportunity
 
 **Primary logo**: The BBVA wordmark in BBVA Blue (#004481) on white backgrounds, or white on dark backgrounds.
 
-**Logo files available** in \`assets/\`:
-- \`BBVA_RGB.svg\` — Vector logo (preferred for web)
-- \`BBVA_RGB.png\` — Raster logo (for contexts requiring PNG)
+**Logo files available** in \`\${CLAUDE_SKILL_DIR}[[/assets/]]\`:
+- \`\${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.svg]]\` — Vector logo (preferred for web)
+- \`\${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.png]]\` — Raster logo (for contexts requiring PNG)
 
 **Logo rules**:
 - Always use the official BBVA wordmark — never recreate or modify
@@ -118,14 +119,14 @@ BBVA is a global financial group with a purpose: to bring the age of opportunity
 
 ### Icon Library
 
-A curated subset of 35 commonly-used SVG icons is bundled in \`assets/icons/\`:
+A curated subset of 35 commonly-used SVG icons is bundled in \`\${CLAUDE_SKILL_DIR}[[/assets/icons/]]\`:
 - Finance: account, bank, card, cart, cash, dollar, euro, transfer, wallet
 - Navigation: arrows, menu, search, filter, home, settings, download, upload
 - Communication: chat, email, send, share
 - Status: check, close, info, warning, lock, delete
 - User: my-profile, mobile, calendar, document, edit, favorite, configuration, add
 
-The full 600+ icon library is cataloged in \`references/icon-catalog.md\`. Additional icons can be obtained from the BBVA corporate design portal.
+The full 600+ icon library is cataloged in \`\${CLAUDE_SKILL_DIR}[[/references/icon-catalog.md]]\`. Additional icons can be obtained from the BBVA corporate design portal.
 
 Use these icons consistently across all BBVA-branded interfaces.
 
@@ -171,7 +172,7 @@ When creating **documents** for BBVA:
 - Accent color (BBVA Blue) for highlights and section markers
 
 When creating **presentations** for BBVA:
-- Reference \`references/bbva-deck-reference.html\` for an example of BBVA-branded slide structure and styling
+- Reference \`\${CLAUDE_SKILL_DIR}[[/references/bbva-deck-reference.html]]\` for an example of BBVA-branded slide structure and styling
 - The SPHERICA PowerPoint template (SPHERICA-Plantilla-BBVA-16-9.potx) is available from the BBVA corporate design portal
 - Light backgrounds as default (white or light gray)
 - BBVA Blue for titles and key data
@@ -189,16 +190,16 @@ When creating **web content** for BBVA:
 
 ## Bundled Assets
 
-- \`assets/BBVA_RGB.svg\` — Official logo, vector format (preferred for web)
-- \`assets/BBVA_RGB.png\` — Official logo, raster format
-- \`assets/fonts/\` — BentonSans BBVA (4 weights) and Tiempos (4 variants), all in WOFF2
-- \`assets/icons/\` — Curated subset of 35 commonly-used SVG icons
+- \`\${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.svg]]\` — Official logo, vector format (preferred for web)
+- \`\${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.png]]\` — Official logo, raster format
+- \`\${CLAUDE_SKILL_DIR}[[/assets/fonts/]]\` — BentonSans BBVA (4 weights) and Tiempos (4 variants), all in WOFF2
+- \`\${CLAUDE_SKILL_DIR}[[/assets/icons/]]\` — Curated subset of 35 commonly-used SVG icons
 
 ## Reference Files
 
-- \`references/icon-catalog.md\` — Complete listing of all 600+ icons in the BBVA library
-- \`references/values-imagery.md\` — Corporate values image catalog with descriptions
-- \`references/bbva-deck-reference.html\` — BBVA-branded presentation example (with .css and .js)
+- \`\${CLAUDE_SKILL_DIR}[[/references/icon-catalog.md]]\` — Complete listing of all 600+ icons in the BBVA library
+- \`\${CLAUDE_SKILL_DIR}[[/references/values-imagery.md]]\` — Corporate values image catalog with descriptions
+- \`\${CLAUDE_SKILL_DIR}[[/references/bbva-deck-reference.html]]\` — BBVA-branded presentation example (with .css and .js)
 
 ## External Resources (BBVA Corporate Design Portal)
 

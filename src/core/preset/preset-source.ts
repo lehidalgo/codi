@@ -1,5 +1,5 @@
-import type { Result } from "../../types/result.js";
-import type { PresetSourceType } from "../../constants.js";
+import type { Result } from "#src/types/result.js";
+import type { PresetSourceType } from "#src/constants.js";
 
 /**
  * Descriptor identifying where a preset comes from and how to resolve it.

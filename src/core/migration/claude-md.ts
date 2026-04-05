@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Result } from "../../types/result.js";
-import type { NormalizedRule } from "../../types/config.js";
-import { ok, err } from "../../types/result.js";
+import type { Result } from "#src/types/result.js";
+import type { NormalizedRule } from "#src/types/config.js";
+import { ok, err } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
-import { resolveProjectDir } from "../../utils/paths.js";
+import { resolveProjectDir } from "#src/utils/paths.js";
 import type { MigrationResult } from "./agents-md.js";
 
 interface Section {
@@ -56,6 +56,7 @@ function sectionToRule(section: Section): NormalizedRule {
   return {
     name: headingToSlug(section.heading),
     description: `Imported from CLAUDE.md: ${section.heading}`,
+    version: 1,
     content: section.content,
     priority: "medium",
     alwaysApply: true,
@@ -68,6 +69,7 @@ function buildFrontmatter(rule: NormalizedRule): string {
     "---",
     `name: ${rule.name}`,
     `description: "${rule.description}"`,
+    `version: ${rule.version}`,
     `priority: ${rule.priority}`,
     `alwaysApply: ${rule.alwaysApply}`,
     `managed_by: ${rule.managedBy}`,
@@ -78,9 +80,7 @@ function buildFrontmatter(rule: NormalizedRule): string {
   return lines.join("\n");
 }
 
-export async function importClaudeMd(
-  projectRoot: string,
-): Promise<Result<MigrationResult>> {
+export async function importClaudeMd(projectRoot: string): Promise<Result<MigrationResult>> {
   const claudeMdPath = path.join(projectRoot, "CLAUDE.md");
   const warnings: string[] = [];
 
@@ -126,9 +126,7 @@ export async function importClaudeMd(
     try {
       await fs.writeFile(filePath, content, "utf-8");
     } catch (cause) {
-      warnings.push(
-        `Failed to write rule ${rule.name}: ${(cause as Error).message}`,
-      );
+      warnings.push(`Failed to write rule ${rule.name}: ${(cause as Error).message}`);
     }
   }
 

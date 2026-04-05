@@ -7,7 +7,6 @@ import {
   addRuleHandler,
   addSkillHandler,
   addAgentHandler,
-  addCommandHandler,
   addMcpServerHandler,
   addBrandHandler,
 } from "#src/cli/add.js";
@@ -88,9 +87,7 @@ describe("add skill command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-skill-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-skill-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -127,17 +124,10 @@ describe("add skill command handler", () => {
   it("creates evals.json in evals directory", async () => {
     await addSkillHandler(tmpDir, "eval-skill", {});
 
-    const evalsPath = path.join(
-      tmpDir,
-      PROJECT_DIR,
-      "skills",
-      "eval-skill",
-      "evals",
-      "evals.json",
-    );
+    const evalsPath = path.join(tmpDir, PROJECT_DIR, "skills", "eval-skill", "evals", "evals.json");
     const content = JSON.parse(await fs.readFile(evalsPath, "utf-8"));
-    expect(content.skill_name).toBe("eval-skill");
-    expect(content.evals).toEqual([]);
+    expect(content.skillName).toBe("eval-skill");
+    expect(content.cases).toEqual([]);
   });
 
   it("fails with invalid skill name", async () => {
@@ -182,9 +172,7 @@ describe("add agent command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-agent-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-agent-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -244,72 +232,11 @@ describe("add agent command handler", () => {
   });
 });
 
-describe("add command handler", () => {
-  let tmpDir: string;
-
-  beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-cmd-`),
-    );
-    await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
-    Logger.init({ level: "error", mode: "human", noColor: true });
-  });
-
-  afterEach(async () => {
-    await cleanupTmpDir(tmpDir);
-  });
-
-  it("creates a command file without template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-command", {});
-
-    expect(result.success).toBe(true);
-    expect(result.data.name).toBe("my-command");
-    expect(result.data.path).toContain("my-command.md");
-
-    const content = await fs.readFile(result.data.path, "utf-8");
-    expect(content).toContain("name: my-command");
-    expect(content).toContain("managed_by: user");
-  });
-
-  it("fails with invalid command name", async () => {
-    const result = await addCommandHandler(tmpDir, "has spaces", {});
-    expect(result.success).toBe(false);
-  });
-
-  it("fails with unknown template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-cmd", {
-      template: "bogus",
-    });
-    expect(result.success).toBe(false);
-    expect(result.errors[0]!.message).toContain("Unknown command template");
-  });
-
-  it("fails if command already exists", async () => {
-    await addCommandHandler(tmpDir, "dup-cmd", {});
-    const result = await addCommandHandler(tmpDir, "dup-cmd", {});
-    expect(result.success).toBe(false);
-    expect(result.errors[0]!.message).toContain("already exists");
-  });
-
-  it("creates a command file with commit template", async () => {
-    const result = await addCommandHandler(tmpDir, "my-commit", {
-      template: prefixedName("commit"),
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.data.template).toBe(prefixedName("commit"));
-    const content = await fs.readFile(result.data.path, "utf-8");
-    expect(content).toContain("name: my-commit");
-  });
-});
-
 describe("add mcp-server command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-mcp-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-mcp-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -373,9 +300,7 @@ describe("add brand command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-brand-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-brand-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -394,8 +319,7 @@ describe("add brand command handler", () => {
 
     const content = await fs.readFile(result.data.path, "utf-8");
     expect(content).toContain("name: my-brand");
-    expect(content).toContain("category: brand");
-    expect(content).toContain("Brand Identity");
+    expect(content).toContain("category: Brand Identity");
   });
 
   it("scaffolds skill subdirectories for brand", async () => {
@@ -426,9 +350,7 @@ describe("add handler shared behaviors", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-add-shared-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-add-shared-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -448,9 +370,6 @@ describe("add handler shared behaviors", () => {
 
     const agentResult = await addAgentHandler(tmpDir, longName, {});
     expect(agentResult.success).toBe(false);
-
-    const commandResult = await addCommandHandler(tmpDir, longName, {});
-    expect(commandResult.success).toBe(false);
 
     const mcpResult = await addMcpServerHandler(tmpDir, longName, {});
     expect(mcpResult.success).toBe(false);
@@ -481,9 +400,6 @@ describe("add handler shared behaviors", () => {
 
     const agentResult = await addAgentHandler(tmpDir, "agent-a", {});
     expect(agentResult.exitCode).toBe(EXIT_CODES.SUCCESS);
-
-    const commandResult = await addCommandHandler(tmpDir, "cmd-a", {});
-    expect(commandResult.exitCode).toBe(EXIT_CODES.SUCCESS);
 
     const mcpResult = await addMcpServerHandler(tmpDir, "mcp-a", {});
     expect(mcpResult.exitCode).toBe(EXIT_CODES.SUCCESS);

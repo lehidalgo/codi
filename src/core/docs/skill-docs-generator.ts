@@ -1,11 +1,12 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import { parseFrontmatter } from "../../utils/frontmatter.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
 } from "../scaffolder/skill-template-loader.js";
 import { renderSkillDocsPage } from "./skill-docs-template.js";
+import { ALL_SKILL_CATEGORIES } from "#src/constants.js";
 
 export interface SkillDocEntry {
   name: string;
@@ -80,8 +81,17 @@ export function groupByCategory(entries: SkillDocEntry[]): CategoryGroup[] {
     map.set(entry.category, list);
   }
 
+  // Sort: known categories in canonical order first, then unknown categories alphabetically.
+  const knownOrder = new Map<string, number>(ALL_SKILL_CATEGORIES.map((cat, i) => [cat, i]));
   return Array.from(map.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => {
+      const ai = knownOrder.get(a);
+      const bi = knownOrder.get(b);
+      if (ai !== undefined && bi !== undefined) return ai - bi;
+      if (ai !== undefined) return -1;
+      if (bi !== undefined) return 1;
+      return a.localeCompare(b);
+    })
     .map(([name, skills]) => ({ name, skills }));
 }
 
@@ -105,12 +115,12 @@ export function generateSkillDocsHtml(): string {
 }
 
 /**
- * Build and write the HTML skill catalog to docs/_site/index.html.
+ * Build and write the HTML skill catalog to docs/codi_docs/index.html.
  * Returns the absolute path of the written file.
  */
 export async function buildSkillDocsFile(projectRoot: string): Promise<string> {
   const html = generateSkillDocsHtml();
-  const outPath = join(projectRoot, "docs", "_site", "index.html");
+  const outPath = join(projectRoot, "docs", "codi_docs", "index.html");
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, html, "utf-8");
   return outPath;

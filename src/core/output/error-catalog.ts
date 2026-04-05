@@ -12,8 +12,7 @@ export const ERROR_CATALOG = {
   E_CONFIG_PARSE_FAILED: {
     exitCode: EXIT_CODES.CONFIG_INVALID,
     severity: "error" as const,
-    hintTemplate:
-      "Failed to parse config file: {file}. Check YAML/JSON syntax.",
+    hintTemplate: "Failed to parse config file: {file}. Check YAML/JSON syntax.",
   },
   E_CONFIG_NOT_FOUND: {
     exitCode: EXIT_CODES.CONFIG_NOT_FOUND,
@@ -28,8 +27,7 @@ export const ERROR_CATALOG = {
   E_FLAG_CONFLICT: {
     exitCode: EXIT_CODES.FLAG_CONFLICT,
     severity: "error" as const,
-    hintTemplate:
-      'Flag "{flag}" has conflicting values from {source1} and {source2}.',
+    hintTemplate: 'Flag "{flag}" has conflicting values from {source1} and {source2}.',
   },
   E_GENERATION_FAILED: {
     exitCode: EXIT_CODES.GENERATION_FAILED,
@@ -92,6 +90,11 @@ export const ERROR_CATALOG = {
     hintTemplate: "{message}",
   },
   W_DOCS_STALE: {
+    exitCode: EXIT_CODES.SUCCESS,
+    severity: "warn" as const,
+    hintTemplate: "{message}",
+  },
+  W_UNKNOWN_CATEGORY: {
     exitCode: EXIT_CODES.SUCCESS,
     severity: "warn" as const,
     hintTemplate: "{message}",
@@ -169,8 +172,7 @@ export const ERROR_CATALOG = {
   E_EVOLVE_NOT_READY: {
     exitCode: EXIT_CODES.GENERAL_ERROR,
     severity: "warn" as const,
-    hintTemplate:
-      'Skill "{name}" needs at least {min} feedback entries to evolve (has {count})',
+    hintTemplate: 'Skill "{name}" needs at least {min} feedback entries to evolve (has {count})',
   },
   E_VERSION_NOT_FOUND: {
     exitCode: EXIT_CODES.GENERAL_ERROR,

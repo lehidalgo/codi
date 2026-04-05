@@ -1,17 +1,18 @@
-import { MIN_CODE_COVERAGE_PERCENT, PROJECT_NAME } from "#src/constants.js";
+import {
+  MIN_CODE_COVERAGE_PERCENT,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Test coverage analysis workflow. Use when measuring coverage, identifying gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.
 category: Code Quality
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Test Coverage
-  examples:
-    - "Check test coverage"
-    - "Find untested code"
-    - "Generate missing tests"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}
@@ -92,10 +93,10 @@ Skip generating tests for:
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-test-generator** — Expert test creation with TDD workflow
-- **codi-code-reviewer** — Review generated tests for quality and correctness
+- **${PROJECT_NAME}-test-generator** — Expert test creation with TDD workflow
+- **${PROJECT_NAME}-code-reviewer** — Review generated tests for quality and correctness
 
 ## Related Skills
 
-- **codi-refactoring** — Clean up dead code after improving coverage
+- **${PROJECT_NAME}-refactoring** — Clean up dead code after improving coverage
 `;

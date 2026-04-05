@@ -5,25 +5,15 @@ import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
 import { loadPreset } from "#src/core/preset/preset-loader.js";
-import {
-  getBuiltinPresetNames,
-  BUILTIN_PRESETS,
-} from "#src/templates/presets/index.js";
+import { getBuiltinPresetNames, BUILTIN_PRESETS } from "#src/templates/presets/index.js";
 import { resolveConfig } from "#src/core/config/resolver.js";
 import { Logger } from "#src/core/output/logger.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-  prefixedName,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME, prefixedName } from "#src/constants.js";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-preset-wf-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-wf-`));
   Logger.init({ level: "error", mode: "human", noColor: true });
 });
 
@@ -49,7 +39,6 @@ describe("Preset Workflow: load all builtin presets", () => {
       expect(Array.isArray(result.data.rules)).toBe(true);
       expect(Array.isArray(result.data.skills)).toBe(true);
       expect(Array.isArray(result.data.agents)).toBe(true);
-      expect(Array.isArray(result.data.commands)).toBe(true);
       expect(typeof result.data.flags).toBe("object");
       expect(typeof result.data.mcp).toBe("object");
     });

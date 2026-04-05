@@ -4,18 +4,13 @@ import path from "node:path";
 import os from "node:os";
 import { importAgentsMd } from "#src/core/migration/agents-md.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
-const FIXTURE_DIR = path.join(
-  __dirname,
-  "../../fixtures/migration/sample-agents-md",
-);
+const FIXTURE_DIR = path.join(__dirname, "../../fixtures/migration/sample-agents-md");
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-migration-agents-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-migration-agents-`));
   // Copy fixture AGENTS.md
   const src = path.join(FIXTURE_DIR, "AGENTS.md");
   await fs.copyFile(src, path.join(tmpDir, "AGENTS.md"));
@@ -33,11 +28,8 @@ describe("importAgentsMd", () => {
     if (!result.ok) return;
 
     expect(result.data.rules).toHaveLength(3);
-    expect(result.data.rules.map((r) => r.name)).toEqual([
-      "code-style",
-      "testing",
-      "security",
-    ]);
+    expect(result.data.rules.map((r) => r.name)).toEqual(["code-style", "testing", "security"]);
+    expect(result.data.rules.every((r) => r.version === 1)).toBe(true);
   });
 
   it("preserves original content in rules", async () => {
@@ -45,9 +37,7 @@ describe("importAgentsMd", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const codeStyleRule = result.data.rules.find(
-      (r) => r.name === "code-style",
-    );
+    const codeStyleRule = result.data.rules.find((r) => r.name === "code-style");
     expect(codeStyleRule?.content).toContain("camelCase");
   });
 
@@ -71,14 +61,13 @@ describe("importAgentsMd", () => {
     );
     expect(content).toContain("---");
     expect(content).toContain("name: code-style");
+    expect(content).toContain("version: 1");
     expect(content).toContain("priority: medium");
     expect(content).toContain("alwaysApply: true");
   });
 
   it("returns error when AGENTS.md not found", async () => {
-    const emptyDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-empty-`),
-    );
+    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-empty-`));
     const result = await importAgentsMd(emptyDir);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -88,10 +77,7 @@ describe("importAgentsMd", () => {
   });
 
   it("preserves 90%+ of original content", async () => {
-    const originalContent = await fs.readFile(
-      path.join(tmpDir, "AGENTS.md"),
-      "utf-8",
-    );
+    const originalContent = await fs.readFile(path.join(tmpDir, "AGENTS.md"), "utf-8");
     const result = await importAgentsMd(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -103,9 +89,7 @@ describe("importAgentsMd", () => {
     expect(allRuleContent).toContain("environment variables");
 
     // Count preserved characters (simple heuristic)
-    const originalLines = originalContent
-      .split("\n")
-      .filter((l) => l.trim() && !l.startsWith("#"));
+    const originalLines = originalContent.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
     let preserved = 0;
     for (const line of originalLines) {
       if (allRuleContent.includes(line.trim())) {

@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { OPERATIONS_LEDGER_FILENAME } from "#src/constants.js";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 
 // ── Interfaces ──────────────────────────────────────────────────────
@@ -22,7 +22,6 @@ export interface LedgerActivePreset {
     rules: string[];
     skills: string[];
     agents: string[];
-    commands: string[];
     mcpServers?: string[];
   };
 }
@@ -30,14 +29,7 @@ export interface LedgerActivePreset {
 export interface LedgerGeneratedFile {
   path: string;
   agent: string;
-  type:
-    | "instruction"
-    | "rule"
-    | "skill"
-    | "command"
-    | "agent"
-    | "mcp"
-    | "settings";
+  type: "instruction" | "rule" | "skill" | "agent" | "mcp" | "settings";
   createdAt: string;
   updatedAt: string;
 }
@@ -45,12 +37,7 @@ export interface LedgerGeneratedFile {
 export interface LedgerHookFile {
   path: string;
   framework: "husky" | "pre-commit" | "lefthook" | "standalone";
-  type:
-    | "pre-commit"
-    | "commit-msg"
-    | "secret-scan"
-    | "file-size-check"
-    | "version-check";
+  type: "pre-commit" | "commit-msg" | "secret-scan" | "file-size-check" | "version-check";
   createdAt: string;
 }
 
@@ -189,9 +176,7 @@ export class OperationsLedgerManager {
     const data = readResult.data;
 
     for (const file of files) {
-      const existingIndex = data.files.generated.findIndex(
-        (f) => f.path === file.path,
-      );
+      const existingIndex = data.files.generated.findIndex((f) => f.path === file.path);
       if (existingIndex !== -1) {
         data.files.generated[existingIndex] = {
           ...data.files.generated[existingIndex],
@@ -262,7 +247,5 @@ export class OperationsLedgerManager {
 // ── Helpers ─────────────────────────────────────────────────────────
 
 function isFileNotFound(error: unknown): boolean {
-  return (
-    error instanceof Error && (error as NodeJS.ErrnoException).code === "ENOENT"
-  );
+  return error instanceof Error && (error as NodeJS.ErrnoException).code === "ENOENT";
 }

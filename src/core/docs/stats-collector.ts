@@ -1,18 +1,16 @@
 import { AVAILABLE_TEMPLATES } from "../scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../scaffolder/command-template-loader.js";
 import { FLAG_CATALOG } from "../flags/flag-catalog.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
-import { getBuiltinPresetNames } from "../../templates/presets/index.js";
-import { ALL_ADAPTERS } from "../../adapters/index.js";
+import { getBuiltinPresetNames } from "#src/templates/presets/index.js";
+import { ALL_ADAPTERS } from "#src/adapters/index.js";
 import { CLI_COMMANDS } from "#src/constants.js";
 
 export interface ProjectStats {
   rules: { count: number; names: string[] };
   skills: { count: number; names: string[] };
   agents: { count: number; names: string[] };
-  commands: { count: number; names: string[] };
   flags: { count: number; names: string[] };
   presets: { count: number; names: string[] };
   errorCodes: number;
@@ -33,10 +31,6 @@ export function collectStats(): ProjectStats {
     agents: {
       count: AVAILABLE_AGENT_TEMPLATES.length,
       names: [...AVAILABLE_AGENT_TEMPLATES],
-    },
-    commands: {
-      count: AVAILABLE_COMMAND_TEMPLATES.length,
-      names: [...AVAILABLE_COMMAND_TEMPLATES],
     },
     flags: {
       count: Object.keys(FLAG_CATALOG).length,

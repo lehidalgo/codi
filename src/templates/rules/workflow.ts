@@ -6,6 +6,7 @@ description: Human-in-the-loop workflow — baby steps, self-evaluation, MCP-fir
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 2
 ---
 
 # Workflow
@@ -29,6 +30,16 @@ Before proceeding with any solution, self-evaluate for:
 - **Cost**: Does this optimize for resource efficiency?
 
 Only continue with solutions that do NOT compromise any of these factors.
+
+## Accuracy Guardrails
+- Never invent file paths, function names, API endpoints, or field names — verify they exist before referencing them
+- When information is unavailable or uncertain, say so explicitly — never fabricate data, statistics, or citations
+- Distinguish between what the code or data shows and what is inferred — label inferences explicitly
+- If a claim cannot be grounded in provided context or code, do not make it
+- Prefer "I don't know" or "I need to check" over a confident wrong answer
+
+BAD: "The function \\\`processPayment()\\\` in \\\`src/billing/handler.ts\\\` handles this" (never verified)
+GOOD: "Let me check where payment processing is handled" (then reads the code)
 
 ## MCP Usage Strategy
 When MCP servers are available, use them PROACTIVELY before making decisions.

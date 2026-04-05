@@ -6,13 +6,8 @@ import { z } from "zod";
 import { RuleFrontmatterSchema } from "#src/schemas/rule.js";
 import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
 import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
-import { CommandFrontmatterSchema } from "#src/schemas/command.js";
 import { ProjectManifestSchema } from "#src/schemas/manifest.js";
-import {
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-  PROJECT_CLI,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY, PROJECT_CLI } from "#src/constants.js";
 
 // ---------------------------------------------------------------------------
 // Generic Zod field introspection
@@ -132,10 +127,7 @@ export function renderZodSchemaTable(
     const info = extractZodFieldInfo(field as z.ZodTypeAny);
     const desc = descriptions[key] ?? "";
     const req = info.isOptional ? "No" : "Yes";
-    const def =
-      info.defaultValue !== undefined
-        ? `\`${formatDefault(info.defaultValue)}\``
-        : "—";
+    const def = info.defaultValue !== undefined ? `\`${formatDefault(info.defaultValue)}\`` : "—";
     return `| \`${key}\` | ${info.typeName} | ${req} | ${def} | ${desc} |`;
   });
 
@@ -148,8 +140,7 @@ export function renderZodSchemaTable(
 
 function formatDefault(value: unknown): string {
   if (typeof value === "string") return value;
-  if (typeof value === "boolean" || typeof value === "number")
-    return String(value);
+  if (typeof value === "boolean" || typeof value === "number") return String(value);
   if (Array.isArray(value)) {
     return value.length === 0 ? "[]" : JSON.stringify(value);
   }
@@ -188,9 +179,7 @@ function flattenShape(
     const inner = unwrapToTerminal(field as z.ZodTypeAny);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod _def is untyped
     const innerDef = (inner as any)._def;
-    const innerKind = (innerDef?.type ?? innerDef?.typeName) as
-      | string
-      | undefined;
+    const innerKind = (innerDef?.type ?? innerDef?.typeName) as string | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod v4 shape access
     const nestedShape = (inner as any).shape ?? innerDef?.shape;
     if ((innerKind === "object" || innerKind === "ZodObject") && nestedShape) {
@@ -205,13 +194,8 @@ function flattenShape(
     } else {
       const desc = descriptions[fullKey] ?? "";
       const req = info.isOptional ? "No" : "Yes";
-      const def =
-        info.defaultValue !== undefined
-          ? `\`${formatDefault(info.defaultValue)}\``
-          : "—";
-      rows.push(
-        `| \`${fullKey}\` | ${info.typeName} | ${req} | ${def} | ${desc} |`,
-      );
+      const def = info.defaultValue !== undefined ? `\`${formatDefault(info.defaultValue)}\`` : "—";
+      rows.push(`| \`${fullKey}\` | ${info.typeName} | ${req} | ${def} | ${desc} |`);
     }
   }
 }
@@ -282,12 +266,6 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
   managed_by: "Who manages this artifact",
 };
 
-const COMMAND_DESCRIPTIONS: Record<string, string> = {
-  name: "Command name (strict alphanumeric + hyphens)",
-  description: "One-line description",
-  managed_by: "Who manages this artifact",
-};
-
 const MANIFEST_DESCRIPTIONS: Record<string, string> = {
   name: "Project name (alphanumeric + hyphens)",
   version: "Manifest version (always `1`)",
@@ -296,7 +274,6 @@ const MANIFEST_DESCRIPTIONS: Record<string, string> = {
   layers: "Toggle content types",
   "layers.rules": "Include rules in generation",
   "layers.skills": "Include skills in generation",
-  "layers.commands": "Include commands in generation",
   "layers.agents": "Include agents in generation",
   "layers.context": "Include context in generation",
   [PROJECT_NAME]: `${PROJECT_NAME_DISPLAY} CLI settings`,
@@ -326,10 +303,6 @@ export function renderSkillFields(): string {
 
 export function renderAgentFields(): string {
   return renderZodSchemaTable(AgentFrontmatterSchema, AGENT_DESCRIPTIONS);
-}
-
-export function renderCommandFields(): string {
-  return renderZodSchemaTable(CommandFrontmatterSchema, COMMAND_DESCRIPTIONS);
 }
 
 export function renderManifestFields(): string {

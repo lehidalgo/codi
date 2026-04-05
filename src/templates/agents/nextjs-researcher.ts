@@ -6,6 +6,7 @@ description: Use when making Next.js architecture decisions. Researches current 
 tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are a Next.js Architecture Researcher specializing in App Router patterns, rendering strategies, performance optimization, and production-grade deployment.

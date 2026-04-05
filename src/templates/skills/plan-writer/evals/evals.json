@@ -1,0 +1,67 @@
+{
+  "skillName": "codi-plan-writer",
+  "cases": [
+    {
+      "id": "implementation-plan-request",
+      "description": "Implementation plan request produces structured sequential plan",
+      "prompt": "write an implementation plan for adding Stripe payment integration",
+      "expectations": [
+        "Reads relevant existing code before writing the plan",
+        "Produces numbered steps in sequential order",
+        "Each step identifies specific files to create or modify",
+        "Plan is complete enough to execute without clarification"
+      ]
+    },
+    {
+      "id": "feature-breakdown",
+      "description": "Complex feature breakdown produces phased implementation plan",
+      "prompt": "plan how to migrate the authentication system from JWT to OAuth2",
+      "expectations": [
+        "Identifies the scope of changes needed",
+        "Organizes steps to maintain system functionality during migration",
+        "Each step is atomic and verifiable",
+        "Includes rollback considerations"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-plan activates the skill",
+      "prompt": "/codi-plan implement the email notification system",
+      "expectations": [
+        "Activates the plan-writer skill",
+        "Reads relevant codebase context before writing",
+        "Produces an ordered, concrete implementation plan"
+      ]
+    },
+    {
+      "id": "plan-from-requirements",
+      "description": "Requirements document produces an actionable implementation plan",
+      "prompt": "I have a spec for the user dashboard. write a plan to implement it",
+      "expectations": [
+        "Reads the spec or asks where it is",
+        "Translates requirements into concrete implementation steps",
+        "Orders steps by dependency (infrastructure before features)"
+      ]
+    },
+    {
+      "id": "negative-execute-plan",
+      "description": "Executing an existing plan should trigger plan-executor, not plan-writer",
+      "prompt": "execute the implementation plan we just wrote",
+      "expectations": [
+        "Does NOT invoke the plan-writer skill",
+        "Does NOT write a new plan",
+        "Executes the existing plan steps"
+      ]
+    },
+    {
+      "id": "negative-brainstorming",
+      "description": "Design exploration should trigger brainstorming, not plan-writer",
+      "prompt": "what's the best way to design the notification system? I see several options",
+      "expectations": [
+        "Does NOT invoke the plan-writer skill",
+        "Does NOT produce sequential implementation steps",
+        "Explores design options with trade-offs"
+      ]
+    }
+  ]
+}

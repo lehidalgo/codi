@@ -8,17 +8,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **`branch-finish` skill** — deterministic branch completion workflow: verify tests, choose merge/PR/keep/discard, clean up worktrees
+- **`worktrees` skill** — evaluates isolation strategy (worktree vs simple branch) and sets up the workspace before plan execution
+- **`codi onboard` command** — prints a structured AI onboarding guide with the full artifact catalog (rules, skills, agents, presets) for the current installation
+- **`normalizeGithubRepo` utility** — parses `owner/repo`, full GitHub URLs, and `.git` suffixes into a canonical slug
+- **`.mcp.env.example`** — companion file listing all env vars required by configured MCP servers
+
+- **Platform-aware SKILL.md generation** — `buildSkillMd` filters frontmatter fields per target platform; cursor, codex, windsurf, and cline receive only fields their format supports
+- **`SUPPORTED_PLATFORMS` constant** — single source of truth for platform IDs, used in skill `compatibility` frontmatter
+- **Skill catalog reorganization** — 8 skills renamed for clarity: `contribute` → `artifact-contributor`, `documentation` → `project-documentation`, `e2e-testing` → `dev-e2e-testing`, `operations` → `dev-operations`, `docs-manager` → `dev-docs-manager`, `error-recovery` → `session-recovery`, `skill-reporter` → `skill-feedback-reporter`
+- **`version: 1` field in all agent and rule templates** — explicit version for tracking and upgrade detection
+- **Commands migrated to skills** — 9 unique command templates converted to 7 skills (`test-run`, `diagnostics`, `session-handoff`, `codebase-explore`, `graph-sync`, `daily-log`, `roadmap`); 8 redundant commands deleted
+- **Artifact version tracking** — built-in templates carry an `artifactVersion` stamp; `codi update` detects outdated, new, and user-modified artifacts and offers per-artifact upgrade choices
+- **Installed artifact inventory** — classifies each `.codi/` artifact as original, modified, new, removed, or user-managed by comparing content hashes against the registry baseline
+- **Grouped multi-select UI** — grouped multi-select replaces flat lists for rule/skill/agent/MCP selection in `init` and `update` wizards
+- **Agent schema fields** — `disallowedTools` (string[]), `maxTurns` (number), and `effort` (low/medium/high/max) added to agent definitions
+- **Humanizer skill** — `codi-humanizer` rewrites AI-generated text into natural human prose
+- **MCP server templates per-file** — 33 servers now live in individual files under `official/`, `vendor/`, `community/`; 5 new servers added: graph-code, chrome-devtools, openai-developer-docs, neon-cloud, anthropic-docs
+- **MCP env var docs** — generated MCP config includes `_instructions` (JSON) or inline comments (TOML) explaining env var setup, plus a companion `.mcp.env.example` listing all required variables
+- **Output discipline rule** — `codi-output-discipline` enforces concise, scope-disciplined, formatting-safe AI responses
 - **Security analysis hooks** — `bandit` (Python), `gosec` (Go), `brakeman` (Ruby), and `phpcs-security` (PHP) added as pre-commit hooks, gated on the `security_scan` flag
 - **Language-group comments in hook scripts** — husky and standalone hook scripts now group hooks under `# — language —` section headers for readability in multi-language projects
 - **Robust secret scanner** — pre-commit secret scan now uses Shannon entropy filtering, excludes `templates/` and `docs/` dirs, adds more token patterns (Slack, AWS, fine-grained GitHub PATs), and reports file:line for each finding
 - **Interactive conflict merge** — new "Merge (interactive)" option resolves each conflict hunk in the terminal via per-hunk accept/keep/both prompts, no external editor needed
 - **Editor-based conflict merge** — new "Merge in editor" and "Merge (auto)" options open `$EDITOR` with git-style conflict markers for manual resolution
 - **VS Code auto-detection** — conflict editor defaults to `code --wait` when VS Code is detected (via `TERM_PROGRAM` or PATH), with async spinner so the terminal stays responsive
-- **Contribute to any GitHub repo** — `codi contribute --repo owner/repo --branch branch` opens PRs to any GitHub repository, not just the official codi repo
+- **Contribute to any GitHub repo** — `codi contribute --repo owner/repo --branch branch` opens PRs to any GitHub repository (public or private), not just the official codi repo; supports `owner/repo` shorthand or full HTTPS URLs
+- **Empty repo bootstrapping** — `codi contribute` detects repos with no commits and pushes an initial commit directly, bypassing the fork/PR workflow that requires an existing branch
+- **Default branch auto-detection** — Codi resolves the target repo's default branch via `gh repo view` with a `git ls-remote` fallback; the `--branch` flag overrides when needed
+- **Private repo access checks** — access is verified before clone using `gh repo view` + `git ls-remote`; on failure, Codi prints step-by-step troubleshooting (token scope, SSH key, collaborator access) instead of a raw git error
 - **Preset resource round-trip** — skill resources (scripts, assets, references) are preserved during ZIP export and re-import
+- **Evals propagation via scaffolder** — `evals/` added to `STATIC_SUBDIRS` so template evals override the empty stub during `codi init`
+- **Built-in eval cases for Tier 1 skills** — 14 skill templates (commit, debugging, tdd, code-review, verification, brainstorming, plan-writer, plan-executor, subagent-dev, session-handoff, skill-creator, refactoring, security-scan, test-coverage) ship with 5-7 eval cases each, including positive triggers, negative cross-cluster cases, and objectively verifiable expectations
+- **`staticDir` for verification, plan-executor, session-handoff** — these three skills now export static directories to support bundled evals and future resource files
+- **`import-depth-check` pre-commit hook** — blocks commits that introduce `../../` relative imports in TS/JS files; always enabled for TypeScript/JavaScript projects
+- **`#src/*` path aliases across all core modules** — all `../../` relative imports in `src/core/` and `src/templates/presets/` converted to `#src/*` subpath aliases
+
+### Changed
+
+- **Import depth rule tightened to 2+ levels** — `codi-typescript` and `codi-code-style` rules now prohibit `../../` imports; only single-level `../` is allowed; use `#src/*` path aliases for cross-module imports
+- **`require()` prohibited in TypeScript** — rules updated with `createRequire` guidance and updated BAD/GOOD examples
+- **Routing-focused agent descriptions** — all 22 agent templates rewritten with trigger-oriented descriptions for better skill routing
+- **Baseline drift check moved to pre-push** — template content drift checks no longer block commits; they run at push time via the `pre-push` hook instead
+- **Agent tools audit** — missing tools added to all agent templates based on each agent's purpose
+
+### Removed
+
+- **Command artifact type** — entire command infrastructure removed (`command-scaffolder`, `command-template-loader`, `NormalizedCommand`, `AVAILABLE_COMMAND_TEMPLATES`, `MAX_COMMAND_LINES`); `codi add command`, `--commands` flag, and `.claude/commands/` generation no longer exist
+- **`(codi-skill) ` prefix** in Claude Code skill file headers — skills no longer receive this annotation prefix
+- **`createVersionMap` helper** removed from `artifact-version` module
+- **`intentHints` skill frontmatter field** — replaced by deriving task type from skill name and using description first sentence
 
 ### Fixed
 
+- **Scoped rules emit `paths` frontmatter** — Claude Code adapter now outputs `paths:` in `.claude/rules/*.md` for rules with a `scope` field, enabling conditional rule loading
 - **False conflict detection on fresh import** — eliminated double `generate()` call during `codi init` that caused spurious conflicts
 - **Version pinning key mismatch** — fixed manifest key from `codi` to `engine` so version checks work correctly
 - **Custom preset lock recording** — custom preset names are now saved to the lock file
@@ -36,7 +79,7 @@ Breaking release. All 0.x and 1.x versions are deprecated.
 
 - **Template registry integrity guard** — CLI startup checks every registered template loads with non-empty content; exits with a clear error message if any template is broken, preventing silent runtime failures
 - **Shared conflict resolver** — extracted interactive diff/conflict resolution from `preset-applier` into `src/utils/conflict-resolver.ts`; reusable across `init`, `update`, and `preset install` flows
-- **Template wiring check hook** — pre-commit hook validates that all artifact template files (rules, skills, agents, commands) are registered in `index.ts` and loader `TEMPLATE_MAP`, preventing silent invisible artifacts
+- **Template wiring check hook** — pre-commit hook validates that all artifact template files (rules, skills, agents) are registered in `index.ts` and loader `TEMPLATE_MAP`, preventing silent invisible artifacts
 - **Status diff display** — `codi status --diff` renders colored unified diffs for drifted preset artifacts by reloading the source preset
 - **Preset flag merge on install** — `preset install` (ZIP and GitHub) now writes preset flags to `flags.yaml` with locked-flag protection
 - **Preset remove cleanup** — `preset remove` lists orphaned artifacts and cleans up stale state entries

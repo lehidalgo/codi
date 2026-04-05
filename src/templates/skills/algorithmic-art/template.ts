@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to create generative art, algorithmic art, flow fields, or particle systems using p5.js with seeded randomness. Creates original computational art with interactive parameter exploration.
 category: Creative and Design
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Generative Art
-  examples:
-    - "Create algorithmic art"
-    - "Build a flow field"
-    - "Generate a particle system"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 ## When to Activate

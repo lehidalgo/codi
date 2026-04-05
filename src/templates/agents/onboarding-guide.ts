@@ -6,6 +6,7 @@ description: Use when onboarding new developers. Explores the codebase and produ
 tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 You are an onboarding agent. Walk new developers through unfamiliar codebases and produce concise orientation guides.

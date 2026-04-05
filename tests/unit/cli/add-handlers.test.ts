@@ -3,7 +3,6 @@ import {
   addRuleHandler,
   addSkillHandler,
   addAgentHandler,
-  addCommandHandler,
   addBrandHandler,
   addMcpServerHandler,
   brandAsArtifactHandler,
@@ -34,9 +33,6 @@ vi.mock("#src/core/scaffolder/skill-scaffolder.js", () => ({
 vi.mock("#src/core/scaffolder/agent-scaffolder.js", () => ({
   createAgent: vi.fn(),
 }));
-vi.mock("#src/core/scaffolder/command-scaffolder.js", () => ({
-  createCommand: vi.fn(),
-}));
 vi.mock("#src/core/scaffolder/mcp-scaffolder.js", () => ({
   createMcpServer: vi.fn(),
 }));
@@ -49,9 +45,6 @@ vi.mock("#src/core/scaffolder/agent-template-loader.js", () => ({
 }));
 vi.mock("#src/core/scaffolder/skill-template-loader.js", () => ({
   AVAILABLE_SKILL_TEMPLATES: ["frontend-design", "pdf"],
-}));
-vi.mock("#src/core/scaffolder/command-template-loader.js", () => ({
-  AVAILABLE_COMMAND_TEMPLATES: ["commit", "review"],
 }));
 vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
   AVAILABLE_MCP_SERVER_TEMPLATES: ["memory", "filesystem"],
@@ -76,7 +69,6 @@ vi.mock("#src/cli/add-wizard.js", () => ({
 import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
-import { createCommand } from "#src/core/scaffolder/command-scaffolder.js";
 import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
 import { runAddWizard } from "#src/cli/add-wizard.js";
 import { regenerateConfigs } from "#src/cli/shared.js";
@@ -84,7 +76,6 @@ import { regenerateConfigs } from "#src/cli/shared.js";
 const mockCreateRule = vi.mocked(createRule);
 const mockCreateSkill = vi.mocked(createSkill);
 const mockCreateAgent = vi.mocked(createAgent);
-const mockCreateCommand = vi.mocked(createCommand);
 const mockCreateMcpServer = vi.mocked(createMcpServer);
 const mockRunAddWizard = vi.mocked(runAddWizard);
 
@@ -194,39 +185,6 @@ describe("addAgentHandler", () => {
   });
 });
 
-describe("addCommandHandler", () => {
-  it("succeeds without template", async () => {
-    mockCreateCommand.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/commands/c",
-    });
-    const result = await addCommandHandler("/tmp", "c", {});
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects unknown template", async () => {
-    const result = await addCommandHandler("/tmp", "c", { template: "bad" });
-    expect(result.success).toBe(false);
-  });
-
-  it("propagates scaffolder errors", async () => {
-    mockCreateCommand.mockResolvedValue({
-      ok: false,
-      errors: [
-        {
-          code: "E",
-          message: "fail",
-          hint: "",
-          severity: "error",
-          context: {},
-        },
-      ],
-    });
-    const result = await addCommandHandler("/tmp", "c", {});
-    expect(result.success).toBe(false);
-  });
-});
-
 describe("addBrandHandler", () => {
   it("succeeds creating brand skill", async () => {
     mockCreateSkill.mockResolvedValue({
@@ -303,9 +261,7 @@ describe("brandAsArtifactHandler", () => {
 });
 
 describe("handleWizardFlow", () => {
-  const mockExit = vi
-    .spyOn(process, "exit")
-    .mockImplementation(() => undefined as never);
+  const mockExit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
 
   it("exits when wizard returns null", async () => {
     mockRunAddWizard.mockResolvedValue(null);

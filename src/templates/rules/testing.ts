@@ -6,6 +6,7 @@ description: Testing strategy, TDD workflow, and test infrastructure
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
+version: 1
 ---
 
 # Testing Standards

@@ -1,9 +1,7 @@
 import type { NormalizedConfig } from "#src/types/config.js";
 import { PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 
-export function createMockConfig(
-  overrides?: Partial<NormalizedConfig>,
-): NormalizedConfig {
+export function createMockConfig(overrides?: Partial<NormalizedConfig>): NormalizedConfig {
   return {
     manifest: {
       name: "test-project",
@@ -30,7 +28,6 @@ export function createMockConfig(
       },
     ],
     skills: [],
-    commands: [],
     agents: [],
     context: [],
     flags: {

@@ -1,17 +1,18 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { loadSkillTemplate } from "./skill-template-loader.js";
 import { generateMitLicense } from "./license-generator.js";
 import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
-import type { SkillTemplateDescriptor } from "../../templates/skills/types.js";
+import type { SkillTemplateDescriptor } from "#src/templates/skills/types.js";
 
 const DEFAULT_CONTENT = `---
 name: {{name}}
 description: Describe when this skill should activate
 managed_by: user
+version: 1
 ---
 
 # {{name}}
@@ -32,9 +33,7 @@ export interface CreateSkillOptions {
   force?: boolean;
 }
 
-export async function createSkill(
-  options: CreateSkillOptions,
-): Promise<Result<string>> {
+export async function createSkill(options: CreateSkillOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
   if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
@@ -145,13 +144,9 @@ async function scaffoldSkillSubdirs(
     }
   }
 
-  const evalsJson = JSON.stringify({ skill_name: name, evals: [] }, null, 2);
+  const evalsJson = JSON.stringify({ skillName: name, cases: [] }, null, 2);
   try {
-    await fs.writeFile(
-      path.join(evalsDir, "evals.json"),
-      evalsJson + "\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(evalsDir, "evals.json"), evalsJson + "\n", "utf-8");
   } catch (cause) {
     return err([
       createError(
@@ -184,30 +179,21 @@ async function scaffoldSkillSubdirs(
 
   const licensePath = path.join(skillDir, "LICENSE.txt");
   try {
-    await fs.writeFile(
-      licensePath,
-      generateMitLicense(copyrightHolder),
-      "utf-8",
-    );
+    await fs.writeFile(licensePath, generateMitLicense(copyrightHolder), "utf-8");
   } catch (cause) {
-    return err([
-      createError("E_PERMISSION_DENIED", { path: licensePath }, cause as Error),
-    ]);
+    return err([createError("E_PERMISSION_DENIED", { path: licensePath }, cause as Error)]);
   }
 
   return ok(skillDir);
 }
 
-const STATIC_SUBDIRS = ["assets", "references", "scripts", "agents"] as const;
+const STATIC_SUBDIRS = ["assets", "evals", "references", "scripts", "agents"] as const;
 
 /**
  * Copy static files from the template's staticDir into the scaffolded skill directory.
  * Removes .gitkeep from any subdir that receives real files.
  */
-async function copyStaticFiles(
-  staticDir: string,
-  skillDir: string,
-): Promise<Result<string>> {
+async function copyStaticFiles(staticDir: string, skillDir: string): Promise<Result<string>> {
   for (const sub of STATIC_SUBDIRS) {
     const srcDir = path.join(staticDir, sub);
 
@@ -218,7 +204,7 @@ async function copyStaticFiles(
       continue; // Source subdir doesn't exist — skip
     }
 
-    const realFiles = entries.filter((f) => !f.startsWith("."));
+    const realFiles = entries.filter((f) => f !== ".gitkeep");
     if (realFiles.length === 0) continue;
 
     const destDir = path.join(skillDir, sub);
@@ -235,13 +221,7 @@ async function copyStaticFiles(
           await fs.copyFile(srcPath, destPath);
         }
       } catch (cause) {
-        return err([
-          createError(
-            "E_PERMISSION_DENIED",
-            { path: destPath },
-            cause as Error,
-          ),
-        ]);
+        return err([createError("E_PERMISSION_DENIED", { path: destPath }, cause as Error)]);
       }
     }
 

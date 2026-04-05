@@ -215,7 +215,7 @@ updates:
 
 Dependabot doesn't cover pre-commit hook versions. Use a dedicated workflow to keep them current.
 
-See `references/pre-commit-hooks.md` → "Automated Weekly Autoupdate" section for the full workflow template.
+See `[[/references/pre-commit-hooks.md]]` → "Automated Weekly Autoupdate" section for the full workflow template.
 
 **Key points:**
 - Runs weekly (Tuesday cron) + manual dispatch

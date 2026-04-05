@@ -1,17 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { ok, err } from "../../types/result.js";
-import { execFileAsync } from "../../utils/exec.js";
-import type { Result } from "../../types/result.js";
-import type { NormalizedSkill } from "../../types/config.js";
+import { ok, err } from "#src/types/result.js";
+import { execFileAsync } from "#src/utils/exec.js";
+import type { Result } from "#src/types/result.js";
+import type { NormalizedSkill } from "#src/types/config.js";
 import type { ProjectError } from "../output/types.js";
 import { createError } from "../output/errors.js";
-import {
-  buildSkillMd,
-  SKIP_DIRS,
-  SKIP_FILES,
-} from "../../adapters/skill-generator.js";
+import { buildSkillMd, SKIP_DIRS, SKIP_FILES } from "#src/adapters/skill-generator.js";
 import { parseSkillFile } from "../config/parser.js";
 import {
   SKILL_OUTPUT_FILENAME,
@@ -20,11 +16,7 @@ import {
   PROJECT_NAME,
 } from "#src/constants.js";
 
-export type SkillExportFormat =
-  | "standard"
-  | "claude-plugin"
-  | "codex-plugin"
-  | "zip";
+export type SkillExportFormat = "standard" | "claude-plugin" | "codex-plugin" | "zip";
 
 export const EXPORT_FORMATS: SkillExportFormat[] = [
   "standard",
@@ -97,9 +89,7 @@ export async function validateSkillForExport(
 /**
  * Exports a skill in the requested format.
  */
-export async function exportSkill(
-  options: SkillExportOptions,
-): Promise<Result<SkillExportResult>> {
+export async function exportSkill(options: SkillExportOptions): Promise<Result<SkillExportResult>> {
   const { name, configDir, outputDir, format } = options;
   const skillDir = path.join(configDir, "skills", name);
 
@@ -125,11 +115,7 @@ export async function exportSkill(
         buildResult = await buildStandardExport(skill, skillDir, stagingDir);
         break;
       case "claude-plugin":
-        buildResult = await buildClaudePluginExport(
-          skill,
-          skillDir,
-          stagingDir,
-        );
+        buildResult = await buildClaudePluginExport(skill, skillDir, stagingDir);
         break;
       case "codex-plugin":
         buildResult = await buildCodexPluginExport(skill, skillDir, stagingDir);
@@ -148,10 +134,7 @@ export async function exportSkill(
     if (isZip) {
       const zipOutputPath = path.resolve(outputDir, `${name}.zip`);
       await fs.mkdir(path.dirname(zipOutputPath), { recursive: true });
-      const zipResult = await createSkillZip(
-        buildResult.data.outputPath,
-        zipOutputPath,
-      );
+      const zipResult = await createSkillZip(buildResult.data.outputPath, zipOutputPath);
       if (!zipResult.ok) return zipResult;
 
       return ok({
@@ -183,11 +166,7 @@ async function buildStandardExport(
 
   // Write clean SKILL.md (no internal fields, no generated header)
   const cleanMd = buildSkillMd(skill);
-  await fs.writeFile(
-    path.join(destDir, SKILL_OUTPUT_FILENAME),
-    cleanMd,
-    "utf-8",
-  );
+  await fs.writeFile(path.join(destDir, SKILL_OUTPUT_FILENAME), cleanMd, "utf-8");
 
   // Copy supporting files
   await copySkillFiles(skillDir, destDir);
@@ -228,11 +207,7 @@ async function buildClaudePluginExport(
 
   // Write clean SKILL.md
   const cleanMd = buildSkillMd(skill);
-  await fs.writeFile(
-    path.join(skillsDir, SKILL_OUTPUT_FILENAME),
-    cleanMd,
-    "utf-8",
-  );
+  await fs.writeFile(path.join(skillsDir, SKILL_OUTPUT_FILENAME), cleanMd, "utf-8");
 
   // Copy supporting files
   await copySkillFiles(skillDir, skillsDir);
@@ -273,11 +248,7 @@ async function buildCodexPluginExport(
 
   // Write clean SKILL.md
   const cleanMd = buildSkillMd(skill);
-  await fs.writeFile(
-    path.join(skillsDir, SKILL_OUTPUT_FILENAME),
-    cleanMd,
-    "utf-8",
-  );
+  await fs.writeFile(path.join(skillsDir, SKILL_OUTPUT_FILENAME), cleanMd, "utf-8");
 
   // Copy supporting files
   await copySkillFiles(skillDir, skillsDir);
@@ -295,9 +266,7 @@ async function buildCodexPluginExport(
 async function createSkillZip(
   sourceDir: string,
   outputPath: string,
-): Promise<
-  Result<{ outputPath: string; sizeBytes: number; warnings: ProjectError[] }>
-> {
+): Promise<Result<{ outputPath: string; sizeBytes: number; warnings: ProjectError[] }>> {
   const warnings: ProjectError[] = [];
   const parentDir = path.dirname(sourceDir);
   const dirName = path.basename(sourceDir);
@@ -340,10 +309,7 @@ async function createSkillZip(
  * Recursively copies supporting files from a skill directory,
  * excluding evals/, .gitkeep, evals.json, and SKILL.md.
  */
-async function copySkillFiles(
-  sourceDir: string,
-  destDir: string,
-): Promise<void> {
+async function copySkillFiles(sourceDir: string, destDir: string): Promise<void> {
   await copyDirFiltered(sourceDir, destDir, sourceDir);
 }
 
@@ -384,9 +350,7 @@ async function copyDirFiltered(
 /**
  * Lists available skills in the skills directory.
  */
-export async function listAvailableSkills(
-  configDir: string,
-): Promise<string[]> {
+export async function listAvailableSkills(configDir: string): Promise<string[]> {
   const skillsDir = path.join(configDir, "skills");
   try {
     const entries = await fs.readdir(skillsDir, { withFileTypes: true });

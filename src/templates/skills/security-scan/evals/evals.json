@@ -1,0 +1,74 @@
+{
+  "skillName": "codi-security-scan",
+  "cases": [
+    {
+      "id": "owasp-scan-request",
+      "description": "OWASP vulnerability scan triggers full analysis",
+      "prompt": "scan the codebase for security vulnerabilities",
+      "expectations": [
+        "Checks for OWASP Top 10 vulnerability categories",
+        "Reports findings with severity: Critical, High, Medium, Low",
+        "Includes file path and line number for each finding",
+        "Provides a remediation suggestion for each finding"
+      ]
+    },
+    {
+      "id": "secrets-detection",
+      "description": "Hardcoded secrets trigger Critical findings",
+      "prompt": "check if we have any hardcoded API keys or credentials in the code",
+      "expectations": [
+        "Searches for patterns matching API keys, tokens, passwords, and secrets",
+        "Reports any hardcoded credentials as Critical severity",
+        "Checks both source files and configuration files"
+      ]
+    },
+    {
+      "id": "auth-code-review",
+      "description": "Authentication code triggers auth-specific security checks",
+      "prompt": "check the authentication implementation for security issues",
+      "expectations": [
+        "Checks for missing authentication on sensitive routes",
+        "Checks for insecure session handling",
+        "Checks for SQL injection risks in auth queries",
+        "Checks for timing attacks in password comparison"
+      ]
+    },
+    {
+      "id": "dependency-audit",
+      "description": "Dependency vulnerability check triggers the skill",
+      "prompt": "audit our dependencies for known vulnerabilities",
+      "expectations": [
+        "Checks package.json or equivalent for dependency versions",
+        "Identifies packages with known CVEs",
+        "Reports severity level for each vulnerable dependency"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-security activates the skill",
+      "prompt": "/codi-security scan the API endpoints",
+      "expectations": [
+        "Activates the security scan skill",
+        "Reviews API endpoints for authentication and input validation issues"
+      ]
+    },
+    {
+      "id": "negative-code-review",
+      "description": "General code quality review should trigger code-review, not security-scan",
+      "prompt": "review this PR for code quality and best practices",
+      "expectations": [
+        "Does NOT invoke the security-scan skill",
+        "Does NOT produce OWASP-categorized security findings"
+      ]
+    },
+    {
+      "id": "negative-refactoring",
+      "description": "Code cleanup should NOT trigger security scan",
+      "prompt": "remove dead code from the utils module",
+      "expectations": [
+        "Does NOT invoke the security-scan skill",
+        "Does NOT produce security vulnerability reports"
+      ]
+    }
+  ]
+}

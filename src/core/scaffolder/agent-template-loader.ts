@@ -1,8 +1,9 @@
-import { ok, err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { ok, err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { prefixedName } from "#src/constants.js";
-import * as agentTemplates from "../../templates/agents/index.js";
+import { parseVersionFromFrontmatter } from "../version/artifact-version.js";
+import * as agentTemplates from "#src/templates/agents/index.js";
 
 const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("code-reviewer")]: agentTemplates.codeReviewer,
@@ -15,21 +16,15 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("api-designer")]: agentTemplates.apiDesigner,
   [prefixedName("codebase-explorer")]: agentTemplates.codebaseExplorer,
   [prefixedName("ai-engineering-expert")]: agentTemplates.aiEngineeringExpert,
-  [prefixedName("data-analytics-bi-expert")]:
-    agentTemplates.dataAnalyticsBiExpert,
-  [prefixedName("data-engineering-expert")]:
-    agentTemplates.dataEngineeringExpert,
-  [prefixedName("data-intensive-architect")]:
-    agentTemplates.dataIntensiveArchitect,
-  [prefixedName("data-science-specialist")]:
-    agentTemplates.dataScienceSpecialist,
+  [prefixedName("data-analytics-bi-expert")]: agentTemplates.dataAnalyticsBiExpert,
+  [prefixedName("data-engineering-expert")]: agentTemplates.dataEngineeringExpert,
+  [prefixedName("data-intensive-architect")]: agentTemplates.dataIntensiveArchitect,
+  [prefixedName("data-science-specialist")]: agentTemplates.dataScienceSpecialist,
   [prefixedName("legal-compliance-eu")]: agentTemplates.legalComplianceEu,
-  [prefixedName("marketing-seo-specialist")]:
-    agentTemplates.marketingSeoSpecialist,
+  [prefixedName("marketing-seo-specialist")]: agentTemplates.marketingSeoSpecialist,
   [prefixedName("mlops-engineer")]: agentTemplates.mlopsEngineer,
   [prefixedName("nextjs-researcher")]: agentTemplates.nextjsResearcher,
-  [prefixedName("openai-agents-specialist")]:
-    agentTemplates.openaiAgentsSpecialist,
+  [prefixedName("openai-agents-specialist")]: agentTemplates.openaiAgentsSpecialist,
   [prefixedName("payload-cms-auditor")]: agentTemplates.payloadCmsAuditor,
   [prefixedName("python-expert")]: agentTemplates.pythonExpert,
   [prefixedName("scalability-expert")]: agentTemplates.scalabilityExpert,
@@ -47,4 +42,9 @@ export function loadAgentTemplate(templateName: string): Result<string> {
     ]);
   }
   return ok(content);
+}
+
+export function getAgentTemplateVersion(templateName: string): number | undefined {
+  const result = loadAgentTemplate(templateName);
+  return result.ok ? parseVersionFromFrontmatter(result.data) : undefined;
 }

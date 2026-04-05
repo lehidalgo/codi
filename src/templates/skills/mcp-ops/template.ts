@@ -2,21 +2,13 @@ import { MAX_NAME_LENGTH, PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/co
 
 export const template = `---
 name: {{name}}
-description: |
-  MCP (Model Context Protocol) operations: configure servers, call tools, debug connections,
-  create new server configs, and build custom MCP servers. Use when the user asks to set up,
-  use, debug, create, or build anything MCP-related. Also activate when the user mentions
-  MCP tools, mcp.yaml, Model Context Protocol, or connecting external APIs to AI agents.
+description: "MCP (Model Context Protocol) operations. Use when setting up, calling, debugging, or building MCP servers. Also activate when the user mentions mcp.yaml, MCP tools, Model Context Protocol, or connecting external APIs to Claude agents."
 category: Developer Tools
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: MCP Operations
-  examples:
-    - "Configure an MCP server"
-    - "Debug MCP connection error"
-    - "Create a new MCP server"
-    - "Call an MCP tool"
+user-invocable: true
+disable-model-invocation: false
+version: 8
 ---
 
 # {{name}}
@@ -133,7 +125,7 @@ The name must be:
 
 **[CODING AGENT]** Verify the server works:
 
-1. Run \\\`${PROJECT_CLI} generate\\\` — produces agent-specific configs (\\\`.claude/mcp.json\\\`, etc.)
+1. Run \\\`${PROJECT_CLI} generate\\\` — produces agent-specific configs (\\\`.mcp.json\\\`, \\\`.cursor/mcp.json\\\`, \\\`.codex/config.toml\\\`, etc.)
 2. For stdio servers: verify the command runs (\\\`npx -y <package> --help\\\`)
 3. For http servers: verify the URL is reachable
 4. Use the MCP Inspector for interactive testing:
@@ -143,7 +135,7 @@ The name must be:
 
 ## Building Custom MCP Servers
 
-When the user needs to build a server from scratch (not just configure an existing one), read the full guide at \\\`references/building-custom-servers.md\\\` in this skill's directory.
+When the user needs to build a server from scratch (not just configure an existing one), read the full guide at \\\`\${CLAUDE_SKILL_DIR}[[/references/building-custom-servers.md]]\\\` in this skill's directory.
 
 Key phases:
 1. **Research and Plan** — Study the MCP protocol, load SDK docs, plan tool selection
@@ -200,5 +192,5 @@ Before finishing, verify:
 ## Available Agents
 
 For API design review of MCP server interfaces, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-api-designer** — Review tool naming, parameters, and error handling
+- **${PROJECT_NAME}-api-designer** — Review tool naming, parameters, and error handling
 `;

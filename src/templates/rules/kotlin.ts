@@ -7,6 +7,7 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: kotlin
+version: 1
 ---
 
 # Kotlin Conventions

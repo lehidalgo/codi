@@ -1,0 +1,73 @@
+{
+  "skillName": "codi-commit",
+  "cases": [
+    {
+      "id": "basic-commit-request",
+      "description": "Standard commit request triggers the skill and follows conventional format",
+      "prompt": "commit these changes",
+      "expectations": [
+        "Runs git status to review working tree state",
+        "Runs git diff to review changes",
+        "Produces a commit message in conventional commit format: type(scope): description",
+        "Commit message first line is 72 characters or fewer",
+        "Does NOT use --no-verify flag"
+      ]
+    },
+    {
+      "id": "commit-bug-fix-context",
+      "description": "Bug fix context produces fix type in conventional commit",
+      "prompt": "I just fixed the login bug where users couldn't reset their password. commit it",
+      "expectations": [
+        "Commit message starts with fix( or fix:",
+        "Commit message references login or password reset context",
+        "Stages specific files rather than using git add -A"
+      ]
+    },
+    {
+      "id": "commit-new-feature",
+      "description": "Feature context produces feat type",
+      "prompt": "I added a new dark mode toggle to the settings page, please commit",
+      "expectations": [
+        "Commit message starts with feat( or feat:",
+        "Commit message mentions dark mode or settings"
+      ]
+    },
+    {
+      "id": "pre-commit-hook-failure",
+      "description": "Pre-commit failure advises fixing, not bypassing",
+      "prompt": "my commit failed because eslint found errors, help me fix it",
+      "expectations": [
+        "Does NOT suggest using --no-verify to bypass hooks",
+        "Suggests fixing the linting errors first",
+        "Suggests creating a NEW commit after fixing (not --amend)"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/commit activates the skill",
+      "prompt": "/commit",
+      "expectations": [
+        "Skill activates and runs the commit workflow",
+        "Runs git status to check for changes"
+      ]
+    },
+    {
+      "id": "negative-git-log",
+      "description": "Git log is informational, not a commit — should NOT trigger commit skill",
+      "prompt": "show me the git log for the last 10 commits",
+      "expectations": [
+        "Does NOT invoke the commit skill",
+        "Does NOT create a git commit"
+      ]
+    },
+    {
+      "id": "negative-code-review",
+      "description": "Review request should NOT trigger commit skill",
+      "prompt": "review the changes I made to the auth module before I merge",
+      "expectations": [
+        "Does NOT invoke the commit skill",
+        "Does NOT create a git commit"
+      ]
+    }
+  ]
+}

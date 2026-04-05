@@ -15,11 +15,11 @@ import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
   buildAgentsTable,
-  buildCommandsTable,
   buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
+  buildMcpEnvExample,
 } from "./section-builder.js";
 import {
   CONTEXT_TOKENS_LARGE,
@@ -28,6 +28,22 @@ import {
   PROJECT_NAME,
 } from "../constants.js";
 import { partitionBrandSkills } from "./brand-filter.js";
+
+/**
+ * Maps the `language` field on a rule to Claude Code `paths:` glob patterns.
+ * Used to preserve the intent of `alwaysApply: false` for language-specific rules —
+ * Claude Code has no alwaysApply concept, only path scoping.
+ */
+const LANGUAGE_GLOB_PATTERNS: Record<string, string[]> = {
+  typescript: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  python: ["**/*.py"],
+  golang: ["**/*.go"],
+  rust: ["**/*.rs"],
+  java: ["**/*.java"],
+  kotlin: ["**/*.kt", "**/*.kts"],
+  csharp: ["**/*.cs"],
+  swift: ["**/*.swift"],
+};
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -46,7 +62,6 @@ export const claudeCodeAdapter: AgentAdapter = {
     configRoot: ".claude",
     rules: ".claude/rules",
     skills: ".claude/skills",
-    commands: ".claude/commands",
     agents: ".claude/agents",
     instructionFile: "CLAUDE.md",
     mcpConfig: ".mcp.json",
@@ -55,7 +70,6 @@ export const claudeCodeAdapter: AgentAdapter = {
   capabilities: {
     rules: true,
     skills: true,
-    commands: true,
     mcp: true,
     frontmatter: false,
     progressiveLoading: true,
@@ -84,10 +98,6 @@ export const claudeCodeAdapter: AgentAdapter = {
       sections.push("## Permissions\n\n" + flagText);
     }
 
-    // Commands table
-    const commandsTable = buildCommandsTable(config);
-    if (commandsTable) sections.push(commandsTable);
-
     // Agents table
     const agentsTable = buildAgentsTable(config);
     if (agentsTable) sections.push(agentsTable);
@@ -111,10 +121,19 @@ export const claudeCodeAdapter: AgentAdapter = {
       hash: hashContent(mainContent),
     });
 
-    // Generate .claude/rules/*.md (no frontmatter)
+    // Generate .claude/rules/*.md (with paths frontmatter for scoped rules)
     for (const rule of config.rules) {
+      // Explicit scope takes priority; fall back to language-derived patterns
+      // for alwaysApply: false rules (Claude Code has no alwaysApply concept).
+      let pathPatterns: string[] | undefined = rule.scope?.length ? rule.scope : undefined;
+      if (!pathPatterns && !rule.alwaysApply && rule.language) {
+        pathPatterns = LANGUAGE_GLOB_PATTERNS[rule.language];
+      }
+      const header = pathPatterns?.length
+        ? `---\npaths:\n${pathPatterns.map((s) => `  - "${s}"`).join("\n")}\n---\n\n`
+        : "";
       const ruleContent = addGeneratedFooter(
-        `# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
+        `${header}# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
       );
       const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
       files.push({
@@ -134,7 +153,8 @@ export const claudeCodeAdapter: AgentAdapter = {
         regularSkills,
         ".claude/skills",
         _options.projectRoot,
-        `(${PROJECT_NAME}-skill) `,
+        "",
+        "claude-code",
       )),
     );
 
@@ -142,9 +162,19 @@ export const claudeCodeAdapter: AgentAdapter = {
     for (const agent of config.agents) {
       const lines = ["---"];
       lines.push(`name: ${agent.name}`);
-      lines.push(`description: (${PROJECT_NAME}-agent) ${agent.description}`);
+      lines.push(`description: ${agent.description}`);
       if (agent.tools) lines.push(`tools: ${agent.tools.join(", ")}`);
+      if (agent.disallowedTools) lines.push(`disallowedTools: ${agent.disallowedTools.join(", ")}`);
       if (agent.model) lines.push(`model: ${agent.model}`);
+      if (agent.maxTurns) lines.push(`maxTurns: ${agent.maxTurns}`);
+      if (agent.effort) lines.push(`effort: ${agent.effort}`);
+      if (agent.permissionMode) lines.push(`permissionMode: ${agent.permissionMode}`);
+      if (agent.mcpServers?.length) lines.push(`mcpServers: [${agent.mcpServers.join(", ")}]`);
+      if (agent.skills?.length) lines.push(`skills: [${agent.skills.join(", ")}]`);
+      if (agent.memory) lines.push(`memory: ${agent.memory}`);
+      if (agent.background) lines.push(`background: true`);
+      if (agent.isolation) lines.push(`isolation: ${agent.isolation}`);
+      if (agent.color) lines.push(`color: ${agent.color}`);
       lines.push("---");
       const agentContent = addGeneratedFooter(`${lines.join("\n")}\n\n${agent.content}`);
       const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";
@@ -153,20 +183,6 @@ export const claudeCodeAdapter: AgentAdapter = {
         content: agentContent,
         sources: [MANIFEST_FILENAME],
         hash: hashContent(agentContent),
-      });
-    }
-
-    // Generate .claude/commands/{name}.md
-    for (const cmd of config.commands) {
-      const cmdContent = addGeneratedFooter(
-        `---\ndescription: (${PROJECT_NAME}-cmd) ${cmd.description}\n---\n\n${cmd.content}`,
-      );
-      const fileName = cmd.name.toLowerCase().replace(/\s+/g, "-") + ".md";
-      files.push({
-        path: `.claude/commands/${fileName}`,
-        content: cmdContent,
-        sources: [MANIFEST_FILENAME],
-        hash: hashContent(cmdContent),
       });
     }
 
@@ -187,7 +203,15 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Generate .mcp.json (project-scoped MCP for Claude Code)
     const enabledMcp = getEnabledMcpServers(config.mcp);
     if (Object.keys(enabledMcp.servers).length > 0) {
-      const mcpOutput = { mcpServers: enabledMcp.servers };
+      const mcpOutput = {
+        _instructions: [
+          `Generated by ${PROJECT_NAME} — do not edit manually, run: codi generate`,
+          "Environment variables use ${VAR_NAME} syntax.",
+          "Set required values in your project .env file or shell environment.",
+          "See .mcp.env.example for the full list of required variables.",
+        ].join(" "),
+        mcpServers: enabledMcp.servers,
+      };
       const mcpContent = JSON.stringify(mcpOutput, null, 2);
       files.push({
         path: ".mcp.json",
@@ -195,6 +219,16 @@ export const claudeCodeAdapter: AgentAdapter = {
         sources: [MCP_FILENAME],
         hash: hashContent(mcpContent),
       });
+
+      const envExample = buildMcpEnvExample(enabledMcp.servers);
+      if (envExample) {
+        files.push({
+          path: ".mcp.env.example",
+          content: envExample,
+          sources: [MCP_FILENAME],
+          hash: hashContent(envExample),
+        });
+      }
     }
 
     // Generate .claude/settings.json (project-level hooks + env)

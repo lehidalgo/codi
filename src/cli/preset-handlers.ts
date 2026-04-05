@@ -8,11 +8,7 @@ import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
-import {
-  PRESET_MANIFEST_FILENAME,
-  PROJECT_CLI,
-  PROJECT_DIR,
-} from "../constants.js";
+import { PRESET_MANIFEST_FILENAME, PROJECT_CLI, PROJECT_DIR } from "../constants.js";
 import { StateManager } from "../core/config/state.js";
 import {
   readLockFile,
@@ -21,16 +17,10 @@ import {
   copyDir,
 } from "../core/preset/preset-registry.js";
 import { parsePresetIdentifier } from "../core/preset/preset-resolver.js";
-import {
-  extractPresetZip,
-  createPresetZip,
-} from "../core/preset/preset-zip.js";
+import { extractPresetZip, createPresetZip } from "../core/preset/preset-zip.js";
 import { validatePreset } from "../core/preset/preset-validator.js";
 import { installFromGithub } from "./preset-github.js";
-import {
-  getBuiltinPresetNames,
-  BUILTIN_PRESETS,
-} from "../templates/presets/index.js";
+import { getBuiltinPresetNames, BUILTIN_PRESETS } from "../templates/presets/index.js";
 import { presetInstallHandler } from "./preset.js";
 import type { PresetData } from "./preset.js";
 import { printBanner } from "./shared.js";
@@ -39,7 +29,6 @@ import { promptSecurityFindings } from "../core/security/scan-prompt.js";
 import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
-import { AVAILABLE_COMMAND_TEMPLATES } from "../core/scaffolder/command-template-loader.js";
 import { regenerateConfigs } from "./shared.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
@@ -81,9 +70,7 @@ async function mergePresetFlags(
 
   await fs.writeFile(flagsFile, stringifyYaml(currentFlags), "utf-8");
   if (merged > 0) {
-    log.info(
-      `Merged ${merged} flag(s) from preset "${preset.name}" into flags.yaml`,
-    );
+    log.info(`Merged ${merged} flag(s) from preset "${preset.name}" into flags.yaml`);
   }
 }
 
@@ -135,9 +122,7 @@ export async function presetInstallUnifiedHandler(
         const proceed = await promptSecurityFindings(scanReport);
         if (!proceed) {
           const tmpParent = path.dirname(extractedDir);
-          await fs
-            .rm(tmpParent, { recursive: true, force: true })
-            .catch(() => {});
+          await fs.rm(tmpParent, { recursive: true, force: true }).catch(() => {});
           return createCommandResult({
             success: false,
             command: "preset install",
@@ -164,9 +149,7 @@ export async function presetInstallUnifiedHandler(
         await copyDir(extractedDir, destDir);
       } finally {
         const tmpParent = path.dirname(extractedDir);
-        await fs
-          .rm(tmpParent, { recursive: true, force: true })
-          .catch(() => {});
+        await fs.rm(tmpParent, { recursive: true, force: true }).catch(() => {});
       }
 
       const version = await getPresetVersionFromDir(destDir);
@@ -183,11 +166,10 @@ export async function presetInstallUnifiedHandler(
       // Apply preset artifacts and flags to project with conflict resolution
       const loadResult = await loadPreset(presetName, presetsDir);
       if (loadResult.ok) {
-        const applyResult = await applyPresetArtifacts(
-          configDir,
-          loadResult.data,
-          { force: installOptions.force, json: installOptions.json },
-        );
+        const applyResult = await applyPresetArtifacts(configDir, loadResult.data, {
+          force: installOptions.force,
+          json: installOptions.json,
+        });
         log.info(
           `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
         );
@@ -204,12 +186,7 @@ export async function presetInstallUnifiedHandler(
     }
 
     if (descriptor.type === "github") {
-      return installFromGithub(
-        projectRoot,
-        descriptor,
-        presetsDir,
-        installOptions,
-      );
+      return installFromGithub(projectRoot, descriptor, presetsDir, installOptions);
     }
 
     if (descriptor.type === "builtin") {
@@ -358,7 +335,7 @@ export async function presetValidateHandler(
   log.info(`Preset "${manifest.name}" is valid.`);
   log.info(`  Version: ${manifest.version ?? "unset"}`);
   log.info(
-    `  Rules: ${artifactCounts.rules}, Skills: ${artifactCounts.skills}, Agents: ${artifactCounts.agents}, Commands: ${artifactCounts.commands}`,
+    `  Rules: ${artifactCounts.rules}, Skills: ${artifactCounts.skills}, Agents: ${artifactCounts.agents}`,
   );
   for (const w of warnings) log.info(`  Warning: ${w.message}`);
 
@@ -408,19 +385,13 @@ export async function presetRemoveHandler(
   const stateManager = new StateManager(configDir, projectRoot);
   const stateResult = await stateManager.read();
   if (stateResult.ok && stateResult.data.presetArtifacts) {
-    const orphaned = stateResult.data.presetArtifacts.filter(
-      (a) => a.preset === name,
-    );
+    const orphaned = stateResult.data.presetArtifacts.filter((a) => a.preset === name);
     if (orphaned.length > 0) {
-      log.info(
-        `${orphaned.length} artifact(s) from "${name}" remain in ${PROJECT_DIR}/:`,
-      );
+      log.info(`${orphaned.length} artifact(s) from "${name}" remain in ${PROJECT_DIR}/:`);
       for (const a of orphaned) {
         log.info(`  ${a.path}`);
       }
-      log.info(
-        "These files are not deleted — remove them manually if no longer needed.",
-      );
+      log.info("These files are not deleted — remove them manually if no longer needed.");
     }
     // Remove stale state entries for this preset
     stateResult.data.presetArtifacts = stateResult.data.presetArtifacts.filter(
@@ -469,11 +440,7 @@ export async function presetListEnhancedHandler(
     const entries = await fs.readdir(presetsDir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const manifestPath = path.join(
-        presetsDir,
-        entry.name,
-        PRESET_MANIFEST_FILENAME,
-      );
+      const manifestPath = path.join(presetsDir, entry.name, PRESET_MANIFEST_FILENAME);
       const lockEntry = lock.presets[entry.name];
       const sourceType = lockEntry?.sourceType ?? "local";
       try {
@@ -505,10 +472,7 @@ export async function presetListEnhancedHandler(
       const tag = pr.sourceType ? `[${pr.sourceType}]` : "";
       const cat = pr.category ? `(${pr.category})` : "";
       log.info(
-        `  ${pr.name} ${tag} ${cat} — ${pr.description || "(no description)"}`.replace(
-          /  +/g,
-          " ",
-        ),
+        `  ${pr.name} ${tag} ${cat} — ${pr.description || "(no description)"}`.replace(/  +/g, " "),
       );
     }
   }
@@ -558,7 +522,6 @@ export async function presetEditHandler(
   const currentRules = new Set(current["rules"] ?? []);
   const currentSkills = new Set(current["skills"] ?? []);
   const currentAgents = new Set(current["agents"] ?? []);
-  const currentCommands = new Set(current["commands"] ?? []);
 
   const rules = await p.multiselect({
     message: "Rules",
@@ -574,9 +537,7 @@ export async function presetEditHandler(
   const skills = await p.multiselect({
     message: "Skills",
     options: AVAILABLE_SKILL_TEMPLATES.map((t) => ({ label: t, value: t })),
-    initialValues: AVAILABLE_SKILL_TEMPLATES.filter((t) =>
-      currentSkills.has(t),
-    ),
+    initialValues: AVAILABLE_SKILL_TEMPLATES.filter((t) => currentSkills.has(t)),
     required: false,
   });
   if (p.isCancel(skills)) {
@@ -587,25 +548,10 @@ export async function presetEditHandler(
   const agents = await p.multiselect({
     message: "Agents",
     options: AVAILABLE_AGENT_TEMPLATES.map((t) => ({ label: t, value: t })),
-    initialValues: AVAILABLE_AGENT_TEMPLATES.filter((t) =>
-      currentAgents.has(t),
-    ),
+    initialValues: AVAILABLE_AGENT_TEMPLATES.filter((t) => currentAgents.has(t)),
     required: false,
   });
   if (p.isCancel(agents)) {
-    p.cancel("Operation cancelled.");
-    return createCancelledResult("preset edit", name);
-  }
-
-  const commands = await p.multiselect({
-    message: "Commands",
-    options: AVAILABLE_COMMAND_TEMPLATES.map((t) => ({ label: t, value: t })),
-    initialValues: AVAILABLE_COMMAND_TEMPLATES.filter((t) =>
-      currentCommands.has(t),
-    ),
-    required: false,
-  });
-  if (p.isCancel(commands)) {
     p.cancel("Operation cancelled.");
     return createCancelledResult("preset edit", name);
   }
@@ -614,7 +560,6 @@ export async function presetEditHandler(
     rules,
     skills,
     agents,
-    commands,
   };
 
   await fs.writeFile(manifestPath, stringifyYaml(manifest), "utf8");
@@ -630,10 +575,7 @@ export async function presetEditHandler(
   });
 }
 
-function createCancelledResult(
-  command: string,
-  name: string,
-): CommandResult<PresetData> {
+function createCancelledResult(command: string, name: string): CommandResult<PresetData> {
   return createCommandResult({
     success: false,
     command,

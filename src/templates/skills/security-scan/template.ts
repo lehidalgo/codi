@@ -1,17 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Security analysis workflow. Use when the user wants to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.
 category: Code Quality
-compatibility: [claude-code, cursor, codex]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Security Audit
-  examples:
-    - "Scan for vulnerabilities"
-    - "Run security check"
-    - "Find hardcoded secrets"
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}
@@ -132,10 +129,10 @@ For each finding include:
 ## Available Agents
 
 For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **codi-security-analyzer** — Deep vulnerability analysis with trust boundary mapping
-- **codi-code-reviewer** — Broader code quality context for security findings
+- **${PROJECT_NAME}-security-analyzer** — Deep vulnerability analysis with trust boundary mapping
+- **${PROJECT_NAME}-code-reviewer** — Broader code quality context for security findings
 
 ## Related Skills
 
-- **codi-code-review** — Combined quality and security review of changes
+- **${PROJECT_NAME}-code-review** — Combined quality and security review of changes
 `;

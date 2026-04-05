@@ -26,7 +26,6 @@ const PresetArtifactsSchema = z
     rules: z.array(z.string()).optional(),
     skills: z.array(z.string()).optional(),
     agents: z.array(z.string()).optional(),
-    commands: z.array(z.string()).optional(),
     // @deprecated — use skills with category: brand instead
     brands: z.array(z.string()).optional(),
   })
@@ -40,9 +39,7 @@ export const PresetManifestSchema = z.object({
   author: z.string().optional(),
   license: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  category: z
-    .enum(["engineering", "design", "data", "platform", "security", "custom"])
-    .optional(),
+  category: z.enum(["engineering", "design", "data", "platform", "security", "custom"]).optional(),
   compatibility: PresetCompatibilitySchema,
   dependencies: z.array(z.string()).optional(),
   artifacts: PresetArtifactsSchema,

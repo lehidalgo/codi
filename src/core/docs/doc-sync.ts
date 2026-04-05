@@ -42,12 +42,6 @@ const COUNT_CHECKS: CountCheck[] = [
   },
   {
     file: "STATUS.md",
-    pattern: /\|\s*Command templates\s*\|\s*(\d+)\s*\|/,
-    getStat: (s) => s.commands.count,
-    label: "Command templates",
-  },
-  {
-    file: "STATUS.md",
     pattern: /\|\s*Error codes\s*\|\s*(\d+)\s*\|/,
     getStat: (s) => s.errorCodes,
     label: "Error codes",
@@ -89,16 +83,10 @@ const COUNT_CHECKS: CountCheck[] = [
     getStat: (s) => s.agents.count,
     label: "agent templates",
   },
-  {
-    file: "CONTRIBUTING.md",
-    pattern: /#\s*(\d+)\s*command templates/,
-    getStat: (s) => s.commands.count,
-    label: "command templates",
-  },
 ];
 
 const INLINE_COUNT_PATTERN =
-  /(\d+)\s*rule templates,\s*(\d+)\s*skill templates,\s*(\d+)\s*agent templates,\s*(\d+)\s*command templates/g;
+  /(\d+)\s*rule templates,\s*(\d+)\s*skill templates,\s*(\d+)\s*agent templates/g;
 
 async function readFileIfExists(filePath: string): Promise<string | null> {
   try {
@@ -108,11 +96,7 @@ async function readFileIfExists(filePath: string): Promise<string | null> {
   }
 }
 
-function checkCountChecks(
-  content: string,
-  file: string,
-  stats: ProjectStats,
-): DocSyncIssue[] {
+function checkCountChecks(content: string, file: string, stats: ProjectStats): DocSyncIssue[] {
   const issues: DocSyncIssue[] = [];
   for (const check of COUNT_CHECKS) {
     if (check.file !== file) continue;
@@ -130,29 +114,20 @@ function checkCountChecks(
   return issues;
 }
 
-function checkInlineCounts(
-  content: string,
-  file: string,
-  stats: ProjectStats,
-): DocSyncIssue[] {
+function checkInlineCounts(content: string, file: string, stats: ProjectStats): DocSyncIssue[] {
   const issues: DocSyncIssue[] = [];
   const match = content.match(INLINE_COUNT_PATTERN);
   if (match) {
     const singleMatch = INLINE_COUNT_PATTERN.exec(content);
     INLINE_COUNT_PATTERN.lastIndex = 0;
     if (singleMatch) {
-      const [, r, s, a, c] = singleMatch.map(Number);
-      if (
-        r !== stats.rules.count ||
-        s !== stats.skills.count ||
-        a !== stats.agents.count ||
-        c !== stats.commands.count
-      ) {
+      const [, r, s, a] = singleMatch.map(Number);
+      if (r !== stats.rules.count || s !== stats.skills.count || a !== stats.agents.count) {
         issues.push({
           file,
-          description: `${file} says "${r} rules, ${s} skills, ${a} agents, ${c} commands" but actual is ${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}, ${stats.commands.count}`,
-          expected: `${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}, ${stats.commands.count}`,
-          actual: `${r}, ${s}, ${a}, ${c}`,
+          description: `${file} says "${r} rules, ${s} skills, ${a} agents" but actual is ${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}`,
+          expected: `${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}`,
+          actual: `${r}, ${s}, ${a}`,
           fixable: true,
         });
       }
@@ -188,28 +163,18 @@ function checkMissingTemplateEntries(
   return issues;
 }
 
-function checkExpectedCounts(
-  content: string,
-  file: string,
-  stats: ProjectStats,
-): DocSyncIssue[] {
-  const pattern =
-    /Expected:\s*(\d+)\s*rules,\s*(\d+)\s*skills,\s*(\d+)\s*agents,\s*(\d+)\s*commands/;
+function checkExpectedCounts(content: string, file: string, stats: ProjectStats): DocSyncIssue[] {
+  const pattern = /Expected:\s*(\d+)\s*rules,\s*(\d+)\s*skills,\s*(\d+)\s*agents/;
   const match = content.match(pattern);
   if (!match) return [];
-  const [, r, s, a, c] = match.map(Number);
-  if (
-    r !== stats.rules.count ||
-    s !== stats.skills.count ||
-    a !== stats.agents.count ||
-    c !== stats.commands.count
-  ) {
+  const [, r, s, a] = match.map(Number);
+  if (r !== stats.rules.count || s !== stats.skills.count || a !== stats.agents.count) {
     return [
       {
         file,
-        description: `${file} says "Expected: ${r} rules, ${s} skills, ${a} agents, ${c} commands" but actual is ${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}, ${stats.commands.count}`,
-        expected: `${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}, ${stats.commands.count}`,
-        actual: `${r}, ${s}, ${a}, ${c}`,
+        description: `${file} says "Expected: ${r} rules, ${s} skills, ${a} agents" but actual is ${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}`,
+        expected: `${stats.rules.count}, ${stats.skills.count}, ${stats.agents.count}`,
+        actual: `${r}, ${s}, ${a}`,
         fixable: false,
         action: `Update the Expected counts in this source file manually`,
       },
@@ -218,9 +183,7 @@ function checkExpectedCounts(
   return [];
 }
 
-export async function checkDocSync(
-  projectRoot: string,
-): Promise<DocSyncIssue[]> {
+export async function checkDocSync(projectRoot: string): Promise<DocSyncIssue[]> {
   const stats = collectStats();
   const issues: DocSyncIssue[] = [];
 
@@ -228,8 +191,8 @@ export async function checkDocSync(
     "STATUS.md",
     "CONTRIBUTING.md",
     "docs/guides/writing-rules.md",
-    "src/templates/skills/e2e-testing.ts",
-    `${PROJECT_DIR}/skills/e2e-testing.md`,
+    "src/templates/skills/dev-e2e-testing.ts",
+    `${PROJECT_DIR}/skills/dev-e2e-testing.md`,
   ];
 
   for (const file of filesToCheck) {
@@ -267,15 +230,6 @@ export async function checkDocSync(
           "src/templates/agents",
         ),
       );
-      issues.push(
-        ...checkMissingTemplateEntries(
-          content,
-          file,
-          stats.commands.names,
-          "command",
-          "src/templates/commands",
-        ),
-      );
     }
 
     if (file.includes("e2e-testing")) {
@@ -310,7 +264,7 @@ export async function fixDocSync(projectRoot: string): Promise<string[]> {
     updated = updated.replace(
       INLINE_COUNT_PATTERN,
       () =>
-        `${stats.rules.count} rule templates, ${stats.skills.count} skill templates, ${stats.agents.count} agent templates, ${stats.commands.count} command templates`,
+        `${stats.rules.count} rule templates, ${stats.skills.count} skill templates, ${stats.agents.count} agent templates`,
     );
 
     if (updated !== content) {

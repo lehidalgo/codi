@@ -1,4 +1,4 @@
-import type { FlagDefinition } from "../../types/flags.js";
+import type { FlagDefinition } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 import { prefixedName, devArtifactName, PROJECT_NAME } from "#src/constants.js";
 
@@ -26,6 +26,7 @@ export const preset: BuiltinPresetDefinition = {
     require_pr_review: { mode: "enabled", value: true },
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: false },
+    doc_protected_branches: { mode: "enabled", value: ["main", "develop", "release/*"] },
     allowed_languages: { mode: "enabled", value: ["*"] },
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "warn" },
@@ -40,29 +41,24 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("security"),
     prefixedName("performance"),
     prefixedName("git-workflow"),
+    prefixedName("output-discipline"),
     devArtifactName("improvement"),
   ],
   skills: [
     prefixedName("code-review"),
-    prefixedName("e2e-testing"),
+    prefixedName("dev-e2e-testing"),
     prefixedName("refactoring"),
     prefixedName("security-scan"),
     prefixedName("test-coverage"),
     prefixedName("commit"),
     prefixedName("compare-preset"),
+    prefixedName("test-run"),
+    prefixedName("diagnostics"),
   ],
   agents: [
     prefixedName("code-reviewer"),
     prefixedName("test-generator"),
     prefixedName("security-analyzer"),
-  ],
-  commands: [
-    prefixedName("check"),
-    prefixedName("commit"),
-    prefixedName("review"),
-    prefixedName("test-run"),
-    prefixedName("test-coverage"),
-    prefixedName("security-scan"),
   ],
   mcpServers: [],
 };

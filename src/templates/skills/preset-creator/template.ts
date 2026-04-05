@@ -4,20 +4,18 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.
 category: ${PROJECT_NAME_DISPLAY} Platform
-compatibility: [claude-code, cursor, codex, windsurf, cline]
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-intentHints:
-  taskType: Preset Creation
-  examples:
-    - "Create a new preset"
-    - "Package my configuration"
-    - "Export my preset as a ZIP"
+user-invocable: true
+disable-model-invocation: false
+version: 4
 ---
 
 # {{name}}
@@ -48,7 +46,6 @@ Ask the user which to include in the preset:
 - **Rules**: list rules from \`${PROJECT_DIR}/rules/\` and built-in templates
 - **Skills**: list skills from \`${PROJECT_DIR}/skills/\` and built-in templates
 - **Agents**: list agents from \`${PROJECT_DIR}/agents/\`
-- **Commands**: list commands from \`${PROJECT_DIR}/commands/\`
 
 ## Step 3: Configure Flags
 
@@ -75,9 +72,8 @@ Then populate the generated directory:
 2. Copy selected rules to \`rules/\`
 3. Copy selected skills to \`skills/\`
 4. Copy selected agents to \`agents/\`
-5. Copy selected commands to \`commands/\`
-6. Write \`flags.yaml\` with the configured overrides
-7. Write \`mcp.yaml\` if MCP servers were selected
+5. Write \`flags.yaml\` with the configured overrides
+6. Write \`mcp.yaml\` if MCP servers were selected
 
 ## Step 6: Choose Output Format
 
@@ -131,5 +127,5 @@ Report any errors or warnings to the user.
 
 ## Related Skills
 
-- **codi-compare-preset** — Compare two presets or audit the active preset configuration
+- **${PROJECT_NAME}-compare-preset** — Compare two presets or audit the active preset configuration
 `;

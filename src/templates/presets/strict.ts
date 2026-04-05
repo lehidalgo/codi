@@ -3,8 +3,7 @@ import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
   name: prefixedName("strict"),
-  description:
-    "Enforced — security locked, tests required, delete restricted, no force-push",
+  description: "Enforced — security locked, tests required, delete restricted, no force-push",
   version: "1.0.0",
   author: PROJECT_NAME,
   tags: ["strict", "enforced", "security", "enterprise", "compliance"],
@@ -25,6 +24,7 @@ export const preset: BuiltinPresetDefinition = {
     require_pr_review: { mode: "enforced", value: true, locked: true },
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: true },
+    doc_protected_branches: { mode: "enabled", value: ["main", "develop", "release/*"] },
     allowed_languages: { mode: "enabled", value: ["*"] },
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "error" },
@@ -38,6 +38,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("git-workflow"),
     prefixedName("api-design"),
     prefixedName("documentation"),
+    prefixedName("output-discipline"),
     devArtifactName("improvement"),
   ],
   skills: [
@@ -45,21 +46,15 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("security-scan"),
     prefixedName("commit"),
     prefixedName("test-coverage"),
-    prefixedName("error-recovery"),
-    prefixedName("documentation"),
+    prefixedName("session-recovery"),
+    prefixedName("project-documentation"),
     prefixedName("compare-preset"),
+    prefixedName("test-run"),
   ],
   agents: [
     prefixedName("code-reviewer"),
     prefixedName("security-analyzer"),
     prefixedName("test-generator"),
-  ],
-  commands: [
-    prefixedName("review"),
-    prefixedName("commit"),
-    prefixedName("security-scan"),
-    prefixedName("test-run"),
-    prefixedName("test-coverage"),
   ],
   mcpServers: [],
 };

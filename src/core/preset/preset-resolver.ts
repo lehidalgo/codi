@@ -1,15 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { err } from "../../types/result.js";
-import type { Result } from "../../types/result.js";
+import { err } from "#src/types/result.js";
+import type { Result } from "#src/types/result.js";
 // PresetSourceType used via preset-source.ts types
 import type { PresetSourceDescriptor } from "./preset-source.js";
 import type { LoadedPreset } from "./preset-loader.js";
 import { loadPresetFromDir } from "./preset-loader.js";
-import {
-  isBuiltinPreset as checkBuiltin,
-  materializeBuiltinPreset,
-} from "./preset-builtin.js";
+import { isBuiltinPreset as checkBuiltin, materializeBuiltinPreset } from "./preset-builtin.js";
 import { createError } from "../output/errors.js";
 import { PROJECT_CLI } from "#src/constants.js";
 
@@ -89,20 +86,14 @@ function isBuiltinPresetName(name: string): boolean {
 }
 
 function isGithubUrl(id: string): boolean {
-  return (
-    id.startsWith("https://github.com/") || id.startsWith("http://github.com/")
-  );
+  return id.startsWith("https://github.com/") || id.startsWith("http://github.com/");
 }
 
 function extractGithubRepoPath(url: string): string {
   // https://github.com/org/repo/tree/branch/path
-  const treeMatch = url.match(
-    /github\.com\/([^/]+\/[^/]+)\/tree\/([^/]+)(?:\/(.+))?$/,
-  );
+  const treeMatch = url.match(/github\.com\/([^/]+\/[^/]+)\/tree\/([^/]+)(?:\/(.+))?$/);
   if (treeMatch && treeMatch[1] && treeMatch[2]) {
-    const base = treeMatch[3]
-      ? `${treeMatch[1]}/${treeMatch[3]}`
-      : treeMatch[1];
+    const base = treeMatch[3] ? `${treeMatch[1]}/${treeMatch[3]}` : treeMatch[1];
     return `${base}#${treeMatch[2]}`;
   }
   const match = url.match(/github\.com\/(.+?)(?:\.git)?$/);
@@ -125,11 +116,7 @@ function parseGithubIdentifier(raw: string): PresetSourceDescriptor {
   return splitRepoAndPath(raw);
 }
 
-function splitRepoAndPath(
-  raw: string,
-  version?: string,
-  ref?: string,
-): PresetSourceDescriptor {
+function splitRepoAndPath(raw: string, version?: string, ref?: string): PresetSourceDescriptor {
   const parts = raw.split("/");
   if (parts.length > 2) {
     const identifier = parts.slice(0, 2).join("/");
@@ -139,10 +126,7 @@ function splitRepoAndPath(
   return { type: "github", identifier: raw, version, ref };
 }
 
-async function loadBuiltinPreset(
-  name: string,
-  presetsDir: string,
-): Promise<Result<LoadedPreset>> {
+async function loadBuiltinPreset(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {
   // First check if there's a local override in presetsDir
   const localDir = path.join(presetsDir, name);
   if (await dirExists(localDir)) {
@@ -153,10 +137,7 @@ async function loadBuiltinPreset(
   return materializeBuiltinPreset(name);
 }
 
-async function loadLocalPreset(
-  name: string,
-  presetsDir: string,
-): Promise<Result<LoadedPreset>> {
+async function loadLocalPreset(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {
   const presetDir = path.join(presetsDir, name);
   if (!(await dirExists(presetDir))) {
     return err([createError("E_PRESET_NOT_FOUND", { name })]);
