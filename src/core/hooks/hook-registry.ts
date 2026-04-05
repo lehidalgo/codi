@@ -10,6 +10,8 @@ export interface HookEntry {
   modifiesFiles?: boolean;
   /** Language this hook belongs to (e.g. "python", "typescript"). Used for grouping in generated hook scripts. */
   language?: string;
+  /** When true, the command is run via execSync with shell: true instead of execFileSync. Required for commands that use shell operators (&&, ||, 2>/dev/null). */
+  shell?: boolean;
 }
 
 const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {

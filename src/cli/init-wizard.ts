@@ -10,6 +10,7 @@ import {
 } from "./init-wizard-paths.js";
 import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
 import { printWelcomeBanner } from "./banner.js";
+import { printLegend } from "./wizard-legend.js";
 
 export interface WizardResult {
   languages: string[];
@@ -57,6 +58,7 @@ export async function runInitWizard(
   });
 
   p.intro(`${PROJECT_CLI} — Project Setup`);
+  printLegend();
 
   let step = 0;
   let savedLanguages: string[] | undefined;
@@ -100,6 +102,7 @@ export async function runInitWizard(
       }
       case 1: {
         p.log.step("Languages");
+        printLegend();
         const allLanguages = getSupportedLanguages();
         const languages = await p.multiselect({
           message: "Select project languages for pre-commit hooks",
@@ -120,6 +123,7 @@ export async function runInitWizard(
       }
       case 2: {
         p.log.step("Agents");
+        printLegend();
         const agents = await p.multiselect({
           message: "Select agents to generate config for",
           options: allAgents.map((id) => ({ label: id, value: id })),
@@ -142,6 +146,7 @@ export async function runInitWizard(
           break;
         }
         p.log.step("Configuration");
+        printLegend();
         const configMode = await p.select({
           message: "How do you want to configure?",
           options: [

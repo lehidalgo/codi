@@ -500,7 +500,7 @@ export async function contributeHandler(
   for (const artifact of selectedArtifacts) {
     const parseResult =
       artifact.type === "skill"
-        ? await parseSkillFile(artifact.path)
+        ? await parseSkillFile(path.join(artifact.path, SKILL_OUTPUT_FILENAME))
         : artifact.type === "agent"
           ? await parseAgentFile(artifact.path)
           : await parseRuleFile(artifact.path);

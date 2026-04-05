@@ -1,16 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import path from "node:path";
-import {
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
-import {
-  runCli,
-  createTempProject,
-  fileExists,
-  readFile,
-} from "./helpers/cli-harness.js";
+import { PROJECT_DIR, MANIFEST_FILENAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { runCli, createTempProject, fileExists, readFile } from "./helpers/cli-harness.js";
 
 // E2E tests are slower — extend timeout
 vi.setConfig({ testTimeout: 30_000 });
@@ -34,20 +25,14 @@ describe("E2E: init → generate → verify lifecycle", () => {
 
     expect(result.exitCode).toBe(0);
     expect(await fileExists(path.join(projectDir, PROJECT_DIR))).toBe(true);
-    expect(
-      await fileExists(path.join(projectDir, PROJECT_DIR, MANIFEST_FILENAME)),
-    ).toBe(true);
-    expect(
-      await fileExists(path.join(projectDir, PROJECT_DIR, "flags.yaml")),
-    ).toBe(true);
-    expect(await fileExists(path.join(projectDir, PROJECT_DIR, "rules"))).toBe(
-      true,
-    );
+    expect(await fileExists(path.join(projectDir, PROJECT_DIR, MANIFEST_FILENAME))).toBe(true);
+    expect(await fileExists(path.join(projectDir, PROJECT_DIR, "flags.yaml"))).toBe(true);
+    expect(await fileExists(path.join(projectDir, PROJECT_DIR, "rules"))).toBe(true);
   });
 
   it("generate produces adapter files after init with --agents", async () => {
     await runCli(projectDir, ["init", "--agents", "claude-code"]);
-    const result = await runCli(projectDir, ["generate"]);
+    const result = await runCli(projectDir, ["generate", "--force"]);
 
     expect(result.exitCode).toBe(0);
     expect(await fileExists(path.join(projectDir, "CLAUDE.md"))).toBe(true);
