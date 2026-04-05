@@ -1,4 +1,4 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -9,12 +9,12 @@ description: |
   documentation at each step. Agent and user work as a team: agent reasons, plans,
   and executes what it can; user performs actions that require credentials, browser
   access, or external systems.
-category: Developer Workflow
+category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 7
 ---
 
 # {{name}}

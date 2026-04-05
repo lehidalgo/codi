@@ -1,4 +1,4 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -6,12 +6,12 @@ description: |
   Implementation plan generator. Use after brainstorming produces an approved design spec.
   Breaks the spec into atomic 2-5 minute TDD tasks with exact file paths, complete code,
   and verification commands. Produces an executable plan document.
-category: Developer Workflow
+category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # {{name}}
