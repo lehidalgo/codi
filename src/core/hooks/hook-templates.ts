@@ -46,8 +46,12 @@ for (const hook of hooks) {
       }
     }
   } catch (e) {
-    console.error(\`\${hook.name} failed\`);
-    exitCode = 1;
+    if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') {
+      console.log(\`  \${hook.name}: skipped (tool not installed)\`);
+    } else {
+      console.error(\`\${hook.name} failed\`);
+      exitCode = 1;
+    }
   }
 }
 process.exit(exitCode);
