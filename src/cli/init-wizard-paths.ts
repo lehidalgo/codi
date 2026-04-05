@@ -29,6 +29,7 @@ import {
 } from "./artifact-categories.js";
 import { filterInventoryByType } from "./installed-artifact-inventory.js";
 import type { ExistingInstallContext } from "./init-wizard.js";
+import { printLegend } from "./wizard-legend.js";
 
 const BACK = Symbol("back");
 
@@ -87,6 +88,7 @@ async function editPresetFlags(
   );
   if (booleanKeys.length > 0) {
     p.log.step(`Flags in "${presetName}" (modify to customize)`);
+    printLegend();
     const selected = await p.multiselect({
       message: "Boolean flags (selected = enabled)",
       options: booleanKeys.map((k) => ({
@@ -205,6 +207,7 @@ export async function handlePresetPath(
   while (step >= 0) {
     switch (step) {
       case 0: {
+        printLegend();
         const presetName = await p.select({
           message: "Choose a preset",
           options: buildPresetOptions(),
@@ -359,6 +362,7 @@ export async function handlePresetPath(
 
         if (changed) {
           p.log.step("Custom Preset");
+          printLegend();
           const customName = await p.text({
             message: "You modified the preset. Save as custom preset (name)",
             initialValue: saveAsPreset ?? `${selectedPreset}-custom`,
@@ -378,6 +382,7 @@ export async function handlePresetPath(
         break;
       }
       case 7: {
+        printLegend();
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
@@ -541,6 +546,7 @@ export async function handleCustomPath(
         break;
       }
       case 4: {
+        printLegend();
         const val = await p.select({
           message: "Choose flag preset",
           options: [
@@ -570,6 +576,7 @@ export async function handleCustomPath(
         break;
       }
       case 5: {
+        printLegend();
         const save = await p.confirm({
           message: "Save this selection as a named preset for reuse?",
           initialValue: false,
@@ -600,6 +607,7 @@ export async function handleCustomPath(
         break;
       }
       case 6: {
+        printLegend();
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );

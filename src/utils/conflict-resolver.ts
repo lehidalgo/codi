@@ -40,6 +40,25 @@ export interface ConflictResolution {
 }
 
 /**
+ * Thrown in non-interactive environments when two sides change the same
+ * lines and auto-merge cannot resolve the conflict automatically.
+ * Use --force to accept all incoming or --json to keep all current.
+ */
+export class UnresolvableConflictError extends Error {
+  public readonly files: string[];
+
+  constructor(files: string[]) {
+    super(
+      `${files.length} file(s) have unresolvable conflicts and require manual resolution.\n` +
+        `Files: ${files.join(", ")}\n` +
+        `Run the command interactively to resolve, or use --force to accept all incoming, --json to keep all current.`,
+    );
+    this.name = "UnresolvableConflictError";
+    this.files = files;
+  }
+}
+
+/**
  * Resolves the editor command and arguments.
  * Priority: $VISUAL → $EDITOR → VS Code (if `code` is in PATH) → vi
  * Splits the env var on whitespace so "code --wait" works correctly with spawnSync.
@@ -72,16 +91,10 @@ const GUI_EDITORS = new Set([
 ]);
 
 /** Opens content in the user's editor and returns the saved result. */
-async function openInEditor(
-  content: string,
-  label: string,
-): Promise<string | null> {
+async function openInEditor(content: string, label: string): Promise<string | null> {
   const { command, args } = resolveEditor();
   const safeName = label.replace(/[^a-z0-9._-]/gi, "-");
-  const tmpFile = path.join(
-    os.tmpdir(),
-    `${safeName}-conflict-${Date.now()}.md`,
-  );
+  const tmpFile = path.join(os.tmpdir(), `${safeName}-conflict-${Date.now()}.md`);
   const isGui = GUI_EDITORS.has(path.basename(command));
 
   try {
@@ -133,13 +146,8 @@ async function openInEditor(
  * Non-overlapping changes are applied automatically.
  * Returns the merged content, or null if the user cancelled.
  */
-async function resolveInteractive(
-  conflict: ConflictEntry,
-): Promise<string | null> {
-  const hunks = extractConflictHunks(
-    conflict.currentContent,
-    conflict.incomingContent,
-  );
+async function resolveInteractive(conflict: ConflictEntry): Promise<string | null> {
+  const hunks = extractConflictHunks(conflict.currentContent, conflict.incomingContent);
   const conflictHunks = hunks.filter((h) => h.type === "conflict");
   const total = conflictHunks.length;
 
@@ -235,12 +243,35 @@ export async function resolveConflicts(
     return { accepted: [], skipped: conflicts, merged: [] };
   }
 
-  // Non-TTY: CI, git hooks, watch mode — auto-accept without prompting
+  // Non-TTY: CI, git hooks, watch mode — auto-merge non-overlapping, fail on true conflicts
   if (!process.stdout.isTTY) {
-    Logger.getInstance().warn(
-      `Non-interactive environment detected: auto-accepting ${conflicts.length} conflict(s). Use --json to keep existing files instead.`,
-    );
-    return { accepted: conflicts, skipped: [], merged: [] };
+    const mergedEntries: ConflictEntry[] = [];
+    const failed: ConflictEntry[] = [];
+
+    for (const conflict of conflicts) {
+      const { content, hasConflicts } = buildConflictMarkers(
+        conflict.currentContent,
+        conflict.incomingContent,
+      );
+      if (!hasConflicts) {
+        conflict.incomingContent = content;
+        mergedEntries.push(conflict);
+      } else {
+        failed.push(conflict);
+      }
+    }
+
+    if (failed.length > 0) {
+      throw new UnresolvableConflictError(failed.map((f) => f.label));
+    }
+
+    if (mergedEntries.length > 0) {
+      Logger.getInstance().info(
+        `${mergedEntries.length} file(s) auto-merged in non-interactive mode`,
+      );
+    }
+
+    return { accepted: [], skipped: [], merged: mergedEntries };
   }
 
   const log = Logger.getInstance();
@@ -268,10 +299,7 @@ export async function resolveConflicts(
       conflict.label,
     );
 
-    p.note(
-      diff,
-      `${conflict.label}  (+${conflict.additions} -${conflict.removals})`,
-    );
+    p.note(diff, `${conflict.label}  (+${conflict.additions} -${conflict.removals})`);
 
     // Prompt loop: repeat if the user edits but leaves unresolved markers
     let resolved = false;
@@ -371,15 +399,8 @@ export async function resolveConflicts(
           p.log.info(
             "Auto-merge found overlapping changes — opening editor to resolve remaining conflicts.",
           );
-          const markerDiff = renderColoredDiff(
-            conflict.currentContent,
-            content,
-            conflict.label,
-          );
-          p.note(
-            markerDiff,
-            `${conflict.label} — conflicts to resolve manually`,
-          );
+          const markerDiff = renderColoredDiff(conflict.currentContent, content, conflict.label);
+          p.note(markerDiff, `${conflict.label} — conflicts to resolve manually`);
           const edited = await openInEditor(content, conflict.label);
           if (edited === null) {
             continue;
