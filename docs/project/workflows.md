@@ -287,13 +287,71 @@ If access fails, Codi shows step-by-step troubleshooting and exits before attemp
 
 If you want to add a built-in template to Codi:
 
-1. Create the template in `src/templates/` (rules, skills, or agents)
-2. Register it in the corresponding `TEMPLATE_MAP`
-3. Export it from the template's `index.ts`
-4. Write tests for the template
-5. Run `codi generate` to verify generation works
+#### 1. Create the template files
 
-See [Artifacts](artifacts.md) for the template system details.
+For a skill named `my-skill`:
+
+```
+src/templates/skills/my-skill/
+├── template.ts       # TypeScript template literal wrapping SKILL.md content
+├── index.ts          # exports `template` and `staticDir`
+└── evals/
+    └── evals.json
+```
+
+`template.ts` must export a `template` string constant. Use an existing template (e.g. `src/templates/skills/commit/template.ts`) as reference.
+
+#### 2. Register the template
+
+Export from `src/templates/skills/index.ts`:
+```typescript
+export { template as mySkill, staticDir as mySkillStaticDir } from "./my-skill/index.js";
+```
+
+Add to `TEMPLATE_MAP` in `src/core/scaffolder/skill-template-loader.ts`:
+```typescript
+[prefixedName("my-skill")]: skillTemplates.mySkill,
+```
+
+**Understanding the key**: `prefixedName("my-skill")` = `"codi-my-skill"`. This is the full name users pass to `--template`.
+
+#### 3. Build before testing
+
+Templates only appear after compilation:
+```bash
+npm run build
+```
+
+#### 4. Link local build (one-time contributor setup)
+
+```bash
+npm link
+```
+
+This makes the `codi` binary use `dist/cli.js` from your local repo. Run `npm run build` again after any source change.
+
+#### 5. Test with `--template` (required)
+
+```bash
+codi add skill codi-my-skill --template codi-my-skill
+```
+
+> **CRITICAL**: `codi add skill <name>` WITHOUT `--template` always creates a blank placeholder using `DEFAULT_CONTENT`, regardless of any built-in template with the same name. The `--template` flag is required to install from a built-in.
+
+#### 6. Validate and generate
+
+```bash
+codi validate && codi generate
+```
+
+#### 7. Clean up accidental placeholders
+
+If you ran `codi add skill` without `--template` during development, remove the placeholder before running `generate` to avoid stale routing entries in CLAUDE.md:
+```bash
+rm -rf .codi/skills/codi-my-skill
+```
+
+See [Artifacts](artifacts.md) for the full template system details.
 
 ---
 
