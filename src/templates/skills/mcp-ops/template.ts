@@ -1,14 +1,21 @@
-import { MAX_NAME_LENGTH, PROJECT_CLI, PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
+import {
+  MAX_NAME_LENGTH,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "MCP (Model Context Protocol) operations. Use when setting up, calling, debugging, or building MCP servers. Also activate when the user mentions mcp.yaml, MCP tools, Model Context Protocol, or connecting external APIs to Claude agents."
-category: Developer Tools
-compatibility: [claude-code]
+category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # {{name}}
