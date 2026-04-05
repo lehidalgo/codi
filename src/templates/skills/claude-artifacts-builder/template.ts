@@ -6,7 +6,7 @@ description: Use when the user needs a complex, multi-component claude.ai HTML a
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # Web Artifacts Builder
@@ -19,9 +19,9 @@ version: 1
 - Do NOT activate for simple single-file HTML or JSX artifacts
 
 To build powerful frontend claude.ai artifacts, follow these steps:
-1. Initialize the frontend repo using \\\`scripts/init-artifact.sh\\\`
+1. Initialize the frontend repo using \\\`\${CLAUDE_SKILL_DIR}[[/scripts/init-artifact.sh]]\\\`
 2. Develop your artifact by editing the generated code
-3. Bundle all code into a single HTML file using \\\`scripts/bundle-artifact.sh\\\`
+3. Bundle all code into a single HTML file using \\\`\${CLAUDE_SKILL_DIR}[[/scripts/bundle-artifact.sh]]\\\`
 4. Display artifact to user
 5. (Optional) Test the artifact
 
@@ -37,7 +37,7 @@ VERY IMPORTANT: To avoid what is often referred to as "AI slop", avoid using exc
 
 Run the initialization script to create a new React project:
 \\\`\\\`\\\`bash
-bash scripts/init-artifact.sh <project-name>
+bash \${CLAUDE_SKILL_DIR}[[/scripts/init-artifact.sh]] <project-name>
 cd <project-name>
 \\\`\\\`\\\`
 
@@ -58,7 +58,7 @@ To build the artifact, edit the generated files. See **Common Development Tasks*
 
 To bundle the React app into a single HTML artifact:
 \\\`\\\`\\\`bash
-bash scripts/bundle-artifact.sh
+bash \${CLAUDE_SKILL_DIR}[[/scripts/bundle-artifact.sh]]
 \\\`\\\`\\\`
 
 This creates \\\`bundle.html\\\` - a self-contained artifact with all JavaScript, CSS, and dependencies inlined. This file can be directly shared in Claude conversations as an artifact.

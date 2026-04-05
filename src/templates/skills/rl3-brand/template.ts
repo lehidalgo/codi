@@ -6,7 +6,7 @@ description: Apply RL3 AI Agency brand identity to any content creation task. Us
 category: Brand Identity
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 ## When to Activate
@@ -43,18 +43,18 @@ Tagline: *"Cada iteracion nos acerca al resultado optimo."*
 
 | Request type | Who generates | Process |
 |---|---|---|
-| HTML / landing / dashboard | Claude inline | Read \\\`scripts/brand_tokens.py\\\` → generate HTML → validate |
+| HTML / landing / dashboard | Claude inline | Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` → generate HTML → validate |
 | Word / proposal / memo | Script | Write \\\`content.json\\\` → run \\\`generate_docx.py\\\` → validate |
 | PowerPoint / deck / pitch | Script | Write \\\`content.json\\\` → run \\\`generate_pptx.py\\\` → validate |
 | Email / text content | Claude inline | Read brand_tokens for tone → write text → validate |
 
 ### HTML / Landing Page / Dashboard
 
-1. Read \\\`scripts/brand_tokens.py\\\` to get current colors, fonts, layout values, and logo SVGs.
+1. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` to get current colors, fonts, layout values, and logo SVGs.
 2. Generate the HTML file inline using CSS variables, Google Fonts URL, grain overlay, and logo SVG from brand_tokens.
 3. Validate:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/validators/html_validator.py --input output.html
+python \${CLAUDE_SKILL_DIR}[[/scripts/validators/html_validator.py]] --input output.html
 \\\`\\\`\\\`
 4. Fix any errors and re-validate until all 12 rules pass.
 
@@ -63,11 +63,11 @@ python \${CLAUDE_SKILL_DIR}/scripts/validators/html_validator.py --input output.
 1. Create \\\`content.json\\\` following the schema below.
 2. Generate the DOCX:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/generate_docx.py --content content.json --output output.docx
+python \${CLAUDE_SKILL_DIR}[[/scripts/generate_docx.py]] --content content.json --output output.docx
 \\\`\\\`\\\`
 3. Validate:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/validators/doc_validator.py --input output.docx
+python \${CLAUDE_SKILL_DIR}[[/scripts/validators/doc_validator.py]] --input output.docx
 \\\`\\\`\\\`
 4. Fix any errors and re-validate until all 5 rules pass.
 
@@ -76,21 +76,21 @@ python \${CLAUDE_SKILL_DIR}/scripts/validators/doc_validator.py --input output.d
 1. Create \\\`content.json\\\` following the schema below.
 2. Generate the PPTX:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/generate_pptx.py --content content.json --output output.pptx
+python \${CLAUDE_SKILL_DIR}[[/scripts/generate_pptx.py]] --content content.json --output output.pptx
 \\\`\\\`\\\`
 3. Validate:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/validators/pptx_validator.py --input output.pptx
+python \${CLAUDE_SKILL_DIR}[[/scripts/validators/pptx_validator.py]] --input output.pptx
 \\\`\\\`\\\`
 4. Fix any errors and re-validate until all 5 rules pass.
 
 ### Email / Text Content
 
-1. Read \\\`scripts/brand_tokens.py\\\` for tone guidance: \\\`PHRASES_USE\\\`, \\\`PHRASES_AVOID\\\`, \\\`TAGLINE\\\`, \\\`CYCLE_LABEL\\\`.
+1. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` for tone guidance: \\\`PHRASES_USE\\\`, \\\`PHRASES_AVOID\\\`, \\\`TAGLINE\\\`, \\\`CYCLE_LABEL\\\`.
 2. Write content following tone of voice rules below.
 3. Validate:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/validators/style_validator.py --input output.txt
+python \${CLAUDE_SKILL_DIR}[[/scripts/validators/style_validator.py]] --input output.txt
 \\\`\\\`\\\`
 4. Fix any errors and re-validate until all 4 rules pass.
 
@@ -128,7 +128,7 @@ All generators accept a JSON file with this structure:
 
 ## Visual Identity
 
-**For exact values, always read \\\`scripts/brand_tokens.py\\\`** — it is the single source of truth.
+**For exact values, always read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\`** — it is the single source of truth.
 
 ### Color Palette
 
@@ -173,7 +173,7 @@ The logo is pure typography: **RL** + **3** on a single shared baseline, with "A
 2. Use a single \\\`<text>\\\` element with a \\\`<tspan>\\\` for the color change. **Never** two separate elements.
 3. The "3" is ALWAYS in gold (\\\`brand_tokens.COLORS["accent"]\\\`). Never the same color as "RL".
 4. For exact SVG markup: read \\\`brand_tokens.LOGO_DARK_BG\\\` and \\\`brand_tokens.LOGO_LIGHT_BG\\\`.
-5. SVG files also available in \\\`assets/rl3-logo-dark.svg\\\` and \\\`assets/rl3-logo-light.svg\\\`.
+5. SVG files also available in \\\`\${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-dark.svg]]\\\` and \\\`\${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-light.svg]]\\\`.
 
 ### Design Patterns
 
@@ -241,7 +241,7 @@ See \\\`brand_tokens.ANIMATIONS\\\` and \\\`brand_tokens.GRAIN_OVERLAY_CSS\\\`:
 
 **Total: 26 rules** (12 HTML + 5 DOCX + 5 PPTX + 4 style).
 
-### HTML Validator — 12 rules (\\\`scripts/validators/html_validator.py\\\`)
+### HTML Validator — 12 rules (\\\`\${CLAUDE_SKILL_DIR}[[/scripts/validators/html_validator.py]]\\\`)
 
 | # | Rule | What it checks |
 |---|------|----------------|
@@ -258,7 +258,7 @@ See \\\`brand_tokens.ANIMATIONS\\\` and \\\`brand_tokens.GRAIN_OVERLAY_CSS\\\`:
 | 11 | mobile_breakpoint | Media query at the defined breakpoint |
 | 12 | fade_animation | \\\`@keyframes fadeUp\\\` defined |
 
-### DOCX Validator — 5 rules (\\\`scripts/validators/doc_validator.py\\\`)
+### DOCX Validator — 5 rules (\\\`\${CLAUDE_SKILL_DIR}[[/scripts/validators/doc_validator.py]]\\\`)
 
 | # | Rule | What it checks |
 |---|------|----------------|
@@ -268,7 +268,7 @@ See \\\`brand_tokens.ANIMATIONS\\\` and \\\`brand_tokens.GRAIN_OVERLAY_CSS\\\`:
 | 4 | footer_text | Footer contains "RL3 AI AGENCY" |
 | 5 | forbidden_phrases | No phrase from \\\`PHRASES_AVOID\\\` |
 
-### PPTX Validator — 5 rules (\\\`scripts/validators/pptx_validator.py\\\`)
+### PPTX Validator — 5 rules (\\\`\${CLAUDE_SKILL_DIR}[[/scripts/validators/pptx_validator.py]]\\\`)
 
 | # | Rule | What it checks |
 |---|------|----------------|
@@ -278,7 +278,7 @@ See \\\`brand_tokens.ANIMATIONS\\\` and \\\`brand_tokens.GRAIN_OVERLAY_CSS\\\`:
 | 4 | section_divider | At least one slide with large gold text (>= 48pt) |
 | 5 | forbidden_phrases | No phrase from \\\`PHRASES_AVOID\\\` |
 
-### Style Validator — 4 rules (\\\`scripts/validators/style_validator.py\\\`)
+### Style Validator — 4 rules (\\\`\${CLAUDE_SKILL_DIR}[[/scripts/validators/style_validator.py]]\\\`)
 
 | # | Rule | What it checks |
 |---|------|----------------|
@@ -294,7 +294,7 @@ See \\\`brand_tokens.ANIMATIONS\\\` and \\\`brand_tokens.GRAIN_OVERLAY_CSS\\\`:
 Run the full test suite (generates HTML, DOCX, PPTX x3 runs each, validates all, verifies SHA-256 determinism):
 
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}/scripts/run_tests.py
+python \${CLAUDE_SKILL_DIR}[[/scripts/run_tests.py]]
 \\\`\\\`\\\`
 
 Expected: \\\`ALL TESTS PASSED - 3 runs, 0 errors, SHA-256 deterministic\\\`
@@ -315,11 +315,11 @@ For automated brand quality evaluation (see \\\`agents/\\\` directory):
 
 | File | When to read |
 |------|-------------|
-| \\\`references/services.md\\\` | Writing proposals, service descriptions, pricing tiers, deliverables |
-| \\\`references/ecosystem.md\\\` | Regional targeting (Spain, UAE, US), use case matrix, technology platform catalog |
-| \\\`references/brandguide.html\\\` | Visual implementation reference: logo, colors, typography, component demos |
-| \\\`references/brand-concept.html\\\` | Layout patterns, animations, full service section structure |
-| \\\`assets/rl3-logo-dark.svg\\\` | Logo for light backgrounds |
-| \\\`assets/rl3-logo-light.svg\\\` | Logo for dark backgrounds |
-| \\\`scripts/brand_tokens.py\\\` | Single source of truth: colors, fonts, logo SVGs, approved phrases |
+| \\\`\${CLAUDE_SKILL_DIR}[[/references/services.md]]\\\` | Writing proposals, service descriptions, pricing tiers, deliverables |
+| \\\`\${CLAUDE_SKILL_DIR}[[/references/ecosystem.md]]\\\` | Regional targeting (Spain, UAE, US), use case matrix, technology platform catalog |
+| \\\`\${CLAUDE_SKILL_DIR}[[/references/brandguide.html]]\\\` | Visual implementation reference: logo, colors, typography, component demos |
+| \\\`\${CLAUDE_SKILL_DIR}[[/references/brand-concept.html]]\\\` | Layout patterns, animations, full service section structure |
+| \\\`\${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-dark.svg]]\\\` | Logo for light backgrounds |
+| \\\`\${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-light.svg]]\\\` | Logo for dark backgrounds |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` | Single source of truth: colors, fonts, logo SVGs, approved phrases |
 `;

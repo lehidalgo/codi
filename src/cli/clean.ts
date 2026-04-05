@@ -72,6 +72,7 @@ const AGENT_SUBDIRS = [
 ];
 const AGENT_FILES = [
   ".mcp.json",
+  ".mcp.env.example",
   ".cursor/mcp.json",
   ".codex/config.toml",
   ".claude/settings.json",

@@ -56,6 +56,7 @@ function sectionToRule(section: Section): NormalizedRule {
   return {
     name: headingToSlug(section.heading),
     description: `Imported from CLAUDE.md: ${section.heading}`,
+    version: 1,
     content: section.content,
     priority: "medium",
     alwaysApply: true,
@@ -68,6 +69,7 @@ function buildFrontmatter(rule: NormalizedRule): string {
     "---",
     `name: ${rule.name}`,
     `description: "${rule.description}"`,
+    `version: ${rule.version}`,
     `priority: ${rule.priority}`,
     `alwaysApply: ${rule.alwaysApply}`,
     `managed_by: ${rule.managedBy}`,

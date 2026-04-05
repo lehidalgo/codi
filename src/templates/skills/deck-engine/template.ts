@@ -7,7 +7,7 @@ category: Document Generation
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 1
+version: 5
 ---
 
 # {{name}} — Presentation Deck Engine
@@ -165,19 +165,19 @@ function example() {
 
 **[CODING AGENT]** Copy the CSS and JS reference files into the generated deck:
 
-- CSS foundation: \\\`references/deck-engine.css\\\` — brand token integration, layout, components, animations, print styles
-- JS navigation engine: \\\`references/deck-engine.js\\\` — keyboard, wheel, touch, and hash navigation
+- CSS foundation: \\\`\${CLAUDE_SKILL_DIR}[[/references/deck-engine.css]]\\\` — brand token integration, layout, components, animations, print styles
+- JS navigation engine: \\\`\${CLAUDE_SKILL_DIR}[[/references/deck-engine.js]]\\\` — keyboard, wheel, touch, and hash navigation
 
 Embed both inline in the output HTML (no external dependencies):
 
 \\\`\\\`\\\`html
 <style>
-  /* paste contents of references/deck-engine.css here */
+  /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.css]] here */
   /* then override brand tokens from the active brand skill */
 </style>
 ...slides...
 <script>
-  /* paste contents of references/deck-engine.js here */
+  /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.js]] here */
 </script>
 \\\`\\\`\\\`
 
@@ -203,7 +203,7 @@ Generate a single \\\`.html\\\` file using this exact scaffold:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Presentation Title</title>
   <style>
-    /* paste contents of references/deck-engine.css here */
+    /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.css]] here */
     /* then override brand tokens if a brand skill is active */
   </style>
 </head>
@@ -220,7 +220,7 @@ Generate a single \\\`.html\\\` file using this exact scaffold:
     </div>
   </div>
   <script>
-    /* paste contents of references/deck-engine.js here */
+    /* paste contents of \${CLAUDE_SKILL_DIR}[[/references/deck-engine.js]] here */
   </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ description: Use when setting up a new project, auditing project quality infrast
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 ## When to Activate
@@ -75,7 +75,7 @@ digraph audit {
 **RUN** (do NOT read) the audit script. It checks for config files and reports status:
 
 \\\`\\\`\\\`bash
-bash \${CLAUDE_SKILL_DIR}/scripts/audit-project.sh "/path/to/project"
+bash \${CLAUDE_SKILL_DIR}[[/scripts/audit-project.sh]] "/path/to/project"
 \\\`\\\`\\\`
 
 ### Step 2: Review and Warn
@@ -99,15 +99,15 @@ For each missing item, ask: "Want me to set up [item]?" When approved, **read** 
 
 | # | Category | Files to Check | Reference |
 |---|----------|---------------|-----------|
-| 1 | **Git Config** | .gitignore, .gitattributes, .editorconfig | \\\`references/git-config.md\\\` |
-| 2 | **Security Scanning** | .gitleaks.toml, .bandit.yaml, secrets rules | \\\`references/security-scanning.md\\\` |
-| 3 | **Pre-commit Hooks** | .pre-commit-config.yaml, hook installation | \\\`references/pre-commit-hooks.md\\\` |
-| 4 | **Python Tooling** | pyproject.toml (ruff, mypy), Makefile | \\\`references/python-tooling.md\\\` |
-| 5 | **TypeScript Tooling** | eslint.config.js, .prettierrc, tsconfig.json | \\\`references/typescript-tooling.md\\\` |
-| 6 | **Testing Strategy** | test dirs, fixtures, coverage config, markers | \\\`references/testing-strategy.md\\\` |
-| 7 | **CI/CD Pipelines** | .github/workflows/ci.yml, deploy.yml | \\\`references/cicd-pipelines.md\\\` |
-| 8 | **Docker & Deploy** | Dockerfile, docker-compose.yml, railway.toml | \\\`references/docker-deploy.md\\\` |
-| 9 | **Env Management** | .env.example, .env.local.example, config.py | \\\`references/env-management.md\\\` |
+| 1 | **Git Config** | .gitignore, .gitattributes, .editorconfig | \\\`\${CLAUDE_SKILL_DIR}[[/references/git-config.md]]\\\` |
+| 2 | **Security Scanning** | .gitleaks.toml, .bandit.yaml, secrets rules | \\\`\${CLAUDE_SKILL_DIR}[[/references/security-scanning.md]]\\\` |
+| 3 | **Pre-commit Hooks** | .pre-commit-config.yaml, hook installation | \\\`\${CLAUDE_SKILL_DIR}[[/references/pre-commit-hooks.md]]\\\` |
+| 4 | **Python Tooling** | pyproject.toml (ruff, mypy), Makefile | \\\`\${CLAUDE_SKILL_DIR}[[/references/python-tooling.md]]\\\` |
+| 5 | **TypeScript Tooling** | eslint.config.js, .prettierrc, tsconfig.json | \\\`\${CLAUDE_SKILL_DIR}[[/references/typescript-tooling.md]]\\\` |
+| 6 | **Testing Strategy** | test dirs, fixtures, coverage config, markers | \\\`\${CLAUDE_SKILL_DIR}[[/references/testing-strategy.md]]\\\` |
+| 7 | **CI/CD Pipelines** | .github/workflows/ci.yml, deploy.yml | \\\`\${CLAUDE_SKILL_DIR}[[/references/cicd-pipelines.md]]\\\` |
+| 8 | **Docker & Deploy** | Dockerfile, docker-compose.yml, railway.toml | \\\`\${CLAUDE_SKILL_DIR}[[/references/docker-deploy.md]]\\\` |
+| 9 | **Env Management** | .env.example, .env.local.example, config.py | \\\`\${CLAUDE_SKILL_DIR}[[/references/env-management.md]]\\\` |
 
 ---
 
@@ -121,7 +121,7 @@ These MUST exist. Always warn if missing — do not silently skip:
 4. **Pre-commit hooks** — Minimum: line endings, trailing whitespace, secrets detection, linting
 5. **CI pipeline** — Minimum: lint + type-check + test on push/PR to main
 6. **\\\`.env.example\\\`** — Document all required env vars with placeholders (NEVER real secrets)
-7. **Testing (80% min coverage)** — Every project must have: fixture tests with synthetic data, unit tests, smoke tests, and integration tests when possible. See \\\`references/testing-strategy.md\\\`.
+7. **Testing (80% min coverage)** — Every project must have: fixture tests with synthetic data, unit tests, smoke tests, and integration tests when possible. See \\\`\${CLAUDE_SKILL_DIR}[[/references/testing-strategy.md]]\\\`.
 
 ---
 
@@ -163,7 +163,7 @@ digraph tests {
 }
 \\\`\\\`\\\`
 
-When auditing or adding tests, **read** \\\`references/testing-strategy.md\\\` for full patterns, fixtures, and config templates.
+When auditing or adding tests, **read** \\\`\${CLAUDE_SKILL_DIR}[[/references/testing-strategy.md]]\\\` for full patterns, fixtures, and config templates.
 
 ---
 

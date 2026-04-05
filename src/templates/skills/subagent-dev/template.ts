@@ -6,7 +6,7 @@ description: Subagent-driven plan execution. Use after ${PROJECT_NAME}-plan-writ
 category: Developer Workflow
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 4
 ---
 
 # {{name}}
@@ -41,7 +41,7 @@ For each task in the plan (in order):
 Extract the complete task text from the plan. Note: spec compliance reviewers need the original requirements, not your summary of them.
 
 **Step 2: Dispatch implementer subagent**
-Use \\\`references/implementer-prompt.md\\\` as the base for the implementer subagent prompt.
+Use \\\`\${CLAUDE_SKILL_DIR}[[/references/implementer-prompt.md]]\\\` as the base for the implementer subagent prompt.
 Using the Agent tool with a prompt that includes:
 - The exact task text from the plan (complete, word for word)
 - The design spec section relevant to this task
@@ -60,14 +60,14 @@ Using the Agent tool with a prompt that includes:
 | BLOCKED | Assess root cause: 1. Context problem: provide more context, re-dispatch same model. 2. Needs more reasoning: re-dispatch with more capable model. 3. Task too large: break into smaller pieces. 4. Plan is wrong: escalate to user. |
 
 **Step 4: Spec compliance review**
-Use \\\`references/spec-reviewer-prompt.md\\\` for the spec reviewer prompt.
+Use \\\`\${CLAUDE_SKILL_DIR}[[/references/spec-reviewer-prompt.md]]\\\` for the spec reviewer prompt.
 Dispatch a spec reviewer subagent:
 - Provide: the original task requirements, the design spec section, the git diff of changes made
 - Ask: "Do the changes fully satisfy the task requirements? Yes/No. If no, what is missing?"
 - If reviewer finds gaps: dispatch implementer again with specific gap description. Re-review.
 
 **Step 5: Code quality review**
-Use \\\`references/quality-review-prompt.md\\\` for the quality reviewer prompt.
+Use \\\`\${CLAUDE_SKILL_DIR}[[/references/quality-review-prompt.md]]\\\` for the quality reviewer prompt.
 Dispatch the ${PROJECT_NAME}-code-reviewer agent:
 - Provide: the git diff, the task context
 - Severity-ranked findings (CRITICAL/HIGH/MEDIUM/LOW)

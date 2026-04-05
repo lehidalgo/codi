@@ -9,7 +9,6 @@ import { detectAdapters, getAllAdapters } from "../core/generator/adapter-regist
 import {
   handleInit,
   handleGenerate,
-  handleImport,
   handleExport,
   handleClean,
   handleAdd,
@@ -43,31 +42,25 @@ export const NORMAL_MENU: HubTopLevelEntry[] = [
   {
     value: "init",
     label: "Initialize project",
-    hint: `Set up ${PROJECT_DIR}/ with agents, presets, and rules`,
+    hint: "Preset, import ZIP, import GitHub, or custom selection",
     requiresProject: false,
   },
   {
     value: "generate",
     label: "Generate configs",
-    hint: "Rebuild all agent configuration files",
+    hint: "Normal, dry run, or force rebuild per agent",
     requiresProject: true,
-  },
-  {
-    value: "import",
-    label: "Import configuration",
-    hint: "Load from ZIP, GitHub, or registry",
-    requiresProject: false,
   },
   {
     value: "export",
     label: "Export & share",
-    hint: "Package skills, presets, or contribute",
+    hint: "Export skill, export preset, or contribute to GitHub",
     requiresProject: true,
   },
   {
     value: "clean",
     label: "Clean generated files",
-    hint: "Remove agent config files",
+    hint: "Remove agent configs or full uninstall with dry run",
     requiresProject: true,
   },
 ];
@@ -77,19 +70,19 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
   {
     value: "add",
     label: "Add artifact",
-    hint: "Create a rule, skill, agent, or brand",
+    hint: "Rule, skill, agent, or brand from template or blank",
     requiresProject: true,
   },
   {
     value: "preset",
     label: "Manage presets",
-    hint: "List, create, install, export presets",
+    hint: "List, create, install, export, edit, or remove presets",
     requiresProject: true,
   },
   {
     value: "update",
     label: "Update templates",
-    hint: "Update rules, skills, and agents to latest",
+    hint: "Rules, skills, agents, MCP servers with dry run",
     requiresProject: true,
   },
   {
@@ -107,7 +100,7 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
   {
     value: "status",
     label: "Project status",
-    hint: "Check if generated files are up to date",
+    hint: "Summary or line-by-line diff of drifted files",
     requiresProject: true,
   },
   {
@@ -119,7 +112,7 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
   {
     value: "verify",
     label: "Verify agent awareness",
-    hint: "Test if your AI agent received instructions",
+    hint: "Show prompt or check agent response",
     requiresProject: true,
   },
   {
@@ -131,7 +124,7 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
   {
     value: "revert",
     label: "Revert to backup",
-    hint: "Restore generated files from a backup",
+    hint: "List backups, restore latest, or pick by timestamp",
     requiresProject: true,
   },
 ];
@@ -209,7 +202,6 @@ async function routeAction(action: string, projectRoot: string): Promise<void> {
   const handlers: Record<string, (root: string) => Promise<void>> = {
     init: handleInit,
     generate: handleGenerate,
-    import: handleImport,
     export: handleExport,
     clean: handleClean,
     add: handleAdd,

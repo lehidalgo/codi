@@ -6,7 +6,7 @@ description: First-line debugging with root cause analysis. Use when investigati
 category: Developer Workflow
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # {{name}}
@@ -97,9 +97,9 @@ BEFORE attempting ANY fix:
    - Keep tracing up until you find the source
    - Fix at the source, not at the symptom
 
-   See \\\`references/root-cause-tracing.md\\\` in this directory for the complete backward tracing technique.
+   See \\\`\${CLAUDE_SKILL_DIR}[[/references/root-cause-tracing.md]]\\\` for the complete backward tracing technique.
 
-   For test pollution issues (tests interfering with each other), use \\\`references/find-polluter.sh\\\` to locate the polluting test.
+   For test pollution issues (tests interfering with each other), use \\\`\${CLAUDE_SKILL_DIR}[[/scripts/find-polluter.sh]]\\\` to locate the polluting test.
 
 ### Phase 2: Pattern Analysis
 
@@ -212,9 +212,9 @@ Note: 95% of "no root cause" cases are incomplete investigation. Exhaust all pha
 
 These techniques are in the \\\`references/\\\` directory:
 
-- **\\\`root-cause-tracing.md\\\`** - Trace bugs backward through the call stack to find the original trigger
-- **\\\`defense-in-depth.md\\\`** - Add validation at multiple layers after finding root cause
-- **\\\`condition-based-waiting.md\\\`** - Replace arbitrary timeouts with condition polling. See \\\`references/condition-based-waiting-example.ts.txt\\\` for a concrete TypeScript implementation.
+- **\\\`\${CLAUDE_SKILL_DIR}[[/references/root-cause-tracing.md]]\\\`** - Trace bugs backward through the call stack to find the original trigger
+- **\\\`\${CLAUDE_SKILL_DIR}[[/references/defense-in-depth.md]]\\\`** - Add validation at multiple layers after finding root cause
+- **\\\`\${CLAUDE_SKILL_DIR}[[/references/condition-based-waiting.md]]\\\`** - Replace arbitrary timeouts with condition polling. See \\\`\${CLAUDE_SKILL_DIR}[[/references/condition-based-waiting-example.ts]]\\\` for a concrete TypeScript implementation.
 
 ## Integration
 

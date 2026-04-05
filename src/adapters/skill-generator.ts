@@ -5,6 +5,7 @@ import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
 import { Logger } from "../core/output/logger.js";
+import { fmStr } from "../utils/yaml-serialize.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import {
   SKILL_OUTPUT_FILENAME,
@@ -71,12 +72,21 @@ function flattenDescription(desc: string): string {
   return desc.replace(/\n\s*/g, " ").trim();
 }
 
-/** Serialize YAML scalar values safely for frontmatter output. */
-function fmStr(value: string): string {
-  if (/[\n\r:#\[\]{},&*?|>'"]/.test(value) || value.startsWith(" ")) {
-    return JSON.stringify(value);
+/**
+ * Resolve [[/path]] markers and the Claude-Code-specific ${CLAUDE_SKILL_DIR} env var.
+ *
+ * Claude Code: strip [[]] markers — ${CLAUDE_SKILL_DIR} is expanded by the agent at runtime.
+ * All other platforms: keep [[]] markers so the skill-resource-check hook can validate them;
+ * strip ${CLAUDE_SKILL_DIR} prefix so paths stay relative to the skill directory.
+ * Inner whitespace is normalized in both cases: [[ /path ]] → [[/path]] or /path.
+ */
+function resolveSkillRefsForPlatform(content: string, platformId: PlatformId): string {
+  if (platformId === "claude-code") {
+    return content.replace(/\[\[\s*(\/[^\]]+?)\s*\]\]/g, "$1");
   }
-  return value;
+  return content
+    .replace(/\$\{CLAUDE_SKILL_DIR\}/g, "")
+    .replace(/\[\[\s*(\/[^\]]+?)\s*\]\]/g, "[[$1]]");
 }
 
 export function buildSkillMd(
@@ -96,8 +106,9 @@ export function buildSkillMd(
   if (allowed.has("disable-model-invocation") && skill.disableModelInvocation) {
     frontmatter.push("disable-model-invocation: true");
   }
-  if (allowed.has("user-invocable") && skill.userInvocable === false) {
-    frontmatter.push("user-invocable: false");
+  if (allowed.has("user-invocable")) {
+    const invocable = skill.userInvocable !== false;
+    frontmatter.push(`user-invocable: ${invocable}`);
   }
   if (allowed.has("argument-hint") && skill.argumentHint) {
     frontmatter.push(`argument-hint: ${fmStr(skill.argumentHint)}`);
@@ -126,6 +137,12 @@ export function buildSkillMd(
   if (allowed.has("license") && skill.license) {
     frontmatter.push(`license: ${fmStr(skill.license)}`);
   }
+  if (allowed.has("metadata") && skill.metadata && Object.keys(skill.metadata).length > 0) {
+    const metadataLines = Object.entries(skill.metadata)
+      .map(([k, v]) => `  ${k}: ${fmStr(v)}`)
+      .join("\n");
+    frontmatter.push(`metadata:\n${metadataLines}`);
+  }
   if (allowed.has("hooks") && skill.hooks !== undefined) {
     const hooksYaml = stringifyYaml({ hooks: skill.hooks }).trimEnd();
     for (const line of hooksYaml.split("\n")) {
@@ -147,7 +164,8 @@ export function buildSkillMd(
     );
   }
 
-  return `${frontmatter.join("\n")}\n\n${skill.content}`;
+  const resolvedContent = resolveSkillRefsForPlatform(skill.content, platformId);
+  return `${frontmatter.join("\n")}\n\n${resolvedContent}`;
 }
 
 /**

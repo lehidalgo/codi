@@ -9,6 +9,7 @@ import {
 export const AgentFrontmatterSchema = z.object({
   name: z.string().regex(NAME_PATTERN_STRICT).max(MAX_NAME_LENGTH),
   description: z.string().max(MAX_DESCRIPTION_LENGTH).default(""),
+  version: z.number().int().positive().default(1),
   tools: z.array(z.string()).optional(),
   disallowedTools: z.array(z.string()).optional(),
   model: z.string().optional(),

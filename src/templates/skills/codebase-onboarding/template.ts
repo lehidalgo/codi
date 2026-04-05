@@ -6,7 +6,7 @@ description: Codebase onboarding workflow. Use when exploring an unfamiliar proj
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # {{name}}
@@ -18,6 +18,7 @@ version: 1
 - User wants to understand the architecture, conventions, or key files of a codebase
 - User asks what the project does, how it is structured, or how to get started
 - A new AI agent needs context about the project before starting work
+- After running \\\`codi init\\\` to add project-specific context to the generated configuration files
 
 ## Onboarding Process
 
@@ -79,6 +80,65 @@ version: 1
 4. **Conventions**: Naming, patterns, commit style (bullet points)
 5. **Key Files**: The 5-10 most important files a newcomer should read first
 6. **Common Tasks**: How to add a feature, fix a bug, run tests
+
+### Phase 5: Persist Project Context
+
+**[CODING AGENT]** Write the analysis from phases 1-3 into each detected coding agent instruction file so future sessions have immediate project context.
+
+1. Detect instruction files in the project root:
+   - \\\`CLAUDE.md\\\` (Claude Code)
+   - \\\`.cursorrules\\\` (Cursor)
+   - \\\`.windsurfrules\\\` (Windsurf)
+   - \\\`AGENTS.md\\\` (OpenAI Codex / multi-agent)
+2. For each file found:
+   a. Read the current content
+   b. Build the Project Context block (see structure below)
+   c. If the file already contains \\\`<!-- codi:project-context:start -->\\\`, replace the content between the markers with the new block
+   d. If not, insert the block before the first \\\`##\\\` heading (or prepend if none)
+   e. Write the updated content back to disk
+3. Report which files were updated
+
+**Project Context block structure** (keep under 50 lines total):
+
+\\\`\\\`\\\`markdown
+<!-- codi:project-context:start -->
+## Project Context
+
+### What This Project Does
+2-3 sentence description from Phase 1 analysis.
+
+### Tech Stack
+- **Language**: ...
+- **Framework**: ...
+- **Database**: ... (omit if not applicable)
+- **Key libraries**: list top 5-10
+
+### Architecture
+- **Pattern**: monolith / microservices / monorepo / library / CLI
+- \\\`src/\\\` — ...describe key directories
+
+### Key Files
+- \\\`path/to/file\\\` — why it matters
+- (5-10 entries maximum)
+
+### Conventions
+- File naming: kebab-case / camelCase / ...
+- Imports: ...
+- Error handling: ...
+- Commit format: ...
+
+### Common Commands
+\\\`\\\`\\\`bash
+# install / run / test / build
+\\\`\\\`\\\`
+<!-- codi:project-context:end -->
+\\\`\\\`\\\`
+
+**Anti-patterns for Phase 5**:
+- Do not duplicate the README — add insights the README does not cover
+- Do not list every dependency — top 5-10 most important only
+- Do not include secrets, internal URLs, or frequently-changing values (version numbers, dates)
+- Keep the block under 50 lines — it is loaded on every agent session
 
 ## Anti-Patterns to Avoid
 

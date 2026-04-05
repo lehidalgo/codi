@@ -8,6 +8,8 @@ import {
   MAX_TOTAL_ARTIFACT_CHARS,
   MAX_SKILL_LINES,
   MAX_AGENT_LINES,
+  ALL_SKILL_CATEGORIES,
+  isKnownSkillCategory,
 } from "#src/constants.js";
 
 function getKnownAdapterIds(): string[] {
@@ -23,8 +25,23 @@ export function validateConfig(config: NormalizedConfig): ProjectError[] {
   errors.push(...validateSkills(config));
   errors.push(...validateAgentArtifacts(config));
   errors.push(...validateFlags(config));
+  errors.push(...validateMetadata(config));
 
   return errors;
+}
+
+function validateMetadata(config: NormalizedConfig): ProjectError[] {
+  const warnings: ProjectError[] = [];
+  for (const skill of config.skills) {
+    if (skill.category && !isKnownSkillCategory(skill.category)) {
+      warnings.push(
+        createError("W_UNKNOWN_CATEGORY", {
+          message: `Skill "${skill.name}" has unknown category "${skill.category}". Valid categories: ${ALL_SKILL_CATEGORIES.join(", ")}`,
+        }),
+      );
+    }
+  }
+  return warnings;
 }
 
 export function validateContentSize(config: NormalizedConfig): ProjectError[] {

@@ -6,7 +6,7 @@ description: Use when the user wants to test, debug, or automate a local web app
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 ## When to Activate
@@ -21,8 +21,8 @@ version: 1
 To test local web applications, write native Python Playwright scripts.
 
 **Helper Scripts Available** (TypeScript and Python — use whichever runtime is available):
-- TypeScript: \\\`scripts/ts/with-server.ts\\\` — Manages server lifecycle (supports multiple servers)
-- Python: \\\`scripts/python/with_server.py\\\` — Same functionality, Python variant
+- TypeScript: \\\`\${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]]\\\` — Manages server lifecycle (supports multiple servers)
+- Python: \\\`\${CLAUDE_SKILL_DIR}[[/scripts/python/with_server.py]]\\\` — Same functionality, Python variant
 
 Use TypeScript by default (\\\`npx tsx\\\`). Use Python when \\\`python3\\\` is available and the project prefers it.
 
@@ -37,7 +37,7 @@ User task → Is it static HTML?
     │         └─ Fails/Incomplete → Treat as dynamic (below)
     │
     └─ No (dynamic webapp) → Is the server already running?
-        ├─ No → Run: npx tsx scripts/ts/with-server.ts --help
+        ├─ No → Run: npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]] --help
         │        Then use the helper + write simplified Playwright script
         │
         └─ Yes → Reconnaissance-then-action:
@@ -53,17 +53,17 @@ To start a server, run \\\`--help\\\` first, then use the helper:
 
 **Single server (TypeScript):**
 \\\`\\\`\\\`bash
-npx tsx scripts/ts/with-server.ts --server "npm run dev" --port 5173 -- node your_automation.js
+npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]] --server "npm run dev" --port 5173 -- node your_automation.js
 \\\`\\\`\\\`
 
 **Single server (Python):**
 \\\`\\\`\\\`bash
-python3 scripts/python/with_server.py --server "npm run dev" --port 5173 -- python3 your_automation.py
+python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/with_server.py]] --server "npm run dev" --port 5173 -- python3 your_automation.py
 \\\`\\\`\\\`
 
 **Multiple servers (e.g., backend + frontend):**
 \\\`\\\`\\\`bash
-npx tsx scripts/ts/with-server.ts \\\\
+npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]] \\\\
   --server "cd backend && node server.js" --port 3000 \\\\
   --server "cd frontend && npm run dev" --port 5173 \\\\
   -- node your_automation.js
@@ -110,10 +110,10 @@ with sync_playwright() as p:
 
 ## Reference Files
 
-- **examples/** - Examples showing common patterns:
-  - \\\`element_discovery.py\\\` - Discovering buttons, links, and inputs on a page
-  - \\\`static_html_automation.py\\\` - Using file:// URLs for local HTML
-  - \\\`console_logging.py\\\` - Capturing console logs during automation
+- **references/** - Examples showing common patterns:
+  - \\\`\${CLAUDE_SKILL_DIR}[[/references/element_discovery.py]]\\\` - Discovering buttons, links, and inputs on a page
+  - \\\`\${CLAUDE_SKILL_DIR}[[/references/static_html_automation.py]]\\\` - Using file:// URLs for local HTML
+  - \\\`\${CLAUDE_SKILL_DIR}[[/references/console_logging.py]]\\\` - Capturing console logs during automation
 
 ## Available Agents
 

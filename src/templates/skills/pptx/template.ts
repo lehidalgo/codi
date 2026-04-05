@@ -6,7 +6,7 @@ description: "Use when the user wants to create, edit, or read a .pptx file. Als
 category: File Format Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # PPTX Skill
@@ -36,10 +36,10 @@ version: 1
 python -m markitdown presentation.pptx
 
 # Visual overview
-python scripts/thumbnail.py presentation.pptx
+python \${CLAUDE_SKILL_DIR}[[/scripts/thumbnail.py]] presentation.pptx
 
 # Raw XML
-python scripts/office/unpack.py presentation.pptx unpacked/
+python \${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpacked/
 \\\`\\\`\\\`
 
 ---
@@ -222,7 +222,7 @@ Report ALL issues found, including minor ones.
 Convert presentations to individual slide images for visual inspection:
 
 \\\`\\\`\\\`bash
-python scripts/office/soffice.py --headless --convert-to pdf output.pptx
+python \${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]] --headless --convert-to pdf output.pptx
 pdftoppm -jpeg -r 150 output.pdf slide
 \\\`\\\`\\\`
 
@@ -241,6 +241,6 @@ pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 - \\\`pip install "markitdown[pptx]"\\\` - text extraction
 - \\\`pip install Pillow\\\` - thumbnail grids
 - \\\`npm install -g pptxgenjs\\\` - creating from scratch
-- LibreOffice (\\\`soffice\\\`) - PDF conversion (auto-configured for sandboxed environments via \\\`scripts/office/soffice.py\\\`)
+- LibreOffice (\\\`soffice\\\`) - PDF conversion (auto-configured for sandboxed environments via \\\`\${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]]\\\`)
 - Poppler (\\\`pdftoppm\\\`) - PDF to images
 `;

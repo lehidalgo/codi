@@ -13,6 +13,7 @@ import {
   makeConflictEntry,
   type ConflictEntry,
 } from "#src/utils/conflict-resolver.js";
+import { extractProjectContext, injectProjectContext } from "#src/utils/project-context-preserv.js";
 
 export interface GenerationResult {
   files: GeneratedFile[];
@@ -61,6 +62,23 @@ export async function generate(
     for (const file of generated) {
       if (file.path === adapter.paths.instructionFile) {
         file.content = file.content + "\n\n" + verifySection;
+
+        // Preserve any user-written project-context block from the existing file.
+        // This prevents codi generate from overwriting the context the agent wrote.
+        const fullPath = join(projectRoot, file.path);
+        let existingContent: string | null = null;
+        try {
+          existingContent = await readFile(fullPath, "utf-8");
+        } catch {
+          // File does not exist yet — nothing to preserve
+        }
+        if (existingContent) {
+          const block = extractProjectContext(existingContent);
+          if (block) {
+            file.content = injectProjectContext(file.content, block);
+          }
+        }
+
         file.hash = hashContent(file.content);
       }
     }

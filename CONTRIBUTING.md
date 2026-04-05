@@ -128,8 +128,8 @@ src/
     version/          # Version enforcement (semver)
   schemas/            # Zod schemas for config, flags, artifacts
   templates/          # Built-in templates
-    rules/            # 27 rule templates
-    skills/           # 53 skill templates
+    rules/            # 28 rule templates
+    skills/           # 66 skill templates
     agents/           # 22 agent templates
     hooks/            # 3 hook templates
   types/              # TypeScript type definitions
@@ -287,7 +287,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
 
 ## Documentation
 
-When making changes that affect behavior, update the relevant documentation. See [Maintaining Docs](docs/maintaining-docs.md) for guidelines on which files to update and how to keep docs in sync with code.
+When making changes that affect behavior, update the relevant documentation. See [Maintaining Docs](docs/project/maintaining-docs.md) for guidelines on which files to update and how to keep docs in sync with code.
 
 ## Questions?
 

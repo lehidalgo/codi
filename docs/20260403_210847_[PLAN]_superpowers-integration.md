@@ -7,7 +7,7 @@
 
 Create 8 new codi-native workflow skills that absorb the behavioral discipline patterns from the superpowers plugin, plus enhance 1 existing skill. Once complete, the superpowers plugin can be uninstalled. All new skills follow codi conventions (codi- prefix, frontmatter format, template registration, CLAUDE.md routing).
 
-## Architecture: 3 Pipelines + Shared Discipline Layer
+## Architecture: 4 Pipelines + Shared Discipline Layer
 
 ```mermaid
 graph TD
@@ -62,7 +62,24 @@ codi-security-scan / codi-test-coverage / codi-code-review / codi-refactoring
     -> codi-verification
 ```
 
-## New Skills (8)
+### Pipeline 4: Operations (guided / audit)
+
+Two entry points sharing a common evidence and documentation layer:
+
+```
+Entry A — Guided Execution (first-time setup, config, infra, deployment):
+codi-guided-execution
+    -> [per step] codi-evidence-gathering -> codi-verification -> codi-step-documenter
+    -> Final summary in docs/executions/<workflow>/README.md
+
+Entry B — Audit-Fix (systematic audit, migration, fix backlog):
+codi-audit-fix
+    -> [per item] codi-evidence-gathering -> codi-verification -> commit
+```
+
+Shared discipline layer applies to both entries (verification, debugging, tdd when applicable).
+
+## New Skills (12)
 
 ### 1. codi-tdd (Shared Discipline Layer)
 
@@ -211,6 +228,76 @@ codi-security-scan / codi-test-coverage / codi-code-review / codi-refactoring
 - Cleanup handled by `codi-branch-finish`
 - Respects `codi-git-workflow` rule conventions
 - Uses `codi-verification` to confirm baseline tests pass
+
+### 9. codi-evidence-gathering (Pipeline 4 shared skill)
+
+**Purpose:** Structured investigation protocol before proposing any change. Reusable across Pipeline 4 and other pipelines requiring formal evidence before action.
+
+**Key patterns:**
+- Iron Law: No conclusions without evidence. No evidence without tool usage.
+- 5-step protocol: FRAME → SEARCH → COLLECT → ANALYZE → REPORT
+- Tool priority order: graph-code MCP → Grep/Glob → Read → Tests → Web research
+- Evidence table: Finding | Source | File:Line | Confidence
+- Distinguishes confirmed facts vs inferences vs unverified assumptions
+- Surfaces open questions rather than guessing
+
+**Integration:**
+- Called by `codi-audit-fix` (Phase 2a per item)
+- Called by `codi-guided-execution` (Phase 6 per step)
+- Feeds into `codi-verification` (evidence gathered here is the verification input)
+- Usable standalone: "investigate X before we change it"
+
+### 10. codi-step-documenter (Pipeline 4 shared skill)
+
+**Purpose:** Generates structured step completion documents after each validated workflow step. Accumulates into a reusable guide for the full process.
+
+**Key patterns:**
+- 14-section template: title, objective, why it matters, initial situation, actions, agent contributions, user contributions, commands used, decisions made, problems encountered, outcome, validation, reusable guide, next step
+- File naming: `docs/executions/<workflow-name>/step-NN-<step-slug>.md`
+- Creates directory and README index on first step
+- Quality checklist: all sections present, commands exact, reusable guide self-contained
+
+**Integration:**
+- Invoked by `codi-guided-execution` after each verified step
+- Receives `codi-verification` output for the "How We Validated" section
+- Produces source material for the workflow summary doc
+
+### 11. codi-audit-fix (Pipeline 4 Entry B)
+
+**Purpose:** Iterative audit-and-fix agent. Processes items from a list one at a time with evidence gathering, fix proposals, user approval gates, and per-item commits.
+
+**Key patterns:**
+- Iron Laws: one item at a time, evidence before proposal, approval before implementation, one commit per item
+- Phase 1: Build TODO list (analyze scope, TaskCreate per item, present for review, lock list)
+- Phase 2: Process current item (investigate → evaluate → fix proposal with 5 sections → present → STOP → wait for approval)
+- Phase 3: Close item (implement → validate → verify → commit → graph update attempt → mark complete)
+- Red flags table: 6 rationalization patterns with corrections
+- Escalation: pattern detection after 3+ same-type items
+
+**Integration:**
+- Uses `codi-evidence-gathering` for Phase 2a investigation
+- Uses `codi-verification` in Phase 3 to confirm fixes
+- Uses `codi-debugging` for complex root cause analysis
+- Produces per-item commits for full traceability
+
+### 12. codi-guided-execution (Pipeline 4 Entry A)
+
+**Purpose:** Collaborative step-by-step execution for first-time technical processes. Agent and user work as a team: agent reasons, plans, and executes what it can; user performs actions requiring credentials, browser access, or external systems.
+
+**Key patterns:**
+- Iron Laws: explain before executing, validate before advancing, document every step
+- 9-step checklist: understand goal → task list → plan approval → execute → validate → document → update tasks → repeat → summary
+- 7-phase step execution protocol per step: framing → rationale → responsibility split → instructions → feedback loop → validation → closure
+- Responsibility classification table: agent vs user actions
+- Troubleshooting mode: invoke debugging, targeted fix, re-validate, 3-cycle escalation
+- Task management: TaskCreate/TaskUpdate with 5 statuses, always shows done/current/next
+- Communication: plain language, one thing per message, explicit about what agent can't verify
+
+**Integration:**
+- Uses `codi-evidence-gathering` + `codi-verification` for step validation
+- Uses `codi-step-documenter` to document each completed step
+- Uses `codi-debugging` in troubleshooting mode
+- For complex goals: pair with `codi-brainstorming` + `codi-plan-writer` first
 
 ## Enhanced Skills (1)
 

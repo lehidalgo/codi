@@ -127,6 +127,11 @@ function materializeMcpServers(templateNames: string[]): McpConfig {
   return { servers } as McpConfig;
 }
 
+function getArtifactVersion(data: Record<string, unknown>): number {
+  const version = data["version"];
+  return typeof version === "number" && Number.isInteger(version) && version > 0 ? version : 1;
+}
+
 function parseRuleTemplate(name: string, content: string): NormalizedRule | null {
   try {
     const { data, content: body } = parseFrontmatter<Record<string, unknown>>(content);
@@ -134,6 +139,7 @@ function parseRuleTemplate(name: string, content: string): NormalizedRule | null
     return {
       name: (d["name"] as string) ?? name,
       description: (d["description"] as string) ?? "",
+      version: getArtifactVersion(d),
       content: body,
       priority: (d["priority"] as "high" | "medium" | "low") ?? "medium",
       alwaysApply: (d["alwaysApply"] as boolean) ?? true,
@@ -155,6 +161,7 @@ function parseSkillTemplate(name: string, content: string): NormalizedSkill | nu
     return {
       name: (d["name"] as string) ?? name,
       description: (d["description"] as string) ?? "",
+      version: getArtifactVersion(d),
       content: body,
       managedBy: PROJECT_NAME,
       ...(d["category"] !== undefined && { category: d["category"] as string }),
@@ -205,6 +212,7 @@ function parseAgentTemplate(name: string, content: string): NormalizedAgent | nu
     return {
       name: (data["name"] as string) ?? name,
       description: (data["description"] as string) ?? "",
+      version: getArtifactVersion(data),
       content: body,
       tools: data["tools"] as string[] | undefined,
       model: data["model"] as string | undefined,

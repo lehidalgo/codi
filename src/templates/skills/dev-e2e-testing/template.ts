@@ -23,7 +23,7 @@ category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: false
-version: 2
+version: 6
 ---
 
 # {{name}}
@@ -261,7 +261,7 @@ servers:
 EOF
 npx ${PROJECT_CLI} generate --json
 \\\`\\\`\\\`
-Expected: .claude/mcp.json, .cursor/mcp.json, .codex/mcp.toml, .windsurf/mcp.json contain test-api.
+Expected: .mcp.json, .cursor/mcp.json, .codex/config.toml contain test-api.
 
 ## Suite 9: Backup & Revert
 
@@ -409,7 +409,7 @@ Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and a
 
 - docs/guides/testing-guide.md — full testing procedure
 - docs/guides/user-flows.md — all 30 user flows
-- docs/troubleshooting.md — common issues (including hook troubleshooting)
+- docs/project/troubleshooting.md — common issues (including hook troubleshooting)
 
 ## Available Agents
 

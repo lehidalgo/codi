@@ -38,8 +38,15 @@ def validate_skill(skill_path):
     except yaml.YAMLError as e:
         return False, f"Invalid YAML in frontmatter: {e}"
 
-    # Define allowed properties
-    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility'}
+    # Define allowed properties — kept in sync with src/schemas/skill.ts and quick-validate.ts
+    ALLOWED_PROPERTIES = {
+        'name', 'description', 'version', 'type', 'license',
+        'tools', 'hooks', 'allowed-tools', 'allowedTools', 'metadata', 'compatibility',
+        'managed_by', 'category',
+        'disable-model-invocation', 'disableModelInvocation',
+        'user-invocable', 'argument-hint', 'argumentHint',
+        'model', 'effort', 'context', 'agent', 'paths', 'shell',
+    }
 
     # Check for unexpected properties (excluding nested keys under metadata)
     unexpected_keys = set(frontmatter.keys()) - ALLOWED_PROPERTIES
@@ -83,13 +90,35 @@ def validate_skill(skill_path):
         if len(description) > 1024:
             return False, f"Description is too long ({len(description)} characters). Maximum is 1024 characters."
 
-    # Validate compatibility field if present (optional)
-    compatibility = frontmatter.get('compatibility', '')
-    if compatibility:
-        if not isinstance(compatibility, str):
-            return False, f"Compatibility must be a string, got {type(compatibility).__name__}"
-        if len(compatibility) > 500:
-            return False, f"Compatibility is too long ({len(compatibility)} characters). Maximum is 500 characters."
+    # Validate compatibility field if present (optional — list of platform strings)
+    compatibility = frontmatter.get('compatibility')
+    if compatibility is not None:
+        if not isinstance(compatibility, list) or not all(isinstance(v, str) for v in compatibility):
+            return False, "Compatibility must be a list of strings (e.g. [claude-code, cursor])"
+
+    # Validate version field if present (optional — positive integer)
+    version = frontmatter.get('version')
+    if version is not None:
+        if not isinstance(version, int) or version <= 0:
+            return False, f"Version must be a positive integer, got {version!r}"
+
+    # Validate category value against the centralized registry.
+    # Kept in sync with ALL_SKILL_CATEGORIES in src/constants.ts.
+    VALID_CATEGORIES = {
+        'Brand Identity', 'Code Quality', 'Content Creation', 'Content Refinement',
+        'Creative and Design', 'Developer Tools', 'Developer Workflow',
+        'Document Generation', 'File Format Tools', 'Planning', 'Productivity',
+        'Testing', 'Workflow', 'Codi Platform',
+    }
+    category = frontmatter.get('category')
+    if category is not None:
+        if not isinstance(category, str):
+            return False, f"Category must be a string, got {type(category).__name__}"
+        if category and category not in VALID_CATEGORIES:
+            return False, (
+                f"Category '{category}' is not recognized. "
+                f"Valid categories: {', '.join(sorted(VALID_CATEGORIES))}"
+            )
 
     return True, "Skill is valid!"
 

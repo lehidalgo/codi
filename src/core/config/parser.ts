@@ -158,7 +158,7 @@ async function scanAgents(agentsDir: string): Promise<Result<NormalizedAgent[]>>
   return ok(agents);
 }
 
-async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>> {
+export async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>> {
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -170,6 +170,7 @@ async function parseAgentFile(filePath: string): Promise<Result<NormalizedAgent>
     return ok({
       name: fm.name,
       description: fm.description,
+      version: fm.version,
       content,
       tools: fm.tools,
       disallowedTools: fm.disallowedTools,
@@ -241,6 +242,7 @@ async function parseLegacyBrandFile(filePath: string): Promise<Result<Normalized
     return ok({
       name,
       description,
+      version: 1,
       content,
       category: BRAND_CATEGORY,
       managedBy: managedBy as ManagedBy | undefined,
@@ -270,6 +272,7 @@ export async function parseSkillFile(filePath: string): Promise<Result<Normalize
     return ok({
       name: fm.name,
       description: fm.description,
+      version: fm.version,
       content,
       compatibility: fm.compatibility,
       tools: fm.tools,
@@ -298,7 +301,7 @@ export async function parseSkillFile(filePath: string): Promise<Result<Normalize
   }
 }
 
-async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> {
+export async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> {
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
@@ -310,6 +313,7 @@ async function parseRuleFile(filePath: string): Promise<Result<NormalizedRule>> 
     return ok({
       name: fm.name,
       description: fm.description,
+      version: fm.version,
       content,
       language: fm.language,
       priority: fm.priority,

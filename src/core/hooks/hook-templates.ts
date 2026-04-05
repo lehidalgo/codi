@@ -1,9 +1,4 @@
-import {
-  GIT_COMMIT_FIRST_LINE_LIMIT,
-  PROJECT_CLI,
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-} from "#src/constants.js";
+import { PROJECT_CLI, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
 // These are template strings for generated hook scripts.
 // They are written to disk as standalone Node.js scripts, not executed in this process.
@@ -291,10 +286,193 @@ for (const art of ARTIFACT_TYPES) {
   }
 }
 
+// Additionally check that every skill template has a 'category' field in its frontmatter.
+// This prevents contributors from shipping skills without proper catalog metadata.
+const skillType = ARTIFACT_TYPES.find(a => a.name === 'skills');
+if (skillType) {
+  const skillDirs = getFilesystemEntries(skillType.templateDir, true, skillType.excludeFiles);
+  for (const dirName of skillDirs) {
+    const templateFile = path.join(skillType.templateDir, dirName, 'template.ts');
+    try {
+      const content = fs.readFileSync(templateFile, 'utf-8');
+      // Look for category: inside a template literal frontmatter block
+      if (!content.includes('category:')) {
+        errors.push('skills: template "' + dirName + '" is missing category in frontmatter (template.ts has no category: field)');
+      }
+    } catch { /* template.ts missing — wiring check above will catch it */ }
+  }
+}
+
 if (errors.length > 0) {
   console.error('Template wiring errors found:');
   for (const e of errors) console.error('  ' + e);
   console.error('\\nFix: export the template in index.ts AND add it to the loader TEMPLATE_MAP.');
+  console.error('For missing category: add a category field to the skill frontmatter in template.ts.');
+  process.exit(1);
+}
+`;
+
+export const SKILL_RESOURCE_CHECK_TEMPLATE = `#!/usr/bin/env node
+// ${PROJECT_NAME_DISPLAY} skill resource reference checker
+// Validates that files referenced in skill files actually exist on disk.
+// Covers two circuits:
+//   User circuit:      .codi/skills/*/{SKILL.md,**/*.md}   -> checks file existence in skill dir
+//   Developer circuit: src/templates/skills/*/{template.ts,**/*.md} -> checks staticDir + file presence
+// Convention: wrap resource paths with [[/path]] markers so this hook can validate them.
+// The parser also tolerates [[ /path ]] to avoid false negatives from older examples.
+// The adapter strips [[...]] at generate time; markdown files keep them as-is.
+import fs from 'fs';
+import path from 'path';
+
+const ROOT = process.cwd();
+
+// One pattern: [[/path]] markers with optional inner whitespace.
+// This avoids false positives from TOML [[section]] and PHP arrays while accepting
+// both the canonical compact form and older spaced examples like [[ /path ]].
+const REFERENCE_PATTERNS = [
+  /\\[\\[\\s*(\\/[^[\\]]*?)\\s*\\]\\]/g,
+];
+
+const EXCLUDED = [/^\\/evals\\//, /[*?{}[\\]]/, /^https?:\\/\\//, /^path$/];
+
+function extractRefs(content) {
+  // Strip <example>...</example> blocks so documented examples of [[/path]] syntax are not validated.
+  const cleaned = content.replace(/<example>[\\s\\S]*?<\\/example>/g, '');
+  const refs = new Set();
+  for (const re of REFERENCE_PATTERNS) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(cleaned)) !== null) {
+      const raw = m[1].trim().replace(/[.,;)]+$/, '');
+      const ref = raw.startsWith('/') ? raw.slice(1) : raw; // strip leading slash
+      if (ref && !EXCLUDED.some(p => p.test(ref))) refs.add(ref);
+    }
+  }
+  return refs;
+}
+
+// Collect all .md files recursively under dir
+function collectMdFiles(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) results.push(...collectMdFiles(full));
+    else if (entry.isFile() && entry.name.endsWith('.md')) results.push(full);
+  }
+  return results;
+}
+
+const errors = [];
+
+// User circuit: .codi/skills/
+const codiSkillsDir = path.join(ROOT, '.codi', 'skills');
+if (fs.existsSync(codiSkillsDir)) {
+  for (const entry of fs.readdirSync(codiSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillDir = path.join(codiSkillsDir, entry.name);
+    const skillMd = path.join(skillDir, 'SKILL.md');
+    if (!fs.existsSync(skillMd)) continue;
+    // Check SKILL.md and all *.md files in the skill directory
+    const mdFiles = [skillMd, ...collectMdFiles(skillDir).filter(f => f !== skillMd)];
+    for (const mdFile of mdFiles) {
+      for (const ref of extractRefs(fs.readFileSync(mdFile, 'utf-8'))) {
+        if (!fs.existsSync(path.join(skillDir, ref))) {
+          errors.push({ source: path.relative(ROOT, mdFile), ref });
+        }
+      }
+    }
+  }
+}
+
+// Developer circuit: src/templates/skills/
+const tmplSkillsDir = path.join(ROOT, 'src', 'templates', 'skills');
+if (fs.existsSync(tmplSkillsDir)) {
+  for (const entry of fs.readdirSync(tmplSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillTemplateDir = path.join(tmplSkillsDir, entry.name);
+    const tmplFile = path.join(skillTemplateDir, 'template.ts');
+    if (!fs.existsSync(tmplFile)) continue;
+
+    const indexFile = path.join(skillTemplateDir, 'index.ts');
+    let hasStatic = false;
+    try { hasStatic = fs.readFileSync(indexFile, 'utf-8').includes('staticDir'); } catch {}
+
+    // Check template.ts and all *.md files under the skill template directory
+    const filesToCheck = [{ file: tmplFile, isTemplate: true }, ...collectMdFiles(skillTemplateDir).map(f => ({ file: f, isTemplate: false }))];
+    for (const { file, isTemplate } of filesToCheck) {
+      const refs = extractRefs(fs.readFileSync(file, 'utf-8'));
+      for (const ref of refs) {
+        if (!hasStatic && isTemplate) {
+          errors.push({ source: path.relative(ROOT, file), ref, extra: 'no staticDir — resource will not be copied to scaffolded skills' });
+        } else if (!fs.existsSync(path.join(skillTemplateDir, ref))) {
+          errors.push({ source: path.relative(ROOT, file), ref });
+        }
+      }
+    }
+  }
+}
+
+// Generated agent circuits: validate [[/path]] markers in generated skill directories.
+// .claude/skills/ is excluded — Claude Code strips markers at generate time by design.
+const AGENT_SKILL_DIRS = ['.agents/skills', '.windsurf/skills', '.cline/skills'];
+for (const relDir of AGENT_SKILL_DIRS) {
+  const agentSkillsDir = path.join(ROOT, relDir);
+  if (!fs.existsSync(agentSkillsDir)) continue;
+  for (const entry of fs.readdirSync(agentSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillDir = path.join(agentSkillsDir, entry.name);
+    const mdFiles = collectMdFiles(skillDir);
+    for (const mdFile of mdFiles) {
+      for (const ref of extractRefs(fs.readFileSync(mdFile, 'utf-8'))) {
+        if (!fs.existsSync(path.join(skillDir, ref))) {
+          errors.push({ source: path.relative(ROOT, mdFile), ref });
+        }
+      }
+    }
+  }
+}
+
+if (errors.length > 0) {
+  console.error('\\nSkill resource reference errors found:\\n');
+  const bySource = {};
+  for (const { source, ref, extra } of errors) {
+    if (!bySource[source]) bySource[source] = [];
+    bySource[source].push(extra ? ref + ' (' + extra + ')' : ref);
+  }
+  for (const [source, refs] of Object.entries(bySource)) {
+    console.error('  ' + source + ':');
+    for (const ref of refs) console.error("    references '" + ref + "' — file does not exist");
+  }
+  console.error('\\nFix: create the missing resource files, or remove the references.');
+  console.error('     Wrap resource paths with [[/path]] markers so the hook can validate them.');
+  console.error('     Example: \${CLAUDE_SKILL_DIR}[[/scripts/run.py]]  — non-Claude-Code agents keep [[]] markers.');
+  console.error('     For templates: export staticDir in index.ts and place files in the template directory.');
+  process.exit(1);
+}
+`;
+
+export const DOC_NAMING_CHECK_TEMPLATE = `#!/usr/bin/env node
+// ${PROJECT_NAME_DISPLAY} doc naming check
+// Validates docs/ filenames follow YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext when docs are staged.
+import { execFileSync } from 'child_process';
+
+const staged = (() => {
+  try {
+    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
+      .trim().split('\\n').filter(Boolean);
+  } catch { return []; }
+})();
+
+const hasDocs = staged.some(f => f.startsWith('docs/'));
+if (!hasDocs) process.exit(0);
+
+try {
+  execFileSync('python3', ['scripts/validate-docs.py', '--quiet'], { stdio: 'inherit' });
+} catch {
+  console.error('');
+  console.error('Documentation naming validation failed.');
+  console.error('Run: python3 scripts/validate-docs.py  to see which files need renaming.');
+  console.error('Format: YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext');
   process.exit(1);
 }
 `;
@@ -332,150 +510,3 @@ try {
  * Blocks pushes to protected branches when docs/project/.doc-stamp is outdated.
  * {{PROTECTED_BRANCHES}} is replaced with a space-separated list of branch patterns at install time.
  */
-export const PRE_PUSH_DOC_CHECK_TEMPLATE = `#!/bin/sh
-# ${PROJECT_NAME_DISPLAY} documentation checkpoint — Auto-generated by ${PROJECT_CLI} init
-# Blocks pushes to protected branches when documentation has not been verified.
-# To verify: review docs/project/, update if needed, then run: codi docs-stamp
-
-STAMP_FILE="docs/project/.doc-stamp"
-PROTECTED_BRANCHES="{{PROTECTED_BRANCHES}}"
-
-is_protected() {
-  target="$1"
-  for pat in $PROTECTED_BRANCHES; do
-    case "$target" in
-      $pat) return 0 ;;
-    esac
-  done
-  return 1
-}
-
-blocked=0
-
-while IFS=' ' read -r _local_ref _local_sha remote_ref _remote_sha; do
-  [ -z "$remote_ref" ] && continue
-  branch="\${remote_ref#refs/heads/}"
-
-  if is_protected "$branch"; then
-    if [ ! -f "$STAMP_FILE" ]; then
-      printf '\\n[${PROJECT_NAME}] Documentation checkpoint\\n'
-      printf '  No stamp found at %s\\n' "$STAMP_FILE"
-      printf '  Run: ${PROJECT_CLI} docs-stamp\\n'
-      printf '  Then commit the stamp and push again.\\n\\n'
-      blocked=1
-      continue
-    fi
-
-    stamp_hash=\$(node -e "try{const s=JSON.parse(require('fs').readFileSync('$STAMP_FILE','utf8'));process.stdout.write(s.commit||'')}catch(e){}" 2>/dev/null)
-
-    if [ -z "\$stamp_hash" ]; then
-      printf '\\n[${PROJECT_NAME}] Documentation checkpoint\\n'
-      printf '  Stamp file is invalid or unreadable.\\n'
-      printf '  Run: ${PROJECT_CLI} docs-stamp\\n'
-      printf '  Then commit the stamp and push again.\\n\\n'
-      blocked=1
-      continue
-    fi
-
-    if ! git rev-parse --verify "\$stamp_hash^{commit}" >/dev/null 2>&1; then
-      printf '\\n[${PROJECT_NAME}] Documentation checkpoint\\n'
-      printf '  Stamp hash not found in history (rebase invalidated it).\\n'
-      printf '  Re-verify docs and run: ${PROJECT_CLI} docs-stamp\\n'
-      printf '  Then commit the stamp and push again.\\n\\n'
-      blocked=1
-      continue
-    fi
-
-    count=\$(git rev-list "\$stamp_hash..HEAD" --count 2>/dev/null || echo 999)
-
-    if [ "\$count" -gt 1 ]; then
-      short=\$(echo "\$stamp_hash" | cut -c1-7)
-      printf '\\n[${PROJECT_NAME}] Documentation checkpoint\\n'
-      printf '  %s commits since last doc verification (stamp: %s).\\n' "\$count" "\$short"
-      printf '  Review docs in docs/project/ and run: ${PROJECT_CLI} docs-stamp\\n'
-      printf '  Then commit the stamp and push again.\\n\\n'
-      blocked=1
-    fi
-  fi
-done
-
-exit \$blocked
-`;
-
-export const COMMIT_MSG_TEMPLATE = `#!/bin/sh
-# ${PROJECT_NAME_DISPLAY} commit message validator — Auto-generated by ${PROJECT_CLI} init
-node --input-type=module - "$1" << 'HOOK_SCRIPT'
-import fs from 'fs';
-
-const msgFile = process.argv[2];
-if (!msgFile) {
-  console.error('No commit message file provided');
-  process.exit(1);
-}
-
-const msg = fs.readFileSync(msgFile, 'utf-8').trim();
-const firstLine = msg.split('\\n')[0];
-
-const TYPES = ['feat', 'fix', 'docs', 'refactor', 'test', 'chore', 'perf', 'ci', 'build', 'style', 'revert'];
-const pattern = new RegExp(\`^(\${TYPES.join('|')})(\\\\([^)]+\\\\))?!?: .+\`);
-
-if (!pattern.test(firstLine)) {
-  console.error('Invalid commit message format.');
-  console.error(\`Expected: type(scope): description\`);
-  console.error(\`Types: \${TYPES.join(', ')}\`);
-  console.error(\`Example: feat(auth): add OAuth2 login flow\`);
-  console.error(\`Got: \${firstLine}\`);
-  process.exit(1);
-}
-
-if (firstLine.length > ${GIT_COMMIT_FIRST_LINE_LIMIT}) {
-  console.error(\`Commit message first line too long: \${firstLine.length} chars (max ${GIT_COMMIT_FIRST_LINE_LIMIT})\`);
-  process.exit(1);
-}
-HOOK_SCRIPT
-`;
-
-export const IMPORT_DEPTH_CHECK_TEMPLATE = `#!/usr/bin/env node
-// ${PROJECT_NAME_DISPLAY} import depth checker
-// Blocks commits that introduce ../../ relative imports — use #src/* path aliases instead.
-import fs from 'fs';
-
-// Regex matches real import/export from statements with ../../ paths
-const IMPORT_RE = /^\\s*(?:import|export)(?:[^'"\\n]*from)?\\s+['"](\\.\\.\\/\\.\\.\\/[^'"]*)['"]/m;
-
-const EXCLUDED = [
-  /\\.d\\.ts$/,
-  /\\/references\\//,
-  /\\/scripts\\//,
-  /\\.md$/,
-];
-
-const files = process.argv.slice(2).filter(f =>
-  /\\.(ts|tsx|js|jsx|mts|mjs)$/.test(f) && !EXCLUDED.some(p => p.test(f))
-);
-
-const findings = [];
-
-for (const file of files) {
-  let content;
-  try { content = fs.readFileSync(file, 'utf-8'); } catch { continue; }
-  const lines = content.split('\\n');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!IMPORT_RE.test(line)) continue;
-    // Skip lines inside template literals (doc examples) — they are indented with backtick context
-    const trimmed = line.trimStart();
-    if (!trimmed.startsWith('import') && !trimmed.startsWith('export') && !trimmed.startsWith('} from')) continue;
-    findings.push({ file, line: i + 1, text: trimmed.substring(0, 100) });
-  }
-}
-
-if (findings.length > 0) {
-  console.error('[import-depth] Deep relative imports found — use #src/* path aliases instead:');
-  for (const f of findings) {
-    console.error(\`  \${f.file}:\${f.line}  \${f.text}\`);
-  }
-  console.error('\\nFix: replace ../../ with #src/ (e.g. "../../types/result.js" → "#src/types/result.js")');
-  process.exit(1);
-}
-`;

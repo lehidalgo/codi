@@ -77,15 +77,15 @@ function renderItem<Value>(
 
   switch (state) {
     case "active":
-      return `${spacing}${styleText("dim", branch)}${styleText("inverse", ` ${S_CHECKBOX_ACTIVE} `)} ${styleText("blue", label)}${suffix}${hint}`;
+      return `${spacing}${styleText("dim", branch)}${styleText("blue", S_CHECKBOX_ACTIVE)} ${styleText("blue", label)}${suffix}${hint}`;
     case "active-selected":
-      return `${spacing}${styleText("dim", branch)}${styleText("inverse", ` ${S_CHECKBOX_SELECTED} `)} ${styleText("blue", label)}${suffix}${hint}`;
+      return `${spacing}${styleText("dim", branch)}${styleText("blue", S_CHECKBOX_SELECTED)} ${styleText("blue", label)}${suffix}${hint}`;
     case "selected":
       return `${spacing}${styleText("dim", branch)}${styleText("green", S_CHECKBOX_SELECTED)} ${styleText("dim", label)}${suffix}`;
     case "group-active":
-      return `${spacing}${branch}${styleText("inverse", ` ${S_CHECKBOX_ACTIVE} `)} ${styleText("dim", label)}${suffix}`;
+      return `${spacing}${branch}${styleText("blue", S_CHECKBOX_ACTIVE)} ${styleText("dim", label)}${suffix}`;
     case "group-active-selected":
-      return `${spacing}${branch}${styleText("inverse", ` ${S_CHECKBOX_SELECTED} `)} ${styleText("dim", label)}${suffix}`;
+      return `${spacing}${branch}${styleText("blue", S_CHECKBOX_SELECTED)} ${styleText("dim", label)}${suffix}`;
     case "submitted":
       return styleText("dim", rawLabel);
     case "cancelled":

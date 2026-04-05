@@ -130,8 +130,12 @@ export async function generateHandler(
           fileSizeCheck: hooksConfig.fileSizeCheck,
           versionCheck: hooksConfig.versionCheck,
           templateWiringCheck: hooksConfig.templateWiringCheck,
+          docNamingCheck: hooksConfig.docNamingCheck,
+          versionBump: hooksConfig.versionBump,
           artifactValidation: hooksConfig.artifactValidation,
           importDepthCheck: hooksConfig.importDepthCheck,
+          skillYamlValidation: hooksConfig.skillYamlValidation,
+          skillResourceCheck: hooksConfig.skillResourceCheck,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });

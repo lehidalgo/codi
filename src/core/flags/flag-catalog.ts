@@ -89,16 +89,16 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
   require_documentation: {
     type: "boolean",
     default: false,
-    hook: null,
+    hook: "doc-check",
     description: "Require documentation for new code",
-    hint: "Agent must update docs (README, CHANGELOG) when adding features",
+    hint: "Agent must update docs (README, CHANGELOG) when adding features. Enables pre-push doc-check hook on protected branches.",
   },
   doc_protected_branches: {
     type: "string[]",
     default: ["main", "develop", "release/*"],
-    hook: null,
+    hook: "doc-check",
     description: "Branch patterns that require documentation verification before push",
-    hint: "Pushes to these branches are blocked if docs/project/.doc-stamp is outdated",
+    hint: "Pushes to these branches are blocked if docs/project/.doc-stamp is outdated. Configures which branches the doc-check hook enforces.",
   },
   allowed_languages: {
     type: "string[]",

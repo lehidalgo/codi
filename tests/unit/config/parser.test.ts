@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import {
   parseManifest,
   parseFlags,
@@ -365,6 +365,7 @@ describe("scanProjectDir", () => {
     const brandSkill = result.data.skills.find((s) => s.name === "acme");
     expect(brandSkill).toBeDefined();
     expect(brandSkill!.category).toBe("brand");
+    expect(brandSkill!.version).toBe(1);
     expect(brandSkill!.content).toContain("Acme blue");
     expect(brandSkill!.managedBy).toBe("user");
   });

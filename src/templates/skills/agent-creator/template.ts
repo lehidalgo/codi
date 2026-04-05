@@ -18,7 +18,7 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 5
 ---
 
 # Agent Creator
@@ -61,6 +61,7 @@ This creates \\\`${PROJECT_DIR}/agents/<name>.md\\\` with a blank skeleton.
 ---
 name: <kebab-case, max ${MAX_NAME_LENGTH} chars>
 description: <max ${MAX_DESCRIPTION_LENGTH} chars — see description rules below>
+version: 1
 tools: [Read, Grep, Glob, Bash]  # only include tools the agent needs
 model: inherit                    # or sonnet, opus
 managed_by: user
@@ -190,11 +191,14 @@ Adapt the severity levels and criteria to match the agent's domain.
 - [ ] Approval criteria have concrete thresholds
 - [ ] \\\`name\\\` in frontmatter matches the filename
 
+Run \\\`${PROJECT_CLI} validate\\\` to check Zod schema compliance (name pattern, description length, version, managed_by). Fix any errors before registering.
+
 ### Step 9 — Register
 
 **[CODING AGENT]** After validation passes:
 
 \\\`\\\`\\\`bash
+${PROJECT_CLI} validate
 ${PROJECT_CLI} generate
 ${PROJECT_CLI} doctor
 \\\`\\\`\\\`

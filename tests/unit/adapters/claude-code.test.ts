@@ -365,7 +365,7 @@ describe("claude-code adapter", () => {
   // ── generate() — MCP config ────────────────────────────────────────
 
   describe("generate() — MCP config", () => {
-    it("produces .claude/mcp.json when MCP servers are configured", async () => {
+    it("produces .mcp.json when MCP servers are configured", async () => {
       const config = createMockConfig({
         mcp: {
           servers: {

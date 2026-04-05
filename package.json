@@ -15,7 +15,8 @@
     }
   },
   "imports": {
-    "#src/*": "./src/*"
+    "#src/*": "./src/*",
+    "#tests/*": "./tests/*"
   },
   "files": [
     "dist"
