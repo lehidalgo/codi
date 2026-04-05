@@ -6,8 +6,9 @@ description: Brand identity for {{name}}. Use when applying design tokens, typog
 category: Brand Identity
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
-user-invocable: false
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}} — Brand Identity

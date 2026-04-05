@@ -6,7 +6,9 @@ description: Use when the user mentions a .pdf file or asks to work with PDFs. H
 category: File Format Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # PDF Processing Guide

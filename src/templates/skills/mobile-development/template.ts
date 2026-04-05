@@ -6,7 +6,9 @@ description: "Mobile development for iOS (SwiftUI/UIKit), Android (Jetpack Compo
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}

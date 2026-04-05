@@ -142,10 +142,10 @@ The routing table maps user intents to recommended skills and appears in all gen
 | Platform | Supported Fields |
 |:---------|:----------------|
 | claude-code | name, description, user-invocable, disable-model-invocation, argument-hint, allowed-tools, model, effort, context, agent, paths, shell, license, metadata, hooks |
-| cursor | name, description, user-invocable, allowed-tools |
+| cursor | name, description, user-invocable, disable-model-invocation, allowed-tools, model, license, metadata |
 | codex | name, description, license, allowed-tools, metadata |
-| windsurf | name, description |
-| cline | name, description |
+| windsurf | name, description, disable-model-invocation, allowed-tools, license, metadata |
+| cline | name, description, disable-model-invocation, allowed-tools, license, metadata |
 
 ### Artifact Version Tracking
 

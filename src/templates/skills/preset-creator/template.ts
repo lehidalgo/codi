@@ -13,7 +13,9 @@ description: Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the us
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 2
+user-invocable: true
+disable-model-invocation: false
+version: 4
 ---
 
 # {{name}}

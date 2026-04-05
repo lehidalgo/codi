@@ -6,7 +6,9 @@ description: Use when the user asks to build web components, pages, or UI interf
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 ## When to Activate

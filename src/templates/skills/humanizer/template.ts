@@ -7,7 +7,8 @@ category: Content Refinement
 compatibility: [claude-code]
 managed_by: user
 user-invocable: true
-version: 1
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}} — Content Humanizer

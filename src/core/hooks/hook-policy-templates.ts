@@ -115,8 +115,8 @@ HOOK_SCRIPT
 
 export const SKILL_YAML_VALIDATE_TEMPLATE = `#!/usr/bin/env node
 // ${PROJECT_NAME_DISPLAY} SKILL.md YAML frontmatter validator
-// Checks staged SKILL.md files for valid YAML syntax AND key metadata fields.
-// Kept in sync with ALL_SKILL_CATEGORIES and MANAGED_BY_VALUES in src/constants.ts.
+// Checks staged SKILL.md files for valid YAML syntax AND schema-constrained fields.
+// Mirrors src/schemas/skill.ts — update both when schema changes.
 import fs from 'fs';
 
 const SKILL_OUTPUT_PATTERNS = [
@@ -128,7 +128,7 @@ const SKILL_OUTPUT_PATTERNS = [
   '.clinerules/',
 ];
 
-// Single source of truth mirrors — update when src/constants.ts changes.
+// Mirrors src/constants.ts — update when constants change.
 const VALID_MANAGED_BY = ['codi', 'user'];
 const VALID_CATEGORIES = [
   'Brand Identity', 'Code Quality', 'Content Creation', 'Content Refinement',
@@ -136,6 +136,10 @@ const VALID_CATEGORIES = [
   'Document Generation', 'File Format Tools', 'Planning', 'Productivity',
   'Testing', 'Workflow', '${PROJECT_NAME_DISPLAY} Platform',
 ];
+// Mirrors SUPPORTED_PLATFORMS in src/constants.ts
+const VALID_PLATFORMS = ['claude-code', 'cursor', 'codex', 'windsurf', 'cline'];
+const VALID_EFFORT = ['low', 'medium', 'high', 'max'];
+const VALID_SHELL = ['bash', 'powershell'];
 
 const files = process.argv.slice(2).filter(f => f.endsWith('.md'));
 const relevant = files.filter(f =>
@@ -166,6 +170,7 @@ for (const file of relevant) {
 
   if (!fm || typeof fm !== 'object') continue;
 
+  // Required fields
   if (!fm.name || typeof fm.name !== 'string') {
     console.error(\`\\u26a0 \${file}: missing or invalid 'name' field\`);
     failed = true;
@@ -175,6 +180,37 @@ for (const file of relevant) {
     failed = true;
   }
 
+  // Enum / type-constrained optional fields (blocking errors — mirror Zod schema)
+  if (fm.compatibility !== undefined) {
+    const compat = Array.isArray(fm.compatibility) ? fm.compatibility : [fm.compatibility];
+    const invalid = compat.filter(v => !VALID_PLATFORMS.includes(v));
+    if (invalid.length > 0) {
+      console.error(\`\\u26a0 \${file}: 'compatibility' contains invalid platform(s): \${invalid.join(', ')}. Valid: \${VALID_PLATFORMS.join(', ')}\`);
+      failed = true;
+    }
+  }
+  if (fm['user-invocable'] !== undefined && typeof fm['user-invocable'] !== 'boolean') {
+    console.error(\`\\u26a0 \${file}: 'user-invocable' must be a boolean (got \${JSON.stringify(fm['user-invocable'])})\`);
+    failed = true;
+  }
+  if (fm['disable-model-invocation'] !== undefined && typeof fm['disable-model-invocation'] !== 'boolean') {
+    console.error(\`\\u26a0 \${file}: 'disable-model-invocation' must be a boolean (got \${JSON.stringify(fm['disable-model-invocation'])})\`);
+    failed = true;
+  }
+  if (fm.effort !== undefined && !VALID_EFFORT.includes(fm.effort)) {
+    console.error(\`\\u26a0 \${file}: 'effort' must be one of [\${VALID_EFFORT.join(', ')}] (got "\${fm.effort}")\`);
+    failed = true;
+  }
+  if (fm.shell !== undefined && !VALID_SHELL.includes(fm.shell)) {
+    console.error(\`\\u26a0 \${file}: 'shell' must be one of [\${VALID_SHELL.join(', ')}] (got "\${fm.shell}")\`);
+    failed = true;
+  }
+  if (fm.context !== undefined && fm.context !== 'fork') {
+    console.error(\`\\u26a0 \${file}: 'context' must be "fork" if set (got "\${fm.context}")\`);
+    failed = true;
+  }
+
+  // Non-blocking warnings
   if (fm.version !== undefined && (typeof fm.version !== 'number' || !Number.isInteger(fm.version) || fm.version <= 0)) {
     warnings.push(\`\${file}: 'version' should be a positive integer (got \${JSON.stringify(fm.version)})\`);
   }
@@ -194,7 +230,7 @@ if (warnings.length > 0) {
 if (failed) {
   console.error('');
   console.error('SKILL.md YAML frontmatter validation failed.');
-  console.error('Common cause: description value contains an unquoted colon.');
+  console.error('Common causes: unquoted colon in description, invalid platform in compatibility, wrong type for boolean fields.');
   console.error('Fix: run "${PROJECT_CLI} generate" to regenerate files with proper quoting.');
   process.exit(1);
 }

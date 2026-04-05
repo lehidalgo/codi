@@ -7,7 +7,8 @@ category: Productivity
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 6
+disable-model-invocation: false
+version: 8
 ---
 
 # {{name}} — NotebookLM Research Assistant

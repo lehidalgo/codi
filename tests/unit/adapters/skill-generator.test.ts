@@ -118,7 +118,16 @@ describe("buildSkillMd", () => {
     expect(result).not.toContain("hooks:");
   });
 
-  it("does not emit hooks for non-claude-code platforms", () => {
+  it("does not emit hooks for platforms that do not support them (windsurf, cline, codex)", () => {
+    const hooks = {
+      PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "./check.sh" }] }],
+    };
+    expect(buildSkillMd({ ...baseSkill, hooks }, "", "windsurf")).not.toContain("hooks:");
+    expect(buildSkillMd({ ...baseSkill, hooks }, "", "cline")).not.toContain("hooks:");
+    expect(buildSkillMd({ ...baseSkill, hooks }, "", "codex")).not.toContain("hooks:");
+  });
+
+  it("strips hooks for cursor (hooks frontmatter is CC-only)", () => {
     const hooks = {
       PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "./check.sh" }] }],
     };
@@ -262,32 +271,47 @@ describe("buildSkillMd — platform-aware field filtering", () => {
     expect(result).not.toContain("shell:");
   });
 
-  it("cursor emits only name, description, user-invocable, allowed-tools", () => {
+  it("cursor emits Agent Skills fields, strips CC-only fields", () => {
     const result = buildSkillMd(richSkill, "", "cursor");
     expect(result).toContain("user-invocable: false");
+    expect(result).toContain("disable-model-invocation: true");
     expect(result).toContain("allowed-tools: Read, Bash");
-    expect(result).not.toContain("model:");
-    expect(result).not.toContain("effort:");
-    expect(result).not.toContain("disable-model-invocation:");
+    expect(result).toContain("model: sonnet");
+    expect(result).toContain("license: MIT");
+    // CC-only fields must NOT appear
     expect(result).not.toContain("argument-hint:");
-    expect(result).not.toContain("license:");
+    expect(result).not.toContain("context:");
+    expect(result).not.toContain("agent:");
+    expect(result).not.toContain("hooks:");
+    expect(result).not.toContain("effort:");
+    expect(result).not.toContain("paths:");
+    expect(result).not.toContain("shell:");
   });
 
-  it("windsurf emits only name and description", () => {
+  it("windsurf emits Agent Skills fields including disable-model-invocation", () => {
     const result = buildSkillMd(richSkill, "", "windsurf");
     expect(result).toContain("name: deploy");
     expect(result).toContain("description:");
+    expect(result).toContain("allowed-tools: Read, Bash");
+    expect(result).toContain("license: MIT");
+    // windsurf supports disable-model-invocation (bug fix: was stripped before)
+    expect(result).toContain("disable-model-invocation: true");
+    // windsurf does NOT support CC-specific fields
     expect(result).not.toContain("model:");
     expect(result).not.toContain("user-invocable:");
-    expect(result).not.toContain("allowed-tools:");
-    expect(result).not.toContain("license:");
+    expect(result).not.toContain("effort:");
   });
 
-  it("cline emits only name and description", () => {
+  it("cline emits Agent Skills fields including disable-model-invocation", () => {
     const result = buildSkillMd(richSkill, "", "cline");
     expect(result).toContain("name: deploy");
     expect(result).toContain("description:");
+    expect(result).toContain("allowed-tools: Read, Bash");
+    expect(result).toContain("license: MIT");
+    // cline supports disable-model-invocation
+    expect(result).toContain("disable-model-invocation: true");
     expect(result).not.toContain("model:");
+    expect(result).not.toContain("user-invocable:");
   });
 
   it("defaults to claude-code behavior when no platformId given", () => {
@@ -340,6 +364,49 @@ describe("generateSkillFiles", () => {
       expect(file.hash).toBeDefined();
       expect(file.sources).toContain(MANIFEST_FILENAME);
     }
+  });
+});
+
+describe("generateSkillFiles — Codex agents/openai.yaml sidecar", () => {
+  const skill: NormalizedSkill = {
+    name: "deploy",
+    description: "Deploy",
+    content: "deploy content",
+  };
+
+  it("emits agents/openai.yaml with allow_implicit_invocation: true by default", async () => {
+    const files = await generateSkillFiles([skill], ".agents/skills", undefined, "", "codex");
+    const sidecar = files.find((f) => f.path === ".agents/skills/deploy/agents/openai.yaml");
+    expect(sidecar).toBeDefined();
+    expect(sidecar!.content).toContain("allow_implicit_invocation: true");
+  });
+
+  it("emits allow_implicit_invocation: false when disableModelInvocation is true", async () => {
+    const files = await generateSkillFiles(
+      [{ ...skill, disableModelInvocation: true }],
+      ".agents/skills",
+      undefined,
+      "",
+      "codex",
+    );
+    const sidecar = files.find((f) => f.path === ".agents/skills/deploy/agents/openai.yaml");
+    expect(sidecar).toBeDefined();
+    expect(sidecar!.content).toContain("allow_implicit_invocation: false");
+  });
+
+  it("does NOT emit agents/openai.yaml for non-codex platforms", async () => {
+    const files = await generateSkillFiles([skill], ".claude/skills", undefined, "", "claude-code");
+    const sidecar = files.find((f) => f.path.endsWith("openai.yaml"));
+    expect(sidecar).toBeUndefined();
+  });
+
+  it("sidecar replaces the agents/.gitkeep for Codex (path takes precedence)", async () => {
+    const files = await generateSkillFiles([skill], ".agents/skills", undefined, "", "codex");
+    const agentsGitkeep = files.find((f) => f.path === ".agents/skills/deploy/agents/.gitkeep");
+    const sidecar = files.find((f) => f.path === ".agents/skills/deploy/agents/openai.yaml");
+    // Both exist: skeleton .gitkeep + sidecar
+    expect(agentsGitkeep).toBeDefined();
+    expect(sidecar).toBeDefined();
   });
 });
 

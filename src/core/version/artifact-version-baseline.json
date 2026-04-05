@@ -112,268 +112,268 @@
     "hash": "67045dca9e73520e2763c863e41b8bc8e3ad4ed5a7e3936fc9209d2d8d6a71d1"
   },
   "codi-mcp-ops": {
-    "version": 6,
-    "hash": "7be6c8ff485c82310daef2d52a0b2a6de04a854aaea5e34558db8b5b983c007e"
+    "version": 8,
+    "hash": "62f1576bb1d9335c5f610cf30af725ec66abd131974bca497af82da6c906d09f"
   },
   "codi-code-review": {
-    "version": 1,
-    "hash": "9c0a7f7653fa03776952a64bdf7ceb37a5fe8b265770692398485a9c750f641b"
+    "version": 3,
+    "hash": "98a27ebccda2fd9800c775096e0b4d1d327486533855e66cbddb54de63866a70"
   },
   "codi-project-documentation": {
-    "version": 1,
-    "hash": "978d9780c33def0de7ee2834f362dcad6e09f5c77daa01a4f5ccc4caec1456e7"
+    "version": 3,
+    "hash": "9c08251f278fa21326edbe5e7de1617a9e19bc91875e6819f42506b7934a3f73"
   },
   "codi-dev-operations": {
-    "version": 2,
-    "hash": "9aed291ca7075cb7d4a35251e20e4dac5e6497912f9acf00f5491236489194c7"
+    "version": 4,
+    "hash": "520c8b2e3c696ed940a26ad7fa6638b0366ed2f949cc0e54390843655a10852e"
   },
   "codi-dev-e2e-testing": {
-    "version": 6,
-    "hash": "16da3a95abc02dcacc4efb3a473280604770def4b799c0b700244cd25c7a9264"
+    "version": 8,
+    "hash": "35d9be83c54a084e10db0e32388b8fedd46a48da6dda86dbcb39a2d1f9a08686"
   },
   "codi-security-scan": {
-    "version": 1,
-    "hash": "f8018b746ee4031619780189a300a7814f06b2b262edf8dd3ddd2a4c9c74f8c2"
+    "version": 3,
+    "hash": "b09c0d1b972af2ef438592ee3be90cd00e66eeb19172870873e1a542c227adc6"
   },
   "codi-test-coverage": {
-    "version": 1,
-    "hash": "810ba6f4fbea42f3a6d9c01360d9dd178cda39d8509b8b21e03faaeb21be1635"
+    "version": 3,
+    "hash": "b5c52ba91d7adff545d7e488c6824b8bb0c33445ffee6a5e5457d8ca23960bbf"
   },
   "codi-refactoring": {
-    "version": 1,
-    "hash": "fbbceb24ada44286d71da0c6af248dc09511e965ed3c78fe8c24a5c1e73ba09f"
+    "version": 3,
+    "hash": "fcf5b1664a0353599668e288a1162f1ea76a7475bb36a8442be602d4c741a351"
   },
   "codi-codebase-onboarding": {
-    "version": 5,
-    "hash": "aa1a9997aa43da7fdc3acf6cc157872b6470985e003f5ab540df1de9921167d5"
+    "version": 7,
+    "hash": "b9dce1d1061e93491ce40e400ded0a42c199c20d84606863b256cfeb72cc7c6b"
   },
   "codi-mobile-development": {
-    "version": 1,
-    "hash": "b3e0ed4e72c627f17bf9f3ba5f5b6c1613e8994201ab3d6cffd72215f1b363bc"
+    "version": 3,
+    "hash": "9731649a58b43ede51dba4ca68ba4171d260ea56caccb44c06283e4df13b62ea"
   },
   "codi-commit": {
-    "version": 1,
-    "hash": "96d365db8f6e9bc03a11a0cb16101e4441ec9c226308268dba5247c1c7a49c12"
+    "version": 3,
+    "hash": "b182522515d7c1759b244b2ae383669f9e865495e1ce16a6c109cd815a59bbe9"
   },
   "codi-preset-creator": {
-    "version": 2,
-    "hash": "f6d24bfba33d515f603ba13943860d25e3f1f886a297f02bfc1540974efdd207"
+    "version": 4,
+    "hash": "4544efeda6abcedd904fcb61789622d0fb563dc0a5240a6efaab1e6f466d30ea"
   },
   "codi-artifact-contributor": {
-    "version": 2,
-    "hash": "02e2cad6e34c2377b10a53dd48eab7c719c38b82b325f992990c98cf6ec43184"
+    "version": 4,
+    "hash": "d8f63bd91586377adcebc26ce3bca7f33ab7167c5b31d3c2cee8c689545d9df8"
   },
   "codi-skill-creator": {
-    "version": 6,
-    "hash": "2b4d594bee7285f73fc656f00c0d1426c1a12ff84a01759c2305912bdfa564ff"
+    "version": 9,
+    "hash": "3d8dd637e3bd7cdd80404b01a3e19df91357c2b476963ae60fe56c1e8f5b3f47"
   },
   "codi-rule-creator": {
-    "version": 5,
-    "hash": "eece815a286b11e79bac9270347ecbb4455e97fb8e7e4c6c43cac70da1cb2b25"
+    "version": 7,
+    "hash": "7c5c6bce55ea1412ea1bca3574aeddd67b006db5899318d3c836fe1b546d185c"
   },
   "codi-agent-creator": {
-    "version": 5,
-    "hash": "bcedcc69efcfcfd9871e63a0e9da70c803f7c5bee4f97b58ebaef1ef41de05ad"
+    "version": 7,
+    "hash": "3ff544783b28c54e61ed14419333095354ecd9a2915a2cc70c46bf8bae949fd7"
   },
   "codi-compare-preset": {
-    "version": 1,
-    "hash": "0258ca8e7123a4c4cfc3a7d7c341f5a2fb3f604199debc9b2911a077f000bab2"
+    "version": 3,
+    "hash": "695d4a9c72c1c791e6b4310ba97bcea659f4c6e68c8a7b5a3dd7564ef46a8c41"
   },
   "codi-guided-qa-testing": {
-    "version": 1,
-    "hash": "a7b7141969f60b8d653d52fc1773316b58d09408b743eecd86745a2561ae0c0c"
+    "version": 3,
+    "hash": "469424558a911ef31779a52ec7957f9de69f55c10cd89a778de915902a2b93f1"
   },
   "codi-session-recovery": {
-    "version": 1,
-    "hash": "9fde0a0f81aaaafaaedd8b6c6e520cc3ecd1c2fd29a20dd2e5b4e63df375e938"
+    "version": 3,
+    "hash": "e66b1d2d0ea500c46a06c7ac70fef0b02e77df6d65f1622664fc8277f7e0815e"
   },
   "codi-deck-engine": {
-    "version": 5,
-    "hash": "fbd68633c95273e7434b6fb88d17cc4f3f22ae3bcbb9ef20f8874dbf7298a6da"
+    "version": 7,
+    "hash": "b41417530983baeb9ed6d9fe9b1380b83427512c35ea682c5d7324956298539e"
   },
   "codi-doc-engine": {
-    "version": 1,
-    "hash": "005beee9ee7753745aaeca6a994d2eac15520b6d3232722313aa21e1b1ace95a"
+    "version": 3,
+    "hash": "1b87094d19d7d4cc3270949874039cfc63c8f94f9f5aad7f4b9b0d6e3b4de5cc"
   },
   "codi-claude-api": {
-    "version": 1,
-    "hash": "b888e854d3b65f523db913f624b1eaa03698a7e0aea589174c5c1345446b4e04"
+    "version": 3,
+    "hash": "edef9ce62647bf4c984ba3e82086f16ae12652dfc03fee4e691c99503bf1f849"
   },
   "codi-pdf": {
-    "version": 1,
-    "hash": "69bda74185e100ad118687191a60ef847a2bdfcec4d724e64aa24694fb66e12d"
+    "version": 3,
+    "hash": "59529d437673d0b2d5cdd205fe84fa0bf5fbcef6a81c8a5777be19aa8e8d5bb4"
   },
   "codi-xlsx": {
-    "version": 5,
-    "hash": "02691675bdf7e241b1998e57fcd59484389092f8d53b7c60f5f851f79e69b97c"
+    "version": 7,
+    "hash": "26be5c7f5b4774d1e30d655d56401bc80d5fc3bbdb2e1600b9e370278e17d26a"
   },
   "codi-docx": {
-    "version": 5,
-    "hash": "ef77ae60df21db5c2a2fb8ed964fcdfca0b40e85709dd54b43813ea63a24cff1"
+    "version": 7,
+    "hash": "3c6d41e48b0e58736924b4c9ebc162a7f4e6cb0951364423acfd6b3397076686"
   },
   "codi-webapp-testing": {
-    "version": 5,
-    "hash": "981ad612e9a14b4287e5c91943a830fcc615b502fb8bcaa77bc5ef16559ee987"
+    "version": 7,
+    "hash": "936a3ce91afde8d87ef81f2801ad6ded890182be5837a728194d390f7ea48818"
   },
   "codi-pptx": {
-    "version": 5,
-    "hash": "49611cdebcdaf4038ccc695e733e0cc1096f18aeb7f34d2dcf42647c78354c04"
+    "version": 7,
+    "hash": "77dfbd6279325a393044d7887f98dd599423b4c8d1a938d6c8d03fde6d477226"
   },
   "codi-frontend-design": {
-    "version": 1,
-    "hash": "d69392aa02aca406b16ad0d74ba2bf367d4f0b2d9a606582ec5b030a3d7b8666"
+    "version": 3,
+    "hash": "ed0449637b5cfbcf2fffb69406371fa965d8fee084a30a7416ffea73c2272057"
   },
   "codi-theme-factory": {
-    "version": 1,
-    "hash": "24df0c552f4d9654abdbe6b57b2361eece3859917004753c25f79c7cbb5c4551"
+    "version": 3,
+    "hash": "b81ff94b09323043b6fd3649b0d335232cfea9be41e13eedf907391fe16a3c2f"
   },
   "codi-claude-artifacts-builder": {
-    "version": 5,
-    "hash": "d6bad79566466b203386e032348fada62e16bc6c37895e79a9a7484eb2db7605"
+    "version": 7,
+    "hash": "f808a9ee951a8c1d27bd7b5f78b47e882f063f28cc3534253fd2920ea3bef1fb"
   },
   "codi-algorithmic-art": {
-    "version": 1,
-    "hash": "6e76affe13cb4b81700fb02aefd0adb46492827d17d1ebf7ed5505fff1358bf1"
+    "version": 3,
+    "hash": "65b1b25f22c0378b2d5d995cbb978b9aa7bacb1e30180b3056eaf9a1544c51e1"
   },
   "codi-canvas-design": {
-    "version": 1,
-    "hash": "4b7bf7736f730615bfd8f37ed9a33cf5a22b37b409140906ece57147ba89fd22"
+    "version": 3,
+    "hash": "1c1cd7dfc27029a118a050b192a74cc368bce8c45a759c50b22a98b56bb5af66"
   },
   "codi-internal-comms": {
-    "version": 1,
-    "hash": "0357b2ba7c45c0285dcd372f7a54434a55cf757e58f032d8aa20068f0cecfe73"
+    "version": 3,
+    "hash": "1eab1f03149b444137b65678c40f5e09bb3089aa432519963364f7203f0eea17"
   },
   "codi-slack-gif-creator": {
-    "version": 1,
-    "hash": "4ad6ae9df7e375519a7a1c639005140ee752184a6ad0c08a105e3d16587e4216"
+    "version": 3,
+    "hash": "5b51b97f213a1ba9a9f75b3ab051b56e6c43942edaf79799f4a39dbf16179a64"
   },
   "codi-dev-docs-manager": {
-    "version": 2,
-    "hash": "246422a6e7ea0d4f2a67d3883ea037883822e6b0b2050147687fa43c5fe53f26"
+    "version": 4,
+    "hash": "d0ae1ee45edb49c5f6a1d7452b28a0b87ae7a950870ee94744eea22bb70c49e8"
   },
   "codi-brand-identity": {
-    "version": 1,
-    "hash": "9e7ab93becca74e83f028b1d7b61f270f165841feb8a81c8cdf62cb6f2ceca7a"
+    "version": 3,
+    "hash": "3a6ead292ac0320e8d175de7b6602844c051f8740da4131faead060efbda380c"
   },
   "codi-rl3-brand": {
-    "version": 5,
-    "hash": "e5ebdc5cc59162c055b6651632d2a75640ba99185559c5b97cd6b1d2f6d9632e"
+    "version": 7,
+    "hash": "80d9053d72710fb539b9617144e5b357186110b1f37224c4cdb446e4e501cf7d"
   },
   "codi-bbva-brand": {
-    "version": 4,
-    "hash": "38826d4345aaa623b62b523785397a9256e8f22760fedd31f6989916a8c71cc4"
+    "version": 6,
+    "hash": "3011974b9197dcdd9091ca7e2bd280f1b9d22e6b24e6662f126839d39bfdb676"
   },
   "codi-content-factory": {
-    "version": 5,
-    "hash": "07a38015f93f052241c1871c803d403cf8dd9a7210587c1c5df7a6dcc60ada30"
+    "version": 7,
+    "hash": "d890ef616c5f56b46d9dbe360ca75242629ff33031c718c62b0298c357806d3c"
   },
   "codi-project-quality-guard": {
-    "version": 5,
-    "hash": "80479de00d84af268524dfda86841ff8cfb6a918ffc40572c7abd3a540e40988"
+    "version": 7,
+    "hash": "a8314e54f070e02b8a4acacbe9fd4dfcc4dcb1d25273a8e7e257f65d4f970021"
   },
   "codi-audio-transcriber": {
-    "version": 5,
-    "hash": "2fe7577051ff9b15e2e9e35b2b723d005dd796a101a3adfb78377f0546499ef6"
+    "version": 7,
+    "hash": "a597a2071b73eae0a352dac1a42e048fa1f3a202c61d645a49677a26ff3d509e"
   },
   "codi-skill-feedback-reporter": {
-    "version": 1,
-    "hash": "99e4b8096fea6c1557f84293d7f3fd1ee83d12d92ed22fb610e421f58a3c2b4d"
+    "version": 3,
+    "hash": "1798d489c093d888efb45cb9b6571c8a11f4b070db5e625c229952bf604253c2"
   },
   "codi-rule-feedback": {
-    "version": 1,
-    "hash": "33903ef3b607b39ed327223f6b7901253e36d91e287225026beedd93c58c3662"
+    "version": 3,
+    "hash": "b93aad6e4f6a785be17dac665cd0e6cd38853c0c5529200fc70bdb904a218b6f"
   },
   "codi-refine-rules": {
-    "version": 1,
-    "hash": "4c6f176345c0f25717133abe25ef39bbbbed4f4ee0dd4a4b218dd26c6aab6315"
+    "version": 3,
+    "hash": "ddea95e22195815f85da2396166b80238dc6d102e469d9bab2f68668cef95e9b"
   },
   "codi-humanizer": {
-    "version": 1,
-    "hash": "57506621ae45a685ce7bc663614827d393bfcdb0b7cc40346ad7efc8ca8505c5"
+    "version": 3,
+    "hash": "5ad9c6611711f2151a33c03eeb0ba62aa7c9e9cf389b3cb790d25a52c6c27d4f"
   },
   "codi-test-run": {
-    "version": 1,
-    "hash": "676fbaa4ccdec22226bf5995992ed9596936d51e1c71fd8fb4f33c4d09669e1d"
+    "version": 3,
+    "hash": "74ec0a69c8a4c54a427d46caacd2fe3799af2d21dbc8e5a2a1c43b8e43170838"
   },
   "codi-diagnostics": {
-    "version": 1,
-    "hash": "cbe42c3ca563d7de94e7a8a7eb2bef3bc22d50026d6114a11e4ad6889c7e225d"
+    "version": 3,
+    "hash": "e5f6c2fc9b7f3b91913ed5d6377ed6210e8e62050f125a203cd3f40f72a81fed"
   },
   "codi-session-handoff": {
-    "version": 1,
-    "hash": "563de4587cc3dcc4ffc92dc96dd524fcc1af740f054d558699924de959744f1f"
+    "version": 3,
+    "hash": "d40d537cc8e1069dd55194fbe582ea244ce15bdc490598ea7aa105e9f043f78a"
   },
   "codi-codebase-explore": {
-    "version": 1,
-    "hash": "066a487cad6594b8c477d60ea5e5a0b2b6b4677d0486e8c3ab0600f74b42ab51"
+    "version": 3,
+    "hash": "8d060da3e1ac576f8aff943530ad148474bc058b25a37aeb8eaae1c3b1b0b488"
   },
   "codi-graph-sync": {
-    "version": 1,
-    "hash": "3361ff4891cfe4e44e99dedabda8c7f3b117999729e776d94f4a42adebbb3111"
+    "version": 3,
+    "hash": "9bd11221b7c422f26c6592427b814e45aba2ceeb56de2e5afd1384c0efa8d62b"
   },
   "codi-daily-log": {
-    "version": 1,
-    "hash": "02cd600f99f6cc206aef9573a412fd8639643098968788d47b302fbf713eab20"
+    "version": 3,
+    "hash": "5e4832e6e8d99afebe781d2dc5515ef34a93f9daa973da07aaba959a0f04dbbf"
   },
   "codi-roadmap": {
-    "version": 1,
-    "hash": "fa2f51070ca36a7ae52e0ae9eb6c0a45c4c47b444860616c566cf49e34b5923c"
+    "version": 3,
+    "hash": "7cfcd7c43f8893f9617851af84182128fbeba753e30a89cecd8eb165f408276a"
   },
   "codi-verification": {
-    "version": 1,
-    "hash": "411bcd4518e17b86f4733968c81fac592b17abc7b333f79f7e3823f607e3de8f"
+    "version": 3,
+    "hash": "ed524863e5011f21bb2394341f79d7915c4ec2bbae094df075682bdf63506f15"
   },
   "codi-debugging": {
-    "version": 5,
-    "hash": "d9032ceea7171258e6f88036a33a1b257406610be8b58cc1e748849b1a438875"
+    "version": 7,
+    "hash": "832b168b270155840de7e6f53fcf39c36c0041343ad7f3716866f0c2a86600d1"
   },
   "codi-tdd": {
-    "version": 1,
-    "hash": "e2000b16f0e38c5177667717308eb290f2f282f687c3bc4461b9f3abb5d886ea"
+    "version": 3,
+    "hash": "cd4eeb6847f892c56115b7222addeb6919c048e8239a56d5dc3552e8277c1fcd"
   },
   "codi-brainstorming": {
-    "version": 5,
-    "hash": "d2958564a046f9a3a89c467da7fc36665b55d98cfd4c251096b56b42684a6739"
+    "version": 7,
+    "hash": "756c98e0a604510852dfbbb81f9db3a3365389820b9033d430eb00a5ae2b24d8"
   },
   "codi-plan-writer": {
-    "version": 5,
-    "hash": "a7d8b58ff8b2fa14a337b774465fb9f881b55aafdb16e96841c8533bcc9d2918"
+    "version": 7,
+    "hash": "a1cbd99f69ca8845d64742dd349ac422b24f2c72ddc6cbb60cbe3b73dc0868ef"
   },
   "codi-worktrees": {
-    "version": 2,
-    "hash": "63db331064bdc98ff624ab3ee50e0d3dcecc41c0bbe1d5050af2a995fea60b87"
+    "version": 4,
+    "hash": "e1a359f2e0b62f733f278e0ec75972e2f6c513d5d1e0611fd646aa5a13cf30f0"
   },
   "codi-branch-finish": {
-    "version": 1,
-    "hash": "358cd2a3214ff44e68cdec331092e6dd4c4aca77d846e70d95f73e9603c6a98d"
+    "version": 3,
+    "hash": "4cb1fe6547fbeaa4cc18130f8270b1d1925aff397b4e3eb4829a7bd5601f1e1c"
   },
   "codi-subagent-dev": {
-    "version": 4,
-    "hash": "70517f52b3e6ea8443fcadc08469ae7e9ccceecbff69a1e5ed4e3170369af8bb"
+    "version": 6,
+    "hash": "1608efa284d3d3d7b70124156cfa22c97f30a651ea4f9c1222b31d50847dfb93"
   },
   "codi-plan-executor": {
-    "version": 1,
-    "hash": "771d06e085e9a2158a375ca461dd418361c6304f60e26e89360d60d4f9341839"
+    "version": 3,
+    "hash": "5ec68dc6e0dd62df2d0ce5c765fe3d7600d1a82c4737119ddf6eb32da88204db"
   },
   "codi-notebooklm": {
-    "version": 6,
-    "hash": "ae53c8014ab9830b1abdc5d3006a45f11ed4ab88458c9337992413eb4509bbf1"
+    "version": 8,
+    "hash": "882774db5053887d6a8b6122132daa0cb055c289d1a719848f654d19eb36c89d"
   },
   "codi-evidence-gathering": {
-    "version": 4,
-    "hash": "34a507ba2cd15e42ce2342bfbf15b1b36f807f13fc1e1fb349b6815a6434c083"
+    "version": 6,
+    "hash": "f335e57258379d69134a3d10bd765731a8745c14aef3fef7c476baf3fd146178"
   },
   "codi-step-documenter": {
-    "version": 4,
-    "hash": "4e7dc42c38585cc237d83b790fa70e83056a10ced6df03186dc5d352874d602c"
+    "version": 6,
+    "hash": "8b7a9c358378b406bc61812b86f4dfe5e0225b23208ece5d6d12aa72d19042cc"
   },
   "codi-audit-fix": {
-    "version": 4,
-    "hash": "347db43d5f3825133e806cab3e4cf01678830606df7f72076159eabd66464515"
+    "version": 6,
+    "hash": "9063e44f77a60ac1c8cd83a282943019d5fac024a3668c56a79a858b1938b98a"
   },
   "codi-guided-execution": {
-    "version": 4,
-    "hash": "4a97f4c6d78b8b30424e1bbe4a553130f6fc7b844c488bbec874f70c1c494b83"
+    "version": 6,
+    "hash": "634a6d0d3dcf291b1db00158b20955d03bee52999fcd1d82e5063033a11f471e"
   },
   "codi-code-reviewer": {
     "version": 1,

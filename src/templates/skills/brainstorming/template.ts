@@ -9,7 +9,9 @@ description: |
 category: Developer Workflow
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # {{name}}

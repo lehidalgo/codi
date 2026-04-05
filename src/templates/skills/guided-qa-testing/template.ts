@@ -6,7 +6,9 @@ description: Step-by-step QA testing methodology. Use when the user wants to tes
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}

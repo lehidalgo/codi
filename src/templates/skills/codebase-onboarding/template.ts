@@ -6,7 +6,9 @@ description: Codebase onboarding workflow. Use when exploring an unfamiliar proj
 category: Developer Tools
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # {{name}}

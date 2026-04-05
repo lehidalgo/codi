@@ -6,7 +6,9 @@ description: "MCP (Model Context Protocol) operations. Use when setting up, call
 category: Developer Tools
 compatibility: [claude-code]
 managed_by: ${PROJECT_NAME}
-version: 6
+user-invocable: true
+disable-model-invocation: false
+version: 8
 ---
 
 # {{name}}

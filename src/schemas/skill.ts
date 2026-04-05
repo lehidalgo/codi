@@ -5,14 +5,17 @@ import {
   NAME_PATTERN,
   MANAGED_BY_VALUES,
   ALL_SKILL_CATEGORIES,
+  SUPPORTED_PLATFORMS,
 } from "../constants.js";
+
+const HookConfigSchema = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
 
 export const SkillFrontmatterSchema = z.object({
   name: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH),
   description: z.string().max(MAX_SKILL_DESCRIPTION_LENGTH),
   version: z.number().int().positive().default(1),
   type: z.literal("skill").default("skill"),
-  compatibility: z.array(z.string()).optional(),
+  compatibility: z.array(z.enum(SUPPORTED_PLATFORMS)).optional(),
   tools: z.array(z.string()).optional(),
   model: z.string().optional(),
   managed_by: z.enum(MANAGED_BY_VALUES).default("user"),
@@ -29,7 +32,7 @@ export const SkillFrontmatterSchema = z.object({
   "user-invocable": z.boolean().optional(),
   paths: z.union([z.array(z.string()), z.string()]).optional(),
   shell: z.enum(["bash", "powershell"]).optional(),
-  hooks: z.unknown().optional(),
+  hooks: HookConfigSchema.optional(),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

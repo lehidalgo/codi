@@ -13,8 +13,9 @@ description: Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream te
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-user-invocable: false
-version: 1
+user-invocable: true
+disable-model-invocation: false
+version: 3
 ---
 
 # {{name}}

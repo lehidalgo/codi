@@ -19,7 +19,9 @@ description: |
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # Rule Creator
@@ -87,7 +89,7 @@ version: 1
 priority: high | medium | low
 alwaysApply: true | false
 managed_by: user
-language: typescript        # optional — omit for universal rules
+user-invocable: truelanguage: typescript        # optional — omit for universal rules
 scope: [src/api/**]         # optional — omit for universal rules
 ---
 \\\`\\\`\\\`

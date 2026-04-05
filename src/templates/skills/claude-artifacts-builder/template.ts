@@ -6,7 +6,9 @@ description: Use when the user needs a complex, multi-component claude.ai HTML a
 category: Creative and Design
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 # Web Artifacts Builder

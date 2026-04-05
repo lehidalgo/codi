@@ -11,8 +11,9 @@ description: Internal meta-skill. Activates after completing a task that used a 
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
+disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 3
 ---
 
 # {{name}}

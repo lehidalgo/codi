@@ -6,7 +6,9 @@ description: Use when setting up a new project, auditing project quality infrast
 category: Code Quality
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 5
+user-invocable: true
+disable-model-invocation: false
+version: 7
 ---
 
 ## When to Activate

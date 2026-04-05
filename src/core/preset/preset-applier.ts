@@ -9,6 +9,7 @@ import type { ArtifactFileState } from "../config/state.js";
 import type { LoadedPreset } from "./preset-loader.js";
 import type { NormalizedRule, NormalizedSkill, NormalizedAgent } from "#src/types/config.js";
 import { SKIP_DIRS, SKIP_FILES } from "#src/adapters/skill-generator.js";
+import { fmStr } from "#src/utils/yaml-serialize.js";
 
 export interface ApplyOptions {
   force?: boolean;
@@ -41,18 +42,6 @@ interface ConflictFile {
 }
 
 type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
-
-/**
- * Serializes a frontmatter string value safely.
- * Values containing newlines or YAML special characters are JSON-stringified,
- * which produces a valid YAML double-quoted scalar.
- */
-function fmStr(val: string): string {
-  if (/[\n\r:#\[\]{},&*?|>'"]/.test(val) || val.startsWith(" ")) {
-    return JSON.stringify(val.replace(/\n+/g, " ").trim());
-  }
-  return val;
-}
 
 export function reconstructRuleContent(rule: NormalizedRule): string {
   const fm = [

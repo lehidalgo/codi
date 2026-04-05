@@ -11,8 +11,9 @@ description: ${PROJECT_NAME_DISPLAY} self-documentation skill. Use when building
 category: ${PROJECT_NAME_DISPLAY} Platform
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-user-invocable: false
-version: 2
+user-invocable: true
+disable-model-invocation: false
+version: 4
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager

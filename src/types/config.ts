@@ -70,6 +70,14 @@ export interface NormalizedAgent {
   maxTurns?: number;
   effort?: "low" | "medium" | "high" | "max";
   managedBy?: ManagedBy;
+  // Claude Code-specific agent fields
+  permissionMode?: "unrestricted" | "readonly" | "limited";
+  mcpServers?: string[];
+  skills?: string[];
+  memory?: "user" | "project" | "none";
+  background?: boolean;
+  isolation?: string;
+  color?: string;
 }
 
 export interface McpConfig {
