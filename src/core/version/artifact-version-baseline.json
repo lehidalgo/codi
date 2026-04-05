@@ -29,7 +29,7 @@
   },
   "codi-documentation": {
     "version": 1,
-    "hash": "bf549a01dfcf11d4c183a9e2c36c48a8bb9dfe6ca0fe14acede5fcfccea7368c"
+    "hash": "1b3561d958a8fb749ddc4060c4a43430656f748f240d8c88307c7378cb218baf"
   },
   "codi-api-design": {
     "version": 1,
@@ -337,7 +337,7 @@
   },
   "codi-brainstorming": {
     "version": 8,
-    "hash": "06802dd7f885120f0ed95a41c4bc3b1bd6ce666fd87dddf3f8fe4486d5931636"
+    "hash": "fcfbd541ab6293cb8a1753011a7c2effeb2c46a947da8144813be8507104946d"
   },
   "codi-plan-writer": {
     "version": 8,
@@ -413,19 +413,19 @@
   },
   "codi-codebase-explorer": {
     "version": 1,
-    "hash": "7c9a7b568adc28b8d54eb7c62f616b7ada7a8e8609185b387cadfa5731e95087"
+    "hash": "ada220afc2a8752bf45d1a1b0367abe3c6669a05d84cb8c0e0718579cc062d78"
   },
   "codi-ai-engineering-expert": {
     "version": 1,
-    "hash": "49b051062e0ee8c646135b650b817bd3f2556681abc709ed7388a33b0f1454b9"
+    "hash": "b84011170ad34c3d6e258bec976b674a0c140cd81341ab1c1e3dadd3c8f07792"
   },
   "codi-data-analytics-bi-expert": {
     "version": 1,
-    "hash": "cbddcd3255c940b9e7985eaeb65c3a5b2613d3d0b4248d98ebc3f4a800f40cb1"
+    "hash": "c0c0f9f8ab0a6fe787127642853edc6b5d9987856d7450fbbce68614fd93cab8"
   },
   "codi-data-engineering-expert": {
     "version": 1,
-    "hash": "bd7ef313d296bcab89b1b08c9decaf3b35a2ea978ae8739253d32694dd24e838"
+    "hash": "d1cd3d17cc10eeb192d0fd1d820b08eb70557cdfc881a477e7f80b82c535120d"
   },
   "codi-data-intensive-architect": {
     "version": 1,
@@ -465,7 +465,7 @@
   },
   "codi-scalability-expert": {
     "version": 1,
-    "hash": "6a9e725784c62bf8ee2dca7221f7e7fcdb6fd3f759ccee859ad216c1d228feb1"
+    "hash": "23d33d2f86529e8f6e5b55e547b3dda792fb8a9d6de817720e7bbbb7c1348709"
   },
   "github": {
     "version": 1,

@@ -120,7 +120,7 @@ After design approval, save the spec:
 
 - Path: \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature-name>.md\\\`
 - Follow codi's doc naming convention (from ${PROJECT_NAME}-documentation rule)
-- Use Mermaid for all diagrams - no ASCII art (codi convention)
+- Use Mermaid for all diagrams - no ASCII art, no custom colors, no \\\`\\\\n\\\` in labels (codi convention)
 - Commit the spec to git before invoking any next skill
 
 **Spec self-review** (fix inline before presenting to user - no need to re-review these):

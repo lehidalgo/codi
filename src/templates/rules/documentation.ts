@@ -86,9 +86,9 @@ Example: \\\`20260325_1430_AUDIT_security-review.md\\\`
 Every generated document must start with:
 \\\`\\\`\\\`markdown
 # Document Title
-**Date**: YYYY-MM-DD HH:MM
-**Document**: filename.md
-**Category**: CATEGORY
+- **Date**: YYYY-MM-DD HH:MM
+- **Document**: filename.md
+- **Category**: CATEGORY
 \\\`\\\`\\\`
 
 ## Document Types & Required Sections
@@ -104,6 +104,11 @@ Every generated document must start with:
 ## Diagrams — Mermaid Only
 - All diagrams must use Mermaid syntax embedded in Markdown — no ASCII art
 - Choose the right diagram type: flowchart, sequenceDiagram, erDiagram, classDiagram, stateDiagram, gantt, pie, mindmap
+- Keep diagrams minimalist: no custom colors, no \\\`fill:\\\`, \\\`style\\\`, or \\\`classDef\\\` directives — default theme only
+- Never use \\\`\\\\n\\\` (literal backslash-n) in node labels — use a new node or a subgraph for multi-line concepts
+
+BAD: \\\`A["Line1\\\\nLine2"]\\\` or \\\`style A fill:#f00\\\`
+GOOD: \\\`A["Concise label"]\\\` with no color overrides
 
 ## Maintenance
 - Remove outdated documentation — wrong docs are worse than no docs
