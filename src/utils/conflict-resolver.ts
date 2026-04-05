@@ -243,12 +243,35 @@ export async function resolveConflicts(
     return { accepted: [], skipped: conflicts, merged: [] };
   }
 
-  // Non-TTY: CI, git hooks, watch mode — auto-accept without prompting
+  // Non-TTY: CI, git hooks, watch mode — auto-merge non-overlapping, fail on true conflicts
   if (!process.stdout.isTTY) {
-    Logger.getInstance().warn(
-      `Non-interactive environment detected: auto-accepting ${conflicts.length} conflict(s). Use --json to keep existing files instead.`,
-    );
-    return { accepted: conflicts, skipped: [], merged: [] };
+    const mergedEntries: ConflictEntry[] = [];
+    const failed: ConflictEntry[] = [];
+
+    for (const conflict of conflicts) {
+      const { content, hasConflicts } = buildConflictMarkers(
+        conflict.currentContent,
+        conflict.incomingContent,
+      );
+      if (!hasConflicts) {
+        conflict.incomingContent = content;
+        mergedEntries.push(conflict);
+      } else {
+        failed.push(conflict);
+      }
+    }
+
+    if (failed.length > 0) {
+      throw new UnresolvableConflictError(failed.map((f) => f.label));
+    }
+
+    if (mergedEntries.length > 0) {
+      Logger.getInstance().info(
+        `${mergedEntries.length} file(s) auto-merged in non-interactive mode`,
+      );
+    }
+
+    return { accepted: [], skipped: [], merged: mergedEntries };
   }
 
   const log = Logger.getInstance();
