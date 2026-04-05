@@ -113,7 +113,7 @@
   },
   "codi-mcp-ops": {
     "version": 8,
-    "hash": "62f1576bb1d9335c5f610cf30af725ec66abd131974bca497af82da6c906d09f"
+    "hash": "3a38b9ee5bf380ee703ab79cafee5fc43f92e80aa57853a8e27bc6a9a3b0b3fa"
   },
   "codi-code-review": {
     "version": 3,
@@ -124,12 +124,12 @@
     "hash": "9c08251f278fa21326edbe5e7de1617a9e19bc91875e6819f42506b7934a3f73"
   },
   "codi-dev-operations": {
-    "version": 4,
-    "hash": "520c8b2e3c696ed940a26ad7fa6638b0366ed2f949cc0e54390843655a10852e"
+    "version": 5,
+    "hash": "7a6e51586c802e76cfa2f9145053b30c5c3bc23e8e7454df519dbb934d116e58"
   },
   "codi-dev-e2e-testing": {
     "version": 8,
-    "hash": "35d9be83c54a084e10db0e32388b8fedd46a48da6dda86dbcb39a2d1f9a08686"
+    "hash": "3e2d4c6b9e8647eca3838dac27d21b5ec8155f381710b4c3458d4aa37afdb4eb"
   },
   "codi-security-scan": {
     "version": 3,
@@ -156,28 +156,28 @@
     "hash": "b182522515d7c1759b244b2ae383669f9e865495e1ce16a6c109cd815a59bbe9"
   },
   "codi-preset-creator": {
-    "version": 4,
-    "hash": "4544efeda6abcedd904fcb61789622d0fb563dc0a5240a6efaab1e6f466d30ea"
+    "version": 5,
+    "hash": "5ed5910e7576d3fb63df7cecc476892e004f6393a273d90c458410b2d8d8566e"
   },
   "codi-artifact-contributor": {
-    "version": 4,
-    "hash": "d8f63bd91586377adcebc26ce3bca7f33ab7167c5b31d3c2cee8c689545d9df8"
+    "version": 5,
+    "hash": "30c98144c693a33948cfd8f319d3f13de14280cc2e6780c022c37f318c22f967"
   },
   "codi-skill-creator": {
-    "version": 9,
-    "hash": "3d8dd637e3bd7cdd80404b01a3e19df91357c2b476963ae60fe56c1e8f5b3f47"
+    "version": 10,
+    "hash": "0462cdbe4a663305d01b2651b56e2781da1e51c7016209d0ea0a94cef9c05e88"
   },
   "codi-rule-creator": {
-    "version": 7,
-    "hash": "7c5c6bce55ea1412ea1bca3574aeddd67b006db5899318d3c836fe1b546d185c"
+    "version": 8,
+    "hash": "a050e7f2b1950311a2e530552952ed7e97fabddc1424e6b863f23bf39128fd01"
   },
   "codi-agent-creator": {
-    "version": 7,
-    "hash": "3ff544783b28c54e61ed14419333095354ecd9a2915a2cc70c46bf8bae949fd7"
+    "version": 8,
+    "hash": "490c2d5ed29fd13a6f1069cae8d81a78d39cc8c9e8a2a99e599a88c0e0ec0b0d"
   },
   "codi-compare-preset": {
-    "version": 3,
-    "hash": "695d4a9c72c1c791e6b4310ba97bcea659f4c6e68c8a7b5a3dd7564ef46a8c41"
+    "version": 4,
+    "hash": "8aab5e51a1344a0492bf98882b72a86a6a9ba115e9c632fde7c8a3983ef4b3df"
   },
   "codi-guided-qa-testing": {
     "version": 3,
@@ -248,12 +248,16 @@
     "hash": "5b51b97f213a1ba9a9f75b3ab051b56e6c43942edaf79799f4a39dbf16179a64"
   },
   "codi-dev-docs-manager": {
-    "version": 4,
-    "hash": "d0ae1ee45edb49c5f6a1d7452b28a0b87ae7a950870ee94744eea22bb70c49e8"
+    "version": 5,
+    "hash": "00db93cdc1a6bd62048a33c0393f0e8a3c90e0679a508f15a957764df0c1e8df"
   },
   "codi-brand-identity": {
     "version": 3,
     "hash": "3a6ead292ac0320e8d175de7b6602844c051f8740da4131faead060efbda380c"
+  },
+  "codi-codi-brand": {
+    "version": 2,
+    "hash": "e5ac2a45c946a2ef4815d0ebe5f711a19fc27b7ebeab2f0afec44750db415cb3"
   },
   "codi-rl3-brand": {
     "version": 7,
@@ -276,20 +280,20 @@
     "hash": "a597a2071b73eae0a352dac1a42e048fa1f3a202c61d645a49677a26ff3d509e"
   },
   "codi-skill-feedback-reporter": {
-    "version": 3,
-    "hash": "1798d489c093d888efb45cb9b6571c8a11f4b070db5e625c229952bf604253c2"
+    "version": 4,
+    "hash": "0cef437f1aaad014d0392fdfb2c7e82591c0ee48843bd31c84bbe41b34f625df"
   },
   "codi-rule-feedback": {
-    "version": 3,
-    "hash": "b93aad6e4f6a785be17dac665cd0e6cd38853c0c5529200fc70bdb904a218b6f"
+    "version": 4,
+    "hash": "178e6f7624adca5d7066a7e9e558fc13a390971f8898484a9f117c0ddfc06dc7"
   },
   "codi-refine-rules": {
-    "version": 3,
-    "hash": "ddea95e22195815f85da2396166b80238dc6d102e469d9bab2f68668cef95e9b"
+    "version": 4,
+    "hash": "55ec9b7fcf5280d6d31d9c6af1b4c43645b73e3eaa01db196f5f9f314ee181b0"
   },
   "codi-humanizer": {
     "version": 3,
-    "hash": "5ad9c6611711f2151a33c03eeb0ba62aa7c9e9cf389b3cb790d25a52c6c27d4f"
+    "hash": "526d45b896dea7acfc80f0800f6e4c39da971f49ac9ba453b051782bf59c7904"
   },
   "codi-test-run": {
     "version": 3,
@@ -349,7 +353,7 @@
   },
   "codi-subagent-dev": {
     "version": 6,
-    "hash": "1608efa284d3d3d7b70124156cfa22c97f30a651ea4f9c1222b31d50847dfb93"
+    "hash": "19bf848f0b4314f23479c60e2985fe4b05b4bb32b60ea7b6f213b140f3ad6b64"
   },
   "codi-plan-executor": {
     "version": 3,

@@ -5,7 +5,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
@@ -15,12 +15,12 @@ description: |
   Agent creation workflow. Use when the user asks to create, build, or define
   a specialized agent. Also activate when the user wants to add a code reviewer,
   security analyzer, test generator, or any autonomous worker role.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # Agent Creator

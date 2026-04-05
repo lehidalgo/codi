@@ -2,18 +2,19 @@ import {
   PROJECT_CLI,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: ${PROJECT_NAME_DISPLAY} self-documentation skill. Use when building, updating, or checking ${PROJECT_NAME_DISPLAY} docs. Also activate for stale documentation, docs site builds, or skill catalog HTML generation.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager

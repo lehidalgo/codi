@@ -5,8 +5,8 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
   devArtifactName,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
@@ -16,12 +16,12 @@ description: |
   Rule creation workflow. Use when the user asks to create, write, or define
   a coding rule, standard, or convention. Also activate when the user wants
   to enforce behavior, set constraints, or establish coding standards.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # Rule Creator

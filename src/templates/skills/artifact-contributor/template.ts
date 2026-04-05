@@ -2,21 +2,21 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
   PROJECT_REPO,
   PROJECT_URL,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when contributing artifacts to GitHub or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation, ZIP export, and manual workflows. Also activate when the user says 'share my skill', 'contribute to Codi', or 'open a PR with my rule'.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
 # {{name}}

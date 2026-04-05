@@ -2,19 +2,19 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Review collected rule feedback and propose targeted improvements one at a time with human approval. Use when asked to improve rules, refine rules, or review rule feedback. Reads observations from ${PROJECT_DIR}/feedback/rules/.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # Rule Refinement
