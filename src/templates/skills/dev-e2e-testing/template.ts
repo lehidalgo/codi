@@ -3,6 +3,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
+  SKILL_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 import type { TemplateCounts } from "../types.js";
@@ -19,12 +20,12 @@ description: |
   End-to-end validation of the ${PROJECT_NAME} installation. Use when asked to test
   or audit the full ${PROJECT_NAME} feature set — artifacts, presets, hooks, verification,
   and commit workflow — in a clean test project.
-category: Code Quality
+category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
 ---
 
 # {{name}}
