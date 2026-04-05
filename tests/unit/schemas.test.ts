@@ -11,7 +11,13 @@ import {
   HookDefinitionSchema,
   HooksConfigSchema,
 } from "../../src/schemas/index.js";
-import { PROJECT_NAME, ALL_SKILL_CATEGORIES, isKnownSkillCategory } from "#src/constants.js";
+import {
+  PROJECT_NAME,
+  ALL_SKILL_CATEGORIES,
+  SKILL_CATEGORIES,
+  SKILL_CATEGORY,
+  isKnownSkillCategory,
+} from "#src/constants.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
@@ -351,6 +357,21 @@ describe("category field — SkillFrontmatterSchema", () => {
       category: "",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("SKILL_CATEGORY constant", () => {
+  it("covers every value in SKILL_CATEGORIES", () => {
+    const values = Object.values(SKILL_CATEGORY);
+    for (const cat of SKILL_CATEGORIES) {
+      expect(values).toContain(cat);
+    }
+  });
+
+  it("has no extra values outside SKILL_CATEGORIES", () => {
+    for (const val of Object.values(SKILL_CATEGORY) as string[]) {
+      expect(isKnownSkillCategory(val)).toBe(true);
+    }
   });
 });
 

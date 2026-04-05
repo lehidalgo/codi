@@ -123,6 +123,26 @@ export const SKILL_CATEGORIES = [
 
 export type SkillCategory = (typeof SKILL_CATEGORIES)[number];
 
+/**
+ * Named constants for each skill category — use in template interpolation instead of
+ * hardcoding strings. Typed with `satisfies` to guarantee every key is a valid SkillCategory.
+ */
+export const SKILL_CATEGORY = {
+  BRAND_IDENTITY: "Brand Identity",
+  CODE_QUALITY: "Code Quality",
+  CONTENT_CREATION: "Content Creation",
+  CONTENT_REFINEMENT: "Content Refinement",
+  CREATIVE_AND_DESIGN: "Creative and Design",
+  DEVELOPER_TOOLS: "Developer Tools",
+  DEVELOPER_WORKFLOW: "Developer Workflow",
+  DOCUMENT_GENERATION: "Document Generation",
+  FILE_FORMAT_TOOLS: "File Format Tools",
+  PLANNING: "Planning",
+  PRODUCTIVITY: "Productivity",
+  TESTING: "Testing",
+  WORKFLOW: "Workflow",
+} as const satisfies Record<string, SkillCategory>;
+
 /** Platform category — derived from PROJECT_NAME_DISPLAY to stay in sync. */
 export const PLATFORM_CATEGORY = `${PROJECT_NAME_DISPLAY} Platform`;
 
