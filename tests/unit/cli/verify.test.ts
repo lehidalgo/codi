@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { verifyHandler } from "#src/cli/verify.js";
 import { initHandler } from "#src/cli/init.js";
 import { addRuleHandler } from "#src/cli/add.js";
@@ -15,9 +15,7 @@ import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 let tmpDir: string;
 
 beforeEach(async () => {
-  const base = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-verify-`),
-  );
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-verify-`));
   tmpDir = path.join(base, "test-project");
   await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(
@@ -41,32 +39,28 @@ describe("verify command handler", () => {
     expect(result.exitCode).toBe(EXIT_CODES.CONFIG_NOT_FOUND);
   });
 
-  it(
-    "returns token, rules, flags, and prompt in show mode",
-    { timeout: 30_000 },
-    async () => {
-      await initHandler(tmpDir, { agents: ["claude-code"], json: true });
-      await addRuleHandler(tmpDir, "code-quality", {
-        template: prefixedName("code-style"),
-      });
-      await generateHandler(tmpDir, {});
+  it("returns token, rules, flags, and prompt in show mode", { timeout: 30_000 }, async () => {
+    await initHandler(tmpDir, { agents: ["claude-code"], json: true });
+    await addRuleHandler(tmpDir, "code-quality", {
+      template: prefixedName("code-style"),
+    });
+    await generateHandler(tmpDir, { force: true });
 
-      const result = await verifyHandler(tmpDir, {});
-      expect(result.success).toBe(true);
-      expect(result.command).toBe("verify");
+    const result = await verifyHandler(tmpDir, {});
+    expect(result.success).toBe(true);
+    expect(result.command).toBe("verify");
 
-      const data = result.data as {
-        token: string;
-        rules: string[];
-        flags: string[];
-        prompt: string;
-      };
-      expect(data.token).toMatch(new RegExp(`^${PROJECT_NAME}-[a-f0-9]{12}$`));
-      expect(data.rules.length).toBeGreaterThan(0);
-      expect(typeof data.prompt).toBe("string");
-      expect(data.prompt.length).toBeGreaterThan(0);
-    },
-  );
+    const data = result.data as {
+      token: string;
+      rules: string[];
+      flags: string[];
+      prompt: string;
+    };
+    expect(data.token).toMatch(new RegExp(`^${PROJECT_NAME}-[a-f0-9]{12}$`));
+    expect(data.rules.length).toBeGreaterThan(0);
+    expect(typeof data.prompt).toBe("string");
+    expect(data.prompt.length).toBeGreaterThan(0);
+  });
 
   it("returns JSON-serializable result", async () => {
     await initHandler(tmpDir, { agents: ["claude-code"], json: true });
@@ -78,9 +72,7 @@ describe("verify command handler", () => {
     const json = JSON.stringify(result);
     const parsed = JSON.parse(json);
     expect(parsed.success).toBe(true);
-    expect(parsed.data.token).toMatch(
-      new RegExp(`^${PROJECT_NAME}-[a-f0-9]{12}$`),
-    );
+    expect(parsed.data.token).toMatch(new RegExp(`^${PROJECT_NAME}-[a-f0-9]{12}$`));
   });
 
   it(
@@ -89,11 +81,11 @@ describe("verify command handler", () => {
     async () => {
       clearAdapters();
       await initHandler(tmpDir, { agents: ["claude-code"], json: true });
-      await generateHandler(tmpDir, {});
+      await generateHandler(tmpDir, { force: true });
       await addRuleHandler(tmpDir, "code-quality", {
         template: prefixedName("code-style"),
       });
-      await generateHandler(tmpDir, {});
+      await generateHandler(tmpDir, { force: true });
 
       const showResult = await verifyHandler(tmpDir, {});
       expect(showResult.success).toBe(true);

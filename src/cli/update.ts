@@ -55,6 +55,11 @@ import { loadPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
 import { syncManifestOnUpdate } from "../core/version/artifact-manifest.js";
 import { injectFrontmatterVersion } from "../core/version/artifact-version.js";
+import {
+  resolveConflicts,
+  makeConflictEntry,
+  type ConflictEntry,
+} from "../utils/conflict-resolver.js";
 
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
@@ -65,6 +70,7 @@ interface UpdateOptions extends GlobalOptions {
   mcpServers?: boolean;
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
+  force?: boolean;
 }
 
 interface UpdateData {
@@ -92,6 +98,8 @@ interface RefreshArtifactOptions {
   getTemplateVersion: (name: string) => number | undefined;
   nameMappings?: Record<string, string>;
   dryRun: boolean;
+  force?: boolean;
+  json?: boolean;
   log: Logger;
 }
 
@@ -109,18 +117,13 @@ async function refreshManagedArtifacts(
     return { updated, skipped };
   }
 
+  const conflicts: ConflictEntry[] = [];
+
   for (const entry of entries) {
     if (!entry.endsWith(".md")) continue;
     const filePath = path.join(dir, entry);
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = matter(raw);
-    const managedBy = parsed.data["managed_by"] as string | undefined;
-
-    if (managedBy !== PROJECT_NAME) {
-      skipped.push(entry.replace(".md", ""));
-      continue;
-    }
-
     const name = (parsed.data["name"] as string) ?? entry.replace(".md", "");
     const templateName = findMatchingTemplate(name, opts.availableTemplates, opts.nameMappings);
 
@@ -138,11 +141,43 @@ async function refreshManagedArtifacts(
         : templateResult.data
     ).replace(/\{\{name\}\}/g, name);
 
-    if (!opts.dryRun) {
-      await fs.writeFile(filePath, newContent + "\n", "utf-8");
+    const normalized = newContent.endsWith("\n") ? newContent : newContent + "\n";
+
+    if (raw.trim() === normalized.trim()) {
+      // identical — nothing to do
+      continue;
     }
-    updated.push(name);
-    opts.log.info(`${opts.dryRun ? "Would update" : "Updated"} ${opts.label}: ${name}`);
+
+    const label = `${opts.subDir}/${name}`;
+    conflicts.push(makeConflictEntry(label, filePath, raw, normalized));
+  }
+
+  if (opts.dryRun) {
+    for (const c of conflicts) {
+      const name = c.label.split("/")[1] ?? c.label;
+      opts.log.info(`Would update ${opts.label}: ${name}`);
+      updated.push(name);
+    }
+    return { updated, skipped };
+  }
+
+  if (conflicts.length > 0) {
+    const resolution = await resolveConflicts(conflicts, {
+      force: opts.force,
+      json: opts.json,
+    });
+
+    for (const entry of [...resolution.accepted, ...resolution.merged]) {
+      await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
+      const name = entry.label.split("/")[1] ?? entry.label;
+      opts.log.info(`Updated ${opts.label}: ${name}`);
+      updated.push(name);
+    }
+
+    for (const entry of resolution.skipped) {
+      const name = entry.label.split("/")[1] ?? entry.label;
+      skipped.push(name);
+    }
   }
 
   return { updated, skipped };
@@ -227,22 +262,25 @@ async function pullFromSource(
   configDir: string,
   dryRun: boolean,
   log: Logger,
+  options: { force?: boolean; json?: boolean } = {},
 ): Promise<string[]> {
   const updated: string[] = [];
-  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
+  const cloneDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
-    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, tmpDir]);
+    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, cloneDir]);
   } catch (cause) {
     log.warn(`Failed to clone source repo: ${repo}`, cause);
     return updated;
   }
 
   const sourcePaths = ["rules", "skills", "agents"];
+  const conflicts: ConflictEntry[] = [];
+  const directWrites: Array<{ localFile: string; content: string; label: string }> = [];
 
   for (const syncPath of sourcePaths) {
-    const sourceDir = path.join(tmpDir, PROJECT_DIR, syncPath);
+    const sourceDir = path.join(cloneDir, PROJECT_DIR, syncPath);
     const localDir = path.join(configDir, syncPath);
 
     let entries: string[];
@@ -260,33 +298,53 @@ async function pullFromSource(
       const localFile = path.join(localDir, entry);
 
       const sourceContent = await fs.readFile(sourceFile, "utf8");
-      const parsed = matter(sourceContent);
-      const managedBy = parsed.data["managed_by"] as string | undefined;
+      const sourceParsed = matter(sourceContent);
+      if (sourceParsed.data["managed_by"] !== PROJECT_NAME) continue;
 
-      // Only pull managed_by: project-managed artifacts
-      if (managedBy !== PROJECT_NAME) continue;
+      const label = `${syncPath}/${entry}`;
 
-      // Check if local file exists and is user-managed
+      let localContent: string | null = null;
       try {
-        const localContent = await fs.readFile(localFile, "utf8");
-        const localParsed = matter(localContent);
-        if (localParsed.data["managed_by"] === "user") {
-          log.info(`Skipping ${entry} (local is managed_by: user)`);
-          continue;
-        }
+        localContent = await fs.readFile(localFile, "utf8");
       } catch {
-        // Local file doesn't exist — will be created
+        // new file — direct write
       }
 
-      if (!dryRun) {
-        await fs.writeFile(localFile, sourceContent, "utf-8");
+      if (localContent === null) {
+        directWrites.push({ localFile, content: sourceContent, label });
+      } else if (localContent.trim() === sourceContent.trim()) {
+        // identical — no-op
+      } else {
+        conflicts.push(makeConflictEntry(label, localFile, localContent, sourceContent));
       }
-      updated.push(`${syncPath}/${entry}`);
-      log.info(`${dryRun ? "Would pull" : "Pulled"}: ${syncPath}/${entry}`);
     }
   }
 
-  await safeRm(tmpDir);
+  await safeRm(cloneDir);
+
+  if (dryRun) {
+    for (const { label } of [...directWrites, ...conflicts]) {
+      log.info(`Would pull: ${label}`);
+      updated.push(label);
+    }
+    return updated;
+  }
+
+  for (const { localFile, content, label } of directWrites) {
+    await fs.writeFile(localFile, content, "utf-8");
+    log.info(`Pulled: ${label}`);
+    updated.push(label);
+  }
+
+  if (conflicts.length > 0) {
+    const resolution = await resolveConflicts(conflicts, options);
+    for (const entry of [...resolution.accepted, ...resolution.merged]) {
+      await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
+      log.info(`Pulled: ${entry.label}`);
+      updated.push(entry.label);
+    }
+  }
+
   return updated;
 }
 
@@ -481,6 +539,8 @@ export async function updateHandler(
       label: "rule",
       dryRun,
       log,
+      force: options.force,
+      json: options.json,
       availableTemplates: AVAILABLE_TEMPLATES,
       loadTemplate,
       getTemplateVersion,
@@ -499,6 +559,8 @@ export async function updateHandler(
       label: "skill",
       dryRun,
       log,
+      force: options.force,
+      json: options.json,
       availableTemplates: AVAILABLE_SKILL_TEMPLATES,
       loadTemplate: loadSkillTemplateContent,
       getTemplateVersion: getSkillTemplateVersion,
@@ -516,6 +578,8 @@ export async function updateHandler(
       label: "agent",
       dryRun,
       log,
+      force: options.force,
+      json: options.json,
       availableTemplates: AVAILABLE_AGENT_TEMPLATES,
       loadTemplate: loadAgentTemplate,
       getTemplateVersion: getAgentTemplateVersion,
@@ -534,7 +598,10 @@ export async function updateHandler(
 
   let sourceUpdated: string[] = [];
   if (options.from) {
-    sourceUpdated = await pullFromSource(options.from, configDir, options.dryRun ?? false, log);
+    sourceUpdated = await pullFromSource(options.from, configDir, options.dryRun ?? false, log, {
+      force: options.force,
+      json: options.json,
+    });
   }
 
   let regenerated = false;
@@ -544,6 +611,7 @@ export async function updateHandler(
     if (configResult.ok) {
       const genResult = await generate(configResult.data, projectRoot, {
         json: options.json,
+        force: options.force,
       });
       regenerated = genResult.ok;
     }
@@ -629,6 +697,7 @@ export function registerUpdateCommand(program: Command): void {
     .option("--agents", "Refresh template-managed agents to latest versions")
     .option("--mcp-servers", "Refresh template-managed MCP servers to latest versions")
     .option("--dry-run", "Show what would change without writing")
+    .option("--force", "Accept all incoming changes without prompting (overwrites local)")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: UpdateOptions = { ...globalOptions, ...cmdOptions };
