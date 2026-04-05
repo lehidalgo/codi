@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user wants to apply a visual theme to slides, documents, HTML artifacts, or other deliverables. Provides 10 pre-set themes with color palettes and font pairings, or generates a custom theme on demand.
-category: Creative and Design
+category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # Theme Factory Skill
