@@ -242,8 +242,22 @@ function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
 // pre-commit hooks while keeping the full suite for CI.
 // To use: add "test:pre-commit": "vitest run tests/unit tests/integration"
 // (or equivalent) to your package.json scripts.
+// Marked shell: true because the command uses &&, ||, and 2>/dev/null operators.
+// passFiles: false because test runners do not accept staged file paths as arguments.
 const NPM_PRECOMMIT_TEST =
   "node -e \"const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)\" 2>/dev/null && npm run test:pre-commit || npm test";
+
+/**
+ * Detects the Python test runner command based on project tooling.
+ * - uv.lock present → uv run pytest
+ * - poetry.lock present → poetry run pytest
+ * - fallback → pytest (assumes activated venv or global install)
+ */
+function getPythonTestCommand(): string {
+  if (existsSync("uv.lock")) return "uv run pytest";
+  if (existsSync("poetry.lock")) return "poetry run pytest";
+  return "pytest";
+}
 
 function getTestHooksForLanguages(languages: string[]): HookEntry[] {
   const TEST_COMMANDS: Record<string, HookEntry> = {
@@ -251,22 +265,31 @@ function getTestHooksForLanguages(languages: string[]): HookEntry[] {
       name: "test-ts",
       command: NPM_PRECOMMIT_TEST,
       stagedFilter: "",
+      shell: true,
+      passFiles: false,
     },
     javascript: {
       name: "test-js",
       command: NPM_PRECOMMIT_TEST,
       stagedFilter: "",
+      shell: true,
+      passFiles: false,
     },
-    python: { name: "test-py", command: "pytest", stagedFilter: "" },
-    go: { name: "test-go", command: "go test ./...", stagedFilter: "" },
-    rust: { name: "test-rs", command: "cargo test", stagedFilter: "" },
-    java: { name: "test-java", command: "mvn test -q", stagedFilter: "" },
-    kotlin: { name: "test-kt", command: "gradle test", stagedFilter: "" },
-    swift: { name: "test-swift", command: "swift test", stagedFilter: "" },
-    csharp: { name: "test-cs", command: "dotnet test", stagedFilter: "" },
-    dart: { name: "test-dart", command: "dart test", stagedFilter: "" },
-    php: { name: "test-php", command: "phpunit", stagedFilter: "" },
-    ruby: { name: "test-rb", command: "bundle exec rspec", stagedFilter: "" },
+    python: {
+      name: "test-py",
+      command: getPythonTestCommand(),
+      stagedFilter: "",
+      passFiles: false,
+    },
+    go: { name: "test-go", command: "go test ./...", stagedFilter: "", passFiles: false },
+    rust: { name: "test-rs", command: "cargo test", stagedFilter: "", passFiles: false },
+    java: { name: "test-java", command: "mvn test -q", stagedFilter: "", passFiles: false },
+    kotlin: { name: "test-kt", command: "gradle test", stagedFilter: "", passFiles: false },
+    swift: { name: "test-swift", command: "swift test", stagedFilter: "", passFiles: false },
+    csharp: { name: "test-cs", command: "dotnet test", stagedFilter: "", passFiles: false },
+    dart: { name: "test-dart", command: "dart test", stagedFilter: "", passFiles: false },
+    php: { name: "test-php", command: "phpunit", stagedFilter: "", passFiles: false },
+    ruby: { name: "test-rb", command: "bundle exec rspec", stagedFilter: "", passFiles: false },
   };
   const hooks: HookEntry[] = [];
   for (const lang of languages) {

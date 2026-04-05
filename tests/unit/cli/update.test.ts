@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { stringify as stringifyYaml, parse as parseYaml } from "yaml";
 import { updateHandler } from "#src/cli/update.js";
 import { Logger } from "#src/core/output/logger.js";
@@ -114,7 +114,7 @@ describe("update command handler", () => {
     expect(result.errors[0]!.code).toBe("E_CONFIG_INVALID");
   });
 
-  it("refreshes managed rules with --rules", async () => {
+  it("refreshes managed rules with --rules using --force", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.writeFile(
       path.join(configDir, "flags.yaml"),
@@ -130,9 +130,83 @@ describe("update command handler", () => {
       "utf-8",
     );
 
-    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    const result = await updateHandler(tmpDir, { force: true, rules: true });
     expect(result.success).toBe(true);
     expect(result.data.rulesUpdated).toContain(ruleName);
+  });
+
+  it("routes managed_by:codi rule change through conflict resolver with json:true => skipped", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.writeFile(
+      path.join(configDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const ruleName = prefixedName("security");
+    await fs.writeFile(
+      path.join(configDir, "rules", `${ruleName}.md`),
+      `---\nname: ${ruleName}\nmanaged_by: ${PROJECT_NAME}\n---\nold content`,
+      "utf-8",
+    );
+
+    // json:true = keep existing (skip all conflicts)
+    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesSkipped).toContain(ruleName);
+    expect(result.data.rulesUpdated).not.toContain(ruleName);
+
+    // file on disk must remain unchanged
+    const onDisk = await fs.readFile(path.join(configDir, "rules", `${ruleName}.md`), "utf-8");
+    expect(onDisk).toContain("old content");
+  });
+
+  it("routes managed_by:user rule change through conflict resolver with json:true => skipped", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.writeFile(
+      path.join(configDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    // User modified a built-in rule but kept the template name
+    const ruleName = prefixedName("security");
+    const originalContent = `---\nname: ${ruleName}\nmanaged_by: user\n---\nmy custom content`;
+    await fs.writeFile(path.join(configDir, "rules", `${ruleName}.md`), originalContent, "utf-8");
+
+    // json:true = keep existing
+    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesSkipped).toContain(ruleName);
+    expect(result.data.rulesUpdated).not.toContain(ruleName);
+
+    // file must be preserved
+    const onDisk = await fs.readFile(path.join(configDir, "rules", `${ruleName}.md`), "utf-8");
+    expect(onDisk).toContain("my custom content");
+  });
+
+  it("force-updates managed_by:user rules when --force", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.writeFile(
+      path.join(configDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const ruleName = prefixedName("security");
+    await fs.writeFile(
+      path.join(configDir, "rules", `${ruleName}.md`),
+      `---\nname: ${ruleName}\nmanaged_by: user\n---\nmy custom content`,
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, { force: true, rules: true });
+    expect(result.success).toBe(true);
+    expect(result.data.rulesUpdated).toContain(ruleName);
+
+    const onDisk = await fs.readFile(path.join(configDir, "rules", `${ruleName}.md`), "utf-8");
+    // must not contain the user's custom content anymore
+    expect(onDisk).not.toContain("my custom content");
   });
 
   it("skips user-owned rules with --rules", async () => {
@@ -202,7 +276,7 @@ describe("update command handler", () => {
       "utf-8",
     );
 
-    const result = await updateHandler(tmpDir, { json: true, skills: true });
+    const result = await updateHandler(tmpDir, { force: true, skills: true });
     expect(result.success).toBe(true);
     expect(result.data.skillsUpdated).toContain(skillName);
   });
@@ -245,7 +319,7 @@ describe("update command handler", () => {
       "utf-8",
     );
 
-    const result = await updateHandler(tmpDir, { json: true, agents: true });
+    const result = await updateHandler(tmpDir, { force: true, agents: true });
     expect(result.success).toBe(true);
     expect(result.data.agentsUpdated).toContain(agentName);
   });
@@ -362,5 +436,22 @@ describe("update command handler", () => {
     const result = await updateHandler(tmpDir, { json: true, agents: true });
     expect(result.success).toBe(true);
     expect(result.data.agentsUpdated).toEqual([]);
+  });
+
+  it("returns empty sourceUpdated when --from fails to clone invalid repo", async () => {
+    const configDir = path.join(tmpDir, PROJECT_DIR);
+    await fs.writeFile(
+      path.join(configDir, "flags.yaml"),
+      stringifyYaml({ auto_commit: { mode: "enabled", value: false } }),
+      "utf-8",
+    );
+
+    const result = await updateHandler(tmpDir, {
+      json: true,
+      from: "this-org/this-repo-does-not-exist-xyz",
+    });
+    // clone fails gracefully — no crash, empty list
+    expect(result.success).toBe(true);
+    expect(result.data.sourceUpdated).toEqual([]);
   });
 });
