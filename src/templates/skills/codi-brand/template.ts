@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 14
 ---
 
 ## When to Activate
@@ -76,20 +76,34 @@ For HTML outputs also read:
 
 ---
 
-## Generator Routing (PPTX / DOCX)
+## Generator Routing (PPTX / DOCX / XLSX)
 
-When the user needs a \`.pptx\` or \`.docx\` file, use the brand scripts in \`\${CLAUDE_SKILL_DIR}/scripts/\`. The canonical brand data is \`\${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json\` — do not hardcode any colors or fonts.
+Generation is handled by the format skills (\`codi-pptx\`, \`codi-docx\`, \`codi-xlsx\`). This brand skill provides only \`\${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json\` — pass it via \`--tokens\`.
 
-### Routing Table
+### Runtime Detection
 
-| Format | Runtime | Command |
-|--------|---------|---------|
-| PPTX | **TypeScript (DEFAULT)** | \`npx tsx \${CLAUDE_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --output output.pptx\` |
-| PPTX | Python (fallback) | \`python3 \${CLAUDE_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --output output.pptx\` |
-| DOCX | **TypeScript (DEFAULT)** | \`npx tsx \${CLAUDE_SKILL_DIR}/scripts/ts/generate_docx.ts --content content.json --output output.docx\` |
-| DOCX | Python (fallback) | \`python3 \${CLAUDE_SKILL_DIR}/scripts/python/generate_docx.py --content content.json --output output.docx\` |
+Detect the available runtime and route accordingly:
 
-Use TypeScript by default. Fall back to Python only when \`npx\` is unavailable.
+\`\`\`bash
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  # TypeScript (preferred)
+  npx tsx \${CODI_PPTX_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
+elif command -v uv &>/dev/null; then
+  # Python via uv (ephemeral isolated env)
+  uv run --with python-pptx python3 \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
+else
+  # Python via venv fallback
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\${SKILL_VENV}" 2>/dev/null || true
+  "\${SKILL_VENV}/bin/pip" install -q python-pptx
+  "\${SKILL_VENV}/bin/python3" \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
+fi
+\`\`\`
+
+Apply the same pattern for DOCX (\`CODI_DOCX_SKILL_DIR\`, \`generate_docx\`, \`out.docx\`) and XLSX (\`CODI_XLSX_SKILL_DIR\`, \`generate_xlsx\`, \`out.xlsx\`).
+
+- \`\${CLAUDE_SKILL_DIR}\` — this brand skill directory (provides tokens)
+- \`\${CODI_PPTX_SKILL_DIR}\` / \`\${CODI_DOCX_SKILL_DIR}\` / \`\${CODI_XLSX_SKILL_DIR}\` — respective format skill directories
+- \`\${BRAND_THEME}\` — \`dark\` or \`light\` (ask the user if not specified)
 
 ### content.json Schema
 
@@ -112,4 +126,3 @@ Use TypeScript by default. Fall back to Python only when \`npx\` is unavailable.
 \`\`\`
 
 `;
-

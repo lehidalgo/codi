@@ -68,7 +68,7 @@ function checkBrandMention(text: string): CheckResult {
 }
 
 function checkNoForbiddenPhrases(text: string): CheckResult {
-  const forbidden = bt.VOICE.phrases_avoid;
+  const forbidden: string[] = bt.tokens.voice.phrases_avoid;
   const found = forbidden.filter((phrase) => text.toLowerCase().includes(phrase.toLowerCase()));
   return {
     name: "no_forbidden_phrases",
@@ -120,7 +120,8 @@ export function report(results: CheckResult[]): void {
 function parseCli(): string {
   const args = process.argv.slice(2);
   const idx = args.indexOf("--input");
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
+  const val = args[idx + 1];
+  if (idx !== -1 && val) return val;
   throw new Error("Usage: npx tsx validate_pptx.ts --input file.pptx");
 }
 

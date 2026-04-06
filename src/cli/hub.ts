@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import { wizardSelect } from "./wizard-prompts.js";
 import fs from "node:fs/promises";
 import { PROJECT_DIR } from "../constants.js";
 import { printWelcomeBanner } from "./banner.js";
@@ -163,7 +164,7 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
       ...(advancedMode ? ADVANCED_MENU.filter((e) => !e.requiresProject || hasProject) : []),
     ];
 
-    const selected = await p.select({
+    const selected = await wizardSelect({
       message: "What would you like to do?",
       options: [
         ...visibleEntries.map((e) => ({
@@ -180,7 +181,7 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
       ],
     });
 
-    if (p.isCancel(selected) || selected === "_exit") {
+    if (typeof selected === "symbol" || selected === "_exit") {
       p.outro("Goodbye.");
       return;
     }

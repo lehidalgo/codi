@@ -10,7 +10,7 @@ import {
 } from "./init-wizard-paths.js";
 import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
 import { printWelcomeBanner } from "./banner.js";
-import { printLegend } from "./wizard-legend.js";
+import { wizardSelect, wizardMultiselect } from "./wizard-prompts.js";
 
 export interface WizardResult {
   languages: string[];
@@ -30,7 +30,7 @@ export interface WizardResult {
 }
 
 function isBack<T>(value: T | symbol): value is symbol {
-  return p.isCancel(value);
+  return typeof value === "symbol";
 }
 
 export interface ExistingSelections {
@@ -58,7 +58,6 @@ export async function runInitWizard(
   });
 
   p.intro(`${PROJECT_CLI} — Project Setup`);
-  printLegend();
 
   let step = 0;
   let savedLanguages: string[] | undefined;
@@ -71,7 +70,7 @@ export async function runInitWizard(
       case 0: {
         if (existingInstall) {
           p.log.step("Existing Installation");
-          const action = await p.select({
+          const action = await wizardSelect({
             message: `${PROJECT_CLI} is already installed. What do you want to do?`,
             options: [
               {
@@ -102,9 +101,8 @@ export async function runInitWizard(
       }
       case 1: {
         p.log.step("Languages");
-        printLegend();
         const allLanguages = getSupportedLanguages();
-        const languages = await p.multiselect({
+        const languages = await wizardMultiselect({
           message: "Select project languages for pre-commit hooks",
           options: allLanguages.map((lang) => ({
             label: formatLabel(lang),
@@ -123,8 +121,7 @@ export async function runInitWizard(
       }
       case 2: {
         p.log.step("Agents");
-        printLegend();
-        const agents = await p.multiselect({
+        const agents = await wizardMultiselect({
           message: "Select agents to generate config for",
           options: allAgents.map((id) => ({ label: id, value: id })),
           initialValues: savedAgents ?? detectedAgents,
@@ -146,8 +143,7 @@ export async function runInitWizard(
           break;
         }
         p.log.step("Configuration");
-        printLegend();
-        const configMode = await p.select({
+        const configMode = await wizardSelect({
           message: "How do you want to configure?",
           options: [
             {

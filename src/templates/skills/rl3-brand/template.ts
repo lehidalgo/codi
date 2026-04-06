@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 19
 ---
 
 ## When to Activate
@@ -45,56 +45,67 @@ Tagline: *"Cada iteracion nos acerca al resultado optimo."*
 
 | Request type | Who generates | Process |
 |---|---|---|
-| HTML / landing / dashboard | Claude inline | Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` → generate HTML → validate |
-| Word / proposal / memo | Script | Write \\\`content.json\\\` → run \\\`generate_docx.py\\\` → validate |
-| PowerPoint / deck / pitch | Script | Write \\\`content.json\\\` → run \\\`generate_pptx.py\\\` → validate |
+| HTML / landing / dashboard | Claude inline | Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\\\` → generate HTML → validate |
+| Word / proposal / memo | Script | Write \\\`content.json\\\` → run \\\`codi-docx\\\` generator with \\\`--tokens\\\` → validate |
+| PowerPoint / deck / pitch | Script | Write \\\`content.json\\\` → run \\\`codi-pptx\\\` generator with \\\`--tokens\\\` → validate |
 | Email / text content | Claude inline | Read brand_tokens for tone → write text → validate |
 
 ### HTML / Landing Page / Dashboard
 
-1. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` to get current colors, fonts, layout values, and logo SVGs.
-2. Generate the HTML file inline using CSS variables, Google Fonts URL, grain overlay, and logo SVG from brand_tokens.
-3. Validate:
+1. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\\\` to get current colors, fonts, layout values, and logo paths.
+2. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/ts/brand_tokens.ts]]\\\` for the TypeScript adapter with CSS variable names, SVG logos, and service pillar data.
+3. Generate the HTML file inline using CSS variables, Google Fonts URL, grain overlay, and logo SVG from brand_tokens.
+4. Validate:
 \\\`\\\`\\\`bash
 python \${CLAUDE_SKILL_DIR}[[/scripts/validators/html_validator.py]] --input output.html
 \\\`\\\`\\\`
-4. Fix any errors and re-validate until all 12 rules pass.
+5. Fix any errors and re-validate until all 12 rules pass.
 
 ### Word Document / Proposal / Memo
 
 1. Create \\\`content.json\\\` following the schema below.
-2. Generate the DOCX (use TypeScript by default; Python if npx unavailable):
+2. Generate the DOCX using the \\\`codi-docx\\\` format skill with RL3 brand tokens:
 \\\`\\\`\\\`bash
-# DEFAULT (TypeScript)
-npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_docx.ts]] --content content.json --output output.docx
-# FALLBACK (Python)
-python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_docx.py]] --content content.json --output output.docx
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  npx tsx \${CODI_DOCX_SKILL_DIR}/scripts/ts/generate_docx.ts --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output output.docx
+elif command -v uv &>/dev/null; then
+  uv run --with python-docx python3 \${CODI_DOCX_SKILL_DIR}/scripts/python/generate_docx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output output.docx
+else
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  "\$SKILL_VENV/bin/pip" install -q python-docx
+  "\$SKILL_VENV/bin/python3" \${CODI_DOCX_SKILL_DIR}/scripts/python/generate_docx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output output.docx
+fi
 \\\`\\\`\\\`
 3. Validate:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}[[/scripts/python/validators/doc_validator.py]] --input output.docx
+python \${CLAUDE_SKILL_DIR}[[/scripts/validators/doc_validator.py]] --input output.docx
 \\\`\\\`\\\`
 4. Fix any errors and re-validate until all 5 rules pass.
 
 ### PowerPoint / Deck / Pitch
 
 1. Create \\\`content.json\\\` following the schema below.
-2. Generate the PPTX (use TypeScript by default; Python if npx unavailable):
+2. Generate the PPTX using the \\\`codi-pptx\\\` format skill with RL3 brand tokens:
 \\\`\\\`\\\`bash
-# DEFAULT (TypeScript)
-npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_pptx.ts]] --content content.json --output output.pptx
-# FALLBACK (Python)
-python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --output output.pptx
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  npx tsx \${CODI_PPTX_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output output.pptx
+elif command -v uv &>/dev/null; then
+  uv run --with python-pptx python3 \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output output.pptx
+else
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  "\$SKILL_VENV/bin/pip" install -q python-pptx
+  "\$SKILL_VENV/bin/python3" \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output output.pptx
+fi
 \\\`\\\`\\\`
 3. Validate:
 \\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}[[/scripts/python/validators/pptx_validator.py]] --input output.pptx
+python \${CLAUDE_SKILL_DIR}[[/scripts/validators/pptx_validator.py]] --input output.pptx
 \\\`\\\`\\\`
 4. Fix any errors and re-validate until all 5 rules pass.
 
 ### Email / Text Content
 
-1. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.py]]\\\` for tone guidance: \\\`PHRASES_USE\\\`, \\\`PHRASES_AVOID\\\`, \\\`TAGLINE\\\`, \\\`CYCLE_LABEL\\\`.
+1. Read \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\\\` → \\\`voice\\\` field for tone guidance: \\\`phrases_use\\\`, \\\`phrases_avoid\\\`, \\\`tagline\\\`, \\\`cycle_label\\\`.
 2. Write content following tone of voice rules below.
 3. Validate:
 \\\`\\\`\\\`bash
@@ -138,18 +149,6 @@ Read \\\`\${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]\\\` for the compl
 
 ---
 
-## Testing
-
-Run the full test suite (generates HTML, DOCX, PPTX x3 runs each, validates all, verifies SHA-256 determinism):
-
-\\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}[[/scripts/run_tests.py]]
-\\\`\\\`\\\`
-
-Expected: \\\`ALL TESTS PASSED - 3 runs, 0 errors, SHA-256 deterministic\\\`
-
----
-
 ## Available Agents
 
 For automated brand quality evaluation (see \\\`agents/\\\` directory):
@@ -170,7 +169,6 @@ For automated brand quality evaluation (see \\\`agents/\\\` directory):
 | \\\`\${CLAUDE_SKILL_DIR}[[/references/brand-concept.html]]\\\` | Layout patterns, animations, full service section structure |
 | \\\`\${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-dark.svg]]\\\` | Logo for light backgrounds |
 | \\\`\${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-light.svg]]\\\` | Logo for dark backgrounds |
-| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\\\` | Canonical brand data — single source of truth for all colors, fonts, layout |
-| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/ts/brand_tokens.ts]]\\\` | TypeScript adapter for brand_tokens.json |
-| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/python/brand_tokens.py]]\\\` | Python adapter (backward-compatible, includes logo SVGs, CSS vars, service pillars) |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\\\` | Canonical brand data — single source of truth for all colors, fonts, layout, voice |
+| \\\`\${CLAUDE_SKILL_DIR}[[/scripts/ts/brand_tokens.ts]]\\\` | TypeScript adapter — CSS variable names, logo SVGs, service pillar data |
 `;

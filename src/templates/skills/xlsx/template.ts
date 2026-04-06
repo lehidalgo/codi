@@ -1,6 +1,22 @@
 import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import type { TemplateCounts } from "../types.js";
 
-export const template = `---
+function buildBrandPrompt(brandSkillNames: string[]): string {
+  const lines = brandSkillNames.map((name, i) => {
+    const label = name.replace(/-brand$/, "");
+    const brandLabel =
+      label.length <= 4 ? label.toUpperCase() : label.charAt(0).toUpperCase() + label.slice(1);
+    const suffix =
+      i === 0 ? " (default — uses bundled tokens)" : `  — requires codi-${name} skill active`;
+    return `  ${i + 1}. ${brandLabel}${suffix}`;
+  });
+  lines.push(`  ${brandSkillNames.length + 1}. Custom — provide a path to brand_tokens.json`);
+  return lines.join("\n");
+}
+
+export function getTemplate(counts: TemplateCounts): string {
+  const brandPrompt = buildBrandPrompt(counts.brandSkillNames);
+  return `---
 name: {{name}}
 description: "Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations."
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
@@ -8,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 20
 ---
 
 ## When to Activate
@@ -121,6 +137,43 @@ This applies to ALL calculations - totals, percentages, ratios, differences, etc
      - \\\`#DIV/0!\\\`: Division by zero
      - \\\`#VALUE!\\\`: Wrong data type in formula
      - \\\`#NAME?\\\`: Unrecognized formula name
+
+## Creating Branded Output
+
+When the user asks to create a branded XLSX, ask two questions if not already stated:
+
+**Step 1 — Brand** (skip if brand already named):
+\`\`\`
+Which brand styling would you like to apply?
+${brandPrompt}
+\`\`\`
+
+**Step 2 — Theme** (skip if theme already named):
+\`\`\`
+Which color theme?
+  1. Dark (default)
+  2. Light
+\`\`\`
+
+Then run (detect runtime first):
+\`\`\`bash
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  # TypeScript (preferred)
+  npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_xlsx.ts]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.xlsx
+elif command -v uv &>/dev/null; then
+  # Python via uv (ephemeral isolated env — no system pollution)
+  uv run --with openpyxl python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_xlsx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.xlsx
+else
+  # Python via venv fallback
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  "\$SKILL_VENV/bin/pip" install -q openpyxl
+  "\$SKILL_VENV/bin/python3" \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_xlsx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.xlsx
+fi
+\`\`\`
+
+Omit \`--tokens\` to use Codi default brand. Replace \`dark\` with \`light\` for the light theme.
+
+---
 
 ### Creating new Excel files
 
@@ -265,3 +318,4 @@ The script returns JSON with error details:
 - Document data sources for hardcoded values
 - Include notes for key calculations and model sections
 `;
+}

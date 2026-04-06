@@ -1,6 +1,6 @@
 import { styleText } from "node:util";
 
-const LEGEND_TEXT = "space toggle · a all · tab fold · ↑↓ move · enter confirm · ^c back";
+const LEGEND_TEXT = "space toggle · a all · tab fold · ↑↓ move · enter confirm · b back";
 
 /**
  * Prints the keyboard navigation legend between wizard prompts.

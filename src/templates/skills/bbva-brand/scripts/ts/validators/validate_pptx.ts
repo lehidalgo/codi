@@ -11,10 +11,7 @@
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join, dirname } from "node:path";
 import * as bt from "../brand_tokens.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,9 +31,7 @@ function checkFileExists(inputPath: string): CheckResult {
   return {
     name: "file_exists",
     pass: existsSync(inputPath),
-    message: existsSync(inputPath)
-      ? `File found: ${inputPath}`
-      : `File not found: ${inputPath}`,
+    message: existsSync(inputPath) ? `File found: ${inputPath}` : `File not found: ${inputPath}`,
   };
 }
 
@@ -63,10 +58,8 @@ function checkHasContent(text: string): CheckResult {
 }
 
 function checkNoForbiddenPhrases(text: string): CheckResult {
-  const forbidden = bt.VOICE.phrases_avoid;
-  const found = forbidden.filter((phrase) =>
-    text.toLowerCase().includes(phrase.toLowerCase())
-  );
+  const forbidden: string[] = bt.tokens.voice.phrases_avoid;
+  const found = forbidden.filter((phrase) => text.toLowerCase().includes(phrase.toLowerCase()));
   return {
     name: "no_forbidden_phrases",
     pass: found.length === 0,
@@ -83,9 +76,7 @@ function checkHasBrandTitle(text: string): CheckResult {
   return {
     name: "has_brand_mention",
     pass: hasBrand,
-    message: hasBrand
-      ? "BBVA brand mention found"
-      : "No BBVA brand mention found in presentation",
+    message: hasBrand ? "BBVA brand mention found" : "No BBVA brand mention found in presentation",
   };
 }
 
@@ -153,7 +144,8 @@ function report(results: CheckResult[]): void {
 function parseCli(): string {
   const args = process.argv.slice(2);
   const idx = args.indexOf("--input");
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
+  const val = args[idx + 1];
+  if (idx !== -1 && val) return val;
   throw new Error("Usage: npx tsx validate_pptx.ts --input file.pptx");
 }
 

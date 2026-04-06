@@ -1,6 +1,22 @@
 import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import type { TemplateCounts } from "../types.js";
 
-export const template = `---
+function buildBrandPrompt(brandSkillNames: string[]): string {
+  const lines = brandSkillNames.map((name, i) => {
+    const label = name.replace(/-brand$/, "").replace(/^codi$/, "Codi");
+    const brandLabel =
+      label.length <= 4 ? label.toUpperCase() : label.charAt(0).toUpperCase() + label.slice(1);
+    const suffix =
+      i === 0 ? " (default — uses bundled tokens)" : `  — requires codi-${name} skill active`;
+    return `  ${i + 1}. ${brandLabel}${suffix}`;
+  });
+  lines.push(`  ${brandSkillNames.length + 1}. Custom — provide a path to brand_tokens.json`);
+  return lines.join("\n");
+}
+
+export function getTemplate(counts: TemplateCounts): string {
+  const brandPrompt = buildBrandPrompt(counts.brandSkillNames);
+  return `---
 name: {{name}}
 description: "Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations."
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
@@ -8,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 20
 ---
 
 # PPTX Skill
@@ -55,6 +71,43 @@ python \${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpac
 
 ---
 
+## Creating Branded Output
+
+When the user asks to create a branded PPTX, ask two questions if not already stated:
+
+**Step 1 — Brand** (skip if brand already named):
+\`\`\`
+Which brand styling would you like to apply?
+${brandPrompt}
+\`\`\`
+
+**Step 2 — Theme** (skip if theme already named):
+\`\`\`
+Which color theme?
+  1. Dark (default)
+  2. Light
+\`\`\`
+
+Then run (detect runtime first):
+\`\`\`bash
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  # TypeScript (preferred)
+  npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_pptx.ts]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+elif command -v uv &>/dev/null; then
+  # Python via uv (ephemeral isolated env — no system pollution)
+  uv run --with python-pptx --with Pillow python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+else
+  # Python via venv fallback
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  "\$SKILL_VENV/bin/pip" install -q python-pptx Pillow
+  "\$SKILL_VENV/bin/python3" \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+fi
+\`\`\`
+
+Omit \`--tokens\` to use Codi default brand. Replace \`dark\` with \`light\` for the light theme.
+
+---
+
 ## Creating from Scratch
 
 **Read [pptxgenjs.md](pptxgenjs.md) for full details.**
@@ -75,7 +128,9 @@ When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), 
 
 1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
 2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`codi-bbva-brand\\\`) and re-run.
-3. Write \\\`content.json\\\` using the schema from the brand skill, then run its TypeScript generator (DEFAULT) or Python fallback.
+3. Write \\\`content.json\\\` using the schema below, then run the TypeScript generator (DEFAULT) or Python fallback.
+
+**Your role as the agent: create content.json only.** The generator script owns all layout decisions — logo position, slide structure, font sizes, spacing. You control what is said on each slide, not how it looks.
 
 **content.json schema:**
 
@@ -83,19 +138,46 @@ When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), 
 {
   "title": "Presentation Title",
   "subtitle": "Optional subtitle",
-  "author": "Author",
-  "sections": [
+  "author": "Author Name",
+  "slides": [
+    { "type": "title" },
     {
+      "type": "section",
       "number": "01",
-      "label": "Section Label",
+      "label": "SECTION LABEL",
       "heading": "Slide Heading",
-      "body": "Body paragraph.",
+      "body": "Optional body paragraph.",
       "items": ["Bullet 1", "Bullet 2"],
       "callout": "Optional callout quote"
-    }
+    },
+    {
+      "type": "quote",
+      "quote": "The most important insight from this quarter.",
+      "attribution": "Name, Title"
+    },
+    {
+      "type": "metrics",
+      "heading": "KEY NUMBERS",
+      "metrics": [
+        { "value": "€12M", "label": "Revenue" },
+        { "value": "34%",  "label": "Growth" },
+        { "value": "420",  "label": "Clients" }
+      ]
+    },
+    { "type": "closing", "message": "Thank you", "contact": "team@example.com" }
   ]
 }
 \\\`\\\`\\\`
+
+**Slide types reference:**
+
+| type | Required fields | Optional fields |
+|------|----------------|-----------------|
+| \\\`title\\\`   | — (uses top-level title/subtitle/author) | title, subtitle, author |
+| \\\`section\\\` | heading | number, label, body, items, callout |
+| \\\`quote\\\`   | quote | attribution |
+| \\\`metrics\\\` | metrics[] (max 4) | heading |
+| \\\`closing\\\` | message | contact |
 
 ---
 
@@ -192,3 +274,4 @@ pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 - LibreOffice (\\\`soffice\\\`) - PDF conversion (auto-configured for sandboxed environments via \\\`\${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]]\\\`)
 - Poppler (\\\`pdftoppm\\\`) - PDF to images
 `;
+}

@@ -1,35 +1,47 @@
 /**
- * brand_tokens.ts — TypeScript adapter for BBVA brand tokens.
- * Reads brand_tokens.json and re-exports typed constants for pptxgenjs use.
+ * brand_tokens.ts — TypeScript adapter for BBVA brand tokens (v2).
+ * Reads brand_tokens.json and exports typed theme helpers.
  */
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const raw = JSON.parse(
-  readFileSync(join(__dirname, "..", "brand_tokens.json"), "utf-8")
-) as Record<string, unknown>;
 
-export const COLORS = raw["colors"] as Record<string, string>;
-export const FONTS  = raw["fonts"]  as Record<string, string>;
-export const LAYOUT = raw["layout"] as Record<string, string>;
-export const ASSETS = raw["assets"] as Record<string, string>;
-export const VOICE  = raw["voice"]  as { phrases_use: string[]; phrases_avoid: string[] };
-
-/**
- * Returns hex color without # prefix (pptxgenjs expects bare hex strings).
- * @example hex("primary") => "001391"
- */
-export function hex(key: string): string {
-  const color = COLORS[key];
-  if (!color) throw new Error(`Unknown BBVA color token: "${key}". Available: ${Object.keys(COLORS).join(", ")}`);
-  return color.replace("#", "");
+export interface BrandTheme {
+  background: string;
+  surface: string;
+  text_primary: string;
+  text_secondary: string;
+  primary: string;
+  accent: string;
+  logo: string;
 }
 
-/** Returns full hex including # (for CSS/HTML contexts). */
-export function cssHex(key: string): string {
-  const color = COLORS[key];
-  if (!color) throw new Error(`Unknown BBVA color token: "${key}"`);
-  return color;
+export interface BrandTokens {
+  brand: string;
+  version: number;
+  themes: { dark: BrandTheme; light: BrandTheme };
+  fonts: { headlines: string; body: string; fallback_sans: string };
+  layout: {
+    slide_width_in: string;
+    slide_height_in: string;
+    content_margin_in: string;
+    accent_bar_width_in: string;
+  };
+  assets: { logo_dark_bg: string; logo_light_bg: string };
+  voice: { phrases_use: string[]; phrases_avoid: string[] };
+}
+
+export const tokens: BrandTokens = JSON.parse(
+  readFileSync(join(__dirname, "..", "brand_tokens.json"), "utf-8"),
+) as BrandTokens;
+
+export function getTheme(name: "dark" | "light" = "dark"): BrandTheme {
+  return tokens.themes[name];
+}
+
+/** Returns hex color without # prefix (pptxgenjs expects bare hex strings). */
+export function hex(color: string): string {
+  return color.replace("#", "");
 }

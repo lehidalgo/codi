@@ -2,10 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
 vi.mock("@clack/prompts", () => ({
+  S_BAR: "|",
+  S_BAR_END: "\\",
+  S_CHECKBOX_ACTIVE: "●",
+  S_CHECKBOX_INACTIVE: "○",
+  S_CHECKBOX_SELECTED: "◼",
+  S_RADIO_ACTIVE: "●",
+  S_RADIO_INACTIVE: "○",
+  symbol: vi.fn().mockReturnValue("◆"),
   intro: vi.fn(),
   outro: vi.fn(),
   cancel: vi.fn(),
@@ -16,7 +24,14 @@ vi.mock("@clack/prompts", () => ({
   isCancel: vi.fn().mockReturnValue(false),
 }));
 
+vi.mock("#src/cli/wizard-prompts.js", () => ({
+  wizardSelect: vi.fn(),
+  wizardMultiselect: vi.fn(),
+  wizardConfirm: vi.fn(),
+}));
+
 import * as p from "@clack/prompts";
+import { wizardSelect, wizardMultiselect } from "#src/cli/wizard-prompts.js";
 import { runPresetWizard } from "#src/cli/preset-wizard.js";
 import { Logger } from "#src/core/output/logger.js";
 
@@ -26,9 +41,7 @@ describe("runPresetWizard", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(p.isCancel).mockReturnValue(false);
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-preset-wiz-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-preset-wiz-`));
     await fs.mkdir(path.join(tmpDir, PROJECT_DIR), { recursive: true });
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
@@ -44,11 +57,11 @@ describe("runPresetWizard", () => {
       .mockResolvedValueOnce("1.0.0" as never) // version
       .mockResolvedValueOnce("web,node" as never); // tags
 
-    vi.mocked(p.select)
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("" as never) // extends: none
       .mockResolvedValueOnce("dir" as never); // output format
 
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["security"] as never) // rules
       .mockResolvedValueOnce(["code-review"] as never) // skills
       .mockResolvedValueOnce([]); // agents
@@ -67,10 +80,7 @@ describe("runPresetWizard", () => {
     const stat = await fs.stat(presetDir);
     expect(stat.isDirectory()).toBe(true);
 
-    const manifest = await fs.readFile(
-      path.join(presetDir, "preset.yaml"),
-      "utf-8",
-    );
+    const manifest = await fs.readFile(path.join(presetDir, "preset.yaml"), "utf-8");
     expect(manifest).toContain("name: my-preset");
     expect(manifest).toContain("security");
   });
@@ -91,11 +101,11 @@ describe("runPresetWizard", () => {
       .mockResolvedValueOnce("1.0.0" as never)
       .mockResolvedValueOnce("" as never);
 
-    vi.mocked(p.select)
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("balanced" as never) // extends balanced
       .mockResolvedValueOnce("dir" as never);
 
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never);
@@ -113,11 +123,11 @@ describe("runPresetWizard", () => {
       .mockResolvedValueOnce("1.0.0" as never)
       .mockResolvedValueOnce("" as never);
 
-    vi.mocked(p.select)
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("" as never) // no extends
       .mockResolvedValueOnce("dir" as never);
 
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never);
@@ -135,11 +145,11 @@ describe("runPresetWizard", () => {
       .mockResolvedValueOnce("2.0.0" as never)
       .mockResolvedValueOnce("" as never);
 
-    vi.mocked(p.select)
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("" as never)
       .mockResolvedValueOnce("github" as never);
 
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never);

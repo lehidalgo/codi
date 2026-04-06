@@ -1,9 +1,8 @@
 #!/usr/bin/env npx tsx
 /**
- * generate_pptx.ts — BBVA brand-specific PPTX generator.
- * Reproduces the BBVA official presentation template layouts (10" × 5.625").
+ * generate_pptx.ts — Brand+theme-aware PPTX generator.
  * Usage: npx tsx generate_pptx.ts --content content.json [--tokens brand_tokens.json] [--theme dark|light] --output out.pptx
- * When --tokens is omitted, uses bundled BBVA brand tokens.
+ * When --tokens is omitted, uses bundled Codi brand tokens.
  */
 import { createRequire } from "node:module";
 import { readFileSync, existsSync } from "node:fs";
@@ -49,8 +48,15 @@ interface BrandTheme {
 }
 interface BrandTokens {
   brand: string;
+  version: number;
   themes: { dark: BrandTheme; light: BrandTheme };
   fonts: { headlines: string; body: string; fallback_sans: string };
+  layout: {
+    slide_width_in: string;
+    slide_height_in: string;
+    content_margin_in: string;
+    accent_bar_width_in: string;
+  };
   assets?: Record<string, string>;
 }
 
@@ -59,21 +65,15 @@ interface TitleSlide {
   title?: string;
   subtitle?: string;
   author?: string;
-  date?: string;
-}
-interface DividerSlide {
-  type: "divider";
-  heading: string;
-  number?: string;
-  label?: string;
 }
 interface SectionSlide {
   type: "section";
+  number?: string;
+  label?: string;
   heading: string;
   body?: string;
   items?: string[];
   callout?: string;
-  breadcrumb?: string;
 }
 interface QuoteSlide {
   type: "quote";
@@ -82,9 +82,8 @@ interface QuoteSlide {
 }
 interface MetricsSlide {
   type: "metrics";
-  metrics: { value: string; label: string }[];
   heading?: string;
-  breadcrumb?: string;
+  metrics: { value: string; label: string }[];
 }
 interface ClosingSlide {
   type: "closing";
@@ -92,12 +91,12 @@ interface ClosingSlide {
   contact?: string;
 }
 
-type Slide = TitleSlide | DividerSlide | SectionSlide | QuoteSlide | MetricsSlide | ClosingSlide;
+type Slide = TitleSlide | SectionSlide | QuoteSlide | MetricsSlide | ClosingSlide;
+
 interface Content {
   title: string;
   subtitle?: string;
   author?: string;
-  date?: string;
   slides: Slide[];
 }
 
@@ -140,6 +139,11 @@ const tokensDir = dirname(tokensPath);
 const tokens: BrandTokens = JSON.parse(readFileSync(tokensPath, "utf-8"));
 const T = tokens.themes[args.theme];
 const F = tokens.fonts;
+const L = tokens.layout;
+const W = parseFloat(L.slide_width_in);
+const H = parseFloat(L.slide_height_in);
+const M = parseFloat(L.content_margin_in);
+const BAR = parseFloat(L.accent_bar_width_in);
 const h = (c: string) => c.replace("#", "");
 
 const content: Content = JSON.parse(readFileSync(resolve(process.cwd(), args.content), "utf-8"));
@@ -148,52 +152,40 @@ const logoRelPath = tokens.assets?.[T.logo];
 const logoPath = logoRelPath ? resolve(tokensDir, logoRelPath) : null;
 const logoExists = logoPath ? existsSync(logoPath) : false;
 
-// ── BBVA Layout Constants (10.000" × 5.625") ──────────────────────────────────
-
-const W = 10.0; // slide width
-const H = 5.625; // slide height
-const ML = 0.366; // left margin (matches template)
-const CW = W - ML * 2; // content width
-
-// BBVA color palette from theme2.xml
-const C = {
-  dk1: "001391", // Electric Blue (primary dark)
-  dk2: "070E46", // Midnight
-  lt1: "FFFFFF", // White
-  lt2: "F7F8F8", // Sand (light gray)
-  accent1: "85C8FF", // Serene Blue / Ice
-  accent3: "FFB56B", // Mandarin
-  accent4: "FFE761", // Canary (yellow)
-  accent5: "88E783", // Lime
-};
-
-// Metric box colors cycling
-const METRIC_COLORS = [C.accent1, C.accent5, C.accent4, C.accent3];
-
 const pres = new PptxGenJS();
-pres.defineLayout({ name: "BBVA", width: W, height: H });
-pres.layout = "BBVA";
+pres.layout = "LAYOUT_WIDE";
 pres.title = content.title;
 pres.author = content.author ?? tokens.brand;
 
-type S2D = ReturnType<typeof pres.addSlide>;
+type Slide2D = ReturnType<typeof pres.addSlide>;
 
-// ── Logo helper ───────────────────────────────────────────────────────────────
+// ── Shared helpers ────────────────────────────────────────────────────────────
 
-function addLogo(
-  s: S2D,
+function accentBar(s: Slide2D): void {
+  s.addShape(pres.ShapeType.rect, {
+    x: 0,
+    y: 0,
+    w: BAR,
+    h: H,
+    fill: { color: h(T.accent) },
+    line: { type: "none" },
+  });
+}
+
+function logo(
+  s: Slide2D,
   x: number,
   y: number,
   w: number,
   ht: number,
-  align: "left" | "right" | "center" = "center",
+  align: "left" | "right" = "right",
 ): void {
   if (logoExists && logoPath) {
     try {
       s.addImage({ path: logoPath, x, y, w, h: ht, sizing: { type: "contain", w, h: ht } });
       return;
     } catch {
-      /* fall through */
+      /* fall through to text fallback */
     }
   }
   s.addText(tokens.brand.toUpperCase(), {
@@ -203,248 +195,132 @@ function addLogo(
     h: ht,
     color: h(T.accent),
     fontFace: F.fallback_sans,
-    fontSize: 9,
+    fontSize: 10,
     bold: true,
-    charSpacing: 2,
+    charSpacing: 3,
     align,
   });
-}
-
-// ── Breadcrumb helper ─────────────────────────────────────────────────────────
-
-function addBreadcrumb(s: S2D, breadcrumb: string | undefined): void {
-  if (!breadcrumb) return;
-  const parts = breadcrumb.split(" / ");
-  const left = (parts[0] ?? "").trim();
-  const right = parts.length > 1 ? parts.slice(1).join(" / ").trim() : "";
-  const crumbStyle = {
-    h: 0.118,
-    color: h(T.primary ?? C.dk1),
-    fontFace: F.body,
-    fontSize: 7,
-    charSpacing: 1,
-  };
-  s.addText(left.toUpperCase(), { x: ML, y: 0.359, w: 2.47, ...crumbStyle });
-  if (right) {
-    s.addText(right.toUpperCase(), { x: 3.296, y: 0.359, w: 2.797, ...crumbStyle });
-  }
 }
 
 // ── Slide builders ────────────────────────────────────────────────────────────
 
 function buildTitleSlide(slide: TitleSlide): void {
   const s = pres.addSlide();
-  const isDark = args.theme === "dark";
-  s.background = { color: isDark ? C.dk1 : C.lt1 };
-
+  s.background = { color: h(T.background) };
+  accentBar(s);
+  logo(s, W - 1.9, 0.18, 1.5, 0.55);
   const title = slide.title ?? content.title;
   const subtitle = slide.subtitle ?? content.subtitle;
   const author = slide.author ?? content.author;
-  const date = slide.date ?? content.date;
-  const textCol = isDark ? C.lt1 : C.dk1;
-  const subCol = isDark ? h(T.text_secondary) : C.dk2;
-
-  if (isDark) {
-    // Dark cover: title top-left, subtitle and photo right (Slide 7 pattern)
-    if (date)
-      s.addText(date, {
-        x: ML,
-        y: 2.645,
-        w: 1.155,
-        h: 0.202,
-        color: subCol,
-        fontFace: F.body,
-        fontSize: 12,
-      });
-    if (subtitle)
-      s.addText(subtitle, {
-        x: ML,
-        y: 4.539,
-        w: 3.96,
-        h: 0.316,
-        color: subCol,
-        fontFace: F.body,
-        fontSize: 12,
-      });
-    s.addText(title, {
-      x: ML,
-      y: 1.222,
-      w: 4.271,
-      h: 1.527,
-      color: textCol,
-      fontFace: F.headlines,
-      fontSize: 40,
-      bold: true,
+  s.addText(title, {
+    x: M,
+    y: H * 0.28,
+    w: W - M * 2,
+    h: 2.6,
+    color: h(T.text_primary),
+    fontFace: F.headlines,
+    fontSize: 40,
+    bold: true,
+    wrap: true,
+  });
+  if (subtitle)
+    s.addText(subtitle, {
+      x: M,
+      y: H * 0.28 + 2.7,
+      w: W - M * 2,
+      h: 0.8,
+      color: h(T.text_secondary),
+      fontFace: F.body,
+      fontSize: 18,
       wrap: true,
     });
-    if (author)
-      s.addText(author, {
-        x: ML,
-        y: H - 0.22,
-        w: 4.0,
-        h: 0.18,
-        color: subCol,
-        fontFace: F.body,
-        fontSize: 9,
-      });
-  } else {
-    // Light cover: Slide 6 pattern — date, subtitle, line, title
-    if (date)
-      s.addText(date, {
-        x: 0.361,
-        y: 2.645,
-        w: 1.155,
-        h: 0.202,
-        color: C.dk2,
-        fontFace: F.body,
-        fontSize: 12,
-      });
-    if (subtitle)
-      s.addText(subtitle, {
-        x: 0.372,
-        y: 2.9,
-        w: 4.225,
-        h: 0.237,
-        color: C.dk2,
-        fontFace: F.body,
-        fontSize: 12,
-      });
-    // Horizontal line at y=3.234
-    s.addShape(pres.ShapeType.line, {
-      x: 0.372,
-      y: 3.234,
-      w: 9.256,
-      h: 0,
-      line: { color: C.dk1, width: 0.75, dashType: "solid" },
+  if (author)
+    s.addText(author, {
+      x: M,
+      y: H - 0.55,
+      w: W - M * 2,
+      h: 0.35,
+      color: h(T.text_secondary),
+      fontFace: F.body,
+      fontSize: 12,
     });
-    s.addText(title, {
-      x: 0.366,
-      y: 3.31,
-      w: 9.268,
-      h: 2.121,
-      color: C.dk1,
-      fontFace: F.headlines,
-      fontSize: 67,
-      bold: true,
-      wrap: true,
-      valign: "top",
-    });
-    if (author)
-      s.addText(author, {
-        x: ML,
-        y: H - 0.22,
-        w: 4.0,
-        h: 0.18,
-        color: C.dk2,
-        fontFace: F.body,
-        fontSize: 9,
-      });
-  }
 }
 
-function buildDividerSlide(slide: DividerSlide): void {
+function buildSectionSlide(slide: SectionSlide): void {
   const s = pres.addSlide();
-  s.background = { color: C.accent1 };
-
-  // Optional number/label above main title
+  s.background = { color: h(T.background) };
+  accentBar(s);
+  logo(s, W - 1.3, H - 0.7, 0.9, 0.35);
   if (slide.number || slide.label) {
-    const tag = [slide.number, slide.label].filter(Boolean).join("  ·  ");
-    s.addText(tag.toUpperCase(), {
-      x: ML,
-      y: 4.2,
-      w: CW,
-      h: 0.25,
-      color: C.dk1,
+    s.addText([slide.number, slide.label].filter(Boolean).join("  ·  "), {
+      x: M,
+      y: 0.3,
+      w: W - M * 2,
+      h: 0.35,
+      color: h(T.accent),
       fontFace: F.body,
       fontSize: 11,
       bold: true,
       charSpacing: 2,
     });
   }
-  // Large title at bottom-left (Slide 12 pattern)
   s.addText(slide.heading, {
-    x: 0.325,
-    y: 4.572,
-    w: 7.725,
-    h: 0.846,
-    color: C.dk1,
+    x: M,
+    y: 0.9,
+    w: W - M * 2,
+    h: 1.4,
+    color: h(T.text_primary),
     fontFace: F.headlines,
-    fontSize: 67,
-    bold: true,
-    wrap: true,
-    valign: "top",
-  });
-}
-
-function buildSectionSlide(slide: SectionSlide): void {
-  const s = pres.addSlide();
-  s.background = { color: C.lt1 };
-
-  addBreadcrumb(s, slide.breadcrumb);
-
-  // Title at y=0.857 (with breadcrumb) or y=0.248 (without)
-  const titleY = slide.breadcrumb ? 0.857 : 0.248;
-  s.addText(slide.heading, {
-    x: 0.373,
-    y: titleY,
-    w: 7.338,
-    h: 0.6,
-    color: C.dk1,
-    fontFace: F.headlines,
-    fontSize: 30,
+    fontSize: 32,
     bold: true,
     wrap: true,
   });
-
-  let y = titleY + 0.7;
-
+  let y = 2.5;
   if (slide.body) {
     s.addText(slide.body, {
-      x: ML,
+      x: M,
       y,
-      w: CW,
+      w: W - M * 2,
       h: 1.0,
-      color: C.dk2,
+      color: h(T.text_secondary),
       fontFace: F.body,
-      fontSize: 13,
+      fontSize: 16,
       wrap: true,
     });
-    y += 1.1;
+    y += 1.15;
   }
-
   if (slide.items?.length) {
     const bullets = slide.items.map((item) => ({
       text: item,
-      options: { bullet: { type: "bullet" as const }, color: C.dk2, fontSize: 13 },
+      options: { bullet: { type: "bullet" as const }, color: h(T.text_primary), fontSize: 15 },
     }));
     s.addText(bullets, {
-      x: ML,
+      x: M,
       y,
-      w: CW,
-      h: slide.items.length * 0.3 + 0.1,
+      w: W - M * 2,
+      h: slide.items.length * 0.45 + 0.2,
       fontFace: F.body,
       wrap: true,
     });
-    y += slide.items.length * 0.3 + 0.2;
+    y += slide.items.length * 0.45 + 0.35;
   }
-
   if (slide.callout) {
     s.addShape(pres.ShapeType.rect, {
-      x: ML,
+      x: M,
       y,
-      w: CW,
-      h: 0.65,
-      fill: { color: C.lt2 },
-      line: { color: C.dk1, width: 1 },
+      w: W - M * 2,
+      h: 0.75,
+      fill: { color: h(T.surface) },
+      line: { color: h(T.accent), width: 1 },
     });
     s.addText(slide.callout, {
-      x: ML + 0.15,
-      y: y + 0.1,
-      w: CW - 0.3,
-      h: 0.45,
-      color: C.dk1,
+      x: M + 0.2,
+      y: y + 0.12,
+      w: W - M * 2 - 0.4,
+      h: 0.5,
+      color: h(T.accent),
       fontFace: F.body,
-      fontSize: 12,
+      fontSize: 14,
       italic: true,
       wrap: true,
     });
@@ -453,41 +329,40 @@ function buildSectionSlide(slide: SectionSlide): void {
 
 function buildQuoteSlide(slide: QuoteSlide): void {
   const s = pres.addSlide();
-  s.background = { color: C.dk1 };
-
-  // Large opening quote mark
+  s.background = { color: h(T.background) };
+  accentBar(s);
+  logo(s, W - 1.3, H - 0.7, 0.9, 0.35);
   s.addText("\u201C", {
-    x: ML,
-    y: 0.3,
-    w: 1.0,
-    h: 0.9,
-    color: C.accent4,
+    x: M,
+    y: 0.35,
+    w: 1.2,
+    h: 1.1,
+    color: h(T.accent),
     fontFace: F.headlines,
-    fontSize: 80,
+    fontSize: 96,
     bold: true,
   });
   s.addText(slide.quote, {
-    x: ML,
-    y: 1.1,
-    w: CW,
-    h: H - 2.4,
-    color: C.lt1,
+    x: M,
+    y: 1.3,
+    w: W - M * 2,
+    h: H - 2.6,
+    color: h(T.text_primary),
     fontFace: F.headlines,
-    fontSize: 26,
+    fontSize: 28,
     italic: true,
     wrap: true,
     valign: "middle",
   });
-
   if (slide.attribution) {
     s.addText(`\u2014 ${slide.attribution}`, {
-      x: ML,
-      y: H - 0.8,
-      w: CW - 1.0,
-      h: 0.35,
-      color: C.accent4,
+      x: M,
+      y: H - 0.85,
+      w: W - M * 2 - 1.6,
+      h: 0.4,
+      color: h(T.accent),
       fontFace: F.body,
-      fontSize: 13,
+      fontSize: 14,
       align: "right",
     });
   }
@@ -495,62 +370,57 @@ function buildQuoteSlide(slide: QuoteSlide): void {
 
 function buildMetricsSlide(slide: MetricsSlide): void {
   const s = pres.addSlide();
-  s.background = { color: C.lt1 };
-
-  addBreadcrumb(s, slide.breadcrumb);
-
-  const titleY = slide.breadcrumb ? 0.857 : 0.248;
+  s.background = { color: h(T.background) };
+  accentBar(s);
+  logo(s, W - 1.3, H - 0.7, 0.9, 0.35);
+  const contentX = M + BAR;
   if (slide.heading) {
     s.addText(slide.heading, {
-      x: ML,
-      y: titleY,
-      w: CW,
-      h: 0.42,
-      color: C.dk1,
-      fontFace: F.headlines,
-      fontSize: 30,
+      x: contentX,
+      y: 0.3,
+      w: W - contentX - M,
+      h: 0.45,
+      color: h(T.accent),
+      fontFace: F.body,
+      fontSize: 11,
       bold: true,
-      wrap: true,
+      charSpacing: 2,
     });
   }
-
   const metrics = slide.metrics.slice(0, 4);
-  const gap = 0.25;
-  const boxW = (W - ML * 2 - gap * (metrics.length - 1)) / metrics.length;
-  const boxY = titleY + 0.55;
-  const boxH = H - boxY - 0.25;
-
+  const gap = 0.2;
+  const boxW = (W - contentX - M - gap * (metrics.length - 1)) / metrics.length;
+  const boxY = slide.heading ? 1.0 : H * 0.2;
   metrics.forEach((m, i) => {
-    const bx = ML + i * (boxW + gap);
-    const col = METRIC_COLORS[i % METRIC_COLORS.length];
+    const bx = contentX + i * (boxW + gap);
     s.addShape(pres.ShapeType.rect, {
       x: bx,
       y: boxY,
       w: boxW,
-      h: boxH,
-      fill: { color: col },
-      line: { type: "none" },
+      h: 3.4,
+      fill: { color: h(T.surface) },
+      line: { color: h(T.accent), width: 1 },
     });
     s.addText(m.value, {
       x: bx,
-      y: boxY + 0.4,
+      y: boxY + 0.5,
       w: boxW,
-      h: 1.4,
-      color: C.dk1,
+      h: 1.7,
+      color: h(T.accent),
       fontFace: F.headlines,
-      fontSize: 44,
+      fontSize: 52,
       bold: true,
       align: "center",
       wrap: false,
     });
     s.addText(m.label, {
       x: bx,
-      y: boxY + 2.0,
+      y: boxY + 2.4,
       w: boxW,
-      h: 0.6,
-      color: C.dk2,
+      h: 0.7,
+      color: h(T.text_secondary),
       fontFace: F.body,
-      fontSize: 12,
+      fontSize: 13,
       align: "center",
       wrap: true,
     });
@@ -559,35 +429,30 @@ function buildMetricsSlide(slide: MetricsSlide): void {
 
 function buildClosingSlide(slide: ClosingSlide): void {
   const s = pres.addSlide();
-  s.background = { color: C.dk1 };
-
-  // Logo centered near top (Slide 43 pattern: x=4.605, y=2.042, w=0.79, h=0.237)
-  addLogo(s, 4.605, 2.042, 0.79, 0.237, "center");
-
-  // Closing message centered
+  s.background = { color: h(T.background) };
+  accentBar(s);
+  logo(s, W / 2 - 1.0, 0.55, 2.0, 0.8, "right");
   s.addText(slide.message, {
-    x: 2.458,
-    y: 2.534,
-    w: 5.085,
-    h: 0.557,
-    color: C.lt1,
+    x: M,
+    y: H * 0.38,
+    w: W - M * 2,
+    h: 2.0,
+    color: h(T.text_primary),
     fontFace: F.headlines,
     fontSize: 36,
     bold: true,
     align: "center",
     wrap: true,
-    valign: "middle",
   });
-
   if (slide.contact) {
     s.addText(slide.contact, {
-      x: 2.458,
-      y: 3.2,
-      w: 5.085,
-      h: 0.35,
-      color: C.accent4,
+      x: M,
+      y: H * 0.38 + 2.15,
+      w: W - M * 2,
+      h: 0.5,
+      color: h(T.accent),
       fontFace: F.body,
-      fontSize: 15,
+      fontSize: 18,
       align: "center",
     });
   }
@@ -599,8 +464,6 @@ function buildSlide(slide: Slide): void {
   switch (slide.type) {
     case "title":
       return buildTitleSlide(slide);
-    case "divider":
-      return buildDividerSlide(slide);
     case "section":
       return buildSectionSlide(slide);
     case "quote":
@@ -623,7 +486,7 @@ const counts = content.slides.reduce(
   {} as Record<string, number>,
 );
 console.log(
-  `BBVA PPTX written: ${args.output} (${content.slides.length} slides — ${Object.entries(counts)
+  `PPTX written: ${args.output} (${content.slides.length} slides — ${Object.entries(counts)
     .map(([k, v]) => `${v} ${k}`)
     .join(", ")})`,
 );
