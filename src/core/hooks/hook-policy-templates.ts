@@ -70,8 +70,17 @@ while IFS=' ' read -r _local_ref _local_sha remote_ref _remote_sha; do
       short=\$(echo "\$stamp_hash" | cut -c1-7)
       printf '\\n[${PROJECT_NAME}] Documentation checkpoint\\n'
       printf '  %s commits since last doc verification (stamp: %s).\\n' "\$count" "\$short"
-      printf '  Review docs in docs/project/ and run: ${PROJECT_CLI} docs-stamp\\n'
-      printf '  Then commit the stamp and push again.\\n\\n'
+      printf '\\n  Commits to review:\\n'
+      git log --oneline "\$stamp_hash..HEAD" | sed 's/^/    /'
+      printf '\\n  Files changed since stamp:\\n'
+      git diff --stat "\$stamp_hash..HEAD" -- . ':(exclude)docs/project/.doc-stamp' | sed 's/^/    /'
+      printf '\\n  Action required (coding agent):\\n'
+      printf '    1. Read each file in docs/project/ (artifacts.md, features.md, workflows.md, troubleshooting.md)\\n'
+      printf '    2. For each commit above, determine whether the changes affect those docs\\n'
+      printf '    3. Update docs/project/ files where needed\\n'
+      printf '    4. Run: ${PROJECT_CLI} docs-stamp\\n'
+      printf '    5. git add docs/project/.doc-stamp && git commit -m "chore: update doc stamp"\\n'
+      printf '    6. Push again.\\n\\n'
       blocked=1
     fi
   fi
