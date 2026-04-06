@@ -13,7 +13,7 @@ description: "Skill creation, improvement, and migration workflow. Use when crea
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 10
+version: 11
 ---
 
 # Skill Creator
@@ -86,7 +86,35 @@ src/templates/skills/<name>/
 
 The \\\`template.ts\\\` file must export a \\\`template\\\` string constant. Use an existing template (e.g. \\\`src/templates/skills/commit/template.ts\\\`) as a reference for the correct module structure, imports, and interpolation syntax. Set \\\`managed_by: ${PROJECT_NAME}\\\` in the frontmatter.
 
-**Script runtime**: Helper scripts are available in both TypeScript (\\\`scripts/ts/\\\`) and Python (\\\`scripts/python/\\\`). Use TypeScript by default (always available via \\\`npx tsx\\\`). Use Python when the project prefers it and \\\`python3\\\` is available.
+**Runtime Compatibility — REQUIRED for all skills with executable scripts**
+
+Skills run in two environments with different capabilities:
+
+| Environment | Python | Bash/sh | TypeScript (npx tsx) |
+|-------------|--------|---------|----------------------|
+| Claude Code (CLI/IDE) | Yes | Yes | Yes |
+| Claude.ai (web/app) | Yes | Yes | NO — Node.js unavailable |
+
+**Rule**: Any skill that includes executable scripts MUST provide both a Python version AND a TypeScript version. Providing only TypeScript breaks the skill in Claude.ai. Providing only Python works everywhere but misses Claude Code's type-safe tooling.
+
+**Directory layout** (both are required, not optional):
+\\\`\\\`\\\`
+scripts/
+├── ts/          # TypeScript scripts — used in Claude Code when npx is available
+└── python/      # Python scripts  — used everywhere, including Claude.ai
+\\\`\\\`\\\`
+
+**Environment detection pattern** (use in SKILL.md routing tables):
+\\\`\\\`\\\`bash
+# Detect runtime and pick the right script
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  npx tsx scripts/ts/generate_xxx.ts --content content.json --output out.xxx
+else
+  python3 scripts/python/generate_xxx.py --content content.json --output out.xxx
+fi
+\\\`\\\`\\\`
+
+The agent tries TypeScript first (preferred in Claude Code for type safety), falls back to Python (guaranteed in Claude.ai and Claude Code).
 
 ### Step 3 — Write SKILL.md Draft
 

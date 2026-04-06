@@ -1,0 +1,30 @@
+{
+  "title": "Codi — AI Agent Configuration",
+  "subtitle": "One config file. Every AI agent. Yours.",
+  "author": "Codi",
+  "sections": [
+    {
+      "number": "01",
+      "label": "Key Features",
+      "heading": "Everything your AI needs",
+      "body": "Codi unifies rules, skills, and agents across Claude Code, Cursor, Codex, Windsurf, and Cline — from a single source of truth.",
+      "items": [
+        "Write once, deploy to every AI agent in your stack",
+        "Versioned skills and rules that evolve with your team",
+        "Install community presets or publish your own"
+      ]
+    },
+    {
+      "number": "02",
+      "label": "Get Started",
+      "heading": "Up and running in 30 seconds",
+      "body": "Initialize Codi in any project and start configuring your AI agents immediately.",
+      "items": [
+        "Run `codi init` in your project root",
+        "Add rules, skills, and agents from the registry",
+        "Run `codi generate` to propagate to all AI tools"
+      ],
+      "callout": "Your AI agents. Your standards. No drift."
+    }
+  ]
+}

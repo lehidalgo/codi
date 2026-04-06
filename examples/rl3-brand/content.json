@@ -1,0 +1,31 @@
+{
+  "title": "RL3 AI Agency",
+  "subtitle": "Strategic AI implementation for teams that ship",
+  "date": "2026-04-06",
+  "sections": [
+    {
+      "number": "01",
+      "label": "What We Do",
+      "heading": "AI that works in production",
+      "body": "RL3 designs and deploys AI systems that integrate into your existing workflow — not prototypes, not demos, but production-grade implementations.",
+      "items": [
+        "AI strategy and architecture for engineering teams",
+        "Custom agent development and deployment",
+        "Ongoing optimization and iteration cycles"
+      ]
+    },
+    {
+      "number": "02",
+      "label": "Start Now",
+      "heading": "Ready to move fast?",
+      "body": "Book a discovery call and we'll map out an implementation plan within 48 hours.",
+      "items": [
+        "Discovery call — understand your stack and goals",
+        "Implementation plan — scoped, prioritized, actionable",
+        "First delivery — working AI in your pipeline"
+      ],
+      "callout": "We don't consult. We build."
+    }
+  ],
+  "footer_text": "RL3 AI AGENCY"
+}

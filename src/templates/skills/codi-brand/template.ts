@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 ## When to Activate
@@ -73,4 +73,43 @@ For HTML outputs also read:
 - [ ] Copy uses second person — not "users" or "developers"
 - [ ] Agent names spelled correctly: Claude Code, Cursor, Codex, Windsurf, Cline
 - [ ] Terminal commands use exact CLI syntax: \`codi init\`, \`codi generate\`, \`codi add rule\`
+
+---
+
+## Generator Routing (PPTX / DOCX)
+
+When the user needs a \`.pptx\` or \`.docx\` file, use the brand scripts in \`\${CLAUDE_SKILL_DIR}/scripts/\`. The canonical brand data is \`\${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json\` — do not hardcode any colors or fonts.
+
+### Routing Table
+
+| Format | Runtime | Command |
+|--------|---------|---------|
+| PPTX | **TypeScript (DEFAULT)** | \`npx tsx \${CLAUDE_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --output output.pptx\` |
+| PPTX | Python (fallback) | \`python3 \${CLAUDE_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --output output.pptx\` |
+| DOCX | **TypeScript (DEFAULT)** | \`npx tsx \${CLAUDE_SKILL_DIR}/scripts/ts/generate_docx.ts --content content.json --output output.docx\` |
+| DOCX | Python (fallback) | \`python3 \${CLAUDE_SKILL_DIR}/scripts/python/generate_docx.py --content content.json --output output.docx\` |
+
+Use TypeScript by default. Fall back to Python only when \`npx\` is unavailable.
+
+### content.json Schema
+
+\`\`\`json
+{
+  "title": "Document or Presentation Title",
+  "subtitle": "Optional subtitle",
+  "author": "Author Name",
+  "sections": [
+    {
+      "number": "01",
+      "label": "Section Label",
+      "heading": "Section Heading",
+      "body": "Section body text.",
+      "items": ["Bullet point 1", "Bullet point 2"],
+      "callout": "Optional highlighted quote or takeaway"
+    }
+  ]
+}
+\`\`\`
+
 `;
+

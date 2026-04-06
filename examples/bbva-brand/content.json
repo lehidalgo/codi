@@ -1,0 +1,30 @@
+{
+  "title": "BBVA Digital Banking",
+  "subtitle": "Innovation at the core of every transaction",
+  "author": "BBVA",
+  "sections": [
+    {
+      "number": "01",
+      "label": "Our Platform",
+      "heading": "Built for the future of finance",
+      "body": "BBVA's digital platform combines best-in-class technology with a customer-first approach to deliver seamless banking experiences.",
+      "items": [
+        "Real-time payments across 30+ markets",
+        "AI-powered financial insights and recommendations",
+        "Open banking APIs for developers and partners"
+      ]
+    },
+    {
+      "number": "02",
+      "label": "Next Steps",
+      "heading": "Join the BBVA ecosystem",
+      "body": "Whether you're a customer, partner, or developer — BBVA provides the tools and support to grow with you.",
+      "items": [
+        "Explore our Open API developer portal",
+        "Connect with our partnership team",
+        "Start with a free business account today"
+      ],
+      "callout": "Transforming finance. Empowering people."
+    }
+  ]
+}

@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # {{name}} — Content Factory
@@ -141,16 +141,7 @@ Tell the user: "Check the preview in your browser. Click any slide and type feed
 
 ### How the Chat Panel Works
 
-The preview UI (\`preview-shell.js\`) provides:
-- **Toolbar**: Aspect ratio presets (1:1 LinkedIn, 4:5 Instagram, 9:16 Story, 1200x630 OG)
-- **Slides area**: CSS \`transform: scale()\` to fit viewport, independently scrollable
-- **Chat panel**: Resizable right-side panel where the user clicks slides and types feedback
-- **Event storage**: Feedback stored in a hidden DOM element \`<script id="cf-events">\`
-- **PNG export**: In-browser export via html2canvas at 2x resolution
-
-The user clicks a slide to select it, types feedback, and presses Enter. The feedback is stored as JSON in the DOM. You read it on your next turn via \`browser_evaluate\`.
-
-If \`cf-events\` returns an empty array \`[]\`, the user did not interact with the browser — use only their terminal text.
+Read \`\${CLAUDE_SKILL_DIR}[[/references/preview-shell-guide.md]]\` for the full feature reference: toolbar controls, aspect ratio presets, event storage format, and PNG export.
 
 ## Step 7: Export Final Assets
 

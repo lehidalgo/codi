@@ -1,0 +1,54 @@
+{
+  "brand": "bbva",
+  "version": 1,
+  "colors": {
+    "primary":          "#001391",
+    "primary_dark":     "#070E46",
+    "primary_mid":      "#003194",
+    "secondary":        "#8BE1E9",
+    "accent":           "#FFE761",
+    "background":       "#F7F8F8",
+    "background_dark":  "#000519",
+    "text_primary":     "#1A1A2A",
+    "text_secondary":   "#4A4A68",
+    "text_light":       "#8A8AB0",
+    "border":           "#D0D0E0",
+    "white":            "#FFFFFF"
+  },
+  "fonts": {
+    "pptx_headlines": "Source Serif 4",
+    "pptx_body":      "Lato",
+    "web_headlines":  "BentonSans BBVA",
+    "web_body":       "BentonSans BBVA",
+    "web_serif":      "Tiempos Text",
+    "fallback_sans":  "Arial",
+    "fallback_serif": "Georgia"
+  },
+  "layout": {
+    "slide_width_in":     "13.333",
+    "slide_height_in":    "7.5",
+    "content_margin_in":  "0.5",
+    "accent_bar_width_in": "0.08"
+  },
+  "assets": {
+    "logo_light_bg":  "../../assets/BBVA_RGB.svg",
+    "logo_dark_bg":   "../../assets/BBVA_RGB_white.svg",
+    "pptx_template":  "",
+    "docx_template":  ""
+  },
+  "voice": {
+    "phrases_use": [
+      "Creando oportunidades",
+      "Tu dinero, tus decisiones",
+      "Banca responsable",
+      "Transformacion digital al servicio de las personas"
+    ],
+    "phrases_avoid": [
+      "Somos lideres en",
+      "Disruptivo",
+      "Cutting-edge",
+      "Nuestro equipo de expertos",
+      "Soluciones 360"
+    ]
+  }
+}
