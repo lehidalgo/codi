@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Resume daily work context or log today's work summary. Use when starting a new session, checking what was worked on, or recording end-of-day progress. Also activate on /open_day or /close_day.
-category: Workflow
+category: ${SKILL_CATEGORY.WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

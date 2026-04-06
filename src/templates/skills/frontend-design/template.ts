@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user asks to build web components, pages, or UI interfaces. Also activate when styling or beautifying any web application. Generates distinctive, production-grade frontends and avoids generic AI aesthetics.
-category: Creative and Design
+category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 ## When to Activate

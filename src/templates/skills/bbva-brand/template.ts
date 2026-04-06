@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Apply BBVA brand identity to any content creation task. Use when creating branded materials for BBVA — presentations, documents, reports, dashboards, or any visual/written deliverable that needs BBVA branding.
-category: Brand Identity
+category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 7
 ---
 
 ## When to Activate

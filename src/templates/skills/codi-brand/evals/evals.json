@@ -1,0 +1,86 @@
+{
+  "skillName": "codi-codi-brand",
+  "cases": [
+    {
+      "id": "landing-page-html",
+      "description": "Creates a Codi-branded HTML landing page with correct tokens",
+      "prompt": "Create a Codi branded landing page section for the features",
+      "expectations": [
+        "Sets background color to #070a0f or var(--bg)",
+        "Includes the CSS variables block with --bg, --c0, --grad defined",
+        "Loads Outfit and Geist Mono from Google Fonts",
+        "Uses lowercase 'codi' for the wordmark, never 'Codi' or 'CODI'",
+        "Applies .gradient-text class or gradient CSS to at least one heading span",
+        "Uses var(--grad) or the linear-gradient for the primary CTA button"
+      ]
+    },
+    {
+      "id": "marketing-copy",
+      "description": "Generates Codi marketing copy with correct tone and facts",
+      "prompt": "Write a short marketing description of Codi for a README",
+      "expectations": [
+        "Uses second person (you/your) rather than 'users' or 'developers'",
+        "Names at least one supported agent: Claude Code, Cursor, Codex, Windsurf, or Cline",
+        "Does NOT use banned phrases like 'revolutionary', 'seamless', or 'cutting-edge'",
+        "Includes the core positioning: unified config or knowledge centralization",
+        "References .codi/ directory or codi generate/codi init commands"
+      ]
+    },
+    {
+      "id": "brand-colors-query",
+      "description": "Returns correct brand colors when asked",
+      "prompt": "What are the Codi brand colors and design tokens?",
+      "expectations": [
+        "States background color #070a0f",
+        "States primary accent --c0 as #56b6c2",
+        "States the gradient as linear-gradient(135deg, #56b6c2, #61afef)",
+        "Mentions Outfit as the heading font",
+        "Mentions Geist Mono as the monospace font"
+      ]
+    },
+    {
+      "id": "tone-voice-check",
+      "description": "Applies correct tone of voice in written copy",
+      "prompt": "Write a tweet announcing a new Codi feature: watch mode",
+      "expectations": [
+        "Uses short declarative sentences",
+        "Uses second person (you/your)",
+        "Does NOT use 'revolutionary', 'game-changer', or similar hyperbole",
+        "References the .codi/ directory or codi CLI commands",
+        "Copy is direct and developer-friendly"
+      ]
+    },
+    {
+      "id": "presentation-slide",
+      "description": "Applies brand correctly to a presentation slide",
+      "prompt": "Create a Codi branded title slide for a presentation",
+      "expectations": [
+        "Uses dark background #070a0f",
+        "Renders the 'codi' wordmark in lowercase",
+        "Uses the primary tagline: 'Your AI coding knowledge. Centralized.' or equivalent",
+        "Font is Outfit or Geist Mono",
+        "Does not use light mode or white backgrounds"
+      ]
+    },
+    {
+      "id": "negative-non-codi-brand",
+      "description": "Does not activate for a different brand request",
+      "prompt": "Create a landing page for my fintech startup called Stackr",
+      "expectations": [
+        "Does NOT apply Codi brand colors (#070a0f, #56b6c2) to Stackr",
+        "Does NOT use 'codi' wordmark for the Stackr brand",
+        "Does NOT reference .codi/ or codi CLI commands in the Stackr copy"
+      ]
+    },
+    {
+      "id": "negative-generic-design",
+      "description": "Does not activate for generic design requests unrelated to Codi",
+      "prompt": "What are some good dark color palettes for a developer tool?",
+      "expectations": [
+        "Does NOT claim Codi brand colors are the only valid answer",
+        "Does NOT produce a Codi-branded page or document",
+        "May mention Codi as one example if relevant but does not force the brand on the answer"
+      ]
+    }
+  ]
+}

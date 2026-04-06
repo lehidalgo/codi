@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Security analysis workflow. Use when the user wants to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.
-category: Code Quality
+category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 5
 ---
 
 # {{name}}

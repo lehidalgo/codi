@@ -82,6 +82,7 @@ export {
 } from "./slack-gif-creator/index.js";
 export { template as devDocsManager } from "./dev-docs-manager/index.js";
 export { template as brandIdentity } from "./brand-identity/index.js";
+export { template as codiBrand, staticDir as codiBrandStaticDir } from "./codi-brand/index.js";
 export { template as rl3Brand, staticDir as rl3BrandStaticDir } from "./rl3-brand/index.js";
 export { template as bbvaBrand, staticDir as bbvaBrandStaticDir } from "./bbva-brand/index.js";
 export {

@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Create a structured roadmap or todo list as a JSON file in docs/roadmaps/. Use when planning features, tracking milestones, or organizing implementation phases. Also activate when the user says 'create a roadmap' or 'plan next steps'.
-category: Planning
+category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

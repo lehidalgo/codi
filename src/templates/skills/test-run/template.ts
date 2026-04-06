@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Detect and run the project test suite, then report results with failure diagnosis. Use when running tests, checking if tests pass, or diagnosing test failures. Also activate when the user says 'run tests' or 'are tests passing'.
-category: Testing
+category: ${SKILL_CATEGORY.TESTING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 5
 ---
 
 # {{name}}

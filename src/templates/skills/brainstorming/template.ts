@@ -1,4 +1,4 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -6,12 +6,12 @@ description: |
   Design exploration before implementation. Use before starting any non-trivial feature,
   change, or document. Explores context, asks clarifying questions, proposes approaches,
   and produces an approved design spec before invoking any implementation skill.
-category: Developer Workflow
+category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # {{name}}
@@ -120,7 +120,7 @@ After design approval, save the spec:
 
 - Path: \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature-name>.md\\\`
 - Follow codi's doc naming convention (from ${PROJECT_NAME}-documentation rule)
-- Use Mermaid for all diagrams - no ASCII art (codi convention)
+- Use Mermaid for all diagrams - no ASCII art, no custom colors, no \\\`\\\\n\\\` in labels (codi convention)
 - Commit the spec to git before invoking any next skill
 
 **Spec self-review** (fix inline before presenting to user - no need to re-review these):

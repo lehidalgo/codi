@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: First-line debugging with root cause analysis. Use when investigating bugs, test failures, unexpected behavior, or build failures. Enforces root cause before any fix. Also activate on /${PROJECT_NAME}-check or when stuck on an error.
-category: Developer Workflow
+category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # {{name}}

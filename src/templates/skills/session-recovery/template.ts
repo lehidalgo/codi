@@ -2,6 +2,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
+  SKILL_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
@@ -11,12 +12,12 @@ description: |
   Error recovery and session health skill. Activate when you have corrected
   your own mistakes 2 or more times in the current conversation. Produces a
   diagnostic report analyzing what went wrong, why, and how to prevent it.
-category: Code Quality
+category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 5
 ---
 
 # {{name}}

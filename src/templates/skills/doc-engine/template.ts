@@ -1,14 +1,19 @@
-import { PROJECT_NAME, PROJECT_NAME_DISPLAY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
-category: Document Generation
+category: ${SKILL_CATEGORY.DOCUMENT_GENERATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}} — Document Engine

@@ -1,4 +1,4 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
@@ -6,12 +6,12 @@ description: |
   Git workspace setup for feature development. Use before executing an
   implementation plan. Evaluates whether a worktree or a simple branch is the right
   approach, then sets up the workspace accordingly.
-category: Developer Workflow
+category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
 # {{name}}

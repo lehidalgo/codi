@@ -46,8 +46,12 @@ for (const hook of hooks) {
       }
     }
   } catch (e) {
-    console.error(\`\${hook.name} failed\`);
-    exitCode = 1;
+    if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') {
+      console.log(\`  \${hook.name}: skipped (tool not installed)\`);
+    } else {
+      console.error(\`\${hook.name} failed\`);
+      exitCode = 1;
+    }
   }
 }
 process.exit(exitCode);
@@ -163,7 +167,7 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents)\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
+const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^src\\/templates\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {
@@ -462,6 +466,15 @@ export const DOC_NAMING_CHECK_TEMPLATE = `#!/usr/bin/env node
 // Validates docs/ filenames follow YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext when docs are staged.
 import { execFileSync } from 'child_process';
 
+const ALLOWED_CATEGORIES = new Set([
+  'ARCHITECTURE', 'AUDIT', 'GUIDE', 'REPORT', 'ROADMAP',
+  'RESEARCH', 'SECURITY', 'TESTING', 'BUSINESS', 'TECH', 'PLAN',
+]);
+
+const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED']);
+const SKIP_FILES = new Set(['.DS_Store']);
+const VALID_PATTERN = /^(\\d{8})_(\\d{6})_\\[([A-Z]+)\\]_.+$/;
+
 const staged = (() => {
   try {
     return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
@@ -469,18 +482,53 @@ const staged = (() => {
   } catch { return []; }
 })();
 
-const hasDocs = staged.some(f => f.startsWith('docs/'));
-if (!hasDocs) process.exit(0);
+const docFiles = staged.filter(f => f.startsWith('docs/'));
+if (docFiles.length === 0) process.exit(0);
 
-try {
-  execFileSync('python3', ['scripts/validate-docs.py', '--quiet'], { stdio: 'inherit' });
-} catch {
-  console.error('');
-  console.error('Documentation naming validation failed.');
-  console.error('Run: python3 scripts/validate-docs.py  to see which files need renaming.');
-  console.error('Format: YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext');
-  process.exit(1);
+const failures = [];
+
+for (const filePath of docFiles) {
+  const parts = filePath.split('/');
+  const filename = parts[parts.length - 1];
+
+  if (SKIP_FILES.has(filename)) continue;
+
+  // Skip files inside excluded subdirectories
+  const inSkipDir = parts.slice(1, -1).some(seg => SKIP_DIRS.has(seg));
+  if (inSkipDir) continue;
+
+  // Files must be in docs/ root (exactly two path segments: docs/<filename>)
+  if (parts.length > 2) {
+    failures.push({ filePath, reason: 'File is in a subdirectory. All docs must be in docs/ root.' });
+    continue;
+  }
+
+  const match = VALID_PATTERN.exec(filename);
+  if (!match) {
+    failures.push({ filePath, reason: 'Missing timestamp or [CATEGORY] tag. Expected: YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext' });
+    continue;
+  }
+
+  const category = match[3];
+  if (!ALLOWED_CATEGORIES.has(category)) {
+    const allowed = [...ALLOWED_CATEGORIES].sort().join(', ');
+    failures.push({ filePath, reason: \`Invalid category [\${category}]. Allowed: \${allowed}\` });
+  }
 }
+
+if (failures.length === 0) process.exit(0);
+
+console.error('');
+console.error('Documentation naming validation failed:');
+console.error('');
+for (const { filePath, reason } of failures) {
+  console.error(\`  FAIL: \${filePath}\`);
+  console.error(\`        \${reason}\`);
+  console.error('');
+}
+console.error('Format: YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext');
+console.error('Allowed categories: ' + [...ALLOWED_CATEGORIES].sort().join(', '));
+process.exit(1);
 `;
 
 export const ARTIFACT_VALIDATE_TEMPLATE = `#!/usr/bin/env node

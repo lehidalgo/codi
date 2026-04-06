@@ -66,7 +66,7 @@ Reports saved to docs/ as Markdown with:
 1. Executive Summary
 2. Problem Context
 3. Current State of the Art
-4. Architecture Patterns (with Mermaid diagrams)
+4. Architecture Patterns (with Mermaid diagrams - no custom colors, no \`\\n\` in labels)
 5. Implementation Guide with production-ready code examples
 6. Evaluation & Metrics
 7. Cost Analysis

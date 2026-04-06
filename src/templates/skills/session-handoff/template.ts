@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Summarize the current session and prepare a handoff prompt for a new chat. Use when the context window is filling up, switching to a new conversation, or handing off work. Also activate on /session-handoff.
-category: Workflow
+category: ${SKILL_CATEGORY.WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.
-category: File Format Tools
+category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # PDF Processing Guide

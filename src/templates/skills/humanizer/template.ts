@@ -1,14 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Remove AI writing patterns from generated content. Use when text sounds robotic, formulaic, or AI-generated. Applies a two-pass rewrite to eliminate documented AI tells. Also activate when the user wants text to sound more natural or less stiff."
-category: Content Refinement
-compatibility: [claude-code]
-managed_by: user
+category: ${SKILL_CATEGORY.CONTENT_REFINEMENT}
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
+managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}} — Content Humanizer

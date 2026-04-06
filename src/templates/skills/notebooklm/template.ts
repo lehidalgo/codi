@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Google NotebookLM research assistant with browser automation. Use when the user wants to query NotebookLM notebooks, manage a notebook library, authenticate with Google, generate Audio Overviews (podcasts), or get source-grounded answers from uploaded documents. Also activate when the user mentions NotebookLM, shares a NotebookLM URL, or uses phrases like "ask my docs", "check my notebook", "query my documentation".
-category: Productivity
+category: ${SKILL_CATEGORY.PRODUCTIVITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # {{name}} — NotebookLM Research Assistant

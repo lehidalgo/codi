@@ -237,38 +237,72 @@ The playbook instructs the coding agent to: explore the codebase deeply, formula
 `codi watch` monitors the `.codi/` directory for changes and auto-regenerates agent config files on save. Useful during active rule or skill editing.
 
 ### Pre-Commit Hooks
-Auto-detects and integrates with existing hook frameworks. Generates hook scripts based on enabled flags and detected languages.
+
+Pre-commit hooks are one of Codi's most important features. They enforce code quality, security, and consistency standards automatically — before bad code can enter the repository. Every check that runs in the hook catches a real class of problem: a leaked secret, a broken import, an oversized file, a malformed commit message. The later a problem is caught, the more expensive it is to fix. Hooks catch problems at the cheapest possible moment: the commit.
+
+Codi generates and manages hooks automatically. `codi init` installs them; `codi generate` regenerates them after configuration changes. Hooks run only on staged files, so they are fast even in large projects.
+
+#### Hook Frameworks
+
+Codi auto-detects your existing hook framework and integrates with it. If none is detected, it installs a standalone shell script.
 
 | Framework | Detection |
 |:----------|:----------|
 | Husky | `.husky/` directory |
 | pre-commit | `.pre-commit-config.yaml` |
 | Lefthook | `.lefthook.yml` or `lefthook.yml` |
-| Standalone | Fallback shell script |
+| Standalone | Fallback shell script at `.git/hooks/pre-commit` |
 
-### Hook Types
+#### Hook Catalog
 
-| Hook | Stage | Flag | Purpose |
-|:-----|:------|:-----|:--------|
-| Doctor | pre-commit | `requiredVersion` in manifest | Check Node.js version and environment health |
-| Linting/formatting | pre-commit | language-detected, always on | ESLint, Prettier, ruff, gofmt, etc. — no flag to disable |
-| Type checking | pre-commit | `type_checking` | Run tsc, pyright, or equivalent |
-| Security analysis | pre-commit | `security_scan` | bandit (Python), gosec (Go), brakeman (Ruby), phpcs-security (PHP) |
-| Version bump | pre-commit | codi-dev only | Auto-increment template frontmatter version when content changes, regenerate baseline |
-| Test runner | pre-commit | `test_before_commit` | Run test suite before commit |
-| Secret detection | pre-commit | `security_scan` | Scan for leaked secrets and API keys (entropy + pattern matching) |
-| File size check | pre-commit | always enabled | Block files exceeding line limit |
-| Version check | pre-commit | `requiredVersion` in manifest | Verify installed codi version satisfies the project requirement |
-| Artifact validate | pre-commit | always enabled | Run `codi validate --ci` when `.codi/` files change |
-| Import depth check | pre-commit | always enabled | Block `../../` deep relative imports in TS/JS files |
-| Skill YAML validate | pre-commit | always enabled | Validate YAML frontmatter in `SKILL.md` files |
-| Skill resource check | pre-commit | always enabled | Verify `[[/path]]` resource references exist on disk |
-| Template wiring check | pre-commit | codi-dev only | Ensure all templates are registered in index.ts (only when `src/templates/` exists) |
-| Commit message | commit-msg | always enabled | Enforce conventional commit format |
-| Doc check | pre-push | `require_documentation` | Block pushes to protected branches without a doc stamp |
+Every hook Codi installs is described below. Language-specific hooks only activate when Codi detects that language in the project. Hooks for tools that are not installed are skipped automatically — they never block commits.
 
-### Auto-Restage
-Hooks that modify files (formatters, fixers) automatically re-stage the modified files after running, so the commit includes the formatted output.
+**Always-on hooks** (every project):
+
+| Hook | Stage | What it checks |
+|:-----|:------|:---------------|
+| File size check | pre-commit | Blocks files that exceed the configured line limit. Prevents large generated files, minified bundles, or accidentally committed binaries from entering the repo. |
+| Secret detection | pre-commit | Scans staged files for hardcoded API keys, tokens, and credentials using entropy analysis and pattern matching. Catches leaks before they reach GitHub where automated scanners index them within minutes. |
+| Artifact validate | pre-commit | Runs `codi validate --ci` when `.codi/` files change. Ensures rules, skills, and agents stay valid after manual edits. |
+| Import depth check | pre-commit | Blocks `../../` deep relative imports in TypeScript/JavaScript files. Enforces path alias usage, which makes the codebase refactor-safe. |
+| Skill YAML validate | pre-commit | Validates YAML frontmatter in `SKILL.md` files. Catches malformed skill definitions before they break agent loading. |
+| Skill resource check | pre-commit | Verifies that `[[/path]]` resource references in skill files exist on disk. Prevents broken skill references from shipping to users. |
+| Commit message | commit-msg | Enforces conventional commit format (`type(scope): description`). Required for automated changelog generation and semantic versioning. |
+
+**Conditional hooks** (activated by flags or detected stack):
+
+| Hook | Stage | Condition | What it checks |
+|:-----|:------|:----------|:---------------|
+| Linting / formatting | pre-commit | Language detected | ESLint + Prettier (TS/JS), ruff (Python), gofmt (Go), cargo fmt (Rust), etc. Fixes style issues automatically and re-stages the result. |
+| Type checking | pre-commit | `type_checking` flag | Runs `tsc --noEmit`, `pyright`, or equivalent. Catches type errors before they reach CI. |
+| Security analysis | pre-commit | `security_scan` flag | bandit (Python), gosec (Go), brakeman (Ruby), phpcs-security (PHP). Flags dangerous code patterns. |
+| Test runner | pre-commit | `test_before_commit` flag | Runs the project test suite. Uses `test:pre-commit` script if defined in `package.json`/`pyproject.toml`, otherwise falls back to the default test command. |
+| Doctor | pre-commit | `requiredVersion` in manifest | Checks Node.js version, git availability, and environment health against the project's declared requirements. |
+| Version check | pre-commit | `requiredVersion` in manifest | Verifies the installed codi version satisfies the project requirement. Blocks commits if the team uses incompatible codi versions. |
+| Doc check | pre-push | `require_documentation` flag | Blocks pushes to protected branches when documentation has not been reviewed and stamped. Prevents undocumented features from reaching main. |
+
+**Codi-dev hooks** (only active inside the Codi repository itself):
+
+| Hook | Stage | What it checks |
+|:-----|:------|:---------------|
+| Version bump | pre-commit | Auto-increments template frontmatter version when skill/rule content changes, then regenerates the artifact baseline. Ensures shipped templates always have up-to-date version numbers. |
+| Template wiring check | pre-commit | Verifies every template file under `src/templates/` is registered in the index. Prevents new templates from silently shipping without being wired into the CLI. |
+
+#### Auto-Restage
+
+Hooks that fix or format files (ESLint, Prettier, ruff, gofmt, etc.) automatically re-stage the modified files after running. The committed output always reflects the formatted result — no extra `git add` needed.
+
+#### Tool Availability
+
+If a hook's tool is not installed on the current machine, Codi skips it with a notice and continues. The commit is never blocked because of a missing optional tool. This ensures new team members can commit immediately, even before setting up the full language toolchain.
+
+```
+[python]
+  Running ruff-check... skipped (tool not installed)
+  Running ruff-format... skipped (tool not installed)
+```
+
+Install the missing tools for your stack and they activate automatically on the next commit.
 
 ---
 

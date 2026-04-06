@@ -1,18 +1,19 @@
 import {
   MIN_CODE_COVERAGE_PERCENT,
   PROJECT_NAME,
+  SKILL_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Test coverage analysis workflow. Use when measuring coverage, identifying gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.
-category: Code Quality
+category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 5
 ---
 
 # {{name}}

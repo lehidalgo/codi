@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Build apps with the Claude API or Anthropic SDK. TRIGGER when code imports anthropic, @anthropic-ai/sdk, or claude_agent_sdk, or user asks to use Claude API. DO NOT TRIGGER for openai imports, general programming, or ML/data-science tasks."
-category: Developer Tools
+category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # Building LLM-Powered Applications with Claude

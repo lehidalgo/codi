@@ -2,18 +2,19 @@ import {
   GIT_COMMIT_FIRST_LINE_LIMIT,
   PROJECT_CLI,
   PROJECT_NAME,
+  SKILL_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code, creating a commit, or fixing a pre-commit hook failure. Also activate on /commit.
-category: Developer Tools
+category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

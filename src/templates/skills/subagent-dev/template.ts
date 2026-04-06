@@ -1,14 +1,14 @@
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Subagent-driven plan execution. Use after ${PROJECT_NAME}-plan-writer produces an implementation plan. Dispatches a fresh subagent per task with two-stage review. Recommended over ${PROJECT_NAME}-plan-executor for complex or multi-file tasks.
-category: Developer Workflow
-compatibility: [claude-code]
+category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
+compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 7
 ---
 
 # {{name}}

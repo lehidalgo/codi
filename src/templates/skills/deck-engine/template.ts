@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "HTML slide deck generator with brand token integration. Use when the user needs a self-contained HTML presentation with navigation, animations, and PDF export. Also activate for pitch decks or technical presentations needing brand tokens."
-category: Document Generation
+category: ${SKILL_CATEGORY.DOCUMENT_GENERATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # {{name}} — Presentation Deck Engine

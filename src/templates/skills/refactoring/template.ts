@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Safe dead code removal and refactoring workflow. Use when removing unused code, consolidating duplicates, or simplifying a module without changing behavior. Classifies safety level and verifies tests after each deletion.
-category: Code Quality
+category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 5
 ---
 
 # {{name}}

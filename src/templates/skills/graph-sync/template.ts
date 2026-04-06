@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Choose full re-index for major changes or incremental update for recent edits.
-category: Developer Tools
+category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

@@ -1,14 +1,14 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Documentation creation and maintenance workflows. Use when writing docs, updating README, generating API docs, creating ADRs, drafting specs, proposals, or decision docs. Also activate when the user mentions writing or structured content authoring."
-category: Developer Tools
+category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

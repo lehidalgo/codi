@@ -62,4 +62,4 @@ Markdown reports with: Executive Summary, Architecture Diagrams (Mermaid), Compo
 2. Always include data quality checks in pipeline designs
 3. Prefer idempotent operations — pipelines should be safely re-runnable
 4. Consider schema evolution from day one
-5. Use Mermaid diagrams for data flow and architecture`;
+5. Use Mermaid diagrams for data flow and architecture (no custom colors, no \`\\n\` in labels)`;

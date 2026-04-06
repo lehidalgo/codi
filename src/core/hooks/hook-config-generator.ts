@@ -201,8 +201,7 @@ function hasTemplateWiringCheck(): boolean {
 }
 
 function hasDocNamingCheck(): boolean {
-  // Only enable for projects that have a validate-docs.py script (codi contributors)
-  return existsSync("scripts/validate-docs.py");
+  return true;
 }
 
 function hasVersionBump(): boolean {

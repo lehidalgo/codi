@@ -4,18 +4,19 @@ import {
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
   PROJECT_URL,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream templates. Use when checking customizations, reviewing upstream updates, or preparing to contribute improvements. Also activate on /${PROJECT_NAME}-compare-preset.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

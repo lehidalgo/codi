@@ -62,4 +62,4 @@ Markdown reports with: Executive Summary, Metric Definitions (tables), Dashboard
 2. Design for the audience — executives need summaries, analysts need drill-downs
 3. Prefer simple, well-understood metrics over complex composite scores
 4. Include data quality considerations in every recommendation
-5. Use Mermaid diagrams for data flow and dashboard layouts`;
+5. Use Mermaid diagrams for data flow and dashboard layouts (no custom colors, no \`\\n\` in labels)`;

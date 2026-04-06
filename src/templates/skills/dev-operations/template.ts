@@ -3,6 +3,7 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 import type { TemplateCounts } from "../types.js";
@@ -11,12 +12,12 @@ export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
 description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, skills, agents, configuration, verification, or troubleshooting ${PROJECT_NAME} setup.
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
 # ${PROJECT_NAME_DISPLAY} Operations

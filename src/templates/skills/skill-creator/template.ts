@@ -3,16 +3,17 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Skill creation, improvement, and migration workflow. Use when creating, building, or improving a skill. Also activate when the user mentions evals, skill testing, description optimization, skill packaging, or importing skills from external sources."
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 9
+version: 10
 ---
 
 # Skill Creator
@@ -425,16 +426,51 @@ Verify the skill appears in the generated agent configuration, then confirm with
 
 **Path (b) — built-in template (contributors only):**
 
-1. Export the template in \\\`src/templates/skills/index.ts\\\`
-2. Register it in \\\`src/core/scaffolder/skill-template-loader.ts\\\` TEMPLATE_MAP
-3. Run build and generate:
+1. Create the template directory and files:
+   - \\\`src/templates/skills/<base-name>/template.ts\\\` — TypeScript template literal wrapping SKILL.md content
+   - \\\`src/templates/skills/<base-name>/index.ts\\\` — exports \\\`template\\\` and \\\`staticDir\\\`
+   - \\\`src/templates/skills/<base-name>/evals/evals.json\\\`
 
-\\\`\\\`\\\`bash
-npm run build && ${PROJECT_CLI} generate
+2. Export the template in \\\`src/templates/skills/index.ts\\\`:
+\\\`\\\`\\\`typescript
+export { template as mySkill, staticDir as mySkillStaticDir } from "./my-skill/index.js";
 \\\`\\\`\\\`
 
-4. Verify with \\\`${PROJECT_CLI} add skill <name>\\\` — it should appear in the skill catalog
-5. Confirm with the user that the skill is ready
+3. Register it in \\\`src/core/scaffolder/skill-template-loader.ts\\\`:
+   - Add to \\\`TEMPLATE_MAP\\\`: \\\`[prefixedName("my-skill")]: skillTemplates.mySkill\\\`
+   - Add to \\\`STATIC_DIR_MAP\\\` if the skill has a static directory
+
+4. **Understanding the template name**: \\\`prefixedName("my-skill")\\\` = \\\`"${PROJECT_NAME}-my-skill"\\\`. This is the full key users pass to \\\`--template\\\`.
+
+5. Build the project — templates only appear after compilation:
+\\\`\\\`\\\`bash
+npm run build
+\\\`\\\`\\\`
+
+6. **Link local build for testing** (contributors only, one-time setup):
+\\\`\\\`\\\`bash
+npm link
+\\\`\\\`\\\`
+   This makes the \\\`${PROJECT_CLI}\\\` binary use \\\`dist/cli.js\\\` from the local repo. Rebuild (\\\`npm run build\\\`) after any source changes.
+
+7. Test the built-in template — **always use \\\`--template\\\`**:
+\\\`\\\`\\\`bash
+${PROJECT_CLI} add skill ${PROJECT_NAME}-my-skill --template ${PROJECT_NAME}-my-skill
+\\\`\\\`\\\`
+
+   **CRITICAL**: \\\`${PROJECT_CLI} add skill <name>\\\` WITHOUT \\\`--template\\\` ALWAYS creates a blank placeholder using \\\`DEFAULT_CONTENT\\\`, regardless of any built-in template with the same name. The \\\`--template\\\` flag is required to install from a built-in.
+
+8. Verify the installed skill and run generate:
+\\\`\\\`\\\`bash
+${PROJECT_CLI} validate && ${PROJECT_CLI} generate
+\\\`\\\`\\\`
+
+9. **Cleanup**: If you accidentally ran \\\`${PROJECT_CLI} add skill\\\` without \\\`--template\\\` during development, remove the placeholder before running \\\`generate\\\` to avoid stale routing entries:
+\\\`\\\`\\\`bash
+rm -rf ${PROJECT_DIR}/skills/${PROJECT_NAME}-my-skill
+\\\`\\\`\\\`
+
+10. Confirm with the user that the skill is ready
 
 ### Step 10 — Import / Migrate Skill
 

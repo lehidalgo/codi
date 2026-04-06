@@ -1,19 +1,19 @@
 import {
   PROJECT_DIR,
   PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
+  PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: "Background rule observation skill. Collects structured feedback about rules during coding sessions -- pattern detection, outdated practices, missing examples, and corrections. Writes observations to feedback/rules/ for review. Does NOT modify rules."
-category: ${PROJECT_NAME_DISPLAY} Platform
+category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: true
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 3
+version: 4
 ---
 
 # Rule Feedback Collector

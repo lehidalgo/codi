@@ -58,7 +58,7 @@ Use Glob/Grep only when graph queries don't provide needed information.
 
 ## Output Guidelines
 - Provide clear, structured explanations of code organization
-- Use Mermaid diagrams for visualizing relationships (no ASCII art)
+- Use Mermaid diagrams for visualizing relationships (no ASCII art, no custom colors, no \`\\n\` in labels)
 - Include qualified names so users can navigate directly to components
 - Highlight important patterns, design decisions, and potential concerns
 

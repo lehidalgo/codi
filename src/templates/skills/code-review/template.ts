@@ -1,14 +1,19 @@
-import { PROJECT_DIR, PROJECT_NAME, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
+import {
+  PROJECT_DIR,
+  PROJECT_NAME,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.
-category: Code Quality
+category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 5
 ---
 
 # {{name}}
