@@ -45,13 +45,13 @@ export { template as ruleFeedback } from "./rule-feedback/index.js";
 export { template as refineRules } from "./refine-rules/index.js";
 export { template as claudeApi, staticDir as claudeApiStaticDir } from "./claude-api/index.js";
 export { template as pdf, staticDir as pdfStaticDir } from "./pdf/index.js";
-export { template as xlsx, staticDir as xlsxStaticDir } from "./xlsx/index.js";
-export { template as docx, staticDir as docxStaticDir } from "./docx/index.js";
+export { getTemplate as xlsx, staticDir as xlsxStaticDir } from "./xlsx/index.js";
+export { getTemplate as docx, staticDir as docxStaticDir } from "./docx/index.js";
 export {
   template as webappTesting,
   staticDir as webappTestingStaticDir,
 } from "./webapp-testing/index.js";
-export { template as pptx, staticDir as pptxStaticDir } from "./pptx/index.js";
+export { getTemplate as pptx, staticDir as pptxStaticDir } from "./pptx/index.js";
 export {
   template as frontendDesign,
   staticDir as frontendDesignStaticDir,
@@ -81,7 +81,10 @@ export {
   staticDir as slackGifCreatorStaticDir,
 } from "./slack-gif-creator/index.js";
 export { template as devDocsManager } from "./dev-docs-manager/index.js";
-export { template as brandIdentity } from "./brand-identity/index.js";
+export {
+  template as brandIdentity,
+  staticDir as brandIdentityStaticDir,
+} from "./brand-identity/index.js";
 export { template as codiBrand, staticDir as codiBrandStaticDir } from "./codi-brand/index.js";
 export { template as rl3Brand, staticDir as rl3BrandStaticDir } from "./rl3-brand/index.js";
 export { template as bbvaBrand, staticDir as bbvaBrandStaticDir } from "./bbva-brand/index.js";

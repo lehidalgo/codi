@@ -1,6 +1,22 @@
 import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import type { TemplateCounts } from "../types.js";
 
-export const template = `---
+function buildBrandPrompt(brandSkillNames: string[]): string {
+  const lines = brandSkillNames.map((name, i) => {
+    const label = name.replace(/-brand$/, "").replace(/^codi$/, "Codi");
+    const brandLabel =
+      label.length <= 4 ? label.toUpperCase() : label.charAt(0).toUpperCase() + label.slice(1);
+    const suffix =
+      i === 0 ? " (default — uses bundled tokens)" : `  — requires codi-${name} skill active`;
+    return `  ${i + 1}. ${brandLabel}${suffix}`;
+  });
+  lines.push(`  ${brandSkillNames.length + 1}. Custom — provide a path to brand_tokens.json`);
+  return lines.join("\n");
+}
+
+export function getTemplate(counts: TemplateCounts): string {
+  const brandPrompt = buildBrandPrompt(counts.brandSkillNames);
+  return `---
 name: {{name}}
 description: "Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations."
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
@@ -8,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 20
 ---
 
 # PPTX Skill
@@ -55,6 +71,43 @@ python \${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpac
 
 ---
 
+## Creating Branded Output
+
+When the user asks to create a branded PPTX, ask two questions if not already stated:
+
+**Step 1 — Brand** (skip if brand already named):
+\`\`\`
+Which brand styling would you like to apply?
+${brandPrompt}
+\`\`\`
+
+**Step 2 — Theme** (skip if theme already named):
+\`\`\`
+Which color theme?
+  1. Dark (default)
+  2. Light
+\`\`\`
+
+Then run (detect runtime first):
+\`\`\`bash
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  # TypeScript (preferred)
+  npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_pptx.ts]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+elif command -v uv &>/dev/null; then
+  # Python via uv (ephemeral isolated env — no system pollution)
+  uv run --with python-pptx --with Pillow python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+else
+  # Python via venv fallback
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  "\$SKILL_VENV/bin/pip" install -q python-pptx Pillow
+  "\$SKILL_VENV/bin/python3" \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+fi
+\`\`\`
+
+Omit \`--tokens\` to use Codi default brand. Replace \`dark\` with \`light\` for the light theme.
+
+---
+
 ## Creating from Scratch
 
 **Read [pptxgenjs.md](pptxgenjs.md) for full details.**
@@ -65,91 +118,66 @@ Use when no template or reference presentation is available.
 
 ## Design Ideas
 
-**Don't create boring slides.** Plain bullets on a white background won't impress anyone. Consider ideas from this list for each slide.
+Read \\\`\${CLAUDE_SKILL_DIR}[[/references/design-guide.md]]\\\` for design principles, color palettes, typography, and layout options.
 
-### Before Starting
+---
 
-- **Pick a bold, content-informed color palette**: The palette should feel designed for THIS topic. If swapping your colors into a completely different presentation would still "work," you haven't made specific enough choices.
-- **Dominance over equality**: One color should dominate (60-70% visual weight), with 1-2 supporting tones and one sharp accent. Never give all colors equal weight.
-- **Dark/light contrast**: Dark backgrounds for title + conclusion slides, light for content ("sandwich" structure). Or commit to dark throughout for a premium feel.
-- **Commit to a visual motif**: Pick ONE distinctive element and repeat it — rounded image frames, icons in colored circles, thick single-side borders. Carry it across every slide.
+## Brand Integration
 
-### Color Palettes
+When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), use the brand skill's generators instead of building slides from scratch.
 
-Choose colors that match your topic — don't default to generic blue. Use these palettes as inspiration:
+1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
+2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`codi-bbva-brand\\\`) and re-run.
+3. Write \\\`content.json\\\` using the schema below, then run the TypeScript generator (DEFAULT) or Python fallback.
 
-| Theme | Primary | Secondary | Accent |
-|-------|---------|-----------|--------|
-| **Midnight Executive** | \\\`1E2761\\\` (navy) | \\\`CADCFC\\\` (ice blue) | \\\`FFFFFF\\\` (white) |
-| **Forest & Moss** | \\\`2C5F2D\\\` (forest) | \\\`97BC62\\\` (moss) | \\\`F5F5F5\\\` (cream) |
-| **Coral Energy** | \\\`F96167\\\` (coral) | \\\`F9E795\\\` (gold) | \\\`2F3C7E\\\` (navy) |
-| **Warm Terracotta** | \\\`B85042\\\` (terracotta) | \\\`E7E8D1\\\` (sand) | \\\`A7BEAE\\\` (sage) |
-| **Ocean Gradient** | \\\`065A82\\\` (deep blue) | \\\`1C7293\\\` (teal) | \\\`21295C\\\` (midnight) |
-| **Charcoal Minimal** | \\\`36454F\\\` (charcoal) | \\\`F2F2F2\\\` (off-white) | \\\`212121\\\` (black) |
-| **Teal Trust** | \\\`028090\\\` (teal) | \\\`00A896\\\` (seafoam) | \\\`02C39A\\\` (mint) |
-| **Berry & Cream** | \\\`6D2E46\\\` (berry) | \\\`A26769\\\` (dusty rose) | \\\`ECE2D0\\\` (cream) |
-| **Sage Calm** | \\\`84B59F\\\` (sage) | \\\`69A297\\\` (eucalyptus) | \\\`50808E\\\` (slate) |
-| **Cherry Bold** | \\\`990011\\\` (cherry) | \\\`FCF6F5\\\` (off-white) | \\\`2F3C7E\\\` (navy) |
+**Your role as the agent: create content.json only.** The generator script owns all layout decisions — logo position, slide structure, font sizes, spacing. You control what is said on each slide, not how it looks.
 
-### For Each Slide
+**content.json schema:**
 
-**Every slide needs a visual element** — image, chart, icon, or shape. Text-only slides are forgettable.
+\\\`\\\`\\\`json
+{
+  "title": "Presentation Title",
+  "subtitle": "Optional subtitle",
+  "author": "Author Name",
+  "slides": [
+    { "type": "title" },
+    {
+      "type": "section",
+      "number": "01",
+      "label": "SECTION LABEL",
+      "heading": "Slide Heading",
+      "body": "Optional body paragraph.",
+      "items": ["Bullet 1", "Bullet 2"],
+      "callout": "Optional callout quote"
+    },
+    {
+      "type": "quote",
+      "quote": "The most important insight from this quarter.",
+      "attribution": "Name, Title"
+    },
+    {
+      "type": "metrics",
+      "heading": "KEY NUMBERS",
+      "metrics": [
+        { "value": "€12M", "label": "Revenue" },
+        { "value": "34%",  "label": "Growth" },
+        { "value": "420",  "label": "Clients" }
+      ]
+    },
+    { "type": "closing", "message": "Thank you", "contact": "team@example.com" }
+  ]
+}
+\\\`\\\`\\\`
 
-**Layout options:**
-- Two-column (text left, illustration on right)
-- Icon + text rows (icon in colored circle, bold header, description below)
-- 2x2 or 2x3 grid (image on one side, grid of content blocks on other)
-- Half-bleed image (full left or right side) with content overlay
+**Slide types reference:**
 
-**Data display:**
-- Large stat callouts (big numbers 60-72pt with small labels below)
-- Comparison columns (before/after, pros/cons, side-by-side options)
-- Timeline or process flow (numbered steps, arrows)
-
-**Visual polish:**
-- Icons in small colored circles next to section headers
-- Italic accent text for key stats or taglines
-
-### Typography
-
-**Choose an interesting font pairing** — don't default to Arial. Pick a header font with personality and pair it with a clean body font.
-
-| Header Font | Body Font |
-|-------------|-----------|
-| Georgia | Calibri |
-| Arial Black | Arial |
-| Calibri | Calibri Light |
-| Cambria | Calibri |
-| Trebuchet MS | Calibri |
-| Impact | Arial |
-| Palatino | Garamond |
-| Consolas | Calibri |
-
-| Element | Size |
-|---------|------|
-| Slide title | 36-44pt bold |
-| Section header | 20-24pt bold |
-| Body text | 14-16pt |
-| Captions | 10-12pt muted |
-
-### Spacing
-
-- 0.5" minimum margins
-- 0.3-0.5" between content blocks
-- Leave breathing room—don't fill every inch
-
-### Avoid (Common Mistakes)
-
-- **Don't repeat the same layout** — vary columns, cards, and callouts across slides
-- **Don't center body text** — left-align paragraphs and lists; center only titles
-- **Don't skimp on size contrast** — titles need 36pt+ to stand out from 14-16pt body
-- **Don't default to blue** — pick colors that reflect the specific topic
-- **Don't mix spacing randomly** — choose 0.3" or 0.5" gaps and use consistently
-- **Don't style one slide and leave the rest plain** — commit fully or keep it simple throughout
-- **Don't create text-only slides** — add images, icons, charts, or visual elements; avoid plain title + bullets
-- **Don't forget text box padding** — when aligning lines or shapes with text edges, set \\\`margin: 0\\\` on the text box or offset the shape to account for padding
-- **Don't use low-contrast elements** — icons AND text need strong contrast against the background; avoid light text on light backgrounds or dark text on dark backgrounds
-- **NEVER use accent lines under titles** — these are a hallmark of AI-generated slides; use whitespace or background color instead
+| type | Required fields | Optional fields |
+|------|----------------|-----------------|
+| \\\`title\\\`   | — (uses top-level title/subtitle/author) | title, subtitle, author |
+| \\\`section\\\` | heading | number, label, body, items, callout |
+| \\\`quote\\\`   | quote | attribution |
+| \\\`metrics\\\` | metrics[] (max 4) | heading |
+| \\\`closing\\\` | message | contact |
 
 ---
 
@@ -246,3 +274,4 @@ pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 - LibreOffice (\\\`soffice\\\`) - PDF conversion (auto-configured for sandboxed environments via \\\`\${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]]\\\`)
 - Poppler (\\\`pdftoppm\\\`) - PDF to images
 `;
+}

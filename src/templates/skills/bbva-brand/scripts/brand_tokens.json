@@ -1,0 +1,43 @@
+{
+  "brand": "bbva",
+  "version": 2,
+  "themes": {
+    "dark": {
+      "background":     "#000519",
+      "surface":        "#070E46",
+      "text_primary":   "#ffffff",
+      "text_secondary": "#8A8AB0",
+      "primary":        "#001391",
+      "accent":         "#FFE761",
+      "logo":           "logo_dark_bg"
+    },
+    "light": {
+      "background":     "#F7F8F8",
+      "surface":        "#ffffff",
+      "text_primary":   "#1A1A2A",
+      "text_secondary": "#4A4A68",
+      "primary":        "#001391",
+      "accent":         "#001391",
+      "logo":           "logo_light_bg"
+    }
+  },
+  "fonts": {
+    "headlines":     "Source Serif 4",
+    "body":          "Lato",
+    "fallback_sans": "Arial"
+  },
+  "layout": {
+    "slide_width_in":      "10.000",
+    "slide_height_in":     "5.625",
+    "content_margin_in":   "0.366",
+    "accent_bar_width_in": "0.0"
+  },
+  "assets": {
+    "logo_dark_bg":  "../assets/BBVA_RGB.svg",
+    "logo_light_bg": "../assets/BBVA_RGB.svg"
+  },
+  "voice": {
+    "phrases_use":   ["Creando oportunidades", "Tu dinero, tus decisiones", "Banca responsable", "Transformacion digital al servicio de las personas"],
+    "phrases_avoid": ["Somos lideres en", "Disruptivo", "Cutting-edge", "Nuestro equipo de expertos", "Soluciones 360"]
+  }
+}

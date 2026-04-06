@@ -16,7 +16,7 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loa
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { getBuiltinPresetNames } from "../templates/presets/index.js";
 import { createPresetZip } from "../core/preset/preset-zip.js";
-import { printLegend } from "./wizard-legend.js";
+import { wizardSelect, wizardMultiselect } from "./wizard-prompts.js";
 
 export interface PresetWizardResult {
   name: string;
@@ -36,7 +36,6 @@ export interface PresetWizardResult {
  */
 export async function runPresetWizard(projectRoot: string): Promise<PresetWizardResult | null> {
   p.intro(`${PROJECT_CLI} — Preset Creator`);
-  printLegend();
 
   // Step 1: Identity
   const name = await p.text({
@@ -47,7 +46,7 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
       if (!NAME_PATTERN_STRICT.test(v)) return "Must be kebab-case, start with a letter";
     },
   });
-  if (p.isCancel(name)) {
+  if (typeof name === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
@@ -55,7 +54,7 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
   const description = await p.text({
     message: "Description",
   });
-  if (p.isCancel(description)) {
+  if (typeof description === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
@@ -64,7 +63,7 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
     message: "Version",
     defaultValue: "1.0.0",
   });
-  if (p.isCancel(version)) {
+  if (typeof version === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
@@ -73,7 +72,7 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
     message: "Tags (comma-separated)",
     defaultValue: "",
   });
-  if (p.isCancel(tags)) {
+  if (typeof tags === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
@@ -82,51 +81,51 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
   const allPresets = getBuiltinPresetNames();
   const uniquePresets = [...new Set(allPresets)];
 
-  const extendsPreset = await p.select({
+  const extendsPreset = await wizardSelect({
     message: "Extend a base preset?",
     options: [
       { label: "(none)", value: "" as const },
       ...uniquePresets.map((pr) => ({ label: pr, value: pr })),
     ],
   });
-  if (p.isCancel(extendsPreset)) {
+  if (typeof extendsPreset === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
 
   // Step 3: Select rules
-  const rules = await p.multiselect({
+  const rules = await wizardMultiselect({
     message: "Select rules",
     options: AVAILABLE_TEMPLATES.map((t) => ({ label: t, value: t })),
     required: false,
   });
-  if (p.isCancel(rules)) {
+  if (typeof rules === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
 
-  const skills = await p.multiselect({
+  const skills = await wizardMultiselect({
     message: "Select skills",
     options: AVAILABLE_SKILL_TEMPLATES.map((t) => ({ label: t, value: t })),
     required: false,
   });
-  if (p.isCancel(skills)) {
+  if (typeof skills === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
 
-  const agents = await p.multiselect({
+  const agents = await wizardMultiselect({
     message: "Select agents",
     options: AVAILABLE_AGENT_TEMPLATES.map((t) => ({ label: t, value: t })),
     required: false,
   });
-  if (p.isCancel(agents)) {
+  if (typeof agents === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }
 
   // Step 6: Output format
-  const format = await p.select({
+  const format = await wizardSelect({
     message: "Output format",
     options: [
       {
@@ -137,7 +136,7 @@ export async function runPresetWizard(projectRoot: string): Promise<PresetWizard
       { label: "GitHub repository scaffold", value: "github" as const },
     ],
   });
-  if (p.isCancel(format)) {
+  if (typeof format === "symbol") {
     p.cancel("Operation cancelled.");
     return null;
   }

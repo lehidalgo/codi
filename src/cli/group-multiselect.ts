@@ -108,8 +108,15 @@ export function groupMultiselect<Value>(
 
   const outputStream = (opts.output ?? process.stdout) as unknown as Writable;
 
+  // AbortController used to cancel the prompt on 'b' / Backspace (back navigation)
+  const backController = new AbortController();
+  if (opts.signal) {
+    opts.signal.addEventListener("abort", () => backController.abort(), { once: true });
+  }
+
   const prompt = new GroupMultiSelectPrompt<GroupMultiSelectOption<Value>>({
     ...opts,
+    signal: backController.signal,
     selectableGroups,
     required,
     validate(value) {
@@ -221,7 +228,8 @@ export function groupMultiselect<Value>(
       }
 
       const footer = this.state === "error" ? this.error : "";
-      const guideText = "space toggle · a all · tab fold · ↑↓ move · enter confirm · ^c back";
+      const guideText =
+        "space toggle · a all · tab fold · ↑↓ move · enter confirm · b back · ctrl+c exit";
       const guideInner = styleText(["dim", "white"], ` ${guideText} `);
       const guideTop = styleText("dim", `┌${"─".repeat(guideText.length + 2)}┐`);
       const guideMid = `${styleText("dim", "│")}${guideInner}${styleText("dim", "│")}`;
@@ -327,6 +335,17 @@ export function groupMultiselect<Value>(
           prompt.cursor = headerIndex;
         }
       }
+    }
+  });
+
+  // Navigation keys: ctrl+c exits, b/Backspace goes back
+  prompt.on("key", (char: string | undefined, key: Key) => {
+    if (key.ctrl && key.name === "c") {
+      process.stdout.write("\n");
+      process.exit(0);
+    }
+    if (char === "b" || key.name === "backspace") {
+      backController.abort();
     }
   });
 

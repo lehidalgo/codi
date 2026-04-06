@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock @clack/prompts before importing the module
 vi.mock("@clack/prompts", () => ({
+  S_BAR: "|",
+  S_BAR_END: "\\",
+  S_CHECKBOX_ACTIVE: "●",
+  S_CHECKBOX_INACTIVE: "○",
+  S_CHECKBOX_SELECTED: "◼",
+  S_RADIO_ACTIVE: "●",
+  S_RADIO_INACTIVE: "○",
+  symbol: vi.fn().mockReturnValue("◆"),
   intro: vi.fn(),
   outro: vi.fn(),
   cancel: vi.fn(),
@@ -26,8 +34,15 @@ vi.mock("#src/cli/group-multiselect.js", () => ({
   groupMultiselect: vi.fn(),
 }));
 
+vi.mock("#src/cli/wizard-prompts.js", () => ({
+  wizardSelect: vi.fn(),
+  wizardMultiselect: vi.fn(),
+  wizardConfirm: vi.fn(),
+}));
+
 import * as p from "@clack/prompts";
 import { groupMultiselect } from "#src/cli/group-multiselect.js";
+import { wizardSelect, wizardMultiselect, wizardConfirm } from "#src/cli/wizard-prompts.js";
 import { runInitWizard } from "#src/cli/init-wizard.js";
 import { getBuiltinPresetDefinition } from "#src/templates/presets/index.js";
 import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
@@ -35,7 +50,7 @@ import { prefixedName } from "#src/constants.js";
 
 /**
  * Mock the flag editing prompts that editPresetFlags() makes:
- * 1 multiselect (booleans) + N selects (enums) + N texts (numbers)
+ * 1 wizardMultiselect (booleans) + N wizardSelects (enums) + N texts (numbers)
  * Returns the default values so flags appear unchanged.
  */
 function mockFlagEditing(presetName: string): void {
@@ -46,12 +61,12 @@ function mockFlagEditing(presetName: string): void {
   const booleanTrueKeys = Object.keys(flags).filter(
     (k) => FLAG_CATALOG[k]?.type === "boolean" && !flags[k]?.locked && flags[k]?.value === true,
   );
-  vi.mocked(p.multiselect).mockResolvedValueOnce(booleanTrueKeys as never);
+  vi.mocked(wizardMultiselect).mockResolvedValueOnce(booleanTrueKeys as never);
 
   // Enum selects: return current value for each
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
     if (spec.type !== "enum" || !spec.values || flags[key]?.locked || !flags[key]) continue;
-    vi.mocked(p.select).mockResolvedValueOnce(flags[key]!.value as never);
+    vi.mocked(wizardSelect).mockResolvedValueOnce(flags[key]!.value as never);
   }
 
   // Number texts: return current value as string
@@ -68,8 +83,7 @@ describe("runInitWizard", () => {
   });
 
   it("returns null when language selection is cancelled", async () => {
-    vi.mocked(p.multiselect).mockResolvedValueOnce(Symbol("cancel") as never);
-    vi.mocked(p.isCancel).mockReturnValueOnce(true);
+    vi.mocked(wizardMultiselect).mockResolvedValueOnce(Symbol("cancel") as never);
 
     const result = await runInitWizard([], [], ["claude-code", "cursor"]);
     expect(result).toBeNull();
@@ -77,7 +91,7 @@ describe("runInitWizard", () => {
   });
 
   it("returns null when no agents selected", async () => {
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce([] as never); // agents (empty)
 
@@ -86,10 +100,10 @@ describe("runInitWizard", () => {
   });
 
   it("returns zip config when zip mode selected", async () => {
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
-    vi.mocked(p.select).mockResolvedValueOnce("zip" as never);
+    vi.mocked(wizardSelect).mockResolvedValueOnce("zip" as never);
     vi.mocked(p.text).mockResolvedValueOnce("/path/to/preset.zip" as never);
 
     const result = await runInitWizard(["typescript"], ["claude-code"], ["claude-code", "cursor"]);
@@ -102,10 +116,10 @@ describe("runInitWizard", () => {
   });
 
   it("returns github config when github mode selected", async () => {
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce([] as never) // languages (none)
       .mockResolvedValueOnce(["claude-code"] as never); // agents
-    vi.mocked(p.select).mockResolvedValueOnce("github" as never);
+    vi.mocked(wizardSelect).mockResolvedValueOnce("github" as never);
     vi.mocked(p.text).mockResolvedValueOnce("org/my-preset" as never);
 
     const result = await runInitWizard([], [], ["claude-code"]);
@@ -117,7 +131,7 @@ describe("runInitWizard", () => {
   });
 
   it("returns custom config with artifact selections", async () => {
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
     vi.mocked(groupMultiselect)
@@ -126,11 +140,11 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce([]) // agent templates
       .mockResolvedValueOnce(["github"] as never); // MCP servers
 
-    vi.mocked(p.select)
-      .mockResolvedValueOnce("custom" as never) // config mode
-      .mockResolvedValueOnce(prefixedName("balanced") as never); // flag preset
+    vi.mocked(wizardSelect).mockResolvedValueOnce("custom" as never); // config mode
+    // flag preset is inside handleCustomPath — wizardSelect called inside it
+    vi.mocked(wizardSelect).mockResolvedValueOnce(prefixedName("balanced") as never);
 
-    vi.mocked(p.confirm)
+    vi.mocked(wizardConfirm)
       .mockResolvedValueOnce(false as never) // save as preset? no
       .mockResolvedValueOnce(true as never); // version pin? yes
 
@@ -151,28 +165,28 @@ describe("runInitWizard", () => {
     const presetAgents = presetDef?.agents ?? [];
     const presetMcpServers = presetDef?.mcpServers ?? [];
 
-    // Step 0: language selection + Step 1: agent selection
-    vi.mocked(p.multiselect)
+    // languages + agents
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce([] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
-    // Step 2: config mode + preset choice
-    vi.mocked(p.select)
+    // config mode + preset choice (both wizardSelect)
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("preset" as never)
       .mockResolvedValueOnce(prefixedName("balanced") as never);
 
-    // Step 3: flag editing (return defaults — no changes)
+    // flag editing (wizardMultiselect for booleans, wizardSelect for enums, p.text for numbers)
     mockFlagEditing(prefixedName("balanced"));
 
-    // Step 4: artifact editing (return same as preset — no changes)
+    // artifact editing (return same as preset — no changes)
     vi.mocked(groupMultiselect)
       .mockResolvedValueOnce(presetRules as never)
       .mockResolvedValueOnce(presetSkills as never)
       .mockResolvedValueOnce(presetAgents as never)
       .mockResolvedValueOnce(presetMcpServers as never);
 
-    // Step 5: version pin
-    vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
+    // version pin (wizardConfirm inside handlePresetPath)
+    vi.mocked(wizardConfirm).mockResolvedValueOnce(false as never);
 
     const result = await runInitWizard([], [], ["claude-code"]);
 
@@ -186,20 +200,20 @@ describe("runInitWizard", () => {
     const presetRules = presetDef?.rules ?? [];
     const modifiedRules = presetRules.length > 0 ? presetRules.slice(1) : ["extra-rule"];
 
-    // Step 0: language selection + Step 1: agent selection
-    vi.mocked(p.multiselect)
+    // languages + agents
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce([] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
-    // Step 2: config mode + preset choice
-    vi.mocked(p.select)
+    // config mode + preset choice
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("preset" as never)
       .mockResolvedValueOnce(prefixedName("strict") as never);
 
-    // Step 3: flag editing (return defaults)
+    // flag editing
     mockFlagEditing(prefixedName("strict"));
 
-    // Step 4: artifacts (modified rules)
+    // artifacts (modified rules)
     vi.mocked(groupMultiselect)
       .mockResolvedValueOnce(modifiedRules as never)
       .mockResolvedValueOnce(presetDef?.skills ?? ([] as never))
@@ -207,11 +221,11 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce(presetDef?.commands ?? ([] as never))
       .mockResolvedValueOnce(presetDef?.mcpServers ?? ([] as never));
 
-    // Step 5: save-as-preset name
+    // save-as-preset name (p.text inside handlePresetPath)
     vi.mocked(p.text).mockResolvedValueOnce("my-custom-preset" as never);
 
-    // Step 6: version pin
-    vi.mocked(p.confirm).mockResolvedValueOnce(true as never);
+    // version pin (wizardConfirm inside handlePresetPath)
+    vi.mocked(wizardConfirm).mockResolvedValueOnce(true as never);
 
     const result = await runInitWizard([], [], ["claude-code"]);
 
@@ -228,11 +242,11 @@ describe("runInitWizard", () => {
     const presetCommands = presetDef?.commands ?? [];
     const presetMcpServers = presetDef?.mcpServers ?? [];
 
-    vi.mocked(p.multiselect)
+    vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
-    vi.mocked(p.select)
+    vi.mocked(wizardSelect)
       .mockResolvedValueOnce("preset" as never)
       .mockResolvedValueOnce(prefixedName("fullstack") as never);
 
@@ -245,7 +259,7 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce(presetCommands as never)
       .mockResolvedValueOnce(presetMcpServers as never);
 
-    vi.mocked(p.confirm).mockResolvedValueOnce(false as never);
+    vi.mocked(wizardConfirm).mockResolvedValueOnce(false as never);
 
     const result = await runInitWizard([], [], ["claude-code"]);
 
@@ -254,15 +268,11 @@ describe("runInitWizard", () => {
   });
 
   it("goes back from agents to languages, then exits on cancel", async () => {
-    // Flow: languages(ok) → agents(cancel) → languages(cancel) → exit
-    vi.mocked(p.multiselect)
-      .mockResolvedValueOnce([] as never) // languages (first pass, ok)
-      .mockResolvedValueOnce(Symbol("cancel") as never) // agents (cancel → back to languages)
-      .mockResolvedValueOnce(Symbol("cancel") as never); // languages (cancel → exit)
-    vi.mocked(p.isCancel)
-      .mockReturnValueOnce(false) // languages check (first pass, ok)
-      .mockReturnValueOnce(true) // agents cancel → back to languages
-      .mockReturnValueOnce(true); // languages cancel → exit
+    // Flow: languages(ok) → agents(symbol → back to languages) → languages(symbol → exit)
+    vi.mocked(wizardMultiselect)
+      .mockResolvedValueOnce([] as never) // languages first pass (ok)
+      .mockResolvedValueOnce(Symbol("back") as never) // agents → back to languages
+      .mockResolvedValueOnce(Symbol("cancel") as never); // languages → exit (cancel)
 
     const result = await runInitWizard([], [], ["claude-code"]);
     expect(result).toBeNull();
@@ -270,21 +280,21 @@ describe("runInitWizard", () => {
   });
 
   it("lets the user choose modify current installation for existing installs", async () => {
-    vi.mocked(p.select)
-      .mockResolvedValueOnce("modify" as never)
-      .mockResolvedValueOnce(prefixedName("balanced") as never);
-    vi.mocked(p.multiselect)
-      .mockResolvedValueOnce(["typescript"] as never)
-      .mockResolvedValueOnce(["claude-code"] as never);
+    vi.mocked(wizardSelect)
+      .mockResolvedValueOnce("modify" as never) // existing install action
+      .mockResolvedValueOnce(prefixedName("balanced") as never); // flag preset inside handleCustomPath
+    vi.mocked(wizardMultiselect)
+      .mockResolvedValueOnce(["typescript"] as never) // languages
+      .mockResolvedValueOnce(["claude-code"] as never); // agents
     vi.mocked(groupMultiselect)
       .mockResolvedValueOnce(["codi-security"] as never)
       .mockResolvedValueOnce(["codi-code-review"] as never)
       .mockResolvedValueOnce(["codi-code-reviewer"] as never)
       .mockResolvedValueOnce(["codi-commit"] as never)
       .mockResolvedValueOnce(["github"] as never);
-    vi.mocked(p.confirm)
-      .mockResolvedValueOnce(false as never)
-      .mockResolvedValueOnce(true as never);
+    vi.mocked(wizardConfirm)
+      .mockResolvedValueOnce(false as never) // save as preset? no
+      .mockResolvedValueOnce(true as never); // version pin? yes
 
     const result = await runInitWizard(["typescript"], ["claude-code"], ["claude-code"], {
       selections: {
@@ -299,14 +309,13 @@ describe("runInitWizard", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(vi.mocked(p.select).mock.calls[0]?.[0]?.message).toContain("already installed");
+    expect(vi.mocked(wizardSelect).mock.calls[0]?.[0]?.message).toContain("already installed");
     // config mode prompt is skipped for modify — goes directly to artifact selection
-    expect(vi.mocked(p.select).mock.calls).toHaveLength(2);
+    expect(vi.mocked(wizardSelect).mock.calls).toHaveLength(2);
   });
 
   it("returns null when existing-install choice is cancelled", async () => {
-    vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
-    vi.mocked(p.isCancel).mockReturnValueOnce(true);
+    vi.mocked(wizardSelect).mockResolvedValueOnce(Symbol("cancel") as never);
 
     const result = await runInitWizard([], [], ["claude-code"], {
       selections: {

@@ -29,12 +29,12 @@ import {
 } from "./artifact-categories.js";
 import { filterInventoryByType } from "./installed-artifact-inventory.js";
 import type { ExistingInstallContext } from "./init-wizard.js";
-import { printLegend } from "./wizard-legend.js";
+import { wizardSelect, wizardMultiselect, wizardConfirm } from "./wizard-prompts.js";
 
 const BACK = Symbol("back");
 
 function isBack<T>(value: T | symbol): value is typeof BACK {
-  return p.isCancel(value);
+  return typeof value === "symbol";
 }
 
 function getReservedPresetNames(): Set<string> {
@@ -88,8 +88,7 @@ async function editPresetFlags(
   );
   if (booleanKeys.length > 0) {
     p.log.step(`Flags in "${presetName}" (modify to customize)`);
-    printLegend();
-    const selected = await p.multiselect({
+    const selected = await wizardMultiselect({
       message: "Boolean flags (selected = enabled)",
       options: booleanKeys.map((k) => ({
         label: formatLabel(k),
@@ -99,7 +98,7 @@ async function editPresetFlags(
       initialValues: booleanKeys.filter((k) => flags[k]?.value === true),
       required: false,
     });
-    if (p.isCancel(selected)) return null;
+    if (typeof selected === "symbol") return null;
 
     const enabledSet = new Set(selected);
     for (const key of booleanKeys) {
@@ -110,7 +109,7 @@ async function editPresetFlags(
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
     if (spec.type !== "enum" || !spec.values || flags[key]?.locked || !flags[key]) continue;
     const current = flags[key]!.value as string;
-    const enumVal = await p.select({
+    const enumVal = await wizardSelect({
       message: `${key} — ${spec.description}`,
       options: spec.values.map((v) => ({
         label: v,
@@ -119,7 +118,7 @@ async function editPresetFlags(
       })),
       initialValue: current,
     });
-    if (p.isCancel(enumVal)) return null;
+    if (typeof enumVal === "symbol") return null;
     result[key] = { ...result[key]!, value: enumVal };
   }
 
@@ -136,7 +135,7 @@ async function editPresetFlags(
         if (spec.min !== undefined && n < spec.min) return `Minimum: ${spec.min}`;
       },
     });
-    if (p.isCancel(numVal)) return null;
+    if (typeof numVal === "symbol") return null;
     result[key] = { ...result[key]!, value: Number(numVal) };
   }
 
@@ -207,8 +206,7 @@ export async function handlePresetPath(
   while (step >= 0) {
     switch (step) {
       case 0: {
-        printLegend();
-        const presetName = await p.select({
+        const presetName = await wizardSelect({
           message: "Choose a preset",
           options: buildPresetOptions(),
         });
@@ -362,7 +360,6 @@ export async function handlePresetPath(
 
         if (changed) {
           p.log.step("Custom Preset");
-          printLegend();
           const customName = await p.text({
             message: "You modified the preset. Save as custom preset (name)",
             initialValue: saveAsPreset ?? `${selectedPreset}-custom`,
@@ -382,11 +379,10 @@ export async function handlePresetPath(
         break;
       }
       case 7: {
-        printLegend();
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
-        const versionPin = await p.confirm({
+        const versionPin = await wizardConfirm({
           message: "Enable version pinning?",
         });
         if (isBack(versionPin)) {
@@ -546,8 +542,7 @@ export async function handleCustomPath(
         break;
       }
       case 4: {
-        printLegend();
-        const val = await p.select({
+        const val = await wizardSelect({
           message: "Choose flag preset",
           options: [
             {
@@ -576,8 +571,7 @@ export async function handleCustomPath(
         break;
       }
       case 5: {
-        printLegend();
-        const save = await p.confirm({
+        const save = await wizardConfirm({
           message: "Save this selection as a named preset for reuse?",
           initialValue: false,
         });
@@ -607,11 +601,10 @@ export async function handleCustomPath(
         break;
       }
       case 6: {
-        printLegend();
         p.log.info(
           `Version pinning locks ${PROJECT_CLI} to the current version — prevents breaking changes on update`,
         );
-        const versionPin = await p.confirm({
+        const versionPin = await wizardConfirm({
           message: "Enable version pinning?",
         });
         if (isBack(versionPin)) {

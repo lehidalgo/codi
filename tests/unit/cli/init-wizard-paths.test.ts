@@ -11,6 +11,14 @@ import { getBuiltinPresetDefinition } from "#src/templates/presets/index.js";
 import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
 
 vi.mock("@clack/prompts", () => ({
+  S_BAR: "|",
+  S_BAR_END: "\\",
+  S_CHECKBOX_ACTIVE: "●",
+  S_CHECKBOX_INACTIVE: "○",
+  S_CHECKBOX_SELECTED: "◼",
+  S_RADIO_ACTIVE: "●",
+  S_RADIO_INACTIVE: "○",
+  symbol: vi.fn().mockReturnValue("◆"),
   intro: vi.fn(),
   outro: vi.fn(),
   cancel: vi.fn(),
@@ -24,6 +32,12 @@ vi.mock("@clack/prompts", () => ({
 
 vi.mock("#src/cli/group-multiselect.js", () => ({
   groupMultiselect: vi.fn(),
+}));
+
+vi.mock("#src/cli/wizard-prompts.js", () => ({
+  wizardSelect: vi.fn(),
+  wizardMultiselect: vi.fn(),
+  wizardConfirm: vi.fn(),
 }));
 
 vi.mock("#src/core/scaffolder/template-loader.js", () => ({
@@ -45,12 +59,13 @@ vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
 
 import * as prompts from "@clack/prompts";
 import { groupMultiselect } from "#src/cli/group-multiselect.js";
+import { wizardSelect, wizardMultiselect, wizardConfirm } from "#src/cli/wizard-prompts.js";
 
 const mockText = vi.mocked(prompts.text);
 const mockIsCancel = vi.mocked(prompts.isCancel);
 const mockGroupMultiselect = vi.mocked(groupMultiselect);
-const mockSelect = vi.mocked(prompts.select);
-const mockConfirm = vi.mocked(prompts.confirm);
+const mockWizardSelect = vi.mocked(wizardSelect);
+const mockWizardConfirm = vi.mocked(wizardConfirm);
 
 function mockFlagEditing(presetName: string): void {
   const presetDef = getBuiltinPresetDefinition(presetName);
@@ -59,13 +74,13 @@ function mockFlagEditing(presetName: string): void {
   const booleanTrueKeys = Object.keys(flags).filter(
     (k) => FLAG_CATALOG[k]?.type === "boolean" && !flags[k]?.locked && flags[k]?.value === true,
   );
-  vi.mocked(prompts.multiselect).mockResolvedValueOnce(booleanTrueKeys as never);
+  vi.mocked(wizardMultiselect).mockResolvedValueOnce(booleanTrueKeys as never);
 
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
     if (spec.type !== "enum" || !spec.values || flags[key]?.locked || !flags[key]) {
       continue;
     }
-    mockSelect.mockResolvedValueOnce(flags[key]!.value as never);
+    mockWizardSelect.mockResolvedValueOnce(flags[key]!.value as never);
   }
 
   for (const [key, spec] of Object.entries(FLAG_CATALOG)) {
@@ -181,8 +196,8 @@ describe("handleCustomPath — groupMultiselect messages include counts", () => 
       .mockResolvedValueOnce([]) // skills
       .mockResolvedValueOnce([]) // agents
       .mockResolvedValueOnce([]); // mcps
-    mockSelect.mockResolvedValueOnce("codi-balanced"); // flag preset
-    mockConfirm
+    mockWizardSelect.mockResolvedValueOnce("codi-balanced"); // flag preset
+    mockWizardConfirm
       .mockResolvedValueOnce(false) // save as preset
       .mockResolvedValueOnce(false); // version pin
   });
@@ -256,7 +271,7 @@ describe("handlePresetPath", () => {
   });
 
   it("uses current installation selections when modifying an existing install", async () => {
-    mockSelect.mockResolvedValueOnce("codi-balanced");
+    mockWizardSelect.mockResolvedValueOnce("codi-balanced");
     mockFlagEditing("codi-balanced");
     mockGroupMultiselect
       .mockResolvedValueOnce(["typescript", "legacy-rule"])
@@ -264,7 +279,7 @@ describe("handlePresetPath", () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
-    mockConfirm.mockResolvedValueOnce(false);
+    mockWizardConfirm.mockResolvedValueOnce(false);
 
     await handlePresetPath(["claude-code"], {
       selections: {

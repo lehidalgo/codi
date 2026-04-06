@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 17
 ---
 
 # {{name}}
@@ -141,6 +141,65 @@ version: 8
 - Do not list every dependency — top 5-10 most important only
 - Do not include secrets, internal URLs, or frequently-changing values (version numbers, dates)
 - Keep the block under 50 lines — it is loaded on every agent session
+
+### Phase 6: Create Project Commands Rule
+
+**[CODING AGENT]** Create a dedicated Codi rule file so every future agent session loads the project's common commands without searching through scripts or manifests.
+
+1. Collect commands discovered in Phase 1:
+   - \\\`package.json\\\` → \\\`scripts\\\` field: extract dev, start, test, build, lint, format, typecheck, clean
+   - \\\`Makefile\\\` → parse targets (top 10)
+   - \\\`pyproject.toml\\\` → \\\`[tool.taskipy.tasks]\\\` or \\\`[tool.poe.tasks]\\\`
+   - \\\`Taskfile.yml\\\` → \\\`tasks\\\` keys
+   - \\\`justfile\\\` → recipe names
+   - Omit any command that requires manual input or exposes credentials
+
+2. Write \\\`.codi/rules/project-commands.md\\\` with this structure:
+
+\\\`\\\`\\\`markdown
+---
+name: project-commands
+description: Common commands for this project — install, dev, test, build, lint
+priority: medium
+alwaysApply: true
+managed_by: user
+---
+
+# Project Commands
+
+## Install
+\\\`\\\`\\\`bash
+# e.g. pnpm install / uv sync / go mod download
+\\\`\\\`\\\`
+
+## Development
+\\\`\\\`\\\`bash
+# e.g. pnpm dev / python manage.py runserver
+\\\`\\\`\\\`
+
+## Testing
+\\\`\\\`\\\`bash
+# e.g. pnpm test / pytest / go test ./...
+\\\`\\\`\\\`
+
+## Build
+\\\`\\\`\\\`bash
+# e.g. pnpm build / python -m build
+\\\`\\\`\\\`
+
+## Lint & Format
+\\\`\\\`\\\`bash
+# e.g. pnpm lint / ruff check .
+\\\`\\\`\\\`
+\\\`\\\`\\\`
+
+   - Omit sections for which no command was found
+   - Max 3 commands per section
+   - If a file already exists at \\\`.codi/rules/project-commands.md\\\`, replace it
+
+3. Run \\\`codi generate\\\` (or \\\`node dist/cli.js generate\\\` for local builds) to propagate the new rule to all configured agent directories (\\\`.claude/rules/\\\`, etc.)
+
+4. Report: "Created \\\`.codi/rules/project-commands.md\\\` and propagated via \\\`codi generate\\\`."
 
 ## Anti-Patterns to Avoid
 

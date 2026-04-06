@@ -138,7 +138,7 @@ managed_by: codi
 <!-- GENERATED:START:skill_templates -->
 | Category | Skills |
 |----------|--------|
-| **Brand Identity** | codi-bbva-brand, codi-brand-identity, codi-rl3-brand |
+| **Brand Identity** | codi-bbva-brand, codi-brand-identity, codi-codi-brand, codi-rl3-brand |
 | **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-test-coverage, codi-webapp-testing |
 | **Codi Platform** | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-feedback-reporter |
 | **Content Creation** | codi-content-factory |

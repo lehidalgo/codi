@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 14
 ---
 
 ## When to Activate
@@ -73,4 +73,56 @@ For HTML outputs also read:
 - [ ] Copy uses second person — not "users" or "developers"
 - [ ] Agent names spelled correctly: Claude Code, Cursor, Codex, Windsurf, Cline
 - [ ] Terminal commands use exact CLI syntax: \`codi init\`, \`codi generate\`, \`codi add rule\`
+
+---
+
+## Generator Routing (PPTX / DOCX / XLSX)
+
+Generation is handled by the format skills (\`codi-pptx\`, \`codi-docx\`, \`codi-xlsx\`). This brand skill provides only \`\${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json\` — pass it via \`--tokens\`.
+
+### Runtime Detection
+
+Detect the available runtime and route accordingly:
+
+\`\`\`bash
+if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
+  # TypeScript (preferred)
+  npx tsx \${CODI_PPTX_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
+elif command -v uv &>/dev/null; then
+  # Python via uv (ephemeral isolated env)
+  uv run --with python-pptx python3 \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
+else
+  # Python via venv fallback
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\${SKILL_VENV}" 2>/dev/null || true
+  "\${SKILL_VENV}/bin/pip" install -q python-pptx
+  "\${SKILL_VENV}/bin/python3" \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
+fi
+\`\`\`
+
+Apply the same pattern for DOCX (\`CODI_DOCX_SKILL_DIR\`, \`generate_docx\`, \`out.docx\`) and XLSX (\`CODI_XLSX_SKILL_DIR\`, \`generate_xlsx\`, \`out.xlsx\`).
+
+- \`\${CLAUDE_SKILL_DIR}\` — this brand skill directory (provides tokens)
+- \`\${CODI_PPTX_SKILL_DIR}\` / \`\${CODI_DOCX_SKILL_DIR}\` / \`\${CODI_XLSX_SKILL_DIR}\` — respective format skill directories
+- \`\${BRAND_THEME}\` — \`dark\` or \`light\` (ask the user if not specified)
+
+### content.json Schema
+
+\`\`\`json
+{
+  "title": "Document or Presentation Title",
+  "subtitle": "Optional subtitle",
+  "author": "Author Name",
+  "sections": [
+    {
+      "number": "01",
+      "label": "Section Label",
+      "heading": "Section Heading",
+      "body": "Section body text.",
+      "items": ["Bullet point 1", "Bullet point 2"],
+      "callout": "Optional highlighted quote or takeaway"
+    }
+  ]
+}
+\`\`\`
+
 `;

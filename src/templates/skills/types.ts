@@ -4,6 +4,8 @@ export interface TemplateCounts {
   skills: number;
   agents: number;
   flags: number;
+  /** Names of installed brand skills (e.g. ["codi-brand", "rl3-brand", "bbva-brand"]). Codi default is always first. */
+  brandSkillNames: string[];
 }
 
 /** Describes a skill template that may include static files to copy during scaffolding. */

@@ -96,6 +96,7 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("claude-artifacts-builder")]: skillTemplates.claudeArtifactsBuilderStaticDir,
   [prefixedName("webapp-testing")]: skillTemplates.webappTestingStaticDir,
   [prefixedName("xlsx")]: skillTemplates.xlsxStaticDir,
+  [prefixedName("brand-identity")]: skillTemplates.brandIdentityStaticDir,
   [prefixedName("codi-brand")]: skillTemplates.codiBrandStaticDir,
   [prefixedName("rl3-brand")]: skillTemplates.rl3BrandStaticDir,
   [prefixedName("bbva-brand")]: skillTemplates.bbvaBrandStaticDir,
@@ -129,11 +130,24 @@ const STATIC_DIR_MAP: Record<string, string> = {
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
 
 function getTemplateCounts(): TemplateCounts {
+  const brandSkillNames = AVAILABLE_SKILL_TEMPLATES.filter((key) => {
+    const bare = key.replace(/^codi-/, "");
+    return bare.endsWith("-brand") && bare !== "brand-identity" && bare !== "brand";
+  }).map((key) => key.replace(/^codi-/, ""));
+
+  // Always ensure codi-brand is first (the default)
+  const codiIdx = brandSkillNames.indexOf("codi-brand");
+  if (codiIdx > 0) {
+    brandSkillNames.splice(codiIdx, 1);
+    brandSkillNames.unshift("codi-brand");
+  }
+
   return {
     rules: AVAILABLE_TEMPLATES.length,
     skills: AVAILABLE_SKILL_TEMPLATES.length,
     agents: AVAILABLE_AGENT_TEMPLATES.length,
     flags: Object.keys(FLAG_CATALOG).length,
+    brandSkillNames,
   };
 }
 
