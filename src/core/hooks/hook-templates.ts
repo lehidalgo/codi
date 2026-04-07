@@ -167,7 +167,7 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^src\\/templates\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
+const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^src\\/templates\\//, /^docs\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {

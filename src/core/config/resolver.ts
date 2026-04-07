@@ -9,9 +9,26 @@ import { validateConfig } from "./validator.js";
 import { FLAGS_FILENAME } from "#src/constants.js";
 
 /**
- * Resolves the full project configuration by reading .codi/ as the single source of truth.
- * All artifacts (rules, skills, agents, commands), flags, and MCP configs come from .codi/.
- * Presets are consumed at install time — they are not loaded during config resolution.
+ * Resolves the full project configuration by reading `.codi/` as the single source of truth.
+ *
+ * Reads the manifest, flags, rules, skills, agents, and MCP config from the `.codi/`
+ * directory, validates them, and returns a `NormalizedConfig` ready for generation.
+ * Presets are consumed at install time and are not re-read during resolution.
+ *
+ * @param projectRoot - Absolute path to the project root directory
+ * @returns A `Result` wrapping the resolved config on success, or validation errors on failure
+ *
+ * @example
+ * ```ts
+ * import { resolveConfig, isOk } from 'codi-cli';
+ *
+ * const result = await resolveConfig(process.cwd());
+ * if (isOk(result)) {
+ *   console.log(`${result.data.rules.length} rules loaded`);
+ * } else {
+ *   result.errors.forEach(e => console.error(e.message));
+ * }
+ * ```
  */
 export async function resolveConfig(projectRoot: string): Promise<Result<NormalizedConfig>> {
   const configDir = resolveProjectDir(projectRoot);

@@ -31,6 +31,13 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+/**
+ * Adapter for Windsurf — Codeium's AI editor.
+ *
+ * Detects presence of `.windsurfrules` file.
+ * Generates `.windsurfrules` (primary instruction file) and `.windsurf/skills/`.
+ * Does not support MCP server configuration.
+ */
 export const windsurfAdapter: AgentAdapter = {
   id: "windsurf",
   name: "Windsurf",
