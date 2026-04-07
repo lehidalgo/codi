@@ -125,11 +125,11 @@
   },
   "codi-dev-operations": {
     "version": 5,
-    "hash": "7a6e51586c802e76cfa2f9145053b30c5c3bc23e8e7454df519dbb934d116e58"
+    "hash": "a2bccaeca8d4dea7cacc76eb5806648b6cd47dabf53f18025928581bc8a1879c"
   },
   "codi-dev-e2e-testing": {
     "version": 10,
-    "hash": "fa478a22099e013ab9c47559d36bcce4f6f87a749f250f9ef2155746b33e06e4"
+    "hash": "3123b6bebf2ede07b718cae8f9958fbea24633c46fbf5c522e0a504e7b14a13c"
   },
   "codi-security-scan": {
     "version": 5,
@@ -190,6 +190,10 @@
   "codi-deck-engine": {
     "version": 8,
     "hash": "225067c1feff394874979179f7bc998e7c14b217115a7bc1979e68da622f4d87"
+  },
+  "codi-deck": {
+    "version": 8,
+    "hash": "5e443f61de5c605f8808e389a138e27961b8c909c8ea0c7f4115906ab00e4468"
   },
   "codi-doc-engine": {
     "version": 4,

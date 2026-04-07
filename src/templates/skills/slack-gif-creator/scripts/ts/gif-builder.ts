@@ -16,13 +16,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
@@ -69,7 +63,6 @@ export class GIFBuilder {
   async deduplicateFrames(threshold = 0.9995): Promise<number> {
     if (this.frames.length < 2) return 0;
 
-    // @ts-expect-error sharp is a user-project dependency
     let sharp: typeof import("sharp");
     try {
       // @ts-expect-error sharp is a user-project dependency
@@ -82,7 +75,9 @@ export class GIFBuilder {
     let removedCount = 0;
 
     for (let i = 1; i < this.frames.length; i++) {
+      // @ts-expect-error sharp module default export
       const prevRaw = await sharp.default(deduplicated.at(-1)).raw().toBuffer();
+      // @ts-expect-error sharp module default export
       const currRaw = await sharp.default(this.frames[i]).raw().toBuffer();
 
       // Calculate similarity
@@ -128,16 +123,13 @@ export class GIFBuilder {
       numColors = Math.min(numColors, 48);
 
       if (this.frames.length > 12) {
-        console.log(
-          `  Reducing frames from ${this.frames.length} to ~12 for emoji size`,
-        );
+        console.log(`  Reducing frames from ${this.frames.length} to ~12 for emoji size`);
         const keepEvery = Math.max(1, Math.floor(this.frames.length / 12));
         this.frames = this.frames.filter((_, i) => i % keepEvery === 0);
       }
     }
 
     // Resize frames to target dimensions
-    // @ts-expect-error sharp is a user-project dependency
     let sharp: typeof import("sharp") | null = null;
     try {
       // @ts-expect-error sharp is a user-project dependency
@@ -149,8 +141,9 @@ export class GIFBuilder {
     if (sharp) {
       const resized: Buffer[] = [];
       for (const frame of this.frames) {
-        const buf = await sharp
-          .default(frame)
+        // @ts-expect-error sharp module default export
+        const sharpInst = sharp.default(frame);
+        const buf = await sharpInst
           .resize(this.width, this.height, { fit: "fill" })
           .png()
           .toBuffer();
@@ -193,19 +186,14 @@ export class GIFBuilder {
     }
     if (sizeMb > 1.0) {
       console.log(`\n  Note: Large file size (${sizeKb.toFixed(1)} KB)`);
-      console.log(
-        "  Consider: fewer frames, smaller dimensions, or fewer colors",
-      );
+      console.log("  Consider: fewer frames, smaller dimensions, or fewer colors");
     }
 
     return info;
   }
 
   /** Save using ImageMagick convert command. */
-  private async saveWithImageMagick(
-    outputPath: string,
-    numColors: number,
-  ): Promise<boolean> {
+  private async saveWithImageMagick(outputPath: string, numColors: number): Promise<boolean> {
     try {
       execFileSync("which", ["convert"], { stdio: "pipe" });
     } catch {
@@ -217,10 +205,7 @@ export class GIFBuilder {
 
     // Write frames as PNGs
     for (let i = 0; i < this.frames.length; i++) {
-      writeFileSync(
-        join(tempDir, `frame_${String(i).padStart(4, "0")}.png`),
-        this.frames[i]!,
-      );
+      writeFileSync(join(tempDir, `frame_${String(i).padStart(4, "0")}.png`), this.frames[i]!);
     }
 
     const delay = Math.round(100 / this.fps); // centiseconds per frame
@@ -246,18 +231,12 @@ export class GIFBuilder {
   }
 
   /** Fallback: save frames as PNGs and instruct user to assemble. */
-  private async saveWithTempFrames(
-    outputPath: string,
-    _numColors: number,
-  ): Promise<void> {
+  private async saveWithTempFrames(outputPath: string, _numColors: number): Promise<void> {
     const frameDir = outputPath.replace(/\.gif$/, "_frames");
     if (!existsSync(frameDir)) mkdirSync(frameDir, { recursive: true });
 
     for (let i = 0; i < this.frames.length; i++) {
-      writeFileSync(
-        join(frameDir, `frame_${String(i).padStart(4, "0")}.png`),
-        this.frames[i]!,
-      );
+      writeFileSync(join(frameDir, `frame_${String(i).padStart(4, "0")}.png`), this.frames[i]!);
     }
 
     console.error("Warning: Neither gif-encoder-2 nor ImageMagick available.");

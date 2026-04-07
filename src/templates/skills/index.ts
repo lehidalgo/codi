@@ -39,6 +39,7 @@ export {
 export { template as comparePreset } from "./compare-preset/index.js";
 export { template as sessionRecovery } from "./session-recovery/index.js";
 export { template as deckEngine, staticDir as deckEngineStaticDir } from "./deck-engine/index.js";
+export { template as deckHtml, staticDir as deckHtmlStaticDir } from "./deck/index.js";
 export { template as docEngine, staticDir as docEngineStaticDir } from "./doc-engine/index.js";
 export { template as skillFeedbackReporter } from "./skill-feedback-reporter/index.js";
 export { template as ruleFeedback } from "./rule-feedback/index.js";
