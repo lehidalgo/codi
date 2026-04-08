@@ -90,6 +90,7 @@ function docLabel(doc: DocEntry): string {
         <a href={`${siteRoot}#who`}>Solo &amp; Teams</a>
         <a href={`${siteRoot}#quickstart`}>Quick Start</a>
         <a href={base} class="docs-tab-active">Docs</a>
+        <a href={`${base}catalog/`}>Catalog</a>
         <a href="https://github.com/lehidalgo/codi" target="_blank" rel="noopener">GitHub</a>
         <a href={`${siteRoot}#quickstart`} class="btn-primary">Install</a>
       </div>
@@ -102,6 +103,13 @@ function docLabel(doc: DocEntry): string {
   <div class="docs-page">
     <aside class="docs-sidebar" id="docs-sidebar">
       <nav aria-label="Documentation navigation">
+        <!-- Static catalog link -->
+        <div class="docs-nav-group">
+          <div class="docs-nav-label">Browse</div>
+          <a href={`${base}catalog/`} class={`docs-nav-link${currentPath.endsWith('/catalog') ? ' active' : ''}`}>
+            Artifact Catalog
+          </a>
+        </div>
         {GROUP_ORDER.filter(g => groups[g]?.length).map(group => (
           <div class="docs-nav-group">
             <div class="docs-nav-label">{GROUP_LABELS[group]}</div>
