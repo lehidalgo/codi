@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Unified preview server infra across brand skills** — `server.cjs`, `preview-shell.js`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`, and `vendor/` (html2canvas + JSZip) are now byte-identical across `bbva-brand`, `rl3-brand`, `codi-brand`, and `content-factory`; only `generators/` templates and `brand/tokens.css` differ per brand. `preview-shell.js` BBVA-specific logo selector removed to make it fully generic.
+- **`rl3-brand` and `codi-brand` gain full preview server** — added `scripts/` infra and `generators/` (slides, document, social) copied from bbva-brand and adapted to each brand's tokens and logo paths
+- **`content-factory` migrated to server approach** — replaced legacy inline `assets/preview-shell.js` + `assets/vendor/` with the shared `scripts/` stack; `generators/` templates now use `.social-card` / `.doc-page` / `.deck` standard classes; `scaffold-session.sh` updated to start the server and seed content dir
+- **`brand/tokens.css`** added for `rl3-brand` and `codi-brand` matching BBVA structure
+
 - **Export All PNGs bundles a ZIP** — "Export All PNGs" in the BBVA brand preview shell now downloads a single `cards.zip` / `slides.zip` / `pages.zip` instead of triggering individual per-file downloads; JSZip 3.10.1 vendored in `scripts/vendor/jszip.min.js` and injected by `server.cjs`
 
 ### Fixed

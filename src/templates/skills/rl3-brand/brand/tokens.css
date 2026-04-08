@@ -1,0 +1,73 @@
+/*
+ * RL3 AI Agency Brand Tokens — CSS Custom Properties
+ * Auto-derived from brand/tokens.json v2
+ *
+ * Usage: inline the full contents of this file into a <style> block in every
+ * HTML output. Do NOT link it with <link href> — file:// protocol blocks external
+ * stylesheets and the brainstorming server may not serve it.
+ *
+ * Theme switching: add class="theme-dark" or class="theme-light" to <html> or
+ * the root container. Dark is the RL3 default for presentations.
+ */
+
+/* ── Font Faces ──────────────────────────────────────────────────────────── */
+/* IMPORTANT: Replace SKILL_FONTS_DIR with the absolute path to assets/fonts/ */
+/* IMPORTANT: Replace SKILL_ASSETS_DIR with the absolute path to assets/      */
+/* The agent substitutes these placeholders:                                   */
+/*   SKILL_FONTS_DIR  → ${CLAUDE_SKILL_DIR}/assets/fonts                      */
+/*   SKILL_ASSETS_DIR → ${CLAUDE_SKILL_DIR}/assets                            */
+
+/* RL3 uses Google Fonts (Space Grotesk + Instrument Sans).                   */
+/* In generated HTML, add:                                                     */
+/*   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"> */
+
+/* ── Dark Theme (RL3 default for presentations) ─────────────────────────── */
+
+.theme-dark,
+:root {
+  --brand-bg:          #0a0a0b;
+  --brand-surface:     #1a1a1b;
+  --brand-text:        #ffffff;
+  --brand-text-muted:  #7a7a7a;
+  --brand-primary:     #c8b88a;
+  --brand-accent:      #c8b88a;
+  --brand-logo:        url('SKILL_ASSETS_DIR/rl3-logo-light.svg');
+
+  --brand-font-headline: 'Space Grotesk', Arial, sans-serif;
+  --brand-font-body:     'Instrument Sans', Arial, sans-serif;
+
+  /* Slide geometry */
+  --slide-w:            960px;
+  --slide-h:            540px;
+  --slide-pad:          36px;
+
+  /* Document geometry */
+  --doc-w:              794px;
+  --doc-page-h:         1123px;
+  --doc-pad:            60px;
+
+  /* Social geometry */
+  --social-w:           1080px;
+  --social-h:           1080px;
+}
+
+/* ── Light Theme ─────────────────────────────────────────────────────────── */
+
+.theme-light {
+  --brand-bg:          #f5f5f5;
+  --brand-surface:     #ffffff;
+  --brand-text:        #0a0a0b;
+  --brand-text-muted:  #4a4a4a;
+  --brand-primary:     #c8b88a;
+  --brand-accent:      #c8b88a;
+  --brand-logo:        url('SKILL_ASSETS_DIR/rl3-logo-dark.svg');
+}
+
+/* ── Utility Classes ─────────────────────────────────────────────────────── */
+
+.brand-accent   { color: var(--brand-accent); }
+.brand-primary  { color: var(--brand-primary); }
+.brand-muted    { color: var(--brand-text-muted); }
+.bg-surface     { background: var(--brand-surface); }
+.bg-primary     { background: var(--brand-primary); }
+.bg-accent      { background: var(--brand-accent); color: var(--brand-bg); }
