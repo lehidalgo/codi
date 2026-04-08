@@ -42,7 +42,7 @@
     "docs:generate": "node dist/cli.js docs --generate",
     "docs:validate": "node dist/cli.js docs --validate",
     "docs:dev": "astro dev",
-    "docs:build": "typedoc && astro build",
+    "docs:build": "node dist/cli.js docs --catalog && typedoc && astro build",
     "docs:check": "astro check",
     "docs:preview": "astro preview"
   },
