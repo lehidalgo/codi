@@ -11,7 +11,7 @@ category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 40
+version: 43
 ---
 
 # {{name}} — BBVA Content Studio
@@ -296,7 +296,20 @@ All exports are saved to \`exports_dir\` (the \`exports/\` folder inside the ses
 > Phase 3 output — substitute them with those values. The source HTML filename depends on
 > content type: slides → \`deck.html\`, document → \`document.html\`, social → \`social.html\`.
 
-### PDF
+### All formats at once (preferred)
+
+Reads session state from the session directory, discovers HTML files, and exports all
+applicable formats (PDF + PPTX for slides, PDF for documents) in a single command.
+The preview server must be running.
+
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/all.js]] \\
+  --session <session_dir>
+\`\`\`
+
+Requires: \`npm install pdf-lib pptxgenjs playwright\` + \`npx playwright install chromium\`
+
+### PDF (individual)
 \`\`\`bash
 node \${CLAUDE_SKILL_DIR}[[/scripts/export/pdf.js]] \\
   --input <screen_dir>/<output-file>.html \\
