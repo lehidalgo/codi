@@ -102,9 +102,11 @@ const frameTemplate    = fs.readFileSync(path.join(__dirname, 'frame-template.ht
 const helperScript     = fs.readFileSync(path.join(__dirname, 'helper.js'), 'utf-8');
 const previewShell     = fs.readFileSync(path.join(__dirname, 'preview-shell.js'), 'utf-8');
 const html2canvasLib   = fs.readFileSync(path.join(__dirname, 'vendor', 'html2canvas.min.js'), 'utf-8');
+const jszipLib         = fs.readFileSync(path.join(__dirname, 'vendor', 'jszip.min.js'), 'utf-8');
 
 // Bundle injected into every content page: export tools + live-reload
 const scriptBundle = [
+  '<script>' + jszipLib        + '</script>',
   '<script>' + html2canvasLib  + '</script>',
   '<script>' + previewShell    + '</script>',
   '<script>' + helperScript    + '</script>',

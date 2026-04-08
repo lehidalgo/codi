@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Docs nav link** — marketing site nav includes a "Docs" link pointing to `/codi/docs/`
 - **Artifact Catalog card** on docs index alongside Getting Started, CLI Reference, Configuration, and API Reference
 
+### Changed
+
+- **Export All PNGs bundles a ZIP** — "Export All PNGs" in the BBVA brand preview shell now downloads a single `cards.zip` / `slides.zip` / `pages.zip` instead of triggering individual per-file downloads; JSZip 3.10.1 vendored in `scripts/vendor/jszip.min.js` and injected by `server.cjs`
+
 ### Fixed
 
 - **BBVA logo invisible in PNG exports** — `preview-shell.js` now pre-renders each SVG to a data-URI image with computed fills inlined as attributes, hides SVGs during html2canvas capture, then composites them onto a fresh canvas; fixes CSS-only fills (e.g. `.slide__logo path { fill:#001391 }`) being stripped by html2canvas for all content types (slides, documents, social cards)
