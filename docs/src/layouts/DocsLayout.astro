@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import '../../../site/style.css';
+import '../../../site/style-docs.css';
 
 interface Props {
   title: string;
@@ -90,7 +91,6 @@ function docLabel(doc: DocEntry): string {
         <a href={`${siteRoot}#who`}>Solo &amp; Teams</a>
         <a href={`${siteRoot}#quickstart`}>Quick Start</a>
         <a href={base} class="docs-tab-active">Docs</a>
-        <a href={`${base}catalog/`}>Catalog</a>
         <a href="https://github.com/lehidalgo/codi" target="_blank" rel="noopener">GitHub</a>
         <a href={`${siteRoot}#quickstart`} class="btn-primary">Install</a>
       </div>

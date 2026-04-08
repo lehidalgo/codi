@@ -44,7 +44,7 @@
     "docs:dev": "astro dev",
     "docs:build": "node dist/cli.js docs --catalog && typedoc && astro build",
     "docs:check": "astro check",
-    "docs:preview": "astro preview"
+    "docs:preview": "node preview-server.mjs"
   },
   "engines": {
     "node": ">=20"

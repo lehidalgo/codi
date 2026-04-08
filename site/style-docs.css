@@ -89,7 +89,7 @@
   font-size: 0.95rem;
 }
 .docs-content a { color: var(--c0); }
-.docs-content a:hover { text-decoration: underline; }
+.docs-content a:hover { text-decoration: none; }
 .docs-content hr { border: none; border-top: 1px solid var(--border); margin: 44px 0; }
 
 .docs-content pre {

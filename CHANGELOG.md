@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Artifact Catalog docs site** — 123 built-in artifacts (67 skills, 28 rules, 22 agents, 6 presets) browsable at `/docs/catalog/` with type tabs, category chips, compatibility filters, search, and individual markdown-rendered artifact pages
+- **`codi docs --catalog` command** — generates per-artifact markdown pages into `docs/src/content/docs/catalog/` and a `docs/generated/catalog-meta.json` index; runs automatically as part of `docs:build`
+- **Full-site preview server** (`preview-server.mjs`) — `npm run docs:preview` now serves the marketing site and docs together at `localhost:4321/codi/` so all navigation links work locally
+- **Docs nav link** — marketing site nav includes a "Docs" link pointing to `/codi/docs/`
+- **Artifact Catalog card** on docs index alongside Getting Started, CLI Reference, Configuration, and API Reference
+
+### Fixed
+
+- **Docs layout CSS missing** — `DocsLayout.astro` now imports `style-docs.css`; docs pages were previously rendered without sidebar or content layout styles
+- **Link hover underline** — removed `text-decoration: underline` on hover across the entire docs site
+
 - **`branch-finish` skill** — deterministic branch completion workflow: verify tests, choose merge/PR/keep/discard, clean up worktrees
 - **`worktrees` skill** — evaluates isolation strategy (worktree vs simple branch) and sets up the workspace before plan execution
 - **`codi onboard` command** — prints a structured AI onboarding guide with the full artifact catalog (rules, skills, agents, presets) for the current installation
