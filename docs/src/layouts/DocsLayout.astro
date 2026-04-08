@@ -1,0 +1,163 @@
+---
+import { getCollection } from 'astro:content';
+import '../../../site/style.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+
+const base = import.meta.env.BASE_URL;          // always /codi/docs/
+const siteRoot = base.replace(/docs\/$/, '');  // always /codi/
+
+const allDocs = await getCollection('docs');
+
+const GROUP_LABELS: Record<string, string> = {
+  guides: 'Guides',
+  reference: 'Reference',
+  api: 'API Reference',
+};
+const GROUP_ORDER = ['guides', 'reference', 'api'];
+
+type DocEntry = (typeof allDocs)[number];
+const groups: Record<string, DocEntry[]> = {};
+
+for (const doc of allDocs) {
+  const topDir = doc.id.split('/')[0];
+  if (!GROUP_ORDER.includes(topDir)) continue;
+
+  // For api/ only show top-level files (api/readme, api/adapters, api/types, etc.)
+  // Skip deeply nested entries like api/core/config
+  if (topDir === 'api') {
+    const parts = doc.id.split('/');
+    // allow: api/README (1 level), api/adapters (1 level), api/core/config (2 levels is ok)
+    if (parts.length > 3) continue;
+  }
+
+  if (!groups[topDir]) groups[topDir] = [];
+  groups[topDir].push(doc);
+}
+
+for (const dir of GROUP_ORDER) {
+  groups[dir]?.sort((a, b) =>
+    (a.data.sidebar?.order ?? 99) - (b.data.sidebar?.order ?? 99)
+  );
+}
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '');
+
+function docHref(id: string) {
+  // TypeDoc generates README.md which maps to id "api/README"
+  // Astro lowercases entry ids from glob loader
+  const slug = id.toLowerCase().replace(/\/readme$/, '/overview');
+  return `${base}${slug}/`;
+}
+
+function isActive(id: string) {
+  const href = docHref(id).replace(/\/$/, '');
+  return currentPath === href;
+}
+
+function docLabel(doc: DocEntry): string {
+  if (doc.data.sidebar?.label) return doc.data.sidebar.label;
+  if (doc.data.title) return doc.data.title;
+  const name = doc.id.split('/').pop() ?? doc.id;
+  return name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, ' ');
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — Codi</title>
+  {description && <meta name="description" content={description} />}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <nav id="nav">
+    <div class="nav-inner">
+      <a href={siteRoot} class="logo">codi</a>
+      <div class="nav-links" id="nav-links">
+        <a href={`${siteRoot}#features`}>Features</a>
+        <a href={`${siteRoot}#who`}>Solo &amp; Teams</a>
+        <a href={`${siteRoot}#quickstart`}>Quick Start</a>
+        <a href={base} class="docs-tab-active">Docs</a>
+        <a href="https://github.com/lehidalgo/codi" target="_blank" rel="noopener">GitHub</a>
+        <a href={`${siteRoot}#quickstart`} class="btn-primary">Install</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="docs-page">
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <nav aria-label="Documentation navigation">
+        {GROUP_ORDER.filter(g => groups[g]?.length).map(group => (
+          <div class="docs-nav-group">
+            <div class="docs-nav-label">{GROUP_LABELS[group]}</div>
+            {groups[group].map(doc => (
+              <a href={docHref(doc.id)} class={`docs-nav-link${isActive(doc.id) ? ' active' : ''}`}>
+                {docLabel(doc)}
+              </a>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </aside>
+
+    <main class="docs-main">
+      <article class="docs-content">
+        <slot />
+      </article>
+    </main>
+  </div>
+
+  <script>
+    // Nav scroll glow
+    const nav = document.getElementById('nav');
+    if (nav) {
+      window.addEventListener('scroll', () => {
+        nav.classList.toggle('scrolled', window.scrollY > 24);
+      }, { passive: true });
+    }
+
+    // Hamburger toggle
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links');
+    if (hamburger && navLinks) {
+      hamburger.addEventListener('click', () => {
+        const open = navLinks.classList.toggle('open');
+        hamburger.setAttribute('aria-expanded', String(open));
+      });
+    }
+
+    // Code copy buttons
+    document.querySelectorAll<HTMLElement>('.docs-content pre').forEach(pre => {
+      const code = pre.querySelector('code');
+      if (!code) return;
+      const btn = document.createElement('button');
+      btn.className = 'docs-copy-btn';
+      btn.title = 'Copy';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      pre.style.position = 'relative';
+      pre.appendChild(btn);
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(code.textContent ?? '').then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 1500);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

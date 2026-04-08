@@ -1,6 +1,18 @@
 import type { ResolvedFlags } from "../types/flags.js";
 import { DEFAULT_MAX_FILE_LINES } from "#src/constants.js";
 
+/**
+ * Render the active flag set as human-readable instruction lines.
+ *
+ * Each resolved flag that has a non-default value contributes one or more
+ * lines of plain-text instructions that are injected into the agent's
+ * instruction file under the "Permissions" section.
+ *
+ * The LOC limit line is always included regardless of flag state.
+ *
+ * @param flags - Fully resolved flags from the project configuration.
+ * @returns Newline-separated instruction string (may be empty if no flags active).
+ */
 export function buildFlagInstructions(flags: ResolvedFlags): string {
   const lines: string[] = [];
 
@@ -42,9 +54,7 @@ export function buildFlagInstructions(flags: ResolvedFlags): string {
     mcpFlag.value.every((v: unknown) => typeof v === "string") &&
     mcpFlag.value.length > 0
   ) {
-    lines.push(
-      `Only use these MCP servers: ${(mcpFlag.value as string[]).join(", ")}.`,
-    );
+    lines.push(`Only use these MCP servers: ${(mcpFlag.value as string[]).join(", ")}.`);
   }
 
   const docsFlag = flags["require_documentation"];
@@ -59,9 +69,7 @@ export function buildFlagInstructions(flags: ResolvedFlags): string {
     langsFlag.value.every((v: unknown) => typeof v === "string") &&
     !(langsFlag.value as string[]).includes("*")
   ) {
-    lines.push(
-      `Only use these languages: ${(langsFlag.value as string[]).join(", ")}.`,
-    );
+    lines.push(`Only use these languages: ${(langsFlag.value as string[]).join(", ")}.`);
   }
 
   return lines.join("\n");

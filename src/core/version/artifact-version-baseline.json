@@ -125,11 +125,11 @@
   },
   "codi-dev-operations": {
     "version": 5,
-    "hash": "a2bccaeca8d4dea7cacc76eb5806648b6cd47dabf53f18025928581bc8a1879c"
+    "hash": "7a6e51586c802e76cfa2f9145053b30c5c3bc23e8e7454df519dbb934d116e58"
   },
   "codi-dev-e2e-testing": {
     "version": 10,
-    "hash": "3123b6bebf2ede07b718cae8f9958fbea24633c46fbf5c522e0a504e7b14a13c"
+    "hash": "fa478a22099e013ab9c47559d36bcce4f6f87a749f250f9ef2155746b33e06e4"
   },
   "codi-security-scan": {
     "version": 5,
@@ -164,8 +164,8 @@
     "hash": "30c98144c693a33948cfd8f319d3f13de14280cc2e6780c022c37f318c22f967"
   },
   "codi-skill-creator": {
-    "version": 11,
-    "hash": "eb3045aea6cc12dde0d41829cf18affff5dd2ba6ab69f3d26278c847ab051b52"
+    "version": 24,
+    "hash": "c3c2f95b752569748eaf459ad6bbd33feb3d1fb6c1a2563204232f1f2236b1ea"
   },
   "codi-rule-creator": {
     "version": 8,
@@ -190,10 +190,6 @@
   "codi-deck-engine": {
     "version": 8,
     "hash": "225067c1feff394874979179f7bc998e7c14b217115a7bc1979e68da622f4d87"
-  },
-  "codi-deck": {
-    "version": 8,
-    "hash": "5e443f61de5c605f8808e389a138e27961b8c909c8ea0c7f4115906ab00e4468"
   },
   "codi-doc-engine": {
     "version": 4,
@@ -268,8 +264,8 @@
     "hash": "94173a87f8c69151b85d53a0f0fddce8acef423366d5193129ee4ff4450e302e"
   },
   "codi-bbva-brand": {
-    "version": 18,
-    "hash": "b85878025e4fa8fa3dba74dd0fdc6fe96f3ffdb98fc7638698b55419be1869d5"
+    "version": 40,
+    "hash": "273bbedce218e66ad848f0a99efa706e5d3e7fb4fb4b843049df555694b47db2"
   },
   "codi-content-factory": {
     "version": 9,

@@ -5,7 +5,7 @@ interface SemverParts {
 }
 
 function parseSemver(version: string): SemverParts | null {
-  const cleaned = version.replace(/^v/, '');
+  const cleaned = version.replace(/^v/, "");
   const match = cleaned.match(/^(\d+)\.(\d+)\.(\d+)/);
   if (!match) return null;
   return {
@@ -21,10 +21,24 @@ function compareVersions(a: SemverParts, b: SemverParts): number {
   return a.patch - b.patch;
 }
 
+/**
+ * Check whether `current` satisfies the `required` version constraint.
+ *
+ * Supports two constraint forms:
+ * - `">=X.Y.Z"` — `current` must be greater than or equal to `X.Y.Z`.
+ * - `"X.Y.Z"` — `current` must be exactly `X.Y.Z`.
+ *
+ * Version strings may optionally be prefixed with `v` (e.g. `"v1.2.3"`).
+ *
+ * @param current - The installed version string (e.g. `"2.3.0"`).
+ * @param required - The required version constraint (e.g. `">=2.0.0"`).
+ * @returns `true` if `current` satisfies `required`, `false` if not or if
+ *   either string cannot be parsed as a semver triple.
+ */
 export function satisfiesVersion(current: string, required: string): boolean {
   const trimmed = required.trim();
 
-  if (trimmed.startsWith('>=')) {
+  if (trimmed.startsWith(">=")) {
     const reqParts = parseSemver(trimmed.slice(2).trim());
     const curParts = parseSemver(current);
     if (!reqParts || !curParts) return false;

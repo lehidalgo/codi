@@ -1,4 +1,25 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// Mock expensive template-hashing — full-pipeline tests cover the integration of
+// init/generate/clean/revert lifecycle, not hash-registry correctness.
+vi.mock("#src/core/version/template-hash-registry.js", () => ({
+  buildTemplateHashRegistry: vi.fn(() => ({
+    cliVersion: "0.0.0",
+    generatedAt: new Date().toISOString(),
+    templates: {},
+  })),
+  getTemplateFingerprint: vi.fn(() => undefined),
+  getAllFingerprints: vi.fn(() => []),
+  _resetRegistryCache: vi.fn(),
+}));
+vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
+  checkTemplateRegistry: vi.fn().mockReturnValue([]),
+}));
+
+// Integration tests do real I/O; under 150 parallel workers contention can
+// exceed the default 10s timeout.
+vi.setConfig({ testTimeout: 30_000 });
+
 import fs from "node:fs/promises";
 import path from "node:path";
 import { cleanupTmpDir } from "../helpers/fs.js";

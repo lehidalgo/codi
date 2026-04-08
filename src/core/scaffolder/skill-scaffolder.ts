@@ -25,14 +25,37 @@ version: 1
 
 1. First step...`;
 
+/** Options for {@link createSkill}. */
 export interface CreateSkillOptions {
+  /** Skill name in kebab-case (validated against {@link NAME_PATTERN_STRICT}). */
   name: string;
+  /** Absolute path to the `.codi/` configuration directory. */
   configDir: string;
+  /** Optional built-in skill template name to scaffold from instead of the default stub. */
   template?: string;
+  /**
+   * Copyright holder name written into the generated `LICENSE.txt`.
+   * Defaults to `"Contributors"`.
+   */
   copyrightHolder?: string;
+  /** When `true`, overwrite an existing `SKILL.md` without error. */
   force?: boolean;
 }
 
+/**
+ * Scaffold a new skill directory inside `<configDir>/skills/<name>/`.
+ *
+ * Creates `SKILL.md`, the standard subdirectory layout (`scripts/`,
+ * `references/`, `assets/`, `agents/`, `evals/`), an `evals/evals.json`
+ * stub, `.gitkeep` files, and a `LICENSE.txt`. When a built-in template is
+ * specified and it exports a `staticDir`, those static files are also copied
+ * into the new skill directory.
+ *
+ * @param options - Scaffolding options.
+ * @returns `ok(filePath)` with the absolute path of the created `SKILL.md`, or
+ *   `err(errors)` if validation fails, the directory is not writable, or the
+ *   skill already exists (when `force` is `false`).
+ */
 export async function createSkill(options: CreateSkillOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
@@ -187,13 +210,43 @@ async function scaffoldSkillSubdirs(
   return ok(skillDir);
 }
 
-const STATIC_SUBDIRS = ["assets", "evals", "references", "scripts", "agents"] as const;
+const STATIC_SUBDIRS = [
+  "assets",
+  "evals",
+  "references",
+  "scripts",
+  "agents",
+  "brand",
+  "generators",
+] as const;
 
 /**
  * Copy static files from the template's staticDir into the scaffolded skill directory.
+ * Copies root-level .md files (e.g. README.md) and all recognized subdirectories.
  * Removes .gitkeep from any subdir that receives real files.
  */
 async function copyStaticFiles(staticDir: string, skillDir: string): Promise<Result<string>> {
+  // Copy root-level .md files (README.md, etc.)
+  let rootEntries: string[];
+  try {
+    rootEntries = await fs.readdir(staticDir);
+  } catch {
+    rootEntries = [];
+  }
+
+  for (const file of rootEntries) {
+    if (!file.endsWith(".md")) continue;
+    const srcPath = path.join(staticDir, file);
+    const destPath = path.join(skillDir, file);
+    try {
+      const stat = await fs.stat(srcPath);
+      if (!stat.isFile()) continue;
+      await fs.copyFile(srcPath, destPath);
+    } catch (cause) {
+      return err([createError("E_PERMISSION_DENIED", { path: destPath }, cause as Error)]);
+    }
+  }
+
   for (const sub of STATIC_SUBDIRS) {
     const srcDir = path.join(staticDir, sub);
 
@@ -208,6 +261,12 @@ async function copyStaticFiles(staticDir: string, skillDir: string): Promise<Res
     if (realFiles.length === 0) continue;
 
     const destDir = path.join(skillDir, sub);
+
+    try {
+      await fs.mkdir(destDir, { recursive: true });
+    } catch (cause) {
+      return err([createError("E_PERMISSION_DENIED", { path: destDir }, cause as Error)]);
+    }
 
     for (const file of realFiles) {
       const srcPath = path.join(srcDir, file);

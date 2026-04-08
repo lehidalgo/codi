@@ -154,7 +154,7 @@ describe("runInitWizard", () => {
     expect(result!.configMode).toBe("custom");
     expect(result!.rules).toEqual([prefixedName("security")]);
     expect(result!.skills).toEqual([prefixedName("code-review")]);
-    expect(result!.preset).toBe(prefixedName("balanced"));
+    expect(result!.flagPreset).toBe(prefixedName("balanced"));
     expect(result!.versionPin).toBe(true);
   });
 

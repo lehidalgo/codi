@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - 'site/**'
-      - 'src/core/hooks/hook-registry.ts'
-      - 'src/core/hooks/hook-policy-templates.ts'
+      - 'docs/src/**'
+      - 'src/**'
+      - 'astro.config.mjs'
       - 'scripts/generate_site_stats.mjs'
       - 'package.json'
+      - 'tsconfig.json'
   workflow_dispatch:
 
 permissions:
@@ -31,8 +33,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Generate site stats from source
         run: node scripts/generate_site_stats.mjs
+      - name: Build Astro docs into site/docs/
+        run: npm run docs:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

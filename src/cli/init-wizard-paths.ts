@@ -622,7 +622,7 @@ export async function handleCustomPath(
           skills: skills!,
           agentTemplates: agentTpls!,
           mcpServers: mcpServers!,
-          preset: (preset ?? DEFAULT_PRESET) as string,
+          flagPreset: (preset ?? DEFAULT_PRESET) as string,
           versionPin: versionPin as boolean,
         };
       }

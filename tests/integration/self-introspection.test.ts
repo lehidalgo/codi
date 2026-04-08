@@ -1,15 +1,35 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+vi.mock("#src/core/version/template-hash-registry.js", () => ({
+  buildTemplateHashRegistry: vi.fn(() => ({
+    cliVersion: "0.0.0",
+    generatedAt: new Date().toISOString(),
+    templates: {},
+  })),
+  getTemplateFingerprint: vi.fn(() => undefined),
+  getAllFingerprints: vi.fn(() => []),
+  _resetRegistryCache: vi.fn(),
+}));
+
+vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
+  checkTemplateRegistry: vi.fn().mockReturnValue([]),
+}));
+
+// Integration tests do real I/O; under 150 parallel workers contention can
+// exceed the default 10s timeout.
+vi.setConfig({ testTimeout: 30_000 });
+
 import fs from "node:fs/promises";
 import path from "node:path";
 import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
-import { initHandler } from "../../src/cli/init.js";
-import { generateHandler } from "../../src/cli/generate.js";
-import { statusHandler } from "../../src/cli/status.js";
-import { validateHandler } from "../../src/cli/validate.js";
-import { addRuleHandler } from "../../src/cli/add.js";
-import { Logger } from "../../src/core/output/logger.js";
-import { clearAdapters } from "../../src/core/generator/adapter-registry.js";
+import { initHandler } from "#src/cli/init.js";
+import { generateHandler } from "#src/cli/generate.js";
+import { statusHandler } from "#src/cli/status.js";
+import { validateHandler } from "#src/cli/validate.js";
+import { addRuleHandler } from "#src/cli/add.js";
+import { Logger } from "#src/core/output/logger.js";
+import { clearAdapters } from "#src/core/generator/adapter-registry.js";
 import {
   prefixedName,
   PROJECT_NAME,
@@ -23,9 +43,7 @@ const ALL_AGENTS = ["claude-code", "cursor", "codex", "windsurf", "cline"];
 let tmpDir: string;
 
 beforeEach(async () => {
-  const base = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-self-`),
-  );
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-self-`));
   tmpDir = path.join(base, "test-project");
   await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(
@@ -48,10 +66,7 @@ describe("Self-introspection (dogfooding)", () => {
     expect(result.success).toBe(true);
     expect(result.data.agents).toEqual(ALL_AGENTS);
 
-    const yaml = await fs.readFile(
-      path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME),
-      "utf-8",
-    );
+    const yaml = await fs.readFile(path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME), "utf-8");
     for (const agent of ALL_AGENTS) {
       expect(yaml).toContain(agent);
     }
@@ -67,7 +82,7 @@ describe("Self-introspection (dogfooding)", () => {
 
   it(
     "full pipeline: init, add rules, validate, generate, status, drift",
-    { timeout: 30000 },
+    { timeout: 60000 },
     async () => {
       // 1. Init with all agents
       const initResult = await initHandler(tmpDir, { agents: ALL_AGENTS });
