@@ -1,6 +1,6 @@
 /*
  * RL3 AI Agency Brand Tokens — CSS Custom Properties
- * Auto-derived from brand/tokens.json v2
+ * Auto-derived from brand/tokens.json v1
  *
  * Usage: inline the full contents of this file into a <style> block in every
  * HTML output. Do NOT link it with <link href> — file:// protocol blocks external
@@ -19,7 +19,7 @@
 
 /* RL3 uses Google Fonts (Space Grotesk + Instrument Sans).                   */
 /* In generated HTML, add:                                                     */
-/*   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"> */
+/*   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"> */
 
 /* ── Dark Theme (RL3 default for presentations) ─────────────────────────── */
 
@@ -35,6 +35,10 @@
 
   --brand-font-headline: 'Space Grotesk', Arial, sans-serif;
   --brand-font-body:     'Instrument Sans', Arial, sans-serif;
+  --brand-font-mono:     'Space Mono', monospace;
+
+  /* RL3-specific */
+  --brand-divider-bg:    #111111;
 
   /* Slide geometry */
   --slide-w:            960px;
