@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **BBVA logo invisible in PNG exports** — `preview-shell.js` now pre-renders each SVG to a data-URI image with computed fills inlined as attributes, hides SVGs during html2canvas capture, then composites them onto a fresh canvas; fixes CSS-only fills (e.g. `.slide__logo path { fill:#001391 }`) being stripped by html2canvas for all content types (slides, documents, social cards)
+
 - **Docs layout CSS missing** — `DocsLayout.astro` now imports `style-docs.css`; docs pages were previously rendered without sidebar or content layout styles
 - **Link hover underline** — removed `text-decoration: underline` on hover across the entire docs site
 

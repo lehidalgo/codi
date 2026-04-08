@@ -24,12 +24,14 @@
     { label: "1200\xd7630 OG", w: 1200, h: 630 },
   ];
 
-  var STRIP_W = 68; // slides right-strip width (px)
+  var SLIDE_W = 1280; // slide reference width (px)
+  var SLIDE_H = 720; // slide reference height (px)
 
   var sidebarOpen = true;
   var sidebarEl = null;
   var bodyEl = null; // scrollable inner container
   var onReflow = null; // callback set by each mode to reflow content
+  var onSelectionChange = null; // callback fired when selectedPages changes
   var userZoom = 1; // user-controlled zoom multiplier (0.25 – 2.0)
   var selectedPages = new Set(); // pages/slides selected for scoped logo ops
 
@@ -151,17 +153,139 @@
   }
 
   // ── PNG export helpers ────────────────────────────────────────────────────────
+
+  // html2canvas clones the DOM before rendering and serialises SVGs as data-URI
+  // images — but this clone loses the page's stylesheets, so CSS-only fill/stroke
+  // colours (e.g. .logo path { fill:#001391 }) disappear.
+  //
+  // Fix: snapshot computed fill/stroke/opacity from every SVG child in the LIVE
+  // DOM (getComputedStyle only works there), then use the onclone callback to
+  // apply those values as explicit XML attributes in the cloned document before
+  // html2canvas serialises it.  No live-DOM mutation required.
+  // Pre-render one live SVG to an <img> with computed fills inlined as attributes.
+  // Strips style= and class= from the clone root so CSS positioning rules
+  // (e.g. position:absolute; left:85%) don't push content off-screen when the
+  // SVG is loaded as a standalone data-URI image.
+  function svgToImg(svg) {
+    return new Promise(function (resolve) {
+      var rect = svg.getBoundingClientRect();
+      var clone = svg.cloneNode(true);
+      clone.removeAttribute("class");
+      clone.removeAttribute("style");
+
+      // Render at export scale for crisp output
+      var rw = Math.round(rect.width * EXPORT_SCALE) || 100;
+      var rh = Math.round(rect.height * EXPORT_SCALE) || 100;
+      clone.setAttribute("width", rw);
+      clone.setAttribute("height", rh);
+
+      // Inline computed fill/stroke onto every descendant element
+      var livePaths = svg.querySelectorAll("*");
+      var clonePaths = clone.querySelectorAll("*");
+      livePaths.forEach(function (lp, i) {
+        var cp = clonePaths[i];
+        if (!cp) return;
+        var cs = window.getComputedStyle(lp);
+        if (cs.fill && cs.fill !== "none" && !cs.fill.startsWith("url")) {
+          cp.setAttribute("fill", cs.fill);
+          cp.style.fill = cs.fill;
+        }
+        if (cs.stroke && cs.stroke !== "none" && !cs.stroke.startsWith("url")) {
+          cp.setAttribute("stroke", cs.stroke);
+          cp.style.stroke = cs.stroke;
+        }
+        if (cs.opacity && cs.opacity !== "1") cp.setAttribute("opacity", cs.opacity);
+        if (cs.fillOpacity && cs.fillOpacity !== "1")
+          cp.setAttribute("fill-opacity", cs.fillOpacity);
+        if (cs.strokeOpacity && cs.strokeOpacity !== "1")
+          cp.setAttribute("stroke-opacity", cs.strokeOpacity);
+      });
+
+      var xml = new XMLSerializer().serializeToString(clone);
+      var uri = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+      var img = new Image();
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function () {
+        resolve(null);
+      };
+      img.src = uri;
+    });
+  }
+
+  // Capture target as a PNG canvas, compositing SVGs via data-URI images to
+  // preserve CSS-only fills that html2canvas strips when serializing SVGs.
   function capture(target, w, h) {
-    return html2canvas(target, {
-      scale: EXPORT_SCALE,
-      width: w,
-      height: h,
-      windowWidth: w,
-      windowHeight: h,
-      scrollX: 0,
-      scrollY: 0,
-      useCORS: true,
-      backgroundColor: null,
+    // Record each visible SVG's position relative to target BEFORE hiding
+    var targetRect = target.getBoundingClientRect();
+    var svgEntries = Array.from(target.querySelectorAll("svg"))
+      .filter(function (svg) {
+        var r = svg.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      })
+      .map(function (svg) {
+        var r = svg.getBoundingClientRect();
+        return {
+          svg: svg,
+          cx: (r.left - targetRect.left) * EXPORT_SCALE,
+          cy: (r.top - targetRect.top) * EXPORT_SCALE,
+          cw: r.width * EXPORT_SCALE,
+          ch: r.height * EXPORT_SCALE,
+        };
+      });
+
+    // Pre-render SVG images before hiding anything
+    return Promise.all(
+      svgEntries.map(function (e) {
+        return svgToImg(e.svg).then(function (img) {
+          e.img = img;
+          return e;
+        });
+      }),
+    ).then(function (entries) {
+      // Hide SVGs so html2canvas captures the slide/page background only
+      svgEntries.forEach(function (e) {
+        e.svg.style.visibility = "hidden";
+      });
+
+      return html2canvas(target, {
+        scale: EXPORT_SCALE,
+        width: w,
+        height: h,
+        windowWidth: w,
+        windowHeight: h,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      }).then(function (h2cCanvas) {
+        // Restore SVGs
+        svgEntries.forEach(function (e) {
+          e.svg.style.visibility = "";
+        });
+
+        // html2canvas returns a GPU-backed canvas that is read-only after render.
+        // Copy to a fresh CPU canvas so we can composite SVG images on top.
+        var fresh = document.createElement("canvas");
+        fresh.width = h2cCanvas.width;
+        fresh.height = h2cCanvas.height;
+        var ctx = fresh.getContext("2d");
+        ctx.drawImage(h2cCanvas, 0, 0);
+
+        // Composite each pre-rendered SVG image at the correct canvas coordinates
+        entries.forEach(function (e) {
+          if (e.img && e.cw > 0 && e.ch > 0) {
+            ctx.drawImage(e.img, e.cx, e.cy, e.cw, e.ch);
+          }
+        });
+
+        return fresh;
+      });
     });
   }
 
@@ -176,6 +300,40 @@
         resolve();
       }, "image/png");
     });
+  }
+
+  // Collect {canvas, name} entries and bundle into a single ZIP download.
+  // Falls back to sequential individual downloads if JSZip is unavailable.
+  function downloadAsZip(entries, zipName) {
+    if (typeof JSZip === "undefined") {
+      // Fallback: download individually
+      return entries.reduce(function (chain, entry) {
+        return chain.then(function () {
+          return download(entry.canvas, entry.name);
+        });
+      }, Promise.resolve());
+    }
+    var zip = new JSZip();
+    return Promise.all(
+      entries.map(function (entry) {
+        return new Promise(function (resolve) {
+          entry.canvas.toBlob(function (blob) {
+            zip.file(entry.name, blob);
+            resolve();
+          }, "image/png");
+        });
+      }),
+    )
+      .then(function () {
+        return zip.generateAsync({ type: "blob" });
+      })
+      .then(function (blob) {
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = zipName;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
   }
 
   function exportName(node, prefix) {
@@ -205,6 +363,7 @@
       selBtn.classList.toggle("cf-active", on);
       if (on) selectedPages.add(page);
       else selectedPages.delete(page);
+      if (onSelectionChange) onSelectionChange();
     });
 
     var expBtn = el("button", "cf-rail-btn");
@@ -222,74 +381,9 @@
     wrapper.appendChild(rail);
   }
 
-  // Builds a fixed right strip for slides with per-slide nav, select, and export.
-  function buildSlideStrip(slides) {
-    var strip = el("div", "cf-slide-strip");
-    document.body.appendChild(strip);
-    var navBtns = [];
-
-    slides.forEach(function (slide, i) {
-      var slot = el("div", "cf-strip-slot");
-
-      var topRow = el("div", "cf-strip-nav-row");
-
-      var navBtn = el("button", "cf-strip-nav");
-      navBtn.textContent = slide.dataset.index || String(i + 1).padStart(2, "0");
-      navBtn.title = "Go to slide " + (i + 1);
-      navBtn.addEventListener("click", function () {
-        slides.forEach(function (s, j) {
-          s.classList.toggle("active", j === i);
-        });
-        syncActive();
-      });
-      navBtns.push(navBtn);
-
-      var selBtn = el("button", "cf-strip-sel");
-      selBtn.innerHTML = "&#9643;"; // ▣
-      selBtn.title = "Select for logo controls";
-      selBtn.addEventListener("click", function () {
-        var on = selBtn.classList.toggle("cf-active");
-        if (on) selectedPages.add(slide);
-        else selectedPages.delete(slide);
-      });
-
-      topRow.appendChild(navBtn);
-      topRow.appendChild(selBtn);
-
-      var expBtn = el("button", "cf-strip-export");
-      expBtn.textContent = "PNG";
-      expBtn.title = "Export slide " + (i + 1) + " as PNG";
-      expBtn.addEventListener("click", function () {
-        expBtn.disabled = true;
-        exportSingleSlide(slide).then(function () {
-          expBtn.disabled = false;
-        });
-      });
-
-      slot.appendChild(topRow);
-      slot.appendChild(expBtn);
-      strip.appendChild(slot);
-    });
-
-    function syncActive() {
-      slides.forEach(function (s, i) {
-        navBtns[i].classList.toggle("cf-strip-active", s.classList.contains("active"));
-      });
-    }
-
-    // Keep strip in sync when the deck engine changes slides (keyboard, etc.)
-    if (typeof MutationObserver !== "undefined") {
-      var obs = new MutationObserver(syncActive);
-      slides.forEach(function (s) {
-        obs.observe(s, { attributes: true, attributeFilter: ["class"] });
-      });
-    }
-
-    syncActive();
-    return strip;
-  }
-
   // ── SLIDES MODE ───────────────────────────────────────────────────────────────
+  // Design: keep deck engine layout intact (one slide at a time, keyboard nav).
+  // Only shift .deck rightward past the sidebar. Prev/Next/Export live in the sidebar.
   function initSlides() {
     injectStyle(slidesCSS());
 
@@ -297,97 +391,168 @@
     var body = sb.body;
     var bar = sb.bar;
 
-    var sec = section("Slides");
-    sec.appendChild(btn("Export All PNGs", exportAllSlides));
-    body.appendChild(sec);
+    // Navigation row
+    var navSec = section("Navigation");
+    var rowDiv = el("div", "cf-scope-row");
+    rowDiv.appendChild(
+      btn("\u2190 Prev", function () {
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      }),
+    );
+    rowDiv.appendChild(
+      btn("Next \u2192", function () {
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      }),
+    );
+    navSec.appendChild(rowDiv);
+    body.appendChild(navSec);
+
+    // Export
+    var expSec = section("Export");
+    expSec.appendChild(btn("Export Current PNG", exportCurrentSlide));
+    expSec.appendChild(btn("Export All PNGs", exportAllSlides));
+    body.appendChild(expSec);
+
+    addZoomControl(body, function () {
+      fitSlideZoom();
+    });
+    addLogoControls(body);
 
     setSidebarVar(SIDEBAR_W);
 
-    var deck = document.querySelector(".deck");
-    var vp = document.querySelector(".deck__viewport");
-    if (deck) {
-      deck.style.cssText +=
-        ";position:fixed;top:0;left:var(--sidebar-w," +
-        SIDEBAR_W +
-        "px);right:" +
-        STRIP_W +
-        "px;bottom:0";
-    }
-
-    function applySlideZoom(z) {
-      if (!vp) return;
-      vp.style.transformOrigin = "center center";
-      vp.style.transform = z !== 1 ? "scale(" + z + ")" : "";
-    }
-
-    addZoomControl(body, applySlideZoom);
-    addLogoControls(body);
-
     onReflow = function (w) {
-      if (deck) deck.style.left = w + "px";
+      setSidebarVar(w);
+      fitSlideZoom();
     };
 
-    buildSlideStrip(Array.from(document.querySelectorAll(".slide")));
+    fitSlideZoom();
+    window.addEventListener("resize", fitSlideZoom);
+    addSlideRail();
 
     return bar;
   }
 
-  function getViewportSize() {
+  function fitSlideZoom() {
     var vp = document.querySelector(".deck__viewport");
-    if (!vp) return { w: 960, h: 540 };
-    var r = vp.getBoundingClientRect();
-    return { w: Math.round(r.width), h: Math.round(r.height), el: vp };
+    if (!vp) return;
+    vp.style.zoom = userZoom >= 0.999 && userZoom <= 1.001 ? "" : userZoom;
   }
 
-  function exportSingleSlide(slide) {
-    var vs = getViewportSize();
-    if (!vs.el) return Promise.resolve();
-    var active = document.querySelector(".slide.active");
-    var all = Array.from(document.querySelectorAll(".slide"));
-    all.forEach(function (s) {
-      s.classList.remove("active");
-    });
-    slide.classList.add("active");
-    return new Promise(function (resolve) {
-      requestAnimationFrame(function () {
-        capture(vs.el, vs.w, vs.h).then(function (canvas) {
-          all.forEach(function (s) {
-            s.classList.remove("active");
-          });
-          if (active) active.classList.add("active");
-          download(canvas, exportName(slide, "slide")).then(resolve);
+  // Fixed rail on the right edge of the viewport — tracks the active slide.
+  // Slides are position:absolute so they can't be wrapped like doc pages.
+  function addSlideRail() {
+    var rail = el("div", "cf-page-rail cf-slide-rail");
+    document.body.appendChild(rail);
+
+    function syncRail() {
+      var active = document.querySelector(".slide.active");
+      rail.innerHTML = "";
+      if (!active) return;
+
+      var selBtn = el("button", "cf-rail-btn");
+      selBtn.innerHTML = "&#9643;";
+      selBtn.title = "Select for logo controls";
+      selBtn.classList.toggle("cf-active", selectedPages.has(active));
+      selBtn.addEventListener("click", function () {
+        var on = !selectedPages.has(active);
+        if (on) selectedPages.add(active);
+        else selectedPages.delete(active);
+        selBtn.classList.toggle("cf-active", on);
+        if (onSelectionChange) onSelectionChange();
+      });
+
+      var expBtn = el("button", "cf-rail-btn");
+      expBtn.textContent = "PNG";
+      expBtn.title = "Export as PNG";
+      expBtn.addEventListener("click", function () {
+        expBtn.disabled = true;
+        exportCurrentSlide().then(function () {
+          expBtn.disabled = false;
         });
       });
+
+      rail.appendChild(selBtn);
+      rail.appendChild(expBtn);
+    }
+
+    // Observe active class changes on every slide
+    var observer = new MutationObserver(syncRail);
+    document.querySelectorAll(".slide").forEach(function (s) {
+      observer.observe(s, { attributes: true, attributeFilter: ["class"] });
+    });
+
+    syncRail();
+  }
+
+  // Forces .deck__viewport to SLIDE_W × SLIDE_H (no zoom), captures the slide
+  // element at design resolution, then restores the viewport to its previous state.
+  function captureSlideAtDesignSize(slide) {
+    var vp = document.querySelector(".deck__viewport");
+    if (!vp) return Promise.resolve(null);
+    var saved = {
+      zoom: vp.style.zoom,
+      width: vp.style.width,
+      height: vp.style.height,
+      maxWidth: vp.style.maxWidth,
+      maxHeight: vp.style.maxHeight,
+    };
+    vp.style.zoom = "";
+    vp.style.width = SLIDE_W + "px";
+    vp.style.height = SLIDE_H + "px";
+    vp.style.maxWidth = SLIDE_W + "px";
+    vp.style.maxHeight = SLIDE_H + "px";
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () {
+        capture(slide, SLIDE_W, SLIDE_H).then(function (canvas) {
+          vp.style.zoom = saved.zoom;
+          vp.style.width = saved.width;
+          vp.style.height = saved.height;
+          vp.style.maxWidth = saved.maxWidth;
+          vp.style.maxHeight = saved.maxHeight;
+          resolve(canvas);
+        });
+      });
+    });
+  }
+
+  function exportCurrentSlide() {
+    var slide = document.querySelector(".slide.active");
+    if (!slide) return Promise.resolve();
+    return captureSlideAtDesignSize(slide).then(function (canvas) {
+      if (canvas) return download(canvas, exportName(slide, "slide"));
     });
   }
 
   function exportAllSlides() {
-    var vs = getViewportSize();
-    if (!vs.el) return;
     var slides = Array.from(document.querySelectorAll(".slide"));
-    var active = document.querySelector(".slide.active");
+    var origActive = document.querySelector(".slide.active");
+    var entries = [];
     var i = 0;
+
+    function restore() {
+      slides.forEach(function (s) {
+        s.classList.remove("active");
+      });
+      if (origActive) origActive.classList.add("active");
+    }
+
     (function next() {
       if (i >= slides.length) {
-        slides.forEach(function (s) {
-          s.classList.remove("active");
-        });
-        if (active) active.classList.add("active");
+        restore();
+        downloadAsZip(entries, "slides.zip");
         return;
       }
-      var s = slides[i];
-      slides.forEach(function (x) {
-        x.classList.remove("active");
+      slides.forEach(function (s, j) {
+        s.classList.toggle("active", j === i);
       });
-      s.classList.add("active");
-      requestAnimationFrame(function () {
-        capture(vs.el, vs.w, vs.h).then(function (canvas) {
-          download(canvas, exportName(s, "slide")).then(function () {
-            i++;
-            setTimeout(next, EXPORT_DELAY_MS);
-          });
+      setTimeout(function () {
+        var cur = slides[i];
+        captureSlideAtDesignSize(cur).then(function (canvas) {
+          if (canvas) entries.push({ canvas: canvas, name: exportName(cur, "slide") });
+          i++;
+          setTimeout(next, EXPORT_DELAY_MS);
         });
-      });
+      }, 150);
     })();
   }
 
@@ -437,11 +602,15 @@
 
   function exportDocPage(page) {
     var origZoom = page.style.zoom;
+    var origOverflow = page.style.overflow;
     page.style.zoom = "";
+    page.style.overflow = "visible"; // ensure absolute logo is not clipped
     return new Promise(function (resolve) {
       requestAnimationFrame(function () {
-        capture(page, DOC_PAGE_W, page.scrollHeight).then(function (canvas) {
+        var h = Math.max(page.offsetHeight, page.scrollHeight);
+        capture(page, DOC_PAGE_W, h).then(function (canvas) {
           page.style.zoom = origZoom;
+          page.style.overflow = origOverflow;
           download(canvas, exportName(page, "page")).then(resolve);
         });
       });
@@ -449,13 +618,28 @@
   }
 
   function exportAllDocPages() {
-    var pages = Array.from(document.querySelectorAll(".doc-page")),
-      i = 0;
+    var pages = Array.from(document.querySelectorAll(".doc-page"));
+    var entries = [];
+    var i = 0;
     (function next() {
-      if (i >= pages.length) return;
-      exportDocPage(pages[i]).then(function () {
-        i++;
-        setTimeout(next, EXPORT_DELAY_MS);
+      if (i >= pages.length) {
+        downloadAsZip(entries, "pages.zip");
+        return;
+      }
+      var page = pages[i];
+      var origZoom = page.style.zoom;
+      var origOverflow = page.style.overflow;
+      page.style.zoom = "";
+      page.style.overflow = "visible";
+      requestAnimationFrame(function () {
+        var h = Math.max(page.offsetHeight, page.scrollHeight);
+        capture(page, DOC_PAGE_W, h).then(function (canvas) {
+          page.style.zoom = origZoom;
+          page.style.overflow = origOverflow;
+          entries.push({ canvas: canvas, name: exportName(page, "page") });
+          i++;
+          setTimeout(next, EXPORT_DELAY_MS);
+        });
       });
     })();
   }
@@ -557,13 +741,16 @@
 
   function exportCard(card, w, h) {
     var origZoom = card.style.zoom;
+    var origOverflow = card.style.overflow;
     card.style.zoom = "";
     card.style.width = w + "px";
     card.style.height = h + "px";
+    card.style.overflow = "visible"; // ensure absolute logo is not clipped
     return new Promise(function (resolve) {
       requestAnimationFrame(function () {
         capture(card, w, h).then(function (canvas) {
           card.style.zoom = origZoom;
+          card.style.overflow = origOverflow;
           download(canvas, exportName(card, "card")).then(resolve);
         });
       });
@@ -571,13 +758,29 @@
   }
 
   function exportAllCards(w, h) {
-    var cards = Array.from(document.querySelectorAll(".social-card")),
-      i = 0;
+    var cards = Array.from(document.querySelectorAll(".social-card"));
+    var entries = [];
+    var i = 0;
     (function next() {
-      if (i >= cards.length) return;
-      exportCard(cards[i], w, h).then(function () {
-        i++;
-        setTimeout(next, EXPORT_DELAY_MS);
+      if (i >= cards.length) {
+        downloadAsZip(entries, "cards.zip");
+        return;
+      }
+      var card = cards[i];
+      var origZoom = card.style.zoom;
+      var origOverflow = card.style.overflow;
+      card.style.zoom = "";
+      card.style.width = w + "px";
+      card.style.height = h + "px";
+      card.style.overflow = "visible";
+      requestAnimationFrame(function () {
+        capture(card, w, h).then(function (canvas) {
+          card.style.zoom = origZoom;
+          card.style.overflow = origOverflow;
+          entries.push({ canvas: canvas, name: exportName(card, "card") });
+          i++;
+          setTimeout(next, EXPORT_DELAY_MS);
+        });
       });
     })();
   }
@@ -721,8 +924,12 @@
     var allLogos = findLogos();
     if (!allLogos.length) return;
 
-    var first = allLogos[0];
+    // All page containers in the document
+    var allPages = Array.from(document.querySelectorAll(".doc-page,.slide,.social-card"));
+    if (!allPages.length) allPages = [document.body];
 
+    // Compute aspect ratio from first logo
+    var first = allLogos[0];
     var aspect = 0;
     if (first.tagName.toLowerCase() === "svg") {
       var vb = first.getAttribute("viewBox");
@@ -737,57 +944,46 @@
     if (!(aspect > 0)) aspect = 2;
 
     var formatH = getFormatHeight();
-    var sliderMax = Math.max(400, Math.round(formatH * 0.55));
-    var curH = Math.round(formatH * 0.07);
-    var curW = Math.round(curH * aspect);
-    var curX = 85;
-    var curY = 85;
-    var visible = true;
-    var logoScope = "all"; // "all" | "selected"
+    var defaultH = Math.round(formatH * 0.07);
+    var defaultW = Math.round(defaultH * aspect);
+    var defaultX = 85;
+    var defaultY = 85;
 
-    function getTargetLogos() {
-      if (logoScope === "all" || selectedPages.size === 0) return allLogos;
-      // Filter the globally-found allLogos to only those belonging to selected pages.
-      // This avoids re-running detection per page (which misses logos without data-role/class).
-      var result = allLogos.filter(function (l) {
-        var inSelected = false;
-        selectedPages.forEach(function (page) {
-          if (page.contains(l)) inSelected = true;
+    // ── Per-page state (WeakMap so pages can be GC'd)
+    var pageStates = new WeakMap();
+
+    function getState(page) {
+      if (!pageStates.has(page)) {
+        pageStates.set(page, {
+          h: defaultH,
+          w: defaultW,
+          x: defaultX,
+          y: defaultY,
+          visible: true,
         });
-        return inSelected;
-      });
-      return result.length ? result : allLogos;
+      }
+      return pageStates.get(page);
     }
 
-    function applySize() {
-      getTargetLogos().forEach(function (l) {
-        l.style.width = curW + "px";
-        l.style.height = curH + "px";
-      });
+    function getTargetPages() {
+      return selectedPages.size > 0 ? Array.from(selectedPages) : allPages;
     }
 
-    function applyPos() {
-      getTargetLogos().forEach(function (l) {
-        var page = l.closest(".slide, .doc-page, .social-card");
-        if (!page) return;
-
-        // Ensure the page container is positioned so % values resolve against it.
+    function applyToPage(page) {
+      var st = getState(page);
+      findLogosIn(page).forEach(function (l) {
+        l.style.display = st.visible ? "" : "none";
+        if (!st.visible) return;
+        l.style.width = st.w + "px";
+        l.style.height = st.h + "px";
         var cs = window.getComputedStyle(page).position;
         if (cs !== "relative" && cs !== "absolute" && cs !== "fixed") {
           page.style.position = "relative";
         }
-
-        // Reparent the logo to be a DIRECT child of the page container.
-        // This guarantees position:absolute anchors to the page, not to any
-        // intermediate container that may have its own CSS positioning
-        // (e.g. .cover-logo-wrap, .page-header, etc.).
-        if (l.parentNode !== page) {
-          page.appendChild(l);
-        }
-
+        if (l.parentNode !== page) page.appendChild(l);
         l.style.position = "absolute";
-        l.style.left = curX + "%";
-        l.style.top = curY + "%";
+        l.style.left = st.x + "%";
+        l.style.top = st.y + "%";
         l.style.right = "";
         l.style.bottom = "";
         l.style.zIndex = "10";
@@ -795,64 +991,112 @@
       });
     }
 
+    // ── Slider DOM refs (populated below, used by syncSlidersTo)
+    var sizeInp, sizeValLbl, xInp, xValLbl, yInp, yValLbl, toggleBtn, hintLbl;
+
+    function syncSlidersTo(page) {
+      var st = getState(page);
+      if (sizeInp) {
+        sizeInp.value = st.h;
+        sizeValLbl.textContent = st.h;
+      }
+      if (xInp) {
+        xInp.value = st.x;
+        xValLbl.textContent = st.x;
+      }
+      if (yInp) {
+        yInp.value = st.y;
+        yValLbl.textContent = st.y;
+      }
+      if (toggleBtn) {
+        toggleBtn.textContent = st.visible ? "Hide logo" : "Show logo";
+        toggleBtn.classList.toggle("cf-active", !st.visible);
+      }
+    }
+
+    function updateHint() {
+      if (!hintLbl) return;
+      hintLbl.textContent =
+        selectedPages.size === 0
+          ? "Applies to all"
+          : selectedPages.size === 1
+            ? "1 page selected"
+            : selectedPages.size + " pages selected";
+    }
+
+    // ── Register selection-change callback
+    onSelectionChange = function () {
+      updateHint();
+      if (selectedPages.size >= 1) {
+        // Sync sliders to the first selected page's stored state
+        syncSlidersTo(Array.from(selectedPages)[0]);
+      }
+      // When selection is cleared keep sliders at current values (next move = all pages)
+    };
+
+    // ── Build UI
     body.appendChild(sep());
     var sec = section("Logo");
 
-    // ── Scope toggle: All / Selected
-    var scopeRow = el("div", "cf-scope-row");
-    var allBtn = btn(
-      "All",
-      function () {
-        logoScope = "all";
-        allBtn.classList.add("cf-active");
-        selScopeBtn.classList.remove("cf-active");
-      },
-      true,
-    );
-    var selScopeBtn = btn("Selected", function () {
-      logoScope = "selected";
-      selScopeBtn.classList.add("cf-active");
-      allBtn.classList.remove("cf-active");
-    });
-    scopeRow.appendChild(allBtn);
-    scopeRow.appendChild(selScopeBtn);
-    sec.appendChild(scopeRow);
+    hintLbl = el("div", "cf-dim");
+    hintLbl.textContent = "Applies to all";
+    sec.appendChild(hintLbl);
 
-    // ── Visibility toggle
-    var toggleBtn = btn("Hide logo", function () {
-      visible = !visible;
-      getTargetLogos().forEach(function (l) {
-        l.style.display = visible ? "" : "none";
+    // Visibility toggle
+    toggleBtn = btn("Hide logo", function () {
+      var targets = getTargetPages();
+      var allVis = targets.every(function (p) {
+        return getState(p).visible;
       });
-      toggleBtn.textContent = visible ? "Hide logo" : "Show logo";
-      toggleBtn.classList.toggle("cf-active", !visible);
+      var next = !allVis;
+      targets.forEach(function (p) {
+        getState(p).visible = next;
+        applyToPage(p);
+      });
+      toggleBtn.textContent = next ? "Hide logo" : "Show logo";
+      toggleBtn.classList.toggle("cf-active", !next);
     });
     sec.appendChild(toggleBtn);
 
-    // ── Size / position sliders
-    sec.appendChild(
-      sliderRow("Size", curH, 10, sliderMax, function (v) {
-        curH = v;
-        curW = Math.round(v * aspect);
-        applySize();
-      }),
-    );
-    sec.appendChild(
-      sliderRow("X", curX, 0, 100, function (v) {
-        curX = v;
-        applyPos();
-      }),
-    );
-    sec.appendChild(
-      sliderRow("Y", curY, 0, 100, function (v) {
-        curY = v;
-        applyPos();
-      }),
-    );
+    // Size slider
+    var sizeRow = sliderRow("Size", defaultH, 10, 800, function (v) {
+      getTargetPages().forEach(function (p) {
+        var st = getState(p);
+        st.h = v;
+        st.w = Math.round(v * aspect);
+        applyToPage(p);
+      });
+    });
+    sizeInp = sizeRow.querySelector("input");
+    sizeValLbl = sizeRow.querySelector(".cf-slider-val");
+    sec.appendChild(sizeRow);
+
+    // X slider
+    var xRow = sliderRow("X", defaultX, 0, 100, function (v) {
+      getTargetPages().forEach(function (p) {
+        getState(p).x = v;
+        applyToPage(p);
+      });
+    });
+    xInp = xRow.querySelector("input");
+    xValLbl = xRow.querySelector(".cf-slider-val");
+    sec.appendChild(xRow);
+
+    // Y slider
+    var yRow = sliderRow("Y", defaultY, 0, 100, function (v) {
+      getTargetPages().forEach(function (p) {
+        getState(p).y = v;
+        applyToPage(p);
+      });
+    });
+    yInp = yRow.querySelector("input");
+    yValLbl = yRow.querySelector(".cf-slider-val");
+    sec.appendChild(yRow);
 
     body.appendChild(sec);
-    applySize();
-    applyPos();
+
+    // Apply initial defaults to all pages
+    allPages.forEach(applyToPage);
   }
 
   // ── CSS ───────────────────────────────────────────────────────────────────────
@@ -953,37 +1197,8 @@
       ".cf-rail-btn:hover{background:rgba(86,182,194,0.07);border-color:rgba(86,182,194,0.35);color:#e6edf3}",
       ".cf-rail-btn.cf-active{background:rgba(86,182,194,0.15);border-color:rgba(86,182,194,0.5);color:#56b6c2}",
       ".cf-rail-btn:disabled{opacity:.4;cursor:default}",
-      ".cf-page-selected>.doc-page,.cf-page-selected>.social-card" +
+      ".cf-page-selected>.doc-page,.cf-page-selected>.social-card,.cf-page-selected>.slide" +
         "{outline:2px solid #56b6c2;outline-offset:3px}",
-
-      // ── Slides right strip
-      ".cf-slide-strip{position:fixed;right:0;top:0;bottom:0;width:" +
-        STRIP_W +
-        "px;" +
-        "z-index:9900;background:#070a0f;border-left:1px solid rgba(255,255,255,0.06);" +
-        "display:flex;flex-direction:column;align-items:stretch;" +
-        "padding:8px 6px;gap:3px;overflow-y:auto;box-sizing:border-box}",
-      ".cf-strip-slot{display:flex;flex-direction:column;gap:3px;" +
-        "padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}",
-      ".cf-strip-nav-row{display:flex;gap:3px;align-items:stretch}",
-      ".cf-strip-nav{flex:1;padding:5px 0;border:1px solid rgba(255,255,255,0.06);" +
-        "border-radius:6px;background:#13181f;color:#8b949e;cursor:pointer;" +
-        "font-size:11px;font-variant-numeric:tabular-nums;text-align:center;" +
-        "transition:background .15s,border-color .15s}",
-      ".cf-strip-nav:hover{background:rgba(86,182,194,0.07);border-color:rgba(86,182,194,0.35);color:#e6edf3}",
-      ".cf-strip-nav.cf-strip-active{background:rgba(97,175,239,0.15);color:#61afef;" +
-        "border-color:rgba(97,175,239,0.4)}",
-      ".cf-strip-sel{width:22px;border:1px solid rgba(255,255,255,0.06);border-radius:5px;" +
-        "background:#13181f;color:#3d4450;cursor:pointer;font-size:11px;" +
-        "display:flex;align-items:center;justify-content:center;flex-shrink:0;" +
-        "transition:background .15s,border-color .15s}",
-      ".cf-strip-sel:hover{border-color:rgba(86,182,194,0.35);color:#8b949e}",
-      ".cf-strip-sel.cf-active{background:rgba(86,182,194,0.15);border-color:rgba(86,182,194,0.5);color:#56b6c2}",
-      ".cf-strip-export{width:100%;padding:4px 0;border:1px solid rgba(255,255,255,0.06);" +
-        "border-radius:6px;background:#13181f;color:#3d4450;cursor:pointer;" +
-        "font-size:10px;text-align:center;transition:background .15s,border-color .15s}",
-      ".cf-strip-export:hover{background:rgba(86,182,194,0.07);border-color:rgba(86,182,194,0.35);color:#56b6c2}",
-      ".cf-strip-export:disabled{opacity:.4;cursor:default}",
 
       // ── Responsive: auto-collapse on narrow screens
       "@media(max-width:640px){.cf-toolbar{width:" +
@@ -993,12 +1208,27 @@
         ".cf-brand-label{display:none}" +
         ".cf-header{padding:0;justify-content:center}" +
         ".cf-brand{justify-content:center}}",
-      "@media print{.cf-toolbar,.cf-slide-strip,.cf-page-rail{display:none!important}}",
+      "@media print{.cf-toolbar,.cf-page-rail{display:none!important}}",
     ].join("\n");
   }
 
   function slidesCSS() {
-    return baseCSS() + "\nbody{margin:0;overflow:hidden}";
+    // Minimal override: shift .deck rightward past the sidebar.
+    // The deck engine keeps its own layout (one slide, keyboard nav, centered viewport).
+    return (
+      baseCSS() +
+      "\n.deck{" +
+      "margin-left:var(--sidebar-w," +
+      SIDEBAR_W +
+      "px)!important;" +
+      "width:calc(100% - var(--sidebar-w," +
+      SIDEBAR_W +
+      "px))!important" +
+      "}" +
+      // Fixed rail anchored to the right edge, vertically centered on the viewport
+      "\n.cf-slide-rail{position:fixed;right:8px;top:50%;transform:translateY(-50%);" +
+      "z-index:9900;padding-top:0}"
+    );
   }
   function docCSS() {
     return baseCSS() + "\nbody{margin:0;overflow-y:auto}";
