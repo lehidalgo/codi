@@ -5,7 +5,7 @@
  * pptx.js — Brand HTML-to-PPTX export via Playwright + PptxGenJS
  *
  * Strategy per slide:
- *   1. Playwright renders at 960×540 (deviceScaleFactor=2 → 1920×1080 screenshot)
+ *   1. Playwright renders at 960×540 (deviceScaleFactor=3 → 2880×1620 screenshot)
  *   2. Text elements hidden before screenshot → screenshot = visual design only
  *      (backgrounds, gradients, shapes, SVG logos, brand decorations)
  *   3. Text extracted with getBoundingClientRect → editable PptxGenJS text overlay
@@ -119,8 +119,10 @@ async function activateSlide(page, idx) {
     slides.forEach((s, j) => {
       const active = j === i;
       s.classList.toggle("active", active);
+      // Preserve absolute layout — slides use position:absolute;inset:0 by design.
+      // position:relative would break the flex layout and misalign text bounding rects.
       s.style.cssText = active
-        ? "display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;"
+        ? "display:flex!important;flex-direction:column!important;visibility:visible!important;opacity:1!important;position:absolute!important;inset:0!important;"
         : "display:none!important;";
     });
 
@@ -247,11 +249,16 @@ function buildSlide(prs, imgBuf, textEls) {
     const x = pxToIn(el.x);
     const y = pxToIn(el.y);
     const w = pxToIn(el.w);
-    const h = pxToIn(el.h);
+    // 2× height buffer: prevents font-fallback overflow in PowerPoint.
+    // When the BBVA custom fonts are unavailable, PowerPoint substitutes a
+    // slightly wider/taller fallback, causing text to wrap and overflow into
+    // adjacent text boxes. shrinkText prevents the overflow; extra height
+    // gives the text room to wrap without clipping.
+    const h = pxToIn(el.h) * 2;
 
     // Skip out-of-bounds or degenerate boxes
     if (x < 0 || y < 0 || w < 0.05 || h < 0.05) continue;
-    if (x + w > W_IN + 0.2 || y + h > H_IN + 0.2) continue;
+    if (x + w > W_IN + 0.2) continue;
 
     const color = rgbToHex(el.color);
     const align =
@@ -269,6 +276,7 @@ function buildSlide(prs, imgBuf, textEls) {
       fontFace: el.fontFamily,
       valign: "top",
       wrap: true,
+      shrinkText: true,
       isTextBox: true,
     });
   }
@@ -307,7 +315,7 @@ async function main() {
   const page = await (
     await browser.newContext({
       viewport: { width: W_PX, height: H_PX },
-      deviceScaleFactor: 2, // 1920×1080 screenshots for sharpness
+      deviceScaleFactor: 3, // 2880×1620 HiDPI screenshots for sharpness
     })
   ).newPage();
 
