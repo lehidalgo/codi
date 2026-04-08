@@ -1,0 +1,538 @@
+---
+import DocsLayout from '../layouts/DocsLayout.astro';
+
+// catalog-meta.json is generated at build time by: node dist/cli.js docs --catalog
+// It lives outside the Astro srcDir so it is not copied as a public asset.
+import catalogMeta from '../../generated/catalog-meta.json';
+
+const base = import.meta.env.BASE_URL;
+
+interface CatalogArtifact {
+  type: 'skill' | 'rule' | 'agent' | 'preset';
+  name: string;
+  description: string;
+  slug: string;
+  category?: string;
+  userInvocable?: boolean;
+  compatibility?: string[];
+  tags?: string[];
+}
+
+interface CatalogMeta {
+  counts: { skills: number; rules: number; agents: number; presets: number; total: number };
+  categories: string[];
+  compatibilities: string[];
+  artifacts: CatalogArtifact[];
+}
+
+const meta = catalogMeta as CatalogMeta;
+const { counts, categories, compatibilities, artifacts } = meta;
+---
+
+<DocsLayout title="Artifact Catalog" description="Browse all Codi rules, skills, agents, and presets">
+
+  <div class="catalog-header">
+    <span class="section-label">Browse</span>
+    <h1>Artifact Catalog</h1>
+    <p class="catalog-subtitle">
+      {counts.total} artifacts — {counts.skills} skills, {counts.rules} rules,
+      {counts.agents} agents, {counts.presets} presets
+    </p>
+  </div>
+
+  <div class="catalog-controls">
+
+    <!-- Type tabs -->
+    <div class="type-tabs" role="tablist" aria-label="Filter by type">
+      <button class="type-tab active" data-type="all" role="tab" aria-selected="true">
+        All <span class="tab-count">{counts.total}</span>
+      </button>
+      <button class="type-tab" data-type="skill" role="tab" aria-selected="false">
+        Skills <span class="tab-count">{counts.skills}</span>
+      </button>
+      <button class="type-tab" data-type="rule" role="tab" aria-selected="false">
+        Rules <span class="tab-count">{counts.rules}</span>
+      </button>
+      <button class="type-tab" data-type="agent" role="tab" aria-selected="false">
+        Agents <span class="tab-count">{counts.agents}</span>
+      </button>
+      <button class="type-tab" data-type="preset" role="tab" aria-selected="false">
+        Presets <span class="tab-count">{counts.presets}</span>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-row">
+      <input
+        type="search"
+        id="catalog-search"
+        class="catalog-search"
+        placeholder="Search artifacts..."
+        aria-label="Search artifacts"
+      />
+    </div>
+
+    <!-- Category chips -->
+    <div class="filter-row" id="category-row">
+      <span class="filter-row-label">Category:</span>
+      {categories.map(cat => (
+        <button class="chip" data-filter="category" data-value={cat}>{cat}</button>
+      ))}
+    </div>
+
+    <!-- Compatibility chips -->
+    <div class="filter-row" id="compat-row">
+      <span class="filter-row-label">Works with:</span>
+      {compatibilities.map(compat => (
+        <button class="chip" data-filter="compat" data-value={compat}>{compat}</button>
+      ))}
+    </div>
+
+    <!-- User-invocable checkbox -->
+    <div class="filter-row" id="invocable-row">
+      <label class="invocable-label">
+        <input type="checkbox" id="invocable-check" />
+        User-invocable only
+      </label>
+    </div>
+
+  </div>
+
+  <!-- Results count -->
+  <p class="results-count" id="results-count">{counts.total} results</p>
+
+  <!-- Catalog grid -->
+  <div class="catalog-grid" id="catalog-grid">
+    {artifacts.map(artifact => (
+      <a
+        href={`${base}${artifact.slug}/`}
+        class="artifact-card"
+        data-type={artifact.type}
+        data-category={artifact.category ?? ''}
+        data-compat={(artifact.compatibility ?? []).join(',')}
+        data-invocable={artifact.userInvocable ? 'true' : 'false'}
+        data-name={artifact.name}
+        data-desc={artifact.description}
+      >
+        <div class="card-header">
+          <span class={`type-badge type-${artifact.type}`}>{artifact.type}</span>
+          {artifact.category && (
+            <span class="category-badge">{artifact.category}</span>
+          )}
+        </div>
+        <h3 class="card-name">{artifact.name}</h3>
+        <p class="card-desc">{artifact.description}</p>
+        {(artifact.compatibility ?? []).length > 0 && (
+          <div class="compat-row">
+            {(artifact.compatibility ?? []).map(c => (
+              <span class="compat-chip">{c}</span>
+            ))}
+          </div>
+        )}
+      </a>
+    ))}
+  </div>
+
+</DocsLayout>
+
+<style>
+  .catalog-header {
+    margin-bottom: 2rem;
+  }
+
+  .catalog-header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .catalog-subtitle {
+    color: var(--text-2);
+    font-size: 1rem;
+  }
+
+  .catalog-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--rl);
+  }
+
+  .type-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .type-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--r);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+
+  .type-tab:hover {
+    color: var(--text-1);
+    border-color: var(--border-a);
+  }
+
+  .type-tab.active {
+    color: var(--c0);
+    border-color: var(--border-a);
+    background: rgba(86, 182, 194, 0.08);
+  }
+
+  .tab-count {
+    font-size: 0.75rem;
+    color: var(--text-3);
+    background: var(--surface-3);
+    padding: 1px 6px;
+    border-radius: 99px;
+  }
+
+  .type-tab.active .tab-count {
+    background: rgba(86, 182, 194, 0.15);
+    color: var(--c0);
+  }
+
+  .search-row {
+    display: flex;
+  }
+
+  .catalog-search {
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .catalog-search::placeholder {
+    color: var(--text-3);
+  }
+
+  .catalog-search:focus {
+    border-color: var(--border-a);
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .filter-row-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-2);
+    margin-right: 0.25rem;
+    white-space: nowrap;
+  }
+
+  .chip {
+    padding: 0.3rem 0.7rem;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+
+  .chip:hover {
+    color: var(--text-1);
+    border-color: var(--border-a);
+  }
+
+  .chip.active {
+    color: var(--c0);
+    border-color: var(--border-a);
+    background: rgba(86, 182, 194, 0.08);
+  }
+
+  .invocable-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+
+  .invocable-label input[type="checkbox"] {
+    accent-color: var(--c0);
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+  }
+
+  .results-count {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    margin-bottom: 1rem;
+  }
+
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .artifact-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.1rem 1.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--rl);
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .artifact-card:hover {
+    border-color: var(--border-a);
+    background: var(--surface-2);
+    transform: translateY(-1px);
+  }
+
+  .artifact-card.hidden {
+    display: none;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .type-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+  }
+
+  .type-skill {
+    color: var(--c0);
+    border-color: rgba(86, 182, 194, 0.35);
+    background: rgba(86, 182, 194, 0.07);
+  }
+
+  .type-rule {
+    color: var(--yellow);
+    border-color: rgba(229, 192, 123, 0.35);
+    background: rgba(229, 192, 123, 0.07);
+  }
+
+  .type-agent {
+    color: var(--c1);
+    border-color: rgba(97, 175, 239, 0.35);
+    background: rgba(97, 175, 239, 0.07);
+  }
+
+  .type-preset {
+    color: var(--green);
+    border-color: rgba(152, 195, 121, 0.35);
+    background: rgba(152, 195, 121, 0.07);
+  }
+
+  .category-badge {
+    font-size: 0.7rem;
+    color: var(--text-2);
+    background: var(--surface-3);
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+
+  .card-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .card-desc {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  .compat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: auto;
+    padding-top: 0.4rem;
+  }
+
+  .compat-chip {
+    font-size: 0.68rem;
+    color: var(--text-3);
+    background: var(--surface-3);
+    padding: 1px 7px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+</style>
+
+<script>
+  const grid = document.getElementById('catalog-grid');
+  const resultsCount = document.getElementById('results-count');
+  const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
+  const invocableCheck = document.getElementById('invocable-check') as HTMLInputElement | null;
+  const categoryRow = document.getElementById('category-row');
+  const compatRow = document.getElementById('compat-row');
+  const invocableRow = document.getElementById('invocable-row');
+
+  let activeType = 'all';
+  const activeCategories = new Set<string>();
+  const activeCompats = new Set<string>();
+
+  function getCards(): HTMLElement[] {
+    if (!grid) return [];
+    return Array.from(grid.querySelectorAll<HTMLElement>('.artifact-card'));
+  }
+
+  function applyFilters(): void {
+    const query = searchInput?.value.toLowerCase().trim() ?? '';
+    const invocableOnly = invocableCheck?.checked ?? false;
+    const cards = getCards();
+    let visible = 0;
+
+    for (const card of cards) {
+      const type = card.dataset.type ?? '';
+      const category = card.dataset.category ?? '';
+      const compat = card.dataset.compat ?? '';
+      const invocable = card.dataset.invocable === 'true';
+      const name = card.dataset.name ?? '';
+      const desc = card.dataset.desc ?? '';
+
+      const compatList = compat ? compat.split(',') : [];
+
+      const matchesType = activeType === 'all' || type === activeType;
+      const matchesCategory =
+        activeCategories.size === 0 || activeCategories.has(category);
+      const matchesCompat =
+        activeCompats.size === 0 ||
+        [...activeCompats].some(c => compatList.includes(c));
+      const matchesInvocable = !invocableOnly || invocable;
+      const matchesSearch =
+        query === '' ||
+        name.toLowerCase().includes(query) ||
+        desc.toLowerCase().includes(query);
+
+      const show =
+        matchesType &&
+        matchesCategory &&
+        matchesCompat &&
+        matchesInvocable &&
+        matchesSearch;
+
+      card.classList.toggle('hidden', !show);
+      if (show) visible++;
+    }
+
+    if (resultsCount) {
+      resultsCount.textContent = `${visible} result${visible !== 1 ? 's' : ''}`;
+    }
+  }
+
+  function updateFilterRowVisibility(): void {
+    if (!categoryRow || !compatRow || !invocableRow) return;
+
+    const showCategory = activeType === 'all' || activeType === 'skill' || activeType === 'rule';
+    const showCompat = activeType === 'all' || activeType === 'skill' || activeType === 'agent';
+    const showInvocable = activeType === 'all' || activeType === 'skill';
+
+    categoryRow.style.display = showCategory ? '' : 'none';
+    compatRow.style.display = showCompat ? '' : 'none';
+    invocableRow.style.display = showInvocable ? '' : 'none';
+  }
+
+  // Type tab click
+  document.querySelectorAll<HTMLElement>('.type-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeType = tab.dataset.type ?? 'all';
+      document.querySelectorAll('.type-tab').forEach(t => {
+        t.classList.toggle('active', t === tab);
+        t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+      });
+      updateFilterRowVisibility();
+      applyFilters();
+    });
+  });
+
+  // Category chip click
+  document.querySelectorAll<HTMLElement>('[data-filter="category"]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const value = chip.dataset.value ?? '';
+      if (activeCategories.has(value)) {
+        activeCategories.delete(value);
+        chip.classList.remove('active');
+      } else {
+        activeCategories.add(value);
+        chip.classList.add('active');
+      }
+      applyFilters();
+    });
+  });
+
+  // Compat chip click
+  document.querySelectorAll<HTMLElement>('[data-filter="compat"]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const value = chip.dataset.value ?? '';
+      if (activeCompats.has(value)) {
+        activeCompats.delete(value);
+        chip.classList.remove('active');
+      } else {
+        activeCompats.add(value);
+        chip.classList.add('active');
+      }
+      applyFilters();
+    });
+  });
+
+  // Search
+  searchInput?.addEventListener('input', () => {
+    applyFilters();
+  });
+
+  // Invocable checkbox
+  invocableCheck?.addEventListener('change', () => {
+    applyFilters();
+  });
+</script>
