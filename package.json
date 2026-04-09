@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
