@@ -212,7 +212,7 @@ Create, list, install, export, validate, remove, and edit presets. Distribution 
 | | `skill` | Manage skills (evolve, export, stats) |
 | **Onboarding** | `onboard` | AI-guided setup — print catalog and playbook for coding agent |
 | **Community** | `contribute` | Share artifacts to any GitHub repo via PR or ZIP export; supports private repos and empty-repo bootstrapping |
-| | `docs` | Open documentation |
+| | `docs` | Open documentation; `--catalog` flag generates the full artifact catalog site |
 
 ---
 
@@ -263,6 +263,7 @@ Every hook Codi installs is described below. Language-specific hooks only activa
 |:-----|:------|:---------------|
 | File size check | pre-commit | Blocks files that exceed the configured line limit. Prevents large generated files, minified bundles, or accidentally committed binaries from entering the repo. |
 | Secret detection | pre-commit | Scans staged files for hardcoded API keys, tokens, and credentials using entropy analysis and pattern matching. Catches leaks before they reach GitHub where automated scanners index them within minutes. |
+| Staged junk check | pre-commit | Blocks OS noise files and build cache dirs (`.DS_Store`, `__pycache__`, `.pyc`, `Thumbs.db`, `.pytest_cache`, `.mypy_cache`, `.class`) from entering the repo. Prints the `git rm --cached` command needed to unstage them. |
 | Artifact validate | pre-commit | Runs `codi validate --ci` when `.codi/` files change. Ensures rules, skills, and agents stay valid after manual edits. |
 | Import depth check | pre-commit | Blocks `../../` deep relative imports in TypeScript/JavaScript files. Enforces path alias usage, which makes the codebase refactor-safe. |
 | Skill YAML validate | pre-commit | Validates YAML frontmatter in `SKILL.md` files. Catches malformed skill definitions before they break agent loading. |
@@ -273,7 +274,7 @@ Every hook Codi installs is described below. Language-specific hooks only activa
 
 | Hook | Stage | Condition | What it checks |
 |:-----|:------|:----------|:---------------|
-| Linting / formatting | pre-commit | Language detected | ESLint + Prettier (TS/JS), ruff (Python), gofmt (Go), cargo fmt (Rust), etc. Fixes style issues automatically and re-stages the result. |
+| Linting / formatting | pre-commit | Language detected | ESLint + Prettier (TS/JS), ruff (Python), gofmt (Go), cargo fmt (Rust), shellcheck (Shell), etc. Fixes style issues automatically and re-stages the result. |
 | Type checking | pre-commit | `type_checking` flag | Runs `tsc --noEmit`, `pyright`, or equivalent. Catches type errors before they reach CI. |
 | Security analysis | pre-commit | `security_scan` flag | bandit (Python), gosec (Go), brakeman (Ruby), phpcs-security (PHP). Flags dangerous code patterns. |
 | Test runner | pre-commit | `test_before_commit` flag | Runs the project test suite. Uses `test:pre-commit` script if defined in `package.json`/`pyproject.toml`, otherwise falls back to the default test command. |
