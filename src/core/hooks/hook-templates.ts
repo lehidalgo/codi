@@ -167,7 +167,7 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^src\\/templates\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
+const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^src\\/templates\\//, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {
@@ -468,12 +468,13 @@ import { execFileSync } from 'child_process';
 
 const ALLOWED_CATEGORIES = new Set([
   'ARCHITECTURE', 'AUDIT', 'GUIDE', 'REPORT', 'ROADMAP',
-  'RESEARCH', 'SECURITY', 'TESTING', 'BUSINESS', 'TECH', 'PLAN',
+  'RESEARCH', 'SECURITY', 'SPEC', 'TESTING', 'BUSINESS', 'TECH', 'PLAN',
+  'HANDOFF', 'REVIEW', 'CHANGELOG',
 ]);
 
-const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED']);
+const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site', 'generated']);
 const SKIP_FILES = new Set(['.DS_Store']);
-const VALID_PATTERN = /^(\\d{8})_(\\d{6})_\\[([A-Z]+)\\]_.+$/;
+const VALID_PATTERN = /^(\\d{8})_(?:\\d{4,6}_)?\\[?([A-Z]+)\\]?_.+$/;
 
 const staged = (() => {
   try {
@@ -509,7 +510,7 @@ for (const filePath of docFiles) {
     continue;
   }
 
-  const category = match[3];
+  const category = match[2];
   if (!ALLOWED_CATEGORIES.has(category)) {
     const allowed = [...ALLOWED_CATEGORIES].sort().join(', ');
     failures.push({ filePath, reason: \`Invalid category [\${category}]. Allowed: \${allowed}\` });

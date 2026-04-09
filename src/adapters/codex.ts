@@ -42,6 +42,12 @@ function toTomlBasicString(value: string): string {
   return JSON.stringify(value);
 }
 
+/**
+ * Adapter for Codex — OpenAI's coding agent.
+ *
+ * Detects presence of `AGENTS.md` or a `.agents/` directory.
+ * Generates `AGENTS.md` (primary instruction file) and `.codex/agents/`.
+ */
 export const codexAdapter: AgentAdapter = {
   id: "codex",
   name: "Codex",

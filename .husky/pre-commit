@@ -18,9 +18,6 @@ PYRIGHT=$(echo "$STAGED" | grep -E '\.(py)$' || true)
 BANDIT=$(echo "$STAGED" | grep -E '\.(py)$' || true)
 [ -n "$BANDIT" ] && printf '%s\n' $BANDIT | xargs bandit -c pyproject.toml -r
 # — global —
-[ -n "$STAGED" ] && node .git/hooks/codi-version-bump.mjs
-node -e "const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)" 2>/dev/null && npm run test:pre-commit || npm test
-pytest
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-secret-scan.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-file-size-check.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-artifact-validate.mjs
@@ -30,6 +27,9 @@ IMPORT_DEPTH_CHECK=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx|mts|mjs)$' || tr
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-skill-resource-check.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-template-wiring-check.mjs
 [ -n "$STAGED" ] && printf '%s\n' $STAGED | xargs node .git/hooks/codi-doc-naming-check.mjs
+[ -n "$STAGED" ] && node .git/hooks/codi-version-bump.mjs
+node -e "const p=require('./package.json');process.exit(p.scripts?.['test:pre-commit']?0:1)" 2>/dev/null && npm run test:pre-commit || npm test
+uv run pytest
 [ -n "$ESLINT" ] && printf '%s\n' $ESLINT | xargs git add || true
 [ -n "$PRETTIER" ] && printf '%s\n' $PRETTIER | xargs git add || true
 [ -n "$RUFF_CHECK" ] && printf '%s\n' $RUFF_CHECK | xargs git add || true

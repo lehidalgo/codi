@@ -61,7 +61,7 @@ interface InitData {
   agents: string[];
   stack: string[];
   generated: boolean;
-  preset: string;
+  preset?: string;
   rules: string[];
 }
 
@@ -142,7 +142,9 @@ export async function initHandler(
     (rawPreset
       ? (resolveArtifactName(rawPreset, getPresetNames() as string[]) ?? rawPreset)
       : undefined) ?? DEFAULT_PRESET;
-  let displayPresetName: string = presetName;
+  /** Set only when a named artifact preset was used (undefined for custom selection). */
+  let artifactPresetName: string | undefined;
+  let displayPresetName: string | undefined = presetName;
   let ruleTemplates: string[] = [];
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
@@ -180,8 +182,16 @@ export async function initHandler(
     }
 
     agentIds = wizardResult.agents;
-    presetName = wizardResult.preset;
-    displayPresetName = wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? presetName;
+    // Artifact preset: only set when a named preset was selected (not custom)
+    artifactPresetName = wizardResult.preset;
+    // Flag preset: used for flags.yaml configuration
+    presetName =
+      wizardResult.selectedPresetName ??
+      wizardResult.flagPreset ??
+      wizardResult.preset ??
+      presetName;
+    displayPresetName =
+      wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? artifactPresetName;
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 
@@ -199,7 +209,7 @@ export async function initHandler(
       await createProjectStructure(
         configDir,
         agentIds,
-        wizardResult.selectedPresetName ?? presetName,
+        presetName,
         wizardResult.versionPin,
         wizardResult.flags,
       );
@@ -307,6 +317,8 @@ export async function initHandler(
     }
 
     log.info(`Using agents: ${agentIds.join(", ")}`);
+    // Non-interactive always uses a named artifact preset
+    artifactPresetName = presetName;
     if (!isUpdate) {
       await createProjectStructure(configDir, agentIds, presetName, false);
     }
@@ -377,8 +389,8 @@ export async function initHandler(
     }
   }
 
-  // Record preset artifacts in state for drift detection
-  if (presetName) {
+  // Record preset artifacts in state for drift detection (only for named artifact presets)
+  if (artifactPresetName) {
     try {
       const stateManager = new StateManager(configDir, projectRoot);
       const now = new Date().toISOString();
@@ -391,7 +403,7 @@ export async function initHandler(
           artifactStates.push({
             path: path.relative(projectRoot, filePath),
             hash: hashContent(content),
-            preset: presetName,
+            preset: artifactPresetName,
             timestamp: now,
           });
         } catch {
@@ -405,7 +417,7 @@ export async function initHandler(
           artifactStates.push({
             path: path.relative(projectRoot, filePath),
             hash: hashContent(content),
-            preset: presetName,
+            preset: artifactPresetName,
             timestamp: now,
           });
         } catch {
@@ -419,7 +431,7 @@ export async function initHandler(
           artifactStates.push({
             path: path.relative(projectRoot, filePath),
             hash: hashContent(content),
-            preset: presetName,
+            preset: artifactPresetName,
             timestamp: now,
           });
         } catch {
@@ -444,11 +456,13 @@ export async function initHandler(
     isUpdate ? existingSelections : undefined,
   ).catch(() => log.warn("Artifact manifest sync failed; this is non-critical."));
 
-  // Record installed preset in lock file
-  if (presetName) {
-    await recordPresetLock(configDir, presetName, displayPresetName).catch(() =>
-      log.warn("Failed to write preset lock file; this is non-critical."),
-    );
+  // Record installed preset in lock file (only for named artifact presets, not custom selection)
+  if (artifactPresetName) {
+    await recordPresetLock(
+      configDir,
+      artifactPresetName,
+      displayPresetName ?? artifactPresetName,
+    ).catch(() => log.warn("Failed to write preset lock file; this is non-critical."));
   }
 
   let generated = importRegenerated;
@@ -561,7 +575,7 @@ export async function initHandler(
     const now = new Date().toISOString();
     await ledger.setInitialization({
       timestamp: now,
-      preset: displayPresetName,
+      preset: displayPresetName ?? presetName,
       agents: agentIds,
       stack,
       codiVersion: VERSION,
@@ -573,7 +587,7 @@ export async function initHandler(
       mcpServerTemplates.length > 0
     ) {
       await ledger.setActivePreset({
-        name: displayPresetName,
+        name: displayPresetName ?? presetName,
         installedAt: now,
         artifactSelection: {
           rules: ruleTemplates,

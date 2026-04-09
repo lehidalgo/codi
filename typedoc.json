@@ -1,0 +1,21 @@
+{
+  "entryPoints": [
+    "./src/types/index.ts",
+    "./src/schemas/index.ts",
+    "./src/adapters/index.ts",
+    "./src/core/config/index.ts",
+    "./src/constants.ts"
+  ],
+  "entryPointStrategy": "resolve",
+  "tsconfig": "./tsconfig.json",
+  "out": "./docs/src/content/docs/api",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-zod"],
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "outputFileStrategy": "modules",
+  "parametersFormat": "htmlTable",
+  "propertyMembersFormat": "htmlTable",
+  "useCodeBlocks": true,
+  "skipErrorChecking": true,
+  "readme": "none"
+}

@@ -1,16 +1,13 @@
 import { z } from "zod";
 import { MAX_NAME_LENGTH, NAME_PATTERN } from "../constants.js";
 
-export const FEEDBACK_AGENTS = [
-  "claude-code",
-  "codex",
-  "cursor",
-  "windsurf",
-  "cline",
-] as const;
+/** Agent ids that can be the source of skill feedback entries. */
+export const FEEDBACK_AGENTS = ["claude-code", "codex", "cursor", "windsurf", "cline"] as const;
 
+/** Possible outcomes of a skill execution: 'success', 'partial', or 'failure'. */
 export const FEEDBACK_OUTCOMES = ["success", "partial", "failure"] as const;
 
+/** Categories for classifying issues found during skill feedback collection. */
 export const ISSUE_CATEGORIES = [
   "trigger-miss",
   "trigger-false",
@@ -21,14 +18,37 @@ export const ISSUE_CATEGORIES = [
   "other",
 ] as const;
 
+/** Severity levels for skill feedback issues. */
 export const ISSUE_SEVERITIES = ["low", "medium", "high"] as const;
 
+/**
+ * Validates a single issue reported in skill feedback.
+ *
+ * Issues are structured observations about problems encountered during skill execution,
+ * used to drive skill evolution and improvement.
+ */
 export const FeedbackIssueSchema = z.object({
-  category: z.enum(ISSUE_CATEGORIES),
+  category: z
+    .enum(ISSUE_CATEGORIES)
+    .describe(
+      "Classification of this issue (e.g. 'missing-step', 'wrong-output', 'unclear-instructions').",
+    ),
   description: z.string().max(500),
-  severity: z.enum(ISSUE_SEVERITIES).default("medium"),
+  severity: z
+    .enum(ISSUE_SEVERITIES)
+    .default("medium")
+    .describe(
+      "How severely this issue impacts skill usability: 'critical', 'high', 'medium', or 'low'.",
+    ),
 });
 
+/**
+ * Validates a complete skill feedback entry stored in `.codi/feedback/`.
+ *
+ * Each entry records a single skill execution outcome with optional issues and
+ * improvement suggestions. Entries are used by `codi skill evolve` to propose
+ * targeted skill improvements.
+ */
 export const FeedbackEntrySchema = z.object({
   id: z.string().uuid(),
   skillName: z.string().regex(NAME_PATTERN).max(MAX_NAME_LENGTH),
@@ -48,6 +68,7 @@ export type IssueCategory = (typeof ISSUE_CATEGORIES)[number];
 
 // --- Rule observation feedback ---
 
+/** Categories for rule observation feedback entries. */
 export const RULE_OBSERVATION_CATEGORIES = [
   "new-pattern",
   "outdated-rule",
@@ -55,12 +76,20 @@ export const RULE_OBSERVATION_CATEGORIES = [
   "user-correction",
 ] as const;
 
+/** Sources that can generate rule observation feedback. */
 export const RULE_OBSERVATION_SOURCES = [
   "pattern-detection",
   "user-correction",
   "api-deprecation",
 ] as const;
 
+/**
+ * Validates a rule observation stored in `.codi/feedback/rules/`.
+ *
+ * Rule observations record patterns, corrections, or outdated practices noticed
+ * during coding sessions. They are reviewed by `codi refine-rules` to propose
+ * targeted rule improvements with human approval.
+ */
 export const RuleObservationSchema = z.object({
   id: z.string().uuid(),
   type: z.literal("rule-observation"),
@@ -76,6 +105,5 @@ export const RuleObservationSchema = z.object({
 });
 
 export type RuleObservation = z.infer<typeof RuleObservationSchema>;
-export type RuleObservationCategory =
-  (typeof RULE_OBSERVATION_CATEGORIES)[number];
+export type RuleObservationCategory = (typeof RULE_OBSERVATION_CATEGORIES)[number];
 export type RuleObservationSource = (typeof RULE_OBSERVATION_SOURCES)[number];

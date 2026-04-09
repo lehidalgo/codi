@@ -41,7 +41,6 @@ export async function validateGif(
 
   // Try sharp for GIF metadata
   try {
-    // @ts-expect-error sharp is a user-project dependency
     const sharp = (await import("sharp")).default;
     const metadata = await sharp(gifPath, { animated: true }).metadata();
     width = metadata.width ?? 0;
@@ -52,14 +51,10 @@ export async function validateGif(
     // Try identify (ImageMagick) as fallback
     try {
       const { execFileSync } = await import("node:child_process");
-      const output = execFileSync(
-        "identify",
-        ["-format", "%w %h %n %T\\n", gifPath],
-        {
-          encoding: "utf-8",
-          stdio: "pipe",
-        },
-      );
+      const output = execFileSync("identify", ["-format", "%w %h %n %T\\n", gifPath], {
+        encoding: "utf-8",
+        stdio: "pipe",
+      });
       const firstLine = output.trim().split("\n")[0];
       if (firstLine) {
         const parts = firstLine.split(/\s+/);
@@ -70,17 +65,13 @@ export async function validateGif(
       }
     } catch {
       if (verbose) {
-        console.error(
-          "Warning: Neither sharp nor ImageMagick available for GIF analysis.",
-        );
+        console.error("Warning: Neither sharp nor ImageMagick available for GIF analysis.");
       }
     }
   }
 
-  const totalDuration =
-    frameCount > 1 ? (durationMs * frameCount) / 1000 : null;
-  const fps =
-    totalDuration && totalDuration > 0 ? frameCount / totalDuration : null;
+  const totalDuration = frameCount > 1 ? (durationMs * frameCount) / 1000 : null;
+  const fps = totalDuration && totalDuration > 0 ? frameCount / totalDuration : null;
 
   // Validate dimensions
   let dimPass: boolean;
@@ -128,9 +119,7 @@ export async function validateGif(
         : `${sizeKb.toFixed(1)} KB`;
     console.log(`  Size: ${sizeStr}`);
 
-    const fpsStr = fps
-      ? ` @ ${fps.toFixed(1)} fps (${totalDuration!.toFixed(1)}s)`
-      : "";
+    const fpsStr = fps ? ` @ ${fps.toFixed(1)} fps (${totalDuration!.toFixed(1)}s)` : "";
     console.log(`  Frames: ${frameCount}${fpsStr}`);
 
     if (!dimPass) {
@@ -160,9 +149,7 @@ export async function isSlackReady(
 if (process.argv[1]?.endsWith("validators.ts")) {
   const gifPath = process.argv[2];
   if (!gifPath) {
-    console.error(
-      "Usage: npx tsx validators.ts <gif-path> [--emoji | --message] [--quiet]",
-    );
+    console.error("Usage: npx tsx validators.ts <gif-path> [--emoji | --message] [--quiet]");
     process.exit(1);
   }
 

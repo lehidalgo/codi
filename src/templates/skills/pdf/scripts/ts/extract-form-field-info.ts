@@ -22,10 +22,8 @@ interface FieldInfo {
 }
 
 export async function getFieldInfo(pdfPath: string): Promise<FieldInfo[]> {
-  // @ts-expect-error pdf-lib is a user-project dependency, not installed in codi
   const pdfLib = await import("pdf-lib");
-  const { PDFDocument, PDFCheckBox, PDFDropdown, PDFRadioGroup, PDFTextField } =
-    pdfLib;
+  const { PDFDocument, PDFCheckBox, PDFDropdown, PDFRadioGroup, PDFTextField } = pdfLib;
 
   const pdfBytes = readFileSync(pdfPath);
   const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
@@ -104,10 +102,7 @@ export async function getFieldInfo(pdfPath: string): Promise<FieldInfo[]> {
   return fieldInfoList;
 }
 
-export async function writeFieldInfo(
-  pdfPath: string,
-  jsonOutputPath: string,
-): Promise<void> {
+export async function writeFieldInfo(pdfPath: string, jsonOutputPath: string): Promise<void> {
   const fieldInfo = await getFieldInfo(pdfPath);
   writeFileSync(jsonOutputPath, JSON.stringify(fieldInfo, null, 2), "utf-8");
   console.log(`Wrote ${fieldInfo.length} fields to ${jsonOutputPath}`);
@@ -116,9 +111,7 @@ export async function writeFieldInfo(
 // CLI entry point
 if (process.argv[1]?.endsWith("extract-form-field-info.ts")) {
   if (process.argv.length !== 4) {
-    console.error(
-      "Usage: npx tsx extract-form-field-info.ts <input.pdf> <output.json>",
-    );
+    console.error("Usage: npx tsx extract-form-field-info.ts <input.pdf> <output.json>");
     process.exit(1);
   }
   await writeFieldInfo(process.argv[2]!, process.argv[3]!);

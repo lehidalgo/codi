@@ -6,7 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-04-09
+
 ### Added
+
+- **Artifact Catalog docs site** — 123 built-in artifacts (67 skills, 28 rules, 22 agents, 6 presets) browsable at `/docs/catalog/` with type tabs, category chips, compatibility filters, search, and individual markdown-rendered artifact pages
+- **`codi docs --catalog` command** — generates per-artifact markdown pages into `docs/src/content/docs/catalog/` and a `docs/generated/catalog-meta.json` index; runs automatically as part of `docs:build`
+- **Full-site preview server** (`preview-server.mjs`) — `npm run docs:preview` now serves the marketing site and docs together at `localhost:4321/codi/` so all navigation links work locally
+- **Docs nav link** — marketing site nav includes a "Docs" link pointing to `/codi/docs/`
+- **Artifact Catalog card** on docs index alongside Getting Started, CLI Reference, Configuration, and API Reference
+
+### Changed
+
+- **Unified preview server infra across brand skills** — `server.cjs`, `preview-shell.js`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`, and `vendor/` (html2canvas + JSZip) are now identical across all brand skills; only `generators/` templates and `brand/tokens.css` differ per brand
+- **`codi-brand` and `content-factory` gain full export stack** — added `scripts/export/` orchestrator with 5 lib modules (state, classify, neutralize, slides-pdf, doc-pdf), `pptx.js` fixes (`--url` flag, `textContent`, `shrinkText`), and `preview-shell.js` with 40% default zoom and logo controls
+- **`content-factory` migrated to server approach** — replaced legacy inline preview assets with the shared `scripts/` stack; `generators/` templates now use `.social-card` / `.doc-page` / `.deck` standard classes
+- **Export All PNGs bundles a ZIP** — brand preview shell downloads `cards.zip` / `slides.zip` / `pages.zip` instead of individual files; JSZip 3.10.1 vendored in `scripts/vendor/jszip.min.js`
+
+### Fixed
+
+- **SVG logo invisible in PNG exports** — `preview-shell.js` pre-renders SVG logos to data-URI images with computed fills inlined as attributes before html2canvas capture; fixes CSS-only fills being stripped for slides, documents, and social cards
+
+- **Docs layout CSS missing** — `DocsLayout.astro` now imports `style-docs.css`; docs pages were previously rendered without sidebar or content layout styles
+- **Link hover underline** — removed `text-decoration: underline` on hover across the entire docs site
 
 - **`branch-finish` skill** — deterministic branch completion workflow: verify tests, choose merge/PR/keep/discard, clean up worktrees
 - **`worktrees` skill** — evaluates isolation strategy (worktree vs simple branch) and sets up the workspace before plan execution

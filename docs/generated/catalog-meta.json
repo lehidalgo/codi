@@ -1,0 +1,1662 @@
+{
+  "generatedAt": "2026-04-08T18:20:24.791Z",
+  "counts": {
+    "skills": 65,
+    "rules": 28,
+    "agents": 22,
+    "presets": 6,
+    "total": 121
+  },
+  "categories": [
+    "Brand Identity",
+    "Code Quality",
+    "Codi Platform",
+    "Content Creation",
+    "Content Refinement",
+    "Creative and Design",
+    "Developer Tools",
+    "Developer Workflow",
+    "Document Generation",
+    "File Format Tools",
+    "Planning",
+    "Productivity",
+    "Testing",
+    "Workflow"
+  ],
+  "compatibilities": [
+    "claude-code",
+    "cline",
+    "codex",
+    "cursor",
+    "windsurf"
+  ],
+  "artifacts": [
+    {
+      "type": "skill",
+      "name": "codi-agent-creator",
+      "description": "Agent creation workflow. Use when the user asks to create, build, or define a specialized agent. Also activate when the user wants to add a code reviewer, security analyzer, test generator, or any autonomous worker role.",
+      "slug": "catalog/skills/codi-agent-creator",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-algorithmic-art",
+      "description": "Use when the user wants to create generative art, algorithmic art, flow fields, or particle systems using p5.js with seeded randomness. Creates original computational art with interactive parameter exploration.",
+      "slug": "catalog/skills/codi-algorithmic-art",
+      "category": "Creative and Design",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-artifact-contributor",
+      "description": "Use when contributing artifacts to GitHub or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation, ZIP export, and manual workflows. Also activate when the user says 'share my skill', 'contribute to Codi', or 'open a PR with my rule'.",
+      "slug": "catalog/skills/codi-artifact-contributor",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-audio-transcriber",
+      "description": "Use when transcribing audio or video files to text using OpenAI Whisper. Launches a local web interface with file upload, concurrent chunk processing, copy/download transcript, and optional Google Sheets output.",
+      "slug": "catalog/skills/codi-audio-transcriber",
+      "category": "Productivity",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-audit-fix",
+      "description": "Iterative audit-and-fix agent. Use when processing a list of items that each require evidence gathering, a fix proposal, and explicit user approval before implementation. Enforces strict one-item-at-a-time discipline with a commit per item. Use for code quality audits, security fix lists, migration checklists, linting backlogs, or any batch of items requiring individual evidence + approval.",
+      "slug": "catalog/skills/codi-audit-fix",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-brainstorming",
+      "description": "Design exploration before implementation. Use before starting any non-trivial feature, change, or document. Explores context, asks clarifying questions, proposes approaches, and produces an approved design spec before invoking any implementation skill.",
+      "slug": "catalog/skills/codi-brainstorming",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-branch-finish",
+      "description": "Development branch completion. Use when implementation is complete and the branch needs to be merged, submitted as a PR, kept, or discarded. Verifies tests, presents four deterministic options, and cleans up worktrees.",
+      "slug": "catalog/skills/codi-branch-finish",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-brand-identity",
+      "description": "Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.",
+      "slug": "catalog/skills/codi-brand-identity",
+      "category": "Brand Identity",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-canvas-design",
+      "description": "Use when the user asks to create a poster, visual art, or a static design piece as a .png or .pdf. Creates original visual designs through a two-step philosophy + canvas approach. Never copies existing artists' work.",
+      "slug": "catalog/skills/codi-canvas-design",
+      "category": "Creative and Design",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-claude-api",
+      "description": "Build apps with the Claude API or Anthropic SDK. TRIGGER when code imports anthropic, @anthropic-ai/sdk, or claude_agent_sdk, or user asks to use Claude API. DO NOT TRIGGER for openai imports, general programming, or ML/data-science tasks.",
+      "slug": "catalog/skills/codi-claude-api",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-claude-artifacts-builder",
+      "description": "Use when the user needs a complex, multi-component claude.ai HTML artifact built with React, Tailwind CSS, and shadcn/ui. Do NOT activate for simple single-file HTML or JSX artifacts.",
+      "slug": "catalog/skills/codi-claude-artifacts-builder",
+      "category": "Creative and Design",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-code-review",
+      "description": "Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.",
+      "slug": "catalog/skills/codi-code-review",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-codebase-explore",
+      "description": "Explore and understand the codebase using the code graph. Use when exploring structure, tracing dependencies, finding callers, or navigating unfamiliar code. Also activate before refactoring or when asked how something works.",
+      "slug": "catalog/skills/codi-codebase-explore",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-codebase-onboarding",
+      "description": "Codebase onboarding workflow. Use when exploring an unfamiliar project or creating an onboarding guide. Analyzes architecture, conventions, and key files to produce a concise guide for new team members or AI agents.",
+      "slug": "catalog/skills/codi-codebase-onboarding",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-codi-brand",
+      "description": "Apply Codi brand identity to any content creation task. Use when creating branded materials for the Codi product — landing pages, marketing copy, presentations, documents, social posts, or any visual/written deliverable that needs Codi branding. Also activate when the user mentions 'codi brand', 'codi design system', or asks for Codi-branded output.",
+      "slug": "catalog/skills/codi-codi-brand",
+      "category": "Brand Identity",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-commit",
+      "description": "Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code, creating a commit, or fixing a pre-commit hook failure. Also activate on /commit.",
+      "slug": "catalog/skills/codi-commit",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-compare-preset",
+      "description": "Compare local Codi artifacts against upstream templates. Use when checking customizations, reviewing upstream updates, or preparing to contribute improvements. Also activate on /codi-compare-preset.",
+      "slug": "catalog/skills/codi-compare-preset",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-content-factory",
+      "description": "Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with interactive browser preview and PNG export.",
+      "slug": "catalog/skills/codi-content-factory",
+      "category": "Content Creation",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-daily-log",
+      "description": "Resume daily work context or log today's work summary. Use when starting a new session, checking what was worked on, or recording end-of-day progress. Also activate on /open_day or /close_day.",
+      "slug": "catalog/skills/codi-daily-log",
+      "category": "Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-debugging",
+      "description": "First-line debugging with root cause analysis. Use when investigating bugs, test failures, unexpected behavior, or build failures. Enforces root cause before any fix. Also activate on /codi-check or when stuck on an error.",
+      "slug": "catalog/skills/codi-debugging",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-deck-engine",
+      "description": "HTML slide deck generator with brand token integration. Use when the user needs a self-contained HTML presentation with navigation, animations, and PDF export. Also activate for pitch decks or technical presentations needing brand tokens.",
+      "slug": "catalog/skills/codi-deck-engine",
+      "category": "Document Generation",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-dev-docs-manager",
+      "description": "Codi self-documentation skill. Use when building, updating, or checking Codi docs. Also activate for stale documentation, docs site builds, or skill catalog HTML generation.",
+      "slug": "catalog/skills/codi-dev-docs-manager",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-dev-e2e-testing",
+      "description": "End-to-end validation of the codi installation. Use when asked to test or audit the full codi feature set — artifacts, presets, hooks, verification, and commit workflow — in a clean test project.",
+      "slug": "catalog/skills/codi-dev-e2e-testing",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-dev-operations",
+      "description": "Unified codi operations skill. Use when managing rules, skills, agents, configuration, verification, or troubleshooting codi setup.",
+      "slug": "catalog/skills/codi-dev-operations",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-diagnostics",
+      "description": "MCP-powered diagnosis for escalated errors. Use when standard debugging has not resolved the issue, or when structured MCP analysis is needed. Not the first-line debugging tool — start with codi-debugging.",
+      "slug": "catalog/skills/codi-diagnostics",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-doc-engine",
+      "description": "Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with Codi brand artifacts.",
+      "slug": "catalog/skills/codi-doc-engine",
+      "category": "Document Generation",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-docx",
+      "description": "Use when creating, editing, or working with Word documents (.docx). Also activate when extracting content, adding tracked changes, comments, or images, or producing reports, memos, and letters as .docx. Do NOT activate for PDFs or spreadsheets.",
+      "slug": "catalog/skills/codi-docx",
+      "category": "File Format Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-evidence-gathering",
+      "description": "Structured investigation before proposing changes. Use when you need to gather concrete evidence about actual vs intended behavior before suggesting a fix, evaluating an audit item, or validating a step. Called by guided-execution and audit-fix, but also usable standalone for any \"investigate X before we change it\" task.",
+      "slug": "catalog/skills/codi-evidence-gathering",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-frontend-design",
+      "description": "Use when the user asks to build web components, pages, or UI interfaces. Also activate when styling or beautifying any web application. Generates distinctive, production-grade frontends and avoids generic AI aesthetics.",
+      "slug": "catalog/skills/codi-frontend-design",
+      "category": "Creative and Design",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-graph-sync",
+      "description": "Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Choose full re-index for major changes or incremental update for recent edits.",
+      "slug": "catalog/skills/codi-graph-sync",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-guided-execution",
+      "description": "Collaborative step-by-step execution for first-time technical processes. Use when the user wants to perform a setup, configuration, infrastructure task, deployment, or operational workflow for the first time and needs structured guidance with documentation at each step. Agent and user work as a team: agent reasons, plans, and executes what it can; user performs actions that require credentials, browser access, or external systems.",
+      "slug": "catalog/skills/codi-guided-execution",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-guided-qa-testing",
+      "description": "Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Coding agent drives automatable phases, flags human-only phases, and tracks all results in a living QA report document.",
+      "slug": "catalog/skills/codi-guided-qa-testing",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-humanizer",
+      "description": "Remove AI writing patterns from generated content. Use when text sounds robotic, formulaic, or AI-generated. Applies a two-pass rewrite to eliminate documented AI tells. Also activate when the user wants text to sound more natural or less stiff.",
+      "slug": "catalog/skills/codi-humanizer",
+      "category": "Content Refinement",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-internal-comms",
+      "description": "Use when the user needs to write internal communications such as status reports, 3P updates, leadership updates, newsletters, FAQs, or incident reports.",
+      "slug": "catalog/skills/codi-internal-comms",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-mcp-ops",
+      "description": "MCP (Model Context Protocol) operations. Use when setting up, calling, debugging, or building MCP servers. Also activate when the user mentions mcp.yaml, MCP tools, Model Context Protocol, or connecting external APIs to Claude agents.",
+      "slug": "catalog/skills/codi-mcp-ops",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-mobile-development",
+      "description": "Mobile development for iOS (SwiftUI/UIKit), Android (Jetpack Compose), and cross-platform (React Native, Flutter, KMP). Use when building, reviewing, or architecting mobile apps. Also activate for mobile testing, accessibility, or store guidelines.",
+      "slug": "catalog/skills/codi-mobile-development",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-notebooklm",
+      "description": "Google NotebookLM research assistant with browser automation. Use when the user wants to query NotebookLM notebooks, manage a notebook library, authenticate with Google, generate Audio Overviews (podcasts), or get source-grounded answers from uploaded documents. Also activate when the user mentions NotebookLM, shares a NotebookLM URL, or uses phrases like \"ask my docs\", \"check my notebook\", \"query my documentation\".",
+      "slug": "catalog/skills/codi-notebooklm",
+      "category": "Productivity",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-pdf",
+      "description": "Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.",
+      "slug": "catalog/skills/codi-pdf",
+      "category": "File Format Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-plan-executor",
+      "description": "Sequential plan execution with checkpoints. Use after codi-plan-writer when subagent orchestration is not preferred. Executes tasks inline with mandatory verification at each step. Use codi-subagent-dev instead when subagents are available.",
+      "slug": "catalog/skills/codi-plan-executor",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-plan-writer",
+      "description": "Implementation plan generator. Use after brainstorming produces an approved design spec. Breaks the spec into atomic 2-5 minute TDD tasks with exact file paths, complete code, and verification commands. Produces an executable plan document.",
+      "slug": "catalog/skills/codi-plan-writer",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-pptx",
+      "description": "Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations.",
+      "slug": "catalog/skills/codi-pptx",
+      "category": "File Format Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-preset-creator",
+      "description": "Guided creation of Codi presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.",
+      "slug": "catalog/skills/codi-preset-creator",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-project-documentation",
+      "description": "Documentation creation and maintenance workflows. Use when writing docs, updating README, generating API docs, creating ADRs, drafting specs, proposals, or decision docs. Also activate when the user mentions writing or structured content authoring.",
+      "slug": "catalog/skills/codi-project-documentation",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-project-quality-guard",
+      "description": "Use when setting up a new project, auditing project quality infrastructure, or checking for missing CI/CD, pre-commit hooks, linting, testing, security scanning, Docker, or environment config.",
+      "slug": "catalog/skills/codi-project-quality-guard",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-refactoring",
+      "description": "Safe dead code removal and refactoring workflow. Use when removing unused code, consolidating duplicates, or simplifying a module without changing behavior. Classifies safety level and verifies tests after each deletion.",
+      "slug": "catalog/skills/codi-refactoring",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-refine-rules",
+      "description": "Review collected rule feedback and propose targeted improvements one at a time with human approval. Use when asked to improve rules, refine rules, or review rule feedback. Reads observations from .codi/feedback/rules/.",
+      "slug": "catalog/skills/codi-refine-rules",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-roadmap",
+      "description": "Create a structured roadmap or todo list as a JSON file in docs/roadmaps/. Use when planning features, tracking milestones, or organizing implementation phases. Also activate when the user says 'create a roadmap' or 'plan next steps'.",
+      "slug": "catalog/skills/codi-roadmap",
+      "category": "Planning",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-rule-creator",
+      "description": "Rule creation workflow. Use when the user asks to create, write, or define a coding rule, standard, or convention. Also activate when the user wants to enforce behavior, set constraints, or establish coding standards.",
+      "slug": "catalog/skills/codi-rule-creator",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-rule-feedback",
+      "description": "Background rule observation skill. Collects structured feedback about rules during coding sessions -- pattern detection, outdated practices, missing examples, and corrections. Writes observations to feedback/rules/ for review. Does NOT modify rules.",
+      "slug": "catalog/skills/codi-rule-feedback",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-security-scan",
+      "description": "Security analysis workflow. Use when the user wants to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.",
+      "slug": "catalog/skills/codi-security-scan",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-session-handoff",
+      "description": "Summarize the current session and prepare a handoff prompt for a new chat. Use when the context window is filling up, switching to a new conversation, or handing off work. Also activate on /session-handoff.",
+      "slug": "catalog/skills/codi-session-handoff",
+      "category": "Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-session-recovery",
+      "description": "Error recovery and session health skill. Activate when you have corrected your own mistakes 2 or more times in the current conversation. Produces a diagnostic report analyzing what went wrong, why, and how to prevent it.",
+      "slug": "catalog/skills/codi-session-recovery",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-skill-creator",
+      "description": "Skill creation, improvement, and migration workflow. Use when creating, building, or improving a skill. Also activate when the user mentions evals, skill testing, description optimization, skill packaging, or importing skills from external sources.",
+      "slug": "catalog/skills/codi-skill-creator",
+      "category": "Codi Platform",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-skill-feedback-reporter",
+      "description": "Internal meta-skill. Activates after completing a task that used a skill. Writes structured JSON feedback to .codi/feedback/ for skill health metrics. Not for direct user invocation — fires automatically after substantive skill usage.",
+      "slug": "catalog/skills/codi-skill-feedback-reporter",
+      "category": "Codi Platform",
+      "userInvocable": false,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-slack-gif-creator",
+      "description": "Use when the user wants to create animated GIFs optimized for Slack. Provides Slack size constraints, validation tools, easing functions, and animation concept guides.",
+      "slug": "catalog/skills/codi-slack-gif-creator",
+      "category": "Creative and Design",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-step-documenter",
+      "description": "Step completion document generator. Invoked after each validated step in a guided-execution workflow to produce a structured, reusable guide. Writes to docs/executions/<workflow-name>/. Also usable standalone to document a completed task retroactively.",
+      "slug": "catalog/skills/codi-step-documenter",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-subagent-dev",
+      "description": "Subagent-driven plan execution. Use after codi-plan-writer produces an implementation plan. Dispatches a fresh subagent per task with two-stage review. Recommended over codi-plan-executor for complex or multi-file tasks.",
+      "slug": "catalog/skills/codi-subagent-dev",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-tdd",
+      "description": "Test-Driven Development discipline. Use when implementing any feature, bug fix, refactor, or behavior change. Enforces RED-GREEN-REFACTOR with iron-law verification. Also activate when the user mentions writing tests, fixing a bug, or adding functionality.",
+      "slug": "catalog/skills/codi-tdd",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-test-coverage",
+      "description": "Test coverage analysis workflow. Use when measuring coverage, identifying gaps below 80% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.",
+      "slug": "catalog/skills/codi-test-coverage",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-test-run",
+      "description": "Detect and run the project test suite, then report results with failure diagnosis. Use when running tests, checking if tests pass, or diagnosing test failures. Also activate when the user says 'run tests' or 'are tests passing'.",
+      "slug": "catalog/skills/codi-test-run",
+      "category": "Testing",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-theme-factory",
+      "description": "Use when the user wants to apply a visual theme to slides, documents, HTML artifacts, or other deliverables. Provides 10 pre-set themes with color palettes and font pairings, or generates a custom theme on demand.",
+      "slug": "catalog/skills/codi-theme-factory",
+      "category": "Creative and Design",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-verification",
+      "description": "Verification before completion. Use before claiming any task is done, fixed, or passing. Requires fresh evidence — not assumptions. Activate when about to say work is complete, tests pass, or a bug is fixed.",
+      "slug": "catalog/skills/codi-verification",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-webapp-testing",
+      "description": "Use when the user wants to test, debug, or automate a local web application using Playwright. Supports verifying frontend functionality, capturing screenshots, and reading browser logs.",
+      "slug": "catalog/skills/codi-webapp-testing",
+      "category": "Code Quality",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-worktrees",
+      "description": "Git workspace setup for feature development. Use before executing an implementation plan. Evaluates whether a worktree or a simple branch is the right approach, then sets up the workspace accordingly.",
+      "slug": "catalog/skills/codi-worktrees",
+      "category": "Developer Workflow",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
+      "name": "codi-xlsx",
+      "description": "Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations.",
+      "slug": "catalog/skills/codi-xlsx",
+      "category": "File Format Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "rule",
+      "name": "codi-agent-usage",
+      "description": "Guidelines for spawning and managing sub-agents — when to use, best practices, parallel execution",
+      "slug": "catalog/rules/codi-agent-usage",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-api-design",
+      "description": "API design conventions, multi-protocol guidance, and schema-first development",
+      "slug": "catalog/rules/codi-api-design",
+      "priority": "medium",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-architecture",
+      "description": "Architecture guidelines, design patterns, and module boundaries",
+      "slug": "catalog/rules/codi-architecture",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-code-style",
+      "description": "Code style and formatting conventions",
+      "slug": "catalog/rules/codi-code-style",
+      "priority": "medium",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-csharp",
+      "description": "C# conventions — records, async patterns, LINQ, nullable types, testing",
+      "slug": "catalog/rules/codi-csharp",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-django",
+      "description": "Django conventions — fat models, QuerySet optimization, DRF serializers, migrations, testing",
+      "slug": "catalog/rules/codi-django",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-documentation",
+      "description": "Documentation standards and practices",
+      "slug": "catalog/rules/codi-documentation",
+      "priority": "medium",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-error-handling",
+      "description": "Error handling, resilience patterns, and observability integration",
+      "slug": "catalog/rules/codi-error-handling",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-git-workflow",
+      "description": "Git workflow and commit conventions",
+      "slug": "catalog/rules/codi-git-workflow",
+      "priority": "medium",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-golang",
+      "description": "Go conventions — error handling, interfaces, testing, concurrency patterns",
+      "slug": "catalog/rules/codi-golang",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-improvement-dev",
+      "description": "Continuous artifact improvement — observe patterns, propose rule/skill improvements with evidence, write to .codi/ with user approval",
+      "slug": "catalog/rules/codi-improvement-dev",
+      "priority": "low",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-java",
+      "description": "Java conventions — records, streams, Optional, testing, dependency injection",
+      "slug": "catalog/rules/codi-java",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-kotlin",
+      "description": "Kotlin conventions — null safety, sealed classes, coroutines, testing patterns",
+      "slug": "catalog/rules/codi-kotlin",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-nextjs",
+      "description": "Next.js App Router conventions — server components, ISR, route handlers, middleware, SEO",
+      "slug": "catalog/rules/codi-nextjs",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-output-discipline",
+      "description": "Token-efficient output — anti-sycophancy, concise responses, formatting safety, scope discipline",
+      "slug": "catalog/rules/codi-output-discipline",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-performance",
+      "description": "Performance optimization, Core Web Vitals, and observability-driven tuning",
+      "slug": "catalog/rules/codi-performance",
+      "priority": "medium",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-production-mindset",
+      "description": "Production-grade standards — no shortcuts, observability, reliability, safe deployments",
+      "slug": "catalog/rules/codi-production-mindset",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-python",
+      "description": "Python-specific conventions — typing, data models, testing, resource management",
+      "slug": "catalog/rules/codi-python",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-react",
+      "description": "React-specific conventions — components, hooks, state management, performance",
+      "slug": "catalog/rules/codi-react",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-rust",
+      "description": "Rust conventions — ownership, error handling, traits, testing patterns",
+      "slug": "catalog/rules/codi-rust",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-security",
+      "description": "Security best practices and vulnerability prevention",
+      "slug": "catalog/rules/codi-security",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-simplicity-first",
+      "description": "Simplicity-first development — avoid over-engineering, prefer direct solutions, minimize complexity",
+      "slug": "catalog/rules/codi-simplicity-first",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-spanish-orthography",
+      "description": "Spanish language orthography enforcement — accents, tildes, punctuation",
+      "slug": "catalog/rules/codi-spanish-orthography",
+      "priority": "low",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-spring-boot",
+      "description": "Spring Boot conventions — constructor injection, JPA, security, testing, error handling",
+      "slug": "catalog/rules/codi-spring-boot",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-swift",
+      "description": "Swift conventions — value types, protocols, concurrency, testing patterns",
+      "slug": "catalog/rules/codi-swift",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-testing",
+      "description": "Testing strategy, TDD workflow, and test infrastructure",
+      "slug": "catalog/rules/codi-testing",
+      "priority": "medium",
+      "alwaysApply": true
+    },
+    {
+      "type": "rule",
+      "name": "codi-typescript",
+      "description": "TypeScript-specific conventions — strict typing, immutability, async patterns",
+      "slug": "catalog/rules/codi-typescript",
+      "priority": "medium",
+      "alwaysApply": false
+    },
+    {
+      "type": "rule",
+      "name": "codi-workflow",
+      "description": "Human-in-the-loop workflow — baby steps, self-evaluation, MCP-first exploration, no unsolicited commits",
+      "slug": "catalog/rules/codi-workflow",
+      "priority": "high",
+      "alwaysApply": true
+    },
+    {
+      "type": "agent",
+      "name": "codi-ai-engineering-expert",
+      "description": "Use when integrating LLMs into products. Covers RAG systems, embeddings, prompt engineering, guardrails, evaluation frameworks, multi-agent orchestration, and cost optimization.",
+      "slug": "catalog/agents/codi-ai-engineering-expert",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-api-designer",
+      "description": "Use when designing REST or GraphQL APIs. Reviews naming conventions, pagination patterns, error handling, versioning, and produces OpenAPI-compatible documentation.",
+      "slug": "catalog/agents/codi-api-designer",
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-code-reviewer",
+      "description": "Use when reviewing PRs or code changes. Provides severity-ranked findings (CRITICAL/HIGH/MEDIUM/LOW) with confidence filtering across multiple files in parallel.",
+      "slug": "catalog/agents/codi-code-reviewer",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-codebase-explorer",
+      "description": "Use when navigating an unfamiliar codebase. Traces call graphs, maps dependencies, finds callers, and produces architecture overviews using a code knowledge graph.",
+      "slug": "catalog/agents/codi-codebase-explorer",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-data-analytics-bi-expert",
+      "description": "Use when designing dashboards, KPI frameworks, or analytical SQL. Covers data visualization best practices, metric definitions, and BI tool selection.",
+      "slug": "catalog/agents/codi-data-analytics-bi-expert",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-data-engineering-expert",
+      "description": "Use when designing ETL/ELT pipelines, lakehouse/warehouse architecture, or data orchestration. Produces architecture reports with Airflow/Dagster/dbt recommendations.",
+      "slug": "catalog/agents/codi-data-engineering-expert",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-data-intensive-architect",
+      "description": "Use when choosing databases or designing for scale. Evaluates storage engines, replication, partitioning, and consistency trade-offs for high-throughput workloads.",
+      "slug": "catalog/agents/codi-data-intensive-architect",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-data-science-specialist",
+      "description": "Use when designing ML pipelines, feature engineering, or model evaluation. Researches best practices for experiment tracking, hypothesis testing, and interpretability.",
+      "slug": "catalog/agents/codi-data-science-specialist",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-docs-lookup",
+      "description": "Use before coding to verify API signatures, check deprecations, and find working examples. Searches official docs and returns authoritative references, not guesses.",
+      "slug": "catalog/agents/codi-docs-lookup",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-legal-compliance-eu",
+      "description": "Use when building EU-facing features. Reviews GDPR compliance, conducts DPIAs, evaluates lawful bases, data retention policies, and EU AI Act requirements.",
+      "slug": "catalog/agents/codi-legal-compliance-eu",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-marketing-seo-specialist",
+      "description": "Use when optimizing for search or planning content strategy. Researches current SEO best practices, keyword strategies, technical SEO for Next.js, and conversion optimization.",
+      "slug": "catalog/agents/codi-marketing-seo-specialist",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-mlops-engineer",
+      "description": "Use when deploying models or building ML infrastructure. Designs deployment architectures, monitors drift, selects MLOps platforms, and sets up ML CI/CD pipelines.",
+      "slug": "catalog/agents/codi-mlops-engineer",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-nextjs-researcher",
+      "description": "Use when making Next.js architecture decisions. Researches current best practices for rendering strategy (SSR/SSG/ISR), caching, performance, and production deployment.",
+      "slug": "catalog/agents/codi-nextjs-researcher",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-onboarding-guide",
+      "description": "Use when onboarding new developers. Explores the codebase and produces a concise guide covering architecture, key modules, conventions, and local setup steps.",
+      "slug": "catalog/agents/codi-onboarding-guide",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-openai-agents-specialist",
+      "description": "Use when building with the OpenAI Agents SDK. Covers agent orchestration, tool design, handoff patterns, guardrails, sessions, tracing, and multi-agent architectures.",
+      "slug": "catalog/agents/codi-openai-agents-specialist",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-payload-cms-auditor",
+      "description": "Use when building or auditing a Payload CMS app. Reviews collection design, access control, hook patterns, performance optimization, and migration strategies.",
+      "slug": "catalog/agents/codi-payload-cms-auditor",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-performance-auditor",
+      "description": "Use when diagnosing performance problems. Profiles bottlenecks, detects N+1 queries, bundle size issues, memory leaks, and Core Web Vitals regressions.",
+      "slug": "catalog/agents/codi-performance-auditor",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-python-expert",
+      "description": "Use when optimizing Python systems. Covers asyncio/threading/multiprocessing trade-offs, GIL implications, Numba/C extensions, and enterprise-grade Python workflows.",
+      "slug": "catalog/agents/codi-python-expert",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-refactorer",
+      "description": "Use when cleaning up code without changing behavior. Removes dead code, consolidates duplicates, reduces cyclomatic complexity, and preserves test coverage.",
+      "slug": "catalog/agents/codi-refactorer",
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-scalability-expert",
+      "description": "Use when designing for traffic growth or resolving scaling bottlenecks. Covers database sharding, caching, CDN strategy, load balancing, and FinOps cost optimization.",
+      "slug": "catalog/agents/codi-scalability-expert",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-security-analyzer",
+      "description": "Use when reviewing auth, payments, or data handling code. Runs OWASP-based vulnerability analysis with trust boundary mapping and produces a remediation plan.",
+      "slug": "catalog/agents/codi-security-analyzer",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "agent",
+      "name": "codi-test-generator",
+      "description": "Use when writing tests or improving coverage. Generates unit, integration, and E2E tests with meaningful assertions, edge cases, and test doubles where needed.",
+      "slug": "catalog/agents/codi-test-generator",
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Grep",
+        "Glob",
+        "Bash"
+      ],
+      "model": "inherit"
+    },
+    {
+      "type": "preset",
+      "name": "codi-minimal",
+      "description": "Permissive — security off, no test requirements, all actions allowed",
+      "slug": "catalog/presets/codi-minimal",
+      "tags": [
+        "minimal",
+        "permissive",
+        "starter"
+      ],
+      "compatibilityAgents": [
+        "claude-code",
+        "cursor",
+        "windsurf",
+        "codex",
+        "cline"
+      ]
+    },
+    {
+      "type": "preset",
+      "name": "codi-balanced",
+      "description": "Recommended — security on, type-checking strict, no force-push",
+      "slug": "catalog/presets/codi-balanced",
+      "tags": [
+        "balanced",
+        "recommended",
+        "general"
+      ],
+      "compatibilityAgents": [
+        "claude-code",
+        "cursor",
+        "windsurf",
+        "codex",
+        "cline"
+      ]
+    },
+    {
+      "type": "preset",
+      "name": "codi-strict",
+      "description": "Enforced — security locked, tests required, delete restricted, no force-push",
+      "slug": "catalog/presets/codi-strict",
+      "tags": [
+        "strict",
+        "enforced",
+        "security",
+        "enterprise",
+        "compliance"
+      ],
+      "compatibilityAgents": [
+        "claude-code",
+        "cursor",
+        "windsurf",
+        "codex",
+        "cline"
+      ]
+    },
+    {
+      "type": "preset",
+      "name": "codi-fullstack",
+      "description": "Comprehensive web/app development — broad rules, testing, and security. Language-agnostic.",
+      "slug": "catalog/presets/codi-fullstack",
+      "tags": [
+        "fullstack",
+        "web",
+        "app",
+        "api"
+      ],
+      "compatibilityAgents": [
+        "claude-code",
+        "cursor",
+        "windsurf",
+        "codex",
+        "cline"
+      ]
+    },
+    {
+      "type": "preset",
+      "name": "codi-dev",
+      "description": "Preset for developing the Codi CLI itself — strict TypeScript, anti-hardcoding, safe releases, and full QA tooling",
+      "slug": "catalog/presets/codi-dev",
+      "tags": [
+        "codi",
+        "cli",
+        "typescript",
+        "node",
+        "development",
+        "tooling"
+      ],
+      "compatibilityAgents": [
+        "claude-code"
+      ]
+    },
+    {
+      "type": "preset",
+      "name": "codi-power-user",
+      "description": "Daily workflow — graph exploration, day tracking, error diagnosis, enhanced commits",
+      "slug": "catalog/presets/codi-power-user",
+      "tags": [
+        "workflow",
+        "mcp",
+        "daily",
+        "power-user"
+      ],
+      "compatibilityAgents": [
+        "claude-code"
+      ]
+    }
+  ]
+}

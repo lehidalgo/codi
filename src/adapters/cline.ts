@@ -31,6 +31,13 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+/**
+ * Adapter for Cline — VS Code AI coding extension.
+ *
+ * Detects presence of `.clinerules` file or `.cline/` directory.
+ * Generates `.clinerules` (primary instruction file) and `.cline/skills/`.
+ * Does not support MCP server configuration.
+ */
 export const clineAdapter: AgentAdapter = {
   id: "cline",
   name: "Cline",

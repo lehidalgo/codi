@@ -3,8 +3,10 @@ import path from "node:path";
 import { PROJECT_DIR, MANIFEST_FILENAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import { runCli, createTempProject, fileExists, readFile } from "./helpers/cli-harness.js";
 
-// E2E tests are slower — extend timeout
-vi.setConfig({ testTimeout: 30_000 });
+// E2E tests spawn real subprocesses; each runCli call builds the template hash registry
+// from scratch. Under parallel test load (150 workers), disk I/O contention can push
+// multi-step tests past 30 s. 60 s gives enough headroom without masking true hangs.
+vi.setConfig({ testTimeout: 60_000 });
 
 let projectDir: string;
 let cleanup: () => Promise<void>;

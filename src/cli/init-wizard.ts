@@ -24,7 +24,8 @@ export interface WizardResult {
   skills: string[];
   agentTemplates: string[];
   mcpServers: string[];
-  preset: string;
+  preset?: string;
+  flagPreset?: string;
   flags?: Record<string, import("../types/flags.js").FlagDefinition>;
   versionPin: boolean;
 }

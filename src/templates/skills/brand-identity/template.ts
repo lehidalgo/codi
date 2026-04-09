@@ -2,13 +2,13 @@ import { SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-bbva-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.
+description: Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.
 category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — Brand Identity

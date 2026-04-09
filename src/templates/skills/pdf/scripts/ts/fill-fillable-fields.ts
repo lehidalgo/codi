@@ -21,14 +21,10 @@ export async function fillPdfFields(
   fieldsJsonPath: string,
   outputPdfPath: string,
 ): Promise<void> {
-  // @ts-expect-error pdf-lib is a user-project dependency, not installed in codi
   const pdfLib = await import("pdf-lib");
-  const { PDFDocument, PDFCheckBox, PDFDropdown, PDFRadioGroup, PDFTextField } =
-    pdfLib;
+  const { PDFDocument, PDFCheckBox, PDFDropdown, PDFRadioGroup, PDFTextField } = pdfLib;
 
-  const fieldValues: FieldValue[] = JSON.parse(
-    readFileSync(fieldsJsonPath, "utf-8"),
-  );
+  const fieldValues: FieldValue[] = JSON.parse(readFileSync(fieldsJsonPath, "utf-8"));
   const pdfBytes = readFileSync(inputPdfPath);
   const doc = await PDFDocument.load(pdfBytes);
   const form = doc.getForm();

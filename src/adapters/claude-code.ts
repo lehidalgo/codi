@@ -54,6 +54,13 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+/**
+ * Adapter for Claude Code — Anthropic's official CLI for Claude.
+ *
+ * Detects presence of `CLAUDE.md` or a `.claude/` directory.
+ * Generates `CLAUDE.md` (primary instruction file), `.claude/rules/`, `.claude/skills/`,
+ * `.claude/agents/`, and `.mcp.json` (MCP server config).
+ */
 export const claudeCodeAdapter: AgentAdapter = {
   id: "claude-code",
   name: "Claude Code",

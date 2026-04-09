@@ -1,15 +1,27 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// Mock expensive template-hashing — skill-management tests cover the skill lifecycle
+// (add, export, feedback), not hash-registry correctness.
+vi.mock("#src/core/version/template-hash-registry.js", () => ({
+  buildTemplateHashRegistry: vi.fn(() => ({
+    cliVersion: "0.0.0",
+    generatedAt: new Date().toISOString(),
+    templates: {},
+  })),
+  getTemplateFingerprint: vi.fn(() => undefined),
+  getAllFingerprints: vi.fn(() => []),
+  _resetRegistryCache: vi.fn(),
+}));
+vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
+  checkTemplateRegistry: vi.fn().mockReturnValue([]),
+}));
 import fs from "node:fs/promises";
 import path from "node:path";
 import { cleanupTmpDir } from "../helpers/fs.js";
 import os from "node:os";
 import { initHandler } from "#src/cli/init.js";
 import { addSkillHandler } from "#src/cli/add-handlers.js";
-import {
-  skillExportHandler,
-  skillFeedbackHandler,
-  skillStatsHandler,
-} from "#src/cli/skill.js";
+import { skillExportHandler, skillFeedbackHandler, skillStatsHandler } from "#src/cli/skill.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
@@ -18,9 +30,7 @@ import { clearAdapters } from "#src/core/generator/adapter-registry.js";
 let tmpDir: string;
 
 beforeEach(async () => {
-  const base = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-skill-mgmt-`),
-  );
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-skill-mgmt-`));
   tmpDir = path.join(base, "test-project");
   await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(

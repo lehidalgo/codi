@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
 # {{name}} — Content Factory
@@ -22,15 +22,16 @@ version: 9
 
 ## Skill Assets
 
-This skill ships with reusable assets in the \`assets/\` directory:
+This skill ships with a preview server and generator templates:
 
 | Asset | Purpose |
 |-------|---------|
-| \`\${CLAUDE_SKILL_DIR}[[/assets/preview-shell.js]]\` | Interactive preview UI: toolbar, aspect ratio switching, CSS scale-to-fit, PNG export, resizable chat panel, DOM event storage |
-| \`\${CLAUDE_SKILL_DIR}[[/assets/carousel-template.html]]\` | HTML skeleton for multi-slide carousels with \`data-index\`/\`data-type\` attributes |
-| \`\${CLAUDE_SKILL_DIR}[[/assets/social-card-template.html]]\` | HTML skeleton for social media cards |
-| \`\${CLAUDE_SKILL_DIR}[[/assets/blog-export-template.html]]\` | HTML skeleton for blog post layouts |
-| \`\${CLAUDE_SKILL_DIR}[[/assets/vendor/html2canvas.min.js]]\` | Client-side PNG export library (v1.4.1, 198KB) |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]\` | Preview server: serves HTML with live reload, injects preview shell automatically |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]\` | Start the preview server (outputs JSON with URL) |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]\` | Stop the preview server |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML base for social cards (.social-card elements) |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML base for documents (.doc-page elements) |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML base for slide decks (.deck + .slide elements) |
 
 ## Step 1: Gather Requirements
 
@@ -44,23 +45,20 @@ This skill ships with reusable assets in the \`assets/\` directory:
 - If found, use its design tokens (\`--brand-*\` CSS variables, fonts, logos)
 - If not found, use neutral dark theme defaults
 
-## Step 2: Create Session Directory
+## Step 2: Start Preview Server
 
-**[CODING AGENT]** Run the scaffold script:
+**[CODING AGENT]** Start the server and seed the session:
 
 \`\`\`bash
-bash \${CLAUDE_SKILL_DIR}[[/scripts/scaffold-session.sh]] <session-name>
+bash \${CLAUDE_SKILL_DIR}[[/scripts/scaffold-session.sh]] <session-name> --project-dir .
 \`\`\`
 
-This creates:
+This starts the preview server and outputs a JSON object with the URL:
+\`\`\`json
+{"type":"server-started","url":"http://localhost:PORT","screen_dir":"/path/to/content/"}
 \`\`\`
-content-factory-output/<session-name>/
-  carousel/
-  social/cards/
-  blog/
-  preview-shell.js      (copied from skill assets)
-  vendor/html2canvas.min.js (copied from skill assets)
-\`\`\`
+
+The server injects \`preview-shell.js\` (sidebar, format switcher, PNG/ZIP export) automatically into every HTML file it serves. No inline scripts needed.
 
 ## Step 3: Write the Blog Post
 
@@ -75,92 +73,54 @@ content-factory-output/<session-name>/
 
 **[CODING AGENT]** For each target platform, generate HTML files using the skill templates:
 
-### Carousel Slides
-- Copy \`carousel-template.html\` from skill assets
-- Populate sections with content from the blog post
-- Each \`<section>\` must have \`data-index\` and \`data-type\` attributes
+### Social Cards / Carousels
+- Start from \`generators/social-base.html\` — use \`.social-card\` elements
+- Each \`.social-card\` gets a \`data-type\` attribute (cover, content, stat, quote, cta)
 - Apply brand CSS variables (\`--brand-bg\`, \`--brand-text\`, \`--brand-accent\`)
+- Write the file to \`screen_dir/social.html\`
 
-### Social Cards
-- Copy \`social-card-template.html\` from skill assets
-- Create platform-specific cards (LinkedIn, Instagram, Twitter/X)
+### Documents / Blog
+- Start from \`generators/document-base.html\` — use \`.doc-page\` elements
+- Write the file to \`screen_dir/document.html\`
 
-## Step 5: Inline Preview Infrastructure
+## Step 5: Visual Review
 
-**[CODING AGENT]** For every generated HTML file:
-
-1. Read \`preview-shell.js\` from the session directory
-2. Read \`vendor/html2canvas.min.js\` from the session directory
-3. Inline both scripts into the HTML before \`</body>\`:
-
-\`\`\`html
-<script>/* html2canvas v1.4.1 content here */</script>
-<script>/* preview-shell.js content here */</script>
-</body>
-\`\`\`
-
-**Why inline?** Browsers block external \`<script src>\` on \`file://\` protocol. Inlining ensures the toolbar, chat panel, and export work when opening HTML files directly.
-
-## Step 6: Visual Review with Chat Feedback
-
-This is the interactive feedback loop between you (the coding agent) and the user.
-
-### Opening the Preview
-
-**[CODING AGENT]** Open the generated HTML in the browser:
+**[CODING AGENT]** Navigate to the server URL from Step 2:
 
 \`\`\`
-mcp__playwright__browser_navigate({ url: "file:///path/to/carousel.html" })
+mcp__playwright__browser_navigate({ url: "http://localhost:PORT" })
 \`\`\`
 
-Tell the user: "Check the preview in your browser. Click any slide and type feedback in the chat panel. Return to the terminal when ready."
+The preview shell sidebar provides:
+- **File selector** — switch between HTML files in the session
+- **Format presets** — 1:1 LinkedIn, 4:5 Instagram, 9:16 Story, 1200×630 OG
+- **Logo controls** — show/hide, resize, reposition
+- **Export** — "Export All PNGs" downloads a ZIP; per-card PNG buttons on hover
 
 ### The Review Loop
 
-1. **End your turn** and wait for the user to respond in the terminal
+1. Show the preview URL to the user and ask for feedback
+2. Apply changes to the HTML file in \`screen_dir/\`
+3. The server live-reloads the browser automatically
+4. Repeat until the user approves
 
-2. **On your next turn** — read feedback from the browser:
-   \`\`\`
-   mcp__playwright__browser_evaluate({
-     expression: "JSON.parse(document.getElementById('cf-events').textContent)"
-   })
-   \`\`\`
-   Returns: \`[{ slide: 3, type: "content", text: "headline too long", timestamp: ... }]\`
+Read \`\${CLAUDE_SKILL_DIR}[[/references/preview-shell-guide.md]]\` for full sidebar feature reference.
 
-3. **Process each feedback message**:
-   - Identify the target slide by \`slide\` number and \`type\`
-   - Apply the requested change to the HTML file
-   - Re-inline preview-shell.js if the HTML was regenerated
+## Step 6: Export Final Assets
 
-4. **Reload the browser**:
-   \`\`\`
-   mcp__playwright__browser_navigate({ url: "file:///path/to/carousel.html" })
-   \`\`\`
+**[CODING AGENT]** After the user approves, click "Export All PNGs" in the sidebar — downloads a ZIP with all cards at 2x resolution. Or automate via Playwright:
 
-5. **Repeat** until the user sends "done" or "approved" in the chat panel, or says so in the terminal
-
-### How the Chat Panel Works
-
-Read \`\${CLAUDE_SKILL_DIR}[[/references/preview-shell-guide.md]]\` for the full feature reference: toolbar controls, aspect ratio presets, event storage format, and PNG export.
-
-## Step 7: Export Final Assets
-
-**[CODING AGENT]** After the user approves:
-
-### Method 1: In-Browser Export (preferred)
-Tell the user to use the toolbar buttons:
-- "Export All PNGs" downloads every slide at the selected aspect ratio (2x resolution)
-- Individual "Export PNG" buttons appear on hover over each slide
-
-### Method 2: Script-Based Export
-If Playwright is available, automate the export:
 \`\`\`
-mcp__playwright__browser_evaluate({
-  expression: "document.querySelector('.cf-toolbar button:nth-child(7)').click()"
-})
+mcp__playwright__browser_snapshot()  // find the Export All PNGs button ref
+mcp__playwright__browser_click({ ref: "..." })
 \`\`\`
 
-## Step 8: Deliver Final Package
+Stop the server when done:
+\`\`\`bash
+bash \${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] <session_dir>
+\`\`\`
+
+## Step 7: Deliver Final Package
 
 **[CODING AGENT]** Summarize what was created:
 - List all output files with their paths

@@ -15,16 +15,13 @@ async function checkFillableFields(pdfPath: string): Promise<void> {
 
   // Try pdf-lib first (richer detection)
   try {
-    // @ts-expect-error pdf-lib is a user-project dependency
     const { PDFDocument } = await import("pdf-lib");
     const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
     const form = doc.getForm();
     const fields = form.getFields();
 
     if (fields.length > 0) {
-      console.log(
-        `This PDF has fillable form fields (${fields.length} fields found)`,
-      );
+      console.log(`This PDF has fillable form fields (${fields.length} fields found)`);
     } else {
       console.log(
         "This PDF does not have fillable form fields; you will need to visually determine where to enter data",

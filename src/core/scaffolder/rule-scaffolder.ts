@@ -19,13 +19,29 @@ version: 1
 
 Add your rule content here.`;
 
+/** Options for {@link createRule}. */
 export interface CreateRuleOptions {
+  /** Rule name in kebab-case (validated against {@link NAME_PATTERN_STRICT}). */
   name: string;
+  /** Absolute path to the `.codi/` configuration directory. */
   configDir: string;
+  /** Optional built-in template name to scaffold from instead of the default stub. */
   template?: string;
+  /** When `true`, overwrite an existing rule file without error. */
   force?: boolean;
 }
 
+/**
+ * Scaffold a new rule Markdown file inside `<configDir>/rules/`.
+ *
+ * The name is validated, a template is loaded (or the default stub is used),
+ * and `{{name}}` placeholders are replaced with the provided name.
+ *
+ * @param options - Scaffolding options.
+ * @returns `ok(filePath)` with the absolute path of the created file, or
+ *   `err(errors)` if validation fails, the directory is not writable, or the
+ *   file already exists (when `force` is `false`).
+ */
 export async function createRule(options: CreateRuleOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 

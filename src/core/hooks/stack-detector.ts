@@ -22,6 +22,22 @@ const STACK_INDICATORS: Record<string, string[]> = {
   "CMakeLists.txt": ["cpp"],
 };
 
+const SCAN_SKIP = new Set(["node_modules", ".git", "dist", "build", ".next", "coverage"]);
+
+async function findShellFile(dir: string, depth = 0): Promise<boolean> {
+  if (depth > 4) return false;
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      if (SCAN_SKIP.has(entry.name)) continue;
+      if (await findShellFile(path.join(dir, entry.name), depth + 1)) return true;
+    } else if (entry.name.endsWith(".sh")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function detectStack(projectRoot: string): Promise<string[]> {
   const detected = new Set<string>();
   for (const [file, languages] of Object.entries(STACK_INDICATORS)) {
@@ -41,6 +57,14 @@ export async function detectStack(projectRoot: string): Promise<string[]> {
     }
   } catch {
     // readdir failed, skip
+  }
+
+  // Shell detection: scan for .sh files recursively (excluding node_modules, .git)
+  try {
+    const hasSh = await findShellFile(projectRoot);
+    if (hasSh) detected.add("shell");
+  } catch {
+    // scan failed, skip
   }
 
   return [...detected];

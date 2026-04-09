@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!--
+  Content Factory Document Base Template — A4 Document Shell
+  =================================================
+  Purpose: Reference template for the CODING AGENT. Read this to understand
+  the required HTML structure for Content Factory documents (reports, proposals, one-pagers).
+  Generate a new file at screen_dir/document.html using this structure.
+
+  Font paths: Replace SKILL_FONTS_DIR with ${CLAUDE_SKILL_DIR}/assets/fonts
+  Logo path:  Replace SKILL_ASSETS_DIR with ${CLAUDE_SKILL_DIR}/assets
+
+  Page types (data-type attribute):
+    cover    — Cover page: title, subtitle, author, date, large logo
+    toc      — Table of contents
+    section  — Section header page
+    body     — Standard content page (heading + body text)
+    closing  — Final page with brand sign-off
+
+  Each .doc-page is one printed A4 page (794×1123px).
+  Pages stack vertically — the preview scrolls through them.
+  PDF export via pdf.js will capture each page separately.
+-->
+<html lang="en" class="theme-light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document — Content Factory</title>
+  <style>
+    /* ── Brand Tokens — paste full contents of brand/tokens.css here ── */
+    /* Use .theme-light on <html> for documents                                */
+
+    /* ── Reset ─────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Document Layout ────────────────────────────────────────────────────── */
+    html, body {
+      background: #e5e5e5;
+      font-family: var(--brand-font-body);
+      color: var(--brand-text);
+    }
+
+    .doc-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0 80px;
+      gap: 16px;
+    }
+
+    /* ── A4 Page ────────────────────────────────────────────────────────────── */
+    .doc-page {
+      background: var(--brand-bg);
+      width: var(--doc-w);
+      min-height: var(--doc-page-h);
+      padding: var(--doc-pad);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      page-break-after: always;
+    }
+
+    /* ── Page Header ────────────────────────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--brand-primary);
+    }
+
+    .page-header .brand-bar {
+      width: 40px; height: 4px;
+      background: var(--brand-accent);
+    }
+
+    /* ── Page Footer ────────────────────────────────────────────────────────── */
+    .page-footer {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--brand-text-muted);
+    }
+
+    /* ── Cover Page ─────────────────────────────────────────────────────────── */
+    .doc-page[data-type="cover"] {
+      background: var(--brand-surface);
+      justify-content: flex-end;
+      padding-bottom: 80px;
+    }
+
+    .doc-page[data-type="cover"] .cover-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 8px;
+      background: var(--brand-primary);
+    }
+
+    .doc-page[data-type="cover"] h1 {
+      font-family: var(--brand-font-headline);
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--brand-text);
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .doc-page[data-type="cover"] .doc-subtitle {
+      font-size: 18px;
+      color: var(--brand-text-muted);
+      margin-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    .doc-page[data-type="cover"] .doc-meta {
+      font-size: 13px;
+      color: var(--brand-text-muted);
+      line-height: 1.8;
+    }
+
+    /* ── Body Page ──────────────────────────────────────────────────────────── */
+    .doc-page[data-type="body"] h2 {
+      font-family: var(--brand-font-headline);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--brand-primary);
+      margin-bottom: 20px;
+    }
+
+    .doc-page[data-type="body"] h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--brand-text);
+      margin: 24px 0 10px;
+    }
+
+    .doc-page[data-type="body"] p {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--brand-text);
+      margin-bottom: 14px;
+    }
+
+    .doc-page[data-type="body"] ul {
+      list-style: none;
+      margin-bottom: 16px;
+    }
+
+    .doc-page[data-type="body"] ul li {
+      font-size: 14px;
+      line-height: 1.6;
+      padding-left: 16px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .doc-page[data-type="body"] ul li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 8px;
+      width: 5px; height: 5px;
+      background: var(--brand-accent);
+      border-radius: 50%;
+    }
+
+    /* ── Callout Box ────────────────────────────────────────────────────────── */
+    .callout {
+      background: var(--brand-surface);
+      border-left: 4px solid var(--brand-accent);
+      padding: 16px 20px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .callout p {
+      font-size: 14px;
+      color: var(--brand-text);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-container">
+
+    <!-- COVER PAGE -->
+    <article class="doc-page" data-index="1" data-type="cover">
+      <div class="cover-accent"></div>
+      <!-- <img src="SKILL_ASSETS_DIR/logo.svg" alt="logo" style="height:32px;margin-bottom:auto;"> -->
+      <h1>Document Title</h1>
+      <p class="doc-subtitle">Subtitle or executive summary in one sentence</p>
+      <div class="doc-meta">
+        <div>Prepared by: Author Name</div>
+        <div>Date: Month Year</div>
+        <div>Classification: Internal / Confidential</div>
+      </div>
+    </article>
+
+    <!-- BODY PAGE -->
+    <article class="doc-page" data-index="2" data-type="body">
+      <div class="page-header">
+        <!-- <img src="SKILL_ASSETS_DIR/logo.svg" alt="logo" style="height:20px;"> -->
+        <div class="brand-bar"></div>
+      </div>
+      <h2>Section Heading</h2>
+      <p>Body text goes here. Keep paragraphs focused — one idea per paragraph. Use concrete language and active voice following brand voice guidelines.</p>
+      <h3>Subsection</h3>
+      <p>Supporting content with specific details, data, or analysis.</p>
+      <ul>
+        <li>Key point with supporting evidence</li>
+        <li>Another point — keep lists to 5 items max</li>
+        <li>Third point with actionable implication</li>
+      </ul>
+      <div class="callout">
+        <p>Key insight or highlight — use callout boxes sparingly for the most important points.</p>
+      </div>
+      <div class="page-footer">
+        <span>Confidential</span>
+        <span>Page 2</span>
+      </div>
+    </article>
+
+  </div>
+</body>
+</html>

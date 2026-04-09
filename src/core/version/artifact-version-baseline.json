@@ -125,11 +125,11 @@
   },
   "codi-dev-operations": {
     "version": 5,
-    "hash": "7a6e51586c802e76cfa2f9145053b30c5c3bc23e8e7454df519dbb934d116e58"
+    "hash": "2a45fca8916346d462fef03d7bb49334057051ed627f1ed45445ab28ca21abb7"
   },
   "codi-dev-e2e-testing": {
     "version": 10,
-    "hash": "fa478a22099e013ab9c47559d36bcce4f6f87a749f250f9ef2155746b33e06e4"
+    "hash": "31046d25818958d7381dc03365ef6e4df60f8fe077eca12594371cce16584a0d"
   },
   "codi-security-scan": {
     "version": 5,
@@ -164,8 +164,8 @@
     "hash": "30c98144c693a33948cfd8f319d3f13de14280cc2e6780c022c37f318c22f967"
   },
   "codi-skill-creator": {
-    "version": 11,
-    "hash": "eb3045aea6cc12dde0d41829cf18affff5dd2ba6ab69f3d26278c847ab051b52"
+    "version": 24,
+    "hash": "c3c2f95b752569748eaf459ad6bbd33feb3d1fb6c1a2563204232f1f2236b1ea"
   },
   "codi-rule-creator": {
     "version": 8,
@@ -205,19 +205,19 @@
   },
   "codi-xlsx": {
     "version": 20,
-    "hash": "cfd00bcac2d3c8a8b2ca2c0ca3a115863c05f8a67f4dce46b822786fa320bae0"
+    "hash": "a283b85c7b08d2cbbc3cca6cf6022a7023fedafbd8fcbd192e5e2226aaa0eac2"
   },
   "codi-docx": {
-    "version": 20,
-    "hash": "46ce84e91eb7f00335fba1e3b33b986a68c86bfc2b60a9642ddb24248bb796e3"
+    "version": 22,
+    "hash": "f411ad53e0e6b63f3b467af6e478df7a2db01ba82d05af5377f0eff4941f102a"
   },
   "codi-webapp-testing": {
     "version": 9,
     "hash": "4bb7e8252d2ad7554be2873a3ccfb05638b1662165982ae73580c24fe5c7ee0a"
   },
   "codi-pptx": {
-    "version": 20,
-    "hash": "fffb306f7e6ce8373a9981fdd59b0fde7db47ae5f2c9839a47ffe2e3f36ccd68"
+    "version": 22,
+    "hash": "ea216c2e0694f91a6ed34117c8fdd24a479f300e643a3aa4962b8e26cef7d72d"
   },
   "codi-frontend-design": {
     "version": 4,
@@ -252,24 +252,16 @@
     "hash": "00db93cdc1a6bd62048a33c0393f0e8a3c90e0679a508f15a957764df0c1e8df"
   },
   "codi-brand-identity": {
-    "version": 5,
-    "hash": "5c6074399cc2d1e1e250a45b5a60b934c09369ad4d7575c72c9151de13829f57"
+    "version": 7,
+    "hash": "6c1cb067cae123ad2ab7a32f5660995ee9092c7295e8246837603bf2111db418"
   },
   "codi-codi-brand": {
-    "version": 14,
-    "hash": "d816d9100f16e14d2e94c5e841960afb02e71c8f2eacb896cf456e333bfbcc43"
-  },
-  "codi-rl3-brand": {
-    "version": 19,
-    "hash": "94173a87f8c69151b85d53a0f0fddce8acef423366d5193129ee4ff4450e302e"
-  },
-  "codi-bbva-brand": {
-    "version": 18,
-    "hash": "b85878025e4fa8fa3dba74dd0fdc6fe96f3ffdb98fc7638698b55419be1869d5"
+    "version": 16,
+    "hash": "0652e86af40402989a6065243a88ec12f26ef240abe4a8ae38c3ddd33adf7e51"
   },
   "codi-content-factory": {
-    "version": 9,
-    "hash": "e543a144eff885045b7ff71853c2c3c19f6e02f497f65bf20d63130272b1d3f3"
+    "version": 11,
+    "hash": "5d3da3ecad09689c133c0d26ee667f68b4c9720f2a3597f26d2d1e4e5e0a712d"
   },
   "codi-project-quality-guard": {
     "version": 9,

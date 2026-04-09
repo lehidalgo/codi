@@ -13,7 +13,7 @@ description: "Skill creation, improvement, and migration workflow. Use when crea
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 11
+version: 24
 ---
 
 # Skill Creator
@@ -457,7 +457,22 @@ Verify the skill appears in the generated agent configuration, then confirm with
 1. Create the template directory and files:
    - \\\`src/templates/skills/<base-name>/template.ts\\\` — TypeScript template literal wrapping SKILL.md content
    - \\\`src/templates/skills/<base-name>/index.ts\\\` — exports \\\`template\\\` and \\\`staticDir\\\`
+   - \\\`src/templates/skills/<base-name>/README.md\\\` — developer documentation for the template (see below)
    - \\\`src/templates/skills/<base-name>/evals/evals.json\\\`
+
+1a. **Write README.md** — every built-in template skill MUST have a README. This applies to all skill types, not just brand or HTML-generating skills. The README is developer documentation for anyone maintaining or adapting the template. It is NOT the SKILL.md that gets generated; it explains how the template itself works. Include the sections that apply:
+
+   - **What This Skill Does** — one paragraph describing the skill's purpose and output (required for all)
+   - **Directory Structure** — annotated tree of every file and subdirectory in the template, with a one-line description of each file's role (required for all)
+   - **Workflow** — numbered phases or steps the skill executes; narrated for a developer reading the source, not an agent following instructions (required for all)
+   - **Configuration** — any configurable values, schemas, or placeholders the template uses (e.g. JSON schemas, CSS custom properties, environment variables, template interpolation tokens); omit if the skill has no configuration
+   - **Output Conventions** — if the skill generates structured output (HTML, JSON, PPTX, documents), document the structure, class/element conventions, data attributes, or schema; omit for skills that only produce terminal output
+   - **Installed Requirements** — external tools, npm packages, or system dependencies the skill's scripts need, with install commands; omit if the skill has no scripts
+   - **Design Decisions** — rationale for non-obvious architectural choices; always document intentional deviations from skill-creator defaults (e.g. JavaScript-only when Python+TypeScript is normally required, skipping a standard step, custom file layout)
+   - **Adapting for Similar Use Cases** — step-by-step guide for duplicating and customising the template for a related domain or brand; include only when the skill is designed to be a reference implementation others will copy
+   - **Testing** — how to run evals, validate the schema, and verify the built output (required for all)
+
+   The README lives alongside \\\`template.ts\\\` in the source tree. It is for contributors and future maintainers, not for end users of the generated skill.
 
 2. Export the template in \\\`src/templates/skills/index.ts\\\`:
 \\\`\\\`\\\`typescript

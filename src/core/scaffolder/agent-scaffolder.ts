@@ -19,13 +19,29 @@ version: 1
 
 Add your agent system prompt here.`;
 
+/** Options for {@link createAgent}. */
 export interface CreateAgentOptions {
+  /** Agent name in kebab-case (validated against {@link NAME_PATTERN_STRICT}). */
   name: string;
+  /** Absolute path to the `.codi/` configuration directory. */
   configDir: string;
+  /** Optional built-in agent template name to scaffold from instead of the default stub. */
   template?: string;
+  /** When `true`, overwrite an existing agent file without error. */
   force?: boolean;
 }
 
+/**
+ * Scaffold a new agent Markdown file inside `<configDir>/agents/`.
+ *
+ * The name is validated, a template is loaded (or the default stub is used),
+ * and `{{name}}` placeholders are replaced with the provided name.
+ *
+ * @param options - Scaffolding options.
+ * @returns `ok(filePath)` with the absolute path of the created file, or
+ *   `err(errors)` if validation fails, the directory is not writable, or the
+ *   file already exists (when `force` is `false`).
+ */
 export async function createAgent(options: CreateAgentOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
