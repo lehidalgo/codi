@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-04-09
+
+### Fixed
+
+- **GitHub Pages artifact upload** — removed `site/site` symlink (pointing to an absolute path on a different developer's machine) that caused `actions/upload-pages-artifact@v3` to fail with "File removed before we read it"
+
 ## [2.5.1] - 2026-04-09
 
 ### Fixed
