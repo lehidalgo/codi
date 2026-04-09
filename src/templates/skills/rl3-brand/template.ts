@@ -11,7 +11,7 @@ category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 20
+version: 21
 ---
 
 # {{name}} — RL3 Content Studio

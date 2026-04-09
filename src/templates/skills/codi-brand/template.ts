@@ -11,7 +11,7 @@ category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 15
+version: 16
 ---
 
 # {{name}} — Codi Content Studio

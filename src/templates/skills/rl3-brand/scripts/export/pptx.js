@@ -5,7 +5,7 @@
  * pptx.js — Brand HTML-to-PPTX export via Playwright + PptxGenJS
  *
  * Strategy per slide:
- *   1. Playwright renders at 960×540 (deviceScaleFactor=2 → 1920×1080 screenshot)
+ *   1. Playwright renders at 960×540 (deviceScaleFactor=3 → 2880×1620 screenshot)
  *   2. Text elements hidden before screenshot → screenshot = visual design only
  *      (backgrounds, gradients, shapes, SVG logos, brand decorations)
  *   3. Text extracted with getBoundingClientRect → editable PptxGenJS text overlay
@@ -21,6 +21,7 @@
 import path from "path";
 import fs from "fs";
 import { pathToFileURL } from "url";
+import { NEUTRALIZE_JS } from "./lib/neutralize.js";
 
 // ─── CLI ──────────────────────────────────────────────────────────────────────
 
@@ -29,20 +30,35 @@ let inputFile = "deck.html";
 let outputFile = "deck.pptx";
 let tokensFile = null;
 let theme = "light";
+let serverUrl = null; // --url overrides --input; page loaded via preview server
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--input" && args[i + 1]) inputFile = args[++i];
   if (args[i] === "--output" && args[i + 1]) outputFile = args[++i];
   if (args[i] === "--tokens" && args[i + 1]) tokensFile = args[++i];
   if (args[i] === "--theme" && args[i + 1]) theme = args[++i];
+  if (args[i] === "--url" && args[i + 1]) serverUrl = args[++i];
 }
 
-const absInput = path.resolve(inputFile);
 const absOutput = path.resolve(outputFile);
 
-if (!fs.existsSync(absInput)) {
-  console.error(`Input not found: ${absInput}`);
-  process.exit(1);
+// When --url is provided, navigation uses the server URL (fonts resolve via HTTP).
+// When --input is provided, navigation uses a file:// URL.
+let pageUrl;
+let inputLabel; // basename used for subject and error messages
+if (serverUrl) {
+  pageUrl = serverUrl;
+  // Extract filename from ?file=<name> query param, fall back to URL path
+  const fileParam = new URL(serverUrl).searchParams.get("file");
+  inputLabel = fileParam ? path.basename(fileParam, ".html") : "deck";
+} else {
+  const absInput = path.resolve(inputFile);
+  if (!fs.existsSync(absInput)) {
+    console.error(`Input not found: ${absInput}`);
+    process.exit(1);
+  }
+  pageUrl = pathToFileURL(absInput).href;
+  inputLabel = path.basename(absInput, ".html");
 }
 
 // ─── Slide geometry ───────────────────────────────────────────────────────────
@@ -119,8 +135,10 @@ async function activateSlide(page, idx) {
     slides.forEach((s, j) => {
       const active = j === i;
       s.classList.toggle("active", active);
+      // Preserve absolute layout — slides use position:absolute;inset:0 by design.
+      // position:relative would break the flex layout and misalign text bounding rects.
       s.style.cssText = active
-        ? "display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;"
+        ? "display:flex!important;flex-direction:column!important;visibility:visible!important;opacity:1!important;position:absolute!important;inset:0!important;"
         : "display:none!important;";
     });
 
@@ -161,7 +179,10 @@ async function extractText(page, idx, slideX, slideY) {
       return all
         .filter((el) => !dominated.has(el))
         .map((el) => {
-          const text = (el.innerText || "").trim().replace(/\s+/g, " ");
+          // textContent gives raw DOM text without visual line-break artifacts.
+          // innerText includes soft-wrap breaks from font rendering, which
+          // corrupts words that happen to fall at a line boundary (e.g. "ent ornos").
+          const text = (el.textContent || "").trim().replace(/\s+/g, " ");
           if (!text) return null;
 
           const r = el.getBoundingClientRect();
@@ -247,11 +268,16 @@ function buildSlide(prs, imgBuf, textEls) {
     const x = pxToIn(el.x);
     const y = pxToIn(el.y);
     const w = pxToIn(el.w);
-    const h = pxToIn(el.h);
+    // 2× height buffer: prevents font-fallback overflow in PowerPoint.
+    // When the BBVA custom fonts are unavailable, PowerPoint substitutes a
+    // slightly wider/taller fallback, causing text to wrap and overflow into
+    // adjacent text boxes. shrinkText prevents the overflow; extra height
+    // gives the text room to wrap without clipping.
+    const h = pxToIn(el.h) * 2;
 
     // Skip out-of-bounds or degenerate boxes
     if (x < 0 || y < 0 || w < 0.05 || h < 0.05) continue;
-    if (x + w > W_IN + 0.2 || y + h > H_IN + 0.2) continue;
+    if (x + w > W_IN + 0.2) continue;
 
     const color = rgbToHex(el.color);
     const align =
@@ -269,6 +295,7 @@ function buildSlide(prs, imgBuf, textEls) {
       fontFace: el.fontFamily,
       valign: "top",
       wrap: true,
+      shrinkText: true,
       isTextBox: true,
     });
   }
@@ -307,20 +334,23 @@ async function main() {
   const page = await (
     await browser.newContext({
       viewport: { width: W_PX, height: H_PX },
-      deviceScaleFactor: 2, // 1920×1080 screenshots for sharpness
+      deviceScaleFactor: 3, // 2880×1620 HiDPI screenshots for sharpness
     })
   ).newPage();
 
   await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "light" });
-  await page.goto(pathToFileURL(absInput).href, { waitUntil: "networkidle" });
+  await page.goto(pageUrl, { waitUntil: "networkidle" });
   await page.evaluate(() =>
     Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]),
   );
+  // Remove preview-shell sidebar margin, toolbar, and doc-page zoom so that
+  // text bounding rects and screenshots reflect the true 960×540 slide layout.
+  await page.evaluate(NEUTRALIZE_JS);
 
   const total = await page.evaluate(() => document.querySelectorAll(".slide").length);
 
   if (!total) {
-    console.error("No .slide elements found in: " + absInput);
+    console.error("No .slide elements found in: " + inputLabel);
     await browser.close();
     process.exit(1);
   }
@@ -330,7 +360,7 @@ async function main() {
   // ── PptxGenJS presentation
   const prs = new PptxGenJS();
   prs.author = "Codi Brand Skill";
-  prs.subject = path.basename(absInput, ".html");
+  prs.subject = inputLabel;
   prs.defineLayout({ name: "WIDE169", width: W_IN, height: H_IN });
   prs.layout = "WIDE169";
 

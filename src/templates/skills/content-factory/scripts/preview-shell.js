@@ -32,7 +32,7 @@
   var bodyEl = null; // scrollable inner container
   var onReflow = null; // callback set by each mode to reflow content
   var onSelectionChange = null; // callback fired when selectedPages changes
-  var userZoom = 1; // user-controlled zoom multiplier (0.25 – 2.0)
+  var userZoom = 0.4; // user-controlled zoom multiplier (0.25 – 2.0); default 40%
   var selectedPages = new Set(); // pages/slides selected for scoped logo ops
 
   // ── Mode detection ────────────────────────────────────────────────────────────
@@ -413,9 +413,13 @@
     expSec.appendChild(btn("Export All PNGs", exportAllSlides));
     body.appendChild(expSec);
 
-    addZoomControl(body, function () {
-      fitSlideZoom();
-    });
+    addZoomControl(
+      body,
+      function () {
+        fitSlideZoom();
+      },
+      40,
+    );
     addLogoControls(body);
 
     setSidebarVar(SIDEBAR_W);
@@ -568,9 +572,13 @@
     sec.appendChild(btn("Export All PNGs", exportAllDocPages));
     body.appendChild(sec);
 
-    addZoomControl(body, function () {
-      fitDocPages();
-    });
+    addZoomControl(
+      body,
+      function () {
+        fitDocPages();
+      },
+      40,
+    );
     addLogoControls(body);
 
     setSidebarVar(SIDEBAR_W);
@@ -692,9 +700,13 @@
     );
     body.appendChild(exportSec);
 
-    addZoomControl(body, function () {
-      applyCardScale(currentW, currentH);
-    });
+    addZoomControl(
+      body,
+      function () {
+        applyCardScale(currentW, currentH);
+      },
+      40,
+    );
     addLogoControls(body);
 
     setSidebarVar(SIDEBAR_W);
@@ -786,7 +798,8 @@
   }
 
   // ── Zoom control ──────────────────────────────────────────────────────────────
-  function addZoomControl(body, applyZoom) {
+  function addZoomControl(body, applyZoom, defaultPct) {
+    var initPct = defaultPct || 100;
     var sec = section("View");
 
     // Zoom slider: 25 – 200 %, step 5
@@ -794,13 +807,13 @@
     var lbl = el("span", "cf-field-lbl");
     lbl.textContent = "Zoom";
     var valLbl = el("span", "cf-zoom-val");
-    valLbl.textContent = "100%";
+    valLbl.textContent = initPct + "%";
     var inp = document.createElement("input");
     inp.type = "range";
     inp.min = "25";
     inp.max = "200";
     inp.step = "5";
-    inp.value = "100";
+    inp.value = String(initPct);
     inp.className = "cf-slider";
     inp.addEventListener("input", function () {
       var pct = parseInt(inp.value);
@@ -809,14 +822,14 @@
       applyZoom(userZoom);
     });
 
-    // Double-click label to reset to 100%
+    // Double-click label to reset to initial default
     valLbl.title = "Double-click to reset";
     valLbl.style.cursor = "pointer";
     valLbl.addEventListener("dblclick", function () {
-      inp.value = "100";
-      valLbl.textContent = "100%";
-      userZoom = 1;
-      applyZoom(1);
+      inp.value = String(initPct);
+      valLbl.textContent = initPct + "%";
+      userZoom = initPct / 100;
+      applyZoom(userZoom);
     });
 
     row.appendChild(lbl);
@@ -969,7 +982,14 @@
 
     function applyToPage(page) {
       var st = getState(page);
-      findLogosIn(page).forEach(function (l) {
+      // Use allLogos (computed once by findLogos()) filtered to this page container.
+      // This is more reliable than findLogosIn() for documents where logos are in
+      // non-"logo"-named containers (e.g. .page-header) and were found via the
+      // repeated-viewBox heuristic that findLogosIn() does not apply.
+      var logosForPage = allLogos.filter(function (l) {
+        return page === l || page.contains(l) || l.parentNode === page;
+      });
+      logosForPage.forEach(function (l) {
         l.style.display = st.visible ? "" : "none";
         if (!st.visible) return;
         l.style.width = st.w + "px";
