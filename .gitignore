@@ -6,6 +6,8 @@ docs/codi_docs/
 *.tsbuildinfo
 .DS_Store
 *.png
+!assets/*.png
+!site/*.png
 projs/
 data/
 .env*
