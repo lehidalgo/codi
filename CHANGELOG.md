@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-04-09
+
+### Fixed
+
+- **GitHub Pages deployment** — upgraded Node.js to 22 in pages deploy workflow; Astro requires >=22.12.0 and was rejecting Node 20
+
 ## [2.5.0] - 2026-04-09
 
 ### Added

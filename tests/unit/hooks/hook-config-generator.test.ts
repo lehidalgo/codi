@@ -197,6 +197,35 @@ describe("generateHooksConfig", () => {
     const config = generateHooksConfig(makeFlags({}), []);
     expect(config.docProtectedBranches).toEqual(["main", "develop", "release/*"]);
   });
+
+  it("test hooks appear after all non-test hooks", () => {
+    const flags = makeFlags({ test_before_commit: { value: true, mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript", "python"]);
+    const names = config.hooks.map((h) => h.name);
+    const testIndices = names
+      .map((n, i) => ({ n, i }))
+      .filter(({ n }) => n.startsWith("test-"))
+      .map(({ i }) => i);
+    const nonTestIndices = names
+      .map((n, i) => ({ n, i }))
+      .filter(({ n }) => !n.startsWith("test-"))
+      .map(({ i }) => i);
+    expect(testIndices.length).toBeGreaterThan(0);
+    const lastNonTest = Math.max(...nonTestIndices);
+    const firstTest = Math.min(...testIndices);
+    expect(firstTest).toBeGreaterThan(lastNonTest);
+  });
+
+  it("staged-junk-check appears before test hooks and language hooks", () => {
+    const flags = makeFlags({ test_before_commit: { value: true, mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    const junkIdx = names.indexOf("staged-junk-check");
+    const eslintIdx = names.indexOf("eslint");
+    const testIdx = names.indexOf("test-ts");
+    expect(junkIdx).toBeLessThan(eslintIdx);
+    expect(junkIdx).toBeLessThan(testIdx);
+  });
 });
 
 describe("FLAG_CATALOG hook field sync", () => {

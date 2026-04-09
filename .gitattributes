@@ -17,6 +17,12 @@
 *.sh    text eol=lf
 *.txt   text eol=lf
 
+# Branch-local files — always keep ours during merges
+# doc-stamp is re-generated per branch; conflicts are never meaningful
+docs/project/.doc-stamp merge=ours
+# uv.lock: develop is the source of truth; keep ours on sync-merges
+uv.lock merge=ours
+
 # Binary files — no conversion
 *.png  binary
 *.jpg  binary
