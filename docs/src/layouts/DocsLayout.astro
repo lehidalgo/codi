@@ -127,7 +127,20 @@ function docLabel(doc: DocEntry): string {
         <slot />
       </article>
     </main>
+
+    <aside class="docs-toc" id="docs-toc" aria-label="On this page">
+      <span class="docs-toc-label">On this page</span>
+      <ul class="docs-toc-list" id="docs-toc-list"></ul>
+    </aside>
   </div>
+
+  <!-- Mobile sidebar toggle -->
+  <button class="docs-sidebar-toggle" id="docs-sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="false">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="docs-overlay" id="docs-overlay"></div>
 
   <script>
     // Nav scroll glow
@@ -147,6 +160,107 @@ function docLabel(doc: DocEntry): string {
         hamburger.setAttribute('aria-expanded', String(open));
       });
     }
+
+    // Mobile docs sidebar toggle
+    const sidebarToggle = document.getElementById('docs-sidebar-toggle');
+    const docsSidebar = document.getElementById('docs-sidebar');
+    const docsOverlay = document.getElementById('docs-overlay');
+    if (sidebarToggle && docsSidebar && docsOverlay) {
+      const openSidebar = () => {
+        docsSidebar.classList.add('open');
+        docsOverlay.classList.add('open');
+        sidebarToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      };
+      const closeSidebar = () => {
+        docsSidebar.classList.remove('open');
+        docsOverlay.classList.remove('open');
+        sidebarToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      };
+      sidebarToggle.addEventListener('click', () => {
+        docsSidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+      });
+      docsOverlay.addEventListener('click', closeSidebar);
+    }
+
+    // Heading anchor links
+    document.querySelectorAll<HTMLElement>('.docs-content h2, .docs-content h3, .docs-content h4').forEach(h => {
+      if (!h.id) {
+        h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
+      }
+      const anchor = document.createElement('a');
+      anchor.href = '#' + h.id;
+      anchor.className = 'heading-anchor';
+      anchor.setAttribute('aria-label', 'Link to this section');
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('width', '14'); svg.setAttribute('height', '14');
+      svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+      const p1 = document.createElementNS(svgNS, 'path');
+      p1.setAttribute('d', 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71');
+      const p2 = document.createElementNS(svgNS, 'path');
+      p2.setAttribute('d', 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71');
+      svg.appendChild(p1); svg.appendChild(p2);
+      anchor.appendChild(svg);
+      h.appendChild(anchor);
+    });
+
+    // TOC: build from headings and wire up scroll-spy
+    (function() {
+      const article = document.querySelector<HTMLElement>('.docs-content');
+      const tocList = document.getElementById('docs-toc-list');
+      const tocSidebar = document.getElementById('docs-toc');
+      if (!article || !tocList || !tocSidebar) return;
+
+      const headings = Array.from(
+        article.querySelectorAll<HTMLElement>('h2, h3')
+      );
+
+      if (headings.length < 2) {
+        tocSidebar.style.visibility = 'hidden';
+        return;
+      }
+
+      headings.forEach(h => {
+        if (!h.id) {
+          h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
+        }
+        const li = document.createElement('li');
+        li.className = `docs-toc-item depth-${h.tagName === 'H3' ? 3 : 2}`;
+        const a = document.createElement('a');
+        a.href = `#${h.id}`;
+        a.className = 'docs-toc-link';
+        a.textContent = h.textContent ?? '';
+        li.appendChild(a);
+        tocList.appendChild(li);
+      });
+
+      // Scroll-spy with IntersectionObserver
+      const links = Array.from(tocList.querySelectorAll<HTMLAnchorElement>('.docs-toc-link'));
+      let active: HTMLAnchorElement | null = null;
+
+      const setActive = (link: HTMLAnchorElement) => {
+        if (active === link) return;
+        active?.classList.remove('active');
+        link.classList.add('active');
+        active = link;
+      };
+
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const link = links.find(l => l.getAttribute('href') === `#${entry.target.id}`);
+            if (link) setActive(link);
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+
+      headings.forEach(h => observer.observe(h));
+      if (links[0]) setActive(links[0]);
+    })();
 
     // Code copy buttons
     document.querySelectorAll<HTMLElement>('.docs-content pre').forEach(pre => {
