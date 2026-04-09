@@ -136,6 +136,7 @@ export async function generateHandler(
           importDepthCheck: hooksConfig.importDepthCheck,
           skillYamlValidation: hooksConfig.skillYamlValidation,
           skillResourceCheck: hooksConfig.skillResourceCheck,
+          stagedJunkCheck: hooksConfig.stagedJunkCheck,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });

@@ -5,6 +5,7 @@ coverage/
 docs/codi_docs/
 *.tsbuildinfo
 .DS_Store
+*.png
 projs/
 data/
 .env*

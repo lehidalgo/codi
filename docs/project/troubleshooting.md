@@ -265,6 +265,26 @@ The secret scanner found a pattern that matches a credential. Inspect the flagge
 
 Never commit real credentials. Automated scanners index GitHub within minutes of a push.
 
+### Staged junk files blocked a commit
+
+The staged-junk-check hook found OS noise files or build cache directories in the staged changes. These files should never enter the repository.
+
+**Fix**: Unstage the listed files and add them to `.gitignore`:
+
+```bash
+# Unstage the files shown in the hook output
+git rm --cached .DS_Store
+git rm --cached -r __pycache__
+
+# Add to .gitignore if not already there
+echo ".DS_Store" >> .gitignore
+echo "__pycache__/" >> .gitignore
+```
+
+The hook output includes the exact `git rm --cached` command needed — copy it directly.
+
+Patterns the hook blocks: `.DS_Store`, `Thumbs.db`, `desktop.ini`, `__pycache__/`, `.pyc`, `.pyo`, `.pytest_cache/`, `.mypy_cache/`, `.class`.
+
 ### File size check blocked a commit
 
 A staged file exceeds the configured line limit (default: 700 lines). This is intentional — large files signal mixed responsibilities.
