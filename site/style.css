@@ -361,9 +361,9 @@ code {
 
 .loop-track {
   display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr 28px 1fr;
-  align-items: center; gap: 0; margin-bottom: 44px;
+  align-items: stretch; gap: 0; margin-bottom: 44px;
 }
-.loop-step { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--rl); padding: 24px 20px; position: relative; overflow: hidden; }
+.loop-step { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--rl); padding: 24px 20px; position: relative; overflow: hidden; align-self: stretch; display: flex; flex-direction: column; }
 .loop-step .ps-corner { border-color: rgba(255,255,255,0.08); }
 .loop-step--peak { border-color: rgba(86,182,194,0.35); background: linear-gradient(145deg, rgba(86,182,194,0.07) 0%, var(--surface-2) 100%); }
 .loop-step--peak .ps-corner { border-color: rgba(86,182,194,0.5); }

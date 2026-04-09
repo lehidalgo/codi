@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codi — Your AI coding knowledge. Centralized.</title>
-  <meta name="description" content="AI coding agents multiply. Your knowledge should too. Codi turns your team's rules, skills, and conventions into a version-controlled knowledge base that syncs to every agent, every time.">
-  <meta property="og:title" content="Codi — Your AI coding knowledge. Centralized.">
-  <meta property="og:description" content="The AI knowledge your team builds should compound — not scatter.">
+  <title>Codi — All your AI coding configs in one place.</title>
+  <meta name="description" content="Rules, skills, agents, and MCP configs — managed in one place and synced to every AI coding tool your team uses. No drift. No manual maintenance. Worth it from two developers.">
+  <meta property="og:title" content="Codi — One config folder. Five AI agents. Zero drift.">
+  <meta property="og:description" content="Write your rules once. Codi keeps every agent — and every teammate — in sync.">
   <meta property="og:url" content="https://lehidalgo.github.io/codi">
   <meta name="theme-color" content="#070a0f">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,8 +43,8 @@
       <div class="hero-grid">
         <div class="hero-content">
           <span class="badge reveal" data-i18n="hero.badge">v2.2.0 — works with 5 agents</span>
-          <h1 class="reveal reveal-d1" data-i18n-html="hero.h1">Your AI knowledge,<br><span class="gradient-text">in one place.</span></h1>
-          <p class="hero-sub reveal reveal-d2" data-i18n-html="hero.sub">You use Claude Code. Your teammate uses Cursor. Your CI runs Codex. None of them share the same rules, so they all behave a little differently. Codi fixes that — one <code>.codi/</code> folder, tracked with git, that generates the right config for every agent. No more drift.</p>
+          <h1 class="reveal reveal-d1" data-i18n-html="hero.h1">Your AI coding configs<br><span class="gradient-text">in one place.</span></h1>
+          <p class="hero-sub reveal reveal-d2" data-i18n-html="hero.sub">Every AI coding tool has its own config format — your rules, skills, agents, and MCPs drift the moment you switch tools or add a developer. Codi manages all of them in one <code>.codi/</code> folder and generates the right native config for every tool, automatically.</p>
           <div class="install-block reveal reveal-d3">
             <code class="install-cmd">npm install -g codi-cli@latest</code>
             <button class="copy-btn" data-copy="npm install -g codi-cli@latest" aria-label="Copy to clipboard">
@@ -52,7 +52,7 @@
             </button>
           </div>
           <div class="hero-ctas reveal reveal-d4">
-            <a href="#quickstart" class="btn-primary" data-i18n="hero.cta1">Quick Start →</a>
+            <a href="#quickstart" class="btn-primary" data-i18n="hero.cta1">Get started →</a>
             <a href="https://github.com/lehidalgo/codi" class="btn-ghost" target="_blank" rel="noopener" data-i18n="hero.cta2">View on GitHub</a>
           </div>
         </div>
@@ -133,15 +133,15 @@
       <h2 class="reveal" data-i18n-html="feat.h2">All you need.<br><span class="gradient-text">Nothing you don't.</span></h2>
       <p class="features-sub reveal" data-i18n="feat.sub">Everything to keep your AI agents in sync — from first setup to team-wide enforcement.</p>
       <div class="features-grid">
-        <div class="feature-card reveal" data-feature="multi-agent" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">⬡</div></div><h4 data-i18n="feat.multi-h4">One folder, 5 agents</h4><p data-i18n-html="feat.multi-p">Everything lives in <code>.codi/</code>. Codi reads it and writes the right config for each agent — Claude Code, Cursor, Codex, Windsurf, and Cline.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="templates" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">◈</div></div><h4 data-i18n="feat.templates-h4">Don't start from scratch</h4><p data-i18n="feat.templates-p">There are 148+ templates already there for common languages, frameworks, security, and testing patterns. Pick what fits, skip what doesn't.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="drift" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">⊛</div></div><h4 data-i18n="feat.drift-h4">Drift detection</h4><p data-i18n="feat.drift-p">If a generated file gets edited directly, Codi notices. You'll always know when something's out of sync.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="presets" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">◉</div></div><h4 data-i18n="feat.presets-h4">Share your setup</h4><p data-i18n="feat.presets-p">Pack your rules, skills, and agents into a preset and push it to GitHub. Everyone on your team installs it with one command — same config, same agent behavior, no setup time.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="flags" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">⬘</div></div><h4 data-i18n="feat.flags-h4">Locked flags</h4><p data-i18n="feat.flags-p">Three layers: preset, repo, user. As a tech lead you can lock the rules your team can't change — things like security checks or test coverage requirements.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="hooks" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">⊗</div></div><h4 data-i18n="feat.hooks-h4">14 hook types</h4><p data-i18n="feat.hooks-p">Auto-detects Husky, pre-commit, and Lefthook. Secret scanning and type checking built in.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="watch" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">◎</div></div><h4 data-i18n="feat.watch-h4">Watch + revert</h4><p data-i18n="feat.watch-p">Live watch mode regenerates on every save. Roll back to any timestamped snapshot instantly.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="onboard" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">⌘</div></div><h4 data-i18n="feat.onboard-h4">AI onboarding</h4><p data-i18n-html="feat.onboard-p"><code>codi onboard</code> explores your codebase and proposes the ideal configuration automatically.</p><span class="feature-more">Explore →</span></div>
-        <div class="feature-card reveal" data-feature="verify" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon">✦</div></div><h4 data-i18n="feat.verify-h4">Verification tokens</h4><p data-i18n-html="feat.verify-p">SHA-256 hash embedded in every generated file. <code>codi verify</code> confirms zero tampering.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="multi-agent" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2.5"/><circle cx="2.5" cy="4" r="1.5"/><circle cx="15.5" cy="4" r="1.5"/><circle cx="9" cy="16" r="1.5"/><line x1="4" y1="4.5" x2="7.2" y2="7.5"/><line x1="14" y1="4.5" x2="10.8" y2="7.5"/><line x1="9" y1="11.5" x2="9" y2="14.5"/></svg></div></div><h4 data-i18n="feat.multi-h4">One folder, 5 agents</h4><p data-i18n-html="feat.multi-p">Everything lives in <code>.codi/</code>. Codi reads it and writes the right config for each agent — Claude Code, Cursor, Codex, Windsurf, and Cline.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="templates" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l7-3 7 3-7 3z"/><path d="M2 9.5l7 3 7-3"/><path d="M2 13l7 3 7-3"/></svg></div></div><h4 data-i18n="feat.templates-h4">Don't start from scratch</h4><p data-i18n="feat.templates-p">There are 148+ templates already there for common languages, frameworks, security, and testing patterns. Pick what fits, skip what doesn't.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="drift" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,9 4,9 6,3.5 8,14.5 10,7 12,11 14,9 17,9"/></svg></div></div><h4 data-i18n="feat.drift-h4">Drift detection</h4><p data-i18n="feat.drift-p">If a generated file gets edited directly, Codi notices. You'll always know when something's out of sync.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="presets" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.5v4H2v-4"/><path d="M16 6.5H2l2-4.5h10z"/><line x1="9" y1="2" x2="9" y2="15.5"/></svg></div></div><h4 data-i18n="feat.presets-h4">Share your setup</h4><p data-i18n="feat.presets-p">Pack your rules, skills, and agents into a preset and push it to GitHub. Everyone on your team installs it with one command — same config, same agent behavior, no setup time.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="flags" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8.5" width="10" height="8" rx="1.5"/><path d="M6.5 8.5V6a2.5 2.5 0 0 1 5 0v2.5"/></svg></div></div><h4 data-i18n="feat.flags-h4">Locked flags</h4><p data-i18n="feat.flags-p">Three layers: preset, repo, user. As a tech lead you can lock the rules your team can't change — things like security checks or test coverage requirements.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="hooks" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 7.5a4 4 0 0 1 0 5.66l-1.42 1.42a4 4 0 0 1-5.66-5.66l1-1"/><path d="M7.5 10.5a4 4 0 0 1 0-5.66l1.42-1.42a4 4 0 0 1 5.66 5.66l-1 1"/></svg></div></div><h4 data-i18n="feat.hooks-h4">14 hook types</h4><p data-i18n="feat.hooks-p">Auto-detects Husky, pre-commit, and Lefthook. Secret scanning and type checking built in.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="watch" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5A6.5 6.5 0 1 0 4 4.2L2 2"/><path d="M2 5.5V2h3.5"/><path d="M9 5.5v4l3 1.5"/></svg></div></div><h4 data-i18n="feat.watch-h4">Watch + revert</h4><p data-i18n="feat.watch-p">Live watch mode regenerates on every save. Roll back to any timestamped snapshot instantly.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="onboard" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M12.4 5.6l1.4-1.4M4.2 13.8l1.4-1.4"/><circle cx="9" cy="9" r="2.5"/></svg></div></div><h4 data-i18n="feat.onboard-h4">AI onboarding</h4><p data-i18n-html="feat.onboard-p"><code>codi onboard</code> explores your codebase and proposes the ideal configuration automatically.</p><span class="feature-more">Explore →</span></div>
+        <div class="feature-card reveal" data-feature="verify" role="button" tabindex="0"><span class="ps-corner ps-corner--tl"></span><span class="ps-corner ps-corner--tr"></span><span class="ps-corner ps-corner--bl"></span><span class="ps-corner ps-corner--br"></span><div class="feature-icon-box"><div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L3 4.5v4.8C3 13.1 5.8 16.1 9 17c3.2-.9 6-3.9 6-7.7V4.5L9 2z"/><polyline points="6.5,9 8,10.5 11.5,6.5"/></svg></div></div><h4 data-i18n="feat.verify-h4">Verification tokens</h4><p data-i18n-html="feat.verify-p">SHA-256 hash embedded in every generated file. <code>codi verify</code> confirms zero tampering.</p><span class="feature-more">Explore →</span></div>
       </div>
     </div>
   </section>
@@ -171,7 +171,7 @@
             <div class="pt-line pt-cmd">codi init</div>
             <div class="pt-line pt-muted"># Sprint 5: capture what you learned</div>
             <div class="pt-line pt-cmd">codi add rule my-error-handling</div>
-            <div class="pt-line pt-g">✓ All 5 agents updated with your conventions</div>
+            <div class="pt-line pt-g">✓ All agents updated with your conventions</div>
             <div class="pt-line pt-cyan"># Sprint 20: agents that feel like you</div>
           </div>
         </div>
@@ -194,7 +194,7 @@
             <div class="pt-line pt-cmd">codi contribute  # publish team preset</div>
             <div class="pt-line pt-muted"># Every developer, including new hires</div>
             <div class="pt-line pt-cmd">codi install github:acme/team-preset</div>
-            <div class="pt-line pt-g">✓ 12 rules, 8 skills synced across 5 agents</div>
+            <div class="pt-line pt-g">✓ 12 rules, 8 skills — all agents synced</div>
             <div class="pt-line pt-cyan"># One config. Zero drift. Always.</div>
           </div>
         </div>
@@ -366,7 +366,7 @@
             <div class="tl"><span class="t-g">✓</span> <span class="t-w">AGENTS.md</span></div>
             <div class="tl"><span class="t-g">✓</span> <span class="t-w">.windsurfrules</span></div>
             <div class="tl"><span class="t-g">✓</span> <span class="t-w">.clinerules</span></div>
-            <div class="tl tl-final"><span class="t-cyan">5 agents synced. Zero drift.</span> <span class="blink">█</span></div>
+            <div class="tl tl-final"><span class="t-cyan">All agents synced. Zero drift.</span> <span class="blink">█</span></div>
           </div>
         </div>
       </div>
@@ -486,7 +486,7 @@
       <div class="t-line t-cmd">codi add rule codi-security</div>
       <div class="t-line t-g">✓ codi-security added to .codi/rules/</div>
       <div class="t-line t-cmd">codi generate</div>
-      <div class="t-line t-g">✓ Security rules propagated to 5 agents</div>
+      <div class="t-line t-g">✓ Security rules propagated to all agents</div>
     </div>
   </template>
 
@@ -522,7 +522,7 @@
     <p class="modal-section-title" data-i18n="modal.presets.section2">Install from anywhere</p>
     <div class="modal-terminal">
       <div class="t-line t-cmd">codi install github:org/my-preset</div>
-      <div class="t-line t-g">✓ Preset installed and synced across 5 agents</div>
+      <div class="t-line t-g">✓ Preset installed — all agents synced</div>
       <div class="t-line t-cmd">codi install ./preset.zip</div>
       <div class="t-line t-g">✓ Preset unpacked from archive</div>
     </div>
@@ -582,7 +582,7 @@
       <div class="t-line t-cmd">codi watch</div>
       <div class="t-line t-g">✓ Watching .codi/ for changes...</div>
       <div class="t-line t-g">✓ codi-security.md saved — regenerating</div>
-      <div class="t-line t-g">✓ 5 agents updated in 42ms</div>
+      <div class="t-line t-g">✓ All agents updated in 42ms</div>
       <div class="t-line t-g">✓ Backup: .codi/backups/2026-04-05T09:30:00</div>
     </div>
     <p class="modal-section-title" data-i18n="modal.watch.section1">Revert to any snapshot</p>
@@ -629,7 +629,7 @@
       <div class="t-line t-g">✓ AGENTS.md        token valid</div>
       <div class="t-line t-g">✓ .windsurfrules   token valid</div>
       <div class="t-line t-g">✓ .clinerules      token valid</div>
-      <div class="t-line t-cyan">All 5 files verified.</div>
+      <div class="t-line t-cyan">All files verified.</div>
     </div>
   </template>
 

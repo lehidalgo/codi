@@ -56,6 +56,13 @@ jobs:
 
       - name: Check version was bumped
         run: |
+          # Skip version bump for non-package changes (site, CI, docs)
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+          NON_PKG=$(echo "$CHANGED" | grep -v '^site/' | grep -v '^docs/' | grep -v '^\.github/' || true)
+          if [ -z "$NON_PKG" ]; then
+            echo "No package changes — skipping version bump check."
+            exit 0
+          fi
           VERSION=$(node -p 'require("./package.json").version')
           PUBLISHED=$(npm view codi-cli version 2>/dev/null || echo "0.0.0")
           if [ "$VERSION" = "$PUBLISHED" ]; then
