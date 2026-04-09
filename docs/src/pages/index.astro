@@ -12,27 +12,56 @@ const base = import.meta.env.BASE_URL;
 
   <div class="docs-cards">
     <a href={`${base}guides/getting-started/`} class="docs-card">
-      <div class="docs-card-icon">→</div>
+      <div class="docs-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2l9.73-9.73a2 2 0 0 0-2.83-2.83L4.5 16.5z"/>
+          <path d="M14.5 6.5c1-1.5 3-4.5 7-4.5-1 4-3 6-4.5 7"/>
+          <circle cx="16" cy="8" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
       <h3>Getting Started</h3>
       <p>Install Codi and generate your first agent configuration in under 5 minutes.</p>
     </a>
     <a href={`${base}reference/cli-reference/`} class="docs-card">
-      <div class="docs-card-icon">$</div>
+      <div class="docs-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="m9 10-3 3 3 3"/>
+          <path d="m15 10 3 3-3 3"/>
+        </svg>
+      </div>
       <h3>CLI Reference</h3>
       <p>Complete reference for all Codi commands, options, and exit codes.</p>
     </a>
     <a href={`${base}reference/configuration/`} class="docs-card">
-      <div class="docs-card-icon">⚙</div>
+      <div class="docs-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
       <h3>Configuration</h3>
       <p>Directory structure, manifest fields, flags, and MCP server setup.</p>
     </a>
-    <a href={`${base}api/overview/`} class="docs-card">
-      <div class="docs-card-icon">{`{}`}</div>
+    <a href={`${base}api/types/`} class="docs-card">
+      <div class="docs-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+      </div>
       <h3>API Reference</h3>
       <p>Auto-generated TypeScript API docs — types, schemas, adapters, and config functions.</p>
     </a>
     <a href={`${base}catalog/`} class="docs-card">
-      <div class="docs-card-icon">◈</div>
+      <div class="docs-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
       <h3>Artifact Catalog</h3>
       <p>Browse all 123 built-in skills, rules, agents, and presets — filter by category, compatibility, and more.</p>
     </a>

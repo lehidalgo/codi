@@ -29,12 +29,13 @@ for (const doc of allDocs) {
   const topDir = doc.id.split('/')[0];
   if (!GROUP_ORDER.includes(topDir)) continue;
 
-  // For api/ only show top-level files (api/readme, api/adapters, api/types, etc.)
-  // Skip deeply nested entries like api/core/config
+  // For api/ only show top-level files (api/adapters, api/types, etc.)
+  // Skip deeply nested entries and the auto-generated README index
   if (topDir === 'api') {
     const parts = doc.id.split('/');
-    // allow: api/README (1 level), api/adapters (1 level), api/core/config (2 levels is ok)
+    const lastName = parts[parts.length - 1].toLowerCase();
     if (parts.length > 3) continue;
+    if (lastName === 'readme') continue;  // hide TypeDoc root index page
   }
 
   if (!groups[topDir]) groups[topDir] = [];
@@ -50,9 +51,7 @@ for (const dir of GROUP_ORDER) {
 const currentPath = Astro.url.pathname.replace(/\/$/, '');
 
 function docHref(id: string) {
-  // TypeDoc generates README.md which maps to id "api/README"
-  // Astro lowercases entry ids from glob loader
-  const slug = id.toLowerCase().replace(/\/readme$/, '/overview');
+  const slug = id.toLowerCase();
   return `${base}${slug}/`;
 }
 
@@ -94,6 +93,13 @@ function docLabel(doc: DocEntry): string {
         <a href="https://github.com/lehidalgo/codi" target="_blank" rel="noopener">GitHub</a>
         <a href={`${siteRoot}#quickstart`} class="btn-primary">Install</a>
       </div>
+      <button class="docs-search-trigger" id="docs-search-trigger" aria-label="Search documentation" aria-keyshortcuts="Control+K Meta+K">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <span>Search</span>
+        <kbd>⌘K</kbd>
+      </button>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -128,7 +134,42 @@ function docLabel(doc: DocEntry): string {
         <slot />
       </article>
     </main>
+
+    <aside class="docs-toc" id="docs-toc" aria-label="On this page">
+      <span class="docs-toc-label">On this page</span>
+      <ul class="docs-toc-list" id="docs-toc-list"></ul>
+    </aside>
   </div>
+
+  <!-- Search modal -->
+  <div class="search-modal" id="search-modal" role="dialog" aria-modal="true" aria-label="Search documentation" hidden>
+    <div class="search-backdrop" id="search-backdrop"></div>
+    <div class="search-box">
+      <div class="search-input-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="search" id="search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false" />
+        <button class="search-close" id="search-close" aria-label="Close search">
+          <kbd>Esc</kbd>
+        </button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+      <div class="search-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> open</span>
+        <span><kbd>Esc</kbd> close</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile sidebar toggle -->
+  <button class="docs-sidebar-toggle" id="docs-sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="false">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="docs-overlay" id="docs-overlay"></div>
 
   <script>
     // Nav scroll glow
@@ -149,6 +190,108 @@ function docLabel(doc: DocEntry): string {
       });
     }
 
+    // Mobile docs sidebar toggle
+    const sidebarToggle = document.getElementById('docs-sidebar-toggle');
+    const docsSidebar = document.getElementById('docs-sidebar');
+    const docsOverlay = document.getElementById('docs-overlay');
+    if (sidebarToggle && docsSidebar && docsOverlay) {
+      const openSidebar = () => {
+        docsSidebar.classList.add('open');
+        docsOverlay.classList.add('open');
+        sidebarToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      };
+      const closeSidebar = () => {
+        docsSidebar.classList.remove('open');
+        docsOverlay.classList.remove('open');
+        sidebarToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      };
+      sidebarToggle.addEventListener('click', () => {
+        docsSidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+      });
+      docsOverlay.addEventListener('click', closeSidebar);
+    }
+
+    // Heading anchor links
+    document.querySelectorAll<HTMLElement>('.docs-content h2, .docs-content h3, .docs-content h4').forEach(h => {
+      if (h.closest('.docs-card')) return;
+      if (!h.id) {
+        h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
+      }
+      const anchor = document.createElement('a');
+      anchor.href = '#' + h.id;
+      anchor.className = 'heading-anchor';
+      anchor.setAttribute('aria-label', 'Link to this section');
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('width', '14'); svg.setAttribute('height', '14');
+      svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+      const p1 = document.createElementNS(svgNS, 'path');
+      p1.setAttribute('d', 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71');
+      const p2 = document.createElementNS(svgNS, 'path');
+      p2.setAttribute('d', 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71');
+      svg.appendChild(p1); svg.appendChild(p2);
+      anchor.appendChild(svg);
+      h.appendChild(anchor);
+    });
+
+    // TOC: build from headings and wire up scroll-spy
+    (function() {
+      const article = document.querySelector<HTMLElement>('.docs-content');
+      const tocList = document.getElementById('docs-toc-list');
+      const tocSidebar = document.getElementById('docs-toc');
+      if (!article || !tocList || !tocSidebar) return;
+
+      const headings = Array.from(
+        article.querySelectorAll<HTMLElement>('h2, h3')
+      );
+
+      if (headings.length < 2) {
+        tocSidebar.style.visibility = 'hidden';
+        return;
+      }
+
+      headings.forEach(h => {
+        if (!h.id) {
+          h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
+        }
+        const li = document.createElement('li');
+        li.className = `docs-toc-item depth-${h.tagName === 'H3' ? 3 : 2}`;
+        const a = document.createElement('a');
+        a.href = `#${h.id}`;
+        a.className = 'docs-toc-link';
+        a.textContent = h.textContent ?? '';
+        li.appendChild(a);
+        tocList.appendChild(li);
+      });
+
+      // Scroll-spy with IntersectionObserver
+      const links = Array.from(tocList.querySelectorAll<HTMLAnchorElement>('.docs-toc-link'));
+      let active: HTMLAnchorElement | null = null;
+
+      const setActive = (link: HTMLAnchorElement) => {
+        if (active === link) return;
+        active?.classList.remove('active');
+        link.classList.add('active');
+        active = link;
+      };
+
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const link = links.find(l => l.getAttribute('href') === `#${entry.target.id}`);
+            if (link) setActive(link);
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+
+      headings.forEach(h => observer.observe(h));
+      if (links[0]) setActive(links[0]);
+    })();
+
     // Code copy buttons
     document.querySelectorAll<HTMLElement>('.docs-content pre').forEach(pre => {
       const code = pre.querySelector('code');
@@ -166,6 +309,102 @@ function docLabel(doc: DocEntry): string {
         });
       });
     });
+    // Search
+    (function() {
+      const modal = document.getElementById('search-modal');
+      const backdrop = document.getElementById('search-backdrop');
+      const input = document.getElementById('search-input') as HTMLInputElement | null;
+      const results = document.getElementById('search-results');
+      const trigger = document.getElementById('docs-search-trigger');
+      const closeBtn = document.getElementById('search-close');
+      if (!modal || !input || !results || !trigger) return;
+
+      let pagefind: any = null;
+      let selectedIndex = -1;
+
+      const openSearch = async () => {
+        modal.hidden = false;
+        input.focus();
+        if (!pagefind) {
+          try {
+            pagefind = await import('/codi/docs/_pagefind/pagefind.js');
+            await pagefind.init();
+          } catch {
+            results.textContent = 'Search index not available. Run npm run docs:build first.';
+          }
+        }
+      };
+
+      const closeSearch = () => {
+        modal.hidden = true;
+        input.value = '';
+        results.textContent = '';
+        selectedIndex = -1;
+      };
+
+      trigger.addEventListener('click', openSearch);
+      backdrop?.addEventListener('click', closeSearch);
+      closeBtn?.addEventListener('click', closeSearch);
+
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          modal.hidden ? openSearch() : closeSearch();
+        }
+        if (!modal.hidden && e.key === 'Escape') closeSearch();
+        if (!modal.hidden && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+          e.preventDefault();
+          const items = results.querySelectorAll<HTMLAnchorElement>('.search-result-item');
+          if (!items.length) return;
+          items[selectedIndex]?.classList.remove('selected');
+          selectedIndex = e.key === 'ArrowDown'
+            ? Math.min(selectedIndex + 1, items.length - 1)
+            : Math.max(selectedIndex - 1, 0);
+          items[selectedIndex]?.classList.add('selected');
+          items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        }
+        if (!modal.hidden && e.key === 'Enter') {
+          const selected = results.querySelector<HTMLAnchorElement>('.search-result-item.selected');
+          if (selected) { selected.click(); closeSearch(); }
+        }
+      });
+
+      let debounce: ReturnType<typeof setTimeout>;
+      input.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+          const q = input.value.trim();
+          results.textContent = '';
+          selectedIndex = -1;
+          if (!q || !pagefind) return;
+          const search = await pagefind.debouncedSearch(q);
+          if (!search?.results?.length) {
+            const empty = document.createElement('p');
+            empty.className = 'search-empty';
+            empty.textContent = 'No results for "' + q + '"';
+            results.appendChild(empty);
+            return;
+          }
+          const top = search.results.slice(0, 8);
+          for (const r of top) {
+            const data = await r.data();
+            const a = document.createElement('a');
+            a.href = data.url;
+            a.className = 'search-result-item';
+            const title = document.createElement('span');
+            title.className = 'search-result-title';
+            title.textContent = data.meta?.title ?? data.url;
+            const excerpt = document.createElement('span');
+            excerpt.className = 'search-result-excerpt';
+            excerpt.textContent = data.excerpt?.replace(/<[^>]+>/g, '') ?? '';
+            a.appendChild(title);
+            a.appendChild(excerpt);
+            a.addEventListener('click', closeSearch);
+            results.appendChild(a);
+          }
+        }, 150);
+      });
+    })();
   </script>
 </body>
 </html>
