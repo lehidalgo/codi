@@ -211,6 +211,13 @@ const LANGUAGE_HOOKS: Record<string, HookEntry[]> = {
       stagedFilter: "**/*.dart",
     },
   ],
+  shell: [
+    {
+      name: "shellcheck",
+      command: "shellcheck -S warning",
+      stagedFilter: "**/*.sh",
+    },
+  ],
 };
 
 const GLOBAL_HOOKS: HookEntry[] = [

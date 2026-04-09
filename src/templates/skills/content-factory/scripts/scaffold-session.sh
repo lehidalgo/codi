@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-SESSION_NAME="${1:?Usage: scaffold-session.sh <session-name>}"
+: "${1:?Usage: scaffold-session.sh <session-name>}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -18,15 +18,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Copy generator templates into the session content directory so the agent has
-# starting-point HTML files. The server will inject preview-shell.js at runtime.
-START_ARGS="--name content-factory"
+# Build start-server.sh args as an array to avoid word-splitting issues
+START_ARGS=(--name content-factory)
 if [[ -n "$PROJECT_DIR" ]]; then
-  START_ARGS="$START_ARGS --project-dir $PROJECT_DIR"
+  START_ARGS+=(--project-dir "$PROJECT_DIR")
 fi
 
 # Start server — it creates the session directory structure
-SERVER_JSON=$(bash "$SCRIPT_DIR/start-server.sh" $START_ARGS)
+SERVER_JSON=$(bash "$SCRIPT_DIR/start-server.sh" "${START_ARGS[@]}")
 echo "$SERVER_JSON"
 
 # Extract screen_dir from server JSON
