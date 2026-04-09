@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-04-09
+
 ### Added
 
 - **Artifact Catalog docs site** — 123 built-in artifacts (67 skills, 28 rules, 22 agents, 6 presets) browsable at `/docs/catalog/` with type tabs, category chips, compatibility filters, search, and individual markdown-rendered artifact pages
