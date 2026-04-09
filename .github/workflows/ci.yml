@@ -56,11 +56,11 @@ jobs:
 
       - name: Check version was bumped
         run: |
-          # Skip version bump requirement when only site/** or docs/project/** changed
+          # Skip version bump for non-package changes (site, CI, docs)
           CHANGED=$(git diff --name-only origin/main...HEAD)
-          NON_SITE=$(echo "$CHANGED" | grep -v '^site/' | grep -v '^docs/project/' || true)
-          if [ -z "$NON_SITE" ]; then
-            echo "Only site/docs changes — skipping version bump check."
+          NON_PKG=$(echo "$CHANGED" | grep -v '^site/' | grep -v '^docs/' | grep -v '^\.github/' || true)
+          if [ -z "$NON_PKG" ]; then
+            echo "No package changes — skipping version bump check."
             exit 0
           fi
           VERSION=$(node -p 'require("./package.json").version')
