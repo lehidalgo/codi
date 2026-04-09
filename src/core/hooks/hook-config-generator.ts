@@ -18,6 +18,7 @@ export interface HooksConfig {
   importDepthCheck: boolean;
   skillYamlValidation: boolean;
   skillResourceCheck: boolean;
+  stagedJunkCheck: boolean;
   versionBump: boolean;
   docCheck: boolean;
   docProtectedBranches: string[];
@@ -153,6 +154,12 @@ export function generateHooksConfig(
     stagedFilter: "**/{SKILL.md,template.ts,*.md}",
   });
 
+  allHooks.push({
+    name: "staged-junk-check",
+    command: `node .git/hooks/${PROJECT_NAME}-staged-junk-check.mjs`,
+    stagedFilter: "**",
+  });
+
   const templateWiringCheck = hasTemplateWiringCheck();
 
   if (templateWiringCheck) {
@@ -189,6 +196,7 @@ export function generateHooksConfig(
     importDepthCheck: true,
     skillYamlValidation: true,
     skillResourceCheck: true,
+    stagedJunkCheck: true,
     versionBump,
     docCheck,
     docProtectedBranches,

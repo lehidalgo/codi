@@ -565,3 +565,38 @@ try {
  * Blocks pushes to protected branches when docs/project/.doc-stamp is outdated.
  * {{PROTECTED_BRANCHES}} is replaced with a space-separated list of branch patterns at install time.
  */
+
+export const STAGED_JUNK_CHECK_TEMPLATE = `#!/usr/bin/env node
+// ${PROJECT_NAME_DISPLAY} staged junk file checker
+// Detects OS/tool junk files staged for commit and blocks them.
+// Junk files are never intentional commits — they pollute history and break wiring checks.
+// Covered: .DS_Store, Thumbs.db, desktop.ini, __pycache__, .pyc, .pyo, .pytest_cache, .mypy_cache, .class
+import { execFileSync } from 'child_process';
+
+const JUNK_PATTERNS = [
+  /(\\\/|^)\\.DS_Store$/,
+  /(\\\/|^)Thumbs\\.db$/i,
+  /(\\\/|^)desktop\\.ini$/i,
+  /(\\\/|^)__pycache__(\\\/|$)/,
+  /\\.pyc$/,
+  /\\.pyo$/,
+  /(\\\/|^)\\.pytest_cache(\\\/|$)/,
+  /(\\\/|^)\\.mypy_cache(\\\/|$)/,
+  /\\.class$/,
+];
+
+const files = process.argv.slice(2);
+const junk = files.filter(f => JUNK_PATTERNS.some(p => p.test(f)));
+
+if (junk.length === 0) process.exit(0);
+
+console.error('[${PROJECT_NAME_DISPLAY}] Junk files detected in staged changes:');
+for (const f of junk) {
+  console.error('  ' + f);
+}
+console.error('');
+console.error('These files were NOT committed. Unstage them with:');
+console.error('  git rm --cached ' + junk.join(' '));
+console.error('And add them to .gitignore if needed.');
+process.exit(1);
+`;

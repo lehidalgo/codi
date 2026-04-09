@@ -15,6 +15,7 @@ import {
   DOC_NAMING_CHECK_TEMPLATE,
   ARTIFACT_VALIDATE_TEMPLATE,
   SKILL_RESOURCE_CHECK_TEMPLATE,
+  STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
 import {
   COMMIT_MSG_TEMPLATE,
@@ -51,6 +52,7 @@ export interface InstallOptions {
   importDepthCheck?: boolean;
   skillYamlValidation?: boolean;
   skillResourceCheck?: boolean;
+  stagedJunkCheck?: boolean;
   versionBump?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
@@ -79,6 +81,10 @@ function buildArtifactValidateScript(): string {
 
 function buildVersionBumpScript(): string {
   return VERSION_BUMP_TEMPLATE;
+}
+
+function buildStagedJunkCheckScript(): string {
+  return STAGED_JUNK_CHECK_TEMPLATE;
 }
 
 async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
@@ -158,6 +164,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, resourceCheckPath));
+  }
+  if (options.stagedJunkCheck) {
+    const junkCheckPath = path.join(hookDir, `${PROJECT_NAME}-staged-junk-check.mjs`);
+    await fs.writeFile(junkCheckPath, STAGED_JUNK_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, junkCheckPath));
   }
   if (options.versionBump) {
     const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);
@@ -576,6 +590,7 @@ export {
   buildFileSizeScript,
   buildTemplateWiringScript,
   buildVersionBumpScript,
+  buildStagedJunkCheckScript,
   stripGeneratedSection,
   globToGrepPattern,
   buildHuskyCommands,
