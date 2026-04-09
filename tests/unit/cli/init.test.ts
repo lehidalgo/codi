@@ -1,16 +1,32 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
+
+// Mock expensive template-hashing operations — these tests cover directory structure,
+// not version/hash logic. buildTemplateHashRegistry() hashes all templates synchronously
+// and causes flaky timeouts when 150+ test workers compete for disk I/O.
+vi.mock("#src/core/version/template-hash-registry.js", () => ({
+  buildTemplateHashRegistry: vi.fn(() => ({
+    cliVersion: "0.0.0",
+    generatedAt: new Date().toISOString(),
+    templates: {},
+  })),
+  getTemplateFingerprint: vi.fn(() => undefined),
+  getAllFingerprints: vi.fn(() => []),
+  _resetRegistryCache: vi.fn(),
+}));
+vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
+  checkTemplateRegistry: vi.fn().mockReturnValue([]),
+}));
+
+// Integration-level I/O under 150 parallel workers can exceed 10s.
+vi.setConfig({ testTimeout: 30_000 });
+
 import { initHandler } from "#src/cli/init.js";
 import { Logger } from "#src/core/output/logger.js";
-import {
-  prefixedName,
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { prefixedName, PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("init command handler", () => {
   let tmpDir: string;
@@ -34,16 +50,10 @@ describe("init command handler", () => {
     const stat = await fs.stat(configDir);
     expect(stat.isDirectory()).toBe(true);
 
-    const manifest = await fs.readFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      "utf-8",
-    );
+    const manifest = await fs.readFile(path.join(configDir, MANIFEST_FILENAME), "utf-8");
     expect(manifest).toContain('version: "1"');
 
-    const flags = await fs.readFile(
-      path.join(configDir, "flags.yaml"),
-      "utf-8",
-    );
+    const flags = await fs.readFile(path.join(configDir, "flags.yaml"), "utf-8");
     expect(flags).toContain("auto_commit:");
 
     const rulesDir = await fs.stat(path.join(configDir, "rules"));
@@ -84,11 +94,7 @@ describe("init command handler", () => {
   });
 
   it("detects python stack when pyproject.toml exists", async () => {
-    await fs.writeFile(
-      path.join(tmpDir, "pyproject.toml"),
-      "[build-system]",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, "pyproject.toml"), "[build-system]", "utf-8");
 
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
@@ -97,11 +103,7 @@ describe("init command handler", () => {
 
   it("detects multiple stacks simultaneously", async () => {
     await fs.writeFile(path.join(tmpDir, "package.json"), "{}", "utf-8");
-    await fs.writeFile(
-      path.join(tmpDir, "pyproject.toml"),
-      "[build-system]",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, "pyproject.toml"), "[build-system]", "utf-8");
 
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
@@ -113,10 +115,7 @@ describe("init command handler", () => {
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
 
-    const manifest = await fs.readFile(
-      path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME),
-      "utf-8",
-    );
+    const manifest = await fs.readFile(path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME), "utf-8");
     expect(manifest).toContain("name:");
     expect(manifest).toContain('version: "1"');
     expect(manifest).toContain("agents:");
@@ -126,10 +125,7 @@ describe("init command handler", () => {
     const result = await initHandler(tmpDir, { json: true });
     expect(result.success).toBe(true);
 
-    const flagsContent = await fs.readFile(
-      path.join(tmpDir, PROJECT_DIR, "flags.yaml"),
-      "utf-8",
-    );
+    const flagsContent = await fs.readFile(path.join(tmpDir, PROJECT_DIR, "flags.yaml"), "utf-8");
     expect(flagsContent).toContain("security_scan:");
   });
 

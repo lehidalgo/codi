@@ -22,12 +22,27 @@ interface DocsCommandOptions extends GlobalOptions {
   html?: boolean;
   generate?: boolean;
   validate?: boolean;
+  catalog?: boolean;
 }
 
 export async function docsHandler(
   projectRoot: string,
   options: DocsCommandOptions,
 ): Promise<CommandResult<DocsData>> {
+  // --catalog: generate artifact catalog markdown pages and meta JSON
+  if (options.catalog) {
+    const { generateCatalogMarkdownFiles, writeCatalogMetaJson } =
+      await import("../core/docs/artifact-catalog-generator.js");
+    await generateCatalogMarkdownFiles(projectRoot);
+    const metaPath = await writeCatalogMetaJson(projectRoot);
+    return createCommandResult({
+      success: true,
+      command: "docs",
+      data: { outputPath: metaPath, totalSkills: 0 },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  }
+
   // --validate: check if code-driven doc sections are in sync
   if (options.validate) {
     const result = await validateSections(projectRoot);
@@ -133,6 +148,7 @@ export function registerDocsCommand(program: Command): void {
     .option("--html", "Generate HTML skill catalog site (default)")
     .option("--generate", "Regenerate code-driven doc sections")
     .option("--validate", "Check if docs are in sync with code")
+    .option("--catalog", "Generate artifact catalog markdown pages and meta JSON")
     .option("--output <path>", "Output file path")
     .action(async (options: DocsCommandOptions) => {
       const globalOptions = program.opts() as GlobalOptions;

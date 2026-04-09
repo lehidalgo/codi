@@ -13,7 +13,7 @@ import { join } from "node:path";
 
 const SRC = "src/templates/skills";
 const DEST = "dist/templates/skills";
-const SUBDIRS = ["assets", "references", "scripts", "agents"];
+const SUBDIRS = ["assets", "references", "scripts", "agents", "brand", "generators"];
 
 let copied = 0;
 

@@ -21,6 +21,11 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     exclude: ["projs/**", "node_modules/**"],
     testTimeout: 10_000,
+    server: {
+      deps: {
+        external: [/astro/, /@astrojs/, /starlight/, /typedoc/, /vitepress/],
+      },
+    },
     fileParallelism: true,
     sequence: {
       concurrent: false,

@@ -48,6 +48,13 @@ function buildMdcFrontmatter(rule: NormalizedRule): string {
   return lines.join("\n");
 }
 
+/**
+ * Adapter for Cursor — AI-powered code editor.
+ *
+ * Detects presence of `.cursor/` directory or `.cursorrules` file.
+ * Generates `.cursorrules` (primary instruction file), `.cursor/rules/*.mdc`,
+ * and `.cursor/mcp.json` (MCP server config).
+ */
 export const cursorAdapter: AgentAdapter = {
   id: "cursor",
   name: "Cursor",

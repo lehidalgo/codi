@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!--
+  Content Factory Social Base Template — Cards / Carousel Shell
+  ====================================================
+  Purpose: Reference template for the CODING AGENT. Read this to understand
+  the required HTML structure for branded social content (LinkedIn carousels,
+  Instagram cards, blog headers, etc.).
+  Generate a new file at screen_dir/social.html using this structure.
+
+  Font paths: Replace SKILL_FONTS_DIR with ${CLAUDE_SKILL_DIR}/assets/fonts
+  Logo path:  Replace SKILL_ASSETS_DIR with ${CLAUDE_SKILL_DIR}/assets
+
+  Card types (data-type attribute):
+    cover    — First card: title + key hook
+    content  — Interior cards: one idea per card
+    stat     — Single metric with context
+    quote    — Pull quote card
+    cta      — Last card: call to action + contact
+
+  Default aspect ratio: 1:1 (1080×1080) for LinkedIn/Instagram
+  Change --social-w / --social-h in :root for other ratios:
+    4:5  portrait:   1080×1350
+    9:16 story:      1080×1920
+    1.91:1 landscape: 1200×628
+-->
+<html lang="en" class="theme-dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Social — Content Factory</title>
+  <style>
+    /* ── Brand Tokens — paste full contents of brand/tokens.css here ── */
+
+    /* ── Reset ─────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Social Layout ──────────────────────────────────────────────────────── */
+    html, body {
+      background: #111;
+      font-family: var(--brand-font-body);
+      color: var(--brand-text);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0 80px;
+      gap: 16px;
+    }
+
+    /* ── Card ───────────────────────────────────────────────────────────────── */
+    .social-card {
+      position: relative;
+      width: var(--social-w);
+      height: var(--social-h);
+      background: var(--brand-bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 60px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    /* ── Card number indicator ───────────────────────────────────────────────── */
+    .card-index {
+      position: absolute;
+      top: 24px; right: 24px;
+      font-size: 12px;
+      color: var(--brand-text-muted);
+      font-weight: 500;
+    }
+
+    /* ── Cover Card ─────────────────────────────────────────────────────────── */
+    .social-card[data-type="cover"] {
+      background: var(--brand-surface);
+      justify-content: flex-end;
+    }
+
+    .social-card[data-type="cover"]::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+    }
+
+    .social-card[data-type="cover"] h1 {
+      font-family: var(--brand-font-headline);
+      font-size: 52px;
+      font-weight: 700;
+      color: var(--brand-text);
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .social-card[data-type="cover"] .card-hook {
+      font-size: 20px;
+      color: var(--brand-text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Content Card ───────────────────────────────────────────────────────── */
+    .social-card[data-type="content"] h2 {
+      font-family: var(--brand-font-headline);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--brand-accent);
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    .social-card[data-type="content"] p {
+      font-size: 20px;
+      line-height: 1.6;
+      color: var(--brand-text);
+    }
+
+    /* ── Stat Card ──────────────────────────────────────────────────────────── */
+    .social-card[data-type="stat"] {
+      background: var(--brand-primary);
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .social-card[data-type="stat"] .stat-value {
+      font-family: var(--brand-font-headline);
+      font-size: 100px;
+      font-weight: 700;
+      color: var(--brand-accent);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .social-card[data-type="stat"] .stat-label {
+      font-size: 22px;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.4;
+      max-width: 500px;
+    }
+
+    /* ── Quote Card ─────────────────────────────────────────────────────────── */
+    .social-card[data-type="quote"] {
+      justify-content: center;
+    }
+
+    .social-card[data-type="quote"] blockquote {
+      font-family: var(--brand-font-headline);
+      font-size: 34px;
+      font-style: italic;
+      color: var(--brand-text);
+      line-height: 1.4;
+      border-left: 5px solid var(--brand-accent);
+      padding-left: 28px;
+    }
+
+    .social-card[data-type="quote"] .attribution {
+      margin-top: 24px;
+      font-size: 16px;
+      color: var(--brand-text-muted);
+      padding-left: 33px;
+    }
+
+    /* ── CTA Card ───────────────────────────────────────────────────────────── */
+    .social-card[data-type="cta"] {
+      background: var(--brand-surface);
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .social-card[data-type="cta"] h2 {
+      font-family: var(--brand-font-headline);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--brand-text);
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    .social-card[data-type="cta"] .cta-link {
+      font-size: 18px;
+      color: var(--brand-accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* ── Logo (bottom-right on all cards) ───────────────────────────────────── */
+    .card-logo {
+      position: absolute;
+      bottom: 40px; right: 40px;
+      height: 28px;
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="social-container">
+
+    <!-- COVER CARD -->
+    <section class="social-card" data-index="1" data-type="cover">
+      <span class="card-index">1 / 5</span>
+      <!-- <img class="card-logo" src="SKILL_ASSETS_DIR/logo.svg" alt="logo"> -->
+      <h1>Post Title</h1>
+      <p class="card-hook">One sentence hook that makes the reader swipe to the next card</p>
+    </section>
+
+    <!-- CONTENT CARD -->
+    <section class="social-card" data-index="2" data-type="content">
+      <span class="card-index">2 / 5</span>
+      <!-- <img class="card-logo" src="SKILL_ASSETS_DIR/logo.svg" alt="logo"> -->
+      <h2>Key Point</h2>
+      <p>One idea per card. Keep text at reading distance — 20px minimum. Short paragraphs. Active voice.</p>
+    </section>
+
+    <!-- STAT CARD -->
+    <section class="social-card" data-index="3" data-type="stat">
+      <span class="card-index">3 / 5</span>
+      <!-- <img class="card-logo" src="SKILL_ASSETS_DIR/logo.svg" alt="logo"> -->
+      <div class="stat-value">74%</div>
+      <div class="stat-label">of customers prefer digital banking for everyday transactions</div>
+    </section>
+
+    <!-- QUOTE CARD -->
+    <section class="social-card" data-index="4" data-type="quote">
+      <span class="card-index">4 / 5</span>
+      <!-- <img class="card-logo" src="SKILL_ASSETS_DIR/logo.svg" alt="logo"> -->
+      <blockquote>Your quote goes here</blockquote>
+      <p class="attribution">Source</p>
+    </section>
+
+    <!-- CTA CARD -->
+    <section class="social-card" data-index="5" data-type="cta">
+      <span class="card-index">5 / 5</span>
+      <!-- <img class="card-logo" src="SKILL_ASSETS_DIR/logo.svg" alt="logo"> -->
+      <h2>Learn more at bbva.com</h2>
+      <a class="cta-link" href="#">bbva.com</a>
+    </section>
+
+  </div>
+</body>
+</html>

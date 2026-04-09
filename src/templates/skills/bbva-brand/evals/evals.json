@@ -2,78 +2,114 @@
   "skillName": "codi-bbva-brand",
   "cases": [
     {
-      "id": "generates-pptx-via-ts-generator",
-      "description": "Skill invokes the TypeScript pptxgenjs generator when creating a BBVA presentation",
-      "prompt": "Create a BBVA presentation about our Q1 2026 results with 3 sections",
+      "id": "asks-discovery-questions",
+      "description": "Skill opens Phase 1 by asking all five discovery questions before generating anything",
+      "prompt": "I need a BBVA presentation about our Q1 2026 results",
       "expectations": [
-        "Reads brand_tokens.json or references it in the command",
-        "Runs npx tsx generate_pptx.ts or equivalent pptxgenjs command",
-        "Output command includes --content and --output flags",
-        "Does NOT use #004481 (legacy color) in any generated content — uses #001391"
+        "Asks about content type (slides, document, social) before generating",
+        "Asks about output format (HTML, PDF, PPTX, DOCX, PNG)",
+        "Asks about theme preference (dark or light)",
+        "Does NOT generate any HTML or run any script before receiving answers",
+        "Groups all questions into a single message"
       ]
     },
     {
-      "id": "generates-docx-branded-report",
-      "description": "Skill invokes the TypeScript DOCX generator for a branded report",
-      "prompt": "I need a BBVA-branded Word document report on our digital transformation strategy",
+      "id": "starts-preview-server",
+      "description": "Skill starts the brainstorming-compatible preview server in Phase 3",
+      "prompt": "Create a BBVA slide deck about digital transformation. Output: HTML. Theme: dark. Audience: executive board, formal.",
       "expectations": [
-        "Runs npx tsx generate_docx.ts or python3 generate_docx.py",
-        "Output file ends in .docx",
-        "Content uses correct BBVA typography tokens (Source Serif 4 / Lato for PPTX, BentonSans for web)",
-        "Document follows BBVA cover page structure (BBVA wordmark, title, author, date)"
+        "Runs bash .../scripts/start-server.sh before writing any HTML",
+        "Saves screen_dir and state_dir from the server output",
+        "Tells the user the preview URL before generating the prototype",
+        "Does NOT use node server.js or any other server script"
       ]
     },
     {
-      "id": "validates-pptx-brand-compliance",
-      "description": "Skill can validate an existing PPTX against BBVA brand rules",
-      "prompt": "Check if this presentation follows BBVA brand guidelines: /tmp/presentation.pptx",
+      "id": "generates-branded-slide-prototype",
+      "description": "Skill generates an HTML prototype at screen_dir/prototype.html with BBVA brand tokens",
+      "prompt": "Create a BBVA presentation about Q1 results. Type: slides. Format: HTML. Theme: dark. Audience: executive, formal.",
       "expectations": [
-        "Runs npx tsx validate_pptx.ts --input or python3 pptx_validator.py --input",
-        "Reports PASS/FAIL for each brand check",
-        "Checks include: has_slides, brand_mention, no_forbidden_phrases",
-        "Output shows check name and result for each rule"
+        "Writes prototype to screen_dir/prototype.html, not to the working directory",
+        "Inlines brand/tokens.css into a <style> block in the HTML",
+        "Replaces SKILL_FONTS_DIR with the absolute path to assets/fonts/",
+        "Does NOT inline preview-shell.js or html2canvas — server injects them automatically",
+        "Prototype contains exactly 3 slides (title, one content, closing)",
+        "Each slide has both data-type and data-index attributes set"
+      ]
+    },
+    {
+      "id": "exports-pptx-via-playwright",
+      "description": "Skill runs pptx.js (Playwright + PptxGenJS) for PPTX export",
+      "prompt": "Export the deck as PPTX",
+      "expectations": [
+        "Runs: node .../scripts/export/pptx.js --input screen_dir/deck.html --tokens .../brand/tokens.json --theme dark --output exports_dir/deck.pptx",
+        "Does NOT run any Python script for PPTX generation",
+        "Does NOT run npx tsx generate_pptx.ts",
+        "Tells the user to run 'npm install pptxgenjs playwright' if packages are missing"
       ]
     },
     {
       "id": "uses-correct-bbva-colors",
-      "description": "Skill provides correct BBVA color values from brand_tokens.json, not legacy values",
-      "prompt": "What are the official BBVA brand colors I should use for a presentation?",
+      "description": "Skill uses correct BBVA brand colors from brand/tokens.json",
+      "prompt": "What are the official BBVA dark theme colors?",
       "expectations": [
-        "Primary color is #001391 (Electric Blue), not #004481",
-        "Dark background is #070E46 (Midnight) or #000519 (Night)",
-        "Secondary accent is #8BE1E9 (Ice), not #2DCCCD",
-        "Mentions brand_tokens.json as the canonical source"
+        "Dark background is #000519",
+        "Dark surface is #070E46",
+        "Dark accent is #FFE761",
+        "Primary is #001391",
+        "References brand/tokens.json as the canonical source, not scripts/brand_tokens.json"
       ]
     },
     {
-      "id": "correct-font-guidance-pptx-vs-web",
-      "description": "Skill correctly distinguishes PPTX fonts from web fonts",
-      "prompt": "What fonts should I use for a BBVA PowerPoint presentation?",
+      "id": "uses-correct-bbva-fonts",
+      "description": "Skill uses Tiempos Headline + Benton Sans BBVA, not Source Serif 4 or Lato",
+      "prompt": "What fonts should I use for a BBVA slide deck?",
       "expectations": [
-        "PPTX headlines: Source Serif 4 (not BentonSans BBVA)",
-        "PPTX body: Lato (not BentonSans BBVA)",
-        "Clarifies that BentonSans BBVA is for web/HTML contexts only",
-        "Mentions font fallbacks (Arial, Georgia)"
+        "Headlines: Tiempos Headline (woff2 at assets/fonts/tiempos-headline-bold.woff2)",
+        "Body: Benton Sans BBVA (woff2 at assets/fonts/BentonSansBBVA-Book.woff2)",
+        "Does NOT recommend Source Serif 4 or Lato for BBVA slides",
+        "References brand/tokens.css for the @font-face declarations"
       ]
     },
     {
-      "id": "negative-no-trigger-for-generic-pptx",
-      "description": "Skill does NOT activate when user wants a generic (non-BBVA) presentation",
+      "id": "png-export-via-toolbar",
+      "description": "Skill explains PNG export is always available via the preview-shell toolbar",
+      "prompt": "Can I download the slides as PNG images?",
+      "expectations": [
+        "Explains that the preview-shell toolbar is injected into every HTML output",
+        "Per-slide: hover over a slide to see the Export PNG button",
+        "Bulk: Export All PNGs button downloads all slides sequentially",
+        "Does NOT run a separate script for PNG export"
+      ]
+    },
+    {
+      "id": "negative-no-trigger-generic-presentation",
+      "description": "Skill does NOT activate for a generic non-BBVA presentation",
       "prompt": "Create a presentation about machine learning fundamentals for my team",
       "expectations": [
-        "Does NOT read BBVA brand_tokens.json",
-        "Does NOT apply BBVA color palette #001391",
-        "Does NOT invoke BBVA brand skill generators"
+        "Does NOT read brand/tokens.json for BBVA colors",
+        "Does NOT apply BBVA color #001391 or #000519",
+        "Does NOT start the brainstorming preview server for this request"
       ]
     },
     {
-      "id": "negative-no-trigger-for-rl3-brand",
-      "description": "Skill does NOT activate when user explicitly asks for RL3 brand styling",
-      "prompt": "I need to create an RL3 AI Agency branded presentation",
+      "id": "negative-no-trigger-rl3-brand",
+      "description": "Skill does NOT activate when user explicitly asks for RL3 brand",
+      "prompt": "I need an RL3 AI Agency branded deck",
       "expectations": [
-        "Does NOT apply BBVA brand tokens",
-        "Does NOT use #001391 as primary color",
+        "Does NOT apply BBVA brand tokens or colors",
+        "Does NOT use BBVA fonts",
         "Routes to codi-rl3-brand skill instead"
+      ]
+    },
+    {
+      "id": "stops-server-after-export",
+      "description": "Skill stops the preview server after delivering the final output",
+      "prompt": "The deck looks great. Export as PDF and we're done.",
+      "expectations": [
+        "Runs node .../scripts/export/pdf.js for PDF export",
+        "After export, runs bash .../scripts/stop-server.sh with the session dir",
+        "Tells the user the PDF path and that the server has been stopped"
       ]
     }
   ]

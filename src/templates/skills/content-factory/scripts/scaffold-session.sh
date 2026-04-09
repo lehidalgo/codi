@@ -1,36 +1,48 @@
 #!/usr/bin/env bash
-# scaffold-session.sh — Create a content-factory session directory
-# Usage: bash scaffold-session.sh <session-name>
-# Creates content-factory-output/<session-name>/ with subdirectories and copies
-# preview-shell.js + vendor/ from the skill assets for inlining into generated HTML.
+# scaffold-session.sh — Create a content-factory session directory and start preview server
+# Usage: bash scaffold-session.sh <session-name> [--project-dir <path>]
 
 set -euo pipefail
 
 SESSION_NAME="${1:?Usage: scaffold-session.sh <session-name>}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-OUTPUT_DIR="content-factory-output/${SESSION_NAME}"
 
-if [ -d "$OUTPUT_DIR" ]; then
-  echo "Session directory already exists: $OUTPUT_DIR"
-  exit 1
+# Parse optional --project-dir
+PROJECT_DIR=""
+shift
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --project-dir) PROJECT_DIR="$2"; shift 2 ;;
+    *) echo "Unknown argument: $1"; exit 1 ;;
+  esac
+done
+
+# Copy generator templates into the session content directory so the agent has
+# starting-point HTML files. The server will inject preview-shell.js at runtime.
+START_ARGS="--name content-factory"
+if [[ -n "$PROJECT_DIR" ]]; then
+  START_ARGS="$START_ARGS --project-dir $PROJECT_DIR"
 fi
 
-mkdir -p "$OUTPUT_DIR"/{carousel,social/cards,blog}
+# Start server — it creates the session directory structure
+SERVER_JSON=$(bash "$SCRIPT_DIR/start-server.sh" $START_ARGS)
+echo "$SERVER_JSON"
 
-# Copy preview infrastructure for inlining
-if [ -f "$SKILL_DIR/assets/preview-shell.js" ]; then
-  cp "$SKILL_DIR/assets/preview-shell.js" "$OUTPUT_DIR/preview-shell.js"
+# Extract screen_dir from server JSON
+CONTENT_DIR=$(echo "$SERVER_JSON" | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{ try{ console.log(JSON.parse(d).screen_dir||'') }catch(e){} })")
+
+if [[ -z "$CONTENT_DIR" ]]; then
+  echo "Warning: could not determine content dir from server JSON" >&2
+  exit 0
 fi
 
-if [ -d "$SKILL_DIR/assets/vendor" ]; then
-  mkdir -p "$OUTPUT_DIR/vendor"
-  cp -r "$SKILL_DIR/assets/vendor/"* "$OUTPUT_DIR/vendor/"
-fi
+# Seed content dir with generator templates renamed for this session
+cp "$SKILL_DIR/generators/social-base.html"   "$CONTENT_DIR/social.html"
+cp "$SKILL_DIR/generators/document-base.html" "$CONTENT_DIR/document.html"
+cp "$SKILL_DIR/generators/slides-base.html"   "$CONTENT_DIR/deck.html"
 
-echo "Session scaffolded: $OUTPUT_DIR"
-echo "  carousel/       — carousel slide HTML"
-echo "  social/cards/   — social media card HTML"
-echo "  blog/           — blog post and export HTML"
-echo "  preview-shell.js — inline into generated HTML"
-echo "  vendor/         — html2canvas for PNG export"
+echo "Session seeded:"
+echo "  social.html   — social card template"
+echo "  document.html — document/blog template"
+echo "  deck.html     — slide deck template"

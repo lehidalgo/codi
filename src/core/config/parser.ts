@@ -25,12 +25,23 @@ import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import type { McpConfig } from "#src/types/config.js";
 import { MANIFEST_FILENAME, FLAGS_FILENAME, MCP_FILENAME, BRAND_CATEGORY } from "#src/constants.js";
 
+/**
+ * The raw parsed contents of a `.codi/` project directory, before validation.
+ *
+ * Produced by `scanProjectDir()` and consumed by `resolveConfig()`.
+ */
 export interface ParsedProjectDir {
+  /** The parsed `codi.yaml` manifest describing agents, rules, and skills to enable. */
   manifest: ProjectManifest;
+  /** Raw flag definitions keyed by flag name, as read from `flags.yaml`. */
   flags: Record<string, FlagDefinition>;
+  /** Normalized rule artifacts scanned from the `rules/` subdirectory. */
   rules: NormalizedRule[];
+  /** Normalized skill artifacts scanned from the `skills/` subdirectory. */
   skills: NormalizedSkill[];
+  /** Normalized agent artifacts scanned from the `agents/` subdirectory. */
   agents: NormalizedAgent[];
+  /** Merged MCP server configuration from `mcp.yaml` and `mcp-servers/`. */
   mcp: McpConfig;
 }
 
@@ -44,6 +55,12 @@ async function readYamlFile(filePath: string): Promise<Result<unknown>> {
   }
 }
 
+/**
+ * Reads and validates the `codi.yaml` manifest file from a config directory.
+ *
+ * @param configDir - Absolute path to the `.codi/` directory
+ * @returns A `Result` wrapping the parsed manifest, or errors if the file is missing or invalid
+ */
 export async function parseManifest(configDir: string): Promise<Result<ProjectManifest>> {
   const manifestPath = path.join(configDir, MANIFEST_FILENAME);
   if (!(await fileExists(manifestPath))) {
@@ -383,6 +400,15 @@ async function parseMcpConfig(configDir: string): Promise<Result<McpConfig>> {
   return ok({ servers: merged } as McpConfig);
 }
 
+/**
+ * Reads and parses all artifacts from a `.codi/` project directory.
+ *
+ * Reads the manifest, flags, rules, skills, agents, and MCP config in parallel.
+ * Returns a `ParsedProjectDir` containing normalized but unvalidated data.
+ *
+ * @param projectRoot - Absolute path to the project root directory
+ * @returns A `Result` wrapping the parsed directory contents, or errors if any file is invalid
+ */
 export async function scanProjectDir(projectRoot: string): Promise<Result<ParsedProjectDir>> {
   const configDir = resolveProjectDir(projectRoot);
   if (!(await fileExists(configDir))) {

@@ -164,8 +164,8 @@
     "hash": "30c98144c693a33948cfd8f319d3f13de14280cc2e6780c022c37f318c22f967"
   },
   "codi-skill-creator": {
-    "version": 11,
-    "hash": "eb3045aea6cc12dde0d41829cf18affff5dd2ba6ab69f3d26278c847ab051b52"
+    "version": 24,
+    "hash": "c3c2f95b752569748eaf459ad6bbd33feb3d1fb6c1a2563204232f1f2236b1ea"
   },
   "codi-rule-creator": {
     "version": 8,
@@ -264,12 +264,12 @@
     "hash": "94173a87f8c69151b85d53a0f0fddce8acef423366d5193129ee4ff4450e302e"
   },
   "codi-bbva-brand": {
-    "version": 18,
-    "hash": "b85878025e4fa8fa3dba74dd0fdc6fe96f3ffdb98fc7638698b55419be1869d5"
+    "version": 40,
+    "hash": "273bbedce218e66ad848f0a99efa706e5d3e7fb4fb4b843049df555694b47db2"
   },
   "codi-content-factory": {
-    "version": 9,
-    "hash": "e543a144eff885045b7ff71853c2c3c19f6e02f497f65bf20d63130272b1d3f3"
+    "version": 10,
+    "hash": "50c15483faead017439708065c36d62819389869d33dfcbadfda9ba092b3c3d3"
   },
   "codi-project-quality-guard": {
     "version": 9,

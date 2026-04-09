@@ -2,127 +2,356 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Apply Codi brand identity to any content creation task. Use when creating branded materials for the Codi product — landing pages, marketing copy, presentations, documents, social posts, or any visual/written deliverable that needs Codi branding. Also activate when the user mentions 'codi brand', 'codi design system', or asks for Codi-branded output.
+description: |
+  Codi brand content studio. Use when creating any branded deliverable for Codi —
+  presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX
+  output that must carry Codi brand identity. Also activate when the user mentions
+  'codi brand', 'codi design system', 'codi style', or asks for Codi-branded output of any kind.
 category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-disable-model-invocation: false
-version: 14
+version: 16
 ---
+
+# {{name}} — Codi Content Studio
 
 ## When to Activate
 
-- User asks to create a landing page, marketing page, or web UI for Codi
-- User needs a Codi-branded document, presentation, or one-pager
-- User requests social media copy or marketing text for the Codi product
-- User mentions "codi brand", "codi design system", or "codi style"
-- User is building any deliverable that should visually or tonally represent Codi
+- User asks to create any content for Codi (slides, deck, presentation, document,
+  report, one-pager, social post, carousel, blog, proposal)
+- User mentions 'codi brand', 'codi design system', or 'codi style'
+- User needs a deliverable that carries Codi visual identity or voice
 
 ---
 
-## Reference Files
+## Asset Map
 
-Before generating any output, read the relevant reference files:
+Read these files BEFORE generating any output.
 
-| File | Purpose |
-|------|---------|
-| \${CLAUDE_SKILL_DIR}[[/references/design-tokens.md]] | Color palette, CSS variables, typography, logo rules, all design patterns |
-| \${CLAUDE_SKILL_DIR}[[/references/tone-and-copy.md]] | Brand positioning, tone of voice, copy rules, key product facts, output guides per artifact type |
-| \${CLAUDE_SKILL_DIR}[[/references/site-index.html]] | Live site HTML — source of truth for structure, copy, and component patterns |
-| \${CLAUDE_SKILL_DIR}[[/references/site-style.css]] | Live site CSS — source of truth for all visual tokens and design patterns |
-| \${CLAUDE_SKILL_DIR}[[/references/site-app.js]] | Live site JS — source of truth for interactions and animations |
+| File | Read when | Purpose |
+|------|-----------|---------|
+| \`\${CLAUDE_SKILL_DIR}[[/brand/tokens.json]]\` | Always | Colors, fonts, layout, voice rules |
+| \`\${CLAUDE_SKILL_DIR}[[/brand/tokens.css]]\` | HTML generation | CSS custom properties to inline |
+| \`\${CLAUDE_SKILL_DIR}[[/brand/tokens.ts]]\` | PPTX/DOCX generation | Typed brand values adapter |
+| \`\${CLAUDE_SKILL_DIR}[[/references/design-tokens.md]]\` | Always | Usage rules, color palette, typography, logo rules |
+| \`\${CLAUDE_SKILL_DIR}[[/references/tone-and-copy.md]]\` | Always | Brand positioning, tone of voice, copy rules |
+| \`\${CLAUDE_SKILL_DIR}[[/references/site-index.html]]\` | HTML generation | Live site structure and component patterns |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | Slide output | 16:9 slide HTML structure |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | Doc output | A4 document HTML structure |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | Social output | Social card HTML structure |
 
----
+**NEVER read these files — they are large binaries/bundles handled by the server:**
 
-## Process
-
-### Step 1 — Read references
-
-**[CODING AGENT]** Before writing any output, read:
-1. \`\${CLAUDE_SKILL_DIR}[[/references/design-tokens.md]]\` — get colors, fonts, CSS variables, and all design patterns
-2. \`\${CLAUDE_SKILL_DIR}[[/references/tone-and-copy.md]]\` — get brand voice, copy rules, product facts, and output guides
-
-For HTML outputs also read:
-3. \`\${CLAUDE_SKILL_DIR}[[/references/site-index.html]]\` — understand the live site structure and component patterns
-4. \`\${CLAUDE_SKILL_DIR}[[/references/site-style.css]]\` — get exact CSS patterns from the live implementation
-
-### Step 2 — Identify artifact type
-
-**[CODING AGENT]** Determine what to produce:
-- **HTML / landing page** → follow the HTML checklist in tone-and-copy.md
-- **Document** → follow the Documents section in tone-and-copy.md
-- **Presentation** → follow the Presentations section in tone-and-copy.md
-- **Marketing copy** → follow the Marketing Copy section in tone-and-copy.md
-
-### Step 3 — Generate output
-
-**[CODING AGENT]** Generate the deliverable using tokens and patterns from the reference files.
-
-### Step 4 — Validate
-
-**[CODING AGENT]** Before delivering, verify:
-
-- [ ] Background is \`#070a0f\` — never light mode
-- [ ] CSS variables block present in HTML outputs
-- [ ] Outfit + Geist Mono loaded from Google Fonts
-- [ ] Logo wordmark is lowercase \`codi\` in Geist Mono + gradient
-- [ ] Primary CTAs use \`--grad\` background
-- [ ] Gradient text used on at least one H1/H2 phrase
-- [ ] No banned phrases (revolutionary, seamless, robust, AI-powered)
-- [ ] Copy uses second person — not "users" or "developers"
-- [ ] Agent names spelled correctly: Claude Code, Cursor, Codex, Windsurf, Cline
-- [ ] Terminal commands use exact CLI syntax: \`codi init\`, \`codi generate\`, \`codi add rule\`
+| File | Reason |
+|------|--------|
+| \`scripts/vendor/html2canvas.min.js\` | ~300 KB minified bundle — server injects it automatically |
+| \`scripts/preview-shell.js\` | Preview toolbar — server injects it automatically |
+| \`scripts/helper.js\` | Live-reload client — server injects it automatically |
 
 ---
 
-## Generator Routing (PPTX / DOCX / XLSX)
+## Phase 1 — Discovery
 
-Generation is handled by the format skills (\`codi-pptx\`, \`codi-docx\`, \`codi-xlsx\`). This brand skill provides only \`\${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json\` — pass it via \`--tokens\`.
+**[CODING AGENT]** Read the user's message carefully BEFORE asking. Extract everything already provided.
+Only ask for what is genuinely missing. Ask all missing items in ONE message.
 
-### Runtime Detection
+### What to infer without asking
 
-Detect the available runtime and route accordingly:
+| Signal in user message | Infer |
+|------------------------|-------|
+| Mentions topic/title/bullets | Q1 answered — propose default brief (see below) |
+| "slides", "deck", "presentation" | Q2 = slides |
+| "document", "report", "proposal" | Q2 = document |
+| "social", "carousel", "cards" | Q2 = social |
+| "all formats" | Q3 = all; start HTML-first, add others after — no re-confirmation |
+| "dark" | Q4 = dark |
+| "light" | Q4 = light |
+| "formal", "executive" | Q5 = formal |
+| "casual", "team" | Q5 = internal/casual |
 
-\`\`\`bash
-if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
-  # TypeScript (preferred)
-  npx tsx \${CODI_PPTX_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
-elif command -v uv &>/dev/null; then
-  # Python via uv (ephemeral isolated env)
-  uv run --with python-pptx python3 \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
-else
-  # Python via venv fallback
-  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\${SKILL_VENV}" 2>/dev/null || true
-  "\${SKILL_VENV}/bin/pip" install -q python-pptx
-  "\${SKILL_VENV}/bin/python3" \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}/scripts/brand_tokens.json --theme \${BRAND_THEME} --output out.pptx
-fi
+### Content brief — offer default, don't block
+
+If the user gave a topic but no key points, **propose a default brief and ask to confirm**:
+> "I'll structure the content as:
+> 1. [Proposed key point 1]
+> 2. [Proposed key point 2]
+> 3. [Proposed key point 3]
+> Does this work, or would you like to adjust it?"
+
+**Do NOT ask an open-ended "what are your key points?" when the topic is clear.**
+
+### Questions to ask only when missing
+
+\`\`\`
+[Ask only what is not yet known from the user's message]
+
+Q2 — Type of output?
+   □ Slides / presentation (16:9)
+   □ Document / report / proposal (A4)
+   □ Social content (carousel, cards)
+
+Q3 — Output format(s)?  [Skip if user said "all formats" — start HTML-first by default]
+   □ HTML  (browser preview + file)
+   □ PDF   (print-ready)
+   □ PPTX  (editable PowerPoint)
+   □ DOCX  (editable Word)
+   □ PNG   (per-slide images — always available via toolbar)
+
+Q4 — Theme?
+   □ Dark  (Near-black #070a0f background, light text, Teal #56b6c2 accent — Codi default)
+   □ Light (White #ffffff background, dark text, Teal accent)
+
+Q5 — Audience and tone?
+   (e.g. "developer audience, technical" / "executive board, formal" / "product launch, concise")
+
+Q6 — Logo placement? (optional — skip to use defaults)
+   Show:     □ Yes (default)   □ No
+   Position: □ bottom-right (default)   □ bottom-left   □ bottom-center
+             □ top-right                □ top-left
+   Size:     □ small (32 px)   □ medium (48 px, default)   □ large (64 px)
 \`\`\`
 
-Apply the same pattern for DOCX (\`CODI_DOCX_SKILL_DIR\`, \`generate_docx\`, \`out.docx\`) and XLSX (\`CODI_XLSX_SKILL_DIR\`, \`generate_xlsx\`, \`out.xlsx\`).
+**Do not proceed until Q2, Q4, and Q5 are answered** (Q3 and Q6 have usable defaults).
 
-- \`\${CLAUDE_SKILL_DIR}\` — this brand skill directory (provides tokens)
-- \`\${CODI_PPTX_SKILL_DIR}\` / \`\${CODI_DOCX_SKILL_DIR}\` / \`\${CODI_XLSX_SKILL_DIR}\` — respective format skill directories
-- \`\${BRAND_THEME}\` — \`dark\` or \`light\` (ask the user if not specified)
+> **Workflow routing** — decide before Phase 2:
+> - User wants **HTML output** or wants to **visually iterate**: follow full workflow (Phase 2 → 8)
+> - User wants **only PPTX / DOCX / PDF** and does NOT need visual iteration: skip Phase 3–5,
+>   go Phase 2 → 6 → 7 → 8 (no server needed — generate final HTML once, export immediately)
 
-### content.json Schema
+---
 
+## Phase 2 — Brand Context Loading
+
+Read \`tokens.json\` and \`design-tokens.md\` per the Asset Map. Build this mental model:
+
+- **Dark theme**: bg #070a0f, surface #0d1117, text #e6edf3, accent/primary #56b6c2
+- **Light theme**: bg #ffffff, surface #f6f8fa, text #070a0f, accent/primary #56b6c2
+- **Fonts**: Outfit (headings and body) — loaded from Google Fonts
+- **Voice**: use "Your rules, your agents", "Ship quality AI workflows today" — avoid "revolutionary", "seamless", "AI-powered"
+- **Logo**: CSS wordmark — lowercase \`codi\` in Geist Mono with gradient \`var(--grad)\`. No SVG file needed. Render as: \`<span class="codi-logo" data-role="brand-logo">codi</span>\` styled with the gradient text pattern from design-tokens.md.
+
+---
+
+## Phase 3 — Start Preview Server
+
+\`\`\`bash
+bash \${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --project-dir $(pwd) --name codi-brand
+\`\`\`
+
+Output (save all five values):
 \`\`\`json
-{
-  "title": "Document or Presentation Title",
-  "subtitle": "Optional subtitle",
-  "author": "Author Name",
-  "sections": [
-    {
-      "number": "01",
-      "label": "Section Label",
-      "heading": "Section Heading",
-      "body": "Section body text.",
-      "items": ["Bullet point 1", "Bullet point 2"],
-      "callout": "Optional highlighted quote or takeaway"
-    }
-  ]
+{ "url": "http://localhost:49XXX", "session_dir": "...", "screen_dir": "...", "state_dir": "...", "exports_dir": "..." }
+\`\`\`
+
+Session files are stored under \`.codi_output/YYYYMMDD_HHMM_codi-brand/\` in the project root.
+This directory persists after the server stops — each run creates a new timestamped folder.
+
+Tell the user:
+> "Preview server is running at {{url}}. Open it in your browser.
+> I'll write prototype files there as we iterate."
+
+---
+
+## Phase 4 — HTML Prototype Generation
+
+### Rules for ALL HTML outputs
+
+> **Plug-and-play:** The preview server automatically injects html2canvas, preview-shell,
+> and the live-reload helper into every HTML file it serves. Write **clean HTML only** —
+> no need to inline any scripts. The server handles the full preview experience.
+
+1. Read the base template from \`generators/\` matching the content type
+2. **Inline brand CSS** — paste full contents of \`brand/tokens.css\` into a \`<style>\` block.
+   Replace \`SKILL_FONTS_DIR\` with the absolute path to the \`assets/fonts\` directory inside
+   the folder containing this SKILL.md file (e.g. \`\${CLAUDE_SKILL_DIR}/assets/fonts\`).
+   Replace \`SKILL_ASSETS_DIR\` with the absolute path to the \`assets\` directory inside
+   the folder containing this SKILL.md file (e.g. \`\${CLAUDE_SKILL_DIR}/assets\`).
+   Add Google Fonts link for Outfit.
+3. Write to \`screen_dir/prototype.html\`
+
+The server watches \`screen_dir\` and reloads the browser on every write.
+When multiple files exist, a file picker appears in the toolbar automatically.
+
+### Slide output (16:9)
+
+**CRITICAL — copy these CSS rules verbatim from \`generators/slides-base.html\`. Do NOT change them:**
+
+\`\`\`css
+/* These rules control visibility — changing them causes ALL slides to render simultaneously.
+   min() approach: self-contained, works with the preview-shell fixed toolbar overlay. */
+html, body { overflow: hidden; background: #ccc; }
+.deck { display: flex; align-items: center; justify-content: center; background: #ccc; }
+.deck__viewport {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  overflow: hidden;
+}
+.slide { display: none; position: absolute; inset: 0; }   /* hidden by default */
+.slide.active { display: flex; flex-direction: column; }  /* only active slide shows */
+\`\`\`
+
+**CRITICAL — copy the deck engine \`<script>\` verbatim from \`generators/slides-base.html\`** (arrow-key + click navigation, \`show(0)\` on load). This script is what makes slides advance.
+
+- Responsive 16:9 letterbox viewport — fills browser window while maintaining aspect ratio
+- Safe zone: \`var(--slide-pad)\` padding (default 36px) all sides
+- Use CSS vars: \`var(--brand-bg)\`, \`var(--brand-text)\`, \`var(--brand-accent)\`, etc.
+- Required \`data-type\` values: \`title\`, \`divider\`, \`content\`, \`quote\`, \`metrics\`, \`table\`, \`closing\`
+- Required \`data-index\` values: \`01\`, \`02\`, \`03\`… (zero-padded) — drives PNG export filenames (\`slide-01-title.png\`)
+- Every \`.slide\` must have **both** attributes: \`<section class="slide" data-type="title" data-index="01">\`
+
+**Logo placement** — apply the choices from Phase 1 Q6. Set these CSS variables in \`:root\`:
+
+\`\`\`css
+:root {
+  --logo-size: 48px;   /* small=32px, medium=48px (default), large=64px */
+  --slide-pad: 36px;
 }
 \`\`\`
 
+Place the logo element inside every \`.slide\` as \`position: absolute\` using these offsets:
+
+| Position | CSS |
+|----------|-----|
+| bottom-right (default) | \`bottom: var(--slide-pad); right: var(--slide-pad);\` |
+| bottom-left | \`bottom: var(--slide-pad); left: var(--slide-pad);\` |
+| bottom-center | \`bottom: var(--slide-pad); left: 50%; transform: translateX(-50%);\` |
+| top-right | \`top: var(--slide-pad); right: var(--slide-pad);\` |
+| top-left | \`top: var(--slide-pad); left: var(--slide-pad);\` |
+
+Logo element: \`<span class="slide__logo codi-logo" data-role="brand-logo" style="font-family:'Geist Mono',monospace;font-size:var(--logo-size,48px);background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:absolute;opacity:0.9;">codi</span>\`
+**REQUIRED**: every logo element across ALL output types (slides, document, social) MUST carry \`data-role="brand-logo"\`.
+This attribute is what the preview toolbar uses to find and control logos — wrong or missing attribute means the controls stop working.
+If user chose **No logo**: omit the logo element entirely (do NOT render a hidden element).
+
+**Prototype scope (Phase 4 only):** 3 slides — title, one content, closing.
+Full deck comes in Phase 6.
+
+### Document output (A4)
+
+- 794px wide × min 1123px tall per \`.doc-page\`
+- Vertical scroll — pages stack
+- Brand header (logo + color bar) + footer (page number) on each page
+- Logo in header: \`<span class="doc__logo codi-logo" data-role="brand-logo" style="font-family:'Geist Mono',monospace;font-size:40px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">codi</span>\` — never smaller than 40px
+
+### Social output (default 1:1)
+
+- 1080×1080px per \`.social-card\`
+- Cards stack vertically for scrolling preview
+- Toolbar allows aspect ratio switching (1:1, 4:5, 9:16, 1200×630)
+- Logo per card: \`<span class="card-logo codi-logo" data-role="brand-logo" style="font-family:'Geist Mono',monospace;font-size:var(--logo-size,48px);background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">codi</span>\`, apply Q6 placement — never smaller than 40px
+
+---
+
+## PNG Downloads — Always Available
+
+The preview server injects the preview-shell toolbar into every HTML file it serves.
+- **Per item**: hover → "Export PNG" button appears on each slide / page / card
+- **All at once**: "Export All PNGs" in toolbar → downloads a ZIP file
+- Resolution: 2× display size (1920×1080 for 16:9 slides)
+- Naming: \`slide-01-title.png\`, \`slide-02-content.png\`, etc. (requires \`data-index\` + \`data-type\`)
+
+---
+
+## Phase 5 — Visual Iteration Loop
+
+After writing the prototype, tell the user:
+> "Prototype is ready at {{url}}. The toolbar lets you:
+> - Export any slide as PNG — hover a slide and click 'Export PNG'
+> - Click 'Export All PNGs' in the toolbar to download all slides as a ZIP
+>
+> Describe your feedback here when ready."
+
+**End your turn and wait.**
+
+### Reading feedback on your next turn
+
+Read the user's reply in the conversation — they will describe what to change.
+
+Apply feedback and rewrite \`screen_dir/prototype.html\`.
+Max 3 iteration rounds. After round 3, ask the user to approve a direction before proceeding.
+
+---
+
+## Phase 6 — Full Content Generation
+
+Generate all slides/pages using the approved style.
+
+- Slides → write to \`screen_dir/deck.html\`
+- Document → \`screen_dir/document.html\`
+- Social → \`screen_dir/social.html\`
+
+Tell the user:
+> "Full [deck/document/carousel] ready at {{url}} — [N] slides/pages.
+> Export PNGs from the toolbar anytime. Ready to generate [FORMAT]?"
+
+---
+
+## Phase 7 — Export
+
+All exports are saved to \`exports_dir\` (the \`exports/\` folder inside the session directory).
+
+> **Substitution reminder**: \`screen_dir\` and \`exports_dir\` are the actual paths saved from
+> Phase 3 output — substitute them with those values. The source HTML filename depends on
+> content type: slides → \`deck.html\`, document → \`document.html\`, social → \`social.html\`.
+
+### PDF
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/pdf.js]] \\
+  --input <screen_dir>/<output-file>.html \\
+  --output <exports_dir>/output.pdf
+\`\`\`
+Requires: \`npx playwright install chromium\` (once)
+
+### PPTX
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/pptx.js]] \\
+  --input <screen_dir>/deck.html \\
+  --tokens \${CLAUDE_SKILL_DIR}[[/brand/tokens.json]] \\
+  --theme dark|light \\
+  --output <exports_dir>/deck.pptx
+\`\`\`
+Requires: \`npm install pptxgenjs playwright\` (once per project)
+
+The script uses Playwright + pptxgenjs internally (screenshots each slide, extracts text as editable boxes).
+
+### DOCX
+Generate a Word document using the \`docx\` npm library.
+Install: \`npm install docx sharp\`
+Output to: \`<exports_dir>/document.docx\`
+
+**Logo in DOCX**: The Codi logo is CSS-rendered — use plain text "codi" in a monospace font for Word output (gradient is not supported in DOCX). Style it with the primary brand color instead.
+
+### HTML
+No extra work — tell the user the path: \`<screen_dir>/<output-file>.html\` (already saved).
+
+---
+
+## Phase 8 — Stop Server
+
+\`\`\`bash
+bash \${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] {{session_dir}}
+\`\`\`
+
+---
+
+## Codi — Reference Files
+
+- Design tokens: \`\${CLAUDE_SKILL_DIR}[[/references/design-tokens.md]]\`
+- Tone and copy: \`\${CLAUDE_SKILL_DIR}[[/references/tone-and-copy.md]]\`
+- Live site HTML: \`\${CLAUDE_SKILL_DIR}[[/references/site-index.html]]\`
+- Live site CSS: \`\${CLAUDE_SKILL_DIR}[[/references/site-style.css]]\`
+- Live site JS: \`\${CLAUDE_SKILL_DIR}[[/references/site-app.js]]\`
+
+---
+
+## Error Handling
+
+| Error | Recovery |
+|-------|----------|
+| Server fails to start | Retry: \`BRAINSTORM_PORT=XXXXX bash .../start-server.sh\` |
+| Playwright not installed | Run \`npx playwright install chromium\` then retry |
+| pptxgenjs not found | Run \`npm install pptxgenjs\` then retry |
+| html2canvas PNG fails | Use Playwright PDF export instead |
 `;

@@ -1,0 +1,97 @@
+/*
+ * Codi Brand Tokens — CSS Custom Properties
+ * Auto-derived from brand/tokens.json v1
+ *
+ * Usage: inline the full contents of this file into a <style> block in every
+ * HTML output. Do NOT link it with <link href> — file:// protocol blocks external
+ * stylesheets and the brainstorming server may not serve it.
+ *
+ * Theme switching: add class="theme-dark" or class="theme-light" to <html> or
+ * the root container. Dark is the Codi default for presentations.
+ */
+
+/* ── Font Faces ──────────────────────────────────────────────────────────── */
+/* IMPORTANT: Replace SKILL_FONTS_DIR with the absolute path to assets/fonts/ */
+/* IMPORTANT: Replace SKILL_ASSETS_DIR with the absolute path to assets/      */
+/* The agent substitutes these placeholders:                                   */
+/*   SKILL_FONTS_DIR  → ${CLAUDE_SKILL_DIR}/assets/fonts                      */
+/*   SKILL_ASSETS_DIR → ${CLAUDE_SKILL_DIR}/assets                            */
+
+/* Codi uses Google Fonts (Outfit + Geist Mono).                               */
+/* In generated HTML, add:                                                     */
+/*   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"> */
+
+/* ── Dark Theme (Codi default for presentations) ────────────────────────── */
+
+.theme-dark,
+:root {
+  --brand-bg:          #070a0f;
+  --brand-surface:     #0d1117;
+  --brand-text:        #e6edf3;
+  --brand-text-muted:  #8b949e;
+  --brand-primary:     #56b6c2;
+  --brand-accent:      #56b6c2;
+  /* Codi logo is a CSS wordmark — render as: <span style="font-family:'Geist Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">codi</span> */
+  --brand-logo:        none;
+
+  --brand-font-headline: 'Outfit', Arial, sans-serif;
+  --brand-font-body:     'Outfit', Arial, sans-serif;
+  --brand-font-mono:     'Geist Mono', monospace;
+
+  /* Codi-specific tokens (from design-tokens.md) */
+  --grad:              linear-gradient(135deg, #56b6c2, #61afef);
+  --c0:                #56b6c2;
+  --c1:                #61afef;
+  --surface-2:         #13181f;
+  --surface-3:         #1c2128;
+  --border:            rgba(255, 255, 255, 0.06);
+  --border-a:          rgba(86, 182, 194, 0.22);
+  --text-1:            #e6edf3;
+  --text-2:            #8b949e;
+  --text-3:            #3d4450;
+  --green:             #98c379;
+  --red:               #e06c75;
+  --yellow:            #e5c07b;
+
+  /* Slide geometry */
+  --slide-w:            960px;
+  --slide-h:            540px;
+  --slide-pad:          36px;
+
+  /* Document geometry */
+  --doc-w:              794px;
+  --doc-page-h:         1123px;
+  --doc-pad:            60px;
+
+  /* Social geometry */
+  --social-w:           1080px;
+  --social-h:           1080px;
+}
+
+/* ── Light Theme ─────────────────────────────────────────────────────────── */
+
+.theme-light {
+  --brand-bg:          #ffffff;
+  --brand-surface:     #f6f8fa;
+  --brand-text:        #070a0f;
+  --brand-text-muted:  #57606a;
+  --brand-primary:     #56b6c2;
+  --brand-accent:      #56b6c2;
+  --brand-logo:        none;
+  --surface-2:         #eaeef2;
+  --surface-3:         #d0d7de;
+  --border:            rgba(0, 0, 0, 0.08);
+  --border-a:          rgba(86, 182, 194, 0.3);
+  --text-1:            #070a0f;
+  --text-2:            #57606a;
+  --text-3:            #8c959f;
+}
+
+/* ── Utility Classes ─────────────────────────────────────────────────────── */
+
+.brand-accent   { color: var(--brand-accent); }
+.brand-primary  { color: var(--brand-primary); }
+.brand-muted    { color: var(--brand-text-muted); }
+.bg-surface     { background: var(--brand-surface); }
+.bg-primary     { background: var(--brand-primary); }
+.bg-accent      { background: var(--brand-accent); color: var(--brand-bg); }

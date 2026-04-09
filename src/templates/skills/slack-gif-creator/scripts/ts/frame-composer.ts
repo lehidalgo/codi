@@ -60,9 +60,7 @@ export function circleSvg(
   stroke?: RGB,
   strokeWidth = 1,
 ): string {
-  const fillStr = fill
-    ? `fill="rgb(${fill.r},${fill.g},${fill.b})"`
-    : 'fill="none"';
+  const fillStr = fill ? `fill="rgb(${fill.r},${fill.g},${fill.b})"` : 'fill="none"';
   const strokeStr = stroke
     ? `stroke="rgb(${stroke.r},${stroke.g},${stroke.b})" stroke-width="${strokeWidth}"`
     : "";
@@ -80,13 +78,8 @@ export function textSvg(
   fontSize = 14,
   centered = false,
 ): string {
-  const anchor = centered
-    ? 'text-anchor="middle" dominant-baseline="central"'
-    : "";
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const anchor = centered ? 'text-anchor="middle" dominant-baseline="central"' : "";
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return `<text x="${x}" y="${y}" fill="rgb(${color.r},${color.g},${color.b})" font-size="${fontSize}" font-family="sans-serif" ${anchor}>${escaped}</text>`;
 }
 
@@ -148,12 +141,8 @@ export async function svgToPng(
   height: number,
 ): Promise<Buffer | null> {
   try {
-    // @ts-expect-error sharp is a user-project dependency
     const sharp = (await import("sharp")).default;
-    return await sharp(Buffer.from(svgContent))
-      .resize(width, height)
-      .png()
-      .toBuffer();
+    return await sharp(Buffer.from(svgContent)).resize(width, height).png().toBuffer();
   } catch {
     return null;
   }

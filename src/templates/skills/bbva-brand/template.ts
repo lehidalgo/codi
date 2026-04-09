@@ -2,114 +2,374 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Apply BBVA brand identity to any content creation task. Use when creating branded materials for BBVA — presentations, documents, reports, dashboards, or any visual/written deliverable that needs BBVA branding. Also activate when the user mentions 'BBVA', 'marca BBVA', 'estilo BBVA', or asks for BBVA-branded output of any kind.
+description: |
+  BBVA brand content studio. Use when creating any branded deliverable for BBVA —
+  presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX
+  output that must carry BBVA brand identity. Also activate when the user mentions
+  'BBVA', 'marca BBVA', 'estilo BBVA', or asks for BBVA-branded output of any kind.
 category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-disable-model-invocation: false
-version: 18
+version: 43
 ---
+
+# {{name}} — BBVA Content Studio
 
 ## When to Activate
 
-- User mentions 'BBVA', 'marca BBVA', or asks for BBVA-branded output
-- User needs a client-facing or internal deliverable (presentation, report, dashboard) for BBVA
-- User is creating any document or visual that should carry the BBVA corporate identity
-
-## Generator Routing (PPTX / DOCX / XLSX)
-
-BBVA PPTX uses a **brand-specific generator** that reproduces the official BBVA presentation template (10" × 5.625"). Run it from the brand skill directory:
-
-\`\`\`bash
-if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
-  npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_pptx.ts]] --content content.json --theme \${BRAND_THEME} --output out.pptx
-elif command -v uv &>/dev/null; then
-  uv run --with python-pptx python3 \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output out.pptx
-else
-  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\${SKILL_VENV}" 2>/dev/null || true
-  "\${SKILL_VENV}/bin/pip" install -q python-pptx
-  "\${SKILL_VENV}/bin/python3" \${CODI_PPTX_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]] --theme \${BRAND_THEME} --output out.pptx
-fi
-\`\`\`
-
-For DOCX and XLSX, use the format skill generators with \`--tokens \${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\`.
-
-- \`\${CLAUDE_SKILL_DIR}\` — this brand skill directory (provides BBVA-specific generator + tokens)
-- \`\${CODI_PPTX_SKILL_DIR}\` / \`\${CODI_DOCX_SKILL_DIR}\` / \`\${CODI_XLSX_SKILL_DIR}\` — format skill directories (DOCX/XLSX fallback)
-- \`\${BRAND_THEME}\` — \`dark\` or \`light\` (ask the user if not specified; dark = Electric Blue bg on cover/closing)
-
-| Validator | Command |
-|-----------|---------|
-| Validate PPTX (TypeScript) | \`npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/validators/validate_pptx.ts]] --input out.pptx\` |
-
-**content.json schema** (BBVA-specific slide types):
-\`\`\`json
-{
-  "title": "Presentation Title",
-  "subtitle": "Optional subtitle",
-  "author": "Author Name",
-  "date": "April 2026",
-  "slides": [
-    { "type": "title" },
-    {
-      "type": "divider",
-      "number": "01",
-      "label": "SECCIÓN",
-      "heading": "Título de sección"
-    },
-    {
-      "type": "section",
-      "heading": "Título de diapositiva",
-      "breadcrumb": "NOMBRE PRESENTACIÓN / SECCIÓN",
-      "body": "Párrafo de cuerpo",
-      "items": ["Punto uno", "Punto dos"],
-      "callout": "Texto destacado opcional"
-    },
-    {
-      "type": "quote",
-      "quote": "Creando oportunidades para todos.",
-      "attribution": "Nombre, Cargo"
-    },
-    {
-      "type": "metrics",
-      "heading": "CIFRAS CLAVE",
-      "breadcrumb": "NOMBRE PRESENTACIÓN / SECCIÓN",
-      "metrics": [
-        { "value": "€12M", "label": "Ingresos" },
-        { "value": "34%",  "label": "Crecimiento" },
-        { "value": "420",  "label": "Clientes" }
-      ]
-    },
-    { "type": "closing", "message": "Gracias", "contact": "equipo@bbva.com" }
-  ]
-}
-\`\`\`
-
-**Slide types reference:**
-
-| type | Required fields | Optional fields | Layout |
-|------|----------------|-----------------|--------|
-| \`title\`   | — (uses top-level fields) | title, subtitle, author, date | White cover (light) or Electric Blue (dark) |
-| \`divider\` | heading | number, label | Ice Blue bg (#85C8FF), large title at bottom-left |
-| \`section\` | heading | body, items, callout, breadcrumb | White bg, breadcrumb at top |
-| \`quote\`   | quote | attribution | Electric Blue bg, italic quote |
-| \`metrics\` | metrics[] (max 4) | heading, breadcrumb | White bg, colored metric boxes |
-| \`closing\` | message | contact | Electric Blue bg, logo + centered message |
+- User asks to create any content for BBVA (slides, deck, presentation, document,
+  report, one-pager, social post, carousel, blog, proposal)
+- User mentions 'BBVA', 'marca BBVA', or any BBVA-related keyword
+- User needs a deliverable that carries BBVA visual identity or voice
 
 ---
 
-# BBVA — Brand Identity System
+## Asset Map
 
-BBVA is a global financial group with a purpose: to bring the age of opportunity to everyone.
-Full brand guide: \`\${CLAUDE_SKILL_DIR}[[/references/brand-guide.md]]\`
+Read these files BEFORE generating any output.
 
-## Bundled Assets
+| File | Read when | Purpose |
+|------|-----------|---------|
+| \`\${CLAUDE_SKILL_DIR}[[/brand/tokens.json]]\` | Always | Colors, fonts, layout, voice rules |
+| \`\${CLAUDE_SKILL_DIR}[[/brand/tokens.css]]\` | HTML generation | CSS custom properties to inline |
+| \`\${CLAUDE_SKILL_DIR}[[/brand/tokens.ts]]\` | PPTX/DOCX generation | Typed brand values adapter |
+| \`\${CLAUDE_SKILL_DIR}[[/references/brand-guide.md]]\` | Always | Usage rules, prohibited patterns, tone |
+| \`\${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.svg]]\` | All themes | BBVA logo SVG string |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | Slide output | 16:9 slide HTML structure |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | Doc output | A4 document HTML structure |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | Social output | Social card HTML structure |
+| \`\${CLAUDE_SKILL_DIR}[[/references/values-imagery.md]]\` | Social / visual output | BBVA imagery principles and values visual language |
 
-- \`\${CLAUDE_SKILL_DIR}[[/scripts/brand_tokens.json]]\` — canonical color/font/layout data (pass via \`--tokens\`)
-- \`\${CLAUDE_SKILL_DIR}[[/scripts/ts/brand_tokens.ts]]\` — TypeScript adapter for brand_tokens.json
-- \`\${CLAUDE_SKILL_DIR}[[/scripts/ts/validators/validate_pptx.ts]]\` — TypeScript PPTX validator
-- \`\${CLAUDE_SKILL_DIR}[[/references/brand-guide.md]]\` — full brand rationale and usage rules
-- \`\${CLAUDE_SKILL_DIR}[[/references/icon-catalog.md]]\` — complete 600+ icon listing
-- \`\${CLAUDE_SKILL_DIR}[[/references/bbva-deck-reference.html]]\` — branded presentation example
+**NEVER read these files — they are large binaries/bundles handled by the server:**
+
+| File | Reason |
+|------|--------|
+| \`scripts/vendor/html2canvas.min.js\` | ~300 KB minified bundle — server injects it automatically |
+| \`scripts/preview-shell.js\` | Preview toolbar — server injects it automatically |
+| \`scripts/helper.js\` | Live-reload client — server injects it automatically |
+
+---
+
+## Phase 1 — Discovery
+
+**[CODING AGENT]** Read the user's message carefully BEFORE asking. Extract everything already provided.
+Only ask for what is genuinely missing. Ask all missing items in ONE message.
+
+### What to infer without asking
+
+| Signal in user message | Infer |
+|------------------------|-------|
+| Mentions topic/title/bullets | Q1 answered — propose default brief (see below) |
+| "slides", "deck", "presentación" | Q2 = slides |
+| "document", "report", "propuesta" | Q2 = document |
+| "social", "carousel", "cards" | Q2 = social |
+| "all formats" / "todos los formatos" | Q3 = all; start HTML-first, add others after — no re-confirmation |
+| "dark" / "oscuro" | Q4 = dark |
+| "light" / "claro" | Q4 = light |
+| "formal", "executive" | Q5 = formal |
+| "casual", "team" | Q5 = internal/casual |
+
+### Content brief — offer default, don't block
+
+If the user gave a topic but no key points, **propose a default brief and ask to confirm**:
+> "I'll structure the content as:
+> 1. [Proposed key point 1]
+> 2. [Proposed key point 2]
+> 3. [Proposed key point 3]
+> Does this work, or would you like to adjust it?"
+
+**Do NOT ask an open-ended "what are your key points?" when the topic is clear.**
+
+### Questions to ask only when missing
+
+\`\`\`
+[Ask only what is not yet known from the user's message]
+
+Q2 — Type of output?
+   □ Slides / presentation (16:9)
+   □ Document / report / proposal (A4)
+   □ Social content (carousel, cards)
+
+Q3 — Output format(s)?  [Skip if user said "all formats" — start HTML-first by default]
+   □ HTML  (browser preview + file)
+   □ PDF   (print-ready)
+   □ PPTX  (editable PowerPoint)
+   □ DOCX  (editable Word)
+   □ PNG   (per-slide images — always available via toolbar)
+
+Q4 — Theme?
+   □ Dark  (Electric Blue #000519 background, white text, Yellow accent — BBVA default)
+   □ Light (White #F7F8F8 background, dark text, BBVA Blue accent)
+
+Q5 — Audience and tone?
+   (e.g. "executive board, formal" / "internal team, casual" / "client pitch, persuasive")
+
+Q6 — Logo placement? (optional — skip to use defaults)
+   Show:     □ Yes (default)   □ No
+   Position: □ bottom-right (default)   □ bottom-left   □ bottom-center
+             □ top-right                □ top-left
+   Size:     □ small (32 px)   □ medium (48 px, default)   □ large (64 px)
+\`\`\`
+
+**Do not proceed until Q2, Q4, and Q5 are answered** (Q3 and Q6 have usable defaults).
+
+> **Workflow routing** — decide before Phase 2:
+> - User wants **HTML output** or wants to **visually iterate**: follow full workflow (Phase 2 → 8)
+> - User wants **only PPTX / DOCX / PDF** and does NOT need visual iteration: skip Phase 3–5,
+>   go Phase 2 → 6 → 7 → 8 (no server needed — generate final HTML once, export immediately)
+
+---
+
+## Phase 2 — Brand Context Loading
+
+Read \`tokens.json\` and \`brand-guide.md\` per the Asset Map. Build this mental model:
+
+- **Dark theme**: bg #000519, surface #070E46, text #fff, accent #FFE761, primary #001391
+- **Light theme**: bg #F7F8F8, surface #fff, text #1A1A2A, accent #001391, primary #001391
+- **Fonts**: Tiempos Headline (headings), Benton Sans BBVA (body) — files at \`\${CLAUDE_SKILL_DIR}[[/assets/fonts/]]\`
+- **Voice**: use "Creando oportunidades", "Banca responsable" — avoid "Disruptivo", "Cutting-edge"
+- **Logo**: read SVG string from \`\${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.svg]]\`
+
+---
+
+## Phase 3 — Start Preview Server
+
+\`\`\`bash
+bash \${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --project-dir $(pwd) --name bbva-brand
+\`\`\`
+
+Output (save all five values):
+\`\`\`json
+{ "url": "http://localhost:49XXX", "session_dir": "...", "screen_dir": "...", "state_dir": "...", "exports_dir": "..." }
+\`\`\`
+
+Session files are stored under \`.codi_output/YYYYMMDD_HHMM_bbva-brand/\` in the project root.
+This directory persists after the server stops — each run creates a new timestamped folder.
+
+Tell the user:
+> "Preview server is running at {{url}}. Open it in your browser.
+> I'll write prototype files there as we iterate."
+
+---
+
+## Phase 4 — HTML Prototype Generation
+
+### Rules for ALL HTML outputs
+
+> **Plug-and-play:** The preview server automatically injects html2canvas, preview-shell,
+> and the live-reload helper into every HTML file it serves. Write **clean HTML only** —
+> no need to inline any scripts. The server handles the full preview experience.
+
+1. Read the base template from \`generators/\` matching the content type
+2. **Inline brand CSS** — paste full contents of \`brand/tokens.css\` into a \`<style>\` block.
+   Replace \`SKILL_FONTS_DIR\` with the absolute path to the \`assets/fonts\` directory inside
+   the folder containing this SKILL.md file (e.g. \`\${CLAUDE_SKILL_DIR}/assets/fonts\`).
+   Replace \`SKILL_ASSETS_DIR\` with the absolute path to the \`assets\` directory inside
+   the folder containing this SKILL.md file (e.g. \`\${CLAUDE_SKILL_DIR}/assets\`).
+3. Write to \`screen_dir/prototype.html\`
+
+The server watches \`screen_dir\` and reloads the browser on every write.
+When multiple files exist, a file picker appears in the toolbar automatically.
+
+### Slide output (16:9)
+
+**CRITICAL — copy these CSS rules verbatim from \`generators/slides-base.html\`. Do NOT change them:**
+
+\`\`\`css
+/* These rules control visibility — changing them causes ALL slides to render simultaneously.
+   min() approach: self-contained, works with the preview-shell fixed toolbar overlay. */
+html, body { overflow: hidden; background: #ccc; }
+.deck { display: flex; align-items: center; justify-content: center; background: #ccc; }
+.deck__viewport {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  overflow: hidden;
+}
+.slide { display: none; position: absolute; inset: 0; }   /* hidden by default */
+.slide.active { display: flex; flex-direction: column; }  /* only active slide shows */
+\`\`\`
+
+**CRITICAL — copy the deck engine \`<script>\` verbatim from \`generators/slides-base.html\`** (arrow-key + click navigation, \`show(0)\` on load). This script is what makes slides advance.
+
+- Responsive 16:9 letterbox viewport — fills browser window while maintaining aspect ratio
+- Safe zone: \`var(--slide-pad)\` padding (default 36px) all sides
+- Use CSS vars: \`var(--brand-bg)\`, \`var(--brand-text)\`, \`var(--brand-accent)\`, etc.
+- Required \`data-type\` values: \`title\`, \`divider\`, \`content\`, \`quote\`, \`metrics\`, \`table\`, \`closing\`
+- Required \`data-index\` values: \`01\`, \`02\`, \`03\`… (zero-padded) — drives PNG export filenames (\`slide-01-title.png\`)
+- Every \`.slide\` must have **both** attributes: \`<section class="slide" data-type="title" data-index="01">\`
+
+**Logo placement** — apply the choices from Phase 1 Q6. Set these CSS variables in \`:root\`:
+
+\`\`\`css
+:root {
+  --logo-size: 48px;   /* small=32px, medium=48px (default), large=64px */
+  --slide-pad: 36px;
+}
+\`\`\`
+
+Place the logo element inside every \`.slide\` as \`position: absolute\` using these offsets:
+
+| Position | CSS |
+|----------|-----|
+| bottom-right (default) | \`bottom: var(--slide-pad); right: var(--slide-pad);\` |
+| bottom-left | \`bottom: var(--slide-pad); left: var(--slide-pad);\` |
+| bottom-center | \`bottom: var(--slide-pad); left: 50%; transform: translateX(-50%);\` |
+| top-right | \`top: var(--slide-pad); right: var(--slide-pad);\` |
+| top-left | \`top: var(--slide-pad); left: var(--slide-pad);\` |
+
+Logo element: \`<img src="/files/BBVA_RGB.svg" class="slide__logo" data-role="brand-logo" alt="BBVA">\`
+Logo CSS: \`height: var(--logo-size); width: auto; position: absolute; opacity: 0.9;\`
+**REQUIRED**: every logo element across ALL output types (slides, document, social) MUST carry \`data-role="brand-logo"\`.
+This attribute is what the preview toolbar uses to find and control logos — wrong or missing attribute means the controls stop working.
+If user chose **No logo**: omit the logo element entirely (do NOT render a hidden element).
+
+**Prototype scope (Phase 4 only):** 3 slides — title, one content, closing.
+Full deck comes in Phase 6.
+
+### Document output (A4)
+
+- 794px wide × min 1123px tall per \`.doc-page\`
+- Vertical scroll — pages stack
+- Brand header (logo + color bar) + footer (page number) on each page
+- Logo in header: \`<img src="/files/BBVA_RGB.svg" class="doc__logo" data-role="brand-logo" alt="BBVA" style="height:40px;width:auto">\` — never smaller than 40px
+
+### Social output (default 1:1)
+
+- 1080×1080px per \`.social-card\`
+- Cards stack vertically for scrolling preview
+- Toolbar allows aspect ratio switching (1:1, 4:5, 9:16, 1200×630)
+- Logo per card: \`<img src="/files/BBVA_RGB.svg" class="card-logo" data-role="brand-logo" alt="BBVA">\`, apply Q6 placement; use \`height: var(--logo-size, 48px); width: auto\` — never smaller than 40px
+
+---
+
+## PNG Downloads — Always Available
+
+The preview server injects the preview-shell toolbar into every HTML file it serves.
+- **Per item**: hover → "Export PNG" button appears on each slide / page / card
+- **All at once**: "Export All PNGs" in toolbar → sequential downloads
+- Resolution: 2× display size (1920×1080 for 16:9 slides)
+- Naming: \`slide-01-title.png\`, \`slide-02-content.png\`, etc. (requires \`data-index\` + \`data-type\`)
+
+---
+
+## Phase 5 — Visual Iteration Loop
+
+After writing the prototype, tell the user:
+> "Prototype is ready at {{url}}. The toolbar lets you:
+> - Export any slide as PNG — hover a slide and click 'Export PNG'
+> - Click 'Export All PNGs' in the toolbar to download all slides
+>
+> Describe your feedback here when ready."
+
+**End your turn and wait.**
+
+### Reading feedback on your next turn
+
+Read the user's reply in the conversation — they will describe what to change.
+
+Apply feedback and rewrite \`screen_dir/prototype.html\`.
+Max 3 iteration rounds. After round 3, ask the user to approve a direction before proceeding.
+
+---
+
+## Phase 6 — Full Content Generation
+
+Generate all slides/pages using the approved style.
+
+- Slides → write to \`screen_dir/deck.html\`
+- Document → \`screen_dir/document.html\`
+- Social → \`screen_dir/social.html\`
+
+Tell the user:
+> "Full [deck/document/carousel] ready at {{url}} — [N] slides/pages.
+> Export PNGs from the toolbar anytime. Ready to generate [FORMAT]?"
+
+---
+
+## Phase 7 — Export
+
+All exports are saved to \`exports_dir\` (the \`exports/\` folder inside the session directory).
+
+> **Substitution reminder**: \`screen_dir\` and \`exports_dir\` are the actual paths saved from
+> Phase 3 output — substitute them with those values. The source HTML filename depends on
+> content type: slides → \`deck.html\`, document → \`document.html\`, social → \`social.html\`.
+
+### All formats at once (preferred)
+
+Reads session state from the session directory, discovers HTML files, and exports all
+applicable formats (PDF + PPTX for slides, PDF for documents) in a single command.
+The preview server must be running.
+
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/all.js]] \\
+  --session <session_dir>
+\`\`\`
+
+Requires: \`npm install pdf-lib pptxgenjs playwright\` + \`npx playwright install chromium\`
+
+### PDF (individual)
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/pdf.js]] \\
+  --input <screen_dir>/<output-file>.html \\
+  --output <exports_dir>/output.pdf
+\`\`\`
+Requires: \`npx playwright install chromium\` (once)
+
+### PPTX
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/pptx.js]] \\
+  --input <screen_dir>/deck.html \\
+  --tokens \${CLAUDE_SKILL_DIR}[[/brand/tokens.json]] \\
+  --theme dark|light \\
+  --output <exports_dir>/deck.pptx
+\`\`\`
+Requires: \`npm install pptxgenjs playwright\` (once per project)
+
+The script uses Playwright + pptxgenjs internally (screenshots each slide, extracts text as editable boxes).
+
+### DOCX
+Generate a Word document using the \`docx\` npm library.
+Install: \`npm install docx sharp\`
+Output to: \`<exports_dir>/document.docx\`
+
+**Logo in DOCX**: Word does not render SVG. Convert the BBVA SVG to PNG first, then embed:
+\`\`\`js
+const sharp = require("sharp");
+const { ImageRun } = require("docx");
+const logoPng = await sharp(path.join(SKILL_DIR, "assets/BBVA_RGB.svg"))
+  .resize({ height: 40 }).png().toBuffer();
+// Then use: new ImageRun({ data: logoPng, transformation: { width: 100, height: 40 } })
+\`\`\`
+
+### HTML
+No extra work — tell the user the path: \`<screen_dir>/<output-file>.html\` (already saved).
+
+---
+
+## Phase 8 — Stop Server
+
+\`\`\`bash
+bash \${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] {{session_dir}}
+\`\`\`
+
+---
+
+## BBVA — Reference Files
+
+- Brand guide: \`\${CLAUDE_SKILL_DIR}[[/references/brand-guide.md]]\`
+- Icon catalog (600+ icons): \`\${CLAUDE_SKILL_DIR}[[/references/icon-catalog.md]]\`
+- Reference deck: \`\${CLAUDE_SKILL_DIR}[[/references/bbva-deck-reference.html]]\`
+
+---
+
+## Error Handling
+
+| Error | Recovery |
+|-------|----------|
+| Server fails to start | Retry: \`BRAINSTORM_PORT=XXXXX bash .../start-server.sh\` |
+| Playwright not installed | Run \`npx playwright install chromium\` then retry |
+| pptxgenjs not found | Run \`npm install pptxgenjs\` then retry |
+| html2canvas PNG fails | Use Playwright PDF export instead |
 `;

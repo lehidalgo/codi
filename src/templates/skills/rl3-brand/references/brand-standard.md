@@ -2,7 +2,7 @@
 
 ## Visual Identity
 
-**For exact values, always read `brand_tokens.py`** — it is the single source of truth.
+**For exact values, always read `brand/tokens.json`** — it is the single source of truth.
 
 ### Color Palette
 
@@ -31,11 +31,14 @@
 | Monospace / Labels | Space Mono | 400-700 |
 | Body text | Instrument Sans | 400-600 |
 
-See `brand_tokens.GOOGLE_FONTS_URL` for the import link and `brand_tokens.TYPOGRAPHY` for tracking and line-height values.
+Google Fonts import:
+```html
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+```
 
 - Headlines: Space Grotesk, weight 600-700, tight letter-spacing
 - Section labels: Space Mono, all caps, wide letter-spacing, small size, gold color
-- Section label format: `01 — Section Name` (see `brand_tokens.SECTION_LABEL_FORMAT`)
+- Section label format: `01 — Section Name`
 - Body: Instrument Sans, generous line-height, gray for secondary text
 
 ### Logo Rules
@@ -45,13 +48,12 @@ The logo is pure typography: **RL** + **3** on a single shared baseline, with "A
 **Critical rules**:
 1. "RL" and "3" MUST sit on the exact same baseline — one word, one line, one level.
 2. Use a single `<text>` element with a `<tspan>` for the color change. **Never** two separate elements.
-3. The "3" is ALWAYS in gold (`brand_tokens.COLORS["accent"]`). Never the same color as "RL".
-4. For exact SVG markup: read `brand_tokens.LOGO_DARK_BG` and `brand_tokens.LOGO_LIGHT_BG`.
-5. SVG files also available in `assets/rl3-logo-dark.svg` and `assets/rl3-logo-light.svg`.
+3. The "3" is ALWAYS in gold (`#c8b88a`). Never the same color as "RL".
+4. SVG files: `assets/rl3-logo-dark.svg` (for light backgrounds) and `assets/rl3-logo-light.svg` (for dark backgrounds).
 
 ### Design Patterns
 
-See `brand_tokens.ANIMATIONS` and `brand_tokens.GRAIN_OVERLAY_CSS`:
+Design patterns:
 - **Hover**: gold top-border reveal (scaleX from 0), background shift to slightly lighter
 - **Entrance**: fadeUp animation (opacity + translateY) with staggered delays
 - **Pulse**: subtle glow behind the "3" element using radial-gradient + blur
@@ -74,13 +76,13 @@ See `brand_tokens.ANIMATIONS` and `brand_tokens.GRAIN_OVERLAY_CSS`:
 - Em dash (—) ONLY in section labels (`01 — Contexto`). Never use em dashes to connect clauses.
 - RL metaphors woven naturally: "cada dato es una señal de mejora", "la policy óptima".
 
-**Approved phrases** (see `brand_tokens.PHRASES_USE`):
+**Approved phrases**:
 - "Cada iteración nos acerca al resultado óptimo"
 - "Observar · Actuar · Iterar"
 - "No demos. Soluciones en producción"
 - "Sistemas que mejoran con el tiempo"
 
-**Phrases to AVOID** (see `brand_tokens.PHRASES_AVOID`):
+**Phrases to AVOID**:
 - "Revolucionamos" / "Disruptivo" / "Cutting-edge"
 - "Nuestro equipo de expertos"
 - "Soluciones 360" / "End-to-end" without specifics
@@ -103,7 +105,7 @@ See `brand_tokens.ANIMATIONS` and `brand_tokens.GRAIN_OVERLAY_CSS`:
 - Use the 3-pillar structure (Observe / Act / Iterate) when presenting methodology
 
 **Web content (HTML/React)**:
-- Always include CSS variables block and Google Fonts import (from brand_tokens)
+- Always include CSS variables block and Google Fonts import (from `brand/tokens.css`)
 - Dark mode default with grain overlay
 - Logo renders RL3 on one baseline — use `<tspan>` for the gold "3", never a separate element
 - Include fadeUp animations and hover gold borders

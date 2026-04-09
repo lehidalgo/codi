@@ -20,7 +20,7 @@ extended usage rules.
 ## Color System — Extended
 
 Colors are extracted from the official SPHERICA BBVA PowerPoint template (Plantilla BBVA_16_9.pptx).
-All values are stored in `/scripts/brand_tokens.json`.
+All values are stored in `brand/tokens.json`.
 
 | Token | Hex | Name | Notes |
 |-------|-----|------|-------|

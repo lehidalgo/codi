@@ -15,9 +15,15 @@ import {
 } from "#src/utils/conflict-resolver.js";
 import { extractProjectContext, injectProjectContext } from "#src/utils/project-context-preserv.js";
 
+/**
+ * Aggregated result returned by {@link generate}.
+ */
 export interface GenerationResult {
+  /** All files produced across every agent, in generation order. */
   files: GeneratedFile[];
+  /** IDs of agents that participated in this generation run. */
   agents: string[];
+  /** Files produced by each agent, keyed by agent ID. */
   filesByAgent: Record<string, GeneratedFile[]>;
   /** Relative paths of files kept as-is due to conflict resolution. */
   skipped: string[];
@@ -28,6 +34,29 @@ interface AgentOutput {
   generated: GeneratedFile[];
 }
 
+/**
+ * Run the full generation pipeline for all registered agents.
+ *
+ * Phase 1 renders file content in memory (no I/O). Phase 2 writes files to
+ * disk with conflict detection: identical content is written directly; differing
+ * content triggers the interactive resolver (or `--force` auto-accept).
+ *
+ * The primary instruction file for each agent also receives the verification
+ * token section and has any existing `<!-- project-context -->` block
+ * preserved across regenerations.
+ *
+ * @param config - Fully resolved and validated Codi configuration.
+ * @param projectRoot - Absolute path to the project root directory.
+ * @param options - Generation options (dry-run, force, agent filter, etc.).
+ * @returns `ok(GenerationResult)` on success, or `err(errors)` if an adapter
+ *   is missing or an unexpected I/O failure occurs.
+ *
+ * @example
+ * const result = await generate(config, process.cwd(), { dryRun: true });
+ * if (result.ok) {
+ *   console.log(`Would write ${result.data.files.length} files`);
+ * }
+ */
 export async function generate(
   config: NormalizedConfig,
   projectRoot: string,

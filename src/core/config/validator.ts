@@ -20,6 +20,24 @@ function getKnownAdapterIds(): string[] {
   return registered.length > 0 ? registered : ALL_ADAPTERS.map((a) => a.id);
 }
 
+/**
+ * Validates a `NormalizedConfig` and returns a list of errors.
+ *
+ * Checks agent ids against the registered adapter list, validates rule and skill
+ * names and sizes, enforces flag references, and checks platform compatibility
+ * for skills. Returns an empty array if the config is valid.
+ *
+ * @param config - The normalized config to validate
+ * @returns An array of `ProjectError` objects. Empty array means valid.
+ *
+ * @example
+ * ```ts
+ * const errors = validateConfig(config);
+ * if (errors.length > 0) {
+ *   errors.forEach(e => console.error(e.message));
+ * }
+ * ```
+ */
 export function validateConfig(config: NormalizedConfig): ProjectError[] {
   const errors: ProjectError[] = [];
 

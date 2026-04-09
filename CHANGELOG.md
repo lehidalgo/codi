@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Artifact Catalog docs site** — 123 built-in artifacts (67 skills, 28 rules, 22 agents, 6 presets) browsable at `/docs/catalog/` with type tabs, category chips, compatibility filters, search, and individual markdown-rendered artifact pages
+- **`codi docs --catalog` command** — generates per-artifact markdown pages into `docs/src/content/docs/catalog/` and a `docs/generated/catalog-meta.json` index; runs automatically as part of `docs:build`
+- **Full-site preview server** (`preview-server.mjs`) — `npm run docs:preview` now serves the marketing site and docs together at `localhost:4321/codi/` so all navigation links work locally
+- **Docs nav link** — marketing site nav includes a "Docs" link pointing to `/codi/docs/`
+- **Artifact Catalog card** on docs index alongside Getting Started, CLI Reference, Configuration, and API Reference
+
+### Changed
+
+- **Unified preview server infra across brand skills** — `server.cjs`, `preview-shell.js`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`, and `vendor/` (html2canvas + JSZip) are now byte-identical across `bbva-brand`, `rl3-brand`, `codi-brand`, and `content-factory`; only `generators/` templates and `brand/tokens.css` differ per brand. `preview-shell.js` BBVA-specific logo selector removed to make it fully generic.
+- **`rl3-brand` and `codi-brand` gain full preview server** — added `scripts/` infra and `generators/` (slides, document, social) copied from bbva-brand and adapted to each brand's tokens and logo paths
+- **`content-factory` migrated to server approach** — replaced legacy inline `assets/preview-shell.js` + `assets/vendor/` with the shared `scripts/` stack; `generators/` templates now use `.social-card` / `.doc-page` / `.deck` standard classes; `scaffold-session.sh` updated to start the server and seed content dir
+- **`brand/tokens.css`** added for `rl3-brand` and `codi-brand` matching BBVA structure
+
+- **Export All PNGs bundles a ZIP** — "Export All PNGs" in the BBVA brand preview shell now downloads a single `cards.zip` / `slides.zip` / `pages.zip` instead of triggering individual per-file downloads; JSZip 3.10.1 vendored in `scripts/vendor/jszip.min.js` and injected by `server.cjs`
+
+### Fixed
+
+- **BBVA logo invisible in PNG exports** — `preview-shell.js` now pre-renders each SVG to a data-URI image with computed fills inlined as attributes, hides SVGs during html2canvas capture, then composites them onto a fresh canvas; fixes CSS-only fills (e.g. `.slide__logo path { fill:#001391 }`) being stripped by html2canvas for all content types (slides, documents, social cards)
+
+- **Docs layout CSS missing** — `DocsLayout.astro` now imports `style-docs.css`; docs pages were previously rendered without sidebar or content layout styles
+- **Link hover underline** — removed `text-decoration: underline` on hover across the entire docs site
+
 - **`branch-finish` skill** — deterministic branch completion workflow: verify tests, choose merge/PR/keep/discard, clean up worktrees
 - **`worktrees` skill** — evaluates isolation strategy (worktree vs simple branch) and sets up the workspace before plan execution
 - **`codi onboard` command** — prints a structured AI onboarding guide with the full artifact catalog (rules, skills, agents, presets) for the current installation

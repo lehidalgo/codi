@@ -30,7 +30,6 @@ export async function createValidationImage(
 
   // Try sharp first, fall back to SVG overlay approach
   try {
-    // @ts-expect-error sharp is a user-project dependency
     const sharp = (await import("sharp")).default;
 
     const image = sharp(inputPath);
@@ -40,9 +39,7 @@ export async function createValidationImage(
 
     // Build SVG overlay with bounding boxes
     const svgParts: string[] = [];
-    svgParts.push(
-      `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`,
-    );
+    svgParts.push(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`);
 
     let numBoxes = 0;
     for (const field of data.form_fields) {
@@ -63,13 +60,9 @@ export async function createValidationImage(
     svgParts.push("</svg>");
     const svgBuffer = Buffer.from(svgParts.join("\n"));
 
-    await image
-      .composite([{ input: svgBuffer, top: 0, left: 0 }])
-      .toFile(outputPath);
+    await image.composite([{ input: svgBuffer, top: 0, left: 0 }]).toFile(outputPath);
 
-    console.log(
-      `Created validation image at ${outputPath} with ${numBoxes} bounding boxes`,
-    );
+    console.log(`Created validation image at ${outputPath} with ${numBoxes} bounding boxes`);
   } catch {
     // Fallback: write a JSON description of the boxes (agent can use another tool)
     const boxes: Array<{ type: string; rect: number[]; page: number }> = [];
@@ -87,17 +80,9 @@ export async function createValidationImage(
         });
       }
     }
-    writeFileSync(
-      outputPath + ".json",
-      JSON.stringify(boxes, null, 2),
-      "utf-8",
-    );
-    console.error(
-      "Warning: 'sharp' not available. Install with: npm install sharp",
-    );
-    console.log(
-      `Wrote ${boxes.length} bounding box definitions to ${outputPath}.json`,
-    );
+    writeFileSync(outputPath + ".json", JSON.stringify(boxes, null, 2), "utf-8");
+    console.error("Warning: 'sharp' not available. Install with: npm install sharp");
+    console.log(`Wrote ${boxes.length} bounding box definitions to ${outputPath}.json`);
   }
 }
 
@@ -113,10 +98,5 @@ if (process.argv[1]?.endsWith("create-validation-image.ts")) {
   const fieldsJsonPath = process.argv[3]!;
   const inputImagePath = process.argv[4]!;
   const outputImagePath = process.argv[5]!;
-  await createValidationImage(
-    pageNumber,
-    fieldsJsonPath,
-    inputImagePath,
-    outputImagePath,
-  );
+  await createValidationImage(pageNumber, fieldsJsonPath, inputImagePath, outputImagePath);
 }

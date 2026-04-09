@@ -53,10 +53,7 @@ function transformFromImageCoords(
   return { x: left, y: bottom };
 }
 
-function transformFromPdfCoords(
-  bbox: number[],
-  _pdfHeight: number,
-): { x: number; y: number } {
+function transformFromPdfCoords(bbox: number[], _pdfHeight: number): { x: number; y: number } {
   // bbox is already in PDF coordinates [left, bottom, right, top]
   return { x: bbox[0]!, y: bbox[1]! };
 }
@@ -75,12 +72,9 @@ export async function fillPdfForm(
   fieldsJsonPath: string,
   outputPdfPath: string,
 ): Promise<void> {
-  // @ts-expect-error pdf-lib is a user-project dependency
   const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
 
-  const fieldsData: FieldsData = JSON.parse(
-    readFileSync(fieldsJsonPath, "utf-8"),
-  );
+  const fieldsData: FieldsData = JSON.parse(readFileSync(fieldsJsonPath, "utf-8"));
   const pdfBytes = readFileSync(inputPdfPath);
   const doc = await PDFDocument.load(pdfBytes);
   const pages = doc.getPages();

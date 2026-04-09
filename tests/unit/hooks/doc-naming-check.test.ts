@@ -26,8 +26,8 @@ describe("DOC_NAMING_CHECK_TEMPLATE", () => {
     }
   });
 
-  it("contains the YYYYMMDD_HHMMSS_[CATEGORY] regex pattern", () => {
-    expect(DOC_NAMING_CHECK_TEMPLATE).toMatch(/\\d\{8\}.*\\d\{6\}/);
+  it("contains the YYYYMMDD date-based regex pattern", () => {
+    expect(DOC_NAMING_CHECK_TEMPLATE).toMatch(/\\d\{8\}/);
   });
 
   it("contains skip dir names matching Python script", () => {

@@ -1,0 +1,24 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../layouts/DocsLayout.astro';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map(entry => {
+    // TypeDoc generates README.md → expose as "overview" in the URL
+    const slug = entry.id.toLowerCase().replace(/\/readme$/, '/overview');
+    return { params: { slug }, props: { entry } };
+  });
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const title = entry.data.title
+  ?? entry.id.split('/').pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  ?? 'Docs';
+---
+
+<DocsLayout title={title} description={entry.data.description}>
+  <Content />
+</DocsLayout>
