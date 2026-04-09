@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-04-09
+
+### Added
+
+- **Staged junk file check** — new always-on pre-commit hook that blocks OS noise files (`.DS_Store`, `Thumbs.db`, `desktop.ini`) and build cache dirs (`__pycache__`, `.pyc`, `.pyo`, `.pytest_cache`, `.mypy_cache`, `.class`) from entering the repository; prints the exact `git rm --cached` command to unstage them
+- **shellcheck for staged shell scripts** — shell language support added to hook registry and stack detector; shellcheck runs on staged `.sh` files before the test suite on projects where shell scripts are detected
+
+### Fixed
+
+- **GitHub Pages deployment** — added `npm run build` step before `docs:build` in `.github/workflows/pages.yml`; the CLI was not compiled, so `node dist/cli.js docs --catalog` failed on every Pages run
+
 ## [2.4.0] - 2026-04-09
 
 ### Added
