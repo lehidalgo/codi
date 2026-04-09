@@ -5,4 +5,11 @@ export default defineConfig({
   base: '/codi/docs/',
   srcDir: './docs/src',
   outDir: './site/docs',
+  vite: {
+    build: {
+      rollupOptions: {
+        external: [/\/_pagefind\//],
+      },
+    },
+  },
 });

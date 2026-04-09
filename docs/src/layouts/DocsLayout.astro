@@ -93,6 +93,13 @@ function docLabel(doc: DocEntry): string {
         <a href="https://github.com/lehidalgo/codi" target="_blank" rel="noopener">GitHub</a>
         <a href={`${siteRoot}#quickstart`} class="btn-primary">Install</a>
       </div>
+      <button class="docs-search-trigger" id="docs-search-trigger" aria-label="Search documentation" aria-keyshortcuts="Control+K Meta+K">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <span>Search</span>
+        <kbd>⌘K</kbd>
+      </button>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -132,6 +139,28 @@ function docLabel(doc: DocEntry): string {
       <span class="docs-toc-label">On this page</span>
       <ul class="docs-toc-list" id="docs-toc-list"></ul>
     </aside>
+  </div>
+
+  <!-- Search modal -->
+  <div class="search-modal" id="search-modal" role="dialog" aria-modal="true" aria-label="Search documentation" hidden>
+    <div class="search-backdrop" id="search-backdrop"></div>
+    <div class="search-box">
+      <div class="search-input-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="search" id="search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false" />
+        <button class="search-close" id="search-close" aria-label="Close search">
+          <kbd>Esc</kbd>
+        </button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+      <div class="search-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> open</span>
+        <span><kbd>Esc</kbd> close</span>
+      </div>
+    </div>
   </div>
 
   <!-- Mobile sidebar toggle -->
@@ -186,6 +215,7 @@ function docLabel(doc: DocEntry): string {
 
     // Heading anchor links
     document.querySelectorAll<HTMLElement>('.docs-content h2, .docs-content h3, .docs-content h4').forEach(h => {
+      if (h.closest('.docs-card')) return;
       if (!h.id) {
         h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
       }
@@ -279,6 +309,102 @@ function docLabel(doc: DocEntry): string {
         });
       });
     });
+    // Search
+    (function() {
+      const modal = document.getElementById('search-modal');
+      const backdrop = document.getElementById('search-backdrop');
+      const input = document.getElementById('search-input') as HTMLInputElement | null;
+      const results = document.getElementById('search-results');
+      const trigger = document.getElementById('docs-search-trigger');
+      const closeBtn = document.getElementById('search-close');
+      if (!modal || !input || !results || !trigger) return;
+
+      let pagefind: any = null;
+      let selectedIndex = -1;
+
+      const openSearch = async () => {
+        modal.hidden = false;
+        input.focus();
+        if (!pagefind) {
+          try {
+            pagefind = await import('/codi/docs/_pagefind/pagefind.js');
+            await pagefind.init();
+          } catch {
+            results.textContent = 'Search index not available. Run npm run docs:build first.';
+          }
+        }
+      };
+
+      const closeSearch = () => {
+        modal.hidden = true;
+        input.value = '';
+        results.textContent = '';
+        selectedIndex = -1;
+      };
+
+      trigger.addEventListener('click', openSearch);
+      backdrop?.addEventListener('click', closeSearch);
+      closeBtn?.addEventListener('click', closeSearch);
+
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          modal.hidden ? openSearch() : closeSearch();
+        }
+        if (!modal.hidden && e.key === 'Escape') closeSearch();
+        if (!modal.hidden && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+          e.preventDefault();
+          const items = results.querySelectorAll<HTMLAnchorElement>('.search-result-item');
+          if (!items.length) return;
+          items[selectedIndex]?.classList.remove('selected');
+          selectedIndex = e.key === 'ArrowDown'
+            ? Math.min(selectedIndex + 1, items.length - 1)
+            : Math.max(selectedIndex - 1, 0);
+          items[selectedIndex]?.classList.add('selected');
+          items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        }
+        if (!modal.hidden && e.key === 'Enter') {
+          const selected = results.querySelector<HTMLAnchorElement>('.search-result-item.selected');
+          if (selected) { selected.click(); closeSearch(); }
+        }
+      });
+
+      let debounce: ReturnType<typeof setTimeout>;
+      input.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+          const q = input.value.trim();
+          results.textContent = '';
+          selectedIndex = -1;
+          if (!q || !pagefind) return;
+          const search = await pagefind.debouncedSearch(q);
+          if (!search?.results?.length) {
+            const empty = document.createElement('p');
+            empty.className = 'search-empty';
+            empty.textContent = 'No results for "' + q + '"';
+            results.appendChild(empty);
+            return;
+          }
+          const top = search.results.slice(0, 8);
+          for (const r of top) {
+            const data = await r.data();
+            const a = document.createElement('a');
+            a.href = data.url;
+            a.className = 'search-result-item';
+            const title = document.createElement('span');
+            title.className = 'search-result-title';
+            title.textContent = data.meta?.title ?? data.url;
+            const excerpt = document.createElement('span');
+            excerpt.className = 'search-result-excerpt';
+            excerpt.textContent = data.excerpt?.replace(/<[^>]+>/g, '') ?? '';
+            a.appendChild(title);
+            a.appendChild(excerpt);
+            a.addEventListener('click', closeSearch);
+            results.appendChild(a);
+          }
+        }, 150);
+      });
+    })();
   </script>
 </body>
 </html>
