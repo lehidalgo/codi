@@ -69,43 +69,39 @@ export function generateHooksConfig(
 ): HooksConfig {
   const allHooks: HookEntry[] = [];
 
-  const hasVersionRequirement = Boolean(manifest?.engine?.requiredVersion);
-  if (hasVersionRequirement) {
-    allHooks.push(getDoctorHook());
-  }
+  // ── Stage 1: Instant filename / pattern checks ───────────────────────────
+  // These reject obvious problems in milliseconds before any file I/O or
+  // tool invocations. Always run first so the hook exits fast on bad input.
 
-  for (const lang of languages) {
-    const langHooks = getHooksForLanguage(lang);
-    for (const hook of langHooks) {
-      if (isHookEnabled(hook.name, flags)) {
-        const alreadyAdded = allHooks.some((h) => h.name === hook.name);
-        if (!alreadyAdded) {
-          allHooks.push(hook);
-        }
-      }
-    }
-  }
+  allHooks.push({
+    name: "staged-junk-check",
+    command: `node .git/hooks/${PROJECT_NAME}-staged-junk-check.mjs`,
+    stagedFilter: "**",
+  });
 
-  const versionBump = hasVersionBump();
-  if (versionBump) {
+  allHooks.push({
+    name: "file-size-check",
+    command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
+    stagedFilter: "**/*",
+  });
+
+  allHooks.push({
+    name: "import-depth-check",
+    command: `node .git/hooks/${PROJECT_NAME}-import-depth-check.mjs`,
+    stagedFilter: "**/*.{ts,tsx,js,jsx,mts,mjs}",
+  });
+
+  const docNamingCheck = hasDocNamingCheck();
+  if (docNamingCheck) {
     allHooks.push({
-      name: "version-bump",
-      command: `node .git/hooks/${PROJECT_NAME}-version-bump.mjs`,
-      stagedFilter: "src/templates/**",
-      passFiles: false,
+      name: "doc-naming-check",
+      command: `node .git/hooks/${PROJECT_NAME}-doc-naming-check.mjs`,
+      stagedFilter: "docs/**",
     });
   }
 
-  const testBeforeCommit = isTestBeforeCommitEnabled(flags);
-  if (testBeforeCommit) {
-    const testHooks = getTestHooksForLanguages(languages);
-    for (const hook of testHooks) {
-      const alreadyAdded = allHooks.some((h) => h.name === hook.name || h.command === hook.command);
-      if (!alreadyAdded) {
-        allHooks.push(hook);
-      }
-    }
-  }
+  // ── Stage 2: Fast content checks ─────────────────────────────────────────
+  // Read file contents but no compilation or external tool startup cost.
 
   const secretScan = isSecurityScanEnabled(flags);
   if (secretScan) {
@@ -115,32 +111,6 @@ export function generateHooksConfig(
       stagedFilter: "**/*",
     });
   }
-
-  allHooks.push({
-    name: "file-size-check",
-    command: `node .git/hooks/${PROJECT_NAME}-file-size-check.mjs`,
-    stagedFilter: "**/*",
-  });
-
-  if (hasVersionRequirement) {
-    allHooks.push({
-      name: "version-check",
-      command: `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
-      stagedFilter: "",
-    });
-  }
-
-  allHooks.push({
-    name: "artifact-validate",
-    command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
-    stagedFilter: ".codi/**",
-  });
-
-  allHooks.push({
-    name: "import-depth-check",
-    command: `node .git/hooks/${PROJECT_NAME}-import-depth-check.mjs`,
-    stagedFilter: "**/*.{ts,tsx,js,jsx,mts,mjs}",
-  });
 
   allHooks.push({
     name: "skill-yaml-validate",
@@ -155,13 +125,53 @@ export function generateHooksConfig(
   });
 
   allHooks.push({
-    name: "staged-junk-check",
-    command: `node .git/hooks/${PROJECT_NAME}-staged-junk-check.mjs`,
-    stagedFilter: "**",
+    name: "artifact-validate",
+    command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
+    stagedFilter: ".codi/**",
   });
 
-  const templateWiringCheck = hasTemplateWiringCheck();
+  // ── Stage 3: Environment / tooling checks ────────────────────────────────
+  // These invoke external tools or make network calls — run after cheap checks.
 
+  const hasVersionRequirement = Boolean(manifest?.engine?.requiredVersion);
+  if (hasVersionRequirement) {
+    allHooks.push(getDoctorHook());
+    allHooks.push({
+      name: "version-check",
+      command: `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
+      stagedFilter: "",
+    });
+  }
+
+  // ── Stage 4: Language hooks (lint → format → type-check → security) ──────
+  // Ordered within each language from fastest to slowest by hook-registry.
+
+  for (const lang of languages) {
+    const langHooks = getHooksForLanguage(lang);
+    for (const hook of langHooks) {
+      if (isHookEnabled(hook.name, flags)) {
+        const alreadyAdded = allHooks.some((h) => h.name === hook.name);
+        if (!alreadyAdded) {
+          allHooks.push(hook);
+        }
+      }
+    }
+  }
+
+  // ── Stage 5: Codi-dev hooks ───────────────────────────────────────────────
+  // Only active inside the Codi repository itself.
+
+  const versionBump = hasVersionBump();
+  if (versionBump) {
+    allHooks.push({
+      name: "version-bump",
+      command: `node .git/hooks/${PROJECT_NAME}-version-bump.mjs`,
+      stagedFilter: "src/templates/**",
+      passFiles: false,
+    });
+  }
+
+  const templateWiringCheck = hasTemplateWiringCheck();
   if (templateWiringCheck) {
     allHooks.push({
       name: "template-wiring-check",
@@ -170,14 +180,19 @@ export function generateHooksConfig(
     });
   }
 
-  const docNamingCheck = hasDocNamingCheck();
+  // ── Stage 6: Test suite — always last ────────────────────────────────────
+  // Running the full test suite is the most expensive check. Only run it after
+  // all fast checks pass, so cheap failures don't pay the test startup cost.
 
-  if (docNamingCheck) {
-    allHooks.push({
-      name: "doc-naming-check",
-      command: `node .git/hooks/${PROJECT_NAME}-doc-naming-check.mjs`,
-      stagedFilter: "docs/**",
-    });
+  const testBeforeCommit = isTestBeforeCommitEnabled(flags);
+  if (testBeforeCommit) {
+    const testHooks = getTestHooksForLanguages(languages);
+    for (const hook of testHooks) {
+      const alreadyAdded = allHooks.some((h) => h.name === hook.name || h.command === hook.command);
+      if (!alreadyAdded) {
+        allHooks.push(hook);
+      }
+    }
   }
 
   const docCheck = isDocCheckEnabled(flags);
