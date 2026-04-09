@@ -472,7 +472,7 @@ const ALLOWED_CATEGORIES = new Set([
   'HANDOFF', 'REVIEW', 'CHANGELOG',
 ]);
 
-const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site']);
+const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site', 'generated']);
 const SKIP_FILES = new Set(['.DS_Store']);
 const VALID_PATTERN = /^(\\d{8})_(?:\\d{4,6}_)?\\[?([A-Z]+)\\]?_.+$/;
 

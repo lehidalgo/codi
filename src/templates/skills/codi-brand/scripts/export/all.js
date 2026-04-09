@@ -9,7 +9,7 @@
  * applicable formats to exports_dir.
  *
  * Usage:
- *   node all.js --session /path/to/.codi_output/20260408_1012_bbva-brand
+ *   node all.js --session /path/to/.codi_output/20260408_1012_codi-brand
  *
  * Requires: playwright, pdf-lib, pptxgenjs
  *   npm install pdf-lib pptxgenjs playwright
@@ -42,7 +42,7 @@ for (let i = 0; i < args.length; i++) {
 if (!sessionDir) {
   console.error(
     "Usage: node all.js --session <session-dir>\n" +
-      "  Example: node all.js --session .codi_output/20260408_1012_bbva-brand",
+      "  Example: node all.js --session .codi_output/20260408_1012_codi-brand",
   );
   process.exit(1);
 }

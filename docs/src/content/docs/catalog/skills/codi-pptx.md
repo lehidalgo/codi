@@ -1,38 +1,27 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
-import type { TemplateCounts } from "../types.js";
-
-function buildBrandPrompt(brandSkillNames: string[]): string {
-  const lines = brandSkillNames.map((name, i) => {
-    const label = name.replace(/-brand$/, "").replace(/^codi$/, "Codi");
-    const brandLabel =
-      label.length <= 4 ? label.toUpperCase() : label.charAt(0).toUpperCase() + label.slice(1);
-    const suffix =
-      i === 0 ? " (default — uses bundled tokens)" : `  — requires codi-${name} skill active`;
-    return `  ${i + 1}. ${brandLabel}${suffix}`;
-  });
-  lines.push(`  ${brandSkillNames.length + 1}. Custom — provide a path to brand_tokens.json`);
-  return lines.join("\n");
-}
-
-export function getTemplate(counts: TemplateCounts): string {
-  const brandPrompt = buildBrandPrompt(counts.brandSkillNames);
-  return `---
-name: {{name}}
-description: "Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations."
-category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
-compatibility: ${SUPPORTED_PLATFORMS_YAML}
-managed_by: ${PROJECT_NAME}
-user-invocable: true
-disable-model-invocation: false
-version: 22
+---
+title: codi-pptx
+description: >
+  Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations.
+sidebar:
+  label: "codi-pptx"
+artifactType: skill
+artifactCategory: File Format Tools
+userInvocable: true
+compatibility:
+  - claude-code
+  - cursor
+  - codex
+  - windsurf
+  - cline
+version: 1
 ---
 
 # PPTX Skill
 
 ## When to Activate
 
-- User wants to create, edit, or read a \\\`.pptx\\\` file
-- User mentions 'deck', 'slides', 'presentation', or a \\\`.pptx\\\` filename
+- User wants to create, edit, or read a `.pptx` file
+- User mentions 'deck', 'slides', 'presentation', or a `.pptx` filename
 - User needs to extract text, speaker notes, or content from a presentation
 - User needs to combine, split, or convert slide files
 
@@ -41,7 +30,7 @@ version: 22
 
 | Task | Guide |
 |------|-------|
-| Read/analyze content | \\\`python -m markitdown presentation.pptx\\\` |
+| Read/analyze content | `python -m markitdown presentation.pptx` |
 | Edit or create from template | Read [editing.md](editing.md) |
 | Create from scratch | Read [pptxgenjs.md](pptxgenjs.md) |
 
@@ -49,16 +38,16 @@ version: 22
 
 ## Reading Content
 
-\\\`\\\`\\\`bash
+```bash
 # Text extraction
 python -m markitdown presentation.pptx
 
 # Visual overview
-python \${CLAUDE_SKILL_DIR}[[/scripts/thumbnail.py]] presentation.pptx
+python ${CLAUDE_SKILL_DIR}[[/scripts/thumbnail.py]] presentation.pptx
 
 # Raw XML
-python \${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpacked/
-\\\`\\\`\\\`
+python ${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpacked/
+```
 
 ---
 
@@ -66,7 +55,7 @@ python \${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpac
 
 **Read [editing.md](editing.md) for full details.**
 
-1. Analyze template with \\\`thumbnail.py\\\`
+1. Analyze template with `thumbnail.py`
 2. Unpack → manipulate slides → edit content → clean → pack
 
 ---
@@ -76,35 +65,36 @@ python \${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpac
 When the user asks to create a branded PPTX, ask two questions if not already stated:
 
 **Step 1 — Brand** (skip if brand already named):
-\`\`\`
+```
 Which brand styling would you like to apply?
-${brandPrompt}
-\`\`\`
+  1. CODI (default — uses bundled tokens)
+  2. Custom — provide a path to brand_tokens.json
+```
 
 **Step 2 — Theme** (skip if theme already named):
-\`\`\`
+```
 Which color theme?
   1. Dark (default)
   2. Light
-\`\`\`
+```
 
 Then run (detect runtime first):
-\`\`\`bash
+```bash
 if command -v npx &>/dev/null && npx tsx --version &>/dev/null 2>&1; then
   # TypeScript (preferred)
-  npx tsx \${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_pptx.ts]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+  npx tsx ${CLAUDE_SKILL_DIR}[[/scripts/ts/generate_pptx.ts]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
 elif command -v uv &>/dev/null; then
   # Python via uv (ephemeral isolated env — no system pollution)
-  uv run --with python-pptx --with Pillow python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+  uv run --with python-pptx --with Pillow python3 ${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
 else
   # Python via venv fallback
-  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
-  "\$SKILL_VENV/bin/pip" install -q python-pptx Pillow
-  "\$SKILL_VENV/bin/python3" \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
+  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "$SKILL_VENV" 2>/dev/null || true
+  "$SKILL_VENV/bin/pip" install -q python-pptx Pillow
+  "$SKILL_VENV/bin/python3" ${CLAUDE_SKILL_DIR}[[/scripts/python/generate_pptx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.pptx
 fi
-\`\`\`
+```
 
-Omit \`--tokens\` to use Codi default brand. Replace \`dark\` with \`light\` for the light theme.
+Omit `--tokens` to use Codi default brand. Replace `dark` with `light` for the light theme.
 
 ---
 
@@ -118,23 +108,23 @@ Use when no template or reference presentation is available.
 
 ## Design Ideas
 
-Read \\\`\${CLAUDE_SKILL_DIR}[[/references/design-guide.md]]\\\` for design principles, color palettes, typography, and layout options.
+Read `${CLAUDE_SKILL_DIR}[[/references/design-guide.md]]` for design principles, color palettes, typography, and layout options.
 
 ---
 
 ## Brand Integration
 
-When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), use the brand skill's generators instead of building slides from scratch.
+When a brand skill is active or the user names a brand (codi, etc.), use the brand skill's generators instead of building slides from scratch.
 
 1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
-2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`codi-brand\\\`) and re-run.
-3. Write \\\`content.json\\\` using the schema below, then run the TypeScript generator (DEFAULT) or Python fallback.
+2. **If the brand skill is not active**, tell the user to enable it (e.g., `codi-brand`) and re-run.
+3. Write `content.json` using the schema below, then run the TypeScript generator (DEFAULT) or Python fallback.
 
 **Your role as the agent: create content.json only.** The generator script owns all layout decisions — logo position, slide structure, font sizes, spacing. You control what is said on each slide, not how it looks.
 
 **content.json schema:**
 
-\\\`\\\`\\\`json
+```json
 {
   "title": "Presentation Title",
   "subtitle": "Optional subtitle",
@@ -167,17 +157,17 @@ When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), 
     { "type": "closing", "message": "Thank you", "contact": "team@example.com" }
   ]
 }
-\\\`\\\`\\\`
+```
 
 **Slide types reference:**
 
 | type | Required fields | Optional fields |
 |------|----------------|-----------------|
-| \\\`title\\\`   | — (uses top-level title/subtitle/author) | title, subtitle, author |
-| \\\`section\\\` | heading | number, label, body, items, callout |
-| \\\`quote\\\`   | quote | attribution |
-| \\\`metrics\\\` | metrics[] (max 4) | heading |
-| \\\`closing\\\` | message | contact |
+| `title`   | — (uses top-level title/subtitle/author) | title, subtitle, author |
+| `section` | heading | number, label, body, items, callout |
+| `quote`   | quote | attribution |
+| `metrics` | metrics[] (max 4) | heading |
+| `closing` | message | contact |
 
 ---
 
@@ -189,17 +179,17 @@ Your first render is almost never correct. Approach QA as a bug hunt, not a conf
 
 ### Content QA
 
-\\\`\\\`\\\`bash
+```bash
 python -m markitdown output.pptx
-\\\`\\\`\\\`
+```
 
 Check for missing content, typos, wrong order.
 
 **When using templates, check for leftover placeholder text:**
 
-\\\`\\\`\\\`bash
+```bash
 python -m markitdown output.pptx | grep -iE "xxxx|lorem|ipsum|this.*(page|slide).*layout"
-\\\`\\\`\\\`
+```
 
 If grep returns results, fix them before declaring success.
 
@@ -209,7 +199,7 @@ If grep returns results, fix them before declaring success.
 
 Convert slides to images (see [Converting to Images](#converting-to-images)), then use this prompt:
 
-\\\`\\\`\\\`
+```
 Visually inspect these slides. Assume there are issues — find them.
 
 Look for:
@@ -233,7 +223,7 @@ Read and analyze these images:
 2. /path/to/slide-02.jpg (Expected: [brief description])
 
 Report ALL issues found, including minor ones.
-\\\`\\\`\\\`
+```
 
 ### Verification Loop
 
@@ -251,27 +241,25 @@ Report ALL issues found, including minor ones.
 
 Convert presentations to individual slide images for visual inspection:
 
-\\\`\\\`\\\`bash
-python \${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]] --headless --convert-to pdf output.pptx
+```bash
+python ${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]] --headless --convert-to pdf output.pptx
 pdftoppm -jpeg -r 150 output.pdf slide
-\\\`\\\`\\\`
+```
 
-This creates \\\`slide-01.jpg\\\`, \\\`slide-02.jpg\\\`, etc.
+This creates `slide-01.jpg`, `slide-02.jpg`, etc.
 
 To re-render specific slides after fixes:
 
-\\\`\\\`\\\`bash
+```bash
 pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
-\\\`\\\`\\\`
+```
 
 ---
 
 ## Dependencies
 
-- \\\`pip install "markitdown[pptx]"\\\` - text extraction
-- \\\`pip install Pillow\\\` - thumbnail grids
-- \\\`npm install -g pptxgenjs\\\` - creating from scratch
-- LibreOffice (\\\`soffice\\\`) - PDF conversion (auto-configured for sandboxed environments via \\\`\${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]]\\\`)
-- Poppler (\\\`pdftoppm\\\`) - PDF to images
-`;
-}
+- `pip install "markitdown[pptx]"` - text extraction
+- `pip install Pillow` - thumbnail grids
+- `npm install -g pptxgenjs` - creating from scratch
+- LibreOffice (`soffice`) - PDF conversion (auto-configured for sandboxed environments via `${CLAUDE_SKILL_DIR}[[/scripts/office/soffice.py]]`)
+- Poppler (`pdftoppm`) - PDF to images

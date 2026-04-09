@@ -16,16 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **Unified preview server infra across brand skills** — `server.cjs`, `preview-shell.js`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`, and `vendor/` (html2canvas + JSZip) are now byte-identical across `bbva-brand`, `rl3-brand`, `codi-brand`, and `content-factory`; only `generators/` templates and `brand/tokens.css` differ per brand. `preview-shell.js` BBVA-specific logo selector removed to make it fully generic.
-- **`rl3-brand` and `codi-brand` gain full preview server** — added `scripts/` infra and `generators/` (slides, document, social) copied from bbva-brand and adapted to each brand's tokens and logo paths
-- **`content-factory` migrated to server approach** — replaced legacy inline `assets/preview-shell.js` + `assets/vendor/` with the shared `scripts/` stack; `generators/` templates now use `.social-card` / `.doc-page` / `.deck` standard classes; `scaffold-session.sh` updated to start the server and seed content dir
-- **`brand/tokens.css`** added for `rl3-brand` and `codi-brand` matching BBVA structure
-
-- **Export All PNGs bundles a ZIP** — "Export All PNGs" in the BBVA brand preview shell now downloads a single `cards.zip` / `slides.zip` / `pages.zip` instead of triggering individual per-file downloads; JSZip 3.10.1 vendored in `scripts/vendor/jszip.min.js` and injected by `server.cjs`
+- **Unified preview server infra across brand skills** — `server.cjs`, `preview-shell.js`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`, and `vendor/` (html2canvas + JSZip) are now identical across all brand skills; only `generators/` templates and `brand/tokens.css` differ per brand
+- **`codi-brand` and `content-factory` gain full export stack** — added `scripts/export/` orchestrator with 5 lib modules (state, classify, neutralize, slides-pdf, doc-pdf), `pptx.js` fixes (`--url` flag, `textContent`, `shrinkText`), and `preview-shell.js` with 40% default zoom and logo controls
+- **`content-factory` migrated to server approach** — replaced legacy inline preview assets with the shared `scripts/` stack; `generators/` templates now use `.social-card` / `.doc-page` / `.deck` standard classes
+- **Export All PNGs bundles a ZIP** — brand preview shell downloads `cards.zip` / `slides.zip` / `pages.zip` instead of individual files; JSZip 3.10.1 vendored in `scripts/vendor/jszip.min.js`
 
 ### Fixed
 
-- **BBVA logo invisible in PNG exports** — `preview-shell.js` now pre-renders each SVG to a data-URI image with computed fills inlined as attributes, hides SVGs during html2canvas capture, then composites them onto a fresh canvas; fixes CSS-only fills (e.g. `.slide__logo path { fill:#001391 }`) being stripped by html2canvas for all content types (slides, documents, social cards)
+- **SVG logo invisible in PNG exports** — `preview-shell.js` pre-renders SVG logos to data-URI images with computed fills inlined as attributes before html2canvas capture; fixes CSS-only fills being stripped for slides, documents, and social cards
 
 - **Docs layout CSS missing** — `DocsLayout.astro` now imports `style-docs.css`; docs pages were previously rendered without sidebar or content layout styles
 - **Link hover underline** — removed `text-decoration: underline` on hover across the entire docs site

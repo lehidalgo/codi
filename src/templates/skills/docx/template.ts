@@ -24,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 20
+version: 22
 ---
 
 # DOCX creation, editing, and analysis
@@ -86,7 +86,7 @@ python \${CLAUDE_SKILL_DIR}[[/scripts/accept_changes.py]] input.docx output.docx
 When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), use the brand skill's generators instead of building the document manually.
 
 1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
-2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`codi-bbva-brand\\\`) and re-run.
+2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`codi-brand\\\`) and re-run.
 3. Write \\\`content.json\\\` using the schema from the brand skill, then run its TypeScript generator (DEFAULT) or Python fallback.
 
 **content.json schema:**

@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
 import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
 describe("skill scaffolder", () => {
   let tmpDir: string;
@@ -153,59 +153,5 @@ describe("skill scaffolder", () => {
     const licensePath = path.join(configDir, "skills", "default-holder", "LICENSE.txt");
     const content = await fs.readFile(licensePath, "utf-8");
     expect(content).toContain("Contributors");
-  });
-
-  it("creates skill with rl3-brand template and populates assets", async () => {
-    const result = await createSkill({
-      name: "test-rl3",
-      configDir,
-      template: prefixedName("rl3-brand"),
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-
-    const content = await fs.readFile(result.data, "utf-8");
-    expect(content).toContain("RL3 AI Agency");
-
-    const skillDir = path.join(configDir, "skills", "test-rl3");
-
-    // Assets should be copied from the template's staticDir
-    const logoDark = path.join(skillDir, "assets", "rl3-logo-dark.svg");
-    await expect(fs.access(logoDark)).resolves.toBeUndefined();
-
-    const logoLight = path.join(skillDir, "assets", "rl3-logo-light.svg");
-    await expect(fs.access(logoLight)).resolves.toBeUndefined();
-
-    // References should be copied
-    const services = path.join(skillDir, "references", "services.md");
-    await expect(fs.access(services)).resolves.toBeUndefined();
-
-    const brandguide = path.join(skillDir, "references", "brandguide.html");
-    await expect(fs.access(brandguide)).resolves.toBeUndefined();
-
-    // .gitkeep should be removed from dirs with real files
-    const assetsGitkeep = path.join(skillDir, "assets", ".gitkeep");
-    await expect(fs.access(assetsGitkeep)).rejects.toThrow();
-
-    const refsGitkeep = path.join(skillDir, "references", ".gitkeep");
-    await expect(fs.access(refsGitkeep)).rejects.toThrow();
-  });
-
-  it("creates skill with bbva-brand template and populates logo", async () => {
-    const result = await createSkill({
-      name: "test-bbva",
-      configDir,
-      template: prefixedName("bbva-brand"),
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-
-    const content = await fs.readFile(result.data, "utf-8");
-    expect(content).toContain("BBVA");
-
-    const logo = path.join(configDir, "skills", "test-bbva", "assets", "BBVA_RGB.svg");
-    await expect(fs.access(logo)).resolves.toBeUndefined();
   });
 });

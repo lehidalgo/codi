@@ -1,28 +1,33 @@
-import { SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
-
-export const template = `---
-name: {{name}}
-description: Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.
-category: ${SKILL_CATEGORY.BRAND_IDENTITY}
-compatibility: ${SUPPORTED_PLATFORMS_YAML}
-managed_by: user
-user-invocable: true
-disable-model-invocation: false
-version: 7
+---
+title: codi-brand-identity
+description: >
+  Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.
+sidebar:
+  label: "codi-brand-identity"
+artifactType: skill
+artifactCategory: Brand Identity
+userInvocable: true
+compatibility:
+  - claude-code
+  - cursor
+  - codex
+  - windsurf
+  - cline
+version: 1
 ---
 
-# {{name}} — Brand Identity
+# codi-brand-identity — Brand Identity
 
 ---
 
 ## Required: brand_tokens.json
 
-Every brand skill **must** have a \`scripts/brand_tokens.json\` as the canonical source of truth.
+Every brand skill **must** have a `scripts/brand_tokens.json` as the canonical source of truth.
 No colors or fonts are hardcoded anywhere else — all adapters read this file.
 
-\\\`\\\`\\\`json
+```json
 {
-  "brand": "{{name}}",
+  "brand": "codi-brand-identity",
   "version": 1,
   "colors": {
     "primary":        "#000000",
@@ -56,13 +61,13 @@ No colors or fonts are hardcoded anywhere else — all adapters read this file.
     "phrases_avoid": ["Phrase to avoid 1", "Phrase to avoid 2"]
   }
 }
-\\\`\\\`\\\`
+```
 
 ---
 
 ## Required: scripts/ Directory Layout
 
-\\\`\\\`\\\`
+```
 scripts/
   brand_tokens.json          ← canonical brand data (no runtime dep)
   ts/
@@ -77,9 +82,9 @@ scripts/
     generate_docx.py         ← python-docx generator (FALLBACK)
     validators/
       pptx_validator.py      ← brand rule checker
-\\\`\\\`\\\`
+```
 
-See \`\${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]\` for full implementation details and adapter patterns.
+See `${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]` for full implementation details and adapter patterns.
 
 ---
 
@@ -87,16 +92,16 @@ See \`\${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]\` for full implement
 
 | Format | Runtime | Command |
 |--------|---------|---------|
-| PPTX | **TypeScript (DEFAULT)** | \`npx tsx \${CLAUDE_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --output out.pptx\` |
-| PPTX | Python (fallback) | \`python3 \${CLAUDE_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --output out.pptx\` |
-| DOCX | **TypeScript (DEFAULT)** | \`npx tsx \${CLAUDE_SKILL_DIR}/scripts/ts/generate_docx.ts --content content.json --output out.docx\` |
-| DOCX | Python (fallback) | \`python3 \${CLAUDE_SKILL_DIR}/scripts/python/generate_docx.py --content content.json --output out.docx\` |
+| PPTX | **TypeScript (DEFAULT)** | `npx tsx ${CLAUDE_SKILL_DIR}/scripts/ts/generate_pptx.ts --content content.json --output out.pptx` |
+| PPTX | Python (fallback) | `python3 ${CLAUDE_SKILL_DIR}/scripts/python/generate_pptx.py --content content.json --output out.pptx` |
+| DOCX | **TypeScript (DEFAULT)** | `npx tsx ${CLAUDE_SKILL_DIR}/scripts/ts/generate_docx.ts --content content.json --output out.docx` |
+| DOCX | Python (fallback) | `python3 ${CLAUDE_SKILL_DIR}/scripts/python/generate_docx.py --content content.json --output out.docx` |
 
-**Always use TypeScript first.** Fall back to Python only when \`npx\` is unavailable.
+**Always use TypeScript first.** Fall back to Python only when `npx` is unavailable.
 
 ### content.json Schema
 
-\\\`\\\`\\\`json
+```json
 {
   "title": "Document Title",
   "subtitle": "Optional subtitle",
@@ -112,8 +117,8 @@ See \`\${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]\` for full implement
     }
   ]
 }
-\\\`\\\`\\\`
+```
 
 ---
 
-Read \`\${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]\` for the color palette scaffold, CSS variables template, typography, logo guidelines, tone of voice, adapter patterns, and validation checklist.`;
+Read `${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]` for the color palette scaffold, CSS variables template, typography, logo guidelines, tone of voice, adapter patterns, and validation checklist.
