@@ -79,6 +79,8 @@ const URL_HOST = process.env.BRAINSTORM_URL_HOST || (HOST === '127.0.0.1' ? 'loc
 const SESSION_DIR = process.env.BRAINSTORM_DIR || '/tmp/brainstorm';
 const CONTENT_DIR = path.join(SESSION_DIR, 'content');
 const STATE_DIR = path.join(SESSION_DIR, 'state');
+const GENERATORS_DIR = path.join(__dirname, '..', 'generators');
+const VENDOR_DIR = path.join(__dirname, 'vendor');
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
 const MIME_TYPES = {
@@ -87,54 +89,19 @@ const MIME_TYPES = {
   '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml'
 };
 
-// ========== Templates and Constants ==========
-
-const WAITING_PAGE = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Brainstorm Companion</title>
-<style>body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-h1 { color: #333; } p { color: #666; }</style>
-</head>
-<body><h1>Brainstorm Companion</h1>
-<p>Waiting for the agent to push a screen...</p></body></html>`;
-
-const frameTemplate    = fs.readFileSync(path.join(__dirname, 'frame-template.html'), 'utf-8');
-const helperScript     = fs.readFileSync(path.join(__dirname, 'helper.js'), 'utf-8');
-const previewShell     = fs.readFileSync(path.join(__dirname, 'preview-shell.js'), 'utf-8');
-const html2canvasLib   = fs.readFileSync(path.join(__dirname, 'vendor', 'html2canvas.min.js'), 'utf-8');
-const jszipLib         = fs.readFileSync(path.join(__dirname, 'vendor', 'jszip.min.js'), 'utf-8');
-
-// Bundle injected into every content page: export tools + live-reload
-const scriptBundle = [
-  '<script>' + jszipLib        + '</script>',
-  '<script>' + html2canvasLib  + '</script>',
-  '<script>' + previewShell    + '</script>',
-  '<script>' + helperScript    + '</script>',
-].join('\n');
-
-// Waiting page gets only the live-reload helper (no preview shell yet)
-const helperOnly = '<script>' + helperScript + '</script>';
-
 // ========== Helper Functions ==========
 
-function isFullDocument(html) {
-  const trimmed = html.trimStart().toLowerCase();
-  return trimmed.startsWith('<!doctype') || trimmed.startsWith('<html');
-}
-
-function wrapInFrame(content) {
-  return frameTemplate.replace('<!-- CONTENT -->', content);
-}
-
-function getNewestScreen() {
-  const files = fs.readdirSync(CONTENT_DIR)
-    .filter(f => f.endsWith('.html'))
-    .map(f => {
-      const fp = path.join(CONTENT_DIR, f);
-      return { path: fp, mtime: fs.statSync(fp).mtime.getTime() };
-    })
-    .sort((a, b) => b.mtime - a.mtime);
-  return files.length > 0 ? files[0].path : null;
+function writeManifest() {
+  try {
+    const files = fs.existsSync(CONTENT_DIR)
+      ? fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.html'))
+      : [];
+    const presetFile = path.join(STATE_DIR, 'preset.json');
+    const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
+    fs.writeFileSync(path.join(STATE_DIR, 'manifest.json'), JSON.stringify({
+      sessionDir: SESSION_DIR, created: Date.now(), preset, files,
+    }, null, 2));
+  } catch { /* non-critical */ }
 }
 
 // ========== HTTP Request Handler ==========
@@ -150,18 +117,63 @@ function getContentFiles() {
     .sort((a, b) => b.mtime - a.mtime);
 }
 
-function injectScripts(html, isWaiting) {
-  const injection = isWaiting ? helperOnly : scriptBundle;
-  if (html.includes('</body>')) {
-    return html.replace('</body>', injection + '\n</body>');
-  }
-  return html + injection;
+function serveFile(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  res.writeHead(200, {
+    'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  });
+  res.end(fs.readFileSync(filePath));
 }
 
 function handleRequest(req, res) {
   touchActivity();
   const parsed = new URL(req.url, 'http://localhost');
   const pathname = parsed.pathname;
+
+  // /api/preset GET — read preset selection (agent reads this to know which style to use)
+  if (req.method === 'GET' && pathname === '/api/preset') {
+    const presetFile = path.join(STATE_DIR, 'preset.json');
+    const data = fs.existsSync(presetFile)
+      ? fs.readFileSync(presetFile, 'utf-8')
+      : JSON.stringify({ id: null });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(data);
+    return;
+  }
+
+  // /api/preset POST — write preset selection from app UI
+  if (req.method === 'POST' && pathname === '/api/preset') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        fs.writeFileSync(path.join(STATE_DIR, 'preset.json'), JSON.stringify(data, null, 2));
+        writeManifest();
+        console.log(JSON.stringify({ type: 'preset-selected', ...data }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // /api/content — return raw HTML without script injection (app extracts .social-card elements)
+  if (req.method === 'GET' && pathname === '/api/content') {
+    const fileParam = parsed.searchParams.get('file');
+    if (!fileParam) { res.writeHead(400); res.end('Missing ?file='); return; }
+    const filePath = path.join(CONTENT_DIR, path.basename(fileParam));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(filePath, 'utf-8'));
+    return;
+  }
 
   // /api/files — return sorted list of HTML files in content dir
   if (req.method === 'GET' && pathname === '/api/files') {
@@ -171,48 +183,116 @@ function handleRequest(req, res) {
     return;
   }
 
-  // / — serve a specific file via ?file= or default to newest
-  if (req.method === 'GET' && pathname === '/') {
-    const fileParam = parsed.searchParams.get('file');
-    let screenFile = null;
-
-    if (fileParam) {
-      const candidate = path.join(CONTENT_DIR, path.basename(fileParam));
-      if (fs.existsSync(candidate)) screenFile = candidate;
-    } else {
-      screenFile = getNewestScreen();
-    }
-
-    let html;
-    let isWaiting;
-    if (screenFile) {
-      const raw = fs.readFileSync(screenFile, 'utf-8');
-      html = isFullDocument(raw) ? raw : wrapInFrame(raw);
-      isWaiting = false;
-    } else {
-      html = WAITING_PAGE;
-      isWaiting = true;
-    }
-
-    html = injectScripts(html, isWaiting);
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(html);
+  // /static/* — serve generator app assets (app.html, app.css, app.js)
+  if (req.method === 'GET' && pathname.startsWith('/static/')) {
+    const filePath = path.join(GENERATORS_DIR, path.basename(pathname.slice(8)));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    serveFile(res, filePath);
     return;
   }
 
-  // /files/:name — serve a static asset from content dir
-  if (req.method === 'GET' && pathname.startsWith('/files/')) {
-    const fileName = pathname.slice(7);
-    const filePath = path.join(CONTENT_DIR, path.basename(fileName));
-    if (!fs.existsSync(filePath)) {
-      res.writeHead(404);
-      res.end('Not found');
-      return;
+  // /vendor/* — serve vendor scripts (html2canvas, jszip)
+  if (req.method === 'GET' && pathname.startsWith('/vendor/')) {
+    const filePath = path.join(VENDOR_DIR, path.basename(pathname.slice(8)));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    serveFile(res, filePath);
+    return;
+  }
+
+  // /api/sessions — list all sessions from the .codi_output parent
+  // Includes sessions with manifest.json AND sessions that only have content files (legacy)
+  if (req.method === 'GET' && pathname === '/api/sessions') {
+    const sessionsParent = path.dirname(SESSION_DIR);
+    const sessions = [];
+    if (fs.existsSync(sessionsParent)) {
+      let dirs;
+      try { dirs = fs.readdirSync(sessionsParent); } catch { dirs = []; }
+      for (const dir of dirs) {
+        const sessionAbsDir = path.join(sessionsParent, dir);
+        const manifestPath = path.join(sessionAbsDir, 'state', 'manifest.json');
+        const contentDir = path.join(sessionAbsDir, 'content');
+        const htmlFiles = fs.existsSync(contentDir)
+          ? fs.readdirSync(contentDir).filter(f => f.endsWith('.html'))
+          : [];
+
+        if (fs.existsSync(manifestPath)) {
+          try {
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+            // Only include if it has content OR is the active session
+            if (htmlFiles.length > 0 || manifest.sessionDir === SESSION_DIR) {
+              sessions.push({ ...manifest, sessionDir: sessionAbsDir, files: htmlFiles });
+            }
+          } catch { /* skip corrupt manifest */ }
+        } else if (htmlFiles.length > 0) {
+          // Legacy session: no manifest, but has content — synthesize one
+          const stat = fs.statSync(sessionAbsDir);
+          sessions.push({
+            sessionDir: sessionAbsDir,
+            created: stat.birthtimeMs || stat.ctimeMs,
+            preset: null,
+            files: htmlFiles,
+          });
+        }
+      }
     }
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(fs.readFileSync(filePath));
+    sessions.sort((a, b) => (b.created || 0) - (a.created || 0));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(sessions));
+    return;
+  }
+
+  // /api/session-content — serve an HTML file from a specific session's content dir
+  if (req.method === 'GET' && pathname === '/api/session-content') {
+    const sessionParam = parsed.searchParams.get('session');
+    const fileParam = parsed.searchParams.get('file');
+    if (!sessionParam || !fileParam) { res.writeHead(400); res.end('Missing params'); return; }
+    const sessionsParent = path.normalize(path.dirname(SESSION_DIR));
+    const resolvedSession = path.normalize(path.resolve(sessionParam));
+    if (!resolvedSession.startsWith(sessionsParent + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+    const filePath = path.join(resolvedSession, 'content', path.basename(fileParam));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(filePath, 'utf-8'));
+    return;
+  }
+
+  // /api/export-png — render card HTML to PNG using Playwright (pixel-perfect)
+  if (req.method === 'POST' && pathname === '/api/export-png') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', async () => {
+      try {
+        const { html, width, height } = JSON.parse(body);
+        if (!html || !width || !height) { res.writeHead(400); res.end('Missing html/width/height'); return; }
+        const { chromium } = require('playwright');
+        const browser = await chromium.launch({ headless: true });
+        // deviceScaleFactor: 2 → exports at 2× resolution (2160×2160 for 1:1 cards)
+        // giving retina-quality output for LinkedIn, Instagram, and other social platforms
+        const page = await browser.newPage({ deviceScaleFactor: 2 });
+        await page.setViewportSize({ width, height });
+        await page.setContent(html, { waitUntil: 'networkidle' });
+        // Extra wait to ensure fonts (Google Fonts) have rendered
+        await page.waitForTimeout(500);
+        // clip uses CSS pixels — Playwright scales up by deviceScaleFactor automatically
+        // so a 1080×1080 clip with deviceScaleFactor:2 → 2160×2160px PNG
+        const png = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
+        await browser.close();
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length });
+        res.end(png);
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // / — always serve the content factory app
+  if (req.method === 'GET' && pathname === '/') {
+    const appPath = path.join(GENERATORS_DIR, 'app.html');
+    if (!fs.existsSync(appPath)) { res.writeHead(503); res.end('App not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(appPath, 'utf-8'));
     return;
   }
 
@@ -322,6 +402,7 @@ const debounceTimers = new Map();
 function startServer() {
   if (!fs.existsSync(CONTENT_DIR)) fs.mkdirSync(CONTENT_DIR, { recursive: true });
   if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
+  writeManifest();
 
   // Track known files to distinguish new screens from updates.
   // macOS fs.watch reports 'rename' for both new files and overwrites,
@@ -353,6 +434,7 @@ function startServer() {
         console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
       }
 
+      writeManifest();
       broadcast({ type: 'reload' });
     }, 100));
   });

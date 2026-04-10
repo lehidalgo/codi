@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.6.1] - 2026-04-10
+
+### Fixed
+
+- **content-factory** — headline `line-height` raised to ≥1.0 across all presets; gradient italic `em` elements get `display:inline-block;padding-bottom:0.06em` to prevent glyph ink clipping behind `overflow:hidden` card containers
+- **content-factory** — server exports PNGs at 2× retina resolution via Playwright `deviceScaleFactor:2`
+- **content-factory** — static assets served with `Cache-Control: no-cache` headers to prevent stale browser cache during development
+
+### Added
+
+- **content-factory** — viewport-fit scaling script in `social-base.html` keeps full 1080px cards visible in any browser window without scrolling into the card
+- **content-factory** — mandatory typography safety rules in `style-presets.md` and `SKILL.md` document the root cause of glyph clipping and provide a generation checklist
+
 ## [2.5.3] - 2026-04-09
 
 ### Changed

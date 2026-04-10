@@ -237,5 +237,37 @@
     </section>
 
   </div>
+
+  <script>
+    /* Viewport-fit scaling — browser preview only, does not affect Playwright export.
+       Cards are 1080px wide/tall for export fidelity. This script scales them down
+       so the full card (top badge + content + bottom bar) is always visible in any
+       browser window without scrolling into the card. */
+    (function scaleCards() {
+      var cards = document.querySelectorAll('.social-card');
+      var container = document.querySelector('.social-container');
+      function apply() {
+        var cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--social-w') || '1080', 10) || 1080;
+        var cardH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--social-h') || '1080', 10) || 1080;
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var scaleW = (vw - 48) / cardW;
+        var scaleH = (vh - 120) / cardH;
+        var scale = Math.min(scaleW, scaleH, 1);
+        cards.forEach(function(card) {
+          card.style.transformOrigin = 'top left';
+          card.style.transform = 'scale(' + scale + ')';
+          card.style.marginBottom = Math.round(cardH * (scale - 1)) + 20 + 'px';
+          card.style.marginRight = Math.round(cardW * (scale - 1)) + 'px';
+        });
+        if (container) {
+          container.style.alignItems = 'flex-start';
+          container.style.paddingLeft = Math.max(Math.round((vw - cardW * scale) / 2), 24) + 'px';
+        }
+      }
+      apply();
+      window.addEventListener('resize', apply);
+    })();
+  </script>
 </body>
 </html>

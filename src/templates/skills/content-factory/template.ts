@@ -2,128 +2,204 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with interactive browser preview and PNG export.
+description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and PNG/ZIP export.
 category: ${SKILL_CATEGORY.CONTENT_CREATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 13
 ---
 
 # {{name}} — Content Factory
 
-## When to Activate
+## Overview
 
-- User asks to create blog content, social media posts, or carousel slides
-- User wants to repurpose a blog post into platform-specific formats
-- User needs branded visual assets for LinkedIn, Instagram, TikTok, or OG images
-- User asks to create social media cards, carousels, or story slides
+Content Factory is a standalone browser-based production tool for creating social media carousels,
+slide decks, and documents. It runs as a local web server that the agent starts, then the user
+opens in their browser to interact with a live preview and export interface.
+
+The tool has two sides:
+
+- **Gallery** — a library of built-in style presets, each with a full deck of rendered slides.
+  Click any preset to load all its slides into Preview.
+- **Preview** — a scrollable card strip showing all slides at the selected zoom level, with
+  sidebar controls for format, handle, zoom, and logo overlay. Export any slide as PNG or all
+  slides as a ZIP.
+
+The agent's job is to start the server, tell the user the URL, then generate content HTML files
+that the app picks up automatically via WebSocket.
+
+---
 
 ## Skill Assets
 
-This skill ships with a preview server and generator templates:
-
 | Asset | Purpose |
 |-------|---------|
-| \`\${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]\` | Preview server: serves HTML with live reload, injects preview shell automatically |
-| \`\${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]\` | Start the preview server (outputs JSON with URL) |
-| \`\${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]\` | Stop the preview server |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML base for social cards (.social-card elements) |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML base for documents (.doc-page elements) |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML base for slide decks (.deck + .slide elements) |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]\` | Node.js HTTP + WebSocket server (no dependencies) |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]\` | Start the server, outputs JSON with URL and paths |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]\` | Stop the server gracefully |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/app.html]]\` | App shell — always served at \`/\` |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/app.css]]\` | App styles — served at \`/static/app.css\` |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/app.js]]\` | App logic — served at \`/static/app.js\` |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/presets.js]]\` | Built-in preset data — served at \`/static/presets.js\` |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML template for agent-generated slide decks |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
 
-## Step 1: Gather Requirements
+---
 
-**[HUMAN]** Provide:
-- Topic or raw idea (a paragraph, bullet points, or a draft blog post)
-- Target platforms (LinkedIn carousel, Instagram story, blog, etc.)
-- Tone (professional, casual, educational, inspirational)
+## Server API
 
-**[CODING AGENT]** Check for brand skills:
-- Search for any skill with **category: brand** in the project
-- If found, use its design tokens (\`--brand-*\` CSS variables, fonts, logos)
-- If not found, use neutral dark theme defaults
+| Route | Method | Purpose |
+|-------|--------|---------|
+| \`/\` | GET | Serve the content factory web app |
+| \`/static/*\` | GET | Serve app assets (app.css, app.js, presets.js) |
+| \`/vendor/*\` | GET | Serve vendor scripts (html2canvas, jszip) |
+| \`/api/files\` | GET | Return list of HTML files in the content dir |
+| \`/api/content?file=xxx\` | GET | Return raw HTML for a content file |
+| \`/api/preset\` | GET | Read the currently selected preset from state |
+| \`/api/preset\` | POST | Write preset selection \`{id, name, type, timestamp}\` |
 
-## Step 2: Start Preview Server
+The server also runs a WebSocket endpoint at the same port. The app connects automatically
+and receives \`{type:"reload"}\` messages whenever a content file changes, triggering a live update.
 
-**[CODING AGENT]** Start the server and seed the session:
+---
+
+## Preset Library
+
+Built-in presets are defined in \`generators/presets.js\` and rendered entirely in the browser —
+no server-side rendering. Each preset has:
+
+- \`id\`, \`name\`, \`type\` (social | slides | document)
+- \`format\` — native pixel dimensions \`{w, h}\`
+- \`css\` — self-contained CSS string
+- \`slides[]\` — array of \`{dataType, dataIndex, html}\` objects
+
+Current presets:
+
+| ID | Name | Type | Format | Slides |
+|----|------|------|--------|--------|
+| \`dark-editorial\` | Dark Editorial | social | 1080×1080 | 4 |
+| \`minimal-mono\` | Minimal Mono | social | 1080×1080 | 3 |
+| \`poster-bold\` | Poster Bold | social | 1080×1080 | 3 |
+| \`clean-slides\` | Clean Slides | slides | 1280×720 | 3 |
+| \`doc-article\` | Doc Article | document | 794×1123 | 3 |
+
+When the user clicks a preset in the Gallery:
+1. All slides load into the Preview strip
+2. The format button updates to match the preset's native format
+3. The selection is saved to \`state_dir/preset.json\` so the agent can read it
+
+---
+
+## App UI Reference
+
+### Sidebar (left panel, scrollable)
+
+| Control | Description |
+|---------|-------------|
+| **Format** | 6 buttons: 1:1 (1080×1080), 4:5 (1080×1350), 9:16 (1080×1920), OG (1200×630), 16:9 (1280×720), A4 (794×1123). Active format applies to agent-generated content only — presets always use their native format. |
+| **Handle** | \`@username\` placeholder replaced in agent-generated content. Preset thumbnails show \`@preview\`; preview cards show \`@[handle]\`. |
+| **Zoom** | Slider from 15% to 120%. Scales all card frames in the Preview strip. Default: 40%. |
+| **Logo** | ON/OFF toggle + Size / X% / Y% sliders. Adds a \`codi\` gradient wordmark overlay positioned absolutely over every card frame. Does not modify iframe content. |
+| **Content files** | List of HTML files written by the agent to the content dir. Click to load. |
+| **Export** | PNG for the active slide; ZIP for all slides at 2× resolution using html2canvas. |
+| **Activity log** | Timestamped log of server events and user actions. WebSocket status dot (green = connected). |
+
+### Main area (tabs)
+
+**Preview tab** — horizontal card strip. Keyboard arrow keys navigate between slides. Active card highlighted with accent border. Click any card to select it.
+
+**Gallery tab** — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: All / Social / Slides / Document. Click a preset to load it into Preview.
+
+---
+
+## Agent Workflow
+
+### Step 1 — Start the server
 
 \`\`\`bash
 bash \${CLAUDE_SKILL_DIR}[[/scripts/scaffold-session.sh]] <session-name> --project-dir .
 \`\`\`
 
-This starts the preview server and outputs a JSON object with the URL:
+Save all values from the JSON output:
 \`\`\`json
-{"type":"server-started","url":"http://localhost:PORT","screen_dir":"/path/to/content/"}
+{
+  "type": "server-started",
+  "url": "http://localhost:PORT",
+  "screen_dir": "/path/to/.codi_output/.../content",
+  "state_dir": "/path/to/.codi_output/.../state"
+}
 \`\`\`
 
-The server injects \`preview-shell.js\` (sidebar, format switcher, PNG/ZIP export) automatically into every HTML file it serves. No inline scripts needed.
+Tell the user:
+> "Content factory is ready at {{url}} — open it in your browser.
+> Go to the Gallery tab, pick a preset, then describe the content you want."
 
-## Step 3: Write the Blog Post
+### Step 2 — Read the selected preset
 
-**[CODING AGENT]** Transform the raw idea into a structured blog post:
-1. Create a compelling headline
-2. Write an introduction hook
-3. Develop 3-5 key sections with subheadings
-4. Add a conclusion with call-to-action
-5. Save as \`blog/blog-post.md\`
+After the user picks a preset and confirms:
 
-## Step 4: Generate Visual Assets
-
-**[CODING AGENT]** For each target platform, generate HTML files using the skill templates:
-
-### Social Cards / Carousels
-- Start from \`generators/social-base.html\` — use \`.social-card\` elements
-- Each \`.social-card\` gets a \`data-type\` attribute (cover, content, stat, quote, cta)
-- Apply brand CSS variables (\`--brand-bg\`, \`--brand-text\`, \`--brand-accent\`)
-- Write the file to \`screen_dir/social.html\`
-
-### Documents / Blog
-- Start from \`generators/document-base.html\` — use \`.doc-page\` elements
-- Write the file to \`screen_dir/document.html\`
-
-## Step 5: Visual Review
-
-**[CODING AGENT]** Navigate to the server URL from Step 2:
-
-\`\`\`
-mcp__playwright__browser_navigate({ url: "http://localhost:PORT" })
+\`\`\`bash
+cat <state_dir>/preset.json
+# {"id":"dark-editorial","name":"Dark Editorial","type":"social","timestamp":...}
 \`\`\`
 
-The preview shell sidebar provides:
-- **File selector** — switch between HTML files in the session
-- **Format presets** — 1:1 LinkedIn, 4:5 Instagram, 9:16 Story, 1200×630 OG
-- **Logo controls** — show/hide, resize, reposition
-- **Export** — "Export All PNGs" downloads a ZIP; per-card PNG buttons on hover
+If the user skipped the gallery, use \`dark-editorial\` as default.
 
-### The Review Loop
+### Step 3 — Generate content
 
-1. Show the preview URL to the user and ask for feedback
-2. Apply changes to the HTML file in \`screen_dir/\`
-3. The server live-reloads the browser automatically
-4. Repeat until the user approves
+Write \`<screen_dir>/social.html\` (or \`slides.html\` / \`document.html\`). The app detects the
+new file via WebSocket and adds it to the Content Files list. Click to load.
 
-Read \`\${CLAUDE_SKILL_DIR}[[/references/preview-shell-guide.md]]\` for full sidebar feature reference.
+#### Required HTML structure
 
-## Step 6: Export Final Assets
-
-**[CODING AGENT]** After the user approves, click "Export All PNGs" in the sidebar — downloads a ZIP with all cards at 2x resolution. Or automate via Playwright:
-
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* Copy full preset CSS here */
+  </style>
+</head>
+<body>
+  <article class="social-card" data-type="cover" data-index="01">
+    <!-- slide HTML matching the selected preset's structure -->
+  </article>
+  <article class="social-card" data-type="content" data-index="02">
+    <!-- slide HTML -->
+  </article>
+  <article class="social-card" data-type="cta" data-index="03">
+    <!-- slide HTML -->
+  </article>
+</body>
+</html>
 \`\`\`
-mcp__playwright__browser_snapshot()  // find the Export All PNGs button ref
-mcp__playwright__browser_click({ ref: "..." })
-\`\`\`
 
-Stop the server when done:
+#### Card rules
+
+- Element selector: \`class="social-card"\` — the app scans for these
+- Required attributes: \`data-type\` (cover | content | stat | quote | cta | title | closing) and \`data-index\` (zero-padded: 01, 02…)
+- Dimensions come from the active format button, not the HTML itself
+- Replace \`@handle\` with the user's actual handle
+- All CSS goes in \`<style>\` — the app extracts styles per card and renders each in its own iframe
+- Rewrite the whole file to update — the WebSocket watcher broadcasts a reload on every change
+
+### Step 4 — Iterate
+
+The user reviews the Preview tab and gives feedback. Rewrite the HTML file with changes.
+The app live-reloads in under 200ms.
+
+### Step 5 — Export and stop
+
+Export happens in the browser via the sidebar buttons. When done:
+
 \`\`\`bash
 bash \${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] <session_dir>
 \`\`\`
 
-## Step 7: Deliver Final Package
-
-**[CODING AGENT]** Summarize what was created:
-- List all output files with their paths
-- Note the aspect ratios and dimensions of exported PNGs
-- Remind the user that HTML files can be reopened for further editing
+Summarize: session path, preset used, number of slides, format, and where exports were saved.
 `;
