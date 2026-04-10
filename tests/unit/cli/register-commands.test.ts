@@ -95,3 +95,31 @@ describe("registerRevertCommand", () => {
     expect(optionNames).toContain("--backup");
   });
 });
+
+describe("registerHooksCommand", () => {
+  it("registers hooks command with doctor and reinstall subcommands", async () => {
+    const { registerHooksCommand } = await import("../../../src/cli/hooks.js");
+    const program = new Command();
+    program.option("-j, --json");
+    registerHooksCommand(program);
+
+    const hooksCmd = program.commands.find((c) => c.name() === "hooks");
+    expect(hooksCmd).toBeDefined();
+
+    const subNames = hooksCmd!.commands.map((c) => c.name());
+    expect(subNames).toContain("doctor");
+    expect(subNames).toContain("reinstall");
+  });
+
+  it("hooks doctor has --fix option", async () => {
+    const { registerHooksCommand } = await import("../../../src/cli/hooks.js");
+    const program = new Command();
+    program.option("-j, --json");
+    registerHooksCommand(program);
+
+    const hooksCmd = program.commands.find((c) => c.name() === "hooks")!;
+    const doctorSub = hooksCmd.commands.find((c) => c.name() === "doctor")!;
+    const fixOpt = doctorSub.options.find((o) => o.long === "--fix");
+    expect(fixOpt).toBeDefined();
+  });
+});
