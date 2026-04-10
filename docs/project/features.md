@@ -211,6 +211,8 @@ Create, list, install, export, validate, remove, and edit presets. Distribution 
 | | `revert` | Restore from timestamped backup |
 | | `skill` | Manage skills (evolve, export, stats) |
 | **Onboarding** | `onboard` | AI-guided setup — print catalog and playbook for coding agent |
+| **Hooks** | `hooks doctor` | Check that all required hook tools are installed; `--fix` prints install commands |
+| | `hooks reinstall` | Re-run `codi generate` to reinstall pre-commit hooks |
 | **Community** | `contribute` | Share artifacts to any GitHub repo via PR or ZIP export; supports private repos and empty-repo bootstrapping |
 | | `docs` | Open documentation; `--catalog` flag generates the full artifact catalog site |
 
@@ -295,15 +297,21 @@ Hooks that fix or format files (ESLint, Prettier, ruff, gofmt, etc.) automatical
 
 #### Tool Availability
 
-If a hook's tool is not installed on the current machine, Codi skips it with a notice and continues. The commit is never blocked because of a missing optional tool. This ensures new team members can commit immediately, even before setting up the full language toolchain.
+Hooks carry a `required` flag. Required tools block the commit and print the exact install command. Optional tools print a warning and let the commit proceed.
 
 ```
 [python]
-  Running ruff-check... skipped (tool not installed)
-  Running ruff-format... skipped (tool not installed)
+  Running ruff-check... ✗ BLOCKING — tool not installed
+    Install: pip install ruff
+
+[python]
+  Running ruff-format... ⚠ WARNING — tool not installed (optional)
+    Install: pip install ruff
 ```
 
 Install the missing tools for your stack and they activate automatically on the next commit.
+
+Run `codi hooks doctor` to see the full health report for all hooks in one command.
 
 ---
 
