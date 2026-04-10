@@ -16,7 +16,7 @@ import { createBackup } from "../core/backup/backup-manager.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { Logger } from "../core/output/logger.js";
-import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
+import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
@@ -141,7 +141,7 @@ export async function generateHandler(
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });
         if (hookResult.ok) {
-          const missingDeps = await checkHookDependencies(hooksConfig.hooks, projectRoot);
+          const missingDeps = filterMissing(await checkHookDependencies(hooksConfig.hooks, projectRoot));
           if (missingDeps.length > 0) {
             const log = Logger.getInstance();
             log.warn("Missing hook tools — install before committing:");
