@@ -367,6 +367,22 @@ codi doctor
 
 Checks: manifest validity, flag consistency, adapter availability, artifact health, version compatibility.
 
+### Hook Health
+
+Check that all pre-commit hook tools are installed:
+
+```bash
+codi hooks doctor
+```
+
+Reports installed tools (✓), optional missing tools (⚠), and required missing tools (✗) with exact install commands. Use `--fix` to print all install commands in one block.
+
+Reinstall hooks after configuration changes:
+
+```bash
+codi hooks reinstall
+```
+
 ### Status
 
 Check for drift between `.codi/` source and generated files:

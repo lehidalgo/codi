@@ -37,7 +37,7 @@ import {
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
-import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
+import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { checkTemplateRegistry } from "../core/scaffolder/template-registry-check.js";
@@ -537,7 +537,7 @@ export async function initHandler(
           log.info(
             `Pre-commit hooks installed (${hookSetup.runner === "none" ? "standalone" : hookSetup.runner})`,
           );
-          const missingDeps = await checkHookDependencies(hooksConfig.hooks, projectRoot);
+          const missingDeps = filterMissing(await checkHookDependencies(hooksConfig.hooks, projectRoot));
           if (missingDeps.length > 0) {
             await installMissingDeps(missingDeps, projectRoot, log, isInteractive(options));
           }

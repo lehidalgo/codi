@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getHooksForLanguage,
   getSupportedLanguages,
+  getGlobalHooks,
 } from "#src/core/hooks/hook-registry.js";
 
 describe("getHooksForLanguage", () => {
@@ -44,10 +45,10 @@ describe("getHooksForLanguage", () => {
     ]);
   });
 
-  it("returns rust hooks", () => {
+  it("returns rust hooks with cargo-fmt before cargo-clippy", () => {
     const hooks = getHooksForLanguage("rust");
     expect(hooks).toHaveLength(2);
-    expect(hooks.map((h) => h.name)).toEqual(["cargo-clippy", "cargo-fmt"]);
+    expect(hooks.map((h) => h.name)).toEqual(["cargo-fmt", "cargo-clippy"]);
   });
 
   it("returns empty array for unknown language", () => {
@@ -69,5 +70,47 @@ describe("getSupportedLanguages", () => {
     expect(languages).toContain("python");
     expect(languages).toContain("go");
     expect(languages).toContain("rust");
+  });
+});
+
+describe("getGlobalHooks", () => {
+  it("returns gitleaks as a global hook", () => {
+    const hooks = getGlobalHooks();
+    expect(hooks.length).toBeGreaterThanOrEqual(1);
+    const gitleaks = hooks.find((h) => h.name === "gitleaks");
+    expect(gitleaks).toBeDefined();
+    expect(gitleaks!.category).toBe("security");
+    expect(gitleaks!.required).toBe(true);
+    expect(gitleaks!.installHint).toBeDefined();
+    expect(gitleaks!.installHint!.command).toContain("gitleaks");
+  });
+});
+
+describe("HookEntry contract completeness", () => {
+  const allLanguages = getSupportedLanguages();
+
+  it("every hook in every language has category, required, and installHint", () => {
+    for (const lang of allLanguages) {
+      const hooks = getHooksForLanguage(lang);
+      for (const h of hooks) {
+        expect(h.category, `${lang}/${h.name} missing category`).toBeDefined();
+        expect(h.required, `${lang}/${h.name} missing required`).toBeDefined();
+        expect(h.installHint, `${lang}/${h.name} missing installHint`).toBeDefined();
+        expect(
+          h.installHint!.command,
+          `${lang}/${h.name} installHint.command is empty`,
+        ).toBeTruthy();
+      }
+    }
+  });
+
+  it("every language has at least one lint or format hook", () => {
+    for (const lang of allLanguages) {
+      const hooks = getHooksForLanguage(lang);
+      const hasLintOrFormat = hooks.some(
+        (h) => h.category === "lint" || h.category === "format",
+      );
+      expect(hasLintOrFormat, `${lang} has no lint or format hook`).toBe(true);
+    }
   });
 });

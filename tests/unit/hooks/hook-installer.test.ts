@@ -565,4 +565,39 @@ describe("buildHuskyCommands", () => {
     const addLines = result.split("\n").filter((l) => l.includes("git add"));
     expect(addLines).toHaveLength(1);
   });
+
+  it("generates command -v guard with exit 1 for a required hook", () => {
+    const hooks: HookEntry[] = [
+      {
+        name: "tsc",
+        command: "npx tsc --noEmit",
+        stagedFilter: "**/*.{ts,tsx}",
+        passFiles: false,
+        category: "type-check",
+        required: true,
+        installHint: { command: "npm install -D typescript" },
+      },
+    ];
+    const result = buildHuskyCommands(hooks);
+    expect(result).toContain("command -v");
+    expect(result).toContain("tsc");
+    expect(result).toContain("BLOCKING");
+    expect(result).toContain("exit 1");
+  });
+
+  it("does not generate exit 1 for a non-required hook", () => {
+    const hooks: HookEntry[] = [
+      {
+        name: "prettier",
+        command: "npx prettier --write",
+        stagedFilter: "**/*.{ts,tsx}",
+        modifiesFiles: true,
+        category: "format",
+        required: false,
+        installHint: { command: "npm install -D prettier" },
+      },
+    ];
+    const result = buildHuskyCommands(hooks);
+    expect(result).not.toContain("exit 1");
+  });
 });

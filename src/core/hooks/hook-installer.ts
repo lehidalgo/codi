@@ -274,8 +274,20 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
     }
 
     if (!h.stagedFilter) {
-      // Global hook (no filter) — always runs
-      lines.push(h.command);
+      // Global hook (no filter) — always runs; guard tool presence for required hooks
+      const globalTool = h.command.split(/\s+/)[0]!;
+      if (h.required === true) {
+        const hint = h.installHint?.command ?? `install ${globalTool}`;
+        lines.push(
+          `if ! command -v ${globalTool} > /dev/null 2>&1; then`,
+          `  echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
+          `  exit 1`,
+          `fi`,
+          h.command,
+        );
+      } else {
+        lines.push(h.command);
+      }
       continue;
     }
 
@@ -296,7 +308,32 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
 
     lines.push(`${varName}=$(echo "$STAGED" | grep -E '${grepPattern}' || true)`);
 
-    if (h.passFiles === false) {
+    if (h.required === true) {
+      // Required tool: check presence before running; block commit if missing
+      const tool = h.command.split(/\s+/).find((p) => p !== "npx") ?? h.name;
+      const hint = h.installHint?.command ?? `install ${tool}`;
+      if (h.passFiles === false) {
+        lines.push(
+          `if [ -n "$${varName}" ]; then`,
+          `  if ! command -v ${tool} > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/${tool}" ]; then`,
+          `    echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
+          `    exit 1`,
+          `  fi`,
+          `  ${h.command}`,
+          `fi`,
+        );
+      } else {
+        lines.push(
+          `if [ -n "$${varName}" ]; then`,
+          `  if ! command -v ${tool} > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/${tool}" ]; then`,
+          `    echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
+          `    exit 1`,
+          `  fi`,
+          `  printf '%s\\n' $${varName} | xargs ${h.command}`,
+          `fi`,
+        );
+      }
+    } else if (h.passFiles === false) {
       // Tool uses project config — run without file args when matching files exist
       lines.push(`[ -n "$${varName}" ] && ${h.command}`);
     } else {

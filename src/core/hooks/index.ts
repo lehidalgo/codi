@@ -19,7 +19,7 @@ export type { HooksConfig } from "./hook-config-generator.js";
 
 export { detectStack } from "./stack-detector.js";
 
-export { checkHookDependencies } from "./hook-dependency-checker.js";
-export type { DependencyCheck } from "./hook-dependency-checker.js";
+export { checkHookDependencies, filterMissing } from "./hook-dependency-checker.js";
+export type { DependencyCheck, DependencyDiagnostic } from "./hook-dependency-checker.js";
 
 export { installMissingDeps, logMissingDeps } from "./hook-dep-installer.js";

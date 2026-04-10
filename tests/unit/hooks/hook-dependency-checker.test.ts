@@ -3,6 +3,7 @@ import {
   extractToolName,
   NODE_PACKAGES,
   checkHookDependencies,
+  filterMissing,
 } from "#src/core/hooks/hook-dependency-checker.js";
 import type { HookEntry } from "#src/core/hooks/hook-registry.js";
 
@@ -44,27 +45,44 @@ describe("NODE_PACKAGES", () => {
 });
 
 describe("checkHookDependencies", () => {
-  it("returns empty array when all tools are available", async () => {
+  it("returns all tools including found ones", async () => {
     // node is always available
     const hooks: HookEntry[] = [
       { name: "node-check", command: "node --version", stagedFilter: "" },
     ];
     const result = await checkHookDependencies(hooks);
-    expect(result).toEqual([]);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.found).toBe(true);
+    expect(result[0]!.severity).toBe("ok");
   });
 
-  it("detects missing tools", async () => {
+  it("detects missing tools with found=false and severity=error for required", async () => {
     const hooks: HookEntry[] = [
       {
         name: "fake-tool",
         command: "nonexistent-tool-xyz --check",
         stagedFilter: "**/*.ts",
+        required: true,
       },
     ];
     const result = await checkHookDependencies(hooks);
     expect(result).toHaveLength(1);
     expect(result[0]!.name).toBe("nonexistent-tool-xyz");
-    expect(result[0]!.available).toBe(false);
+    expect(result[0]!.found).toBe(false);
+    expect(result[0]!.severity).toBe("error");
+  });
+
+  it("detects missing tools with severity=warning for non-required", async () => {
+    const hooks: HookEntry[] = [
+      {
+        name: "fake-tool",
+        command: "nonexistent-tool-xyz --check",
+        stagedFilter: "**/*.ts",
+        required: false,
+      },
+    ];
+    const result = await checkHookDependencies(hooks);
+    expect(result[0]!.severity).toBe("warning");
   });
 
   it("deduplicates tools from multiple hooks", async () => {
@@ -89,12 +107,9 @@ describe("checkHookDependencies", () => {
       { name: "eslint", command: "npx eslint --fix", stagedFilter: "**/*.ts" },
     ];
     const result = await checkHookDependencies(hooks);
-    // eslint may or may not be installed, but if missing it should have isNodePackage=true
-    for (const dep of result) {
-      if (dep.name === "eslint") {
-        expect(dep.isNodePackage).toBe(true);
-      }
-    }
+    const eslintDep = result.find((d) => d.name === "eslint");
+    expect(eslintDep).toBeDefined();
+    expect(eslintDep!.isNodePackage).toBe(true);
   });
 
   it("checks node_modules/.bin when projectRoot is provided", async () => {
@@ -102,14 +117,30 @@ describe("checkHookDependencies", () => {
       { name: "eslint", command: "npx eslint --fix", stagedFilter: "**/*.ts" },
     ];
     // Using a nonexistent project root ensures the tool won't be found in node_modules
-    const result = await checkHookDependencies(
-      hooks,
-      "/tmp/nonexistent-project",
-    );
+    const result = await checkHookDependencies(hooks, "/tmp/nonexistent-project");
     const eslintDep = result.find((d) => d.name === "eslint");
-    if (eslintDep) {
-      expect(eslintDep.isNodePackage).toBe(true);
-      expect(eslintDep.installHint).toBe("npm install -D eslint");
-    }
+    expect(eslintDep).toBeDefined();
+    expect(eslintDep!.isNodePackage).toBe(true);
+    expect(eslintDep!.installHint?.command).toBe("npm install -D eslint");
+  });
+});
+
+describe("filterMissing", () => {
+  it("returns only missing tools as DependencyCheck array", async () => {
+    const hooks: HookEntry[] = [
+      { name: "node-check", command: "node --version", stagedFilter: "" },
+      {
+        name: "fake-tool",
+        command: "nonexistent-tool-xyz --check",
+        stagedFilter: "**/*.ts",
+        required: true,
+      },
+    ];
+    const diagnostics = await checkHookDependencies(hooks);
+    const missing = filterMissing(diagnostics);
+    expect(missing).toHaveLength(1);
+    expect(missing[0]!.name).toBe("nonexistent-tool-xyz");
+    expect(missing[0]!.available).toBe(false);
+    expect(typeof missing[0]!.installHint).toBe("string");
   });
 });

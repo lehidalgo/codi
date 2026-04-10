@@ -82,6 +82,7 @@ describe("generateHooksConfig", () => {
     const config = generateHooksConfig(makeFlags({}), ["cobol"]);
     const langHooks = config.hooks.filter(
       (h) =>
+        h.name !== "gitleaks" &&
         h.name !== "secret-scan" &&
         h.name !== "file-size-check" &&
         h.name !== "artifact-validate" &&
@@ -260,6 +261,30 @@ describe("FLAG_CATALOG hook field sync", () => {
     const noDoc = makeFlags({ require_documentation: { value: false, mode: "enabled" } });
     const noDocCfg = generateHooksConfig(noDoc, []);
     expect(noDocCfg.docCheck).toBe(false);
+  });
+
+  it("includes gitleaks in hook list when security_scan is enabled", () => {
+    const config = generateHooksConfig(makeFlags({}), []);
+    const gitleaks = config.hooks.find((h) => h.name === "gitleaks");
+    expect(gitleaks).toBeDefined();
+    expect(gitleaks!.category).toBe("security");
+  });
+
+  it("places gitleaks before language hooks", () => {
+    const config = generateHooksConfig(makeFlags({}), ["typescript"]);
+    const gitleaksIdx = config.hooks.findIndex((h) => h.name === "gitleaks");
+    const eslintIdx = config.hooks.findIndex((h) => h.name === "eslint");
+    expect(gitleaksIdx).toBeGreaterThanOrEqual(0);
+    expect(gitleaksIdx).toBeLessThan(eslintIdx);
+  });
+
+  it("excludes gitleaks when security_scan is disabled", () => {
+    const flags = makeFlags({
+      security_scan: { value: false, mode: "disabled" },
+    });
+    const config = generateHooksConfig(flags, []);
+    const gitleaks = config.hooks.find((h) => h.name === "gitleaks");
+    expect(gitleaks).toBeUndefined();
   });
 
   it("all flags with hook != null in catalog have a matching generator effect", () => {
