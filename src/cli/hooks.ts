@@ -20,8 +20,7 @@ async function hooksDoctorHandler(
 ): Promise<void> {
   const logger = Logger.getInstance();
 
-  const stackResult = await detectStack(projectRoot);
-  const languages = stackResult.ok ? stackResult.data.languages : [];
+  const languages = await detectStack(projectRoot);
 
   const configResult = await resolveConfig(projectRoot);
   const flags = configResult.ok ? configResult.data.flags : {};
