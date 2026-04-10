@@ -3,7 +3,7 @@ import type { ResolvedFlags } from "#src/types/flags.js";
 import { PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "#src/types/config.js";
 import type { HookEntry } from "./hook-registry.js";
-import { getHooksForLanguage, getDoctorHook } from "./hook-registry.js";
+import { getHooksForLanguage, getDoctorHook, getGlobalHooks } from "./hook-registry.js";
 
 export interface HooksConfig {
   hooks: HookEntry[];
@@ -33,12 +33,12 @@ interface FlagHookMapping {
 const FLAG_HOOK_MAPPINGS: FlagHookMapping[] = [
   {
     flagName: "type_checking",
-    hookNames: ["tsc", "pyright"],
+    hookNames: ["tsc", "pyright", "dotnet-build"],
     check: (flag) => flag.value !== "off" && flag.mode !== "disabled",
   },
   {
     flagName: "security_scan",
-    hookNames: ["bandit", "gosec", "brakeman", "phpcs-security"],
+    hookNames: ["gitleaks", "bandit", "gosec", "brakeman", "phpcs-security"],
     check: (flag) => flag.value !== false && flag.mode !== "disabled",
   },
 ];
@@ -102,6 +102,15 @@ export function generateHooksConfig(
 
   // ── Stage 2: Fast content checks ─────────────────────────────────────────
   // Read file contents but no compilation or external tool startup cost.
+
+  // Global hooks (gitleaks) — controlled by security_scan flag
+  if (isSecurityScanEnabled(flags)) {
+    for (const globalHook of getGlobalHooks()) {
+      if (globalHook.name !== `${PROJECT_NAME}-doctor`) {
+        allHooks.push(globalHook);
+      }
+    }
+  }
 
   const secretScan = isSecurityScanEnabled(flags);
   if (secretScan) {
