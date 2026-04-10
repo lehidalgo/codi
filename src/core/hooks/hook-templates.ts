@@ -47,7 +47,21 @@ for (const hook of hooks) {
     }
   } catch (e) {
     if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') {
-      console.log(\`  \${hook.name}: skipped (tool not installed)\`);
+      if (hook.required === true) {
+        console.error(\`\\n  ✗ BLOCKING — install \${hook.name} to commit:\`);
+        if (hook.installHint && hook.installHint.command) {
+          console.error(\`    \${hook.installHint.command}\`);
+        }
+        if (hook.installHint && hook.installHint.url) {
+          console.error(\`    See: \${hook.installHint.url}\`);
+        }
+        exitCode = 1;
+      } else {
+        console.warn(\`  ⚠ WARNING — install \${hook.name} to enable \${hook.category ?? 'this check'} (optional)\`);
+        if (hook.installHint && hook.installHint.command) {
+          console.warn(\`    \${hook.installHint.command}\`);
+        }
+      }
     } else {
       console.error(\`\${hook.name} failed\`);
       exitCode = 1;
