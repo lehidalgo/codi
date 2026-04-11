@@ -1,0 +1,15 @@
+{
+  "skill": "content-factory",
+  "tiers": {
+    "contract": true,
+    "logic": {
+      "lib": "generators/lib/",
+      "tests": "tests/unit/"
+    },
+    "behavior": {
+      "server": "scripts/server.cjs",
+      "startScript": "scripts/start-server.sh",
+      "tests": "tests/e2e/"
+    }
+  }
+}
