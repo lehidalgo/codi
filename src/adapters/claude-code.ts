@@ -20,6 +20,8 @@ import {
   buildWorkflowSection,
   getEnabledMcpServers,
   buildMcpEnvExample,
+  buildSelfDevWarning,
+  buildProjectContext,
 } from "./section-builder.js";
 import {
   CONTEXT_TOKENS_LARGE,
@@ -100,6 +102,14 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Project overview from manifest
     const overview = buildProjectOverview(config);
     if (overview) sections.push(overview);
+
+    // Self-development mode warning (only when name === "codi")
+    const selfDevWarning = buildSelfDevWarning(config);
+    if (selfDevWarning) sections.push(selfDevWarning);
+
+    // Project context from manifest.project_context
+    const projectContext = buildProjectContext(config);
+    if (projectContext) sections.push(projectContext);
 
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);
