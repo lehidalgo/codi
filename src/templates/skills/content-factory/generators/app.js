@@ -22,6 +22,7 @@ const state = {
   activeCard: 0,
   preset: null, // template id of currently active template
   templates: [], // loaded from /api/templates — replaces PRESETS global
+  activeMeta: null, // { name, type, format } — set for session content, cleared for templates
 };
 
 let ws = null,
@@ -397,6 +398,39 @@ function buildCardEl(card, i, container) {
   container.appendChild(wrapper);
 }
 
+// ====== Preview metadata bar ======
+function updatePreviewMeta() {
+  const bar = $("preview-meta");
+  if (!state.cards.length) {
+    bar.hidden = true;
+    return;
+  }
+  let name = "";
+  let type = "";
+  let fmt = state.format;
+  if (state.preset) {
+    const t = state.templates.find((x) => x.id === state.preset);
+    if (t) {
+      name = t.name;
+      type = t.type;
+      fmt = t.format || state.format;
+    }
+  } else if (state.activeMeta) {
+    name = state.activeMeta.name;
+    type = state.activeMeta.type;
+    fmt = state.activeMeta.format || state.format;
+  } else if (state.activeFile) {
+    name = state.activeFile.split("/").pop().replace(".html", "");
+    type = "content";
+  }
+  $("preview-meta-name").textContent = name;
+  $("preview-meta-type").textContent = type;
+  $("preview-meta-format").textContent = fmt.w + " × " + fmt.h;
+  $("preview-meta-slides").textContent =
+    state.cards.length + (state.cards.length === 1 ? " slide" : " slides");
+  bar.hidden = false;
+}
+
 // ====== Render cards ======
 function renderCards() {
   const strip = $("card-strip");
@@ -409,6 +443,7 @@ function renderCards() {
     $("card-nav").hidden = true;
     setAppNavVisible(false);
     if (countEl) countEl.textContent = "0 of 0";
+    updatePreviewMeta();
     return;
   }
   if (countEl) countEl.textContent = state.selectedCards.size + " of " + state.cards.length;
@@ -434,6 +469,7 @@ function renderCards() {
     updateCardNav();
   }
   renderFilmstrip();
+  updatePreviewMeta();
 }
 
 function setAppNavVisible(show) {
@@ -819,7 +855,7 @@ async function renderSessions(grid) {
         "px;border:none;display:block;pointer-events:none;";
       inner.appendChild(iframe);
       cover.appendChild(inner);
-      // Lazy load: fetch session content and show first card
+      // Lazy load: fetch session content, render cover thumbnail, and extract content name
       fetch(
         "/api/session-content?session=" +
           encodeURIComponent(session.sessionDir) +
@@ -828,21 +864,20 @@ async function renderSessions(grid) {
       )
         .then((r) => r.text())
         .then((html) => {
-          const doc = new DOMParser().parseFromString(html, "text/html");
-          const firstCard = doc.querySelector(".social-card");
+          const t = parseTemplate(html, session.files[0]);
+          // Resolve the best display name for this session's content
+          const genericName = session.files[0]
+            .replace(/\.html$/, "")
+            .replace(/-/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+          const contentName = t.name !== genericName ? t.name : session.preset?.name || t.name;
+          // Update the name element if the card is still in the DOM
+          const nameEl = card.querySelector(".session-content-name");
+          if (nameEl && contentName) nameEl.textContent = contentName;
+
+          const firstCard = t.cards[0];
           if (!firstCard) return;
-          const styleText = Array.from(doc.querySelectorAll("style"))
-            .map((s) => s.textContent)
-            .join("\n");
-          const linkTags = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
-            .map((l) => l.outerHTML)
-            .join("\n");
-          iframe.srcdoc = buildThumbDoc({
-            html: firstCard.outerHTML,
-            styleText,
-            linkTags,
-            format: fmt,
-          });
+          iframe.srcdoc = buildThumbDoc({ ...firstCard, format: fmt });
         })
         .catch(() => {});
     } else {
@@ -870,6 +905,9 @@ async function renderSessions(grid) {
       dateStr +
       "</span>" +
       '<span class="preset-type-badge type-slides">WORK</span></div>' +
+      (fileCount
+        ? '<div class="session-content-name preset-name-text" style="font-size:12px;margin-top:2px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>'
+        : "") +
       '<div class="preset-meta">' +
       fileCount +
       " file" +
@@ -901,19 +939,37 @@ async function loadSessionContent(session) {
       log("Session not found", "err");
       return;
     }
-    const cards = parseCards(await res.text());
-    if (!cards.length) {
+    const html = await res.text();
+    const template = parseTemplate(html, file);
+    if (!template.cards.length) {
       log("No slides found", "err");
       return;
     }
+    // Resolve format: codi:template meta in file takes priority, then session preset, then current
     const presetMeta = session.preset
       ? state.templates.find((t) => t.id === session.preset.id)
       : null;
-    if (presetMeta) {
-      cards.forEach((c) => (c.format = presetMeta.format));
-      state.format = presetMeta.format;
-    }
-    state.cards = cards;
+    const fmt =
+      template.format.w !== 1080 || template.format.h !== 1080
+        ? template.format
+        : presetMeta
+          ? presetMeta.format
+          : state.format;
+    template.cards.forEach((c) => (c.format = fmt));
+    state.format = fmt;
+    state.cards = template.cards;
+    // Name: use explicit title/meta from file; fall back to session preset name, then filename
+    const genericName = file
+      .replace(/\.html$/, "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const resolvedName =
+      template.name !== genericName ? template.name : session.preset?.name || template.name;
+    const resolvedType =
+      template.type !== "social" || session.preset?.type === "social"
+        ? template.type
+        : session.preset?.type || template.type;
+    state.activeMeta = { name: resolvedName, type: resolvedType, format: fmt };
     state.preset = null;
     state.activeFile = session.sessionDir + "/" + file;
     state.activeCard = 0;
@@ -933,6 +989,7 @@ async function selectTemplate(filename) {
 
   state.preset = template.id;
   state.activeFile = null;
+  state.activeMeta = null;
   state.zoom = 0.4;
   state.viewMode = "app";
   state.activeCard = 0;

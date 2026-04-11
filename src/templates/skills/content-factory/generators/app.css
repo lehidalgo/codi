@@ -505,6 +505,44 @@ input[type="range"] {
 .nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
+/* ====== Preview metadata bar ====== */
+.preview-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.preview-meta-name {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.preview-meta-sep {
+  color: var(--border);
+}
+
+.preview-meta-chip {
+  color: var(--accent);
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.preview-meta-dim {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ====== Views ====== */
 .view { display: none; flex: 1; overflow: auto; }
 .view.active { display: flex; flex-direction: column; }

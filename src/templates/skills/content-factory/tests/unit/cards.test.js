@@ -101,6 +101,44 @@ describe("parseTemplate", () => {
     expect(t.format).toEqual({ w: 1080, h: 1080 });
   });
 
+  it("reads type from legacy <meta name=template-type> when codi:template is absent", () => {
+    const html = `<!DOCTYPE html><html><head>
+      <meta name="template-type" content="slides">
+    </head><body>
+      <article class="social-card" data-type="cover" data-index="01"></article>
+    </body></html>`;
+    const t = parseTemplate(html, "clean-slides.html");
+    expect(t.type).toBe("slides");
+  });
+
+  it("reads format from legacy <meta name=template-format> when codi:template is absent", () => {
+    const html = `<!DOCTYPE html><html><head>
+      <meta name="template-format" content="1280x720">
+    </head><body>
+      <article class="social-card" data-type="cover" data-index="01"></article>
+    </body></html>`;
+    const t = parseTemplate(html, "clean-slides.html");
+    expect(t.format).toEqual({ w: 1280, h: 720 });
+  });
+
+  it("uses <title> tag as name fallback when codi:template is absent", () => {
+    const html = `<!DOCTYPE html><html><head>
+      <title>Codi — Social Content Series</title>
+    </head><body>
+      <article class="social-card" data-type="cover" data-index="01"></article>
+    </body></html>`;
+    const t = parseTemplate(html, "social.html");
+    expect(t.name).toBe("Codi");
+  });
+
+  it("strips the dash-separated suffix from the title tag", () => {
+    const html = `<html><head><title>Clean Slides — Template</title></head><body>
+      <section class="slide" data-type="title" data-index="01"></section>
+    </body></html>`;
+    const t = parseTemplate(html, "clean-slides.html");
+    expect(t.name).toBe("Clean Slides");
+  });
+
   it("includes parsed cards in template object", () => {
     const meta = JSON.stringify({
       id: "t",

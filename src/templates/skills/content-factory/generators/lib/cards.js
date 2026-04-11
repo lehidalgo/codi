@@ -48,13 +48,25 @@ export function parseTemplate(html, filename) {
     if (metaEl) meta = JSON.parse(metaEl.content);
   } catch {}
   const id = meta.id || filename.replace(/\.html$/, "");
+
+  // Fallback: read legacy <meta name="template-type"> and <meta name="template-format">
+  const legacyType = doc.querySelector('meta[name="template-type"]')?.content;
+  const legacyFormatStr = doc.querySelector('meta[name="template-format"]')?.content;
+  const legacyFormat = legacyFormatStr
+    ? (([w, h]) => ({ w: Number(w), h: Number(h) }))(legacyFormatStr.toLowerCase().split("x"))
+    : null;
+
+  // Fallback name: codi:template > <title> tag > capitalized id
+  const titleEl = doc.querySelector("title");
+  const titleText = titleEl ? titleEl.textContent.replace(/\s*[—–-].*$/, "").trim() : "";
+
   const cards = parseCards(html);
   return {
     filename,
     id,
-    name: meta.name || id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    type: meta.type || "social",
-    format: meta.format || { w: 1080, h: 1080 },
+    name: meta.name || titleText || id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    type: meta.type || legacyType || "social",
+    format: meta.format || legacyFormat || { w: 1080, h: 1080 },
     desc: meta.desc || "",
     cards,
   };
