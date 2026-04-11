@@ -2,13 +2,13 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and PNG/ZIP export.
+description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and context-aware export (PNG, PDF, PPTX).
 category: ${SKILL_CATEGORY.CONTENT_CREATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 19
+version: 20
 ---
 
 # {{name}} — Content Factory
@@ -70,6 +70,7 @@ that the app picks up automatically via WebSocket.
 | \`/api/session-status\` | POST | Persist status \`{sessionDir, status}\` to a project's manifest |
 | \`/api/templates\` | GET | List template files with metadata (id, type, format, url) |
 | \`/api/export-png\` | POST | Render card HTML to PNG via Playwright at 2× resolution |
+| \`/api/export-pdf\` | POST | Render slides array to multi-page PDF — body: \`{slides:[{html,width,height}]}\`, returns \`application/pdf\` |
 
 The server also runs a WebSocket endpoint at the same port. The app connects automatically
 and receives \`{type:"reload"}\` messages whenever a content file changes, triggering a live update.
@@ -104,7 +105,7 @@ When the user clicks a template in the Gallery:
 | **Zoom** | Slider from 15% to 120%. Scales all card frames in the Preview strip. Default: 40%. |
 | **Logo** | ON/OFF toggle + Size / X% / Y% sliders. Adds a \`codi\` gradient wordmark overlay positioned absolutely over every card frame. Does not modify iframe content. |
 | **Content files** | List of HTML files written by the agent to the content dir. Click to load. |
-| **Export** | PNG for the active slide; ZIP for all slides at 2× resolution using html2canvas. |
+| **Export** | Context-aware buttons based on content type: **social** → PNG (current slide) + PDF (all); **slides** → PPTX (all, primary) + PDF (all) + PNG (current); **document** → PDF (all, primary) + PNG (current). PNG uses Playwright 2× resolution; PDF renders via Playwright server-side; PPTX embeds PNG images using PptxGenJS. |
 | **Activity log** | Timestamped log of server events and user actions. WebSocket status dot (green = connected). |
 
 ### Main area (tabs)

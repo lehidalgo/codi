@@ -23,6 +23,8 @@ export interface ProjectManifest {
   version: "1";
   /** Optional human-readable description of this project. */
   description?: string;
+  /** Free-form markdown injected verbatim into the AI instruction file. */
+  project_context?: string;
   /**
    * Subset of agent ids to generate configuration for.
    * Omit to generate for all agents detected in the project.
@@ -41,6 +43,8 @@ export interface ProjectManifest {
     skills?: boolean;
     /** Whether to generate agent files. Defaults to `true`. */
     agents?: boolean;
+    /** Whether to generate context files. Defaults to `true`. */
+    context?: boolean;
   };
   /** Minimum Codi engine version required to use this configuration. */
   engine?: {
