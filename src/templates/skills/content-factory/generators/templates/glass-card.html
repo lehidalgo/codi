@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"glass-card","name":"Glass Card","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="glass-card">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Glass Card — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-grad:   linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      --glass-bg:  rgba(255,255,255,0.08);
+      --glass-b:   rgba(255,255,255,0.13);
+      --glass-b2:  rgba(255,255,255,0.18);
+      --text-1:    #ffffff;
+      --text-2:    rgba(255,255,255,0.80);
+      --text-3:    rgba(255,255,255,0.45);
+      --acc-grad:  linear-gradient(135deg, #a78bfa, #60a5fa);
+      --fh:        'Outfit', Arial, sans-serif;
+      --fm:        'Geist Mono', monospace;
+      --w:         1080px;
+      --h:         1080px;
+      --pad:       56px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #111;
+      font-family: var(--fh);
+      color: var(--text-1);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(167,139,250,0.35);
+    }
+
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 72px rgba(0,0,0,0.75);
+    }
+
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-grad);
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .orb-1 {
+      top: -100px;
+      right: -80px;
+      width: 380px;
+      height: 380px;
+      background: rgba(139,92,246,0.40);
+      filter: blur(90px);
+    }
+
+    .orb-2 {
+      bottom: -80px;
+      left: -60px;
+      width: 300px;
+      height: 300px;
+      background: rgba(59,130,246,0.28);
+      filter: blur(80px);
+    }
+
+    .orb-3 {
+      top: 45%;
+      left: 35%;
+      width: 220px;
+      height: 220px;
+      background: rgba(236,72,153,0.18);
+      filter: blur(80px);
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: var(--pad);
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-b);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .card-bar {
+      position: relative;
+      z-index: 2;
+      height: 80px;
+      background: rgba(0,0,0,0.25);
+      border-top: 1px solid var(--glass-b);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--pad);
+    }
+
+    .bar-handle {
+      font-family: var(--fm);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text-2);
+    }
+
+    .bar-dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--glass-b);
+      border: 1px solid var(--glass-b2);
+    }
+
+    .dot.active {
+      background: rgba(167,139,250,0.70);
+      border-color: rgba(167,139,250,0.90);
+    }
+
+    em.acc {
+      font-style: italic;
+      font-weight: 800;
+      padding-right: 0.12em;
+      background: var(--acc-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .label {
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(167,139,250,0.70);
+    }
+
+    .img-placeholder {
+      background: rgba(255,255,255,0.04);
+      border: 1.5px dashed rgba(255,255,255,0.18);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: rgba(255,255,255,0.30);
+    }
+
+    .feature-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--glass-b);
+    }
+
+    .feature-row:last-child { border-bottom: none; }
+
+    .feature-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--acc-grad);
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+
+    .code-block {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(167,139,250,0.20);
+      border-radius: 12px;
+      padding: 22px 28px;
+      font-family: var(--fm);
+      font-size: 22px;
+      color: #a78bfa;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .code-prompt {
+      color: rgba(255,255,255,0.25);
+    }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Glass Card — 3 cards</div>
+
+<!-- Card 1 — Cover -->
+<article class="social-card" data-index="01" data-type="cover">
+  <div class="card-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="card-inner" style="justify-content: center; align-items: center;">
+    <div class="glass-panel" style="width: 880px; padding: 72px 68px 68px; display: flex; flex-direction: column; align-items: flex-start;">
+      <p class="label" style="margin-bottom: 32px;">Introducing codi</p>
+      <h1 style="font-size: 92px; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 28px;">
+        Your AI,<br><em class="acc">finally in sync.</em>
+      </h1>
+      <p style="font-size: 24px; color: var(--text-2); line-height: 1.55; max-width: 620px;">
+        One unified config source for every AI coding tool — rules, skills, and agents in sync.
+      </p>
+    </div>
+  </div>
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <div class="bar-dots">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</article>
+
+<!-- Card 2 — Content -->
+<article class="social-card" data-index="02" data-type="content">
+  <div class="card-bg"></div>
+  <div class="orb orb-1" style="top: -60px; right: -40px; width: 300px; height: 300px;"></div>
+  <div class="orb orb-2"></div>
+  <div class="card-inner" style="justify-content: center; align-items: center;">
+    <div class="glass-panel" style="width: 900px; padding: 40px 48px 48px; display: flex; flex-direction: column; gap: 28px;">
+      <div class="img-placeholder" style="height: 260px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span style="font-family: var(--fm); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;">Photo / Video</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div class="feature-row">
+          <div class="feature-dot" style="margin-top: 10px;"></div>
+          <div>
+            <p style="font-size: 22px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">Rules</p>
+            <p style="font-size: 18px; color: var(--text-2); line-height: 1.5;">Coding standards that propagate to every tool automatically.</p>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot" style="margin-top: 10px;"></div>
+          <div>
+            <p style="font-size: 22px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">Skills</p>
+            <p style="font-size: 18px; color: var(--text-2); line-height: 1.5;">Reusable workflows triggered by intent — commit, review, deploy.</p>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot" style="margin-top: 10px;"></div>
+          <div>
+            <p style="font-size: 22px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">Agents</p>
+            <p style="font-size: 18px; color: var(--text-2); line-height: 1.5;">Domain experts that activate on the right task, every time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <div class="bar-dots">
+      <div class="dot"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</article>
+
+<!-- Card 3 — CTA -->
+<article class="social-card" data-index="03" data-type="cta">
+  <div class="card-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2" style="bottom: -40px; left: -40px; width: 360px; height: 360px; background: rgba(59,130,246,0.32);"></div>
+  <div class="orb orb-3" style="top: 30%; left: 20%; background: rgba(236,72,153,0.22);"></div>
+  <div class="card-inner" style="justify-content: center; align-items: center;">
+    <div class="glass-panel" style="width: 880px; padding: 64px 68px; display: flex; flex-direction: column; gap: 32px;">
+      <div>
+        <p class="label" style="margin-bottom: 24px;">Get started</p>
+        <h2 style="font-size: 80px; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 16px;">
+          Ship in<br><em class="acc">30 seconds.</em>
+        </h2>
+        <p style="font-size: 21px; color: var(--text-2); line-height: 1.55;">
+          Install codi, run init, and every AI tool gets your config.
+        </p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="code-block">
+          <span class="code-prompt">$</span>
+          npm install -g codi-cli
+        </div>
+        <div class="code-block">
+          <span class="code-prompt">$</span>
+          codi init &amp;&amp; codi generate
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <div class="bar-dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot active"></div>
+    </div>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

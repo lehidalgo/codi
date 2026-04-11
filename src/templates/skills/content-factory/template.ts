@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 13
+version: 15
 ---
 
 # {{name}} — Content Factory
@@ -60,6 +60,9 @@ that the app picks up automatically via WebSocket.
 | \`/api/content?file=xxx\` | GET | Return raw HTML for a content file |
 | \`/api/preset\` | GET | Read the currently selected preset from state |
 | \`/api/preset\` | POST | Write preset selection \`{id, name, type, timestamp}\` |
+| \`/api/active-file\` | GET | Read which file/preset the user currently has loaded |
+| \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset}\` |
+| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, preset}\` — use this to orient before editing |
 
 The server also runs a WebSocket endpoint at the same port. The app connects automatically
 and receives \`{type:"reload"}\` messages whenever a content file changes, triggering a live update.
@@ -99,7 +102,7 @@ When the user clicks a preset in the Gallery:
 
 | Control | Description |
 |---------|-------------|
-| **Format** | 6 buttons: 1:1 (1080×1080), 4:5 (1080×1350), 9:16 (1080×1920), OG (1200×630), 16:9 (1280×720), A4 (794×1123). Active format applies to agent-generated content only — presets always use their native format. |
+| **Format** | 6 buttons: 1:1 (1080×1080), 4:5 (1080×1350), 9:16 (1080×1920), OG (1200×630), 16:9 (1280×720), A4 (794×1123). Active format applies to all content — social and slides presets adapt to the selected format. A4 (Doc) is the only fixed format; document cards always render at 794×1123 regardless of the selector. |
 | **Handle** | \`@username\` placeholder replaced in agent-generated content. Preset thumbnails show \`@preview\`; preview cards show \`@[handle]\`. |
 | **Zoom** | Slider from 15% to 120%. Scales all card frames in the Preview strip. Default: 40%. |
 | **Logo** | ON/OFF toggle + Size / X% / Y% sliders. Adds a \`codi\` gradient wordmark overlay positioned absolutely over every card frame. Does not modify iframe content. |
@@ -120,7 +123,7 @@ When the user clicks a preset in the Gallery:
 ### Step 1 — Start the server
 
 \`\`\`bash
-bash \${CLAUDE_SKILL_DIR}[[/scripts/scaffold-session.sh]] <session-name> --project-dir .
+bash \${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --name content-factory --project-dir .
 \`\`\`
 
 Save all values from the JSON output:
@@ -188,10 +191,107 @@ new file via WebSocket and adds it to the Content Files list. Click to load.
 - All CSS goes in \`<style>\` — the app extracts styles per card and renders each in its own iframe
 - Rewrite the whole file to update — the WebSocket watcher broadcasts a reload on every change
 
+#### Clipping rules — MANDATORY
+
+**Social cards and slides use \`overflow: hidden\`.** Every pixel beyond the card boundary is clipped — hard, with no warning. This applies to text, decorative elements, absolute-positioned glows, and images. Never assume content will wrap gracefully; test every card at the intended format before declaring it done.
+
+**Large headline text**
+- Use \`line-height: 1.1\` minimum on all headlines — lower values clip ascenders and descenders at large font sizes
+- Use \`letter-spacing\` between \`-0.03em\` and \`-0.05em\` to control width — heavy weights at 80px+ can overflow the content area
+- Keep headline text short enough to fit within the card's padding: content width = card width minus horizontal padding × 2
+
+**Gradient italic text (\`background-clip: text\`)**
+- Always add \`padding-right: 0.12em\` to any element that combines \`font-style: italic\` with \`background-clip: text\`
+- Italic glyphs overhang their typographic advance width; the gradient stops painting at the advance boundary, making the right edge of trailing characters appear clipped against the dark background
+- Apply this to every italic gradient span regardless of font size — it is invisible at small sizes but critical at 60px+
+
+\`\`\`css
+/* CORRECT — covers the italic glyph's right overhang */
+em.acc {
+  font-style: italic;
+  padding-right: 0.12em;
+  background: linear-gradient(135deg, #56b6c2, #61afef);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* WRONG — glyph overhang is outside the painted area */
+em.acc {
+  font-style: italic;
+  background: linear-gradient(135deg, #56b6c2, #61afef);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+\`\`\`
+
+**Absolute-positioned decorative elements**
+- Glows and background shapes positioned outside the main layout are intentionally clipped
+- Do not let decorative elements overlap critical text — the clip boundary is exact and unforgiving
+
+**Document pages (\`.doc-page\`) are exempt** — they use \`min-height\` with no \`overflow: hidden\`, so content grows vertically without clipping. Horizontal overflow still renders poorly.
+
 ### Step 4 — Iterate
 
 The user reviews the Preview tab and gives feedback. Rewrite the HTML file with changes.
 The app live-reloads in under 200ms.
+
+### Step 4b — Modify an existing content file
+
+When the user says "change the headline on slide 2" or "update the colors" and there is already
+a content file loaded in the Preview:
+
+1. **Read state** to confirm what the user has open:
+   \`\`\`bash
+   curl -s <url>/api/state
+   # {"activeFile":"social.html","activePreset":null,"preset":{...}}
+   \`\`\`
+
+2. **Fetch the current HTML** for the active file:
+   \`\`\`bash
+   curl -s "<url>/api/content?file=social.html"
+   \`\`\`
+
+3. **Edit and rewrite** the file at \`<screen_dir>/social.html\` with your changes.
+   The WebSocket watcher broadcasts a reload — the user sees the update in under 200ms.
+
+If \`activeFile\` is \`null\` and \`activePreset\` is set, the user is viewing a gallery preset
+(not a writable content file). Follow the gallery preset workflow below instead.
+
+### Step 4c — Modify a gallery preset
+
+When \`activePreset\` is set (not null), edit the preset directly in
+\`\${CLAUDE_SKILL_DIR}[[/generators/presets.js]]\`. The server watches that file and
+broadcasts \`{type:"reload-presets"}\` whenever it changes — the browser reloads
+automatically, the gallery updates, and the filmstrip thumbnails reflect the new styles.
+
+1. **Read state** to confirm the preset ID:
+   \`\`\`bash
+   curl -s <url>/api/state
+   # {"activeFile":null,"activePreset":"earthy-bold","preset":{...}}
+   \`\`\`
+
+2. **Find the preset** in \`generators/presets.js\` by searching for its \`id:\`:
+   \`\`\`bash
+   grep -n '"earthy-bold"' generators/presets.js
+   \`\`\`
+
+3. **Edit the preset in place** — change \`css\`, \`slides\`, colors, copy, whatever the user
+   asked. The preset object is a plain JS literal; edit it directly.
+
+4. **Save the file** — the server's \`presetsWatcher\` fires within 150ms and broadcasts
+   \`reload-presets\`. The browser reloads, the gallery and filmstrip both reflect the change.
+
+5. **Sync to the skill directory** if you want the change to persist across sessions:
+   \`\`\`bash
+   cp generators/presets.js \${CLAUDE_SKILL_DIR}[[/generators/presets.js]]
+   \`\`\`
+   Skip this step for temporary/session-specific edits.
+
+**Important**: editing \`presets.js\` changes the template for all future sessions. If the user
+only wants a one-off variation without touching the template, use the content file path
+(Step 4b) instead.
 
 ### Step 5 — Export and stop
 

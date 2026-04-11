@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"minimal-mono","name":"Minimal Mono","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="minimal-mono">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Minimal Mono — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a0e13;
+      --surface:  #0f1318;
+      --border:   rgba(86,182,194,0.18);
+      --border-2: rgba(86,182,194,0.08);
+      --c0:       #56b6c2;
+      --c1:       #61afef;
+      --grad:     linear-gradient(135deg, #56b6c2, #61afef);
+      --text-1:   #e6edf3;
+      --text-2:   rgba(230,237,243,0.55);
+      --text-3:   rgba(86,182,194,0.4);
+      --fm:       'Geist Mono', monospace;
+      --fh:       'Outfit', Arial, sans-serif;
+      --w:        1080px;
+      --h:        1080px;
+      --pad:      60px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #080b0e;
+      font-family: var(--fm);
+      color: var(--text-1);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(86,182,194,0.25);
+    }
+
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 56px rgba(0,0,0,0.55);
+    }
+
+    .card-body {
+      flex: 1;
+      padding: var(--pad);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 0;
+    }
+
+    .card-tag {
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--c0);
+      opacity: 0.7;
+      margin-bottom: auto;
+    }
+
+    .card-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: auto;
+    }
+
+    .card-handle {
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text-3);
+    }
+
+    .card-num {
+      font-size: 80px;
+      font-weight: 200;
+      color: rgba(86,182,194,0.1);
+      line-height: 1;
+    }
+
+    .acc { color: var(--c0); }
+
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      font-size: 26px;
+      font-weight: 300;
+      color: var(--text-2);
+      line-height: 2;
+    }
+    .bullet-list li::before {
+      content: '· ';
+      color: var(--c0);
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: var(--c0);
+      opacity: 0.3;
+      margin: 28px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Minimal Mono — 3 cards</div>
+
+<!-- Card 1 — Cover -->
+<article class="social-card" data-index="01" data-type="cover">
+  <div class="card-body">
+    <div class="card-tag">Introducing</div>
+    <div>
+      <h1 style="font-size:110px;font-weight:300;line-height:1.1;letter-spacing:-0.04em;margin-bottom:16px;">
+        codi<span class="acc">.</span>
+      </h1>
+      <div class="divider"></div>
+      <p style="font-size:26px;font-weight:300;color:var(--text-2);line-height:1.6;margin-bottom:0;">
+        Unified config platform<br>for AI coding agents
+      </p>
+    </div>
+    <div class="card-foot">
+      <span class="card-handle">@handle</span>
+      <span class="card-num">01</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 2 — Features -->
+<article class="social-card" data-index="02" data-type="content">
+  <div class="card-body">
+    <div class="card-tag">Features</div>
+    <div>
+      <h2 style="font-size:100px;font-weight:300;line-height:1.1;letter-spacing:-0.04em;margin-bottom:28px;">
+        one<span class="acc">/</span>all
+      </h2>
+      <ul class="bullet-list">
+        <li>rules &amp; skills</li>
+        <li>agents &amp; tools</li>
+        <li>every AI tool</li>
+        <li>one source of truth</li>
+      </ul>
+    </div>
+    <div class="card-foot">
+      <span class="card-handle">@handle</span>
+      <span class="card-num">02</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 3 — Get started -->
+<article class="social-card" data-index="03" data-type="cta">
+  <div class="card-body">
+    <div class="card-tag">Get started</div>
+    <div>
+      <h2 style="font-size:100px;font-weight:300;line-height:1.1;letter-spacing:-0.04em;margin-bottom:28px;">
+        npm<span class="acc">.</span>
+      </h2>
+      <p style="font-size:22px;font-weight:300;color:var(--text-2);line-height:2.2;margin-bottom:0;">
+        npm i -g codi-cli<br>codi init
+      </p>
+    </div>
+    <div class="card-foot">
+      <span class="card-handle">@handle</span>
+      <span class="card-num">03</span>
+    </div>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

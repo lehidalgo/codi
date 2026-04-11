@@ -118,7 +118,7 @@ At generate time, Codi does not read from `src/templates/` directly. `.codi/` is
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 28 |
-| **Skills** | 67 |
+| **Skills** | 65 |
 | **Agents** | 22 |
 <!-- GENERATED:END:template_counts_compact -->
 

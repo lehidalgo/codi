@@ -1,0 +1,78 @@
+/* eslint-disable */
+// Navy Waves preset — deep navy alternating with clean white
+// Corporate / finance / education carousel style
+
+const navyWavesPreset = {
+  id: "navy-waves",
+  name: "Navy Waves",
+  type: "social",
+  format: { w: 1080, h: 1080 },
+  desc: "Deep navy alternating with clean white — corporate, education, finance",
+  css: [
+    "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}",
+    "body{background:#080d17;font-family:'Outfit',sans-serif;color:#fff}",
+    ".c{width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column;position:relative;background:#0f1729}",
+    ".c.lgt{background:#ffffff;color:#0f1729}",
+    ".body{flex:1;padding:64px 68px 32px;display:flex;flex-direction:column;position:relative;z-index:1}",
+    ".bar{height:88px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 68px;position:relative;z-index:2}",
+    ".c .bar{border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}",
+    ".c.lgt .bar{border-top:1px solid rgba(15,23,41,.1);background:rgba(248,250,252,.9)}",
+    ".hn{font-family:'Geist Mono',monospace;font-size:20px;color:rgba(255,255,255,.55)}",
+    ".lgt .hn{color:rgba(15,23,41,.45)}",
+    ".ct{font-family:'Geist Mono',monospace;font-size:18px;font-weight:300;letter-spacing:.04em;color:rgba(255,255,255,.35)}",
+    ".lgt .ct{color:rgba(15,23,41,.3)}",
+    ".ml{font-family:'Geist Mono',monospace;font-size:18px;letter-spacing:.1em;text-transform:uppercase;color:#2563eb}",
+    ".ar{width:80px;height:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:2px;margin-top:32px}",
+    ".br{display:flex;align-items:flex-start;gap:20px;padding:22px 0;border-bottom:1px solid rgba(15,23,41,.08)}",
+    ".br:last-child{border-bottom:none}",
+    ".bsq{width:8px;height:8px;background:#2563eb;border-radius:1px;flex-shrink:0;margin-top:7px}",
+    ".bt{font-size:22px;font-weight:700;color:#0f1729;line-height:1.3;margin-bottom:4px}",
+    ".bb{font-size:18px;color:#94a3b8;line-height:1.5}",
+    ".ip{width:400px;border:1.5px dashed #cbd5e1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f8fafc;flex-shrink:0}",
+    ".ip-lbl{font-family:'Geist Mono',monospace;font-size:14px;color:#94a3b8;letter-spacing:.06em}",
+    ".cp{display:inline-flex;align-items:center;gap:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:14px 22px;font-family:'Geist Mono',monospace;font-size:22px;color:#2563eb;margin-top:28px}",
+    ".qm{font-size:160px;font-weight:900;color:#2563eb;line-height:1;text-align:center;margin-bottom:-20px}",
+    ".qt{font-size:40px;font-weight:700;font-style:italic;color:#fff;line-height:1.3;text-align:center;max-width:780px;margin:0 auto}",
+    ".qs{font-family:'Geist Mono',monospace;font-size:18px;color:#94a3b8;text-align:center;margin-top:28px;letter-spacing:.06em}",
+    ".sr{display:flex;align-items:stretch;justify-content:center;margin-bottom:36px}",
+    ".si{flex:1;display:flex;flex-direction:column;align-items:center;padding:0 32px;position:relative}",
+    ".si+.si::before{content:'';position:absolute;left:0;top:10%;height:80%;width:1px;background:rgba(255,255,255,.12)}",
+    ".sn{font-size:72px;font-weight:900;color:#2563eb;line-height:1.1;letter-spacing:-.04em}",
+    ".sl{font-size:18px;color:#94a3b8;margin-top:8px;text-align:center}",
+    ".cb{background:rgba(0,0,0,.4);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:22px 32px;font-family:'Geist Mono',monospace;font-size:24px;color:#60a5fa;display:flex;align-items:center;gap:16px;margin-top:32px}",
+    ".cbp{color:rgba(255,255,255,.25)}",
+    ".wd{position:absolute;bottom:0;right:0;pointer-events:none;opacity:.18;z-index:0}",
+  ].join(""),
+  slides: [
+    {
+      dataType: "cover",
+      dataIndex: "01",
+      html: '<div class="c"><svg class="wd" width="380" height="380" viewBox="0 0 380 380"><polygon points="380,0 380,380 0,380" fill="#2563eb"/></svg><div class="body" style="justify-content:space-between"><div class="ml">codi · rules</div><div><h1 style="font-size:92px;font-weight:900;line-height:1.1;letter-spacing:-.04em;color:#fff">THE RULES<br>THAT MAKE<br>AI WORK.</h1><div class="ar"></div></div><div></div></div><div class="bar"><span class="hn">@handle</span><span class="ct">01 / 06</span></div></div>',
+    },
+    {
+      dataType: "content",
+      dataIndex: "02",
+      html: '<div class="c lgt"><div class="body"><div class="ml" style="margin-bottom:28px">02 · RULES</div><h2 style="font-size:72px;font-weight:900;line-height:1.1;letter-spacing:-.04em;color:#0f1729;margin-bottom:40px">Write once.<br>Sync everywhere.</h2><div style="flex:1;display:flex;flex-direction:column;justify-content:center"><div class="br"><div class="bsq"></div><div><div class="bt">One source of truth</div><div class="bb">Define rules in .codi/ — propagated to every AI tool automatically.</div></div></div><div class="br"><div class="bsq"></div><div><div class="bt">No manual syncing</div><div class="bb">Claude, Cursor, Copilot and Gemini stay aligned without extra work.</div></div></div><div class="br"><div class="bsq"></div><div><div class="bt">Version controlled</div><div class="bb">Rules live in your repo — reviewed, tested, and deployed with your code.</div></div></div></div></div><div class="bar"><span class="hn">@handle</span><span class="ct">02 / 06</span></div></div>',
+    },
+    {
+      dataType: "content",
+      dataIndex: "03",
+      html: '<div class="c"><svg class="wd" width="380" height="380" viewBox="0 0 380 380"><polygon points="380,0 380,380 0,380" fill="#2563eb"/></svg><div class="body" style="align-items:center;justify-content:center"><div class="qm">"</div><p class="qt">The teams shipping fastest are the ones whose AI tools follow the same rules as their engineers.</p><p class="qs">— Engineering lead, Series B startup</p></div><div class="bar"><span class="hn">@handle</span><span class="ct">03 / 06</span></div></div>',
+    },
+    {
+      dataType: "content",
+      dataIndex: "04",
+      html: '<div class="c lgt"><div class="body"><div class="ml" style="margin-bottom:28px">04 · AGENTS</div><div style="flex:1;display:flex;gap:40px;align-items:stretch"><div style="flex:1;display:flex;flex-direction:column;justify-content:space-between"><div><h2 style="font-size:64px;font-weight:900;line-height:1.1;letter-spacing:-.04em;color:#0f1729;margin-bottom:20px">Agents that know your standards.</h2><p style="font-size:20px;color:#94a3b8;line-height:1.6">Specialized agents ship pre-configured with domain expertise. Drop them into your project in seconds.</p></div><div class="cp"><span style="color:#94a3b8">$</span>codi init</div></div><div class="ip"><svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="10" width="40" height="28" rx="4" stroke="#cbd5e1" stroke-width="2"/><circle cx="24" cy="24" r="7" stroke="#cbd5e1" stroke-width="2"/><circle cx="24" cy="24" r="3" fill="#cbd5e1"/><circle cx="38" cy="15" r="2" fill="#cbd5e1"/></svg><span class="ip-lbl">IMAGE</span></div></div></div><div class="bar"><span class="hn">@handle</span><span class="ct">04 / 06</span></div></div>',
+    },
+    {
+      dataType: "stat",
+      dataIndex: "05",
+      html: '<div class="c"><svg class="wd" width="380" height="380" viewBox="0 0 380 380"><polygon points="380,0 380,380 0,380" fill="#2563eb"/></svg><div class="body" style="align-items:center;justify-content:center"><div class="sr" style="width:100%"><div class="si"><div class="sn">5x</div><div class="sl">faster config<br>setup</div></div><div class="si"><div class="sn">10+</div><div class="sl">AI tools<br>supported</div></div><div class="si"><div class="sn">0</div><div class="sl">manual files<br>to maintain</div></div></div><p style="font-size:24px;color:#fff;text-align:center;max-width:720px;line-height:1.5;margin-top:16px">Teams using codi spend less time on config and more time shipping.</p></div><div class="bar"><span class="hn">@handle</span><span class="ct">05 / 06</span></div></div>',
+    },
+    {
+      dataType: "cta",
+      dataIndex: "06",
+      html: '<div class="c"><svg class="wd" width="380" height="380" viewBox="0 0 380 380"><polygon points="380,0 380,380 0,380" fill="#2563eb"/></svg><div class="body" style="align-items:center;justify-content:center"><h2 style="font-size:110px;font-weight:900;line-height:1.05;letter-spacing:-.04em;color:#fff;text-align:center;text-transform:uppercase">START<br>TODAY.</h2><div class="cb"><span class="cbp">$</span>npm install -g codi-cli</div><p style="font-family:\'Geist Mono\',monospace;font-size:22px;color:#2563eb;margin-top:24px;letter-spacing:.04em">codi.tools</p></div><div class="bar"><span class="hn">@handle</span><span class="ct">06 / 06</span></div></div>',
+    },
+  ],
+};

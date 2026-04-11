@@ -78,11 +78,11 @@ a:hover { text-decoration: underline; }
 <div class="layout">
   <nav class="sidebar">
     <h1>Codi Skills</h1>
-    <p class="stats">67 skills</p>
+    <p class="stats">65 skills</p>
     <input type="text" class="search-box" placeholder="Search skills..." id="search">
     <div class="nav-group" id="nav-brand-identity">
       <h3 class="nav-category">Brand Identity</h3>
-      <ul><li><a href="#"></a></li><li><a href="#codi-brand-identity">codi-brand-identity</a></li><li><a href="#codi-codi-brand">codi-codi-brand</a></li><li><a href="#"></a></li></ul></div><div class="nav-group" id="nav-code-quality">
+      <ul><li><a href="#codi-brand-identity">codi-brand-identity</a></li><li><a href="#codi-codi-brand">codi-codi-brand</a></li></ul></div><div class="nav-group" id="nav-code-quality">
       <h3 class="nav-category">Code Quality</h3>
       <ul><li><a href="#codi-code-review">codi-code-review</a></li><li><a href="#codi-dev-e2e-testing">codi-dev-e2e-testing</a></li><li><a href="#codi-guided-qa-testing">codi-guided-qa-testing</a></li><li><a href="#codi-project-quality-guard">codi-project-quality-guard</a></li><li><a href="#codi-refactoring">codi-refactoring</a></li><li><a href="#codi-security-scan">codi-security-scan</a></li><li><a href="#codi-session-recovery">codi-session-recovery</a></li><li><a href="#codi-test-coverage">codi-test-coverage</a></li><li><a href="#codi-webapp-testing">codi-webapp-testing</a></li></ul></div><div class="nav-group" id="nav-content-creation">
       <h3 class="nav-category">Content Creation</h3>
@@ -113,275 +113,17 @@ a:hover { text-decoration: underline; }
   <main class="main">
     <h1>Codi Skills Catalog</h1>
     <p style="color:var(--text-muted);margin-bottom:2rem">
-      67 skills across 14 categories.
+      65 skills across 14 categories.
       Click a skill header to expand/collapse.
     </p>
     
-    <article class="skill-card" id="">
-      <div class="skill-header" onclick="this.parentElement.classList.toggle('collapsed')">
-        <h2></h2>
-        <div class="badges"><span class="badge invocable">user-invocable</span> <span class="badge cat">Brand Identity</span> <span class="badge compat">claude-code, cursor, codex, windsurf, cline</span></div>
-        <span class="toggle-icon"></span>
-      </div>
-      <p class="skill-desc">BBVA brand content studio. Use when creating any branded deliverable for BBVA — presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX output that must carry BBVA brand identity. Also activate when the user mentions 'BBVA', 'marca BBVA', 'estilo BBVA', or asks for BBVA-branded output of any kind.</p>
-      <div class="skill-body"><h1 id="-bbva-content-studio"> — BBVA Content Studio</h1>
-<h2 id="when-to-activate">When to Activate</h2>
-<ul>
-<li>User asks to create any content for BBVA (slides, deck, presentation, document,</li>
-</ul>
-<p>  report, one-pager, social post, carousel, blog, proposal)</p>
-<ul>
-<li>User mentions 'BBVA', 'marca BBVA', or any BBVA-related keyword</li>
-<li>User needs a deliverable that carries BBVA visual identity or voice</li>
-</ul>
-<hr>
-<h2 id="asset-map">Asset Map</h2>
-<p>Read these files BEFORE generating any output.</p>
-<table><thead><tr><th>File</th><th>Read when</th><th>Purpose</th></tr></thead><tbody><tr><td><code>${CLAUDE_SKILL_DIR}[[/brand/tokens.json]]</code></td><td>Always</td><td>Colors, fonts, layout, voice rules</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/brand/tokens.css]]</code></td><td>HTML generation</td><td>CSS custom properties to inline</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/brand/tokens.ts]]</code></td><td>PPTX/DOCX generation</td><td>Typed brand values adapter</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/references/brand-guide.md]]</code></td><td>Always</td><td>Usage rules, prohibited patterns, tone</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.svg]]</code></td><td>All themes</td><td>BBVA logo SVG string</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]</code></td><td>Slide output</td><td>16:9 slide HTML structure</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]</code></td><td>Doc output</td><td>A4 document HTML structure</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]</code></td><td>Social output</td><td>Social card HTML structure</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/references/values-imagery.md]]</code></td><td>Social / visual output</td><td>BBVA imagery principles and values visual language</td></tr></tbody></table>
-<p><strong>NEVER read these files — they are large binaries/bundles handled by the server:</strong></p>
-<table><thead><tr><th>File</th><th>Reason</th></tr></thead><tbody><tr><td><code>scripts/vendor/html2canvas.min.js</code></td><td>~300 KB minified bundle — server injects it automatically</td></tr><tr><td><code>scripts/preview-shell.js</code></td><td>Preview toolbar — server injects it automatically</td></tr><tr><td><code>scripts/helper.js</code></td><td>Live-reload client — server injects it automatically</td></tr></tbody></table>
-<hr>
-<h2 id="phase-1-discovery">Phase 1 — Discovery</h2>
-<p><strong>[CODING AGENT]</strong> Read the user's message carefully BEFORE asking. Extract everything already provided.</p>
-<p>Only ask for what is genuinely missing. Ask all missing items in ONE message.</p>
-<h3 id="what-to-infer-without-asking">What to infer without asking</h3>
-<table><thead><tr><th>Signal in user message</th><th>Infer</th></tr></thead><tbody><tr><td>Mentions topic/title/bullets</td><td>Q1 answered — propose default brief (see below)</td></tr><tr><td>"slides", "deck", "presentación"</td><td>Q2 = slides</td></tr><tr><td>"document", "report", "propuesta"</td><td>Q2 = document</td></tr><tr><td>"social", "carousel", "cards"</td><td>Q2 = social</td></tr><tr><td>"all formats" / "todos los formatos"</td><td>Q3 = all; start HTML-first, add others after — no re-confirmation</td></tr><tr><td>"dark" / "oscuro"</td><td>Q4 = dark</td></tr><tr><td>"light" / "claro"</td><td>Q4 = light</td></tr><tr><td>"formal", "executive"</td><td>Q5 = formal</td></tr><tr><td>"casual", "team"</td><td>Q5 = internal/casual</td></tr></tbody></table>
-<h3 id="content-brief-offer-default-don-t-block">Content brief — offer default, don't block</h3>
-<p>If the user gave a topic but no key points, <strong>propose a default brief and ask to confirm</strong>:</p>
-<blockquote><p>"I'll structure the content as:</p>
-<ol>
-<li>[Proposed key point 1]</li>
-<li>[Proposed key point 2]</li>
-<li>[Proposed key point 3]</li>
-</ul>
-<p>Does this work, or would you like to adjust it?"</p>
-</blockquote>
-<p><strong>Do NOT ask an open-ended "what are your key points?" when the topic is clear.</strong></p>
-<h3 id="questions-to-ask-only-when-missing">Questions to ask only when missing</h3>
-<pre><code class="language-">[Ask only what is not yet known from the user's message]
-
-Q2 — Type of output?
-   □ Slides / presentation (16:9)
-   □ Document / report / proposal (A4)
-   □ Social content (carousel, cards)
-
-Q3 — Output format(s)?  [Skip if user said &quot;all formats&quot; — start HTML-first by default]
-   □ HTML  (browser preview + file)
-   □ PDF   (print-ready)
-   □ PPTX  (editable PowerPoint)
-   □ DOCX  (editable Word)
-   □ PNG   (per-slide images — always available via toolbar)
-
-Q4 — Theme?
-   □ Dark  (Electric Blue #000519 background, white text, Yellow accent — BBVA default)
-   □ Light (White #F7F8F8 background, dark text, BBVA Blue accent)
-
-Q5 — Audience and tone?
-   (e.g. &quot;executive board, formal&quot; / &quot;internal team, casual&quot; / &quot;client pitch, persuasive&quot;)
-
-Q6 — Logo placement? (optional — skip to use defaults)
-   Show:     □ Yes (default)   □ No
-   Position: □ bottom-right (default)   □ bottom-left   □ bottom-center
-             □ top-right                □ top-left
-   Size:     □ small (32 px)   □ medium (48 px, default)   □ large (64 px)</code></pre>
-<p><strong>Do not proceed until Q2, Q4, and Q5 are answered</strong> (Q3 and Q6 have usable defaults).</p>
-<blockquote><p><strong>Workflow routing</strong> — decide before Phase 2:</p>
-<ul>
-<li>User wants <strong>HTML output</strong> or wants to <strong>visually iterate</strong>: follow full workflow (Phase 2 → 8)</li>
-<li>User wants <strong>only PPTX / DOCX / PDF</strong> and does NOT need visual iteration: skip Phase 3–5,</li>
-</ul>
-<p>  go Phase 2 → 6 → 7 → 8 (no server needed — generate final HTML once, export immediately)</p>
-</blockquote>
-<hr>
-<h2 id="phase-2-brand-context-loading">Phase 2 — Brand Context Loading</h2>
-<p>Read <code>tokens.json</code> and <code>brand-guide.md</code> per the Asset Map. Build this mental model:</p>
-<ul>
-<li><strong>Dark theme</strong>: bg #000519, surface #070E46, text #fff, accent #FFE761, primary #001391</li>
-<li><strong>Light theme</strong>: bg #F7F8F8, surface #fff, text #1A1A2A, accent #001391, primary #001391</li>
-<li><strong>Fonts</strong>: Tiempos Headline (headings), Benton Sans BBVA (body) — files at <code>${CLAUDE_SKILL_DIR}[[/assets/fonts/]]</code></li>
-<li><strong>Voice</strong>: use "Creando oportunidades", "Banca responsable" — avoid "Disruptivo", "Cutting-edge"</li>
-<li><strong>Logo</strong>: read SVG string from <code>${CLAUDE_SKILL_DIR}[[/assets/BBVA_RGB.svg]]</code></li>
-</ul>
-<hr>
-<h2 id="phase-3-start-preview-server">Phase 3 — Start Preview Server</h2>
-<pre><code class="language-bash">bash ${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --project-dir $(pwd) --name </code></pre>
-<p>Output (save all five values):</p>
-<pre><code class="language-json">{ &quot;url&quot;: &quot;http://localhost:49XXX&quot;, &quot;session_dir&quot;: &quot;...&quot;, &quot;screen_dir&quot;: &quot;...&quot;, &quot;state_dir&quot;: &quot;...&quot;, &quot;exports_dir&quot;: &quot;...&quot; }</code></pre>
-<p>Session files are stored under <code>.codi_output/YYYYMMDD_HHMM_/</code> in the project root.</p>
-<p>This directory persists after the server stops — each run creates a new timestamped folder.</p>
-<p>Tell the user:</p>
-<blockquote><p>"Preview server is running at {{url}}. Open it in your browser.</p>
-<p>I'll write prototype files there as we iterate."</p>
-</blockquote>
-<hr>
-<h2 id="phase-4-html-prototype-generation">Phase 4 — HTML Prototype Generation</h2>
-<h3 id="rules-for-all-html-outputs">Rules for ALL HTML outputs</h3>
-<blockquote><p><strong>Plug-and-play:</strong> The preview server automatically injects html2canvas, preview-shell,</p>
-<p>and the live-reload helper into every HTML file it serves. Write <strong>clean HTML only</strong> —</p>
-<p>no need to inline any scripts. The server handles the full preview experience.</p>
-</blockquote>
-<ol>
-<li>Read the base template from <code>generators/</code> matching the content type</li>
-<li><strong>Inline brand CSS</strong> — paste full contents of <code>brand/tokens.css</code> into a <code><style></code> block.</li>
-</ul>
-<p>   Replace <code>SKILL_FONTS_DIR</code> with the absolute path to the <code>assets/fonts</code> directory inside</p>
-<p>   the folder containing this SKILL.md file (e.g. <code>${CLAUDE_SKILL_DIR}/assets/fonts</code>).</p>
-<p>   Replace <code>SKILL_ASSETS_DIR</code> with the absolute path to the <code>assets</code> directory inside</p>
-<p>   the folder containing this SKILL.md file (e.g. <code>${CLAUDE_SKILL_DIR}/assets</code>).</p>
-<ol>
-<li>Write to <code>screen_dir/prototype.html</code></li>
-</ul>
-<p>The server watches <code>screen_dir</code> and reloads the browser on every write.</p>
-<p>When multiple files exist, a file picker appears in the toolbar automatically.</p>
-<h3 id="slide-output-16-9">Slide output (16:9)</h3>
-<p><strong>CRITICAL — copy these CSS rules verbatim from <code>generators/slides-base.html</code>. Do NOT change them:</strong></p>
-<pre><code class="language-css">/* These rules control visibility — changing them causes ALL slides to render simultaneously.
-   min() approach: self-contained, works with the preview-shell fixed toolbar overlay. */
-html, body { overflow: hidden; background: #ccc; }
-.deck { display: flex; align-items: center; justify-content: center; background: #ccc; }
-.deck__viewport {
-  position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
-  overflow: hidden;
-}
-.slide { display: none; position: absolute; inset: 0; }   /* hidden by default */
-.slide.active { display: flex; flex-direction: column; }  /* only active slide shows */</code></pre>
-<p><strong>CRITICAL — copy the deck engine <code><script></code> verbatim from <code>generators/slides-base.html</code></strong> (arrow-key + click navigation, <code>show(0)</code> on load). This script is what makes slides advance.</p>
-<ul>
-<li>Responsive 16:9 letterbox viewport — fills browser window while maintaining aspect ratio</li>
-<li>Safe zone: <code>var(--slide-pad)</code> padding (default 36px) all sides</li>
-<li>Use CSS vars: <code>var(--brand-bg)</code>, <code>var(--brand-text)</code>, <code>var(--brand-accent)</code>, etc.</li>
-<li>Required <code>data-type</code> values: <code>title</code>, <code>divider</code>, <code>content</code>, <code>quote</code>, <code>metrics</code>, <code>table</code>, <code>closing</code></li>
-<li>Required <code>data-index</code> values: <code>01</code>, <code>02</code>, <code>03</code>… (zero-padded) — drives PNG export filenames (<code>slide-01-title.png</code>)</li>
-<li>Every <code>.slide</code> must have <strong>both</strong> attributes: <code><section class="slide" data-type="title" data-index="01"></code></li>
-</ul>
-<p><strong>Logo placement</strong> — apply the choices from Phase 1 Q6. Set these CSS variables in <code>:root</code>:</p>
-<pre><code class="language-css">:root {
-  --logo-size: 48px;   /* small=32px, medium=48px (default), large=64px */
-  --slide-pad: 36px;
-}</code></pre>
-<p>Place the logo element inside every <code>.slide</code> as <code>position: absolute</code> using these offsets:</p>
-<table><thead><tr><th>Position</th><th>CSS</th></tr></thead><tbody><tr><td>bottom-right (default)</td><td><code>bottom: var(--slide-pad); right: var(--slide-pad);</code></td></tr><tr><td>bottom-left</td><td><code>bottom: var(--slide-pad); left: var(--slide-pad);</code></td></tr><tr><td>bottom-center</td><td><code>bottom: var(--slide-pad); left: 50%; transform: translateX(-50%);</code></td></tr><tr><td>top-right</td><td><code>top: var(--slide-pad); right: var(--slide-pad);</code></td></tr><tr><td>top-left</td><td><code>top: var(--slide-pad); left: var(--slide-pad);</code></td></tr></tbody></table>
-<p>Logo element: <code><img src="/files/BBVA_RGB.svg" class="slide__logo" data-role="brand-logo" alt="BBVA"></code></p>
-<p>Logo CSS: <code>height: var(--logo-size); width: auto; position: absolute; opacity: 0.9;</code></p>
-<p><strong>REQUIRED</strong>: every logo element across ALL output types (slides, document, social) MUST carry <code>data-role="brand-logo"</code>.</p>
-<p>This attribute is what the preview toolbar uses to find and control logos — wrong or missing attribute means the controls stop working.</p>
-<p>If user chose <strong>No logo</strong>: omit the logo element entirely (do NOT render a hidden element).</p>
-<p><strong>Prototype scope (Phase 4 only):</strong> 3 slides — title, one content, closing.</p>
-<p>Full deck comes in Phase 6.</p>
-<h3 id="document-output-a4">Document output (A4)</h3>
-<ul>
-<li>794px wide × min 1123px tall per <code>.doc-page</code></li>
-<li>Vertical scroll — pages stack</li>
-<li>Brand header (logo + color bar) + footer (page number) on each page</li>
-<li>Logo in header: <code><img src="/files/BBVA_RGB.svg" class="doc__logo" data-role="brand-logo" alt="BBVA" style="height:40px;width:auto"></code> — never smaller than 40px</li>
-</ul>
-<h3 id="social-output-default-1-1">Social output (default 1:1)</h3>
-<ul>
-<li>1080×1080px per <code>.social-card</code></li>
-<li>Cards stack vertically for scrolling preview</li>
-<li>Toolbar allows aspect ratio switching (1:1, 4:5, 9:16, 1200×630)</li>
-<li>Logo per card: <code><img src="/files/BBVA_RGB.svg" class="card-logo" data-role="brand-logo" alt="BBVA"></code>, apply Q6 placement; use <code>height: var(--logo-size, 48px); width: auto</code> — never smaller than 40px</li>
-</ul>
-<hr>
-<h2 id="png-downloads-always-available">PNG Downloads — Always Available</h2>
-<p>The preview server injects the preview-shell toolbar into every HTML file it serves.</p>
-<ul>
-<li><strong>Per item</strong>: hover → "Export PNG" button appears on each slide / page / card</li>
-<li><strong>All at once</strong>: "Export All PNGs" in toolbar → sequential downloads</li>
-<li>Resolution: 2× display size (1920×1080 for 16:9 slides)</li>
-<li>Naming: <code>slide-01-title.png</code>, <code>slide-02-content.png</code>, etc. (requires <code>data-index</code> + <code>data-type</code>)</li>
-</ul>
-<hr>
-<h2 id="phase-5-visual-iteration-loop">Phase 5 — Visual Iteration Loop</h2>
-<p>After writing the prototype, tell the user:</p>
-<blockquote><p>"Prototype is ready at {{url}}. The toolbar lets you:</p>
-<ul>
-<li>Export any slide as PNG — hover a slide and click 'Export PNG'</li>
-<li>Click 'Export All PNGs' in the toolbar to download all slides</li>
-</ul>
-<p>Describe your feedback here when ready."</p>
-</blockquote>
-<p><strong>End your turn and wait.</strong></p>
-<h3 id="reading-feedback-on-your-next-turn">Reading feedback on your next turn</h3>
-<p>Read the user's reply in the conversation — they will describe what to change.</p>
-<p>Apply feedback and rewrite <code>screen_dir/prototype.html</code>.</p>
-<p>Max 3 iteration rounds. After round 3, ask the user to approve a direction before proceeding.</p>
-<hr>
-<h2 id="phase-6-full-content-generation">Phase 6 — Full Content Generation</h2>
-<p>Generate all slides/pages using the approved style.</p>
-<ul>
-<li>Slides → write to <code>screen_dir/deck.html</code></li>
-<li>Document → <code>screen_dir/document.html</code></li>
-<li>Social → <code>screen_dir/social.html</code></li>
-</ul>
-<p>Tell the user:</p>
-<blockquote><p>"Full [deck/document/carousel] ready at {{url}} — [N] slides/pages.</p>
-<p>Export PNGs from the toolbar anytime. Ready to generate [FORMAT]?"</p>
-</blockquote>
-<hr>
-<h2 id="phase-7-export">Phase 7 — Export</h2>
-<p>All exports are saved to <code>exports_dir</code> (the <code>exports/</code> folder inside the session directory).</p>
-<blockquote><p><strong>Substitution reminder</strong>: <code>screen_dir</code> and <code>exports_dir</code> are the actual paths saved from</p>
-<p>Phase 3 output — substitute them with those values. The source HTML filename depends on</p>
-<p>content type: slides → <code>deck.html</code>, document → <code>document.html</code>, social → <code>social.html</code>.</p>
-</blockquote>
-<h3 id="all-formats-at-once-preferred">All formats at once (preferred)</h3>
-<p>Reads session state from the session directory, discovers HTML files, and exports all</p>
-<p>applicable formats (PDF + PPTX for slides, PDF for documents) in a single command.</p>
-<p>The preview server must be running.</p>
-<pre><code class="language-bash">node ${CLAUDE_SKILL_DIR}[[/scripts/export/all.js]] \
-  --session &lt;session_dir&gt;</code></pre>
-<p>Requires: <code>npm install pdf-lib pptxgenjs playwright</code> + <code>npx playwright install chromium</code></p>
-<h3 id="pdf-individual">PDF (individual)</h3>
-<pre><code class="language-bash">node ${CLAUDE_SKILL_DIR}[[/scripts/export/pdf.js]] \
-  --input &lt;screen_dir&gt;/&lt;output-file&gt;.html \
-  --output &lt;exports_dir&gt;/output.pdf</code></pre>
-<p>Requires: <code>npx playwright install chromium</code> (once)</p>
-<h3 id="pptx">PPTX</h3>
-<pre><code class="language-bash">node ${CLAUDE_SKILL_DIR}[[/scripts/export/pptx.js]] \
-  --input &lt;screen_dir&gt;/deck.html \
-  --tokens ${CLAUDE_SKILL_DIR}[[/brand/tokens.json]] \
-  --theme dark|light \
-  --output &lt;exports_dir&gt;/deck.pptx</code></pre>
-<p>Requires: <code>npm install pptxgenjs playwright</code> (once per project)</p>
-<p>The script uses Playwright + pptxgenjs internally (screenshots each slide, extracts text as editable boxes).</p>
-<h3 id="docx">DOCX</h3>
-<p>Generate a Word document using the <code>docx</code> npm library.</p>
-<p>Install: <code>npm install docx sharp</code></p>
-<p>Output to: <code><exports_dir>/document.docx</code></p>
-<p><strong>Logo in DOCX</strong>: Word does not render SVG. Convert the BBVA SVG to PNG first, then embed:</p>
-<pre><code class="language-js">const sharp = require(&quot;sharp&quot;);
-const { ImageRun } = require(&quot;docx&quot;);
-const logoPng = await sharp(path.join(SKILL_DIR, &quot;assets/BBVA_RGB.svg&quot;))
-  .resize({ height: 40 }).png().toBuffer();
-// Then use: new ImageRun({ data: logoPng, transformation: { width: 100, height: 40 } })</code></pre>
-<h3 id="html">HTML</h3>
-<p>No extra work — tell the user the path: <code><screen_dir>/<output-file>.html</code> (already saved).</p>
-<hr>
-<h2 id="phase-8-stop-server">Phase 8 — Stop Server</h2>
-<pre><code class="language-bash">bash ${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] {{session_dir}}</code></pre>
-<hr>
-<h2 id="bbva-reference-files">BBVA — Reference Files</h2>
-<ul>
-<li>Brand guide: <code>${CLAUDE_SKILL_DIR}[[/references/brand-guide.md]]</code></li>
-<li>Icon catalog (600+ icons): <code>${CLAUDE_SKILL_DIR}[[/references/icon-catalog.md]]</code></li>
-<li>Reference deck: <code>${CLAUDE_SKILL_DIR}[[/references/bbva-deck-reference.html]]</code></li>
-</ul>
-<hr>
-<h2 id="error-handling">Error Handling</h2>
-<table><thead><tr><th>Error</th><th>Recovery</th></tr></thead><tbody><tr><td>Server fails to start</td><td>Retry: <code>BRAINSTORM_PORT=XXXXX bash .../start-server.sh</code></td></tr><tr><td>Playwright not installed</td><td>Run <code>npx playwright install chromium</code> then retry</td></tr><tr><td>pptxgenjs not found</td><td>Run <code>npm install pptxgenjs</code> then retry</td></tr><tr><td>html2canvas PNG fails</td><td>Use Playwright PDF export instead</td></tr></tbody></table>
-</div>
-    </article>
-
     <article class="skill-card" id="codi-brand-identity">
       <div class="skill-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <h2>codi-brand-identity</h2>
         <div class="badges"><span class="badge invocable">user-invocable</span> <span class="badge cat">Brand Identity</span> <span class="badge compat">claude-code, cursor, codex, windsurf, cline</span></div>
         <span class="toggle-icon"></span>
       </div>
-      <p class="skill-desc">Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See  for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.</p>
+      <p class="skill-desc">Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.</p>
       <div class="skill-body"><h1 id="codi-brand-identity-brand-identity">codi-brand-identity — Brand Identity</h1>
 <hr>
 <h2 id="required-brand-tokens-json">Required: brand_tokens.json</h2>
@@ -712,262 +454,6 @@ html, body { overflow: hidden; background: #ccc; }
 </div>
     </article>
 
-    <article class="skill-card" id="">
-      <div class="skill-header" onclick="this.parentElement.classList.toggle('collapsed')">
-        <h2></h2>
-        <div class="badges"><span class="badge invocable">user-invocable</span> <span class="badge cat">Brand Identity</span> <span class="badge compat">claude-code, cursor, codex, windsurf, cline</span></div>
-        <span class="toggle-icon"></span>
-      </div>
-      <p class="skill-desc">RL3 AI Agency brand content studio. Use when creating any branded deliverable for RL3 — presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX output that must carry RL3 brand identity. Also activate when the user mentions 'RL3', 'marca RL3', 'estilo RL3', or asks for RL3-branded output of any kind.</p>
-      <div class="skill-body"><h1 id="-rl3-content-studio"> — RL3 Content Studio</h1>
-<h2 id="when-to-activate">When to Activate</h2>
-<ul>
-<li>User asks to create any content for RL3 (slides, deck, presentation, document,</li>
-</ul>
-<p>  report, one-pager, social post, carousel, blog, proposal)</p>
-<ul>
-<li>User mentions 'RL3', 'marca RL3', or any RL3-related keyword</li>
-<li>User needs a deliverable that carries RL3 visual identity or voice</li>
-</ul>
-<hr>
-<h2 id="asset-map">Asset Map</h2>
-<p>Read these files BEFORE generating any output.</p>
-<table><thead><tr><th>File</th><th>Read when</th><th>Purpose</th></tr></thead><tbody><tr><td><code>${CLAUDE_SKILL_DIR}[[/brand/tokens.json]]</code></td><td>Always</td><td>Colors, fonts, layout, voice rules</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/brand/tokens.css]]</code></td><td>HTML generation</td><td>CSS custom properties to inline</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/brand/tokens.ts]]</code></td><td>PPTX/DOCX generation</td><td>Typed brand values adapter</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]</code></td><td>Always</td><td>Usage rules, prohibited patterns, tone</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-light.svg]]</code></td><td>Dark backgrounds</td><td>RL3 logo for dark theme</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-dark.svg]]</code></td><td>Light backgrounds</td><td>RL3 logo for light theme</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]</code></td><td>Slide output</td><td>16:9 slide HTML structure</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]</code></td><td>Doc output</td><td>A4 document HTML structure</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]</code></td><td>Social output</td><td>Social card HTML structure</td></tr></tbody></table>
-<p><strong>NEVER read these files — they are large binaries/bundles handled by the server:</strong></p>
-<table><thead><tr><th>File</th><th>Reason</th></tr></thead><tbody><tr><td><code>scripts/vendor/html2canvas.min.js</code></td><td>~300 KB minified bundle — server injects it automatically</td></tr><tr><td><code>scripts/preview-shell.js</code></td><td>Preview toolbar — server injects it automatically</td></tr><tr><td><code>scripts/helper.js</code></td><td>Live-reload client — server injects it automatically</td></tr></tbody></table>
-<hr>
-<h2 id="phase-1-discovery">Phase 1 — Discovery</h2>
-<p><strong>[CODING AGENT]</strong> Read the user's message carefully BEFORE asking. Extract everything already provided.</p>
-<p>Only ask for what is genuinely missing. Ask all missing items in ONE message.</p>
-<h3 id="what-to-infer-without-asking">What to infer without asking</h3>
-<table><thead><tr><th>Signal in user message</th><th>Infer</th></tr></thead><tbody><tr><td>Mentions topic/title/bullets</td><td>Q1 answered — propose default brief (see below)</td></tr><tr><td>"slides", "deck", "presentación"</td><td>Q2 = slides</td></tr><tr><td>"document", "report", "propuesta"</td><td>Q2 = document</td></tr><tr><td>"social", "carousel", "cards"</td><td>Q2 = social</td></tr><tr><td>"all formats" / "todos los formatos"</td><td>Q3 = all; start HTML-first, add others after — no re-confirmation</td></tr><tr><td>"dark" / "oscuro"</td><td>Q4 = dark</td></tr><tr><td>"light" / "claro"</td><td>Q4 = light</td></tr><tr><td>"formal", "executive"</td><td>Q5 = formal</td></tr><tr><td>"casual", "team"</td><td>Q5 = internal/casual</td></tr></tbody></table>
-<h3 id="content-brief-offer-default-don-t-block">Content brief — offer default, don't block</h3>
-<p>If the user gave a topic but no key points, <strong>propose a default brief and ask to confirm</strong>:</p>
-<blockquote><p>"I'll structure the content as:</p>
-<ol>
-<li>[Proposed key point 1]</li>
-<li>[Proposed key point 2]</li>
-<li>[Proposed key point 3]</li>
-</ul>
-<p>Does this work, or would you like to adjust it?"</p>
-</blockquote>
-<p><strong>Do NOT ask an open-ended "what are your key points?" when the topic is clear.</strong></p>
-<h3 id="questions-to-ask-only-when-missing">Questions to ask only when missing</h3>
-<pre><code class="language-">[Ask only what is not yet known from the user's message]
-
-Q2 — Type of output?
-   □ Slides / presentation (16:9)
-   □ Document / report / proposal (A4)
-   □ Social content (carousel, cards)
-
-Q3 — Output format(s)?  [Skip if user said &quot;all formats&quot; — start HTML-first by default]
-   □ HTML  (browser preview + file)
-   □ PDF   (print-ready)
-   □ PPTX  (editable PowerPoint)
-   □ DOCX  (editable Word)
-   □ PNG   (per-slide images — always available via toolbar)
-
-Q4 — Theme?
-   □ Dark  (Near-black #0a0a0b background, white text, Gold #c8b88a accent — RL3 default)
-   □ Light (Off-white #f5f5f5 background, dark text, Gold accent)
-
-Q5 — Audience and tone?
-   (e.g. &quot;executive board, formal&quot; / &quot;internal team, casual&quot; / &quot;client pitch, persuasive&quot;)
-
-Q6 — Logo placement? (optional — skip to use defaults)
-   Show:     □ Yes (default)   □ No
-   Position: □ bottom-right (default)   □ bottom-left   □ bottom-center
-             □ top-right                □ top-left
-   Size:     □ small (32 px)   □ medium (48 px, default)   □ large (64 px)</code></pre>
-<p><strong>Do not proceed until Q2, Q4, and Q5 are answered</strong> (Q3 and Q6 have usable defaults).</p>
-<blockquote><p><strong>Workflow routing</strong> — decide before Phase 2:</p>
-<ul>
-<li>User wants <strong>HTML output</strong> or wants to <strong>visually iterate</strong>: follow full workflow (Phase 2 → 8)</li>
-<li>User wants <strong>only PPTX / DOCX / PDF</strong> and does NOT need visual iteration: skip Phase 3–5,</li>
-</ul>
-<p>  go Phase 2 → 6 → 7 → 8 (no server needed — generate final HTML once, export immediately)</p>
-</blockquote>
-<hr>
-<h2 id="phase-2-brand-context-loading">Phase 2 — Brand Context Loading</h2>
-<p>Read <code>tokens.json</code> and <code>brand-standard.md</code> per the Asset Map. Build this mental model:</p>
-<ul>
-<li><strong>Dark theme</strong>: bg #0a0a0b, surface #1a1a1b, text #fff, accent/primary #c8b88a</li>
-<li><strong>Light theme</strong>: bg #f5f5f5, surface #fff, text #0a0a0b, accent/primary #c8b88a</li>
-<li><strong>Fonts</strong>: Space Grotesk (headings), Instrument Sans (body) — loaded from Google Fonts</li>
-<li><strong>Voice</strong>: use "Observar · Actuar · Iterar", "Cada iteración nos acerca al resultado óptimo" — avoid "Disruptivo", "Cutting-edge"</li>
-<li><strong>Logo dark bg</strong>: read SVG from <code>${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-light.svg]]</code></li>
-<li><strong>Logo light bg</strong>: read SVG from <code>${CLAUDE_SKILL_DIR}[[/assets/rl3-logo-dark.svg]]</code></li>
-</ul>
-<hr>
-<h2 id="phase-3-start-preview-server">Phase 3 — Start Preview Server</h2>
-<pre><code class="language-bash">bash ${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --project-dir $(pwd) --name </code></pre>
-<p>Output (save all five values):</p>
-<pre><code class="language-json">{ &quot;url&quot;: &quot;http://localhost:49XXX&quot;, &quot;session_dir&quot;: &quot;...&quot;, &quot;screen_dir&quot;: &quot;...&quot;, &quot;state_dir&quot;: &quot;...&quot;, &quot;exports_dir&quot;: &quot;...&quot; }</code></pre>
-<p>Session files are stored under <code>.codi_output/YYYYMMDD_HHMM_/</code> in the project root.</p>
-<p>This directory persists after the server stops — each run creates a new timestamped folder.</p>
-<p>Tell the user:</p>
-<blockquote><p>"Preview server is running at {{url}}. Open it in your browser.</p>
-<p>I'll write prototype files there as we iterate."</p>
-</blockquote>
-<hr>
-<h2 id="phase-4-html-prototype-generation">Phase 4 — HTML Prototype Generation</h2>
-<h3 id="rules-for-all-html-outputs">Rules for ALL HTML outputs</h3>
-<blockquote><p><strong>Plug-and-play:</strong> The preview server automatically injects html2canvas, preview-shell,</p>
-<p>and the live-reload helper into every HTML file it serves. Write <strong>clean HTML only</strong> —</p>
-<p>no need to inline any scripts. The server handles the full preview experience.</p>
-</blockquote>
-<ol>
-<li>Read the base template from <code>generators/</code> matching the content type</li>
-<li><strong>Inline brand CSS</strong> — paste full contents of <code>brand/tokens.css</code> into a <code><style></code> block.</li>
-</ul>
-<p>   Replace <code>SKILL_FONTS_DIR</code> with the absolute path to the <code>assets/fonts</code> directory inside</p>
-<p>   the folder containing this SKILL.md file (e.g. <code>${CLAUDE_SKILL_DIR}/assets/fonts</code>).</p>
-<p>   Replace <code>SKILL_ASSETS_DIR</code> with the absolute path to the <code>assets</code> directory inside</p>
-<p>   the folder containing this SKILL.md file (e.g. <code>${CLAUDE_SKILL_DIR}/assets</code>).</p>
-<p>   Add Google Fonts link for Space Grotesk + Instrument Sans.</p>
-<ol>
-<li>Write to <code>screen_dir/prototype.html</code></li>
-</ul>
-<p>The server watches <code>screen_dir</code> and reloads the browser on every write.</p>
-<p>When multiple files exist, a file picker appears in the toolbar automatically.</p>
-<h3 id="slide-output-16-9">Slide output (16:9)</h3>
-<p><strong>CRITICAL — copy these CSS rules verbatim from <code>generators/slides-base.html</code>. Do NOT change them:</strong></p>
-<pre><code class="language-css">/* These rules control visibility — changing them causes ALL slides to render simultaneously.
-   min() approach: self-contained, works with the preview-shell fixed toolbar overlay. */
-html, body { overflow: hidden; background: #ccc; }
-.deck { display: flex; align-items: center; justify-content: center; background: #ccc; }
-.deck__viewport {
-  position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
-  overflow: hidden;
-}
-.slide { display: none; position: absolute; inset: 0; }   /* hidden by default */
-.slide.active { display: flex; flex-direction: column; }  /* only active slide shows */</code></pre>
-<p><strong>CRITICAL — copy the deck engine <code><script></code> verbatim from <code>generators/slides-base.html</code></strong> (arrow-key + click navigation, <code>show(0)</code> on load). This script is what makes slides advance.</p>
-<ul>
-<li>Responsive 16:9 letterbox viewport — fills browser window while maintaining aspect ratio</li>
-<li>Safe zone: <code>var(--slide-pad)</code> padding (default 36px) all sides</li>
-<li>Use CSS vars: <code>var(--brand-bg)</code>, <code>var(--brand-text)</code>, <code>var(--brand-accent)</code>, etc.</li>
-<li>Required <code>data-type</code> values: <code>title</code>, <code>divider</code>, <code>content</code>, <code>quote</code>, <code>metrics</code>, <code>table</code>, <code>closing</code></li>
-<li>Required <code>data-index</code> values: <code>01</code>, <code>02</code>, <code>03</code>… (zero-padded) — drives PNG export filenames (<code>slide-01-title.png</code>)</li>
-<li>Every <code>.slide</code> must have <strong>both</strong> attributes: <code><section class="slide" data-type="title" data-index="01"></code></li>
-</ul>
-<p><strong>Logo placement</strong> — apply the choices from Phase 1 Q6. Set these CSS variables in <code>:root</code>:</p>
-<pre><code class="language-css">:root {
-  --logo-size: 48px;   /* small=32px, medium=48px (default), large=64px */
-  --slide-pad: 36px;
-}</code></pre>
-<p>Place the logo element inside every <code>.slide</code> as <code>position: absolute</code> using these offsets:</p>
-<table><thead><tr><th>Position</th><th>CSS</th></tr></thead><tbody><tr><td>bottom-right (default)</td><td><code>bottom: var(--slide-pad); right: var(--slide-pad);</code></td></tr><tr><td>bottom-left</td><td><code>bottom: var(--slide-pad); left: var(--slide-pad);</code></td></tr><tr><td>bottom-center</td><td><code>bottom: var(--slide-pad); left: 50%; transform: translateX(-50%);</code></td></tr><tr><td>top-right</td><td><code>top: var(--slide-pad); right: var(--slide-pad);</code></td></tr><tr><td>top-left</td><td><code>top: var(--slide-pad); left: var(--slide-pad);</code></td></tr></tbody></table>
-<p>Logo element (dark theme): <code><img src="/files/rl3-logo-light.svg" class="slide__logo" data-role="brand-logo" alt="RL3"></code></p>
-<p>Logo element (light theme): <code><img src="/files/rl3-logo-dark.svg" class="slide__logo" data-role="brand-logo" alt="RL3"></code></p>
-<p>Logo CSS: <code>height: var(--logo-size); width: auto; position: absolute; opacity: 0.9;</code></p>
-<p><strong>REQUIRED</strong>: every logo element across ALL output types (slides, document, social) MUST carry <code>data-role="brand-logo"</code>.</p>
-<p>This attribute is what the preview toolbar uses to find and control logos — wrong or missing attribute means the controls stop working.</p>
-<p>If user chose <strong>No logo</strong>: omit the logo element entirely (do NOT render a hidden element).</p>
-<p><strong>Prototype scope (Phase 4 only):</strong> 3 slides — title, one content, closing.</p>
-<p>Full deck comes in Phase 6.</p>
-<h3 id="document-output-a4">Document output (A4)</h3>
-<ul>
-<li>794px wide × min 1123px tall per <code>.doc-page</code></li>
-<li>Vertical scroll — pages stack</li>
-<li>Brand header (logo + color bar) + footer (page number) on each page</li>
-<li>Logo in header: <code><img src="/files/rl3-logo-light.svg" class="doc__logo" data-role="brand-logo" alt="RL3" style="height:40px;width:auto"></code> — never smaller than 40px</li>
-</ul>
-<h3 id="social-output-default-1-1">Social output (default 1:1)</h3>
-<ul>
-<li>1080×1080px per <code>.social-card</code></li>
-<li>Cards stack vertically for scrolling preview</li>
-<li>Toolbar allows aspect ratio switching (1:1, 4:5, 9:16, 1200×630)</li>
-<li>Logo per card: <code><img src="/files/rl3-logo-light.svg" class="card-logo" data-role="brand-logo" alt="RL3"></code>, apply Q6 placement; use <code>height: var(--logo-size, 48px); width: auto</code> — never smaller than 40px</li>
-</ul>
-<hr>
-<h2 id="png-downloads-always-available">PNG Downloads — Always Available</h2>
-<p>The preview server injects the preview-shell toolbar into every HTML file it serves.</p>
-<ul>
-<li><strong>Per item</strong>: hover → "Export PNG" button appears on each slide / page / card</li>
-<li><strong>All at once</strong>: "Export All PNGs" in toolbar → downloads a ZIP file</li>
-<li>Resolution: 2× display size (1920×1080 for 16:9 slides)</li>
-<li>Naming: <code>slide-01-title.png</code>, <code>slide-02-content.png</code>, etc. (requires <code>data-index</code> + <code>data-type</code>)</li>
-</ul>
-<hr>
-<h2 id="phase-5-visual-iteration-loop">Phase 5 — Visual Iteration Loop</h2>
-<p>After writing the prototype, tell the user:</p>
-<blockquote><p>"Prototype is ready at {{url}}. The toolbar lets you:</p>
-<ul>
-<li>Export any slide as PNG — hover a slide and click 'Export PNG'</li>
-<li>Click 'Export All PNGs' in the toolbar to download all slides as a ZIP</li>
-</ul>
-<p>Describe your feedback here when ready."</p>
-</blockquote>
-<p><strong>End your turn and wait.</strong></p>
-<h3 id="reading-feedback-on-your-next-turn">Reading feedback on your next turn</h3>
-<p>Read the user's reply in the conversation — they will describe what to change.</p>
-<p>Apply feedback and rewrite <code>screen_dir/prototype.html</code>.</p>
-<p>Max 3 iteration rounds. After round 3, ask the user to approve a direction before proceeding.</p>
-<hr>
-<h2 id="phase-6-full-content-generation">Phase 6 — Full Content Generation</h2>
-<p>Generate all slides/pages using the approved style.</p>
-<ul>
-<li>Slides → write to <code>screen_dir/deck.html</code></li>
-<li>Document → <code>screen_dir/document.html</code></li>
-<li>Social → <code>screen_dir/social.html</code></li>
-</ul>
-<p>Tell the user:</p>
-<blockquote><p>"Full [deck/document/carousel] ready at {{url}} — [N] slides/pages.</p>
-<p>Export PNGs from the toolbar anytime. Ready to generate [FORMAT]?"</p>
-</blockquote>
-<hr>
-<h2 id="phase-7-export">Phase 7 — Export</h2>
-<p>All exports are saved to <code>exports_dir</code> (the <code>exports/</code> folder inside the session directory).</p>
-<blockquote><p><strong>Substitution reminder</strong>: <code>screen_dir</code> and <code>exports_dir</code> are the actual paths saved from</p>
-<p>Phase 3 output — substitute them with those values. The source HTML filename depends on</p>
-<p>content type: slides → <code>deck.html</code>, document → <code>document.html</code>, social → <code>social.html</code>.</p>
-</blockquote>
-<h3 id="pdf">PDF</h3>
-<pre><code class="language-bash">node ${CLAUDE_SKILL_DIR}[[/scripts/export/pdf.js]] \
-  --input &lt;screen_dir&gt;/&lt;output-file&gt;.html \
-  --output &lt;exports_dir&gt;/output.pdf</code></pre>
-<p>Requires: <code>npx playwright install chromium</code> (once)</p>
-<h3 id="pptx">PPTX</h3>
-<pre><code class="language-bash">node ${CLAUDE_SKILL_DIR}[[/scripts/export/pptx.js]] \
-  --input &lt;screen_dir&gt;/deck.html \
-  --tokens ${CLAUDE_SKILL_DIR}[[/brand/tokens.json]] \
-  --theme dark|light \
-  --output &lt;exports_dir&gt;/deck.pptx</code></pre>
-<p>Requires: <code>npm install pptxgenjs playwright</code> (once per project)</p>
-<p>The script uses Playwright + pptxgenjs internally (screenshots each slide, extracts text as editable boxes).</p>
-<h3 id="docx">DOCX</h3>
-<p>Generate a Word document using the <code>docx</code> npm library.</p>
-<p>Install: <code>npm install docx sharp</code></p>
-<p>Output to: <code><exports_dir>/document.docx</code></p>
-<p><strong>Logo in DOCX</strong>: Word does not render SVG. Convert the RL3 SVG to PNG first, then embed:</p>
-<pre><code class="language-js">const sharp = require(&quot;sharp&quot;);
-const { ImageRun } = require(&quot;docx&quot;);
-const logoPng = await sharp(path.join(SKILL_DIR, &quot;assets/rl3-logo-light.svg&quot;))
-  .resize({ height: 40 }).png().toBuffer();
-// Then use: new ImageRun({ data: logoPng, transformation: { width: 100, height: 40 } })</code></pre>
-<h3 id="html">HTML</h3>
-<p>No extra work — tell the user the path: <code><screen_dir>/<output-file>.html</code> (already saved).</p>
-<hr>
-<h2 id="phase-8-stop-server">Phase 8 — Stop Server</h2>
-<pre><code class="language-bash">bash ${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] {{session_dir}}</code></pre>
-<hr>
-<h2 id="rl3-reference-files">RL3 — Reference Files</h2>
-<ul>
-<li>Brand standard: <code>${CLAUDE_SKILL_DIR}[[/references/brand-standard.md]]</code></li>
-<li>Brand guide (HTML): <code>${CLAUDE_SKILL_DIR}[[/references/brandguide.html]]</code></li>
-<li>Brand concept (HTML): <code>${CLAUDE_SKILL_DIR}[[/references/brand-concept.html]]</code></li>
-<li>Services catalog: <code>${CLAUDE_SKILL_DIR}[[/references/services.md]]</code></li>
-<li>Ecosystem & markets: <code>${CLAUDE_SKILL_DIR}[[/references/ecosystem.md]]</code></li>
-</ul>
-<hr>
-<h2 id="error-handling">Error Handling</h2>
-<table><thead><tr><th>Error</th><th>Recovery</th></tr></thead><tbody><tr><td>Server fails to start</td><td>Retry: <code>BRAINSTORM_PORT=XXXXX bash .../start-server.sh</code></td></tr><tr><td>Playwright not installed</td><td>Run <code>npx playwright install chromium</code> then retry</td></tr><tr><td>pptxgenjs not found</td><td>Run <code>npm install pptxgenjs</code> then retry</td></tr><tr><td>html2canvas PNG fails</td><td>Use Playwright PDF export instead</td></tr></tbody></table>
-</div>
-    </article>
-
     <article class="skill-card" id="codi-code-review">
       <div class="skill-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <h2>codi-code-review</h2>
@@ -1154,7 +640,7 @@ npx codi --version</code></pre>
 <pre><code class="language-bash">npx codi add rule --all --json
 npx codi add skill --all --json
 npx codi add agent --all --json</code></pre>
-<p>Expected: 28 rules, 67 skills, 22 agents. All managed_by: codi.</p>
+<p>Expected: 28 rules, 65 skills, 22 agents. All managed_by: codi.</p>
 <p><strong>[SYSTEM]</strong> Add custom artifacts:</p>
 <pre><code class="language-bash">npx codi add rule my-custom --json
 npx codi add skill my-custom --json</code></pre>
@@ -2334,91 +1820,159 @@ with sync_playwright() as p:
         <div class="badges"><span class="badge invocable">user-invocable</span> <span class="badge cat">Content Creation</span> <span class="badge compat">claude-code, cursor, codex, windsurf, cline</span></div>
         <span class="toggle-icon"></span>
       </div>
-      <p class="skill-desc">Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with interactive browser preview and PNG export.</p>
+      <p class="skill-desc">Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and PNG/ZIP export.</p>
       <div class="skill-body"><h1 id="codi-content-factory-content-factory">codi-content-factory — Content Factory</h1>
-<h2 id="when-to-activate">When to Activate</h2>
+<h2 id="overview">Overview</h2>
+<p>Content Factory is a standalone browser-based production tool for creating social media carousels,</p>
+<p>slide decks, and documents. It runs as a local web server that the agent starts, then the user</p>
+<p>opens in their browser to interact with a live preview and export interface.</p>
+<p>The tool has two sides:</p>
 <ul>
-<li>User asks to create blog content, social media posts, or carousel slides</li>
-<li>User wants to repurpose a blog post into platform-specific formats</li>
-<li>User needs branded visual assets for LinkedIn, Instagram, TikTok, or OG images</li>
-<li>User asks to create social media cards, carousels, or story slides</li>
+<li><strong>Gallery</strong> — a library of built-in style presets, each with a full deck of rendered slides.</li>
 </ul>
+<p>  Click any preset to load all its slides into Preview.</p>
+<ul>
+<li><strong>Preview</strong> — a scrollable card strip showing all slides at the selected zoom level, with</li>
+</ul>
+<p>  sidebar controls for format, handle, zoom, and logo overlay. Export any slide as PNG or all</p>
+<p>  slides as a ZIP.</p>
+<p>The agent's job is to start the server, tell the user the URL, then generate content HTML files</p>
+<p>that the app picks up automatically via WebSocket.</p>
+<hr>
 <h2 id="skill-assets">Skill Assets</h2>
-<p>This skill ships with a preview server and generator templates:</p>
-<table><thead><tr><th>Asset</th><th>Purpose</th></tr></thead><tbody><tr><td><code>${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]</code></td><td>Preview server: serves HTML with live reload, injects preview shell automatically</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]</code></td><td>Start the preview server (outputs JSON with URL)</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]</code></td><td>Stop the preview server</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]</code></td><td>HTML base for social cards (.social-card elements)</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]</code></td><td>HTML base for documents (.doc-page elements)</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]</code></td><td>HTML base for slide decks (.deck + .slide elements)</td></tr></tbody></table>
-<h2 id="step-1-gather-requirements">Step 1: Gather Requirements</h2>
-<p><strong>[HUMAN]</strong> Provide:</p>
+<table><thead><tr><th>Asset</th><th>Purpose</th></tr></thead><tbody><tr><td><code>${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]</code></td><td>Node.js HTTP + WebSocket server (no dependencies)</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]</code></td><td>Start the server, outputs JSON with URL and paths</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]</code></td><td>Stop the server gracefully</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/app.html]]</code></td><td>App shell — always served at <code>/</code></td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/app.css]]</code></td><td>App styles — served at <code>/static/app.css</code></td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/app.js]]</code></td><td>App logic — served at <code>/static/app.js</code></td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/presets.js]]</code></td><td>Built-in preset data — served at <code>/static/presets.js</code></td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]</code></td><td>HTML template for agent-generated social cards</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]</code></td><td>HTML template for agent-generated slide decks</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]</code></td><td>HTML template for agent-generated documents</td></tr><tr><td><code>${CLAUDE_SKILL_DIR}[[/generators/templates/]]</code></td><td>Stock template HTML files — browsable in the Gallery Templates tab</td></tr></tbody></table>
+<hr>
+<h2 id="server-api">Server API</h2>
+<table><thead><tr><th>Route</th><th>Method</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/</code></td><td>GET</td><td>Serve the content factory web app</td></tr><tr><td><code>/static/*</code></td><td>GET</td><td>Serve app assets (app.css, app.js, presets.js)</td></tr><tr><td><code>/vendor/*</code></td><td>GET</td><td>Serve vendor scripts (html2canvas, jszip)</td></tr><tr><td><code>/api/files</code></td><td>GET</td><td>Return list of HTML files in the content dir</td></tr><tr><td><code>/api/content?file=xxx</code></td><td>GET</td><td>Return raw HTML for a content file</td></tr><tr><td><code>/api/preset</code></td><td>GET</td><td>Read the currently selected preset from state</td></tr><tr><td><code>/api/preset</code></td><td>POST</td><td>Write preset selection <code>{id, name, type, timestamp}</code></td></tr><tr><td><code>/templates/*</code></td><td>GET</td><td>Serve stock template HTML files statically</td></tr><tr><td><code>/api/templates</code></td><td>GET</td><td>List template files with metadata (id, type, format, url)</td></tr><tr><td><code>/api/sessions</code></td><td>GET</td><td>List past sessions from <code>.codi_output/</code> parent dir</td></tr><tr><td><code>/api/session-content?session=&file=</code></td><td>GET</td><td>Serve an HTML file from a specific session's content dir</td></tr><tr><td><code>/api/export-png</code></td><td>POST</td><td>Render card HTML to PNG via Playwright at 2× resolution</td></tr></tbody></table>
+<p>The server also runs a WebSocket endpoint at the same port. The app connects automatically</p>
+<p>and receives <code>{type:"reload"}</code> messages whenever a content file changes, triggering a live update.</p>
+<hr>
+<h2 id="preset-library">Preset Library</h2>
+<p>Built-in presets are defined in <code>generators/presets.js</code> and rendered entirely in the browser —</p>
+<p>no server-side rendering. Each preset has:</p>
 <ul>
-<li>Topic or raw idea (a paragraph, bullet points, or a draft blog post)</li>
-<li>Target platforms (LinkedIn carousel, Instagram story, blog, etc.)</li>
-<li>Tone (professional, casual, educational, inspirational)</li>
+<li><code>id</code>, <code>name</code>, <code>type</code> (social | slides | document)</li>
+<li><code>format</code> — native pixel dimensions <code>{w, h}</code></li>
+<li><code>css</code> — self-contained CSS string</li>
+<li><code>slides[]</code> — array of <code>{dataType, dataIndex, html}</code> objects</li>
 </ul>
-<p><strong>[CODING AGENT]</strong> Check for brand skills:</p>
-<ul>
-<li>Search for any skill with <strong>category: brand</strong> in the project</li>
-<li>If found, use its design tokens (<code>--brand-*</code> CSS variables, fonts, logos)</li>
-<li>If not found, use neutral dark theme defaults</li>
+<p>Current presets:</p>
+<table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Format</th><th>Slides</th></tr></thead><tbody><tr><td><code>dark-editorial</code></td><td>Dark Editorial</td><td>social</td><td>1080×1080</td><td>4</td></tr><tr><td><code>minimal-mono</code></td><td>Minimal Mono</td><td>social</td><td>1080×1080</td><td>3</td></tr><tr><td><code>poster-bold</code></td><td>Poster Bold</td><td>social</td><td>1080×1080</td><td>3</td></tr><tr><td><code>clean-slides</code></td><td>Clean Slides</td><td>slides</td><td>1280×720</td><td>3</td></tr><tr><td><code>doc-article</code></td><td>Doc Article</td><td>document</td><td>794×1123</td><td>3</td></tr></tbody></table>
+<p>When the user clicks a preset in the Gallery:</p>
+<ol>
+<li>All slides load into the Preview strip</li>
+<li>The format button updates to match the preset's native format</li>
+<li>The selection is saved to <code>state_dir/preset.json</code> so the agent can read it</li>
 </ul>
-<h2 id="step-2-start-preview-server">Step 2: Start Preview Server</h2>
-<p><strong>[CODING AGENT]</strong> Start the server and seed the session:</p>
+<hr>
+<h2 id="app-ui-reference">App UI Reference</h2>
+<h3 id="sidebar-left-panel-scrollable">Sidebar (left panel, scrollable)</h3>
+<table><thead><tr><th>Control</th><th>Description</th></tr></thead><tbody><tr><td><strong>Format</strong></td><td>6 buttons: 1:1 (1080×1080), 4:5 (1080×1350), 9:16 (1080×1920), OG (1200×630), 16:9 (1280×720), A4 (794×1123). Active format applies to agent-generated content only — presets always use their native format.</td></tr><tr><td><strong>Handle</strong></td><td><code>@username</code> placeholder replaced in agent-generated content. Preset thumbnails show <code>@preview</code>; preview cards show <code>@[handle]</code>.</td></tr><tr><td><strong>Zoom</strong></td><td>Slider from 15% to 120%. Scales all card frames in the Preview strip. Default: 40%.</td></tr><tr><td><strong>Logo</strong></td><td>ON/OFF toggle + Size / X% / Y% sliders. Adds a <code>codi</code> gradient wordmark overlay positioned absolutely over every card frame. Does not modify iframe content.</td></tr><tr><td><strong>Content files</strong></td><td>List of HTML files written by the agent to the content dir. Click to load.</td></tr><tr><td><strong>Export</strong></td><td>PNG for the active slide; ZIP for all slides at 2× resolution using html2canvas.</td></tr><tr><td><strong>Activity log</strong></td><td>Timestamped log of server events and user actions. WebSocket status dot (green = connected).</td></tr></tbody></table>
+<h3 id="main-area-tabs">Main area (tabs)</h3>
+<p><strong>Preview tab</strong> — horizontal card strip. Keyboard arrow keys navigate between slides. Active card highlighted with accent border. Click any card to select it.</p>
+<p><strong>Gallery tab</strong> — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: All / Social / Slides / Document / My Work / Templates. Click any card to load it into Preview. "My Work" shows past sessions; "Templates" shows the stock template HTML files from <code>generators/templates/</code>.</p>
+<hr>
+<h2 id="agent-workflow">Agent Workflow</h2>
+<h3 id="step-1-start-the-server">Step 1 — Start the server</h3>
 <pre><code class="language-bash">bash ${CLAUDE_SKILL_DIR}[[/scripts/scaffold-session.sh]] &lt;session-name&gt; --project-dir .</code></pre>
-<p>This starts the preview server and outputs a JSON object with the URL:</p>
-<pre><code class="language-json">{&quot;type&quot;:&quot;server-started&quot;,&quot;url&quot;:&quot;http://localhost:PORT&quot;,&quot;screen_dir&quot;:&quot;/path/to/content/&quot;}</code></pre>
-<p>The server injects <code>preview-shell.js</code> (sidebar, format switcher, PNG/ZIP export) automatically into every HTML file it serves. No inline scripts needed.</p>
-<h2 id="step-3-write-the-blog-post">Step 3: Write the Blog Post</h2>
-<p><strong>[CODING AGENT]</strong> Transform the raw idea into a structured blog post:</p>
-<ol>
-<li>Create a compelling headline</li>
-<li>Write an introduction hook</li>
-<li>Develop 3-5 key sections with subheadings</li>
-<li>Add a conclusion with call-to-action</li>
-<li>Save as <code>blog/blog-post.md</code></li>
-</ul>
-<h2 id="step-4-generate-visual-assets">Step 4: Generate Visual Assets</h2>
-<p><strong>[CODING AGENT]</strong> For each target platform, generate HTML files using the skill templates:</p>
-<h3 id="social-cards-carousels">Social Cards / Carousels</h3>
+<p>Save all values from the JSON output:</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;server-started&quot;,
+  &quot;url&quot;: &quot;http://localhost:PORT&quot;,
+  &quot;screen_dir&quot;: &quot;/path/to/.codi_output/.../content&quot;,
+  &quot;state_dir&quot;: &quot;/path/to/.codi_output/.../state&quot;
+}</code></pre>
+<p>Tell the user:</p>
+<blockquote><p>"Content factory is ready at {{url}} — open it in your browser.</p>
+<p>Go to the Gallery tab, pick a preset, then describe the content you want."</p>
+</blockquote>
+<h3 id="step-2-read-the-selected-preset">Step 2 — Read the selected preset</h3>
+<p>After the user picks a preset and confirms:</p>
+<pre><code class="language-bash">cat &lt;state_dir&gt;/preset.json
+# {&quot;id&quot;:&quot;dark-editorial&quot;,&quot;name&quot;:&quot;Dark Editorial&quot;,&quot;type&quot;:&quot;social&quot;,&quot;timestamp&quot;:...}</code></pre>
+<p>If the user skipped the gallery, use <code>dark-editorial</code> as default.</p>
+<h3 id="step-3-generate-content">Step 3 — Generate content</h3>
+<p>Write <code><screen_dir>/social.html</code> (or <code>slides.html</code> / <code>document.html</code>). The app detects the</p>
+<p>new file via WebSocket and adds it to the Content Files list. Click to load.</p>
+<h4 id="required-html-structure">Required HTML structure</h4>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Geist+Mono:wght@300;400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+  &lt;style&gt;
+    /* Copy full preset CSS here */
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;article class=&quot;social-card&quot; data-type=&quot;cover&quot; data-index=&quot;01&quot;&gt;
+    &lt;!-- slide HTML matching the selected preset's structure --&gt;
+  &lt;/article&gt;
+  &lt;article class=&quot;social-card&quot; data-type=&quot;content&quot; data-index=&quot;02&quot;&gt;
+    &lt;!-- slide HTML --&gt;
+  &lt;/article&gt;
+  &lt;article class=&quot;social-card&quot; data-type=&quot;cta&quot; data-index=&quot;03&quot;&gt;
+    &lt;!-- slide HTML --&gt;
+  &lt;/article&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<h4 id="card-rules">Card rules</h4>
 <ul>
-<li>Start from <code>generators/social-base.html</code> — use <code>.social-card</code> elements</li>
-<li>Each <code>.social-card</code> gets a <code>data-type</code> attribute (cover, content, stat, quote, cta)</li>
-<li>Apply brand CSS variables (<code>--brand-bg</code>, <code>--brand-text</code>, <code>--brand-accent</code>)</li>
-<li>Write the file to <code>screen_dir/social.html</code></li>
+<li>Element selector: <code>class="social-card"</code> — the app scans for these</li>
+<li>Required attributes: <code>data-type</code> (cover | content | stat | quote | cta | title | closing) and <code>data-index</code> (zero-padded: 01, 02…)</li>
+<li>Dimensions come from the active format button, not the HTML itself</li>
+<li>Replace <code>@handle</code> with the user's actual handle</li>
+<li>All CSS goes in <code><style></code> — the app extracts styles per card and renders each in its own iframe</li>
+<li>Rewrite the whole file to update — the WebSocket watcher broadcasts a reload on every change</li>
 </ul>
-<h3 id="documents-blog">Documents / Blog</h3>
+<h4 id="mandatory-typography-safety-rules-prevents-glyph-clipping">MANDATORY — Typography safety rules (prevents glyph clipping)</h4>
+<p><strong>Root cause:</strong> <code>line-height: 1.0</code> at large font sizes combined with italic or gradient <code><em></code></p>
+<p>inside a parent with <code>overflow: hidden</code> causes visible glyph truncation — ascenders, descenders,</p>
+<p>and italic overhangs are clipped at the line box boundary.</p>
+<p><strong>Rule 1 — Always use <code>line-height: 1.1</code> (minimum) on ALL headlines, at every font size.</strong></p>
+<p>Use <code>1.1</code> universally — do not try to use tighter values at larger sizes. The safe floor is <code>1.1</code>.</p>
+<p>BAD:</p>
+<pre><code class="language-html">&lt;h1 style=&quot;font-size:156px;line-height:1.0;&quot;&gt;One&lt;br&gt;&lt;em class=&quot;acc&quot;&gt;config.&lt;/em&gt;&lt;/h1&gt;</code></pre>
+<p>GOOD:</p>
+<pre><code class="language-html">&lt;h1 style=&quot;font-size:156px;line-height:1.1;&quot;&gt;One&lt;br&gt;&lt;em class=&quot;acc&quot;&gt;config.&lt;/em&gt;&lt;/h1&gt;</code></pre>
+<p><strong>Rule 2 — Never use <code>display:inline-block</code> or <code>padding-bottom</code> on gradient italic <code><em></code>.</strong></p>
+<p>Adding <code>display:inline-block</code> to an <code>em</code> inside a headline causes a secondary bug: at large font</p>
+<p>sizes the inline-block's total height (font metrics + padding-bottom) exceeds the parent's line box</p>
+<p>height, forcing the line box to expand and creating a large visible gap between headline lines.</p>
+<p>WRONG fix (introduces gap bug):</p>
+<pre><code class="language-css">em.acc {
+  display: inline-block;   /* DO NOT DO THIS */
+  padding-bottom: 0.08em;  /* DO NOT DO THIS */
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}</code></pre>
+<p>CORRECT:</p>
+<pre><code class="language-css">em.acc {
+  font-style: italic;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* line-height: 1.1 on the PARENT heading is what prevents clipping */
+}</code></pre>
+<p><strong>Rule 3 — Check every ancestor for <code>overflow: hidden</code>.</strong></p>
+<p>Cards use <code>overflow: hidden</code> to clip to their frame. A tight line-height on a headline</p>
+<p>inside that container = guaranteed clipping at the bottom of the last line.</p>
+<p><strong>Pre-write checklist:</strong></p>
 <ul>
-<li>Start from <code>generators/document-base.html</code> — use <code>.doc-page</code> elements</li>
-<li>Write the file to <code>screen_dir/document.html</code></li>
+<li>[ ] ALL headlines use <code>line-height: 1.1</code> (no exceptions, no tighter values)</li>
+<li>[ ] <code>em.acc</code> (gradient italic) has NO <code>display:inline-block</code> and NO <code>padding-bottom</code></li>
+<li>[ ] No parent element clips the bottom of the last headline line</li>
 </ul>
-<h2 id="step-5-visual-review">Step 5: Visual Review</h2>
-<p><strong>[CODING AGENT]</strong> Navigate to the server URL from Step 2:</p>
-<pre><code class="language-">mcp__playwright__browser_navigate({ url: &quot;http://localhost:PORT&quot; })</code></pre>
-<p>The preview shell sidebar provides:</p>
-<ul>
-<li><strong>File selector</strong> — switch between HTML files in the session</li>
-<li><strong>Format presets</strong> — 1:1 LinkedIn, 4:5 Instagram, 9:16 Story, 1200×630 OG</li>
-<li><strong>Logo controls</strong> — show/hide, resize, reposition</li>
-<li><strong>Export</strong> — "Export All PNGs" downloads a ZIP; per-card PNG buttons on hover</li>
-</ul>
-<h3 id="the-review-loop">The Review Loop</h3>
-<ol>
-<li>Show the preview URL to the user and ask for feedback</li>
-<li>Apply changes to the HTML file in <code>screen_dir/</code></li>
-<li>The server live-reloads the browser automatically</li>
-<li>Repeat until the user approves</li>
-</ul>
-<p>Read <code>${CLAUDE_SKILL_DIR}[[/references/preview-shell-guide.md]]</code> for full sidebar feature reference.</p>
-<h2 id="step-6-export-final-assets">Step 6: Export Final Assets</h2>
-<p><strong>[CODING AGENT]</strong> After the user approves, click "Export All PNGs" in the sidebar — downloads a ZIP with all cards at 2x resolution. Or automate via Playwright:</p>
-<pre><code class="language-">mcp__playwright__browser_snapshot()  // find the Export All PNGs button ref
-mcp__playwright__browser_click({ ref: &quot;...&quot; })</code></pre>
-<p>Stop the server when done:</p>
+<h3 id="step-4-iterate">Step 4 — Iterate</h3>
+<p>The user reviews the Preview tab and gives feedback. Rewrite the HTML file with changes.</p>
+<p>The app live-reloads in under 200ms.</p>
+<h3 id="step-5-export-and-stop">Step 5 — Export and stop</h3>
+<p>Export happens in the browser via the sidebar buttons. When done:</p>
 <pre><code class="language-bash">bash ${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] &lt;session_dir&gt;</code></pre>
-<h2 id="step-7-deliver-final-package">Step 7: Deliver Final Package</h2>
-<p><strong>[CODING AGENT]</strong> Summarize what was created:</p>
-<ul>
-<li>List all output files with their paths</li>
-<li>Note the aspect ratios and dimensions of exported PNGs</li>
-<li>Remind the user that HTML files can be reopened for further editing</li>
-</ul>
+<p>Summarize: session path, preset used, number of slides, format, and where exports were saved.</p>
 </div>
     </article>
 
@@ -6666,7 +6220,7 @@ pdftoppm -jpeg -r 150 document.pdf page</code></pre>
 <p>When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), use the brand skill's generators instead of building the document manually.</p>
 <ol>
 <li><strong>If the brand skill is already active</strong> in this session, its generator commands are in its content with paths already resolved — use them directly.</li>
-<li><strong>If the brand skill is not active</strong>, tell the user to enable it (e.g., <code></code>) and re-run.</li>
+<li><strong>If the brand skill is not active</strong>, tell the user to enable it (e.g., <code>codi-brand</code>) and re-run.</li>
 <li>Write <code>content.json</code> using the schema from the brand skill, then run its TypeScript generator (DEFAULT) or Python fallback.</li>
 </ul>
 <p><strong>content.json schema:</strong></p>
@@ -6691,9 +6245,7 @@ pdftoppm -jpeg -r 150 document.pdf page</code></pre>
 <p><strong>Step 1 — Brand</strong> (skip if brand already named):</p>
 <pre><code class="language-">Which brand styling would you like to apply?
   1. CODI (default — uses bundled tokens)
-  2. RL3  — requires  skill active
-  3. BBVA  — requires  skill active
-  4. Custom — provide a path to brand_tokens.json</code></pre>
+  2. Custom — provide a path to brand_tokens.json</code></pre>
 <p><strong>Step 2 — Theme</strong> (skip if theme already named):</p>
 <pre><code class="language-">Which color theme?
   1. Dark (default)
@@ -7160,9 +6712,7 @@ python ${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpack
 <p><strong>Step 1 — Brand</strong> (skip if brand already named):</p>
 <pre><code class="language-">Which brand styling would you like to apply?
   1. CODI (default — uses bundled tokens)
-  2. RL3  — requires  skill active
-  3. BBVA  — requires  skill active
-  4. Custom — provide a path to brand_tokens.json</code></pre>
+  2. Custom — provide a path to brand_tokens.json</code></pre>
 <p><strong>Step 2 — Theme</strong> (skip if theme already named):</p>
 <pre><code class="language-">Which color theme?
   1. Dark (default)
@@ -7193,7 +6743,7 @@ fi</code></pre>
 <p>When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), use the brand skill's generators instead of building slides from scratch.</p>
 <ol>
 <li><strong>If the brand skill is already active</strong> in this session, its generator commands are in its content with paths already resolved — use them directly.</li>
-<li><strong>If the brand skill is not active</strong>, tell the user to enable it (e.g., <code></code>) and re-run.</li>
+<li><strong>If the brand skill is not active</strong>, tell the user to enable it (e.g., <code>codi-brand</code>) and re-run.</li>
 <li>Write <code>content.json</code> using the schema below, then run the TypeScript generator (DEFAULT) or Python fallback.</li>
 </ul>
 <p><strong>Your role as the agent: create content.json only.</strong> The generator script owns all layout decisions — logo position, slide structure, font sizes, spacing. You control what is said on each slide, not how it looks.</p>
@@ -7402,9 +6952,7 @@ sheet['D20'] = '=AVERAGE(D2:D19)'</code></pre>
 <p><strong>Step 1 — Brand</strong> (skip if brand already named):</p>
 <pre><code class="language-">Which brand styling would you like to apply?
   1. CODI (default — uses bundled tokens)
-  2. RL3  — requires  skill active
-  3. BBVA  — requires  skill active
-  4. Custom — provide a path to brand_tokens.json</code></pre>
+  2. Custom — provide a path to brand_tokens.json</code></pre>
 <p><strong>Step 2 — Theme</strong> (skip if theme already named):</p>
 <pre><code class="language-">Which color theme?
   1. Dark (default)
@@ -8580,7 +8128,7 @@ done</code></pre>
 </ul>
 <h2 id="artifact-lifecycle">Artifact Lifecycle</h2>
 <p>Codi manages 3 artifact types with identical lifecycle:</p>
-<table><thead><tr><th>Type</th><th>Location</th><th>Create</th><th>Templates</th></tr></thead><tbody><tr><td>Rules</td><td>.codi/rules/</td><td>codi add rule</td><td>28 templates</td></tr><tr><td>Skills</td><td>.codi/skills/</td><td>codi add skill</td><td>67 templates</td></tr><tr><td>Agents</td><td>.codi/agents/</td><td>codi add agent</td><td>22 templates</td></tr></tbody></table>
+<table><thead><tr><th>Type</th><th>Location</th><th>Create</th><th>Templates</th></tr></thead><tbody><tr><td>Rules</td><td>.codi/rules/</td><td>codi add rule</td><td>28 templates</td></tr><tr><td>Skills</td><td>.codi/skills/</td><td>codi add skill</td><td>65 templates</td></tr><tr><td>Agents</td><td>.codi/agents/</td><td>codi add agent</td><td>22 templates</td></tr></tbody></table>
 <h3 id="creating-artifacts">Creating Artifacts</h3>
 <pre><code class="language-bash">codi add rule &lt;name&gt; --template &lt;template&gt;    # From template (managed_by: codi)
 codi add rule &lt;name&gt;                          # Blank skeleton (managed_by: user)

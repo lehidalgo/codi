@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"navy-waves","name":"Navy Waves","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="navy-waves">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Navy Waves — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #0f1729;
+      --blue:    #2563eb;
+      --light:   #f8fafc;
+      --white:   #ffffff;
+      --muted:   #94a3b8;
+      --dark:    #1e293b;
+      --fh:      'Outfit', Arial, sans-serif;
+      --fm:      'Geist Mono', monospace;
+      --w:       1080px;
+      --h:       1080px;
+      --pad:     68px;
+      --bar-h:   88px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #080d17;
+      font-family: var(--fh);
+      color: var(--white);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 24px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.18);
+    }
+
+    /* Base card */
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.7);
+    }
+
+    /* Dark variant (navy) */
+    .social-card.dark {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    /* Light variant (white) */
+    .social-card.light {
+      background: var(--white);
+      color: var(--navy);
+    }
+
+    /* ── Bottom bar ── */
+    .card-bar {
+      height: var(--bar-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--pad);
+      position: relative;
+      z-index: 2;
+    }
+
+    .dark .card-bar {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .light .card-bar {
+      border-top: 1px solid rgba(15,23,41,0.1);
+      background: rgba(248,250,252,0.9);
+    }
+
+    .bar-handle {
+      font-family: var(--fm);
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .dark .bar-handle { color: rgba(255,255,255,0.55); }
+    .light .bar-handle { color: rgba(15,23,41,0.45); }
+
+    .bar-counter {
+      font-family: var(--fm);
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+    }
+
+    .dark .bar-counter { color: rgba(255,255,255,0.35); }
+    .light .bar-counter { color: rgba(15,23,41,0.3); }
+
+    /* ── SVG diagonal decoration ── */
+    .wave-deco {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 380px;
+      height: 380px;
+      pointer-events: none;
+      opacity: 0.18;
+      z-index: 0;
+    }
+
+    /* ── Mono label ── */
+    .mono-label {
+      font-family: var(--fm);
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--blue);
+    }
+
+    /* ── Accent rule ── */
+    .accent-rule {
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--blue), #60a5fa);
+      border-radius: 2px;
+      margin-top: 32px;
+    }
+
+    /* ── Bullet rows ── */
+    .bullet-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 22px 0;
+      border-bottom: 1px solid rgba(15,23,41,0.08);
+    }
+    .bullet-row:last-child { border-bottom: none; }
+
+    .bullet-sq {
+      width: 8px;
+      height: 8px;
+      background: var(--blue);
+      border-radius: 1px;
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    .bullet-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .bullet-body {
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Image placeholder ── */
+    .img-placeholder {
+      width: 400px;
+      height: 100%;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #f8fafc;
+      flex-shrink: 0;
+    }
+
+    .img-placeholder-label {
+      font-family: var(--fm);
+      font-size: 14px;
+      color: #94a3b8;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Code pill ── */
+    .code-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 22px;
+      font-family: var(--fm);
+      font-size: 22px;
+      color: var(--blue);
+      margin-top: 28px;
+    }
+
+    /* ── Stats ── */
+    .stats-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+
+    .stat-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 32px;
+      position: relative;
+    }
+
+    .stat-item + .stat-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10%;
+      height: 80%;
+      width: 1px;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .stat-num {
+      font-family: var(--fh);
+      font-size: 72px;
+      font-weight: 900;
+      color: var(--blue);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .stat-label {
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* ── Quote decoration ── */
+    .quote-mark {
+      font-family: var(--fh);
+      font-size: 160px;
+      font-weight: 900;
+      color: var(--blue);
+      line-height: 1;
+      text-align: center;
+      margin-bottom: -20px;
+      opacity: 0.9;
+    }
+
+    .quote-text {
+      font-size: 40px;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--white);
+      line-height: 1.3;
+      text-align: center;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .quote-source {
+      font-family: var(--fm);
+      font-size: 18px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 28px;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── CTA command block ── */
+    .cmd-block {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(37,99,235,0.3);
+      border-radius: 10px;
+      padding: 22px 32px;
+      font-family: var(--fm);
+      font-size: 24px;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .cmd-prompt {
+      color: rgba(255,255,255,0.25);
+    }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Navy Waves — 6 cards</div>
+
+<!-- ═══════════════════════════════════════════════
+     Card 1 — Cover (dark navy)
+════════════════════════════════════════════════ -->
+<article class="social-card dark" data-index="01" data-type="cover">
+
+  <!-- SVG diagonal decoration -->
+  <svg class="wave-deco" viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="380,0 380,380 0,380" fill="#2563eb"/>
+  </svg>
+
+  <!-- Main content area -->
+  <div style="flex:1;padding:64px var(--pad) 32px;display:flex;flex-direction:column;justify-content:space-between;position:relative;z-index:1;">
+
+    <!-- Top brand label -->
+    <div class="mono-label">codi · rules</div>
+
+    <!-- Headline block -->
+    <div>
+      <h1 style="font-size:92px;font-weight:900;line-height:1.1;letter-spacing:-0.04em;color:var(--white);">
+        THE RULES<br>THAT MAKE<br>AI WORK.
+      </h1>
+      <div class="accent-rule"></div>
+    </div>
+
+    <!-- Spacer -->
+    <div></div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="card-bar" style="z-index:2;">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-counter">01 / 06</span>
+  </div>
+
+</article>
+
+<!-- ═══════════════════════════════════════════════
+     Card 2 — Content (white)
+════════════════════════════════════════════════ -->
+<article class="social-card light" data-index="02" data-type="content">
+
+  <div style="flex:1;padding:64px var(--pad) 32px;display:flex;flex-direction:column;position:relative;z-index:1;">
+
+    <!-- Mono label -->
+    <div class="mono-label" style="margin-bottom:28px;">02 · RULES</div>
+
+    <!-- Headline -->
+    <h2 style="font-size:72px;font-weight:900;line-height:1.1;letter-spacing:-0.04em;color:var(--navy);margin-bottom:40px;">
+      Write once.<br>Sync everywhere.
+    </h2>
+
+    <!-- Bullet rows -->
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+      <div class="bullet-row">
+        <div class="bullet-sq"></div>
+        <div>
+          <div class="bullet-title">One source of truth</div>
+          <div class="bullet-body">Define rules in .codi/ — propagated to every AI tool automatically.</div>
+        </div>
+      </div>
+      <div class="bullet-row">
+        <div class="bullet-sq"></div>
+        <div>
+          <div class="bullet-title">No manual syncing</div>
+          <div class="bullet-body">Claude, Cursor, Copilot and Gemini stay aligned without extra work.</div>
+        </div>
+      </div>
+      <div class="bullet-row">
+        <div class="bullet-sq"></div>
+        <div>
+          <div class="bullet-title">Version controlled</div>
+          <div class="bullet-body">Rules live in your repo — reviewed, tested, and deployed with your code.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-counter">02 / 06</span>
+  </div>
+
+</article>
+
+<!-- ═══════════════════════════════════════════════
+     Card 3 — Quote (dark navy)
+════════════════════════════════════════════════ -->
+<article class="social-card dark" data-index="03" data-type="content">
+
+  <svg class="wave-deco" viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="380,0 380,380 0,380" fill="#2563eb"/>
+  </svg>
+
+  <div style="flex:1;padding:64px var(--pad) 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;">
+
+    <div class="quote-mark">"</div>
+
+    <p class="quote-text">
+      The teams shipping fastest are the ones whose AI tools follow the same rules as their engineers.
+    </p>
+
+    <p class="quote-source">— Engineering lead, Series B startup</p>
+
+  </div>
+
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-counter">03 / 06</span>
+  </div>
+
+</article>
+
+<!-- ═══════════════════════════════════════════════
+     Card 4 — Content with image placeholder (white)
+════════════════════════════════════════════════ -->
+<article class="social-card light" data-index="04" data-type="content">
+
+  <div style="flex:1;padding:64px var(--pad) 32px;display:flex;flex-direction:column;position:relative;z-index:1;">
+
+    <!-- Mono label -->
+    <div class="mono-label" style="margin-bottom:28px;">04 · AGENTS</div>
+
+    <!-- Two-column layout -->
+    <div style="flex:1;display:flex;gap:40px;align-items:stretch;">
+
+      <!-- Left column -->
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <h2 style="font-size:64px;font-weight:900;line-height:1.1;letter-spacing:-0.04em;color:var(--navy);margin-bottom:20px;">
+            Agents that know your standards.
+          </h2>
+          <p style="font-size:20px;color:var(--muted);line-height:1.6;">
+            Specialized agents ship pre-configured with domain expertise. Drop them into your project in seconds.
+          </p>
+        </div>
+        <div class="code-pill">
+          <span style="color:#94a3b8;">$</span>
+          codi init
+        </div>
+      </div>
+
+      <!-- Right column — image placeholder -->
+      <div class="img-placeholder">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="10" width="40" height="28" rx="4" stroke="#cbd5e1" stroke-width="2"/>
+          <circle cx="24" cy="24" r="7" stroke="#cbd5e1" stroke-width="2"/>
+          <circle cx="24" cy="24" r="3" fill="#cbd5e1"/>
+          <circle cx="38" cy="15" r="2" fill="#cbd5e1"/>
+        </svg>
+        <span class="img-placeholder-label">IMAGE</span>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-counter">04 / 06</span>
+  </div>
+
+</article>
+
+<!-- ═══════════════════════════════════════════════
+     Card 5 — Stats (dark navy)
+════════════════════════════════════════════════ -->
+<article class="social-card dark" data-index="05" data-type="stat">
+
+  <svg class="wave-deco" viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="380,0 380,380 0,380" fill="#2563eb"/>
+  </svg>
+
+  <div style="flex:1;padding:64px var(--pad) 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;">
+
+    <!-- Stats row -->
+    <div class="stats-row" style="width:100%;">
+      <div class="stat-item">
+        <div class="stat-num">5x</div>
+        <div class="stat-label">faster config<br>setup</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">10+</div>
+        <div class="stat-label">AI tools<br>supported</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">0</div>
+        <div class="stat-label">manual files<br>to maintain</div>
+      </div>
+    </div>
+
+    <!-- Supporting sentence -->
+    <p style="font-size:24px;color:var(--white);text-align:center;max-width:720px;line-height:1.5;margin-top:16px;">
+      Teams using codi spend less time on config and more time shipping.
+    </p>
+
+  </div>
+
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-counter">05 / 06</span>
+  </div>
+
+</article>
+
+<!-- ═══════════════════════════════════════════════
+     Card 6 — CTA (dark navy)
+════════════════════════════════════════════════ -->
+<article class="social-card dark" data-index="06" data-type="cta">
+
+  <svg class="wave-deco" viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="380,0 380,380 0,380" fill="#2563eb"/>
+  </svg>
+
+  <div style="flex:1;padding:64px var(--pad) 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;">
+
+    <!-- Big CTA headline -->
+    <h2 style="font-size:110px;font-weight:900;line-height:1.05;letter-spacing:-0.04em;color:var(--white);text-align:center;text-transform:uppercase;">
+      START<br>TODAY.
+    </h2>
+
+    <!-- Command block -->
+    <div class="cmd-block">
+      <span class="cmd-prompt">$</span>
+      npm install -g codi-cli
+    </div>
+
+    <!-- Domain -->
+    <p style="font-family:var(--fm);font-size:22px;color:var(--blue);margin-top:24px;letter-spacing:0.04em;">
+      codi.tools
+    </p>
+
+  </div>
+
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-counter">06 / 06</span>
+  </div>
+
+</article>
+
+</div>
+</body>
+</html>

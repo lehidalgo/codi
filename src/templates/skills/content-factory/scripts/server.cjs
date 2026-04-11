@@ -164,6 +164,72 @@ function handleRequest(req, res) {
     return;
   }
 
+  // /api/active-file GET — return which file/preset the user currently has loaded in Preview
+  if (req.method === 'GET' && pathname === '/api/active-file') {
+    const activeFile = path.join(STATE_DIR, 'active.json');
+    const data = fs.existsSync(activeFile)
+      ? fs.readFileSync(activeFile, 'utf-8')
+      : JSON.stringify({ file: null, preset: null });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(data);
+    return;
+  }
+
+  // /api/active-file POST — record which file/preset the user just loaded
+  if (req.method === 'POST' && pathname === '/api/active-file') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        fs.writeFileSync(
+          path.join(STATE_DIR, 'active.json'),
+          JSON.stringify({ ...data, timestamp: Date.now() }, null, 2)
+        );
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // /api/state GET — aggregate: active file + preset selection (agent reads this to orient itself)
+  if (req.method === 'GET' && pathname === '/api/state') {
+    const presetFile = path.join(STATE_DIR, 'preset.json');
+    const activeFile = path.join(STATE_DIR, 'active.json');
+    const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
+    const active = fs.existsSync(activeFile) ? JSON.parse(fs.readFileSync(activeFile, 'utf-8')) : { file: null, preset: null };
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ activeFile: active.file ?? null, activePreset: active.preset ?? null, preset }));
+    return;
+  }
+
+  // /api/templates — list HTML files in generators/templates/
+  if (req.method === 'GET' && pathname === '/api/templates') {
+    const templatesDir = path.join(GENERATORS_DIR, 'templates');
+    const files = fs.existsSync(templatesDir)
+      ? fs.readdirSync(templatesDir).filter(f => f.endsWith('.html')).sort()
+      : [];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(files));
+    return;
+  }
+
+  // /api/template?file=xxx — serve a template HTML file from generators/templates/
+  if (req.method === 'GET' && pathname === '/api/template') {
+    const fileParam = parsed.searchParams.get('file');
+    if (!fileParam) { res.writeHead(400); res.end('Missing ?file='); return; }
+    const templatesDir = path.join(GENERATORS_DIR, 'templates');
+    const filePath = path.join(templatesDir, path.basename(fileParam));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+    res.end(fs.readFileSync(filePath, 'utf-8'));
+    return;
+  }
+
   // /api/content — return raw HTML without script injection (app extracts .social-card elements)
   if (req.method === 'GET' && pathname === '/api/content') {
     const fileParam = parsed.searchParams.get('file');
@@ -414,6 +480,22 @@ function startServer() {
   const server = http.createServer(handleRequest);
   server.on('upgrade', handleUpgrade);
 
+  // Watch generators/templates/ — when the agent adds or edits a template HTML file,
+  // broadcast reload-templates so the browser refreshes the gallery without a full page reload.
+  const TEMPLATES_DIR = path.join(GENERATORS_DIR, 'templates');
+  if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
+  const presetsWatcher = fs.watch(TEMPLATES_DIR, (eventType, filename) => {
+    if (!filename || !filename.endsWith('.html')) return;
+    if (debounceTimers.has('tpl:' + filename)) clearTimeout(debounceTimers.get('tpl:' + filename));
+    debounceTimers.set('tpl:' + filename, setTimeout(() => {
+      debounceTimers.delete('tpl:' + filename);
+      touchActivity();
+      console.log(JSON.stringify({ type: 'template-updated', file: filename }));
+      broadcast({ type: 'reload-templates' });
+    }, 150));
+  });
+  presetsWatcher.on('error', (err) => console.error('templates watcher error:', err.message));
+
   const watcher = fs.watch(CONTENT_DIR, (eventType, filename) => {
     if (!filename || !filename.endsWith('.html')) return;
 
@@ -449,6 +531,7 @@ function startServer() {
       JSON.stringify({ reason, timestamp: Date.now() }) + '\n'
     );
     watcher.close();
+    presetsWatcher.close();
     clearInterval(lifecycleCheck);
     server.close(() => process.exit(0));
   }

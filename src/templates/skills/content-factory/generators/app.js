@@ -12,7 +12,8 @@ const state = {
   activeFile: null,
   cards: [],
   activeCard: 0,
-  preset: null,
+  preset: null, // template id of currently active template
+  templates: [], // loaded from /api/templates — replaces PRESETS global
 };
 
 let ws = null,
@@ -60,6 +61,21 @@ function connectWS() {
       if (msg.type === "reload") {
         log("Content updated", "accent");
         loadFiles(true);
+      } else if (msg.type === "reload-templates") {
+        log("Templates updated — refreshing gallery…", "accent");
+        galleryInit = false;
+        clearEl($("gallery-grid"));
+        loadTemplates().then(() => {
+          if ($("view-gallery").classList.contains("active")) initGallery();
+          // If the active template changed, reload its cards
+          if (state.preset) {
+            const t = state.templates.find((x) => x.id === state.preset);
+            if (t) {
+              loadTemplateAsCards(t);
+              renderCards();
+            }
+          }
+        });
       }
     } catch {
       /* ignore */
@@ -136,6 +152,11 @@ async function selectFile(name) {
       b.classList.toggle("active", b.querySelector("span:last-child").textContent === name),
     );
   log("Loading " + name);
+  fetch("/api/active-file", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ file: name, preset: null }),
+  }).catch(() => {});
   await loadContent(name);
 }
 
@@ -171,7 +192,7 @@ function parseCards(html) {
   const linkTags = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
     .map((l) => l.outerHTML)
     .join("\n");
-  return Array.from(doc.querySelectorAll(".social-card")).map((el, i) => ({
+  return Array.from(doc.querySelectorAll(".social-card, .doc-page, .slide")).map((el, i) => ({
     index: i,
     dataType: el.getAttribute("data-type") || "card",
     dataIdx: el.getAttribute("data-index") || String(i + 1).padStart(2, "0"),
@@ -182,9 +203,54 @@ function parseCards(html) {
   }));
 }
 
+// ====== Template loading ======
+function parseTemplate(html, filename) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const metaEl = doc.querySelector('meta[name="codi:template"]');
+  let meta = {};
+  try {
+    if (metaEl) meta = JSON.parse(metaEl.content);
+  } catch {}
+  const id = meta.id || filename.replace(/\.html$/, "");
+  const cards = parseCards(html);
+  return {
+    filename,
+    id,
+    name: meta.name || id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    type: meta.type || "social",
+    format: meta.format || { w: 1080, h: 1080 },
+    desc: meta.desc || "",
+    cards,
+  };
+}
+
+async function loadTemplates() {
+  try {
+    const files = await fetch("/api/templates").then((r) => r.json());
+    const results = await Promise.all(
+      files.map(async (f) => {
+        try {
+          const html = await fetch("/api/template?file=" + encodeURIComponent(f)).then((r) =>
+            r.text(),
+          );
+          return parseTemplate(html, f);
+        } catch {
+          return null;
+        }
+      }),
+    );
+    state.templates = results.filter(Boolean);
+  } catch {
+    state.templates = [];
+  }
+}
+
 // ====== Card helpers ======
 function cardFormat(card) {
-  return card && card.format ? card.format : state.format;
+  // A4 document cards always use their native format — format selector has no effect
+  if (card && card.format && card.format.w === 794) return card.format;
+  // All other content types follow the sidebar format selector
+  return state.format;
 }
 
 function buildCardDoc(card, forExport = false, logo = null) {
@@ -249,7 +315,21 @@ function buildCardDoc(card, forExport = false, logo = null) {
       ";position:relative;" +
       bg +
       "}",
-    card.styleText + "</style></head><body>",
+    card.styleText +
+      // Override format vars and card dimensions to match the active format selector.
+      // Injected after template CSS so it wins the cascade without !important on vars.
+      // !important on .social-card catches templates that hardcode px instead of using vars.
+      ":root{--w:" +
+      fmt.w +
+      "px;--h:" +
+      fmt.h +
+      "px}" +
+      ".social-card{width:" +
+      fmt.w +
+      "px!important;height:" +
+      fmt.h +
+      "px!important}" +
+      "</style></head><body>",
     html + logoHtml + "</body></html>",
   ].join("");
 }
@@ -260,7 +340,7 @@ function computeCardSize(card) {
   const cw = Math.max(canvasEl.clientWidth, 400);
   const ch = Math.max(canvasEl.clientHeight, 300);
   let scale;
-  if (state.viewMode === "app" && getContentType() !== "document") {
+  if (state.viewMode === "app") {
     // Fit card to canvas (with room for nav arrows and 92px filmstrip at bottom)
     const fitW = (cw - 140) / fmt.w;
     const fitH = (ch - 92) / fmt.h;
@@ -275,10 +355,10 @@ function computeCardSize(card) {
   return { scale, fmt, displayW: Math.round(fmt.w * scale), displayH: Math.round(fmt.h * scale) };
 }
 
-function getContentType() {
+function _getContentType() {
   if (state.preset) {
-    const p = PRESETS.find((x) => x.id === state.preset);
-    if (p) return p.type;
+    const t = state.templates.find((x) => x.id === state.preset);
+    if (t) return t.type;
   }
   const { w, h } = state.format;
   if (w === 794) return "document";
@@ -449,24 +529,15 @@ function renderCards() {
   $("btn-png").disabled = $("btn-zip").disabled = false;
   clearEl(strip);
 
-  const type = getContentType();
   const canvas = $("canvas");
 
   if (state.viewMode === "app") {
-    if (type === "document") {
-      canvas.className = "canvas mode-doc";
-      strip.className = "card-strip doc-view";
-      state.cards.forEach((card, i) => buildCardEl(card, i, strip));
-      $("card-nav").hidden = true;
-      setAppNavVisible(false);
-    } else {
-      canvas.className = "canvas mode-single";
-      strip.className = "card-strip single-view";
-      buildCardEl(state.cards[state.activeCard], state.activeCard, strip);
-      $("card-nav").hidden = false;
-      updateCardNav();
-      setAppNavVisible(true);
-    }
+    canvas.className = "canvas mode-single";
+    strip.className = "card-strip single-view";
+    buildCardEl(state.cards[state.activeCard], state.activeCard, strip);
+    $("card-nav").hidden = false;
+    updateCardNav();
+    setAppNavVisible(true);
   } else {
     canvas.className = "canvas mode-grid";
     strip.className = "card-strip grid-view";
@@ -490,8 +561,7 @@ function setActiveCard(i, updateSelection = true) {
   state.activeCard = i;
   // Only card body clicks update selection; arrow navigation leaves selection intact
   if (updateSelection) state.selectedCards = new Set([i]);
-  const type = getContentType();
-  if (state.viewMode === "app" && type !== "document") {
+  if (state.viewMode === "app") {
     renderCards();
   } else {
     updateSelectionUI();
@@ -519,9 +589,10 @@ function updateCardNav() {
 function renderFilmstrip() {
   const strip = $("filmstrip");
   if (!strip) return;
-  const type = getContentType();
-  const show = state.viewMode === "app" && type !== "document" && state.cards.length > 1;
-  strip.hidden = !show;
+  const show = state.viewMode === "app" && state.cards.length > 1;
+  strip.style.display = show ? "" : "none";
+  // Clear the HTML `hidden` attribute so strip.hidden reflects reality
+  if (show) strip.removeAttribute("hidden");
   if (!show) {
     clearEl(strip);
     return;
@@ -532,12 +603,14 @@ function renderFilmstrip() {
   const THUMB_W = Math.round((THUMB_H * fmt.w) / fmt.h);
   const scale = THUMB_H / fmt.h;
 
-  // Rebuild only when card count changes, otherwise just update states
+  // Rebuild when card count OR source changes (same count, different source = stale iframes)
+  const sourceKey = state.activeFile || "preset:" + state.preset;
   const existing = strip.querySelectorAll(".filmstrip-thumb");
-  if (existing.length === state.cards.length) {
+  if (existing.length === state.cards.length && strip.dataset.source === sourceKey) {
     updateFilmstripStates();
     return;
   }
+  strip.dataset.source = sourceKey;
 
   clearEl(strip);
   state.cards.forEach((card, i) => {
@@ -573,7 +646,7 @@ function renderFilmstrip() {
 
 function updateFilmstripStates() {
   const strip = $("filmstrip");
-  if (!strip || strip.hidden) return;
+  if (!strip || strip.style.display === "none") return;
   strip.querySelectorAll(".filmstrip-thumb").forEach((t) => {
     const i = Number(t.dataset.index);
     t.classList.toggle("active", i === state.activeCard);
@@ -594,17 +667,10 @@ function setViewMode(mode) {
   if (state.cards.length) renderCards();
 }
 
-// ====== Preset loading ======
-function loadPresetAsCards(preset) {
-  state.cards = preset.slides.map((slide, i) => ({
-    index: i,
-    dataType: slide.dataType,
-    dataIdx: slide.dataIndex,
-    html: slide.html, // raw — @handle replaced at render time
-    styleText: preset.css,
-    linkTags: FONTS_LINK,
-    format: preset.format,
-  }));
+// ====== Template card loading ======
+function loadTemplateAsCards(template) {
+  // Cards from parseCards() already have styleText + linkTags — just stamp format
+  state.cards = template.cards.map((card) => ({ ...card, format: template.format }));
   state.activeCard = 0;
   state.cardLogos = {};
   state.selectedCards = new Set([0]);
@@ -692,79 +758,89 @@ async function exportAll() {
 // ====== Gallery ======
 let galleryInit = false;
 
-function buildThumbDoc(fmt, css, linkTags, slideHtml) {
+// Build a thumbnail srcdoc from any card object (works for both templates and content files)
+function buildThumbDoc(card) {
+  const fmt = cardFormat(card);
   return [
     '<!DOCTYPE html><html><head><meta charset="utf-8">',
-    linkTags,
+    card.linkTags || "",
     "<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}",
     "html,body{width:" + fmt.w + "px;height:" + fmt.h + "px;overflow:hidden}",
-    css + "</style></head><body>",
-    slideHtml.replace(/@handle/g, "@preview") + "</body></html>",
+    (card.styleText || "") +
+      ":root{--w:" +
+      fmt.w +
+      "px;--h:" +
+      fmt.h +
+      "px}" +
+      ".social-card{width:" +
+      fmt.w +
+      "px!important;height:" +
+      fmt.h +
+      "px!important}" +
+      "</style></head><body>",
+    (card.html || "").replace(/@handle/g, "@preview") + "</body></html>",
   ].join("");
 }
 
-function buildPresetCoverEl(preset, BOX_W, BOX_H) {
-  const sc = Math.min(BOX_W / preset.format.w, BOX_H / preset.format.h) * 0.98;
+function buildTemplateCoverEl(template, BOX_W, BOX_H) {
+  const fmt = template.format;
+  const sc = Math.min(BOX_W / fmt.w, BOX_H / fmt.h) * 0.98;
   const inner = document.createElement("div");
   inner.className = "preset-cover-inner";
-  inner.dataset.presetId = preset.id;
   inner.setAttribute("data-pending", "1");
   inner.style.cssText =
     "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(" +
     sc +
     ");width:" +
-    preset.format.w +
+    fmt.w +
     "px;height:" +
-    preset.format.h +
+    fmt.h +
     "px;transform-origin:center;";
   const iframe = document.createElement("iframe");
   iframe.setAttribute("sandbox", "allow-same-origin");
   iframe.style.cssText =
-    "width:" +
-    preset.format.w +
-    "px;height:" +
-    preset.format.h +
-    "px;border:none;display:block;pointer-events:none;";
+    "width:" + fmt.w + "px;height:" + fmt.h + "px;border:none;display:block;pointer-events:none;";
   inner.appendChild(iframe);
+  // Store the cover card as a property for the IntersectionObserver to pick up
+  inner._coverCard = template.cards[0] ? { ...template.cards[0], format: fmt } : null;
   return inner;
 }
 
 function filterGallery() {
   const type = state.galleryFilter;
   document.querySelectorAll(".preset-card").forEach((c) => {
-    c.style.display =
-      type === "work" ? "none" : type === "all" || c.dataset.type === type ? "" : "none";
-  });
-  document.querySelectorAll(".session-card").forEach((c) => {
-    c.style.display = type === "work" ? "" : "none";
+    const isWork = c.classList.contains("session-card");
+    if (type === "work") {
+      c.style.display = isWork ? "" : "none";
+    } else if (type === "all") {
+      c.style.display = isWork ? "none" : "";
+    } else {
+      c.style.display = !isWork && c.dataset.type === type ? "" : "none";
+    }
   });
 }
 
 async function initGallery() {
+  const grid = $("gallery-grid");
+
   if (galleryInit) {
+    // Just sync active state and filter — no rebuild
     document
-      .querySelectorAll(".preset-card")
+      .querySelectorAll(".preset-card:not(.session-card)")
       .forEach((c) => c.classList.toggle("selected", c.dataset.id === state.preset));
     filterGallery();
     return;
   }
   galleryInit = true;
-  const grid = $("gallery-grid");
 
-  // Lazy-load preset cover iframes via IntersectionObserver
+  // Lazy-load cover iframes via IntersectionObserver
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
         const el = entry.target;
-        const preset = PRESETS.find((p) => p.id === el.dataset.presetId);
-        if (preset && el.hasAttribute("data-pending")) {
-          el.querySelector("iframe").srcdoc = buildThumbDoc(
-            preset.format,
-            preset.css,
-            FONTS_LINK,
-            preset.slides[0].html,
-          );
+        if (el.hasAttribute("data-pending") && el._coverCard) {
+          el.querySelector("iframe").srcdoc = buildThumbDoc(el._coverCard);
           el.removeAttribute("data-pending");
         }
         observer.unobserve(el);
@@ -773,19 +849,19 @@ async function initGallery() {
     { threshold: 0.05 },
   );
 
-  // Render preset cards
-  PRESETS.forEach((preset) => {
+  // Render one card per template — uses state.templates (fetched HTML files)
+  state.templates.forEach((template) => {
     const card = document.createElement("div");
-    card.className = "preset-card" + (state.preset === preset.id ? " selected" : "");
-    card.dataset.id = preset.id;
-    card.dataset.type = preset.type;
+    card.className = "preset-card" + (state.preset === template.id ? " selected" : "");
+    card.dataset.id = template.id;
+    card.dataset.type = template.type;
 
     const cover = document.createElement("div");
     cover.className = "preset-cover";
-    const inner = buildPresetCoverEl(preset, 320, 200);
+    const inner = buildTemplateCoverEl(template, 320, 200);
     const chipRow = document.createElement("div");
     chipRow.className = "preset-cover-chips";
-    preset.slides.forEach((_, si) => {
+    template.cards.forEach((_, si) => {
       chipRow.appendChild(
         Object.assign(document.createElement("span"), {
           className: "cover-chip" + (si === 0 ? " active" : ""),
@@ -800,27 +876,27 @@ async function initGallery() {
     nameRow.className = "preset-name-row";
     nameRow.innerHTML =
       '<span class="preset-name-text">' +
-      preset.name +
+      template.name +
       "</span>" +
       '<span class="preset-type-badge type-' +
-      preset.type +
+      template.type +
       '">' +
-      preset.type.toUpperCase() +
+      template.type.toUpperCase() +
       "</span>" +
-      (state.preset === preset.id ? '<span class="preset-badge">ACTIVE</span>' : "");
+      (state.preset === template.id ? '<span class="preset-badge">ACTIVE</span>' : "");
     const meta = document.createElement("div");
     meta.className = "preset-meta";
     meta.textContent =
-      preset.slides.length +
+      template.cards.length +
       " slide" +
-      (preset.slides.length === 1 ? "" : "s") +
+      (template.cards.length === 1 ? "" : "s") +
       " \xb7 " +
-      preset.format.w +
+      template.format.w +
       "\xd7" +
-      preset.format.h;
+      template.format.h;
     info.append(nameRow, meta);
     card.append(cover, info);
-    card.addEventListener("click", () => selectPreset(preset.id));
+    card.addEventListener("click", () => selectTemplate(template.filename));
     grid.appendChild(card);
     observer.observe(inner);
   });
@@ -848,7 +924,9 @@ async function renderSessions(grid) {
     cover.className = "preset-cover";
 
     if (session.files && session.files.length) {
-      const presetMeta = session.preset ? PRESETS.find((p) => p.id === session.preset.id) : null;
+      const presetMeta = session.preset
+        ? state.templates.find((t) => t.id === session.preset.id)
+        : null;
       const fmt = (presetMeta ? presetMeta.format : null) || { w: 1080, h: 1080 };
       const sc = Math.min(320 / fmt.w, 200 / fmt.h) * 0.98;
       const inner = document.createElement("div");
@@ -888,7 +966,12 @@ async function renderSessions(grid) {
           const linkTags = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
             .map((l) => l.outerHTML)
             .join("\n");
-          iframe.srcdoc = buildThumbDoc(fmt, styleText, linkTags, firstCard.outerHTML);
+          iframe.srcdoc = buildThumbDoc({
+            html: firstCard.outerHTML,
+            styleText,
+            linkTags,
+            format: fmt,
+          });
         })
         .catch(() => {});
     } else {
@@ -952,7 +1035,9 @@ async function loadSessionContent(session) {
       log("No slides found", "err");
       return;
     }
-    const presetMeta = session.preset ? PRESETS.find((p) => p.id === session.preset.id) : null;
+    const presetMeta = session.preset
+      ? state.templates.find((t) => t.id === session.preset.id)
+      : null;
     if (presetMeta) {
       cards.forEach((c) => (c.format = presetMeta.format));
       state.format = presetMeta.format;
@@ -971,8 +1056,11 @@ async function loadSessionContent(session) {
   }
 }
 
-async function selectPreset(id) {
-  state.preset = id;
+async function selectTemplate(filename) {
+  const template = state.templates.find((t) => t.filename === filename);
+  if (!template) return;
+
+  state.preset = template.id;
   state.activeFile = null;
   state.zoom = 0.4;
   state.viewMode = "app";
@@ -986,56 +1074,49 @@ async function selectPreset(id) {
 
   document
     .querySelectorAll(".preset-card")
-    .forEach((c) => c.classList.toggle("selected", c.dataset.id === id));
+    .forEach((c) => c.classList.toggle("selected", c.dataset.id === template.id));
   document.querySelectorAll(".file-item").forEach((b) => b.classList.remove("active"));
 
-  const preset = PRESETS.find((p) => p.id === id);
-  if (!preset) return;
-  log("Preset: " + preset.name, "accent");
+  log("Template: " + template.name, "accent");
 
   const fmtBtn = document.querySelector(
-    '.fmt[data-w="' + preset.format.w + '"][data-h="' + preset.format.h + '"]',
+    '.fmt[data-w="' + template.format.w + '"][data-h="' + template.format.h + '"]',
   );
   if (fmtBtn) {
     document.querySelectorAll(".fmt").forEach((b) => b.classList.remove("active"));
     fmtBtn.classList.add("active");
-    state.format = preset.format;
+    state.format = template.format;
   }
 
-  // Make the view visible BEFORE rendering so canvas has dimensions
   setView("preview");
-  loadPresetAsCards(preset);
+  loadTemplateAsCards(template);
 
   try {
     await fetch("/api/preset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, name: preset.name, type: preset.type, timestamp: Date.now() }),
+      body: JSON.stringify({
+        id: template.id,
+        name: template.name,
+        type: template.type,
+        timestamp: Date.now(),
+      }),
     });
+    fetch("/api/active-file", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file: null, preset: template.id }),
+    }).catch(() => {});
   } catch {
     /* non-critical */
   }
 
-  log("Loaded " + preset.slides.length + " slides", "ok");
+  log("Loaded " + template.cards.length + " slides", "ok");
 }
 
 // ====== Init ======
 function init() {
-  fetch("/api/preset")
-    .then((r) => r.json())
-    .then((data) => {
-      if (data.id) {
-        state.preset = data.id;
-        const p = PRESETS.find((x) => x.id === data.id);
-        if (p) {
-          log("Preset: " + p.name);
-          setView("preview");
-          loadPresetAsCards(p);
-        }
-      }
-    })
-    .catch(() => {});
-
+  // Register all UI event listeners synchronously — must be responsive from page load
   $("format-grid").addEventListener("click", (e) => {
     const btn = e.target.closest(".fmt");
     if (btn) setFormat(btn);
@@ -1059,10 +1140,14 @@ function init() {
   });
 
   $("logo-toggle").addEventListener("click", () => {
-    const noneSelected = state.selectedCards.size === 0;
-    const i = noneSelected ? null : [...state.selectedCards][0];
-    const logo = i !== null ? getCardLogo(i) : state.logo;
-    applyLogoChange("visible", !logo.visible);
+    // Logo ON/OFF is a global control — always affects all cards and the global default
+    const newVisible = !state.logo.visible;
+    state.logo.visible = newVisible;
+    state.cards.forEach((_, i) => {
+      if (!state.cardLogos[i]) state.cardLogos[i] = {};
+      state.cardLogos[i].visible = newVisible;
+    });
+    applyLogoToAllCards();
     syncLogoSlidersToSelection();
   });
   $("logo-size").addEventListener("input", () => {
@@ -1130,6 +1215,27 @@ function init() {
 
   connectWS();
   log("Content factory ready", "ok");
+
+  // Load templates in background — gallery populates when ready, UI is already responsive
+  loadTemplates()
+    .then(() => {
+      log("Loaded " + state.templates.length + " templates", "ok");
+      return fetch("/api/preset").then((r) => r.json());
+    })
+    .then((data) => {
+      if (data && data.id) {
+        const t = state.templates.find((x) => x.id === data.id);
+        if (t) {
+          state.preset = t.id;
+          log("Template: " + t.name);
+          setView("preview");
+          loadTemplateAsCards(t);
+        }
+      }
+    })
+    .catch(() => {
+      /* non-critical */
+    });
 }
 
 document.addEventListener("DOMContentLoaded", init);

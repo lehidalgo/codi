@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="codi:template" content='{"id":"terminal-green","name":"Terminal Green","type":"social","format":{"w":1080,"h":1080}}' />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .social-card {
+      width: 1080px;
+      height: 1080px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 48px 52px;
+      position: relative;
+      font-family: 'Outfit', sans-serif;
+      color: #e8f5e8;
+      /* Scanlines + radial glow + dark base */
+      background:
+        radial-gradient(ellipse at 38% 38%, rgba(0, 55, 5, 0.50) 0%, transparent 58%),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 3px,
+          rgba(0, 0, 0, 0.13) 3px,
+          rgba(0, 0, 0, 0.13) 4px
+        ),
+        #030a04;
+    }
+
+    /* Corner bracket decorations */
+    .corner {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-color: #39ff7a;
+      border-style: solid;
+      border-width: 0;
+    }
+    .corner-tl { top: 36px; left: 36px; border-top-width: 2px; border-left-width: 2px; }
+    .corner-tr { top: 36px; right: 36px; border-top-width: 2px; border-right-width: 2px; }
+    .corner-bl { bottom: 92px; left: 36px; border-bottom-width: 2px; border-left-width: 2px; }
+    .corner-br { bottom: 92px; right: 36px; border-bottom-width: 2px; border-right-width: 2px; }
+
+    /* Top area — label pill */
+    .top {
+      display: flex;
+      align-items: flex-start;
+      flex-shrink: 0;
+      margin-bottom: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      background: #39ff7a;
+      color: #030a04;
+      font-family: 'Geist Mono', monospace;
+      font-size: 16px;
+      font-weight: 500;
+      padding: 7px 16px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Center content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0 40px;
+    }
+
+    .headline {
+      font-size: 84px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+      margin-bottom: 28px;
+    }
+
+    .subtitle {
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: rgba(232, 245, 232, 0.55);
+      max-width: 680px;
+    }
+
+    /* Code-style variant for CTA */
+    .headline-mono {
+      font-family: 'Geist Mono', monospace;
+      font-size: 58px;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: #39ff7a;
+      margin-bottom: 28px;
+    }
+
+    /* Footer */
+    .foot {
+      flex-shrink: 0;
+    }
+
+    .swipe-row {
+      text-align: right;
+      font-family: 'Geist Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      color: #39ff7a;
+      margin-bottom: 14px;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(57, 255, 122, 0.18);
+      margin-bottom: 16px;
+    }
+
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .brand {
+      font-family: 'Geist Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(232, 245, 232, 0.75);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      line-height: 1.0;
+    }
+
+    .brand-sub {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(232, 245, 232, 0.38);
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+      text-transform: none;
+    }
+
+    .counter {
+      font-family: 'Geist Mono', monospace;
+      font-size: 13px;
+      color: rgba(232, 245, 232, 0.38);
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide 01 — Cover -->
+  <article class="social-card" data-type="cover" data-index="01">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <div class="top">
+      <div class="pill">&gt; codi.exe</div>
+    </div>
+
+    <div class="main">
+      <div class="headline">Your AI Tools<br>Finally Agree</div>
+      <p class="subtitle">One config. All your AI assistants.<br>Zero repeated setup.</p>
+    </div>
+
+    <div class="foot">
+      <div class="swipe-row">SWIPE →</div>
+      <div class="divider"></div>
+      <div class="bottom-bar">
+        <div class="brand">CODI<span class="brand-sub">github.com/lehidalgo/codi · @handle</span></div>
+        <div class="counter">01 / 03</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Slide 02 — Features -->
+  <article class="social-card" data-type="content" data-index="02">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <div class="top">
+      <div class="pill">&gt; features.exe</div>
+    </div>
+
+    <div class="main">
+      <div class="headline">Rules. Skills.<br>Agents.</div>
+      <p class="subtitle">The three primitives that make your AI<br>actually good at its job.</p>
+    </div>
+
+    <div class="foot">
+      <div class="swipe-row">SWIPE →</div>
+      <div class="divider"></div>
+      <div class="bottom-bar">
+        <div class="brand">CODI<span class="brand-sub">github.com/lehidalgo/codi · @handle</span></div>
+        <div class="counter">02 / 03</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Slide 03 — CTA -->
+  <article class="social-card" data-type="cta" data-index="03">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <div class="top">
+      <div class="pill">&gt; install.exe</div>
+    </div>
+
+    <div class="main">
+      <div class="headline-mono">npm install -g codi-cli<br>codi init</div>
+      <p class="subtitle">Claude Code · Cursor · Windsurf · GitHub Copilot<br>All your AI tools, one config.</p>
+    </div>
+
+    <div class="foot">
+      <div class="swipe-row">GET STARTED →</div>
+      <div class="divider"></div>
+      <div class="bottom-bar">
+        <div class="brand">CODI<span class="brand-sub">github.com/lehidalgo/codi · @handle</span></div>
+        <div class="counter">03 / 03</div>
+      </div>
+    </div>
+  </article>
+
+</body>
+</html>

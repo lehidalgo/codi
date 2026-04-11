@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"split-photo","name":"Split Photo","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="split-photo">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Split Photo — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,700;0,800;0,900;1,800;1,900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #ffffff;
+      --text-1:    #0d1117;
+      --text-2:    #6b7280;
+      --accent:    #56b6c2;
+      --grad-s1:   linear-gradient(160deg, #667eea 0%, #764ba2 100%);
+      --grad-s2:   linear-gradient(160deg, #f093fb 0%, #f5576c 100%);
+      --grad-s3:   linear-gradient(160deg, #4facfe 0%, #00f2fe 100%);
+      --fh:        'Outfit', Arial, sans-serif;
+      --fm:        'Geist Mono', monospace;
+      --w:         1080px;
+      --h:         1080px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #e5e7eb;
+      font-family: var(--fh);
+      color: var(--text-1);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      background: var(--bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: row;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+    }
+
+    .img-col {
+      position: relative;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .img-col-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .content-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 60px 56px;
+      position: relative;
+    }
+
+    .tag {
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .handle-bar {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .handle {
+      font-family: var(--fm);
+      font-size: 18px;
+      color: var(--text-2);
+    }
+
+    .bullet-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .bullet-item:last-child { border-bottom: none; }
+
+    .bullet-accent {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 11px;
+    }
+
+    .code-pill {
+      display: inline-block;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-family: var(--fm);
+      font-size: 19px;
+      color: var(--text-1);
+    }
+
+    .cam-icon {
+      opacity: 0.45;
+    }
+
+    .img-label {
+      font-family: var(--fm);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Split Photo — 3 cards</div>
+
+<!-- Card 1 — Cover -->
+<article class="social-card" data-index="01" data-type="cover">
+  <!-- Left: image placeholder -->
+  <div class="img-col" style="width: 540px; height: 1080px; background: var(--grad-s1);">
+    <div class="img-col-inner">
+      <svg class="cam-icon" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <span class="img-label" style="color: rgba(255,255,255,0.45);">Photo / Video</span>
+    </div>
+  </div>
+  <!-- Right: content -->
+  <div class="content-col">
+    <div class="tag">Unified AI config</div>
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+      <h1 style="font-size: 80px; font-weight: 900; line-height: 1.1; letter-spacing: -0.04em; color: var(--text-1); margin-bottom: 28px;">
+        One config.<br>All your AI.
+      </h1>
+      <p style="font-size: 22px; color: var(--text-2); line-height: 1.6;">
+        Write rules, skills, and agents once. Codi generates every tool's config automatically.
+      </p>
+    </div>
+    <div class="handle-bar">
+      <span class="handle">@handle</span>
+      <span style="font-family: var(--fm); font-size: 13px; color: #d1d5db;">1 / 3</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 2 — Content -->
+<article class="social-card" data-index="02" data-type="content">
+  <!-- Left: content -->
+  <div class="content-col">
+    <div class="tag">How it works</div>
+    <h2 style="font-size: 60px; font-weight: 900; line-height: 1.1; letter-spacing: -0.04em; color: var(--text-1); margin-bottom: 36px;">
+      Rules, Skills,<br>Agents.
+    </h2>
+    <div style="display: flex; flex-direction: column;">
+      <div class="bullet-item">
+        <div class="bullet-accent"></div>
+        <div>
+          <p style="font-size: 20px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">Rules</p>
+          <p style="font-size: 17px; color: var(--text-2); line-height: 1.5;">Coding standards pushed to Claude Code, Cursor, Windsurf, and more.</p>
+        </div>
+      </div>
+      <div class="bullet-item">
+        <div class="bullet-accent"></div>
+        <div>
+          <p style="font-size: 20px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">Skills</p>
+          <p style="font-size: 17px; color: var(--text-2); line-height: 1.5;">Reusable workflows — commit, review, refactor — triggered by intent.</p>
+        </div>
+      </div>
+      <div class="bullet-item">
+        <div class="bullet-accent"></div>
+        <div>
+          <p style="font-size: 20px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">Agents</p>
+          <p style="font-size: 17px; color: var(--text-2); line-height: 1.5;">Domain experts — security, performance, architecture — ready on demand.</p>
+        </div>
+      </div>
+    </div>
+    <div class="handle-bar">
+      <span class="handle">@handle</span>
+      <span style="font-family: var(--fm); font-size: 13px; color: #d1d5db;">2 / 3</span>
+    </div>
+  </div>
+  <!-- Right: image placeholder -->
+  <div class="img-col" style="width: 540px; height: 1080px; background: var(--grad-s2);">
+    <div class="img-col-inner">
+      <svg class="cam-icon" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <span class="img-label" style="color: rgba(255,255,255,0.45);">Photo / Video</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 3 — CTA (full bleed image + bottom panel) -->
+<article class="social-card" data-index="03" data-type="cta" style="flex-direction: column;">
+  <!-- Full background image placeholder -->
+  <div style="position: absolute; inset: 0; background: var(--grad-s3);">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: rgba(255,255,255,0.30);">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <span style="font-family: var(--fm); font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.30);">Photo / Video</span>
+    </div>
+  </div>
+  <!-- Bottom white panel -->
+  <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 320px; background: #ffffff; padding: 40px 60px 44px; display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <h2 style="font-size: 52px; font-weight: 900; line-height: 1.1; letter-spacing: -0.04em; color: var(--text-1); margin-bottom: 20px;">
+        Start in 30 seconds.
+      </h2>
+      <div class="code-pill">npm install -g codi-cli &nbsp;· &nbsp;codi init</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span class="handle">@handle</span>
+      <span style="font-family: var(--fm); font-size: 13px; color: var(--accent);">3 / 3</span>
+    </div>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"dark-editorial","name":"Dark Editorial","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="dark-editorial">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Dark Editorial — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #070a0f;
+      --surface:  #0d1117;
+      --surface-2:#13181f;
+      --border:   rgba(255,255,255,0.07);
+      --border-a: rgba(86,182,194,0.25);
+      --c0:       #56b6c2;
+      --c1:       #61afef;
+      --grad:     linear-gradient(135deg, #56b6c2, #61afef);
+      --text-1:   #e6edf3;
+      --text-2:   #8b949e;
+      --text-3:   #3d4450;
+      --fh:       'Outfit', Arial, sans-serif;
+      --fm:       'Geist Mono', monospace;
+      --w:        1080px;
+      --h:        1080px;
+      --pad:      52px;
+      --bar-h:    80px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #0b0d11;
+      font-family: var(--fh);
+      color: var(--text-1);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      background: var(--bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 56px rgba(0,0,0,0.65);
+    }
+
+    .card-body {
+      flex: 1;
+      padding: 40px var(--pad) 32px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 0;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      flex-shrink: 0;
+    }
+
+    .card-source {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .card-source .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--c0);
+    }
+    .card-num {
+      font-family: var(--fm);
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+    }
+
+    .card-bar {
+      height: var(--bar-h);
+      background: rgba(0,0,0,0.28);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0 var(--pad);
+    }
+
+    .progress-track {
+      display: flex;
+      gap: 6px;
+      padding-top: 14px;
+      padding-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .prog-bar {
+      height: 3px;
+      border-radius: 2px;
+      flex: 1;
+      background: var(--text-3);
+      opacity: 0.35;
+    }
+    .prog-bar.active { background: var(--grad); opacity: 1; }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex: 1;
+      padding-bottom: 16px;
+    }
+    .bar-handle {
+      font-family: var(--fm);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text-1);
+      line-height: 1;
+    }
+    .bar-right {
+      font-family: var(--fm);
+      font-size: 13px;
+      color: var(--text-3);
+      letter-spacing: 0.04em;
+    }
+
+    .label {
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--c0);
+    }
+
+    em.acc {
+      font-style: italic;
+      font-weight: 800;
+      padding-right: 0.12em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--grad);
+      z-index: 5;
+    }
+
+    .glow {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+    }
+
+    .table-rows {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .t-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 22px 26px;
+      gap: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .t-row:last-child { border-bottom: none; }
+    .t-key {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-1);
+      min-width: 180px;
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+    .t-val {
+      font-size: 20px;
+      color: var(--text-2);
+      line-height: 1.4;
+    }
+    .t-val code {
+      font-family: var(--fm);
+      font-size: 15px;
+      color: var(--c0);
+      background: rgba(86,182,194,0.08);
+      padding: 1px 7px;
+      border-radius: 4px;
+    }
+
+    /* p4 progress helpers */
+    .p4-1 .prog-bar:nth-child(1) { background: var(--grad); opacity: 1; }
+    .p4-2 .prog-bar:nth-child(2) { background: var(--grad); opacity: 1; }
+    .p4-3 .prog-bar:nth-child(3) { background: var(--grad); opacity: 1; }
+    .p4-4 .prog-bar:nth-child(4) { background: var(--grad); opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Dark Editorial — 4 cards</div>
+
+<!-- Card 1 — Cover -->
+<article class="social-card" data-index="01" data-type="cover">
+  <div class="top-bar"></div>
+  <div class="glow" style="top:-80px;right:-60px;width:500px;height:500px;background:radial-gradient(ellipse,rgba(86,182,194,0.09) 0%,transparent 65%);"></div>
+  <div class="card-body" style="justify-content:space-between;">
+    <div class="card-top">
+      <span class="card-source"><span class="dot"></span> codi</span>
+      <span class="card-num">1 / 4</span>
+    </div>
+    <div>
+      <p class="label" style="margin-bottom:24px;">Intro</p>
+      <h1 style="font-size:82px;font-weight:800;line-height:1.1;letter-spacing:-0.035em;margin-bottom:28px;">
+        Your rules,<br><em class="acc">your agents.</em>
+      </h1>
+      <p style="font-size:24px;color:var(--text-2);line-height:1.5;max-width:820px;">One config source. All AI tools, in sync.</p>
+    </div>
+  </div>
+  <div class="card-bar">
+    <div class="progress-track p4-1">
+      <div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-handle">@handle</span>
+      <span class="bar-right">Swipe to see the problem →</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 2 — Problem -->
+<article class="social-card" data-index="02" data-type="content">
+  <div class="card-body" style="justify-content:space-between;">
+    <div>
+      <div class="card-top">
+        <span class="card-source"><span class="dot"></span> codi</span>
+        <span class="card-num">2 / 4</span>
+      </div>
+      <h2 style="font-size:64px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:10px;">5 configs.<br><em class="acc">One mess.</em></h2>
+      <p style="font-size:22px;color:var(--text-2);margin-bottom:32px;">Every AI tool ships with its own format. Each one drifts.</p>
+    </div>
+    <div class="table-rows" style="flex:1;display:flex;flex-direction:column;justify-content:stretch;">
+      <div class="t-row" style="flex:1;">
+        <span class="t-key">Claude Code</span>
+        <span class="t-val"><code>CLAUDE.md</code></span>
+      </div>
+      <div class="t-row" style="flex:1;">
+        <span class="t-key">Cursor</span>
+        <span class="t-val"><code>.cursorrules</code></span>
+      </div>
+      <div class="t-row" style="flex:1;">
+        <span class="t-key">Copilot</span>
+        <span class="t-val"><code>.github/copilot-instructions.md</code></span>
+      </div>
+      <div class="t-row" style="flex:1;border-bottom:none;">
+        <span class="t-key">Windsurf</span>
+        <span class="t-val"><code>.windsurfrules</code></span>
+      </div>
+    </div>
+  </div>
+  <div class="card-bar">
+    <div class="progress-track p4-2">
+      <div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-handle">@handle</span>
+      <span class="bar-right">Swipe →</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 3 — Solution -->
+<article class="social-card" data-index="03" data-type="content">
+  <div class="glow" style="bottom:-100px;left:-60px;width:600px;height:600px;background:radial-gradient(ellipse,rgba(97,175,239,0.07) 0%,transparent 65%);"></div>
+  <div class="card-body" style="justify-content:space-between;">
+    <div>
+      <div class="card-top">
+        <span class="card-source"><span class="dot"></span> codi</span>
+        <span class="card-num">3 / 4</span>
+      </div>
+      <p class="label" style="margin-bottom:20px;">The solution</p>
+      <h2 style="font-size:72px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:24px;">
+        codi<br><em class="acc">fixes this.</em>
+      </h2>
+    </div>
+    <div>
+      <p style="font-size:23px;color:var(--text-2);line-height:1.6;margin-bottom:0;">
+        Write once in <span style="font-family:var(--fm);color:var(--c0);">.codi/</span> &mdash; generate config for every tool automatically. Rules, skills, and agent settings in one place.
+      </p>
+    </div>
+  </div>
+  <div class="card-bar">
+    <div class="progress-track p4-3">
+      <div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-handle">@handle</span>
+      <span class="bar-right">Swipe →</span>
+    </div>
+  </div>
+</article>
+
+<!-- Card 4 — CTA -->
+<article class="social-card" data-index="04" data-type="cta">
+  <div class="top-bar"></div>
+  <div class="glow" style="top:100px;right:-80px;width:700px;height:700px;background:radial-gradient(ellipse,rgba(86,182,194,0.07) 0%,transparent 65%);"></div>
+  <div class="card-body" style="justify-content:space-between;">
+    <div class="card-top">
+      <span class="card-source"><span class="dot"></span> codi</span>
+      <span class="card-num">4 / 4</span>
+    </div>
+    <div>
+      <p class="label" style="margin-bottom:24px;">Get started</p>
+      <h2 style="font-size:88px;font-weight:800;line-height:1.1;letter-spacing:-0.04em;margin-bottom:32px;">
+        Ship<br><em class="acc">today.</em>
+      </h2>
+      <div style="background:#040609;border:1px solid var(--border-a);border-radius:10px;padding:22px 28px;font-family:var(--fm);font-size:21px;color:var(--c0);display:flex;align-items:center;gap:12px;">
+        <span style="color:var(--text-3);">$</span>
+        npm install -g codi-cli
+      </div>
+      <div style="background:#040609;border:1px solid var(--border-a);border-radius:10px;padding:22px 28px;font-family:var(--fm);font-size:21px;color:var(--c0);display:flex;align-items:center;gap:12px;margin-top:12px;">
+        <span style="color:var(--text-3);">$</span>
+        codi init
+      </div>
+    </div>
+  </div>
+  <div class="card-bar">
+    <div class="progress-track p4-4">
+      <div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div><div class="prog-bar"></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-handle">@handle</span>
+      <span class="bar-right">github.com/lehidalgo/codi</span>
+    </div>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

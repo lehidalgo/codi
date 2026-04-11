@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"doc-article","name":"Doc Article","type":"document","format":{"w":794,"h":1123}}' />
+  <meta name="template" content="doc-article">
+  <meta name="template-type" content="document">
+  <meta name="template-format" content="794x1123">
+  <title>Doc Article — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #ffffff;
+      --surface:  #f6f8fa;
+      --border:   #e1e4e8;
+      --border-a: rgba(86,182,194,0.3);
+      --c0:       #56b6c2;
+      --c1:       #61afef;
+      --grad:     linear-gradient(135deg, #56b6c2, #61afef);
+      --text-1:   #0d1117;
+      --text-2:   #444d56;
+      --text-3:   rgba(86,182,194,0.6);
+      --fh:       'Outfit', Arial, sans-serif;
+      --fm:       'Geist Mono', monospace;
+      --w:        794px;
+      --h:        1123px;
+      --pad:      72px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #e8eaed;
+      font-family: var(--fh);
+      color: var(--text-1);
+    }
+
+    .doc-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .doc-page {
+      position: relative;
+      width: var(--w);
+      min-height: var(--h);
+      background: var(--bg);
+      padding: var(--pad);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+    }
+
+    /* ── Top accent bar ─────────────────────────────────────────────────── */
+    .page-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--grad);
+    }
+
+    /* ── Page header ────────────────────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      padding-top: 8px;
+    }
+
+    .page-logo {
+      font-family: var(--fm);
+      font-size: 20px;
+      font-weight: 500;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-meta {
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    /* ── Page footer ────────────────────────────────────────────────────── */
+    .page-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--fm);
+      font-size: 11px;
+      color: rgba(86,182,194,0.45);
+    }
+
+    /* ── Typography ─────────────────────────────────────────────────────── */
+    .page-tag {
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--c0);
+      margin-bottom: 14px;
+    }
+
+    h1.page-title {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+      color: var(--text-1);
+    }
+
+    h2.section-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-1);
+      margin-bottom: 12px;
+      margin-top: 32px;
+    }
+
+    em.acc {
+      font-style: italic;
+      padding-right: 0.12em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-body {
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--text-2);
+      line-height: 1.75;
+      flex: 1;
+    }
+    .page-body p { margin-bottom: 16px; }
+    .page-body strong { color: var(--text-1); font-weight: 600; }
+
+    code {
+      font-family: var(--fm);
+      font-size: 14px;
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--text-1);
+    }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      font-family: var(--fm);
+      font-size: 15px;
+      color: var(--c0);
+      line-height: 2;
+      margin: 16px 0;
+    }
+    .code-block .prompt { color: var(--text-3); margin-right: 10px; }
+
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--c0);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      font-size: 17px;
+      color: var(--text-2);
+      line-height: 1.6;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="doc-container">
+
+<!-- Page 1 — Cover -->
+<article class="doc-page" data-index="01" data-type="cover">
+  <div class="page-accent"></div>
+  <div class="page-header">
+    <span class="page-logo">codi</span>
+    <span class="page-meta">Article · 2026</span>
+  </div>
+  <div class="page-body">
+    <div class="page-tag">Article</div>
+    <h1 class="page-title">Your rules,<br><em class="acc">your agents</em></h1>
+    <p>One config source. All AI coding tools, in sync.</p>
+    <p>
+      codi manages rules, skills, and agent configuration across Claude Code, Cursor, Copilot, and more
+      — from a single source of truth. Write once. Generate everywhere.
+    </p>
+    <div class="callout">
+      <strong>The short version:</strong> stop maintaining 5 config files manually. codi generates them all from one place.
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>@handle</span>
+    <span>01 / 03</span>
+  </div>
+</article>
+
+<!-- Page 2 — Problem -->
+<article class="doc-page" data-index="02" data-type="body">
+  <div class="page-accent"></div>
+  <div class="page-header">
+    <span class="page-logo">codi</span>
+    <span class="page-meta">The Problem</span>
+  </div>
+  <div class="page-body">
+    <div class="page-tag">The Problem</div>
+    <h1 class="page-title">Config<br><em class="acc">sprawl</em></h1>
+    <p>
+      Every AI coding tool ships with its own config format. Claude Code reads <code>CLAUDE.md</code>,
+      Cursor reads <code>.cursorrules</code>, Copilot reads its own instructions file, Windsurf reads
+      <code>.windsurfrules</code>.
+    </p>
+    <p>
+      Teams end up manually maintaining 5 separate config files with duplicate rules, diverging
+      conventions, and no single source of truth. Update one — the others fall behind.
+    </p>
+    <h2 class="section-title">The compounding cost</h2>
+    <p>
+      The deeper problem is not just duplication — it is <strong>drift</strong>. When a new security
+      rule is added to your Claude config, does Cursor know about it? When you onboard a new teammate
+      using Copilot, do they get the same context as everyone else?
+    </p>
+    <p>
+      Config sprawl turns every rule change into a multi-file operation. It turns onboarding into
+      archaeology. It makes "what does our team AI actually know?" an unanswerable question.
+    </p>
+  </div>
+  <div class="page-footer">
+    <span>@handle</span>
+    <span>02 / 03</span>
+  </div>
+</article>
+
+<!-- Page 3 — Solution + CTA -->
+<article class="doc-page" data-index="03" data-type="closing">
+  <div class="page-accent"></div>
+  <div class="page-header">
+    <span class="page-logo">codi</span>
+    <span class="page-meta">Get Started</span>
+  </div>
+  <div class="page-body">
+    <div class="page-tag">Get Started</div>
+    <h1 class="page-title">Ship<br><em class="acc">today</em></h1>
+    <p>Getting started takes two commands:</p>
+    <div class="code-block">
+      <div><span class="prompt">$</span>npm install -g codi-cli</div>
+      <div><span class="prompt">$</span>codi init</div>
+    </div>
+    <p>
+      codi detects your project stack, generates starter rules, and sets up config for every AI tool
+      you use. From there, edit rules in <code>.codi/rules/</code> and run <code>codi generate</code>
+      to propagate changes everywhere.
+    </p>
+    <h2 class="section-title">What you get</h2>
+    <p>
+      A single <code>.codi/</code> directory becomes the source of truth for all your AI agent
+      configuration. Rules, skills, agents, and hooks — all in one place, all versioned, all
+      shareable.
+    </p>
+    <div class="callout">
+      <strong>Open source.</strong> codi is MIT licensed. Contribute rules and skills back to the community via <code>codi contribute</code>.
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>@handle</span>
+    <span>03 / 03</span>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

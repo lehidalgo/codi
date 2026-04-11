@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-08T18:20:24.791Z",
+  "generatedAt": "2026-04-09T22:41:21.481Z",
   "counts": {
     "skills": 65,
     "rules": 28,
@@ -244,7 +244,7 @@
     {
       "type": "skill",
       "name": "codi-codi-brand",
-      "description": "Apply Codi brand identity to any content creation task. Use when creating branded materials for the Codi product — landing pages, marketing copy, presentations, documents, social posts, or any visual/written deliverable that needs Codi branding. Also activate when the user mentions 'codi brand', 'codi design system', or asks for Codi-branded output.",
+      "description": "Codi brand content studio. Use when creating any branded deliverable for Codi — presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX output that must carry Codi brand identity. Also activate when the user mentions 'codi brand', 'codi design system', 'codi style', or asks for Codi-branded output of any kind.",
       "slug": "catalog/skills/codi-codi-brand",
       "category": "Brand Identity",
       "userInvocable": true,

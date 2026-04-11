@@ -114,7 +114,7 @@ Read `${CLAUDE_SKILL_DIR}[[/references/design-guide.md]]` for design principles,
 
 ## Brand Integration
 
-When a brand skill is active or the user names a brand (codi, etc.), use the brand skill's generators instead of building slides from scratch.
+When a brand skill is active or the user names a brand (bbva, rl3, codi, etc.), use the brand skill's generators instead of building slides from scratch.
 
 1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
 2. **If the brand skill is not active**, tell the user to enable it (e.g., `codi-brand`) and re-run.
