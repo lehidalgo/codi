@@ -220,6 +220,16 @@ function handleRequest(req, res) {
       ? crypto.createHash('sha256').update(activeFilePath).digest('hex').slice(0, 8)
       : null;
 
+    // Read status from the active session's manifest (My Work only)
+    let activeStatus = null;
+    if (mode === 'mywork' && active.sessionDir) {
+      const activeManifest = path.join(active.sessionDir, 'state', 'manifest.json');
+      try {
+        const m = JSON.parse(fs.readFileSync(activeManifest, 'utf-8'));
+        activeStatus = m.status || 'draft';
+      } catch { activeStatus = 'draft'; }
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       activeFile: active.file ?? null,
@@ -228,6 +238,7 @@ function handleRequest(req, res) {
       activeFilePath,
       mode,
       contentId,
+      status: activeStatus,
       preset,
     }));
     return;
@@ -317,7 +328,7 @@ function handleRequest(req, res) {
             const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
             // Only include if it has content OR is the active session
             if (htmlFiles.length > 0 || manifest.sessionDir === SESSION_DIR) {
-              sessions.push({ ...manifest, sessionDir: sessionAbsDir, files: htmlFiles });
+              sessions.push({ ...manifest, sessionDir: sessionAbsDir, files: htmlFiles, status: manifest.status || 'draft' });
             }
           } catch { /* skip corrupt manifest */ }
         } else if (htmlFiles.length > 0) {
@@ -328,6 +339,7 @@ function handleRequest(req, res) {
             created: stat.birthtimeMs || stat.ctimeMs,
             preset: null,
             files: htmlFiles,
+            status: 'draft',
           });
         }
       }
@@ -335,6 +347,32 @@ function handleRequest(req, res) {
     sessions.sort((a, b) => (b.created || 0) - (a.created || 0));
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(sessions));
+    return;
+  }
+
+  // POST /api/session-status — persist status for a My Work session
+  if (req.method === 'POST' && pathname === '/api/session-status') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { sessionDir: sessionParam, status } = JSON.parse(body);
+        const VALID = ['draft', 'in-progress', 'review', 'done'];
+        if (!VALID.includes(status)) { res.writeHead(400); res.end('Invalid status'); return; }
+        const sessionsParent = path.normalize(path.dirname(SESSION_DIR));
+        const resolved = path.normalize(path.resolve(sessionParam));
+        if (!resolved.startsWith(sessionsParent + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+        const manifestPath2 = path.join(resolved, 'state', 'manifest.json');
+        if (!fs.existsSync(manifestPath2)) { res.writeHead(404); res.end('Session not found'); return; }
+        // Update status in manifest.json — single source of truth for project metadata
+        const manifest2 = JSON.parse(fs.readFileSync(manifestPath2, 'utf-8'));
+        manifest2.status = status;
+        manifest2.statusUpdatedAt = Date.now();
+        fs.writeFileSync(manifestPath2, JSON.stringify(manifest2, null, 2));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch { res.writeHead(400); res.end('Bad request'); }
+    });
     return;
   }
 

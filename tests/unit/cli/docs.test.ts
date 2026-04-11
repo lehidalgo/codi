@@ -120,28 +120,20 @@ describe("docsHandler", () => {
     stdoutSpy.mockRestore();
   });
 
-  it("generates HTML docs by default", async () => {
-    mockBuildDocs.mockResolvedValue("/tmp/project/docs/codi_docs/index.html");
-    mockExportJson.mockReturnValue(JSON.stringify({ totalSkills: 3, groups: [] }));
+  it("exports JSON catalog to stdout by default (no options)", async () => {
+    const catalog = JSON.stringify({ totalSkills: 3, groups: [] });
+    mockExportJson.mockReturnValue(catalog);
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     const result = await docsHandler("/tmp/project", {});
 
     expect(result.success).toBe(true);
     expect(result.exitCode).toBe(EXIT_CODES.SUCCESS);
-    expect(result.data.outputPath).toBe("/tmp/project/docs/codi_docs/index.html");
+    expect(result.data.outputPath).toBe("stdout");
     expect(result.data.totalSkills).toBe(3);
-    expect(mockBuildDocs).toHaveBeenCalledWith("/tmp/project");
-  });
+    expect(mockBuildDocs).not.toHaveBeenCalled();
 
-  it("skips JSON sidecar when --output is specified", async () => {
-    const { writeFile: mockWriteFile } = await import("node:fs/promises");
-    mockBuildDocs.mockResolvedValue("/custom/path/index.html");
-    mockExportJson.mockReturnValue(JSON.stringify({ totalSkills: 2, groups: [] }));
-
-    await docsHandler("/tmp/project", { output: "/custom/path" });
-
-    // writeFile should NOT be called for the JSON sidecar
-    expect(mockWriteFile).not.toHaveBeenCalled();
+    stdoutSpy.mockRestore();
   });
 });
 
@@ -156,9 +148,8 @@ describe("registerDocsCommand", () => {
 
     const optionNames = docsCmd!.options.map((o) => o.long);
     expect(optionNames).toContain("--json");
-    expect(optionNames).toContain("--html");
     expect(optionNames).toContain("--generate");
     expect(optionNames).toContain("--validate");
-    expect(optionNames).toContain("--output");
+    expect(optionNames).toContain("--catalog");
   });
 });

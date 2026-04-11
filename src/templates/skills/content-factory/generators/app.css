@@ -543,6 +543,35 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
 }
 
+.preview-meta-status-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-status-select {
+  font-size: 9px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 18px 2px 6px;
+  border-radius: 3px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 5px center;
+}
+.preview-status-select.status-draft       { background-color: rgba(171,178,191,.12); color: #abb2bf; }
+.preview-status-select.status-in-progress { background-color: rgba(229,192,123,.14); color: #e5c07b; }
+.preview-status-select.status-review      { background-color: rgba(198,120,221,.12); color: #c678dd; }
+.preview-status-select.status-done        { background-color: rgba(152,195,121,.14); color: #98c379; }
+.preview-status-select option             { background: #1a1e2b; color: var(--text); }
+
 /* ====== Views ====== */
 .view { display: none; flex: 1; overflow: auto; }
 .view.active { display: flex; flex-direction: column; }
@@ -1001,6 +1030,54 @@ input[type="range"] {
 .type-social   { background: rgba(86,182,194,.12); color: #56b6c2; }
 .type-slides   { background: rgba(97,175,239,.12); color: #61afef; }
 .type-document { background: rgba(152,195,121,.12); color: #98c379; }
+
+/* ====== Session status badges ====== */
+.session-status-row { margin-top: 5px; }
+
+.session-status-badge {
+  display: inline-block;
+  font-size: 8px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s;
+}
+.session-status-badge:hover { opacity: 0.75; }
+
+.status-draft       { background: rgba(171,178,191,.12); color: #abb2bf; }
+.status-in-progress { background: rgba(229,192,123,.14); color: #e5c07b; }
+.status-review      { background: rgba(198,120,221,.12); color: #c678dd; }
+.status-done        { background: rgba(152,195,121,.14); color: #98c379; }
+
+/* ====== Work status sub-filter bar ====== */
+.work-status-filters {
+  display: flex;
+  gap: 6px;
+  padding: 0 24px 14px;
+  flex-wrap: wrap;
+}
+
+.status-filter-btn {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.status-filter-btn:hover,
+.status-filter-btn.active {
+  background: rgba(86,182,194,.08);
+  color: var(--text);
+  border-color: var(--accent);
+}
 
 .preset-badge {
   font-size: 9px;

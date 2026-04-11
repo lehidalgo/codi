@@ -149,7 +149,7 @@ uv run pytest src/templates/skills/<name>/tests/python/ -v       # one skill
 ### Both
 
 ```bash
-npm run test:all    # vitest run && uv run pytest src/templates/skills/
+npm run test:all    # runs both; always executes pytest even if vitest fails
 ```
 
 ## Writing Python Unit Tests

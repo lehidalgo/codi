@@ -109,6 +109,13 @@ describe("GET /api/preset", () => {
 
 describe("POST /api/preset", () => {
   it("saves and retrieves a preset selection", async () => {
+    // Preset persistence requires an active project — create one first
+    await fetch(`${baseUrl}/api/create-project`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "preset-test" }),
+    });
+
     const payload = {
       id: "dark-editorial",
       name: "Dark Editorial",

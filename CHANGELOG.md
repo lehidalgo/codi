@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **content-factory** — refresh button in nav bar reloads content in place without switching tabs or resetting slide position
 - **content-factory** — toast notification appears on agent-triggered content updates
 - **content-factory** — auto-fit: content fills canvas height at 100% zoom by default; slider scales relative to fit
+- **content-factory** — My Work projects have a status field (`draft`, `in-progress`, `review`, `done`); clicking the badge on a session card cycles through statuses and persists to `state/status.json`
+- **content-factory** — status sub-filter bar appears in gallery when "My Work" is active, letting users filter sessions by status
 
 ### Changed
 

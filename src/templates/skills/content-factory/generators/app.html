@@ -175,6 +175,15 @@
         <span id="preview-meta-format" class="preview-meta-dim"></span>
         <span class="preview-meta-sep">·</span>
         <span id="preview-meta-slides" class="preview-meta-dim"></span>
+        <span id="preview-meta-status-wrap" class="preview-meta-status-wrap" hidden>
+          <span class="preview-meta-sep">·</span>
+          <select id="preview-status-select" class="preview-status-select" aria-label="Project status">
+            <option value="draft">Draft</option>
+            <option value="in-progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </span>
       </div>
       <div id="canvas" class="canvas mode-grid">
         <button id="app-prev" class="app-nav-btn" hidden aria-label="Previous slide">&#8249;</button>
@@ -200,6 +209,13 @@
         <button class="filter-btn" data-type="slides" type="button">Slides</button>
         <button class="filter-btn" data-type="document" type="button">Document</button>
         <button class="filter-btn" data-type="work" type="button">My Work</button>
+      </div>
+      <div id="work-status-filters" class="work-status-filters" style="display:none">
+        <button class="status-filter-btn active" data-status="all" type="button">All</button>
+        <button class="status-filter-btn" data-status="draft" type="button">Draft</button>
+        <button class="status-filter-btn" data-status="in-progress" type="button">In Progress</button>
+        <button class="status-filter-btn" data-status="review" type="button">Review</button>
+        <button class="status-filter-btn" data-status="done" type="button">Done</button>
       </div>
       <div id="gallery-grid" class="gallery-grid"></div>
     </div>

@@ -15,6 +15,8 @@ const state = {
   cardLogos: {}, // { [cardIndex]: partial logo overrides per card }
   selectedCards: new Set([0]),
   galleryFilter: "all",
+  workStatusFilter: "all",
+  activeStatus: null, // status of the open My Work project; null for built-in templates
   viewMode: "app", // default is app view
   files: [],
   activeFile: null,
@@ -24,6 +26,14 @@ const state = {
   preset: null, // template id of currently active template
   templates: [], // loaded from /api/templates
   activeMeta: null, // { name, type, format } — set for session content, cleared for templates
+};
+
+const STATUS_CYCLE = ["draft", "in-progress", "review", "done"];
+const STATUS_LABEL = {
+  draft: "DRAFT",
+  "in-progress": "IN PROGRESS",
+  review: "REVIEW",
+  done: "DONE",
 };
 
 let ws = null,
@@ -463,6 +473,20 @@ function updatePreviewMeta() {
   $("preview-meta-format").textContent = fmt.w + " × " + fmt.h;
   $("preview-meta-slides").textContent =
     state.cards.length + (state.cards.length === 1 ? " slide" : " slides");
+
+  // Show status selector only for My Work projects — never for built-in templates
+  const statusWrap = $("preview-meta-status-wrap");
+  const statusSelect = $("preview-status-select");
+  const selectWrap = $("status-select-wrap");
+  const isMyWork = !!state.activeSessionDir && !state.preset;
+  statusWrap.hidden = !isMyWork;
+  if (isMyWork && statusSelect) {
+    const s = state.activeStatus || "draft";
+    statusSelect.value = s;
+    // Color class lives on the wrapper (provides background + caret color)
+    if (selectWrap) selectWrap.className = "status-select-wrap status-" + s;
+  }
+
   bar.hidden = false;
 }
 
@@ -750,16 +774,20 @@ function buildTemplateCoverEl(template, BOX_W, BOX_H) {
 
 function filterGallery() {
   const type = state.galleryFilter;
+  const workStatus = state.workStatusFilter || "all";
   document.querySelectorAll(".preset-card").forEach((c) => {
     const isWork = c.classList.contains("session-card");
     if (type === "work") {
-      c.style.display = isWork ? "" : "none";
+      const statusMatch = workStatus === "all" || c.dataset.status === workStatus;
+      c.style.display = isWork && statusMatch ? "" : "none";
     } else if (type === "all") {
       c.style.display = isWork ? "none" : "";
     } else {
       c.style.display = !isWork && c.dataset.type === type ? "" : "none";
     }
   });
+  const workBar = $("work-status-filters");
+  if (workBar) workBar.style.display = type === "work" ? "" : "none";
 }
 
 async function initGallery() {
@@ -861,6 +889,8 @@ async function renderSessions(grid) {
   sessions.forEach((session) => {
     const card = document.createElement("div");
     card.className = "preset-card session-card";
+    card.dataset.status = session.status || "draft";
+    card.dataset.sessionDir = session.sessionDir;
     card.style.display = "none"; // shown only in "My Work" filter
 
     const cover = document.createElement("div");
@@ -934,25 +964,80 @@ async function renderSessions(grid) {
           minute: "2-digit",
         })
       : session.sessionDir;
+    // Named projects (new architecture) show their name; legacy sessions show date
+    const displayName = session.name && session.slug ? session.name : dateStr;
     const presetLabel = session.preset ? session.preset.name || session.preset.id : "No preset";
     const fileCount = session.files ? session.files.length : 0;
-    info.innerHTML =
-      '<div class="preset-name-row"><span class="preset-name-text">' +
-      dateStr +
-      "</span>" +
-      '<span class="preset-type-badge type-slides">WORK</span></div>' +
-      (fileCount
-        ? '<div class="session-content-name preset-name-text" style="font-size:12px;margin-top:2px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>'
-        : "") +
-      '<div class="preset-meta">' +
-      fileCount +
-      " file" +
-      (fileCount === 1 ? "" : "s") +
-      " \xb7 " +
-      presetLabel +
-      "</div>";
+
+    // Name row
+    const nameRow = document.createElement("div");
+    nameRow.className = "preset-name-row";
+    const nameText = document.createElement("span");
+    nameText.className = "preset-name-text";
+    nameText.textContent = displayName;
+    const workBadge = document.createElement("span");
+    workBadge.className = "preset-type-badge type-slides";
+    workBadge.textContent = "WORK";
+    nameRow.append(nameText, workBadge);
+    info.appendChild(nameRow);
+
+    // Content name (populated lazily after fetch)
+    if (fileCount) {
+      const contentNameEl = document.createElement("div");
+      contentNameEl.className = "session-content-name preset-name-text";
+      contentNameEl.style.cssText =
+        "font-size:12px;margin-top:2px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      info.appendChild(contentNameEl);
+    }
+
+    // Meta row
+    const metaEl = document.createElement("div");
+    metaEl.className = "preset-meta";
+    metaEl.textContent =
+      fileCount + " file" + (fileCount === 1 ? "" : "s") + " \xb7 " + presetLabel;
+    info.appendChild(metaEl);
+
+    // Status badge — click cycles status without opening session
+    const initialStatus = session.status || "draft";
+    const statusBadge = document.createElement("span");
+    statusBadge.className = "session-status-badge status-" + initialStatus;
+    statusBadge.textContent = STATUS_LABEL[initialStatus];
+    statusBadge.title = "Click to change status";
+    statusBadge.dataset.status = initialStatus;
+    const statusRow = document.createElement("div");
+    statusRow.className = "session-status-row";
+    statusRow.appendChild(statusBadge);
+    info.appendChild(statusRow);
+
+    statusBadge.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const cur = statusBadge.dataset.status;
+      const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur) + 1) % STATUS_CYCLE.length];
+      statusBadge.dataset.status = next;
+      statusBadge.className = "session-status-badge status-" + next;
+      statusBadge.textContent = STATUS_LABEL[next];
+      card.dataset.status = next;
+      // If this session is currently open in preview, sync the dropdown too
+      if (state.activeSessionDir === session.sessionDir) {
+        state.activeStatus = next;
+        const wrap = $("status-select-wrap");
+        const sel = $("preview-status-select");
+        if (sel) sel.value = next;
+        if (wrap) wrap.className = "status-select-wrap status-" + next;
+      }
+      await fetch("/api/session-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionDir: session.sessionDir, status: next }),
+      }).catch(() => {});
+      filterGallery();
+    });
+
     card.append(cover, info);
-    card.addEventListener("click", () => loadSessionContent(session));
+    // Pass current card status (dataset is live; closure session.status is stale after badge cycling)
+    card.addEventListener("click", () =>
+      loadSessionContent({ ...session, status: card.dataset.status }),
+    );
     grid.appendChild(card);
   });
 }
@@ -1009,13 +1094,19 @@ async function loadSessionContent(session) {
     state.preset = null;
     state.activeFile = session.sessionDir + "/" + file;
     state.activeSessionDir = session.sessionDir;
+    state.activeStatus = session.status || "draft";
     state.activeCard = 0;
     state.cardLogos = {};
     state.selectedCards = new Set([0]);
     setView("preview");
     requestAnimationFrame(renderCards);
     log("Loaded " + template.cards.length + " slides from session", "ok");
-    // Record the open session so /api/state returns the correct mode and contentId
+    // Activate the project server-side and record the open file for /api/state
+    fetch("/api/open-project", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectDir: session.sessionDir }),
+    }).catch(() => {});
     fetch("/api/active-file", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1038,6 +1129,7 @@ async function selectTemplate(filename) {
   state.activeFile = null;
   state.activeSessionDir = null;
   state.activeMeta = null;
+  state.activeStatus = null;
   state.zoom = 1.0;
   state.viewMode = "app";
   state.activeCard = 0;
@@ -1154,7 +1246,50 @@ function init() {
     document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     state.galleryFilter = btn.dataset.type;
+    // Reset status sub-filter when switching main filter
+    if (btn.dataset.type !== "work") {
+      state.workStatusFilter = "all";
+      document
+        .querySelectorAll(".status-filter-btn")
+        .forEach((b) => b.classList.toggle("active", b.dataset.status === "all"));
+    }
     filterGallery();
+  });
+
+  $("work-status-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest(".status-filter-btn");
+    if (!btn) return;
+    document.querySelectorAll(".status-filter-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.workStatusFilter = btn.dataset.status;
+    filterGallery();
+  });
+
+  $("preview-status-select").addEventListener("change", async (e) => {
+    const next = e.target.value;
+    state.activeStatus = next;
+    const wrap = $("status-select-wrap");
+    if (wrap) wrap.className = "status-select-wrap status-" + next;
+    if (state.activeSessionDir) {
+      // Sync the gallery card badge in real-time — no re-render needed
+      const card = document.querySelector(
+        `.session-card[data-session-dir="${CSS.escape(state.activeSessionDir)}"]`,
+      );
+      if (card) {
+        card.dataset.status = next;
+        const badge = card.querySelector(".session-status-badge");
+        if (badge) {
+          badge.dataset.status = next;
+          badge.className = "session-status-badge status-" + next;
+          badge.textContent = STATUS_LABEL[next];
+        }
+      }
+      await fetch("/api/session-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionDir: state.activeSessionDir, status: next }),
+      }).catch(() => {});
+    }
   });
 
   document
