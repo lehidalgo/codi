@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **content-factory** — 3-tier skill testing framework: Tier 1 contract validator, Tier 2 unit tests for pure lib functions, Tier 3 HTTP integration tests against the live server
+- **content-factory** — pure function library (`lib/cards.js`, `lib/card-builder.js`) extracted from `app.js` and importable by Node.js/Vitest
+- **schemas** — `SkillTestManifestSchema` Zod schema for validating `skill.test.json` manifests
+
+### Changed
+
+- **content-factory** — `app.js` updated to ES module imports from `lib/`; `app.html` updated to `type="module"`
+- **content-factory** — server static handler now serves `lib/` subdirectory with path traversal guard
+
 ## [2.6.1] - 2026-04-10
 
 ### Fixed
