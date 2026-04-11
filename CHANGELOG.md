@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **skills** — optional `README.md` setup guides for 17 complex skills (audio-transcriber, pdf, docx, xlsx, pptx, notebooklm, webapp-testing, slack-gif-creator, content-factory, codi-brand, algorithmic-art, claude-artifacts-builder, brainstorming, skill-creator, deck-engine, doc-engine, mcp-ops)
+- **docs site** — skill catalog pages now display `# README` and `# SKILL.md` as h1 sections with TOC entries in the right sidebar
+- **docs site** — TOC now includes h1 headings (depth-1 style) alongside h2/h3
+
+### Removed
+
+- **docs** — standalone HTML skill catalog generation (`docs/codi_docs/`) removed; Astro GitHub Pages site is the only docs target
+- **cli** — `codi docs` default behavior changed from `--html` to `--json`; `--html` flag removed
+
+### Changed
+
+- **docs** — `buildSkillMarkdown()` renders README content before SKILL.md body with horizontal rule separator
+- **scripts** — `copy-skill-assets.mjs` now copies root-level `.md` files (README.md) from skill source dirs to dist
+
 - **content-factory** — 3-tier skill testing framework: Tier 1 contract validator, Tier 2 unit tests for pure lib functions, Tier 3 HTTP integration tests against the live server
 - **content-factory** — pure function library (`lib/cards.js`, `lib/card-builder.js`) extracted from `app.js` and importable by Node.js/Vitest
 - **schemas** — `SkillTestManifestSchema` Zod schema for validating `skill.test.json` manifests
@@ -15,15 +29,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **content-factory** — refresh button in nav bar reloads content in place without switching tabs or resetting slide position
 - **content-factory** — toast notification appears on agent-triggered content updates
 - **content-factory** — auto-fit: content fills canvas height at 100% zoom by default; slider scales relative to fit
-- **content-factory** — My Work projects have a status field (`draft`, `in-progress`, `review`, `done`); clicking the badge on a session card cycles through statuses and persists to `state/status.json`
+- **content-factory** — My Work projects have a status field (`draft`, `in-progress`, `review`, `done`); clicking the badge on a session card cycles through statuses and persists to `manifest.json`
 - **content-factory** — status sub-filter bar appears in gallery when "My Work" is active, letting users filter sessions by status
+- **content-factory** — named project architecture: `.codi_output/` is now a persistent workspace; each content project lives in its own named directory (`<slug>/content`, `<slug>/state`, `<slug>/exports`) instead of a per-server-startup timestamp folder
+- **content-factory** — `POST /api/create-project { name }` creates a named project directory, activates it, and returns `contentDir`/`stateDir`/`exportsDir`
+- **content-factory** — `POST /api/open-project { projectDir }` activates an existing project server-side, rewiring file watchers
+- **content-factory** — `lib/workspace.cjs` module extracted: `slugify`, `createProject`, `listProjects`, `getActiveProjectDir`, `saveActiveProjectDir`
+- **content-factory** — `_workspace.json` persists the last active project across server restarts
 
 ### Changed
 
 - **content-factory** — `app.js` updated to ES module imports from `lib/`; `app.html` updated to `type="module"`
 - **content-factory** — server static handler now serves `lib/` subdirectory with path traversal guard
 - **content-factory** — `start-server.sh` resolves `--project-dir` to absolute path before `cd` to fix crash on relative paths
-- **content-factory** — `loadSessionContent` posts to `/api/active-file` so My Work sessions register state on open
+- **content-factory** — `loadSessionContent` posts to both `/api/open-project` and `/api/active-file` so My Work sessions activate server-side on open
+- **content-factory** — gallery session cards show project name instead of creation timestamp for new-style named projects
+- **content-factory** — `start-server.sh` refactored: passes `BRAINSTORM_WORKSPACE` instead of `BRAINSTORM_DIR`; outputs `workspace_dir` in server-started JSON; no per-startup directory created
+- **content-factory** — `stop-server.sh` updated: takes `<workspace_dir>` argument; PID file at `_server.pid` inside workspace
 - **content-factory** — skill Step 2 updated to 3-mode decision table using `contentId` and `activeFilePath` as unambiguous edit targets
 
 ### Removed

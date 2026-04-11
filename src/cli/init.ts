@@ -537,7 +537,9 @@ export async function initHandler(
           log.info(
             `Pre-commit hooks installed (${hookSetup.runner === "none" ? "standalone" : hookSetup.runner})`,
           );
-          const missingDeps = filterMissing(await checkHookDependencies(hooksConfig.hooks, projectRoot));
+          const missingDeps = filterMissing(
+            await checkHookDependencies(hooksConfig.hooks, projectRoot),
+          );
           if (missingDeps.length > 0) {
             await installMissingDeps(missingDeps, projectRoot, log, isInteractive(options));
           }
@@ -548,15 +550,6 @@ export async function initHandler(
     } catch {
       log.warn("Hook detection failed; skipping hook installation.");
     }
-  }
-
-  // Generate HTML documentation site (non-critical)
-  try {
-    const { buildSkillDocsFile } = await import("../core/docs/skill-docs-generator.js");
-    const docsPath = await buildSkillDocsFile(projectRoot);
-    log.info(`Documentation site generated: ${docsPath}`);
-  } catch {
-    log.warn("HTML docs generation skipped.");
   }
 
   // Update code-driven documentation sections (non-critical)

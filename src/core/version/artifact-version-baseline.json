@@ -248,8 +248,8 @@
     "hash": "1d02a5bc6aa1dbbfa96a985c404d04492c93d8c01bdefc3c441b4c6a2c1c3542"
   },
   "codi-dev-docs-manager": {
-    "version": 5,
-    "hash": "00db93cdc1a6bd62048a33c0393f0e8a3c90e0679a508f15a957764df0c1e8df"
+    "version": 6,
+    "hash": "a2dda9275153f6d25e1b99083558cbe6626860b42ffb506784ef797b37d519d8"
   },
   "codi-brand-identity": {
     "version": 7,
@@ -260,8 +260,8 @@
     "hash": "0652e86af40402989a6065243a88ec12f26ef240abe4a8ae38c3ddd33adf7e51"
   },
   "codi-content-factory": {
-    "version": 18,
-    "hash": "50c5bb0c571a9a05a5583592cc91800587bf7b3fed247e6fe90b593e09225880"
+    "version": 19,
+    "hash": "2d9579746bfd8c06e1b9674f6010eaf1132a47372b68471ade349a7a98c30cd4"
   },
   "codi-project-quality-guard": {
     "version": 9,

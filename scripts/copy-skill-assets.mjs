@@ -6,9 +6,12 @@
  * them into dist/templates/skills/{name}/ so they resolve correctly both
  * when running from the repo and when installed as an npm package.
  *
+ * Also copies root-level .md files (e.g. README.md) from each skill directory
+ * so they are available to copyStaticFiles() in skill-scaffolder.ts.
+ *
  * Called via tsup's onSuccess hook after every successful build.
  */
-import { cpSync, readdirSync, existsSync, statSync } from "node:fs";
+import { cpSync, copyFileSync, mkdirSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const SRC = "src/templates/skills";
@@ -21,6 +24,18 @@ for (const skill of readdirSync(SRC)) {
   const skillSrc = join(SRC, skill);
   if (!statSync(skillSrc).isDirectory()) continue;
 
+  // Copy root-level .md files (README.md, etc.)
+  for (const file of readdirSync(skillSrc)) {
+    if (!file.endsWith(".md")) continue;
+    const srcPath = join(skillSrc, file);
+    if (!statSync(srcPath).isFile()) continue;
+    const destDir = join(DEST, skill);
+    mkdirSync(destDir, { recursive: true });
+    copyFileSync(srcPath, join(destDir, file));
+    copied++;
+  }
+
+  // Copy named subdirectories
   for (const sub of SUBDIRS) {
     const subSrc = join(skillSrc, sub);
     if (!existsSync(subSrc)) continue;
@@ -33,4 +48,4 @@ for (const skill of readdirSync(SRC)) {
   }
 }
 
-console.log(`Copied ${copied} skill asset directories to ${DEST}`);
+console.log(`Copied ${copied} skill asset directories/files to ${DEST}`);

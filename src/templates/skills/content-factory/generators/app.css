@@ -549,28 +549,48 @@ input[type="range"] {
   gap: 6px;
 }
 
+/* Wrapper provides the colored background and caret via ::after */
+.status-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.status-select-wrap::after {
+  content: "▾";
+  font-size: 9px;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* Color per status — applied to wrapper, caret inherits */
+.status-select-wrap.status-draft       { background: rgba(171,178,191,.18); color: #abb2bf; }
+.status-select-wrap.status-in-progress { background: rgba(229,192,123,.20); color: #e5c07b; }
+.status-select-wrap.status-review      { background: rgba(198,120,221,.18); color: #c678dd; }
+.status-select-wrap.status-done        { background: rgba(152,195,121,.20); color: #98c379; }
+
+/* Select itself is transparent — wrapper provides the background */
 .preview-status-select {
   font-size: 9px;
   font-family: 'Geist Mono', monospace;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 2px 18px 2px 6px;
-  border-radius: 3px;
+  padding: 3px 18px 3px 7px;
   border: none;
   outline: none;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 5px center;
+  background: transparent;
+  color: inherit;
 }
-.preview-status-select.status-draft       { background-color: rgba(171,178,191,.12); color: #abb2bf; }
-.preview-status-select.status-in-progress { background-color: rgba(229,192,123,.14); color: #e5c07b; }
-.preview-status-select.status-review      { background-color: rgba(198,120,221,.12); color: #c678dd; }
-.preview-status-select.status-done        { background-color: rgba(152,195,121,.14); color: #98c379; }
-.preview-status-select option             { background: #1a1e2b; color: var(--text); }
+.preview-status-select option { background: #1a1e2b; color: var(--text); }
 
 /* ====== Views ====== */
 .view { display: none; flex: 1; overflow: auto; }

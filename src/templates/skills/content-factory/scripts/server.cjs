@@ -1,7 +1,9 @@
+'use strict';
 const crypto = require('crypto');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const workspace = require('./lib/workspace.cjs');
 
 // ========== WebSocket Protocol (RFC 6455) ==========
 
@@ -16,7 +18,6 @@ function encodeFrame(opcode, payload) {
   const fin = 0x80;
   const len = payload.length;
   let header;
-
   if (len < 126) {
     header = Buffer.alloc(2);
     header[0] = fin | opcode;
@@ -32,21 +33,17 @@ function encodeFrame(opcode, payload) {
     header[1] = 127;
     header.writeBigUInt64BE(BigInt(len), 2);
   }
-
   return Buffer.concat([header, payload]);
 }
 
 function decodeFrame(buffer) {
   if (buffer.length < 2) return null;
-
   const secondByte = buffer[1];
   const opcode = buffer[0] & 0x0F;
   const masked = (secondByte & 0x80) !== 0;
   let payloadLen = secondByte & 0x7F;
   let offset = 2;
-
   if (!masked) throw new Error('Client frames must be masked');
-
   if (payloadLen === 126) {
     if (buffer.length < 4) return null;
     payloadLen = buffer.readUInt16BE(2);
@@ -56,18 +53,13 @@ function decodeFrame(buffer) {
     payloadLen = Number(buffer.readBigUInt64BE(2));
     offset = 10;
   }
-
   const maskOffset = offset;
   const dataOffset = offset + 4;
   const totalLen = dataOffset + payloadLen;
   if (buffer.length < totalLen) return null;
-
   const mask = buffer.slice(maskOffset, dataOffset);
   const data = Buffer.alloc(payloadLen);
-  for (let i = 0; i < payloadLen; i++) {
-    data[i] = buffer[dataOffset + i] ^ mask[i % 4];
-  }
-
+  for (let i = 0; i < payloadLen; i++) data[i] = buffer[dataOffset + i] ^ mask[i % 4];
   return { opcode, payload: data, bytesConsumed: totalLen };
 }
 
@@ -76,9 +68,7 @@ function decodeFrame(buffer) {
 const PORT = process.env.BRAINSTORM_PORT || (49152 + Math.floor(Math.random() * 16383));
 const HOST = process.env.BRAINSTORM_HOST || '127.0.0.1';
 const URL_HOST = process.env.BRAINSTORM_URL_HOST || (HOST === '127.0.0.1' ? 'localhost' : HOST);
-const SESSION_DIR = process.env.BRAINSTORM_DIR || '/tmp/brainstorm';
-const CONTENT_DIR = path.join(SESSION_DIR, 'content');
-const STATE_DIR = path.join(SESSION_DIR, 'state');
+const WORKSPACE_DIR = process.env.BRAINSTORM_WORKSPACE || '/tmp/brainstorm-workspace';
 const GENERATORS_DIR = path.join(__dirname, '..', 'generators');
 const VENDOR_DIR = path.join(__dirname, 'vendor');
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
@@ -86,32 +76,58 @@ let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml'
+  '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml',
 };
 
-// ========== Helper Functions ==========
+// ========== Active Project State ==========
 
-function writeManifest() {
+let activeProject = null; // { dir, contentDir, stateDir, exportsDir }
+let contentWatcher = null;
+let knownFiles = new Set();
+const debounceTimers = new Map();
+
+function setActiveProject(dir) {
+  if (!dir) { activeProject = null; return; }
+  const resolved = path.normalize(path.resolve(dir));
+  // Validate the directory is inside WORKSPACE_DIR
+  const ws = path.normalize(WORKSPACE_DIR);
+  if (!resolved.startsWith(ws + path.sep) && resolved !== ws) return;
+  if (!fs.existsSync(resolved)) return;
+  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
+  activeProject = workspace.projectDirs(resolved);
+  knownFiles = new Set(
+    fs.existsSync(activeProject.contentDir)
+      ? fs.readdirSync(activeProject.contentDir).filter(f => f.endsWith('.html'))
+      : []
+  );
+  if (fs.existsSync(activeProject.contentDir)) startContentWatcher();
+  workspace.saveActiveProjectDir(WORKSPACE_DIR, resolved);
+}
+
+function writeProjectManifest() {
+  if (!activeProject) return;
   try {
-    const files = fs.existsSync(CONTENT_DIR)
-      ? fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.html'))
+    const files = fs.existsSync(activeProject.contentDir)
+      ? fs.readdirSync(activeProject.contentDir).filter(f => f.endsWith('.html'))
       : [];
-    const presetFile = path.join(STATE_DIR, 'preset.json');
+    const presetFile = path.join(activeProject.stateDir, 'preset.json');
     const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
-    fs.writeFileSync(path.join(STATE_DIR, 'manifest.json'), JSON.stringify({
-      sessionDir: SESSION_DIR, created: Date.now(), preset, files,
-    }, null, 2));
+    const manifestPath = path.join(activeProject.stateDir, 'manifest.json');
+    const existing = fs.existsSync(manifestPath)
+      ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+      : {};
+    fs.writeFileSync(manifestPath, JSON.stringify({ ...existing, preset, files, updatedAt: Date.now() }, null, 2));
   } catch { /* non-critical */ }
 }
 
-// ========== HTTP Request Handler ==========
+// ========== HTTP Helpers ==========
 
 function getContentFiles() {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-  return fs.readdirSync(CONTENT_DIR)
+  if (!activeProject || !fs.existsSync(activeProject.contentDir)) return [];
+  return fs.readdirSync(activeProject.contentDir)
     .filter(f => f.endsWith('.html'))
     .map(f => {
-      const fp = path.join(CONTENT_DIR, f);
+      const fp = path.join(activeProject.contentDir, f);
       return { name: f, path: fp, mtime: fs.statSync(fp).mtime.getTime() };
     })
     .sort((a, b) => b.mtime - a.mtime);
@@ -122,37 +138,44 @@ function serveFile(res, filePath) {
   res.writeHead(200, {
     'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
+    'Pragma': 'no-cache', 'Expires': '0',
   });
   res.end(fs.readFileSync(filePath));
 }
+
+function readJson(filePath, fallback) {
+  try { return fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf-8')) : fallback; }
+  catch { return fallback; }
+}
+
+// ========== HTTP Request Handler ==========
 
 function handleRequest(req, res) {
   touchActivity();
   const parsed = new URL(req.url, 'http://localhost');
   const pathname = parsed.pathname;
 
-  // /api/preset GET — read preset selection (agent reads this to know which style to use)
+  // /api/preset GET
   if (req.method === 'GET' && pathname === '/api/preset') {
-    const presetFile = path.join(STATE_DIR, 'preset.json');
-    const data = fs.existsSync(presetFile)
-      ? fs.readFileSync(presetFile, 'utf-8')
-      : JSON.stringify({ id: null });
+    const data = activeProject
+      ? readJson(path.join(activeProject.stateDir, 'preset.json'), { id: null })
+      : { id: null };
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(data);
+    res.end(JSON.stringify(data));
     return;
   }
 
-  // /api/preset POST — write preset selection from app UI
+  // /api/preset POST
   if (req.method === 'POST' && pathname === '/api/preset') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', () => {
       try {
         const data = JSON.parse(body);
-        fs.writeFileSync(path.join(STATE_DIR, 'preset.json'), JSON.stringify(data, null, 2));
-        writeManifest();
+        if (activeProject) {
+          fs.writeFileSync(path.join(activeProject.stateDir, 'preset.json'), JSON.stringify(data, null, 2));
+          writeProjectManifest();
+        }
         console.log(JSON.stringify({ type: 'preset-selected', ...data }));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
@@ -164,28 +187,28 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/active-file GET — return which file/preset the user currently has loaded in Preview
+  // /api/active-file GET
   if (req.method === 'GET' && pathname === '/api/active-file') {
-    const activeFile = path.join(STATE_DIR, 'active.json');
-    const data = fs.existsSync(activeFile)
-      ? fs.readFileSync(activeFile, 'utf-8')
-      : JSON.stringify({ file: null, preset: null });
+    const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+    const data = readJson(path.join(stateDir, 'active.json'), { file: null, preset: null });
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(data);
+    res.end(JSON.stringify(data));
     return;
   }
 
-  // /api/active-file POST — record which file/preset the user just loaded
+  // /api/active-file POST
   if (req.method === 'POST' && pathname === '/api/active-file') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', () => {
       try {
         const data = JSON.parse(body);
-        fs.writeFileSync(
-          path.join(STATE_DIR, 'active.json'),
-          JSON.stringify({ ...data, timestamp: Date.now() }, null, 2)
-        );
+        // If sessionDir/projectDir provided, activate that project
+        const projDir = data.projectDir || data.sessionDir || null;
+        if (projDir) setActiveProject(projDir);
+        const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+        if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir, { recursive: true });
+        fs.writeFileSync(path.join(stateDir, 'active.json'), JSON.stringify({ ...data, timestamp: Date.now() }, null, 2));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
       } catch {
@@ -196,51 +219,82 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/state GET — aggregate: active file + preset selection (agent reads this to orient itself)
+  // /api/state GET — aggregate state for agent orientation
   if (req.method === 'GET' && pathname === '/api/state') {
-    const presetFile = path.join(STATE_DIR, 'preset.json');
-    const activeStateFile = path.join(STATE_DIR, 'active.json');
-    const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
-    const active = fs.existsSync(activeStateFile)
-      ? JSON.parse(fs.readFileSync(activeStateFile, 'utf-8'))
-      : { file: null, preset: null, sessionDir: null };
-
-    // Derive mode and the canonical absolute path to the file being edited
-    const mode = active.sessionDir ? 'mywork' : (active.preset ? 'template' : null);
+    const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+    const preset = readJson(path.join(stateDir, 'preset.json'), null);
+    const active = readJson(path.join(stateDir, 'active.json'), { file: null, preset: null });
+    const mode = activeProject ? 'mywork' : (active.preset ? 'template' : null);
     let activeFilePath = null;
-    if (mode === 'mywork' && active.sessionDir && active.file) {
-      activeFilePath = path.join(active.sessionDir, 'content', active.file);
+    if (mode === 'mywork' && activeProject && active.file) {
+      activeFilePath = path.join(activeProject.contentDir, active.file);
     } else if (mode === 'template' && active.preset) {
       activeFilePath = path.join(GENERATORS_DIR, 'templates', active.preset + '.html');
     }
-
-    // Stable 8-char hash so the agent can uniquely identify the open item even when
-    // a built-in template and a My Work project share the same name
     const contentId = activeFilePath
       ? crypto.createHash('sha256').update(activeFilePath).digest('hex').slice(0, 8)
       : null;
-
-    // Read status from the active session's manifest (My Work only)
     let activeStatus = null;
-    if (mode === 'mywork' && active.sessionDir) {
-      const activeManifest = path.join(active.sessionDir, 'state', 'manifest.json');
-      try {
-        const m = JSON.parse(fs.readFileSync(activeManifest, 'utf-8'));
-        activeStatus = m.status || 'draft';
-      } catch { activeStatus = 'draft'; }
+    if (activeProject) {
+      const m = readJson(path.join(activeProject.stateDir, 'manifest.json'), {});
+      activeStatus = m.status || 'draft';
     }
-
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       activeFile: active.file ?? null,
       activePreset: active.preset ?? null,
-      activeSessionDir: active.sessionDir ?? null,
+      activeSessionDir: activeProject ? activeProject.dir : null,
       activeFilePath,
-      mode,
-      contentId,
+      mode, contentId,
       status: activeStatus,
       preset,
     }));
+    return;
+  }
+
+  // /api/create-project POST — create a new named project and activate it
+  if (req.method === 'POST' && pathname === '/api/create-project') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { name } = JSON.parse(body);
+        if (!name || typeof name !== 'string') { res.writeHead(400); res.end('Missing name'); return; }
+        const project = workspace.createProject(WORKSPACE_DIR, name.trim());
+        setActiveProject(project.dir);
+        if (fs.existsSync(project.contentDir)) startContentWatcher();
+        console.log(JSON.stringify({ type: 'project-created', name, projectDir: project.dir }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true,
+          projectDir: project.dir,
+          contentDir: project.contentDir,
+          stateDir: project.stateDir,
+          exportsDir: project.exportsDir,
+          // Legacy aliases for backward compat with template.ts
+          screen_dir: project.contentDir,
+          state_dir: project.stateDir,
+          exports_dir: project.exportsDir,
+        }));
+      } catch (e) { res.writeHead(500); res.end(e.message); }
+    });
+    return;
+  }
+
+  // /api/open-project POST — activate an existing project
+  if (req.method === 'POST' && pathname === '/api/open-project') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { projectDir } = JSON.parse(body);
+        setActiveProject(projectDir);
+        const active = activeProject;
+        if (!active) { res.writeHead(404); res.end('Project not found'); return; }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, projectDir: active.dir, contentDir: active.contentDir, stateDir: active.stateDir }));
+      } catch { res.writeHead(400); res.end('Bad request'); }
+    });
     return;
   }
 
@@ -255,7 +309,7 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/template?file=xxx — serve a template HTML file from generators/templates/
+  // /api/template?file=xxx — serve a template HTML file
   if (req.method === 'GET' && pathname === '/api/template') {
     const fileParam = parsed.searchParams.get('file');
     if (!fileParam) { res.writeHead(400); res.end('Missing ?file='); return; }
@@ -267,18 +321,18 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/content — return raw HTML without script injection (app extracts .social-card elements)
+  // /api/content?file=xxx — raw HTML from active project's content dir
   if (req.method === 'GET' && pathname === '/api/content') {
     const fileParam = parsed.searchParams.get('file');
-    if (!fileParam) { res.writeHead(400); res.end('Missing ?file='); return; }
-    const filePath = path.join(CONTENT_DIR, path.basename(fileParam));
+    if (!fileParam || !activeProject) { res.writeHead(activeProject ? 400 : 404); res.end(activeProject ? 'Missing ?file=' : 'No active project'); return; }
+    const filePath = path.join(activeProject.contentDir, path.basename(fileParam));
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(fs.readFileSync(filePath, 'utf-8'));
     return;
   }
 
-  // /api/files — return sorted list of HTML files in content dir
+  // /api/files — sorted list of HTML files in active project's content dir
   if (req.method === 'GET' && pathname === '/api/files') {
     const files = getContentFiles().map(f => f.name);
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -286,11 +340,10 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /static/* — serve generator app assets (app.html, app.css, app.js, lib/*)
+  // /static/* — serve generator app assets
   if (req.method === 'GET' && pathname.startsWith('/static/')) {
-    const rel = pathname.slice(8); // strip "/static/"
+    const rel = pathname.slice(8);
     const filePath = path.resolve(GENERATORS_DIR, rel);
-    // Guard against path traversal outside generators dir
     if (!filePath.startsWith(GENERATORS_DIR + path.sep) && filePath !== GENERATORS_DIR) {
       res.writeHead(403); res.end('Forbidden'); return;
     }
@@ -299,7 +352,7 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /vendor/* — serve vendor scripts (html2canvas, jszip)
+  // /vendor/* — serve vendor scripts
   if (req.method === 'GET' && pathname.startsWith('/vendor/')) {
     const filePath = path.join(VENDOR_DIR, path.basename(pathname.slice(8)));
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
@@ -307,50 +360,15 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/sessions — list all sessions from the .codi_output parent
-  // Includes sessions with manifest.json AND sessions that only have content files (legacy)
+  // /api/sessions — list all projects in workspace
   if (req.method === 'GET' && pathname === '/api/sessions') {
-    const sessionsParent = path.dirname(SESSION_DIR);
-    const sessions = [];
-    if (fs.existsSync(sessionsParent)) {
-      let dirs;
-      try { dirs = fs.readdirSync(sessionsParent); } catch { dirs = []; }
-      for (const dir of dirs) {
-        const sessionAbsDir = path.join(sessionsParent, dir);
-        const manifestPath = path.join(sessionAbsDir, 'state', 'manifest.json');
-        const contentDir = path.join(sessionAbsDir, 'content');
-        const htmlFiles = fs.existsSync(contentDir)
-          ? fs.readdirSync(contentDir).filter(f => f.endsWith('.html'))
-          : [];
-
-        if (fs.existsSync(manifestPath)) {
-          try {
-            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-            // Only include if it has content OR is the active session
-            if (htmlFiles.length > 0 || manifest.sessionDir === SESSION_DIR) {
-              sessions.push({ ...manifest, sessionDir: sessionAbsDir, files: htmlFiles, status: manifest.status || 'draft' });
-            }
-          } catch { /* skip corrupt manifest */ }
-        } else if (htmlFiles.length > 0) {
-          // Legacy session: no manifest, but has content — synthesize one
-          const stat = fs.statSync(sessionAbsDir);
-          sessions.push({
-            sessionDir: sessionAbsDir,
-            created: stat.birthtimeMs || stat.ctimeMs,
-            preset: null,
-            files: htmlFiles,
-            status: 'draft',
-          });
-        }
-      }
-    }
-    sessions.sort((a, b) => (b.created || 0) - (a.created || 0));
+    const sessions = workspace.listProjects(WORKSPACE_DIR);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(sessions));
     return;
   }
 
-  // POST /api/session-status — persist status for a My Work session
+  // /api/session-status POST — persist status to a project's manifest
   if (req.method === 'POST' && pathname === '/api/session-status') {
     let body = '';
     req.on('data', d => { body += d; });
@@ -359,16 +377,15 @@ function handleRequest(req, res) {
         const { sessionDir: sessionParam, status } = JSON.parse(body);
         const VALID = ['draft', 'in-progress', 'review', 'done'];
         if (!VALID.includes(status)) { res.writeHead(400); res.end('Invalid status'); return; }
-        const sessionsParent = path.normalize(path.dirname(SESSION_DIR));
         const resolved = path.normalize(path.resolve(sessionParam));
-        if (!resolved.startsWith(sessionsParent + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
-        const manifestPath2 = path.join(resolved, 'state', 'manifest.json');
-        if (!fs.existsSync(manifestPath2)) { res.writeHead(404); res.end('Session not found'); return; }
-        // Update status in manifest.json — single source of truth for project metadata
-        const manifest2 = JSON.parse(fs.readFileSync(manifestPath2, 'utf-8'));
-        manifest2.status = status;
-        manifest2.statusUpdatedAt = Date.now();
-        fs.writeFileSync(manifestPath2, JSON.stringify(manifest2, null, 2));
+        const ws = path.normalize(WORKSPACE_DIR);
+        if (!resolved.startsWith(ws + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+        const manifestPath = path.join(resolved, 'state', 'manifest.json');
+        if (!fs.existsSync(manifestPath)) { res.writeHead(404); res.end('Project not found'); return; }
+        const m = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+        m.status = status;
+        m.statusUpdatedAt = Date.now();
+        fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
       } catch { res.writeHead(400); res.end('Bad request'); }
@@ -376,22 +393,22 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/session-content — serve an HTML file from a specific session's content dir
+  // /api/session-content?session=&file= — serve HTML from a specific project
   if (req.method === 'GET' && pathname === '/api/session-content') {
     const sessionParam = parsed.searchParams.get('session');
     const fileParam = parsed.searchParams.get('file');
     if (!sessionParam || !fileParam) { res.writeHead(400); res.end('Missing params'); return; }
-    const sessionsParent = path.normalize(path.dirname(SESSION_DIR));
-    const resolvedSession = path.normalize(path.resolve(sessionParam));
-    if (!resolvedSession.startsWith(sessionsParent + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
-    const filePath = path.join(resolvedSession, 'content', path.basename(fileParam));
+    const resolved = path.normalize(path.resolve(sessionParam));
+    const ws = path.normalize(WORKSPACE_DIR);
+    if (!resolved.startsWith(ws + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+    const filePath = path.join(resolved, 'content', path.basename(fileParam));
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(fs.readFileSync(filePath, 'utf-8'));
     return;
   }
 
-  // /api/export-png — render card HTML to PNG using Playwright (pixel-perfect)
+  // /api/export-png POST — render card HTML to PNG via Playwright
   if (req.method === 'POST' && pathname === '/api/export-png') {
     let body = '';
     req.on('data', d => { body += d; });
@@ -401,15 +418,10 @@ function handleRequest(req, res) {
         if (!html || !width || !height) { res.writeHead(400); res.end('Missing html/width/height'); return; }
         const { chromium } = require('playwright');
         const browser = await chromium.launch({ headless: true });
-        // deviceScaleFactor: 2 → exports at 2× resolution (2160×2160 for 1:1 cards)
-        // giving retina-quality output for LinkedIn, Instagram, and other social platforms
         const page = await browser.newPage({ deviceScaleFactor: 2 });
         await page.setViewportSize({ width, height });
         await page.setContent(html, { waitUntil: 'networkidle' });
-        // Extra wait to ensure fonts (Google Fonts) have rendered
         await page.waitForTimeout(500);
-        // clip uses CSS pixels — Playwright scales up by deviceScaleFactor automatically
-        // so a 1080×1080 clip with deviceScaleFactor:2 → 2160×2160px PNG
         const png = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
         await browser.close();
         res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length });
@@ -422,7 +434,7 @@ function handleRequest(req, res) {
     return;
   }
 
-  // / — always serve the content factory app
+  // / — serve app shell
   if (req.method === 'GET' && pathname === '/') {
     const appPath = path.join(GENERATORS_DIR, 'app.html');
     if (!fs.existsSync(appPath)) { res.writeHead(503); res.end('App not found'); return; }
@@ -435,14 +447,13 @@ function handleRequest(req, res) {
   res.end('Not found');
 }
 
-// ========== WebSocket Connection Handling ==========
+// ========== WebSocket ==========
 
 const clients = new Set();
 
 function handleUpgrade(req, socket) {
   const key = req.headers['sec-websocket-key'];
   if (!key) { socket.destroy(); return; }
-
   const accept = computeAcceptKey(key);
   socket.write(
     'HTTP/1.1 101 Switching Protocols\r\n' +
@@ -450,64 +461,36 @@ function handleUpgrade(req, socket) {
     'Connection: Upgrade\r\n' +
     'Sec-WebSocket-Accept: ' + accept + '\r\n\r\n'
   );
-
   let buffer = Buffer.alloc(0);
   clients.add(socket);
-
   socket.on('data', (chunk) => {
     buffer = Buffer.concat([buffer, chunk]);
     while (buffer.length > 0) {
       let result;
-      try {
-        result = decodeFrame(buffer);
-      } catch (e) {
-        socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0)));
-        clients.delete(socket);
-        return;
-      }
+      try { result = decodeFrame(buffer); }
+      catch { socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0))); clients.delete(socket); return; }
       if (!result) break;
       buffer = buffer.slice(result.bytesConsumed);
-
       switch (result.opcode) {
-        case OPCODES.TEXT:
-          handleMessage(result.payload.toString());
-          break;
-        case OPCODES.CLOSE:
-          socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0)));
-          clients.delete(socket);
-          return;
-        case OPCODES.PING:
-          socket.write(encodeFrame(OPCODES.PONG, result.payload));
-          break;
-        case OPCODES.PONG:
-          break;
-        default: {
-          const closeBuf = Buffer.alloc(2);
-          closeBuf.writeUInt16BE(1003);
-          socket.end(encodeFrame(OPCODES.CLOSE, closeBuf));
-          clients.delete(socket);
-          return;
-        }
+        case OPCODES.TEXT: handleMessage(result.payload.toString()); break;
+        case OPCODES.CLOSE: socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0))); clients.delete(socket); return;
+        case OPCODES.PING: socket.write(encodeFrame(OPCODES.PONG, result.payload)); break;
+        case OPCODES.PONG: break;
+        default: { const cb = Buffer.alloc(2); cb.writeUInt16BE(1003); socket.end(encodeFrame(OPCODES.CLOSE, cb)); clients.delete(socket); return; }
       }
     }
   });
-
   socket.on('close', () => clients.delete(socket));
   socket.on('error', () => clients.delete(socket));
 }
 
 function handleMessage(text) {
   let event;
-  try {
-    event = JSON.parse(text);
-  } catch (e) {
-    console.error('Failed to parse WebSocket message:', e.message);
-    return;
-  }
+  try { event = JSON.parse(text); } catch (e) { console.error('WS parse error:', e.message); return; }
   touchActivity();
   console.log(JSON.stringify({ source: 'user-event', ...event }));
-  if (event.choice) {
-    const eventsFile = path.join(STATE_DIR, 'events');
+  if (event.choice && activeProject) {
+    const eventsFile = path.join(activeProject.stateDir, 'events');
     fs.appendFileSync(eventsFile, JSON.stringify(event) + '\n');
   }
 }
@@ -515,45 +498,65 @@ function handleMessage(text) {
 function broadcast(msg) {
   const frame = encodeFrame(OPCODES.TEXT, Buffer.from(JSON.stringify(msg)));
   for (const socket of clients) {
-    try { socket.write(frame); } catch (e) { clients.delete(socket); }
+    try { socket.write(frame); } catch { clients.delete(socket); }
   }
 }
 
 // ========== Activity Tracking ==========
 
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 let lastActivity = Date.now();
+function touchActivity() { lastActivity = Date.now(); }
 
-function touchActivity() {
-  lastActivity = Date.now();
+// ========== File Watchers ==========
+
+let presetsWatcher = null;
+
+function startContentWatcher() {
+  if (!activeProject || !fs.existsSync(activeProject.contentDir)) return;
+  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
+  const watcher = fs.watch(activeProject.contentDir, (eventType, filename) => {
+    if (!filename || !filename.endsWith('.html')) return;
+    if (debounceTimers.has(filename)) clearTimeout(debounceTimers.get(filename));
+    debounceTimers.set(filename, setTimeout(() => {
+      debounceTimers.delete(filename);
+      const filePath = path.join(activeProject.contentDir, filename);
+      if (!fs.existsSync(filePath)) return;
+      touchActivity();
+      if (!knownFiles.has(filename)) {
+        knownFiles.add(filename);
+        const eventsFile = path.join(activeProject.stateDir, 'events');
+        if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
+        console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
+      } else {
+        console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
+      }
+      writeProjectManifest();
+      broadcast({ type: 'reload' });
+    }, 100));
+  });
+  watcher.on('error', (err) => console.error('content watcher error:', err.message));
+  contentWatcher = watcher;
 }
-
-// ========== File Watching ==========
-
-const debounceTimers = new Map();
 
 // ========== Server Startup ==========
 
 function startServer() {
-  if (!fs.existsSync(CONTENT_DIR)) fs.mkdirSync(CONTENT_DIR, { recursive: true });
-  if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
-  writeManifest();
+  fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
 
-  // Track known files to distinguish new screens from updates.
-  // macOS fs.watch reports 'rename' for both new files and overwrites,
-  // so we can't rely on eventType alone.
-  const knownFiles = new Set(
-    fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.html'))
-  );
+  // Restore last active project
+  const lastActiveDir = workspace.getActiveProjectDir(WORKSPACE_DIR);
+  if (lastActiveDir && fs.existsSync(lastActiveDir)) {
+    setActiveProject(lastActiveDir);
+  }
 
   const server = http.createServer(handleRequest);
   server.on('upgrade', handleUpgrade);
 
-  // Watch generators/templates/ — when the agent adds or edits a template HTML file,
-  // broadcast reload-templates so the browser refreshes the gallery without a full page reload.
+  // Watch generators/templates/ for gallery live reload
   const TEMPLATES_DIR = path.join(GENERATORS_DIR, 'templates');
   if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
-  const presetsWatcher = fs.watch(TEMPLATES_DIR, (eventType, filename) => {
+  presetsWatcher = fs.watch(TEMPLATES_DIR, (eventType, filename) => {
     if (!filename || !filename.endsWith('.html')) return;
     if (debounceTimers.has('tpl:' + filename)) clearTimeout(debounceTimers.get('tpl:' + filename));
     debounceTimers.set('tpl:' + filename, setTimeout(() => {
@@ -565,42 +568,13 @@ function startServer() {
   });
   presetsWatcher.on('error', (err) => console.error('templates watcher error:', err.message));
 
-  const watcher = fs.watch(CONTENT_DIR, (eventType, filename) => {
-    if (!filename || !filename.endsWith('.html')) return;
-
-    if (debounceTimers.has(filename)) clearTimeout(debounceTimers.get(filename));
-    debounceTimers.set(filename, setTimeout(() => {
-      debounceTimers.delete(filename);
-      const filePath = path.join(CONTENT_DIR, filename);
-
-      if (!fs.existsSync(filePath)) return; // file was deleted
-      touchActivity();
-
-      if (!knownFiles.has(filename)) {
-        knownFiles.add(filename);
-        const eventsFile = path.join(STATE_DIR, 'events');
-        if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
-        console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
-      } else {
-        console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
-      }
-
-      writeManifest();
-      broadcast({ type: 'reload' });
-    }, 100));
-  });
-  watcher.on('error', (err) => console.error('fs.watch error:', err.message));
-
   function shutdown(reason) {
     console.log(JSON.stringify({ type: 'server-stopped', reason }));
-    const infoFile = path.join(STATE_DIR, 'server-info');
-    if (fs.existsSync(infoFile)) fs.unlinkSync(infoFile);
-    fs.writeFileSync(
-      path.join(STATE_DIR, 'server-stopped'),
-      JSON.stringify({ reason, timestamp: Date.now() }) + '\n'
-    );
-    watcher.close();
-    presetsWatcher.close();
+    const pidFile = path.join(WORKSPACE_DIR, '_server.pid');
+    if (fs.existsSync(pidFile)) fs.unlinkSync(pidFile);
+    fs.writeFileSync(path.join(WORKSPACE_DIR, '_server-stopped'), JSON.stringify({ reason, timestamp: Date.now() }) + '\n');
+    if (contentWatcher) contentWatcher.close();
+    if (presetsWatcher) presetsWatcher.close();
     clearInterval(lifecycleCheck);
     server.close(() => process.exit(0));
   }
@@ -610,16 +584,12 @@ function startServer() {
     try { process.kill(ownerPid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
   }
 
-  // Check every 60s: exit if owner process died or idle for 30 minutes
   const lifecycleCheck = setInterval(() => {
     if (!ownerAlive()) shutdown('owner process exited');
     else if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) shutdown('idle timeout');
   }, 60 * 1000);
   lifecycleCheck.unref();
 
-  // Validate owner PID at startup. If it's already dead, the PID resolution
-  // was wrong (common on WSL, Tailscale SSH, and cross-user scenarios).
-  // Disable monitoring and rely on the idle timeout instead.
   if (ownerPid) {
     try { process.kill(ownerPid, 0); }
     catch (e) {
@@ -634,10 +604,10 @@ function startServer() {
     const info = JSON.stringify({
       type: 'server-started', port: Number(PORT), host: HOST,
       url_host: URL_HOST, url: 'http://' + URL_HOST + ':' + PORT,
-      session_dir: SESSION_DIR, screen_dir: CONTENT_DIR, state_dir: STATE_DIR
+      workspace_dir: WORKSPACE_DIR,
     });
     console.log(info);
-    fs.writeFileSync(path.join(STATE_DIR, 'server-info'), info + '\n');
+    fs.writeFileSync(path.join(WORKSPACE_DIR, '_server-info'), info + '\n');
   });
 }
 

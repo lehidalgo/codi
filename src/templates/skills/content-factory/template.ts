@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 18
+version: 19
 ---
 
 # {{name}} — Content Factory
@@ -56,17 +56,19 @@ that the app picks up automatically via WebSocket.
 | \`/\` | GET | Serve the content factory web app |
 | \`/static/*\` | GET | Serve app assets (app.css, app.js) |
 | \`/vendor/*\` | GET | Serve vendor scripts (html2canvas, jszip) |
-| \`/api/files\` | GET | Return list of HTML files in the content dir |
-| \`/api/content?file=xxx\` | GET | Return raw HTML for a content file |
-| \`/api/preset\` | GET | Read the currently selected preset from state |
+| \`/api/files\` | GET | Return list of HTML files in the active project's content dir |
+| \`/api/content?file=xxx\` | GET | Return raw HTML for a content file in the active project |
+| \`/api/preset\` | GET | Read the currently selected preset from active project state |
 | \`/api/preset\` | POST | Write preset selection \`{id, name, type, timestamp}\` |
 | \`/api/active-file\` | GET | Read which file/preset the user currently has loaded |
 | \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset, sessionDir}\` |
-| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, preset}\` — use this to orient before editing |
-| \`/templates/*\` | GET | Serve stock template HTML files statically |
+| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset}\` — use this to orient before editing |
+| \`/api/create-project\` | POST | Create a new named project dir, activate it — body: \`{name}\`, returns \`{projectDir, contentDir, stateDir, exportsDir}\` |
+| \`/api/open-project\` | POST | Activate an existing project — body: \`{projectDir}\` |
+| \`/api/sessions\` | GET | List all projects from the workspace directory |
+| \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific project's content dir |
+| \`/api/session-status\` | POST | Persist status \`{sessionDir, status}\` to a project's manifest |
 | \`/api/templates\` | GET | List template files with metadata (id, type, format, url) |
-| \`/api/sessions\` | GET | List past sessions from \`.codi_output/\` parent dir |
-| \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific session's content dir |
 | \`/api/export-png\` | POST | Render card HTML to PNG via Playwright at 2× resolution |
 
 The server also runs a WebSocket endpoint at the same port. The app connects automatically
@@ -120,22 +122,47 @@ When the user clicks a template in the Gallery:
 ### Step 1 — Start the server
 
 \`\`\`bash
-bash \${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --name content-factory --project-dir .
+bash \${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --project-dir .
 \`\`\`
 
-Save all values from the JSON output:
+Save the JSON output:
 \`\`\`json
 {
   "type": "server-started",
   "url": "http://localhost:PORT",
-  "screen_dir": "/path/to/.codi_output/.../content",
-  "state_dir": "/path/to/.codi_output/.../state"
+  "workspace_dir": "/path/to/.codi_output"
 }
 \`\`\`
 
 Tell the user:
-> "Content factory is ready at {{url}} — open it in your browser.
+> "Content factory is ready at \`<url>\` — open it in your browser.
 > Go to the Gallery tab, pick a preset, then describe the content you want."
+
+### Step 1b — Create a project (when generating new content)
+
+Before writing any files, create a named project. This returns the directory paths to use:
+
+\`\`\`bash
+curl -s -X POST <url>/api/create-project \\
+  -H "Content-Type: application/json" \\
+  -d '{"name": "bbva-social-campaign"}'
+\`\`\`
+
+Response:
+\`\`\`json
+{
+  "ok": true,
+  "projectDir": "/path/to/.codi_output/bbva-social-campaign",
+  "contentDir": "/path/to/.codi_output/bbva-social-campaign/content",
+  "stateDir": "/path/to/.codi_output/bbva-social-campaign/state",
+  "exportsDir": "/path/to/.codi_output/bbva-social-campaign/exports"
+}
+\`\`\`
+
+Save \`contentDir\` — this is where you write HTML files. The project is now active.
+
+**Skip Step 1b** when the user opens an existing My Work project from the gallery — the server
+activates the project automatically when the user clicks it.
 
 ### Step 2 — Read state and determine mode
 
@@ -153,18 +180,17 @@ Example responses:
   "activeFilePath": "/abs/path/generators/templates/earthy-bold.html",
   "activeFile": null, "activeSessionDir": null, "preset": {...} }
 
-// My Work project open (may share the same template name)
-{ "mode": "mywork", "contentId": "a3f9c2d1", "activePreset": "earthy-bold",
-  "activeFilePath": "/abs/path/.codi_output/20260410_1400_earthy-bold/content/social.html",
-  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/20260410_1400_earthy-bold",
-  "preset": {...} }
+// My Work project open
+{ "mode": "mywork", "contentId": "a3f9c2d1", "activePreset": null,
+  "activeFilePath": "/abs/path/.codi_output/bbva-social-campaign/content/social.html",
+  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/bbva-social-campaign",
+  "status": "in-progress", "preset": null }
 
 // Nothing selected
 { "mode": null, "contentId": null, "activeFilePath": null, ... }
 \`\`\`
 
-**Use \`contentId\` as the anchor — not the template name.** A built-in template and a My Work
-project can share the same name (e.g. both called "earthy-bold"). The \`contentId\` is a hash of
+**Use \`contentId\` as the anchor — not the template name.** The \`contentId\` is a hash of
 \`activeFilePath\` and is always unique. If you are ever unsure which item is open, re-read
 \`/api/state\` and confirm the \`contentId\` matches what the user is looking at.
 
@@ -173,13 +199,13 @@ server has already resolved the absolute path for you.
 
 | \`mode\` value | Meaning | What to do |
 |----------------|---------|------------|
-| \`"template"\` | User opened a **Gallery template** | → Step 3: create a new project in \`.codi_output/\` styled after that template |
+| \`"template"\` | User opened a **Gallery template** | → Step 1b + Step 3: create a project, then generate content styled after that template |
 | \`"mywork"\` | User opened a **My Work project** | → Step 4b: edit \`activeFilePath\` in place |
 | \`null\` | Nothing selected yet | → Tell the user: "Open the Gallery tab, pick a template to start fresh, or pick a My Work project to continue editing." |
 
 **Template mode** means the user is looking at a read-only built-in template as a style reference.
-Your job is to generate a *new* project (new HTML file in \`screen_dir\`) that follows that template's
-visual identity — colors, typography, layout — but with the user's content.
+Your job is to create a new project (Step 1b) and generate a new HTML file in \`contentDir\` that
+follows that template's visual identity — colors, typography, layout — but with the user's content.
 
 **My Work mode** means the user is looking at content they already created.
 Your job is to edit the existing HTML file at \`activeFilePath\` in place.
@@ -189,8 +215,8 @@ Do not assume a default — mode selection determines where changes are written.
 
 ### Step 3 — Generate content (Template mode)
 
-Write \`<screen_dir>/social.html\` (or \`slides.html\` / \`document.html\`). The app detects the
-new file via WebSocket and adds it to the Content Files list. Click to load.
+After creating a project (Step 1b), write \`<contentDir>/social.html\` (or \`slides.html\` /
+\`document.html\`). The app detects the new file via WebSocket and adds it to the Content Files list.
 
 #### Required HTML structure
 
@@ -318,9 +344,9 @@ When \`mode\` is \`"mywork"\` in \`/api/state\`, the user has a past project ope
    \`\`\`bash
    curl -s <url>/api/state
    # { "mode": "mywork", "contentId": "a3f9c2d1",
-   #   "activeFilePath": "/abs/path/.codi_output/20260410_1400_earthy-bold/content/social.html",
-   #   "activeSessionDir": "/abs/path/.codi_output/20260410_1400_earthy-bold",
-   #   "activeFile": "social.html", ... }
+   #   "activeFilePath": "/abs/path/.codi_output/bbva-social-campaign/content/social.html",
+   #   "activeSessionDir": "/abs/path/.codi_output/bbva-social-campaign",
+   #   "activeFile": "social.html", "status": "in-progress", ... }
    \`\`\`
 
 2. **Read the current HTML** from disk:
@@ -417,8 +443,8 @@ which is a separate concern.
 Export happens in the browser via the sidebar buttons. When done:
 
 \`\`\`bash
-bash \${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] <session_dir>
+bash \${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]] <workspace_dir>
 \`\`\`
 
-Summarize: session path, preset used, number of slides, format, and where exports were saved.
+Summarize: workspace path, project name, number of slides, format, and where exports were saved.
 `;

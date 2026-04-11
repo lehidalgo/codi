@@ -16,7 +16,7 @@ compatibility:
 version: 1
 ---
 
-# codi-brand-identity — Brand Identity
+# SKILL.md
 
 ---
 

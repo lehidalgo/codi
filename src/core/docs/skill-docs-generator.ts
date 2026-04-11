@@ -1,6 +1,5 @@
-import { writeFile, mkdir } from "node:fs/promises";
 import { readFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
@@ -15,7 +14,6 @@ import {
   loadAgentTemplate,
 } from "../scaffolder/agent-template-loader.js";
 import { BUILTIN_PRESETS } from "#src/templates/presets/index.js";
-import { renderSkillDocsPage } from "./skill-docs-template.js";
 import { ALL_SKILL_CATEGORIES } from "#src/constants.js";
 
 export interface SkillDocEntry {
@@ -126,27 +124,6 @@ export function exportSkillCatalogJson(): string {
   const entries = collectSkillEntries();
   const groups = groupByCategory(entries);
   return JSON.stringify({ totalSkills: entries.length, groups }, null, 2);
-}
-
-/**
- * Generate the full HTML skill catalog page.
- */
-export function generateSkillDocsHtml(): string {
-  const entries = collectSkillEntries();
-  const groups = groupByCategory(entries);
-  return renderSkillDocsPage(groups, entries.length);
-}
-
-/**
- * Build and write the HTML skill catalog to docs/codi_docs/index.html.
- * Returns the absolute path of the written file.
- */
-export async function buildSkillDocsFile(projectRoot: string): Promise<string> {
-  const html = generateSkillDocsHtml();
-  const outPath = join(projectRoot, "docs", "codi_docs", "index.html");
-  await mkdir(dirname(outPath), { recursive: true });
-  await writeFile(outPath, html, "utf-8");
-  return outPath;
 }
 
 // ---------------------------------------------------------------------------

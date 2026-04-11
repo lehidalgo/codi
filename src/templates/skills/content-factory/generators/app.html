@@ -177,12 +177,14 @@
         <span id="preview-meta-slides" class="preview-meta-dim"></span>
         <span id="preview-meta-status-wrap" class="preview-meta-status-wrap" hidden>
           <span class="preview-meta-sep">·</span>
-          <select id="preview-status-select" class="preview-status-select" aria-label="Project status">
-            <option value="draft">Draft</option>
-            <option value="in-progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="done">Done</option>
-          </select>
+          <span class="status-select-wrap status-draft" id="status-select-wrap">
+            <select id="preview-status-select" class="preview-status-select" aria-label="Project status">
+              <option value="draft">Draft</option>
+              <option value="in-progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+          </span>
         </span>
       </div>
       <div id="canvas" class="canvas mode-grid">
