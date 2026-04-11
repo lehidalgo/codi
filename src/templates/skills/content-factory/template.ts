@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 15
+version: 16
 ---
 
 # {{name}} — Content Factory
@@ -46,6 +46,7 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML template for agent-generated slide decks |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — browsable in the Gallery Templates tab |
 
 ---
 
@@ -63,6 +64,11 @@ that the app picks up automatically via WebSocket.
 | \`/api/active-file\` | GET | Read which file/preset the user currently has loaded |
 | \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset}\` |
 | \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, preset}\` — use this to orient before editing |
+| \`/templates/*\` | GET | Serve stock template HTML files statically |
+| \`/api/templates\` | GET | List template files with metadata (id, type, format, url) |
+| \`/api/sessions\` | GET | List past sessions from \`.codi_output/\` parent dir |
+| \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific session's content dir |
+| \`/api/export-png\` | POST | Render card HTML to PNG via Playwright at 2× resolution |
 
 The server also runs a WebSocket endpoint at the same port. The app connects automatically
 and receives \`{type:"reload"}\` messages whenever a content file changes, triggering a live update.
@@ -112,9 +118,11 @@ When the user clicks a preset in the Gallery:
 
 ### Main area (tabs)
 
-**Preview tab** — horizontal card strip. Keyboard arrow keys navigate between slides. Active card highlighted with accent border. Click any card to select it.
+**Preview tab** — horizontal card strip. Keyboard arrow keys navigate between slides. Active card highlighted with accent border. Click any card to select it. A **metadata bar** above the canvas shows the active content name, type chip, pixel dimensions, and slide count — updated whenever content changes.
 
-**Gallery tab** — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: All / Social / Slides / Document. Click a preset to load it into Preview.
+**Gallery tab** — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: All / Social / Slides / Document / My Work / Templates.
+- **My Work** — past sessions loaded from \`.codi_output/\`. Shows session date, preset name, and resolved content name. Click any session card to load its content files.
+- **Templates** — stock template HTML files from \`generators/templates/\`. Click to load as a starting point for agent-generated content.
 
 ---
 
@@ -163,6 +171,9 @@ new file via WebSocket and adds it to the Content Files list. Click to load.
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- REQUIRED: content identity — powers the preview metadata bar -->
+  <meta name="codi:template" content='{"id":"my-content","name":"My Content Title","type":"social","format":{"w":1080,"h":1080}}'>
+  <title>My Content Title</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* Copy full preset CSS here */
@@ -182,9 +193,26 @@ new file via WebSocket and adds it to the Content Files list. Click to load.
 </html>
 \`\`\`
 
+#### Content identity — REQUIRED
+
+Every generated HTML file MUST include a \`<meta name="codi:template">\` tag and a \`<title>\` in \`<head>\`.
+These power the preview metadata bar (name · type · format · slide count) shown above the canvas.
+
+\`\`\`json
+{"id":"<kebab-case-id>","name":"<Human Readable Name>","type":"<social|slides|document>","format":{"w":<width>,"h":<height>}}
+\`\`\`
+
+- \`type\` must match: \`social\` for cards, \`slides\` for decks, \`document\` for A4 pages
+- \`format\` must match the active format button dimensions
+- \`name\` describes the content topic, not the template (e.g. "AI Agents Series", not "Dark Editorial")
+- Set \`<title>\` to the same human-readable name as a fallback
+
 #### Card rules
 
-- Element selector: \`class="social-card"\` — the app scans for these
+- Element selectors scanned by the app:
+  - \`class="social-card"\` — social media cards (1:1, 4:5, 9:16, OG)
+  - \`class="slide"\` — slide deck pages (16:9)
+  - \`class="doc-page"\` — document pages (A4)
 - Required attributes: \`data-type\` (cover | content | stat | quote | cta | title | closing) and \`data-index\` (zero-padded: 01, 02…)
 - Dimensions come from the active format button, not the HTML itself
 - Replace \`@handle\` with the user's actual handle
@@ -232,10 +260,27 @@ em.acc {
 
 **Document pages (\`.doc-page\`) are exempt** — they use \`min-height\` with no \`overflow: hidden\`, so content grows vertically without clipping. Horizontal overflow still renders poorly.
 
-### Step 4 — Iterate
+### Step 4 — Iterate (loop until done)
 
-The user reviews the Preview tab and gives feedback. Rewrite the HTML file with changes.
-The app live-reloads in under 200ms.
+Content creation is a back-and-forth process. This step repeats until the user is satisfied.
+
+**The loop:**
+1. User opens the Preview tab and reviews the rendered cards
+2. User gives feedback in chat: "change the headline on slide 2", "make the background darker", "add a stat slide"
+3. Agent reads current state to confirm what the user has open:
+   \`\`\`bash
+   curl -s <url>/api/state
+   # {"activeFile":"social.html","activePreset":null,"preset":{...}}
+   \`\`\`
+4. Agent fetches the current HTML, applies the changes, and rewrites the file
+5. App reloads in under 200ms — user sees the update immediately
+6. Repeat from step 1
+
+**Do not ask the user to reload the page** — the WebSocket handles it.
+
+**After each rewrite, confirm what changed** — tell the user exactly which slides were updated and what changed so they can review quickly without hunting for the difference.
+
+**Do not stop at one pass.** Keep iterating until the user says they are done, satisfied, or wants to export.
 
 ### Step 4b — Modify an existing content file
 
