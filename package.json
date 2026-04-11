@@ -24,6 +24,8 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:python": "uv run pytest src/templates/skills/",
+    "test:all": "vitest run && uv run pytest src/templates/skills/",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e",

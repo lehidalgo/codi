@@ -1,9 +1,10 @@
 import { writeFile, mkdir } from "node:fs/promises";
+import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
-  loadSkillTemplateContent,
+  loadSkillTemplate,
 } from "../scaffolder/skill-template-loader.js";
 import {
   AVAILABLE_TEMPLATES as AVAILABLE_RULE_TEMPLATES,
@@ -24,6 +25,7 @@ export interface SkillDocEntry {
   userInvocable: boolean;
   compatibility: string[];
   body: string;
+  readme?: string;
 }
 
 interface SkillFrontmatter {
@@ -58,11 +60,22 @@ export function collectSkillEntries(): SkillDocEntry[] {
   const entries: SkillDocEntry[] = [];
 
   for (const templateName of AVAILABLE_SKILL_TEMPLATES) {
-    const result = loadSkillTemplateContent(templateName);
+    const result = loadSkillTemplate(templateName);
     if (!result.ok) continue;
 
-    const raw = resolveTemplatePlaceholders(result.data, templateName);
+    const descriptor = result.data;
+    const raw = resolveTemplatePlaceholders(descriptor.template, templateName);
     const { data, content } = parseFrontmatter<SkillFrontmatter>(raw);
+
+    let readme: string | undefined;
+    if (descriptor.staticDir) {
+      const readmePath = join(descriptor.staticDir, "README.md");
+      if (existsSync(readmePath)) {
+        const rawReadme = readFileSync(readmePath, "utf-8");
+        // Strip leading h1 title — skill name is already shown in the card header
+        readme = unescapeTemplateOutput(rawReadme.replace(/^#[^\n]*\n/, "").trimStart());
+      }
+    }
 
     entries.push({
       name: data.name ?? templateName,
@@ -71,6 +84,7 @@ export function collectSkillEntries(): SkillDocEntry[] {
       userInvocable: data["user-invocable"] !== false,
       compatibility: data.compatibility ?? [],
       body: unescapeTemplateOutput(content),
+      readme,
     });
   }
 

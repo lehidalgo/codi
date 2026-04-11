@@ -1,3 +1,20 @@
+[project]
+name = "codi"
+version = "0.1.0"
+requires-python = ">=3.14"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["src/templates/skills"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-v", "--tb=short"]
+
 [tool.bandit]
 exclude_dirs = ["dist", "projs", "src/templates", "scripts", "tests"]
 skips = []

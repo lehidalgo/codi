@@ -164,8 +164,8 @@
     "hash": "30c98144c693a33948cfd8f319d3f13de14280cc2e6780c022c37f318c22f967"
   },
   "codi-skill-creator": {
-    "version": 24,
-    "hash": "c3c2f95b752569748eaf459ad6bbd33feb3d1fb6c1a2563204232f1f2236b1ea"
+    "version": 27,
+    "hash": "7d1e7227dd9069128fb3dbb2936e08ab6fcb065aebefffa7c1140a0e6497ef64"
   },
   "codi-rule-creator": {
     "version": 8,
@@ -260,8 +260,8 @@
     "hash": "0652e86af40402989a6065243a88ec12f26ef240abe4a8ae38c3ddd33adf7e51"
   },
   "codi-content-factory": {
-    "version": 15,
-    "hash": "1ef6ba424a77326431269a7aa19f97deed4e37040e22deeb8118d6e725e9333f"
+    "version": 16,
+    "hash": "cd967e3b0506f120969b67a15ca246fd3f493931dbfa1a2b5a6750dab15910b4"
   },
   "codi-project-quality-guard": {
     "version": 9,
