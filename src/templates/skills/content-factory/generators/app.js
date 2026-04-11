@@ -1,3 +1,11 @@
+import { parseCards as _parseCards, parseTemplate as _parseTemplate } from "/static/lib/cards.js";
+import {
+  cardFormat as _cardFormat,
+  buildCardDoc as _buildCardDoc,
+  buildThumbDoc as _buildThumbDoc,
+  computeCardSize as _computeCardSize,
+} from "/static/lib/card-builder.js";
+
 // ====== State ======
 const state = {
   format: { w: 1080, h: 1080 },
@@ -185,43 +193,12 @@ async function loadContent(filename) {
 }
 
 function parseCards(html) {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const styleText = Array.from(doc.querySelectorAll("style"))
-    .map((s) => s.textContent)
-    .join("\n");
-  const linkTags = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
-    .map((l) => l.outerHTML)
-    .join("\n");
-  return Array.from(doc.querySelectorAll(".social-card, .doc-page, .slide")).map((el, i) => ({
-    index: i,
-    dataType: el.getAttribute("data-type") || "card",
-    dataIdx: el.getAttribute("data-index") || String(i + 1).padStart(2, "0"),
-    html: el.outerHTML, // raw HTML — @handle replaced at render time
-    styleText,
-    linkTags,
-    format: null,
-  }));
+  return _parseCards(html);
 }
 
 // ====== Template loading ======
 function parseTemplate(html, filename) {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const metaEl = doc.querySelector('meta[name="codi:template"]');
-  let meta = {};
-  try {
-    if (metaEl) meta = JSON.parse(metaEl.content);
-  } catch {}
-  const id = meta.id || filename.replace(/\.html$/, "");
-  const cards = parseCards(html);
-  return {
-    filename,
-    id,
-    name: meta.name || id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    type: meta.type || "social",
-    format: meta.format || { w: 1080, h: 1080 },
-    desc: meta.desc || "",
-    cards,
-  };
+  return _parseTemplate(html, filename);
 }
 
 async function loadTemplates() {
@@ -247,112 +224,23 @@ async function loadTemplates() {
 
 // ====== Card helpers ======
 function cardFormat(card) {
-  // A4 document cards always use their native format — format selector has no effect
-  if (card && card.format && card.format.w === 794) return card.format;
-  // All other content types follow the sidebar format selector
-  return state.format;
+  return _cardFormat(card, state.format);
 }
 
 function buildCardDoc(card, forExport = false, logo = null) {
   const fmt = cardFormat(card);
-  const bg = forExport ? "background:#070a0f" : "";
-  const html = card.html.replace(/@handle/g, "@" + (state.handle || "handle"));
-
-  // For export: inject the logo as an SVG element directly into the srcdoc.
-  // The DOM overlay sits outside the iframe (not captured by html2canvas).
-  // We use SVG with a proper linearGradient because html2canvas cannot render
-  // -webkit-background-clip:text — but it does render SVG gradients correctly.
-  let logoHtml = "";
-  let logoFontLink = "";
-  if (forExport && logo && logo.visible) {
-    logoFontLink =
-      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap">';
-    const svgStyle = [
-      "position:absolute",
-      "left:" + logo.x + "%",
-      "top:" + logo.y + "%",
-      "transform:translate(-50%,-50%)",
-      "overflow:visible",
-      "z-index:999",
-      "pointer-events:none",
-      "opacity:0.88",
-    ].join(";");
-    logoHtml = [
-      '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" style="' + svgStyle + '">',
-      "<defs>",
-      '<linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">',
-      '<stop offset="0%" stop-color="#56b6c2"/>',
-      '<stop offset="100%" stop-color="#61afef"/>',
-      "</linearGradient>",
-      "</defs>",
-      '<text x="0" y="0"',
-      " font-family=\"'Geist Mono',monospace\"",
-      ' font-size="' + logo.size + '"',
-      ' font-weight="500"',
-      ' fill="url(#cg)"',
-      ' text-anchor="middle"',
-      ' dominant-baseline="middle"',
-      ">codi</text>",
-      "</svg>",
-    ].join("");
-  }
-
-  // For export: body uses overflow:visible so Playwright's clip rect is the boundary
-  // (not the CSS overflow). This prevents font-rendering size differences from clipping text.
-  // For preview: overflow:hidden correctly clips the iframe to the card's format dimensions.
-  const bodyOverflow = forExport ? "overflow:visible" : "overflow:hidden";
-  return [
-    '<!DOCTYPE html><html><head><meta charset="utf-8">',
-    card.linkTags,
-    logoFontLink,
-    "<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}",
-    "html,body{width:" +
-      fmt.w +
-      "px;height:" +
-      fmt.h +
-      "px;" +
-      bodyOverflow +
-      ";position:relative;" +
-      bg +
-      "}",
-    card.styleText +
-      // Override format vars and card dimensions to match the active format selector.
-      // Injected after template CSS so it wins the cascade without !important on vars.
-      // !important on .social-card catches templates that hardcode px instead of using vars.
-      ":root{--w:" +
-      fmt.w +
-      "px;--h:" +
-      fmt.h +
-      "px}" +
-      ".social-card{width:" +
-      fmt.w +
-      "px!important;height:" +
-      fmt.h +
-      "px!important}" +
-      "</style></head><body>",
-    html + logoHtml + "</body></html>",
-  ].join("");
+  return _buildCardDoc(card, fmt, logo, state.handle || "handle", forExport);
 }
 
 function computeCardSize(card) {
   const fmt = cardFormat(card);
   const canvasEl = $("canvas");
-  const cw = Math.max(canvasEl.clientWidth, 400);
-  const ch = Math.max(canvasEl.clientHeight, 300);
-  let scale;
-  if (state.viewMode === "app") {
-    // Fit card to canvas (with room for nav arrows and 92px filmstrip at bottom)
-    const fitW = (cw - 140) / fmt.w;
-    const fitH = (ch - 92) / fmt.h;
-    const fitScale = Math.min(fitW, fitH);
-    // Cap at fitScale: card must always fit the canvas — no clipping allowed in app mode
-    scale = Math.min(fitScale * state.zoom, fitScale);
-  } else {
-    // Grid / document: fixed reference width, zoom scales from there
-    const refW = Math.min(cw - 80, 520);
-    scale = (refW / fmt.w) * state.zoom;
-  }
-  return { scale, fmt, displayW: Math.round(fmt.w * scale), displayH: Math.round(fmt.h * scale) };
+  return _computeCardSize(fmt, {
+    canvasW: Math.max(canvasEl.clientWidth, 400),
+    canvasH: Math.max(canvasEl.clientHeight, 300),
+    zoom: state.zoom,
+    viewMode: state.viewMode,
+  });
 }
 
 function _getContentType() {
@@ -761,25 +649,7 @@ let galleryInit = false;
 // Build a thumbnail srcdoc from any card object (works for both templates and content files)
 function buildThumbDoc(card) {
   const fmt = cardFormat(card);
-  return [
-    '<!DOCTYPE html><html><head><meta charset="utf-8">',
-    card.linkTags || "",
-    "<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}",
-    "html,body{width:" + fmt.w + "px;height:" + fmt.h + "px;overflow:hidden}",
-    (card.styleText || "") +
-      ":root{--w:" +
-      fmt.w +
-      "px;--h:" +
-      fmt.h +
-      "px}" +
-      ".social-card{width:" +
-      fmt.w +
-      "px!important;height:" +
-      fmt.h +
-      "px!important}" +
-      "</style></head><body>",
-    (card.html || "").replace(/@handle/g, "@preview") + "</body></html>",
-  ].join("");
+  return _buildThumbDoc(card, fmt);
 }
 
 function buildTemplateCoverEl(template, BOX_W, BOX_H) {
@@ -840,7 +710,8 @@ async function initGallery() {
         if (!entry.isIntersecting) return;
         const el = entry.target;
         if (el.hasAttribute("data-pending") && el._coverCard) {
-          el.querySelector("iframe").srcdoc = buildThumbDoc(el._coverCard);
+          const native = el._coverCard.format || state.format;
+          el.querySelector("iframe").srcdoc = _buildThumbDoc(el._coverCard, native);
           el.removeAttribute("data-pending");
         }
         observer.unobserve(el);

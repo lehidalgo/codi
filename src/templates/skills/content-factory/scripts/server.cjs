@@ -249,9 +249,14 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /static/* — serve generator app assets (app.html, app.css, app.js)
+  // /static/* — serve generator app assets (app.html, app.css, app.js, lib/*)
   if (req.method === 'GET' && pathname.startsWith('/static/')) {
-    const filePath = path.join(GENERATORS_DIR, path.basename(pathname.slice(8)));
+    const rel = pathname.slice(8); // strip "/static/"
+    const filePath = path.resolve(GENERATORS_DIR, rel);
+    // Guard against path traversal outside generators dir
+    if (!filePath.startsWith(GENERATORS_DIR + path.sep) && filePath !== GENERATORS_DIR) {
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
     serveFile(res, filePath);
     return;
