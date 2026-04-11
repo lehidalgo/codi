@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **manifest** — `project_context` field: free-form markdown injected into the AI instruction file as a `## Project Context` section
+- **generate** — auto-injects `## Self-Development Mode` warning into CLAUDE.md when `manifest.name === "codi"`, guiding AI agents away from editing generated output
+- **section-builder** — `buildSelfDevWarning()` and `buildProjectContext()` adapters for the two new CLAUDE.md sections
+
 - **skills** — optional `README.md` setup guides for 17 complex skills (audio-transcriber, pdf, docx, xlsx, pptx, notebooklm, webapp-testing, slack-gif-creator, content-factory, codi-brand, algorithmic-art, claude-artifacts-builder, brainstorming, skill-creator, deck-engine, doc-engine, mcp-ops)
 - **docs site** — skill catalog pages now display `# README` and `# SKILL.md` as h1 sections with TOC entries in the right sidebar
 - **docs site** — TOC now includes h1 headings (depth-1 style) alongside h2/h3
@@ -23,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **scripts** — `copy-skill-assets.mjs` now copies root-level `.md` files (README.md) from skill source dirs to dist
 
 - **content-factory** — 3-tier skill testing framework: Tier 1 contract validator, Tier 2 unit tests for pure lib functions, Tier 3 HTTP integration tests against the live server
+- **content-factory** — context-aware export panel: social → PNG + PDF; slides → PPTX (primary) + PDF + PNG; document → PDF (primary) + PNG; PDF via Playwright server-side (`/api/export-pdf`); PPTX via PptxGenJS client-side vendor bundle
 - **content-factory** — pure function library (`lib/cards.js`, `lib/card-builder.js`) extracted from `app.js` and importable by Node.js/Vitest
 - **schemas** — `SkillTestManifestSchema` Zod schema for validating `skill.test.json` manifests
 - **content-factory** — `/api/state` returns `mode`, `activeFilePath`, and `contentId` hash to distinguish same-named built-in templates from My Work projects
