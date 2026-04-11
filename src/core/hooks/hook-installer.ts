@@ -15,6 +15,7 @@ import {
   DOC_NAMING_CHECK_TEMPLATE,
   ARTIFACT_VALIDATE_TEMPLATE,
   SKILL_RESOURCE_CHECK_TEMPLATE,
+  SKILL_PATH_WRAP_CHECK_TEMPLATE,
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
 import {
@@ -52,6 +53,7 @@ export interface InstallOptions {
   importDepthCheck?: boolean;
   skillYamlValidation?: boolean;
   skillResourceCheck?: boolean;
+  skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
   versionBump?: boolean;
   docCheck?: boolean;
@@ -164,6 +166,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, resourceCheckPath));
+  }
+  if (options.skillPathWrapCheck) {
+    const pathWrapCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-path-wrap-check.mjs`);
+    await fs.writeFile(pathWrapCheckPath, SKILL_PATH_WRAP_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, pathWrapCheckPath));
   }
   if (options.stagedJunkCheck) {
     const junkCheckPath = path.join(hookDir, `${PROJECT_NAME}-staged-junk-check.mjs`);

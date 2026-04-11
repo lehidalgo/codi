@@ -105,16 +105,9 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="export-panel">
       <div class="panel-label">Export</div>
-      <button class="btn-export" id="btn-png" disabled>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11.5l-4-4h2.5V2h3v5.5H12L8 11.5zM2 13.5h12V12H2v1.5z"/></svg>
-        PNG · current slide
-      </button>
-      <button class="btn-export primary" id="btn-zip" disabled>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11.5l-4-4h2.5V2h3v5.5H12L8 11.5zM2 13.5h12V12H2v1.5z"/></svg>
-        ZIP · all slides
-      </button>
+      <div id="export-panel-btns"></div>
     </section>
 
     <section class="panel panel--log">
@@ -226,6 +219,7 @@
 </div>
 <script src="/vendor/jszip.min.js"></script>
 <script src="/vendor/html2canvas.min.js"></script>
+<script src="/vendor/pptxgen.bundle.js"></script>
 <script type="module" src="/static/app.js"></script>
 </body>
 </html>

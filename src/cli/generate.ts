@@ -136,12 +136,15 @@ export async function generateHandler(
           importDepthCheck: hooksConfig.importDepthCheck,
           skillYamlValidation: hooksConfig.skillYamlValidation,
           skillResourceCheck: hooksConfig.skillResourceCheck,
+          skillPathWrapCheck: hooksConfig.skillPathWrapCheck,
           stagedJunkCheck: hooksConfig.stagedJunkCheck,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });
         if (hookResult.ok) {
-          const missingDeps = filterMissing(await checkHookDependencies(hooksConfig.hooks, projectRoot));
+          const missingDeps = filterMissing(
+            await checkHookDependencies(hooksConfig.hooks, projectRoot),
+          );
           if (missingDeps.length > 0) {
             const log = Logger.getInstance();
             log.warn("Missing hook tools — install before committing:");

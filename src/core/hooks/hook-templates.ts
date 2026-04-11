@@ -475,6 +475,127 @@ if (errors.length > 0) {
 }
 `;
 
+export const SKILL_PATH_WRAP_CHECK_TEMPLATE = `#!/usr/bin/env node
+// ${PROJECT_NAME_DISPLAY} skill path wrap checker
+// Finds skill resource paths that are missing the [[/path]] wrapper convention.
+// Two detection patterns:
+//   1. CLAUDE_SKILL_DIR variable followed by a bare /path (missing [[...]])
+//   2. Bare /scripts/, /references/, /assets/, /lib/ paths not inside [[...]]
+// Convention: wrap resource paths with [[/path]] so the resource-check hook can validate them.
+import fs from 'fs';
+import path from 'path';
+
+const ROOT = process.cwd();
+
+// Known skill subdirectory names — bare paths under these are flagged.
+const SKILL_SUBDIRS = 'scripts|references|assets|lib|generators|agents|hooks|tests|tools';
+
+function extractBareSkillPaths(content) {
+  // Normalize backslash-escaped backticks before code-block stripping.
+  // template.ts files write fenced code blocks using backslash-escaped backticks
+  // so they do not close the outer TS template literal. This produces one or more
+  // backslashes before each backtick in the raw file bytes. Replace any such run
+  // with a plain backtick so the fenced code block regex can strip them.
+  const T = String.fromCharCode(96); // backtick
+  const BS = String.fromCharCode(92); // backslash
+  let cleaned = content.replace(new RegExp(BS + BS + '+' + T, 'g'), T);
+  // Strip <example>...</example> blocks.
+  cleaned = cleaned.replace(/<example>[\\s\\S]*?<\\/example>/g, '');
+  // Strip fenced code blocks (both \`\`\` and plain after normalization).
+  cleaned = cleaned.replace(new RegExp(T + T + T + '[\\\\s\\\\S]*?' + T + T + T, 'g'), '');
+  // Strip inline code spans.
+  cleaned = cleaned.replace(new RegExp(T + '[^' + T + '\\\\n]+' + T, 'g'), '');
+  // Strip already-wrapped [[...]] content.
+  cleaned = cleaned.replace(/\\[\\[[\\s\\S]*?\\]\\]/g, '');
+
+  const found = new Set();
+
+  // Pattern 1: CLAUDE_SKILL_DIR var + bare /known-subdir/... path (missing [[...]]).
+  // Requires a known skill subdir to avoid false positives like \${CLAUDE_SKILL_DIR}/.env.
+  // Matches: \${CLAUDE_SKILL_DIR}/scripts/run.py  and  \\\${CLAUDE_SKILL_DIR}/scripts/run.py
+  const skillDirPattern = /\\\\?\\$\\{?CLAUDE_SKILL_DIR\\}?(\\/(?:scripts|references|assets|lib|generators|agents|hooks|tests|tools)\\/[^\\s"'\\]>)]+)/g;
+  let m;
+  while ((m = skillDirPattern.exec(cleaned)) !== null) {
+    const p = m[1].replace(/[.,;)"'!?]+$/, '');
+    found.add(p);
+  }
+
+  // Pattern 2: Bare /known-subdir/... paths not inside [[...]].
+  // Negative lookbehind prevents matching substrings like ../../assets/ or .git/hooks/.
+  const subdirRe = /(?<![\\w.])\\/(?:scripts|references|assets|lib|generators|agents|hooks|tests|tools)\\/[^\\s"'\\]>),]+/g;
+  while ((m = subdirRe.exec(cleaned)) !== null) {
+    const p = m[0].replace(/[.,;)"'!?]+$/, '');
+    found.add(p);
+  }
+
+  return found;
+}
+
+const SKIP_DIRS = new Set(['node_modules', '.git', 'vendor', 'dist']);
+
+function collectFiles(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (SKIP_DIRS.has(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) results.push(...collectFiles(full));
+    else if (entry.isFile() && (entry.name.endsWith('.md') || entry.name === 'template.ts')) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+const errors = [];
+
+// User circuit: .codi/skills/
+const codiSkillsDir = path.join(ROOT, '.codi', 'skills');
+if (fs.existsSync(codiSkillsDir)) {
+  for (const entry of fs.readdirSync(codiSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillDir = path.join(codiSkillsDir, entry.name);
+    if (!fs.existsSync(path.join(skillDir, 'SKILL.md'))) continue;
+    for (const file of collectFiles(skillDir)) {
+      for (const p of extractBareSkillPaths(fs.readFileSync(file, 'utf-8'))) {
+        errors.push({ source: path.relative(ROOT, file), path: p });
+      }
+    }
+  }
+}
+
+// Developer circuit: src/templates/skills/
+const tmplSkillsDir = path.join(ROOT, 'src', 'templates', 'skills');
+if (fs.existsSync(tmplSkillsDir)) {
+  for (const entry of fs.readdirSync(tmplSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillTemplateDir = path.join(tmplSkillsDir, entry.name);
+    if (!fs.existsSync(path.join(skillTemplateDir, 'template.ts'))) continue;
+    for (const file of collectFiles(skillTemplateDir)) {
+      for (const p of extractBareSkillPaths(fs.readFileSync(file, 'utf-8'))) {
+        errors.push({ source: path.relative(ROOT, file), path: p });
+      }
+    }
+  }
+}
+
+if (errors.length > 0) {
+  console.error('\\nSkill path wrap errors found:\\n');
+  const bySource = {};
+  for (const { source, path: p } of errors) {
+    if (!bySource[source]) bySource[source] = [];
+    bySource[source].push(p);
+  }
+  for (const [source, paths] of Object.entries(bySource)) {
+    console.error('  ' + source + ':');
+    for (const p of paths) console.error("    bare path '" + p + "' — wrap with [[" + p + "]]");
+  }
+  console.error('\\nFix: wrap each path with [[/path]] markers.');
+  console.error('     Example: \${CLAUDE_SKILL_DIR}[[/scripts/server.py]]');
+  console.error('     Claude Code strips [[]] at generate time; other agents keep them as-is.');
+  process.exit(1);
+}
+`;
+
 export const DOC_NAMING_CHECK_TEMPLATE = `#!/usr/bin/env node
 // ${PROJECT_NAME_DISPLAY} doc naming check
 // Validates docs/ filenames follow YYYYMMDD_HHMMSS_[CATEGORY]_filename.ext when docs are staged.

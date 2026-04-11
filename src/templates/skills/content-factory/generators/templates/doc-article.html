@@ -149,6 +149,42 @@
     }
     .page-body p { margin-bottom: 16px; }
     .page-body strong { color: var(--text-1); font-weight: 600; }
+    /* .page-body is display:flex (inherited from .doc-page flex column) — flex children
+       need min-width:0 to prevent tables and code blocks from overflowing page width. */
+    .page-body > * { min-width: 0; }
+
+    /* ── Data Table ─────────────────────────────────────────────────────────── */
+    /* table-layout:fixed is required — prevents column collapse in flex containers
+       and ensures Google Docs renders column widths correctly via the DOCX tblGrid.
+       overflow:visible is required — overflow:hidden clips content in the browser
+       preview and corrupts the DOCX Playwright screenshot. */
+    .data-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      overflow: visible;
+      font-size: 14px;
+      margin: 14px 0;
+    }
+    .data-table thead tr { background: var(--c0); }
+    .data-table thead th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .data-table tbody tr:nth-child(even) { background: var(--surface); }
+    .data-table tbody tr { border-bottom: 1px solid var(--border); }
+    .data-table td {
+      padding: 8px 12px;
+      vertical-align: top;
+      line-height: 1.5;
+      word-break: break-word;
+      color: var(--text-2);
+    }
 
     code {
       font-family: var(--fm);

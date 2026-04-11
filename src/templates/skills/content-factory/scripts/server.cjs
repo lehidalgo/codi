@@ -4,6 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const workspace = require('./lib/workspace.cjs');
+const { handleExportPng, handleExportPdf, handleExportDocx } = require('./lib/exports.cjs');
 
 // ========== WebSocket Protocol (RFC 6455) ==========
 
@@ -410,28 +411,15 @@ function handleRequest(req, res) {
 
   // /api/export-png POST — render card HTML to PNG via Playwright
   if (req.method === 'POST' && pathname === '/api/export-png') {
-    let body = '';
-    req.on('data', d => { body += d; });
-    req.on('end', async () => {
-      try {
-        const { html, width, height } = JSON.parse(body);
-        if (!html || !width || !height) { res.writeHead(400); res.end('Missing html/width/height'); return; }
-        const { chromium } = require('playwright');
-        const browser = await chromium.launch({ headless: true });
-        const page = await browser.newPage({ deviceScaleFactor: 2 });
-        await page.setViewportSize({ width, height });
-        await page.setContent(html, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(500);
-        const png = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
-        await browser.close();
-        res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length });
-        res.end(png);
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: e.message }));
-      }
-    });
-    return;
+    handleExportPng(req, res); return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/export-pdf') {
+    handleExportPdf(req, res); return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/export-docx') {
+    handleExportDocx(req, res); return;
   }
 
   // / — serve app shell

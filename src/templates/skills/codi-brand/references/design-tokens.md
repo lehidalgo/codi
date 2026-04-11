@@ -1,6 +1,6 @@
 # Codi Design Tokens
 
-> Source of truth: /references/site-style.css
+> Source of truth: [[/references/site-style.css]]
 
 ## Color Palette
 

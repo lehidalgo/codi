@@ -18,6 +18,7 @@ export interface HooksConfig {
   importDepthCheck: boolean;
   skillYamlValidation: boolean;
   skillResourceCheck: boolean;
+  skillPathWrapCheck: boolean;
   stagedJunkCheck: boolean;
   versionBump: boolean;
   docCheck: boolean;
@@ -134,6 +135,12 @@ export function generateHooksConfig(
   });
 
   allHooks.push({
+    name: "skill-path-wrap-check",
+    command: `node .git/hooks/${PROJECT_NAME}-skill-path-wrap-check.mjs`,
+    stagedFilter: "**/{SKILL.md,template.ts,*.md}",
+  });
+
+  allHooks.push({
     name: "artifact-validate",
     command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
     stagedFilter: ".codi/**",
@@ -220,6 +227,7 @@ export function generateHooksConfig(
     importDepthCheck: true,
     skillYamlValidation: true,
     skillResourceCheck: true,
+    skillPathWrapCheck: true,
     stagedJunkCheck: true,
     versionBump,
     docCheck,

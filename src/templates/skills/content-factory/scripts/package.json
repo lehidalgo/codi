@@ -1,0 +1,9 @@
+{
+  "name": "codi-content-factory-server",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "docx": "^9.6.1",
+    "html-to-docx": "^1.8.0"
+  }
+}

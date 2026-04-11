@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 20
+version: 27
 ---
 
 # {{name}} — Content Factory
@@ -276,44 +276,25 @@ These power the preview metadata bar (name · type · format · slide count) sho
 
 #### Clipping rules — MANDATORY
 
-**Social cards and slides use \`overflow: hidden\`.** Every pixel beyond the card boundary is clipped — hard, with no warning. This applies to text, decorative elements, absolute-positioned glows, and images. Never assume content will wrap gracefully; test every card at the intended format before declaring it done.
+Full rules: \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\`
 
-**Large headline text**
-- Use \`line-height: 1.1\` minimum on all headlines — lower values clip ascenders and descenders at large font sizes
-- Use \`letter-spacing\` between \`-0.03em\` and \`-0.05em\` to control width — heavy weights at 80px+ can overflow the content area
-- Keep headline text short enough to fit within the card's padding: content width = card width minus horizontal padding × 2
+**Key points:**
+- Social cards and slides: \`overflow: hidden\` — every pixel beyond the boundary is clipped. Test all content at the intended format.
+- Document pages (\`.doc-page\`): \`overflow: visible\` — content grows vertically. Never use \`overflow: hidden\` on \`.code-block\`, \`pre\`, or \`table\` — it clips content in the browser preview and breaks DOCX screenshot capture.
+- Tables inside \`.doc-page\` (a flex column container): always add \`table-layout: fixed\` to \`.data-table\` and \`min-width: 0\` on flex children — without these, browsers collapse table columns to near-zero width.
 
-**Gradient italic text (\`background-clip: text\`)**
-- Always add \`padding-right: 0.12em\` to any element that combines \`font-style: italic\` with \`background-clip: text\`
-- Italic glyphs overhang their typographic advance width; the gradient stops painting at the advance boundary, making the right edge of trailing characters appear clipped against the dark background
-- Apply this to every italic gradient span regardless of font size — it is invisible at small sizes but critical at 60px+
+#### Document template conventions — DOCX export
 
-\`\`\`css
-/* CORRECT — covers the italic glyph's right overhang */
-em.acc {
-  font-style: italic;
-  padding-right: 0.12em;
-  background: linear-gradient(135deg, #56b6c2, #61afef);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\`
 
-/* WRONG — glyph overhang is outside the painted area */
-em.acc {
-  font-style: italic;
-  background: linear-gradient(135deg, #56b6c2, #61afef);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-\`\`\`
-
-**Absolute-positioned decorative elements**
-- Glows and background shapes positioned outside the main layout are intentionally clipped
-- Do not let decorative elements overlap critical text — the clip boundary is exact and unforgiving
-
-**Document pages (\`.doc-page\`) are exempt** — they use \`min-height\` with no \`overflow: hidden\`, so content grows vertically without clipping. Horizontal overflow still renders poorly.
+**Key points:**
+- Standard HTML tags (\`h1\`–\`h3\`, \`p\`, \`ul\`/\`ol\`, \`strong\`, \`em\`, \`code\`) map automatically to DOCX paragraph styles
+- Use \`.page-header\`, \`.page-footer\`, \`.callout\`, \`.eyebrow\` for page chrome
+- Use \`<table class="data-table">\` for DOCX tables — always include \`table-layout: fixed\` in CSS; this prevents column collapse in the HTML preview (flex container context) and ensures Google Docs renders column widths correctly via the DOCX \`<w:tblGrid>\`
+- Use \`<div class="code-block">\` for syntax-highlighted code — exported as Playwright screenshot PNG; \`overflow: visible\` is required on both \`.code-block\` and \`pre\` — \`overflow: hidden\` clips code in the browser and corrupts the screenshot
+- Use \`<div class="diagram-wrap"><svg ...>\` for SVG diagrams — SVG must be a **direct child** of the wrapper; apply \`max-width\` + \`align-self: center\` to constrain diagram width in the DOCX output
+- \`.doc-page\` is \`display: flex; flex-direction: column\` — all direct flex children need \`min-width: 0\` to prevent tables and code blocks from overflowing the 794px page boundary
+- Remote \`https://\` image URLs are not fetched during DOCX export — use data URIs or \`file://\` paths
 
 ### Step 4 — Iterate (loop until done)
 
@@ -394,8 +375,9 @@ wants a one-off variation without touching the original, generate a new content 
 
 ### Step 4d — Promote a My Work project to a built-in template
 
-When the user says "save this as a template", "add this to my presets", or "make this reusable",
-use the Codi self-improvement workflow to add the project as a new built-in template.
+When the user says "save this as a template", "add this to my presets", "make this reusable",
+or "add my project from .codi_output as a new template", use the Codi self-improvement
+workflow to add the project as a new built-in template.
 
 This follows the \`codi-improvement-dev\` principle: you are both a consumer and an improver of
 Codi skills. A user project that is worth reusing belongs in the skill's template library.
@@ -406,11 +388,20 @@ Codi skills. A user project that is worth reusing belongs in the skill's templat
    # {"activeFile":"social.html","activeSessionDir":"/abs/path/.codi_output/20260410_content-factory",...}
    \`\`\`
 
-2. **Ask the user** for a template name and confirm:
+   If the user has not opened the project yet, ask them to click it in the Gallery → My Work tab
+   first so the server activates it and \`/api/state\` returns the correct \`activeFilePath\`.
+
+2. **Check document template conventions** (for \`type: document\` files only):
+   If the source file uses \`.doc-page\` containers, verify it follows the DOCX class conventions
+   from the "Document template class conventions" section above. If the file is missing
+   \`.page-header\`, \`.page-footer\`, or \`.callout\` classes, apply them before promoting — a
+   template that does not follow the conventions will produce unstructured DOCX exports.
+
+3. **Ask the user** for a template name and confirm:
    > "I'll add this as a new template named '[name]'. It will appear in the Gallery Templates tab
    > for all future sessions. Confirm?"
 
-3. **Copy the HTML file** to both the installed skill and the source:
+4. **Copy the HTML file** to both the installed skill and the source:
    \`\`\`bash
    TEMPLATE_NAME="<kebab-case-name>"
    # Installed skill (active immediately)
@@ -421,19 +412,23 @@ Codi skills. A user project that is worth reusing belongs in the skill's templat
       "src/templates/skills/content-factory/generators/templates/\${TEMPLATE_NAME}.html"
    \`\`\`
 
-4. **Update the \`<meta name="codi:template">\`** tag inside the copied file to set a stable
+5. **Update the \`<meta name="codi:template">\`** tag inside the copied file to set a stable
    \`id\` and a clean \`name\` matching what the user confirmed. The \`id\` must be the same
    kebab-case name as the filename.
 
-5. **Verify it appears** in the Gallery — the server's template watcher broadcasts
+6. **Verify it appears** in the Gallery — the server's template watcher broadcasts
    \`reload-templates\` within 150ms of the file being written:
    \`\`\`bash
    curl -s <url>/api/templates | grep "\${TEMPLATE_NAME}"
    \`\`\`
 
-6. **Invoke the skill feedback reporter** to record the improvement:
+7. **Invoke the skill feedback reporter** to record the improvement:
    Use \`codi-skill-feedback-reporter\` to log that a new template was added, so the
    improvement loop can track what changed.
+
+8. **If the user wants to share or contribute the template upstream**, invoke the
+   \`codi-skill-creator\` skill to package it as a proper skill improvement with metadata,
+   then use \`codi-artifact-contributor\` to submit it as a PR or ZIP package.
 
 **Do not run \`codi generate\`** unless the user explicitly asks — copying the source file is
 sufficient to persist the template. \`codi generate\` regenerates the SKILL.md from template.ts,

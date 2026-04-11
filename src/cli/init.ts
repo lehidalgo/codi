@@ -527,6 +527,7 @@ export async function initHandler(
           importDepthCheck: hooksConfig.importDepthCheck,
           skillYamlValidation: hooksConfig.skillYamlValidation,
           skillResourceCheck: hooksConfig.skillResourceCheck,
+          skillPathWrapCheck: hooksConfig.skillPathWrapCheck,
           stagedJunkCheck: hooksConfig.stagedJunkCheck,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,

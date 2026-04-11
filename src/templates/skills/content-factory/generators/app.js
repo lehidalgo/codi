@@ -498,7 +498,7 @@ function renderCards() {
   if (!state.cards.length) {
     strip.hidden = true;
     emptyEl.style.display = "";
-    $("btn-png").disabled = $("btn-zip").disabled = true;
+    updateExportPanel(false);
     $("card-nav").hidden = true;
     setAppNavVisible(false);
     if (countEl) countEl.textContent = "0 of 0";
@@ -508,7 +508,7 @@ function renderCards() {
   if (countEl) countEl.textContent = state.selectedCards.size + " of " + state.cards.length;
   emptyEl.style.display = "none";
   strip.hidden = false;
-  $("btn-png").disabled = $("btn-zip").disabled = false;
+  updateExportPanel(true);
   $("btn-refresh").hidden = false;
   clearEl(strip);
 
@@ -676,9 +676,48 @@ function setFormat(btn) {
       ")",
   );
   if (state.cards.length) renderCards();
+  updateExportPanel(state.cards.length > 0);
 }
 
 // ====== Export ======
+
+// Export matrix by content type:
+//   social   → PNG (current), PDF
+//   slides   → PNG (current), PDF, PPTX (primary)
+//   document → PDF (primary), PNG
+
+const EXPORT_ICON_DOWNLOAD = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11.5l-4-4h2.5V2h3v5.5H12L8 11.5zM2 13.5h12V12H2v1.5z"/></svg>`;
+
+function updateExportPanel(hasCards) {
+  const container = document.getElementById("export-panel-btns");
+  if (!container) return;
+  container.innerHTML = "";
+  const type = _getContentType(); // 'social' | 'slides' | 'document'
+
+  // PNG + ZIP are always present; extra buttons depend on content type
+  const extraByType = {
+    slides:   [{ id: "btn-pptx", label: "PPTX · all", primary: true,  handler: () => exportPptx() },
+               { id: "btn-pdf",  label: "PDF · all",   primary: false, handler: () => exportPdf() }],
+    document: [{ id: "btn-pdf",  label: "PDF · all",   primary: true,  handler: () => exportPdf() },
+               { id: "btn-docx", label: "DOCX · all",  primary: false, handler: () => exportDocx() }],
+    social:   [{ id: "btn-pdf",  label: "PDF · all",   primary: false, handler: () => exportPdf() }],
+  };
+  const buttons = [
+    { id: "btn-png", label: "PNG · current", primary: false, handler: () => exportCard(state.activeCard) },
+    { id: "btn-zip", label: "ZIP · all",     primary: false, handler: () => exportAll() },
+    ...(extraByType[type] || []),
+  ];
+  for (const spec of buttons) {
+    const btn = document.createElement("button");
+    btn.className = "btn-export" + (spec.primary ? " primary" : "");
+    btn.id = spec.id;
+    btn.disabled = !hasCards;
+    btn.innerHTML = EXPORT_ICON_DOWNLOAD + " " + spec.label;
+    btn.addEventListener("click", spec.handler);
+    container.appendChild(btn);
+  }
+}
+
 async function renderCardToPngBlob(card, cardIndex) {
   const fmt = cardFormat(card);
   const logo = cardIndex !== undefined ? getCardLogo(cardIndex) : state.logo;
@@ -704,13 +743,113 @@ function downloadBlob(blob, filename) {
 async function exportCard(index) {
   const card = state.cards[index];
   if (!card) return;
-  log("Exporting slide " + (index + 1) + "...");
+  log("Exporting PNG " + (index + 1) + "...");
   try {
     const blob = await renderCardToPngBlob(card, index);
     downloadBlob(blob, "slide-" + card.dataIdx + "-" + card.dataType + ".png");
     log("Saved slide-" + card.dataIdx + "-" + card.dataType + ".png", "ok");
   } catch (e) {
     log("Export failed: " + e.message, "err");
+  }
+}
+
+async function exportPdf() {
+  if (!state.cards.length) return;
+  const baseName = (state.preset || state.activeFile || "export").replace(".html", "");
+  log("Building PDF (" + state.cards.length + " slides)...");
+  try {
+    const slides = [];
+    for (let ci = 0; ci < state.cards.length; ci++) {
+      const card = state.cards[ci];
+      const fmt = cardFormat(card);
+      const logo = getCardLogo(ci);
+      const html = buildCardDoc(card, true, logo);
+      slides.push({ html, width: fmt.w, height: fmt.h });
+      log("  rendering slide " + (ci + 1) + "...", "accent");
+    }
+    const resp = await fetch("/api/export-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slides }),
+    });
+    if (!resp.ok) throw new Error("PDF export failed: " + resp.statusText);
+    const blob = await resp.blob();
+    downloadBlob(blob, baseName + ".pdf");
+    log("PDF ready — " + baseName + ".pdf", "ok");
+  } catch (e) {
+    log("PDF failed: " + e.message, "err");
+  }
+}
+
+async function exportPptx() {
+  if (!state.cards.length) return;
+  const baseName = (state.preset || state.activeFile || "export").replace(".html", "");
+  log("Building PPTX (" + state.cards.length + " slides)...");
+  try {
+    // PptxGenJS is loaded as a global via vendor/pptxgen.bundle.js
+    const PptxGenJS = window.PptxGenJS;
+    if (!PptxGenJS) throw new Error("PptxGenJS not loaded");
+    const pptx = new PptxGenJS();
+    const { w: fw, h: fh } = cardFormat(state.cards[0]);
+    // Set slide size in inches (96 dpi baseline)
+    pptx.defineLayout({ name: "CUSTOM", width: +(fw / 96).toFixed(3), height: +(fh / 96).toFixed(3) });
+    pptx.layout = "CUSTOM";
+
+    for (let ci = 0; ci < state.cards.length; ci++) {
+      const card = state.cards[ci];
+      const fmt = cardFormat(card);
+      const logo = getCardLogo(ci);
+      const html = buildCardDoc(card, true, logo);
+      log("  rendering slide " + (ci + 1) + "...", "accent");
+      // Render each slide to PNG via server, then embed as full-slide image in PPTX
+      const resp = await fetch("/api/export-png", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, width: fmt.w, height: fmt.h }),
+      });
+      if (!resp.ok) throw new Error("PNG render failed for slide " + (ci + 1));
+      const pngBlob = await resp.blob();
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(pngBlob);
+      });
+      const slide = pptx.addSlide();
+      slide.addImage({ data: dataUrl, x: 0, y: 0, w: "100%", h: "100%" });
+    }
+    const pptxBlob = await pptx.write({ outputType: "blob" });
+    downloadBlob(pptxBlob, baseName + ".pptx");
+    log("PPTX ready — " + baseName + ".pptx", "ok");
+  } catch (e) {
+    log("PPTX failed: " + e.message, "err");
+  }
+}
+
+async function exportDocx() {
+  if (!state.cards.length) return;
+  const baseName = (state.preset || state.activeFile || "export").replace(".html", "");
+  log("Building DOCX (" + state.cards.length + " slides)...");
+  try {
+    const slides = state.cards.map((card, ci) => {
+      const fmt = cardFormat(card);
+      const logo = getCardLogo(ci);
+      const html = buildCardDoc(card, true, logo);
+      return { html, width: fmt.w, height: fmt.h };
+    });
+    const resp = await fetch("/api/export-docx", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slides }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: resp.statusText }));
+      throw new Error(err.error || resp.statusText);
+    }
+    const blob = await resp.blob();
+    downloadBlob(blob, baseName + ".docx");
+    log("DOCX ready — " + baseName + ".docx", "ok");
+  } catch (e) {
+    log("DOCX failed: " + e.message, "err");
   }
 }
 
@@ -1331,8 +1470,7 @@ function init() {
       setActiveCard(state.activeCard + 1, false);
   });
 
-  $("btn-png").addEventListener("click", () => exportCard(state.activeCard));
-  $("btn-zip").addEventListener("click", exportAll);
+  // Export buttons are created dynamically by updateExportPanel() — no static listeners needed here
 
   // Default view mode button state
   $("btn-vm-grid").classList.remove("active");
@@ -1340,6 +1478,7 @@ function init() {
 
   $("btn-select-toggle").addEventListener("click", toggleSelectAll);
 
+  updateExportPanel(false);
   connectWS();
   log("Content factory ready", "ok");
 
