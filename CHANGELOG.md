@@ -41,6 +41,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **content-factory** — `POST /api/open-project { projectDir }` activates an existing project server-side, rewiring file watchers
 - **content-factory** — `lib/workspace.cjs` module extracted: `slugify`, `createProject`, `listProjects`, `getActiveProjectDir`, `saveActiveProjectDir`
 - **content-factory** — `_workspace.json` persists the last active project across server restarts
+- **content-factory** — `lib/exports.cjs` module: PNG, PDF, PPTX, and DOCX export handlers extracted from server into a dedicated lib module
+- **content-factory** — DOCX export (`/api/export-docx`): diagram and code-block images read PNG IHDR bytes 16–23 for exact dimensions instead of unreliable `getBoundingClientRect()` inside flex columns
+- **content-factory** — DOCX export: Playwright browser launches at `deviceScaleFactor: 2` so embedded PNG screenshots are sharp in Word
+- **content-factory** — DOCX export: `Table` now receives `columnWidths` array, generating `<w:tblGrid>` required for Google Docs to render column widths correctly
+- **content-factory** — `references/docx-export.md` and `references/html-clipping.md` added as agent-accessible reference documents covering DOCX class conventions, overflow rules, flex column table gotchas, and PNG IHDR dimension pattern
+- **content-factory** — `document-base.html` updated: `.doc-page > * { min-width: 0 }` (was dead `.page-body > *` selector), `overflow: visible` on `.data-table`, code-block and diagram-wrap CSS and HTML examples added
+- **content-factory** — `doc-article.html` template updated: `.page-body > * { min-width: 0 }` and `.data-table` CSS with `table-layout: fixed` added
 
 ### Changed
 
