@@ -83,6 +83,11 @@ if [[ "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
   fi
 fi
 
+# Resolve PROJECT_DIR to absolute path before cd changes the working directory
+if [[ -n "$PROJECT_DIR" ]]; then
+  PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)" || { echo '{"error": "Invalid --project-dir"}'; exit 1; }
+fi
+
 # Build session directory path
 TIMESTAMP="$(date +%Y%m%d_%H%M)"
 

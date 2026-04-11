@@ -59,8 +59,8 @@
     <section class="panel">
       <div class="panel-label">Zoom</div>
       <div class="slider-row">
-        <input id="zoom-slider" type="range" min="15" max="120" value="40">
-        <span id="zoom-val" class="slider-val">40%</span>
+        <input id="zoom-slider" type="range" min="20" max="200" value="100">
+        <span id="zoom-val" class="slider-val">100%</span>
       </div>
     </section>
 
@@ -156,7 +156,15 @@
         <span id="card-idx" aria-live="polite">1 / 1</span>
         <button id="btn-next" class="nav-btn" aria-label="Next slide">&#8250;</button>
       </span>
+
+      <button id="btn-refresh" class="refresh-btn" title="Reload content" hidden aria-label="Reload content">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M10.5 6A4.5 4.5 0 1 1 6 1.5V0L8.5 2 6 4V2.5A3.5 3.5 0 1 0 9.5 6h1z"/>
+        </svg>
+      </button>
     </nav>
+
+    <div id="update-toast" class="update-toast" role="status" aria-live="polite"></div>
 
     <div id="view-preview" class="view active" role="tabpanel">
       <div id="preview-meta" class="preview-meta" hidden>

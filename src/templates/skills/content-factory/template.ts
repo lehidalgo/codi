@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 16
+version: 18
 ---
 
 # {{name}} — Content Factory
@@ -42,7 +42,6 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.html]]\` | App shell — always served at \`/\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.css]]\` | App styles — served at \`/static/app.css\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.js]]\` | App logic — served at \`/static/app.js\` |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/presets.js]]\` | Built-in preset data — served at \`/static/presets.js\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML template for agent-generated slide decks |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
@@ -55,15 +54,15 @@ that the app picks up automatically via WebSocket.
 | Route | Method | Purpose |
 |-------|--------|---------|
 | \`/\` | GET | Serve the content factory web app |
-| \`/static/*\` | GET | Serve app assets (app.css, app.js, presets.js) |
+| \`/static/*\` | GET | Serve app assets (app.css, app.js) |
 | \`/vendor/*\` | GET | Serve vendor scripts (html2canvas, jszip) |
 | \`/api/files\` | GET | Return list of HTML files in the content dir |
 | \`/api/content?file=xxx\` | GET | Return raw HTML for a content file |
 | \`/api/preset\` | GET | Read the currently selected preset from state |
 | \`/api/preset\` | POST | Write preset selection \`{id, name, type, timestamp}\` |
 | \`/api/active-file\` | GET | Read which file/preset the user currently has loaded |
-| \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset}\` |
-| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, preset}\` — use this to orient before editing |
+| \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset, sessionDir}\` |
+| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, preset}\` — use this to orient before editing |
 | \`/templates/*\` | GET | Serve stock template HTML files statically |
 | \`/api/templates\` | GET | List template files with metadata (id, type, format, url) |
 | \`/api/sessions\` | GET | List past sessions from \`.codi_output/\` parent dir |
@@ -75,29 +74,19 @@ and receives \`{type:"reload"}\` messages whenever a content file changes, trigg
 
 ---
 
-## Preset Library
+## Template Library
 
-Built-in presets are defined in \`generators/presets.js\` and rendered entirely in the browser —
-no server-side rendering. Each preset has:
+Built-in templates are standalone HTML files in \`generators/templates/\`.
+They are served via \`/api/templates\` and loaded by the browser into the Gallery.
 
-- \`id\`, \`name\`, \`type\` (social | slides | document)
-- \`format\` — native pixel dimensions \`{w, h}\`
-- \`css\` — self-contained CSS string
-- \`slides[]\` — array of \`{dataType, dataIndex, html}\` objects
+Each template HTML file must include a \`<meta name="codi:template">\` tag:
+\`\`\`json
+{"id":"<kebab-id>","name":"<Human Name>","type":"<social|slides|document>","format":{"w":<w>,"h":<h>}}
+\`\`\`
 
-Current presets:
-
-| ID | Name | Type | Format | Slides |
-|----|------|------|--------|--------|
-| \`dark-editorial\` | Dark Editorial | social | 1080×1080 | 4 |
-| \`minimal-mono\` | Minimal Mono | social | 1080×1080 | 3 |
-| \`poster-bold\` | Poster Bold | social | 1080×1080 | 3 |
-| \`clean-slides\` | Clean Slides | slides | 1280×720 | 3 |
-| \`doc-article\` | Doc Article | document | 794×1123 | 3 |
-
-When the user clicks a preset in the Gallery:
-1. All slides load into the Preview strip
-2. The format button updates to match the preset's native format
+When the user clicks a template in the Gallery:
+1. The app fetches and parses the HTML file
+2. All \`social-card\` / \`slide\` / \`doc-page\` elements load into the Preview strip
 3. The selection is saved to \`state_dir/preset.json\` so the agent can read it
 
 ---
@@ -148,18 +137,57 @@ Tell the user:
 > "Content factory is ready at {{url}} — open it in your browser.
 > Go to the Gallery tab, pick a preset, then describe the content you want."
 
-### Step 2 — Read the selected preset
+### Step 2 — Read state and determine mode
 
-After the user picks a preset and confirms:
+Before doing anything else, read the current state to know what the user has open:
 
 \`\`\`bash
-cat <state_dir>/preset.json
-# {"id":"dark-editorial","name":"Dark Editorial","type":"social","timestamp":...}
+curl -s <url>/api/state
 \`\`\`
 
-If the user skipped the gallery, use \`dark-editorial\` as default.
+Example responses:
 
-### Step 3 — Generate content
+\`\`\`jsonc
+// Built-in template open
+{ "mode": "template", "contentId": "b2e4a9f3", "activePreset": "earthy-bold",
+  "activeFilePath": "/abs/path/generators/templates/earthy-bold.html",
+  "activeFile": null, "activeSessionDir": null, "preset": {...} }
+
+// My Work project open (may share the same template name)
+{ "mode": "mywork", "contentId": "a3f9c2d1", "activePreset": "earthy-bold",
+  "activeFilePath": "/abs/path/.codi_output/20260410_1400_earthy-bold/content/social.html",
+  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/20260410_1400_earthy-bold",
+  "preset": {...} }
+
+// Nothing selected
+{ "mode": null, "contentId": null, "activeFilePath": null, ... }
+\`\`\`
+
+**Use \`contentId\` as the anchor — not the template name.** A built-in template and a My Work
+project can share the same name (e.g. both called "earthy-bold"). The \`contentId\` is a hash of
+\`activeFilePath\` and is always unique. If you are ever unsure which item is open, re-read
+\`/api/state\` and confirm the \`contentId\` matches what the user is looking at.
+
+**Use \`activeFilePath\` for all file edits.** Never reconstruct the path from name fragments — the
+server has already resolved the absolute path for you.
+
+| \`mode\` value | Meaning | What to do |
+|----------------|---------|------------|
+| \`"template"\` | User opened a **Gallery template** | → Step 3: create a new project in \`.codi_output/\` styled after that template |
+| \`"mywork"\` | User opened a **My Work project** | → Step 4b: edit \`activeFilePath\` in place |
+| \`null\` | Nothing selected yet | → Tell the user: "Open the Gallery tab, pick a template to start fresh, or pick a My Work project to continue editing." |
+
+**Template mode** means the user is looking at a read-only built-in template as a style reference.
+Your job is to generate a *new* project (new HTML file in \`screen_dir\`) that follows that template's
+visual identity — colors, typography, layout — but with the user's content.
+
+**My Work mode** means the user is looking at content they already created.
+Your job is to edit the existing HTML file at \`activeFilePath\` in place.
+
+If the user skipped the gallery, ask them to pick a template or a My Work project before proceeding.
+Do not assume a default — mode selection determines where changes are written.
+
+### Step 3 — Generate content (Template mode)
 
 Write \`<screen_dir>/social.html\` (or \`slides.html\` / \`document.html\`). The app detects the
 new file via WebSocket and adds it to the Content Files list. Click to load.
@@ -282,61 +310,107 @@ Content creation is a back-and-forth process. This step repeats until the user i
 
 **Do not stop at one pass.** Keep iterating until the user says they are done, satisfied, or wants to export.
 
-### Step 4b — Modify an existing content file
+### Step 4b — Edit a My Work project
 
-When the user says "change the headline on slide 2" or "update the colors" and there is already
-a content file loaded in the Preview:
+When \`mode\` is \`"mywork"\` in \`/api/state\`, the user has a past project open.
 
-1. **Read state** to confirm what the user has open:
+1. **Read state** — \`activeFilePath\` is the absolute path to edit:
    \`\`\`bash
    curl -s <url>/api/state
-   # {"activeFile":"social.html","activePreset":null,"preset":{...}}
+   # { "mode": "mywork", "contentId": "a3f9c2d1",
+   #   "activeFilePath": "/abs/path/.codi_output/20260410_1400_earthy-bold/content/social.html",
+   #   "activeSessionDir": "/abs/path/.codi_output/20260410_1400_earthy-bold",
+   #   "activeFile": "social.html", ... }
    \`\`\`
 
-2. **Fetch the current HTML** for the active file:
+2. **Read the current HTML** from disk:
    \`\`\`bash
-   curl -s "<url>/api/content?file=social.html"
+   cat "<activeFilePath>"
    \`\`\`
 
-3. **Edit and rewrite** the file at \`<screen_dir>/social.html\` with your changes.
+3. **Edit and rewrite** \`activeFilePath\` directly on disk.
    The WebSocket watcher broadcasts a reload — the user sees the update in under 200ms.
 
-If \`activeFile\` is \`null\` and \`activePreset\` is set, the user is viewing a gallery preset
-(not a writable content file). Follow the gallery preset workflow below instead.
+4. **Do not create a new file** — this is an edit of the user's existing work. Preserve all
+   slides they did not ask to change.
 
-### Step 4c — Modify a gallery preset
+**Never reconstruct the path from name fragments** — always use \`activeFilePath\` verbatim.
+A built-in template and a My Work project can have the same name; \`activeFilePath\` and
+\`contentId\` are the only unambiguous identifiers.
 
-When \`activePreset\` is set (not null), edit the preset directly in
-\`\${CLAUDE_SKILL_DIR}[[/generators/presets.js]]\`. The server watches that file and
-broadcasts \`{type:"reload-presets"}\` whenever it changes — the browser reloads
-automatically, the gallery updates, and the filmstrip thumbnails reflect the new styles.
+### Step 4c — Modify a built-in template
 
-1. **Read state** to confirm the preset ID:
+When \`mode\` is \`"template"\` in \`/api/state\`, the user has a built-in template open.
+
+1. **Read state** — \`activeFilePath\` is the absolute path to the template file:
    \`\`\`bash
    curl -s <url>/api/state
-   # {"activeFile":null,"activePreset":"earthy-bold","preset":{...}}
+   # { "mode": "template", "contentId": "b2e4a9f3",
+   #   "activeFilePath": "/abs/path/generators/templates/earthy-bold.html",
+   #   "activePreset": "earthy-bold", "activeSessionDir": null, ... }
    \`\`\`
 
-2. **Find the preset** in \`generators/presets.js\` by searching for its \`id:\`:
+2. **Edit \`activeFilePath\` in place** — change CSS, slide copy, colors, structure, whatever
+   the user asked. The server's template watcher fires within 150ms and broadcasts
+   \`reload-templates\`. The browser gallery and filmstrip update automatically.
+
+4. **Also edit the source** so the change persists across \`codi generate\`:
    \`\`\`bash
-   grep -n '"earthy-bold"' generators/presets.js
+   # Edit both paths — they are the same file in two locations
+   \${CLAUDE_SKILL_DIR}/generators/templates/earthy-bold.html
+   src/templates/skills/content-factory/generators/templates/earthy-bold.html
    \`\`\`
 
-3. **Edit the preset in place** — change \`css\`, \`slides\`, colors, copy, whatever the user
-   asked. The preset object is a plain JS literal; edit it directly.
+**Important**: editing a template changes it for all future sessions. If the user only
+wants a one-off variation without touching the original, generate a new content file
+(Step 3) and use the template as a style reference only.
 
-4. **Save the file** — the server's \`presetsWatcher\` fires within 150ms and broadcasts
-   \`reload-presets\`. The browser reloads, the gallery and filmstrip both reflect the change.
+### Step 4d — Promote a My Work project to a built-in template
 
-5. **Sync to the skill directory** if you want the change to persist across sessions:
+When the user says "save this as a template", "add this to my presets", or "make this reusable",
+use the Codi self-improvement workflow to add the project as a new built-in template.
+
+This follows the \`codi-improvement-dev\` principle: you are both a consumer and an improver of
+Codi skills. A user project that is worth reusing belongs in the skill's template library.
+
+1. **Read state** to get the source file:
    \`\`\`bash
-   cp generators/presets.js \${CLAUDE_SKILL_DIR}[[/generators/presets.js]]
+   curl -s <url>/api/state
+   # {"activeFile":"social.html","activeSessionDir":"/abs/path/.codi_output/20260410_content-factory",...}
    \`\`\`
-   Skip this step for temporary/session-specific edits.
 
-**Important**: editing \`presets.js\` changes the template for all future sessions. If the user
-only wants a one-off variation without touching the template, use the content file path
-(Step 4b) instead.
+2. **Ask the user** for a template name and confirm:
+   > "I'll add this as a new template named '[name]'. It will appear in the Gallery Templates tab
+   > for all future sessions. Confirm?"
+
+3. **Copy the HTML file** to both the installed skill and the source:
+   \`\`\`bash
+   TEMPLATE_NAME="<kebab-case-name>"
+   # Installed skill (active immediately)
+   cp "<activeSessionDir>/content/<activeFile>" \\
+      "\${CLAUDE_SKILL_DIR}/generators/templates/\${TEMPLATE_NAME}.html"
+   # Source (persists across codi generate)
+   cp "<activeSessionDir>/content/<activeFile>" \\
+      "src/templates/skills/content-factory/generators/templates/\${TEMPLATE_NAME}.html"
+   \`\`\`
+
+4. **Update the \`<meta name="codi:template">\`** tag inside the copied file to set a stable
+   \`id\` and a clean \`name\` matching what the user confirmed. The \`id\` must be the same
+   kebab-case name as the filename.
+
+5. **Verify it appears** in the Gallery — the server's template watcher broadcasts
+   \`reload-templates\` within 150ms of the file being written:
+   \`\`\`bash
+   curl -s <url>/api/templates | grep "\${TEMPLATE_NAME}"
+   \`\`\`
+
+6. **Invoke the skill feedback reporter** to record the improvement:
+   Use \`codi-skill-feedback-reporter\` to log that a new template was added, so the
+   improvement loop can track what changed.
+
+**Do not run \`codi generate\`** unless the user explicitly asks — copying the source file is
+sufficient to persist the template. \`codi generate\` regenerates the SKILL.md from template.ts,
+which is a separate concern.
 
 ### Step 5 — Export and stop
 

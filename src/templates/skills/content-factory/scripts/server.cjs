@@ -199,11 +199,37 @@ function handleRequest(req, res) {
   // /api/state GET — aggregate: active file + preset selection (agent reads this to orient itself)
   if (req.method === 'GET' && pathname === '/api/state') {
     const presetFile = path.join(STATE_DIR, 'preset.json');
-    const activeFile = path.join(STATE_DIR, 'active.json');
+    const activeStateFile = path.join(STATE_DIR, 'active.json');
     const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
-    const active = fs.existsSync(activeFile) ? JSON.parse(fs.readFileSync(activeFile, 'utf-8')) : { file: null, preset: null };
+    const active = fs.existsSync(activeStateFile)
+      ? JSON.parse(fs.readFileSync(activeStateFile, 'utf-8'))
+      : { file: null, preset: null, sessionDir: null };
+
+    // Derive mode and the canonical absolute path to the file being edited
+    const mode = active.sessionDir ? 'mywork' : (active.preset ? 'template' : null);
+    let activeFilePath = null;
+    if (mode === 'mywork' && active.sessionDir && active.file) {
+      activeFilePath = path.join(active.sessionDir, 'content', active.file);
+    } else if (mode === 'template' && active.preset) {
+      activeFilePath = path.join(GENERATORS_DIR, 'templates', active.preset + '.html');
+    }
+
+    // Stable 8-char hash so the agent can uniquely identify the open item even when
+    // a built-in template and a My Work project share the same name
+    const contentId = activeFilePath
+      ? crypto.createHash('sha256').update(activeFilePath).digest('hex').slice(0, 8)
+      : null;
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ activeFile: active.file ?? null, activePreset: active.preset ?? null, preset }));
+    res.end(JSON.stringify({
+      activeFile: active.file ?? null,
+      activePreset: active.preset ?? null,
+      activeSessionDir: active.sessionDir ?? null,
+      activeFilePath,
+      mode,
+      contentId,
+      preset,
+    }));
     return;
   }
 

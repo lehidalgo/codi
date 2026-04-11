@@ -11,11 +11,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **content-factory** — 3-tier skill testing framework: Tier 1 contract validator, Tier 2 unit tests for pure lib functions, Tier 3 HTTP integration tests against the live server
 - **content-factory** — pure function library (`lib/cards.js`, `lib/card-builder.js`) extracted from `app.js` and importable by Node.js/Vitest
 - **schemas** — `SkillTestManifestSchema` Zod schema for validating `skill.test.json` manifests
+- **content-factory** — `/api/state` returns `mode`, `activeFilePath`, and `contentId` hash to distinguish same-named built-in templates from My Work projects
+- **content-factory** — refresh button in nav bar reloads content in place without switching tabs or resetting slide position
+- **content-factory** — toast notification appears on agent-triggered content updates
+- **content-factory** — auto-fit: content fills canvas height at 100% zoom by default; slider scales relative to fit
 
 ### Changed
 
 - **content-factory** — `app.js` updated to ES module imports from `lib/`; `app.html` updated to `type="module"`
 - **content-factory** — server static handler now serves `lib/` subdirectory with path traversal guard
+- **content-factory** — `start-server.sh` resolves `--project-dir` to absolute path before `cd` to fix crash on relative paths
+- **content-factory** — `loadSessionContent` posts to `/api/active-file` so My Work sessions register state on open
+- **content-factory** — skill Step 2 updated to 3-mode decision table using `contentId` and `activeFilePath` as unambiguous edit targets
+
+### Removed
+
+- **content-factory** — deleted `presets.js` and companion preset JS stubs (dead code replaced by `/api/templates` HTML files)
 
 ## [2.6.1] - 2026-04-10
 

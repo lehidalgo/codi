@@ -10,7 +10,7 @@ import {
 const state = {
   format: { w: 1080, h: 1080 },
   handle: "lehidalgo",
-  zoom: 0.4,
+  zoom: 1.0, // 1.0 = fit content to canvas height; slider scales relative to fit
   logo: { visible: true, size: 48, x: 85, y: 85 }, // global defaults
   cardLogos: {}, // { [cardIndex]: partial logo overrides per card }
   selectedCards: new Set([0]),
@@ -18,10 +18,11 @@ const state = {
   viewMode: "app", // default is app view
   files: [],
   activeFile: null,
+  activeSessionDir: null, // set when a My Work session is loaded; null for built-in templates
   cards: [],
   activeCard: 0,
   preset: null, // template id of currently active template
-  templates: [], // loaded from /api/templates — replaces PRESETS global
+  templates: [], // loaded from /api/templates
   activeMeta: null, // { name, type, format } — set for session content, cleared for templates
 };
 
@@ -69,7 +70,7 @@ function connectWS() {
       const msg = JSON.parse(ev.data);
       if (msg.type === "reload") {
         log("Content updated", "accent");
-        loadFiles(true);
+        reloadCurrentContent();
       } else if (msg.type === "reload-templates") {
         log("Templates updated — refreshing gallery…", "accent");
         galleryInit = false;
@@ -161,16 +162,17 @@ async function selectFile(name) {
       b.classList.toggle("active", b.querySelector("span:last-child").textContent === name),
     );
   log("Loading " + name);
+  // Preserve sessionDir so /api/state keeps the correct mode and contentId
   fetch("/api/active-file", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ file: name, preset: null }),
+    body: JSON.stringify({ file: name, preset: null, sessionDir: state.activeSessionDir ?? null }),
   }).catch(() => {});
   await loadContent(name);
 }
 
 // ====== Content loading ======
-async function loadContent(filename) {
+async function loadContent(filename, { preserveCard = false } = {}) {
   try {
     const res = await fetch("/api/content?file=" + encodeURIComponent(filename));
     if (!res.ok) {
@@ -182,15 +184,48 @@ async function loadContent(filename) {
       log("No .social-card elements found", "err");
       return;
     }
+    const prevCard = state.activeCard;
     state.cards = cards;
-    state.activeCard = 0;
+    // Restore position when reloading (agent edit) — only reset if the card no longer exists
+    state.activeCard = preserveCard && prevCard < cards.length ? prevCard : 0;
     state.cardLogos = {};
-    state.selectedCards = new Set([0]);
+    state.selectedCards = new Set([state.activeCard]);
+    if (!preserveCard) {
+      // Fresh load — reset zoom to fit so content fills the canvas
+      state.zoom = 1.0;
+      $("zoom-slider").value = "100";
+      $("zoom-val").textContent = "100%";
+    }
     requestAnimationFrame(renderCards);
     log("Loaded " + cards.length + " card" + (cards.length === 1 ? "" : "s"), "ok");
   } catch (e) {
     log("Error: " + e.message, "err");
   }
+}
+
+// Reload the active content file in place — preserves slide position and current tab
+async function reloadCurrentContent() {
+  if (!state.activeFile) {
+    // No file open yet — fall back to full file list refresh
+    loadFiles(true);
+    return;
+  }
+  const filename = state.activeFile.split("/").pop();
+  await loadContent(filename, { preserveCard: true });
+  showToast("Content updated");
+  // Refresh file list in background (new files may have been added) without auto-selecting
+  loadFiles(false);
+}
+
+// Brief toast notification — appears, then fades out after 2s
+let toastTimer = null;
+function showToast(message) {
+  const el = $("update-toast");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("visible"), 2000);
 }
 
 function parseCards(html) {
@@ -450,6 +485,7 @@ function renderCards() {
   emptyEl.style.display = "none";
   strip.hidden = false;
   $("btn-png").disabled = $("btn-zip").disabled = false;
+  $("btn-refresh").hidden = false;
   clearEl(strip);
 
   const canvas = $("canvas");
@@ -972,12 +1008,23 @@ async function loadSessionContent(session) {
     state.activeMeta = { name: resolvedName, type: resolvedType, format: fmt };
     state.preset = null;
     state.activeFile = session.sessionDir + "/" + file;
+    state.activeSessionDir = session.sessionDir;
     state.activeCard = 0;
     state.cardLogos = {};
     state.selectedCards = new Set([0]);
     setView("preview");
     requestAnimationFrame(renderCards);
-    log("Loaded " + cards.length + " slides from session", "ok");
+    log("Loaded " + template.cards.length + " slides from session", "ok");
+    // Record the open session so /api/state returns the correct mode and contentId
+    fetch("/api/active-file", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        file: file,
+        preset: session.preset?.id || null,
+        sessionDir: session.sessionDir,
+      }),
+    }).catch(() => {});
   } catch (e) {
     log("Error loading session: " + e.message, "err");
   }
@@ -989,14 +1036,15 @@ async function selectTemplate(filename) {
 
   state.preset = template.id;
   state.activeFile = null;
+  state.activeSessionDir = null;
   state.activeMeta = null;
-  state.zoom = 0.4;
+  state.zoom = 1.0;
   state.viewMode = "app";
   state.activeCard = 0;
   state.cardLogos = {};
   state.selectedCards = new Set([0]);
-  $("zoom-slider").value = "40";
-  $("zoom-val").textContent = "40%";
+  $("zoom-slider").value = "100";
+  $("zoom-val").textContent = "100%";
   $("btn-vm-grid").classList.remove("active");
   $("btn-vm-app").classList.add("active");
 
@@ -1067,6 +1115,15 @@ function init() {
     if (state.cards.length) renderCards();
   });
 
+  // Re-render on resize so the auto-fit recalculates for the new canvas dimensions
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (state.cards.length && state.viewMode === "app") renderCards();
+    }, 60);
+  });
+
   $("logo-toggle").addEventListener("click", () => {
     // Logo ON/OFF is a global control — always affects all cards and the global default
     const newVisible = !state.logo.visible;
@@ -1112,6 +1169,13 @@ function init() {
   });
   $("btn-next").addEventListener("click", () => {
     if (state.activeCard < state.cards.length - 1) setActiveCard(state.activeCard + 1, false);
+  });
+
+  $("btn-refresh").addEventListener("click", async () => {
+    const btn = $("btn-refresh");
+    btn.classList.add("spinning");
+    await reloadCurrentContent();
+    setTimeout(() => btn.classList.remove("spinning"), 500);
   });
 
   const appPrev = $("app-prev"),

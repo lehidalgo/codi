@@ -149,9 +149,10 @@ export function computeCardSize(fmt, { canvasW, canvasH, zoom, viewMode } = {}) 
   let scale;
   if (mode === "app") {
     const fitW = (cw - 140) / fmt.w;
-    const fitH = (ch - 92) / fmt.h;
+    const fitH = (ch - 140) / fmt.h; // 140 = ~70px top + 70px bottom breathing room
     const fitScale = Math.min(fitW, fitH);
-    scale = Math.min(fitScale * z, fitScale);
+    // z = 1.0 means "fit to canvas"; z > 1 zooms in, z < 1 zooms out
+    scale = fitScale * z;
   } else {
     const refW = Math.min(cw - 80, 520);
     scale = (refW / fmt.w) * z;
