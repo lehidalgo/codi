@@ -745,7 +745,8 @@ codi skill export --interactive
 
 **What you get:**
 
-- An archive of the skill directory, importable via `codi add skill --template <path>`
+- A copy of the skill directory (`--format standard`) or a zip archive (`--format zip`)
+- Place the exported directory in another project's `.codi/skills/` to use it there
 
 ---
 
