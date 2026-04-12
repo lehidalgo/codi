@@ -223,6 +223,7 @@ Full documentation is available at **[lehidalgo.github.io/codi/docs/](https://le
 | [Workflows](docs/project/workflows.md) | Daily usage, CI/CD, team patterns |
 | [Migration](docs/project/migration.md) | Adopt Codi in existing projects |
 | [Troubleshooting](docs/project/troubleshooting.md) | Common issues and fixes |
+| [User Journeys](https://lehidalgo.github.io/codi/docs/guides/user-journeys/) | Step-by-step guides for every Codi scenario |
 
 ---
 
