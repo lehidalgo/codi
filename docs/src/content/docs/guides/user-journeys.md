@@ -1000,7 +1000,7 @@ codi init -v
 | Hooks not running | `codi doctor` — checks hook installation |
 | Config looks wrong | `codi validate` — schema errors in flags.yaml |
 | Unknown flag in flags.yaml | `codi update` — adds missing flags from new releases |
-| Generated file is too large | `codi validate` — warns on files > 1 MB |
+| Generated file is too large | `codi validate` — warns on artifacts > 6,000 chars or total > 12,000 chars |
 
 ---
 
