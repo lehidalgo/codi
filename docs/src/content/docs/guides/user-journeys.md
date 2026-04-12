@@ -148,7 +148,7 @@ codi init --preset codi-balanced --agents claude-code cursor
 | `--preset <name>` | Required — which preset to use |
 | `--agents <agents...>` | Required — which agents to generate for |
 | `--json` | Machine-readable output |
-| `--quiet` | Suppress all non-error output |
+| `--quiet` | Suppress progress and info log messages |
 | `--force` | Reinitialize even if `.codi/` exists |
 
 **Gotchas:**
