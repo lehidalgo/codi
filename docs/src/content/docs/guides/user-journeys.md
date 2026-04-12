@@ -725,7 +725,7 @@ A deterministic hash of your active rules, skills, and enabled flags. If the age
 **Gotchas:**
 
 - The token changes any time you add, remove, or edit an artifact or flag.
-- The agent must report exact artifact names and the token for the check to pass.
+- The agent must report the token, rule names, and active flags for the check to pass. Skills and agents are not checked.
 
 ---
 
