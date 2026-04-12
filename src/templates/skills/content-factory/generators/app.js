@@ -26,6 +26,7 @@ const state = {
   preset: null, // template id of currently active template
   templates: [], // loaded from /api/templates
   activeMeta: null, // { name, type, format } — set for session content, cleared for templates
+  brief: null, // { anchor: { file, type, revision, status }, variants: [...] } — campaign brief for the active project
 };
 
 const STATUS_CYCLE = ["draft", "in-progress", "review", "done"];
@@ -132,6 +133,13 @@ async function loadFiles(autoSelect = false) {
     const res = await fetch("/api/files");
     if (!res.ok) return;
     state.files = await res.json();
+    // Refresh the campaign brief alongside the file list so the anchor badge stays in sync
+    try {
+      const briefRes = await fetch("/api/brief");
+      state.brief = briefRes.ok ? await briefRes.json() : null;
+    } catch {
+      state.brief = null;
+    }
     renderFileList(state.files, autoSelect);
   } catch {
     /* server not ready */
@@ -148,6 +156,7 @@ function renderFileList(files, autoSelect) {
     listEl.appendChild(em);
     return;
   }
+  const anchorFile = state.brief?.anchor?.file ?? null;
   files.forEach((name) => {
     const btn = document.createElement("button");
     btn.className = "file-item" + (name === state.activeFile ? " active" : "");
@@ -156,6 +165,15 @@ function renderFileList(files, autoSelect) {
       Object.assign(document.createElement("span"), { className: "file-dot" }),
       Object.assign(document.createElement("span"), { textContent: name }),
     );
+    if (anchorFile && name === anchorFile) {
+      btn.append(
+        Object.assign(document.createElement("span"), {
+          className: "file-badge file-badge-anchor",
+          textContent: "anchor",
+          title: "Campaign anchor — source of truth for all variants",
+        }),
+      );
+    }
     btn.addEventListener("click", () => selectFile(name));
     listEl.appendChild(btn);
   });
@@ -200,6 +218,7 @@ async function loadContent(filename, { preserveCard = false } = {}) {
     state.activeCard = preserveCard && prevCard < cards.length ? prevCard : 0;
     state.cardLogos = {};
     state.selectedCards = new Set([state.activeCard]);
+    reportActiveCard();
     if (!preserveCard) {
       // Fresh load — reset zoom to fit so content fills the canvas
       state.zoom = 1.0;
@@ -249,14 +268,23 @@ function parseTemplate(html, filename) {
 
 async function loadTemplates() {
   try {
-    const files = await fetch("/api/templates").then((r) => r.json());
+    const entries = await fetch("/api/templates").then((r) => r.json());
     const results = await Promise.all(
-      files.map(async (f) => {
+      entries.map(async (entry) => {
         try {
-          const html = await fetch("/api/template?file=" + encodeURIComponent(f)).then((r) =>
-            r.text(),
-          );
-          return parseTemplate(html, f);
+          const html = await fetch(entry.url).then((r) => r.text());
+          const parsed = parseTemplate(html, entry.file);
+          // Server metadata is authoritative — it already prefixes brand templates
+          // with `<brand>--` so lookups by id stay consistent across client and server
+          return {
+            ...parsed,
+            id: entry.id,
+            name: entry.name,
+            type: entry.type,
+            format: entry.format,
+            brand: entry.brand,
+            filename: entry.file,
+          };
         } catch {
           return null;
         }
@@ -541,10 +569,28 @@ function setAppNavVisible(show) {
   next.style.display = show && state.activeCard < total - 1 ? "flex" : "none";
 }
 
+function reportActiveCard() {
+  const i = state.activeCard;
+  const card = state.cards[i];
+  if (!card) return;
+  fetch("/api/active-card", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      index: i,
+      total: state.cards.length,
+      dataType: card.dataType ?? null,
+      dataIdx: card.dataIdx ?? null,
+      file: state.activeFile ?? null,
+    }),
+  }).catch(() => {});
+}
+
 function setActiveCard(i, updateSelection = true) {
   state.activeCard = i;
   // Only card body clicks update selection; arrow navigation leaves selection intact
   if (updateSelection) state.selectedCards = new Set([i]);
+  reportActiveCard();
   if (state.viewMode === "app") {
     renderCards();
   } else {
@@ -696,15 +742,24 @@ function updateExportPanel(hasCards) {
 
   // PNG + ZIP are always present; extra buttons depend on content type
   const extraByType = {
-    slides:   [{ id: "btn-pptx", label: "PPTX · all", primary: true,  handler: () => exportPptx() },
-               { id: "btn-pdf",  label: "PDF · all",   primary: false, handler: () => exportPdf() }],
-    document: [{ id: "btn-pdf",  label: "PDF · all",   primary: true,  handler: () => exportPdf() },
-               { id: "btn-docx", label: "DOCX · all",  primary: false, handler: () => exportDocx() }],
-    social:   [{ id: "btn-pdf",  label: "PDF · all",   primary: false, handler: () => exportPdf() }],
+    slides: [
+      { id: "btn-pptx", label: "PPTX · all", primary: true, handler: () => exportPptx() },
+      { id: "btn-pdf", label: "PDF · all", primary: false, handler: () => exportPdf() },
+    ],
+    document: [
+      { id: "btn-pdf", label: "PDF · all", primary: true, handler: () => exportPdf() },
+      { id: "btn-docx", label: "DOCX · all", primary: false, handler: () => exportDocx() },
+    ],
+    social: [{ id: "btn-pdf", label: "PDF · all", primary: false, handler: () => exportPdf() }],
   };
   const buttons = [
-    { id: "btn-png", label: "PNG · current", primary: false, handler: () => exportCard(state.activeCard) },
-    { id: "btn-zip", label: "ZIP · all",     primary: false, handler: () => exportAll() },
+    {
+      id: "btn-png",
+      label: "PNG · current",
+      primary: false,
+      handler: () => exportCard(state.activeCard),
+    },
+    { id: "btn-zip", label: "ZIP · all", primary: false, handler: () => exportAll() },
     ...(extraByType[type] || []),
   ];
   for (const spec of buttons) {
@@ -792,7 +847,11 @@ async function exportPptx() {
     const pptx = new PptxGenJS();
     const { w: fw, h: fh } = cardFormat(state.cards[0]);
     // Set slide size in inches (96 dpi baseline)
-    pptx.defineLayout({ name: "CUSTOM", width: +(fw / 96).toFixed(3), height: +(fh / 96).toFixed(3) });
+    pptx.defineLayout({
+      name: "CUSTOM",
+      width: +(fw / 96).toFixed(3),
+      height: +(fh / 96).toFixed(3),
+    });
     pptx.layout = "CUSTOM";
 
     for (let ci = 0; ci < state.cards.length; ci++) {

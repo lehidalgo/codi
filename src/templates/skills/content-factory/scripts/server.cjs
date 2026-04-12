@@ -245,11 +245,87 @@ function handleRequest(req, res) {
     return;
   }
 
+  // /api/active-card GET — read which card the user currently has selected in preview
+  if (req.method === 'GET' && pathname === '/api/active-card') {
+    const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+    const data = readJson(path.join(stateDir, 'active-card.json'), {
+      index: null, total: null, dataType: null, dataIdx: null, file: null, timestamp: null,
+    });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // /api/active-card POST — app reports current preview card selection
+  //   body: { index, total, dataType, dataIdx, file }
+  if (req.method === 'POST' && pathname === '/api/active-card') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+        if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(stateDir, 'active-card.json'),
+          JSON.stringify({ ...data, timestamp: Date.now() }, null, 2)
+        );
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // /api/brief GET — read the current project's campaign brief
+  if (req.method === 'GET' && pathname === '/api/brief') {
+    if (!activeProject) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(null));
+      return;
+    }
+    const briefPath = path.join(activeProject.dir, 'brief.json');
+    const data = readJson(briefPath, null);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // /api/brief POST — write the current project's campaign brief
+  //   body: full brief.json object (schema version 1)
+  if (req.method === 'POST' && pathname === '/api/brief') {
+    if (!activeProject) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'No active project — create one first via /api/create-project' }));
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const briefPath = path.join(activeProject.dir, 'brief.json');
+        fs.writeFileSync(briefPath, JSON.stringify(data, null, 2));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, path: briefPath }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
   // /api/state GET — aggregate state for agent orientation
   if (req.method === 'GET' && pathname === '/api/state') {
     const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
     const preset = readJson(path.join(stateDir, 'preset.json'), null);
     const active = readJson(path.join(stateDir, 'active.json'), { file: null, preset: null });
+    const activeCard = readJson(path.join(stateDir, 'active-card.json'), null);
+    const brief = activeProject ? readJson(path.join(activeProject.dir, 'brief.json'), null) : null;
     const mode = activeProject ? 'mywork' : (active.preset ? 'template' : null);
     let activeFilePath = null;
     if (mode === 'mywork' && activeProject && active.file) {
@@ -274,6 +350,8 @@ function handleRequest(req, res) {
       mode, contentId,
       status: activeStatus,
       preset,
+      activeCard,
+      brief,
       activeBrand: activeBrand ? { name: activeBrand.name, display_name: activeBrand.display_name } : null,
     }));
     return;
