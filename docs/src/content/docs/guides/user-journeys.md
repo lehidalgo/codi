@@ -347,14 +347,14 @@ codi add brand my-company
 
 **What happens:**
 
-- Prompts for brand metadata: name, colors (hex), logo URL, messaging tone
-- Creates `.codi/brands/<name>.yaml`
-- Brand data is available to skills like `codi-content-factory` for styled output
+- Creates `.codi/skills/<name>/` using the `brand-creator` skill template
+- Injects the brand name into `SKILL.md` frontmatter and description
+- Brand tokens (colors, fonts, voice guidelines) are defined inside the skill directory
 
 **Gotchas:**
 
-- Brands are metadata only. Actual styling depends on the skill that reads them.
-- Brands do not generate into agent config files directly.
+- Brand output depends on the skill that reads the brand tokens.
+- Brands are skills, not YAML config files. They do not generate into agent config files directly.
 
 ---
 
