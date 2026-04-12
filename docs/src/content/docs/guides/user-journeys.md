@@ -1045,7 +1045,7 @@ codi
 
 **What opens:**
 
-A TUI menu listing every available command: init, generate, add, status, doctor, validate, update, preset, watch, contribute, compliance, clean, revert, onboard, verify. Select one and it runs with an interactive prompt for any required options.
+A TUI with two levels. The normal menu shows the most common actions: Initialize project, Generate configs, Export & share, Clean generated files. Select "Advanced options..." to reveal: Add artifact, Manage presets, Update templates, Health check, Project status, Validate config, Verify agent awareness, Compliance report, Revert to backup. Select any option and it runs with interactive prompts.
 
 ---
 
