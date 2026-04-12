@@ -806,7 +806,7 @@ codi skill evolve codi-debugging --dry-run
 1. Reads feedback entries for the skill
 2. Analyzes failure patterns
 3. Generates an improvement prompt you can paste into Claude
-4. If not `--dry-run`: saves the current `SKILL.md` as a versioned backup (`SKILL.md.v2`, etc.)
+4. If not `--dry-run`: saves the current `SKILL.md` as a versioned backup in `versions/v<N>.SKILL.md`
 
 ---
 
