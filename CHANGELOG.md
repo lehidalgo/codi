@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **skill-feedback-reporter** — repurposed to read `.codi/feedback/` and show the top 3 most actionable observations
 - **brand-creator** — new skill replacing `brand-identity`; generates brand skills with `brand/tokens.json` (themes, fonts, assets, voice)
 - **content-factory** — brand API endpoints (`/api/brands`, `/api/active-brand`) and brand template support
+- **content-factory** — campaign pipeline: `/api/active-card`, `/api/brief`, brief-driven variant propagation, promote-to-template workflow
 - **manifest** — `project_context` field: free-form markdown injected into the AI instruction file
 - **generate** — auto-injects self-development mode warning into CLAUDE.md when `manifest.name === "codi"`
 - **skill READMEs** — setup guides added for 17 complex skills
