@@ -246,7 +246,7 @@ codi add rule --all
 **Gotchas:**
 
 - The rule file name must match the `name` field in the frontmatter.
-- If a rule with that name already exists, Codi prompts before overwriting.
+- If a rule with that name already exists, the command exits with an error. Delete the file first or use a different name.
 - Rules managed by Codi have `managed_by: codi` in frontmatter. Do not remove this field — it controls update behavior.
 
 ---
