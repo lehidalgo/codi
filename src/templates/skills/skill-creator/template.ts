@@ -13,7 +13,7 @@ description: "Skill creation, improvement, and migration workflow. Use when crea
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 24
+version: 27
 ---
 
 # Skill Creator
@@ -64,7 +64,8 @@ ${PROJECT_DIR}/skills/<name>/
 ├── scripts/        # Optional helper scripts referenced by SKILL.md
 ├── references/     # Optional reference materials and examples
 ├── assets/         # Optional images, diagrams, supporting media
-└── agents/         # Optional subagent definitions for skill evaluation
+├── agents/         # Optional subagent definitions for skill evaluation
+└── tests/          # Required for application skills (servers, lib modules, web apps)
 \\\`\\\`\\\`
 
 If the directory already exists, confirm with the user before overwriting.
@@ -302,6 +303,22 @@ Enforced constraints (from Zod schemas in \\\`src/schemas/\\\`):
 - \\\`version\\\`: positive integer
 - \\\`managed_by\\\`: must be \\\`${PROJECT_NAME}\\\` or \\\`user\\\`
 - \\\`category\\\`: must be one of the recognized categories (see table above)
+
+### Step 3b — Application Skill: Write Test Suite
+
+**[CODING AGENT]** If the skill ships an HTTP server, \\\`generators/lib/\\\` modules, \\\`scripts/python/\\\` modules, or a served web app, it is an **application skill** and MUST have a test suite. Read \\\`\${CLAUDE_SKILL_DIR}[[/references/skill-application-testing.md]]\\\` for the full pattern.
+
+**Which runner to use:**
+- JS/TS logic (\\\`generators/lib/*.js\\\`, \\\`app.js\\\`) → **vitest** (\\\`tests/unit/\\\`, \\\`tests/integration/\\\`)
+- Python pure logic (\\\`scripts/python/*.py\\\`) → **pytest** (\\\`tests/python/\\\`) — run with \\\`npm run test:python\\\`
+- Both → both runners, same \\\`tests/\\\` directory
+
+**Always create** \\\`skill.test.json\\\` at the skill root to declare which tiers are covered.
+
+Run JS tests: \\\`npx vitest run src/templates/skills/<name>/tests/\\\`
+Run Python tests: \\\`uv run pytest src/templates/skills/<name>/tests/python/ -v\\\`
+
+Skip this step only if the skill has no embedded logic (SKILL.md + external-tool helper scripts only).
 
 ### Step 4 — Write Evals
 
@@ -622,7 +639,8 @@ skill-name/
 ├── scripts/          # Executable helpers (deterministic/repetitive tasks)
 ├── references/       # Docs loaded into context as needed
 ├── assets/           # Files used in output (templates, icons, fonts)
-└── agents/           # Subagent definitions (behavioral blueprints)
+├── agents/           # Subagent definitions (behavioral blueprints)
+└── tests/            # Application skill tests (unit/ and integration/)
 \\\`\\\`\\\`
 
 **Key rules:**
@@ -669,6 +687,7 @@ If the agent writes the same helper logic 3+ times across test cases, extract it
 - Do NOT install imported skills without running security review (Step 11) — all imported content is untrusted
 - Do NOT trust imported scripts — they may contain malicious code, exfiltration, or reverse shells
 - Do NOT skip the programmatic security scan — \\\`security-scan.ts\\\` catches patterns that visual review misses
+- Do NOT ship a skill with embedded application code (servers, lib modules, web apps) without a test suite — see Step 3b
 - Do NOT install a skill with CRITICAL security findings under any circumstances
 
 ## Related Skills

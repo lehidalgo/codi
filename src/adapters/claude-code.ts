@@ -20,14 +20,24 @@ import {
   buildWorkflowSection,
   getEnabledMcpServers,
   buildMcpEnvExample,
+  buildSelfDevWarning,
+  buildProjectContext,
 } from "./section-builder.js";
 import {
   CONTEXT_TOKENS_LARGE,
   MANIFEST_FILENAME,
   MCP_FILENAME,
   PROJECT_NAME,
+  PROJECT_DIR,
 } from "../constants.js";
 import { partitionBrandSkills } from "./brand-filter.js";
+import {
+  buildSkillTrackerScript,
+  buildSkillObserverScript,
+  HOOKS_SUBDIR,
+  SKILL_TRACKER_FILENAME,
+  SKILL_OBSERVER_FILENAME,
+} from "../core/hooks/heartbeat-hooks.js";
 
 /**
  * Maps the `language` field on a rule to Claude Code `paths:` glob patterns.
@@ -100,6 +110,14 @@ export const claudeCodeAdapter: AgentAdapter = {
     // Project overview from manifest
     const overview = buildProjectOverview(config);
     if (overview) sections.push(overview);
+
+    // Self-development mode warning (only when name === "codi")
+    const selfDevWarning = buildSelfDevWarning(config);
+    if (selfDevWarning) sections.push(selfDevWarning);
+
+    // Project context from manifest.project_context
+    const projectContext = buildProjectContext(config);
+    if (projectContext) sections.push(projectContext);
 
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);
@@ -238,27 +256,52 @@ export const claudeCodeAdapter: AgentAdapter = {
       }
     }
 
-    // Generate .claude/settings.json (project-level hooks + env)
+    // Generate heartbeat hook scripts to .codi/hooks/
+    const trackerScript = buildSkillTrackerScript();
+    const trackerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`;
+    files.push({
+      path: trackerPath,
+      content: trackerScript,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(trackerScript),
+    });
+
+    const observerScript = buildSkillObserverScript();
+    const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+    files.push({
+      path: observerPath,
+      content: observerScript,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(observerScript),
+    });
+
+    // Generate .claude/settings.json (permissions + heartbeat hooks)
     const settingsJson = buildSettingsJson(config);
-    if (settingsJson) {
-      const settingsContent = JSON.stringify(settingsJson, null, 2);
-      files.push({
-        path: ".claude/settings.json",
-        content: settingsContent,
-        sources: [MANIFEST_FILENAME],
-        hash: hashContent(settingsContent),
-      });
-    }
+    const settingsContent = JSON.stringify(settingsJson, null, 2);
+    files.push({
+      path: ".claude/settings.json",
+      content: settingsContent,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(settingsContent),
+    });
 
     return files;
   },
 };
 
-interface ClaudeSettings {
-  permissions?: { deny?: string[] };
+interface ClaudeHookCommand {
+  type: "command";
+  command: string;
+  timeout: number;
+  async?: true;
 }
 
-function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
+interface ClaudeSettings {
+  permissions?: { deny?: string[] };
+  hooks?: Record<string, ClaudeHookCommand[]>;
+}
+
+function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
   const settings: ClaudeSettings = {};
 
   // Map flags to permissions.deny (native enforcement — hard blocks tool calls)
@@ -279,7 +322,26 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings | null {
     settings.permissions = { deny };
   }
 
-  // Only return if there's content to write
-  if (Object.keys(settings).length === 0) return null;
+  // Heartbeat hooks — always present so the feedback loop works out of the box.
+  // Users who need personal hooks must use .claude/settings.local.json (auto-merged by Claude Code).
+  const hooksDir = `${PROJECT_DIR}/${HOOKS_SUBDIR}`;
+  settings.hooks = {
+    InstructionsLoaded: [
+      {
+        type: "command",
+        command: `${hooksDir}/${SKILL_TRACKER_FILENAME}`,
+        timeout: 5,
+        async: true,
+      },
+    ],
+    Stop: [
+      {
+        type: "command",
+        command: `${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
+        timeout: 15,
+      },
+    ],
+  };
+
   return settings;
 }

@@ -32,15 +32,19 @@ afterEach(async () => {
 });
 
 describe("docs generation pipeline", () => {
-  it("generates HTML docs after init", async () => {
+  it("exports JSON catalog to stdout by default after init", async () => {
     await initHandler(tmpDir, { agents: ["claude-code"] });
+
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     const result = await docsHandler(tmpDir, {});
 
     expect(result.success).toBe(true);
     expect(result.exitCode).toBe(EXIT_CODES.SUCCESS);
-    expect(result.data.outputPath).toContain("index.html");
+    expect(result.data.outputPath).toBe("stdout");
     expect(result.data.totalSkills).toBeGreaterThan(0);
+
+    stdoutSpy.mockRestore();
   });
 
   it("exports JSON catalog to stdout", async () => {

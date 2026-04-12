@@ -27,6 +27,13 @@ Complete reference for Codi's configuration system: directory structure, manifes
   brands/                      # Brand definitions (BRAND.md + assets)
   presets/                     # Installed presets
   backups/                     # Automatic backups (max 5)
+  hooks/
+    codi-skill-tracker.cjs     # InstructionsLoaded hook (Claude Code)
+    codi-skill-observer.cjs    # Stop hook (Claude Code + Codex)
+  .session/
+    active-skills.json         # Per-session skill tracking (auto-managed)
+  feedback/
+    {timestamp}-{artifact}-{id}.json  # One file per collected observation
   operations-ledger.json       # Audit trail of all CLI operations
 ```
 
@@ -246,3 +253,62 @@ MCP config is distributed to each agent in its native format:
 | Claude Code | `.mcp.json` |
 | Cursor | `.cursor/mcp.json` |
 | Codex | `.codex/config.toml` |
+
+---
+
+## Hooks (Heartbeat Feedback Loop)
+
+`codi generate` writes two hook scripts to `.codi/hooks/` and registers them automatically in the agent's settings file. You do not configure hooks manually.
+
+### Claude Code — `.claude/settings.json`
+
+`settings.json` is always generated. It contains:
+
+```json
+{
+  "hooks": {
+    "InstructionsLoaded": [
+      {
+        "type": "command",
+        "command": ".codi/hooks/codi-skill-tracker.cjs",
+        "timeout": 5,
+        "async": true
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": ".codi/hooks/codi-skill-observer.cjs",
+        "timeout": 15
+      }
+    ]
+  }
+}
+```
+
+If you need personal hooks that run alongside Codi's, add them to `.claude/settings.local.json`. Claude Code auto-merges that file with `settings.json` at startup. Never edit `settings.json` directly — it is overwritten by `codi generate`.
+
+### Codex — `.codex/hooks.json`
+
+Codex has no `InstructionsLoaded` event. Only the Stop observer is wired:
+
+```json
+{
+  "Stop": [
+    {
+      "type": "command",
+      "command": ".codi/hooks/codi-skill-observer.cjs",
+      "timeout": 15
+    }
+  ]
+}
+```
+
+### What the hooks do
+
+| Hook script | Trigger | Action |
+|-------------|---------|--------|
+| `codi-skill-tracker.cjs` | InstructionsLoaded | Records which Codi skills loaded in this session to `.codi/.session/active-skills.json` |
+| `codi-skill-observer.cjs` | Stop | Reads the transcript, extracts `[CODI-OBSERVATION: ...]` markers, writes feedback JSON to `.codi/feedback/` |
+
+See the [self-improvement guide](/guides/self-improvement) for a full explanation of how the feedback loop works.

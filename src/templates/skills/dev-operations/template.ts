@@ -17,7 +17,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 11
 ---
 
 # ${PROJECT_NAME_DISPLAY} Operations
@@ -82,13 +82,6 @@ model: inherit
 managed_by: ${PROJECT_NAME} | user
 \`\`\`
 
-Commands:
-\`\`\`yaml
-name: command-name
-description: What this command does
-managed_by: ${PROJECT_NAME} | user
-\`\`\`
-
 ## Configuration
 
 ### Flag Presets
@@ -132,6 +125,83 @@ ${PROJECT_CLI} compliance            # Full health check (validate + doctor + dr
 ${PROJECT_CLI} doctor --ci           # CI-mode health check (exit non-zero on failure)
 ${PROJECT_CLI} status                # Check for drift in generated files
 \`\`\`
+
+## Conflict Resolution
+
+When \`${PROJECT_CLI} generate\` exits with code 2, it means one or more files have conflicts that could not be auto-merged. The command writes a JSON payload to stdout:
+
+\`\`\`json
+{
+  "type": "conflicts",
+  "items": [
+    {
+      "label": "CLAUDE.md",
+      "fullPath": "/absolute/path/CLAUDE.md",
+      "currentContent": "... your local version ...",
+      "incomingContent": "... new template version ..."
+    }
+  ]
+}
+\`\`\`
+
+### When you detect exit code 2
+
+**[CODING AGENT]** Do the following immediately — do NOT show the raw JSON or exit code to the user:
+
+1. Parse the JSON payload from stdout.
+2. Tell the user in plain language:
+
+> "I ran \`${PROJECT_CLI} generate\` and found conflicts in N file(s): [comma-separated labels].
+> These files have local customizations that differ from the updated templates.
+> How would you like to resolve this?"
+
+3. Offer two options:
+
+> **[A] Let me handle it** — I will read both versions, merge them preserving your customizations, and continue automatically.
+>
+> **[B] I'll do it manually** — I will open the files with conflict markers so you can choose each change yourself.
+
+4. Wait for the user's choice before proceeding.
+
+### Path A — Agent resolves
+
+For each item in the payload:
+
+1. Read \`currentContent\` (your local version) and \`incomingContent\` (the new template).
+2. Produce a merged version:
+   - Keep all content unique to \`currentContent\` (your customizations).
+   - Add all sections present in \`incomingContent\` but absent from \`currentContent\`.
+   - For sections present in both where the template changed: keep \`currentContent\` unless it matches the old template exactly, in which case take \`incomingContent\`.
+3. Write the merged content to \`fullPath\`.
+
+After writing all resolved files, re-run \`${PROJECT_CLI} generate\`:
+- If it exits 0: report success to the user.
+- If it exits 2 again: switch to Path B — the semantic merge was not sufficient. Tell the user: "The automatic merge could not fully resolve these conflicts. I've opened the files with conflict markers — please resolve them manually and confirm."
+
+### Path B — Manual resolve
+
+For each item in the payload:
+
+1. Write the file at \`fullPath\` with git-style conflict markers:
+\`\`\`
+<<<<<<< current (your version)
+[currentContent]
+=======
+[incomingContent]
+>>>>>>> incoming (new template)
+\`\`\`
+
+2. Open the file in the user's editor (use \`$VISUAL\` → \`$EDITOR\` → \`code\` → \`vi\` resolution order).
+
+3. Tell the user:
+> "I've opened [label] with conflict markers. Choose the version you want for each section, remove the markers, save the file, and let me know when you're done."
+
+4. When the user confirms, re-run \`${PROJECT_CLI} generate\`. If it exits 0, report success.
+
+### Version bump reminder
+
+After any successful \`${PROJECT_CLI} generate\` run that writes new content, remind the user:
+> "Generation complete. If this was triggered by a template update, consider running \`${PROJECT_CLI} update\` to check for other stale artifacts."
 
 ## Generation & Maintenance
 

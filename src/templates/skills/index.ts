@@ -82,9 +82,9 @@ export {
 } from "./slack-gif-creator/index.js";
 export { template as devDocsManager } from "./dev-docs-manager/index.js";
 export {
-  template as brandIdentity,
-  staticDir as brandIdentityStaticDir,
-} from "./brand-identity/index.js";
+  template as brandCreator,
+  staticDir as brandCreatorStaticDir,
+} from "./brand-creator/index.js";
 export { template as codiBrand, staticDir as codiBrandStaticDir } from "./codi-brand/index.js";
 export {
   template as contentFactory,

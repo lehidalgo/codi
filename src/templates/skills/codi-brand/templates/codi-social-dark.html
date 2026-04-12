@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="codi:template" content='{"id":"codi-social-dark","name":"Codi Social — Dark","type":"social","format":{"w":1080,"h":1080}}'>
+  <title>Codi Social — Dark</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-bg:         #070a0f;
+      --brand-surface:    #0d1117;
+      --brand-text:       #e6edf3;
+      --brand-text-muted: #8b949e;
+      --brand-primary:    #56b6c2;
+      --brand-accent:     #56b6c2;
+      --brand-font-headline: 'Outfit', sans-serif;
+      --brand-font-body:     'Outfit', sans-serif;
+      --brand-font-mono:     'Geist Mono', monospace;
+      --grad: linear-gradient(135deg, #56b6c2, #61afef);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #111; font-family: var(--brand-font-body); color: var(--brand-text); }
+    .social-container { display: flex; flex-direction: column; align-items: center; padding: 32px 0 80px; gap: 16px; }
+    .social-card {
+      position: relative;
+      width: 1080px; height: 1080px;
+      background: var(--brand-bg);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      padding: 64px;
+    }
+    .card-index { position: absolute; top: 24px; right: 28px; font-size: 13px; color: var(--brand-text-muted); font-weight: 500; font-family: var(--brand-font-mono); }
+    /* Cover */
+    .social-card[data-type="cover"] { background: var(--brand-surface); justify-content: flex-end; }
+    .social-card[data-type="cover"]::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--grad); }
+    .social-card[data-type="cover"] h1 { font-size: 60px; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 24px; }
+    .social-card[data-type="cover"] h1 em { font-style: italic; padding-right: 0.12em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .social-card[data-type="cover"] .hook { font-size: 22px; color: var(--brand-text-muted); line-height: 1.5; }
+    .codi-logo { font-family: var(--brand-font-mono); font-size: 18px; font-weight: 400; letter-spacing: -0.02em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; position: absolute; bottom: 40px; right: 52px; }
+    /* Content */
+    .social-card[data-type="content"] h2 { font-size: 44px; font-weight: 700; color: var(--brand-accent); line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 28px; }
+    .social-card[data-type="content"] p { font-size: 22px; line-height: 1.6; color: var(--brand-text); }
+    .social-card[data-type="content"] ul { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+    .social-card[data-type="content"] ul li { font-size: 20px; line-height: 1.5; padding-left: 28px; position: relative; color: var(--brand-text); }
+    .social-card[data-type="content"] ul li::before { content: '→'; position: absolute; left: 0; color: var(--brand-accent); font-weight: 600; }
+    /* Stat */
+    .social-card[data-type="stat"] { justify-content: center; }
+    .social-card[data-type="stat"]::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--grad); }
+    .stat-value { font-size: 120px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+    .stat-label { font-size: 26px; color: var(--brand-text-muted); line-height: 1.4; max-width: 600px; }
+    /* Quote */
+    .social-card[data-type="quote"] { justify-content: center; }
+    blockquote { font-size: 34px; font-weight: 500; line-height: 1.45; letter-spacing: -0.01em; color: var(--brand-text); border-left: 4px solid var(--brand-accent); padding-left: 32px; }
+    .attribution { font-size: 16px; color: var(--brand-text-muted); margin-top: 20px; padding-left: 36px; }
+    /* CTA */
+    .social-card[data-type="cta"] { background: var(--brand-surface); justify-content: center; align-items: flex-start; }
+    .social-card[data-type="cta"]::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--grad); }
+    .social-card[data-type="cta"] h2 { font-size: 52px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 24px; }
+    .cta-link { display: inline-block; font-size: 20px; font-family: var(--brand-font-mono); color: var(--brand-accent); text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+  </style>
+</head>
+<body>
+  <div class="social-container">
+
+    <article class="social-card" data-type="cover" data-index="01">
+      <span class="card-index">1 / 5</span>
+      <h1>Your <em>headline</em> goes here</h1>
+      <p class="hook">A compelling hook that makes people want to read the next card.</p>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="social-card" data-type="content" data-index="02">
+      <span class="card-index">2 / 5</span>
+      <h2>Key Point One</h2>
+      <p>Explain the idea clearly in 2–3 sentences. Each card should carry one idea only.</p>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="social-card" data-type="stat" data-index="03">
+      <span class="card-index">3 / 5</span>
+      <div class="stat-value">10×</div>
+      <div class="stat-label">Short description of what this metric means and why it matters.</div>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="social-card" data-type="quote" data-index="04">
+      <span class="card-index">4 / 5</span>
+      <blockquote>"A memorable quote or insight that reinforces the series message."</blockquote>
+      <p class="attribution">— Source or context</p>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="social-card" data-type="cta" data-index="05">
+      <span class="card-index">5 / 5</span>
+      <h2>Ready to get started?</h2>
+      <a class="cta-link" href="#">codi.dev</a>
+      <span class="codi-logo">codi</span>
+    </article>
+
+  </div>
+</body>
+</html>

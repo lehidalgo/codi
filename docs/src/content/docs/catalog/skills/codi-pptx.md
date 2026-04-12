@@ -16,7 +16,66 @@ compatibility:
 version: 1
 ---
 
-# PPTX Skill
+# README
+
+Creates, edits, and analyzes PowerPoint presentations (`.pptx`). Supports reading slide content, editing via XML manipulation, creating from scratch with `pptxgenjs`, and converting to PDF or images via LibreOffice.
+
+## Prerequisites
+
+| Dependency | Install | Purpose |
+|------------|---------|---------|
+| Python 3.9+ | required | core runtime |
+| markitdown | `pip install markitdown` | quick text extraction from .pptx |
+| LibreOffice | `brew install --cask libreoffice` | convert .ppt → .pptx, export to PDF/images |
+| Node.js | required for creation | `pptxgenjs` for creating .pptx from scratch |
+| pptxgenjs | `npm install pptxgenjs` | programmatic .pptx creation |
+
+## Scripts
+
+| File | Purpose |
+|------|---------|
+| `scripts/thumbnail.py` | Render slide thumbnails via LibreOffice for visual inspection |
+| `scripts/office/unpack.py` | Unzip .pptx to raw XML for direct editing |
+| `scripts/office/soffice.py` | LibreOffice wrapper — convert formats, export to PDF/images |
+| `scripts/__init__.py` | Python package init |
+| `scripts/clean.py` | Remove unused slide layouts and master slides |
+| `scripts/add_slide.py` | Add slides to an existing presentation |
+| `scripts/brand_tokens.json` | Brand colors, fonts, and layout values |
+
+## Workflow Summary
+
+| Task | Approach |
+|------|----------|
+| Read / extract text | `python -m markitdown presentation.pptx` |
+| Visual inspection | `python scripts/thumbnail.py presentation.pptx` |
+| Edit existing slides | Unpack XML → edit content → clean → repack |
+| Create from scratch | `pptxgenjs` (see `references/pptxgenjs.md`) |
+| Convert `.ppt` → `.pptx` | `python scripts/office/soffice.py --convert-to pptx file.ppt` |
+
+## Quick Start
+
+```bash
+# Install dependencies (macOS)
+brew install --cask libreoffice
+pip install markitdown
+
+# Read a presentation
+python -m markitdown presentation.pptx
+
+# Generate slide thumbnails
+python scripts/thumbnail.py presentation.pptx
+
+# Unpack for XML editing
+python scripts/office/unpack.py presentation.pptx unpacked/
+```
+
+## Branded Output
+
+For branded presentations, a `brand_tokens.json` file provides color palette, font names, and layout constants. The skill reads this automatically when a brand skill is active in the project.
+
+---
+
+# SKILL.md
 
 ## When to Activate
 
@@ -114,7 +173,7 @@ Read `${CLAUDE_SKILL_DIR}[[/references/design-guide.md]]` for design principles,
 
 ## Brand Integration
 
-When a brand skill is active or the user names a brand (codi, etc.), use the brand skill's generators instead of building slides from scratch.
+When a brand skill is active or the user names a brand (e.g., codi), use the brand skill's generators instead of building slides from scratch.
 
 1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
 2. **If the brand skill is not active**, tell the user to enable it (e.g., `codi-brand`) and re-run.

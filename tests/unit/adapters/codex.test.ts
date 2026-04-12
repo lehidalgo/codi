@@ -377,6 +377,52 @@ describe("codex adapter", () => {
     expect(configFile).toBeUndefined();
   });
 
+  // --- generate() — heartbeat hook scripts ---
+
+  describe("generate() — heartbeat hook scripts", () => {
+    it("includes the skill-observer script in generated files", async () => {
+      const config = createMockConfig({});
+      const files = await codexAdapter.generate(config, {});
+
+      const observer = files.find((f) => f.path.endsWith("codi-skill-observer.cjs"));
+      expect(observer).toBeDefined();
+      expect(observer!.path).toBe(".codi/hooks/codi-skill-observer.cjs");
+      expect(observer!.content).toContain("CODI-OBSERVATION");
+    });
+
+    it("does NOT include the skill-tracker script (Codex has no InstructionsLoaded hook)", async () => {
+      const config = createMockConfig({});
+      const files = await codexAdapter.generate(config, {});
+
+      const tracker = files.find((f) => f.path.endsWith("codi-skill-tracker.cjs"));
+      expect(tracker).toBeUndefined();
+    });
+
+    it("generates .codex/hooks.json with the Stop hook pointing to skill-observer", async () => {
+      const config = createMockConfig({});
+      const files = await codexAdapter.generate(config, {});
+
+      const hooksFile = files.find((f) => f.path === ".codex/hooks.json");
+      expect(hooksFile).toBeDefined();
+      const parsed = JSON.parse(hooksFile!.content);
+      expect(parsed.Stop).toBeDefined();
+      expect(Array.isArray(parsed.Stop)).toBe(true);
+      const hook = parsed.Stop[0];
+      expect(hook.type).toBe("command");
+      expect(hook.command).toContain("codi-skill-observer.cjs");
+      expect(hook.timeout).toBeGreaterThan(0);
+    });
+
+    it(".codex/hooks.json has non-empty content and a hash", async () => {
+      const config = createMockConfig({});
+      const files = await codexAdapter.generate(config, {});
+
+      const hooksFile = files.find((f) => f.path === ".codex/hooks.json");
+      expect(hooksFile!.content.length).toBeGreaterThan(0);
+      expect(hooksFile!.hash).toBeTruthy();
+    });
+  });
+
   // --- generate() with flag restrictions in config.toml ---
 
   it("generates config.toml with developer_instructions from flag restrictions", async () => {

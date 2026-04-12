@@ -14,7 +14,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
 # ${PROJECT_NAME_DISPLAY} Documentation Manager
@@ -96,23 +96,13 @@ For each significant change (new artifact type, renamed field, new adapter, remo
 - New adapters → add description in architecture.md
 - Changed directory structure → update directory trees in relevant docs
 
-## Step 3: Build HTML Documentation Site
+## Step 3: Export Skill Catalog (optional)
 
-**[CODING AGENT]** Generate the skill catalog and HTML site:
+**[CODING AGENT]** Export the skill catalog as JSON for machine consumption:
 
 \\\`\\\`\\\`bash
-# Build the HTML skill catalog site
-npx ${PROJECT_CLI} docs --html
-
-# Optionally export JSON for machine consumption
 npx ${PROJECT_CLI} docs --json
 \\\`\\\`\\\`
-
-This produces \\\`docs/codi_docs/index.html\\\` — a self-contained HTML file with:
-- Skill catalog grouped by category with descriptions
-- Client-side search across all skills
-- Dark/light mode support
-- Print-friendly CSS for PDF export
 
 ## Step 4: Final Validation
 

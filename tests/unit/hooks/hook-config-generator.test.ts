@@ -89,10 +89,12 @@ describe("generateHooksConfig", () => {
         h.name !== "import-depth-check" &&
         h.name !== "skill-yaml-validate" &&
         h.name !== "skill-resource-check" &&
+        h.name !== "skill-path-wrap-check" &&
         h.name !== "staged-junk-check" &&
         h.name !== "template-wiring-check" &&
         h.name !== "doc-naming-check" &&
-        h.name !== "version-bump",
+        h.name !== "version-bump" &&
+        h.name !== "brand-skill-validate",
     );
     expect(langHooks).toHaveLength(0);
   });
@@ -226,6 +228,24 @@ describe("generateHooksConfig", () => {
     const testIdx = names.indexOf("test-ts");
     expect(junkIdx).toBeLessThan(eslintIdx);
     expect(junkIdx).toBeLessThan(testIdx);
+  });
+
+  it("always enables brandSkillValidation", () => {
+    const config = generateHooksConfig(makeFlags({}), []);
+    expect(config.brandSkillValidation).toBe(true);
+  });
+
+  it("includes brand-skill-validate hook in Stage 2", () => {
+    const config = generateHooksConfig(makeFlags({}), []);
+    expect(config.hooks.map((h) => h.name)).toContain("brand-skill-validate");
+  });
+
+  it("brand-skill-validate appears before language hooks", () => {
+    const config = generateHooksConfig(makeFlags({}), ["typescript"]);
+    const brandIdx = config.hooks.findIndex((h) => h.name === "brand-skill-validate");
+    const eslintIdx = config.hooks.findIndex((h) => h.name === "eslint");
+    expect(brandIdx).toBeGreaterThanOrEqual(0);
+    expect(brandIdx).toBeLessThan(eslintIdx);
   });
 });
 

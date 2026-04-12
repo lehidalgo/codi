@@ -214,7 +214,7 @@ function docLabel(doc: DocEntry): string {
     }
 
     // Heading anchor links
-    document.querySelectorAll<HTMLElement>('.docs-content h2, .docs-content h3, .docs-content h4').forEach(h => {
+    document.querySelectorAll<HTMLElement>('.docs-content h1, .docs-content h2, .docs-content h3, .docs-content h4').forEach(h => {
       if (h.closest('.docs-card')) return;
       if (!h.id) {
         h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
@@ -246,7 +246,7 @@ function docLabel(doc: DocEntry): string {
       if (!article || !tocList || !tocSidebar) return;
 
       const headings = Array.from(
-        article.querySelectorAll<HTMLElement>('h2, h3')
+        article.querySelectorAll<HTMLElement>('h1, h2, h3')
       );
 
       if (headings.length < 2) {
@@ -259,7 +259,7 @@ function docLabel(doc: DocEntry): string {
           h.id = h.textContent?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') ?? '';
         }
         const li = document.createElement('li');
-        li.className = `docs-toc-item depth-${h.tagName === 'H3' ? 3 : 2}`;
+        li.className = `docs-toc-item depth-${h.tagName === 'H1' ? 1 : h.tagName === 'H3' ? 3 : 2}`;
         const a = document.createElement('a');
         a.href = `#${h.id}`;
         a.className = 'docs-toc-link';
@@ -327,7 +327,7 @@ function docLabel(doc: DocEntry): string {
         input.focus();
         if (!pagefind) {
           try {
-            pagefind = await import('/codi/docs/_pagefind/pagefind.js');
+            pagefind = await import(/* @vite-ignore */ '/codi/docs/_pagefind/pagefind.js');
             await pagefind.init();
           } catch {
             results.textContent = 'Search index not available. Run npm run docs:build first.';

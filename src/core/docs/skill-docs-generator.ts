@@ -1,9 +1,9 @@
-import { writeFile, mkdir } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
   AVAILABLE_SKILL_TEMPLATES,
-  loadSkillTemplateContent,
+  loadSkillTemplate,
 } from "../scaffolder/skill-template-loader.js";
 import {
   AVAILABLE_TEMPLATES as AVAILABLE_RULE_TEMPLATES,
@@ -14,7 +14,6 @@ import {
   loadAgentTemplate,
 } from "../scaffolder/agent-template-loader.js";
 import { BUILTIN_PRESETS } from "#src/templates/presets/index.js";
-import { renderSkillDocsPage } from "./skill-docs-template.js";
 import { ALL_SKILL_CATEGORIES } from "#src/constants.js";
 
 export interface SkillDocEntry {
@@ -24,6 +23,7 @@ export interface SkillDocEntry {
   userInvocable: boolean;
   compatibility: string[];
   body: string;
+  readme?: string;
 }
 
 interface SkillFrontmatter {
@@ -58,11 +58,22 @@ export function collectSkillEntries(): SkillDocEntry[] {
   const entries: SkillDocEntry[] = [];
 
   for (const templateName of AVAILABLE_SKILL_TEMPLATES) {
-    const result = loadSkillTemplateContent(templateName);
+    const result = loadSkillTemplate(templateName);
     if (!result.ok) continue;
 
-    const raw = resolveTemplatePlaceholders(result.data, templateName);
+    const descriptor = result.data;
+    const raw = resolveTemplatePlaceholders(descriptor.template, templateName);
     const { data, content } = parseFrontmatter<SkillFrontmatter>(raw);
+
+    let readme: string | undefined;
+    if (descriptor.staticDir) {
+      const readmePath = join(descriptor.staticDir, "README.md");
+      if (existsSync(readmePath)) {
+        const rawReadme = readFileSync(readmePath, "utf-8");
+        // Strip leading h1 title — skill name is already shown in the card header
+        readme = unescapeTemplateOutput(rawReadme.replace(/^#[^\n]*\n/, "").trimStart());
+      }
+    }
 
     entries.push({
       name: data.name ?? templateName,
@@ -71,6 +82,7 @@ export function collectSkillEntries(): SkillDocEntry[] {
       userInvocable: data["user-invocable"] !== false,
       compatibility: data.compatibility ?? [],
       body: unescapeTemplateOutput(content),
+      readme,
     });
   }
 
@@ -112,27 +124,6 @@ export function exportSkillCatalogJson(): string {
   const entries = collectSkillEntries();
   const groups = groupByCategory(entries);
   return JSON.stringify({ totalSkills: entries.length, groups }, null, 2);
-}
-
-/**
- * Generate the full HTML skill catalog page.
- */
-export function generateSkillDocsHtml(): string {
-  const entries = collectSkillEntries();
-  const groups = groupByCategory(entries);
-  return renderSkillDocsPage(groups, entries.length);
-}
-
-/**
- * Build and write the HTML skill catalog to docs/codi_docs/index.html.
- * Returns the absolute path of the written file.
- */
-export async function buildSkillDocsFile(projectRoot: string): Promise<string> {
-  const html = generateSkillDocsHtml();
-  const outPath = join(projectRoot, "docs", "codi_docs", "index.html");
-  await mkdir(dirname(outPath), { recursive: true });
-  await writeFile(outPath, html, "utf-8");
-  return outPath;
 }
 
 // ---------------------------------------------------------------------------

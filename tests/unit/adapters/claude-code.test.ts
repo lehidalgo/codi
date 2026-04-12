@@ -106,6 +106,75 @@ describe("claude-code adapter", () => {
       expect(mainFile.hash).toBeTruthy();
       expect(typeof mainFile.hash).toBe("string");
     });
+
+    it("injects self-dev warning when project name is codi", async () => {
+      const config = createMockConfig({
+        manifest: { name: PROJECT_NAME, version: "1", agents: [] },
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
+
+      expect(content).toContain("## Self-Development Mode");
+      expect(content).toContain("src/templates/");
+    });
+
+    it("does not inject self-dev warning for non-codi projects", async () => {
+      const config = createMockConfig({
+        manifest: { name: "my-app", version: "1", agents: [] },
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
+
+      expect(content).not.toContain("## Self-Development Mode");
+    });
+
+    it("injects project_context when set in manifest", async () => {
+      const config = createMockConfig({
+        manifest: {
+          name: "my-proj",
+          version: "1",
+          agents: [],
+          project_context: "## Custom Context\n\nProject-specific guidance.",
+        },
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
+
+      expect(content).toContain("## Project Context");
+      expect(content).toContain("## Custom Context");
+      expect(content).toContain("Project-specific guidance.");
+    });
+
+    it("does not inject project_context when field is absent", async () => {
+      const config = createMockConfig();
+      const files = await claudeCodeAdapter.generate(config, {});
+      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
+
+      expect(content).not.toContain("## Project Context");
+    });
+
+    it("places self-dev warning before project_context before permissions", async () => {
+      const config = createMockConfig({
+        manifest: {
+          name: PROJECT_NAME,
+          version: "1",
+          agents: [],
+          project_context: "## Custom Context\n\nGuidance.",
+        },
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
+
+      const selfDevPos = content.indexOf("## Self-Development Mode");
+      const contextPos = content.indexOf("## Project Context");
+      const permissionsPos = content.indexOf("## Permissions");
+
+      expect(selfDevPos).toBeGreaterThan(-1);
+      expect(contextPos).toBeGreaterThan(-1);
+      expect(permissionsPos).toBeGreaterThan(-1);
+      expect(selfDevPos).toBeLessThan(contextPos);
+      expect(contextPos).toBeLessThan(permissionsPos);
+    });
   });
 
   // ── generate() — rule files ────────────────────────────────────────
@@ -459,10 +528,46 @@ describe("claude-code adapter", () => {
     });
   });
 
+  // ── generate() — heartbeat hook scripts ──────────────────────────
+
+  describe("generate() — heartbeat hook scripts", () => {
+    it("includes the skill-tracker script in generated files", async () => {
+      const config = createMockConfig({});
+      const files = await claudeCodeAdapter.generate(config, {});
+
+      const tracker = files.find((f) => f.path.endsWith("codi-skill-tracker.cjs"));
+      expect(tracker).toBeDefined();
+      expect(tracker!.path).toBe(".codi/hooks/codi-skill-tracker.cjs");
+      expect(tracker!.content).toContain("SKILL.md");
+    });
+
+    it("includes the skill-observer script in generated files", async () => {
+      const config = createMockConfig({});
+      const files = await claudeCodeAdapter.generate(config, {});
+
+      const observer = files.find((f) => f.path.endsWith("codi-skill-observer.cjs"));
+      expect(observer).toBeDefined();
+      expect(observer!.path).toBe(".codi/hooks/codi-skill-observer.cjs");
+      expect(observer!.content).toContain("CODI-OBSERVATION");
+    });
+
+    it("hook scripts have non-empty content and a hash", async () => {
+      const config = createMockConfig({});
+      const files = await claudeCodeAdapter.generate(config, {});
+
+      for (const suffix of ["codi-skill-tracker.cjs", "codi-skill-observer.cjs"]) {
+        const f = files.find((file) => file.path.endsWith(suffix));
+        expect(f).toBeDefined();
+        expect(f!.content.length).toBeGreaterThan(0);
+        expect(f!.hash).toBeTruthy();
+      }
+    });
+  });
+
   // ── generate() — settings.json ─────────────────────────────────────
 
   describe("generate() — settings.json (buildSettingsJson)", () => {
-    it("returns null (no settings.json) when no relevant flags are set", async () => {
+    it("always generates settings.json with heartbeat hooks even when no permission flags are set", async () => {
       const config = createMockConfig({
         flags: {
           lint_on_save: {
@@ -476,7 +581,38 @@ describe("claude-code adapter", () => {
       const files = await claudeCodeAdapter.generate(config, {});
 
       const settingsFile = files.find((f) => f.path === ".claude/settings.json");
-      expect(settingsFile).toBeUndefined();
+      expect(settingsFile).toBeDefined();
+      const parsed = JSON.parse(settingsFile!.content);
+      expect(parsed.hooks).toBeDefined();
+      expect(parsed.permissions).toBeUndefined();
+    });
+
+    it("settings.json InstructionsLoaded hook points to skill-tracker with async: true", async () => {
+      const config = createMockConfig({});
+      const files = await claudeCodeAdapter.generate(config, {});
+
+      const settingsFile = files.find((f) => f.path === ".claude/settings.json");
+      const parsed = JSON.parse(settingsFile!.content);
+      const hook = parsed.hooks.InstructionsLoaded?.[0];
+      expect(hook).toBeDefined();
+      expect(hook.type).toBe("command");
+      expect(hook.command).toContain("codi-skill-tracker.cjs");
+      expect(hook.async).toBe(true);
+      expect(hook.timeout).toBeGreaterThan(0);
+    });
+
+    it("settings.json Stop hook points to skill-observer without async flag", async () => {
+      const config = createMockConfig({});
+      const files = await claudeCodeAdapter.generate(config, {});
+
+      const settingsFile = files.find((f) => f.path === ".claude/settings.json");
+      const parsed = JSON.parse(settingsFile!.content);
+      const hook = parsed.hooks.Stop?.[0];
+      expect(hook).toBeDefined();
+      expect(hook.type).toBe("command");
+      expect(hook.command).toContain("codi-skill-observer.cjs");
+      expect(hook.async).toBeUndefined();
+      expect(hook.timeout).toBeGreaterThan(0);
     });
 
     it("generates permissions.deny for allow_force_push: false", async () => {
@@ -516,12 +652,14 @@ describe("claude-code adapter", () => {
       expect(parsed.permissions.deny).toContain("Bash");
     });
 
-    it("returns null when flags object is empty", async () => {
+    it("generates settings.json with hooks when flags object is empty", async () => {
       const config = createMockConfig({ flags: {} });
       const files = await claudeCodeAdapter.generate(config, {});
 
       const settingsFile = files.find((f) => f.path === ".claude/settings.json");
-      expect(settingsFile).toBeUndefined();
+      expect(settingsFile).toBeDefined();
+      const parsed = JSON.parse(settingsFile!.content);
+      expect(parsed.hooks).toBeDefined();
     });
   });
 

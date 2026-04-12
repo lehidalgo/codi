@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"clean-slides","name":"Clean Slides","type":"slides","format":{"w":1280,"h":720}}' />
+  <meta name="template" content="clean-slides">
+  <meta name="template-type" content="slides">
+  <meta name="template-format" content="1280x720">
+  <title>Clean Slides — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,700;0,800;1,700;1,800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   rgba(255,255,255,0.06);
+      --border-a: rgba(86,182,194,0.2);
+      --c0:       #56b6c2;
+      --c1:       #61afef;
+      --grad:     linear-gradient(135deg, #56b6c2, #61afef);
+      --text-1:   #e6edf3;
+      --text-2:   rgba(230,237,243,0.65);
+      --text-3:   rgba(230,237,243,0.35);
+      --fh:       'Outfit', Arial, sans-serif;
+      --fm:       'Geist Mono', monospace;
+      --pad:      40px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: var(--fh);
+      color: var(--text-1);
+    }
+
+    .deck {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%; height: 100%;
+      background: #111;
+    }
+
+    .deck__viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: calc(100vh * 16 / 9);
+      max-height: calc(100vw * 9 / 16);
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--grad);
+      transition: width 0.3s ease;
+      z-index: 10;
+    }
+
+    .slide-counter {
+      position: absolute;
+      bottom: 12px; right: 16px;
+      font-family: var(--fm);
+      font-size: 11px;
+      color: var(--text-3);
+      z-index: 10;
+    }
+
+    .slide {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      padding: var(--pad) 56px;
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    .slide.active { display: flex; }
+
+    /* ── Slide header bar ──────────────────────────────────────────────── */
+    .slide-tag {
+      font-family: var(--fm);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(86,182,194,0.6);
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+
+    /* ── Bottom bar ────────────────────────────────────────────────────── */
+    .slide-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 52px;
+      background: rgba(0,0,0,0.3);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 56px;
+    }
+    .slide-handle {
+      font-family: var(--fm);
+      font-size: 13px;
+      color: rgba(230,237,243,0.35);
+    }
+    .slide-num {
+      font-family: var(--fm);
+      font-size: 13px;
+      color: rgba(86,182,194,0.3);
+      margin-left: auto;
+      margin-right: 48px;
+    }
+
+    em.acc {
+      font-style: italic;
+      padding-right: 0.12em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      font-size: 22px;
+      font-weight: 300;
+      color: rgba(230,237,243,0.7);
+      line-height: 1.9;
+    }
+    .bullet-list li::before {
+      content: '→ ';
+      color: var(--c0);
+    }
+
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--c0);
+      border-radius: 0 8px 8px 0;
+      padding: 18px 24px;
+      font-size: 18px;
+      color: var(--text-2);
+      line-height: 1.55;
+      margin-top: 24px;
+    }
+    .callout code {
+      font-family: var(--fm);
+      font-size: 14px;
+      color: var(--c0);
+      background: rgba(86,182,194,0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <div class="deck__viewport">
+      <div class="progress-bar" id="progressBar"></div>
+      <span class="slide-counter" id="slideCounter"></span>
+
+      <!-- Slide 1 — Title -->
+      <section class="slide active" data-index="01" data-type="title">
+        <div class="slide-tag">CODI</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+          <h1 style="font-size:72px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:20px;">
+            Your rules,<br><em class="acc">your agents</em>
+          </h1>
+          <p style="font-size:24px;font-weight:300;color:var(--text-2);line-height:1.5;">
+            One config source — all AI tools in sync
+          </p>
+        </div>
+        <div class="slide-bar">
+          <span class="slide-handle">@handle</span>
+          <span class="slide-num">01</span>
+        </div>
+      </section>
+
+      <!-- Slide 2 — Problem -->
+      <section class="slide" data-index="02" data-type="content">
+        <div class="slide-tag">THE PROBLEM</div>
+        <h2 style="font-size:58px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:28px;">
+          Too many<br><em class="acc">configs.</em>
+        </h2>
+        <ul class="bullet-list">
+          <li>Claude Code, Cursor, Copilot, Windsurf</li>
+          <li>Each needs its own rules file</li>
+          <li>Manually synced — or drifted apart</li>
+          <li>New agent? Start over from scratch</li>
+        </ul>
+        <div class="slide-bar">
+          <span class="slide-handle">@handle</span>
+          <span class="slide-num">02</span>
+        </div>
+      </section>
+
+      <!-- Slide 3 — Solution -->
+      <section class="slide" data-index="03" data-type="content">
+        <div class="slide-tag">THE SOLUTION</div>
+        <h2 style="font-size:58px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:24px;">
+          codi<br><em class="acc">fixes this.</em>
+        </h2>
+        <p style="font-size:22px;font-weight:300;color:var(--text-2);line-height:1.6;max-width:700px;margin-bottom:0;">
+          Write once in <span style="font-family:var(--fm);color:var(--c0);">.codi/</span> — generate config for every tool automatically.
+        </p>
+        <div class="callout">
+          Rules, skills, and agent settings propagate to <code>CLAUDE.md</code>, <code>.cursorrules</code>, <code>.windsurfrules</code>, and more.
+        </div>
+        <div class="slide-bar">
+          <span class="slide-handle">@handle</span>
+          <span class="slide-num">03</span>
+        </div>
+      </section>
+
+      <!-- Slide 4 — CTA -->
+      <section class="slide" data-index="04" data-type="closing">
+        <div class="slide-tag">SHIP TODAY</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;">
+          <h2 style="font-size:68px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:8px;">
+            npm i -g<br><em class="acc">codi-cli</em>
+          </h2>
+          <p style="font-size:22px;font-weight:300;color:var(--text-2);">codi init · codi generate · done</p>
+        </div>
+        <div class="slide-bar">
+          <span class="slide-handle">@handle</span>
+          <span class="slide-num">04</span>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var slides = Array.from(document.querySelectorAll('.slide'));
+    var cur = 0;
+
+    function show(i) {
+      slides.forEach(function(s, j) {
+        s.classList.toggle('active', j === i);
+      });
+      var pb = document.getElementById('progressBar');
+      var sc = document.getElementById('slideCounter');
+      if (pb) pb.style.width = ((i + 1) / slides.length * 100) + '%';
+      if (sc) sc.textContent = (i + 1) + ' / ' + slides.length;
+      cur = i;
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === ' ') show(Math.min(cur + 1, slides.length - 1));
+      if (e.key === 'ArrowLeft') show(Math.max(cur - 1, 0));
+    });
+
+    document.querySelector('.deck__viewport').addEventListener('click', function() {
+      show(Math.min(cur + 1, slides.length - 1));
+    });
+
+    show(0);
+  })();
+  </script>
+</body>
+</html>

@@ -15,8 +15,10 @@ import {
   DOC_NAMING_CHECK_TEMPLATE,
   ARTIFACT_VALIDATE_TEMPLATE,
   SKILL_RESOURCE_CHECK_TEMPLATE,
+  SKILL_PATH_WRAP_CHECK_TEMPLATE,
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
 import {
   COMMIT_MSG_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
@@ -52,8 +54,10 @@ export interface InstallOptions {
   importDepthCheck?: boolean;
   skillYamlValidation?: boolean;
   skillResourceCheck?: boolean;
+  skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
   versionBump?: boolean;
+  brandSkillValidation?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
 }
@@ -165,6 +169,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
     });
     files.push(path.relative(options.projectRoot, resourceCheckPath));
   }
+  if (options.skillPathWrapCheck) {
+    const pathWrapCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-path-wrap-check.mjs`);
+    await fs.writeFile(pathWrapCheckPath, SKILL_PATH_WRAP_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, pathWrapCheckPath));
+  }
   if (options.stagedJunkCheck) {
     const junkCheckPath = path.join(hookDir, `${PROJECT_NAME}-staged-junk-check.mjs`);
     await fs.writeFile(junkCheckPath, STAGED_JUNK_CHECK_TEMPLATE, {
@@ -181,6 +193,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, versionBumpPath));
+  }
+  if (options.brandSkillValidation) {
+    const brandSkillPath = path.join(hookDir, `${PROJECT_NAME}-brand-skill-validate.mjs`);
+    await fs.writeFile(brandSkillPath, BRAND_SKILL_VALIDATE_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, brandSkillPath));
   }
   return files;
 }

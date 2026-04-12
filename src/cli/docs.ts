@@ -1,7 +1,5 @@
 import type { Command } from "commander";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { exportSkillCatalogJson, buildSkillDocsFile } from "../core/docs/skill-docs-generator.js";
+import { exportSkillCatalogJson } from "../core/docs/skill-docs-generator.js";
 import { injectSections, validateSections } from "../core/docs/docs-generator.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -17,9 +15,7 @@ interface DocsData {
 }
 
 interface DocsCommandOptions extends GlobalOptions {
-  output?: string;
   json?: boolean;
-  html?: boolean;
   generate?: boolean;
   validate?: boolean;
   catalog?: boolean;
@@ -105,37 +101,13 @@ export async function docsHandler(
   }
 
   // --json: export JSON catalog to stdout
-  if (options.json) {
-    const catalog = exportSkillCatalogJson();
-    const parsed = JSON.parse(catalog) as { totalSkills: number };
-    process.stdout.write(catalog);
-    return createCommandResult({
-      success: true,
-      command: "docs",
-      data: { outputPath: "stdout", totalSkills: parsed.totalSkills },
-      exitCode: EXIT_CODES.SUCCESS,
-    });
-  }
-
-  // Default / --html: generate HTML skill catalog
-  const outputPath = await buildSkillDocsFile(projectRoot);
-
-  // Also write JSON catalog alongside if no custom output specified
-  if (!options.output) {
-    const catalog = exportSkillCatalogJson();
-    const jsonPath = join(projectRoot, "docs", "codi_docs", "skill-catalog.json");
-    await mkdir(dirname(jsonPath), { recursive: true });
-    await writeFile(jsonPath, catalog, "utf-8");
-  }
-
-  const parsed = JSON.parse(exportSkillCatalogJson()) as {
-    totalSkills: number;
-  };
-
+  const catalog = exportSkillCatalogJson();
+  const parsed = JSON.parse(catalog) as { totalSkills: number };
+  process.stdout.write(catalog);
   return createCommandResult({
     success: true,
     command: "docs",
-    data: { outputPath, totalSkills: parsed.totalSkills },
+    data: { outputPath: "stdout", totalSkills: parsed.totalSkills },
     exitCode: EXIT_CODES.SUCCESS,
   });
 }
@@ -145,11 +117,9 @@ export function registerDocsCommand(program: Command): void {
     .command("docs")
     .description("Generate and validate documentation")
     .option("--json", "Output JSON skill catalog to stdout")
-    .option("--html", "Generate HTML skill catalog site (default)")
     .option("--generate", "Regenerate code-driven doc sections")
     .option("--validate", "Check if docs are in sync with code")
     .option("--catalog", "Generate artifact catalog markdown pages and meta JSON")
-    .option("--output <path>", "Output file path")
     .action(async (options: DocsCommandOptions) => {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="codi:template" content='{"id":"codi-slides-pitch","name":"Codi Slides — Pitch","type":"slides","format":{"w":1280,"h":720}}'>
+  <title>Codi Slides — Pitch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-bg:         #070a0f;
+      --brand-surface:    #0d1117;
+      --brand-text:       #e6edf3;
+      --brand-text-muted: #8b949e;
+      --brand-primary:    #56b6c2;
+      --brand-accent:     #56b6c2;
+      --brand-font-headline: 'Outfit', sans-serif;
+      --brand-font-body:     'Outfit', sans-serif;
+      --brand-font-mono:     'Geist Mono', monospace;
+      --grad: linear-gradient(135deg, #56b6c2, #61afef);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #111; font-family: var(--brand-font-body); color: var(--brand-text); }
+    .slides-container { display: flex; flex-direction: column; align-items: center; padding: 32px 0 80px; gap: 16px; }
+    .slide {
+      position: relative;
+      width: 1280px; height: 720px;
+      background: var(--brand-bg);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      padding: 64px 72px;
+    }
+    .slide-counter { position: absolute; bottom: 28px; right: 36px; font-size: 12px; color: var(--brand-text-muted); font-family: var(--brand-font-mono); }
+    .codi-logo { font-family: var(--brand-font-mono); font-size: 15px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; position: absolute; bottom: 24px; left: 36px; }
+    /* Accent bar */
+    .slide::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grad); }
+    /* Title slide */
+    .slide[data-type="title"] { justify-content: center; background: var(--brand-surface); }
+    .slide[data-type="title"] .eyebrow { font-size: 13px; font-family: var(--brand-font-mono); color: var(--brand-text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; }
+    .slide[data-type="title"] h1 { font-size: 64px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 20px; }
+    .slide[data-type="title"] h1 em { font-style: italic; padding-right: 0.12em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .slide[data-type="title"] .subtitle { font-size: 22px; color: var(--brand-text-muted); line-height: 1.5; max-width: 700px; }
+    .slide[data-type="title"] .meta { position: absolute; bottom: 52px; left: 72px; font-size: 14px; color: var(--brand-text-muted); font-family: var(--brand-font-mono); }
+    /* Divider */
+    .slide[data-type="divider"] { justify-content: center; background: var(--brand-surface); }
+    .slide[data-type="divider"] .section-num { font-size: 13px; font-family: var(--brand-font-mono); color: var(--brand-accent); letter-spacing: 0.1em; margin-bottom: 16px; }
+    .slide[data-type="divider"] h2 { font-size: 52px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+    /* Content */
+    .slide[data-type="content"] h2 { font-size: 36px; font-weight: 700; color: var(--brand-accent); letter-spacing: -0.02em; margin-bottom: 28px; }
+    .slide[data-type="content"] p { font-size: 20px; line-height: 1.6; color: var(--brand-text); margin-bottom: 16px; }
+    .slide[data-type="content"] ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .slide[data-type="content"] ul li { font-size: 19px; line-height: 1.5; padding-left: 24px; position: relative; color: var(--brand-text); }
+    .slide[data-type="content"] ul li::before { content: '—'; position: absolute; left: 0; color: var(--brand-accent); }
+    /* Metrics */
+    .slide[data-type="metrics"] { justify-content: center; }
+    .slide[data-type="metrics"] .eyebrow { font-size: 13px; font-family: var(--brand-font-mono); color: var(--brand-text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 36px; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .metric-card { background: var(--brand-surface); padding: 32px; border-radius: 4px; border-top: 2px solid var(--brand-accent); }
+    .metric-value { font-size: 52px; font-weight: 800; letter-spacing: -0.03em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 10px; }
+    .metric-label { font-size: 15px; color: var(--brand-text-muted); line-height: 1.4; }
+    /* Closing */
+    .slide[data-type="closing"] { justify-content: center; background: var(--brand-surface); }
+    .slide[data-type="closing"] h2 { font-size: 52px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .slide[data-type="closing"] .contact { font-size: 16px; color: var(--brand-text-muted); font-family: var(--brand-font-mono); }
+  </style>
+</head>
+<body>
+  <div class="slides-container">
+
+    <article class="slide" data-type="title" data-index="01">
+      <span class="eyebrow">Codi · 2026</span>
+      <h1>Presentation <em>Title</em></h1>
+      <p class="subtitle">Brief subtitle or key message — one sentence max.</p>
+      <p class="meta">Author Name · Date</p>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="slide" data-type="divider" data-index="02">
+      <span class="section-num">01 —</span>
+      <h2>Section One</h2>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="slide" data-type="content" data-index="03">
+      <h2>Slide Heading</h2>
+      <ul>
+        <li>First key point — keep each bullet to one line</li>
+        <li>Second key point — simple and direct</li>
+        <li>Third key point — avoid sub-bullets</li>
+      </ul>
+      <span class="slide-counter">3</span>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="slide" data-type="metrics" data-index="04">
+      <span class="eyebrow">By the numbers</span>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-value">10×</div><div class="metric-label">Short metric label here</div></div>
+        <div class="metric-card"><div class="metric-value">99%</div><div class="metric-label">Short metric label here</div></div>
+        <div class="metric-card"><div class="metric-value">50K</div><div class="metric-label">Short metric label here</div></div>
+      </div>
+      <span class="slide-counter">4</span>
+      <span class="codi-logo">codi</span>
+    </article>
+
+    <article class="slide" data-type="closing" data-index="05">
+      <h2>Thank you</h2>
+      <p class="contact">hello@codi.dev · codi.dev</p>
+      <span class="codi-logo">codi</span>
+    </article>
+
+  </div>
+</body>
+</html>

@@ -1,8 +1,5 @@
 export { ProjectManifestSchema } from "./manifest.js";
-export type {
-  ProjectManifestInput,
-  ProjectManifestOutput,
-} from "./manifest.js";
+export type { ProjectManifestInput, ProjectManifestOutput } from "./manifest.js";
 
 export { RuleFrontmatterSchema } from "./rule.js";
 export type { RuleFrontmatterInput, RuleFrontmatterOutput } from "./rule.js";
@@ -16,11 +13,7 @@ export {
   FlagValueSchema,
   FlagDefinitionSchema,
 } from "./flag.js";
-export type {
-  FlagModeOutput,
-  FlagConditionsOutput,
-  FlagDefinitionOutput,
-} from "./flag.js";
+export type { FlagModeOutput, FlagConditionsOutput, FlagDefinitionOutput } from "./flag.js";
 
 export { McpConfigSchema } from "./mcp.js";
 export type { McpConfigInput, McpConfigOutput } from "./mcp.js";
@@ -48,3 +41,6 @@ export type {
 
 export { EvalsDataSchema, EvalCaseSchema } from "./evals.js";
 export type { EvalsData, EvalCase } from "./evals.js";
+
+export { SkillTestManifestSchema } from "./skill-test.js";
+export type { SkillTestManifest } from "./skill-test.js";

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>codi · content factory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div id="app">
+
+  <aside id="sidebar">
+    <header class="sidebar-header">
+      <span class="logo">codi</span>
+      <span class="logo-tag">content factory</span>
+    </header>
+
+    <section class="panel">
+      <div class="panel-label">Format</div>
+      <div class="format-grid" id="format-grid">
+        <button class="fmt active" data-w="1080" data-h="1080">
+          <span class="fmt-shape sq"></span>
+          <b>1:1</b><small>Square</small>
+        </button>
+        <button class="fmt" data-w="1080" data-h="1350">
+          <span class="fmt-shape pt"></span>
+          <b>4:5</b><small>Portrait</small>
+        </button>
+        <button class="fmt" data-w="1080" data-h="1920">
+          <span class="fmt-shape st"></span>
+          <b>9:16</b><small>Story</small>
+        </button>
+        <button class="fmt" data-w="1200" data-h="630">
+          <span class="fmt-shape og"></span>
+          <b>OG</b><small>Banner</small>
+        </button>
+        <button class="fmt" data-w="1280" data-h="720">
+          <span class="fmt-shape wide"></span>
+          <b>16:9</b><small>Slides</small>
+        </button>
+        <button class="fmt" data-w="794" data-h="1123">
+          <span class="fmt-shape a4"></span>
+          <b>A4</b><small>Doc</small>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-label">Handle</div>
+      <div class="handle-wrap">
+        <span class="at-sign">@</span>
+        <input id="handle" type="text" placeholder="username" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-label">Zoom</div>
+      <div class="slider-row">
+        <input id="zoom-slider" type="range" min="20" max="200" value="100">
+        <span id="zoom-val" class="slider-val">100%</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-label">
+        Selection
+        <span id="selection-count" class="selection-count">0 of 0</span>
+      </div>
+      <div class="selection-btn-row">
+        <button id="btn-select-toggle" class="btn-select" type="button">Select all</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-label">
+        Logo
+        <button id="logo-toggle" class="logo-toggle-btn active" type="button">ON</button>
+      </div>
+      <div id="logo-controls">
+        <div class="slider-row">
+          <span class="slider-label">Size</span>
+          <input id="logo-size" type="range" min="16" max="120" value="48">
+          <span id="logo-size-val" class="slider-val">48</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">X</span>
+          <input id="logo-x" type="range" min="5" max="95" value="85">
+          <span id="logo-x-val" class="slider-val">85%</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Y</span>
+          <input id="logo-y" type="range" min="5" max="95" value="85">
+          <span id="logo-y-val" class="slider-val">85%</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--files">
+      <div class="panel-label">Content files</div>
+      <div id="file-list" class="file-list">
+        <div class="file-empty">No content yet</div>
+      </div>
+    </section>
+
+    <section class="panel" id="export-panel">
+      <div class="panel-label">Export</div>
+      <div id="export-panel-btns"></div>
+    </section>
+
+    <section class="panel panel--log">
+      <div class="panel-label">
+        Activity
+        <span id="ws-dot" class="ws-dot" title="Live connection status"></span>
+      </div>
+      <div id="log" class="log" role="log" aria-live="polite"></div>
+    </section>
+  </aside>
+
+  <div id="main">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="preview" role="tab" aria-selected="true">Preview</button>
+      <button class="tab" data-view="gallery" role="tab" aria-selected="false">Gallery</button>
+      <div class="tabs-fill"></div>
+
+      <!-- View mode toggle — only visible in Preview tab -->
+      <div id="view-mode-bar" class="view-mode-bar">
+        <button id="btn-vm-grid" class="vm-btn" title="Overview — all slides at once" type="button">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <rect x="0" y="0" width="6" height="6" rx="1"/>
+            <rect x="8" y="0" width="6" height="6" rx="1"/>
+            <rect x="0" y="8" width="6" height="6" rx="1"/>
+            <rect x="8" y="8" width="6" height="6" rx="1"/>
+          </svg>
+          Grid
+        </button>
+        <button id="btn-vm-app" class="vm-btn active" title="App mode — presentation or scroll view" type="button">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <rect x="1" y="1" width="12" height="12" rx="2"/>
+          </svg>
+          App
+        </button>
+      </div>
+
+      <span id="card-nav" class="card-nav" hidden>
+        <button id="btn-prev" class="nav-btn" aria-label="Previous slide">&#8249;</button>
+        <span id="card-idx" aria-live="polite">1 / 1</span>
+        <button id="btn-next" class="nav-btn" aria-label="Next slide">&#8250;</button>
+      </span>
+
+      <button id="btn-refresh" class="refresh-btn" title="Reload content" hidden aria-label="Reload content">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M10.5 6A4.5 4.5 0 1 1 6 1.5V0L8.5 2 6 4V2.5A3.5 3.5 0 1 0 9.5 6h1z"/>
+        </svg>
+      </button>
+    </nav>
+
+    <div id="update-toast" class="update-toast" role="status" aria-live="polite"></div>
+
+    <div id="view-preview" class="view active" role="tabpanel">
+      <div id="preview-meta" class="preview-meta" hidden>
+        <span id="preview-meta-name" class="preview-meta-name"></span>
+        <span class="preview-meta-sep">·</span>
+        <span id="preview-meta-type" class="preview-meta-chip"></span>
+        <span class="preview-meta-sep">·</span>
+        <span id="preview-meta-format" class="preview-meta-dim"></span>
+        <span class="preview-meta-sep">·</span>
+        <span id="preview-meta-slides" class="preview-meta-dim"></span>
+        <span id="preview-meta-status-wrap" class="preview-meta-status-wrap" hidden>
+          <span class="preview-meta-sep">·</span>
+          <span class="status-select-wrap status-draft" id="status-select-wrap">
+            <select id="preview-status-select" class="preview-status-select" aria-label="Project status">
+              <option value="draft">Draft</option>
+              <option value="in-progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+          </span>
+        </span>
+      </div>
+      <div id="canvas" class="canvas mode-grid">
+        <button id="app-prev" class="app-nav-btn" hidden aria-label="Previous slide">&#8249;</button>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-glyph">&#9672;</div>
+          <div class="empty-title">Ready for content</div>
+          <div class="empty-body">Pick a preset from the Gallery tab,<br>or ask the agent to generate content.</div>
+        </div>
+        <div id="card-strip" class="card-strip grid-view" hidden></div>
+        <button id="app-next" class="app-nav-btn" hidden aria-label="Next slide">&#8250;</button>
+        <div id="filmstrip" class="filmstrip" hidden></div>
+      </div>
+    </div>
+
+    <div id="view-gallery" class="view" role="tabpanel">
+      <div class="gallery-hero">
+        <h1>Preset Library</h1>
+        <p>Click a preset to load all its slides into preview. Use Grid for overview, App for presentation mode.</p>
+      </div>
+      <div class="gallery-filters" id="gallery-filters">
+        <button class="filter-btn active" data-type="all" type="button">All</button>
+        <button class="filter-btn" data-type="social" type="button">Social</button>
+        <button class="filter-btn" data-type="slides" type="button">Slides</button>
+        <button class="filter-btn" data-type="document" type="button">Document</button>
+        <button class="filter-btn" data-type="work" type="button">My Work</button>
+      </div>
+      <div id="work-status-filters" class="work-status-filters" style="display:none">
+        <button class="status-filter-btn active" data-status="all" type="button">All</button>
+        <button class="status-filter-btn" data-status="draft" type="button">Draft</button>
+        <button class="status-filter-btn" data-status="in-progress" type="button">In Progress</button>
+        <button class="status-filter-btn" data-status="review" type="button">Review</button>
+        <button class="status-filter-btn" data-status="done" type="button">Done</button>
+      </div>
+      <div id="gallery-grid" class="gallery-grid"></div>
+    </div>
+  </div>
+
+</div>
+<script src="/vendor/jszip.min.js"></script>
+<script src="/vendor/html2canvas.min.js"></script>
+<script src="/vendor/pptxgen.bundle.js"></script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

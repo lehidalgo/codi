@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"minimal-carousel","name":"Minimal Carousel","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="minimal-carousel">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Minimal Carousel — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,700;1,800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --white:    #ffffff;
+      --gray:     #f4f6f8;
+      --teal:     #14b8a6;
+      --dark:     #0f172a;
+      --muted:    #64748b;
+      --fh:       'Outfit', Arial, sans-serif;
+      --fm:       'Geist Mono', monospace;
+      --w:        1080px;
+      --h:        1080px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #e8ecf0;
+      font-family: var(--fh);
+      color: var(--dark);
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    /* ── Base card ── */
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    }
+
+    /* ── Bottom bar shared ── */
+    .bar {
+      flex-shrink: 0;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      padding: 0 56px;
+      gap: 16px;
+    }
+    .bar-teal {
+      background: rgba(0,0,0,0.10);
+      border-top: 1px solid rgba(255,255,255,0.20);
+    }
+    .bar-white {
+      background: rgba(244,246,248,0.70);
+      border-top: 1px solid rgba(20,184,166,0.12);
+    }
+
+    .hn {
+      font-family: var(--fm);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1;
+    }
+    .hn-white {
+      color: rgba(255,255,255,0.75);
+    }
+    .sp { flex: 1; }
+
+    /* ── SLIDE 1 — Cover (light gray bg) ── */
+    .cover-card {
+      background: var(--gray);
+    }
+    .cover-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--teal);
+    }
+    .cover-body {
+      flex: 1;
+      padding: 64px 64px 48px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cover-num {
+      font-family: var(--fm);
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--teal);
+      letter-spacing: 0.04em;
+      text-align: right;
+    }
+    .cover-headline {
+      font-family: var(--fh);
+      font-size: 112px;
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      color: var(--dark);
+      text-transform: uppercase;
+    }
+    .cover-swipe {
+      font-family: var(--fm);
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── SLIDE 2 & 4 — Split content (white bg) ── */
+    .content-card {
+      background: var(--white);
+    }
+    .split-wrap {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    /* image column */
+    .ic {
+      flex-shrink: 0;
+      width: 45%;
+      position: relative;
+      background: var(--gray);
+    }
+    .ic-in {
+      position: absolute;
+      inset: 32px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .ic-icon {
+      font-size: 48px;
+      color: #94a3b8;
+      line-height: 1;
+    }
+    .ic-label {
+      font-family: var(--fm);
+      font-size: 16px;
+      color: #94a3b8;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* text column */
+    .cc {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 56px 56px 40px 52px;
+      gap: 20px;
+    }
+    .cc-right {
+      padding: 56px 52px 40px 56px;
+    }
+    .slide-num {
+      font-family: var(--fm);
+      font-size: 20px;
+      color: var(--teal);
+      letter-spacing: 0.04em;
+    }
+    .slide-headline {
+      font-family: var(--fh);
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--dark);
+    }
+    .slide-body {
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── SLIDE 3 — Quote (teal bg) ── */
+    .quote-card {
+      background: var(--teal);
+      display: flex;
+      flex-direction: column;
+    }
+    .quote-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 72px 96px 32px;
+      text-align: center;
+    }
+    .quote-mark {
+      font-family: var(--fh);
+      font-size: 180px;
+      font-weight: 900;
+      line-height: 0.75;
+      color: rgba(255,255,255,0.25);
+      margin-bottom: 24px;
+      user-select: none;
+    }
+    .quote-text {
+      font-family: var(--fh);
+      font-size: 38px;
+      font-weight: 700;
+      font-style: italic;
+      line-height: 1.35;
+      color: #ffffff;
+      max-width: 800px;
+    }
+    .quote-counter {
+      font-family: var(--fm);
+      font-size: 18px;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── SLIDE 5 — Stat (light gray bg) ── */
+    .stat-card {
+      background: var(--gray);
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 80px 32px;
+      text-align: center;
+      gap: 16px;
+    }
+    .stat-num {
+      font-family: var(--fh);
+      font-size: 160px;
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      color: var(--teal);
+    }
+    .stat-label {
+      font-family: var(--fh);
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--dark);
+    }
+    .stat-desc {
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 680px;
+    }
+    .stat-counter {
+      font-family: var(--fm);
+      font-size: 18px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── SLIDE 6 — CTA (teal bg) ── */
+    .cta-card {
+      background: var(--teal);
+      display: flex;
+      flex-direction: column;
+    }
+    .cta-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 72px 80px 32px;
+      text-align: center;
+      gap: 20px;
+    }
+    .cta-headline {
+      font-family: var(--fh);
+      font-size: 90px;
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+    .cta-sub {
+      font-size: 24px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.70);
+      line-height: 1.5;
+    }
+    .cta-follow {
+      font-family: var(--fm);
+      font-size: 20px;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Minimal Carousel — 6 cards</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — Cover
+═══════════════════════════════════════════════════════ -->
+<article class="social-card cover-card" data-index="01" data-type="cover">
+  <div class="cover-accent"></div>
+
+  <div class="cover-body">
+    <!-- top row: spacer + slide number -->
+    <div style="display:flex;justify-content:flex-end;">
+      <span class="cover-num">01</span>
+    </div>
+
+    <!-- headline -->
+    <div>
+      <h1 class="cover-headline">
+        YOUR<br>CONTENT<br><span style="color:var(--teal);">FINALLY</span><br>WORKS
+      </h1>
+    </div>
+
+    <!-- bottom row: handle + swipe -->
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="hn">@handle</span>
+      <span class="cover-swipe">SWIPE →</span>
+    </div>
+  </div>
+</article>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — Content (photo left / text right)
+═══════════════════════════════════════════════════════ -->
+<article class="social-card content-card" data-index="02" data-type="content">
+  <div class="split-wrap">
+    <!-- image column — LEFT -->
+    <div class="ic">
+      <div class="ic-in">
+        <div class="ic-icon">📷</div>
+        <span class="ic-label">Photo / Video</span>
+      </div>
+    </div>
+
+    <!-- text column — RIGHT -->
+    <div class="cc">
+      <span class="slide-num">02</span>
+      <h2 class="slide-headline">The story<br>starts here.</h2>
+      <p class="slide-body">Drop your photo or video on the left. This text block sits opposite — clean, readable, on brand.</p>
+    </div>
+  </div>
+
+  <div class="bar bar-white">
+    <span class="hn">@handle</span>
+  </div>
+</article>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 — Quote (full-color teal)
+═══════════════════════════════════════════════════════ -->
+<article class="social-card quote-card" data-index="03" data-type="content">
+  <div class="quote-body">
+    <div class="quote-mark">&ldquo;</div>
+    <p class="quote-text">
+      The best content is the kind that makes someone stop scrolling and actually think.
+    </p>
+  </div>
+
+  <div class="bar bar-teal" style="justify-content:space-between;">
+    <span class="hn hn-white">@handle</span>
+    <span class="quote-counter">03 / 06</span>
+  </div>
+</article>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 — Content (photo right / text left) — MIRRORED
+═══════════════════════════════════════════════════════ -->
+<article class="social-card content-card" data-index="04" data-type="content">
+  <div class="split-wrap">
+    <!-- text column — LEFT -->
+    <div class="cc cc-right">
+      <span class="slide-num">04</span>
+      <h2 class="slide-headline">Flip the<br>layout here.</h2>
+      <p class="slide-body">Alternating sides keeps the carousel moving. Your audience stays curious card after card.</p>
+    </div>
+
+    <!-- image column — RIGHT -->
+    <div class="ic">
+      <div class="ic-in">
+        <div class="ic-icon">📷</div>
+        <span class="ic-label">Photo / Video</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar bar-white">
+    <span class="hn">@handle</span>
+  </div>
+</article>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 — Stat card (light gray bg)
+═══════════════════════════════════════════════════════ -->
+<article class="social-card stat-card" data-index="05" data-type="stat">
+  <div class="stat-body">
+    <div class="stat-num">10×</div>
+    <div class="stat-label">More productive</div>
+    <p class="stat-desc">Teams who batch their content creation ship 10x more posts with the same effort — without sacrificing quality.</p>
+  </div>
+
+  <div class="bar bar-white" style="justify-content:flex-end;">
+    <span class="stat-counter">05 / 06</span>
+  </div>
+</article>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 — CTA (teal bg)
+═══════════════════════════════════════════════════════ -->
+<article class="social-card cta-card" data-index="06" data-type="cta">
+  <div class="cta-body">
+    <h2 class="cta-headline">THANKS<br>FOR<br>READING!</h2>
+    <p class="cta-sub">Follow for more tips, templates, and tools.</p>
+  </div>
+
+  <div class="bar bar-teal" style="justify-content:space-between;">
+    <span class="hn hn-white">@handle</span>
+    <span class="cta-follow">FOLLOW →</span>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

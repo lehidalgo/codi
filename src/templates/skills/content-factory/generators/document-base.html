@@ -60,6 +60,12 @@
       page-break-after: always;
     }
 
+    /* CRITICAL: every flex child of .doc-page that is itself a flex column MUST
+       have width:100% so that percentage widths (tables, code blocks) resolve
+       against a definite containing-block width. Without this, width:100% on a
+       <table> child of a nested flex-column resolves to auto/content, collapsing
+       columns to near-zero even when table-layout:fixed is set. */
+
     /* ── Page Header ────────────────────────────────────────────────────────── */
     .page-header {
       display: flex;
@@ -167,6 +173,99 @@
       border-radius: 50%;
     }
 
+    /* ── Data Table ─────────────────────────────────────────────────────────── */
+    /* CRITICAL: table-layout:fixed prevents collapse inside .doc-page which is a
+       flex column container. border-collapse + width:100% is unreliable in flex;
+       fixed layout + min-width:0 on flex children ensures correct column distribution.
+       overflow:visible (the default) is required — never set overflow:hidden on tables;
+       it clips content in the browser and breaks DOCX screenshot capture. */
+    .data-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      overflow: visible;
+      font-size: 13px;
+      margin: 14px 0;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+    .data-table thead tr { background: var(--brand-primary); }
+    .data-table thead th {
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #fff;
+    }
+    .data-table tbody tr:nth-child(even) { background: var(--brand-surface); }
+    .data-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.07); }
+    .data-table td {
+      padding: 8px 12px;
+      vertical-align: top;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    /* .doc-page is display:flex; flex-direction:column — all direct children need
+       min-width:0 so tables and code blocks do not overflow the 794px page boundary. */
+    .doc-page > * { min-width: 0; }
+
+    /* ── Code Block ─────────────────────────────────────────────────────────── */
+    /* The entire .code-block is captured as a PNG screenshot for DOCX export.
+       overflow:visible is REQUIRED — overflow:hidden clips code in the browser
+       preview and corrupts the DOCX screenshot. */
+    .code-block {
+      background: #1e1e2e;
+      border-radius: 8px;
+      margin: 16px 0;
+      overflow: visible;
+    }
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .code-lang {
+      font-family: monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em;
+    }
+    .code-dots { display: flex; gap: 5px; }
+    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .code-dot.r { background: #ff5f57; }
+    .code-dot.y { background: #febc2e; }
+    .code-dot.g { background: #28c840; }
+    .code-block pre {
+      padding: 16px 20px;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #cdd6f4;
+      overflow: visible;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ── Diagram Wrap ───────────────────────────────────────────────────────── */
+    /* The DOCX exporter detects .diagram-wrap and captures it as a PNG screenshot.
+       The SVG must be a DIRECT child of .diagram-wrap — a nested SVG is not detected.
+       Use max-width + align-self:center to control the diagram width in the DOCX. */
+    .diagram-wrap {
+      margin: 20px 0;
+      overflow: visible;
+    }
+    .diagram-wrap svg { display: block; width: 100%; }
+    .diagram-caption {
+      font-size: 11px;
+      color: var(--brand-text-muted);
+      text-align: center;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
     /* ── Callout Box ────────────────────────────────────────────────────────── */
     .callout {
       background: var(--brand-surface);
@@ -217,6 +316,54 @@
       <div class="callout">
         <p>Key insight or highlight — use callout boxes sparingly for the most important points.</p>
       </div>
+
+      <!-- DATA TABLE — table-layout:fixed is required; see CSS comment above -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Column A</th>
+            <th>Column B</th>
+            <th>Column C</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Value 1</td><td>Value 2</td><td>Value 3</td></tr>
+          <tr><td>Value 4</td><td>Value 5</td><td>Value 6</td></tr>
+        </tbody>
+      </table>
+
+      <!-- CODE BLOCK — captured as PNG screenshot for DOCX; overflow:visible required -->
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">TypeScript — example.ts</span>
+          <div class="code-dots">
+            <div class="code-dot r"></div>
+            <div class="code-dot y"></div>
+            <div class="code-dot g"></div>
+          </div>
+        </div>
+        <pre>function greet(name: string): string {
+  return `Hello, ${name}!`;
+}</pre>
+      </div>
+
+      <!-- DIAGRAM WRAP — SVG must be a DIRECT child; not nested inside another div -->
+      <div class="diagram-wrap">
+        <svg width="580" height="80" viewBox="0 0 580 80" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="20" width="120" height="40" rx="6" fill="var(--brand-primary)" opacity="0.8"/>
+          <text x="70" y="45" text-anchor="middle" font-size="13" fill="#fff">Step A</text>
+          <line x1="130" y1="40" x2="200" y2="40" stroke="var(--brand-primary)" stroke-width="2" marker-end="url(#arrow)"/>
+          <rect x="200" y="20" width="120" height="40" rx="6" fill="var(--brand-primary)" opacity="0.8"/>
+          <text x="260" y="45" text-anchor="middle" font-size="13" fill="#fff">Step B</text>
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="var(--brand-primary)"/>
+            </marker>
+          </defs>
+        </svg>
+        <div class="diagram-caption">Figure 1 — Example flow diagram</div>
+      </div>
+
       <div class="page-footer">
         <span>Confidential</span>
         <span>Page 2</span>

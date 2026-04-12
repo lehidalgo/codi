@@ -18,8 +18,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "src/templates/skills/**/tests/**/*.test.{ts,js}"],
     exclude: ["projs/**", "node_modules/**"],
+    environmentMatchGlobs: [["src/templates/skills/**/tests/**/*.test.{ts,js}", "jsdom"]],
     testTimeout: 10_000,
     server: {
       deps: {
@@ -32,7 +33,7 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.ts", "src/templates/skills/**/generators/lib/*.js"],
       exclude: [
         "src/**/*.d.ts",
         "src/**/index.ts", // barrel re-exports

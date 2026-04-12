@@ -121,8 +121,19 @@ function buildSkillMarkdown(entry: SkillDocEntry, refs: ReferenceSection[]): str
     `version: 1`,
     "---",
     "",
-    entry.body.trim(),
   ];
+
+  // README section — only for skills that have one
+  if (entry.readme) {
+    lines.push("# README", "", entry.readme.trim(), "", "---", "");
+  }
+
+  // SKILL.md section — strip leading h1 (e.g. "# codi-skill-name") to avoid duplicate
+  const bodyLines = entry.body.trim().split("\n");
+  const bodyContent = bodyLines[0]?.startsWith("# ")
+    ? bodyLines.slice(1).join("\n").trimStart()
+    : entry.body.trim();
+  lines.push("# SKILL.md", "", bodyContent);
 
   for (const ref of refs) {
     lines.push("", "---", "", `## Reference: ${ref.title}`, "", ref.content);

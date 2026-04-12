@@ -1,0 +1,10 @@
+{
+  "skill": "slack-gif-creator",
+  "tiers": {
+    "contract": true,
+    "logic": {
+      "lib": "scripts/python/",
+      "tests": "tests/python/"
+    }
+  }
+}

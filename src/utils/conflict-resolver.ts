@@ -262,7 +262,18 @@ export async function resolveConflicts(
     }
 
     if (failed.length > 0) {
-      throw new UnresolvableConflictError(failed.map((f) => f.label));
+      process.stdout.write(
+        JSON.stringify({
+          type: "conflicts",
+          items: failed.map((f) => ({
+            label: f.label,
+            fullPath: f.fullPath,
+            currentContent: f.currentContent,
+            incomingContent: f.incomingContent,
+          })),
+        }) + "\n",
+      );
+      process.exitCode = 2;
     }
 
     if (mergedEntries.length > 0) {
@@ -271,7 +282,9 @@ export async function resolveConflicts(
       );
     }
 
-    return { accepted: [], skipped: [], merged: mergedEntries };
+    // failed entries go into skipped — callers inspect process.exitCode === 2
+    // to know unresolvable conflicts were found.
+    return { accepted: [], skipped: failed, merged: mergedEntries };
   }
 
   const log = Logger.getInstance();

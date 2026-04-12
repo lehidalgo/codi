@@ -1,7 +1,10 @@
+'use strict';
 const crypto = require('crypto');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const workspace = require('./lib/workspace.cjs');
+const { handleExportPng, handleExportPdf, handleExportDocx } = require('./lib/exports.cjs');
 
 // ========== WebSocket Protocol (RFC 6455) ==========
 
@@ -16,7 +19,6 @@ function encodeFrame(opcode, payload) {
   const fin = 0x80;
   const len = payload.length;
   let header;
-
   if (len < 126) {
     header = Buffer.alloc(2);
     header[0] = fin | opcode;
@@ -32,21 +34,17 @@ function encodeFrame(opcode, payload) {
     header[1] = 127;
     header.writeBigUInt64BE(BigInt(len), 2);
   }
-
   return Buffer.concat([header, payload]);
 }
 
 function decodeFrame(buffer) {
   if (buffer.length < 2) return null;
-
   const secondByte = buffer[1];
   const opcode = buffer[0] & 0x0F;
   const masked = (secondByte & 0x80) !== 0;
   let payloadLen = secondByte & 0x7F;
   let offset = 2;
-
   if (!masked) throw new Error('Client frames must be masked');
-
   if (payloadLen === 126) {
     if (buffer.length < 4) return null;
     payloadLen = buffer.readUInt16BE(2);
@@ -56,18 +54,13 @@ function decodeFrame(buffer) {
     payloadLen = Number(buffer.readBigUInt64BE(2));
     offset = 10;
   }
-
   const maskOffset = offset;
   const dataOffset = offset + 4;
   const totalLen = dataOffset + payloadLen;
   if (buffer.length < totalLen) return null;
-
   const mask = buffer.slice(maskOffset, dataOffset);
   const data = Buffer.alloc(payloadLen);
-  for (let i = 0; i < payloadLen; i++) {
-    data[i] = buffer[dataOffset + i] ^ mask[i % 4];
-  }
-
+  for (let i = 0; i < payloadLen; i++) data[i] = buffer[dataOffset + i] ^ mask[i % 4];
   return { opcode, payload: data, bytesConsumed: totalLen };
 }
 
@@ -76,94 +69,394 @@ function decodeFrame(buffer) {
 const PORT = process.env.BRAINSTORM_PORT || (49152 + Math.floor(Math.random() * 16383));
 const HOST = process.env.BRAINSTORM_HOST || '127.0.0.1';
 const URL_HOST = process.env.BRAINSTORM_URL_HOST || (HOST === '127.0.0.1' ? 'localhost' : HOST);
-const SESSION_DIR = process.env.BRAINSTORM_DIR || '/tmp/brainstorm';
-const CONTENT_DIR = path.join(SESSION_DIR, 'content');
-const STATE_DIR = path.join(SESSION_DIR, 'state');
+const WORKSPACE_DIR = process.env.BRAINSTORM_WORKSPACE || '/tmp/brainstorm-workspace';
+const GENERATORS_DIR = path.join(__dirname, '..', 'generators');
+const VENDOR_DIR = path.join(__dirname, 'vendor');
+// Parent of the content-factory skill directory — contains all installed skills
+const SKILLS_DIR = path.join(__dirname, '..', '..');
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml'
+  '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml',
 };
 
-// ========== Templates and Constants ==========
+// ========== Active Project State ==========
 
-const WAITING_PAGE = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Brainstorm Companion</title>
-<style>body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-h1 { color: #333; } p { color: #666; }</style>
-</head>
-<body><h1>Brainstorm Companion</h1>
-<p>Waiting for the agent to push a screen...</p></body></html>`;
+let activeProject = null; // { dir, contentDir, stateDir, exportsDir }
+let activeBrand = null;   // { name, dir, tokens } — set by POST /api/active-brand
+let contentWatcher = null;
+let knownFiles = new Set();
+const debounceTimers = new Map();
 
-const frameTemplate    = fs.readFileSync(path.join(__dirname, 'frame-template.html'), 'utf-8');
-const helperScript     = fs.readFileSync(path.join(__dirname, 'helper.js'), 'utf-8');
-const previewShell     = fs.readFileSync(path.join(__dirname, 'preview-shell.js'), 'utf-8');
-const html2canvasLib   = fs.readFileSync(path.join(__dirname, 'vendor', 'html2canvas.min.js'), 'utf-8');
-const jszipLib         = fs.readFileSync(path.join(__dirname, 'vendor', 'jszip.min.js'), 'utf-8');
-
-// Bundle injected into every content page: export tools + live-reload
-const scriptBundle = [
-  '<script>' + jszipLib        + '</script>',
-  '<script>' + html2canvasLib  + '</script>',
-  '<script>' + previewShell    + '</script>',
-  '<script>' + helperScript    + '</script>',
-].join('\n');
-
-// Waiting page gets only the live-reload helper (no preview shell yet)
-const helperOnly = '<script>' + helperScript + '</script>';
-
-// ========== Helper Functions ==========
-
-function isFullDocument(html) {
-  const trimmed = html.trimStart().toLowerCase();
-  return trimmed.startsWith('<!doctype') || trimmed.startsWith('<html');
+function setActiveProject(dir) {
+  if (!dir) { activeProject = null; return; }
+  const resolved = path.normalize(path.resolve(dir));
+  // Validate the directory is inside WORKSPACE_DIR
+  const ws = path.normalize(WORKSPACE_DIR);
+  if (!resolved.startsWith(ws + path.sep) && resolved !== ws) return;
+  if (!fs.existsSync(resolved)) return;
+  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
+  activeProject = workspace.projectDirs(resolved);
+  knownFiles = new Set(
+    fs.existsSync(activeProject.contentDir)
+      ? fs.readdirSync(activeProject.contentDir).filter(f => f.endsWith('.html'))
+      : []
+  );
+  if (fs.existsSync(activeProject.contentDir)) startContentWatcher();
+  workspace.saveActiveProjectDir(WORKSPACE_DIR, resolved);
 }
 
-function wrapInFrame(content) {
-  return frameTemplate.replace('<!-- CONTENT -->', content);
+function writeProjectManifest() {
+  if (!activeProject) return;
+  try {
+    const files = fs.existsSync(activeProject.contentDir)
+      ? fs.readdirSync(activeProject.contentDir).filter(f => f.endsWith('.html'))
+      : [];
+    const presetFile = path.join(activeProject.stateDir, 'preset.json');
+    const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
+    const manifestPath = path.join(activeProject.stateDir, 'manifest.json');
+    const existing = fs.existsSync(manifestPath)
+      ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+      : {};
+    fs.writeFileSync(manifestPath, JSON.stringify({ ...existing, preset, files, updatedAt: Date.now() }, null, 2));
+  } catch { /* non-critical */ }
 }
 
-function getNewestScreen() {
-  const files = fs.readdirSync(CONTENT_DIR)
-    .filter(f => f.endsWith('.html'))
-    .map(f => {
-      const fp = path.join(CONTENT_DIR, f);
-      return { path: fp, mtime: fs.statSync(fp).mtime.getTime() };
-    })
-    .sort((a, b) => b.mtime - a.mtime);
-  return files.length > 0 ? files[0].path : null;
-}
-
-// ========== HTTP Request Handler ==========
+// ========== HTTP Helpers ==========
 
 function getContentFiles() {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-  return fs.readdirSync(CONTENT_DIR)
+  if (!activeProject || !fs.existsSync(activeProject.contentDir)) return [];
+  return fs.readdirSync(activeProject.contentDir)
     .filter(f => f.endsWith('.html'))
     .map(f => {
-      const fp = path.join(CONTENT_DIR, f);
+      const fp = path.join(activeProject.contentDir, f);
       return { name: f, path: fp, mtime: fs.statSync(fp).mtime.getTime() };
     })
     .sort((a, b) => b.mtime - a.mtime);
 }
 
-function injectScripts(html, isWaiting) {
-  const injection = isWaiting ? helperOnly : scriptBundle;
-  if (html.includes('</body>')) {
-    return html.replace('</body>', injection + '\n</body>');
-  }
-  return html + injection;
+function serveFile(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  res.writeHead(200, {
+    'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache', 'Expires': '0',
+  });
+  res.end(fs.readFileSync(filePath));
 }
+
+function readJson(filePath, fallback) {
+  try { return fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf-8')) : fallback; }
+  catch { return fallback; }
+}
+
+function discoverBrands() {
+  const brands = [];
+  if (!fs.existsSync(SKILLS_DIR)) return brands;
+  for (const entry of fs.readdirSync(SKILLS_DIR)) {
+    if (!entry.endsWith('-brand')) continue;
+    const skillDir = path.join(SKILLS_DIR, entry);
+    const tokensPath = path.join(skillDir, 'brand', 'tokens.json');
+    if (!fs.existsSync(tokensPath)) continue;
+    try {
+      const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+      brands.push({
+        name: entry,
+        dir: skillDir,
+        display_name: tokens.display_name || entry,
+        version: tokens.version || 1,
+        tokens,
+      });
+    } catch { /* skip malformed tokens.json */ }
+  }
+  return brands;
+}
+
+// ========== HTTP Request Handler ==========
 
 function handleRequest(req, res) {
   touchActivity();
   const parsed = new URL(req.url, 'http://localhost');
   const pathname = parsed.pathname;
 
-  // /api/files — return sorted list of HTML files in content dir
+  // /api/preset GET
+  if (req.method === 'GET' && pathname === '/api/preset') {
+    const data = activeProject
+      ? readJson(path.join(activeProject.stateDir, 'preset.json'), { id: null })
+      : { id: null };
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // /api/preset POST
+  if (req.method === 'POST' && pathname === '/api/preset') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        if (activeProject) {
+          fs.writeFileSync(path.join(activeProject.stateDir, 'preset.json'), JSON.stringify(data, null, 2));
+          writeProjectManifest();
+        }
+        console.log(JSON.stringify({ type: 'preset-selected', ...data }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // /api/active-file GET
+  if (req.method === 'GET' && pathname === '/api/active-file') {
+    const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+    const data = readJson(path.join(stateDir, 'active.json'), { file: null, preset: null });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // /api/active-file POST
+  if (req.method === 'POST' && pathname === '/api/active-file') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        // If sessionDir/projectDir provided, activate that project
+        const projDir = data.projectDir || data.sessionDir || null;
+        if (projDir) setActiveProject(projDir);
+        const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+        if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir, { recursive: true });
+        fs.writeFileSync(path.join(stateDir, 'active.json'), JSON.stringify({ ...data, timestamp: Date.now() }, null, 2));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // /api/state GET — aggregate state for agent orientation
+  if (req.method === 'GET' && pathname === '/api/state') {
+    const stateDir = activeProject ? activeProject.stateDir : path.join(WORKSPACE_DIR, '_state');
+    const preset = readJson(path.join(stateDir, 'preset.json'), null);
+    const active = readJson(path.join(stateDir, 'active.json'), { file: null, preset: null });
+    const mode = activeProject ? 'mywork' : (active.preset ? 'template' : null);
+    let activeFilePath = null;
+    if (mode === 'mywork' && activeProject && active.file) {
+      activeFilePath = path.join(activeProject.contentDir, active.file);
+    } else if (mode === 'template' && active.preset) {
+      activeFilePath = path.join(GENERATORS_DIR, 'templates', active.preset + '.html');
+    }
+    const contentId = activeFilePath
+      ? crypto.createHash('sha256').update(activeFilePath).digest('hex').slice(0, 8)
+      : null;
+    let activeStatus = null;
+    if (activeProject) {
+      const m = readJson(path.join(activeProject.stateDir, 'manifest.json'), {});
+      activeStatus = m.status || 'draft';
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      activeFile: active.file ?? null,
+      activePreset: active.preset ?? null,
+      activeSessionDir: activeProject ? activeProject.dir : null,
+      activeFilePath,
+      mode, contentId,
+      status: activeStatus,
+      preset,
+      activeBrand: activeBrand ? { name: activeBrand.name, display_name: activeBrand.display_name } : null,
+    }));
+    return;
+  }
+
+  // /api/brands GET — list available brand skills
+  if (req.method === 'GET' && pathname === '/api/brands') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(discoverBrands().map(b => ({ name: b.name, dir: b.dir, display_name: b.display_name, version: b.version }))));
+    return;
+  }
+
+  // /api/active-brand POST — set active brand { name } or clear with {}
+  if (req.method === 'POST' && pathname === '/api/active-brand') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { name } = JSON.parse(body);
+        if (!name) { activeBrand = null; res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, activeBrand: null })); return; }
+        const found = discoverBrands().find(b => b.name === name);
+        if (!found) { res.writeHead(404); res.end('Brand not found'); return; }
+        activeBrand = found;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, activeBrand: { name: found.name, display_name: found.display_name } }));
+      } catch { res.writeHead(400); res.end('Bad request'); }
+    });
+    return;
+  }
+
+  // /api/create-project POST — create a new named project and activate it
+  if (req.method === 'POST' && pathname === '/api/create-project') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { name } = JSON.parse(body);
+        if (!name || typeof name !== 'string') { res.writeHead(400); res.end('Missing name'); return; }
+        const project = workspace.createProject(WORKSPACE_DIR, name.trim());
+        setActiveProject(project.dir);
+        if (fs.existsSync(project.contentDir)) startContentWatcher();
+        console.log(JSON.stringify({ type: 'project-created', name, projectDir: project.dir }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true,
+          projectDir: project.dir,
+          contentDir: project.contentDir,
+          stateDir: project.stateDir,
+          exportsDir: project.exportsDir,
+          // Legacy aliases for backward compat with template.ts
+          screen_dir: project.contentDir,
+          state_dir: project.stateDir,
+          exports_dir: project.exportsDir,
+        }));
+      } catch (e) { res.writeHead(500); res.end(e.message); }
+    });
+    return;
+  }
+
+  // /api/open-project POST — activate an existing project
+  if (req.method === 'POST' && pathname === '/api/open-project') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { projectDir } = JSON.parse(body);
+        setActiveProject(projectDir);
+        const active = activeProject;
+        if (!active) { res.writeHead(404); res.end('Project not found'); return; }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, projectDir: active.dir, contentDir: active.contentDir, stateDir: active.stateDir }));
+      } catch { res.writeHead(400); res.end('Bad request'); }
+    });
+    return;
+  }
+
+  // /api/templates — list templates from built-ins + installed brand skills
+  if (req.method === 'GET' && pathname === '/api/templates') {
+    const entries = [];
+    // Built-in templates
+    const builtinDir = path.join(GENERATORS_DIR, 'templates');
+    if (fs.existsSync(builtinDir)) {
+      for (const file of fs.readdirSync(builtinDir).filter(f => f.endsWith('.html')).sort()) {
+        entries.push({ file, dir: builtinDir, brand: null });
+      }
+    }
+    // Brand skill templates
+    for (const brand of discoverBrands()) {
+      const brandTemplatesDir = path.join(brand.dir, 'templates');
+      if (!fs.existsSync(brandTemplatesDir)) continue;
+      for (const file of fs.readdirSync(brandTemplatesDir).filter(f => f.endsWith('.html')).sort()) {
+        entries.push({ file, dir: brandTemplatesDir, brand: brand.name });
+      }
+    }
+    // Extract <meta name="codi:template"> from each file for id/name/type/format
+    const results = [];
+    for (const entry of entries) {
+      const filePath = path.join(entry.dir, entry.file);
+      try {
+        const html = fs.readFileSync(filePath, 'utf-8');
+        const match = html.match(/<meta[^>]+name=["']codi:template["'][^>]*content='([^']+)'/i)
+          || html.match(/<meta[^>]+name=["']codi:template["'][^>]*content="([^"]+)"/i)
+          || html.match(/<meta[^>]+content='([^']+)'[^>]*name=["']codi:template["']/i)
+          || html.match(/<meta[^>]+content="([^"]+)"[^>]*name=["']codi:template["']/i);
+        const meta = match ? JSON.parse(match[1]) : {};
+        const id = entry.brand ? `${entry.brand}--${path.basename(entry.file, '.html')}` : path.basename(entry.file, '.html');
+        results.push({
+          id: meta.id || id,
+          name: meta.name || path.basename(entry.file, '.html'),
+          type: meta.type || 'social',
+          format: meta.format || { w: 1080, h: 1080 },
+          file: entry.file,
+          brand: entry.brand,
+          url: entry.brand
+            ? `/api/template?brand=${encodeURIComponent(entry.brand)}&file=${encodeURIComponent(entry.file)}`
+            : `/api/template?file=${encodeURIComponent(entry.file)}`,
+        });
+      } catch { /* skip unreadable files */ }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(results));
+    return;
+  }
+
+  // /api/template?file=xxx[&brand=yyy] — serve a template HTML file
+  if (req.method === 'GET' && pathname === '/api/template') {
+    const fileParam = parsed.searchParams.get('file');
+    const brandParam = parsed.searchParams.get('brand');
+    if (!fileParam) { res.writeHead(400); res.end('Missing ?file='); return; }
+    let filePath;
+    if (brandParam) {
+      const brand = discoverBrands().find(b => b.name === brandParam);
+      if (!brand) { res.writeHead(404); res.end('Brand not found'); return; }
+      filePath = path.join(brand.dir, 'templates', path.basename(fileParam));
+    } else {
+      filePath = path.join(GENERATORS_DIR, 'templates', path.basename(fileParam));
+    }
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+    res.end(fs.readFileSync(filePath, 'utf-8'));
+    return;
+  }
+
+  // /api/brand/:name/assets/* GET — serve static files from a brand skill's assets/ directory
+  // Enables HTML content to load logos and fonts via absolute URL instead of unresolvable relative paths.
+  // Example: GET /api/brand/codi-rl3-brand/assets/rl3-logo-light.svg
+  //          GET /api/brand/codi-bbva-brand/assets/fonts/BentonSansBBVA-Bold.woff2
+  const brandAssetMatch = pathname.match(/^\/api\/brand\/([^/]+)\/assets\/(.+)$/);
+  if (req.method === 'GET' && brandAssetMatch) {
+    const brandName = brandAssetMatch[1];
+    const assetRel  = brandAssetMatch[2];
+    const brand = discoverBrands().find(b => b.name === brandName);
+    if (!brand) { res.writeHead(404); res.end('Brand not found'); return; }
+    // Prevent path traversal: resolve and verify the file stays inside assets/
+    const assetsRoot = path.join(brand.dir, 'assets');
+    const filePath   = path.normalize(path.join(assetsRoot, assetRel));
+    if (!filePath.startsWith(assetsRoot + path.sep) && filePath !== assetsRoot) {
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Asset not found'); return; }
+    const ext = path.extname(filePath).toLowerCase();
+    const mime = MIME_TYPES[ext] || 'application/octet-stream';
+    res.writeHead(200, {
+      'Content-Type': mime,
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(fs.readFileSync(filePath));
+    return;
+  }
+
+  // /api/content?file=xxx — raw HTML from active project's content dir
+  if (req.method === 'GET' && pathname === '/api/content') {
+    const fileParam = parsed.searchParams.get('file');
+    if (!fileParam || !activeProject) { res.writeHead(activeProject ? 400 : 404); res.end(activeProject ? 'Missing ?file=' : 'No active project'); return; }
+    const filePath = path.join(activeProject.contentDir, path.basename(fileParam));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(filePath, 'utf-8'));
+    return;
+  }
+
+  // /api/files — sorted list of HTML files in active project's content dir
   if (req.method === 'GET' && pathname === '/api/files') {
     const files = getContentFiles().map(f => f.name);
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -171,48 +464,93 @@ function handleRequest(req, res) {
     return;
   }
 
-  // / — serve a specific file via ?file= or default to newest
-  if (req.method === 'GET' && pathname === '/') {
-    const fileParam = parsed.searchParams.get('file');
-    let screenFile = null;
-
-    if (fileParam) {
-      const candidate = path.join(CONTENT_DIR, path.basename(fileParam));
-      if (fs.existsSync(candidate)) screenFile = candidate;
-    } else {
-      screenFile = getNewestScreen();
+  // /static/* — serve generator app assets
+  if (req.method === 'GET' && pathname.startsWith('/static/')) {
+    const rel = pathname.slice(8);
+    const filePath = path.resolve(GENERATORS_DIR, rel);
+    if (!filePath.startsWith(GENERATORS_DIR + path.sep) && filePath !== GENERATORS_DIR) {
+      res.writeHead(403); res.end('Forbidden'); return;
     }
-
-    let html;
-    let isWaiting;
-    if (screenFile) {
-      const raw = fs.readFileSync(screenFile, 'utf-8');
-      html = isFullDocument(raw) ? raw : wrapInFrame(raw);
-      isWaiting = false;
-    } else {
-      html = WAITING_PAGE;
-      isWaiting = true;
-    }
-
-    html = injectScripts(html, isWaiting);
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(html);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    serveFile(res, filePath);
     return;
   }
 
-  // /files/:name — serve a static asset from content dir
-  if (req.method === 'GET' && pathname.startsWith('/files/')) {
-    const fileName = pathname.slice(7);
-    const filePath = path.join(CONTENT_DIR, path.basename(fileName));
-    if (!fs.existsSync(filePath)) {
-      res.writeHead(404);
-      res.end('Not found');
-      return;
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(fs.readFileSync(filePath));
+  // /vendor/* — serve vendor scripts
+  if (req.method === 'GET' && pathname.startsWith('/vendor/')) {
+    const filePath = path.join(VENDOR_DIR, path.basename(pathname.slice(8)));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    serveFile(res, filePath);
+    return;
+  }
+
+  // /api/sessions — list all projects in workspace
+  if (req.method === 'GET' && pathname === '/api/sessions') {
+    const sessions = workspace.listProjects(WORKSPACE_DIR);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(sessions));
+    return;
+  }
+
+  // /api/session-status POST — persist status to a project's manifest
+  if (req.method === 'POST' && pathname === '/api/session-status') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { sessionDir: sessionParam, status } = JSON.parse(body);
+        const VALID = ['draft', 'in-progress', 'review', 'done'];
+        if (!VALID.includes(status)) { res.writeHead(400); res.end('Invalid status'); return; }
+        const resolved = path.normalize(path.resolve(sessionParam));
+        const ws = path.normalize(WORKSPACE_DIR);
+        if (!resolved.startsWith(ws + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+        const manifestPath = path.join(resolved, 'state', 'manifest.json');
+        if (!fs.existsSync(manifestPath)) { res.writeHead(404); res.end('Project not found'); return; }
+        const m = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+        m.status = status;
+        m.statusUpdatedAt = Date.now();
+        fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch { res.writeHead(400); res.end('Bad request'); }
+    });
+    return;
+  }
+
+  // /api/session-content?session=&file= — serve HTML from a specific project
+  if (req.method === 'GET' && pathname === '/api/session-content') {
+    const sessionParam = parsed.searchParams.get('session');
+    const fileParam = parsed.searchParams.get('file');
+    if (!sessionParam || !fileParam) { res.writeHead(400); res.end('Missing params'); return; }
+    const resolved = path.normalize(path.resolve(sessionParam));
+    const ws = path.normalize(WORKSPACE_DIR);
+    if (!resolved.startsWith(ws + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+    const filePath = path.join(resolved, 'content', path.basename(fileParam));
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(filePath, 'utf-8'));
+    return;
+  }
+
+  // /api/export-png POST — render card HTML to PNG via Playwright
+  if (req.method === 'POST' && pathname === '/api/export-png') {
+    handleExportPng(req, res); return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/export-pdf') {
+    handleExportPdf(req, res); return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/export-docx') {
+    handleExportDocx(req, res); return;
+  }
+
+  // / — serve app shell
+  if (req.method === 'GET' && pathname === '/') {
+    const appPath = path.join(GENERATORS_DIR, 'app.html');
+    if (!fs.existsSync(appPath)) { res.writeHead(503); res.end('App not found'); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(appPath, 'utf-8'));
     return;
   }
 
@@ -220,14 +558,13 @@ function handleRequest(req, res) {
   res.end('Not found');
 }
 
-// ========== WebSocket Connection Handling ==========
+// ========== WebSocket ==========
 
 const clients = new Set();
 
 function handleUpgrade(req, socket) {
   const key = req.headers['sec-websocket-key'];
   if (!key) { socket.destroy(); return; }
-
   const accept = computeAcceptKey(key);
   socket.write(
     'HTTP/1.1 101 Switching Protocols\r\n' +
@@ -235,64 +572,36 @@ function handleUpgrade(req, socket) {
     'Connection: Upgrade\r\n' +
     'Sec-WebSocket-Accept: ' + accept + '\r\n\r\n'
   );
-
   let buffer = Buffer.alloc(0);
   clients.add(socket);
-
   socket.on('data', (chunk) => {
     buffer = Buffer.concat([buffer, chunk]);
     while (buffer.length > 0) {
       let result;
-      try {
-        result = decodeFrame(buffer);
-      } catch (e) {
-        socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0)));
-        clients.delete(socket);
-        return;
-      }
+      try { result = decodeFrame(buffer); }
+      catch { socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0))); clients.delete(socket); return; }
       if (!result) break;
       buffer = buffer.slice(result.bytesConsumed);
-
       switch (result.opcode) {
-        case OPCODES.TEXT:
-          handleMessage(result.payload.toString());
-          break;
-        case OPCODES.CLOSE:
-          socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0)));
-          clients.delete(socket);
-          return;
-        case OPCODES.PING:
-          socket.write(encodeFrame(OPCODES.PONG, result.payload));
-          break;
-        case OPCODES.PONG:
-          break;
-        default: {
-          const closeBuf = Buffer.alloc(2);
-          closeBuf.writeUInt16BE(1003);
-          socket.end(encodeFrame(OPCODES.CLOSE, closeBuf));
-          clients.delete(socket);
-          return;
-        }
+        case OPCODES.TEXT: handleMessage(result.payload.toString()); break;
+        case OPCODES.CLOSE: socket.end(encodeFrame(OPCODES.CLOSE, Buffer.alloc(0))); clients.delete(socket); return;
+        case OPCODES.PING: socket.write(encodeFrame(OPCODES.PONG, result.payload)); break;
+        case OPCODES.PONG: break;
+        default: { const cb = Buffer.alloc(2); cb.writeUInt16BE(1003); socket.end(encodeFrame(OPCODES.CLOSE, cb)); clients.delete(socket); return; }
       }
     }
   });
-
   socket.on('close', () => clients.delete(socket));
   socket.on('error', () => clients.delete(socket));
 }
 
 function handleMessage(text) {
   let event;
-  try {
-    event = JSON.parse(text);
-  } catch (e) {
-    console.error('Failed to parse WebSocket message:', e.message);
-    return;
-  }
+  try { event = JSON.parse(text); } catch (e) { console.error('WS parse error:', e.message); return; }
   touchActivity();
   console.log(JSON.stringify({ source: 'user-event', ...event }));
-  if (event.choice) {
-    const eventsFile = path.join(STATE_DIR, 'events');
+  if (event.choice && activeProject) {
+    const eventsFile = path.join(activeProject.stateDir, 'events');
     fs.appendFileSync(eventsFile, JSON.stringify(event) + '\n');
   }
 }
@@ -300,73 +609,83 @@ function handleMessage(text) {
 function broadcast(msg) {
   const frame = encodeFrame(OPCODES.TEXT, Buffer.from(JSON.stringify(msg)));
   for (const socket of clients) {
-    try { socket.write(frame); } catch (e) { clients.delete(socket); }
+    try { socket.write(frame); } catch { clients.delete(socket); }
   }
 }
 
 // ========== Activity Tracking ==========
 
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 let lastActivity = Date.now();
+function touchActivity() { lastActivity = Date.now(); }
 
-function touchActivity() {
-  lastActivity = Date.now();
-}
+// ========== File Watchers ==========
 
-// ========== File Watching ==========
+let presetsWatcher = null;
 
-const debounceTimers = new Map();
-
-// ========== Server Startup ==========
-
-function startServer() {
-  if (!fs.existsSync(CONTENT_DIR)) fs.mkdirSync(CONTENT_DIR, { recursive: true });
-  if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
-
-  // Track known files to distinguish new screens from updates.
-  // macOS fs.watch reports 'rename' for both new files and overwrites,
-  // so we can't rely on eventType alone.
-  const knownFiles = new Set(
-    fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.html'))
-  );
-
-  const server = http.createServer(handleRequest);
-  server.on('upgrade', handleUpgrade);
-
-  const watcher = fs.watch(CONTENT_DIR, (eventType, filename) => {
+function startContentWatcher() {
+  if (!activeProject || !fs.existsSync(activeProject.contentDir)) return;
+  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
+  const watcher = fs.watch(activeProject.contentDir, (eventType, filename) => {
     if (!filename || !filename.endsWith('.html')) return;
-
     if (debounceTimers.has(filename)) clearTimeout(debounceTimers.get(filename));
     debounceTimers.set(filename, setTimeout(() => {
       debounceTimers.delete(filename);
-      const filePath = path.join(CONTENT_DIR, filename);
-
-      if (!fs.existsSync(filePath)) return; // file was deleted
+      const filePath = path.join(activeProject.contentDir, filename);
+      if (!fs.existsSync(filePath)) return;
       touchActivity();
-
       if (!knownFiles.has(filename)) {
         knownFiles.add(filename);
-        const eventsFile = path.join(STATE_DIR, 'events');
+        const eventsFile = path.join(activeProject.stateDir, 'events');
         if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
         console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
       } else {
         console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
       }
-
+      writeProjectManifest();
       broadcast({ type: 'reload' });
     }, 100));
   });
-  watcher.on('error', (err) => console.error('fs.watch error:', err.message));
+  watcher.on('error', (err) => console.error('content watcher error:', err.message));
+  contentWatcher = watcher;
+}
+
+// ========== Server Startup ==========
+
+function startServer() {
+  fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
+
+  // Restore last active project
+  const lastActiveDir = workspace.getActiveProjectDir(WORKSPACE_DIR);
+  if (lastActiveDir && fs.existsSync(lastActiveDir)) {
+    setActiveProject(lastActiveDir);
+  }
+
+  const server = http.createServer(handleRequest);
+  server.on('upgrade', handleUpgrade);
+
+  // Watch generators/templates/ for gallery live reload
+  const TEMPLATES_DIR = path.join(GENERATORS_DIR, 'templates');
+  if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
+  presetsWatcher = fs.watch(TEMPLATES_DIR, (eventType, filename) => {
+    if (!filename || !filename.endsWith('.html')) return;
+    if (debounceTimers.has('tpl:' + filename)) clearTimeout(debounceTimers.get('tpl:' + filename));
+    debounceTimers.set('tpl:' + filename, setTimeout(() => {
+      debounceTimers.delete('tpl:' + filename);
+      touchActivity();
+      console.log(JSON.stringify({ type: 'template-updated', file: filename }));
+      broadcast({ type: 'reload-templates' });
+    }, 150));
+  });
+  presetsWatcher.on('error', (err) => console.error('templates watcher error:', err.message));
 
   function shutdown(reason) {
     console.log(JSON.stringify({ type: 'server-stopped', reason }));
-    const infoFile = path.join(STATE_DIR, 'server-info');
-    if (fs.existsSync(infoFile)) fs.unlinkSync(infoFile);
-    fs.writeFileSync(
-      path.join(STATE_DIR, 'server-stopped'),
-      JSON.stringify({ reason, timestamp: Date.now() }) + '\n'
-    );
-    watcher.close();
+    const pidFile = path.join(WORKSPACE_DIR, '_server.pid');
+    if (fs.existsSync(pidFile)) fs.unlinkSync(pidFile);
+    fs.writeFileSync(path.join(WORKSPACE_DIR, '_server-stopped'), JSON.stringify({ reason, timestamp: Date.now() }) + '\n');
+    if (contentWatcher) contentWatcher.close();
+    if (presetsWatcher) presetsWatcher.close();
     clearInterval(lifecycleCheck);
     server.close(() => process.exit(0));
   }
@@ -376,16 +695,12 @@ function startServer() {
     try { process.kill(ownerPid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
   }
 
-  // Check every 60s: exit if owner process died or idle for 30 minutes
   const lifecycleCheck = setInterval(() => {
     if (!ownerAlive()) shutdown('owner process exited');
     else if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) shutdown('idle timeout');
   }, 60 * 1000);
   lifecycleCheck.unref();
 
-  // Validate owner PID at startup. If it's already dead, the PID resolution
-  // was wrong (common on WSL, Tailscale SSH, and cross-user scenarios).
-  // Disable monitoring and rely on the idle timeout instead.
   if (ownerPid) {
     try { process.kill(ownerPid, 0); }
     catch (e) {
@@ -400,10 +715,10 @@ function startServer() {
     const info = JSON.stringify({
       type: 'server-started', port: Number(PORT), host: HOST,
       url_host: URL_HOST, url: 'http://' + URL_HOST + ':' + PORT,
-      session_dir: SESSION_DIR, screen_dir: CONTENT_DIR, state_dir: STATE_DIR
+      workspace_dir: WORKSPACE_DIR,
     });
     console.log(info);
-    fs.writeFileSync(path.join(STATE_DIR, 'server-info'), info + '\n');
+    fs.writeFileSync(path.join(WORKSPACE_DIR, '_server-info'), info + '\n');
   });
 }
 

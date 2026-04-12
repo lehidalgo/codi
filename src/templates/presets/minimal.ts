@@ -1,4 +1,5 @@
 import { PROJECT_NAME, prefixedName } from "#src/constants.js";
+import { CORE_PLATFORM_RULES, CORE_PLATFORM_SKILLS } from "./core-platform.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
@@ -30,8 +31,8 @@ export const preset: BuiltinPresetDefinition = {
     drift_detection: { mode: "enabled", value: "off" },
     auto_generate_on_change: { mode: "enabled", value: false },
   },
-  rules: [],
-  skills: [],
+  rules: [...CORE_PLATFORM_RULES],
+  skills: [...CORE_PLATFORM_SKILLS],
   agents: [],
   mcpServers: [],
 };

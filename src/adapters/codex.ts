@@ -27,7 +27,13 @@ import {
   MCP_FILENAME,
   PROJECT_CLI,
   PROJECT_NAME_DISPLAY,
+  PROJECT_DIR,
 } from "../constants.js";
+import {
+  buildSkillObserverScript,
+  HOOKS_SUBDIR,
+  SKILL_OBSERVER_FILENAME,
+} from "../core/hooks/heartbeat-hooks.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -219,6 +225,34 @@ export const codexAdapter: AgentAdapter = {
         hash: hashContent(configContent),
       });
     }
+
+    // Generate heartbeat hook script and .codex/hooks.json
+    // Codex has no InstructionsLoaded — only the Stop observer is needed.
+    const observerScript = buildSkillObserverScript();
+    const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+    files.push({
+      path: observerPath,
+      content: observerScript,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(observerScript),
+    });
+
+    const codexHooks = {
+      Stop: [
+        {
+          type: "command",
+          command: `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
+          timeout: 15,
+        },
+      ],
+    };
+    const codexHooksContent = JSON.stringify(codexHooks, null, 2);
+    files.push({
+      path: ".codex/hooks.json",
+      content: codexHooksContent,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(codexHooksContent),
+    });
 
     return files;
   },

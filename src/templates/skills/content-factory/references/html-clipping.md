@@ -1,0 +1,157 @@
+# HTML Clipping and Overflow Rules
+
+## Social cards and slides — `overflow: hidden`
+
+Every pixel beyond the card boundary is clipped — hard, with no warning. This applies to text, decorative elements, absolute-positioned glows, and images. Never assume content will wrap gracefully; test every card at the intended format before declaring it done.
+
+### Large headline text
+
+- Use `line-height: 1.1` minimum on all headlines — lower values clip ascenders and descenders at large font sizes
+- Use `letter-spacing` between `-0.03em` and `-0.05em` to control width — heavy weights at 80px+ can overflow the content area
+- Keep headline text short enough to fit within the card's padding: content width = card width minus horizontal padding × 2
+
+### Gradient italic text (`background-clip: text`)
+
+- Always add `padding-right: 0.12em` to any element that combines `font-style: italic` with `background-clip: text`
+- Italic glyphs overhang their typographic advance width; the gradient stops painting at the advance boundary, making the right edge of trailing characters appear clipped against the dark background
+- Apply this to every italic gradient span regardless of font size — it is invisible at small sizes but critical at 60px+
+
+```css
+/* CORRECT — covers the italic glyph's right overhang */
+em.acc {
+  font-style: italic;
+  padding-right: 0.12em;
+  background: linear-gradient(135deg, #56b6c2, #61afef);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* WRONG — glyph overhang is outside the painted area */
+em.acc {
+  font-style: italic;
+  background: linear-gradient(135deg, #56b6c2, #61afef);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+```
+
+### Absolute-positioned decorative elements
+
+- Glows and background shapes positioned outside the main layout are intentionally clipped
+- Do not let decorative elements overlap critical text — the clip boundary is exact and unforgiving
+
+---
+
+## Document pages (`.doc-page`) — fixed A4 canvas
+
+Each `.doc-page` is a **fixed A4 canvas** (794×1123px). The Content Factory preview renders every page at exactly this height — the viewer never auto-expands iframes. Content that overflows `1123px` is clipped in the preview and may be silently missing from DOCX export.
+
+**Page discipline rules (mandatory):**
+- One `.doc-page` = one printed page. Plan content per page before writing HTML.
+- If content does not fit, split it into a new `<article class="doc-page">` element.
+- Every page must use the same three-part structure: `.page-header` + `.page-body` + `.page-footer`.
+- `.page-body` must have `display: flex; flex-direction: column; flex: 1; overflow: hidden` so it fills the space between header and footer exactly.
+- Never set `min-height` on `.doc-page` or `.page-body` to a value that exceeds the available height — the available body height is approximately 1123px − header height − footer height ≈ ~950px.
+
+**Content budget** (approximate at default font sizes):
+- `h1` ~50px, `h2` ~40px, `h3` ~32px
+- `p` (~3 lines, 1.5 line-height) ~70px
+- `ul`/`ol` (4–5 items) ~120px
+- `table` (3 data rows + header) ~160px
+- `.code-block` (10 lines) ~180px
+- `.callout` (2 lines) ~80px
+- `.stat-row` / `.two-col` ~120–150px
+- `.diagram-wrap` (SVG ~200px) ~220px
+- Page padding top + bottom ~80px
+- **Available body height ~950px** — fits 2–3 major sections maximum
+
+Always verify the sum of element heights fits within ~950px before writing a page. When in doubt, use fewer elements and add a new page.
+
+Document pages use `overflow: visible` (not `hidden`) so content grows vertically without clipping. Horizontal overflow still renders poorly — keep content within the 794px page width.
+
+**CRITICAL — never use `overflow: hidden` on content containers inside `.doc-page`.**
+
+Using `overflow: hidden` on `.code-block`, `.code-block pre`, `table`, or any element that holds readable content will:
+- Silently clip text in the browser preview
+- Corrupt Playwright screenshot capture used for DOCX export (the screenshot captures only what is rendered; clipped content disappears from the DOCX)
+
+Always use `overflow: visible` (or omit `overflow` entirely) on content containers. `overflow: hidden` is only acceptable on purely decorative containers (`.cover-hero`, `.brand-bar`, `.cover-accent`) where no readable text lives.
+
+```css
+/* CORRECT */
+.code-block { overflow: visible; }
+.code-block pre { overflow: visible; }
+.data-table { overflow: visible; }
+
+/* WRONG — silently clips code and table rows */
+.code-block { overflow: hidden; }
+.code-block pre { overflow: hidden; }
+.data-table { overflow: hidden; }
+```
+
+---
+
+## `getBoundingClientRect()` unreliability inside flex columns
+
+`getBoundingClientRect()` on elements inside `display: flex; flex-direction: column` containers can return incorrect height values during Playwright headless rendering. The reported height may be smaller than the element's actual rendered height, causing DOCX images to appear clipped at the bottom.
+
+**Do not use `getBoundingClientRect().height` to set `ImageRun` dimensions in the DOCX exporter.** Instead, read dimensions from the PNG IHDR header (bytes 16–23) after capturing the screenshot — the PNG knows its own exact pixel dimensions. Divide by `deviceScaleFactor` to get CSS pixels.
+
+```js
+// CORRECT — read from captured PNG header
+function pngCssDimensions(buf, deviceScaleFactor) {
+  if (!buf || buf.length < 24) return null;
+  const w = buf.readUInt32BE(16);
+  const h = buf.readUInt32BE(20);
+  if (!w || !h) return null;
+  return { w: w / deviceScaleFactor, h: h / deviceScaleFactor };
+}
+
+// WRONG — getBoundingClientRect height is unreliable in flex columns
+const rect = el.getBoundingClientRect();
+capturedHeight: Math.round(rect.height)  // may be clipped/wrong
+```
+
+---
+
+## Tables inside flex column containers
+
+Any flex-column wrapper nested inside `.doc-page` (e.g., `.page-body`) must have `width: 100%` set explicitly. Without it, `width: 100%` on a child `<table>` resolves against an indefinite containing-block width and the browser collapses all columns to near-zero — even when `table-layout: fixed` is set.
+
+**Three rules that must all be present together:**
+
+1. `width: 100%` on the flex-column wrapper (`.page-body` or equivalent)
+2. `table-layout: fixed` + `width: 100%` on `.data-table`
+3. `min-width: 0` on flex children of the wrapper
+
+```css
+/* CORRECT */
+.page-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;       /* ← REQUIRED: gives tables a definite containing-block width */
+}
+.data-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.page-body > * { min-width: 0; }
+
+/* WRONG — missing width:100% on the flex-column wrapper */
+.page-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* no width: 100% — child table width:100% resolves to auto, collapsing columns */
+}
+
+/* WRONG — missing table-layout: fixed */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+```

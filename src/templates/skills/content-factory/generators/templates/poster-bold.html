@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="codi:template" content='{"id":"poster-bold","name":"Poster Bold","type":"social","format":{"w":1080,"h":1080}}' />
+  <meta name="template" content="poster-bold">
+  <meta name="template-type" content="social">
+  <meta name="template-format" content="1080x1080">
+  <title>Poster Bold — Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,900;1,900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #070a0f;
+      --border-a: rgba(86,182,194,0.25);
+      --c0:       #56b6c2;
+      --c1:       #61afef;
+      --grad:     linear-gradient(135deg, #56b6c2, #61afef);
+      --text-1:   #e6edf3;
+      --text-2:   rgba(230,237,243,0.45);
+      --fh:       'Outfit', Arial, sans-serif;
+      --fm:       'Geist Mono', monospace;
+      --w:        1080px;
+      --h:        1080px;
+      --pad:      60px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #050709;
+      font-family: var(--fh);
+      color: var(--text-1);
+      overflow-x: hidden;
+    }
+
+    .social-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 0 100px;
+      gap: 20px;
+    }
+
+    .post-label {
+      width: var(--w);
+      padding: 20px 0 4px;
+      font-family: var(--fm);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(86,182,194,0.2);
+    }
+
+    .social-card {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      background: var(--bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--pad) var(--pad) 0;
+      box-shadow: 0 12px 56px rgba(0,0,0,0.7);
+    }
+
+    .card-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+    .card-bar {
+      height: 100px;
+      background: linear-gradient(90deg, rgba(86,182,194,0.1), transparent);
+      border-top: 2px solid rgba(86,182,194,0.25);
+      display: flex;
+      align-items: center;
+      padding: 0 var(--pad);
+      margin: 0 calc(-1 * var(--pad));
+      flex-shrink: 0;
+    }
+
+    .bar-handle {
+      font-family: var(--fm);
+      font-size: 24px;
+      color: rgba(86,182,194,0.6);
+    }
+
+    .bar-brand {
+      font-family: var(--fm);
+      font-size: 24px;
+      font-weight: 500;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-left: auto;
+    }
+
+    em.acc {
+      font-style: italic;
+      padding-right: 0.12em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+<body>
+<div class="social-container">
+
+<div class="post-label">Poster Bold — 3 cards</div>
+
+<!-- Card 1 — Cover -->
+<article class="social-card" data-index="01" data-type="cover">
+  <div class="card-content">
+    <h1 style="font-size:156px;font-weight:900;line-height:1.1;letter-spacing:-0.05em;margin-bottom:16px;">
+      One<br><em class="acc">config.</em>
+    </h1>
+    <p style="font-size:36px;font-weight:300;color:var(--text-2);">Every AI tool.</p>
+  </div>
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-brand">codi</span>
+  </div>
+</article>
+
+<!-- Card 2 — Stat -->
+<article class="social-card" data-index="02" data-type="stat">
+  <div class="card-content">
+    <h1 style="font-size:156px;font-weight:900;line-height:1.1;letter-spacing:-0.05em;margin-bottom:16px;">
+      <em class="acc">5x</em><br>faster.
+    </h1>
+    <p style="font-size:36px;font-weight:300;color:var(--text-2);">Config sync across all agents.</p>
+  </div>
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-brand">codi</span>
+  </div>
+</article>
+
+<!-- Card 3 — CTA -->
+<article class="social-card" data-index="03" data-type="cta">
+  <div class="card-content">
+    <h1 style="font-size:156px;font-weight:900;line-height:1.1;letter-spacing:-0.05em;margin-bottom:16px;">
+      Start<br><em class="acc">now.</em>
+    </h1>
+    <p style="font-size:36px;font-weight:300;color:var(--text-2);font-family:var(--fm);">npm install -g codi-cli</p>
+  </div>
+  <div class="card-bar">
+    <span class="bar-handle">@handle</span>
+    <span class="bar-brand">codi</span>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

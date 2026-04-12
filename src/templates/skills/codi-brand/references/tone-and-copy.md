@@ -1,6 +1,6 @@
 # Codi Tone of Voice & Copy Guide
 
-> Source of truth: /references/site-index.html
+> Source of truth: [[/references/site-index.html]]
 
 ## Brand Essence
 
@@ -68,7 +68,7 @@
 
 ### HTML / Landing Page
 1. Set `background-color: #070a0f` on `<body>`
-2. Include the full CSS variables block (see /references/design-tokens.md)
+2. Include the full CSS variables block (see [[/references/design-tokens.md]])
 3. Load Google Fonts (Outfit + Geist Mono)
 4. Add `<div class="noise" aria-hidden="true"></div>` as first child of `<body>`
 5. Use `.gradient-text` on second line of major H1/H2 headings

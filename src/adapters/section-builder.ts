@@ -1,5 +1,5 @@
 import type { NormalizedConfig, NormalizedSkill, McpConfig } from "../types/config.js";
-import { PROJECT_NAME_DISPLAY, PROJECT_URL, BRAND_CATEGORY } from "../constants.js";
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY, PROJECT_URL, BRAND_CATEGORY } from "../constants.js";
 
 /** Build a project overview section from manifest metadata. */
 export function buildProjectOverview(config: NormalizedConfig): string {
@@ -199,4 +199,32 @@ export function buildMcpEnvExample(servers: McpConfig["servers"]): string | null
     lines.push("");
   }
   return lines.join("\n");
+}
+
+/** Build a Project Context section from the manifest's project_context field. */
+export function buildProjectContext(config: NormalizedConfig): string | null {
+  const ctx = config.manifest.project_context;
+  if (!ctx?.trim()) return null;
+  return `## Project Context\n\n${ctx.trim()}`;
+}
+
+/** Build a Self-Development Mode warning when working on the Codi source repo. */
+export function buildSelfDevWarning(config: NormalizedConfig): string | null {
+  if (config.manifest.name !== PROJECT_NAME) return null;
+  return [
+    "## Self-Development Mode",
+    "",
+    "> You are working on the **Codi source code** — not a consumer project.",
+    "> The source of truth for templates shipped to users is `src/templates/`, not `.codi/`.",
+    "",
+    "| To change | Edit | Never edit |",
+    "|-----------|------|------------|",
+    "| A rule template | `src/templates/rules/<name>.md` | `.claude/rules/` (generated) |",
+    "| A skill template | `src/templates/skills/<name>/template.ts` | `.claude/skills/` (generated) |",
+    "| An agent template | `src/templates/agents/<name>.md` | `.claude/agents/` (generated) |",
+    "| This project's own rules | `.codi/rules/<name>.md` | `.claude/rules/` (generated) |",
+    "",
+    "Run `pnpm build && codi generate` in a test project to verify template changes.",
+    "Bump `version:` in template frontmatter whenever content changes.",
+  ].join("\n");
 }

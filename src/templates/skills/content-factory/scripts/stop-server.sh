@@ -1,40 +1,31 @@
 #!/usr/bin/env bash
-# Stop the brainstorm server and clean up
-# Usage: stop-server.sh <session_dir>
+# Stop the content factory server.
+# Usage: stop-server.sh <workspace_dir>
 #
-# Kills the server process. Only deletes session directory if it's
-# under /tmp (ephemeral). Persistent directories (.codi/) are
-# kept so mockups can be reviewed later.
+# Kills the server process identified by <workspace_dir>/_server.pid.
+# The workspace directory is preserved so projects can be reviewed later.
+# Only ephemeral /tmp workspaces are deleted on stop.
 
-SESSION_DIR="$1"
+WORKSPACE_DIR="$1"
 
-if [[ -z "$SESSION_DIR" ]]; then
-  echo '{"error": "Usage: stop-server.sh <session_dir>"}'
+if [[ -z "$WORKSPACE_DIR" ]]; then
+  echo '{"error": "Usage: stop-server.sh <workspace_dir>"}'
   exit 1
 fi
 
-STATE_DIR="${SESSION_DIR}/state"
-PID_FILE="${STATE_DIR}/server.pid"
+PID_FILE="${WORKSPACE_DIR}/_server.pid"
 
 if [[ -f "$PID_FILE" ]]; then
   pid=$(cat "$PID_FILE")
 
-  # Try to stop gracefully, fallback to force if still alive
+  # Graceful stop, escalate to SIGKILL if needed
   kill "$pid" 2>/dev/null || true
-
-  # Wait for graceful shutdown (up to ~2s)
   for _ in {1..20}; do
-    if ! kill -0 "$pid" 2>/dev/null; then
-      break
-    fi
+    if ! kill -0 "$pid" 2>/dev/null; then break; fi
     sleep 0.1
   done
-
-  # If still running, escalate to SIGKILL
   if kill -0 "$pid" 2>/dev/null; then
     kill -9 "$pid" 2>/dev/null || true
-
-    # Give SIGKILL a moment to take effect
     sleep 0.1
   fi
 
@@ -43,11 +34,11 @@ if [[ -f "$PID_FILE" ]]; then
     exit 1
   fi
 
-  rm -f "$PID_FILE" "${STATE_DIR}/server.log"
+  rm -f "$PID_FILE"
 
-  # Only delete ephemeral /tmp directories
-  if [[ "$SESSION_DIR" == /tmp/* ]]; then
-    rm -rf "$SESSION_DIR"
+  # Only delete ephemeral /tmp workspaces
+  if [[ "$WORKSPACE_DIR" == /tmp/* ]]; then
+    rm -rf "$WORKSPACE_DIR"
   fi
 
   echo '{"status": "stopped"}'

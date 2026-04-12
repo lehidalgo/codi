@@ -229,6 +229,17 @@ for (const file of relevant) {
   if (fm.category !== undefined && !VALID_CATEGORIES.includes(fm.category)) {
     warnings.push(\`\${file}: 'category' "\${fm.category}" is not a recognized category. Valid: \${VALID_CATEGORIES.join(', ')}\`);
   }
+
+  // Non-blocking: user-invocable skills must have a trigger clause in their description
+  // so the agent knows when to activate them. Intent routing degrades without one.
+  if (fm['user-invocable'] === true) {
+    const desc = typeof fm.description === 'string' ? fm.description : '';
+    const triggerPhrases = ['Use when', 'TRIGGER when', 'Activate when', 'Use for'];
+    const hasTrigger = triggerPhrases.some(p => desc.includes(p));
+    if (!hasTrigger) {
+      warnings.push(\`\${file}: 'user-invocable' is true but description has no trigger clause. Add a "Use when..." sentence so the agent knows when to activate this skill.\`);
+    }
+  }
 }
 
 if (warnings.length > 0) {

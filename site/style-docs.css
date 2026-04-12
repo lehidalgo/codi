@@ -95,6 +95,8 @@
 }
 .docs-toc-list { list-style: none; padding: 0; margin: 0; }
 .docs-toc-item { margin-bottom: 1px; }
+.docs-toc-item.depth-1 { margin-top: 6px; }
+.docs-toc-item.depth-1 .docs-toc-link { font-weight: 600; color: var(--text-1); font-size: 0.8rem; }
 .docs-toc-item.depth-3 { padding-left: 10px; }
 .docs-toc-link {
   display: block;
