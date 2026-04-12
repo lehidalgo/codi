@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 36
+version: 37
 ---
 
 # {{name}} — Content Factory
@@ -68,7 +68,11 @@ that the app picks up automatically via WebSocket.
 | \`/api/sessions\` | GET | List all projects from the workspace directory |
 | \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific project's content dir |
 | \`/api/session-status\` | POST | Persist status \`{sessionDir, status}\` to a project's manifest |
-| \`/api/templates\` | GET | List template files with metadata (id, type, format, url) |
+| \`/api/templates\` | GET | List template files with metadata (id, type, format, url) — includes templates from brand skills' \`templates/\` dirs |
+| \`/api/template?file=xxx[&brand=yyy]\` | GET | Serve a single template HTML file; \`brand\` param routes to brand skill's \`templates/\` dir |
+| \`/api/brands\` | GET | List available brand skills (those with \`brand/tokens.json\`) |
+| \`/api/active-brand\` | POST | Set or clear the active brand — body: \`{name}\` or \`{}\` to clear |
+| \`/api/brand/:name/assets/*\` | GET | Serve a file from a brand skill's \`assets/\` directory — use this URL for logos and fonts in generated HTML |
 | \`/api/export-png\` | POST | Render card HTML to PNG via Playwright at 2× resolution |
 | \`/api/export-pdf\` | POST | Render slides array to multi-page PDF — body: \`{slides:[{html,width,height}]}\`, returns \`application/pdf\` |
 
@@ -191,11 +195,55 @@ curl -s -X POST <url>/api/active-brand \\
   -d '{"name": "codi-codi-brand"}'
 \`\`\`
 
-Once a brand is active:
-- Read its \`brand/tokens.json\` for color tokens, fonts, and voice
-- Import \`brand/tokens.css\` as a \`<link>\` or inline \`<style>\` in every generated HTML file
-- Use \`voice.tone\` and \`voice.phrases_use\` when writing copy
-- Check the brand's \`templates/\` directory — those templates appear in the Gallery and should be used as the visual starting point instead of generic built-ins
+Once a brand is active, apply it fully across every generated HTML file:
+
+**1. Read tokens**
+
+Read \`brand/tokens.json\` from the brand's skill directory. Extract:
+- \`colors\` and \`themes\` for CSS values
+- \`fonts\` for typography
+- \`assets.logo_dark_bg\` / \`assets.logo_light_bg\` for the logo file paths
+- \`voice.tone\`, \`voice.phrases_use\`, \`voice.phrases_avoid\` for copy
+
+**2. Inline CSS variables**
+
+Fetch \`brand/tokens.css\` from disk and paste its full content into a \`<style>\` block in every generated HTML file. Do NOT use \`<link href="...">\` — iframes have no access to file paths, only inline styles work reliably.
+
+**3. Load fonts**
+
+Check \`tokens.json.fonts.google_fonts_url\`:
+- **If set** (e.g. RL3, Codi): add a \`<link rel="stylesheet">\` tag pointing to that URL — Google Fonts loads correctly inside iframes from the web
+- **If null** (e.g. BBVA local fonts): generate \`@font-face\` declarations using the brand asset serving URL:
+  \`\`\`css
+  @font-face {
+    font-family: 'BentonSans BBVA';
+    src: url('http://localhost:PORT/api/brand/codi-bbva-brand/assets/fonts/BentonSansBBVA-Bold.woff2') format('woff2');
+    font-weight: 700;
+  }
+  \`\`\`
+  Enumerate the font files present in \`assets/fonts/\` and generate one \`@font-face\` block per file. Replace PORT with the actual server port from the startup JSON.
+
+**4. Embed the logo**
+
+Determine the card's background color. If dark: use \`assets.logo_light_bg\` (light logo on dark background). If light: use \`assets.logo_dark_bg\` (dark logo on light background).
+
+Fetch the SVG file via the brand asset route:
+\`\`\`
+GET http://localhost:PORT/api/brand/<brand-name>/assets/<logo-filename>
+\`\`\`
+Inline the SVG source directly in the HTML. Do NOT use \`<img src="...">\` with a file path — the path won't resolve inside an iframe.
+
+**5. Visual style reference**
+
+Read the brand's \`references/\` directory. Open HTML reference files (e.g. \`references/brandguide.html\`, \`references/bbva-deck-reference.html\`) to understand the brand's CSS patterns, layout, component structure, and visual identity. Use these as the style guide when writing card HTML and CSS.
+
+**6. Gallery templates (if available)**
+
+If the brand has a \`templates/\` directory, those files appear in the Gallery → Templates tab. Ask the user if they want to start from one of those instead of a generic built-in.
+
+**7. Copy and voice**
+
+Write all copy using \`voice.tone\` as the style guide. Use \`voice.phrases_use\` phrases where natural. Never use \`voice.phrases_avoid\` phrases.
 
 **Skip Step 1c** if the user explicitly provides a template or says "no brand".
 
@@ -266,9 +314,15 @@ After creating a project (Step 1b), write \`<contentDir>/social.html\` (or \`sli
   <!-- REQUIRED: content identity — powers the preview metadata bar -->
   <meta name="codi:template" content='{"id":"my-content","name":"My Content Title","type":"social","format":{"w":1080,"h":1080}}'>
   <title>My Content Title</title>
+  <!-- FONTS: if a brand is active and tokens.json.fonts.google_fonts_url is set, use that URL.
+       If the brand has local fonts (google_fonts_url is null), generate @font-face blocks in <style> below
+       using http://localhost:PORT/api/brand/<name>/assets/fonts/<file>.woff2 URLs.
+       If no brand is active, use the default: -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* Copy full preset CSS here */
+    /* If brand is active: paste full content of brand/tokens.css here (inline — not a <link>) */
+    /* Then add any @font-face blocks for local fonts (see Step 1c for URL pattern) */
+    /* Then add card-specific styles */
   </style>
 </head>
 <body>
