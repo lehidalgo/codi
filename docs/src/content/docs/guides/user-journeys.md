@@ -911,8 +911,8 @@ codi revert --list
 # Restore the most recent backup:
 codi revert --last
 
-# Restore a specific backup:
-codi revert --backup 2026-04-12T18:30:00Z
+# Restore a specific backup (use timestamp from --list output):
+codi revert --backup 2026-04-12T18-30-00-000Z
 ```
 
 **What happens:**
