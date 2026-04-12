@@ -593,7 +593,10 @@ describe("claude-code adapter", () => {
 
       const settingsFile = files.find((f) => f.path === ".claude/settings.json");
       const parsed = JSON.parse(settingsFile!.content);
-      const hook = parsed.hooks.InstructionsLoaded?.[0];
+      const entry = parsed.hooks.InstructionsLoaded?.[0];
+      expect(entry).toBeDefined();
+      expect(entry.matcher).toBe("");
+      const hook = entry.hooks?.[0];
       expect(hook).toBeDefined();
       expect(hook.type).toBe("command");
       expect(hook.command).toContain("codi-skill-tracker.cjs");
@@ -607,7 +610,10 @@ describe("claude-code adapter", () => {
 
       const settingsFile = files.find((f) => f.path === ".claude/settings.json");
       const parsed = JSON.parse(settingsFile!.content);
-      const hook = parsed.hooks.Stop?.[0];
+      const entry = parsed.hooks.Stop?.[0];
+      expect(entry).toBeDefined();
+      expect(entry.matcher).toBe("");
+      const hook = entry.hooks?.[0];
       expect(hook).toBeDefined();
       expect(hook.type).toBe("command");
       expect(hook.command).toContain("codi-skill-observer.cjs");
