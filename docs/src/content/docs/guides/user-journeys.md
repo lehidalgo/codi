@@ -404,7 +404,7 @@ codi update --rules --skills --agents --mcp-servers --force
    - If different: shows a conflict resolution prompt (keep / accept / merge)
 2. Writes accepted changes
 3. Runs `codi generate` automatically
-4. Updates `.artifact-manifest.yaml` and `presets.lock.json`
+4. Updates `artifact-manifest.json` and `preset-lock.json`
 5. Writes an audit log entry
 
 **What is skipped:**
