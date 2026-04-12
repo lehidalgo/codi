@@ -537,7 +537,7 @@ codi preset install awesome-preset
 2. Validates `preset.yaml` structure
 3. Runs a security scan — warns about suspicious patterns
 4. Copies to `.codi/presets/<name>/`
-5. Updates `presets.lock.json` with source and version
+5. Updates `preset-lock.json` with source and version
 6. Logs the operation
 
 **Gotchas:**
@@ -575,7 +575,7 @@ codi preset update --dry-run
 
 **What happens:**
 
-1. Reads `presets.lock.json` for all installed presets and their sources
+1. Reads `preset-lock.json` for all installed presets and their sources
 2. Queries the registry for the latest version of each
 3. For presets with new versions: runs a security scan, applies artifact changes with conflict resolution, updates the lock file
 
@@ -609,7 +609,7 @@ codi preset remove my-old-preset
 **What happens:**
 
 - Deletes `.codi/presets/my-old-preset/`
-- Removes the entry from `presets.lock.json`
+- Removes the entry from `preset-lock.json`
 - Logs the operation
 
 **Note:** Removing a preset does not remove the artifacts that were applied from it. Those live in `.codi/rules/`, `.codi/skills/`, etc.
