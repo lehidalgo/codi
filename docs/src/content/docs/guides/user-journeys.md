@@ -650,14 +650,14 @@ codi doctor --ci
 | Version match | CLI version vs. project pin in manifest |
 | Generated files | Exist, are readable, match source hashes |
 | Drift status | Any generated file changed outside of Codi |
-| File size | Warn if any generated file exceeds 1 MB |
+| File size | Warn if any artifact exceeds 6,000 chars or total exceeds 12,000 chars |
 | Documentation sync | Doc stamp up to date (if docs enabled) |
 | Pre-commit hooks | Hooks installed and executable |
 
 **Gotchas:**
 
-- `--ci` flag causes a non-zero exit on any failure or warning, which fails the pipeline.
-- Hook warnings are informational in normal mode; they are failures in `--ci` mode.
+- `--ci` flag causes a non-zero exit on drift or version failures, which fails the pipeline.
+- Content size and hook warnings are informational in both modes; they never cause a non-zero exit.
 
 ---
 
