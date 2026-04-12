@@ -272,12 +272,12 @@
     "hash": "0fe4af3579ab4cd2024882843f532e6994cc1ca7c7bfaa382cb2ccdd285edb48"
   },
   "codi-skill-feedback-reporter": {
-    "version": 5,
-    "hash": "10cb6cc4162b5417d23295d31ff163074e4df6c6b741116d027a773a25848be7"
+    "version": 6,
+    "hash": "7fec11ac6eb6b647bf514393491f029873ccb5a0b8e97e19e26c3c65c5877260"
   },
   "codi-rule-feedback": {
-    "version": 5,
-    "hash": "a88a6e810fb7ce464f173c8c33956a4bc10036b28eb778d1dba3ed7cd7d83315"
+    "version": 6,
+    "hash": "b005d19152424cfdfbce759b8c79dc117859612269aaf24a2f2ba460b835b59c"
   },
   "codi-refine-rules": {
     "version": 4,

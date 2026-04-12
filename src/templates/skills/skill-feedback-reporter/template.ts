@@ -7,140 +7,53 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Internal meta-skill. Activates after completing a task that used a skill. Writes structured JSON feedback to .codi/feedback/ for skill health metrics. Not for direct user invocation — fires automatically after substantive skill usage.
+description: Review accumulated skill and rule observations collected in .codi/feedback/. Groups findings by artifact, shows the top 3 worth acting on. Use before running /${PROJECT_NAME}-refine-rules to see what has accumulated.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
-user-invocable: false
+user-invocable: true
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 4
+version: 6
 ---
 
-# {{name}}
+# Feedback Reviewer
 
 ## Purpose
 
-You are an AI coding agent that uses skills (slash commands) to complete tasks.
-After you finish a task that involved using a skill, you MUST write a feedback
-report so the skill can be improved over time. This is NOT optional.
+Read the observations collected in \`${PROJECT_DIR}/feedback/\` and show a concise summary grouped by artifact. This is the first step before running \`/${PROJECT_NAME}-refine-rules\`.
 
-## When to Report
+Observations are written automatically by the Stop hook — the agent emits a \`[CODI-OBSERVATION: ...]\` marker in its response and the hook structures it into JSON. You do not write feedback files manually.
 
-Report feedback after **every** skill invocation where you performed substantive
-work. Skip trivial invocations (e.g., skill loaded but immediately cancelled).
+## What to Do
 
-## Feedback JSON Schema
+1. Read all JSON files in \`${PROJECT_DIR}/feedback/\`
+2. Group observations by \`skillName\`
+3. Within each group, sort by severity (high → medium → low), then by timestamp (newest first)
+4. Show the top 3 most actionable observations across all groups
+5. For each, show: artifact name, category, observation text, severity, and date
 
-Write a single JSON file to \`${PROJECT_DIR}/feedback/\` with this exact structure:
+## Output Format
 
-\`\`\`json
-{
-  "id": "<uuid-v4>",
-  "skillName": "<skill-name>",
-  "timestamp": "<ISO-8601 datetime>",
-  "agent": "<your-agent-id>",
-  "taskSummary": "<what you did, max 500 chars>",
-  "outcome": "<success | partial | failure>",
-  "issues": [
-    {
-      "category": "<category>",
-      "description": "<what went wrong, max 500 chars>",
-      "severity": "<low | medium | high>"
-    }
-  ],
-  "suggestions": [
-    "<free-text improvement idea, max 500 chars>"
-  ]
-}
+\`\`\`
+## Feedback Summary — N observations across M artifacts
+
+### codi-commit (2 observations)
+1. [HIGH] trigger-miss — skill did not activate when user typed /codi-commit directly (2026-04-10)
+2. [LOW] missing-step — no step to verify staged files are not empty before committing (2026-04-08)
+
+### codi-testing (1 observation)
+3. [MEDIUM] outdated-rule — rule says use Jest but project migrated to Vitest (2026-04-09)
+
+---
+Run /${PROJECT_NAME}-refine-rules to review these one by one and propose changes.
 \`\`\`
 
-## Field Reference
+## If No Feedback Exists
 
-### agent
-Your agent identifier. Use exactly one of:
-- \`claude-code\` — Claude Code CLI or IDE extension
-- \`codex\` — OpenAI Codex CLI
-- \`cursor\` — Cursor IDE
-- \`windsurf\` — Windsurf IDE
-- \`cline\` — Cline VS Code extension
-
-### outcome
-- \`success\` — Skill worked as intended, task completed correctly
-- \`partial\` — Skill helped but required workarounds or manual fixes
-- \`failure\` — Skill did not produce useful output or led to errors
-
-### Issue Categories
-
-| Category | When to Use |
-|----------|-------------|
-| \`trigger-miss\` | Skill should have activated but did not |
-| \`trigger-false\` | Skill activated when it should not have |
-| \`unclear-step\` | A step in the skill was ambiguous or confusing |
-| \`missing-step\` | The skill lacked a step needed for the task |
-| \`wrong-output\` | Following the skill produced incorrect output |
-| \`context-overflow\` | Skill content was too large for the context window |
-| \`other\` | Issue does not fit other categories |
-
-## File Naming
-
-Save the file as:
-\`\`\`
-${PROJECT_DIR}/feedback/{timestamp}-{skill-name}.json
-\`\`\`
-
-Replace colons and dots in the timestamp with hyphens. Example:
-\`\`\`
-${PROJECT_DIR}/feedback/2026-03-28T21-30-00-000Z-commit.json
-\`\`\`
-
-## Examples
-
-### Success with no issues
-\`\`\`json
-{
-  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "skillName": "commit",
-  "timestamp": "2026-03-28T21:30:00.000Z",
-  "agent": "claude-code",
-  "taskSummary": "Created conventional commit for auth feature addition",
-  "outcome": "success",
-  "issues": [],
-  "suggestions": []
-}
-\`\`\`
-
-### Partial success with issues
-\`\`\`json
-{
-  "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-  "skillName": "security-scan",
-  "timestamp": "2026-03-28T22:15:00.000Z",
-  "agent": "claude-code",
-  "taskSummary": "Ran security scan on auth module, found 3 issues but missed CSRF",
-  "outcome": "partial",
-  "issues": [
-    {
-      "category": "missing-step",
-      "description": "Skill does not include CSRF token validation checks",
-      "severity": "high"
-    }
-  ],
-  "suggestions": [
-    "Add CSRF validation to the security scan checklist"
-  ]
-}
-\`\`\`
-
-## Important
-
-- Generate a real UUID v4 for the \`id\` field
-- Use the current ISO-8601 timestamp
-- Keep \`taskSummary\` concise (under 500 characters)
-- Only report genuine issues — do not fabricate problems
-- If the skill worked perfectly, report \`success\` with empty issues
-- Write the file AFTER completing the task, not during
+Report: "No observations in \`${PROJECT_DIR}/feedback/\` yet. The system collects them automatically as you work."
 
 ## Related Skills
 
-- **${PROJECT_NAME}-rule-feedback** — Write structured feedback on a specific rule (same feedback loop, rule-scoped)
+- **${PROJECT_NAME}-refine-rules** — Review observations one by one and propose rule/skill changes
+- **${PROJECT_NAME}-rule-feedback** — Background observation skill (describes the marker format)
 `;

@@ -324,12 +324,12 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
 
   // Heartbeat hooks — always present so the feedback loop works out of the box.
   // Users who need personal hooks must use .claude/settings.local.json (auto-merged by Claude Code).
-  const hooksDir = `.${PROJECT_NAME}/hooks`;
+  const hooksDir = `${PROJECT_DIR}/${HOOKS_SUBDIR}`;
   settings.hooks = {
     InstructionsLoaded: [
       {
         type: "command",
-        command: `${hooksDir}/${PROJECT_NAME}-skill-tracker.mjs`,
+        command: `${hooksDir}/${SKILL_TRACKER_FILENAME}`,
         timeout: 5,
         async: true,
       },
@@ -337,7 +337,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
     Stop: [
       {
         type: "command",
-        command: `${hooksDir}/${PROJECT_NAME}-skill-observer.mjs`,
+        command: `${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
         timeout: 15,
       },
     ],

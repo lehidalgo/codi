@@ -9,13 +9,7 @@
  */
 
 import { spawn } from "node:child_process";
-import {
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  unlinkSync,
-} from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, rmdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
@@ -41,20 +35,24 @@ function runSingleQuery(
   return new Promise((resolvePromise) => {
     const uniqueId = randomUUID().slice(0, 8);
     const cleanName = `${skillName}-skill-${uniqueId}`;
-    const commandsDir = join(projectRoot, ".claude", "commands");
-    const commandFile = join(commandsDir, `${cleanName}.md`);
+    const skillDir = join(projectRoot, ".claude", "skills", cleanName);
+    const skillFile = join(skillDir, "SKILL.md");
 
-    mkdirSync(commandsDir, { recursive: true });
+    mkdirSync(skillDir, { recursive: true });
 
-    const indentedDesc = skillDescription.split("\n").join("\n  ");
-    const commandContent =
-      `---\ndescription: |\n  ${indentedDesc}\n---\n\n` +
+    const skillContent =
+      `---\nname: ${cleanName}\ndescription: |\n  ${skillDescription.split("\n").join("\n  ")}\n---\n\n` +
       `# ${skillName}\n\nThis skill handles: ${skillDescription}\n`;
-    writeFileSync(commandFile, commandContent, "utf-8");
+    writeFileSync(skillFile, skillContent, "utf-8");
 
     const cleanup = () => {
       try {
-        unlinkSync(commandFile);
+        unlinkSync(skillFile);
+      } catch {
+        /* ignore */
+      }
+      try {
+        rmdirSync(skillDir);
       } catch {
         /* ignore */
       }
@@ -136,10 +134,7 @@ function runSingleQuery(
                 return;
               }
             }
-          } else if (
-            seType === "content_block_stop" ||
-            seType === "message_stop"
-          ) {
+          } else if (seType === "content_block_stop" || seType === "message_stop") {
             if (pendingToolName) {
               clearTimeout(timer);
               finish(accumulatedJson.includes(cleanName));
@@ -153,9 +148,7 @@ function runSingleQuery(
           }
         } else if (event.type === "assistant") {
           const message = event.message as Record<string, unknown> | undefined;
-          const contentItems = (message?.content ?? []) as Array<
-            Record<string, unknown>
-          >;
+          const contentItems = (message?.content ?? []) as Array<Record<string, unknown>>;
           for (const item of contentItems) {
             if (item.type !== "tool_use") continue;
             const toolName = item.name as string;
@@ -165,10 +158,7 @@ function runSingleQuery(
               finish(true);
               return;
             }
-            if (
-              toolName === "Read" &&
-              toolInput?.file_path?.includes(cleanName)
-            ) {
+            if (toolName === "Read" && toolInput?.file_path?.includes(cleanName)) {
               clearTimeout(timer);
               finish(true);
               return;
@@ -322,9 +312,7 @@ if (isDirectExecution) {
   const verboseVal = values["verbose"] as boolean | undefined;
 
   if (!evalSetPath || !skillPath) {
-    console.error(
-      "Usage: npx tsx run-eval.ts --eval-set <path> --skill-path <path>",
-    );
+    console.error("Usage: npx tsx run-eval.ts --eval-set <path> --skill-path <path>");
     process.exit(1);
   }
 
