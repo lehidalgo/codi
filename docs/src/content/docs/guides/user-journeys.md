@@ -114,14 +114,13 @@ codi init --force --preset codi-strict
 
 - Loads the existing `.codi/` directory (does not delete it)
 - Resets `flags.yaml` to the `codi-strict` preset values
-- Compares current artifacts to the preset's artifact list
-- Prompts for any conflicts on changed artifacts
+- Overwrites existing preset artifacts with the new preset versions (no prompting with `--force`)
 - Regenerates all agent config files
 
 **Gotchas:**
 
 - Without `--force`, the command runs but skips existing `.codi/` artifacts (shows warnings). Use `--force` to overwrite them.
-- Custom artifacts you added (not from a preset template) are preserved unless `--force` is used.
+- Custom artifacts you added (not from a preset template) are always preserved — they are not part of any preset's artifact list, so `--force` does not affect them.
 - Flags already marked `locked: true` cannot be overridden.
 - Use `--on-conflict keep-incoming` instead of `--force` when you want to overwrite only the generated agent files but not the `.codi/` artifacts.
 
