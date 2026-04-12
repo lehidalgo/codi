@@ -1545,6 +1545,12 @@ function init() {
   loadTemplates()
     .then(() => {
       log("Loaded " + state.templates.length + " templates", "ok");
+      // Force gallery rebuild now that templates are loaded.
+      // Without this, if the gallery was initialized before loadTemplates resolved,
+      // it renders with zero template cards and never recovers.
+      galleryInit = false;
+      clearEl($("gallery-grid"));
+      if ($("view-gallery").classList.contains("active")) initGallery();
       return fetch("/api/preset").then((r) => r.json());
     })
     .then((data) => {

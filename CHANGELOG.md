@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **content-factory** — gallery grid renders empty when templates load after gallery init; force rebuild after `loadTemplates()` resolves
 - **conflict resolver** — unresolvable conflict data in non-TTY mode now writes to stderr instead of stdout, preventing raw JSON from polluting piped output
 - **heartbeat hooks** — use `.cjs` extension so CommonJS `require()` works in ESM projects
 - **run-eval** — creates temp skills in `.claude/skills/` instead of deprecated `.claude/commands/`
