@@ -95,23 +95,40 @@ capturedHeight: Math.round(rect.height)  // may be clipped/wrong
 
 ## Tables inside flex column containers
 
-`.page-body` is `display: flex; flex-direction: column`. Tables with `border-collapse: collapse` and `width: 100%` do **not** reliably stretch to the container width in this context — the browser can collapse columns to near-zero width.
+Any flex-column wrapper nested inside `.doc-page` (e.g., `.page-body`) must have `width: 100%` set explicitly. Without it, `width: 100%` on a child `<table>` resolves against an indefinite containing-block width and the browser collapses all columns to near-zero — even when `table-layout: fixed` is set.
 
-**Always use `table-layout: fixed` on `.data-table` and `min-width: 0` on flex children.**
+**Three rules that must all be present together:**
+
+1. `width: 100%` on the flex-column wrapper (`.page-body` or equivalent)
+2. `table-layout: fixed` + `width: 100%` on `.data-table`
+3. `min-width: 0` on flex children of the wrapper
 
 ```css
-/* CORRECT — fixed layout forces equal column distribution */
+/* CORRECT */
+.page-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;       /* ← REQUIRED: gives tables a definite containing-block width */
+}
 .data-table {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
-/* Prevent flex children from expanding beyond page width */
 .page-body > * { min-width: 0; }
 
-/* WRONG — auto layout collapses columns inside flex containers */
+/* WRONG — missing width:100% on the flex-column wrapper */
+.page-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* no width: 100% — child table width:100% resolves to auto, collapsing columns */
+}
+
+/* WRONG — missing table-layout: fixed */
 .data-table {
   width: 100%;
-  border-collapse: collapse; /* no table-layout: fixed */
+  border-collapse: collapse;
 }
 ```

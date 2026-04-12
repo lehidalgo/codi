@@ -370,6 +370,31 @@ async function handleExportDocx(req, res) {
                     capturedWidth: Math.round(rect.width) || 580,
                     capturedHeight: Math.round(rect.height) || 200, ...base });
 
+                // ── VISUAL BLOCKS (stat rows, feature grids, step lists) ────
+                // These use custom div classes whose text nodes are nested inside
+                // non-semantic divs — text is unreachable via the element walker.
+                // Capture the whole container as a PNG screenshot instead.
+                } else if (cls.includes('stat-row') || cls.includes('two-col') ||
+                           cls.includes('step-list') || cls.includes('feature-grid') ||
+                           cls.includes('metric-row') || cls.includes('card-grid') ||
+                           cls.includes('cover-hero') || cls.includes('toc-list') ||
+                           cls.includes('cover-toc-title')) {
+                  const blockIdx = els.filter(e => e.role === 'visual-block').length;
+                  const rect = el.getBoundingClientRect();
+                  els.push({ role: 'visual-block', blockIndex: blockIdx,
+                    capturedWidth: Math.round(rect.width) || 580,
+                    capturedHeight: Math.round(rect.height) || 200, ...base });
+
+                // ── CODE BLOCK ──────────────────────────────────────────────
+                } else if (cls.includes('code-block')) {
+                  const captionEl = el.querySelector('.code-lang, .code-title, .code-label');
+                  const caption = captionEl ? collapseWs(captionEl.textContent).trim() : '';
+                  const codeIdx = els.filter(e => e.role === 'code-block').length;
+                  const rect = el.getBoundingClientRect();
+                  els.push({ role: 'code-block', codeIndex: codeIdx, caption,
+                    capturedWidth: Math.round(rect.width) || 580,
+                    capturedHeight: Math.round(rect.height) || 200, ...base });
+
                 // ── INLINE IMAGE ─────────────────────────────────────────────
                 } else if (tag === 'img') {
                   const rect = el.getBoundingClientRect();
@@ -407,12 +432,41 @@ async function handleExportDocx(req, res) {
               diagramPngs[di] = png.toString('base64');
             } catch (_) { /* element may be offscreen — skip */ }
           }
+          // Screenshot visual block containers (stat rows, feature grids, step lists)
+          const blockLocators = await page.locator(
+            '.stat-row, .two-col, .step-list, .feature-grid, .metric-row, .card-grid, ' +
+            '.cover-hero, .toc-list, .cover-toc-title'
+          ).all();
+          const blockPngs = {};
+          for (let bi = 0; bi < blockLocators.length; bi++) {
+            try {
+              const png = await blockLocators[bi].screenshot({ type: 'png' });
+              blockPngs[bi] = png.toString('base64');
+            } catch (_) { /* element may be offscreen — skip */ }
+          }
+
+          // Screenshot every code block element
+          const codeLocators = await page.locator('.code-block').all();
+          const codePngs = {};
+          for (let ci = 0; ci < codeLocators.length; ci++) {
+            try {
+              const png = await codeLocators[ci].screenshot({ type: 'png' });
+              codePngs[ci] = png.toString('base64');
+            } catch (_) { /* element may be offscreen — skip */ }
+          }
+
           // Also collect <img> data URLs (they come through via evaluated src)
           const imgPngs = {};
           for (const pg of pageData) {
             for (const el of pg.elements) {
               if (el.role === 'diagram' && diagramPngs[el.diagramIndex] !== undefined) {
                 el.pngBase64 = diagramPngs[el.diagramIndex];
+              }
+              if (el.role === 'visual-block' && blockPngs[el.blockIndex] !== undefined) {
+                el.pngBase64 = blockPngs[el.blockIndex];
+              }
+              if (el.role === 'code-block' && codePngs[el.codeIndex] !== undefined) {
+                el.pngBase64 = codePngs[el.codeIndex];
               }
               if (el.role === 'img' && el.src) {
                 const src = el.src;
@@ -578,6 +632,8 @@ async function handleExportDocx(req, res) {
                 break;
               }
 
+              case 'visual-block':
+              case 'code-block':
               case 'diagram':
               case 'img': {
                 if (el.pngBase64) {

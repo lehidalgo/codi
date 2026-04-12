@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 27
+version: 28
 ---
 
 # {{name}} — Content Factory
@@ -281,7 +281,7 @@ Full rules: \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\`
 **Key points:**
 - Social cards and slides: \`overflow: hidden\` — every pixel beyond the boundary is clipped. Test all content at the intended format.
 - Document pages (\`.doc-page\`): \`overflow: visible\` — content grows vertically. Never use \`overflow: hidden\` on \`.code-block\`, \`pre\`, or \`table\` — it clips content in the browser preview and breaks DOCX screenshot capture.
-- Tables inside \`.doc-page\` (a flex column container): always add \`table-layout: fixed\` to \`.data-table\` and \`min-width: 0\` on flex children — without these, browsers collapse table columns to near-zero width.
+- Tables inside \`.doc-page\` (a flex column container): the flex-column wrapper (e.g. \`.page-body\`) MUST have \`width: 100%\` — without it, \`width: 100%\` on a child table resolves against an indefinite width and columns collapse to near-zero even with \`table-layout: fixed\`. Also add \`min-width: 0\` on flex children.
 
 #### Document template conventions — DOCX export
 

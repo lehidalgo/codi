@@ -48,6 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **content-factory** — `references/docx-export.md` and `references/html-clipping.md` added as agent-accessible reference documents covering DOCX class conventions, overflow rules, flex column table gotchas, and PNG IHDR dimension pattern
 - **content-factory** — `document-base.html` updated: `.doc-page > * { min-width: 0 }` (was dead `.page-body > *` selector), `overflow: visible` on `.data-table`, code-block and diagram-wrap CSS and HTML examples added
 - **content-factory** — `doc-article.html` template updated: `.page-body > * { min-width: 0 }` and `.data-table` CSS with `table-layout: fixed` added
+- **content-factory** — DOCX export: `.code-block` elements now captured as Playwright PNG screenshots and embedded as images, preserving syntax highlighting
+- **content-factory** — DOCX export: custom visual blocks (`.stat-row`, `.two-col`, `.step-list`, `.cover-hero`, `.toc-list`, and aliases) captured as PNG screenshots — fixes silent text-drop for custom div layouts
+- **content-factory** — `html-clipping.md` updated with three-rule requirement for tables in flex column containers (`width: 100%` on wrapper, `table-layout: fixed` on table, `min-width: 0` on flex children)
 
 ### Changed
 

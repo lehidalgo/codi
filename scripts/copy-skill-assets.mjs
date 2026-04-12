@@ -12,7 +12,7 @@
  * Called via tsup's onSuccess hook after every successful build.
  */
 import { cpSync, copyFileSync, mkdirSync, readdirSync, existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 const SRC = "src/templates/skills";
 const DEST = "dist/templates/skills";
@@ -43,7 +43,10 @@ for (const skill of readdirSync(SRC)) {
     const entries = readdirSync(subSrc).filter((f) => f !== ".gitkeep");
     if (entries.length === 0) continue;
 
-    cpSync(subSrc, join(DEST, skill, sub), { recursive: true });
+    cpSync(subSrc, join(DEST, skill, sub), {
+      recursive: true,
+      filter: (src) => !src.includes(`${sep}node_modules`),
+    });
     copied++;
   }
 }

@@ -60,6 +60,12 @@
       page-break-after: always;
     }
 
+    /* CRITICAL: every flex child of .doc-page that is itself a flex column MUST
+       have width:100% so that percentage widths (tables, code blocks) resolve
+       against a definite containing-block width. Without this, width:100% on a
+       <table> child of a nested flex-column resolves to auto/content, collapsing
+       columns to near-zero even when table-layout:fixed is set. */
+
     /* ── Page Header ────────────────────────────────────────────────────────── */
     .page-header {
       display: flex;
