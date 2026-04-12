@@ -201,7 +201,7 @@ codi watch
 **What happens:**
 
 - Watches the `.codi/` directory for file changes
-- Debounces 100ms and runs `codi generate` on each change
+- Debounces 500ms and runs `codi generate` on each change
 - Continues until you press `Ctrl+C`
 
 **Options:**
