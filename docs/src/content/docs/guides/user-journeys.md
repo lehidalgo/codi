@@ -675,7 +675,8 @@ codi validate
 - Every rule `.md` has valid frontmatter (name, description, managed_by fields)
 - Every skill `SKILL.md` has valid frontmatter
 - Every agent `.md` has valid frontmatter
-- No single generated output would exceed 1 MB
+
+Content size warnings (artifact > 6,000 chars or total > 12,000 chars) are reported but do not affect the exit code.
 
 **Exit code:** `0` if valid, `1` if any error found.
 
