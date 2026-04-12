@@ -697,7 +697,7 @@ codi compliance --ci
 
 - Config valid: yes/no
 - Version match: current vs. expected
-- Drift status: number of drifted files
+- Drift status: whether any generated file has drifted (boolean)
 - Artifact counts: rules / skills / agents / flags enabled
 - Verification token: a hash of the current config state
 
