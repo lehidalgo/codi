@@ -371,7 +371,7 @@ codi status --diff
 
 **What you see:**
 
-- A table: agent | file | status (up-to-date / drifted / missing)
+- A table: agent | file | status (synced / drifted / missing)
 - With `--diff`: the actual content difference between what is on disk and what Codi would generate
 
 **Gotchas:**
