@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 30
+version: 36
 ---
 
 # {{name}} — Content Factory
@@ -146,17 +146,17 @@ Before writing any files, create a named project. This returns the directory pat
 \`\`\`bash
 curl -s -X POST <url>/api/create-project \\
   -H "Content-Type: application/json" \\
-  -d '{"name": "bbva-social-campaign"}'
+  -d '{"name": "acme-social-campaign"}'
 \`\`\`
 
 Response:
 \`\`\`json
 {
   "ok": true,
-  "projectDir": "/path/to/.codi_output/bbva-social-campaign",
-  "contentDir": "/path/to/.codi_output/bbva-social-campaign/content",
-  "stateDir": "/path/to/.codi_output/bbva-social-campaign/state",
-  "exportsDir": "/path/to/.codi_output/bbva-social-campaign/exports"
+  "projectDir": "/path/to/.codi_output/acme-social-campaign",
+  "contentDir": "/path/to/.codi_output/acme-social-campaign/content",
+  "stateDir": "/path/to/.codi_output/acme-social-campaign/state",
+  "exportsDir": "/path/to/.codi_output/acme-social-campaign/exports"
 }
 \`\`\`
 
@@ -164,6 +164,40 @@ Save \`contentDir\` — this is where you write HTML files. The project is now a
 
 **Skip Step 1b** when the user opens an existing My Work project from the gallery — the server
 activates the project automatically when the user clicks it.
+
+### Step 1c — Detect and apply a brand (optional)
+
+After creating a project, check whether any brand skills are installed:
+
+\`\`\`bash
+curl -s <url>/api/brands
+\`\`\`
+
+Response example:
+\`\`\`json
+[
+  { "name": "codi-codi-brand", "display_name": "Codi Platform", "version": 2,
+    "dir": "/abs/path/.claude/skills/codi-codi-brand" }
+]
+\`\`\`
+
+If brands are available and the user has not specified one, ask:
+> "I found these brand skills: [list]. Should I apply one to this content?"
+
+If the user confirms a brand, activate it:
+\`\`\`bash
+curl -s -X POST <url>/api/active-brand \\
+  -H "Content-Type: application/json" \\
+  -d '{"name": "codi-codi-brand"}'
+\`\`\`
+
+Once a brand is active:
+- Read its \`brand/tokens.json\` for color tokens, fonts, and voice
+- Import \`brand/tokens.css\` as a \`<link>\` or inline \`<style>\` in every generated HTML file
+- Use \`voice.tone\` and \`voice.phrases_use\` when writing copy
+- Check the brand's \`templates/\` directory — those templates appear in the Gallery and should be used as the visual starting point instead of generic built-ins
+
+**Skip Step 1c** if the user explicitly provides a template or says "no brand".
 
 ### Step 2 — Read state and determine mode
 
@@ -183,12 +217,15 @@ Example responses:
 
 // My Work project open
 { "mode": "mywork", "contentId": "a3f9c2d1", "activePreset": null,
-  "activeFilePath": "/abs/path/.codi_output/bbva-social-campaign/content/social.html",
-  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/bbva-social-campaign",
+  "activeFilePath": "/abs/path/.codi_output/acme-social-campaign/content/social.html",
+  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/acme-social-campaign",
   "status": "in-progress", "preset": null }
 
 // Nothing selected
 { "mode": null, "contentId": null, "activeFilePath": null, ... }
+
+// With an active brand
+{ ..., "activeBrand": { "name": "codi-codi-brand", "display_name": "Codi Platform" } }
 \`\`\`
 
 **Use \`contentId\` as the anchor — not the template name.** The \`contentId\` is a hash of
@@ -361,8 +398,8 @@ When \`mode\` is \`"mywork"\` in \`/api/state\`, the user has a past project ope
    \`\`\`bash
    curl -s <url>/api/state
    # { "mode": "mywork", "contentId": "a3f9c2d1",
-   #   "activeFilePath": "/abs/path/.codi_output/bbva-social-campaign/content/social.html",
-   #   "activeSessionDir": "/abs/path/.codi_output/bbva-social-campaign",
+   #   "activeFilePath": "/abs/path/.codi_output/acme-social-campaign/content/social.html",
+   #   "activeSessionDir": "/abs/path/.codi_output/acme-social-campaign",
    #   "activeFile": "social.html", "status": "in-progress", ... }
    \`\`\`
 

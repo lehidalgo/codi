@@ -17,7 +17,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 10
 ---
 
 # ${PROJECT_NAME_DISPLAY} Operations
@@ -79,13 +79,6 @@ name: agent-name
 description: When to use this agent
 tools: [Read, Grep, Glob, Bash]
 model: inherit
-managed_by: ${PROJECT_NAME} | user
-\`\`\`
-
-Commands:
-\`\`\`yaml
-name: command-name
-description: What this command does
 managed_by: ${PROJECT_NAME} | user
 \`\`\`
 

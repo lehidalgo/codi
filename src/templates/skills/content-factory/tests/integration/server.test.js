@@ -75,21 +75,22 @@ describe("GET /", () => {
 });
 
 describe("GET /api/templates", () => {
-  it("returns an array of .html filenames", async () => {
+  it("returns an array of template objects with id, name, type, format, file, url", async () => {
     const files = await fetch(`${baseUrl}/api/templates`).then((r) => r.json());
     expect(Array.isArray(files)).toBe(true);
     expect(files.length).toBeGreaterThan(0);
-    expect(files.every((f) => f.endsWith(".html"))).toBe(true);
+    expect(files.every((f) => typeof f === "object" && f.id && f.file && f.url)).toBe(true);
   });
 });
 
 describe("GET /api/template", () => {
   it("returns HTML for a known template file", async () => {
-    const files = await fetch(`${baseUrl}/api/templates`).then((r) => r.json());
-    const first = files[0];
-    const html = await fetch(`${baseUrl}/api/template?file=${encodeURIComponent(first)}`).then(
-      (r) => r.text(),
-    );
+    const templates = await fetch(`${baseUrl}/api/templates`).then((r) => r.json());
+    const first = templates[0];
+    const url = first.brand
+      ? `${baseUrl}/api/template?brand=${encodeURIComponent(first.brand)}&file=${encodeURIComponent(first.file)}`
+      : `${baseUrl}/api/template?file=${encodeURIComponent(first.file)}`;
+    const html = await fetch(url).then((r) => r.text());
     expect(html).toContain("<!DOCTYPE html");
     expect(html).toContain('name="codi:template"');
   });

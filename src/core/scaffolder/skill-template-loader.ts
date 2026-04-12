@@ -47,7 +47,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("internal-comms")]: skillTemplates.internalComms,
   [prefixedName("slack-gif-creator")]: skillTemplates.slackGifCreator,
   [prefixedName("dev-docs-manager")]: skillTemplates.devDocsManager,
-  [prefixedName("brand-identity")]: skillTemplates.brandIdentity,
+  [prefixedName("brand-creator")]: skillTemplates.brandCreator,
   [prefixedName("codi-brand")]: skillTemplates.codiBrand,
   [prefixedName("content-factory")]: skillTemplates.contentFactory,
   [prefixedName("project-quality-guard")]: skillTemplates.projectQualityGuard,
@@ -94,7 +94,7 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("claude-artifacts-builder")]: skillTemplates.claudeArtifactsBuilderStaticDir,
   [prefixedName("webapp-testing")]: skillTemplates.webappTestingStaticDir,
   [prefixedName("xlsx")]: skillTemplates.xlsxStaticDir,
-  [prefixedName("brand-identity")]: skillTemplates.brandIdentityStaticDir,
+  [prefixedName("brand-creator")]: skillTemplates.brandCreatorStaticDir,
   [prefixedName("codi-brand")]: skillTemplates.codiBrandStaticDir,
   [prefixedName("content-factory")]: skillTemplates.contentFactoryStaticDir,
   [prefixedName("project-quality-guard")]: skillTemplates.projectQualityGuardStaticDir,
@@ -128,7 +128,7 @@ export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
 function getTemplateCounts(): TemplateCounts {
   const brandSkillNames = AVAILABLE_SKILL_TEMPLATES.filter((key) => {
     const bare = key.replace(/^codi-/, "");
-    return bare.endsWith("-brand") && bare !== "brand-identity" && bare !== "brand";
+    return bare.endsWith("-brand") && bare !== "brand-creator" && bare !== "brand";
   }).map((key) => key.replace(/^codi-/, ""));
 
   // Always ensure codi-brand is first (the default)

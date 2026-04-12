@@ -1,4 +1,5 @@
-import { PROJECT_NAME, prefixedName, devArtifactName } from "#src/constants.js";
+import { PROJECT_NAME, prefixedName } from "#src/constants.js";
+import { CORE_PLATFORM_RULES, CORE_PLATFORM_SKILLS } from "./core-platform.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
 export const preset: BuiltinPresetDefinition = {
@@ -31,6 +32,7 @@ export const preset: BuiltinPresetDefinition = {
     auto_generate_on_change: { mode: "enabled", value: true },
   },
   rules: [
+    ...CORE_PLATFORM_RULES,
     prefixedName("code-style"),
     prefixedName("testing"),
     prefixedName("error-handling"),
@@ -39,16 +41,14 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("api-design"),
     prefixedName("documentation"),
     prefixedName("output-discipline"),
-    devArtifactName("improvement"),
   ],
   skills: [
+    ...CORE_PLATFORM_SKILLS,
     prefixedName("code-review"),
     prefixedName("security-scan"),
     prefixedName("commit"),
     prefixedName("test-coverage"),
-    prefixedName("session-recovery"),
     prefixedName("project-documentation"),
-    prefixedName("compare-preset"),
     prefixedName("test-run"),
   ],
   agents: [

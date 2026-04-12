@@ -167,7 +167,7 @@ export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
 export const ARTIFACT_TYPES = ["rules", "skills", "agents"] as const;
 
 // --- Brand category ---
-/** Category label assigned to brand-identity skills. */
+/** Category label assigned to brand skills. */
 export const BRAND_CATEGORY = "brand" as const;
 
 // --- Skill categories (single source of truth) ---

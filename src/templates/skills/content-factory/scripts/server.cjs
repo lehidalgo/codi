@@ -72,6 +72,8 @@ const URL_HOST = process.env.BRAINSTORM_URL_HOST || (HOST === '127.0.0.1' ? 'loc
 const WORKSPACE_DIR = process.env.BRAINSTORM_WORKSPACE || '/tmp/brainstorm-workspace';
 const GENERATORS_DIR = path.join(__dirname, '..', 'generators');
 const VENDOR_DIR = path.join(__dirname, 'vendor');
+// Parent of the content-factory skill directory — contains all installed skills
+const SKILLS_DIR = path.join(__dirname, '..', '..');
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
 const MIME_TYPES = {
@@ -83,6 +85,7 @@ const MIME_TYPES = {
 // ========== Active Project State ==========
 
 let activeProject = null; // { dir, contentDir, stateDir, exportsDir }
+let activeBrand = null;   // { name, dir, tokens } — set by POST /api/active-brand
 let contentWatcher = null;
 let knownFiles = new Set();
 const debounceTimers = new Map();
@@ -147,6 +150,28 @@ function serveFile(res, filePath) {
 function readJson(filePath, fallback) {
   try { return fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf-8')) : fallback; }
   catch { return fallback; }
+}
+
+function discoverBrands() {
+  const brands = [];
+  if (!fs.existsSync(SKILLS_DIR)) return brands;
+  for (const entry of fs.readdirSync(SKILLS_DIR)) {
+    if (!entry.endsWith('-brand')) continue;
+    const skillDir = path.join(SKILLS_DIR, entry);
+    const tokensPath = path.join(skillDir, 'brand', 'tokens.json');
+    if (!fs.existsSync(tokensPath)) continue;
+    try {
+      const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+      brands.push({
+        name: entry,
+        dir: skillDir,
+        display_name: tokens.display_name || entry,
+        version: tokens.version || 1,
+        tokens,
+      });
+    } catch { /* skip malformed tokens.json */ }
+  }
+  return brands;
 }
 
 // ========== HTTP Request Handler ==========
@@ -249,7 +274,33 @@ function handleRequest(req, res) {
       mode, contentId,
       status: activeStatus,
       preset,
+      activeBrand: activeBrand ? { name: activeBrand.name, display_name: activeBrand.display_name } : null,
     }));
+    return;
+  }
+
+  // /api/brands GET — list available brand skills
+  if (req.method === 'GET' && pathname === '/api/brands') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(discoverBrands().map(b => ({ name: b.name, dir: b.dir, display_name: b.display_name, version: b.version }))));
+    return;
+  }
+
+  // /api/active-brand POST — set active brand { name } or clear with {}
+  if (req.method === 'POST' && pathname === '/api/active-brand') {
+    let body = '';
+    req.on('data', d => { body += d; });
+    req.on('end', () => {
+      try {
+        const { name } = JSON.parse(body);
+        if (!name) { activeBrand = null; res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, activeBrand: null })); return; }
+        const found = discoverBrands().find(b => b.name === name);
+        if (!found) { res.writeHead(404); res.end('Brand not found'); return; }
+        activeBrand = found;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, activeBrand: { name: found.name, display_name: found.display_name } }));
+      } catch { res.writeHead(400); res.end('Bad request'); }
+    });
     return;
   }
 
@@ -299,23 +350,67 @@ function handleRequest(req, res) {
     return;
   }
 
-  // /api/templates — list HTML files in generators/templates/
+  // /api/templates — list templates from built-ins + installed brand skills
   if (req.method === 'GET' && pathname === '/api/templates') {
-    const templatesDir = path.join(GENERATORS_DIR, 'templates');
-    const files = fs.existsSync(templatesDir)
-      ? fs.readdirSync(templatesDir).filter(f => f.endsWith('.html')).sort()
-      : [];
+    const entries = [];
+    // Built-in templates
+    const builtinDir = path.join(GENERATORS_DIR, 'templates');
+    if (fs.existsSync(builtinDir)) {
+      for (const file of fs.readdirSync(builtinDir).filter(f => f.endsWith('.html')).sort()) {
+        entries.push({ file, dir: builtinDir, brand: null });
+      }
+    }
+    // Brand skill templates
+    for (const brand of discoverBrands()) {
+      const brandTemplatesDir = path.join(brand.dir, 'templates');
+      if (!fs.existsSync(brandTemplatesDir)) continue;
+      for (const file of fs.readdirSync(brandTemplatesDir).filter(f => f.endsWith('.html')).sort()) {
+        entries.push({ file, dir: brandTemplatesDir, brand: brand.name });
+      }
+    }
+    // Extract <meta name="codi:template"> from each file for id/name/type/format
+    const results = [];
+    for (const entry of entries) {
+      const filePath = path.join(entry.dir, entry.file);
+      try {
+        const html = fs.readFileSync(filePath, 'utf-8');
+        const match = html.match(/<meta[^>]+name=["']codi:template["'][^>]*content='([^']+)'/i)
+          || html.match(/<meta[^>]+name=["']codi:template["'][^>]*content="([^"]+)"/i)
+          || html.match(/<meta[^>]+content='([^']+)'[^>]*name=["']codi:template["']/i)
+          || html.match(/<meta[^>]+content="([^"]+)"[^>]*name=["']codi:template["']/i);
+        const meta = match ? JSON.parse(match[1]) : {};
+        const id = entry.brand ? `${entry.brand}--${path.basename(entry.file, '.html')}` : path.basename(entry.file, '.html');
+        results.push({
+          id: meta.id || id,
+          name: meta.name || path.basename(entry.file, '.html'),
+          type: meta.type || 'social',
+          format: meta.format || { w: 1080, h: 1080 },
+          file: entry.file,
+          brand: entry.brand,
+          url: entry.brand
+            ? `/api/template?brand=${encodeURIComponent(entry.brand)}&file=${encodeURIComponent(entry.file)}`
+            : `/api/template?file=${encodeURIComponent(entry.file)}`,
+        });
+      } catch { /* skip unreadable files */ }
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(files));
+    res.end(JSON.stringify(results));
     return;
   }
 
-  // /api/template?file=xxx — serve a template HTML file
+  // /api/template?file=xxx[&brand=yyy] — serve a template HTML file
   if (req.method === 'GET' && pathname === '/api/template') {
     const fileParam = parsed.searchParams.get('file');
+    const brandParam = parsed.searchParams.get('brand');
     if (!fileParam) { res.writeHead(400); res.end('Missing ?file='); return; }
-    const templatesDir = path.join(GENERATORS_DIR, 'templates');
-    const filePath = path.join(templatesDir, path.basename(fileParam));
+    let filePath;
+    if (brandParam) {
+      const brand = discoverBrands().find(b => b.name === brandParam);
+      if (!brand) { res.writeHead(404); res.end('Brand not found'); return; }
+      filePath = path.join(brand.dir, 'templates', path.basename(fileParam));
+    } else {
+      filePath = path.join(GENERATORS_DIR, 'templates', path.basename(fileParam));
+    }
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
     res.end(fs.readFileSync(filePath, 'utf-8'));

@@ -227,7 +227,7 @@ export async function addBrandHandler(
   const result = await createSkill({
     name,
     configDir,
-    template: prefixedName("brand-identity"),
+    template: prefixedName("brand-creator"),
     copyrightHolder: path.basename(projectRoot),
   });
 

@@ -122,7 +122,7 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
     const result = await createSkill({
       name: "test-brand",
       configDir,
-      template: prefixedName("brand-identity"),
+      template: prefixedName("brand-creator"),
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -132,10 +132,8 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
     expect(content).toContain("category: Brand Identity");
 
     const skillDir = path.join(configDir, "skills", "test-brand");
-    for (const sub of ["assets", "references", "scripts", "evals"]) {
-      const stat = await fs.stat(path.join(skillDir, sub));
-      expect(stat.isDirectory()).toBe(true);
-    }
+    const stat = await fs.stat(path.join(skillDir, "references"));
+    expect(stat.isDirectory()).toBe(true);
   });
 });
 
@@ -196,12 +194,12 @@ describe("Scaffolder Pipeline: error paths", () => {
     await createSkill({
       name: "dup",
       configDir,
-      template: prefixedName("brand-identity"),
+      template: prefixedName("brand-creator"),
     });
     const result = await createSkill({
       name: "dup",
       configDir,
-      template: prefixedName("brand-identity"),
+      template: prefixedName("brand-creator"),
     });
     expect(result.ok).toBe(false);
   });

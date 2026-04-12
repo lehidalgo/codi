@@ -1,6 +1,7 @@
 import type { FlagDefinition } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "./types.js";
-import { prefixedName, devArtifactName, PROJECT_NAME } from "#src/constants.js";
+import { prefixedName, PROJECT_NAME } from "#src/constants.js";
+import { CORE_PLATFORM_RULES, CORE_PLATFORM_SKILLS } from "./core-platform.js";
 
 export const preset: BuiltinPresetDefinition = {
   name: prefixedName("fullstack"),
@@ -33,6 +34,7 @@ export const preset: BuiltinPresetDefinition = {
     auto_generate_on_change: { mode: "enabled", value: false },
   } satisfies Record<string, FlagDefinition>,
   rules: [
+    ...CORE_PLATFORM_RULES,
     prefixedName("code-style"),
     prefixedName("testing"),
     prefixedName("architecture"),
@@ -42,16 +44,15 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("performance"),
     prefixedName("git-workflow"),
     prefixedName("output-discipline"),
-    devArtifactName("improvement"),
   ],
   skills: [
+    ...CORE_PLATFORM_SKILLS,
     prefixedName("code-review"),
     prefixedName("dev-e2e-testing"),
     prefixedName("refactoring"),
     prefixedName("security-scan"),
     prefixedName("test-coverage"),
     prefixedName("commit"),
-    prefixedName("compare-preset"),
     prefixedName("test-run"),
     prefixedName("diagnostics"),
   ],

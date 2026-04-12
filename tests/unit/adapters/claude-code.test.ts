@@ -531,7 +531,7 @@ describe("claude-code adapter", () => {
   // ── generate() — settings.json ─────────────────────────────────────
 
   describe("generate() — settings.json (buildSettingsJson)", () => {
-    it("returns null (no settings.json) when no relevant flags are set", async () => {
+    it("always generates settings.json with heartbeat hooks even when no permission flags are set", async () => {
       const config = createMockConfig({
         flags: {
           lint_on_save: {
@@ -545,7 +545,10 @@ describe("claude-code adapter", () => {
       const files = await claudeCodeAdapter.generate(config, {});
 
       const settingsFile = files.find((f) => f.path === ".claude/settings.json");
-      expect(settingsFile).toBeUndefined();
+      expect(settingsFile).toBeDefined();
+      const parsed = JSON.parse(settingsFile!.content);
+      expect(parsed.hooks).toBeDefined();
+      expect(parsed.permissions).toBeUndefined();
     });
 
     it("generates permissions.deny for allow_force_push: false", async () => {
@@ -585,12 +588,14 @@ describe("claude-code adapter", () => {
       expect(parsed.permissions.deny).toContain("Bash");
     });
 
-    it("returns null when flags object is empty", async () => {
+    it("generates settings.json with hooks when flags object is empty", async () => {
       const config = createMockConfig({ flags: {} });
       const files = await claudeCodeAdapter.generate(config, {});
 
       const settingsFile = files.find((f) => f.path === ".claude/settings.json");
-      expect(settingsFile).toBeUndefined();
+      expect(settingsFile).toBeDefined();
+      const parsed = JSON.parse(settingsFile!.content);
+      expect(parsed.hooks).toBeDefined();
     });
   });
 

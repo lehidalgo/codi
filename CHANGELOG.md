@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **brand-creator** — new skill replacing `brand-identity`; generates brand skills with `brand/tokens.json` schema (themes, fonts, assets, voice) and optional Content Factory `templates/` directory
+- **brand-creator** — `references/brand-standard.md` full schema reference with tokens.css generation rules, logo guidelines, and Content Factory template conventions
+- **codi-brand** — two Content Factory HTML templates: `codi-social-dark.html` (5-card social carousel) and `codi-slides-pitch.html` (5-slide pitch deck), both using Codi brand tokens
+- **content-factory** — `/api/brands` endpoint returns all `*-brand` skills with `brand/tokens.json` discovered from the installed skills directory
+- **content-factory** — `/api/active-brand` endpoint sets/clears the active brand for the current session
+- **content-factory** — `/api/templates` extended to include brand skill `templates/` directories alongside built-in generator templates
+- **content-factory** — Step 1c in SKILL.md: detect and apply a brand before generating content
+- **copy-skill-assets** — `templates` subdirectory added to `SUBDIRS` so brand skill templates are copied to `dist/`
+
 - **manifest** — `project_context` field: free-form markdown injected into the AI instruction file as a `## Project Context` section
 - **generate** — auto-injects `## Self-Development Mode` warning into CLAUDE.md when `manifest.name === "codi"`, guiding AI agents away from editing generated output
 - **section-builder** — `buildSelfDevWarning()` and `buildProjectContext()` adapters for the two new CLAUDE.md sections
@@ -15,6 +24,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **skills** — optional `README.md` setup guides for 17 complex skills (audio-transcriber, pdf, docx, xlsx, pptx, notebooklm, webapp-testing, slack-gif-creator, content-factory, codi-brand, algorithmic-art, claude-artifacts-builder, brainstorming, skill-creator, deck-engine, doc-engine, mcp-ops)
 - **docs site** — skill catalog pages now display `# README` and `# SKILL.md` as h1 sections with TOC entries in the right sidebar
 - **docs site** — TOC now includes h1 headings (depth-1 style) alongside h2/h3
+
+### Removed
+
+- **brand-identity** — skill deleted; replaced by `brand-creator` with a simpler `tokens.json`-only schema
+- **content-factory** — `bbva-social.html` and `rl3-social.html` example templates removed; Codi brand templates added instead
+
+### Changed
+
+- **codi-brand** — `brand/tokens.json` adds `display_name` and `voice.tone` fields; version bumped to 2
+- **content-factory** — all BBVA/RL3 example references replaced with `example.com` / `acme-social-campaign` placeholders
+- **pptx** / **docx** — template version bumped to 23 to pass integrity check after example reference cleanup
 
 ### Removed
 
