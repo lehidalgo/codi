@@ -77,11 +77,28 @@ codi generate
 
 Both the `.codi/` source directory and the generated agent config files. Agents read the generated files from the repository.
 
+**Conflict resolution (interactive terminal):**
+
+If generated files (`CLAUDE.md`, `.cursorrules`, etc.) have local changes, Codi shows a per-file diff and prompts:
+- Accept incoming (overwrite local)
+- Keep current (skip this file)
+- Merge (interactive hunk-by-hunk in terminal)
+- Merge in editor (opens `$EDITOR` or VS Code)
+- Accept ALL / Keep ALL (bulk options)
+
+**Non-interactive / CI conflict strategy:**
+
+Use `--on-conflict` to skip the prompt:
+```bash
+codi init --preset codi-balanced --agents claude-code --on-conflict keep-current   # keep your files (default)
+codi init --preset codi-balanced --agents claude-code --on-conflict keep-incoming  # overwrite with new versions
+```
+`--force` is an alias for `--on-conflict keep-incoming`.
+
 **Gotchas:**
 
-- If agent config files already exist, Codi shows a conflict resolution prompt — keep yours, accept the new version, or merge.
 - Hooks require a git repository. Run `git init` first if the project is not yet a repo.
-- Use `codi init --force` to reinitialize an existing `.codi/` directory.
+- Use `codi init --force` to reinitialize an existing `.codi/` directory (overwrites everything).
 
 ---
 
@@ -103,9 +120,10 @@ codi init --force --preset codi-strict
 
 **Gotchas:**
 
-- `--force` is required. Without it, the command aborts if `.codi/` already exists.
-- Custom artifacts you added (not from a preset template) are preserved.
+- Without `--force`, the command runs but skips existing `.codi/` artifacts (shows warnings). Use `--force` to overwrite them.
+- Custom artifacts you added (not from a preset template) are preserved unless `--force` is used.
 - Flags already marked `locked: true` cannot be overridden.
+- Use `--on-conflict keep-incoming` instead of `--force` when you want to overwrite only the generated agent files but not the `.codi/` artifacts.
 
 ---
 

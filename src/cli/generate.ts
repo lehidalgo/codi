@@ -27,6 +27,7 @@ interface GenerateCommandOptions extends GlobalOptions {
   agent?: string[];
   dryRun?: boolean;
   force?: boolean;
+  onConflict?: "keep-current" | "keep-incoming";
 }
 
 interface GenerateSummary {
@@ -64,7 +65,8 @@ export async function generateHandler(
   const genResult = await generate(configResult.data, projectRoot, {
     agents: options.agent,
     dryRun: options.dryRun,
-    force: options.force,
+    force: options.force || options.onConflict === "keep-incoming",
+    json: options.json || options.onConflict === "keep-current",
   });
 
   if (!genResult.ok) {
@@ -266,6 +268,10 @@ export function registerGenerateCommand(program: Command): void {
     .option("--agent <agents...>", "Generate for specific agents only")
     .option("--dry-run", "Show what would be generated without writing")
     .option("--force", "Force regeneration even if unchanged")
+    .option(
+      "--on-conflict <strategy>",
+      "Conflict strategy when generated files have local changes: keep-current (default) or keep-incoming",
+    )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: GenerateCommandOptions = {
