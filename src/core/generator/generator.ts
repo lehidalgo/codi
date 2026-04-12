@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { GeneratedFile, GenerateOptions } from "#src/types/agent.js";
 import type { NormalizedConfig } from "#src/types/config.js";
@@ -154,6 +154,9 @@ export async function generate(
           await copyFile(file.binarySrc, fullPath);
         } else {
           await writeFile(fullPath, file.content, "utf-8");
+          if (fullPath.endsWith(".cjs") || fullPath.endsWith(".sh")) {
+            await chmod(fullPath, 0o755);
+          }
         }
       }),
     );
@@ -168,6 +171,9 @@ export async function generate(
         [...resolution.accepted, ...resolution.merged].map(async (entry) => {
           await mkdir(dirname(entry.fullPath), { recursive: true });
           await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
+          if (entry.fullPath.endsWith(".cjs") || entry.fullPath.endsWith(".sh")) {
+            await chmod(entry.fullPath, 0o755);
+          }
         }),
       );
 
