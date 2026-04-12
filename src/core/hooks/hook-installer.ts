@@ -18,6 +18,7 @@ import {
   SKILL_PATH_WRAP_CHECK_TEMPLATE,
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
 import {
   COMMIT_MSG_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
@@ -56,6 +57,7 @@ export interface InstallOptions {
   skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
   versionBump?: boolean;
+  brandSkillValidation?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
 }
@@ -191,6 +193,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, versionBumpPath));
+  }
+  if (options.brandSkillValidation) {
+    const brandSkillPath = path.join(hookDir, `${PROJECT_NAME}-brand-skill-validate.mjs`);
+    await fs.writeFile(brandSkillPath, BRAND_SKILL_VALIDATE_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, brandSkillPath));
   }
   return files;
 }

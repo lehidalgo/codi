@@ -21,6 +21,7 @@ export interface HooksConfig {
   skillPathWrapCheck: boolean;
   stagedJunkCheck: boolean;
   versionBump: boolean;
+  brandSkillValidation: boolean;
   docCheck: boolean;
   docProtectedBranches: string[];
 }
@@ -141,6 +142,12 @@ export function generateHooksConfig(
   });
 
   allHooks.push({
+    name: "brand-skill-validate",
+    command: `node .git/hooks/${PROJECT_NAME}-brand-skill-validate.mjs`,
+    stagedFilter: "**/*.{json,css,html,svg,md}",
+  });
+
+  allHooks.push({
     name: "artifact-validate",
     command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
     stagedFilter: ".codi/**",
@@ -230,6 +237,7 @@ export function generateHooksConfig(
     skillPathWrapCheck: true,
     stagedJunkCheck: true,
     versionBump,
+    brandSkillValidation: true,
     docCheck,
     docProtectedBranches,
   };
