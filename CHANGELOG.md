@@ -30,6 +30,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **heartbeat hooks** — use `.cjs` extension so CommonJS `require()` works in ESM projects
 - **run-eval** — creates temp skills in `.claude/skills/` instead of deprecated `.claude/commands/`
+- **settings.json hooks** — wrap hook commands in `{ matcher, hooks: [...] }` objects to match Claude Code's required format
+- **wizard pre-selection** — custom path no longer pre-selects all rules and agents; only Codi Platform artifacts are pre-selected by default across all paths
+
+### Added (docs site)
+
+- **search** — results now show artifact type badge (skill/rule/agent/preset) and file path hint
+- **search** — matched terms highlighted in excerpts via Pagefind's `<mark>` tags
 
 ### Removed
 
