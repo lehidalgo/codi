@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 28
+version: 30
 ---
 
 # {{name}} — Content Factory
@@ -295,6 +295,41 @@ Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\`
 - Use \`<div class="diagram-wrap"><svg ...>\` for SVG diagrams — SVG must be a **direct child** of the wrapper; apply \`max-width\` + \`align-self: center\` to constrain diagram width in the DOCX output
 - \`.doc-page\` is \`display: flex; flex-direction: column\` — all direct flex children need \`min-width: 0\` to prevent tables and code blocks from overflowing the 794px page boundary
 - Remote \`https://\` image URLs are not fetched during DOCX export — use data URIs or \`file://\` paths
+
+#### Document page discipline — MANDATORY
+
+Each \`.doc-page\` is a **fixed A4 canvas** (794×1123px). The preview renders every page at exactly this height — there is no auto-expand. Content that overflows is hidden in the viewer and may be missing from DOCX export.
+
+**Rules:**
+- One \`.doc-page\` = one printed page. Plan content explicitly per page before writing HTML.
+- If content does not fit, split it into a new \`<article class="doc-page">\` — never try to squeeze more into one page.
+- Use consistent structure on every page: \`.page-header\` + \`.page-body\` + \`.page-footer\` — this ensures all pages have the same visual height and footer position.
+- \`.page-body\` must use \`display: flex; flex-direction: column; flex: 1; overflow: hidden\` so it fills the space between header and footer without growing beyond it.
+- Never use \`min-height\` values larger than what fits inside \`.page-body\` — the body height is approximately 1123 − header − footer ≈ ~950px.
+
+**Content budget per page** (approximate at default font sizes):
+| Element | Approx. height |
+|---------|---------------|
+| \`h1\` (2.2rem) | ~50px |
+| \`h2\` (1.5rem) | ~40px |
+| \`h3\` (1.2rem) | ~32px |
+| \`p\` (1rem, 1.5 line-height, ~3 lines) | ~70px |
+| \`ul\`/\`ol\` (4–5 items at 1rem) | ~120px |
+| \`table\` (3 rows × 40px + header) | ~160px |
+| \`.code-block\` (10 lines at 0.85rem) | ~180px |
+| \`.callout\` (2 lines) | ~80px |
+| \`.stat-row\` (3 stats) | ~120px |
+| \`.two-col\` (2 columns, ~4 lines each) | ~150px |
+| \`.diagram-wrap\` (SVG ~200px tall) | ~220px |
+| Page padding (top + bottom) | ~80px |
+
+A \`.page-body\` of ~950px fits roughly 2–3 major sections. When in doubt, use fewer elements and add a new page.
+
+**Page split checklist before writing HTML:**
+1. List all content sections for the document
+2. Assign each section to a page — confirm each page's estimated total height < ~950px
+3. If a section (e.g. a large table or code block) alone exceeds ~800px, split it across two pages with a continuation header
+4. Write one \`<article class="doc-page">\` per planned page
 
 ### Step 4 — Iterate (loop until done)
 

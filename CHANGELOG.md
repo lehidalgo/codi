@@ -51,6 +51,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **content-factory** — DOCX export: `.code-block` elements now captured as Playwright PNG screenshots and embedded as images, preserving syntax highlighting
 - **content-factory** — DOCX export: custom visual blocks (`.stat-row`, `.two-col`, `.step-list`, `.cover-hero`, `.toc-list`, and aliases) captured as PNG screenshots — fixes silent text-drop for custom div layouts
 - **content-factory** — `html-clipping.md` updated with three-rule requirement for tables in flex column containers (`width: 100%` on wrapper, `table-layout: fixed` on table, `min-width: 0` on flex children)
+- **content-factory** — SKILL.md and `html-clipping.md` updated with mandatory A4 page discipline: content budget table, page split checklist, `.page-body` flex rules, ~950px body height constraint
 
 ### Changed
 
