@@ -168,10 +168,9 @@ codi generate
 
 **What happens:**
 
-1. Reads `.codi/` (flags, rules, skills, agents, MCP servers)
-2. Resolves the configuration through 3 layers: preset defaults → repo → user
-3. Passes the result through adapters for each detected agent
-4. Backs up existing generated files to `.codi/.backups/{timestamp}/`
+1. Reads `.codi/` as the single source of truth (flags, rules, skills, agents, MCP servers)
+2. Passes the result through adapters for each detected agent
+3. Backs up existing generated files to `.codi/backups/{timestamp}/`
 5. Writes new `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, etc.
 6. Updates `state.json` with new hashes
 7. Re-installs pre-commit hooks
@@ -916,7 +915,7 @@ codi revert --backup 2026-04-12T18:30:00Z
 
 **What happens:**
 
-- Copies agent config files from `.codi/.backups/{timestamp}/` back to the project root
+- Copies agent config files from `.codi/backups/{timestamp}/` back to the project root
 - Runs `codi generate` after restore to ensure consistency
 
 **Note:** Codi creates a backup before every `codi generate` run. Backups are timestamped ISO strings.
