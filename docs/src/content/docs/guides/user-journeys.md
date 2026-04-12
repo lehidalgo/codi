@@ -332,7 +332,7 @@ codi add mcp-server --all
 **Gotchas:**
 
 - MCP servers are YAML files, not Markdown.
-- Only Claude Code and Cursor fully support MCP.
+- Only Claude Code, Cursor, and Codex fully support MCP.
 - The `managed_by: codi` field is how `codi update --mcp-servers` knows which servers to refresh. Do not remove it.
 
 ---
