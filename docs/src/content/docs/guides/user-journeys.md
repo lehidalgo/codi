@@ -627,8 +627,8 @@ codi preset validate my-team-preset
 **What is checked:**
 
 - `preset.yaml` exists and parses
-- Required fields are present: `name`, `version`, `artifacts`
-- All referenced artifact files exist inside the preset directory
+- Required field `name` is present (`version` and `artifacts` are optional)
+- All `.md` files found in artifact directories (`rules/`, `skills/`, `agents/`, `brands/`) have valid frontmatter
 
 ---
 
