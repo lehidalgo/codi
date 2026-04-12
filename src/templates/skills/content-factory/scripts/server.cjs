@@ -417,6 +417,34 @@ function handleRequest(req, res) {
     return;
   }
 
+  // /api/brand/:name/assets/* GET — serve static files from a brand skill's assets/ directory
+  // Enables HTML content to load logos and fonts via absolute URL instead of unresolvable relative paths.
+  // Example: GET /api/brand/codi-rl3-brand/assets/rl3-logo-light.svg
+  //          GET /api/brand/codi-bbva-brand/assets/fonts/BentonSansBBVA-Bold.woff2
+  const brandAssetMatch = pathname.match(/^\/api\/brand\/([^/]+)\/assets\/(.+)$/);
+  if (req.method === 'GET' && brandAssetMatch) {
+    const brandName = brandAssetMatch[1];
+    const assetRel  = brandAssetMatch[2];
+    const brand = discoverBrands().find(b => b.name === brandName);
+    if (!brand) { res.writeHead(404); res.end('Brand not found'); return; }
+    // Prevent path traversal: resolve and verify the file stays inside assets/
+    const assetsRoot = path.join(brand.dir, 'assets');
+    const filePath   = path.normalize(path.join(assetsRoot, assetRel));
+    if (!filePath.startsWith(assetsRoot + path.sep) && filePath !== assetsRoot) {
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Asset not found'); return; }
+    const ext = path.extname(filePath).toLowerCase();
+    const mime = MIME_TYPES[ext] || 'application/octet-stream';
+    res.writeHead(200, {
+      'Content-Type': mime,
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(fs.readFileSync(filePath));
+    return;
+  }
+
   // /api/content?file=xxx — raw HTML from active project's content dir
   if (req.method === 'GET' && pathname === '/api/content') {
     const fileParam = parsed.searchParams.get('file');

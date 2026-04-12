@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 9
 ---
 
 # {{name}} — Brand Identity
@@ -18,10 +18,11 @@ version: 6
 When creating content that must carry this brand identity:
 
 1. Read \`brand/tokens.json\` from this skill's directory for colors, fonts, and voice
-2. Import \`brand/tokens.css\` into any HTML output for CSS variable definitions
+2. Read \`brand/tokens.css\` and inline its full content in every generated HTML file — do NOT use \`<link href="...">\`, iframes cannot resolve file paths
 3. Apply \`voice.tone\` when writing copy — concise, confident, and on-brand
 4. Use phrases from \`voice.phrases_use\`; avoid \`voice.phrases_avoid\`
-5. Check \`templates/\` for pre-styled Content Factory HTML templates
+5. Read \`references/\` for visual HTML examples — open each file to understand the brand's CSS patterns, layout, and component structure. Use these as the visual style guide.
+6. Check \`templates/\` (optional) for Gallery-ready Content Factory HTML templates the user can load directly
 
 ---
 
@@ -55,11 +56,12 @@ The canonical source of brand data. All colors, fonts, and voice come from this 
     }
   },
   "fonts": {
-    "headlines":      "Arial",
-    "body":           "Arial",
-    "monospace":      "Courier New",
-    "fallback_serif": "Georgia",
-    "fallback_sans":  "Arial"
+    "headlines":        "Arial",
+    "body":             "Arial",
+    "monospace":        "Courier New",
+    "fallback_serif":   "Georgia",
+    "fallback_sans":    "Arial",
+    "google_fonts_url": null
   },
   "assets": {
     "logo_dark_bg":  "assets/logo-light.svg",
@@ -116,20 +118,27 @@ Generate this file from \`tokens.json\` so HTML content can import it directly:
 \\\`\\\`\\\`
 {{name}}/
   SKILL.md                ← this file
+  LICENSE.txt             ← usage license for brand assets
   brand/
     tokens.json           ← canonical brand data (single source of truth)
-    tokens.css            ← generated CSS variables — import in HTML outputs
+    tokens.css            ← generated CSS variables — inline in HTML outputs
   assets/
     logo-dark.svg         ← logo for dark backgrounds
     logo-light.svg        ← logo for light backgrounds
-  templates/              ← optional: Content Factory HTML templates
+    fonts/                ← optional: local font files (woff2)
+  references/             ← visual HTML examples — style guide for the agent
+    brandguide.html       ← brand colors, type, and component reference
+    deck-reference.html   ← slide deck visual reference
+  evals/
+    evals.json            ← evaluation prompts and expected brand outputs
+  templates/              ← optional: Gallery-ready Content Factory HTML templates
     social-cover.html     ← pre-styled social card template
     slides-intro.html     ← pre-styled slide deck template
     document-report.html  ← pre-styled document template
 \\\`\\\`\\\`
 
-Each file in \`templates/\` must include a \`<meta name="codi:template">\` tag and follow the
-same format as built-in Content Factory templates (see content-factory skill for full spec).
+Files in \`references/\` are visual HTML style guides — they do NOT need \`<meta name="codi:template">\`.
+Files in \`templates/\` must include \`<meta name="codi:template">\` and follow the Content Factory template spec.
 
 ---
 

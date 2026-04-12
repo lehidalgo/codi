@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 37
+version: 39
 ---
 
 # {{name}} — Content Factory
@@ -212,12 +212,12 @@ Fetch \`brand/tokens.css\` from disk and paste its full content into a \`<style>
 **3. Load fonts**
 
 Check \`tokens.json.fonts.google_fonts_url\`:
-- **If set** (e.g. RL3, Codi): add a \`<link rel="stylesheet">\` tag pointing to that URL — Google Fonts loads correctly inside iframes from the web
-- **If null** (e.g. BBVA local fonts): generate \`@font-face\` declarations using the brand asset serving URL:
+- **If set** (e.g. Codi, any brand using Google Fonts): add a \`<link rel="stylesheet">\` tag pointing to that URL — Google Fonts loads correctly inside iframes from the web
+- **If null** (local fonts — brand ships its own font files): generate \`@font-face\` declarations using the brand asset serving URL:
   \`\`\`css
   @font-face {
-    font-family: 'BentonSans BBVA';
-    src: url('http://localhost:PORT/api/brand/codi-bbva-brand/assets/fonts/BentonSansBBVA-Bold.woff2') format('woff2');
+    font-family: 'Acme Sans';
+    src: url('http://localhost:PORT/api/brand/codi-acme-brand/assets/fonts/AcmeSans-Bold.woff2') format('woff2');
     font-weight: 700;
   }
   \`\`\`
@@ -235,7 +235,7 @@ Inline the SVG source directly in the HTML. Do NOT use \`<img src="...">\` with 
 
 **5. Visual style reference**
 
-Read the brand's \`references/\` directory. Open HTML reference files (e.g. \`references/brandguide.html\`, \`references/bbva-deck-reference.html\`) to understand the brand's CSS patterns, layout, component structure, and visual identity. Use these as the style guide when writing card HTML and CSS.
+Read the brand's \`references/\` directory. Open HTML reference files (e.g. \`references/brandguide.html\`, \`references/deck-reference.html\`) to understand the brand's CSS patterns, layout, component structure, and visual identity. Use these as the style guide when writing card HTML and CSS.
 
 **6. Gallery templates (if available)**
 
