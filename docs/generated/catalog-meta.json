@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-11T19:42:36.697Z",
+  "generatedAt": "2026-04-12T11:11:00.754Z",
   "counts": {
     "skills": 65,
     "rules": 28,
@@ -138,9 +138,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-brand-identity",
-      "description": "Template for creating brand identity skills. Use when building a new brand skill — provides the standard brand_tokens.json schema, dual-runtime generator structure (pptxgenjs default, python-pptx fallback), and routing table pattern. See codi-brand for a reference implementation. Also activate when applying design tokens, typography, logo, or tone of voice to any deliverable.",
-      "slug": "catalog/skills/codi-brand-identity",
+      "name": "codi-brand-creator",
+      "description": "Brand identity skill for codi-brand-creator. Use when creating any branded deliverable — social cards, slides, documents, or any visual output that must carry codi-brand-creator brand identity. Provides design tokens (colors, fonts), voice guidelines, and Content Factory templates.",
+      "slug": "catalog/skills/codi-brand-creator",
       "category": "Brand Identity",
       "userInvocable": true,
       "compatibility": [
@@ -289,7 +289,7 @@
     {
       "type": "skill",
       "name": "codi-content-factory",
-      "description": "Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and PNG/ZIP export.",
+      "description": "Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and context-aware export (PNG, PDF, PPTX).",
       "slug": "catalog/skills/codi-content-factory",
       "category": "Content Creation",
       "userInvocable": true,
@@ -754,10 +754,10 @@
     {
       "type": "skill",
       "name": "codi-rule-feedback",
-      "description": "Background rule observation skill. Collects structured feedback about rules during coding sessions -- pattern detection, outdated practices, missing examples, and corrections. Writes observations to feedback/rules/ for review. Does NOT modify rules.",
+      "description": "Rule observation skill. Activates when the agent notices a gap, outdated guidance, or missing example in a loaded rule. Emits a CODI-OBSERVATION marker — the Stop hook collects and structures it automatically.",
       "slug": "catalog/skills/codi-rule-feedback",
       "category": "Codi Platform",
-      "userInvocable": true,
+      "userInvocable": false,
       "compatibility": [
         "claude-code",
         "cursor",
@@ -829,10 +829,10 @@
     {
       "type": "skill",
       "name": "codi-skill-feedback-reporter",
-      "description": "Internal meta-skill. Activates after completing a task that used a skill. Writes structured JSON feedback to .codi/feedback/ for skill health metrics. Not for direct user invocation — fires automatically after substantive skill usage.",
+      "description": "Review accumulated skill and rule observations collected in .codi/feedback/. Groups findings by artifact, shows the top 3 worth acting on. Use before running /codi-refine-rules to see what has accumulated.",
       "slug": "catalog/skills/codi-skill-feedback-reporter",
       "category": "Codi Platform",
-      "userInvocable": false,
+      "userInvocable": true,
       "compatibility": [
         "claude-code",
         "cursor",
@@ -1089,7 +1089,7 @@
     {
       "type": "rule",
       "name": "codi-improvement-dev",
-      "description": "Continuous artifact improvement — observe patterns, propose rule/skill improvements with evidence, write to .codi/ with user approval",
+      "description": "Continuous artifact improvement — observe patterns, emit CODI-OBSERVATION markers, propose rule/skill improvements with evidence and user approval",
       "slug": "catalog/rules/codi-improvement-dev",
       "priority": "low",
       "alwaysApply": true
