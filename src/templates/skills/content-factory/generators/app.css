@@ -338,6 +338,23 @@ input[type="range"] {
 
 .file-item.active .file-dot { background: var(--accent); }
 
+.file-badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.file-badge-anchor {
+  background: rgba(86, 182, 194, 0.18);
+  color: var(--accent);
+  border: 1px solid rgba(86, 182, 194, 0.35);
+}
+
 /* ====== Export buttons ====== */
 .btn-export {
   display: flex;

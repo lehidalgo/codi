@@ -262,7 +262,7 @@ export async function resolveConflicts(
     }
 
     if (failed.length > 0) {
-      process.stdout.write(
+      process.stderr.write(
         JSON.stringify({
           type: "conflicts",
           items: failed.map((f) => ({

@@ -88,7 +88,7 @@ describe("resolveConflicts - non-TTY", () => {
 });
 
 describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
-  let stdoutSpy: ReturnType<typeof vi.spyOn>;
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
   let originalIsTTY: boolean | undefined;
   let originalExitCode: number | undefined;
 
@@ -100,7 +100,7 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
       writable: true,
       configurable: true,
     });
-    stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -110,7 +110,7 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
       configurable: true,
     });
     process.exitCode = originalExitCode;
-    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
   });
 
   it("does NOT throw when there are unresolvable conflicts", async () => {
@@ -131,14 +131,14 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
     expect(process.exitCode).toBe(2);
   });
 
-  it("writes JSON payload to stdout for unresolvable conflicts", async () => {
+  it("writes JSON payload to stderr for unresolvable conflicts", async () => {
     const current = "line1\nUSER-VERSION\nline3\n";
     const incoming = "line1\nUPSTREAM-VERSION\nline3\n";
     const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", current, incoming);
 
     await resolveConflicts([conflict]);
 
-    const written = stdoutSpy.mock.calls.map((c) => c[0]).join("");
+    const written = stderrSpy.mock.calls.map((c) => c[0]).join("");
     const parsed = JSON.parse(written) as unknown;
     expect(parsed).toMatchObject({ type: "conflicts" });
   });
@@ -150,7 +150,7 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
 
     await resolveConflicts([conflict]);
 
-    const written = stdoutSpy.mock.calls.map((c) => c[0]).join("");
+    const written = stderrSpy.mock.calls.map((c) => c[0]).join("");
     const parsed = JSON.parse(written) as { type: string; items: unknown[] };
     expect(parsed.items).toHaveLength(1);
     expect(parsed.items[0]).toMatchObject({
@@ -202,8 +202,13 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
 
     await resolveConflicts([c1, c2]);
 
-    const written = stdoutSpy.mock.calls.map((c) => c[0]).join("");
-    const parsed = JSON.parse(written) as { type: string; items: Array<{ label: string }> };
+    const jsonPayload = stderrSpy.mock.calls
+      .map((c) => c[0] as string)
+      .find((s) => s.trimStart().startsWith("{"));
+    const parsed = JSON.parse(jsonPayload ?? "") as {
+      type: string;
+      items: Array<{ label: string }>;
+    };
     expect(parsed.items).toHaveLength(1);
     expect(parsed.items[0]!.label).toBe("rules/conflict");
   });

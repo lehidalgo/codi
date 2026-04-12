@@ -54,6 +54,7 @@ interface InitOptions extends GlobalOptions {
   force?: boolean;
   agents?: string[];
   preset?: string;
+  onConflict?: "keep-current" | "keep-incoming";
 }
 
 interface InitData {
@@ -331,12 +332,14 @@ export async function initHandler(
     }
   }
 
+  const forceArtifacts = options.force || options.onConflict === "keep-incoming";
+
   for (const template of ruleTemplates) {
     const result = await createRule({
       name: template,
       configDir,
       template,
-      force: options.force,
+      force: forceArtifacts,
     });
     if (!result.ok) {
       log.warn(
@@ -352,7 +355,7 @@ export async function initHandler(
       configDir,
       template,
       copyrightHolder: projectName,
-      force: options.force,
+      force: forceArtifacts,
     });
     if (!result.ok) {
       log.warn(
@@ -366,7 +369,7 @@ export async function initHandler(
       name: template,
       configDir,
       template,
-      force: options.force,
+      force: forceArtifacts,
     });
     if (!result.ok) {
       log.warn(
@@ -380,7 +383,7 @@ export async function initHandler(
       name: template,
       configDir,
       template,
-      force: options.force,
+      force: forceArtifacts,
     });
     if (!result.ok) {
       log.warn(
@@ -469,8 +472,8 @@ export async function initHandler(
   const configResult = await resolveConfig(projectRoot);
   if (!importRegenerated && configResult.ok) {
     const genResult = await generate(configResult.data, projectRoot, {
-      force: options.force,
-      json: options.json,
+      force: options.force || options.onConflict === "keep-incoming",
+      json: options.json || options.onConflict === "keep-current",
     });
     generated = genResult.ok;
     if (!genResult.ok) {
@@ -529,6 +532,7 @@ export async function initHandler(
           skillResourceCheck: hooksConfig.skillResourceCheck,
           skillPathWrapCheck: hooksConfig.skillPathWrapCheck,
           stagedJunkCheck: hooksConfig.stagedJunkCheck,
+          brandSkillValidation: hooksConfig.brandSkillValidation,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
         });
@@ -648,6 +652,10 @@ export function registerInitCommand(program: Command): void {
     .option(
       "--preset <preset>",
       `Flag preset: ${getPresetNames().join(", ")} (default: ${DEFAULT_PRESET})`,
+    )
+    .option(
+      "--on-conflict <strategy>",
+      "Conflict strategy when generated files have local changes: keep-current (default) or keep-incoming",
     )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;

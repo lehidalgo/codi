@@ -40,6 +40,22 @@ export const RULE_CATEGORIES: Record<string, string[]> = {
   [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev"],
 };
 
+// Artifacts that are always pre-selected regardless of preset or custom choice.
+// These are the Codi Platform artifacts — they govern how Codi itself operates in the project.
+export const PLATFORM_RULE_DEFAULTS: readonly string[] =
+  RULE_CATEGORIES[PLATFORM_CATEGORY] ?? [];
+
+// Platform skill defaults are derived at runtime from frontmatter because skill
+// categories live in template content, not in a static map.
+// Call this once per wizard session using the same loadFn already in scope.
+export function getPlatformSkillDefaults(
+  templates: string[],
+  loadFn: (name: string) => { ok: boolean; data?: string },
+): string[] {
+  const categoryMap = buildSkillCategoryMap(templates, loadFn);
+  return categoryMap[PLATFORM_CATEGORY] ?? [];
+}
+
 export const AGENT_CATEGORIES: Record<string, string[]> = {
   "Code Quality": [
     "codi-code-reviewer",

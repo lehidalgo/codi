@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **`--on-conflict` flag** — `codi init` and `codi generate` accept `--on-conflict keep-current|keep-incoming` to control conflict resolution in non-interactive/CI mode; `--force` remains an alias for `keep-incoming`
 - **heartbeat hooks** — `codi generate` writes `codi-skill-tracker.cjs` and `codi-skill-observer.cjs` to `.codi/hooks/` and wires them into `.claude/settings.json` and `.codex/hooks.json`
 - **skill-observer** — Stop hook extracts `[CODI-OBSERVATION: ...]` markers from the transcript and writes feedback JSON to `.codi/feedback/`
 - **skill-tracker** — InstructionsLoaded hook records active Codi skills to `.codi/.session/active-skills.json`
@@ -15,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **skill-feedback-reporter** — repurposed to read `.codi/feedback/` and show the top 3 most actionable observations
 - **brand-creator** — new skill replacing `brand-identity`; generates brand skills with `brand/tokens.json` (themes, fonts, assets, voice)
 - **content-factory** — brand API endpoints (`/api/brands`, `/api/active-brand`) and brand template support
+- **content-factory** — campaign pipeline: `/api/active-card`, `/api/brief`, brief-driven variant propagation, promote-to-template workflow
 - **manifest** — `project_context` field: free-form markdown injected into the AI instruction file
 - **generate** — auto-injects self-development mode warning into CLAUDE.md when `manifest.name === "codi"`
 - **skill READMEs** — setup guides added for 17 complex skills
@@ -28,8 +30,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **content-factory** — gallery grid renders empty when templates load after gallery init; force rebuild after `loadTemplates()` resolves
+- **conflict resolver** — unresolvable conflict data in non-TTY mode now writes to stderr instead of stdout, preventing raw JSON from polluting piped output
 - **heartbeat hooks** — use `.cjs` extension so CommonJS `require()` works in ESM projects
 - **run-eval** — creates temp skills in `.claude/skills/` instead of deprecated `.claude/commands/`
+- **settings.json hooks** — wrap hook commands in `{ matcher, hooks: [...] }` objects to match Claude Code's required format
+- **wizard pre-selection** — custom path no longer pre-selects all rules and agents; only Codi Platform artifacts are pre-selected by default across all paths
+
+### Added (docs site)
+
+- **search** — results now show artifact type badge (skill/rule/agent/preset) and file path hint
+- **search** — matched terms highlighted in excerpts via Pagefind's `<mark>` tags
 
 ### Removed
 

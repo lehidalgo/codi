@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 39
+version: 48
 ---
 
 # {{name}} — Content Factory
@@ -45,7 +45,7 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML template for agent-generated slide decks |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — browsable in the Gallery Templates tab |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under the All / Social / Slides / Document filters based on each template's \`type\` |
 
 ---
 
@@ -62,7 +62,11 @@ that the app picks up automatically via WebSocket.
 | \`/api/preset\` | POST | Write preset selection \`{id, name, type, timestamp}\` |
 | \`/api/active-file\` | GET | Read which file/preset the user currently has loaded |
 | \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset, sessionDir}\` |
-| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset}\` — use this to orient before editing |
+| \`/api/active-card\` | GET | Read which **individual card/slide/page** the user currently has selected in Preview — returns \`{index, total, dataType, dataIdx, file, timestamp}\` |
+| \`/api/active-card\` | POST | App-only — automatically posted by the browser app whenever the user clicks a card, navigates with arrows, or loads a new file. The agent does not call this. |
+| \`/api/brief\` | GET | Read the active project's \`brief.json\` (campaign intake) — returns \`null\` if no project is active or no brief has been written |
+| \`/api/brief\` | POST | Write the active project's \`brief.json\` — body is a full brief object (schema v1). Returns 400 if no project is active. |
+| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset, activeCard, brief}\` — use this to orient before editing |
 | \`/api/create-project\` | POST | Create a new named project dir, activate it — body: \`{name}\`, returns \`{projectDir, contentDir, stateDir, exportsDir}\` |
 | \`/api/open-project\` | POST | Activate an existing project — body: \`{projectDir}\` |
 | \`/api/sessions\` | GET | List all projects from the workspace directory |
@@ -116,9 +120,12 @@ When the user clicks a template in the Gallery:
 
 **Preview tab** — horizontal card strip. Keyboard arrow keys navigate between slides. Active card highlighted with accent border. Click any card to select it. A **metadata bar** above the canvas shows the active content name, type chip, pixel dimensions, and slide count — updated whenever content changes.
 
-**Gallery tab** — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: All / Social / Slides / Document / My Work / Templates.
-- **My Work** — past sessions loaded from \`.codi_output/\`. Shows session date, preset name, and resolved content name. Click any session card to load its content files.
-- **Templates** — stock template HTML files from \`generators/templates/\`. Click to load as a starting point for agent-generated content.
+**Gallery tab** — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: **All / Social / Slides / Document / My Work** (5 filters, no separate Templates tab).
+- **All** — every built-in template plus every installed brand skill template, regardless of type. Session cards are excluded from this view.
+- **Social** / **Slides** / **Document** — narrow to templates whose \`type\` meta matches the filter. Built-in templates and brand templates appear side by side, grouped only by type.
+- **My Work** — past projects loaded from \`.codi_output/\`. Shows project date, preset name, and resolved content name. Click any project card to activate it and load its content files. A secondary status filter row appears (All / Draft / In Progress / Review / Done) when this filter is active.
+
+Stock template HTML files in \`generators/templates/\` and brand templates (from any installed brand skill's \`templates/\` dir) land in the same flat list — the Gallery does not separate them into their own tab. Each card's \`type\` attribute decides which type filter it shows up under.
 
 ---
 
@@ -169,83 +176,58 @@ Save \`contentDir\` — this is where you write HTML files. The project is now a
 **Skip Step 1b** when the user opens an existing My Work project from the gallery — the server
 activates the project automatically when the user clicks it.
 
+### Step 1b.ii — Campaign pipeline intake (optional)
+
+Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/campaign-pipeline.md]]\`
+Platform rules: \`\${CLAUDE_SKILL_DIR}[[/references/platform-rules.md]]\`
+
+**When to switch to campaign mode** — scan the user's initial request for any of:
+"campaign", "blog post", "launch", "launch post", "repurpose across", "publish
+about X on [LinkedIn / Instagram / TikTok / Twitter]", "turn this into a blog + …".
+These phrases signal the user wants **one long-form anchor distilled into multiple
+platform variants** — not a quick one-off card.
+
+**If the user's request is a single-format one-off** ("make me a quick Instagram post"),
+skip this step and continue with the normal Step 3 single-file flow.
+
+**The pipeline has 5 phases:**
+
+1. **Intake** — ask 6 questions (topic, anchor type, audience, voice, platforms, CTA),
+   write \`brief.json\` via \`POST /api/brief\`, show a summary, wait for explicit confirmation
+2. **Anchor generation** — write one long-form master (\`00-anchor-<type>.html\`) where
+   \`type\` is \`blog\` / \`docs\` / \`deck\`. Iterate until the user approves; each rewrite
+   increments \`anchor.revision\` in the brief
+3. **Distillation** — after approval, loop over \`brief.variants[]\` serially and write one
+   platform-specific file per variant (LinkedIn carousel, Instagram feed/story, TikTok
+   cover, Twitter card, summary deck). Each variant carries a \`codi:variant\` meta tag
+   with its \`derived_from_revision\`
+4. **Per-file iteration** — unchanged from Step 4; the targeted-card-edit workflow works
+   the same on variant files as on any other content file
+5. **Edit propagation** — on the *next* skill invocation after an anchor edit, if any
+   variant has \`derived_from_revision < anchor.revision\`, ask the user which stale
+   variants to re-distill (\`all\` / named file / \`skip\`). Never auto-propagate.
+
+**Marketing-skills soft dependency**: Content Factory softly uses the external
+\`marketing-skills\` plugin if installed (\`content-strategy\`, \`copywriting\`,
+\`social-content\`, \`humanizer\`, etc.). If the plugin is absent, fall back to inline
+generation — the workflow and file outputs are identical. The reference file has the
+full detection table and future Codi-native migration notes.
+
+**File naming** (numeric prefixes give natural sort order):
+\`00-anchor-<type>.html\` · \`10-19\` LinkedIn · \`20-29\` Instagram · \`30-39\` TikTok ·
+\`40-49\` Twitter · \`50-59\` decks · \`60-69\` email/ads/other.
+
 ### Step 1c — Detect and apply a brand (optional)
 
-After creating a project, check whether any brand skills are installed:
+Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\`
 
-\`\`\`bash
-curl -s <url>/api/brands
-\`\`\`
+After creating a project, query \`GET /api/brands\` to discover installed brand
+skills. If any exist and the user has not specified one, ask whether to apply it.
+If the user confirms, \`POST /api/active-brand\` with \`{name}\`, then apply the
+brand end-to-end (tokens, fonts, logo, voice) using the full procedure in the
+reference file.
 
-Response example:
-\`\`\`json
-[
-  { "name": "codi-codi-brand", "display_name": "Codi Platform", "version": 2,
-    "dir": "/abs/path/.claude/skills/codi-codi-brand" }
-]
-\`\`\`
-
-If brands are available and the user has not specified one, ask:
-> "I found these brand skills: [list]. Should I apply one to this content?"
-
-If the user confirms a brand, activate it:
-\`\`\`bash
-curl -s -X POST <url>/api/active-brand \\
-  -H "Content-Type: application/json" \\
-  -d '{"name": "codi-codi-brand"}'
-\`\`\`
-
-Once a brand is active, apply it fully across every generated HTML file:
-
-**1. Read tokens**
-
-Read \`brand/tokens.json\` from the brand's skill directory. Extract:
-- \`colors\` and \`themes\` for CSS values
-- \`fonts\` for typography
-- \`assets.logo_dark_bg\` / \`assets.logo_light_bg\` for the logo file paths
-- \`voice.tone\`, \`voice.phrases_use\`, \`voice.phrases_avoid\` for copy
-
-**2. Inline CSS variables**
-
-Fetch \`brand/tokens.css\` from disk and paste its full content into a \`<style>\` block in every generated HTML file. Do NOT use \`<link href="...">\` — iframes have no access to file paths, only inline styles work reliably.
-
-**3. Load fonts**
-
-Check \`tokens.json.fonts.google_fonts_url\`:
-- **If set** (e.g. Codi, any brand using Google Fonts): add a \`<link rel="stylesheet">\` tag pointing to that URL — Google Fonts loads correctly inside iframes from the web
-- **If null** (local fonts — brand ships its own font files): generate \`@font-face\` declarations using the brand asset serving URL:
-  \`\`\`css
-  @font-face {
-    font-family: 'Acme Sans';
-    src: url('http://localhost:PORT/api/brand/codi-acme-brand/assets/fonts/AcmeSans-Bold.woff2') format('woff2');
-    font-weight: 700;
-  }
-  \`\`\`
-  Enumerate the font files present in \`assets/fonts/\` and generate one \`@font-face\` block per file. Replace PORT with the actual server port from the startup JSON.
-
-**4. Embed the logo**
-
-Determine the card's background color. If dark: use \`assets.logo_light_bg\` (light logo on dark background). If light: use \`assets.logo_dark_bg\` (dark logo on light background).
-
-Fetch the SVG file via the brand asset route:
-\`\`\`
-GET http://localhost:PORT/api/brand/<brand-name>/assets/<logo-filename>
-\`\`\`
-Inline the SVG source directly in the HTML. Do NOT use \`<img src="...">\` with a file path — the path won't resolve inside an iframe.
-
-**5. Visual style reference**
-
-Read the brand's \`references/\` directory. Open HTML reference files (e.g. \`references/brandguide.html\`, \`references/deck-reference.html\`) to understand the brand's CSS patterns, layout, component structure, and visual identity. Use these as the style guide when writing card HTML and CSS.
-
-**6. Gallery templates (if available)**
-
-If the brand has a \`templates/\` directory, those files appear in the Gallery → Templates tab. Ask the user if they want to start from one of those instead of a generic built-in.
-
-**7. Copy and voice**
-
-Write all copy using \`voice.tone\` as the style guide. Use \`voice.phrases_use\` phrases where natural. Never use \`voice.phrases_avoid\` phrases.
-
-**Skip Step 1c** if the user explicitly provides a template or says "no brand".
+**Skip this step** if the user explicitly provides a template or says "no brand".
 
 ### Step 2 — Read state and determine mode
 
@@ -387,6 +369,76 @@ Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\`
 - \`.doc-page\` is \`display: flex; flex-direction: column\` — all direct flex children need \`min-width: 0\` to prevent tables and code blocks from overflowing the 794px page boundary
 - Remote \`https://\` image URLs are not fetched during DOCX export — use data URIs or \`file://\` paths
 
+#### Visual density — MANDATORY for all card types
+
+Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\`
+
+**The rule**: every card must visibly occupy **≥85% of its canvas** with purposeful content.
+A single centered headline on a blank canvas reads as unfinished work — treat every card as
+a composed layout, not a text slot.
+
+**Quick check before writing each card**: mentally draw a 3×3 grid. At least 7 of the 9 cells
+must contain content or a purposeful decorative element. If 3+ cells are empty, add content
+from the fill techniques list in the reference file (multi-column layout, supporting elements,
+decorative accents, code/data mockups, edge-anchored chrome, oversized typography, background
+fills). The reference also has per-card-type minimum element checklists and anti-patterns.
+
+#### Design system — MANDATORY for all slides
+
+Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\`
+
+**The 13 core rules** (every slide must pass all of them before being shipped):
+
+1. **Fixed frame** — chrome-top, header (h2 + secondary description), chrome-bottom sit at
+   identical y-coordinates across every slide. Only the content zone between them varies.
+   Enforce via \`min-height\` on h2 (120px) and \`.sub\`/\`.feat-lead\` (80px).
+2. **Chrome indicators match** — \`.slide-num\` and \`.chrome-feat\` pills must render at
+   identical height/font/padding/border. Same font-size for label and bold number (e.g. 18px);
+   differentiate only via color + weight, never size.
+3. **Text size standard** — all plain body text maps to 5 tiers: T1=28px (secondary
+   description), T2=26px (primary body), T3=24px (supporting), T4=22px (tertiary),
+   T5=20px (minimum). **No body text smaller than 20px** and **no values between tiers** (no
+   19/21/23/27). Titles, big numerals, badges, monospace code blocks, and pill labels are
+   allowed outside this range.
+4. **Two-color titles** — every h2 and h3 splits into plain white text + a cyan-gradient
+   \`<span class="grad">\` on the punch phrase. Register a CSS rule for both:
+   \`h2 .grad, h3 .grad { background: var(--grad); -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent; }\`.
+5. **Equidistant spacing** — every container uses a single \`gap\` value on its flex/grid;
+   children never use \`margin-top\`/\`margin-bottom\` overrides. Rule is recursive.
+6. **Three-element pinned card layout (lbl/val/note)** — feature stat cards use
+   \`position: absolute\` for lbl (top-left) and note (bottom), with the val as the sole
+   flex-centered child. Note has **fixed height** (e.g. 115px) so its separator line renders
+   at the same y across every card in the row. Card padding reserves space:
+   \`padding: 64px 28px 155px\`.
+7. **Feature slide layout hierarchy** — on feature slides, \`.feat-stats { flex: 1 }\` gets
+   the vertical space; \`.feat-bullets\` and \`.feat-terminal\` are \`flex: 0 0 auto\`
+   (content-sized). Never give bullets/terminal \`flex: 1\` — they stretch and create dead
+   space between their items.
+8. **Bullet uniform spacing** — \`.feat-bullets\` uses \`justify-content: space-evenly\` with
+   zero vertical container padding (\`padding: 0 26px\`) and uniform item padding
+   (\`14px 0 14px 44px\`). Top/between/bottom gaps end up identical.
+9. **Stretch rows** — grid cell rows use \`align-items: stretch\` so all cells share the
+   tallest cell's height.
+10. **No content overflow ever** — after every structural edit, measure all slides with the
+    verification script. Fix by compacting content, never by expanding the canvas, never by
+    shrinking text below 20px, never by removing fixed frame zones.
+11. **Quote / dialogue box** — use the standard pattern: dashed cyan border, dark surface-3
+    background, italic monospace text at T5, big decorative " mark in cyan, glowing status
+    dot top-right.
+12. **Per-slide verification checklist** — frame locked, chrome indicators matched, text in
+    tier, two-color titles, equidistant spacing, lbl/val/note aligned across the row, feature
+    layout hierarchy respected, bullet spacing uniform, zero overflow, nested cards also
+    respect the rules.
+13. **Cover slide exception** — the first slide can break rule 1 (fixed frame) to be a
+    visual scroll-stopper. Rules 3, 5, and 10 still apply.
+
+The reference file contains full CSS patterns, before/after examples, verification scripts
+you can paste into DevTools/Playwright, and the origin story of each rule.
+
+**Do not skip the verification**: after any edit to a slide's layout, run the overflow
+check and the frame-lock check from the reference before declaring the edit done.
+
 #### Document page discipline — MANDATORY
 
 Each \`.doc-page\` is a **fixed A4 canvas** (794×1123px). The preview renders every page at exactly this height — there is no auto-expand. Content that overflows is hidden in the viewer and may be missing from DOCX export.
@@ -426,6 +478,37 @@ A \`.page-body\` of ~950px fits roughly 2–3 major sections. When in doubt, use
 
 Content creation is a back-and-forth process. This step repeats until the user is satisfied.
 
+#### Campaign propagation check — run FIRST when a brief exists
+
+Before applying any new feedback, if the project has a campaign brief, read it and
+check whether the anchor has drifted ahead of any variants:
+
+\`\`\`bash
+curl -s <url>/api/brief
+\`\`\`
+
+If the response is non-null, scan \`variants[]\` for entries where
+\`derived_from_revision < anchor.revision\` AND \`status !== "manual"\`. If any exist,
+**ask the user before processing new feedback**:
+
+> "Before I apply this change — the anchor changed since I distilled these variants:
+> - \`10-linkedin-carousel.html\` (was rev 1, now rev 3)
+> - \`20-instagram-feed.html\` (was rev 1, now rev 3)
+>
+> Want me to re-distill them? (\`all\` / name a file / \`skip\`)"
+
+On \`skip\`, set each stale variant's \`status = "manual"\` in \`brief.json\` and POST
+it back — this prevents the same prompt from firing again for the same revision.
+On \`all\` or a named file, re-run Phase 3 distillation for the selected variants
+(see \`\${CLAUDE_SKILL_DIR}[[/references/campaign-pipeline.md]]\` Phase 5). Only
+then proceed to apply the user's new feedback.
+
+**When the current edit IS an anchor edit**, increment \`anchor.revision\` in
+\`brief.json\` after writing the file. This is what makes the next invocation's
+propagation check fire.
+
+**If no brief exists** (quick one-off flow), skip this check entirely.
+
 **The loop:**
 1. User opens the Preview tab and reviews the rendered cards
 2. User gives feedback in chat: "change the headline on slide 2", "make the background darker", "add a stat slide"
@@ -439,6 +522,67 @@ Content creation is a back-and-forth process. This step repeats until the user i
 6. Repeat from step 1
 
 **Do not ask the user to reload the page** — the WebSocket handles it.
+
+#### Targeted card edits — "this slide", "this page", "update this"
+
+When the user says "change **this** slide", "fix **this** page", "update the card I'm looking at",
+or gives feedback without naming a specific slide number, they are referring to the card
+currently highlighted in the Preview strip. The app automatically reports the selected card
+to the server — you can read it from \`/api/state\` under \`activeCard\`:
+
+\`\`\`bash
+curl -s <url>/api/state
+\`\`\`
+
+\`\`\`jsonc
+{
+  "mode": "mywork",
+  "activeFilePath": "/abs/path/.codi_output/acme/content/slides.html",
+  "activeCard": {
+    "index": 2,          // zero-based position in state.cards
+    "total": 7,          // total cards in the file
+    "dataType": "stat",  // the card's data-type attribute
+    "dataIdx": "03",     // the card's data-index attribute (zero-padded string)
+    "file": "slides.html",
+    "timestamp": 1744478800000
+  },
+  ...
+}
+\`\`\`
+
+**Resolution rule — use \`dataIdx\` first, then \`dataType\`, then \`index\` as fallback.** The
+\`dataIdx\` is the stable identifier baked into the HTML; \`index\` shifts when cards are added
+or removed. To locate the exact element in the file:
+
+\`\`\`
+<article class="slide" data-type="stat" data-index="03">
+\`\`\`
+
+**Targeted edit workflow:**
+
+1. **Read \`/api/state\`** and confirm \`activeCard\` matches what the user is looking at (the
+   Preview strip highlights it with the accent border).
+2. **Read the file** at \`activeFilePath\` and locate the element whose \`data-index\` matches
+   \`activeCard.dataIdx\`.
+3. **Edit only that element** — leave all other cards untouched. Preserve the \`data-type\`
+   and \`data-index\` attributes unless the user asked to change them.
+4. **Rewrite the whole file** (the watcher needs a file write to trigger reload). Even though
+   you only changed one card's inner HTML, the file rewrite is the signal.
+5. **Confirm to the user** which card changed using its human-readable position: "Updated
+   slide 3 of 7 (stat card) — new value is 42%." Do not say "updated the active card" — be
+   specific so the user can verify immediately.
+
+**If \`activeCard\` is \`null\`** (user has not clicked any card yet, or no file is loaded), ask
+the user to click the card they want to change in the Preview strip, then re-read \`/api/state\`.
+
+**Ambiguity guard:** if the user names a slide explicitly ("change slide 5"), trust the user's
+number — do NOT silently remap it to \`activeCard\`. Only use \`activeCard\` when the user uses
+deictic language ("this", "here", "the one I'm on") or gives feedback without any position
+reference at all.
+
+**Multi-card selection is not supported yet** — \`activeCard\` always refers to a single card
+(the most recently clicked one). If the user says "update these three cards", ask which ones
+by slide number.
 
 **After each rewrite, confirm what changed** — tell the user exactly which slides were updated and what changed so they can review quickly without hunting for the difference.
 
@@ -501,64 +645,18 @@ wants a one-off variation without touching the original, generate a new content 
 
 ### Step 4d — Promote a My Work project to a built-in template
 
-When the user says "save this as a template", "add this to my presets", "make this reusable",
-or "add my project from .codi_output as a new template", use the Codi self-improvement
-workflow to add the project as a new built-in template.
+Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/promote-template.md]]\`
+
+**Trigger phrases**: "save this as a template", "add this to my presets", "make this reusable",
+"add my project from .codi_output as a new template".
 
 This follows the \`codi-improvement-dev\` principle: you are both a consumer and an improver of
-Codi skills. A user project that is worth reusing belongs in the skill's template library.
-
-1. **Read state** to get the source file:
-   \`\`\`bash
-   curl -s <url>/api/state
-   # {"activeFile":"social.html","activeSessionDir":"/abs/path/.codi_output/20260410_content-factory",...}
-   \`\`\`
-
-   If the user has not opened the project yet, ask them to click it in the Gallery → My Work tab
-   first so the server activates it and \`/api/state\` returns the correct \`activeFilePath\`.
-
-2. **Check document template conventions** (for \`type: document\` files only):
-   If the source file uses \`.doc-page\` containers, verify it follows the DOCX class conventions
-   from the "Document template class conventions" section above. If the file is missing
-   \`.page-header\`, \`.page-footer\`, or \`.callout\` classes, apply them before promoting — a
-   template that does not follow the conventions will produce unstructured DOCX exports.
-
-3. **Ask the user** for a template name and confirm:
-   > "I'll add this as a new template named '[name]'. It will appear in the Gallery Templates tab
-   > for all future sessions. Confirm?"
-
-4. **Copy the HTML file** to both the installed skill and the source:
-   \`\`\`bash
-   TEMPLATE_NAME="<kebab-case-name>"
-   # Installed skill (active immediately)
-   cp "<activeSessionDir>/content/<activeFile>" \\
-      "\${CLAUDE_SKILL_DIR}/generators/templates/\${TEMPLATE_NAME}.html"
-   # Source (persists across codi generate)
-   cp "<activeSessionDir>/content/<activeFile>" \\
-      "src/templates/skills/content-factory/generators/templates/\${TEMPLATE_NAME}.html"
-   \`\`\`
-
-5. **Update the \`<meta name="codi:template">\`** tag inside the copied file to set a stable
-   \`id\` and a clean \`name\` matching what the user confirmed. The \`id\` must be the same
-   kebab-case name as the filename.
-
-6. **Verify it appears** in the Gallery — the server's template watcher broadcasts
-   \`reload-templates\` within 150ms of the file being written:
-   \`\`\`bash
-   curl -s <url>/api/templates | grep "\${TEMPLATE_NAME}"
-   \`\`\`
-
-7. **Invoke the skill feedback reporter** to record the improvement:
-   Use \`codi-skill-feedback-reporter\` to log that a new template was added, so the
-   improvement loop can track what changed.
-
-8. **If the user wants to share or contribute the template upstream**, invoke the
-   \`codi-skill-creator\` skill to package it as a proper skill improvement with metadata,
-   then use \`codi-artifact-contributor\` to submit it as a PR or ZIP package.
+Codi skills. Read the reference for the full 8-step workflow (read state → verify doc
+conventions → confirm name → copy to both installed and source paths → update meta → verify
+in Gallery → log feedback → optional upstream contribution).
 
 **Do not run \`codi generate\`** unless the user explicitly asks — copying the source file is
-sufficient to persist the template. \`codi generate\` regenerates the SKILL.md from template.ts,
-which is a separate concern.
+sufficient to persist the template.
 
 ### Step 5 — Export and stop
 

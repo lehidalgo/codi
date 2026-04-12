@@ -26,6 +26,8 @@ import {
   buildGroupedInventoryOptions,
   buildGroupedBasicOptions,
   formatLabel as _formatLabel,
+  PLATFORM_RULE_DEFAULTS,
+  getPlatformSkillDefaults,
 } from "./artifact-categories.js";
 import { filterInventoryByType } from "./installed-artifact-inventory.js";
 import type { ExistingInstallContext } from "./init-wizard.js";
@@ -202,6 +204,10 @@ export async function handlePresetPath(
   let agentTpls: string[] | undefined = existingSelections?.agents;
   let mcpServers: string[] | undefined = existingSelections?.mcpServers;
   let saveAsPreset: string | undefined;
+  const platformSkills = getPlatformSkillDefaults(
+    AVAILABLE_SKILL_TEMPLATES,
+    loadSkillTemplateContent,
+  );
 
   while (step >= 0) {
     switch (step) {
@@ -244,7 +250,12 @@ export async function handlePresetPath(
             : buildGroupedBasicOptions(AVAILABLE_TEMPLATES, RULE_CATEGORIES, (t) =>
                 loadTemplate(t),
               ),
-          initialValues: rules ?? AVAILABLE_TEMPLATES.filter((t) => presetRules.has(t)),
+          initialValues: rules ?? [
+            ...new Set([
+              ...AVAILABLE_TEMPLATES.filter((t) => presetRules.has(t)),
+              ...PLATFORM_RULE_DEFAULTS,
+            ]),
+          ],
           required: false,
           selectableGroups: true,
           withGuide: true,
@@ -273,7 +284,12 @@ export async function handlePresetPath(
             : buildGroupedBasicOptions(AVAILABLE_SKILL_TEMPLATES, skillCategories, (t) =>
                 loadSkillTemplateContent(t),
               ),
-          initialValues: skills ?? AVAILABLE_SKILL_TEMPLATES.filter((t) => presetSkills.has(t)),
+          initialValues: skills ?? [
+            ...new Set([
+              ...AVAILABLE_SKILL_TEMPLATES.filter((t) => presetSkills.has(t)),
+              ...platformSkills,
+            ]),
+          ],
           required: false,
           selectableGroups: true,
           withGuide: true,
@@ -434,6 +450,10 @@ export async function handleCustomPath(
   let mcpServers: string[] | undefined;
   let preset: string | undefined;
   let saveAsPreset: string | undefined;
+  const platformSkills = getPlatformSkillDefaults(
+    AVAILABLE_SKILL_TEMPLATES,
+    loadSkillTemplateContent,
+  );
 
   while (step >= 0) {
     switch (step) {
@@ -447,7 +467,7 @@ export async function handleCustomPath(
             : buildGroupedBasicOptions(AVAILABLE_TEMPLATES, RULE_CATEGORIES, (t) =>
                 loadTemplate(t),
               ),
-          initialValues: rules ?? existingSelections?.rules ?? [...AVAILABLE_TEMPLATES],
+          initialValues: rules ?? existingSelections?.rules ?? [...PLATFORM_RULE_DEFAULTS],
           required: false,
           selectableGroups: true,
           withGuide: true,
@@ -471,7 +491,7 @@ export async function handleCustomPath(
             : buildGroupedBasicOptions(AVAILABLE_SKILL_TEMPLATES, skillCategories, (t) =>
                 loadSkillTemplateContent(t),
               ),
-          initialValues: skills ?? existingSelections?.skills,
+          initialValues: skills ?? existingSelections?.skills ?? platformSkills,
           required: false,
           selectableGroups: true,
           withGuide: true,
@@ -495,7 +515,7 @@ export async function handleCustomPath(
             : buildGroupedBasicOptions(AVAILABLE_AGENT_TEMPLATES, AGENT_CATEGORIES, (t) =>
                 loadAgentTemplate(t),
               ),
-          initialValues: agentTpls ?? existingSelections?.agents ?? [...AVAILABLE_AGENT_TEMPLATES],
+          initialValues: agentTpls ?? existingSelections?.agents ?? [],
           required: false,
           selectableGroups: true,
           withGuide: true,

@@ -296,9 +296,14 @@ interface ClaudeHookCommand {
   async?: true;
 }
 
+interface ClaudeHookEntry {
+  matcher: string;
+  hooks: ClaudeHookCommand[];
+}
+
 interface ClaudeSettings {
   permissions?: { deny?: string[] };
-  hooks?: Record<string, ClaudeHookCommand[]>;
+  hooks?: Record<string, ClaudeHookEntry[]>;
 }
 
 function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
@@ -328,17 +333,27 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
   settings.hooks = {
     InstructionsLoaded: [
       {
-        type: "command",
-        command: `${hooksDir}/${SKILL_TRACKER_FILENAME}`,
-        timeout: 5,
-        async: true,
+        matcher: "",
+        hooks: [
+          {
+            type: "command",
+            command: `${hooksDir}/${SKILL_TRACKER_FILENAME}`,
+            timeout: 5,
+            async: true,
+          },
+        ],
       },
     ],
     Stop: [
       {
-        type: "command",
-        command: `${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
-        timeout: 15,
+        matcher: "",
+        hooks: [
+          {
+            type: "command",
+            command: `${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
+            timeout: 15,
+          },
+        ],
       },
     ],
   };

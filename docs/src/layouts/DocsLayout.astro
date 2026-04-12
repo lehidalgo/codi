@@ -385,18 +385,71 @@ function docLabel(doc: DocEntry): string {
             results.appendChild(empty);
             return;
           }
+          // Strip all HTML from Pagefind excerpt except <mark> highlight tags
+          function safeExcerpt(raw: string): string {
+            return raw
+              .replace(/<mark>/g, '\x00MARK\x00')
+              .replace(/<\/mark>/g, '\x00ENDMARK\x00')
+              .replace(/<[^>]+>/g, '')
+              .replace(/\x00MARK\x00/g, '<mark>')
+              .replace(/\x00ENDMARK\x00/g, '</mark>');
+          }
+
           const top = search.results.slice(0, 8);
           for (const r of top) {
             const data = await r.data();
             const a = document.createElement('a');
             a.href = data.url;
             a.className = 'search-result-item';
+
+            // Parse URL to get artifact type and file path hint
+            const urlParts = data.url.replace(/\/$/, '').split('/').filter(Boolean);
+            const catalogIdx = urlParts.indexOf('catalog');
+            let typeBadge = 'doc';
+            let pathHint = '';
+            if (catalogIdx !== -1 && urlParts[catalogIdx + 1]) {
+              const plural = urlParts[catalogIdx + 1] as string;
+              const name = urlParts[catalogIdx + 2] ?? '';
+              typeBadge = plural.replace(/s$/, '');
+              const dirMap: Record<string, string> = {
+                skills:  '.codi/skills/' + name,
+                rules:   '.codi/rules/'  + name + '.md',
+                agents:  '.codi/agents/' + name + '.md',
+                presets: 'preset: '      + name,
+              };
+              pathHint = dirMap[plural] ?? plural + '/' + name;
+            } else {
+              const guideIdx = urlParts.indexOf('guides');
+              const refIdx   = urlParts.indexOf('reference');
+              const last = urlParts[urlParts.length - 1] ?? '';
+              if (guideIdx  !== -1) pathHint = 'docs/guides/'     + last;
+              else if (refIdx !== -1) pathHint = 'docs/reference/' + last;
+              else                    pathHint = 'docs/'           + last;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'search-result-header';
+            const badge = document.createElement('span');
+            badge.className = 'search-result-badge search-result-badge--' + typeBadge;
+            badge.textContent = typeBadge;
+            header.appendChild(badge);
+            if (pathHint) {
+              const path = document.createElement('span');
+              path.className = 'search-result-path';
+              path.textContent = pathHint;
+              header.appendChild(path);
+            }
+
             const title = document.createElement('span');
             title.className = 'search-result-title';
             title.textContent = data.meta?.title ?? data.url;
+
             const excerpt = document.createElement('span');
             excerpt.className = 'search-result-excerpt';
-            excerpt.textContent = data.excerpt?.replace(/<[^>]+>/g, '') ?? '';
+            // safeExcerpt strips all tags except <mark> — no arbitrary HTML from index
+            excerpt.innerHTML = safeExcerpt(data.excerpt ?? '');
+
+            a.appendChild(header);
             a.appendChild(title);
             a.appendChild(excerpt);
             a.addEventListener('click', closeSearch);
