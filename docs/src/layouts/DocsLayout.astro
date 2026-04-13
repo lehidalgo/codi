@@ -109,10 +109,13 @@ function docLabel(doc: DocEntry): string {
   <div class="docs-page">
     <aside class="docs-sidebar" id="docs-sidebar">
       <nav aria-label="Documentation navigation">
-        <!-- Static catalog link -->
+        <!-- Static top-level links -->
         <div class="docs-nav-group">
           <div class="docs-nav-label">Browse</div>
-          <a href={`${base}catalog/`} class={`docs-nav-link${currentPath.endsWith('/catalog') ? ' active' : ''}`}>
+          <a href={base} class={`docs-nav-link${currentPath === base.replace(/\/$/, '') || currentPath === base ? ' active' : ''}`}>
+            Documentation
+          </a>
+          <a href={`${base}catalog/`} class={`docs-nav-link${currentPath.includes('/catalog') ? ' active' : ''}`}>
             Artifact Catalog
           </a>
         </div>
@@ -151,7 +154,10 @@ function docLabel(doc: DocEntry): string {
         </svg>
         <input type="search" id="search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false" />
         <button class="search-close" id="search-close" aria-label="Close search">
-          <kbd>Esc</kbd>
+          <kbd class="search-close-kbd">Esc</kbd>
+          <svg class="search-close-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
       <div class="search-results" id="search-results"></div>
@@ -163,12 +169,6 @@ function docLabel(doc: DocEntry): string {
     </div>
   </div>
 
-  <!-- Mobile sidebar toggle -->
-  <button class="docs-sidebar-toggle" id="docs-sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="false">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-    </svg>
-  </button>
   <div class="docs-overlay" id="docs-overlay"></div>
 
   <script>
@@ -180,34 +180,24 @@ function docLabel(doc: DocEntry): string {
       }, { passive: true });
     }
 
-    // Hamburger toggle
+    // Docs sidebar via hamburger (nav-links are hidden on docs pages at mobile widths)
     const hamburger = document.getElementById('hamburger');
-    const navLinks = document.getElementById('nav-links');
-    if (hamburger && navLinks) {
-      hamburger.addEventListener('click', () => {
-        const open = navLinks.classList.toggle('open');
-        hamburger.setAttribute('aria-expanded', String(open));
-      });
-    }
-
-    // Mobile docs sidebar toggle
-    const sidebarToggle = document.getElementById('docs-sidebar-toggle');
     const docsSidebar = document.getElementById('docs-sidebar');
     const docsOverlay = document.getElementById('docs-overlay');
-    if (sidebarToggle && docsSidebar && docsOverlay) {
+    if (hamburger && docsSidebar && docsOverlay) {
       const openSidebar = () => {
         docsSidebar.classList.add('open');
         docsOverlay.classList.add('open');
-        sidebarToggle.setAttribute('aria-expanded', 'true');
+        hamburger.setAttribute('aria-expanded', 'true');
         document.body.style.overflow = 'hidden';
       };
       const closeSidebar = () => {
         docsSidebar.classList.remove('open');
         docsOverlay.classList.remove('open');
-        sidebarToggle.setAttribute('aria-expanded', 'false');
+        hamburger.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
       };
-      sidebarToggle.addEventListener('click', () => {
+      hamburger.addEventListener('click', () => {
         docsSidebar.classList.contains('open') ? closeSidebar() : openSidebar();
       });
       docsOverlay.addEventListener('click', closeSidebar);
