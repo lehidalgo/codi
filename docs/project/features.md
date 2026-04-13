@@ -29,7 +29,7 @@ Append-only JSONL log records every generation event with timestamp, artifacts i
 
 ## Multi-Agent Support
 
-Five agents supported via an adapter pattern. Each adapter translates the unified `.codi/` artifacts into the agent's native config format.
+Six agents supported via an adapter pattern. Each adapter translates the unified `.codi/` artifacts into the agent's native config format.
 
 | Agent | Config File | Rules | Skills | Agents | MCP Config | Skill Files |
 |:------|:-----------|:-----:|:------:|:------:|:----------:|:----------:|
@@ -38,6 +38,7 @@ Five agents supported via an adapter pattern. Each adapter translates the unifie
 | Codex | `AGENTS.md` | Yes | Yes | Yes | `.codex/config.toml` | Yes |
 | Windsurf | `.windsurfrules` | Yes | Yes | -- | -- | Yes |
 | Cline | `.clinerules` | Yes | Yes | -- | -- | Yes |
+| GitHub Copilot | `.github/copilot-instructions.md` | Yes | Yes | Yes | `.vscode/mcp.json` | Yes |
 
 ---
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { MAX_NAME_LENGTH, NAME_PATTERN } from "../constants.js";
 
 /** Agent ids that can be the source of skill feedback entries. */
-export const FEEDBACK_AGENTS = ["claude-code", "codex", "cursor", "windsurf", "cline"] as const;
+export const FEEDBACK_AGENTS = ["claude-code", "codex", "cursor", "windsurf", "cline", "copilot"] as const;
 
 /** Possible outcomes of a skill execution: 'success', 'partial', or 'failure'. */
 export const FEEDBACK_OUTCOMES = ["success", "partial", "failure"] as const;

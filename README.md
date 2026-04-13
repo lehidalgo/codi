@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Define your rules, skills, and workflows once in <code>.codi/</code> — Codi generates the correct configuration for Claude Code, Cursor, Codex, Windsurf, and Cline automatically.
+  Define your rules, skills, and workflows once in <code>.codi/</code> — Codi generates the correct configuration for Claude Code, Cursor, Codex, Windsurf, Cline, and GitHub Copilot automatically.
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 ## Who Is Codi For?
 
-- **Teams using multiple AI agents** — ensure consistent rules across Claude Code, Cursor, Codex, Windsurf, and Cline
+- **Teams using multiple AI agents** — ensure consistent rules across Claude Code, Cursor, Codex, Windsurf, Cline, and GitHub Copilot
 - **Tech leads enforcing standards** — define security policies, coding conventions, and testing requirements once and deploy them to every developer's agent
 - **Individual developers** — get a structured, version-controlled configuration with 100+ built-in templates instead of writing agent configs from scratch
 
@@ -52,7 +52,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 | | |
 |:--|:--|
-| **5 agents, 1 config** | Generate native config files for all supported agents from a single `.codi/` directory |
+| **6 agents, 1 config** | Generate native config files for all supported agents from a single `.codi/` directory |
 | **100+ built-in templates** | Rules, skills, and agents covering security, testing, 11 languages, and 3 frameworks |
 | **6 presets** | From minimal to strict — choose your starting point and customize |
 | **Pre-commit hooks** | Automated testing, secret scanning, type checking, and file size limits |

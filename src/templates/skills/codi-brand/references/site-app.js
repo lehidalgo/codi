@@ -31,7 +31,7 @@ var TRANSLATIONS = {
     "why.solution-h3": "Write once, works everywhere",
     "why.solution-p":
       "Drop your rules in <code>.codi/</code> and run <code>codi generate</code>. Every agent gets updated instantly, always in sync.",
-    "why.solution-li1": "One folder drives all 5 agents",
+    "why.solution-li1": "One folder drives all 6 agents",
     "why.solution-li2": "New teammate runs <code>codi init</code> and inherits everything",
     "why.solution-li3": "Git-tracked \u2014 every change is auditable",
     "why.solution-li4": "Lock rules your team can\u2019t override",
@@ -227,7 +227,7 @@ var TRANSLATIONS = {
     "why.solution-h3": "Escribe una vez, funciona en todos lados",
     "why.solution-p":
       "Dejas tus reglas en <code>.codi/</code> y ejecutas <code>codi generate</code>. Todos los agentes se actualizan al instante, siempre sincronizados.",
-    "why.solution-li1": "Una sola carpeta controla los 5 agentes",
+    "why.solution-li1": "Una sola carpeta controla los 6 agentes",
     "why.solution-li2": "El nuevo compa\u00f1ero ejecuta <code>codi init</code> y hereda todo",
     "why.solution-li3": "En git \u2014 cada cambio queda auditado",
     "why.solution-li4": "Bloquea reglas que el equipo no puede cambiar",

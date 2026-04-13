@@ -65,6 +65,15 @@ const PLATFORM_SKILL_FIELDS: Record<PlatformId, Set<string>> = {
     "license",
     "metadata",
   ]),
+  copilot: new Set([
+    "name",
+    "description",
+    "allowed-tools",
+    "model",
+    "argument-hint",
+    "license",
+    "metadata",
+  ]),
 };
 
 // Directories to skip when propagating skills to agent dirs

@@ -277,7 +277,7 @@ codi add skill --all
 
 - Skills are directories, not single files. The `SKILL.md` file must exist at the root of the directory.
 - Resource files (JSON, YAML, markdown references) are copied as-is.
-- Skills only generate into agents that support them (currently: Claude Code, Cursor, Codex, Windsurf, Cline).
+- Skills only generate into agents that support them (currently: Claude Code, Cursor, Codex, Windsurf, Cline, GitHub Copilot).
 
 ---
 

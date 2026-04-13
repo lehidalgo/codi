@@ -38,7 +38,7 @@ import {
   MANIFEST_FILENAME,
 } from "../../src/constants.js";
 
-const ALL_AGENTS = ["claude-code", "cursor", "codex", "windsurf", "cline"];
+const ALL_AGENTS = ["claude-code", "cursor", "codex", "windsurf", "cline", "copilot"];
 
 let tmpDir: string;
 
@@ -61,7 +61,7 @@ afterEach(async () => {
 });
 
 describe("Self-introspection (dogfooding)", () => {
-  it("init with --agents specifies all 5 agents", async () => {
+  it("init with --agents specifies all 6 agents", async () => {
     const result = await initHandler(tmpDir, { agents: ALL_AGENTS });
     expect(result.success).toBe(true);
     expect(result.data.agents).toEqual(ALL_AGENTS);

@@ -86,12 +86,13 @@ The `VERSION` constant is injected at build time from `package.json` via tsup's 
 
 ```
 src/
-  adapters/           # Agent-specific output formatters (5 agents)
+  adapters/           # Agent-specific output formatters (6 agents)
     claude-code.ts    # Claude Code adapter
     cursor.ts         # Cursor adapter
     codex.ts          # Codex (OpenAI) adapter
     windsurf.ts       # Windsurf adapter
     cline.ts          # Cline adapter
+    copilot.ts        # GitHub Copilot adapter
     flag-instructions.ts  # Flag-to-instruction mapping
     generated-header.ts   # Traceability headers
     skill-generator.ts    # Skill file generation
