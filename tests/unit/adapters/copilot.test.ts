@@ -83,8 +83,8 @@ describe("copilot adapter", () => {
     expect(mainFile!.hash).toBeTruthy();
     expect(mainFile!.sources).toContain(MANIFEST_FILENAME);
 
-    // Only the instruction file, no extras
-    expect(files).toHaveLength(1);
+    // Instruction file + hooks JSON + 2 heartbeat scripts = 4
+    expect(files).toHaveLength(4);
   });
 
   // --- generate() with rules ---
@@ -348,6 +348,35 @@ describe("copilot adapter", () => {
 
     const mcpFile = files.find((f) => f.path === ".vscode/mcp.json");
     expect(mcpFile).toBeUndefined();
+  });
+
+  // --- Copilot hooks: .github/hooks/codi-hooks.json ---
+
+  it("generates .github/hooks/codi-hooks.json with sessionStart and sessionEnd", async () => {
+    const config = createMockConfig({ rules: [], skills: [], flags: {} });
+    const files = await copilotAdapter.generate(config, {});
+
+    const hooksFile = files.find((f) => f.path === ".github/hooks/codi-hooks.json");
+    expect(hooksFile).toBeDefined();
+
+    const parsed = JSON.parse(hooksFile!.content);
+    expect(parsed.version).toBe(1);
+    expect(parsed.hooks.sessionStart).toBeDefined();
+    expect(parsed.hooks.sessionEnd).toBeDefined();
+    expect(parsed.hooks.sessionStart[0].type).toBe("command");
+    expect(parsed.hooks.sessionEnd[0].type).toBe("command");
+  });
+
+  it("generates heartbeat scripts in .codi/hooks/", async () => {
+    const config = createMockConfig({ rules: [], skills: [], flags: {} });
+    const files = await copilotAdapter.generate(config, {});
+
+    const tracker = files.find((f) => f.path.includes("codi-skill-tracker"));
+    const observer = files.find((f) => f.path.includes("codi-skill-observer"));
+    expect(tracker).toBeDefined();
+    expect(observer).toBeDefined();
+    expect(tracker!.content).toContain("skill-tracker");
+    expect(observer!.content).toContain("skill-observer");
   });
 
   // --- generate() produces unique hashes ---

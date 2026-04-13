@@ -25,7 +25,14 @@ import {
   buildMcpEnvExample,
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
-import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME } from "../constants.js";
+import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME, MCP_FILENAME, PROJECT_DIR } from "../constants.js";
+import {
+  buildSkillTrackerScript,
+  buildSkillObserverScript,
+  SKILL_TRACKER_FILENAME,
+  SKILL_OBSERVER_FILENAME,
+  HOOKS_SUBDIR,
+} from "../core/hooks/heartbeat-hooks.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -272,6 +279,56 @@ export const copilotAdapter: AgentAdapter = {
         });
       }
     }
+
+    // --- 6. Heartbeat hook scripts (.codi/hooks/) ---
+    const trackerScript = buildSkillTrackerScript();
+    const trackerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`;
+    files.push({
+      path: trackerPath,
+      content: trackerScript,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(trackerScript),
+    });
+
+    const observerScript = buildSkillObserverScript();
+    const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+    files.push({
+      path: observerPath,
+      content: observerScript,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(observerScript),
+    });
+
+    // --- 7. Copilot hooks config: .github/hooks/codi-hooks.json ---
+    // Maps Copilot hook events to the heartbeat scripts in .codi/hooks/
+    const copilotHooks: Record<string, unknown[]> = {
+      sessionStart: [
+        {
+          type: "command",
+          bash: `node ${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`,
+          powershell: `node ${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`,
+          cwd: ".",
+          timeoutSec: 10,
+        },
+      ],
+      sessionEnd: [
+        {
+          type: "command",
+          bash: `node ${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
+          powershell: `node ${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
+          cwd: ".",
+          timeoutSec: 15,
+        },
+      ],
+    };
+    const hooksOutput = { version: 1, hooks: copilotHooks };
+    const hooksContent = JSON.stringify(hooksOutput, null, 2);
+    files.push({
+      path: ".github/hooks/codi-hooks.json",
+      content: hooksContent,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(hooksContent),
+    });
 
     return files;
   },
