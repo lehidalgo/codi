@@ -347,25 +347,6 @@
 .docs-card p { font-size: 0.83rem; color: var(--text-2); line-height: 1.6; margin: 0; }
 
 /* ===== MOBILE SIDEBAR OVERLAY ===== */
-.docs-sidebar-toggle {
-  display: none;
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 200;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-1);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-}
-.docs-sidebar-toggle:hover { background: var(--surface-3); border-color: var(--border-a); }
 .docs-overlay {
   display: none;
   position: fixed;
@@ -374,9 +355,10 @@
   backdrop-filter: blur(2px);
   z-index: 149;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.2s;
 }
-.docs-overlay.open { opacity: 1; }
+.docs-overlay.open { opacity: 1; pointer-events: auto; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1280px) {
@@ -401,10 +383,25 @@
   }
   .docs-sidebar.open { transform: translateX(0); }
   .docs-overlay { display: block; }
-  .docs-sidebar-toggle { display: flex; }
   .docs-content { max-width: 100%; }
   .docs-content h2 { margin-top: 40px; }
   .docs-content .heading-anchor { display: none; }
+  /* Show nav hamburger at docs breakpoint too */
+  .nav-links { display: none; }
+  .hamburger { display: flex; z-index: 101; }
+}
+
+@media (max-width: 600px) {
+  .docs-content th { white-space: normal; }
+}
+
+@media (max-height: 600px) {
+  .search-modal { padding-top: 16px; }
+  .search-results { max-height: 200px; }
+}
+
+@media (max-width: 480px) {
+  .catalog-controls { padding: 12px 16px; }
 }
 
 /* ===== SEARCH TRIGGER BUTTON ===== */
@@ -432,10 +429,6 @@
   border-radius: 4px;
   padding: 1px 5px;
   line-height: 1.6;
-}
-@media (max-width: 700px) {
-  .docs-search-trigger span, .docs-search-trigger kbd { display: none; }
-  .docs-search-trigger { padding: 6px; border-radius: 50%; }
 }
 
 /* ===== SEARCH MODAL ===== */
@@ -601,4 +594,16 @@
   border-radius: 3px;
   padding: 1px 4px;
   margin-right: 2px;
+}
+
+/* Close button: show X icon on touch, Esc kbd on desktop */
+.search-close-icon { display: none; }
+
+@media (max-width: 600px) {
+  .search-modal { padding-top: 48px; }
+  .search-box { margin: 0 10px; border-radius: 10px; }
+  .search-footer { display: none; }
+  .search-close-kbd { display: none; }
+  .search-close-icon { display: block; color: var(--text-3); }
+  .search-close { padding: 4px; }
 }

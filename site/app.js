@@ -126,7 +126,7 @@ var TRANSLATIONS = {
     "about.label": "Who made this",
     "about.role": "AI Engineer",
     "about.bio":
-      "Four AI coding agents, four different configs \u2014 they always drifted. When my Claude quota ran out and I switched to Codex, nothing was in sync. Codi was what I needed.",
+      "Several AI coding agents, several different configs \u2014 they always drifted. When my Claude quota ran out and I switched to Codex, nothing was in sync. Codi was what I needed.",
     "contact.label": "Get in touch",
     "contact.h2": 'Found a bug? Have feedback?<br><span class="gradient-text">I want to hear it.</span>',
     "contact.sub":
@@ -324,7 +324,7 @@ var TRANSLATIONS = {
     "about.label": "Qui\u00e9n lo hizo",
     "about.role": "Ingeniero de IA",
     "about.bio":
-      "Cuatro herramientas de IA, cuatro configs separadas \u2014 siempre se desincronizaban. Cuando se me acab\u00f3 la cuota de Claude y cambi\u00e9 a Codex, nada estaba en sincron\u00eda. Codi era lo que necesitaba.",
+      "Varias herramientas de IA, varias configs separadas \u2014 siempre se desincronizaban. Cuando se me acab\u00f3 la cuota de Claude y cambi\u00e9 a Codex, nada estaba en sincron\u00eda. Codi era lo que necesitaba.",
     "contact.label": "Contacto",
     "contact.h2": '\u00bfEncontraste un bug? \u00bfTienes feedback?<br><span class="gradient-text">Quiero escucharlo.</span>',
     "contact.sub":

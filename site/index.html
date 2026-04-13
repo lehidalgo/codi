@@ -41,9 +41,15 @@
   <section class="hero">
     <div class="container">
       <div class="hero-grid">
-        <div class="hero-content">
+        <div class="hero-top">
           <span class="badge reveal" data-i18n="hero.badge">v2.2.0 — works with 5 agents</span>
           <h1 class="reveal reveal-d1" data-i18n-html="hero.h1">Your AI coding configs<br><span class="gradient-text">in one place.</span></h1>
+        </div>
+        <div class="hero-orbit-wrap reveal reveal-d3" aria-hidden="true">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="orbit-stage" id="orbit-stage"></div>
+        </div>
+        <div class="hero-bottom">
           <p class="hero-sub reveal reveal-d2" data-i18n-html="hero.sub">Every AI coding tool has its own config format — your rules, skills, agents, and MCPs drift the moment you switch tools or add a developer. Codi manages all of them in one <code>.codi/</code> folder and generates the right native config for every tool, automatically.</p>
           <div class="install-block reveal reveal-d3">
             <code class="install-cmd">npm install -g codi-cli@latest</code>
@@ -55,10 +61,6 @@
             <a href="#quickstart" class="btn-primary" data-i18n="hero.cta1">Get started →</a>
             <a href="https://github.com/lehidalgo/codi" class="btn-ghost" target="_blank" rel="noopener" data-i18n="hero.cta2">View on GitHub</a>
           </div>
-        </div>
-        <div class="hero-orbit-wrap reveal reveal-d3" aria-hidden="true">
-          <div class="hero-glow" aria-hidden="true"></div>
-          <div class="orbit-stage" id="orbit-stage"></div>
         </div>
       </div>
     </div>
