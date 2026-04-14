@@ -81,7 +81,7 @@ codi generate
 codi status
 ```
 
-Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, and other agent files are generated and ready to commit.
+Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.github/copilot-instructions.md`, and other agent files are generated and ready to commit.
 
 > **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 20**.
 
@@ -100,6 +100,7 @@ flowchart LR
     E --> H["AGENTS.md"]
     E --> I[".windsurfrules"]
     E --> J[".clinerules"]
+    E --> K[".github/copilot-instructions.md"]
 ```
 
 `codi init` and `codi add` scaffold templates from the built-in library into `.codi/`. Then `codi generate` reads `.codi/`, resolves configuration across 3 layers (preset defaults → repo → user), and passes the result through agent-specific adapters that produce each platform's native format. Flags marked `locked: true` cannot be overridden by later layers.
@@ -127,6 +128,7 @@ flowchart LR
 | **Codex** | `AGENTS.md` | `.` | `.agents/skills` | `.codex/agents` | `.codex/config.toml` |
 | **Windsurf** | `.windsurfrules` | `.` | `.windsurf/skills` | — | — |
 | **Cline** | `.clinerules` | `.cline` | `.cline/skills` | — | — |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | `.github/instructions` | `.github/prompts` | `.github/agents` | `.vscode/mcp.json` |
 <!-- GENERATED:END:supported_agents -->
 
 ---
