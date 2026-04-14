@@ -197,6 +197,92 @@ export class StateManager {
     return this.write(state);
   }
 
+  /**
+   * Detects orphaned generated files — files that exist in the previous state
+   * but are not present in the next generation run. Called BEFORE
+   * `updateAgentsBatch` so the previous state is still readable.
+   *
+   * An orphan is only returned as deletable if its current on-disk hash matches
+   * the previously recorded `generatedHash` (meaning no user edits). Drifted
+   * orphans (user-edited after generation) are returned in `drifted` so the
+   * caller can warn or force-delete via `force: true`.
+   *
+   * The method does not touch the filesystem or state — it is a pure
+   * diff+inspect. Call `deleteOrphans()` to actually unlink the files.
+   *
+   * @param nextAgents - The new agent-to-files map that will be written on this run.
+   */
+  async detectOrphans(
+    nextAgents: Record<string, GeneratedFileState[]>,
+  ): Promise<Result<{ clean: GeneratedFileState[]; drifted: GeneratedFileState[] }>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const prevState = stateResult.data.agents;
+    const clean: GeneratedFileState[] = [];
+    const drifted: GeneratedFileState[] = [];
+
+    for (const [agentId, prevFiles] of Object.entries(prevState)) {
+      const nextPaths = new Set((nextAgents[agentId] ?? []).map((f) => f.path));
+      const orphans = prevFiles.filter((f) => !nextPaths.has(f.path));
+      for (const orphan of orphans) {
+        const fullPath = path.resolve(this.projectRoot, orphan.path);
+        try {
+          const content = await fs.readFile(fullPath, "utf8");
+          const currentHash = hashContent(content);
+          if (currentHash === orphan.generatedHash) {
+            clean.push(orphan);
+          } else {
+            drifted.push(orphan);
+          }
+        } catch (cause) {
+          if (isNodeError(cause) && cause.code === "ENOENT") {
+            // Already gone from disk — still count as clean so state gets trimmed.
+            clean.push(orphan);
+          } else {
+            // Unreadable for another reason — treat as drifted (keep) to be safe.
+            drifted.push(orphan);
+          }
+        }
+      }
+    }
+
+    return ok({ clean, drifted });
+  }
+
+  /**
+   * Unlinks the given orphaned files from disk. Silently ignores files that
+   * were already removed. Returns the paths that were actually deleted so the
+   * caller can report them.
+   *
+   * @param orphans - Files returned by `detectOrphans()` (either clean or forced drifted).
+   */
+  async deleteOrphans(orphans: GeneratedFileState[]): Promise<string[]> {
+    const deleted: string[] = [];
+    for (const orphan of orphans) {
+      const fullPath = path.resolve(this.projectRoot, orphan.path);
+      try {
+        await fs.unlink(fullPath);
+        deleted.push(orphan.path);
+        // Prune any now-empty parent dirs up to the project root (non-recursive sweep).
+        let dir = path.dirname(fullPath);
+        while (dir !== this.projectRoot && dir.startsWith(this.projectRoot)) {
+          try {
+            await fs.rmdir(dir);
+          } catch {
+            break; // non-empty or permissions — stop climbing
+          }
+          dir = path.dirname(dir);
+        }
+      } catch (cause) {
+        if (isNodeError(cause) && cause.code === "ENOENT") {
+          deleted.push(orphan.path);
+        }
+      }
+    }
+    return deleted;
+  }
+
   /** Updates the generated hook file records. */
   async updateHooks(files: GeneratedFileState[]): Promise<Result<void>> {
     const stateResult = await this.read();

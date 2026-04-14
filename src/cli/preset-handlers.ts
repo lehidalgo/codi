@@ -78,8 +78,12 @@ async function mergePresetFlags(
  * Unified install handler: auto-detects source type from the argument.
  */
 export interface PresetInstallOptions {
+  /** Overwrite all conflicting files without prompting. */
   force?: boolean;
+  /** JSON output mode detection for non-interactive handlers. */
   json?: boolean;
+  /** Skip all conflicting files without prompting (keep existing content). */
+  keepCurrent?: boolean;
 }
 
 export async function presetInstallUnifiedHandler(
@@ -168,7 +172,7 @@ export async function presetInstallUnifiedHandler(
       if (loadResult.ok) {
         const applyResult = await applyPresetArtifacts(configDir, loadResult.data, {
           force: installOptions.force,
-          json: installOptions.json,
+          keepCurrent: installOptions.keepCurrent,
         });
         log.info(
           `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,

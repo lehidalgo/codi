@@ -164,7 +164,7 @@ export async function generate(
     if (potentialConflicts.length > 0) {
       const resolution = await resolveConflicts(potentialConflicts, {
         force: options.force,
-        json: options.json,
+        keepCurrent: options.keepCurrent,
       });
 
       await Promise.all(

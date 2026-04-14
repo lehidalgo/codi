@@ -13,7 +13,8 @@ import { fmStr } from "#src/utils/yaml-serialize.js";
 
 export interface ApplyOptions {
   force?: boolean;
-  json?: boolean;
+  /** Skip all conflicting files without prompting (keep existing content). */
+  keepCurrent?: boolean;
 }
 
 export interface ConflictDetail {

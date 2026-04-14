@@ -83,10 +83,7 @@ export async function installFromGithub(
   const ref = descriptor.ref ?? "main";
   log.info(`Cloning preset from ${repoUrl} (ref: ${ref})...`);
 
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-preset-gh-${Date.now()}`,
-  );
+  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-gh-${Date.now()}`);
   try {
     const cloneArgs = ["clone", "--depth", GIT_CLONE_DEPTH];
     if (descriptor.ref) cloneArgs.push("--branch", descriptor.ref);
@@ -258,11 +255,10 @@ export async function installFromGithub(
 
     const loadResult = await loadPreset(name, presetsDir);
     if (loadResult.ok) {
-      const applyResult = await applyPresetArtifacts(
-        configDir,
-        loadResult.data,
-        { force: installOptions.force, json: installOptions.json },
-      );
+      const applyResult = await applyPresetArtifacts(configDir, loadResult.data, {
+        force: installOptions.force,
+        keepCurrent: installOptions.keepCurrent,
+      });
       log.info(
         `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
       );

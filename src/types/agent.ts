@@ -64,10 +64,10 @@ export interface GenerateOptions {
   agents?: string[];
   /** When true, compute and return files without writing them to disk. */
   dryRun?: boolean;
-  /** When true, overwrite existing files even if their content is unchanged. */
+  /** When true, overwrite existing files even if their content is unchanged (maps to --on-conflict keep-incoming). */
   force?: boolean;
-  /** Non-interactive mode: skip all conflicting files without prompting. */
-  json?: boolean;
+  /** Non-interactive mode: skip all conflicting files without prompting (maps to --on-conflict keep-current). */
+  keepCurrent?: boolean;
   /** Absolute path to the project root; defaults to the current working directory. */
   projectRoot?: string;
 }

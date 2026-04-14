@@ -26,8 +26,8 @@ export interface ConflictEntry {
 export interface ConflictOptions {
   /** Overwrite all conflicting files without prompting. */
   force?: boolean;
-  /** Skip all conflicting files without prompting (keep existing). */
-  json?: boolean;
+  /** Skip all conflicting files without prompting (keep existing content). */
+  keepCurrent?: boolean;
 }
 
 export interface ConflictResolution {
@@ -42,7 +42,8 @@ export interface ConflictResolution {
 /**
  * Thrown in non-interactive environments when two sides change the same
  * lines and auto-merge cannot resolve the conflict automatically.
- * Use --force to accept all incoming or --json to keep all current.
+ * Use --on-conflict keep-incoming to accept all incoming or
+ * --on-conflict keep-current to keep all current.
  */
 export class UnresolvableConflictError extends Error {
   public readonly files: string[];
@@ -51,7 +52,9 @@ export class UnresolvableConflictError extends Error {
     super(
       `${files.length} file(s) have unresolvable conflicts and require manual resolution.\n` +
         `Files: ${files.join(", ")}\n` +
-        `Run the command interactively to resolve, or use --force to accept all incoming, --json to keep all current.`,
+        `Run the command interactively to resolve, or use ` +
+        `--on-conflict keep-incoming to accept all incoming, or ` +
+        `--on-conflict keep-current to keep all current.`,
     );
     this.name = "UnresolvableConflictError";
     this.files = files;
@@ -223,9 +226,9 @@ export function makeConflictEntry(
 
 /**
  * Resolves a list of conflicting files via one of three modes:
- * - force: accept all without prompting
- * - json:  skip all without prompting
- * - default: interactive per-file diff with accept/skip/accept-all/skip-all
+ * - force:       accept all without prompting (keep-incoming)
+ * - keepCurrent: skip all without prompting (keep current content)
+ * - default:     interactive per-file diff with accept/skip/accept-all/skip-all
  */
 export async function resolveConflicts(
   conflicts: ConflictEntry[],
@@ -239,7 +242,7 @@ export async function resolveConflicts(
     return { accepted: conflicts, skipped: [], merged: [] };
   }
 
-  if (options.json) {
+  if (options.keepCurrent) {
     return { accepted: [], skipped: conflicts, merged: [] };
   }
 

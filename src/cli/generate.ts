@@ -66,7 +66,7 @@ export async function generateHandler(
     agents: options.agent,
     dryRun: options.dryRun,
     force: options.force || options.onConflict === "keep-incoming",
-    json: options.json || options.onConflict === "keep-current",
+    keepCurrent: options.onConflict === "keep-current",
   });
 
   if (!genResult.ok) {
@@ -95,6 +95,29 @@ export async function generateHandler(
         }),
       );
     }
+
+    // Detect and delete orphans BEFORE updating state — otherwise the previous
+    // file list is lost. Drifted orphans (user-edited after generation) are
+    // preserved unless --on-conflict keep-incoming was requested.
+    const orphanResult = await stateManager.detectOrphans(agentUpdates);
+    if (orphanResult.ok) {
+      const { clean, drifted } = orphanResult.data;
+      const forceDelete = options.force || options.onConflict === "keep-incoming";
+      const toDelete = forceDelete ? [...clean, ...drifted] : clean;
+      if (toDelete.length > 0) {
+        const deleted = await stateManager.deleteOrphans(toDelete);
+        if (deleted.length > 0) {
+          log.info(`Pruned ${deleted.length} orphaned file(s) removed from source templates`);
+        }
+      }
+      if (drifted.length > 0 && !forceDelete) {
+        log.warn(
+          `${drifted.length} orphaned file(s) have local edits — preserved. ` +
+            `Use --on-conflict keep-incoming to force delete.`,
+        );
+      }
+    }
+
     await stateManager.updateAgentsBatch(agentUpdates);
 
     await writeAuditEntry(configDir, {
@@ -267,10 +290,13 @@ export function registerGenerateCommand(program: Command): void {
     .description("Generate agent configuration files")
     .option("--agent <agents...>", "Generate for specific agents only")
     .option("--dry-run", "Show what would be generated without writing")
-    .option("--force", "Force regeneration even if unchanged")
+    .option(
+      "--force",
+      "Skip no-op detection and rewrite every generated file (implies --on-conflict keep-incoming)",
+    )
     .option(
       "--on-conflict <strategy>",
-      "Conflict strategy when generated files have local changes: keep-current (default) or keep-incoming",
+      "How to resolve local edits to generated files: keep-current (skip) or keep-incoming (overwrite). Defaults to interactive prompts on a TTY, auto-merge off-TTY.",
     )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;

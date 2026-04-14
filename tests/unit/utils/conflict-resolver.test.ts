@@ -27,10 +27,10 @@ describe("UnresolvableConflictError", () => {
     expect(err).toBeInstanceOf(Error);
   });
 
-  it("includes --force and --json hints in message", () => {
+  it("includes --on-conflict keep-incoming and keep-current hints in message", () => {
     const err = new UnresolvableConflictError(["rules/x"]);
-    expect(err.message).toContain("--force");
-    expect(err.message).toContain("--json");
+    expect(err.message).toContain("--on-conflict keep-incoming");
+    expect(err.message).toContain("--on-conflict keep-current");
   });
 });
 
