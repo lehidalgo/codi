@@ -1,0 +1,26 @@
+Codi Brand Assets License
+=========================
+
+Copyright (c) Codi Platform contributors
+
+The assets in this directory (logos, fonts, colors, voice guidelines, and
+references) describe the visual and editorial identity of the Codi project.
+
+You may:
+  - Use these assets when creating content ABOUT Codi (tutorials, articles,
+    integrations, presentations referencing Codi).
+  - Embed the logo and colors in screenshots, diagrams, and documentation
+    that accurately represents Codi.
+
+You may NOT:
+  - Use the Codi logo, wordmark, or brand name in a way that implies
+    endorsement of a third-party product or service.
+  - Modify the logo, wordmark, or color palette and present it as Codi's.
+  - Use these assets for any purpose that could mislead users about the
+    origin of a product.
+
+The source code of the Codi platform itself is distributed separately under
+its own open-source license (see the repository root LICENSE file).
+
+For brand inquiries, questions about fair use, or permission requests,
+open an issue at https://github.com/lehidalgo/codi.

@@ -125,11 +125,11 @@
   },
   "codi-dev-operations": {
     "version": 11,
-    "hash": "8fc44f23de5de1adf5558751c6641a8208e6e21141e5b34689891987cb40e132"
+    "hash": "0ab76d102808574f7762fc53954f518436539747a0b24af82d3a6828ba0ace53"
   },
   "codi-dev-e2e-testing": {
     "version": 10,
-    "hash": "31046d25818958d7381dc03365ef6e4df60f8fe077eca12594371cce16584a0d"
+    "hash": "663cd87d76673a44efdc4e055fde90ea5bfdae2f54db7a4a3a06792258eb30d7"
   },
   "codi-security-scan": {
     "version": 5,
@@ -187,13 +187,9 @@
     "version": 5,
     "hash": "5c82bbf846ebd78bb6791284fb98b94a6e3b39db108a1899d206894cd7dfb054"
   },
-  "codi-deck-engine": {
-    "version": 8,
-    "hash": "225067c1feff394874979179f7bc998e7c14b217115a7bc1979e68da622f4d87"
-  },
   "codi-doc-engine": {
     "version": 4,
-    "hash": "fd6b5f7105accc3f699d544d1d0edf826c43bec5209ead760ddcf5133ca33ddd"
+    "hash": "8c7069b0e1f0758e8cf586a1d1fc419d7381a5f86779d8cd4ea796dd378d10e7"
   },
   "codi-claude-api": {
     "version": 4,
@@ -225,7 +221,7 @@
   },
   "codi-theme-factory": {
     "version": 4,
-    "hash": "646e83d20658c9a46401f79235c8f2b786ac525e548c47b2ab770b6a02667580"
+    "hash": "bff4d96a51cffdf2ad0d84e67273ab89e7b8d3f6273ede9cb6a04f2cbfa717bb"
   },
   "codi-claude-artifacts-builder": {
     "version": 8,
@@ -256,12 +252,12 @@
     "hash": "7c01a2da6700ed0a938a54a2b45bbafe6b1542b9ad000a72ddd4720ab471aeff"
   },
   "codi-codi-brand": {
-    "version": 16,
-    "hash": "0652e86af40402989a6065243a88ec12f26ef240abe4a8ae38c3ddd33adf7e51"
+    "version": 18,
+    "hash": "1fbb060b85c8bdf85d9281e6d4b2edb9fde2883c06c1c11402f5e02012713158"
   },
   "codi-content-factory": {
     "version": 48,
-    "hash": "664165c02ff3af390f3c7149eaaaccc3793c56c5dd6bfe6ec42ad17f3bc13a32"
+    "hash": "5bda184b775a9dc6305a74da3b852ec6dba8beac47edc2115163172ea9a3d81c"
   },
   "codi-project-quality-guard": {
     "version": 9,
@@ -285,7 +281,7 @@
   },
   "codi-humanizer": {
     "version": 4,
-    "hash": "1c4b94a5fb9c7d69dcf5fb42a24af8cdd4f123c8f20d3307011a82d3babb24a5"
+    "hash": "f87295e247d39541523626e578a4e27312626f60a86940357cfbb40122c5d869"
   },
   "codi-test-run": {
     "version": 5,
@@ -329,7 +325,7 @@
   },
   "codi-brainstorming": {
     "version": 8,
-    "hash": "fcfbd541ab6293cb8a1753011a7c2effeb2c46a947da8144813be8507104946d"
+    "hash": "86d38395caefd921e99d6735ba009de368aa0b283293b91523303a751863fca1"
   },
   "codi-plan-writer": {
     "version": 8,

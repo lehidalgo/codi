@@ -1,25 +1,17 @@
 /*
  * Codi Brand Tokens — CSS Custom Properties
- * Auto-derived from brand/tokens.json v1
+ * Generated from brand/tokens.json — do not edit manually.
  *
  * Usage: inline the full contents of this file into a <style> block in every
- * HTML output. Do NOT link it with <link href> — file:// protocol blocks external
- * stylesheets and the brainstorming server may not serve it.
+ * HTML output. Do NOT link it with <link href> — file:// protocol blocks
+ * external stylesheets.
  *
- * Theme switching: add class="theme-dark" or class="theme-light" to <html> or
- * the root container. Dark is the Codi default for presentations.
+ * Theme switching: add class="theme-dark" or class="theme-light" to <html>
+ * or the root container. Dark is the Codi default for presentations.
+ *
+ * Fonts: Codi uses Google Fonts (Outfit + Geist Mono). In generated HTML, add
+ * the stylesheet link from tokens.json `fonts.google_fonts_url`.
  */
-
-/* ── Font Faces ──────────────────────────────────────────────────────────── */
-/* IMPORTANT: Replace SKILL_FONTS_DIR with the absolute path to assets/fonts/ */
-/* IMPORTANT: Replace SKILL_ASSETS_DIR with the absolute path to assets/      */
-/* The agent substitutes these placeholders:                                   */
-/*   SKILL_FONTS_DIR  → ${CLAUDE_SKILL_DIR}/assets/fonts                      */
-/*   SKILL_ASSETS_DIR → ${CLAUDE_SKILL_DIR}/assets                            */
-
-/* Codi uses Google Fonts (Outfit + Geist Mono).                               */
-/* In generated HTML, add:                                                     */
-/*   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"> */
 
 /* ── Dark Theme (Codi default for presentations) ────────────────────────── */
 
