@@ -5,5 +5,8 @@
   "dependencies": {
     "docx": "^9.6.1",
     "html-to-docx": "^1.8.0"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.59.1"
   }
 }

@@ -11,6 +11,7 @@ import {
 import { state } from "./state.js";
 import { $, clearEl, setAppNavVisible } from "./dom.js";
 import { formatTimeAgo } from "./content-descriptor.js";
+import { createValidationBadge } from "./validation-badge.js";
 
 // ====== Card format + inspector-context-aware buildCardDoc ======
 
@@ -215,6 +216,14 @@ function buildCardEl(card, i, container) {
 
   wrapper.addEventListener("click", () => setActiveCard(i));
   wrapper.append(iframe, logoEl, circleEl);
+  // Validation badge — async-fetches score, hides itself when the
+  // badge layer is off or the active content is a template.
+  try {
+    const file =
+      state.activeContent && state.activeContent.source && state.activeContent.source.file;
+    const badge = createValidationBadge(i, file);
+    wrapper.appendChild(badge);
+  } catch {}
   container.appendChild(wrapper);
 }
 

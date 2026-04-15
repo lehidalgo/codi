@@ -27,6 +27,9 @@ import {
 } from "./lib/card-strip.js";
 import { updateExportPanel } from "./lib/exports-ui.js";
 import { initGallery, filterGallery, loadSessionContent, setGalleryStale } from "./lib/gallery.js";
+import { registerPanelOpener } from "./lib/validation-badge.js";
+import { openValidationPanel } from "./lib/validation-panel.js";
+import { initValidationSettings } from "./lib/validation-settings.js";
 
 // Wire forward-references so cycles resolve at runtime.
 registerRenderCards(renderCards);
@@ -40,6 +43,9 @@ registerWsHandlers({
   loadTemplateAsCards,
   renderCards,
 });
+// Validation badge -> panel wiring (validation-badge.js registers the
+// opener lazily so badges don't need to import the panel directly).
+registerPanelOpener((report, ctx) => openValidationPanel(report, ctx));
 
 // ====== Format switching ======
 function setFormat(btn) {
@@ -221,6 +227,9 @@ function init() {
   $("btn-vm-app").classList.add("active");
 
   $("btn-select-toggle").addEventListener("click", toggleSelectAll);
+
+  // ====== Validation settings widget ======
+  initValidationSettings();
 
   // ====== Inspect-elements toggle ======
   state.inspectOn = false;

@@ -12,6 +12,7 @@ const fileRoutes = require('./routes/file-routes.cjs');
 const exportRoutes = require('./routes/export-routes.cjs');
 const inspectRoutes = require('./routes/inspect-routes.cjs');
 const contentRoutes = require('./routes/content-routes.cjs');
+const validateRoutes = require('./routes/validate-routes.cjs');
 
 // ========== Configuration ==========
 
@@ -38,6 +39,7 @@ function handleRequest(req, res) {
   const parsed = new URL(req.url, 'http://localhost');
   if (inspectRoutes.handle(req, res, parsed, ctx)) return;
   if (contentRoutes.handle(req, res, parsed, ctx)) return;
+  if (validateRoutes.handle(req, res, parsed, ctx)) return;
   if (stateRoutes.handle(req, res, parsed, ctx)) return;
   if (brandRoutes.handle(req, res, parsed, ctx)) return;
   if (projectRoutes.handle(req, res, parsed, ctx)) return;

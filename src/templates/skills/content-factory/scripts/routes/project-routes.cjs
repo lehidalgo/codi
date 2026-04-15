@@ -93,10 +93,15 @@ function handle(req, res, parsed, ctx) {
   }
 
   // /api/session-status POST — persist status to a project's manifest
+  //
+  // Layer 5 status gate: if the target status is in the session's
+  // validation.blockStatus list, run a batch validation of all cards
+  // and block with 409 if any fail. `force:true` in the body bypasses
+  // (used by the UI's "change anyway" confirm).
   if (req.method === 'POST' && pathname === '/api/session-status') {
-    readJsonBody(req, (err, body) => {
+    readJsonBody(req, async (err, body) => {
       if (err) { res.writeHead(400); res.end('Bad request'); return; }
-      const { sessionDir: sessionParam, status: newStatus } = body || {};
+      const { sessionDir: sessionParam, status: newStatus, force } = body || {};
       if (!VALID_STATUSES.includes(newStatus)) { res.writeHead(400); res.end('Invalid status'); return; }
       const resolved = path.normalize(path.resolve(sessionParam));
       const ws = path.normalize(ctx.WORKSPACE_DIR);
@@ -104,6 +109,48 @@ function handle(req, res, parsed, ctx) {
       const manifestPath = path.join(resolved, 'state', 'manifest.json');
       if (!fs.existsSync(manifestPath)) { res.writeHead(404); res.end('Project not found'); return; }
       const m = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+
+      // Layer 5 gate
+      if (!force) {
+        try {
+          const cfgLib = require('../lib/validation-config.cjs');
+          const { config } = cfgLib.resolveConfig({
+            workspaceDir: ctx.WORKSPACE_DIR,
+            projectDir: resolved,
+          });
+          const layersOn = config.enabled !== false && config.layers && config.layers.statusGate !== false;
+          const blockList = Array.isArray(config.blockStatus) ? config.blockStatus : [];
+          if (layersOn && blockList.includes(newStatus)) {
+            const validator = require('../lib/validator.cjs');
+            const file = Array.isArray(m.files) && m.files[0] ? m.files[0] : null;
+            if (file) {
+              const batch = await validator.validateAllCards(resolved, file, {
+                preset: config.preset,
+                threshold: config.threshold,
+                tolerance: config.tolerance,
+              });
+              if (batch.ok && batch.pass === false) {
+                sendJson(res, 409, {
+                  ok: false,
+                  code: 'validation_blocks_status',
+                  message: 'Cannot change status: ' + batch.failingCards.length + ' card(s) fail layout validation',
+                  targetStatus: newStatus,
+                  failingCards: batch.failingCards.map((c) => ({
+                    cardIndex: c.cardIndex,
+                    score: c.score,
+                    errors: c.summary ? c.summary.errors : 0,
+                  })),
+                  overridable: true,
+                });
+                return;
+              }
+            }
+          }
+        } catch (_e) {
+          // If validation itself errors, don't block the status change
+        }
+      }
+
       m.status = newStatus;
       m.statusUpdatedAt = Date.now();
       fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));

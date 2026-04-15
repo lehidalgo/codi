@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 55
+version: 56
 ---
 
 # {{name}} — Content Factory
@@ -85,6 +85,13 @@ that the app picks up automatically via WebSocket.
 | \`/api/content-metadata?kind=&id=\` | GET | **Unified content descriptor.** Returns a single shape for both built-in templates and My Work sessions: \`{kind, id, name, type, format, cardCount, status, createdAt, modifiedAt, readOnly, source}\`. \`kind\` is \`template\` or \`session\`. \`readOnly=true\` for templates (edits refused); \`readOnly=false\` for sessions. \`source.sessionDir\` is the absolute project path for sessions; \`source.templateId\` is the template id for templates. Use this to populate the preview header, resolve URL pins, or verify a selection's origin before calling \`/api/persist-style\`. |
 | \`/api/content-list\` | GET | Debug/utility: returns every content descriptor the server knows about, templates and sessions merged into one list. |
 | \`/api/clone-template-to-session\` | POST | **Copy a built-in template into a new editable session.** Body: \`{templateId, name?}\`. The server creates a new session directory under the workspace, copies the template HTML byte-for-byte into \`<session>/content/\`, writes a manifest with provenance (\`preset\` pointing at the origin template), and returns \`{ok, session: <unified descriptor>, sessionDir, file}\`. Use this when the user wants to edit a template — call this first, then drive all subsequent edits against the returned session. The Gallery also exposes this via a "Save to My Work" button on every template card. |
+| \`/api/validate-card\` | POST | **Box Layout Theory validation.** Body: \`{project, file, cardIndex, force?}\`. Runs the content-factory box-layout validator (vendored from box-validator) and returns \`{ok, pass, score, violations:[{rule, severity, path, message, fix}], summary, fixInstructions}\`. Cached by SHA-1 of HTML + dimensions + preset. Returns \`{ok:true, skipped:"master-switch-off"}\` when the session has validation disabled. |
+| \`/api/validate-cards?project=&file=\` | GET | Batch validation for all cards in a file. Returns \`{ok, pass, cards:[...], failingCards:[...]}\`. Used by Layer 4 (export preflight) and Layer 5 (status gate). |
+| \`/api/validation-config?project=<dir>[&file=<basename>]\` | GET | Returns the resolved validation config cascade \`{config, source, contentType}\`. The cascade order is type-default → user default → session → per-file. The \`source\` map shows which scope produced each top-level field. |
+| \`/api/validation-config\` | PATCH | Body: \`{project|user:true, patch}\`. Merges a partial patch into session or user defaults. Returns the new resolved config. |
+| \`/api/validation-config/toggle\` | POST | Body: \`{project, layer, value}\`. Flip a layer on or off. Layers: \`all\` (master), \`endpoint\`, \`badge\`, \`agentDiscipline\`, \`exportPreflight\`, \`statusGate\`. |
+| \`/api/validation-config/ignore-violation\` | POST | Body: \`{project, file, rule, selector?, cardIndex?}\`. Adds a per-file exemption to the session manifest so future validation runs skip that specific violation. |
+| \`/api/validator-health\` | GET | Returns \`{degraded, workers, cacheSize, cacheHits, cacheMisses, avgLatencyMs, lastError}\`. Use this to check if Playwright is installed (\`degraded: true\` means it is missing and all layers default to pass). |
 
 ## URL-pinned tab state
 
@@ -116,6 +123,25 @@ The robust edit flow for element styling is:
 
 1. **Read the selection**: \`GET /api/active-element\` (or \`/api/active-elements\` for multi-set). The response includes a \`context\` field carrying \`{kind, id, name, file, sessionDir?, templateId?, cardIndex, readOnly}\` — captured by the iframe that hosted the click.
 2. **Check \`context.readOnly\`**: if \`true\`, the selection came from a built-in template. Call \`POST /api/clone-template-to-session\` with \`{templateId: context.templateId}\` to create an editable copy in My Work. The response includes the new session descriptor — load it via the normal session flow (URL \`?kind=session&id=<newId>&file=<basename>\`), ask the user to re-click the element in the new session, then retry \`/api/persist-style\`. The 409 response from \`persist-style\` also includes a ready-to-use \`cloneSuggestion\` payload so you do not have to construct it yourself.
+
+## Validation — Box Layout Theory enforcement
+
+content-factory vendors the box-validator rule engine. Five layers all
+on by default, toggleable via \`POST /api/validation-config/toggle\`:
+L1 \`/api/validate-card\` primitive, L2 score badges, L3 agent discipline,
+L4 export preflight, L5 session-status gate. Defaults: slides/document
+strict@0.9, social lenient@0.8. If Playwright is not installed,
+\`/api/validator-health\` reports \`degraded:true\` and all layers
+degrade to pass silently. Install with
+\`bash \${CLAUDE_SKILL_DIR}[[/scripts/setup-validation.sh]]\`.
+
+**Agent workflow (L3)**: after every \`persist-style\` write, check
+\`GET /api/validation-config\` — if \`enabled===false\` or
+\`layers.agentDiscipline===false\`, skip. Otherwise call
+\`POST /api/validate-card {project, file, cardIndex}\`. If \`pass:false\`,
+read \`violations[].fix\`, apply fixes via more \`persist-style\` calls,
+re-validate, iterate up to \`config.iterateLimit\` (default 3), then
+report remaining violations and stop.
 3. **Persist to source**: \`POST /api/persist-style\` with \`{targetSelector, patches}\`. The server reads the context from the selection (no project/file needed in the body). It writes a stable \`data-cf-id\` into the card HTML and upserts a CSS rule inside a bounded \`/* === cf:user-edits === */\` region of the \`<style>\` block. Returns \`409\` with \`{templateId, suggestion}\` if the context is read-only — the server refuses cleanly even if the agent skipped step 2.
 4. **(Optional) Live-preview**: \`POST /api/eval\` for instant visual feedback without waiting for the iframe to rebuild. The persisted source will take effect on the next render cycle anyway.
 

@@ -6,6 +6,92 @@
 import { state } from "./state.js";
 import { log } from "./dom.js";
 import { cardFormat, buildCardDoc, getCardLogo } from "./card-strip.js";
+import * as vcfg from "./validation-config.js";
+import { openValidationPanel } from "./validation-panel.js";
+
+// ====== Export preflight (Layer 4) ======
+//
+// Before every export, check the current session's cards for validation
+// errors. If any fail AND the preflight layer is on, show a modal with
+// three actions: Export anyway / Fix first / Show report. Returns:
+//   { proceed: true }               — user cleared (pass or soft-override)
+//   { proceed: false }              — user chose not to export
+async function exportPreflight() {
+  const cfg = vcfg.getConfig();
+  if (!cfg || cfg.enabled === false) return { proceed: true };
+  if (cfg.layers && cfg.layers.exportPreflight === false) return { proceed: true };
+  if (cfg.overrideExport === "disabled") return { proceed: true };
+
+  const c = state.activeContent;
+  if (!c || c.kind !== "session" || !c.source || !c.source.sessionDir) {
+    return { proceed: true }; // templates bypass preflight
+  }
+
+  try {
+    const res = await fetch(
+      "/api/validate-cards?project=" +
+        encodeURIComponent(c.source.sessionDir) +
+        "&file=" +
+        encodeURIComponent(c.source.file),
+    );
+    const batch = await res.json();
+    if (!batch.ok) return { proceed: true }; // degraded or errored — don't block
+    if (batch.pass !== false) return { proceed: true };
+
+    // One or more failing cards. Show the modal.
+    return await showPreflightModal(batch, cfg.overrideExport || "soft");
+  } catch {
+    return { proceed: true };
+  }
+}
+
+function showPreflightModal(batch, overrideMode) {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText =
+      "position:fixed;inset:0;background:rgba(7,10,15,0.78);z-index:1200;display:flex;align-items:center;justify-content:center;";
+    const modal = document.createElement("div");
+    modal.style.cssText =
+      "background:var(--surface2,#161b22);border:1px solid var(--border-hover,rgba(255,255,255,0.14));border-radius:12px;padding:24px;max-width:460px;color:var(--text,#e6edf3);font:13px system-ui,sans-serif;box-shadow:0 30px 80px rgba(0,0,0,0.6);";
+    const failCount = batch.failingCards ? batch.failingCards.length : 0;
+    const hardBlock = overrideMode === "hard";
+    modal.innerHTML = `
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:#e06c75;">Layout validation failed</div>
+      <div style="opacity:0.8;line-height:1.5;margin-bottom:16px;">
+        ${failCount} card${failCount === 1 ? "" : "s"} fail Box Layout Theory checks.
+        ${hardBlock ? "Fix the issues before exporting." : "You can export anyway, but the output may have layout issues."}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+        <button type="button" id="pf-cancel" style="padding:8px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:inherit;border-radius:6px;cursor:pointer;font:inherit;">Cancel</button>
+        <button type="button" id="pf-report" style="padding:8px 14px;background:rgba(86,182,194,0.15);border:1px solid var(--accent,#56b6c2);color:var(--accent,#56b6c2);border-radius:6px;cursor:pointer;font:inherit;">Show report</button>
+        ${hardBlock ? "" : '<button type="button" id="pf-force" style="padding:8px 14px;background:rgba(224,108,117,0.18);border:1px solid #e06c75;color:#e06c75;border-radius:6px;cursor:pointer;font:inherit;">Export anyway</button>'}
+      </div>
+    `;
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    function close(proceed) {
+      document.body.removeChild(backdrop);
+      resolve({ proceed });
+    }
+    modal.querySelector("#pf-cancel").addEventListener("click", () => close(false));
+    const reportBtn = modal.querySelector("#pf-report");
+    reportBtn.addEventListener("click", () => {
+      const first = batch.failingCards && batch.failingCards[0];
+      if (first) {
+        openValidationPanel(first, {
+          cardIndex: first.cardIndex,
+          file: state.activeContent?.source?.file,
+          projectDir: state.activeContent?.source?.sessionDir,
+        });
+      }
+      close(false);
+    });
+    if (!hardBlock) {
+      modal.querySelector("#pf-force").addEventListener("click", () => close(true));
+    }
+  });
+}
 
 const EXPORT_ICON_DOWNLOAD = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11.5l-4-4h2.5V2h3v5.5H12L8 11.5zM2 13.5h12V12H2v1.5z"/></svg>`;
 
@@ -96,6 +182,8 @@ function downloadBlob(blob, filename) {
 export async function exportCard(index) {
   const card = state.cards[index];
   if (!card) return;
+  const preflight = await exportPreflight();
+  if (!preflight.proceed) return;
   log("Exporting PNG " + (index + 1) + "...");
   try {
     const blob = await renderCardToPngBlob(card, index);
@@ -108,6 +196,8 @@ export async function exportCard(index) {
 
 export async function exportPdf() {
   if (!state.cards.length) return;
+  const preflight = await exportPreflight();
+  if (!preflight.proceed) return;
   const baseName = (state.preset || state.activeFile || "export").replace(".html", "");
   log("Building PDF (" + state.cards.length + " slides)...");
   try {
@@ -136,6 +226,8 @@ export async function exportPdf() {
 
 export async function exportPptx() {
   if (!state.cards.length) return;
+  const preflight = await exportPreflight();
+  if (!preflight.proceed) return;
   const baseName = (state.preset || state.activeFile || "export").replace(".html", "");
   log("Building PPTX (" + state.cards.length + " slides)...");
   try {
@@ -181,6 +273,8 @@ export async function exportPptx() {
 
 export async function exportDocx() {
   if (!state.cards.length) return;
+  const preflight = await exportPreflight();
+  if (!preflight.proceed) return;
   const baseName = (state.preset || state.activeFile || "export").replace(".html", "");
   log("Building DOCX (" + state.cards.length + " slides)...");
   try {
@@ -208,6 +302,8 @@ export async function exportDocx() {
 }
 
 export async function exportHtmlBundle() {
+  const preflight = await exportPreflight();
+  if (!preflight.proceed) return;
   log("Building HTML bundle...");
   try {
     const payload = buildExportHtmlBundlePayload();
@@ -256,6 +352,8 @@ function resolveBundleBaseName(payload) {
 
 export async function exportAll() {
   if (!state.cards.length) return;
+  const preflight = await exportPreflight();
+  if (!preflight.proceed) return;
   log("Building ZIP (" + state.cards.length + " slides)...");
   try {
     const zip = new JSZip();
