@@ -13,7 +13,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
 
 # {{name}} — Document Engine
@@ -194,6 +194,18 @@ Choose structure based on document type:
 - **Consistent formatting** — parallel structure in lists
 - **Source attribution** — cite data sources in footnotes or inline
 
+## Step 4b: Validate layout structure
+
+After writing the HTML file, run the Box Layout Validator to catch spacing, hierarchy, and sibling-consistency bugs before delivering:
+
+\\\`\\\`\\\`bash
+bash ~/.claude/skills/codi-box-validator/scripts/setup.sh   # first run only
+node ~/.claude/skills/codi-box-validator/scripts/validate.mjs \\\\
+  --input <absolute-path> --width 794 --height 1123 --threshold 0.85
+\\\`\\\`\\\`
+
+For A4 portrait use 794×1123, landscape 1123×794, US Letter 816×1056. If \\\`valid: false\\\`, read the JSON \\\`fixInstructions\\\` field, patch the HTML, revalidate. Max 4 iterations. Only deliver when valid or at final attempt.
+
 ## Step 5: Output Formats
 
 ### HTML (Primary)
@@ -223,7 +235,7 @@ For content research during document generation, delegate to these agents (see \
 ## Related Skills
 
 - **${PROJECT_NAME}-theme-factory** — Apply visual themes to generated documents
-- **${PROJECT_NAME}-deck-engine** — Generate slide presentations from document content
+- **${PROJECT_NAME}-content-factory** — Generate slide presentations from document content
 
 ## Step 6: Component Reference
 

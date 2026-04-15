@@ -144,9 +144,9 @@ managed_by: codi
 | **Content Creation** | codi-content-factory |
 | **Content Refinement** | codi-humanizer |
 | **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory |
-| **Developer Tools** | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-diagnostics, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
+| **Developer Tools** | codi-box-validator, codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-diagnostics, codi-graph-sync, codi-html-live-inspect, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
 | **Developer Workflow** | codi-audit-fix, codi-brainstorming, codi-branch-finish, codi-debugging, codi-evidence-gathering, codi-guided-execution, codi-plan-executor, codi-plan-writer, codi-step-documenter, codi-subagent-dev, codi-tdd, codi-verification, codi-worktrees |
-| **Document Generation** | codi-deck-engine, codi-doc-engine |
+| **Document Generation** | codi-doc-engine |
 | **File Format Tools** | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
 | **Planning** | codi-roadmap |
 | **Productivity** | codi-audio-transcriber, codi-notebooklm |

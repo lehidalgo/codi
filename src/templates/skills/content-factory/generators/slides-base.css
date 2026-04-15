@@ -1,0 +1,545 @@
+/*
+  slides-base.css — Brand tokens + slide styles for Content Factory decks
+  ========================================================================
+  Purpose: Reference stylesheet for the CODING AGENT. Copy this file as
+  deck.css in the session's content directory. When a brand skill is
+  active, replace the :root token block with that brand's tokens.css.
+
+  Font paths: Replace SKILL_FONTS_DIR with ${CLAUDE_SKILL_DIR}/assets/fonts
+  Logo path:  Replace SKILL_ASSETS_DIR with ${CLAUDE_SKILL_DIR}/assets
+*/
+
+/* ── Brand Tokens ──────────────────────────────────────────────────────────── */
+/* Replace this block with the active brand's tokens.css contents.             */
+/* If using local fonts, add @font-face rules here with absolute file:// paths */
+:root {
+  /* Colors */
+  --brand-primary:    #1a1a2e;
+  --brand-bg:         #0f0f1a;
+  --brand-surface:    #16213e;
+  --brand-text:       #e8e8f0;
+  --brand-text-muted: #9090a8;
+  --brand-accent:     #6c63ff;
+
+  /* Typography */
+  --brand-font-headline: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --brand-font-body:     'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --brand-font-mono:     'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* Layout */
+  --slide-pad:    48px;
+  --slide-pad-sm: 28px;
+  --slide-radius: 6px;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CRITICAL: Do NOT change the rules below marked REQUIRED.
+   Altering them causes all slides to render simultaneously (stacking bug).
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Deck Viewport ─────────────────────────────────────────────────────────── */
+html, body {
+  width: 100%; height: 100%;
+  background: #000;
+  overflow: hidden;           /* REQUIRED */
+  font-family: var(--brand-font-body);
+  color: var(--brand-text);
+}
+
+.deck {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%; height: 100%;
+}
+
+.deck__viewport {
+  position: relative;         /* REQUIRED */
+  width: 100%; height: 100%;
+  max-width: calc(100vh * 16 / 9);
+  max-height: calc(100vw * 9 / 16);
+  overflow: hidden;
+}
+
+/* ── Slide Chrome — persistent overlay (logo + progress + counter) ─────────── */
+.slide-chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 101;
+}
+
+.global-logo {
+  position: absolute;
+  bottom: var(--slide-pad-sm);
+  right: var(--slide-pad);
+  height: 22px;
+  width: auto;
+  opacity: 0.8;
+}
+
+.global-logo--inverted {
+  filter: brightness(0) invert(1);
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 3px;
+  background: var(--brand-accent);
+  transition: width 0.3s ease;
+  z-index: 102;
+}
+
+.slide-counter {
+  position: absolute;
+  bottom: 10px; right: 14px;
+  font-size: 11px;
+  color: var(--brand-text-muted);
+  z-index: 102;
+  font-family: var(--brand-font-body);
+}
+
+/* ── Slide Base ────────────────────────────────────────────────────────────── */
+.slide {
+  display: none;              /* REQUIRED */
+  position: absolute;         /* REQUIRED */
+  inset: 0;
+  background: var(--brand-bg);
+  padding: var(--slide-pad);
+  overflow: hidden;
+  font-size: clamp(12px, 1.5vw, 20px);
+}
+
+.slide.active {               /* REQUIRED */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Dark slide modifier (.slide--blue uses brand-primary background) ─────── */
+.slide--blue {
+  background: var(--brand-primary) !important;
+  color: #fff;
+}
+
+.slide--blue h1,
+.slide--blue h2,
+.slide--blue h3,
+.slide--blue p,
+.slide--blue li { color: #fff; }
+
+.slide--blue .slide__subtitle,
+.slide--blue .slide__meta,
+.slide--blue .attribution { color: rgba(255,255,255,0.65); }
+
+/* Logo automatically inverts on dark slides */
+.slide--blue .slide__logo { filter: brightness(0) invert(1); }
+
+/* ── Title Slide ────────────────────────────────────────────────────────────── */
+.slide[data-type="title"] {
+  background: var(--brand-surface);
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.slide[data-type="title"] .slide__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--brand-accent);
+  font-weight: 500;
+}
+
+.slide[data-type="title"] h1 {
+  font-family: var(--brand-font-headline);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--brand-text);
+  max-width: 560px;
+}
+
+.slide[data-type="title"] .slide__subtitle {
+  font-size: 18px;
+  color: var(--brand-text-muted);
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.slide[data-type="title"] .slide__meta {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--brand-text-muted);
+}
+
+/* ── Divider Slide ─────────────────────────────────────────────────────────── */
+.slide[data-type="divider"] {
+  background: var(--brand-primary);
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.slide[data-type="divider"] .section-number {
+  font-size: 72px;
+  font-family: var(--brand-font-headline);
+  font-weight: 700;
+  color: rgba(255,255,255,0.12);
+  line-height: 1;
+  position: absolute;
+  top: var(--slide-pad);
+  right: var(--slide-pad);
+}
+
+.slide[data-type="divider"] h2 {
+  font-family: var(--brand-font-headline);
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  max-width: 480px;
+  line-height: 1.2;
+}
+
+/* ── Content Slide ──────────────────────────────────────────────────────────── */
+.slide[data-type="content"] h2,
+.slide[data-type="metrics"] h2,
+.slide[data-type="table"] h2,
+.slide[data-type="cards"] h2,
+.slide[data-type="code"] h2,
+.slide[data-type="split"] h2,
+.slide[data-type="flow"] h2 {
+  font-family: var(--brand-font-headline);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--brand-text);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--brand-accent);
+  flex-shrink: 0;
+}
+
+.slide[data-type="content"] p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--brand-text-muted);
+  margin-bottom: 12px;
+}
+
+/* ── Bullet list ────────────────────────────────────────────────────────────── */
+.bullet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.bullet-list li {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--brand-text);
+  padding-left: 18px;
+  position: relative;
+}
+
+.bullet-list li::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 8px;
+  width: 6px; height: 6px;
+  background: var(--brand-accent);
+  border-radius: 50%;
+}
+
+/* ── Quote Slide ────────────────────────────────────────────────────────────── */
+.slide[data-type="quote"] {
+  background: var(--brand-primary);
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.slide[data-type="quote"] blockquote {
+  font-family: var(--brand-font-headline);
+  font-size: 28px;
+  font-style: italic;
+  color: #fff;
+  line-height: 1.4;
+  max-width: 700px;
+  border-left: 4px solid var(--brand-accent);
+  padding-left: 24px;
+}
+
+.slide[data-type="quote"] .attribution {
+  margin-top: 20px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  padding-left: 28px;
+}
+
+/* ── Metrics Slide ──────────────────────────────────────────────────────────── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  flex: 1;
+}
+
+.metric-card {
+  background: var(--brand-surface);
+  border-radius: var(--slide-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 3px solid var(--brand-accent);
+}
+
+.metric-value {
+  font-family: var(--brand-font-headline);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--brand-accent);
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--brand-text-muted);
+  line-height: 1.3;
+}
+
+/* ── Table Slide ────────────────────────────────────────────────────────────── */
+.slide[data-type="table"] table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  flex: 1;
+}
+
+.slide[data-type="table"] th {
+  background: var(--brand-primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slide[data-type="table"] td {
+  padding: 7px 12px;
+  color: var(--brand-text);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.slide[data-type="table"] tr:nth-child(even) td {
+  background: rgba(255,255,255,0.03);
+}
+
+/* ── Card Grid (2- or 3-column) ─────────────────────────────────────────────── */
+.card-grid {
+  display: grid;
+  gap: 16px;
+  flex: 1;
+}
+
+.card-grid--2 { grid-template-columns: repeat(2, 1fr); }
+.card-grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+.card {
+  background: var(--brand-surface);
+  border-radius: var(--slide-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 3px solid var(--brand-accent);
+}
+
+.card__title {
+  font-family: var(--brand-font-headline);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--brand-text);
+}
+
+.card__body {
+  font-size: 13px;
+  color: var(--brand-text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* ── Code Block ─────────────────────────────────────────────────────────────── */
+.code-block {
+  background: #0d0d1a;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--slide-radius);
+  padding: 16px 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.code-block pre {
+  font-family: var(--brand-font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.code-block .comment  { color: #6a737d; }
+.code-block .keyword  { color: #ff7b72; }
+.code-block .string   { color: #a5d6ff; }
+.code-block .function { color: #d2a8ff; }
+.code-block .number   { color: #79c0ff; }
+
+/* ── Split Layout (text + visual) ───────────────────────────────────────────── */
+.slide__content--split {
+  display: flex;
+  flex: 1;
+  gap: 32px;
+  overflow: hidden;
+}
+
+.split__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+
+.split__text p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--brand-text-muted);
+}
+
+.split__visual {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-surface);
+  border-radius: var(--slide-radius);
+  overflow: hidden;
+}
+
+.split__visual img,
+.split__visual svg { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* ── Flow Diagram ───────────────────────────────────────────────────────────── */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.flow__step {
+  background: var(--brand-surface);
+  border: 2px solid var(--brand-accent);
+  border-radius: var(--slide-radius);
+  padding: 14px 18px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-text);
+  min-width: 100px;
+}
+
+.flow__arrow {
+  font-size: 20px;
+  color: var(--brand-accent);
+  flex-shrink: 0;
+}
+
+/* ── Closing Slide ──────────────────────────────────────────────────────────── */
+.slide[data-type="closing"] {
+  background: var(--brand-surface);
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.slide[data-type="closing"] h2 {
+  font-family: var(--brand-font-headline);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--brand-text);
+  margin-bottom: 16px;
+}
+
+.slide[data-type="closing"] .contact {
+  font-size: 14px;
+  color: var(--brand-text-muted);
+  margin-top: auto;
+}
+
+/* ── Per-slide logo (fallback if not using slide-chrome overlay) ────────────── */
+.slide__logo {
+  position: absolute;
+  bottom: var(--slide-pad-sm);
+  right: var(--slide-pad);
+  height: 22px;
+  width: auto;
+  opacity: 0.8;
+}
+
+/* ── Entrance animations ─────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* .animate-in elements are invisible until the slide becomes active */
+.animate-in { opacity: 0; }
+
+.slide.active .animate-in {
+  animation: fadeUp 0.45s ease forwards;
+}
+
+/* Staggered delays for up to 7 children */
+.slide.active .animate-in:nth-child(1) { animation-delay:   0ms; }
+.slide.active .animate-in:nth-child(2) { animation-delay:  80ms; }
+.slide.active .animate-in:nth-child(3) { animation-delay: 160ms; }
+.slide.active .animate-in:nth-child(4) { animation-delay: 240ms; }
+.slide.active .animate-in:nth-child(5) { animation-delay: 320ms; }
+.slide.active .animate-in:nth-child(6) { animation-delay: 400ms; }
+.slide.active .animate-in:nth-child(7) { animation-delay: 480ms; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-height: 600px) {
+  :root { --slide-pad: 28px; }
+  .slide[data-type="title"] h1 { font-size: 32px; }
+  .metric-value { font-size: 26px; }
+}
+
+@media (max-width: 768px) {
+  :root { --slide-pad: 20px; }
+  .card-grid--3 { grid-template-columns: repeat(2, 1fr); }
+  .slide__content--split { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in { opacity: 1 !important; animation: none !important; }
+  .progress-bar { transition: none; }
+}
+
+/* ── Print (one slide per page for PDF export) ──────────────────────────────── */
+@media print {
+  html, body { overflow: visible; background: #fff; }
+  .deck { display: block; }
+  .deck__viewport { max-width: none; max-height: none; width: 100%; height: auto; position: static; overflow: visible; }
+  .slide { display: flex !important; position: relative !important; inset: auto !important; height: 100vh; page-break-after: always; break-after: page; }
+  .slide-chrome, .progress-bar, .slide-counter { display: none !important; }
+  .animate-in { opacity: 1 !important; animation: none !important; }
+}

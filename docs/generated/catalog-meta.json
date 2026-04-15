@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-04-12T15:59:25.338Z",
+  "generatedAt": "2026-04-13T21:38:32.888Z",
   "counts": {
-    "skills": 65,
+    "skills": 64,
     "rules": 28,
     "agents": 22,
     "presets": 6,
-    "total": 121
+    "total": 120
   },
   "categories": [
     "Brand Identity",
@@ -244,7 +244,7 @@
     {
       "type": "skill",
       "name": "codi-codi-brand",
-      "description": "Codi brand content studio. Use when creating any branded deliverable for Codi — presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX output that must carry Codi brand identity. Also activate when the user mentions 'codi brand', 'codi design system', 'codi style', or asks for Codi-branded output of any kind.",
+      "description": "Codi brand identity. Use when creating any branded deliverable for Codi — slides, documents, social cards, reports, or any HTML/PDF/PPTX/DOCX output that must carry Codi visual identity. Also activate when the user mentions 'codi brand', 'codi design system', or asks for Codi-branded output of any kind. Provides design tokens (colors, fonts), voice guidelines, references, and Content Factory templates. Rendering and export are handled by the codi-content-factory skill — this skill ships no preview server or code.",
       "slug": "catalog/skills/codi-codi-brand",
       "category": "Brand Identity",
       "userInvocable": true,
@@ -322,21 +322,6 @@
       "description": "First-line debugging with root cause analysis. Use when investigating bugs, test failures, unexpected behavior, or build failures. Enforces root cause before any fix. Also activate on /codi-check or when stuck on an error.",
       "slug": "catalog/skills/codi-debugging",
       "category": "Developer Workflow",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
-      "name": "codi-deck-engine",
-      "description": "HTML slide deck generator with brand token integration. Use when the user needs a self-contained HTML presentation with navigation, animations, and PDF export. Also activate for pitch decks or technical presentations needing brand tokens.",
-      "slug": "catalog/skills/codi-deck-engine",
-      "category": "Document Generation",
       "userInvocable": true,
       "compatibility": [
         "claude-code",

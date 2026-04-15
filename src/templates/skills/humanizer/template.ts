@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
 # {{name}} — Content Humanizer
@@ -131,6 +131,6 @@ If the user wants to iterate, accept feedback and revise — do not restart the 
 
 - **${PROJECT_NAME}-content-factory** — Generate blog posts and social media content (includes opt-in humanizer step)
 - **${PROJECT_NAME}-doc-engine** — Generate branded reports and proposals (includes opt-in humanizer step)
-- **${PROJECT_NAME}-deck-engine** — Generate HTML slide decks (includes opt-in humanizer step)
+- **${PROJECT_NAME}-content-factory** — Generate HTML slide decks and social content (includes opt-in humanizer step)
 - **${PROJECT_NAME}-documentation** — Write technical documentation (includes opt-in humanizer step)
 `;

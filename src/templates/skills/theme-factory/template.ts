@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
 # Theme Factory Skill
@@ -73,7 +73,7 @@ To handle cases where none of the existing themes work for an artifact, create a
 
 ## Related Skills
 
-- **${PROJECT_NAME}-deck-engine** — Presentation engine whose output can be themed
+- **${PROJECT_NAME}-content-factory** — Presentation and slide engine whose output can be themed
 - **${PROJECT_NAME}-doc-engine** — Document engine whose output can be themed
 - **${PROJECT_NAME}-frontend-design** — Frontend interfaces that can use theme tokens
 `;

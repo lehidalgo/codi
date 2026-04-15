@@ -11,7 +11,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # {{name}}
@@ -109,7 +109,7 @@ After design is approved, identify the pipeline and tell the user which one was 
 | Task Type | Detection Signals | Next Skill |
 |-----------|-------------------|------------|
 | **Implementation** | New feature, bug fix, refactor, API change, database change | \\\`${PROJECT_NAME}-plan-writer\\\` |
-| **Content** | Blog post, report, deck, documentation, README | Appropriate content skill (\\\`${PROJECT_NAME}-content-factory\\\` / \\\`${PROJECT_NAME}-doc-engine\\\` / \\\`${PROJECT_NAME}-deck-engine\\\` / \\\`${PROJECT_NAME}-project-documentation\\\`) |
+| **Content** | Blog post, report, deck, documentation, README | Appropriate content skill (\\\`${PROJECT_NAME}-content-factory\\\` / \\\`${PROJECT_NAME}-doc-engine\\\` / \\\`${PROJECT_NAME}-project-documentation\\\`) |
 | **Quality** | Security audit, code review, test coverage | Skip brainstorming entirely - go directly to quality skill |
 
 Say explicitly: "This is an [implementation / content / quality] task. I will invoke [skill name] next."
