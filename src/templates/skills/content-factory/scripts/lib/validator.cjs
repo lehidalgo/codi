@@ -111,6 +111,17 @@ async function probeRenderer() {
       _degraded = true;
       return false;
     }
+    // If the renderer exposes a playwright probe, actually try to load it.
+    // Without this, renderer.cjs lazy-loads playwright inside renderAndExtract
+    // and probeRenderer would incorrectly report healthy.
+    if (typeof renderer.probePlaywright === 'function') {
+      const ok = await renderer.probePlaywright();
+      if (!ok) {
+        _degraded = true;
+        _lastError = 'playwright not installed';
+        return false;
+      }
+    }
     _degraded = false;
     return true;
   } catch (e) {
@@ -118,6 +129,16 @@ async function probeRenderer() {
     _lastError = e.message;
     return false;
   }
+}
+
+// Detects the "playwright not installed" error (string match, since the
+// error may bubble up from deep inside renderAndExtract). When it fires,
+// we flip to degraded mode for subsequent calls and return a skipped
+// response instead of an error.
+function isMissingPlaywrightError(err) {
+  if (!err) return false;
+  const msg = String(err.message || err);
+  return /playwright not installed/i.test(msg);
 }
 
 // Queue so only one validation runs at a time against the shared browser.
@@ -184,6 +205,15 @@ async function validateHtml(html, opts = {}) {
       return full;
     } catch (e) {
       _lastError = e.message;
+      // Defensive: if playwright vanished between probe and call, flip to
+      // degraded and return a skipped response — higher layers treat skipped
+      // as pass, not error.
+      if (isMissingPlaywrightError(e)) {
+        _degraded = true;
+        const degraded = degradedResponse();
+        cacheSet(key, degraded);
+        return degraded;
+      }
       const errResult = { ok: false, error: e.message };
       // Do NOT cache error responses — they may be transient.
       return errResult;
@@ -205,9 +235,9 @@ async function validateCard(project, file, cardIndex, cfg = {}) {
     return { ok: false, error: 'file not found: ' + contentPath };
   }
   const rawHtml = fs.readFileSync(contentPath, 'utf-8');
-  // The content file contains one or more <article class="social-card">
-  // elements. We extract the Nth one and render it in isolation inside
-  // a host shell matching its declared format.
+  // The content file contains one or more card elements (social-card,
+  // slide, or doc-page). We extract the Nth one and render it in isolation
+  // inside a host shell matching its declared format.
   const { html, width, height } = extractCardHtml(rawHtml, cardIndex, cfg);
   if (!html) {
     return { ok: false, error: 'card index out of range: ' + cardIndex };
@@ -254,13 +284,22 @@ function extractCardHtml(rawHtml, cardIndex, cfg = {}) {
   return all[cardIndex] || { html: null };
 }
 
+// Card classes we know how to extract. Add new types here.
+const CARD_CLASSES = ['social-card', 'slide', 'doc-page'];
+
+// Default canvas dimensions per card class. Used when cfg.format is absent.
+const DEFAULT_CANVAS = {
+  'social-card': { w: 1080, h: 1080 },
+  slide: { w: 1920, h: 1080 },
+  'doc-page': { w: 1240, h: 1754 },
+};
+
 function extractAllCardsHtml(rawHtml, cfg = {}) {
-  // Parse out each <article class="social-card">...</article> block.
-  // We wrap each card in a minimal host document with the declared canvas
-  // dimensions so computed styles reflect what the browser would render
-  // inside the content-factory preview.
-  const width = (cfg.format && cfg.format.w) || 1080;
-  const height = (cfg.format && cfg.format.h) || 1080;
+  // Parse out each top-level card block. Supports <article|section> with any
+  // recognized card class. We wrap each card in a minimal host document with
+  // the declared canvas dimensions so computed styles reflect what the
+  // browser would render inside the content-factory preview.
+  const formatOverride = cfg.format || null;
 
   // Pull out <style> blocks from the source — they apply to all cards.
   const styleMatches = [];
@@ -277,18 +316,29 @@ function extractAllCardsHtml(rawHtml, cfg = {}) {
     linkMatches.push(m[0]);
   }
 
-  // Find each <article class="social-card"> block.
+  // Match <article|section class="… (social-card|slide|doc-page) …">…</…>
+  const classAlt = CARD_CLASSES.join('|');
+  const cardRe = new RegExp(
+    '<(article|section)\\b[^>]*class\\s*=\\s*["\'][^"\']*\\b(' +
+      classAlt +
+      ')\\b[^"\']*["\'][^>]*>[\\s\\S]*?<\\/\\1>',
+    'gi',
+  );
   const cards = [];
-  const articleRe = /<article\b[^>]*class\s*=\s*["'][^"']*\bsocial-card\b[^"']*["'][^>]*>[\s\S]*?<\/article>/gi;
-  while ((m = articleRe.exec(rawHtml)) !== null) {
+  while ((m = cardRe.exec(rawHtml)) !== null) {
     const articleHtml = m[0];
-    const hostHtml = buildHostHtml(articleHtml, styleMatches, linkMatches, width, height);
-    cards.push({ html: hostHtml, width, height });
+    const cardClass = m[2];
+    const defaults = DEFAULT_CANVAS[cardClass] || DEFAULT_CANVAS['social-card'];
+    const width = formatOverride ? formatOverride.w : defaults.w;
+    const height = formatOverride ? formatOverride.h : defaults.h;
+    const hostHtml = buildHostHtml(articleHtml, styleMatches, linkMatches, width, height, cardClass);
+    cards.push({ html: hostHtml, width, height, cardClass });
   }
   return cards;
 }
 
-function buildHostHtml(article, styles, links, width, height) {
+function buildHostHtml(article, styles, links, width, height, cardClass) {
+  const sizedSelector = cardClass ? '.' + cardClass : '.social-card';
   const head = [
     '<meta charset="utf-8">',
     ...links,
@@ -296,7 +346,7 @@ function buildHostHtml(article, styles, links, width, height) {
     '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }',
     `html, body { width: ${width}px; height: ${height}px; position: relative; overflow: hidden; }`,
     `:root { --w: ${width}px; --h: ${height}px; }`,
-    `.social-card { width: ${width}px !important; height: ${height}px !important; }`,
+    `${sizedSelector} { width: ${width}px !important; height: ${height}px !important; }`,
     '</style>',
     ...styles,
   ].join('\n');

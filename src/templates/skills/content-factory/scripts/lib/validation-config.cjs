@@ -145,9 +145,21 @@ function writeSessionConfig(projectDir, cfg) {
  * Returns { config, source, scope } where source is a flat map of
  * top-level keys to their originating scope name.
  */
+// Infer content type from a filename when the session manifest does not
+// declare a preset type. Matches on basename prefix.
+function inferTypeFromFile(file) {
+  if (!file) return null;
+  const base = String(file).split('/').pop().toLowerCase();
+  if (/^slides?\b/.test(base)) return 'slides';
+  if (/^social\b/.test(base)) return 'social';
+  if (/^(doc|document|report|page)\b/.test(base)) return 'document';
+  return null;
+}
+
 function resolveConfig({ workspaceDir, projectDir, file }) {
   const session = readSessionConfig(projectDir);
-  const typeDefaults = getDefaultsFor(session.type);
+  const type = session.type || inferTypeFromFile(file);
+  const typeDefaults = getDefaultsFor(type);
   const userDefaults = workspaceDir ? readUserDefaults(workspaceDir) : null;
   const sessionCfg = session.cfg;
 
@@ -173,7 +185,7 @@ function resolveConfig({ workspaceDir, projectDir, file }) {
     }
   }
 
-  return { config: merged, source, type: session.type };
+  return { config: merged, source, type };
 }
 
 /**
@@ -228,6 +240,7 @@ module.exports = {
   writeUserDefaults,
   readSessionConfig,
   writeSessionConfig,
+  inferTypeFromFile,
   resolveConfig,
   patchSessionConfig,
   setLayer,

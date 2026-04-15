@@ -108,6 +108,38 @@ describe("validation-config resolve cascade", () => {
     expect(source.threshold).toBe("session");
   });
 
+  it("infers type from filename when manifest preset is null", () => {
+    // manifest with preset:null — type should fall back to filename inference
+    const proj = makeSession(ws, "noPreset", { preset: null });
+    const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: "slides.html" });
+    expect(r.type).toBe("slides");
+    expect(r.config.preset).toBe("strict");
+    expect(r.config.threshold).toBe(0.9);
+  });
+
+  it("infers social type from social.html filename", () => {
+    const proj = makeSession(ws, "noPresetSocial", { preset: null });
+    const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: "social.html" });
+    expect(r.type).toBe("social");
+    expect(r.config.preset).toBe("lenient");
+    expect(r.config.threshold).toBe(0.8);
+  });
+
+  it("infers document type from doc/report/page prefixes", () => {
+    const proj = makeSession(ws, "noPresetDoc", { preset: null });
+    for (const name of ["doc.html", "document.html", "report.html", "page.html"]) {
+      const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: name });
+      expect(r.type).toBe("document");
+      expect(r.config.preset).toBe("strict");
+    }
+  });
+
+  it("manifest preset.type wins over filename inference", () => {
+    const proj = makeSession(ws, "hasPreset"); // default: slides
+    const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: "social.html" });
+    expect(r.type).toBe("slides");
+  });
+
   it("perFile override wins for a specific file", () => {
     const proj = makeSession(ws, "a");
     cfgLib.writeSessionConfig(proj, {

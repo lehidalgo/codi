@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "fs";
+import path from "path";
+import os from "os";
 import * as validator from "#src/templates/skills/content-factory/scripts/lib/validator.cjs";
 
 // Fake renderer — returns a synthetic annotated tree without using
@@ -109,6 +112,33 @@ describe("validator wrapper", () => {
     expect(h.degraded).toBe(true);
   });
 
+  it("returns degraded response when probePlaywright reports false", async () => {
+    validator.__setRenderer({
+      renderAndExtract: async () => leafTree(),
+      probePlaywright: async () => false,
+    });
+    const r = await validator.validateHtml("<html></html>", { width: 1080, height: 1080 });
+    expect(r.ok).toBe(true);
+    expect(r.skipped).toBe("playwright-missing");
+    expect(r.installHint).toMatch(/setup-validation/);
+    expect(validator.getHealth().degraded).toBe(true);
+  });
+
+  it("catches late playwright failure and flips to degraded", async () => {
+    // probePlaywright says OK, but renderAndExtract throws the install error
+    // — this simulates playwright vanishing between probe and render call.
+    validator.__setRenderer({
+      probePlaywright: async () => true,
+      renderAndExtract: async () => {
+        throw new Error("playwright not installed. Run: bash scripts/setup-validation.sh");
+      },
+    });
+    const r = await validator.validateHtml("<x/>", { width: 1080, height: 1080 });
+    expect(r.ok).toBe(true);
+    expect(r.skipped).toBe("playwright-missing");
+    expect(validator.getHealth().degraded).toBe(true);
+  });
+
   it("runs validation with a fake renderer and returns a pass report", async () => {
     validator.__setRenderer(fakeRenderer(() => leafTree("centered text")));
     const r = await validator.validateHtml("<x/>", { width: 1080, height: 1080 });
@@ -189,6 +219,95 @@ describe("validator wrapper", () => {
       validator.validateHtml("<x/>", { width: 103, height: 100 }),
     ]);
     expect(maxInFlight).toBe(1);
+  });
+
+  it("extracts all card classes: social-card, slide, doc-page", async () => {
+    const captured = [];
+    validator.__setRenderer({
+      renderAndExtract: async ({ html, width, height }) => {
+        captured.push({
+          width,
+          height,
+          hasSocial: /social-card/.test(html),
+          hasSlide: /class="slide/.test(html),
+          hasDoc: /doc-page/.test(html),
+        });
+        return leafTree();
+      },
+      closeBrowser: async () => {},
+    });
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cf-extract-"));
+    const project = path.join(tmp, "sess");
+    fs.mkdirSync(path.join(project, "content"), { recursive: true });
+
+    // social
+    fs.writeFileSync(
+      path.join(project, "content", "social.html"),
+      `<!DOCTYPE html><html><body>
+        <article class="social-card"><div>A</div></article>
+        <article class="social-card"><div>B</div></article>
+      </body></html>`,
+    );
+    const s = await validator.validateAllCards(project, "social.html", {});
+    expect(s.cards).toHaveLength(2);
+
+    // slides
+    fs.writeFileSync(
+      path.join(project, "content", "slides.html"),
+      `<!DOCTYPE html><html><body>
+        <article class="slide slide--cover"><h1>One</h1></article>
+        <article class="slide"><h1>Two</h1></article>
+        <article class="slide"><h1>Three</h1></article>
+      </body></html>`,
+    );
+    const sl = await validator.validateAllCards(project, "slides.html", {});
+    expect(sl.cards).toHaveLength(3);
+
+    // docs
+    fs.writeFileSync(
+      path.join(project, "content", "doc.html"),
+      `<!DOCTYPE html><html><body>
+        <section class="doc-page"><p>Page 1</p></section>
+        <section class="doc-page"><p>Page 2</p></section>
+      </body></html>`,
+    );
+    const d = await validator.validateAllCards(project, "doc.html", {});
+    expect(d.cards).toHaveLength(2);
+
+    // Default canvas sizes applied when cfg.format is absent
+    const slideRender = captured.find((c) => c.hasSlide && !c.hasSocial);
+    expect(slideRender).toBeDefined();
+    expect(slideRender.width).toBe(1920);
+    expect(slideRender.height).toBe(1080);
+    const docRender = captured.find((c) => c.hasDoc);
+    expect(docRender.width).toBe(1240);
+    expect(docRender.height).toBe(1754);
+    const socialRender = captured.find((c) => c.hasSocial);
+    expect(socialRender.width).toBe(1080);
+    expect(socialRender.height).toBe(1080);
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("cfg.format override wins over default canvas sizes", async () => {
+    const sizes = [];
+    validator.__setRenderer({
+      renderAndExtract: async ({ width, height }) => {
+        sizes.push({ width, height });
+        return leafTree();
+      },
+      closeBrowser: async () => {},
+    });
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cf-extract-"));
+    const project = path.join(tmp, "sess");
+    fs.mkdirSync(path.join(project, "content"), { recursive: true });
+    fs.writeFileSync(
+      path.join(project, "content", "slides.html"),
+      `<article class="slide"><h1>A</h1></article>`,
+    );
+    await validator.validateAllCards(project, "slides.html", { format: { w: 800, h: 600 } });
+    expect(sizes[0]).toEqual({ width: 800, height: 600 });
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
 
   it("returns an error response (not cached) when renderer throws", async () => {

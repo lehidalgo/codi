@@ -20,6 +20,18 @@ async function loadPlaywright() {
   }
 }
 
+// Lightweight probe: verifies that the playwright module can be imported,
+// without launching a browser. Used by the validator wrapper to decide
+// whether to enter degraded mode on startup.
+async function probePlaywright() {
+  try {
+    await import('playwright');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Persistent browser reused across calls. Launched lazily on first use.
 let _browser = null;
 async function getBrowser() {
@@ -146,4 +158,4 @@ function extractInBrowser() {
   return walk(root, root.tagName.toLowerCase());
 }
 
-module.exports = { renderAndExtract, closeBrowser };
+module.exports = { renderAndExtract, closeBrowser, probePlaywright };
