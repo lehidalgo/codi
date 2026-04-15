@@ -100,6 +100,13 @@ body {
   overflow: hidden;
 }
 
+.inspect-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
 .panel-label {
   font-size: 10px;
   font-weight: 600;
@@ -879,6 +886,15 @@ input[type="range"] {
   pointer-events: none;
 }
 
+/* When inspect mode is on, let clicks reach card content in the main
+   preview iframe so the injected inspector can capture DOM elements.
+   Filmstrip thumbnails are left as-is so thumbnail navigation still
+   works by clicking through to the wrapper. */
+body.inspect-on .card-frame iframe {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
 /* ====== Card selection circle ====== */
 .card-select-circle {
   position: absolute;
@@ -986,6 +1002,7 @@ input[type="range"] {
 
 /* ====== Preset card ====== */
 .preset-card {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
@@ -998,6 +1015,112 @@ input[type="range"] {
   border-color: var(--border-hover);
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Card overflow menu — shared button for template + session cards.
+   A conventional three-dots trigger in the top-right; clicking it opens
+   a small dropdown anchored to the card. One menu open at a time. */
+.card-menu-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(13, 17, 23, 0.85);
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.15s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.card-menu-btn:hover,
+.card-menu-btn:focus-visible,
+.card-menu-btn.is-open {
+  background: rgba(86, 182, 194, 0.15);
+  color: var(--text);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.card-menu-btn[disabled] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Dropdown popup — fixed-positioned so it never clips against card
+   overflow or the gallery grid. */
+.card-menu-popup {
+  position: fixed;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border-hover);
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: card-menu-pop 0.12s ease;
+}
+
+@keyframes card-menu-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.card-menu-item:hover,
+.card-menu-item:focus-visible {
+  background: rgba(86, 182, 194, 0.12);
+  color: var(--text);
+  outline: none;
+}
+
+.card-menu-item.danger {
+  color: var(--danger);
+}
+
+.card-menu-item.danger:hover,
+.card-menu-item.danger:focus-visible {
+  background: rgba(224, 108, 117, 0.14);
+  color: var(--danger);
+}
+
+.card-menu-item-glyph {
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  opacity: 0.75;
 }
 
 .preset-card.selected {

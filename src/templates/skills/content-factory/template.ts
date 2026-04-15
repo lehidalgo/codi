@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 48
+version: 55
 ---
 
 # {{name}} — Content Factory
@@ -43,9 +43,12 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.css]]\` | App styles — served at \`/static/app.css\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.js]]\` | App logic — served at \`/static/app.js\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML template for agent-generated slide decks |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML shell for agent-generated slide decks (3-file: links to deck.css + deck.js) |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.css]]\` | Brand tokens + all slide styles — copy as deck.css in the session content dir |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.js]]\` | Deck navigation engine — copy as deck.js in the session content dir |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under the All / Social / Slides / Document filters based on each template's \`type\` |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/export/compile-deck.js]]\` | Bundle deck.html + deck.css + deck.js into a single portable standalone HTML |
 
 ---
 
@@ -64,6 +67,14 @@ that the app picks up automatically via WebSocket.
 | \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset, sessionDir}\` |
 | \`/api/active-card\` | GET | Read which **individual card/slide/page** the user currently has selected in Preview — returns \`{index, total, dataType, dataIdx, file, timestamp}\` |
 | \`/api/active-card\` | POST | App-only — automatically posted by the browser app whenever the user clicks a card, navigates with arrows, or loads a new file. The agent does not call this. |
+| \`/api/active-element\` | GET | **Live element inspection.** Returns the DOM element the user most recently clicked inside the preview — full context (selector, tag, id, classes, attributes, text, outerHTML snippet, bounding rect, curated computed styles, parent chain). \`null\` if no click yet. Combine with \`/api/active-card\` to know which card the element belongs to. |
+| \`/api/active-elements\` | GET | Multi-selection set — everything the user has Cmd/Ctrl-clicked. Returns \`{count, selections:[...]}\`. Use this to apply an operation to many elements at once. |
+| \`/api/active-elements\` | DELETE | Clear the multi-selection set. |
+| \`/api/inspect-events?since=<seq>\` | GET | Ring buffer of user interactions in the preview (clicks, inputs, submits, scrolls). Poll with \`?since=<lastSeq>\` for incremental updates. |
+| \`/api/eval\` | POST | Run JavaScript inside the currently-previewed HTML page. Body: \`{js, timeoutMs?}\`. Returns \`{ok, result, error}\`. Use this for **ephemeral** live-preview only — changes revert on reload. Eval is on by default; disable with env \`CONTENT_FACTORY_ALLOW_EVAL=0\`. |
+| \`/api/persist-style\` | POST | **Persist a style edit to the card source file.** Body: \`{project, file, targetSelector, patches: {prop: value}, snapshot?}\`. Response: \`{ok, cfId, selector, rule, sourceModified}\`. On first use against an element, the server assigns a stable \`data-cf-id\` attribute and writes it into the HTML; subsequent edits reuse it. The CSS rule is upserted inside a \`/* === cf:user-edits === */\` region of the card's \`<style>\` block. Idempotent: re-applying the same edit is a no-op. Returns \`409\` if the selector no longer matches (source drift) — refresh the selection and retry. Edits **survive reload, regeneration, and export**. |
+| \`/api/persist-style\` | DELETE | Revert a persisted edit. Query: \`?cfId=<id>&project=<dir>&file=<basename>\`. Removes the rule from the user-edits region and strips the \`data-cf-id\` attribute if no other rule references it. |
+| \`/api/persist-style\` | GET | List all persisted edits for a card. Query: \`?project=<dir>&file=<basename>\`. Returns \`{count, rules: [{selector, declarations: [{property, value}]}]}\`. |
 | \`/api/brief\` | GET | Read the active project's \`brief.json\` (campaign intake) — returns \`null\` if no project is active or no brief has been written |
 | \`/api/brief\` | POST | Write the active project's \`brief.json\` — body is a full brief object (schema v1). Returns 400 if no project is active. |
 | \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset, activeCard, brief}\` — use this to orient before editing |
@@ -71,6 +82,46 @@ that the app picks up automatically via WebSocket.
 | \`/api/open-project\` | POST | Activate an existing project — body: \`{projectDir}\` |
 | \`/api/sessions\` | GET | List all projects from the workspace directory |
 | \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific project's content dir |
+| \`/api/content-metadata?kind=&id=\` | GET | **Unified content descriptor.** Returns a single shape for both built-in templates and My Work sessions: \`{kind, id, name, type, format, cardCount, status, createdAt, modifiedAt, readOnly, source}\`. \`kind\` is \`template\` or \`session\`. \`readOnly=true\` for templates (edits refused); \`readOnly=false\` for sessions. \`source.sessionDir\` is the absolute project path for sessions; \`source.templateId\` is the template id for templates. Use this to populate the preview header, resolve URL pins, or verify a selection's origin before calling \`/api/persist-style\`. |
+| \`/api/content-list\` | GET | Debug/utility: returns every content descriptor the server knows about, templates and sessions merged into one list. |
+| \`/api/clone-template-to-session\` | POST | **Copy a built-in template into a new editable session.** Body: \`{templateId, name?}\`. The server creates a new session directory under the workspace, copies the template HTML byte-for-byte into \`<session>/content/\`, writes a manifest with provenance (\`preset\` pointing at the origin template), and returns \`{ok, session: <unified descriptor>, sessionDir, file}\`. Use this when the user wants to edit a template — call this first, then drive all subsequent edits against the returned session. The Gallery also exposes this via a "Save to My Work" button on every template card. |
+
+## URL-pinned tab state
+
+The app URL is the **single source of truth** for what a tab is viewing.
+Every reload lands on exactly the same project, file, and card. Two tabs
+with different URLs show two independent states. The server-side
+\`_workspace.json\` is a home-screen convenience — it is never consulted
+on reload.
+
+Query parameters (unified):
+
+| Param | Meaning |
+|-------|---------|
+| \`kind\` | \`template\` or \`session\` |
+| \`id\` | Stable content id (template id, or session dir basename) |
+| \`file\` | Content file basename, e.g. \`social.html\` |
+| \`card\` | Active card index (0-based), default 0 |
+
+Example (template): \`http://localhost:PORT/?kind=template&id=linkedin-carousel-concept-story&file=social.html&card=2\`
+Example (session): \`http://localhost:PORT/?kind=session&id=my-campaign-oct&file=social.html&card=0\`
+
+Legacy \`?project=\` and \`?preset=\` parameters are honored for one release so existing bookmarks keep working.
+
+The agent can construct a URL directly and send it to the user for deep-linking.
+
+## Persisting element-level edits
+
+The robust edit flow for element styling is:
+
+1. **Read the selection**: \`GET /api/active-element\` (or \`/api/active-elements\` for multi-set). The response includes a \`context\` field carrying \`{kind, id, name, file, sessionDir?, templateId?, cardIndex, readOnly}\` — captured by the iframe that hosted the click.
+2. **Check \`context.readOnly\`**: if \`true\`, the selection came from a built-in template. Call \`POST /api/clone-template-to-session\` with \`{templateId: context.templateId}\` to create an editable copy in My Work. The response includes the new session descriptor — load it via the normal session flow (URL \`?kind=session&id=<newId>&file=<basename>\`), ask the user to re-click the element in the new session, then retry \`/api/persist-style\`. The 409 response from \`persist-style\` also includes a ready-to-use \`cloneSuggestion\` payload so you do not have to construct it yourself.
+3. **Persist to source**: \`POST /api/persist-style\` with \`{targetSelector, patches}\`. The server reads the context from the selection (no project/file needed in the body). It writes a stable \`data-cf-id\` into the card HTML and upserts a CSS rule inside a bounded \`/* === cf:user-edits === */\` region of the \`<style>\` block. Returns \`409\` with \`{templateId, suggestion}\` if the context is read-only — the server refuses cleanly even if the agent skipped step 2.
+4. **(Optional) Live-preview**: \`POST /api/eval\` for instant visual feedback without waiting for the iframe to rebuild. The persisted source will take effect on the next render cycle anyway.
+
+Persisted edits survive reloads, card regeneration, and exports. They are
+byte-additive: everything outside the user-edits region is untouched.
+Revert with \`DELETE /api/persist-style?cfId=...&project=<sessionDir>&file=<basename>\` — the rule and the \`data-cf-id\` attribute both go away cleanly.
 | \`/api/session-status\` | POST | Persist status \`{sessionDir, status}\` to a project's manifest |
 | \`/api/templates\` | GET | List template files with metadata (id, type, format, url) — includes templates from brand skills' \`templates/\` dirs |
 | \`/api/template?file=xxx[&brand=yyy]\` | GET | Serve a single template HTML file; \`brand\` param routes to brand skill's \`templates/\` dir |
@@ -439,6 +490,41 @@ you can paste into DevTools/Playwright, and the origin story of each rule.
 **Do not skip the verification**: after any edit to a slide's layout, run the overflow
 check and the frame-lock check from the reference before declaring the edit done.
 
+#### Slide deck generation — 3-file approach (MANDATORY)
+
+Slide decks MUST use the canonical 3-file reference pattern — no exceptions, no single-file shortcuts:
+
+1. **\`deck.html\`** — structure only. Use \`<section class="slide" data-type="…">\` (never \`<article>\`). Wrap with the canonical \`<div class="deck"><div class="deck__viewport">\` container, include \`<div class="progress-bar" id="progressBar"></div>\` and \`<span class="slide-counter" id="slideCounter"></span>\` as the first children of the viewport, reference \`<link rel="stylesheet" href="deck.css">\` in \`<head>\`, and \`<script src="deck.js"></script>\` at the end of \`<body>\`.
+2. **\`deck.css\`** — copy the full contents of \`slides-base.css\` verbatim, then replace the \`:root { ... }\` block with the active brand's tokens. Do NOT author a parallel style system.
+3. **\`deck.js\`** — copy the full contents of \`slides-base.js\` verbatim. Do NOT rewrite the navigation engine.
+
+**Animation contract**: mark every element that should animate on slide entry with \`class="animate-in"\`. The canonical CSS defines \`@keyframes fadeUp\` + staggered \`animation-delay\` for nth-child 1-7; the canonical JS replays these via \`resetAnimations()\` on every slide visit. Elements without \`.animate-in\` appear instantly.
+
+**Bundle fidelity guarantee**: the "HTML · all" export inlines \`deck.css\` into \`<style>\` and \`deck.js\` into \`<script>\` without modification, so the bundle is byte-equivalent to the three files merged — the same animations, navigation, and chrome you see when opening \`deck.html\` in the browser.
+
+**Narrative arc**: Problem→Solution (pitches), Progressive Disclosure (technical), 3-Act (status updates), Comparison (decisions). Budget: 5-7 slides (5 min), 8-12 (standard), 15-20 (deep dive). Rule: ~2 min/slide, max 5 bullets, lead with the most important point.
+
+**Slide types** (set \`data-type\` on the \`<section class="slide">\`):
+
+| data-type | Key elements | Note |
+|-----------|--------------|------|
+| \`title\`   | \`.slide__eyebrow\`, \`h1\`, \`.slide__subtitle\`, \`.slide__meta\` | |
+| \`divider\` | \`.section-number\`, \`h2\` | add \`.slide--blue\` |
+| \`content\` | \`h2\`, \`.bullet-list > li\` (max 5) | |
+| \`quote\`   | \`blockquote\`, \`.attribution\` | add \`.slide--blue\` |
+| \`metrics\` | \`h2\`, \`.metric-grid > .metric-card\` (max 4) | |
+| \`table\`   | \`h2\`, \`<table><thead><tbody>\` | |
+| \`cards\`   | \`h2\`, \`.card-grid--2\` or \`.card-grid--3\`, \`.card\` | |
+| \`code\`    | \`h2\`, \`.code-block > pre\` | |
+| \`split\`   | \`h2\`, \`.slide__content--split\` → \`.split__text\` + \`.split__visual\` | |
+| \`flow\`    | \`h2\`, \`.flow\` → \`.flow__step\` + \`.flow__arrow\` | |
+| \`closing\` | \`h2\`, \`.contact\` | |
+
+Add \`.animate-in\` to every visible element. Add \`.slide--blue\` to use the dark brand color. Standalone export:
+\`\`\`bash
+node \${CLAUDE_SKILL_DIR}[[/scripts/export/compile-deck.js]] --content <contentDir>
+\`\`\`
+
 #### Document page discipline — MANDATORY
 
 Each \`.doc-page\` is a **fixed A4 canvas** (794×1123px). The preview renders every page at exactly this height — there is no auto-expand. Content that overflows is hidden in the viewer and may be missing from DOCX export.
@@ -473,6 +559,18 @@ A \`.page-body\` of ~950px fits roughly 2–3 major sections. When in doubt, use
 2. Assign each section to a page — confirm each page's estimated total height < ~950px
 3. If a section (e.g. a large table or code block) alone exceeds ~800px, split it across two pages with a continuation header
 4. Write one \`<article class="doc-page">\` per planned page
+
+### Step 3b — Validate layout structure (all modes)
+
+After writing any HTML file, validate it with the Box Layout Validator skill before showing anything to the user. This catches spacing, hierarchy, and sibling-consistency bugs you cannot see by reading the code.
+
+\`\`\`bash
+bash ~/.claude/skills/codi-box-validator/scripts/setup.sh   # first run only
+node ~/.claude/skills/codi-box-validator/scripts/validate.mjs \\
+  --input <absolute-path-to-html> --width <W> --height <H> --threshold 0.85
+\`\`\`
+
+If \`valid: false\` in the JSON output, read \`fixInstructions\`, patch the HTML, and revalidate. Max 4 iterations. Only show the user the final validated result.
 
 ### Step 4 — Iterate (loop until done)
 

@@ -10,6 +10,8 @@ const brandRoutes = require('./routes/brand-routes.cjs');
 const projectRoutes = require('./routes/project-routes.cjs');
 const fileRoutes = require('./routes/file-routes.cjs');
 const exportRoutes = require('./routes/export-routes.cjs');
+const inspectRoutes = require('./routes/inspect-routes.cjs');
+const contentRoutes = require('./routes/content-routes.cjs');
 
 // ========== Configuration ==========
 
@@ -34,6 +36,8 @@ state.init({ workspaceDir: WORKSPACE_DIR });
 function handleRequest(req, res) {
   state.touchActivity();
   const parsed = new URL(req.url, 'http://localhost');
+  if (inspectRoutes.handle(req, res, parsed, ctx)) return;
+  if (contentRoutes.handle(req, res, parsed, ctx)) return;
   if (stateRoutes.handle(req, res, parsed, ctx)) return;
   if (brandRoutes.handle(req, res, parsed, ctx)) return;
   if (projectRoutes.handle(req, res, parsed, ctx)) return;

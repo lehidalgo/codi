@@ -65,6 +65,33 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
+  // /api/sessions DELETE — remove a project by id (?id=<basename>)
+  if (req.method === 'DELETE' && pathname === '/api/sessions') {
+    const sessionId = parsed.searchParams.get('id');
+    if (!sessionId) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'id query param is required' }));
+      return true;
+    }
+    try {
+      const result = workspace.deleteProject(ctx.WORKSPACE_DIR, sessionId);
+      // If this session was the active one server-side, clear it so
+      // /api/state stops reporting a deleted project.
+      try {
+        const active = state.getActiveProject && state.getActiveProject();
+        if (active && path.basename(active.projectDir || '') === sessionId) {
+          state.setActiveProject(null);
+        }
+      } catch { /* best effort */ }
+      sendJson(res, 200, { ok: true, removedPath: result.removedPath });
+    } catch (e) {
+      const status = e && e.status ? e.status : 500;
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return true;
+  }
+
   // /api/session-status POST — persist status to a project's manifest
   if (req.method === 'POST' && pathname === '/api/session-status') {
     readJsonBody(req, (err, body) => {
@@ -95,8 +122,11 @@ function handle(req, res, parsed, ctx) {
     if (!resolved.startsWith(ws + path.sep)) { res.writeHead(403); res.end('Forbidden'); return true; }
     const filePath = path.join(resolved, 'content', path.basename(fileParam));
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return true; }
+    const injector = require('../lib/injector.cjs');
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const injected = injector.inject(raw);
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(fs.readFileSync(filePath, 'utf-8'));
+    res.end(injected);
     return true;
   }
 

@@ -38,7 +38,6 @@ export {
 } from "./guided-qa-testing/index.js";
 export { template as comparePreset } from "./compare-preset/index.js";
 export { template as sessionRecovery } from "./session-recovery/index.js";
-export { template as deckEngine, staticDir as deckEngineStaticDir } from "./deck-engine/index.js";
 export { template as docEngine, staticDir as docEngineStaticDir } from "./doc-engine/index.js";
 export { template as skillFeedbackReporter } from "./skill-feedback-reporter/index.js";
 export { template as ruleFeedback } from "./rule-feedback/index.js";
@@ -135,3 +134,11 @@ export { template as evidenceGathering } from "./evidence-gathering/index.js";
 export { template as stepDocumenter } from "./step-documenter/index.js";
 export { template as auditFix } from "./audit-fix/index.js";
 export { template as guidedExecution } from "./guided-execution/index.js";
+export {
+  template as boxValidator,
+  staticDir as boxValidatorStaticDir,
+} from "./box-validator/index.js";
+export {
+  template as htmlLiveInspect,
+  staticDir as htmlLiveInspectStaticDir,
+} from "./html-live-inspect/index.js";

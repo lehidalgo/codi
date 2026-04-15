@@ -31,7 +31,6 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("compare-preset")]: skillTemplates.comparePreset,
   [prefixedName("guided-qa-testing")]: skillTemplates.guidedQaTesting,
   [prefixedName("session-recovery")]: skillTemplates.sessionRecovery,
-  [prefixedName("deck-engine")]: skillTemplates.deckEngine,
   [prefixedName("doc-engine")]: skillTemplates.docEngine,
   [prefixedName("claude-api")]: skillTemplates.claudeApi,
   [prefixedName("pdf")]: skillTemplates.pdf,
@@ -77,6 +76,8 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("step-documenter")]: skillTemplates.stepDocumenter,
   [prefixedName("audit-fix")]: skillTemplates.auditFix,
   [prefixedName("guided-execution")]: skillTemplates.guidedExecution,
+  [prefixedName("box-validator")]: skillTemplates.boxValidator,
+  [prefixedName("html-live-inspect")]: skillTemplates.htmlLiveInspect,
 };
 
 /** Maps template names to their static asset directories (when available). */
@@ -111,7 +112,6 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("frontend-design")]: skillTemplates.frontendDesignStaticDir,
   [prefixedName("doc-engine")]: skillTemplates.docEngineStaticDir,
   [prefixedName("mcp-ops")]: skillTemplates.mcpOpsStaticDir,
-  [prefixedName("deck-engine")]: skillTemplates.deckEngineStaticDir,
   [prefixedName("debugging")]: skillTemplates.debuggingStaticDir,
   [prefixedName("tdd")]: skillTemplates.tddStaticDir,
   [prefixedName("subagent-dev")]: skillTemplates.subagentDevStaticDir,
@@ -121,6 +121,8 @@ const STATIC_DIR_MAP: Record<string, string> = {
   [prefixedName("plan-executor")]: skillTemplates.planExecutorStaticDir,
   [prefixedName("session-handoff")]: skillTemplates.sessionHandoffStaticDir,
   [prefixedName("notebooklm")]: skillTemplates.notebooklmStaticDir,
+  [prefixedName("box-validator")]: skillTemplates.boxValidatorStaticDir,
+  [prefixedName("html-live-inspect")]: skillTemplates.htmlLiveInspectStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

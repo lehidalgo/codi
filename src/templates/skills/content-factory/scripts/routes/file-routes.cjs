@@ -22,8 +22,10 @@ function handle(req, res, parsed, ctx) {
     }
     const filePath = path.join(active.contentDir, path.basename(fileParam));
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return true; }
+    const injector = require('../lib/injector.cjs');
+    const raw = fs.readFileSync(filePath, 'utf-8');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(fs.readFileSync(filePath, 'utf-8'));
+    res.end(injector.inject(raw));
     return true;
   }
 

@@ -31,7 +31,15 @@ export function cardFormat(card, stateFormat) {
  * @param {boolean} [forExport] - When true: transparent bg, overflow:visible, SVG logo
  * @returns {string}
  */
-export function buildCardDoc(card, fmt, logo = null, handle = "handle", forExport = false) {
+export function buildCardDoc(
+  card,
+  fmt,
+  logo = null,
+  handle = "handle",
+  forExport = false,
+  inspectorSource = "",
+  cardContext = null,
+) {
   const bg = forExport ? "background:#070a0f" : "";
   const html = card.html.replace(/@handle/g, "@" + handle);
 
@@ -100,7 +108,23 @@ export function buildCardDoc(card, fmt, logo = null, handle = "handle", forExpor
       fmt.h +
       "px!important}" +
       "</style></head><body>",
-    html + logoHtml + "</body></html>",
+    html + logoHtml,
+    // Live element inspector — inlined into every interactive preview card
+    // so URL resolution inside srcdoc iframes is not a factor. Starts
+    // dormant; the parent app's Inspect toggle calls
+    // iframe.contentWindow.__HLI__.setDormant(false) to activate it.
+    //
+    // __CF_CARD_CONTEXT__ tells the inspector which project/file/card this
+    // iframe belongs to. Every selection and event the inspector posts
+    // carries this context so the agent never has to guess what to edit.
+    !forExport && inspectorSource
+      ? "<script>window.__HLI_DORMANT__=true;window.__CF_CARD_CONTEXT__=" +
+        JSON.stringify(cardContext || null).replace(/</g, "\\u003c") +
+        ";</script><script>" +
+        inspectorSource +
+        "</script>"
+      : "",
+    "</body></html>",
   ].join("");
 }
 

@@ -76,6 +76,14 @@
 
     <section class="panel">
       <div class="panel-label">
+        Inspect elements
+        <button id="inspect-toggle" class="logo-toggle-btn" type="button">OFF</button>
+      </div>
+      <div class="inspect-hint">Click inside a card to pick a DOM element. Cmd/Ctrl-click to select multiple. Alt-click to clear.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-label">
         Logo
         <button id="logo-toggle" class="logo-toggle-btn active" type="button">ON</button>
       </div>
@@ -179,6 +187,8 @@
             </select>
           </span>
         </span>
+        <span class="preview-meta-sep" id="preview-meta-modified-sep" hidden>·</span>
+        <span id="preview-meta-modified" class="preview-meta-dim" hidden title=""></span>
       </div>
       <div id="canvas" class="canvas mode-grid">
         <button id="app-prev" class="app-nav-btn" hidden aria-label="Previous slide">&#8249;</button>

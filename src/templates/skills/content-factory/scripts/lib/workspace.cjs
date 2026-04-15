@@ -96,4 +96,51 @@ function saveActiveProjectDir(workspaceDir, activeProjectDir) {
   );
 }
 
-module.exports = { slugify, projectDirs, createProject, listProjects, getActiveProjectDir, saveActiveProjectDir };
+// Delete a project by id (the basename of its session directory). Returns
+// { ok: true, removedPath } on success. Guards against path traversal
+// by refusing anything that escapes the workspace root after resolution.
+function deleteProject(workspaceDir, sessionId) {
+  if (!workspaceDir || !sessionId) {
+    throw new Error('workspaceDir and sessionId are required');
+  }
+  // Only allow bare basenames — reject any path separator or '..' part.
+  if (
+    sessionId.startsWith('_') ||
+    sessionId.includes('/') ||
+    sessionId.includes('\\') ||
+    sessionId.includes('..') ||
+    sessionId === '.' ||
+    sessionId === ''
+  ) {
+    const e = new Error('invalid session id: ' + sessionId);
+    e.status = 400;
+    throw e;
+  }
+  const ws = path.resolve(workspaceDir);
+  const target = path.resolve(ws, sessionId);
+  // Path traversal guard — target must be a direct child of the workspace.
+  if (path.dirname(target) !== ws) {
+    const e = new Error('session path escapes workspace');
+    e.status = 400;
+    throw e;
+  }
+  if (!fs.existsSync(target)) {
+    const e = new Error('session not found: ' + sessionId);
+    e.status = 404;
+    throw e;
+  }
+  // Extra safety — verify the target has the shape of a project
+  // (content dir OR a manifest). We never delete arbitrary directories.
+  const looksLikeProject =
+    fs.existsSync(path.join(target, 'content')) ||
+    fs.existsSync(path.join(target, 'state', 'manifest.json'));
+  if (!looksLikeProject) {
+    const e = new Error('not a project directory: ' + sessionId);
+    e.status = 400;
+    throw e;
+  }
+  fs.rmSync(target, { recursive: true, force: true });
+  return { ok: true, removedPath: target };
+}
+
+module.exports = { slugify, projectDirs, createProject, listProjects, getActiveProjectDir, saveActiveProjectDir, deleteProject };
