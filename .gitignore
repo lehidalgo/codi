@@ -17,6 +17,7 @@ __pycache__
 site/docs/
 docs/src/content/docs/api/
 .astro/
+.docs
 
 # Artifact catalog — generated at build time
 docs/src/content/docs/catalog/
