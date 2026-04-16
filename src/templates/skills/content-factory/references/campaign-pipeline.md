@@ -1,5 +1,15 @@
 # Campaign Pipeline — Anchor → Distill
 
+> **Superseded — read `methodology.md`, `anchor-authoring.md`,
+> `distillation-principles.md`, and `intent-detection.md` instead.**
+>
+> The anchor-first flow is no longer an opt-in "campaign pipeline";
+> it's the default methodology for any non-trivial content request,
+> with an explicit fast-path for one-off work. The new references
+> reframe the flow as principles the agent applies with judgment,
+> rather than a fixed pipeline. This file remains for one release
+> cycle as a pointer and will be deleted in a subsequent commit.
+
 The campaign pipeline turns a single topic into a coordinated set of content
 formats. It runs as an **opt-in** alternative to the one-off single-file flow,
 triggered when the user's request signals that they want to publish across
