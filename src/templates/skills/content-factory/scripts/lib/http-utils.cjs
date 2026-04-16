@@ -4,8 +4,12 @@ const path = require('path');
 
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
-  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml',
+  '.mjs': 'application/javascript', '.json': 'application/json',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif', '.svg': 'image/svg+xml',
+  '.webp': 'image/webp', '.avif': 'image/avif', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.otf': 'font/otf',
+  '.eot': 'application/vnd.ms-fontobject',
 };
 
 function serveFile(res, filePath) {
@@ -24,15 +28,34 @@ function readJson(filePath, fallback) {
 }
 
 function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(payload));
+  const body = JSON.stringify(payload);
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(body),
+  });
+  res.end(body);
 }
 
-function readJsonBody(req, callback) {
-  let body = '';
-  req.on('data', chunk => { body += chunk.toString(); });
+function readJsonBody(req, limitOrCb, maybeCb) {
+  const limit = typeof limitOrCb === 'number' ? limitOrCb : 0;
+  const callback = typeof limitOrCb === 'function' ? limitOrCb : maybeCb;
+  let total = 0;
+  let destroyed = false;
+  const chunks = [];
+  req.on('data', (chunk) => {
+    if (destroyed) return;
+    total += chunk.length;
+    if (limit > 0 && total > limit) {
+      destroyed = true;
+      req.destroy();
+      callback(new Error('body too large'), null);
+      return;
+    }
+    chunks.push(chunk);
+  });
   req.on('end', () => {
-    try { callback(null, JSON.parse(body)); }
+    if (destroyed) return;
+    try { callback(null, JSON.parse(Buffer.concat(chunks).toString('utf-8'))); }
     catch (e) { callback(e, null); }
   });
 }

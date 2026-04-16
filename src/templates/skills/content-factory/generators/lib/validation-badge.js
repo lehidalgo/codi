@@ -120,6 +120,36 @@ function applyStyle(el, styleObj) {
   }
 }
 
+// Apply a validation report to a badge element.
+function applyReport(badge, report) {
+  if (!report) {
+    applyStyle(badge, styleFor("error"));
+    badge.textContent = "!";
+    badge.dataset.tooltip = "Validation error";
+    return;
+  }
+  const cfg = vcfg.getConfig();
+  const threshold = (cfg && cfg.threshold) || 0.85;
+  const stateName = classifyScore(report, threshold);
+  applyStyle(badge, styleFor(stateName));
+  badge.textContent = renderText(stateName, report);
+  const label =
+    stateName === "pending"
+      ? "Validating..."
+      : stateName === "pass"
+        ? "Layout passes all checks"
+        : stateName === "warn"
+          ? `${report.violations?.length || 0} minor issues`
+          : stateName === "fail"
+            ? `${report.violations?.length || 0} issues — click to review`
+            : stateName === "skipped"
+              ? "Validation skipped: " + (report.skipped || "")
+              : "Validation error";
+  badge.dataset.tooltip = label;
+  badge._report = report;
+}
+
+// Create a badge DOM element — pure sync, no fetch.
 export function createValidationBadge(cardIndex, file) {
   ensureTooltipStyle();
   ensureConfigListener();
@@ -132,16 +162,13 @@ export function createValidationBadge(cardIndex, file) {
   applyStyle(badge, styleFor("pending"));
   badge.textContent = "…";
 
-  // If badges are disabled, hide entirely
   if (!vcfg.getLayer("badge")) {
     badge.style.display = "none";
     return badge;
   }
 
-  // Kick off async validation
   const c = state.activeContent;
   if (!c || c.kind !== "session" || !c.source || !c.source.sessionDir) {
-    // Templates: show a muted "—" chip
     applyStyle(badge, styleFor("skipped"));
     badge.textContent = "—";
     badge.dataset.tooltip = "Validation only on My Work sessions";
@@ -151,44 +178,6 @@ export function createValidationBadge(cardIndex, file) {
   const projectDir = c.source.sessionDir;
   const fileName = file || c.source.file;
 
-  fetch("/api/validate-card", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project: projectDir, file: fileName, cardIndex }),
-  })
-    .then((r) => (r.ok ? r.json() : null))
-    .then((report) => {
-      if (!report) {
-        applyStyle(badge, styleFor("error"));
-        badge.textContent = "!";
-        badge.dataset.tooltip = "Validation error";
-        return;
-      }
-      const cfg = vcfg.getConfig();
-      const threshold = (cfg && cfg.threshold) || 0.85;
-      const stateName = classifyScore(report, threshold);
-      applyStyle(badge, styleFor(stateName));
-      badge.textContent = renderText(stateName, report);
-      const label =
-        stateName === "pending"
-          ? "Validating..."
-          : stateName === "pass"
-            ? "Layout passes all checks"
-            : stateName === "warn"
-              ? `${report.violations?.length || 0} minor issues`
-              : stateName === "fail"
-                ? `${report.violations?.length || 0} issues — click to review`
-                : stateName === "skipped"
-                  ? "Validation skipped: " + (report.skipped || "")
-                  : "Validation error";
-      badge.dataset.tooltip = label;
-      badge._report = report;
-    })
-    .catch(() => {
-      applyStyle(badge, styleFor("error"));
-      badge.textContent = "!";
-    });
-
   badge.addEventListener("click", (e) => {
     e.stopPropagation();
     if (_panelOpener && badge._report) {
@@ -197,4 +186,33 @@ export function createValidationBadge(cardIndex, file) {
   });
 
   return badge;
+}
+
+// Batch-validate all badges on screen in a single request.
+// Called once after renderCards() builds all card elements.
+export function runBatchValidation() {
+  const c = state.activeContent;
+  if (!c || c.kind !== "session" || !c.source || !c.source.sessionDir) return;
+  if (!vcfg.isEnabled() || !vcfg.getLayer("badge")) return;
+
+  const projectDir = c.source.sessionDir;
+  const fileName = c.source.file;
+
+  fetch(
+    "/api/validate-cards?project=" +
+      encodeURIComponent(projectDir) +
+      "&file=" +
+      encodeURIComponent(fileName),
+  )
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (!data || !data.cards) return;
+      const badges = document.querySelectorAll(".validation-badge");
+      for (const badge of badges) {
+        const idx = Number(badge.dataset.cardIndex);
+        const report = data.cards.find((c) => c.cardIndex === idx) || null;
+        applyReport(badge, report);
+      }
+    })
+    .catch(() => {});
 }

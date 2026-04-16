@@ -8,33 +8,14 @@ const path = require('node:path');
 
 const validator = require('../lib/validator.cjs');
 const cfgLib = require('../lib/validation-config.cjs');
+const { sendJson, readJsonBody } = require('../lib/http-utils.cjs');
 
 const MAX_BODY = 128 * 1024;
 
-function sendJson(res, status, body) {
-  const buf = Buffer.from(JSON.stringify(body), 'utf-8');
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': buf.length,
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-  });
-  res.end(buf);
-}
-
-function readJsonBody(req, limit, cb) {
-  let total = 0;
-  const chunks = [];
-  req.on('data', (chunk) => {
-    total += chunk.length;
-    if (total > limit) { req.destroy(); cb(new Error('body too large')); return; }
-    chunks.push(chunk);
-  });
-  req.on('end', () => {
-    if (!chunks.length) { cb(null, {}); return; }
-    try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf-8'))); }
-    catch (e) { cb(e); }
-  });
-  req.on('error', (e) => cb(e));
+function isInsideWorkspace(project, ctx) {
+  if (!project || !ctx.WORKSPACE_DIR) return false;
+  const resolved = path.resolve(project);
+  return resolved.startsWith(path.resolve(ctx.WORKSPACE_DIR) + path.sep);
 }
 
 function isValidationEnabled(cfg) {
@@ -68,6 +49,9 @@ async function handleValidateCardPost(req, res, ctx) {
         error: 'project, file, and integer cardIndex are required',
       });
     }
+    if (!isInsideWorkspace(project, ctx)) {
+      return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
+    }
     try {
       const { config } = cfgLib.resolveConfig({
         workspaceDir: ctx.WORKSPACE_DIR,
@@ -98,6 +82,9 @@ async function handleValidateCardsGet(req, res, ctx, parsed) {
   const force = parsed.searchParams.get('force') === '1';
   if (!project || !file) {
     return sendJson(res, 400, { ok: false, error: 'project and file are required' });
+  }
+  if (!isInsideWorkspace(project, ctx)) {
+    return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
   }
   try {
     const { config } = cfgLib.resolveConfig({
@@ -130,6 +117,9 @@ function handleGetConfig(req, res, ctx, parsed) {
   }
   if (!project) {
     return sendJson(res, 400, { ok: false, error: 'project or user=true is required' });
+  }
+  if (!isInsideWorkspace(project, ctx)) {
+    return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
   }
   try {
     const resolved = cfgLib.resolveConfig({
@@ -165,6 +155,9 @@ function handlePatchConfig(req, res, ctx) {
       if (!project) {
         return sendJson(res, 400, { ok: false, error: 'project or user=true is required' });
       }
+      if (!isInsideWorkspace(project, ctx)) {
+        return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
+      }
       const resolved = cfgLib.patchSessionConfig({
         workspaceDir: ctx.WORKSPACE_DIR,
         projectDir: project,
@@ -188,6 +181,9 @@ function handleToggle(req, res, ctx) {
     const { project, layer, value } = body || {};
     if (!project || !layer || typeof value !== 'boolean') {
       return sendJson(res, 400, { ok: false, error: 'project, layer, boolean value required' });
+    }
+    if (!isInsideWorkspace(project, ctx)) {
+      return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
     }
     const validLayers = ['all', 'endpoint', 'badge', 'agentDiscipline', 'exportPreflight', 'statusGate'];
     if (!validLayers.includes(layer)) {
@@ -213,6 +209,9 @@ function handleIgnoreViolation(req, res, ctx) {
     const { project, file, rule, selector, cardIndex } = body || {};
     if (!project || !file || !rule) {
       return sendJson(res, 400, { ok: false, error: 'project, file, rule required' });
+    }
+    if (!isInsideWorkspace(project, ctx)) {
+      return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
     }
     try {
       const resolved = cfgLib.addIgnoreRule({

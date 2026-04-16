@@ -11,7 +11,7 @@ import {
 import { state } from "./state.js";
 import { $, clearEl, setAppNavVisible } from "./dom.js";
 import { formatTimeAgo } from "./content-descriptor.js";
-import { createValidationBadge } from "./validation-badge.js";
+import { createValidationBadge, runBatchValidation } from "./validation-badge.js";
 
 // ====== Card format + inspector-context-aware buildCardDoc ======
 
@@ -331,6 +331,7 @@ export function renderCards() {
   }
   renderFilmstrip();
   updatePreviewMeta();
+  runBatchValidation();
 }
 
 export function reportActiveCard() {

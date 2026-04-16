@@ -17,40 +17,12 @@ const path = require('path');
 const elementStore = require('../lib/element-store.cjs');
 const eventLog = require('../lib/event-log.cjs');
 const evalBridge = require('../lib/eval-bridge.cjs');
-const httpBase = require('../lib/http-utils.cjs');
+const { sendJson, readJsonBody, serveFile: _serveFile } = require('../lib/http-utils.cjs');
 const cardSource = require('../lib/card-source.cjs');
 const cfId = require('../lib/cf-id.cjs');
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const INSPECTOR_CLIENT_PATH = path.join(__dirname, '..', 'client', 'inspector.js');
-
-// content-factory's http-utils does not expose readJsonBody with a limit —
-// provide a small local reader so we do not have to modify shared utils.
-function readJsonBody(req, limitBytes, cb) {
-  let total = 0;
-  const chunks = [];
-  req.on('data', (chunk) => {
-    total += chunk.length;
-    if (total > limitBytes) { req.destroy(); cb(new Error('body too large')); return; }
-    chunks.push(chunk);
-  });
-  req.on('end', () => {
-    if (!chunks.length) { cb(null, {}); return; }
-    try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf-8'))); }
-    catch (e) { cb(e); }
-  });
-  req.on('error', (e) => cb(e));
-}
-
-function sendJson(res, status, body) {
-  const buf = Buffer.from(JSON.stringify(body), 'utf-8');
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': buf.length,
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-  });
-  res.end(buf);
-}
 
 function serveInspectorClient(res) {
   if (!fs.existsSync(INSPECTOR_CLIENT_PATH)) {

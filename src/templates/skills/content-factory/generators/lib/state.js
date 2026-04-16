@@ -8,7 +8,7 @@
 // for the `readOnly` flag.
 export const state = {
   format: { w: 1080, h: 1080 },
-  handle: "lehidalgo",
+  handle: "handle",
   zoom: 1.0, // 1.0 = fit content to canvas height; slider scales relative to fit
   logo: { visible: true, size: 48, x: 85, y: 85 }, // global defaults
   cardLogos: {}, // { [cardIndex]: partial logo overrides per card }

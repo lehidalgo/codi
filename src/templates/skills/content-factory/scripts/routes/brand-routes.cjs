@@ -4,21 +4,7 @@ const path = require('path');
 const state = require('../lib/project-state.cjs');
 const { discoverBrands } = require('../lib/brand-discovery.cjs');
 const { MIME_TYPES, sendJson, readJsonBody } = require('../lib/http-utils.cjs');
-
-const META_PATTERNS = [
-  /<meta[^>]+name=["']codi:template["'][^>]*content='([^']+)'/i,
-  /<meta[^>]+name=["']codi:template["'][^>]*content="([^"]+)"/i,
-  /<meta[^>]+content='([^']+)'[^>]*name=["']codi:template["']/i,
-  /<meta[^>]+content="([^"]+)"[^>]*name=["']codi:template["']/i,
-];
-
-function extractTemplateMeta(html) {
-  for (const re of META_PATTERNS) {
-    const m = html.match(re);
-    if (m) return JSON.parse(m[1]);
-  }
-  return {};
-}
+const { extractTemplateMeta } = require('../lib/content-registry.cjs');
 
 /**
  * Routes that discover brand skills, list gallery templates, and serve

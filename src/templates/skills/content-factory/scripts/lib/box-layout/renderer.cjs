@@ -43,7 +43,7 @@ async function getBrowser() {
 
 async function closeBrowser() {
   if (_browser) {
-    try { await _browser.close(); } catch {}
+    try { await _browser.close(); } catch { /* browser may have crashed */ }
     _browser = null;
   }
 }
@@ -158,4 +158,4 @@ function extractInBrowser() {
   return walk(root, root.tagName.toLowerCase());
 }
 
-module.exports = { renderAndExtract, closeBrowser, probePlaywright };
+module.exports = { renderAndExtract, closeBrowser, probePlaywright, getBrowser };

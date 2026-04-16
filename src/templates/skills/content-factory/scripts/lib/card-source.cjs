@@ -39,7 +39,7 @@ function writeAtomic(filePath, content) {
   try {
     fs.renameSync(tmp, filePath);
   } catch (err) {
-    try { fs.unlinkSync(tmp); } catch {}
+    try { fs.unlinkSync(tmp); } catch { /* best-effort temp file cleanup */ }
     throw err;
   }
   return { bytesWritten: Buffer.byteLength(content, 'utf-8'), skipped: false };
@@ -228,25 +228,6 @@ function parseSimple(part) {
 
 function parseSelector(selector) {
   return selector.split('>').map((p) => parseSimple(p.trim()));
-}
-
-function matchSimple(node, simple) {
-  if (simple.tag && node.name !== simple.tag) return false;
-  if (simple.id && node.attrs.id !== simple.id) return false;
-  if (simple.classes.length) {
-    const cls = (node.attrs.class || '').split(/\s+/).filter(Boolean);
-    for (const c of simple.classes) {
-      if (!cls.includes(c)) return false;
-    }
-  }
-  if (simple.nthOfType != null) {
-    // Find position among siblings with same tag
-    const parent = node.parent;
-    if (!parent) return simple.nthOfType === 1 && true;
-    // Walk all nodes to find siblings with the same parent and name
-    return true; // handled at matcher level (see findElement)
-  }
-  return true;
 }
 
 function findElement(html, selector) {

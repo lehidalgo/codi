@@ -377,7 +377,7 @@ async function close() {
         await renderer.closeBrowser();
       }
     }
-  } catch {}
+  } catch { /* best-effort browser cleanup on shutdown */ }
 }
 
 module.exports = {

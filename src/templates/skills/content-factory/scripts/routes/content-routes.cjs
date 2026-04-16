@@ -9,32 +9,7 @@
 
 const contentRegistry = require('../lib/content-registry.cjs');
 const templateCloner = require('../lib/template-cloner.cjs');
-
-function sendJson(res, status, body) {
-  const buf = Buffer.from(JSON.stringify(body), 'utf-8');
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': buf.length,
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-  });
-  res.end(buf);
-}
-
-function readJsonBody(req, limitBytes, cb) {
-  let total = 0;
-  const chunks = [];
-  req.on('data', (chunk) => {
-    total += chunk.length;
-    if (total > limitBytes) { req.destroy(); cb(new Error('body too large')); return; }
-    chunks.push(chunk);
-  });
-  req.on('end', () => {
-    if (!chunks.length) { cb(null, {}); return; }
-    try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf-8'))); }
-    catch (e) { cb(e); }
-  });
-  req.on('error', (e) => cb(e));
-}
+const { sendJson, readJsonBody } = require('../lib/http-utils.cjs');
 
 function handle(req, res, parsed, ctx) {
   const { pathname } = parsed;

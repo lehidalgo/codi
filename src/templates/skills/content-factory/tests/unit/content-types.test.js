@@ -45,3 +45,27 @@ describe("content-types registry", () => {
     expect(ct.allCardClasses()).toEqual(["social-card", "slide", "doc-page"]);
   });
 });
+
+describe("content-types CJS/ESM parity", () => {
+  it("client mirror has same types, card classes, and canvas sizes as server", async () => {
+    // Read the client ESM module as text and extract the CONTENT_TYPES object
+    const fs = await import("fs");
+    const path = await import("path");
+    const clientPath = path.resolve(import.meta.dirname, "../../generators/lib/content-types.js");
+    const clientSrc = fs.readFileSync(clientPath, "utf-8");
+
+    // Verify each server type exists in client source with matching values
+    for (const [type, entry] of Object.entries(ct.CONTENT_TYPES)) {
+      expect(clientSrc).toContain(type);
+      expect(clientSrc).toContain(entry.cardClass);
+      expect(clientSrc).toContain(`w: ${entry.canvas.w}`);
+      expect(clientSrc).toContain(`h: ${entry.canvas.h}`);
+      expect(clientSrc).toContain(entry.label);
+    }
+
+    // Verify client VALID_TYPES matches server
+    expect(clientSrc).toContain("VALID_TYPES");
+    expect(clientSrc).toContain("isValidType");
+    expect(clientSrc).toContain("typeForCardClass");
+  });
+});

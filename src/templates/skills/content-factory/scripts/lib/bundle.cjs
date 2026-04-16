@@ -39,14 +39,7 @@ const { inlineFonts, inlineImages } = require('../export/lib/inline-assets.js');
 // Each URL is a deterministic token that can't collide with other content,
 // so we use exact substring replacement — no HTML parsing.
 
-const MIME_BY_EXT = {
-  '.css': 'text/css', '.js': 'application/javascript', '.mjs': 'application/javascript',
-  '.json': 'application/json', '.html': 'text/html',
-  '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif', '.webp': 'image/webp', '.avif': 'image/avif', '.ico': 'image/x-icon',
-  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.otf': 'font/otf',
-  '.eot': 'application/vnd.ms-fontobject',
-};
+const { MIME_TYPES: MIME_BY_EXT } = require('./http-utils.cjs');
 
 function fileToDataUri(filePath) {
   const ext = path.extname(filePath).toLowerCase();

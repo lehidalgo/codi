@@ -140,7 +140,7 @@ function descriptorFromSession(session) {
   const file = files[0] || 'social.html';
   const filePath = path.join(session.sessionDir, 'content', file);
   let html = '';
-  try { html = fs.readFileSync(filePath, 'utf-8'); } catch {}
+  try { html = fs.readFileSync(filePath, 'utf-8'); } catch { /* file may not exist yet */ }
   const stat = fs.existsSync(filePath) ? fs.statSync(filePath) : null;
   return {
     kind: 'session',
