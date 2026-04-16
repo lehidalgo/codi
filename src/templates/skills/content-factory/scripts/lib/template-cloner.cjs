@@ -61,7 +61,7 @@ function cloneTemplate({ templateId, name }, ctx) {
   }
 
   const sessionName = (name && String(name).trim()) || defaultSessionName(template);
-  const project = workspace.createProject(ctx.WORKSPACE_DIR, sessionName);
+  const project = workspace.createProject(ctx.WORKSPACE_DIR, sessionName, { type: template.type || 'social' });
   // `createProject` returns {dir, contentDir, stateDir, exportsDir, manifest}.
   // Normalize to a single shape the rest of this function (and callers) uses.
   const sessionDir = project.dir;

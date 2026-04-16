@@ -9,6 +9,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { VALID_TYPES, typeForCardClass, allCardClasses } = require('./content-types.cjs');
 
 const USER_DEFAULTS_FILE = '_validation-defaults.json';
 
@@ -113,13 +114,42 @@ function writeUserDefaults(workspaceDir, cfg) {
   fs.writeFileSync(file, JSON.stringify(cfg, null, 2));
 }
 
+// Scan content/*.html for recognized card classes to infer type.
+function inferTypeFromContent(projectDir) {
+  const contentDir = path.join(projectDir, 'content');
+  if (!fs.existsSync(contentDir)) return null;
+  try {
+    const classAlt = allCardClasses().join('|');
+    const re = new RegExp('\\b(' + classAlt + ')\\b');
+    const files = fs.readdirSync(contentDir).filter((f) => f.endsWith('.html'));
+    for (const f of files) {
+      const html = fs.readFileSync(path.join(contentDir, f), 'utf-8');
+      const m = re.exec(html);
+      if (m) return typeForCardClass(m[1]);
+    }
+  } catch {}
+  return null;
+}
+
 function readSessionConfig(projectDir) {
   const manifestPath = path.join(projectDir, 'state', 'manifest.json');
   if (!fs.existsSync(manifestPath)) return { manifest: null, cfg: null, type: null };
   try {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
     const cfg = manifest.validation || null;
-    const type = (manifest.preset && manifest.preset.type) || null;
+    let type = (manifest.preset && manifest.preset.type) || null;
+
+    // Lazy migration: if type is missing, infer from HTML content and persist.
+    if (!type) {
+      type = inferTypeFromContent(projectDir);
+      if (type) {
+        if (!manifest.preset) manifest.preset = {};
+        manifest.preset.type = type;
+        manifest.updatedAt = Date.now();
+        fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+      }
+    }
+
     return { manifest, cfg, type };
   } catch {
     return { manifest: null, cfg: null, type: null };
@@ -145,20 +175,9 @@ function writeSessionConfig(projectDir, cfg) {
  * Returns { config, source, scope } where source is a flat map of
  * top-level keys to their originating scope name.
  */
-// Infer content type from a filename when the session manifest does not
-// declare a preset type. Matches on basename prefix.
-function inferTypeFromFile(file) {
-  if (!file) return null;
-  const base = String(file).split('/').pop().toLowerCase();
-  if (/^slides?\b/.test(base)) return 'slides';
-  if (/^social\b/.test(base)) return 'social';
-  if (/^(doc|document|report|page)\b/.test(base)) return 'document';
-  return null;
-}
-
 function resolveConfig({ workspaceDir, projectDir, file }) {
   const session = readSessionConfig(projectDir);
-  const type = session.type || inferTypeFromFile(file);
+  const type = session.type || null;
   const typeDefaults = getDefaultsFor(type);
   const userDefaults = workspaceDir ? readUserDefaults(workspaceDir) : null;
   const sessionCfg = session.cfg;
@@ -240,7 +259,6 @@ module.exports = {
   writeUserDefaults,
   readSessionConfig,
   writeSessionConfig,
-  inferTypeFromFile,
   resolveConfig,
   patchSessionConfig,
   setLayer,

@@ -13,6 +13,7 @@ import {
 import { createCardMenuButton } from "./card-menu.js";
 import { cardFormat, loadTemplateAsCards, renderCards } from "./card-strip.js";
 import { parseTemplate } from "./file-manager.js";
+import { loadForActiveSession } from "./validation-config.js";
 
 let galleryInit = false;
 
@@ -483,6 +484,7 @@ export async function loadSessionContent(session) {
     state.cardLogos = {};
     state.selectedCards = new Set([0]);
     state.activeContent = buildSessionContentFromSession(session, [file], template.cards);
+    loadForActiveSession();
     setView("preview");
     requestAnimationFrame(renderCards);
     log("Loaded " + template.cards.length + " slides from session", "ok");
@@ -516,6 +518,7 @@ export async function selectTemplate(filename) {
   state.activeMeta = null;
   state.activeStatus = null;
   state.activeContent = buildTemplateContentFromRegistry(template);
+  loadForActiveSession();
   state.zoom = 1.0;
   state.viewMode = "app";
   state.activeCard = 0;

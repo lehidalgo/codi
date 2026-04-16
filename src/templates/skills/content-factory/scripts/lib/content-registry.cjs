@@ -34,6 +34,7 @@ const path = require('path');
 
 const { discoverBrands } = require('./brand-discovery.cjs');
 const workspace = require('./workspace.cjs');
+const { isValidType, allCardClasses } = require('./content-types.cjs');
 
 const META_PATTERNS = [
   /<meta[^>]+name=["']codi:template["'][^>]*content='([^']+)'/i,
@@ -52,10 +53,9 @@ function extractTemplateMeta(html) {
   return {};
 }
 
-// Minimal card counter — a card is one <article class="social-card">
-// wrapper. The renderer uses the exact same pattern.
 function countCards(html) {
-  const re = /<article\b[^>]*class\s*=\s*["'][^"']*\bsocial-card\b[^"']*["']/gi;
+  const classAlt = allCardClasses().join('|');
+  const re = new RegExp('<(article|section)\\b[^>]*class\\s*=\\s*["\'][^"\']*\\b(' + classAlt + ')\\b[^"\']*["\']', 'gi');
   let n = 0;
   while (re.exec(html) !== null) n++;
   return Math.max(n, 1);
@@ -99,7 +99,7 @@ function descriptorFromTemplateEntry(entry) {
     kind: 'template',
     id: templateIdFor(entry, meta),
     name: meta.name || path.basename(entry.file, '.html'),
-    type: meta.type || 'social',
+    type: isValidType(meta.type) ? meta.type : 'social',
     format: meta.format || { w: 1080, h: 1080 },
     cardCount: countCards(html),
     status: null,
@@ -146,7 +146,7 @@ function descriptorFromSession(session) {
     kind: 'session',
     id: path.basename(session.sessionDir),
     name: session.name || path.basename(session.sessionDir),
-    type: (session.preset && session.preset.type) || 'social',
+    type: isValidType(session.preset && session.preset.type) ? session.preset.type : 'social',
     format:
       (session.preset && session.preset.format) ||
       { w: 1080, h: 1080 },

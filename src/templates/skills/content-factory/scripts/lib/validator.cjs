@@ -22,6 +22,7 @@ const { computeContext, applyPreset } = require('./box-layout/context.cjs');
 const { annotate } = require('./box-layout/tree-walker.cjs');
 const { runRules } = require('./box-layout/rule-engine.cjs');
 const { buildReport } = require('./box-layout/report-builder.cjs');
+const { CONTENT_TYPES, allCardClasses, typeForCardClass } = require('./content-types.cjs');
 
 const DEFAULT_THRESHOLD = 0.85;
 const MAX_CACHE_ENTRIES = 500;
@@ -284,15 +285,12 @@ function extractCardHtml(rawHtml, cardIndex, cfg = {}) {
   return all[cardIndex] || { html: null };
 }
 
-// Card classes we know how to extract. Add new types here.
-const CARD_CLASSES = ['social-card', 'slide', 'doc-page'];
-
-// Default canvas dimensions per card class. Used when cfg.format is absent.
-const DEFAULT_CANVAS = {
-  'social-card': { w: 1080, h: 1080 },
-  slide: { w: 1920, h: 1080 },
-  'doc-page': { w: 1240, h: 1754 },
-};
+// Derived from the canonical registry — no hardcoded lists.
+const CARD_CLASSES = allCardClasses();
+const DEFAULT_CANVAS = {};
+for (const [, entry] of Object.entries(CONTENT_TYPES)) {
+  DEFAULT_CANVAS[entry.cardClass] = entry.canvas;
+}
 
 function extractAllCardsHtml(rawHtml, cfg = {}) {
   // Parse out each top-level card block. Supports <article|section> with any

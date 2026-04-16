@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const state = require('../lib/project-state.cjs');
 const { readJson, sendJson, readJsonBody } = require('../lib/http-utils.cjs');
+const { isValidType } = require('../lib/content-types.cjs');
 
 /**
  * Routes that manage session/preset/active-file/active-card/brief state.
@@ -26,6 +27,9 @@ function handle(req, res, parsed, ctx) {
   if (req.method === 'POST' && pathname === '/api/preset') {
     readJsonBody(req, (err, data) => {
       if (err) return sendJson(res, 400, { error: 'Invalid JSON' });
+      if (data && data.type && !isValidType(data.type)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid type: ' + data.type + '. Must be one of: social, slides, document' });
+      }
       const active = state.getActiveProject();
       if (active) {
         fs.writeFileSync(path.join(active.stateDir, 'preset.json'), JSON.stringify(data, null, 2));

@@ -5,7 +5,7 @@
 // test asserts specific strings live in this file.
 
 import { state, STATUS_LABEL } from "./lib/state.js";
-import { $, clearEl, log, setView } from "./lib/dom.js";
+import { $, clearEl, log, setView, registerOnLeavePreview } from "./lib/dom.js";
 import { buildTemplateContentFromRegistry } from "./lib/content-descriptor.js";
 import { connectWS, registerWsHandlers, registerGalleryStaleSetter } from "./lib/ws.js";
 import {
@@ -28,7 +28,7 @@ import {
 import { updateExportPanel } from "./lib/exports-ui.js";
 import { initGallery, filterGallery, loadSessionContent, setGalleryStale } from "./lib/gallery.js";
 import { registerPanelOpener } from "./lib/validation-badge.js";
-import { openValidationPanel } from "./lib/validation-panel.js";
+import { openValidationPanel, closeValidationPanel } from "./lib/validation-panel.js";
 import { initValidationSettings } from "./lib/validation-settings.js";
 
 // Wire forward-references so cycles resolve at runtime.
@@ -46,6 +46,7 @@ registerWsHandlers({
 // Validation badge -> panel wiring (validation-badge.js registers the
 // opener lazily so badges don't need to import the panel directly).
 registerPanelOpener((report, ctx) => openValidationPanel(report, ctx));
+registerOnLeavePreview(() => closeValidationPanel());
 
 // ====== Format switching ======
 function setFormat(btn) {

@@ -18,10 +18,11 @@ function handle(req, res, parsed, ctx) {
   if (req.method === 'POST' && pathname === '/api/create-project') {
     readJsonBody(req, (err, body) => {
       if (err) { res.writeHead(400); res.end('Bad request'); return; }
-      const { name } = body || {};
+      const { name, type } = body || {};
       if (!name || typeof name !== 'string') { res.writeHead(400); res.end('Missing name'); return; }
+      if (!type) { sendJson(res, 400, { ok: false, error: 'Missing type. Must be one of: social, slides, document' }); return; }
       try {
-        const project = workspace.createProject(ctx.WORKSPACE_DIR, name.trim());
+        const project = workspace.createProject(ctx.WORKSPACE_DIR, name.trim(), { type });
         state.setActiveProject(project.dir);
         if (fs.existsSync(project.contentDir)) state.startContentWatcher();
         console.log(JSON.stringify({ type: 'project-created', name, projectDir: project.dir }));

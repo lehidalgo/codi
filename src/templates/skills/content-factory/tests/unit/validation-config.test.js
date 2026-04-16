@@ -108,36 +108,34 @@ describe("validation-config resolve cascade", () => {
     expect(source.threshold).toBe("session");
   });
 
-  it("infers type from filename when manifest preset is null", () => {
-    // manifest with preset:null — type should fall back to filename inference
+  it("returns null type and social defaults when manifest has no preset", () => {
     const proj = makeSession(ws, "noPreset", { preset: null });
     const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: "slides.html" });
-    expect(r.type).toBe("slides");
-    expect(r.config.preset).toBe("strict");
-    expect(r.config.threshold).toBe(0.9);
-  });
-
-  it("infers social type from social.html filename", () => {
-    const proj = makeSession(ws, "noPresetSocial", { preset: null });
-    const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: "social.html" });
-    expect(r.type).toBe("social");
+    expect(r.type).toBeNull();
     expect(r.config.preset).toBe("lenient");
     expect(r.config.threshold).toBe(0.8);
   });
 
-  it("infers document type from doc/report/page prefixes", () => {
-    const proj = makeSession(ws, "noPresetDoc", { preset: null });
-    for (const name of ["doc.html", "document.html", "report.html", "page.html"]) {
-      const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: name });
-      expect(r.type).toBe("document");
-      expect(r.config.preset).toBe("strict");
-    }
+  it("lazy-migrates type from HTML content when preset is null", () => {
+    const proj = makeSession(ws, "migrateme", { preset: null });
+    // Write content with slide cards
+    fs.writeFileSync(
+      path.join(proj, "content", "slides.html"),
+      '<article class="slide"><h1>Hello</h1></article>',
+    );
+    const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj });
+    expect(r.type).toBe("slides");
+    expect(r.config.preset).toBe("strict");
+    // Verify persisted to manifest
+    const m = JSON.parse(fs.readFileSync(path.join(proj, "state", "manifest.json"), "utf-8"));
+    expect(m.preset.type).toBe("slides");
   });
 
-  it("manifest preset.type wins over filename inference", () => {
-    const proj = makeSession(ws, "hasPreset"); // default: slides
+  it("reads type from manifest preset.type", () => {
+    const proj = makeSession(ws, "hasPreset"); // default fixture: slides
     const r = cfgLib.resolveConfig({ workspaceDir: ws, projectDir: proj, file: "social.html" });
     expect(r.type).toBe("slides");
+    expect(r.config.preset).toBe("strict");
   });
 
   it("perFile override wins for a specific file", () => {

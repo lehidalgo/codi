@@ -3,7 +3,6 @@
 // Jump to element, Ignore this violation, Ask agent to fix.
 
 import { log } from "./dom.js";
-import * as vcfg from "./validation-config.js";
 
 let _panel = null;
 let _currentContext = null;
@@ -40,11 +39,11 @@ function header(report) {
   h.style.cssText =
     "padding:16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px;flex-shrink:0;";
   const score = report.score != null ? Math.round(report.score * 100) : "—";
-  const pass = report.pass ? "PASS" : "FAIL";
-  const passColor = report.pass ? "#98c379" : "#e06c75";
+  const pass = report.ok === false ? "ERROR" : report.pass ? "PASS" : "FAIL";
+  const passColor = report.ok === false ? "#e5c07b" : report.pass ? "#98c379" : "#e06c75";
   h.innerHTML = `
     <div style="font-size:24px;font-weight:700;">${score}<span style="font-size:11px;opacity:0.5;"> / 100</span></div>
-    <div style="flex:1;">
+    <div style="flex:1;" data-panel-header>
       <div style="font-size:11px;letter-spacing:0.08em;color:${passColor};font-weight:600;">${pass}</div>
       <div style="font-size:11px;opacity:0.55;margin-top:2px;">${report.summary ? report.summary.errors + " errors, " + report.summary.warnings + " warnings" : ""}</div>
     </div>
@@ -53,9 +52,30 @@ function header(report) {
   return h;
 }
 
+function toolbar(report) {
+  const t = document.createElement("div");
+  t.style.cssText =
+    "padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;flex-shrink:0;";
+  if (!report.violations || !report.violations.length || report.ok === false) return t;
+  const btnStyle =
+    "font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid;";
+  t.innerHTML = `
+    <button type="button" class="vpanel-ignore-all" style="${btnStyle}background:rgba(255,255,255,0.06);color:inherit;border-color:rgba(255,255,255,0.12);">Ignore all</button>
+    <button type="button" class="vpanel-ask-all" style="${btnStyle}background:rgba(86,182,194,0.15);color:var(--accent,#56b6c2);border-color:rgba(86,182,194,0.3);">Fix all</button>
+  `;
+  return t;
+}
+
 function body(report) {
   const b = document.createElement("div");
   b.style.cssText = "flex:1;overflow-y:auto;padding:12px 16px;";
+  if (report.ok === false) {
+    b.innerHTML =
+      '<div style="opacity:0.5;text-align:center;margin-top:40px;">Validation error: ' +
+      (report.error || "unknown") +
+      "</div>";
+    return b;
+  }
   if (!report.violations || !report.violations.length) {
     b.innerHTML =
       '<div style="opacity:0.5;text-align:center;margin-top:40px;">No violations. Layout passes all checks.</div>';
@@ -79,6 +99,7 @@ function body(report) {
     `;
     for (const v of items) {
       const row = document.createElement("div");
+      row.setAttribute("data-violation-row", "");
       row.style.cssText =
         "padding:10px 12px;margin-bottom:6px;border-radius:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);";
       const sevColor = v.severity === "error" ? "#e06c75" : "#e5c07b";
@@ -108,11 +129,34 @@ function escapeHtml(s) {
 }
 
 function handleIgnore(rule, path) {
-  if (!_currentContext) return;
-  const { cardIndex, file } = _currentContext;
-  vcfg.ignoreViolation({ file, rule, selector: path, cardIndex }).then(() => {
-    log(`Ignored ${rule} at ${path}`, "ok");
-  });
+  log(`Ignored ${rule} at ${path}`, "ok");
+  updatePanelHeader();
+}
+
+function updatePanelHeader() {
+  if (!_panel) return;
+  // Count remaining visible rows
+  const rows = _panel.querySelectorAll("[data-violation-row]");
+  let errors = 0;
+  let warnings = 0;
+  for (const r of rows) {
+    const sev = r.querySelector("[data-violation-row] > div:first-child");
+    if (!sev) continue;
+    const text = sev.textContent.trim().toLowerCase();
+    if (text === "error") errors++;
+    else if (text === "warning") warnings++;
+  }
+  const headerEl = _panel.querySelector("[data-panel-header]");
+  if (headerEl) {
+    const total = errors + warnings;
+    const pass = total === 0;
+    const passLabel = pass ? "PASS" : "FAIL";
+    const passColor = pass ? "#98c379" : "#e06c75";
+    headerEl.innerHTML = `
+      <div style="font-size:11px;letter-spacing:0.08em;color:${passColor};font-weight:600;">${passLabel}</div>
+      <div style="font-size:11px;opacity:0.55;margin-top:2px;">${errors} errors, ${warnings} warnings</div>
+    `;
+  }
 }
 
 function handleAskAgent(rule, pathStr) {
@@ -128,6 +172,7 @@ export function openValidationPanel(report, context) {
   _currentContext = context || null;
   _panel.innerHTML = "";
   _panel.appendChild(header(report));
+  _panel.appendChild(toolbar(report));
   _panel.appendChild(body(report));
   _panel.hidden = false;
   requestAnimationFrame(() => {
@@ -136,15 +181,65 @@ export function openValidationPanel(report, context) {
   _panel.querySelector(".vpanel-close").addEventListener("click", closeValidationPanel);
   _panel.querySelectorAll(".vpanel-ignore").forEach((btn) => {
     btn.addEventListener("click", () => {
-      handleIgnore(btn.dataset.rule, btn.dataset.path);
-      btn.closest("div[style*='padding:10px']").style.opacity = "0.4";
+      const row = btn.closest("[data-violation-row]");
+      if (row) {
+        row.style.transition = "opacity 0.3s, max-height 0.3s, margin 0.3s, padding 0.3s";
+        row.style.opacity = "0";
+        row.style.maxHeight = "0";
+        row.style.overflow = "hidden";
+        row.style.marginBottom = "0";
+        row.style.paddingTop = "0";
+        row.style.paddingBottom = "0";
+        setTimeout(() => {
+          row.remove();
+          handleIgnore(btn.dataset.rule, btn.dataset.path);
+        }, 350);
+      } else {
+        handleIgnore(btn.dataset.rule, btn.dataset.path);
+      }
+      btn.textContent = "Ignored";
+      btn.disabled = true;
     });
   });
   _panel.querySelectorAll(".vpanel-ask").forEach((btn) => {
     btn.addEventListener("click", () => {
       handleAskAgent(btn.dataset.rule, btn.dataset.path);
+      btn.textContent = "Sent to log";
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
     });
   });
+  const ignoreAllBtn = _panel.querySelector(".vpanel-ignore-all");
+  if (ignoreAllBtn) {
+    ignoreAllBtn.addEventListener("click", () => {
+      _panel.querySelectorAll("[data-violation-row]").forEach((row) => {
+        row.style.transition = "opacity 0.25s";
+        row.style.opacity = "0";
+      });
+      setTimeout(() => {
+        _panel.querySelectorAll("[data-violation-row]").forEach((r) => r.remove());
+        updatePanelHeader();
+        ignoreAllBtn.textContent = "All ignored";
+        ignoreAllBtn.disabled = true;
+        log("Ignored all violations for this card", "ok");
+      }, 300);
+    });
+  }
+  const fixAllBtn = _panel.querySelector(".vpanel-ask-all");
+  if (fixAllBtn) {
+    fixAllBtn.addEventListener("click", () => {
+      _panel.querySelectorAll(".vpanel-ask").forEach((btn) => {
+        if (!btn.disabled) {
+          handleAskAgent(btn.dataset.rule, btn.dataset.path);
+          btn.textContent = "Sent to log";
+          btn.disabled = true;
+          btn.style.opacity = "0.5";
+        }
+      });
+      fixAllBtn.textContent = "All sent";
+      fixAllBtn.disabled = true;
+    });
+  }
 }
 
 export function closeValidationPanel() {

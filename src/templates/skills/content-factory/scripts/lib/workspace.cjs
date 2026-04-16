@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { isValidType } = require('./content-types.cjs');
 
 function slugify(name) {
   return (name || 'project')
@@ -20,8 +21,13 @@ function projectDirs(dir) {
 }
 
 // Create a new named project directory under workspaceDir.
+// `opts.type` is required and must be a valid content type.
 // Returns { dir, contentDir, stateDir, exportsDir, manifest }.
-function createProject(workspaceDir, name) {
+function createProject(workspaceDir, name, opts = {}) {
+  const type = opts.type || null;
+  if (!isValidType(type)) {
+    throw new Error('createProject requires a valid type (social, slides, document). Got: ' + type);
+  }
   const slug = slugify(name);
   let dir = path.join(workspaceDir, slug);
   // Avoid clobbering an existing project — append a short time suffix
@@ -37,7 +43,7 @@ function createProject(workspaceDir, name) {
     slug,
     projectDir: dir,
     created: Date.now(),
-    preset: null,
+    preset: { type },
     files: [],
     status: 'draft',
   };

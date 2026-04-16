@@ -35,6 +35,12 @@ export function _registerInitGallery(fn) {
   _initGallery = fn;
 }
 
+// Callbacks invoked when leaving preview (validation panel, inspect mode, etc.)
+const _onLeavePreview = [];
+export function registerOnLeavePreview(fn) {
+  _onLeavePreview.push(fn);
+}
+
 export function setView(viewId) {
   document.querySelectorAll(".tab").forEach((t) => {
     const a = t.dataset.view === viewId;
@@ -46,6 +52,12 @@ export function setView(viewId) {
     .forEach((v) => v.classList.toggle("active", v.id === "view-" + viewId));
   const vmBar = $("view-mode-bar");
   if (vmBar) vmBar.style.display = viewId === "preview" ? "" : "none";
+  if (viewId !== "preview")
+    _onLeavePreview.forEach((fn) => {
+      try {
+        fn();
+      } catch {}
+    });
   if (viewId === "gallery" && _initGallery) _initGallery();
 }
 

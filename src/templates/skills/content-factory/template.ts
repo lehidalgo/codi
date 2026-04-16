@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 56
+version: 57
 ---
 
 # {{name}} — Content Factory
@@ -78,7 +78,7 @@ that the app picks up automatically via WebSocket.
 | \`/api/brief\` | GET | Read the active project's \`brief.json\` (campaign intake) — returns \`null\` if no project is active or no brief has been written |
 | \`/api/brief\` | POST | Write the active project's \`brief.json\` — body is a full brief object (schema v1). Returns 400 if no project is active. |
 | \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset, activeCard, brief}\` — use this to orient before editing |
-| \`/api/create-project\` | POST | Create a new named project dir, activate it — body: \`{name}\`, returns \`{projectDir, contentDir, stateDir, exportsDir}\` |
+| \`/api/create-project\` | POST | Create a new named project dir, activate it — body: \`{name, type}\`, returns \`{projectDir, contentDir, stateDir, exportsDir}\`. **\`type\` is required** and must be one of: \`social\`, \`slides\`, \`document\`. The server rejects unknown types with HTTP 400. |
 | \`/api/open-project\` | POST | Activate an existing project — body: \`{projectDir}\` |
 | \`/api/sessions\` | GET | List all projects from the workspace directory |
 | \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific project's content dir |
@@ -229,12 +229,13 @@ Tell the user:
 
 ### Step 1b — Create a project (when generating new content)
 
-Before writing any files, create a named project. This returns the directory paths to use:
+Before writing any files, create a named project. **You must specify a content type.**
+The only valid types are: \`social\`, \`slides\`, \`document\`. The server rejects anything else.
 
 \`\`\`bash
 curl -s -X POST <url>/api/create-project \\
   -H "Content-Type: application/json" \\
-  -d '{"name": "acme-social-campaign"}'
+  -d '{"name": "acme-social-campaign", "type": "social"}'
 \`\`\`
 
 Response:

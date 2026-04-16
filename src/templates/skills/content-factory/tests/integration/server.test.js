@@ -114,7 +114,7 @@ describe("POST /api/preset", () => {
     await fetch(`${baseUrl}/api/create-project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "preset-test" }),
+      body: JSON.stringify({ name: "preset-test", type: "social" }),
     });
 
     const payload = {
@@ -175,7 +175,7 @@ describe("POST /api/brief", () => {
     await fetch(`${baseUrl}/api/create-project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "brief-test" }),
+      body: JSON.stringify({ name: "brief-test", type: "social" }),
     });
 
     const brief = {

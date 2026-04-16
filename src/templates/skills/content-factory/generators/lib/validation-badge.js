@@ -12,6 +12,38 @@ export function registerPanelOpener(fn) {
   _panelOpener = fn;
 }
 
+// Sync all badge visibility when validation config changes.
+let _configListenerSet = false;
+function ensureConfigListener() {
+  if (_configListenerSet) return;
+  _configListenerSet = true;
+  vcfg.onChange(() => {
+    const show = vcfg.isEnabled() && vcfg.getLayer("badge");
+    document.querySelectorAll(".validation-badge").forEach((b) => {
+      b.style.display = show ? "" : "none";
+    });
+  });
+}
+
+// Inject tooltip styles once — native title is unreliable over iframes.
+let _tooltipStyled = false;
+function ensureTooltipStyle() {
+  if (_tooltipStyled) return;
+  _tooltipStyled = true;
+  const s = document.createElement("style");
+  s.textContent = `
+    .validation-badge[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%);
+      margin-bottom: 6px; padding: 4px 8px; border-radius: 4px;
+      background: rgba(20,24,34,0.95); color: rgba(230,237,243,0.85);
+      font-size: 11px; font-weight: 400; letter-spacing: 0.01em;
+      white-space: nowrap; pointer-events: none; z-index: 10;
+    }
+  `;
+  document.head.appendChild(s);
+}
+
 function classifyScore(report, threshold) {
   if (!report) return "pending";
   if (report.skipped) return "skipped";
@@ -89,6 +121,8 @@ function applyStyle(el, styleObj) {
 }
 
 export function createValidationBadge(cardIndex, file) {
+  ensureTooltipStyle();
+  ensureConfigListener();
   const badge = document.createElement("button");
   badge.type = "button";
   badge.className = "validation-badge";
@@ -110,7 +144,7 @@ export function createValidationBadge(cardIndex, file) {
     // Templates: show a muted "—" chip
     applyStyle(badge, styleFor("skipped"));
     badge.textContent = "—";
-    badge.title = "Validation only on My Work sessions";
+    badge.dataset.tooltip = "Validation only on My Work sessions";
     return badge;
   }
 
@@ -127,7 +161,7 @@ export function createValidationBadge(cardIndex, file) {
       if (!report) {
         applyStyle(badge, styleFor("error"));
         badge.textContent = "!";
-        badge.title = "Validation error";
+        badge.dataset.tooltip = "Validation error";
         return;
       }
       const cfg = vcfg.getConfig();
@@ -147,7 +181,7 @@ export function createValidationBadge(cardIndex, file) {
                 : stateName === "skipped"
                   ? "Validation skipped: " + (report.skipped || "")
                   : "Validation error";
-      badge.title = label;
+      badge.dataset.tooltip = label;
       badge._report = report;
     })
     .catch(() => {

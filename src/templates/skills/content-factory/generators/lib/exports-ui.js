@@ -96,13 +96,12 @@ function showPreflightModal(batch, overrideMode) {
 const EXPORT_ICON_DOWNLOAD = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11.5l-4-4h2.5V2h3v5.5H12L8 11.5zM2 13.5h12V12H2v1.5z"/></svg>`;
 
 function _getContentType() {
+  const c = state.activeContent;
+  if (c && c.type) return c.type;
   if (state.preset) {
     const t = state.templates.find((x) => x.id === state.preset);
-    if (t) return t.type;
+    if (t && t.type) return t.type;
   }
-  const { w, h } = state.format;
-  if (w === 794) return "document";
-  if (w > h) return "slides";
   return "social";
 }
 
