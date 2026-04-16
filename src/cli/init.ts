@@ -192,7 +192,10 @@ export async function initHandler(
       wizardResult.preset ??
       presetName;
     displayPresetName =
-      wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? artifactPresetName;
+      wizardResult.saveAsPreset ??
+      wizardResult.selectedPresetName ??
+      artifactPresetName ??
+      (wizardResult.configMode === "custom" ? "custom" : undefined);
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 

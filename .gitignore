@@ -12,7 +12,7 @@ projs/
 data/
 .env*
 __pycache__
-
+.codi_output_BKP/
 # Astro docs build
 site/docs/
 docs/src/content/docs/api/

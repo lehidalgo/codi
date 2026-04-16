@@ -22,6 +22,7 @@ export const state = {
   activeSessionDir: null, // set when a My Work session is loaded; null for built-in templates
   cards: [],
   activeCard: 0,
+  cardRevision: 0, // incremented on every card data reload; used by filmstrip cache
   preset: null, // template id of currently active template
   templates: [], // loaded from /api/templates
   activeMeta: null, // { name, type, format } — set for session content, cleared for templates

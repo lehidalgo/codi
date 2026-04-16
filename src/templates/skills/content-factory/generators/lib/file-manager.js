@@ -109,6 +109,7 @@ export async function loadContent(filename, { preserveCard = false } = {}) {
     }
     const prevCard = state.activeCard;
     state.cards = cards;
+    state.cardRevision++;
     state.activeCard = preserveCard && prevCard < cards.length ? prevCard : 0;
     state.cardLogos = {};
     state.selectedCards = new Set([state.activeCard]);
