@@ -94,6 +94,33 @@ function showPreflightModal(batch, overrideMode) {
 }
 
 const EXPORT_ICON_DOWNLOAD = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11.5l-4-4h2.5V2h3v5.5H12L8 11.5zM2 13.5h12V12H2v1.5z"/></svg>`;
+const EXPORT_ICON_SPINNER = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="9 28" opacity="0.95"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.75" opacity="0.18"/></svg>`;
+
+function svgNodeFrom(svgString) {
+  const doc = new DOMParser().parseFromString(svgString, "image/svg+xml");
+  return doc.documentElement;
+}
+
+/**
+ * Wrap an async export handler to toggle the button's busy state.
+ * Adds `.is-busy`, disables the button while the handler runs, and
+ * restores normal state in `finally` — even on error.
+ */
+async function runWithBusy(btn, handler) {
+  if (!btn || btn.classList.contains("is-busy")) return;
+  btn.classList.add("is-busy");
+  btn.setAttribute("aria-busy", "true");
+  btn.disabled = true;
+  try {
+    await handler();
+  } catch (e) {
+    log("export error: " + (e && e.message ? e.message : String(e)), "error");
+  } finally {
+    btn.classList.remove("is-busy");
+    btn.removeAttribute("aria-busy");
+    btn.disabled = false;
+  }
+}
 
 function _getContentType() {
   const c = state.activeContent;
@@ -146,8 +173,20 @@ export function updateExportPanel(hasCards) {
     btn.className = "btn-export" + (spec.primary ? " primary" : "");
     btn.id = spec.id;
     btn.disabled = !hasCards;
-    btn.innerHTML = EXPORT_ICON_DOWNLOAD + " " + spec.label;
-    btn.addEventListener("click", spec.handler);
+    btn.type = "button";
+
+    const iconEl = document.createElement("span");
+    iconEl.className = "btn-export__icon";
+    iconEl.appendChild(svgNodeFrom(EXPORT_ICON_DOWNLOAD));
+    const spinnerEl = document.createElement("span");
+    spinnerEl.className = "btn-export__spinner";
+    spinnerEl.appendChild(svgNodeFrom(EXPORT_ICON_SPINNER));
+    const labelEl = document.createElement("span");
+    labelEl.className = "btn-export__label";
+    labelEl.textContent = spec.label;
+    btn.append(iconEl, spinnerEl, labelEl);
+
+    btn.addEventListener("click", () => runWithBusy(btn, spec.handler));
     container.appendChild(btn);
   }
 }

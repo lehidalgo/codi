@@ -30,7 +30,7 @@ describe("content-types registry", () => {
 
   it("canvasForType returns default dimensions", () => {
     expect(ct.canvasForType("social")).toEqual({ w: 1080, h: 1080 });
-    expect(ct.canvasForType("slides")).toEqual({ w: 1920, h: 1080 });
+    expect(ct.canvasForType("slides")).toEqual({ w: 1280, h: 720 });
     expect(ct.canvasForType("document")).toEqual({ w: 1240, h: 1754 });
   });
 

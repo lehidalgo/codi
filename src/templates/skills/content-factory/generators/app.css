@@ -390,6 +390,30 @@ input[type="range"] {
 
 .btn-export:disabled { opacity: 0.38; cursor: not-allowed; }
 
+.btn-export__icon,
+.btn-export__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.btn-export__spinner { display: none; color: var(--accent); }
+
+.btn-export.is-busy { cursor: progress; opacity: 1; }
+.btn-export.is-busy:disabled { opacity: 1; cursor: progress; }
+.btn-export.is-busy .btn-export__icon { display: none; }
+.btn-export.is-busy .btn-export__spinner { display: inline-flex; }
+.btn-export.is-busy .btn-export__spinner svg { animation: btn-export-spin 720ms linear infinite; }
+
+@keyframes btn-export-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-export.is-busy .btn-export__spinner svg { animation-duration: 2s; }
+}
+
 .btn-export.primary {
   background: rgba(86, 182, 194, 0.1);
   border-color: rgba(86, 182, 194, 0.3);

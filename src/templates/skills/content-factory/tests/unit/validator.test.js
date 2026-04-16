@@ -277,8 +277,8 @@ describe("validator wrapper", () => {
     // Default canvas sizes applied when cfg.format is absent
     const slideRender = captured.find((c) => c.hasSlide && !c.hasSocial);
     expect(slideRender).toBeDefined();
-    expect(slideRender.width).toBe(1920);
-    expect(slideRender.height).toBe(1080);
+    expect(slideRender.width).toBe(1280);
+    expect(slideRender.height).toBe(720);
     const docRender = captured.find((c) => c.hasDoc);
     expect(docRender.width).toBe(1240);
     expect(docRender.height).toBe(1754);

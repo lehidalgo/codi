@@ -13,7 +13,7 @@ const CONTENT_TYPES = {
   },
   slides: {
     cardClass: 'slide',
-    canvas: { w: 1920, h: 1080 },
+    canvas: { w: 1280, h: 720 },
     label: 'Slides',
   },
   document: {

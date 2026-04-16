@@ -3,7 +3,7 @@
 
 export const CONTENT_TYPES = {
   social: { cardClass: "social-card", canvas: { w: 1080, h: 1080 }, label: "Social" },
-  slides: { cardClass: "slide", canvas: { w: 1920, h: 1080 }, label: "Slides" },
+  slides: { cardClass: "slide", canvas: { w: 1280, h: 720 }, label: "Slides" },
   document: { cardClass: "doc-page", canvas: { w: 1240, h: 1754 }, label: "Document" },
 };
 

@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 57
+version: 62
 ---
 
 # {{name}} — Content Factory
@@ -43,12 +43,9 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.css]]\` | App styles — served at \`/static/app.css\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.js]]\` | App logic — served at \`/static/app.js\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.html]]\` | HTML shell for agent-generated slide decks (3-file: links to deck.css + deck.js) |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.css]]\` | Brand tokens + all slide styles — copy as deck.css in the session content dir |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/slides-base.js]]\` | Deck navigation engine — copy as deck.js in the session content dir |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under the All / Social / Slides / Document filters based on each template's \`type\` |
-| \`\${CLAUDE_SKILL_DIR}[[/scripts/export/compile-deck.js]]\` | Bundle deck.html + deck.css + deck.js into a single portable standalone HTML |
+| \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` | Creative brief for slide decks — structural contract, motion principles, brand alignment, anti-patterns. Read this before authoring any deck. |
 
 ---
 
@@ -463,94 +460,13 @@ fills). The reference also has per-card-type minimum element checklists and anti
 
 #### Design system — MANDATORY for all slides
 
-Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\`
+Read \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` before authoring any slide. The reference holds the 13 design rules (fixed frame, chrome match, text tiers, two-color titles, equidistant spacing, pinned card layout, feature hierarchy, bullet spacing, stretch rows, no overflow, quote box, per-slide checklist, cover exception), full CSS patterns, before/after examples, and verification scripts. Every slide must pass every rule before shipping.
 
-**The 13 core rules** (every slide must pass all of them before being shipped):
+#### Slide deck generation — single-file authoring (MANDATORY)
 
-1. **Fixed frame** — chrome-top, header (h2 + secondary description), chrome-bottom sit at
-   identical y-coordinates across every slide. Only the content zone between them varies.
-   Enforce via \`min-height\` on h2 (120px) and \`.sub\`/\`.feat-lead\` (80px).
-2. **Chrome indicators match** — \`.slide-num\` and \`.chrome-feat\` pills must render at
-   identical height/font/padding/border. Same font-size for label and bold number (e.g. 18px);
-   differentiate only via color + weight, never size.
-3. **Text size standard** — all plain body text maps to 5 tiers: T1=28px (secondary
-   description), T2=26px (primary body), T3=24px (supporting), T4=22px (tertiary),
-   T5=20px (minimum). **No body text smaller than 20px** and **no values between tiers** (no
-   19/21/23/27). Titles, big numerals, badges, monospace code blocks, and pill labels are
-   allowed outside this range.
-4. **Two-color titles** — every h2 and h3 splits into plain white text + a cyan-gradient
-   \`<span class="grad">\` on the punch phrase. Register a CSS rule for both:
-   \`h2 .grad, h3 .grad { background: var(--grad); -webkit-background-clip: text;
-   -webkit-text-fill-color: transparent; }\`.
-5. **Equidistant spacing** — every container uses a single \`gap\` value on its flex/grid;
-   children never use \`margin-top\`/\`margin-bottom\` overrides. Rule is recursive.
-6. **Three-element pinned card layout (lbl/val/note)** — feature stat cards use
-   \`position: absolute\` for lbl (top-left) and note (bottom), with the val as the sole
-   flex-centered child. Note has **fixed height** (e.g. 115px) so its separator line renders
-   at the same y across every card in the row. Card padding reserves space:
-   \`padding: 64px 28px 155px\`.
-7. **Feature slide layout hierarchy** — on feature slides, \`.feat-stats { flex: 1 }\` gets
-   the vertical space; \`.feat-bullets\` and \`.feat-terminal\` are \`flex: 0 0 auto\`
-   (content-sized). Never give bullets/terminal \`flex: 1\` — they stretch and create dead
-   space between their items.
-8. **Bullet uniform spacing** — \`.feat-bullets\` uses \`justify-content: space-evenly\` with
-   zero vertical container padding (\`padding: 0 26px\`) and uniform item padding
-   (\`14px 0 14px 44px\`). Top/between/bottom gaps end up identical.
-9. **Stretch rows** — grid cell rows use \`align-items: stretch\` so all cells share the
-   tallest cell's height.
-10. **No content overflow ever** — after every structural edit, measure all slides with the
-    verification script. Fix by compacting content, never by expanding the canvas, never by
-    shrinking text below 20px, never by removing fixed frame zones.
-11. **Quote / dialogue box** — use the standard pattern: dashed cyan border, dark surface-3
-    background, italic monospace text at T5, big decorative " mark in cyan, glowing status
-    dot top-right.
-12. **Per-slide verification checklist** — frame locked, chrome indicators matched, text in
-    tier, two-color titles, equidistant spacing, lbl/val/note aligned across the row, feature
-    layout hierarchy respected, bullet spacing uniform, zero overflow, nested cards also
-    respect the rules.
-13. **Cover slide exception** — the first slide can break rule 1 (fixed frame) to be a
-    visual scroll-stopper. Rules 3, 5, and 10 still apply.
+Read \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` before authoring any deck. The brief is the single source of truth for the structural contract (per-slide isolation, canvas size, document shape), motion principles (CSS-only autoplay, no JS-gated visibility), the \`data-type\` slide-type table, narrative arcs and slide budgets, dual-mode standalone presentation, anti-patterns, and the pre-ship self-audit.
 
-The reference file contains full CSS patterns, before/after examples, verification scripts
-you can paste into DevTools/Playwright, and the origin story of each rule.
-
-**Do not skip the verification**: after any edit to a slide's layout, run the overflow
-check and the frame-lock check from the reference before declaring the edit done.
-
-#### Slide deck generation — 3-file approach (MANDATORY)
-
-Slide decks MUST use the canonical 3-file reference pattern — no exceptions, no single-file shortcuts:
-
-1. **\`deck.html\`** — structure only. Use \`<section class="slide" data-type="…">\` (never \`<article>\`). Wrap with the canonical \`<div class="deck"><div class="deck__viewport">\` container, include \`<div class="progress-bar" id="progressBar"></div>\` and \`<span class="slide-counter" id="slideCounter"></span>\` as the first children of the viewport, reference \`<link rel="stylesheet" href="deck.css">\` in \`<head>\`, and \`<script src="deck.js"></script>\` at the end of \`<body>\`.
-2. **\`deck.css\`** — copy the full contents of \`slides-base.css\` verbatim, then replace the \`:root { ... }\` block with the active brand's tokens. Do NOT author a parallel style system.
-3. **\`deck.js\`** — copy the full contents of \`slides-base.js\` verbatim. Do NOT rewrite the navigation engine.
-
-**Animation contract**: mark every element that should animate on slide entry with \`class="animate-in"\`. The canonical CSS defines \`@keyframes fadeUp\` + staggered \`animation-delay\` for nth-child 1-7; the canonical JS replays these via \`resetAnimations()\` on every slide visit. Elements without \`.animate-in\` appear instantly.
-
-**Bundle fidelity guarantee**: the "HTML · all" export inlines \`deck.css\` into \`<style>\` and \`deck.js\` into \`<script>\` without modification, so the bundle is byte-equivalent to the three files merged — the same animations, navigation, and chrome you see when opening \`deck.html\` in the browser.
-
-**Narrative arc**: Problem→Solution (pitches), Progressive Disclosure (technical), 3-Act (status updates), Comparison (decisions). Budget: 5-7 slides (5 min), 8-12 (standard), 15-20 (deep dive). Rule: ~2 min/slide, max 5 bullets, lead with the most important point.
-
-**Slide types** (set \`data-type\` on the \`<section class="slide">\`):
-
-| data-type | Key elements | Note |
-|-----------|--------------|------|
-| \`title\`   | \`.slide__eyebrow\`, \`h1\`, \`.slide__subtitle\`, \`.slide__meta\` | |
-| \`divider\` | \`.section-number\`, \`h2\` | add \`.slide--blue\` |
-| \`content\` | \`h2\`, \`.bullet-list > li\` (max 5) | |
-| \`quote\`   | \`blockquote\`, \`.attribution\` | add \`.slide--blue\` |
-| \`metrics\` | \`h2\`, \`.metric-grid > .metric-card\` (max 4) | |
-| \`table\`   | \`h2\`, \`<table><thead><tbody>\` | |
-| \`cards\`   | \`h2\`, \`.card-grid--2\` or \`.card-grid--3\`, \`.card\` | |
-| \`code\`    | \`h2\`, \`.code-block > pre\` | |
-| \`split\`   | \`h2\`, \`.slide__content--split\` → \`.split__text\` + \`.split__visual\` | |
-| \`flow\`    | \`h2\`, \`.flow\` → \`.flow__step\` + \`.flow__arrow\` | |
-| \`closing\` | \`h2\`, \`.contact\` | |
-
-Add \`.animate-in\` to every visible element. Add \`.slide--blue\` to use the dark brand color. Standalone export:
-\`\`\`bash
-node \${CLAUDE_SKILL_DIR}[[/scripts/export/compile-deck.js]] --content <contentDir>
-\`\`\`
+Every deck is one self-contained HTML file authored from scratch. No sibling \`deck.css\`/\`deck.js\`. No external refs except Google Fonts. The "HTML · all" export downloads the source byte-for-byte — the agent's output IS the export.
 
 #### Document page discipline — MANDATORY
 
