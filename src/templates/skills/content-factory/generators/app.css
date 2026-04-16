@@ -711,6 +711,7 @@ input[type="range"] {
   align-items: center;
   justify-content: center;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   padding-bottom: 2px;
 }
@@ -858,28 +859,54 @@ input[type="range"] {
 /* ====== Card frame ====== */
 .card-frame {
   flex-shrink: 0;
-  overflow: hidden;
-  border-radius: 10px;
-  box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06);
+  display: flex;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
   position: relative;
 }
 
 .card-frame:hover {
   transform: translateY(-2px);
+}
+
+/* ====== Card rail (left strip: selection circle + validation badge) ====== */
+.card-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 32px;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.card-frame.active-card .card-rail {
+  border-left: 2px solid var(--accent);
+  border-radius: 2px 0 0 2px;
+}
+
+/* ====== Card content (iframe + logo wrapper) ====== */
+.card-content {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06);
+  position: relative;
+}
+
+.card-frame:hover .card-content {
   box-shadow: 0 12px 50px rgba(0,0,0,.7), 0 0 0 1px rgba(86,182,194,.3);
 }
 
-.card-frame.active-card {
+.card-frame.active-card .card-content {
   box-shadow: 0 8px 40px rgba(0,0,0,.6);
 }
 
-.card-frame.selected-card {
+.card-frame.selected-card .card-content {
   box-shadow: 0 8px 40px rgba(0,0,0,.6);
 }
 
-.card-frame iframe {
+.card-content iframe {
   border: none;
   display: block;
   transform-origin: top left;
@@ -890,29 +917,24 @@ input[type="range"] {
    preview iframe so the injected inspector can capture DOM elements.
    Filmstrip thumbnails are left as-is so thumbnail navigation still
    works by clicking through to the wrapper. */
-body.inspect-on .card-frame iframe {
+body.inspect-on .card-content iframe {
   pointer-events: auto;
   cursor: crosshair;
 }
 
-/* ====== Card selection circle ====== */
+/* ====== Card selection circle (inside .card-rail) ====== */
 .card-select-circle {
-  position: absolute;
-  top: 8px;
-  left: 8px;
   width: 20px;
   height: 20px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.28);
   background: rgba(13, 17, 23, 0.6);
   cursor: pointer;
-  z-index: 15;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: border-color 0.15s, background 0.15s;
-  backdrop-filter: blur(4px);
 }
 
 .card-select-circle:hover { border-color: var(--accent); }

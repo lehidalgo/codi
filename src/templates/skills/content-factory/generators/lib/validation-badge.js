@@ -64,24 +64,20 @@ function renderText(state, report) {
 
 function styleFor(state) {
   const base = {
-    position: "absolute",
-    left: "10px",
-    bottom: "10px",
-    width: "34px",
-    height: "22px",
+    width: "24px",
+    height: "24px",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "0 6px",
-    borderRadius: "11px",
+    padding: "0",
+    borderRadius: "12px",
     fontFamily: "system-ui, sans-serif",
-    fontSize: "11px",
+    fontSize: "10px",
     fontWeight: "600",
     letterSpacing: "0.04em",
     cursor: "pointer",
-    zIndex: "3",
+    flexShrink: "0",
     border: "1px solid rgba(255,255,255,0.12)",
-    backdropFilter: "blur(6px)",
     transition: "background 0.12s, border-color 0.12s, transform 0.12s",
   };
   const palette = {

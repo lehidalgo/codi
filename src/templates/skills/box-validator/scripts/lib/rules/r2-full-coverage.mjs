@@ -1,10 +1,20 @@
 // Rule 2: FULL COVERAGE — children + spacing must fill the parent completely.
-// Expected total along the main axis = padding*2 + sum(child sizes) + gap*(n-1).
-// Cross-axis: each child must span parent minus padding*2 (leaving room for
-// parent borders).
+// When a container uses justify-content to distribute space intentionally,
+// the main-axis check is downgraded to warning (Layer 2 CSS placement).
 
 export const id = "R2";
 export const name = "Full Coverage";
+
+// justify-content values that intentionally distribute leftover space.
+// When present, children are not expected to fill the main axis — the
+// browser handles the remaining space via CSS positioning (Layer 2).
+const DISTRIBUTING_JUSTIFY = new Set([
+  "space-between",
+  "space-around",
+  "space-evenly",
+  "center",
+  "flex-end",
+]);
 
 export function check(root, context) {
   const violations = [];
@@ -12,10 +22,6 @@ export function check(root, context) {
   return violations;
 
   function walk(n) {
-    // Structural parents get full-coverage checked. Compound cohesion
-    // containers (icon + text split per R9) are exempt — their children
-    // are content-sized by intent and the parent uses justify-content:
-    // center to cluster them. See tree-walker.mjs detectCompoundCohesion.
     if (
       !n.isLeaf &&
       n.children.length > 0 &&
@@ -37,6 +43,7 @@ function checkNode(n, context, out) {
   const padL = n.css.paddingLeft;
   const gap = n.css.gap;
   const cn = n.children.length;
+  const distributes = DISTRIBUTING_JUSTIFY.has(n.css.justifyContent);
 
   if (n.flow === "column") {
     const expected =
@@ -45,13 +52,14 @@ function checkNode(n, context, out) {
     if (delta > tol) {
       out.push({
         rule: "R2",
-        severity: "error",
+        severity: distributes ? "warning" : "error",
         path: n.path,
         message: `Column height ${n.rect.h.toFixed(1)}px ≠ children+spacing ${expected.toFixed(1)}px (Δ${delta.toFixed(1)}px)`,
-        fix: "Give every child `flex: 1` (or explicit heights) so they fill the parent. Verify there is no absolute-positioned ghost or hidden sibling.",
+        fix: distributes
+          ? "Column uses justify-content to distribute space. Consider using flex children to fill the axis for tighter structure."
+          : "Give every child `flex: 1` (or explicit heights) so they fill the parent. Verify there is no absolute-positioned ghost or hidden sibling.",
       });
     }
-    // Cross axis: each child width should equal parent width - left - right padding
     const expectedW = n.rect.w - padL - padR;
     for (const c of n.children) {
       if (Math.abs(c.rect.w - expectedW) > tol) {
@@ -71,10 +79,12 @@ function checkNode(n, context, out) {
     if (delta > tol) {
       out.push({
         rule: "R2",
-        severity: "error",
+        severity: distributes ? "warning" : "error",
         path: n.path,
         message: `Row width ${n.rect.w.toFixed(1)}px ≠ children+spacing ${expected.toFixed(1)}px (Δ${delta.toFixed(1)}px)`,
-        fix: "Give every child `flex: 1` (or explicit widths) so they fill the parent.",
+        fix: distributes
+          ? "Row uses justify-content to distribute space. Consider using flex children to fill the axis for tighter structure."
+          : "Give every child `flex: 1` (or explicit widths) so they fill the parent.",
       });
     }
     const expectedH = n.rect.h - padT - padB;

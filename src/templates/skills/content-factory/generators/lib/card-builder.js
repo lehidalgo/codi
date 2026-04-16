@@ -154,7 +154,9 @@ export function buildThumbDoc(card, fmt) {
       fmt.h +
       "px!important}" +
       "</style></head><body>",
-    (card.html || "").replace(/@handle/g, "@preview") + "</body></html>",
+    (card.html || "")
+      .replace(/@handle/g, "@preview")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "") + "</body></html>",
   ].join("");
 }
 

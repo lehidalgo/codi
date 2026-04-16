@@ -1,9 +1,13 @@
 // Rule 3: SHARED DIMENSION — column siblings share width, row siblings share
 // height. Text-leaf children are exempt on the varying axis because text
 // heights/widths legitimately differ.
+// Inline elements (br, wbr) and zero-dimension nodes are excluded from
+// sibling comparison — they don't participate in the flex layout.
 
 export const id = "R3";
 export const name = "Shared Dimension";
+
+const SKIP_TAGS = new Set(["br", "wbr"]);
 
 export function check(root, context) {
   const violations = [];
@@ -18,12 +22,18 @@ export function check(root, context) {
   }
 }
 
+function isLayoutParticipant(child) {
+  if (SKIP_TAGS.has(child.tag)) return false;
+  if (child.rect.w === 0 && child.rect.h === 0) return false;
+  return true;
+}
+
 function checkSiblings(parent, context, out) {
   const tol = context.tolerance;
-  const kids = parent.children;
+  const kids = parent.children.filter(isLayoutParticipant);
+  if (kids.length < 2) return;
 
   if (parent.flow === "column") {
-    // All siblings must share the same width (cross axis)
     const widths = kids.map((c) => c.rect.w);
     const avg = avgOf(widths);
     for (let i = 0; i < kids.length; i++) {
@@ -39,7 +49,6 @@ function checkSiblings(parent, context, out) {
       }
     }
   } else if (parent.flow === "row") {
-    // All siblings must share the same height — BUT leaf text children are exempt
     const nonLeaf = kids.filter((c) => !c.isLeaf);
     if (nonLeaf.length >= 2) {
       const heights = nonLeaf.map((c) => c.rect.h);

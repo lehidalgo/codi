@@ -3,6 +3,10 @@
 const id = 'R7';
 const name = 'No Empty Nodes';
 
+const DECORATIVE_TAGS = new Set([
+  'img', 'video', 'audio', 'canvas', 'svg', 'iframe', 'picture', 'hr',
+]);
+
 function check(root, context) {
   const violations = [];
   walk(root);
@@ -22,14 +26,21 @@ function check(root, context) {
   }
 }
 
-const DECORATIVE_TAGS = new Set([
-  'img', 'video', 'audio', 'canvas', 'svg', 'iframe', 'picture', 'hr',
-]);
-
 function isLikelyDecorative(n, context) {
   if (DECORATIVE_TAGS.has(n.tag)) return true;
   const z = context.zeroAreaThreshold;
-  return n.rect.w < z || n.rect.h < z;
+  if (n.rect.w < z || n.rect.h < z) return true;
+  if (hasVisualBackground(n)) return true;
+  if (n.css.borderWidth > 0) return true;
+  if (n.css.boxShadow && n.css.boxShadow !== 'none') return true;
+  return false;
+}
+
+function hasVisualBackground(n) {
+  const bg = n.css.backgroundColor;
+  if (!bg) return false;
+  if (bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') return false;
+  return true;
 }
 
 module.exports = { id, name, check };

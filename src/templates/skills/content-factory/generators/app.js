@@ -239,10 +239,10 @@ function init() {
     // Wake ONLY the currently-active card iframe; every other .card-frame
     // iframe stays dormant. This guarantees /api/eval tasks route to the
     // card the user is looking at.
-    const all = document.querySelectorAll(".card-frame iframe");
+    const all = document.querySelectorAll(".card-content iframe");
     for (const f of all) {
-      const isActive =
-        state.inspectOn && f.parentElement && f.parentElement.classList.contains("active-card");
+      const frame = f.closest(".card-frame");
+      const isActive = state.inspectOn && frame && frame.classList.contains("active-card");
       try {
         const w = f.contentWindow;
         if (!w) continue;

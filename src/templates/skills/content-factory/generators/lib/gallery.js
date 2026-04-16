@@ -91,6 +91,19 @@ export async function initGallery() {
           el.querySelector("iframe").srcdoc = _buildThumbDoc(el._coverCard, native);
           el.removeAttribute("data-pending");
         }
+        // Deferred metadata fetch for template cards
+        if (el._tmplMetaCtx) {
+          const { templateId, timeEl } = el._tmplMetaCtx;
+          fetch("/api/content-metadata?kind=template&id=" + encodeURIComponent(templateId))
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+              if (!d || !d.modifiedAt) return;
+              timeEl.textContent = "edited " + formatTimeAgo(d.modifiedAt);
+              timeEl.title = new Date(d.modifiedAt).toLocaleString();
+              timeEl.hidden = false;
+            })
+            .catch(() => {});
+        }
         observer.unobserve(el);
       });
     },
@@ -146,15 +159,8 @@ export async function initGallery() {
     tmplTime.className = "preset-meta preset-meta-time";
     tmplTime.style.cssText = "font-size:10px;opacity:0.6;margin-top:2px;";
     tmplTime.hidden = true;
-    fetch("/api/content-metadata?kind=template&id=" + encodeURIComponent(template.id))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!d || !d.modifiedAt) return;
-        tmplTime.textContent = "edited " + formatTimeAgo(d.modifiedAt);
-        tmplTime.title = new Date(d.modifiedAt).toLocaleString();
-        tmplTime.hidden = false;
-      })
-      .catch(() => {});
+    // Defer metadata fetch until the card is visible (via IntersectionObserver)
+    inner._tmplMetaCtx = { templateId: template.id, timeEl: tmplTime };
 
     async function cloneTemplateAction() {
       try {
@@ -404,6 +410,7 @@ async function renderSessions(grid) {
           state.activeStatus = null;
           state.preset = null;
           state.cards = [];
+          state.cardRevision++;
           state.activeCard = 0;
           renderCards();
           if (window._cfUpdateUrl) window._cfUpdateUrl();
@@ -465,6 +472,7 @@ export async function loadSessionContent(session) {
     template.cards.forEach((c) => (c.format = fmt));
     state.format = fmt;
     state.cards = template.cards;
+    state.cardRevision++;
     const genericName = file
       .replace(/\.html$/, "")
       .replace(/-/g, " ")
@@ -480,11 +488,14 @@ export async function loadSessionContent(session) {
     state.activeFile = session.sessionDir + "/" + file;
     state.activeSessionDir = session.sessionDir;
     state.activeStatus = session.status || "draft";
+    state.viewMode = "app";
     state.activeCard = 0;
     state.cardLogos = {};
     state.selectedCards = new Set([0]);
     state.activeContent = buildSessionContentFromSession(session, [file], template.cards);
     loadForActiveSession();
+    $("btn-vm-grid").classList.remove("active");
+    $("btn-vm-app").classList.add("active");
     setView("preview");
     requestAnimationFrame(renderCards);
     log("Loaded " + template.cards.length + " slides from session", "ok");

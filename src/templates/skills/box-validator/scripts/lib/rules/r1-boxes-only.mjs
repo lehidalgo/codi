@@ -1,9 +1,12 @@
 // Rule 1: BOXES ONLY — text content lives only in leaves. A non-leaf node
-// with own text (excluding descendants) violates the rule because it mixes
-// structure and content.
+// with own text violates the rule because it mixes structure and content.
+// Exemption: heading (h1-h6) and paragraph (p) elements commonly mix text
+// with inline formatting elements (span, em, strong) — this is standard HTML.
 
 export const id = "R1";
 export const name = "Boxes Only";
+
+const EXEMPT_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6", "p"]);
 
 export function check(node, _context) {
   const violations = [];
@@ -11,7 +14,7 @@ export function check(node, _context) {
   return violations;
 
   function walk(n) {
-    if (!n.isLeaf && n.hasContent) {
+    if (!n.isLeaf && n.hasContent && !EXEMPT_TAGS.has(n.tag)) {
       violations.push({
         rule: "R1",
         severity: "error",

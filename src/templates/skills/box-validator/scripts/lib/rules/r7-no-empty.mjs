@@ -1,6 +1,7 @@
 // Rule 7: NO EMPTY NODES — every node must be either a parent (has children)
 // or a content leaf (has own text). Childless, contentless nodes serve no
-// purpose and usually indicate a structural bug.
+// purpose UNLESS they have visual CSS properties (background, border,
+// box-shadow) that make them decorative elements.
 
 export const id = "R7";
 export const name = "No Empty Nodes";
@@ -24,8 +25,6 @@ export function check(root, context) {
   }
 }
 
-// Images, videos, canvas, svg, iframes etc. legitimately have no children and
-// no text — they are self-rendering content leaves.
 const DECORATIVE_TAGS = new Set([
   "img",
   "video",
@@ -39,7 +38,17 @@ const DECORATIVE_TAGS = new Set([
 
 function isLikelyDecorative(n, context) {
   if (DECORATIVE_TAGS.has(n.tag)) return true;
-  // Zero-area is threshold-based (below 1 CSS px is effectively nothing).
   const z = context.zeroAreaThreshold;
-  return n.rect.w < z || n.rect.h < z;
+  if (n.rect.w < z || n.rect.h < z) return true;
+  if (hasVisualBackground(n)) return true;
+  if (n.css.borderWidth > 0) return true;
+  if (n.css.boxShadow && n.css.boxShadow !== "none") return true;
+  return false;
+}
+
+function hasVisualBackground(n) {
+  const bg = n.css.backgroundColor;
+  if (!bg) return false;
+  if (bg === "transparent" || bg === "rgba(0, 0, 0, 0)") return false;
+  return true;
 }

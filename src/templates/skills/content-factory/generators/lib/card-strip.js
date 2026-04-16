@@ -170,8 +170,32 @@ function buildCardEl(card, i, container) {
     "card-frame" +
     (isActive ? " active-card" : "") +
     (isSelected && !isActive ? " selected-card" : "");
-  wrapper.style.cssText = "width:" + sz.displayW + "px;height:" + sz.displayH + "px";
   wrapper.dataset.index = String(i);
+
+  // Left rail: selection circle (top) + validation badge (bottom)
+  const railEl = document.createElement("div");
+  railEl.className = "card-rail";
+
+  const circleEl = document.createElement("div");
+  circleEl.className = "card-select-circle" + (isSelected ? " checked" : "");
+  circleEl.title = "Select / deselect this slide";
+  circleEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleCardSelection(i);
+  });
+  railEl.appendChild(circleEl);
+
+  try {
+    const file =
+      state.activeContent && state.activeContent.source && state.activeContent.source.file;
+    const badge = createValidationBadge(i, file);
+    railEl.appendChild(badge);
+  } catch {}
+
+  // Card content area: iframe + logo overlay
+  const contentEl = document.createElement("div");
+  contentEl.className = "card-content";
+  contentEl.style.cssText = "width:" + sz.displayW + "px;height:" + sz.displayH + "px";
 
   const iframe = document.createElement("iframe");
   iframe.setAttribute("sandbox", "allow-same-origin allow-scripts");
@@ -183,15 +207,13 @@ function buildCardEl(card, i, container) {
     "display:block",
   ].join(";");
   iframe.addEventListener("load", () => {
-    // Dormant unless inspect is ON AND this iframe is in the active-card
-    // wrapper. Active state is re-synced on every setActiveCard call.
     try {
       const w = iframe.contentWindow;
       if (!w) return;
       const isActiveIframe =
         state.inspectOn &&
-        iframe.parentElement &&
-        iframe.parentElement.classList.contains("active-card");
+        iframe.closest(".card-frame") &&
+        iframe.closest(".card-frame").classList.contains("active-card");
       if (w.__HLI__ && typeof w.__HLI__.setDormant === "function") {
         w.__HLI__.setDormant(!isActiveIframe);
       } else {
@@ -206,24 +228,9 @@ function buildCardEl(card, i, container) {
   logoEl.textContent = "codi";
   applyLogoStyle(logoEl, sz, getCardLogo(i));
 
-  const circleEl = document.createElement("div");
-  circleEl.className = "card-select-circle" + (isSelected ? " checked" : "");
-  circleEl.title = "Select / deselect this slide";
-  circleEl.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleCardSelection(i);
-  });
-
+  contentEl.append(iframe, logoEl);
   wrapper.addEventListener("click", () => setActiveCard(i));
-  wrapper.append(iframe, logoEl, circleEl);
-  // Validation badge — async-fetches score, hides itself when the
-  // badge layer is off or the active content is a template.
-  try {
-    const file =
-      state.activeContent && state.activeContent.source && state.activeContent.source.file;
-    const badge = createValidationBadge(i, file);
-    wrapper.appendChild(badge);
-  } catch {}
+  wrapper.append(railEl, contentEl);
   container.appendChild(wrapper);
 }
 
@@ -399,7 +406,7 @@ export function renderFilmstrip() {
   const THUMB_W = Math.round((THUMB_H * fmt.w) / fmt.h);
   const scale = THUMB_H / fmt.h;
 
-  const sourceKey = state.activeFile || "preset:" + state.preset;
+  const sourceKey = (state.activeFile || "preset:" + state.preset) + "@" + state.cardRevision;
   const existing = strip.querySelectorAll(".filmstrip-thumb");
   if (existing.length === state.cards.length && strip.dataset.source === sourceKey) {
     updateFilmstripStates();
@@ -462,6 +469,7 @@ export function setViewMode(mode) {
 
 export function loadTemplateAsCards(template) {
   state.cards = template.cards.map((card) => ({ ...card, format: template.format }));
+  state.cardRevision++;
   state.activeCard = 0;
   state.cardLogos = {};
   state.selectedCards = new Set([0]);

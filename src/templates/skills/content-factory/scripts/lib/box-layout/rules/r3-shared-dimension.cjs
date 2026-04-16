@@ -3,6 +3,8 @@
 const id = 'R3';
 const name = 'Shared Dimension';
 
+const SKIP_TAGS = new Set(['br', 'wbr']);
+
 function check(root, context) {
   const violations = [];
   walk(root);
@@ -16,9 +18,16 @@ function check(root, context) {
   }
 }
 
+function isLayoutParticipant(child) {
+  if (SKIP_TAGS.has(child.tag)) return false;
+  if (child.rect.w === 0 && child.rect.h === 0) return false;
+  return true;
+}
+
 function checkSiblings(parent, context, out) {
   const tol = context.tolerance;
-  const kids = parent.children;
+  const kids = parent.children.filter(isLayoutParticipant);
+  if (kids.length < 2) return;
 
   if (parent.flow === 'column') {
     const widths = kids.map((c) => c.rect.w);

@@ -9,12 +9,13 @@
     padding: 20px; gap: 20px;
     background: #fff;
   }
-  .canvas > * { flex: 1; min-height: 0; background: #eee; }
+  .canvas > .filled { flex: 1; min-height: 0; background: #eee; }
+  .canvas > .empty { flex: 1; min-height: 0; }
 </style></head>
 <body>
   <div class="canvas">
-    <div>filled</div>
-    <div></div>
+    <div class="filled">filled</div>
+    <div class="empty"></div>
   </div>
 </body>
 </html>
