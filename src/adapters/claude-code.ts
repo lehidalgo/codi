@@ -337,7 +337,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `${hooksDir}/${SKILL_TRACKER_FILENAME}`,
+            command: `node ${hooksDir}/${SKILL_TRACKER_FILENAME}`,
             timeout: 5,
             async: true,
           },
@@ -350,7 +350,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
+            command: `node ${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
             timeout: 15,
           },
         ],

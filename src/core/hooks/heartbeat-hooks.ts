@@ -49,6 +49,10 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
+// Resolve project root from script location: .codi/hooks/ -> project root
+// This makes the hook work regardless of the cwd Claude Code uses.
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
+
 async function main() {
   let payload = '';
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
@@ -73,7 +77,7 @@ async function main() {
   if (!skillName) process.exit(0);
 
   const sessionFile = path.join(
-    process.cwd(),
+    PROJECT_ROOT,
     '${PROJECT_DIR}',
     '${SESSION_SUBDIR}',
     '${ACTIVE_SKILLS_FILENAME}'
@@ -117,6 +121,10 @@ const path = require('path');
 const readline = require('readline');
 const crypto = require('crypto');
 
+// Resolve project root from script location: .codi/hooks/ -> project root
+// This makes the hook work regardless of the cwd Claude Code uses.
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
+
 const OBSERVATION_RE = new RegExp('${MARKER_PATTERN_TEXT}', 'g');
 const SEVERITY_MAP = { 'user-correction': 'high', 'trigger-miss': 'medium', 'trigger-false': 'medium' };
 const HINT_THRESHOLD = ${OBSERVATION_HINT_THRESHOLD};
@@ -126,8 +134,8 @@ async function main() {
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
   for await (const line of rl) payload += line;
 
-  const sessionFile = path.join(process.cwd(), '${PROJECT_DIR}', '${SESSION_SUBDIR}', '${ACTIVE_SKILLS_FILENAME}');
-  const feedbackDir = path.join(process.cwd(), '${PROJECT_DIR}', 'feedback');
+  const sessionFile = path.join(PROJECT_ROOT, '${PROJECT_DIR}', '${SESSION_SUBDIR}', '${ACTIVE_SKILLS_FILENAME}');
+  const feedbackDir = path.join(PROJECT_ROOT, '${PROJECT_DIR}', 'feedback');
 
   // Step 1: exit immediately if this is not a codi session
   if (!fs.existsSync(sessionFile)) { console.log('{}'); process.exit(0); }

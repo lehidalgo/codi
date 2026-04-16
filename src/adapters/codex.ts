@@ -241,7 +241,7 @@ export const codexAdapter: AgentAdapter = {
       Stop: [
         {
           type: "command",
-          command: `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
+          command: `node ${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
           timeout: 15,
         },
       ],
