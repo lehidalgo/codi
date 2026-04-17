@@ -1,372 +1,283 @@
 # Anchor Authoring
 
-How to write a great anchor — the long-form piece that captures the
-substance before any visual format distills from it.
+The anchor is the long-form prose every variant distills from. It is
+authored in **Markdown** and lives at `content/00-anchor.md` in the project
+root. There is exactly one anchor per project.
 
-The anchor is a standalone, shippable article. It should read well on
-its own (a user who only reads the anchor should feel they got
-something valuable) and it should carry enough semantic structure that
-distillation to visual formats is unambiguous.
-
-Read this alongside `[[/references/methodology.md]]` (why anchor-first) and
-`[[/references/distillation-principles.md]]` (how the anchor feeds downstream
-variants).
+Markdown is the only supported format for the anchor. HTML is reserved for
+rendered variants (social cards, slide decks, A4 documents). The content
+factory preview renders the Markdown anchor into a styled A4 document so
+you can review it as a finished piece.
 
 ---
 
-## 1. Shapes that work
+## Why Markdown
 
-Pick the shape that fits the topic. Don't force a narrative essay onto
-a listicle topic, and don't force a listicle onto a narrative essay
-topic. The shape is a judgment call — there's no closed list, but
-these are the patterns that recur.
-
-### 1.1 Narrative essay
-
-A continuous argument with a strong voice. Opens with a scene or a
-provocation, develops a claim, returns to the scene at the end. Best
-for: opinion pieces, manifestos, strategic writing, philosophy-adjacent
-topics.
-
-### 1.2 Listicle
-
-N ordered points on a theme. Each point stands alone but the set
-compounds. Best for: "5 lessons from X", "The 7 mistakes teams make",
-rapid-fire tactical content.
-
-### 1.3 Case study
-
-Context → challenge → approach → result → takeaway. Best for:
-customer stories, project retrospectives, postmortems, "here's what
-worked" content.
-
-### 1.4 Technical explainer
-
-Assumes a specific technical audience. Opens with the problem, builds
-the mental model, applies it, caveats at the end. Best for: engineering
-blog posts, architecture explanations, deep dives on a specific tool or
-technique.
-
-### 1.5 Comparison / decision piece
-
-Option A vs. B vs. C, evaluated against explicit criteria, with a
-recommendation. Best for: build-vs-buy, tool selection, platform
-choices.
-
-### 1.6 Manifesto
-
-A position piece staking out a view on how things should be. Opens with
-the status quo, names what's wrong, proposes the alternative. Best
-for: category creation, brand positioning, ideological content.
-
-### 1.7 Retrospective
-
-Chronological or thematic look-back. Best for: "What we learned
-shipping X", annual reviews, "The first year of Y".
-
-Hybrid shapes are fine. A case study can lead into a manifesto. A
-technical explainer can end with a listicle of practical tips. The
-shape serves the content, not the other way round.
+- **Substance separate from presentation.** Markdown forces you to think
+  in headings, paragraphs, and lists — the units distillation actually
+  consumes. HTML authoring tempts you to micro-design the anchor, which
+  distracts from the writing.
+- **Diff-friendly revisions.** Line-level diffs on prose changes are the
+  atomic unit of anchor revision. A one-sentence edit is a one-line diff.
+- **Portable.** The same anchor text can feed `/blog write` in claude-blog,
+  `/seo audit` in claude-seo, a newsletter, or a doc repo without
+  re-authoring.
+- **Platform-agnostic.** Distillation decides what becomes a slide, a
+  carousel frame, or a tweet — the anchor never commits to a presentation
+  format.
 
 ---
 
-## 2. Length classes
+## File layout
 
-Pick one at the intake stage. The class sets reader expectations and
-shapes what the anchor can distill into.
-
-### Short anchor — 1-2 min read, ~400-600 words
-
-- 3 key points, 1 piece of evidence each.
-- One figure, one quote, one stat at most.
-- Reads like a tight LinkedIn post with headers.
-- Distills cleanly to 5-7 slides, 6-8 carousel frames, a one-page
-  summary document.
-
-### Standard anchor — 3-5 min read, ~1000-1500 words
-
-- 5 key points, 1-2 pieces of evidence each.
-- Multiple figures, quotes, stats as needed.
-- Reads like a typical blog post with sub-headers.
-- Distills to 8-12 slides, 8-10 carousel frames, a 2-3 page document.
-
-### Deep anchor — 8-12 min read, ~2500-4000 words
-
-- 7+ key points, often grouped into sections with their own
-  sub-structure.
-- Rich evidence: charts, extended quotes, code blocks, diagrams.
-- Reads like a long-form blog post, whitepaper, or chapter.
-- Distills to 15-20 slides, multi-part carousel series, full
-  whitepaper document.
-
-When the user's intent is ambiguous about depth, default to standard
-and mention it: "I'll aim for a 3-5 minute read — say if you want it
-shorter or deeper."
-
----
-
-## 3. Semantic tagging
-
-Distillation reads the anchor by walking its sections and deciding
-what each contributes to the target format. Consistent section
-annotation makes this reliable without forcing a rigid taxonomy.
-
-### 3.1 Conventions that work
-
-Wrap each meaningful section in a `<section>` with a `data-role`
-attribute:
-
-```html
-<section data-role="hook">...</section>
-<section data-role="point" data-point-ix="1">...</section>
-<section data-role="evidence">...</section>
-<section data-role="synthesis">...</section>
-<section data-role="cta">...</section>
+```
+<project>/
+├── brief.json                  # intake answers
+├── state/manifest.json         # project manifest
+└── content/
+    ├── 00-anchor.md            # ← the anchor, Markdown
+    ├── linkedin/
+    ├── instagram/
+    ├── facebook/
+    ├── tiktok/
+    ├── x/
+    ├── blog/
+    └── deck/
 ```
 
-Common roles and what they typically carry:
-
-| Role | What's inside | Distillation use |
-|---|---|---|
-| `hook` | Opening paragraph or scene earning the read | Title slide, carousel frame 1, story cover |
-| `point` | One key argument or section (numbered with `data-point-ix`) | One slide / carousel frame / card per point |
-| `evidence` | Data, quote, example, code, diagram supporting a point | Metrics slide, quote slide, or folded into its parent point |
-| `synthesis` | "What this means" pull-together, implications, consequences | Insight slide near the end |
-| `cta` | What the reader should do next | Closing slide, final carousel frame, share prompt |
-
-Other roles that make sense for specific shapes:
-
-- `context` — setup for a case study or retrospective
-- `contrarian` — the counter-view you're pushing back against
-- `definition` — terminology a technical explainer needs the reader to
-  hold
-- `caveat` — edge cases, limitations, counter-arguments
-- `aside` — interesting but off the critical path
-
-Invent roles when the content calls for them. The downstream
-distillation references document how common roles map to format slots;
-uncommon roles get the agent's creative decision.
-
-### 3.2 Why tag
-
-Without roles, distillation has to guess what each section is. With
-roles, distillation is deterministic: "this point becomes a slide, this
-evidence becomes a metric, this synthesis becomes the closing insight."
-
-Tagging also makes the anchor self-documenting. A user reading the HTML
-source sees the structure immediately.
-
-### 3.3 Skip tagging when it hurts
-
-If a section's role is already obvious from its content and position
-(the `<header>` of an article is clearly the hook; the last `<section>`
-is clearly the close), explicit tagging adds noise. Tag where it helps
-distillation; skip where it's redundant.
+The anchor filename is always `00-anchor.md`. The `00-` prefix keeps it
+first in alphabetical listings. Platform subfolders are pre-scaffolded
+when the project is created.
 
 ---
 
-## 4. Structural skeleton
+## Required frontmatter
 
-A common skeleton for the standard anchor length class:
+Every anchor begins with a YAML frontmatter block. These fields drive
+distillation and appear in the preview header.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="codi:template"
-        content='{"id":"kebab-id","name":"Human Readable","type":"document","format":{"w":794,"h":1123}}'>
-  <meta name="codi:anchor"
-        content='{"revision":1,"status":"draft"}'>
-  <title>Title</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/...">
-  <style>/* tokens.css inlined + anchor styles */</style>
-</head>
-<body>
-  <!-- The anchor is a `document` content type. Long anchors span multiple
-       `.doc-page` elements — split at natural section breaks. The skeleton
-       below shows a short anchor on a single page; expand to multiple
-       `<article class="doc-page">` blocks for standard and deep classes. -->
-  <article class="doc-page" data-type="article" data-index="01">
-    <header class="page-header anchor-cover">
-      <p class="anchor-eyebrow">Category · date</p>
-      <h1>Title</h1>
-      <p class="anchor-dek">Thesis in one sentence.</p>
-      <p class="anchor-meta">Author · est. read time</p>
-    </header>
-
-    <div class="page-body">
-      <section data-role="hook">
-        <p>Opening paragraph or scene that earns the read.</p>
-      </section>
-
-      <section data-role="point" data-point-ix="1">
-        <h2>Point 1 title</h2>
-        <p>Argument prose — several paragraphs.</p>
-        <aside data-role="evidence">
-          <blockquote>Supporting quote or stat.</blockquote>
-          <cite>Attribution.</cite>
-        </aside>
-      </section>
-
-      <section data-role="point" data-point-ix="2">...</section>
-      <section data-role="point" data-point-ix="3">...</section>
-      <!-- 3-7 points typical -->
-
-      <section data-role="synthesis">
-        <h2>What this means</h2>
-        <p>Pull the threads together.</p>
-      </section>
-
-      <section data-role="cta">
-        <h2>Your turn</h2>
-        <p>What should the reader do next?</p>
-      </section>
-    </div>
-
-    <footer class="page-footer">
-      <p>Author · codi.dev</p>
-    </footer>
-  </article>
-</body>
-</html>
+```markdown
+---
+title: Every AI agent speaks a different language
+subtitle: And your standards are paying for it
+audience: engineering leaders
+voice: technical, candid, no filler
+length_class: standard
+cta: Install codi — one config, every agent
+revision: 1
+---
 ```
 
-Adapt freely. A narrative essay might skip the explicit `point`
-sections and use paragraph-level structure. A listicle might have
-eight `point` sections and no `synthesis`. A case study might add
-`context`, `challenge`, `approach`, `result` sections with their own
-roles.
+| Key | Purpose |
+|-----|---------|
+| `title` | Headline of the anchor; used in variant titles too |
+| `subtitle` | One-line expansion on the title |
+| `audience` | Who this is written for; distillation uses it to choose voice and examples per platform |
+| `voice` | Tone + constraints; variants inherit this unless platform rules override |
+| `length_class` | `short` · `standard` · `deep`. **Default is `standard`** — only use `deep` when explicitly asked |
+| `cta` | The single call to action — every variant ends with a platform-appropriate form of this |
+| `revision` | Integer, bumped via `POST /api/anchor/revise` whenever substance changes |
 
 ---
 
-## 5. Brand alignment
+## Length classes — default is standard
 
-The anchor is where brand voice gets set. Every downstream variant
-inherits from it.
+Default: **standard** (1000–1500 words, 3–5 min read, 5–7 key points).
+Users can request `short` or `deep` explicitly in the intake.
 
-- **Inline brand tokens** in `<style>`. Read `tokens.css` from the
-  active brand and paste verbatim.
-- **Respect voice rules.** Read `voice.tone`, `voice.phrases_use`,
-  `voice.phrases_avoid` from `tokens.json`. Write in the tone. Use
-  phrases-use where natural. Never write phrases-avoid.
-- **Apply typography tokens.** Headings in the brand's heading font;
-  body in the brand's body font; code and metadata in the brand's
-  monospace font.
-- **Honor the logo rules.** Place the logo per brand guidance. For
-  Codi: the CSS gradient wordmark, not a raster image. For other
-  brands: follow their logo rules.
-- **Read the brand references.** Every brand ships a `references/`
-  directory with visual style guides. Skim them before writing — they
-  tell you what the brand's existing content looks like.
+### Short anchor — 400–600 words
 
-See `[[/references/brand-integration.md]]` for the full procedure.
+- 2–3 key points, each 1–2 sentences
+- One example or statistic per point
+- Ships when the user says "quick", "brief", "one-pager"
+
+### Standard anchor — 1000–1500 words (DEFAULT)
+
+- 5–7 key points, each with a sub-paragraph of evidence
+- 2–3 examples or data points
+- A synthesis section summarizing what the points mean together
+- This is what ships when length is ambiguous
+
+### Deep anchor — 2500–4000 words
+
+- 7+ key points, grouped into sections with their own H2 headings
+- Each point has 2–3 sub-points, evidence, worked examples
+- Explicit counter-arguments and caveats
+- Ships when the user says "comprehensive", "deep dive", "full report"
+
+Do not pad a short topic to hit a word count. If the idea supports 600
+words cleanly, stop at 600. Length is a consequence of depth, not a target.
 
 ---
 
-## 6. Worked examples
+## Structural contract
 
-### Example 1 — Short anchor, manifesto shape
+The renderer uses semantic Markdown — nothing fancy. Distillation reads
+your ATX headings and list structure to decide what becomes a hook, a
+point, evidence, a synthesis, and a CTA. Use the structure below
+consistently so distillation stays lossless.
 
-Topic: "Why Codi uses anchor-first content."
+### The standard skeleton
 
-```html
-<article class="doc-page" data-type="article">
-  <header class="anchor-cover">
-    <p class="anchor-eyebrow">Codi · methodology</p>
-    <h1>One idea, every format</h1>
-    <p class="anchor-dek">Content is information; format is presentation. The anchor is the source of truth — visuals are specialized views.</p>
-  </header>
+```markdown
+---
+title: ...
+subtitle: ...
+audience: ...
+voice: ...
+length_class: standard
+cta: ...
+revision: 1
+---
 
-  <section data-role="hook">
-    <p>Teams ship three versions of the same idea — a blog, a deck, a carousel — and each one says something slightly different. By the time feedback comes back, the thesis has drifted. The fix isn't more coordination; it's one source of truth.</p>
-  </section>
+# {{title}}
 
-  <section data-role="point" data-point-ix="1">
-    <h2>Substance before form</h2>
-    <p>Write the argument as prose first. Every visual format compresses from there — with constraints, with platform awareness, but always from the same substance.</p>
-  </section>
+> {{one-sentence hook that states the payoff — what the reader walks away with}}
 
-  <section data-role="point" data-point-ix="2">
-    <h2>Revision economy</h2>
-    <p>Edit the idea once. Derived formats re-distill on demand. Nine files stay aligned because eight are derived from one.</p>
-  </section>
+## The problem
 
-  <section data-role="point" data-point-ix="3">
-    <h2>Separation of concerns</h2>
-    <p>Substance lives in the anchor. Presentation lives in the variant. Layout lives in the validator. When something is wrong, you know where to fix it.</p>
-  </section>
+{{2–3 paragraphs framing why this matters now. Cite a real data point or
+observation in the first paragraph. The last sentence of this section must
+be the thesis — the single claim the anchor defends.}}
 
-  <section data-role="cta">
-    <h2>Start with the anchor</h2>
-    <p>Next time a content request comes in, write the article first. Everything else follows.</p>
-  </section>
-</article>
+## {{Point 1 — imperative phrasing}}
+
+{{Evidence paragraph. Use a concrete example, a number, or a before/after.
+If this point has a sub-move, use a bullet list of 2–4 items. Never more
+than 5 bullets — that's a sign the point should split.}}
+
+## {{Point 2 — imperative phrasing}}
+
+…
+
+## {{Point N — imperative phrasing}}
+
+…
+
+## What this means
+
+{{2-paragraph synthesis. First paragraph: what the points add up to.
+Second paragraph: what changes in practice if the reader acts on this.}}
+
+## {{CTA heading — the ask}}
+
+{{One paragraph. State the action. Link if relevant. No hashtags.}}
 ```
 
-Three points. One thesis. Distills cleanly to: a 5-slide deck (title,
-point 1, point 2, point 3, CTA) or a 6-frame carousel (hook, 3 points,
-synthesis, CTA) or a one-page document.
+### Anchor anatomy, by role
 
-### Example 2 — Standard anchor, case study shape
-
-Topic: "How we migrated slide decks from 3-file to single-file."
-
-Section roles: `context` (what the problem was), `challenge` (why it
-was hard), `approach` (what we did), `result` (what changed),
-`takeaway` (what's transferable). Five points, each with 1-2 pieces of
-evidence (before/after numbers, code snippets, validation scores).
-
-Distillation targets:
-
-- **Deck (8-12 slides)**: title → context → challenge → 3 approach
-  slides → result metrics → takeaway → CTA.
-- **LinkedIn carousel (8 frames)**: hook (contrarian), 3 approach
-  frames, result frame, takeaway, CTA, share-back.
-- **Blog post**: the anchor itself, maybe with an added hero image and
-  SEO metadata.
-
-### Example 3 — Deep anchor, technical explainer shape
-
-Topic: "Why LLM coding agents produce better content with anchor-first
-methodology."
-
-Length: 3500 words. Structure: `hook` (the failure mode), `context`
-(how agents approach content today), `definition` (what anchor-first
-means), 4 `point` sections (benefits), `evidence` nested in each point
-(experiments, before/after outputs), `caveat` (when it doesn't apply),
-`synthesis` (what this implies for skill design), `cta` (try it, report
-back).
-
-Distillation targets:
-
-- **Whitepaper document (4-5 pages)**: near-identical to the anchor,
-  added TOC and cover.
-- **Deck (15-20 slides)**: expanded with speaker-note-quality detail
-  on each point.
-- **LinkedIn carousel (10 frames)**: tight compression — one hook,
-  four points with one stat each, closing insight, CTA.
-- **Twitter thread (8 tweets)**: thesis → each point as one tweet →
-  CTA tweet → reply-thread for caveats.
-
-Different audiences, different compression ratios, same substance.
+| Section | Heading pattern | Role |
+|---------|-----------------|------|
+| Title | `# {{title}}` (h1) | Used in variant titles and exports |
+| Hook | First `>` blockquote after the title | Distillation's cover-slide source |
+| Problem framing | `## The problem` | Slide 02 on carousels; lede on blogs |
+| Points | `## {{verb-first phrase}}` (h2) | One per carousel slide / deck point |
+| Evidence | Paragraphs + lists under each point | Supporting copy on variants |
+| Synthesis | `## What this means` | Penultimate slide; conclusion on blogs |
+| CTA | Final `##` section | Final slide; post caption close |
 
 ---
 
-## 7. Authoring checklist
+## Writing rules
 
-Before declaring the anchor ready for distillation:
+### Lead with the payoff
 
-- [ ] Single clear thesis stated in one sentence (the `anchor-dek`).
-- [ ] 3-7 points, each with its own `<section data-role="point">`.
-- [ ] Every point has at least one piece of evidence or example.
-- [ ] A synthesis or closing insight that pulls the threads together.
-- [ ] A CTA that names the next step concretely.
-- [ ] Brand tokens inlined. Voice rules honored (no `phrases_avoid`
-      hits; `phrases_use` where natural).
-- [ ] Length matches the intake class (short / standard / deep).
-- [ ] The anchor reads well as a standalone article — a user who only
-      reads this got value.
-- [ ] Explicit approval from the user before distillation starts.
+The title and the hook blockquote together must tell the reader what
+they're getting if they keep reading. A hook that sets up a question
+("Have you ever wondered…") or asks for attention ("Let me tell you a
+story…") loses 60% of readers on mobile platforms.
 
-Distillation can't fix a weak anchor. Get the substance right first.
+Good: `> Five AI agents, five config files, five slightly different
+interpretations of your standards.`
+
+Bad: `> I've been thinking about AI developer tooling lately.`
+
+### One idea per H2
+
+Every `##` heading represents one point. If you're writing a point that
+needs two different arguments, split it into two H2s. Distillation gives
+each H2 its own carousel slide — forcing one-per-slide honesty is the
+whole reason the structure exists.
+
+### Use imperative phrasing for points
+
+Works: `## Keep your rules in one file` · `## Let agents read the same
+source` · `## Stop writing the same code twice`.
+
+Doesn't: `## On the importance of consolidation` · `## Thoughts on AI
+configuration`.
+
+Imperative headings read as promises. They distill cleanly into slide
+titles because they already ARE slide titles.
+
+### Concrete over abstract
+
+Every point gets at least one of: a specific number, a named tool, a
+before/after example, a direct quote. If a point has none of these, it's
+a platitude — cut it or find the concrete thing.
+
+### Preserve key numbers verbatim
+
+Statistics, quotes, and specific figures must appear in the anchor exactly
+as they'll appear in variants. Distillation cites them by reference; if
+they're fuzzy in the anchor, they go wrong everywhere.
+
+---
+
+## Links, images, and code
+
+- **Links**: `[label](url)` syntax. Distillation strips links from social
+  variants (platforms don't render inline links) and preserves them in
+  blog/deck variants.
+- **Images**: `![alt](path)`. Anchors rarely need images — variants pull
+  hero images from `banana-claude` if installed, or the brand's image
+  library otherwise.
+- **Code blocks**: fenced triple-backtick with a language hint.
+  Distillation preserves code blocks verbatim in blog variants; social
+  variants convert short snippets to screenshotted "terminal cards" and
+  skip long blocks entirely.
+- **Tables**: GitHub-flavored pipe syntax. Rendered as proper `<table>`
+  elements in blog/doc variants; on social/deck variants, 2–3 row tables
+  become comparison cards, longer tables are converted to a hero metric
+  plus a "see the full data" CTA.
+
+---
+
+## Revisions
+
+When you change substance (a thesis shift, a new point, a revised
+statistic), bump the revision:
+
+```
+POST /api/anchor/revise { "bump": "minor" }
+```
+
+The server:
+1. Increments `revision` in the frontmatter.
+2. Marks every variant whose `derivedFromRevision` is less than the new
+   revision as `stale`.
+3. Emits a WebSocket notification; the UI surfaces a "3 variants stale —
+   re-distill?" banner.
+
+**Never auto-propagate.** The user decides which variants to re-distill.
+Revisions track provenance; the decision to ship is human.
+
+Cosmetic changes (typo fixes, punctuation, rephrasings that don't change
+meaning) do not require a revision bump.
+
+---
+
+## What not to do in the anchor
+
+- **Do not embed HTML.** The renderer does not pass HTML through.
+  Everything renders via the Markdown parser.
+- **Do not use images as content.** An image supporting a point is fine;
+  a hero image doing the work of a headline is not. Anchors lead with
+  text.
+- **Do not write platform-specific copy.** No LinkedIn voice, no Twitter
+  voice. Those shifts happen at distillation time. The anchor is the
+  substance; voice layers on top.
+- **Do not use heading depth beyond H3.** If you're reaching for `####`,
+  your point needs to split into its own H2.
+- **Do not use footnotes.** They don't distill. Inline the evidence or
+  move it to its own paragraph.

@@ -13,6 +13,28 @@ How to adapt an approved anchor (blog, docs, or deck) into platform-specific
 variants. Each section defines suggested hook, length, format, density,
 hashtag, and CTA patterns for one platform.
 
+---
+
+## Card class contract — read before authoring any variant
+
+The `codi:template` meta's `type` field and the HTML card wrapper class MUST
+match. Mismatch breaks the preview header (which infers type from card class),
+the format picker (which gates allowed aspect ratios by type), and the export
+pipeline (which routes per card class).
+
+| `type` in meta | Card wrapper                       | Allowed canvases                                     |
+|----------------|------------------------------------|------------------------------------------------------|
+| `social`       | `<article class="social-card">`    | 1080×1080 · 1080×1350 · 1080×1920 · 1200×630         |
+| `slides`       | `<article class="slide">`          | 1280×720                                             |
+| `document`     | `<article class="doc-page">`       | 794×1123 (A4 96dpi)                                  |
+
+Every platform section below assumes this mapping. Do not substitute one
+card class for another because a platform uses the English word "slide" —
+`.slide` means "deck slide at 1280×720", nothing else. A LinkedIn carousel
+uses `.social-card` even though each card is called "slide 03" in prose.
+
+---
+
 **Universal distillation principles:**
 
 1. **Compress, do not rewrite.** Extract key points from the anchor verbatim
@@ -32,8 +54,9 @@ hashtag, and CTA patterns for one platform.
 
 ## LinkedIn carousel
 
-**File:** `10-linkedin-carousel.html`
+**File:** `content/linkedin/carousel.html` (see also `[[/references/platforms/linkedin.md]]` for the full playbook)
 **Meta:** `{"id":"linkedin-carousel","name":"<topic> — LinkedIn Carousel","type":"social","format":{"w":1080,"h":1350}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 4:5 (1080×1350)
 **Slides:** 6-10 cards (cover + 4-8 content + CTA)
 **Audience mode:** Professional, credentialed, skimmable
@@ -72,8 +95,9 @@ hashtag, and CTA patterns for one platform.
 
 ## LinkedIn single post (image card)
 
-**File:** `11-linkedin-post.html`
+**File:** `content/linkedin/post.html` (see also `[[/references/platforms/linkedin.md]]`)
 **Meta:** `{"id":"linkedin-post","name":"<topic> — LinkedIn Post","type":"social","format":{"w":1080,"h":1080}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 1:1 (1080×1080)
 **Slides:** 1 card
 
@@ -99,8 +123,9 @@ also expose it through the app later.
 
 ## Instagram feed post
 
-**File:** `20-instagram-feed.html`
+**File:** `content/instagram/feed.html` (see also `[[/references/platforms/instagram.md]]`)
 **Meta:** `{"id":"instagram-feed","name":"<topic> — Instagram Feed","type":"social","format":{"w":1080,"h":1350}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 4:5 (1080×1350)
 **Slides:** 1-10 cards (carousel-eligible)
 
@@ -134,8 +159,9 @@ also expose it through the app later.
 
 ## Instagram story
 
-**File:** `21-instagram-story.html`
+**File:** `content/instagram/story.html` (see also `[[/references/platforms/instagram.md]]`)
 **Meta:** `{"id":"instagram-story","name":"<topic> — Instagram Story","type":"social","format":{"w":1080,"h":1920}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 9:16 (1080×1920)
 **Slides:** 3-5 cards
 
@@ -165,8 +191,9 @@ also expose it through the app later.
 
 ## TikTok cover / static frame
 
-**File:** `30-tiktok-cover.html`
+**File:** `content/tiktok/cover.html` (see also `[[/references/platforms/tiktok.md]]`)
 **Meta:** `{"id":"tiktok-cover","name":"<topic> — TikTok Cover","type":"social","format":{"w":1080,"h":1920}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 9:16 (1080×1920)
 **Slides:** 1 card (TikTok cover frame only)
 
@@ -197,8 +224,9 @@ for the video itself.
 
 ## Twitter/X card
 
-**File:** `40-twitter-card.html`
+**File:** `content/x/card.html` (see also `[[/references/platforms/x.md]]`)
 **Meta:** `{"id":"twitter-card","name":"<topic> — Twitter/X Card","type":"social","format":{"w":1200,"h":630}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** OG (1200×630)
 **Slides:** 1 card
 
@@ -222,8 +250,9 @@ a destination.
 
 ## Summary deck (optional)
 
-**File:** `50-summary-deck.html`
+**File:** `content/deck/slides.html` (see also `[[/references/platforms/deck.md]]`)
 **Meta:** `{"id":"summary-deck","name":"<topic> — Summary Deck","type":"slides","format":{"w":1280,"h":720}}`
+**Card wrapper:** `<article class="slide">`
 **Format:** 16:9 (1280×720)
 **Slides:** 5-8 cards
 

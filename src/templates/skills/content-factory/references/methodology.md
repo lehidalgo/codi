@@ -1,12 +1,21 @@
 # Content Methodology
 
+> **Read `[[/references/operating-system.md]]` first.** That document is
+> the Content Factory operating system — the six-phase validation-first
+> workflow (Discovery → Master Document → Validation → Planning →
+> Validation → Generation) and the interaction rules you operate under.
+> This file is the detailed HOW behind those six phases. Treat the OS
+> document as the contract with the user; treat this file as the
+> implementation spec for satisfying that contract.
+
 How to create content with Content Factory: principles, not a pipeline.
 
 You are a senior content strategist and designer. The skill gives you
 tools (server APIs, brand tokens, validators) and quality gates (brand
 voice, design rules, validator thresholds). It does not hand you a
 script. Read this file before any non-trivial content request, then
-apply the principles with judgment.
+apply the principles with judgment — always inside the six-phase
+gated workflow defined in the operating system.
 
 ---
 
@@ -114,24 +123,126 @@ A typical anchor-first session, at a high level:
 
 1. **Read the request.** Classify intent (see `[[/references/intent-detection.md]]`).
    Decide anchor vs. fast-path. Infer the format set.
-2. **Intake (optional, adaptive).** Ask the user only what you actually
-   need — topic, audience, voice, points, CTA. Skip what's obvious from
-   context. Persist answers to `brief.json` via `POST /api/brief`.
-3. **Author the anchor.** Write one self-contained HTML article. Read
-   `[[/references/anchor-authoring.md]]` for shape and semantic tagging. Iterate with
-   the user until they approve.
-4. **Distill each requested format.** For each variant, read
-   `[[/references/distillation-principles.md]]` for the format's nature and compression
-   philosophy. Make creative decisions. Write one HTML file per variant,
-   tag it with the anchor revision it derives from.
-5. **Validate.** Run the box-validator against every card. Apply
-   brand-voice checks. Fix violations up to four iterations. Only ship
-   once gates pass.
-6. **Track revisions.** When the anchor changes, bump the revision via
-   `POST /api/anchor/revise`. Variants become stale. Surface staleness
-   to the user at the start of the next turn; let them choose what to
-   re-distill.
-7. **Export.** User clicks export buttons in the UI. Content Factory
+
+2. **Campaign intake — always ask which platforms.** For any anchor-first
+   request, present the platform checklist to the user before authoring
+   anything. Ask explicitly:
+
+   > "Which platforms should I distill this into? Pick any of: LinkedIn
+   > (carousel, post), Instagram (feed, story, reel cover), Facebook
+   > (post, story, reel), TikTok (cover), X/Twitter (card/thread), blog
+   > (long-form post), slide deck. Say 'all' to generate every variant."
+
+   Persist the answer to `brief.json`:
+
+   ```json
+   {
+     "topic": "...",
+     "platforms": ["linkedin/carousel", "instagram/feed", "x/card"],
+     "length_class": "standard",
+     "audience": "engineering leaders",
+     "voice": "technical, candid"
+   }
+   ```
+
+   Also ask: topic, audience, voice, CTA, anchor `length_class` (default
+   `standard`). Skip what's obvious from context. Full per-platform
+   playbooks live in `[[/references/platforms/]]` — read the ones you
+   intend to distill before authoring.
+
+3. **Project type at creation — always `document` for anchor-first.**
+   When you call `POST /api/create-project` to host an anchor, pass
+   `type: 'document'`. The anchor is always a Markdown document
+   (`00-anchor.md`) at `content/` root. Social, slides, blog, and other
+   platform variants distilled later live as separate HTML files under
+   platform subfolders (`content/linkedin/`, `content/instagram/`,
+   `content/facebook/`, `content/tiktok/`, `content/x/`, `content/blog/`,
+   `content/deck/`). The preview header derives each file's type and
+   canvas from its own card class at render time.
+
+4. **Author the anchor in Markdown.** Write `content/00-anchor.md`. The
+   anchor is Markdown — not HTML. Read `[[/references/anchor-authoring.md]]`
+   for the frontmatter contract, length classes, and structural rules.
+   Iterate with the user until approved. Call `POST /api/anchor/approve`
+   when done.
+
+5. **Plan each requested variant in Markdown.** For every platform the
+   user selected in step 2, write a **plan file** — plain Markdown, not
+   HTML — that describes what the variant will be. No rendered cards, no
+   inline CSS, no `<article>` elements. Just prose explaining every
+   slide / frame / section, copy draft, visual direction, CTA.
+
+   | Platform selection | Plan file (Markdown) |
+   |--------------------|----------------------|
+   | LinkedIn carousel | `content/linkedin/carousel.md` |
+   | LinkedIn post | `content/linkedin/post.md` |
+   | Instagram feed | `content/instagram/feed.md` |
+   | Instagram story | `content/instagram/story.md` |
+   | Instagram reel cover | `content/instagram/reel-cover.md` |
+   | Facebook post | `content/facebook/post.md` |
+   | Facebook story | `content/facebook/story.md` |
+   | Facebook reel | `content/facebook/reel.md` |
+   | TikTok cover | `content/tiktok/cover.md` |
+   | X/Twitter card | `content/x/card.md` |
+   | Blog post | `content/blog/post.md` |
+   | Slide deck | `content/deck/slides.md` |
+
+   Read `[[/references/plan-authoring.md]]` for the plan contract (shared
+   frontmatter, slide-by-slide structure, copy drafts, hashtag/CTA blocks,
+   visual direction). Each per-platform playbook in
+   `[[/references/platforms/]]` specifies what a plan must cover for
+   that platform.
+
+   **The plan is the checkpoint.** Present each plan to the user, iterate
+   on prose / hooks / slide order / CTA. The user has to approve the plan
+   before anything visual is rendered. One plan = one approval.
+
+6. **HARD GATE — wait for user approval of each plan.**
+
+   > DO NOT write `.html` for a variant until the user explicitly approves
+   > the `.md` plan for that variant. "Approval" means the user says yes,
+   > ok, approved, render it, go ahead, or equivalent — not silence,
+   > not "looks good so far", not a partial edit. If the user edits the
+   > plan, that is continued iteration, not approval. Ask again before
+   > rendering.
+
+   Skip this gate and you waste the user's review budget on HTML that
+   might not reflect what they wanted. The plan is cheap to iterate; the
+   HTML is expensive.
+
+7. **Render HTML from approved plans only.** Once the user has approved
+   a plan, generate the matching `.html` file in the SAME folder,
+   replacing the `.md` extension:
+
+   | Plan file | Rendered HTML (only after approval) |
+   |-----------|--------------------------------------|
+   | `content/linkedin/carousel.md` | `content/linkedin/carousel.html` |
+   | `content/instagram/feed.md` | `content/instagram/feed.html` |
+   | …and so on for every platform | |
+
+   Tag each rendered variant with
+   `<meta name="codi:variant" content='{"derivedFromRevision":N,"sourceAnchor":"00-anchor.md","planSource":"<platform>/<name>.md","platform":"..."}'>`.
+
+   **Card class contract.** The HTML card wrapper class MUST match the
+   `type` declared in the variant's `codi:template` meta: `type:"social"`
+   → `<article class="social-card">`, `type:"slides"` → `<article
+   class="slide">`, `type:"document"` → `<article class="doc-page">`.
+   See the "Card class contract" table at the top of
+   `[[/references/platform-rules.md]]`.
+
+   If the user later edits the `.md` plan, mark the matching `.html` as
+   stale and ask before re-rendering.
+
+8. **Validate.** Run the box-validator against every card in each
+   rendered `.html`. Apply brand-voice checks. Fix violations up to four
+   iterations. Only ship once gates pass.
+
+9. **Track revisions.** When the anchor changes, bump the revision via
+   `POST /api/anchor/revise`. Plans AND rendered variants both become
+   stale. Surface staleness to the user at the start of the next turn;
+   let them choose what to re-plan and re-render.
+
+10. **Export.** User clicks export buttons in the UI. Content Factory
    produces PNG/PDF/PPTX/DOCX/HTML per format.
 
 Steps 3-6 loop until the user is satisfied. The agent drives the files;

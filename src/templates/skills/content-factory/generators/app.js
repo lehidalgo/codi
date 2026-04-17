@@ -24,6 +24,7 @@ import {
   applyLogoToAllCards,
   syncLogoSlidersToSelection,
   registerUpdateExportPanel,
+  registerUpdateFormatGrid,
 } from "./lib/card-strip.js";
 import { updateExportPanel } from "./lib/exports-ui.js";
 import { initGallery, filterGallery, loadSessionContent, setGalleryStale } from "./lib/gallery.js";
@@ -34,6 +35,7 @@ import { initValidationSettings } from "./lib/validation-settings.js";
 // Wire forward-references so cycles resolve at runtime.
 registerRenderCards(renderCards);
 registerUpdateExportPanel(updateExportPanel);
+registerUpdateFormatGrid(updateFormatGrid);
 registerGalleryStaleSetter(setGalleryStale);
 registerWsHandlers({
   loadFiles,
@@ -50,6 +52,12 @@ registerOnLeavePreview(() => closeValidationPanel());
 
 // ====== Format switching ======
 function setFormat(btn) {
+  if (btn.classList.contains("disabled") || btn.disabled) {
+    const activeType =
+      state.activeContent && state.activeContent.type ? state.activeContent.type : "—";
+    log("Format locked for type '" + activeType + "' — switch content type first", "warn");
+    return;
+  }
   document.querySelectorAll(".fmt").forEach((b) => b.classList.remove("active"));
   btn.classList.add("active");
   state.format = { w: Number(btn.dataset.w), h: Number(btn.dataset.h) };
@@ -64,6 +72,32 @@ function setFormat(btn) {
   );
   if (state.cards.length) renderCards();
   updateExportPanel(state.cards.length > 0);
+}
+
+// Gate format buttons by the active content's type. Non-matching formats are
+// visually disabled and reject clicks. If the currently-active format is not
+// allowed for the new type, snap to the first allowed one so the header and
+// render pipeline stay consistent.
+export function updateFormatGrid(type) {
+  const btns = document.querySelectorAll(".fmt");
+  if (!type) {
+    btns.forEach((b) => {
+      b.classList.remove("disabled");
+      b.disabled = false;
+    });
+    return;
+  }
+  let firstAllowed = null;
+  let activeAllowed = false;
+  btns.forEach((b) => {
+    const allowed = (b.dataset.types || "").split(/\s+/).filter(Boolean);
+    const ok = allowed.length === 0 || allowed.includes(type);
+    b.classList.toggle("disabled", !ok);
+    b.disabled = !ok;
+    if (ok && !firstAllowed) firstAllowed = b;
+    if (ok && b.classList.contains("active")) activeAllowed = true;
+  });
+  if (!activeAllowed && firstAllowed) setFormat(firstAllowed);
 }
 
 // ====== Init ======
@@ -126,19 +160,16 @@ function init() {
     $("logo-y-val").textContent = $("logo-y").value + "%";
   });
 
-  // Gallery filters
+  // Gallery filters — preset content type only. My Work lives in its own
+  // top-level tab now; its status filters have a separate handler below.
   $("gallery-filters").addEventListener("click", (e) => {
     const btn = e.target.closest(".filter-btn");
     if (!btn) return;
-    document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+    document
+      .querySelectorAll("#gallery-filters .filter-btn")
+      .forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     state.galleryFilter = btn.dataset.type;
-    if (btn.dataset.type !== "work") {
-      state.workStatusFilter = "all";
-      document
-        .querySelectorAll(".status-filter-btn")
-        .forEach((b) => b.classList.toggle("active", b.dataset.status === "all"));
-    }
     filterGallery();
   });
 

@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const state = require('../lib/project-state.cjs');
+const workspace = require('../lib/workspace.cjs');
 const { serveFile, sendJson } = require('../lib/http-utils.cjs');
 
 /**
@@ -11,7 +12,11 @@ const { serveFile, sendJson } = require('../lib/http-utils.cjs');
 function handle(req, res, parsed, ctx) {
   const { pathname } = parsed;
 
-  // /api/content?file=xxx GET — raw HTML from active project's content dir
+  // /api/content?file=xxx GET — raw HTML or Markdown from active project's
+  // content dir. Accepts relative paths that include platform subfolders
+  // (e.g. "linkedin/carousel.html", "00-anchor.md"). Path-traversal guard
+  // lives in workspace.resolveContentPath — any path that escapes
+  // content/ resolves to null.
   if (req.method === 'GET' && pathname === '/api/content') {
     const fileParam = parsed.searchParams.get('file');
     const active = state.getActiveProject();
@@ -20,10 +25,20 @@ function handle(req, res, parsed, ctx) {
       res.end(active ? 'Missing ?file=' : 'No active project');
       return true;
     }
-    const filePath = path.join(active.contentDir, path.basename(fileParam));
+    const filePath = workspace.resolveContentPath(active.dir, fileParam);
+    if (!filePath) { res.writeHead(400); res.end('Invalid path'); return true; }
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return true; }
-    const injector = require('../lib/injector.cjs');
     const raw = fs.readFileSync(filePath, 'utf-8');
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.md') {
+      // Markdown is served raw — the client renders it via lib/markdown.js
+      // so live-reload edits don't require a server round-trip beyond the
+      // fetch itself.
+      res.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8' });
+      res.end(raw);
+      return true;
+    }
+    const injector = require('../lib/injector.cjs');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(injector.inject(raw));
     return true;

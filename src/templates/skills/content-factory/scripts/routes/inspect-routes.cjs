@@ -169,10 +169,15 @@ function resolveCardFile(project, file) {
   if (!project || !file) {
     return { error: 'project and file are required' };
   }
-  const filePath = path.resolve(project, 'content', path.basename(file));
-  const projectAbs = path.resolve(project);
-  if (!filePath.startsWith(projectAbs + path.sep)) {
-    return { error: 'path escapes project dir' };
+  // Preserve subfolder paths (e.g. "linkedin/carousel.html"). Reject any
+  // path with backslashes or that escapes content/ after resolution.
+  if (typeof file !== 'string' || file.includes('\\')) {
+    return { error: 'invalid file path' };
+  }
+  const contentRoot = path.resolve(project, 'content');
+  const filePath = path.resolve(contentRoot, file);
+  if (filePath !== contentRoot && !filePath.startsWith(contentRoot + path.sep)) {
+    return { error: 'path escapes project content dir' };
   }
   if (!fs.existsSync(filePath)) {
     return { error: 'file does not exist: ' + filePath };

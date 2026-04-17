@@ -191,11 +191,14 @@ Print-readiness (the reader may print it or view as PDF).
 **What it punishes.** Overflow at page boundaries. Inconsistent
 headers/footers across pages. Decorative chrome that hides content.
 
-**Typical compression.** The anchor often IS the document, or nearly
-so. Add a cover page, a TOC for longer documents, page numbers,
-header/footer chrome per brand. Map anchor sections to
-`<article class="doc-page">` elements — one page per section, or
-multiple sections per page when they're short.
+**Typical compression.** The anchor (Markdown in `content/00-anchor.md`)
+often IS the document, or nearly so. For a standalone A4 document
+variant, distill into `content/blog/post.html` or render the anchor
+directly via the preview's Markdown renderer + export-to-PDF. Map anchor
+H2 sections to `<article class="doc-page">` elements — one page per
+section, or multiple sections per page when they're short. The source
+that distillation reads is Markdown, not HTML — walk the ATX headings
+(`#`, `##`) and block structure of the anchor, not HTML `<section>` tags.
 
 **Format-specific references.** `[[/references/docx-export.md]]` for DOCX mapping.
 `[[/references/html-clipping.md]]` for multi-page boundaries.

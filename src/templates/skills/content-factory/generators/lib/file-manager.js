@@ -2,6 +2,7 @@
 // content/ dir, plus the built-in/brand template registry.
 
 import { parseCards as _parseCards, parseTemplate as _parseTemplate } from "/static/lib/cards.js";
+import { renderMarkdownAsDocument } from "/static/lib/markdown.js";
 
 import { state } from "./state.js";
 import { $, clearEl, log, showToast } from "./dom.js";
@@ -37,6 +38,28 @@ export async function loadFiles(autoSelect = false) {
   }
 }
 
+// Group files by their top-level folder. Files directly in content/ (no
+// slash in the relative path) are collected under a virtual "root" group —
+// this is where the 00-anchor.md lives. Every other file goes into its
+// platform folder (linkedin/, instagram/, facebook/, tiktok/, x/, blog/,
+// deck/). Order: root first (anchor), then platform folders alphabetically.
+function groupFilesByFolder(files) {
+  const groups = new Map();
+  for (const name of files) {
+    const ix = name.indexOf("/");
+    const folder = ix === -1 ? "__root__" : name.slice(0, ix);
+    if (!groups.has(folder)) groups.set(folder, []);
+    groups.get(folder).push(name);
+  }
+  const root = groups.get("__root__") || [];
+  groups.delete("__root__");
+  const sortedFolders = [...groups.keys()].sort();
+  return [
+    ...(root.length ? [{ folder: null, files: root }] : []),
+    ...sortedFolders.map((folder) => ({ folder, files: groups.get(folder) })),
+  ];
+}
+
 function renderFileList(files, autoSelect) {
   const listEl = $("file-list");
   if (!listEl) return;
@@ -49,26 +72,52 @@ function renderFileList(files, autoSelect) {
     return;
   }
   const anchorFile = state.brief?.anchor?.file ?? null;
-  files.forEach((name) => {
-    const btn = document.createElement("button");
-    btn.className = "file-item" + (name === state.activeFile ? " active" : "");
-    btn.type = "button";
-    btn.append(
-      Object.assign(document.createElement("span"), { className: "file-dot" }),
-      Object.assign(document.createElement("span"), { textContent: name }),
-    );
-    if (anchorFile && name === anchorFile) {
-      btn.append(
-        Object.assign(document.createElement("span"), {
-          className: "file-badge file-badge-anchor",
-          textContent: "anchor",
-          title: "Campaign anchor — source of truth for all variants",
-        }),
-      );
+  const groups = groupFilesByFolder(files);
+  for (const { folder, files: group } of groups) {
+    if (folder) {
+      const header = document.createElement("div");
+      header.className = "file-folder";
+      header.textContent = folder;
+      listEl.appendChild(header);
     }
-    btn.addEventListener("click", () => selectFile(name));
-    listEl.appendChild(btn);
-  });
+    for (const name of group) {
+      const btn = document.createElement("button");
+      btn.className = "file-item" + (name === state.activeFile ? " active" : "");
+      btn.type = "button";
+      const displayName = folder ? name.slice(folder.length + 1) : name;
+      btn.append(
+        Object.assign(document.createElement("span"), { className: "file-dot" }),
+        Object.assign(document.createElement("span"), { textContent: displayName }),
+      );
+      const isAnchorByBrief = anchorFile && name === anchorFile;
+      const isAnchorByConvention = !folder && name.toLowerCase().endsWith(".md");
+      const isPlanMd = !!folder && name.toLowerCase().endsWith(".md");
+      if (isAnchorByBrief || isAnchorByConvention) {
+        btn.append(
+          Object.assign(document.createElement("span"), {
+            className: "file-badge file-badge-anchor",
+            textContent: "anchor",
+            title: "Campaign anchor — Markdown source of truth for all variants",
+          }),
+        );
+      } else if (isPlanMd) {
+        // Markdown files in a platform subfolder are variant plans — the
+        // Markdown source the user iterates on before the matching
+        // .html is rendered. The PLAN badge makes the plan/render
+        // distinction visible at a glance in the file tree.
+        btn.append(
+          Object.assign(document.createElement("span"), {
+            className: "file-badge file-badge-plan",
+            textContent: "plan",
+            title:
+              "Markdown plan for this variant. The .html is rendered only after user approval.",
+          }),
+        );
+      }
+      btn.addEventListener("click", () => selectFile(name));
+      listEl.appendChild(btn);
+    }
+  }
   if (autoSelect && files.length) {
     selectFile(state.activeFile && files.includes(state.activeFile) ? state.activeFile : files[0]);
   }
@@ -102,9 +151,21 @@ export async function loadContent(filename, { preserveCard = false } = {}) {
       log("File not found: " + filename, "err");
       return;
     }
-    const cards = parseCards(await res.text());
+    const text = await res.text();
+    // Markdown anchors are rendered into a full HTML document (one
+    // <article class="doc-page"> per natural page break) and parsed back
+    // through parseCards, so the preview pipeline sees them as a regular
+    // document file. No fake card wrappers, no special data-types.
+    const isMarkdown = filename.toLowerCase().endsWith(".md");
+    const html = isMarkdown ? renderMarkdownAsDocument(text) : text;
+    const cards = parseCards(html);
     if (!cards.length) {
-      log("No .social-card elements found", "err");
+      log(
+        isMarkdown
+          ? "Anchor Markdown rendered to no content — file empty?"
+          : "No .social-card / .slide / .doc-page elements found",
+        "err",
+      );
       return;
     }
     const prevCard = state.activeCard;
@@ -132,8 +193,10 @@ export async function reloadCurrentContent() {
     loadFiles(true);
     return;
   }
-  const filename = state.activeFile.split("/").pop();
-  await loadContent(filename, { preserveCard: true });
+  // state.activeFile is a relative POSIX path under content/ (e.g.
+  // "linkedin/carousel.html" or "00-anchor.md"). Keep it intact — legacy
+  // code that stripped to basename broke subfolder lookups.
+  await loadContent(state.activeFile, { preserveCard: true });
   showToast("Content updated");
   loadFiles(false);
 }

@@ -4,6 +4,22 @@
 // branches on kind except for `readOnly`.
 
 import { state } from "./state.js";
+import { CONTENT_TYPES, VALID_TYPES, isValidType, typeForCardClass } from "./content-types.js";
+
+// Infer the content type from the first card's outer HTML by matching its
+// card class. Returns null when no recognized class is found.
+function inferTypeFromCards(cards) {
+  if (!Array.isArray(cards) || !cards.length) return null;
+  const first = cards[0];
+  if (!first || typeof first.html !== "string") return null;
+  const classAlt = VALID_TYPES.map((t) => CONTENT_TYPES[t].cardClass).join("|");
+  const re = new RegExp(
+    "<(?:article|section)\\b[^>]*class\\s*=\\s*[\"'][^\"']*\\b(" + classAlt + ")\\b",
+    "i",
+  );
+  const m = first.html.match(re);
+  return m ? typeForCardClass(m[1]) : null;
+}
 
 export function contentKey(content) {
   if (!content) return null;
@@ -37,12 +53,24 @@ export function buildSessionContentFromSession(session, files, cards) {
   if (!session) return null;
   const fileList = Array.isArray(files) ? files : [];
   const file = fileList[0] || session.files?.[0] || "social.html";
+  const inferredType = inferTypeFromCards(cards);
+  const presetType = session.preset && session.preset.type;
+  const type = isValidType(inferredType)
+    ? inferredType
+    : isValidType(presetType)
+      ? presetType
+      : "social";
+  const format =
+    (isValidType(inferredType) &&
+      CONTENT_TYPES[inferredType] && { ...CONTENT_TYPES[inferredType].canvas }) ||
+    (session.preset && session.preset.format) ||
+    state.format;
   return {
     kind: "session",
     id: session.sessionDir ? session.sessionDir.split("/").pop() : session.slug || "session",
     name: session.name || session.slug || "Untitled",
-    type: (session.preset && session.preset.type) || "social",
-    format: (session.preset && session.preset.format) || state.format,
+    type,
+    format,
     cardCount: Array.isArray(cards) ? cards.length : 0,
     status: session.status || "draft",
     createdAt: session.created || null,

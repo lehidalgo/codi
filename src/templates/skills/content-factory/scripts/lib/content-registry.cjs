@@ -34,7 +34,17 @@ const path = require('path');
 
 const { discoverBrands } = require('./brand-discovery.cjs');
 const workspace = require('./workspace.cjs');
-const { isValidType, allCardClasses } = require('./content-types.cjs');
+const { CONTENT_TYPES, isValidType, allCardClasses, typeForCardClass } = require('./content-types.cjs');
+
+// Infer the content type from the HTML body by matching the first card class.
+// Returns null when no recognized card class is present (empty file, plain HTML).
+function inferTypeFromHtml(html) {
+  if (!html) return null;
+  const classAlt = allCardClasses().join('|');
+  const re = new RegExp('<(?:article|section)\\b[^>]*class\\s*=\\s*["\'][^"\']*\\b(' + classAlt + ')\\b', 'i');
+  const m = html.match(re);
+  return m ? typeForCardClass(m[1]) : null;
+}
 
 const META_PATTERNS = [
   /<meta[^>]+name=["']codi:template["'][^>]*content='([^']+)'/i,
@@ -56,9 +66,21 @@ function extractTemplateMeta(html) {
 function countCards(html) {
   const classAlt = allCardClasses().join('|');
   const re = new RegExp('<(article|section)\\b[^>]*class\\s*=\\s*["\'][^"\']*\\b(' + classAlt + ')\\b[^"\']*["\']', 'gi');
-  let n = 0;
-  while (re.exec(html) !== null) n++;
-  return Math.max(n, 1);
+  const matches = html.match(re) || [];
+  return Math.max(matches.length, 1);
+}
+
+// Estimate the page count of a Markdown anchor by counting top-level H2s
+// plus 1 for the cover. Mirrors how renderMarkdownAsDocument splits the
+// rendered HTML into <article class="doc-page"> elements — one per H2
+// section, with everything before the first H2 forming the cover page.
+// Strips fenced code blocks so inline '##' inside code doesn't falsely
+// inflate the count.
+function countMarkdownPages(md) {
+  if (!md) return 1;
+  const stripped = md.replace(/```[\s\S]*?```/g, '');
+  const h2Count = (stripped.match(/^\s{0,3}##\s+/gm) || []).length;
+  return Math.max(1, h2Count + 1);
 }
 
 // ============================================================================
@@ -137,20 +159,34 @@ function listTemplates(ctx) {
 
 function descriptorFromSession(session) {
   const files = Array.isArray(session.files) ? session.files : [];
+  // scanContentFiles orders .md anchors first when they live at content/
+  // root, so files[0] is the anchor when one exists. Preserve that order —
+  // downstream UI treats files[0] as the session's "primary" content.
   const file = files[0] || 'social.html';
   const filePath = path.join(session.sessionDir, 'content', file);
+  const ext = path.extname(file).toLowerCase();
+  const isMarkdownAnchor = ext === '.md';
   let html = '';
   try { html = fs.readFileSync(filePath, 'utf-8'); } catch { /* file may not exist yet */ }
   const stat = fs.existsSync(filePath) ? fs.statSync(filePath) : null;
+  // Markdown anchors always resolve to document type — the client wraps
+  // the rendered Markdown in a single virtual doc-page. HTML files fall
+  // back to card-class inference.
+  const inferredType = isMarkdownAnchor ? 'document' : inferTypeFromHtml(html);
+  const presetType = session.preset && session.preset.type;
+  const type = isValidType(inferredType) ? inferredType
+             : isValidType(presetType) ? presetType
+             : 'social';
+  const format = (isValidType(inferredType) && CONTENT_TYPES[inferredType] && { ...CONTENT_TYPES[inferredType].canvas })
+              || (session.preset && session.preset.format)
+              || { ...CONTENT_TYPES.social.canvas };
   return {
     kind: 'session',
     id: path.basename(session.sessionDir),
     name: session.name || path.basename(session.sessionDir),
-    type: isValidType(session.preset && session.preset.type) ? session.preset.type : 'social',
-    format:
-      (session.preset && session.preset.format) ||
-      { w: 1080, h: 1080 },
-    cardCount: html ? countCards(html) : 1,
+    type,
+    format,
+    cardCount: isMarkdownAnchor ? countMarkdownPages(html) : (html ? countCards(html) : 1),
     status: session.status || 'draft',
     createdAt: session.created || (stat && stat.birthtimeMs) || null,
     modifiedAt: (stat && stat.mtimeMs) || session.created || null,

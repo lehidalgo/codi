@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 69
+version: 83
 ---
 
 # {{name}} — Content Factory
@@ -50,7 +50,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | **Content file** | One HTML file in a project's \`content/\` directory. Carries a \`<meta name="codi:template">\` tag and one or more cards. One file = one logical content unit (a carousel, a deck, a document) |
 | **Card** | One rendered page inside a content file. Three element types: \`.social-card\`, \`.slide\`, \`.doc-page\`. The app scanner only recognizes these three class names |
 | **Preset** / **Template** | Same thing at the Gallery level. A "preset" is what the user picks from the Gallery. A "template" is the underlying HTML file in \`generators/templates/\` (built-in) or a brand skill's \`templates/\` directory |
-| **Anchor** | The long-form master file in an anchor-first flow. Always a \`document\` content type (A4 pages). Named \`00-anchor.html\` by convention |
+| **Anchor** | The long-form master file in an anchor-first flow. Always Markdown, always at \`content/00-anchor.md\`. Rendered in the preview as a styled A4 document; distillation reads the Markdown sections (H1/H2/blockquotes/lists) to produce variants |
 | **Variant** | A platform-specific content file distilled from an anchor. Carries a \`<meta name="codi:variant">\` tag linking back to the anchor's revision |
 | **Brief** | A project's \`brief.json\` — arbitrary JSON (no schema enforcement) capturing intake, anchor revision, and variant registry |
 
@@ -70,6 +70,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under All / Social / Slides / Document filters |
+| \`\${CLAUDE_SKILL_DIR}[[/references/operating-system.md]]\` | **MUST-READ first.** The Content Factory operating philosophy — the six-phase validation-first workflow (Discovery → Master → Validation → Planning → Validation → Generation). Describes WHO the skill is and HOW it operates before any mechanics. Every other reference is the HOW behind this WHY |
 | \`\${CLAUDE_SKILL_DIR}[[/references/server-api.md]]\` | Full Server API reference — every endpoint, grouped by concern. Read on demand when you need a specific route |
 | \`\${CLAUDE_SKILL_DIR}[[/references/url-pinning.md]]\` | URL-pinned tab state — how to construct deep-link URLs |
 | \`\${CLAUDE_SKILL_DIR}[[/references/app-ui.md]]\` | Browser app UI layout — sidebar, tabs, filters. Rarely needed by agents |
@@ -85,6 +86,13 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
 | \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |
 | \`\${CLAUDE_SKILL_DIR}[[/references/platform-rules.md]]\` | Convenience appendix: per-platform distillation recipes |
+| \`\${CLAUDE_SKILL_DIR}[[/references/plan-authoring.md]]\` | The plan-first pipeline contract — how to author a Markdown plan per variant, status lifecycle (planned → approved → rendered → stale), revision handling. Read BEFORE writing any variant file |
+| \`\${CLAUDE_SKILL_DIR}[[/references/copywriting-formulas.md]]\` | Seven battle-tested formulas (AIDA, PAS, BAB, 4Ps, 1-2-3-4, 4Us, FAB) with structure, worked examples, default formula-per-variant mapping |
+| \`\${CLAUDE_SKILL_DIR}[[/references/hooks-and-retention.md]]\` | Hook archetypes (10), anti-patterns, per-platform length budgets, retention tactics (open loops, scan beats, pattern interrupts) |
+| \`\${CLAUDE_SKILL_DIR}[[/references/humanized-writing.md]]\` | Anti-AI-sounding techniques — the five tells, banned words, humanization checklist, per-platform AI tolerance. MANDATORY pass before any \`.html\` renders |
+| \`\${CLAUDE_SKILL_DIR}[[/references/research-audit-2026.md]]\` | The reference-catalog audit that produced the three craft docs above; tracks what's covered, what's delegated to external skills, and what's still missing |
+| \`\${CLAUDE_SKILL_DIR}[[/references/platforms/]]\` | Per-platform playbooks — read the ones you're distilling into. Each playbook's "Plan shape" section shows the exact Markdown structure for that platform's plan. Files: \`linkedin.md\`, \`instagram.md\`, \`facebook.md\`, \`tiktok.md\`, \`x.md\`, \`blog.md\`, \`deck.md\` |
+| \`\${CLAUDE_SKILL_DIR}[[/references/external-skills.md]]\` | Soft-dependency integration: marketingskills, claude-blog, claude-seo, banana-claude — when to use, install instructions, detection patterns |
 | \`\${CLAUDE_SKILL_DIR}[[/references/promote-template.md]]\` | Promote a My Work project into a built-in Gallery template |
 
 ---
@@ -253,31 +261,58 @@ High-level shape:
 
 1. **Read the request.** Classify intent via
    \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\`. Decide anchor-first vs. fast-path.
-2. **Intake (adaptive).** Ask the user only what you need. Persist answers to
-   \`brief.json\` via \`POST /api/brief\` (no schema enforcement).
-3. **Author the anchor.** For anchor-first paths, write one self-contained long-form
-   document first. Read \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\`. The
-   anchor is a \`document\` content type (A4 article). Iterate until the user approves; call
+2. **Campaign intake — always ask which platforms.** For any anchor-first request,
+   present the platform checklist before authoring: LinkedIn (carousel, post) ·
+   Instagram (feed, story, reel cover) · Facebook (post, story, reel) · TikTok (cover) ·
+   X/Twitter (card/thread) · blog · slide deck. Also ask: topic, audience, voice, CTA,
+   anchor \`length_class\` (default \`standard\`). Persist to \`brief.json\` via \`POST /api/brief\`.
+3. **Author the anchor in Markdown.** Write \`content/00-anchor.md\`. The anchor is
+   Markdown — not HTML. Read \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\`
+   for frontmatter, length classes, and structure. Iterate until approved; call
    \`POST /api/anchor/approve\`.
-4. **Distill each requested format.** For each variant, read
-   \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\`. Make creative
-   decisions. Write one HTML file per variant with a \`codi:variant\` meta tag carrying
-   \`derivedFromRevision\`.
-5. **Revisions.** When the anchor changes substantively, call \`POST /api/anchor/revise\`.
-   The server marks stale variants. At the start of the next iteration, call
-   \`GET /api/distill-status\` to surface staleness; let the user choose what to re-distill.
-   Never auto-propagate.
-6. **Fast-path.** When the user signals a one-off ("quick", "just", "one tweet"), skip
-   anchor authoring. Write a single HTML file of the requested type. No \`brief.json\`.
+4. **Plan each requested variant in Markdown.** For every platform the user selected
+   in step 2, write a plan file (Markdown, NOT HTML) at
+   \`content/<platform>/<variant>.md\`. The plan is prose — slide-by-slide breakdown,
+   copy drafts, caption, hashtags, visual direction. Read
+   \`\${CLAUDE_SKILL_DIR}[[/references/plan-authoring.md]]\` for the contract + the
+   platform playbook for per-platform quirks. No HTML exists yet at this stage.
+5. **HARD GATE — user approves each plan before any HTML renders.** Present each
+   plan. Iterate on the prose. Render the matching \`.html\` ONLY after the user
+   explicitly says yes / approved / render it for that specific plan. Silence is
+   not approval. Partial edits are continued iteration, not approval.
+6. **Render approved plans into HTML.** Once a plan is approved, generate
+   \`content/<platform>/<variant>.html\` from the same-basename \`.md\`. Tag the HTML
+   with \`<meta name="codi:variant" content='{"derivedFromRevision":N,"sourceAnchor":"00-anchor.md","planSource":"<platform>/<variant>.md",...}'>\`.
+7. **Revisions.** When the anchor changes substantively, call \`POST /api/anchor/revise\`.
+   Plans AND rendered HTML both become stale. At the start of the next iteration,
+   surface staleness; let the user choose what to re-plan and re-render. Never
+   auto-propagate.
+8. **Fast-path.** When the user signals a one-off ("quick", "just", "one tweet"), skip
+   anchor authoring. Still plan the single variant in Markdown, get approval, then
+   render. No \`brief.json\`.
 
-**File naming** (convention, not enforcement): \`00-anchor.html\` for the master · \`10-19\`
-LinkedIn · \`20-29\` Instagram · \`30-39\` TikTok · \`40-49\` Twitter · \`50-59\` decks ·
-\`60-69\` email / ads / other.
+**Folder contract** (enforced by the scanner + workspace scaffolder):
 
-**Marketing-skills soft dependency:** if the external \`marketing-skills\` plugin is
-installed (\`content-strategy\`, \`copywriting\`, \`social-content\`, \`humanizer\`), use it
-for audience research and copy polish. If absent, inline-generate. Output files are
-identical either way.
+| Path | Content |
+|------|---------|
+| \`content/00-anchor.md\` | Markdown anchor — always at content/ root, always \`.md\` |
+| \`content/linkedin/\` | LinkedIn variants (\`carousel.html\`, \`post.html\`) |
+| \`content/instagram/\` | Instagram variants (\`feed.html\`, \`story.html\`, \`reel-cover.html\`) |
+| \`content/facebook/\` | Facebook variants (\`post.html\`, \`story.html\`, \`reel.html\`) |
+| \`content/tiktok/\` | TikTok (\`cover.html\`) |
+| \`content/x/\` | X/Twitter (\`card.html\`) |
+| \`content/blog/\` | Blog post (\`post.html\`) |
+| \`content/deck/\` | Slide deck (\`slides.html\`) |
+
+**External skills — soft dependencies.** See
+\`\${CLAUDE_SKILL_DIR}[[/references/external-skills.md]]\`. Probe for
+\`marketingskills\`, \`claude-blog\`, \`claude-seo\`, and \`banana-claude\` at the start of
+every anchor-first session. If present, invoke relevant slash commands during intake
+(/content-strategy, /marketing-psychology), anchor authoring (/blog outline,
+/blog write, /blog factcheck, /seo content), and distillation (/social-content,
+/copy-editing, /banana generate for hero images). If absent, inline-generate with
+lower fidelity and tell the user once which installs would upgrade quality — never
+auto-install, never block the workflow.
 
 ### Step 1d — Detect and apply a brand (optional)
 

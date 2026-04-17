@@ -24,6 +24,12 @@ async function mapConcurrent(items, concurrency, fn) {
 
 const RENDER_CONCURRENCY = 3;
 
+// Device scale factor for all export pipelines (PNG, PDF, DOCX, and by
+// extension PPTX + ZIP which both route through /api/export-png).
+// 3× is the retina print-quality standard — sharp on high-DPI displays
+// and print output, without the file-size and OOM cost of 4×.
+const EXPORT_DEVICE_SCALE = 3;
+
 // ── PNG ──────────────────────────────────────────────────────────────────────
 
 async function handleExportPng(req, res) {
@@ -35,7 +41,7 @@ async function handleExportPng(req, res) {
         const { html, width, height } = JSON.parse(body);
         if (!html || !width || !height) { res.writeHead(400); res.end('Missing html/width/height'); return resolve(); }
         const browser = await getBrowser();
-        const page = await browser.newPage({ deviceScaleFactor: 2 });
+        const page = await browser.newPage({ deviceScaleFactor: EXPORT_DEVICE_SCALE });
         await page.setViewportSize({ width, height });
         await page.setContent(html, { waitUntil: 'networkidle' });
         await page.waitForFunction(() => document.fonts.ready);
@@ -65,7 +71,7 @@ async function handleExportPdf(req, res) {
           res.writeHead(400); res.end('Missing slides array'); return resolve();
         }
         const browser = await getBrowser();
-        const PDF_DEVICE_SCALE = 1.5;
+        const PDF_DEVICE_SCALE = EXPORT_DEVICE_SCALE;
         const validSlides = slides.filter(s => s.html && s.width && s.height);
         const pngDataUrls = await mapConcurrent(validSlides, RENDER_CONCURRENCY, async (slide) => {
           const { html, width, height } = slide;
@@ -140,7 +146,7 @@ async function handleExportDocx(req, res) {
           return { w: w / deviceScaleFactor, h: h / deviceScaleFactor };
         }
 
-        const DOCX_DEVICE_SCALE = 2;
+        const DOCX_DEVICE_SCALE = EXPORT_DEVICE_SCALE;
         const browser = await getBrowser();
         const slideResults = await mapConcurrent(slides, RENDER_CONCURRENCY, async (slide) => {
           const { html, width, height } = slide;
@@ -648,7 +654,7 @@ async function handleExportDocx(req, res) {
                   const imgBuf = Buffer.from(el.pngBase64, 'base64');
                   // Derive CSS dimensions from PNG header so the ImageRun exactly matches
                   // what Playwright captured (getBoundingClientRect can be unreliable).
-                  // deviceScaleFactor=2 means PNG pixels are 2× CSS pixels.
+                  // PNG pixels are DOCX_DEVICE_SCALE× CSS pixels.
                   const pngDims = pngCssDimensions(imgBuf, DOCX_DEVICE_SCALE);
                   const maxW = 600;
                   const srcW = pngDims ? pngDims.w : (el.capturedWidth || maxW);

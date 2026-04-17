@@ -58,7 +58,11 @@ export function setView(viewId) {
         fn();
       } catch {}
     });
-  if (viewId === "gallery" && _initGallery) _initGallery();
+  // Both Gallery and My Work panels are populated by initGallery — it
+  // renders preset cards into #gallery-grid and session cards into
+  // #work-grid in a single pass. Triggering on either tab ensures the
+  // right grid is fresh after a new project or edit.
+  if ((viewId === "gallery" || viewId === "work") && _initGallery) _initGallery();
 }
 
 export function setAppNavVisible(show) {

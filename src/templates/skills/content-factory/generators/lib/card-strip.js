@@ -146,9 +146,13 @@ export function updateSelectionUI() {
     const active = idx === state.activeCard;
     f.classList.toggle("active-card", active);
     f.classList.toggle("selected-card", sel && !active);
-    const circle = f.querySelector(".card-select-circle");
-    if (circle) circle.classList.toggle("checked", sel);
   });
+  // Sync the top-bar select circle — it reflects the ACTIVE card's
+  // selection state (the per-card rail circles no longer exist).
+  const topCircle = $("preview-meta-select");
+  if (topCircle) {
+    topCircle.classList.toggle("checked", state.selectedCards.has(state.activeCard));
+  }
   const countEl = $("selection-count");
   if (countEl) countEl.textContent = state.selectedCards.size + " of " + state.cards.length;
   const toggleBtn = $("btn-select-toggle");
@@ -172,25 +176,11 @@ function buildCardEl(card, i, container) {
     (isSelected && !isActive ? " selected-card" : "");
   wrapper.dataset.index = String(i);
 
-  // Left rail: selection circle (top) + validation badge (bottom)
-  const railEl = document.createElement("div");
-  railEl.className = "card-rail";
-
-  const circleEl = document.createElement("div");
-  circleEl.className = "card-select-circle" + (isSelected ? " checked" : "");
-  circleEl.title = "Select / deselect this slide";
-  circleEl.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleCardSelection(i);
-  });
-  railEl.appendChild(circleEl);
-
-  try {
-    const file =
-      state.activeContent && state.activeContent.source && state.activeContent.source.file;
-    const badge = createValidationBadge(i, file);
-    railEl.appendChild(badge);
-  } catch {}
+  // Card selection circle + validation badge used to live in a per-card
+  // vertical rail alongside each card. Both were moved to the top
+  // preview-meta bar so the rail doesn't crowd the card edges. The top
+  // bar reflects the ACTIVE card's state; clicking another card updates
+  // the selector + badge via updatePreviewMeta().
 
   // Card content area: iframe + logo overlay
   const contentEl = document.createElement("div");
@@ -230,7 +220,7 @@ function buildCardEl(card, i, container) {
 
   contentEl.append(iframe, logoEl);
   wrapper.addEventListener("click", () => setActiveCard(i));
-  wrapper.append(railEl, contentEl);
+  wrapper.append(contentEl);
   container.appendChild(wrapper);
 }
 
@@ -238,6 +228,7 @@ function buildCardEl(card, i, container) {
 
 export function updatePreviewMeta() {
   const bar = $("preview-meta");
+  _updateFormatGrid(state.activeContent ? state.activeContent.type : null);
   if (!state.cards.length) {
     bar.hidden = true;
     return;
@@ -253,6 +244,31 @@ export function updatePreviewMeta() {
   $("preview-meta-format").textContent = fmt.w + " × " + fmt.h;
   $("preview-meta-slides").textContent =
     state.cards.length + (state.cards.length === 1 ? " slide" : " slides");
+
+  // Sync the active card's select-circle state.
+  const selectEl = $("preview-meta-select");
+  if (selectEl) {
+    selectEl.classList.toggle("checked", state.selectedCards.has(state.activeCard));
+    selectEl.onclick = (e) => {
+      e.stopPropagation();
+      toggleCardSelection(state.activeCard);
+    };
+  }
+
+  // Rebuild the validation badge so it targets the active card. The badge
+  // registers itself for runBatchValidation via dataset attributes; we
+  // replace the node in place on every active-card change.
+  const valHost = $("preview-meta-validation");
+  if (valHost) {
+    clearEl(valHost);
+    try {
+      const activeFile = c && c.source && c.source.file ? c.source.file : null;
+      const badge = createValidationBadge(state.activeCard, activeFile);
+      valHost.appendChild(badge);
+    } catch {
+      /* badge is best-effort */
+    }
+  }
 
   const modEl = $("preview-meta-modified");
   const modSep = $("preview-meta-modified-sep");
@@ -297,6 +313,13 @@ export function updatePreviewMeta() {
 let _updateExportPanel = () => {};
 export function registerUpdateExportPanel(fn) {
   _updateExportPanel = fn;
+}
+
+// Forward binding from app.js — avoids a hard cycle. The app registers a
+// handler that gates the format picker by the active content's type.
+let _updateFormatGrid = () => {};
+export function registerUpdateFormatGrid(fn) {
+  _updateFormatGrid = fn;
 }
 
 export function renderCards() {

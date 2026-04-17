@@ -160,7 +160,11 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
-  // /api/session-content?session=&file= GET — serve HTML from a specific project
+  // /api/session-content?session=&file= GET — serve HTML or Markdown from a
+  // specific project. Accepts relative paths that include platform
+  // subfolders (e.g. "linkedin/carousel.html") and Markdown anchors
+  // ("00-anchor.md"). Path-traversal guard lives in
+  // workspace.resolveContentPath.
   if (req.method === 'GET' && pathname === '/api/session-content') {
     const sessionParam = parsed.searchParams.get('session');
     const fileParam = parsed.searchParams.get('file');
@@ -168,13 +172,19 @@ function handle(req, res, parsed, ctx) {
     const resolved = path.normalize(path.resolve(sessionParam));
     const ws = path.normalize(ctx.WORKSPACE_DIR);
     if (!resolved.startsWith(ws + path.sep)) { res.writeHead(403); res.end('Forbidden'); return true; }
-    const filePath = path.join(resolved, 'content', path.basename(fileParam));
+    const filePath = workspace.resolveContentPath(resolved, fileParam);
+    if (!filePath) { res.writeHead(400); res.end('Invalid path'); return true; }
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return true; }
-    const injector = require('../lib/injector.cjs');
     const raw = fs.readFileSync(filePath, 'utf-8');
-    const injected = injector.inject(raw);
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.md') {
+      res.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8' });
+      res.end(raw);
+      return true;
+    }
+    const injector = require('../lib/injector.cjs');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(injected);
+    res.end(injector.inject(raw));
     return true;
   }
 

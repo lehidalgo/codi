@@ -13,6 +13,7 @@ import {
 import { createCardMenuButton } from "./card-menu.js";
 import { cardFormat, loadTemplateAsCards, renderCards } from "./card-strip.js";
 import { parseTemplate } from "./file-manager.js";
+import { renderMarkdownAsDocument } from "/static/lib/markdown.js";
 import { loadForActiveSession } from "./validation-config.js";
 
 let galleryInit = false;
@@ -50,22 +51,21 @@ function buildTemplateCoverEl(template, BOX_W, BOX_H) {
   return inner;
 }
 
+// Filter logic split by tab panel. Gallery (#gallery-grid) holds preset
+// cards only and is filtered by content type. My Work (#work-grid) holds
+// session cards only and is filtered by status. Both run on every call
+// so the UI stays consistent when switching tabs or editing a project.
 export function filterGallery() {
   const type = state.galleryFilter;
   const workStatus = state.workStatusFilter || "all";
-  document.querySelectorAll(".preset-card").forEach((c) => {
-    const isWork = c.classList.contains("session-card");
-    if (type === "work") {
-      const statusMatch = workStatus === "all" || c.dataset.status === workStatus;
-      c.style.display = isWork && statusMatch ? "" : "none";
-    } else if (type === "all") {
-      c.style.display = isWork ? "none" : "";
-    } else {
-      c.style.display = !isWork && c.dataset.type === type ? "" : "none";
-    }
+  document.querySelectorAll("#gallery-grid .preset-card").forEach((c) => {
+    if (type === "all") c.style.display = "";
+    else c.style.display = c.dataset.type === type ? "" : "none";
   });
-  const workBar = $("work-status-filters");
-  if (workBar) workBar.style.display = type === "work" ? "" : "none";
+  document.querySelectorAll("#work-grid .session-card").forEach((c) => {
+    const statusMatch = workStatus === "all" || c.dataset.status === workStatus;
+    c.style.display = statusMatch ? "" : "none";
+  });
 }
 
 export async function initGallery() {
@@ -199,7 +199,9 @@ export async function initGallery() {
     observer.observe(inner);
   });
 
-  await renderSessions(grid);
+  // Session cards go to the My Work grid, not the preset library.
+  const workGrid = $("work-grid");
+  if (workGrid) await renderSessions(workGrid);
   filterGallery();
 }
 
@@ -254,10 +256,15 @@ async function renderSessions(grid) {
           encodeURIComponent(session.files[0]),
       )
         .then((r) => r.text())
-        .then((html) => {
-          const t = parseTemplate(html, session.files[0]);
-          const genericName = session.files[0]
-            .replace(/\.html$/, "")
+        .then((raw) => {
+          const file = session.files[0];
+          // Markdown anchor → render into a full HTML document with real
+          // .doc-page articles before parsing. Mirrors loadSessionContent.
+          const html = file.toLowerCase().endsWith(".md") ? renderMarkdownAsDocument(raw) : raw;
+          const t = parseTemplate(html, file);
+          const genericName = file
+            .replace(/\.(html|md)$/i, "")
+            .replace(/^\d+[-_]/, "")
             .replace(/-/g, " ")
             .replace(/\b\w/g, (c) => c.toUpperCase());
           const contentName = t.name !== genericName ? t.name : session.preset?.name || t.name;
@@ -454,7 +461,11 @@ export async function loadSessionContent(session) {
       log("Session not found", "err");
       return;
     }
-    const html = await res.text();
+    const raw = await res.text();
+    // Markdown anchors render into a full HTML document with real
+    // .doc-page articles, so parseTemplate handles them identically to
+    // any other HTML variant.
+    const html = file.toLowerCase().endsWith(".md") ? renderMarkdownAsDocument(raw) : raw;
     const template = parseTemplate(html, file);
     if (!template.cards.length) {
       log("No slides found", "err");
@@ -474,7 +485,8 @@ export async function loadSessionContent(session) {
     state.cards = template.cards;
     state.cardRevision++;
     const genericName = file
-      .replace(/\.html$/, "")
+      .replace(/\.(html|md)$/i, "")
+      .replace(/^\d+[-_]/, "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
     const resolvedName =
@@ -485,7 +497,11 @@ export async function loadSessionContent(session) {
         : session.preset?.type || template.type;
     state.activeMeta = { name: resolvedName, type: resolvedType, format: fmt };
     state.preset = null;
-    state.activeFile = session.sessionDir + "/" + file;
+    // Keep activeFile as the relative path under content/ so reload + the
+    // file-panel active-item matcher + /api/content fetches all agree on
+    // the same identifier. The session's absolute dir lives separately in
+    // state.activeSessionDir.
+    state.activeFile = file;
     state.activeSessionDir = session.sessionDir;
     state.activeStatus = session.status || "draft";
     state.viewMode = "app";
