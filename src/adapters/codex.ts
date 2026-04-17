@@ -19,6 +19,7 @@ import {
   buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
+  buildSelfDevWarning,
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import {
@@ -93,6 +94,10 @@ export const codexAdapter: AgentAdapter = {
     // Project overview from manifest
     const overview = buildProjectOverview(config);
     if (overview) sections.push(overview);
+
+    // Self-development mode warning (only when name === "codi")
+    const selfDevWarning = buildSelfDevWarning(config);
+    if (selfDevWarning) sections.push(selfDevWarning);
 
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);

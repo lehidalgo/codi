@@ -18,6 +18,7 @@ import {
   buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
+  buildSelfDevWarning,
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME } from "../constants.js";
@@ -73,6 +74,10 @@ export const clineAdapter: AgentAdapter = {
 
     const overview = buildProjectOverview(config);
     if (overview) sections.push(overview);
+
+    // Self-development mode warning (only when name === "codi")
+    const selfDevWarning = buildSelfDevWarning(config);
+    if (selfDevWarning) sections.push(selfDevWarning);
 
     if (flagText) {
       sections.push(flagText);

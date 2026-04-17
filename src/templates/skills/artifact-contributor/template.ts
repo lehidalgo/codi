@@ -2,6 +2,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
   PROJECT_REPO,
   PROJECT_URL,
   PLATFORM_CATEGORY,
@@ -16,7 +17,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}}
@@ -142,6 +143,14 @@ The PR method forks the target repo (if needed), pushes a branch, and opens a PR
    - Rules go in \\\`src/templates/rules/{name}.ts\\\`
    - Skills go in \\\`src/templates/skills/{name}.ts\\\`
    - Agents go in \\\`src/templates/agents/{name}.ts\\\`
+
+   **Heads up — source-layer edits need clean + reinstall to take effect locally.**
+   \\\`${PROJECT_CLI} generate\\\` reads from \\\`${PROJECT_DIR}/\\\`, not from \\\`src/templates/\\\`. To verify
+   your new artifact inside the ${PROJECT_NAME_DISPLAY} repo before pushing: run \\\`pnpm build\\\`, remove
+   the stale installed copy at \\\`${PROJECT_DIR}/<artifact-type>/${PROJECT_NAME}-<name>\\\`, delete its
+   entry from \\\`${PROJECT_DIR}/artifact-manifest.json\\\`, then
+   \\\`${PROJECT_CLI} add <artifact-type> ${PROJECT_NAME}-<name> --template ${PROJECT_NAME}-<name>\\\` and
+   \\\`${PROJECT_CLI} generate --force\\\`. The ${PROJECT_NAME}-dev-operations skill documents the full flow.
 
 4. Export as a template string:
    \\\`\\\`\\\`typescript
