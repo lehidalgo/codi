@@ -199,7 +199,16 @@ for (const file of files) {
     }
   } catch {}
 }
-if (failed) process.exit(1);
+if (failed) {
+  console.error(\`
+Fix: code files must stay under \${maxLines} lines (single responsibility).
+  - For source modules: extract helpers into sibling files, split by responsibility.
+  - For skill template.ts: move long prose into references/*.md (already excluded).
+  - Do NOT skip this hook. Do NOT use --no-verify. Split the file instead.
+  - Excluded from the check: .md / .mdx / .txt / .rst / docs/ / references/ / assets/.
+\`);
+  process.exit(1);
+}
 `;
 
 export const TEMPLATE_WIRING_CHECK_TEMPLATE = `#!/usr/bin/env node
@@ -472,10 +481,35 @@ if (errors.length > 0) {
     console.error('  ' + source + ':');
     for (const ref of refs) console.error("    references '" + ref + "' — file does not exist");
   }
-  console.error('\\nFix: create the missing resource files, or remove the references.');
-  console.error('     Wrap resource paths with [[/path]] markers so the hook can validate them.');
-  console.error('     Example: \${CLAUDE_SKILL_DIR}[[/scripts/run.py]]  — non-Claude-Code agents keep [[]] markers.');
-  console.error('     For templates: export staticDir in index.ts and place files in the template directory.');
+  console.error(\`
+Diagnostic order — follow these steps before assuming which layer is broken:
+
+  1. IDENTIFY THE CIRCUIT by looking at the source path above:
+     - .codi/skills/<skill>/... or .cline/skills/... or .agents/skills/...
+       → GENERATED / INSTALLED circuit. Do NOT create the file at this path.
+       The broken reference was propagated from the source template.
+     - src/templates/skills/<skill>/...
+       → SOURCE circuit (self-dev only — codi-internal work).
+
+  2. IF GENERATED CIRCUIT: check the source FIRST.
+     - Look for src/templates/skills/<skill>/<ref-path>.
+     - If the file EXISTS in source, the install failed to propagate it.
+       Common causes, in order of likelihood:
+         a. src/templates/skills/<skill>/index.ts is missing the staticDir export.
+            Add: export const staticDir = resolveStaticDir("<skill>", import.meta.url);
+         b. The skill is not registered in STATIC_DIR_MAP inside
+            src/core/scaffolder/skill-template-loader.ts.
+         c. Stale install — run codi init (or pnpm build + clean + reinstall + generate).
+     - If the file does NOT exist in source, add it there (or drop the reference).
+
+  3. IF SOURCE CIRCUIT: the source template references a file that is genuinely missing.
+     Create the file, or remove the reference from template.ts / the .md.
+
+  4. ALL CIRCUITS: wrap resource paths with [[/path]] markers so this hook can validate them.
+     In template.ts or SKILL.md: \${CLAUDE_SKILL_DIR}[[/scripts/run.py]]
+     In references/*.md:       [[/scripts/run.py]]
+     Claude Code strips [[]] at generate time; other agents keep the markers.
+\`);
   process.exit(1);
 }
 `;
