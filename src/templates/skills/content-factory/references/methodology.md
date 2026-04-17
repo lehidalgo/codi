@@ -112,16 +112,16 @@ Ask this once, at the start. Don't re-prompt on every iteration.
 
 A typical anchor-first session, at a high level:
 
-1. **Read the request.** Classify intent (see `intent-detection.md`).
+1. **Read the request.** Classify intent (see `[[/references/intent-detection.md]]`).
    Decide anchor vs. fast-path. Infer the format set.
 2. **Intake (optional, adaptive).** Ask the user only what you actually
    need — topic, audience, voice, points, CTA. Skip what's obvious from
    context. Persist answers to `brief.json` via `POST /api/brief`.
 3. **Author the anchor.** Write one self-contained HTML article. Read
-   `anchor-authoring.md` for shape and semantic tagging. Iterate with
+   `[[/references/anchor-authoring.md]]` for shape and semantic tagging. Iterate with
    the user until they approve.
 4. **Distill each requested format.** For each variant, read
-   `distillation-principles.md` for the format's nature and compression
+   `[[/references/distillation-principles.md]]` for the format's nature and compression
    philosophy. Make creative decisions. Write one HTML file per variant,
    tag it with the anchor revision it derives from.
 5. **Validate.** Run the box-validator against every card. Apply
@@ -230,15 +230,15 @@ You have access to:
   revision tracking, style persistence, exports. See the Server API
   table in SKILL.md.
 - **Brand tokens** — colors, fonts, assets, voice rules. See
-  `brand-integration.md`.
-- **Design system** — the 13 rules. See `design-system.md`.
+  `[[/references/brand-integration.md]]`.
+- **Design system** — the 13 rules. See `[[/references/design-system.md]]`.
 - **Box-validator** — layout quality check. See SKILL.md Step 3b.
 - **Slide-deck engine** — the single-file slide structural contract.
-  See `slide-deck-engine.md` when distilling to decks.
+  See `[[/references/slide-deck-engine.md]]` when distilling to decks.
 - **Format principles** — what makes each format excel or fail. See
-  `distillation-principles.md`.
+  `[[/references/distillation-principles.md]]`.
 - **Intent detection signals** — how to read user requests. See
-  `intent-detection.md`.
+  `[[/references/intent-detection.md]]`.
 
 You do not have a script, a fixed questionnaire, a role taxonomy, or a
 file-naming policy. You have principles, tools, and gates. Make

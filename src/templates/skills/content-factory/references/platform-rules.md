@@ -14,7 +14,7 @@ CTA rules for one platform.
    exactly one call to action. Do not stack CTAs.
 4. **Preserve key numbers.** Statistics, quotes, and specific figures from the
    anchor must appear verbatim — these are what people remember and share.
-5. **Apply visual density rules.** See `visual-density.md` — every card must
+5. **Apply visual density rules.** See `[[/references/visual-density.md]]` — every card must
    occupy ≥85% of its canvas regardless of platform.
 6. **Run through humanizer.** If the `humanizer` skill is installed, pass every
    variant through it before saving. Social platforms punish AI-sounding copy.
@@ -228,7 +228,7 @@ a distilled summary of any anchor into slide form.
 - Takeaway slide: "3 things to remember"
 - CTA slide: link to anchor source + author contact
 
-**Density:** Apply slides content rules from `visual-density.md` — every slide
+**Density:** Apply slides content rules from `[[/references/visual-density.md]]` — every slide
 needs a title, body, footer strip (brand · page · date), and one decorative
 accent.
 

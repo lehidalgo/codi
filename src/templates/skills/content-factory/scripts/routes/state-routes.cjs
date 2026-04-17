@@ -117,6 +117,127 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
+  // /api/distill-status GET — anchor revision + per-variant staleness
+  //
+  // Reads the active project's brief.json and returns a summary of the
+  // anchor's current revision plus each declared variant's derivation
+  // status. A variant is "stale" when derivedFromRevision < anchor.revision.
+  // Variants with no derivedFromRevision field are reported as status
+  // "pending" (not yet distilled). Returns null when no project is active.
+  //
+  // Response shape:
+  //   {
+  //     anchor: { file, revision, status } | null,
+  //     variants: [{ file, format, derivedFromRevision, status, staleBy }],
+  //     stale: ["file1.html", ...]
+  //   }
+  if (req.method === 'GET' && pathname === '/api/distill-status') {
+    const active = state.getActiveProject();
+    if (!active) { sendJson(res, 200, null); return true; }
+    const brief = readJson(path.join(active.dir, 'brief.json'), null);
+    if (!brief) {
+      sendJson(res, 200, { anchor: null, variants: [], stale: [] });
+      return true;
+    }
+    const anchor = brief.anchor || null;
+    const anchorRevision = anchor && typeof anchor.revision === 'number' ? anchor.revision : 0;
+    const variants = Array.isArray(brief.variants) ? brief.variants : [];
+    const stale = [];
+    const enrichedVariants = variants.map((v) => {
+      const derivedFrom = typeof v.derivedFromRevision === 'number' ? v.derivedFromRevision : null;
+      let status = v.status || (derivedFrom === null ? 'pending' : 'ready');
+      let staleBy = 0;
+      if (derivedFrom !== null && derivedFrom < anchorRevision) {
+        status = 'stale';
+        staleBy = anchorRevision - derivedFrom;
+        stale.push(v.file);
+      }
+      return { ...v, derivedFromRevision: derivedFrom, status, staleBy };
+    });
+    sendJson(res, 200, { anchor, variants: enrichedVariants, stale });
+    return true;
+  }
+
+  // /api/anchor/revise POST — bump anchor revision, mark variants stale
+  //
+  // Call after a substantive anchor edit. Body is optional (accepts
+  // { reason?: string } for audit trail). Increments brief.anchor.revision
+  // by 1, sets status to "draft", marks every variant with
+  // derivedFromRevision < new revision as status: "stale", and writes back.
+  //
+  // The agent decides what counts as a "substantive" edit — cosmetic
+  // changes need not bump. When in doubt, bump: a spurious staleness flag
+  // is cheaper than silent drift.
+  if (req.method === 'POST' && pathname === '/api/anchor/revise') {
+    const active = state.getActiveProject();
+    if (!active) {
+      sendJson(res, 400, { error: 'No active project' });
+      return true;
+    }
+    readJsonBody(req, (err, body) => {
+      if (err) return sendJson(res, 400, { error: 'Invalid JSON' });
+      const briefPath = path.join(active.dir, 'brief.json');
+      const brief = readJson(briefPath, null);
+      if (!brief) {
+        sendJson(res, 400, { error: 'No brief.json in project — create one via POST /api/brief first' });
+        return;
+      }
+      const currentRevision = (brief.anchor && typeof brief.anchor.revision === 'number')
+        ? brief.anchor.revision : 0;
+      const newRevision = currentRevision + 1;
+      brief.anchor = {
+        ...(brief.anchor || {}),
+        revision: newRevision,
+        status: 'draft',
+        revisedAt: new Date().toISOString(),
+        ...(body && body.reason ? { lastReviseReason: String(body.reason) } : {}),
+      };
+      if (Array.isArray(brief.variants)) {
+        brief.variants = brief.variants.map((v) => {
+          const derivedFrom = typeof v.derivedFromRevision === 'number' ? v.derivedFromRevision : null;
+          if (derivedFrom !== null && derivedFrom < newRevision) {
+            return { ...v, status: 'stale' };
+          }
+          return v;
+        });
+      }
+      fs.writeFileSync(briefPath, JSON.stringify(brief, null, 2));
+      sendJson(res, 200, { ok: true, brief });
+    });
+    return true;
+  }
+
+  // /api/anchor/approve POST — mark anchor approved, ready for distillation
+  //
+  // Call when the user has explicitly approved the current anchor and
+  // distillation should begin. Sets brief.anchor.status = "approved" and
+  // records approvedAt timestamp. Idempotent: calling twice at the same
+  // revision is a no-op.
+  if (req.method === 'POST' && pathname === '/api/anchor/approve') {
+    const active = state.getActiveProject();
+    if (!active) {
+      sendJson(res, 400, { error: 'No active project' });
+      return true;
+    }
+    readJsonBody(req, (err) => {
+      if (err) return sendJson(res, 400, { error: 'Invalid JSON' });
+      const briefPath = path.join(active.dir, 'brief.json');
+      const brief = readJson(briefPath, null);
+      if (!brief) {
+        sendJson(res, 400, { error: 'No brief.json in project — create one via POST /api/brief first' });
+        return;
+      }
+      brief.anchor = {
+        ...(brief.anchor || { revision: 1 }),
+        status: 'approved',
+        approvedAt: new Date().toISOString(),
+      };
+      fs.writeFileSync(briefPath, JSON.stringify(brief, null, 2));
+      sendJson(res, 200, { ok: true, brief });
+    });
+    return true;
+  }
+
   // /api/state GET — aggregate state for agent orientation
   if (req.method === 'GET' && pathname === '/api/state') {
     const active = state.getActiveProject();

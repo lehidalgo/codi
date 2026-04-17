@@ -6,10 +6,10 @@ anchor into the same format should produce distinct but both-valid
 outputs — same substance, different interpretation. Like two designers
 handed the same brief.
 
-Read this alongside `methodology.md` (why anchor-first),
-`anchor-authoring.md` (what the source looks like), and the
-format-specific references (`slide-deck-engine.md` for decks,
-`visual-density.md` for visual quality, `docx-export.md` for document
+Read this alongside `[[/references/methodology.md]]` (why anchor-first),
+`[[/references/anchor-authoring.md]]` (what the source looks like), and the
+format-specific references (`[[/references/slide-deck-engine.md]]` for decks,
+`[[/references/visual-density.md]]` for visual quality, `[[/references/docx-export.md]]` for document
 export).
 
 ---
@@ -103,7 +103,7 @@ notes aren't shown in the preview but can carry the detail that got
 cut.
 
 **Format-specific references.** Structural contract in
-`slide-deck-engine.md`. Design rules in `design-system.md`. Per-slide
+`[[/references/slide-deck-engine.md]]`. Design rules in `[[/references/design-system.md]]`. Per-slide
 verification in both.
 
 ### 3.2 LinkedIn carousel (4:5, 1080×1350)
@@ -197,8 +197,8 @@ header/footer chrome per brand. Map anchor sections to
 `<article class="doc-page">` elements — one page per section, or
 multiple sections per page when they're short.
 
-**Format-specific references.** `docx-export.md` for DOCX mapping.
-`html-clipping.md` for multi-page boundaries.
+**Format-specific references.** `[[/references/docx-export.md]]` for DOCX mapping.
+`[[/references/html-clipping.md]]` for multi-page boundaries.
 
 ### 3.8 Blog post (HTML article)
 
@@ -318,7 +318,7 @@ content that fits, or skip the slot.
   anchor stays warm, the variant hooks hard.
 - **Animated moments.** Slide decks reward entry animations on each
   slide. The anchor has none. Invent per the motion principles in
-  `slide-deck-engine.md`.
+  `[[/references/slide-deck-engine.md]]`.
 - **Platform-native chrome.** Handle, slide counter, logo, progress
   indicator. Invent per the format's native conventions.
 - **Share prompts.** "Swipe to comment," "DM me," "Retweet if useful"

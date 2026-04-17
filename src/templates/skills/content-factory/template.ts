@@ -2,13 +2,13 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and context-aware export (PNG, PDF, PPTX).
+description: Use when the user wants to create content — articles, blog posts, slide decks, social carousels, documents, single-format social posts, or multi-format campaigns (blog + deck + carousel about the same topic). Authors substance first (an anchor article) and distills into every requested visual format. Explicit fast path for one-off requests. Generates branded HTML with an interactive web app — live preview and context-aware export (PNG, PDF, PPTX, DOCX, HTML, ZIP).
 category: ${SKILL_CATEGORY.CONTENT_CREATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 62
+version: 64
 ---
 
 # {{name}} — Content Factory
@@ -45,6 +45,10 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under the All / Social / Slides / Document filters based on each template's \`type\` |
+| \`\${CLAUDE_SKILL_DIR}[[/references/methodology.md]]\` | Content methodology — anchor-first flow, fast-path, quality gates, principles. Read this before any non-trivial content request. |
+| \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\` | How to read user requests and decide anchor-first vs. fast-path. |
+| \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\` | How to write a great anchor — shapes, length classes, semantic tagging, worked examples. |
+| \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\` | How to compress an anchor into any target format — platform norms, five compression moves, thesis + CTA preservation. |
 | \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` | Creative brief for slide decks — structural contract, motion principles, brand alignment, anti-patterns. Read this before authoring any deck. |
 
 ---
@@ -72,8 +76,11 @@ that the app picks up automatically via WebSocket.
 | \`/api/persist-style\` | POST | **Persist a style edit to the card source file.** Body: \`{project, file, targetSelector, patches: {prop: value}, snapshot?}\`. Response: \`{ok, cfId, selector, rule, sourceModified}\`. On first use against an element, the server assigns a stable \`data-cf-id\` attribute and writes it into the HTML; subsequent edits reuse it. The CSS rule is upserted inside a \`/* === cf:user-edits === */\` region of the card's \`<style>\` block. Idempotent: re-applying the same edit is a no-op. Returns \`409\` if the selector no longer matches (source drift) — refresh the selection and retry. Edits **survive reload, regeneration, and export**. |
 | \`/api/persist-style\` | DELETE | Revert a persisted edit. Query: \`?cfId=<id>&project=<dir>&file=<basename>\`. Removes the rule from the user-edits region and strips the \`data-cf-id\` attribute if no other rule references it. |
 | \`/api/persist-style\` | GET | List all persisted edits for a card. Query: \`?project=<dir>&file=<basename>\`. Returns \`{count, rules: [{selector, declarations: [{property, value}]}]}\`. |
-| \`/api/brief\` | GET | Read the active project's \`brief.json\` (campaign intake) — returns \`null\` if no project is active or no brief has been written |
-| \`/api/brief\` | POST | Write the active project's \`brief.json\` — body is a full brief object (schema v1). Returns 400 if no project is active. |
+| \`/api/brief\` | GET | Read the active project's \`brief.json\` (intake + variants registry) — returns \`null\` if no project is active or no brief has been written |
+| \`/api/brief\` | POST | Write the active project's \`brief.json\` — body is an arbitrary JSON object; no schema enforcement. Returns 400 if no project is active. |
+| \`/api/distill-status\` | GET | Anchor revision + per-variant staleness. Returns \`{anchor:{file,revision,status}, variants:[{file,format,derivedFromRevision,status,staleBy}], stale:[files]}\`. Returns \`null\` when no project is active. Use at the start of every iteration turn to detect stale variants. |
+| \`/api/anchor/revise\` | POST | Bump \`brief.anchor.revision\` and mark variants where \`derivedFromRevision < new revision\` as \`status: "stale"\`. Optional body: \`{reason?}\`. Call after a substantive anchor edit. |
+| \`/api/anchor/approve\` | POST | Set \`brief.anchor.status = "approved"\` and record \`approvedAt\`. Idempotent. Call when the user explicitly approves the anchor for distillation. |
 | \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset, activeCard, brief}\` — use this to orient before editing |
 | \`/api/create-project\` | POST | Create a new named project dir, activate it — body: \`{name, type}\`, returns \`{projectDir, contentDir, stateDir, exportsDir}\`. **\`type\` is required** and must be one of: \`social\`, \`slides\`, \`document\`. The server rejects unknown types with HTTP 400. |
 | \`/api/open-project\` | POST | Activate an existing project — body: \`{projectDir}\` |
@@ -251,46 +258,22 @@ Save \`contentDir\` — this is where you write HTML files. The project is now a
 **Skip Step 1b** when the user opens an existing My Work project from the gallery — the server
 activates the project automatically when the user clicks it.
 
-### Step 1b.ii — Campaign pipeline intake (optional)
+### Step 1b.ii — Content methodology (default)
 
-Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/campaign-pipeline.md]]\`
-Platform rules: \`\${CLAUDE_SKILL_DIR}[[/references/platform-rules.md]]\`
+Read \`\${CLAUDE_SKILL_DIR}[[/references/methodology.md]]\` before any non-trivial content request. It covers the anchor-first flow, the fast-path for one-off requests, quality gates, and the principles you apply with judgment. The skill frames you as a senior content strategist + designer — the methodology gives you principles and tools, not a script.
 
-**When to switch to campaign mode** — scan the user's initial request for any of:
-"campaign", "blog post", "launch", "launch post", "repurpose across", "publish
-about X on [LinkedIn / Instagram / TikTok / Twitter]", "turn this into a blog + …".
-These phrases signal the user wants **one long-form anchor distilled into multiple
-platform variants** — not a quick one-off card.
+The high-level shape:
 
-**If the user's request is a single-format one-off** ("make me a quick Instagram post"),
-skip this step and continue with the normal Step 3 single-file flow.
+1. **Read the request.** Classify intent via \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\`. Decide anchor-first vs. fast-path. Infer which formats to produce.
+2. **Intake (adaptive).** Ask the user only what you need. Persist answers to \`brief.json\` via \`POST /api/brief\` (no schema enforcement — arbitrary JSON).
+3. **Author the anchor.** For anchor-first paths, write one self-contained long-form document first. Read \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\` for shape, semantic tagging, and worked examples. The anchor is a \`document\` content type (A4-width article). Iterate until the user approves; call \`POST /api/anchor/approve\`.
+4. **Distill each requested format.** For each variant, read \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\` for platform norms and the five compression moves. Make creative decisions. Write one HTML file per variant with a \`codi:variant\` meta tag carrying \`derivedFromRevision\`.
+5. **Revisions.** When the anchor changes substantively, call \`POST /api/anchor/revise\`. The server marks stale variants. At the start of the next iteration, call \`GET /api/distill-status\` to surface staleness to the user; let them choose what to re-distill. Never auto-propagate.
+6. **Fast-path.** When the user signals a one-off ("quick", "just", "one tweet"), skip anchor authoring. Write a single HTML file of the requested type. No \`brief.json\`, no revision tracking.
 
-**The pipeline has 5 phases:**
+**File naming** (numeric prefixes give natural sort order — a convention, not enforcement): \`00-anchor.html\` for the master · \`10-19\` LinkedIn · \`20-29\` Instagram · \`30-39\` TikTok · \`40-49\` Twitter · \`50-59\` decks · \`60-69\` email/ads/other.
 
-1. **Intake** — ask 6 questions (topic, anchor type, audience, voice, platforms, CTA),
-   write \`brief.json\` via \`POST /api/brief\`, show a summary, wait for explicit confirmation
-2. **Anchor generation** — write one long-form master (\`00-anchor-<type>.html\`) where
-   \`type\` is \`blog\` / \`docs\` / \`deck\`. Iterate until the user approves; each rewrite
-   increments \`anchor.revision\` in the brief
-3. **Distillation** — after approval, loop over \`brief.variants[]\` serially and write one
-   platform-specific file per variant (LinkedIn carousel, Instagram feed/story, TikTok
-   cover, Twitter card, summary deck). Each variant carries a \`codi:variant\` meta tag
-   with its \`derived_from_revision\`
-4. **Per-file iteration** — unchanged from Step 4; the targeted-card-edit workflow works
-   the same on variant files as on any other content file
-5. **Edit propagation** — on the *next* skill invocation after an anchor edit, if any
-   variant has \`derived_from_revision < anchor.revision\`, ask the user which stale
-   variants to re-distill (\`all\` / named file / \`skip\`). Never auto-propagate.
-
-**Marketing-skills soft dependency**: Content Factory softly uses the external
-\`marketing-skills\` plugin if installed (\`content-strategy\`, \`copywriting\`,
-\`social-content\`, \`humanizer\`, etc.). If the plugin is absent, fall back to inline
-generation — the workflow and file outputs are identical. The reference file has the
-full detection table and future Codi-native migration notes.
-
-**File naming** (numeric prefixes give natural sort order):
-\`00-anchor-<type>.html\` · \`10-19\` LinkedIn · \`20-29\` Instagram · \`30-39\` TikTok ·
-\`40-49\` Twitter · \`50-59\` decks · \`60-69\` email/ads/other.
+**Marketing-skills soft dependency**: if the external \`marketing-skills\` plugin is installed (\`content-strategy\`, \`copywriting\`, \`social-content\`, \`humanizer\`, etc.), use it for audience research and copy polish. If absent, inline-generate. Output files are identical either way.
 
 ### Step 1c — Detect and apply a brand (optional)
 
@@ -470,38 +453,7 @@ Every deck is one self-contained HTML file authored from scratch. No sibling \`d
 
 #### Document page discipline — MANDATORY
 
-Each \`.doc-page\` is a **fixed A4 canvas** (794×1123px). The preview renders every page at exactly this height — there is no auto-expand. Content that overflows is hidden in the viewer and may be missing from DOCX export.
-
-**Rules:**
-- One \`.doc-page\` = one printed page. Plan content explicitly per page before writing HTML.
-- If content does not fit, split it into a new \`<article class="doc-page">\` — never try to squeeze more into one page.
-- Use consistent structure on every page: \`.page-header\` + \`.page-body\` + \`.page-footer\` — this ensures all pages have the same visual height and footer position.
-- \`.page-body\` must use \`display: flex; flex-direction: column; flex: 1; overflow: hidden\` so it fills the space between header and footer without growing beyond it.
-- Never use \`min-height\` values larger than what fits inside \`.page-body\` — the body height is approximately 1123 − header − footer ≈ ~950px.
-
-**Content budget per page** (approximate at default font sizes):
-| Element | Approx. height |
-|---------|---------------|
-| \`h1\` (2.2rem) | ~50px |
-| \`h2\` (1.5rem) | ~40px |
-| \`h3\` (1.2rem) | ~32px |
-| \`p\` (1rem, 1.5 line-height, ~3 lines) | ~70px |
-| \`ul\`/\`ol\` (4–5 items at 1rem) | ~120px |
-| \`table\` (3 rows × 40px + header) | ~160px |
-| \`.code-block\` (10 lines at 0.85rem) | ~180px |
-| \`.callout\` (2 lines) | ~80px |
-| \`.stat-row\` (3 stats) | ~120px |
-| \`.two-col\` (2 columns, ~4 lines each) | ~150px |
-| \`.diagram-wrap\` (SVG ~200px tall) | ~220px |
-| Page padding (top + bottom) | ~80px |
-
-A \`.page-body\` of ~950px fits roughly 2–3 major sections. When in doubt, use fewer elements and add a new page.
-
-**Page split checklist before writing HTML:**
-1. List all content sections for the document
-2. Assign each section to a page — confirm each page's estimated total height < ~950px
-3. If a section (e.g. a large table or code block) alone exceeds ~800px, split it across two pages with a continuation header
-4. Write one \`<article class="doc-page">\` per planned page
+Read \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` for the full rules on \`.doc-page\` canvas (794×1123 fixed), per-page structure (\`.page-header\` + \`.page-body\` + \`.page-footer\`), content height budget (~950px usable), page-split checklist, and DOCX mapping. One \`.doc-page\` per printed page. If content overflows, split into another \`<article class="doc-page">\` — never squeeze. Anchor articles follow this pattern: a long-form anchor is a \`document\` with multiple \`.doc-page\` elements at natural section breaks.
 
 ### Step 3b — Validate layout structure (all modes)
 

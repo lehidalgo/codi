@@ -8,8 +8,8 @@ its own (a user who only reads the anchor should feel they got
 something valuable) and it should carry enough semantic structure that
 distillation to visual formats is unambiguous.
 
-Read this alongside `methodology.md` (why anchor-first) and
-`distillation-principles.md` (how the anchor feeds downstream
+Read this alongside `[[/references/methodology.md]]` (why anchor-first) and
+`[[/references/distillation-principles.md]]` (how the anchor feeds downstream
 variants).
 
 ---
@@ -175,7 +175,7 @@ A common skeleton for the standard anchor length class:
 <head>
   <meta charset="utf-8">
   <meta name="codi:template"
-        content='{"id":"kebab-id","name":"Human Readable","type":"anchor","format":{"w":794}}'>
+        content='{"id":"kebab-id","name":"Human Readable","type":"document","format":{"w":794,"h":1123}}'>
   <meta name="codi:anchor"
         content='{"revision":1,"status":"draft"}'>
   <title>Title</title>
@@ -183,40 +183,50 @@ A common skeleton for the standard anchor length class:
   <style>/* tokens.css inlined + anchor styles */</style>
 </head>
 <body>
-  <article class="anchor" data-type="article">
-    <header class="anchor-cover">
+  <!-- The anchor is a `document` content type. Long anchors span multiple
+       `.doc-page` elements — split at natural section breaks. The skeleton
+       below shows a short anchor on a single page; expand to multiple
+       `<article class="doc-page">` blocks for standard and deep classes. -->
+  <article class="doc-page" data-type="article" data-index="01">
+    <header class="page-header anchor-cover">
       <p class="anchor-eyebrow">Category · date</p>
       <h1>Title</h1>
       <p class="anchor-dek">Thesis in one sentence.</p>
       <p class="anchor-meta">Author · est. read time</p>
     </header>
 
-    <section data-role="hook">
-      <p>Opening paragraph or scene that earns the read.</p>
-    </section>
+    <div class="page-body">
+      <section data-role="hook">
+        <p>Opening paragraph or scene that earns the read.</p>
+      </section>
 
-    <section data-role="point" data-point-ix="1">
-      <h2>Point 1 title</h2>
-      <p>Argument prose — several paragraphs.</p>
-      <aside data-role="evidence">
-        <blockquote>Supporting quote or stat.</blockquote>
-        <cite>Attribution.</cite>
-      </aside>
-    </section>
+      <section data-role="point" data-point-ix="1">
+        <h2>Point 1 title</h2>
+        <p>Argument prose — several paragraphs.</p>
+        <aside data-role="evidence">
+          <blockquote>Supporting quote or stat.</blockquote>
+          <cite>Attribution.</cite>
+        </aside>
+      </section>
 
-    <section data-role="point" data-point-ix="2">...</section>
-    <section data-role="point" data-point-ix="3">...</section>
-    <!-- 3-7 points typical -->
+      <section data-role="point" data-point-ix="2">...</section>
+      <section data-role="point" data-point-ix="3">...</section>
+      <!-- 3-7 points typical -->
 
-    <section data-role="synthesis">
-      <h2>What this means</h2>
-      <p>Pull the threads together.</p>
-    </section>
+      <section data-role="synthesis">
+        <h2>What this means</h2>
+        <p>Pull the threads together.</p>
+      </section>
 
-    <section data-role="cta">
-      <h2>Your turn</h2>
-      <p>What should the reader do next?</p>
-    </section>
+      <section data-role="cta">
+        <h2>Your turn</h2>
+        <p>What should the reader do next?</p>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <p>Author · codi.dev</p>
+    </footer>
   </article>
 </body>
 </html>
@@ -250,7 +260,7 @@ inherits from it.
   directory with visual style guides. Skim them before writing — they
   tell you what the brand's existing content looks like.
 
-See `brand-integration.md` for the full procedure.
+See `[[/references/brand-integration.md]]` for the full procedure.
 
 ---
 

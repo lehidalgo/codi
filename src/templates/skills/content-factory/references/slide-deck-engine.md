@@ -5,8 +5,17 @@ from scratch per deck, following a structural contract and a motion brief.
 No canonical CSS or JS to paste. No sibling files. No reference engine.
 
 Read this file before writing any slide deck. Read it alongside
-`design-system.md` (the 13 quality rules) and `brand/tokens.*` (colors and
+`[[/references/design-system.md]]` (the 13 quality rules) and `brand/tokens.*` (colors and
 fonts for the active brand).
+
+**Anchor-first context.** When the deck is distilled from an anchor (the
+default for non-trivial content requests — see `[[/references/methodology.md]]`), the
+compression decisions — which anchor sections become which slides, which
+fold together, which are visualized as metrics — are governed by
+`[[/references/distillation-principles.md]]`. This reference covers the deck's structural
+contract and motion language; distillation covers *what to put in it*.
+When the deck is a fast-path one-off, ignore the distillation reference
+and author directly from this file.
 
 ---
 
@@ -232,7 +241,7 @@ deterministic in full page, deterministic under screenshot.
 - **Colors, typography, spacing** come from the active brand's tokens. Read `brand/tokens.json` for structured values; read `brand/tokens.css` to copy CSS custom properties into the inline `<style>` block.
 - **Voice and copy** follow the brand's tone-and-copy reference. Do not invent taglines, do not import external marketing copy.
 - **Logo** — for Codi, render the CSS gradient wordmark (see `codi-brand`). For other brands, follow their logo rules.
-- **The 13 design-system rules apply** — see `design-system.md` for the full rule set and `template.ts` (SKILL.md) for the short summary.
+- **The 13 design-system rules apply** — see `[[/references/design-system.md]]` for the full rule set and `template.ts` (SKILL.md) for the short summary.
 
 ### 4.1 Fonts
 
@@ -397,7 +406,7 @@ nothing in the Content Factory render path.
 ## 7. Per-slide verification
 
 The per-slide checklist and the box-validator command both live in SKILL.md
-(Step 3b — Validate layout structure) and `design-system.md`. Run them
+(Step 3b — Validate layout structure) and `[[/references/design-system.md]]`. Run them
 after every structural edit; ship only after the final check passes.
 
 Additional checks specific to single-file authoring:

@@ -1,7 +1,7 @@
 # Campaign Pipeline — Anchor → Distill
 
-> **Superseded — read `methodology.md`, `anchor-authoring.md`,
-> `distillation-principles.md`, and `intent-detection.md` instead.**
+> **Superseded — read `[[/references/methodology.md]]`, `[[/references/anchor-authoring.md]]`,
+> `[[/references/distillation-principles.md]]`, and `[[/references/intent-detection.md]]` instead.**
 >
 > The anchor-first flow is no longer an opt-in "campaign pipeline";
 > it's the default methodology for any non-trivial content request,
@@ -198,18 +198,18 @@ user reviews, edits, and approves the master before any variants are produced.
    Soft dependency: fall back to inline generation if the plugin is absent.
    See *Marketing-skills soft invocation* below.
 
-2. **Read the brand** if one is active. Follow `brand-integration.md` to
+2. **Read the brand** if one is active. Follow `[[/references/brand-integration.md]]` to
    inline tokens, fonts, and logo.
 
 3. **Plan pages / slides.** Before writing HTML, produce a plain-text outline:
    - For `blog` / `docs`: list sections with estimated height per page; confirm
-     each page fits in ~950px of body (see `docx-export.md` and the document
+     each page fits in ~950px of body (see `[[/references/docx-export.md]]` and the document
      page discipline section of the main skill).
    - For `deck`: list slide titles and their card type (cover / content / stat /
      quote / cta / closing).
 
 4. **Write the HTML** as `content/00-anchor-<type>.html`:
-   - Apply `visual-density.md` rules — every page/slide ≥85% occupied
+   - Apply `[[/references/visual-density.md]]` rules — every page/slide ≥85% occupied
    - Include `<meta name="codi:template">` with type, format, and title from
      the brief
    - Include `<meta name="codi:anchor">` with the brief's topic and revision
@@ -231,7 +231,7 @@ user reviews, edits, and approves the master before any variants are produced.
 - **Blog**: headline + intro hook + 3-5 key sections + conclusion + CTA. Each
   section is ≥1 full A4 page with visual density applied.
 - **Docs**: title page + overview + step-by-step sections + reference / FAQ +
-  contact/feedback. Code blocks follow `docx-export.md` rules.
+  contact/feedback. Code blocks follow `[[/references/docx-export.md]]` rules.
 - **Deck**: cover slide + agenda + 6-12 content slides + takeaway slide + CTA
   slide. Every slide has a title, body, and footer strip.
 
@@ -251,7 +251,7 @@ For each variant in `brief.variants` where `status === "pending"` or
 2. **Extract structure:** topic, audience, key points, stats, quotes, CTA.
    Use the `brief.json` fields as the canonical source — they were approved in
    Phase 1 — and pull any additional stats or quotes from the anchor HTML.
-3. **Read platform rules** from `platform-rules.md` for the target platform.
+3. **Read platform rules** from `[[/references/platform-rules.md]]` for the target platform.
 4. **Invoke `social-content`** (marketing-skills, if installed) with the
    platform + anchor + brief as context. Otherwise draft inline from the rules.
 5. **Invoke `humanizer`** (if installed) on the generated copy.
@@ -353,7 +353,7 @@ or the project's `.claude/skills/` directory.
 
 If the plugin is not installed:
 - Generate all copy inline from `brief.json` fields and the anchor HTML
-- Still apply `platform-rules.md` and `visual-density.md` rigorously
+- Still apply `[[/references/platform-rules.md]]` and `[[/references/visual-density.md]]` rigorously
 - Do not mention the absence of the plugin to the user — the workflow is the
   same from their perspective
 
