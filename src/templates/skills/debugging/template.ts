@@ -2,26 +2,49 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: First-line debugging with root cause analysis. Use when investigating bugs, test failures, unexpected behavior, or build failures. Enforces root cause before any fix. Also activate on /${PROJECT_NAME}-check or when stuck on an error.
+description: |
+  Root-cause debugging with tiered escalation. Phases 1-4 = first-line
+  workflow (Root Cause → Pattern → Hypothesis → Implementation). Phase 5
+  = MCP-powered deep diagnosis when standard phases fail (code-graph,
+  docs search, sequential thinking, reasoning-confirmation-execution
+  loop). Use when investigating a bug, test failure, crash, exception,
+  unexpected behavior, build failure, integration issue, flaky test,
+  test pollution, or production incident. Also activate for phrases like
+  "why is X broken", "can't figure out why", "debug this", "error
+  investigation", "stack trace", "root cause", "stuck on this error",
+  "multiple attempts failed", "deep diagnosis", "MCP investigation",
+  "sequential thinking", and on /${PROJECT_NAME}-check. Enforces root
+  cause before any fix — no fixes may be proposed until Phase 1
+  investigation is complete. Do NOT activate for writing new code or
+  features (use ${PROJECT_NAME}-plan-writer), planning architecture (use
+  ${PROJECT_NAME}-brainstorming), or running tests without a failure to
+  investigate (use ${PROJECT_NAME}-test-suite).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 12
 ---
 
-# {{name}}
+# {{name}} — Debugging
 
 ## When to Activate
 
 Use for ANY technical issue:
-- Test failures
+- Test failures (including flaky tests and test pollution)
 - Bugs in production or development
-- Unexpected behavior
+- Unexpected behavior, crashes, exceptions, stack traces
 - Performance problems
 - Build failures
 - Integration issues
+
+## Skip When
+
+- Writing new code or features (no existing bug to investigate) — use ${PROJECT_NAME}-plan-writer
+- Planning architecture or exploring approaches — use ${PROJECT_NAME}-brainstorming
+- Running tests as a general health check (no failure yet) — use ${PROJECT_NAME}-test-suite
+- Reviewing code without a specific bug to fix — use ${PROJECT_NAME}-code-review
 
 Use this ESPECIALLY when:
 - Under time pressure (emergencies make guessing tempting)
@@ -134,15 +157,55 @@ Fix the root cause, not the symptom:
    - STOP
    - Count: how many fixes have you tried?
    - If fewer than 3: return to Phase 1 and re-analyze with the new information
-   - If 3 or more: stop and question the architecture (see Escalation below)
-   - Do NOT attempt Fix 4 without an architectural discussion
+   - If 3 or more: escalate to Phase 5 (MCP-Powered Deep Diagnosis) before any further fix attempt
+   - Do NOT attempt Fix 4 without either Phase 5 investigation or an architectural discussion
 
-## Escalation: 3+ Failed Fixes
+### Phase 5: MCP-Powered Deep Diagnosis (Escalation)
+
+Enter Phase 5 when ANY of these are true:
+- Phases 1-4 have produced 3+ failed hypotheses
+- The user explicitly asks for a "deep diagnosis", MCP-backed investigation, or sequential-thinking analysis
+- Standard Phase 1 investigation cannot produce a clear hypothesis because the problem spans too many components
+
+Phase 5 uses structured MCP-backed tools and a strict reasoning-confirmation-execution loop. It is not a substitute for Phases 1-4 — it is the continuation for problems that resist standard investigation.
+
+#### Step 1 — Gather Context Using MCP Servers
+
+**[SYSTEM]** Search multiple sources before reasoning:
+
+- **Documentation** — search the indexed knowledge base for known issues, best practices, and similar error patterns.
+- **Codebase Analysis** — query the code graph to understand the call chain leading to the error, find related functions, and trace dependencies.
+- **Web Search (last resort)** — only if indexed sources return no relevant results. Search for specific error messages and recent issues.
+
+#### Step 2 — Structured Problem Solving
+
+**[CODING AGENT]** Use sequential thinking for complex problems — break the analysis into numbered steps, evaluate each systematically.
+
+#### Step 3 — Reasoning-Confirmation-Execution Loop
+
+**[CODING AGENT]** For every action Phase 5 proposes, no matter how small:
+1. **Think deeply** about the implications
+2. **Reason** through the decision using gathered context
+3. **Explain** your thinking with references to findings
+4. **Ask for confirmation** before taking any step
+5. **Only proceed once explicitly confirmed**
+
+#### Step 4 — Solution Validation
+
+**[CODING AGENT]** Before implementing any fix surfaced by Phase 5:
+- Verify it aligns with documented best practices
+- Check for potential side effects on callers and dependents
+- Ensure no security or performance compromises
+
+If Phase 5 also fails to resolve the issue, escalate to the architectural discussion below.
+
+## Escalation Beyond Phase 5: Question the Architecture
 
 Pattern indicating an architectural problem:
 - Each fix reveals new shared state, coupling, or a problem in a different place
 - Fixes require massive refactoring to implement
 - Each fix creates new symptoms elsewhere
+- Phase 5 deep diagnosis has also been exhausted without a working hypothesis
 
 When you see this pattern: STOP and question fundamentals. Ask:
 - Is this pattern fundamentally sound?
@@ -188,6 +251,7 @@ If you catch yourself thinking any of the following, STOP and return to Phase 1:
 | **2. Pattern** | Find working examples, compare | Identify differences |
 | **3. Hypothesis** | Form theory, test minimally | Confirmed or new hypothesis |
 | **4. Implementation** | Create test, fix, verify | Bug resolved, tests pass |
+| **5. MCP Deep Diagnosis** | Gather MCP context, sequential thinking, confirm each step | Resolved after Phases 1-4 failed |
 
 ## User's Signals You're Doing It Wrong
 
@@ -222,5 +286,5 @@ These techniques are in the \\\`references/\\\` directory:
 
 - Use **${PROJECT_NAME}-tdd** when Phase 4 requires writing a failing test
 - Use **${PROJECT_NAME}-verification** before claiming the fix is complete
-- Use the **${PROJECT_NAME}-codebase-explorer** agent to trace call graphs in Phase 1
+- Use the **${PROJECT_NAME}-codebase-explore** skill to trace call graphs in Phase 1
 `;

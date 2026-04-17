@@ -7,16 +7,27 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.
+description: |
+  Structured code review workflow. Use when reviewing a pull request,
+  examining code changes, auditing code quality, or producing severity-ranked
+  findings against project rules. Also activate for phrases like "review my
+  code", "review my PR", "PR review", "check my changes", "audit this file",
+  "look at this diff", "feedback on implementation", "pre-merge review",
+  "review before I merge". Produces findings with file path, line number,
+  severity (Critical / Warning / Suggestion), and suggested fixes. Do NOT
+  activate for fixing bugs the user identifies (use ${PROJECT_NAME}-debugging),
+  writing new code (use a content/plan/subagent skill), running a full
+  security scan (use ${PROJECT_NAME}-security-scan), or measuring test
+  coverage (use ${PROJECT_NAME}-test-suite).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 10
 ---
 
-# {{name}}
+# {{name}} — Code Review
 
 ## When to Activate
 
@@ -24,6 +35,15 @@ version: 5
 - User wants a code quality audit on a file, module, or entire codebase
 - User asks to check code against project rules before merging
 - User requests feedback on their implementation or architecture decisions
+- User invokes the /codi-code-review slash command directly
+
+## Skip When
+
+- User wants the bug fixed, not reviewed — use ${PROJECT_NAME}-debugging
+- User wants new code written — use ${PROJECT_NAME}-plan-writer or ${PROJECT_NAME}-plan-execution
+- User needs a dedicated security audit — use ${PROJECT_NAME}-security-scan
+- User needs coverage measurement — use ${PROJECT_NAME}-test-suite
+- User wants refactoring suggestions without finding bugs — use ${PROJECT_NAME}-refactoring
 
 ## Review Process
 
@@ -94,17 +114,17 @@ For each finding include:
 
 ## Available Agents
 
-For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-code-reviewer** — Severity-ranked review with confidence filtering
-- **${PROJECT_NAME}-security-analyzer** — Deep OWASP vulnerability analysis
-- **${PROJECT_NAME}-performance-auditor** — Performance anti-pattern detection
+For specialized analysis, delegate to these agents:
+- **${PROJECT_NAME}-code-reviewer** — Severity-ranked review with confidence filtering. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/code-reviewer.md]]\\\`
+- **${PROJECT_NAME}-security-analyzer** — Deep OWASP vulnerability analysis. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/security-analyzer.md]]\\\`
+- **${PROJECT_NAME}-performance-auditor** — Performance anti-pattern detection. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/performance-auditor.md]]\\\`
 
 ## Requesting a Review
 
-Code reviews are not optional. Request a review after each implementation task completes (in ${PROJECT_NAME}-subagent-dev workflow), after completing a major feature, and always before merging to main.
+Code reviews are not optional. Request a review after each implementation task completes (in ${PROJECT_NAME}-plan-execution workflow), after completing a major feature, and always before merging to main.
 
 **When to request:**
-- After ${PROJECT_NAME}-subagent-dev completes all tasks — dispatch a full-changeset review
+- After ${PROJECT_NAME}-plan-execution completes all tasks — dispatch a full-changeset review
 - After completing a significant feature or bug fix
 - Before invoking ${PROJECT_NAME}-branch-finish
 
@@ -149,8 +169,8 @@ Read each piece of feedback and check it against the actual code before doing an
 ## Related Skills
 
 - **${PROJECT_NAME}-security-scan** — Dedicated security audits beyond code review scope
-- **${PROJECT_NAME}-test-coverage** — Verify test coverage for reviewed changes
+- **${PROJECT_NAME}-test-suite** — Verify test coverage for reviewed changes
 - **${PROJECT_NAME}-brainstorming** — Design before the code being reviewed was written
-- **${PROJECT_NAME}-subagent-dev** — Requests reviews after each task via this skill
+- **${PROJECT_NAME}-plan-execution** — Requests reviews after each task via this skill
 - **${PROJECT_NAME}-branch-finish** — Runs a final review before merge options
 `;

@@ -261,7 +261,120 @@ ${PROJECT_NAME} generate --json
 
 Report progress to the user as each command completes.
 
-### Step 6: Generate Summary Documentation
+### Step 6: Populate Project Context Into Every Instruction File
+
+Now that the agent config files exist, inject a project-context block into
+each coding-agent instruction file you detect, so future sessions have
+immediate project context.
+
+1. Detect which of these instruction files exist in the project root:
+   - \`CLAUDE.md\` (Claude Code)
+   - \`AGENTS.md\` (OpenAI Codex, Cursor, Aider, GitHub Copilot, ...)
+   - \`.cursorrules\` (Cursor, legacy)
+   - \`.windsurfrules\` (Windsurf)
+   - \`.clinerules\` (Cline)
+
+2. For each detected file, read its current content. The generated file
+   already contains an insertion anchor at the top:
+
+   \`\`\`
+   <!-- codi:project-context:insert-here -->
+   \`\`\`
+
+3. Build the Project Context block using the structure below
+   (**keep under 50 lines — it is loaded on every agent session**):
+
+   \`\`\`markdown
+   <!-- codi:project-context:start -->
+   ## Project Context
+
+   ### What This Project Does
+   2-3 sentences from your Step 1 analysis.
+
+   ### Tech Stack
+   - **Language**: ...
+   - **Framework**: ...
+   - **Database**: ... (omit if not applicable)
+   - **Key libraries**: top 5-10
+
+   ### Architecture
+   - **Pattern**: monolith / microservices / monorepo / library / CLI
+   - \`src/\` — describe key directories
+
+   ### Key Files
+   - \`path/to/file\` — why it matters
+   - (5-10 entries maximum)
+
+   ### Conventions
+   - File naming, imports, error handling, commit format
+
+   ### Common Commands
+   \`\`\`bash
+   # install / run / test / build
+   \`\`\`
+   <!-- codi:project-context:end -->
+   \`\`\`
+
+4. Replace the insertion anchor with the new block. If the file already
+   has a \`<!-- codi:project-context:start -->\` / \`:end -->\` block, replace
+   the existing block in place instead — never duplicate it.
+
+5. Subsequent runs of \`${PROJECT_NAME} generate\` preserve this block
+   automatically. Users can edit the block between the markers.
+
+**Anti-patterns**:
+- Do not duplicate the README — add insights the README does not cover
+- Do not list every dependency — top 5-10 only
+- Do not include secrets, internal URLs, or frequently-changing values
+- Write **once**, per file detected — not per platform enabled
+
+### Step 7: Create the Project Commands Rule
+
+Create \`.${PROJECT_NAME}/rules/project-commands.md\` so every agent session
+loads the project's real install/dev/test/build commands without having to
+grep through scripts.
+
+1. Collect commands from whichever of these exist:
+   - \`package.json\` → \`scripts\` (dev, start, test, build, lint, format, typecheck)
+   - \`Makefile\` → top 10 targets
+   - \`pyproject.toml\` → \`[tool.taskipy.tasks]\` / \`[tool.poe.tasks]\`
+   - \`Taskfile.yml\` → \`tasks\` keys
+   - \`justfile\` → recipe names
+   - Omit any command that requires manual input or exposes credentials
+
+2. Write the file with this structure (omit empty sections, max 3 per section):
+
+   \`\`\`markdown
+   ---
+   name: project-commands
+   description: Common commands for this project — install, dev, test, build, lint
+   priority: medium
+   alwaysApply: true
+   managed_by: user
+   ---
+
+   # Project Commands
+
+   ## Install
+   \`\`\`bash
+   # e.g. pnpm install / uv sync / go mod download
+   \`\`\`
+
+   ## Development
+   \`\`\`bash
+   # e.g. pnpm dev / python manage.py runserver
+   \`\`\`
+
+   ## Testing / Build / Lint & Format — same pattern, omit if empty
+   \`\`\`
+
+3. Run \`${PROJECT_NAME} generate\` to propagate the new rule into every
+   configured agent directory (\`.claude/rules/\`, etc.).
+
+4. Report to the user: "Wrote \`.${PROJECT_NAME}/rules/project-commands.md\`
+   and propagated via \`${PROJECT_NAME} generate\`."
+
+### Step 8: Generate Summary Documentation
 
 Create a file: \`docs/YYYYMMDD_HHMMSS_[PLAN]_codi-init.md\`
 
@@ -309,10 +422,12 @@ Use this structure:
 - Check installation health: \`${PROJECT_NAME} doctor\`
 \`\`\`
 
-### Step 7: Present Summary
+### Step 9: Present Summary
 
 Show the user the generated documentation file path and a brief summary of
-what was installed. Ask if they have any questions.
+what was installed, including which instruction files received the
+project-context block (Step 6) and that \`.${PROJECT_NAME}/rules/project-commands.md\`
+was created (Step 7). Ask if they have any questions.
 `;
 }
 

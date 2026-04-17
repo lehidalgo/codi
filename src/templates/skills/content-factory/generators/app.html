@@ -21,27 +21,27 @@
     <section class="panel">
       <div class="panel-label">Format</div>
       <div class="format-grid" id="format-grid">
-        <button class="fmt active" data-w="1080" data-h="1080">
+        <button class="fmt active" data-w="1080" data-h="1080" data-types="social">
           <span class="fmt-shape sq"></span>
           <b>1:1</b><small>Square</small>
         </button>
-        <button class="fmt" data-w="1080" data-h="1350">
+        <button class="fmt" data-w="1080" data-h="1350" data-types="social">
           <span class="fmt-shape pt"></span>
           <b>4:5</b><small>Portrait</small>
         </button>
-        <button class="fmt" data-w="1080" data-h="1920">
+        <button class="fmt" data-w="1080" data-h="1920" data-types="social">
           <span class="fmt-shape st"></span>
           <b>9:16</b><small>Story</small>
         </button>
-        <button class="fmt" data-w="1200" data-h="630">
+        <button class="fmt" data-w="1200" data-h="630" data-types="social">
           <span class="fmt-shape og"></span>
           <b>OG</b><small>Banner</small>
         </button>
-        <button class="fmt" data-w="1280" data-h="720">
+        <button class="fmt" data-w="1280" data-h="720" data-types="slides">
           <span class="fmt-shape wide"></span>
           <b>16:9</b><small>Slides</small>
         </button>
-        <button class="fmt" data-w="794" data-h="1123">
+        <button class="fmt" data-w="794" data-h="1123" data-types="document">
           <span class="fmt-shape a4"></span>
           <b>A4</b><small>Doc</small>
         </button>
@@ -73,6 +73,16 @@
         <button id="btn-select-toggle" class="btn-select" type="button">Select all</button>
       </div>
     </section>
+
+    <section class="panel">
+      <div class="panel-label">
+        Inspect elements
+        <button id="inspect-toggle" class="logo-toggle-btn" type="button">OFF</button>
+      </div>
+      <div class="inspect-hint">Click inside a card to pick a DOM element. Cmd/Ctrl-click to select multiple. Alt-click to clear.</div>
+    </section>
+
+    <section class="panel" id="validation-settings"></section>
 
     <section class="panel">
       <div class="panel-label">
@@ -123,6 +133,7 @@
     <nav class="tabs" role="tablist">
       <button class="tab active" data-view="preview" role="tab" aria-selected="true">Preview</button>
       <button class="tab" data-view="gallery" role="tab" aria-selected="false">Gallery</button>
+      <button class="tab" data-view="work" role="tab" aria-selected="false">My Work</button>
       <div class="tabs-fill"></div>
 
       <!-- View mode toggle — only visible in Preview tab -->
@@ -161,6 +172,8 @@
 
     <div id="view-preview" class="view active" role="tabpanel">
       <div id="preview-meta" class="preview-meta" hidden>
+        <button id="preview-meta-select" class="card-select-circle" type="button" title="Select / deselect current slide" aria-label="Select current slide"></button>
+        <span id="preview-meta-validation" class="preview-meta-validation"></span>
         <span id="preview-meta-name" class="preview-meta-name"></span>
         <span class="preview-meta-sep">·</span>
         <span id="preview-meta-type" class="preview-meta-chip"></span>
@@ -179,6 +192,8 @@
             </select>
           </span>
         </span>
+        <span class="preview-meta-sep" id="preview-meta-modified-sep" hidden>·</span>
+        <span id="preview-meta-modified" class="preview-meta-dim" hidden title=""></span>
       </div>
       <div id="canvas" class="canvas mode-grid">
         <button id="app-prev" class="app-nav-btn" hidden aria-label="Previous slide">&#8249;</button>
@@ -194,25 +209,30 @@
     </div>
 
     <div id="view-gallery" class="view" role="tabpanel">
-      <div class="gallery-hero">
-        <h1>Preset Library</h1>
-        <p>Click a preset to load all its slides into preview. Use Grid for overview, App for presentation mode.</p>
-      </div>
-      <div class="gallery-filters" id="gallery-filters">
-        <button class="filter-btn active" data-type="all" type="button">All</button>
-        <button class="filter-btn" data-type="social" type="button">Social</button>
-        <button class="filter-btn" data-type="slides" type="button">Slides</button>
-        <button class="filter-btn" data-type="document" type="button">Document</button>
-        <button class="filter-btn" data-type="work" type="button">My Work</button>
-      </div>
-      <div id="work-status-filters" class="work-status-filters" style="display:none">
-        <button class="status-filter-btn active" data-status="all" type="button">All</button>
-        <button class="status-filter-btn" data-status="draft" type="button">Draft</button>
-        <button class="status-filter-btn" data-status="in-progress" type="button">In Progress</button>
-        <button class="status-filter-btn" data-status="review" type="button">Review</button>
-        <button class="status-filter-btn" data-status="done" type="button">Done</button>
+      <div class="panel-bar">
+        <h1 class="panel-bar-title" title="Click a preset to load all its slides into preview. Use Grid for overview, App for presentation mode.">Preset Library</h1>
+        <div class="gallery-filters panel-bar-filters" id="gallery-filters">
+          <button class="filter-btn active" data-type="all" type="button">All</button>
+          <button class="filter-btn" data-type="social" type="button">Social</button>
+          <button class="filter-btn" data-type="slides" type="button">Slides</button>
+          <button class="filter-btn" data-type="document" type="button">Document</button>
+        </div>
       </div>
       <div id="gallery-grid" class="gallery-grid"></div>
+    </div>
+
+    <div id="view-work" class="view" role="tabpanel">
+      <div class="panel-bar">
+        <h1 class="panel-bar-title" title="All the projects you have created. Click any card to resume work.">My Work</h1>
+        <div class="work-status-filters panel-bar-filters" id="work-status-filters">
+          <button class="status-filter-btn active" data-status="all" type="button">All</button>
+          <button class="status-filter-btn" data-status="draft" type="button">Draft</button>
+          <button class="status-filter-btn" data-status="in-progress" type="button">In Progress</button>
+          <button class="status-filter-btn" data-status="review" type="button">Review</button>
+          <button class="status-filter-btn" data-status="done" type="button">Done</button>
+        </div>
+      </div>
+      <div id="work-grid" class="gallery-grid"></div>
     </div>
   </div>
 

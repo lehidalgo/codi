@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-mcp-ops",
+  "cases": [
+    {
+      "id": "add-github-mcp-server",
+      "description": "Adding an MCP server triggers the skill",
+      "prompt": "add the GitHub MCP server to my setup",
+      "expectations": [
+        "Activates mcp-ops skill",
+        "Proposes editing .codi/mcp.yaml with stdio transport (npx @anthropic-ai/mcp-server-github)",
+        "Uses ${VAR_NAME} syntax for GITHUB_TOKEN — no hardcoded secrets",
+        "Runs `codi generate` to distribute to all agents",
+        "Suggests MCP Inspector for verification"
+      ]
+    },
+    {
+      "id": "debug-failed-mcp-call",
+      "description": "Failed MCP tool call triggers the skill",
+      "prompt": "my MCP tool call is failing — the server just says connection refused",
+      "expectations": [
+        "Activates mcp-ops skill",
+        "Walks through the Troubleshooting table (server not running, URL wrong, missing env var)",
+        "Proposes minimal reproduction steps",
+        "Points at MCP Inspector for isolating the issue"
+      ]
+    },
+    {
+      "id": "build-custom-mcp",
+      "description": "Custom MCP server build triggers the skill",
+      "prompt": "I want to build a custom MCP server for our internal API",
+      "expectations": [
+        "Activates mcp-ops skill",
+        "Reads references/building-custom-servers.md for the full guide",
+        "Walks through Research → Implement → Review → Evals phases",
+        "Recommends @modelcontextprotocol/sdk with Zod schemas"
+      ]
+    },
+    {
+      "id": "negative-general-api",
+      "description": "Generic REST API question does NOT trigger mcp-ops",
+      "prompt": "design a REST API for our user service",
+      "expectations": [
+        "Does NOT activate mcp-ops skill",
+        "Routes to a general API-design flow (codi-api-designer agent or direct)",
+        "Does NOT open .codi/mcp.yaml"
+      ]
+    },
+    {
+      "id": "negative-claude-api",
+      "description": "Anthropic SDK question does NOT trigger mcp-ops",
+      "prompt": "I want to use the Claude API with tool use",
+      "expectations": [
+        "Does NOT activate mcp-ops skill",
+        "Routes to codi-claude-api instead",
+        "Does NOT configure an MCP server"
+      ]
+    }
+  ]
+}

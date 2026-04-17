@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-graph-sync",
+  "cases": [
+    {
+      "id": "incremental-update",
+      "description": "Normal post-edit refresh triggers incremental update",
+      "prompt": "refresh the code graph after my recent edits",
+      "expectations": [
+        "Activates graph-sync skill",
+        "Calls graph-code MCP index_repository WITHOUT force flag",
+        "Reports files updated / added / deleted",
+        "Suggests next step is codi-codebase-explore"
+      ]
+    },
+    {
+      "id": "full-reindex-after-refactor",
+      "description": "Major refactor triggers full re-index",
+      "prompt": "we just did a big refactor — re-index the whole repo",
+      "expectations": [
+        "Activates graph-sync skill",
+        "Calls graph-code MCP index_repository WITH force=True",
+        "Warns that full re-index may take seconds to minutes",
+        "Clears only this project's graph, preserves others"
+      ]
+    },
+    {
+      "id": "slash-update-graph",
+      "description": "/update_graph slash command triggers the skill",
+      "prompt": "/update_graph",
+      "expectations": [
+        "Activates graph-sync skill",
+        "Runs incremental update (default)",
+        "Reports outcome"
+      ]
+    },
+    {
+      "id": "negative-codebase-exploration",
+      "description": "Code exploration query does NOT trigger graph-sync",
+      "prompt": "what functions call UserService.create_user?",
+      "expectations": [
+        "Does NOT activate graph-sync skill",
+        "Routes to codi-codebase-explore (queries the graph, doesn't re-index)",
+        "Does NOT call index_repository"
+      ]
+    },
+    {
+      "id": "negative-no-graph-mcp",
+      "description": "Request with graph MCP unavailable does not crash",
+      "prompt": "refresh the code graph",
+      "expectations": [
+        "If graph-code MCP is not available, reports the missing dependency clearly",
+        "Does NOT fabricate results",
+        "Does NOT proceed as if sync succeeded"
+      ]
+    }
+  ]
+}

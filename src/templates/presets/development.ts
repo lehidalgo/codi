@@ -55,7 +55,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("dev-operations"),
     prefixedName("dev-e2e-testing"),
     prefixedName("guided-qa-testing"),
-    prefixedName("test-coverage"),
+    prefixedName("test-suite"),
     prefixedName("refactoring"),
     prefixedName("security-scan"),
     prefixedName("codebase-onboarding"),
@@ -66,7 +66,6 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("skill-creator"),
     prefixedName("rule-creator"),
     prefixedName("agent-creator"),
-    prefixedName("test-run"),
   ],
   agents: [
     prefixedName("code-reviewer"),

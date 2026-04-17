@@ -63,8 +63,8 @@ curl -s <url>/api/templates | grep "${TEMPLATE_NAME}"
 
 ### 7. Record the improvement
 
-Invoke `codi-skill-feedback-reporter` to log that a new template was added, so
-the improvement loop can track what changed.
+Invoke `codi-refine-rules` (REVIEW mode) to log that a new template was added,
+so the improvement loop can track what changed.
 
 ### 8. Optional — contribute upstream
 

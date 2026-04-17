@@ -67,7 +67,6 @@ presets:
 | `name` | string | Yes | — | Project name (alphanumeric + hyphens) |
 | `version` | `1` | Yes | — | Manifest version (always `1`) |
 | `description` | string | No | — | Project description |
-| `project_context` | string | No | — | Free-form markdown injected into the AI instruction file as a Project Context section |
 | `agents` | string[] | No | — | Agent IDs to generate for |
 | `layers` | object | No | — | Toggle content types |
 | `layers.rules` | boolean | Yes | `true` | Include rules in generation |

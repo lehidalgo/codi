@@ -1,0 +1,60 @@
+{
+  "skillName": "codi-mobile-development",
+  "cases": [
+    {
+      "id": "swiftui-view",
+      "description": "SwiftUI request triggers the skill",
+      "prompt": "build a SwiftUI profile screen with @Observable state",
+      "expectations": [
+        "Activates mobile-development skill",
+        "Uses @Observable macro (iOS 17+) not ObservableObject/@Published",
+        "Uses NavigationStack, not deprecated NavigationView",
+        "Adds #Preview for the view",
+        "Uses .task { } for async loading"
+      ]
+    },
+    {
+      "id": "jetpack-compose-screen",
+      "description": "Jetpack Compose request triggers the skill",
+      "prompt": "write a Jetpack Compose product list screen with Hilt DI",
+      "expectations": [
+        "Activates mobile-development skill",
+        "Uses LazyColumn (not Column + forEach)",
+        "Uses collectAsStateWithLifecycle for Flow observation",
+        "Uses @HiltViewModel with Hilt injection",
+        "Applies Material 3 components"
+      ]
+    },
+    {
+      "id": "kmp-shared-logic",
+      "description": "Cross-platform KMP request triggers the skill",
+      "prompt": "set up a KMP module to share our networking layer between iOS and Android",
+      "expectations": [
+        "Activates mobile-development skill",
+        "Proposes shared networking via Ktor and database via SQLDelight",
+        "Keeps UI native (SwiftUI + Compose)",
+        "Uses expect/actual for platform-specific code"
+      ]
+    },
+    {
+      "id": "negative-web-ui",
+      "description": "Web UI request does NOT trigger mobile-development",
+      "prompt": "build a React landing page for our marketing site",
+      "expectations": [
+        "Does NOT activate mobile-development skill",
+        "Routes to codi-frontend-design instead",
+        "Does NOT propose SwiftUI or Jetpack Compose"
+      ]
+    },
+    {
+      "id": "negative-backend-api",
+      "description": "Backend API request does NOT trigger mobile-development",
+      "prompt": "design a REST API endpoint for user profile updates",
+      "expectations": [
+        "Does NOT activate mobile-development skill",
+        "Routes to a backend/api design flow",
+        "Does NOT produce mobile client code"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "skillName": "codi-pptx",
+  "cases": [
+    {
+      "id": "create-branded-deck",
+      "description": "Branded PPTX request triggers the skill",
+      "prompt": "create a 6-slide PowerPoint pitch deck for the investor meeting using our Codi brand",
+      "expectations": [
+        "Activates pptx skill",
+        "Asks for brand selection if not set, uses Codi default otherwise",
+        "Detects runtime (npx tsx first, uv run, venv fallback)",
+        "Produces content.json and runs the generator",
+        "Emits a valid .pptx file"
+      ]
+    },
+    {
+      "id": "edit-existing-deck",
+      "description": "Editing an existing .pptx triggers the skill",
+      "prompt": "update slide 3 in quarterly-review.pptx to change the revenue number",
+      "expectations": [
+        "Activates pptx skill",
+        "Reads references/editing.md for the edit workflow",
+        "Uses unpack → edit → clean → pack flow",
+        "Preserves all other slides untouched"
+      ]
+    },
+    {
+      "id": "extract-speaker-notes",
+      "description": "Speaker notes extraction triggers the skill",
+      "prompt": "extract all speaker notes from conference-talk.pptx",
+      "expectations": [
+        "Activates pptx skill",
+        "Uses python -m markitdown for text extraction OR unpacks the XML",
+        "Returns the speaker notes separately from slide text"
+      ]
+    },
+    {
+      "id": "negative-pdf-slides",
+      "description": "PDF slides request does NOT trigger pptx",
+      "prompt": "export my slides as a PDF",
+      "expectations": [
+        "Does NOT activate pptx skill",
+        "Routes to codi-pdf for PDF manipulation or the PDF export path",
+        "Does NOT attempt to produce .pptx"
+      ]
+    },
+    {
+      "id": "negative-html-deck",
+      "description": "HTML slide deck does NOT trigger pptx",
+      "prompt": "build an HTML slide deck at 1920x1080 for our product launch",
+      "expectations": [
+        "Does NOT activate pptx skill",
+        "Routes to codi-content-factory (slide-deck engine) instead",
+        "Does NOT emit a binary .pptx"
+      ]
+    }
+  ]
+}

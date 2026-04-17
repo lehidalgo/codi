@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-codebase-onboarding",
+  "cases": [
+    {
+      "id": "new-project-overview",
+      "description": "New project orientation triggers the skill",
+      "prompt": "I just cloned this repo, help me get oriented",
+      "expectations": [
+        "Activates codebase-onboarding skill",
+        "Runs Phase 1 Reconnaissance (reads package manifest, detects language, maps top-level dirs)",
+        "Runs Phase 2 Architecture Analysis (tech stack, pattern, data flow)",
+        "Runs Phase 3 Convention Detection (naming, commit style, tooling)",
+        "Produces an onboarding guide under 100 lines"
+      ]
+    },
+    {
+      "id": "create-onboarding-guide",
+      "description": "Explicit onboarding guide request triggers the skill",
+      "prompt": "write an onboarding guide for new team members on this codebase",
+      "expectations": [
+        "Activates codebase-onboarding skill",
+        "Guide contains Overview, Quick Setup, Architecture, Conventions, Key Files, Common Tasks sections",
+        "Lists 5-10 key files (not every file)",
+        "Does NOT duplicate the README"
+      ]
+    },
+    {
+      "id": "set-up-project-context",
+      "description": "CLAUDE.md project context setup triggers the skill",
+      "prompt": "set up project context so future agent sessions know what this project is",
+      "expectations": [
+        "Runs Phase 5 (Persist Project Context)",
+        "Writes the Project Context block between codi:project-context:start / end sentinels in CLAUDE.md or AGENTS.md",
+        "Runs Phase 6 to create .codi/rules/project-commands.md with install/dev/test/build/lint commands",
+        "Invokes `codi generate` to propagate the new rule"
+      ]
+    },
+    {
+      "id": "negative-bug-fix",
+      "description": "Bug fix does NOT trigger codebase-onboarding",
+      "prompt": "fix the failing test in src/auth/login.test.ts",
+      "expectations": [
+        "Does NOT activate codebase-onboarding skill",
+        "Does NOT produce an onboarding guide",
+        "Routes to codi-debugging"
+      ]
+    },
+    {
+      "id": "negative-single-file-review",
+      "description": "Single-file review does NOT trigger codebase-onboarding",
+      "prompt": "review the error handling in src/utils/retry.ts",
+      "expectations": [
+        "Does NOT activate codebase-onboarding skill",
+        "Routes to codi-code-review instead",
+        "Does NOT analyze the whole project's architecture"
+      ]
+    }
+  ]
+}

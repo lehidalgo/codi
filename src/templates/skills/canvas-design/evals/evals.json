@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-canvas-design",
+  "cases": [
+    {
+      "id": "poster-design",
+      "description": "Explicit poster request triggers the skill",
+      "prompt": "design a concert poster for a jazz trio",
+      "expectations": [
+        "Activates canvas-design skill",
+        "Produces the design philosophy (markdown, 4-6 paragraphs) before any canvas output",
+        "Delivers a single-page PDF or PNG",
+        "Uses minimal text — visual-first composition",
+        "If fonts are needed, reads from assets/canvas-fonts/"
+      ]
+    },
+    {
+      "id": "album-cover",
+      "description": "Album cover request triggers the skill",
+      "prompt": "create an album cover for an experimental electronic record",
+      "expectations": [
+        "Activates canvas-design skill",
+        "Philosophy phase precedes the canvas",
+        "Delivers a .png or .pdf square artifact",
+        "Visual style reflects the stated genre without naming it literally"
+      ]
+    },
+    {
+      "id": "editorial-spread",
+      "description": "Editorial design request triggers the skill",
+      "prompt": "design an editorial spread about Japanese minimalism",
+      "expectations": [
+        "Activates canvas-design skill",
+        "Produces a design philosophy before the canvas",
+        "Single-page or multi-page PDF — honors minimalism in composition",
+        "Text is sparse, integrated as visual element"
+      ]
+    },
+    {
+      "id": "negative-animated-gif",
+      "description": "Animated content does NOT trigger canvas-design",
+      "prompt": "make an animated loading spinner for Slack",
+      "expectations": [
+        "Does NOT activate canvas-design skill",
+        "Routes to slack-gif-creator or algorithmic-art instead",
+        "Does NOT produce a static .pdf or .png"
+      ]
+    },
+    {
+      "id": "negative-data-chart",
+      "description": "Data visualization does NOT trigger canvas-design",
+      "prompt": "plot the revenue breakdown by region as a pie chart",
+      "expectations": [
+        "Does NOT activate canvas-design skill",
+        "Does NOT produce a design philosophy markdown",
+        "Uses a charting library or data-viz tool"
+      ]
+    }
+  ]
+}

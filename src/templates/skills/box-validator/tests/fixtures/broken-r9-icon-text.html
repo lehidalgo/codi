@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><style>
+  html, body { margin: 0; padding: 0; }
+  body { width: 800px; height: 800px; font-family: system-ui, sans-serif; }
+  .canvas {
+    width: 800px; height: 800px; box-sizing: border-box;
+    display: flex; flex-direction: column;
+    padding: 20px; gap: 20px;
+    background: #fff;
+  }
+  .canvas > * { flex: 1; min-height: 0; min-width: 0; }
+
+  .row {
+    display: flex; flex-direction: row;
+    padding: 16px; gap: 16px;
+    box-sizing: border-box;
+    background: #fafafa;
+    border: 1px solid #ddd;
+  }
+  .row > * { flex: 1; display: flex; align-items: center; }
+</style></head>
+<body>
+  <div class="canvas">
+    <div class="row">
+      <div>↑ 34.2% vs Q3</div>    <!-- 2 atoms: icon + text -->
+      <div>$12.4M</div>            <!-- 1 atom (pass) -->
+    </div>
+    <div class="row">
+      <div>2026-04-14 · 14:20 UTC</div>  <!-- 3 atoms: text + icon + text -->
+      <div>Terms &amp; Conditions</div>   <!-- 1 atom (pass, & is glue) -->
+    </div>
+    <div class="row">
+      <div>✓ Done</div>            <!-- 2 atoms: icon + text -->
+      <div>Hello world</div>       <!-- 1 atom (pass) -->
+    </div>
+  </div>
+</body>
+</html>

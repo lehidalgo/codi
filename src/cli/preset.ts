@@ -8,7 +8,7 @@ import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
-import { initFromOptions, handleOutput } from "./shared.js";
+import { initFromOptions, handleOutput, regenerateConfigs } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { scanProjectDir } from "../core/config/parser.js";
 import {
@@ -36,6 +36,7 @@ import {
   presetRemoveHandler,
   presetListEnhancedHandler,
   presetEditHandler,
+  updateActivePreset,
 } from "./preset-handlers.js";
 import { runPresetWizard } from "./preset-wizard.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
@@ -256,6 +257,15 @@ export async function presetInstallHandler(
     };
     await writeLockFile(configDir, lock);
 
+    // Apply artifacts and update active preset in operations.json
+    const presetsDir = path.join(configDir, "presets");
+    const loadResult = await loadPreset(name, presetsDir);
+    if (loadResult.ok) {
+      await applyPresetArtifacts(configDir, loadResult.data);
+      await updateActivePreset(configDir, loadResult.data);
+      await regenerateConfigs(projectRoot);
+    }
+
     log.info(`Installed preset "${name}" to ${PROJECT_DIR}/presets/${name}/`);
 
     return createCommandResult({
@@ -417,6 +427,7 @@ export async function presetUpdateHandler(
           const loadResult = await loadPreset(name, presetsDir);
           if (loadResult.ok) {
             await applyPresetArtifacts(configDir, loadResult.data);
+            await updateActivePreset(configDir, loadResult.data);
           }
 
           lock.presets[name] = {

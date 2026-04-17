@@ -1,0 +1,136 @@
+{
+  "skillName": "codi-content-factory",
+  "cases": [
+    {
+      "id": "trigger-single-social-card",
+      "description": "Skill triggers for a one-off social card request",
+      "prompt": "Make me an Instagram post about our 2.0 launch.",
+      "expectations": [
+        "The agent invokes the codi-content-factory skill",
+        "The agent runs scripts/start-server.sh with --project-dir flag",
+        "The agent calls POST /api/create-project with type set to social",
+        "The agent writes an HTML file containing at least one <article class=\"social-card\"> element",
+        "The generated HTML contains a <meta name=\"codi:template\"> tag with type set to social",
+        "The agent does NOT create a brief.json (fast-path, not anchor-first)"
+      ]
+    },
+    {
+      "id": "trigger-slide-deck",
+      "description": "Skill triggers for a slide deck request",
+      "prompt": "Build me a 10-slide deck about API caching strategies.",
+      "expectations": [
+        "The agent invokes the codi-content-factory skill",
+        "The agent calls POST /api/create-project with type set to slides",
+        "The generated HTML contains <article class=\"slide\"> elements with data-type and data-index attributes",
+        "The agent reads references/design-system.md before authoring any slide",
+        "The agent reads references/slide-deck-engine.md before authoring the deck"
+      ]
+    },
+    {
+      "id": "trigger-document",
+      "description": "Skill triggers for a document / blog post request",
+      "prompt": "Write a technical guide about setting up edge caching with Cloudflare.",
+      "expectations": [
+        "The agent calls POST /api/create-project with type set to document",
+        "The generated HTML contains <article class=\"doc-page\"> elements",
+        "The agent reads references/docx-export.md for page discipline",
+        "Each .doc-page follows the .page-header + .page-body + .page-footer structure"
+      ]
+    },
+    {
+      "id": "trigger-multi-format-campaign",
+      "description": "Skill triggers for a multi-format anchor-first campaign",
+      "prompt": "Create a campaign about how we cut API latency 80% with edge caching. I want a blog, LinkedIn carousel, and Instagram story.",
+      "expectations": [
+        "The agent invokes the codi-content-factory skill",
+        "The agent reads references/methodology.md before authoring any content",
+        "The agent reads references/anchor-authoring.md before writing the anchor",
+        "The agent writes an anchor file as document type (A4) first, before any variants",
+        "The agent asks the user to approve the anchor before distilling",
+        "The agent calls POST /api/anchor/approve only after explicit user approval",
+        "Each variant HTML contains a <meta name=\"codi:variant\"> tag with derivedFromRevision (camelCase, not snake_case)"
+      ]
+    },
+    {
+      "id": "trigger-targeted-edit-deictic",
+      "description": "Skill resolves 'this slide' to the active card",
+      "prompt": "Make this headline shorter and bolder.",
+      "expectations": [
+        "The agent calls GET /api/state to read activeCard before editing",
+        "The agent uses activeCard.dataIdx to locate the element, not the card's index",
+        "The agent rewrites the whole file (required for WebSocket watcher to broadcast reload)",
+        "The agent confirms which card changed in its reply (e.g. 'Updated slide 3 of 7')"
+      ]
+    },
+    {
+      "id": "trigger-persist-style-edit",
+      "description": "Skill uses the persist-style flow for an element-level edit",
+      "prompt": "Change the color of the element I just clicked to red.",
+      "expectations": [
+        "The agent calls GET /api/active-element before proposing an edit",
+        "If context.readOnly is true, the agent calls POST /api/clone-template-to-session before persist-style",
+        "The agent calls POST /api/persist-style with targetSelector and patches in the body",
+        "The agent does NOT write to the card source file directly (uses the API instead)"
+      ]
+    },
+    {
+      "id": "validation-after-persist-style",
+      "description": "Skill runs validator after persist-style (Layer 3 agent discipline)",
+      "prompt": "Change the padding on the card container to 40px.",
+      "expectations": [
+        "The agent calls POST /api/validate-card after POST /api/persist-style completes",
+        "If the validator returns pass: false, the agent reads violations[].fix and iterates",
+        "The agent reports remaining violations to the user only after exhausting iterateLimit"
+      ]
+    },
+    {
+      "id": "negative-unrelated-query-weather",
+      "description": "Skill does not trigger for unrelated queries",
+      "prompt": "What is the weather today?",
+      "expectations": [
+        "The agent does NOT invoke the codi-content-factory skill",
+        "The agent does NOT run start-server.sh",
+        "The agent does NOT create a project"
+      ]
+    },
+    {
+      "id": "negative-code-review-query",
+      "description": "Skill does not trigger for code review or engineering tasks",
+      "prompt": "Review this Python function for performance issues.",
+      "expectations": [
+        "The agent does NOT invoke the codi-content-factory skill",
+        "The agent does NOT create any HTML content files",
+        "The agent does NOT start the content factory server"
+      ]
+    },
+    {
+      "id": "negative-near-miss-presentation-software",
+      "description": "Skill does not trigger for generic presentation-software questions",
+      "prompt": "How do I install Microsoft PowerPoint?",
+      "expectations": [
+        "The agent does NOT invoke the codi-content-factory skill",
+        "The agent does NOT create a slide deck project"
+      ]
+    },
+    {
+      "id": "create-project-requires-type",
+      "description": "Skill always provides the required type field when creating a project",
+      "prompt": "Start a project called acme-launch for our new social cards.",
+      "expectations": [
+        "The agent calls POST /api/create-project with both name and type in the body",
+        "The type field is one of social, slides, document (not an arbitrary string)",
+        "If the user's intent is ambiguous, the agent asks which type before calling create-project"
+      ]
+    },
+    {
+      "id": "template-mode-creates-new-project",
+      "description": "When mode is template, skill creates a new project rather than editing the template",
+      "prompt": "Use this preset for my content.",
+      "expectations": [
+        "The agent calls GET /api/state and reads mode",
+        "If mode is template, the agent calls POST /api/create-project before writing any file",
+        "The agent does NOT edit the read-only template file in place (unless user explicitly asks to modify the template)"
+      ]
+    }
+  ]
+}

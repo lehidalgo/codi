@@ -2,14 +2,30 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user wants to test, debug, or automate a local web application using Playwright. Supports verifying frontend functionality, capturing screenshots, and reading browser logs.
+description: |
+  Test, debug, or automate a local web application with Playwright. Use
+  when the user wants to verify frontend functionality, capture
+  screenshots, read browser console logs, check network requests, or
+  drive a local dev server. Also activate for phrases like "Playwright",
+  "local server test", "browser automation", "screenshot this page",
+  "check console logs", "test my webapp", "automate UI", "headless
+  browser", "multi-server test", "end-to-end UI check". Runtime-compat
+  helpers manage server lifecycle. Do NOT activate for collaborative
+  local-HTML element inspection (use ${PROJECT_NAME}-html-live-inspect),
+  designing a new UI (use ${PROJECT_NAME}-frontend-design), generative
+  art sketches (use ${PROJECT_NAME}-algorithmic-art), or full
+  multi-phase QA sweeps (use ${PROJECT_NAME}-guided-qa-testing).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 10
 ---
+
+# {{name}} — Web Application Testing
+
+To test local web applications, write native Python Playwright scripts.
 
 ## When to Activate
 
@@ -18,9 +34,13 @@ version: 9
 - User wants to check browser console logs or network requests
 - User needs to interact with UI elements programmatically
 
-# Web Application Testing
+## Skip When
 
-To test local web applications, write native Python Playwright scripts.
+- User wants collaborative local-HTML inspect (see what they click) — use ${PROJECT_NAME}-html-live-inspect
+- User wants to design a new UI from scratch — use ${PROJECT_NAME}-frontend-design
+- User wants generative / algorithmic art — use ${PROJECT_NAME}-algorithmic-art
+- User wants multi-phase QA sweep across the whole app — use ${PROJECT_NAME}-guided-qa-testing
+- User wants to audit the full Codi installation (contributor-only) — use ${PROJECT_NAME}-dev-e2e-testing
 
 **Helper Scripts Available** (TypeScript and Python — use whichever runtime is available):
 - TypeScript: \\\`\${CLAUDE_SKILL_DIR}[[/scripts/ts/with-server.ts]]\\\` — Manages server lifecycle (supports multiple servers)
@@ -119,6 +139,6 @@ with sync_playwright() as p:
 
 ## Available Agents
 
-For test generation from webapp testing results, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-test-generator** — Generate automated tests from webapp testing findings
+For test generation from webapp testing results, delegate to this agent:
+- **${PROJECT_NAME}-test-generator** — Generate automated tests from webapp testing findings. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/test-generator.md]]\\\`
 `;

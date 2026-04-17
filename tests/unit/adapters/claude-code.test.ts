@@ -127,54 +127,6 @@ describe("claude-code adapter", () => {
 
       expect(content).not.toContain("## Self-Development Mode");
     });
-
-    it("injects project_context when set in manifest", async () => {
-      const config = createMockConfig({
-        manifest: {
-          name: "my-proj",
-          version: "1",
-          agents: [],
-          project_context: "## Custom Context\n\nProject-specific guidance.",
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
-
-      expect(content).toContain("## Project Context");
-      expect(content).toContain("## Custom Context");
-      expect(content).toContain("Project-specific guidance.");
-    });
-
-    it("does not inject project_context when field is absent", async () => {
-      const config = createMockConfig();
-      const files = await claudeCodeAdapter.generate(config, {});
-      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
-
-      expect(content).not.toContain("## Project Context");
-    });
-
-    it("places self-dev warning before project_context before permissions", async () => {
-      const config = createMockConfig({
-        manifest: {
-          name: PROJECT_NAME,
-          version: "1",
-          agents: [],
-          project_context: "## Custom Context\n\nGuidance.",
-        },
-      });
-      const files = await claudeCodeAdapter.generate(config, {});
-      const content = files.find((f) => f.path === "CLAUDE.md")!.content;
-
-      const selfDevPos = content.indexOf("## Self-Development Mode");
-      const contextPos = content.indexOf("## Project Context");
-      const permissionsPos = content.indexOf("## Permissions");
-
-      expect(selfDevPos).toBeGreaterThan(-1);
-      expect(contextPos).toBeGreaterThan(-1);
-      expect(permissionsPos).toBeGreaterThan(-1);
-      expect(selfDevPos).toBeLessThan(contextPos);
-      expect(contextPos).toBeLessThan(permissionsPos);
-    });
   });
 
   // ── generate() — rule files ────────────────────────────────────────

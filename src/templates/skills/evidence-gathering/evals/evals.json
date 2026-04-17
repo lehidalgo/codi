@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-evidence-gathering",
+  "cases": [
+    {
+      "id": "investigate-before-fix",
+      "description": "Pre-fix investigation triggers the skill",
+      "prompt": "I think this function is broken, but investigate before we change anything",
+      "expectations": [
+        "Activates evidence-gathering skill",
+        "Follows FRAME → SEARCH → COLLECT → ANALYZE → REPORT",
+        "Produces an evidence table with Finding / Source / Location / Confidence",
+        "Separates confirmed facts, inferences, and unverified assumptions",
+        "Does NOT propose a fix before Step 5 REPORT is complete"
+      ]
+    },
+    {
+      "id": "actual-vs-intended",
+      "description": "Actual vs intended behavior question triggers the skill",
+      "prompt": "what is this module actually doing vs what it's supposed to do?",
+      "expectations": [
+        "Activates evidence-gathering skill",
+        "Uses graph-code / Grep / Read / Tests in priority order",
+        "Compares actual behavior (from tool output) to intended behavior (from docs/tests)",
+        "States the gap explicitly in the Analyze step"
+      ]
+    },
+    {
+      "id": "verify-assumption",
+      "description": "Assumption verification triggers the skill",
+      "prompt": "verify my assumption that the cache TTL is 60 seconds — run the actual checks",
+      "expectations": [
+        "Activates evidence-gathering skill",
+        "Frames the exact question in Step 1",
+        "Pulls evidence from tool output (not memory)",
+        "Reports a confidence level (High / Medium / Low) on the conclusion"
+      ]
+    },
+    {
+      "id": "negative-fresh-evidence",
+      "description": "Already-fresh evidence does NOT re-trigger the skill",
+      "prompt": "we just ran the tests 30 seconds ago — what did they show?",
+      "expectations": [
+        "Does NOT re-invoke evidence-gathering skill",
+        "Uses the fresh tool output from the current session directly",
+        "Does NOT re-run the search/collect phases"
+      ]
+    },
+    {
+      "id": "negative-write-feature",
+      "description": "Writing a feature does NOT trigger evidence-gathering",
+      "prompt": "add a dark mode toggle to the settings page",
+      "expectations": [
+        "Does NOT activate evidence-gathering skill",
+        "Routes to plan-writer or brainstorming",
+        "No evidence table is produced before writing code"
+      ]
+    }
+  ]
+}

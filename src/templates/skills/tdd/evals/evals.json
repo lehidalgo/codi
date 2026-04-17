@@ -65,8 +65,8 @@
       ]
     },
     {
-      "id": "negative-test-run",
-      "description": "Running existing tests should trigger test-run, not tdd",
+      "id": "negative-test-suite",
+      "description": "Running existing tests should trigger test-suite, not tdd",
       "prompt": "run the test suite and show me what passes",
       "expectations": [
         "Does NOT invoke the tdd skill",

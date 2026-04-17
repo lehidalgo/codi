@@ -19,6 +19,7 @@ import {
   buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
+  buildSelfDevWarning,
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import {
@@ -93,6 +94,10 @@ export const codexAdapter: AgentAdapter = {
     // Project overview from manifest
     const overview = buildProjectOverview(config);
     if (overview) sections.push(overview);
+
+    // Self-development mode warning (only when name === "codi")
+    const selfDevWarning = buildSelfDevWarning(config);
+    if (selfDevWarning) sections.push(selfDevWarning);
 
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);
@@ -237,11 +242,17 @@ export const codexAdapter: AgentAdapter = {
       hash: hashContent(observerScript),
     });
 
+    // Codex injects no project-dir env variable (see codex-rs/hooks/src/engine/command_runner.rs),
+    // and the docs explicitly recommend resolving via `git rev-parse --show-toplevel` because
+    // "Codex may be started from a subdirectory". The `|| echo .` fallback preserves today's
+    // behavior when git is unavailable so there is no regression. Codex disables hooks on
+    // Windows, so POSIX command substitution is safe here.
+    const codexProjectRootRef = '"$(git rev-parse --show-toplevel 2>/dev/null || echo .)"';
     const codexHooks = {
       Stop: [
         {
           type: "command",
-          command: `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
+          command: `node ${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
           timeout: 15,
         },
       ],

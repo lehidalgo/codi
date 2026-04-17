@@ -290,7 +290,7 @@ beforeAll(async () => {
   tempDir = mkdtempSync(`${tmpdir()}/skill-test-`);
   const result = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("Server start timeout")), 10_000);
-    const proc = spawn("bash", ["scripts/start-server.sh", "--name", "test", "--project-dir", tempDir]);
+    const proc = spawn("bash", ["scripts/start-server.sh", "--project-dir", tempDir]);
     serverProcess = proc;
     proc.stdout.on("data", (chunk) => {
       for (const line of chunk.toString().split("\n")) {

@@ -26,7 +26,7 @@ The preview server is optional — use it when the design spec is complex enough
 
 ```bash
 # Start the server
-bash scripts/start-server.sh --name brainstorm --project-dir .
+bash scripts/start-server.sh --project-dir .
 
 # The command outputs JSON:
 # { "url": "http://localhost:PORT", "screen_dir": "...", "state_dir": "..." }

@@ -162,6 +162,47 @@ All inline formatting is handled automatically via `extractRuns()`:
 
 ---
 
+## Document page discipline — MANDATORY
+
+Each `.doc-page` is a **fixed A4 canvas** (794×1123px). The preview renders every page at exactly this height — there is no auto-expand. Content that overflows is hidden in the viewer and may be missing from DOCX export.
+
+**Rules:**
+- One `.doc-page` = one printed page. Plan content explicitly per page before writing HTML.
+- If content does not fit, split into a new `<article class="doc-page">` — never squeeze.
+- Use consistent structure on every page: `.page-header` + `.page-body` + `.page-footer` — keeps all pages at the same visual height and footer position.
+- `.page-body` must use `display: flex; flex-direction: column; flex: 1; overflow: hidden` so it fills the space between header and footer without growing beyond it.
+- Never use `min-height` values larger than what fits inside `.page-body` — the body height is approximately 1123 − header − footer ≈ ~950px.
+
+**Content budget per page** (approximate at default font sizes):
+
+| Element | Approx. height |
+|---------|---------------|
+| `h1` (2.2rem) | ~50px |
+| `h2` (1.5rem) | ~40px |
+| `h3` (1.2rem) | ~32px |
+| `p` (1rem, 1.5 line-height, ~3 lines) | ~70px |
+| `ul`/`ol` (4–5 items at 1rem) | ~120px |
+| `table` (3 rows × 40px + header) | ~160px |
+| `.code-block` (10 lines at 0.85rem) | ~180px |
+| `.callout` (2 lines) | ~80px |
+| `.stat-row` (3 stats) | ~120px |
+| `.two-col` (2 columns, ~4 lines each) | ~150px |
+| `.diagram-wrap` (SVG ~200px tall) | ~220px |
+| Page padding (top + bottom) | ~80px |
+
+A `.page-body` of ~950px fits roughly 2–3 major sections. When in doubt, use fewer elements and add a new page.
+
+**Page split checklist before writing HTML:**
+
+1. List all content sections for the document.
+2. Assign each section to a page — confirm each page's estimated total height < ~950px.
+3. If a section (e.g. a large table or code block) alone exceeds ~800px, split it across two pages with a continuation header.
+4. Write one `<article class="doc-page">` per planned page.
+
+**Anchor articles** (from the methodology — see `[[/references/methodology.md]]`) follow this same pattern: the anchor is a `document` content type with multiple `.doc-page` elements at natural section breaks. A short anchor fits one page; a standard anchor spans 2-3 pages; a deep anchor spans 4-10+ pages.
+
+---
+
 ## What NOT to do
 
 | Mistake | Consequence | Fix |

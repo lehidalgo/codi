@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  PROJECT_NAME,
-  PROJECT_NAME_DISPLAY,
-  PROJECT_CLI,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_NAME_DISPLAY, PROJECT_CLI } from "#src/constants.js";
 import { buildVerificationSection } from "#src/core/verify/section-builder.js";
 import type { VerificationData } from "#src/core/verify/token.js";
 
@@ -31,24 +27,24 @@ describe("buildVerificationSection", () => {
     expect(section).toContain(`## ${PROJECT_NAME_DISPLAY} Verification`);
   });
 
-  it("lists rule names explicitly", () => {
+  it("reports installed counts instead of full name lists", () => {
     const section = buildVerificationSection(data);
-    expect(section).toContain("- Rules: code-quality, security");
+    expect(section).toContain("- Installed: 2 rules, 1 skills, 1 agents");
+    expect(section).not.toContain("code-quality, security");
+    expect(section).not.toContain("- Rules:");
+    expect(section).not.toContain("- Skills:");
+    expect(section).not.toContain("- Agents:");
   });
 
-  it("lists skill names explicitly", () => {
+  it("points to the CLI for the full manifest", () => {
     const section = buildVerificationSection(data);
-    expect(section).toContain("- Skills: rule-management");
+    expect(section).toContain(`${PROJECT_CLI} list`);
   });
 
-  it("lists agent names explicitly", () => {
+  it("does not embed a regenerated-at timestamp", () => {
     const section = buildVerificationSection(data);
-    expect(section).toContain("- Agents: code-reviewer");
-  });
-
-  it("includes generated timestamp", () => {
-    const section = buildVerificationSection(data);
-    expect(section).toContain("- Generated: 2026-03-23T20:12:30.000Z");
+    expect(section).not.toContain("- Generated:");
+    expect(section).not.toContain(data.timestamp);
   });
 
   it("includes instruction prompt for the agent", () => {
@@ -57,21 +53,21 @@ describe("buildVerificationSection", () => {
     expect(section).toContain(`${PROJECT_CLI} verify`);
   });
 
-  it("omits rules line when no rules", () => {
-    const noRules: VerificationData = { ...data, ruleNames: [] };
-    const section = buildVerificationSection(noRules);
-    expect(section).not.toContain("- Rules:");
+  it("omits the Installed line entirely when nothing is configured", () => {
+    const empty: VerificationData = {
+      ...data,
+      ruleNames: [],
+      skillNames: [],
+      agentNames: [],
+    };
+    const section = buildVerificationSection(empty);
+    expect(section).not.toContain("- Installed:");
   });
 
-  it("omits skills line when no skills", () => {
-    const noSkills: VerificationData = { ...data, skillNames: [] };
-    const section = buildVerificationSection(noSkills);
-    expect(section).not.toContain("- Skills:");
-  });
-
-  it("omits agents line when no agents", () => {
-    const noAgents: VerificationData = { ...data, agentNames: [] };
-    const section = buildVerificationSection(noAgents);
-    expect(section).not.toContain("- Agents:");
+  it("lists only present artifact counts", () => {
+    const rulesOnly: VerificationData = { ...data, skillNames: [], agentNames: [] };
+    const section = buildVerificationSection(rulesOnly);
+    const installedLine = section.split("\n").find((line) => line.startsWith("- Installed:"));
+    expect(installedLine).toBe("- Installed: 2 rules");
   });
 });

@@ -1,0 +1,114 @@
+{
+  "skillName": "codi-plan-execution",
+  "cases": [
+    {
+      "id": "asks-mode-before-starting",
+      "description": "Must always ask the user to pick INLINE vs SUBAGENT mode before touching code",
+      "prompt": "execute the implementation plan we wrote",
+      "expectations": [
+        "Does NOT start executing tasks immediately",
+        "Asks the user to choose INLINE (sequential, watch-along) or SUBAGENT (fresh subagent per task with two-stage review)",
+        "Waits for the user's explicit choice before proceeding",
+        "Does NOT default to one mode silently"
+      ]
+    },
+    {
+      "id": "slash-command-asks-mode",
+      "description": "/codi-plan-execution slash activation also asks the mode question",
+      "prompt": "/codi-plan-execution",
+      "expectations": [
+        "Activates plan-execution skill",
+        "Reads the plan to confirm it exists",
+        "Asks INLINE vs SUBAGENT before starting any task"
+      ]
+    },
+    {
+      "id": "inline-sequential-execution",
+      "description": "INLINE mode: user picks inline — agent executes sequentially with checkpoints",
+      "prompt": "execute the plan inline, step by step",
+      "expectations": [
+        "Loads the plan document completely",
+        "Creates a task list via TaskCreate",
+        "Executes each task precisely as written (no improvisation)",
+        "Applies codi-tdd for each implementation step",
+        "Applies codi-verification before marking each task complete",
+        "Does NOT dispatch subagents"
+      ]
+    },
+    {
+      "id": "inline-continue-interrupted",
+      "description": "INLINE mode: resumes from the last incomplete task",
+      "prompt": "continue executing the plan inline from where we left off",
+      "expectations": [
+        "Reads the plan to identify completed and pending tasks",
+        "Identifies the first incomplete task",
+        "Continues execution from that task",
+        "Does NOT restart from the beginning"
+      ]
+    },
+    {
+      "id": "subagent-two-stage-review",
+      "description": "SUBAGENT mode: user picks subagent — dispatch per task with two-stage review",
+      "prompt": "run the plan with subagents — dispatch one per task with two-stage review",
+      "expectations": [
+        "Extracts the specific task text for each subagent (no full plan access)",
+        "Dispatches implementer subagent with tdd + verification instructions",
+        "Waits for DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED status",
+        "Runs spec compliance review BEFORE code quality review",
+        "Dispatches codi-code-reviewer agent for Step 5",
+        "Does NOT dispatch multiple implementer subagents in parallel"
+      ]
+    },
+    {
+      "id": "subagent-multi-file",
+      "description": "SUBAGENT mode: multi-file tasks with coordination",
+      "prompt": "use subagents to implement the user management system per the plan",
+      "expectations": [
+        "Asks the user to confirm SUBAGENT mode",
+        "Dispatches one subagent per task from the plan",
+        "Applies two-stage review per task before moving to the next",
+        "Runs codi-code-reviewer on the complete changeset after all tasks"
+      ]
+    },
+    {
+      "id": "negative-no-approved-plan",
+      "description": "No approved plan should route to plan-writer, not activate plan-execution",
+      "prompt": "write a plan for implementing the notification system",
+      "expectations": [
+        "Does NOT activate plan-execution skill",
+        "Routes to codi-plan-writer (and codi-brainstorming if no design spec yet)",
+        "Does NOT start executing tasks"
+      ]
+    },
+    {
+      "id": "negative-single-file-edit",
+      "description": "Trivial single-file edits should NOT trigger plan-execution",
+      "prompt": "add error handling to the payment service",
+      "expectations": [
+        "Does NOT activate plan-execution skill",
+        "Edits directly without plan overhead",
+        "Does NOT ask INLINE vs SUBAGENT"
+      ]
+    },
+    {
+      "id": "negative-bug-no-fix-plan",
+      "description": "Bug investigation without a fix plan routes to debugging",
+      "prompt": "the payment webhook is failing — figure out why",
+      "expectations": [
+        "Does NOT activate plan-execution skill",
+        "Routes to codi-debugging for root-cause work",
+        "Does NOT ask INLINE vs SUBAGENT"
+      ]
+    },
+    {
+      "id": "negative-baseline-failing",
+      "description": "Baseline failing tests must be fixed before execution",
+      "prompt": "execute the plan — note that some tests are already failing",
+      "expectations": [
+        "Recognizes the baseline-on-red condition",
+        "Refuses to proceed until baseline is green",
+        "Recommends codi-debugging for the failing tests first"
+      ]
+    }
+  ]
+}

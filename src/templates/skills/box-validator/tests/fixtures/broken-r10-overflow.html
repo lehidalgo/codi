@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><style>
+  html, body { margin: 0; padding: 0; }
+  body { width: 800px; height: 400px; font-family: system-ui, sans-serif; }
+  .canvas {
+    width: 800px; height: 400px; box-sizing: border-box;
+    display: flex; flex-direction: column;
+    padding: 20px; gap: 20px;
+    background: #fff;
+  }
+  .canvas > * { flex: 1; min-height: 0; min-width: 0; }
+  .leaf {
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    background: #f5f5f5; border: 1px solid #ddd;
+    padding: 8px; box-sizing: border-box;
+  }
+  /* Intentional bug: font too large for allocated flex:1 slot (~100px).
+     Content scrollHeight will exceed clientHeight → R10 error. */
+  .giant { font-size: 160px; line-height: 1; }
+  /* Intentional bug: white-space nowrap + huge single word → scrollWidth
+     exceeds clientWidth → R10 horizontal overflow. */
+  .wide  { white-space: nowrap; font-size: 72px; }
+  /* Passes: normal font fitting the slot. */
+  .ok    { font-size: 24px; }
+</style></head>
+<body>
+  <div class="canvas">
+    <div class="leaf giant">$12.4M</div>
+    <div class="leaf wide">ExtraordinarilyLongIdentifierNameThatExceedsWidth</div>
+    <div class="leaf ok">Fits fine</div>
+  </div>
+</body>
+</html>

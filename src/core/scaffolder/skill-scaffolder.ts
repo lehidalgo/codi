@@ -218,6 +218,7 @@ const STATIC_SUBDIRS = [
   "agents",
   "brand",
   "generators",
+  "templates",
 ] as const;
 
 /**

@@ -2,22 +2,39 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Create a structured roadmap or todo list as a JSON file in docs/roadmaps/. Use when planning features, tracking milestones, or organizing implementation phases. Also activate when the user says 'create a roadmap' or 'plan next steps'.
+description: |
+  Create a structured roadmap or persistent todo list as a JSON file in
+  \\\`docs/roadmaps/\\\`. Use when the user plans features, tracks
+  milestones, breaks down an epic, organizes phase-based work, or drafts
+  a product roadmap. Also activate for phrases like "create a roadmap",
+  "plan next steps", "feature roadmap", "Q3 plan", "milestone tracking",
+  "epic breakdown", "phase-based plan", "multi-phase rollout", "product
+  roadmap". Output is JSON (priority, status, dependencies). Do NOT
+  activate for in-session task tracking (use TaskCreate), implementation
+  plans (use ${PROJECT_NAME}-plan-writer after ${PROJECT_NAME}-brainstorming),
+  or daily progress logs (use ${PROJECT_NAME}-session-log).
 category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 7
 ---
 
-# {{name}}
+# {{name}} — Roadmap
 
 ## When to Activate
 
 - User wants to create a structured task list or roadmap for a feature or project
 - User asks to plan out next steps in a persistent format
 - User needs a trackable task list saved to the repository
+
+## Skip When
+
+- Short-lived in-session task tracking — use TaskCreate instead of a persistent roadmap
+- Concrete implementation plan (file paths + TDD steps) — use ${PROJECT_NAME}-plan-writer
+- Design exploration before the roadmap — use ${PROJECT_NAME}-brainstorming first
+- Daily session log or end-of-day summary — use ${PROJECT_NAME}-session-log
 
 ## Workflow
 

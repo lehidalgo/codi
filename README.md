@@ -137,8 +137,8 @@ flowchart LR
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 28 |
-| **Skills** | 65 |
-| **Agents** | 22 |
+| **Skills** | 60 |
+| **Agents** | 21 |
 <!-- GENERATED:END:template_counts_compact -->
 
 Browse the full catalog at **[lehidalgo.github.io/codi/docs/catalog/](https://lehidalgo.github.io/codi/docs/catalog/)** — filterable by type, category, and keyword, with per-artifact pages showing frontmatter and full content.

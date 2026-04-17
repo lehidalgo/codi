@@ -18,6 +18,7 @@ import {
   buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
+  buildSelfDevWarning,
   getEnabledMcpServers,
   buildMcpEnvExample,
 } from "./section-builder.js";
@@ -93,6 +94,10 @@ export const cursorAdapter: AgentAdapter = {
 
     const overview = buildProjectOverview(config);
     if (overview) sections.push(overview);
+
+    // Self-development mode warning (only when name === "codi")
+    const selfDevWarning = buildSelfDevWarning(config);
+    if (selfDevWarning) sections.push(selfDevWarning);
 
     if (flagText) {
       sections.push(flagText);

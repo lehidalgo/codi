@@ -129,7 +129,7 @@ src/
   schemas/            # Zod schemas for config, flags, artifacts
   templates/          # Built-in templates
     rules/            # 28 rule templates
-    skills/           # 66 skill templates
+    skills/           # 65 skill templates
     agents/           # 22 agent templates
     hooks/            # 3 hook templates
   types/              # TypeScript type definitions

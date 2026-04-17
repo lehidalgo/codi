@@ -3,18 +3,25 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Test-Driven Development discipline. Use when implementing any feature, bug fix,
-  refactor, or behavior change. Enforces RED-GREEN-REFACTOR with iron-law verification.
-  Also activate when the user mentions writing tests, fixing a bug, or adding functionality.
+  Test-Driven Development discipline. Use when implementing any feature,
+  bug fix, refactor, or behavior change. Enforces RED-GREEN-REFACTOR with
+  iron-law verification (no production code without a failing test first).
+  Also activate for phrases like "RED-GREEN-REFACTOR", "failing test
+  first", "test-first", "write the test before the code", "TDD workflow",
+  "implement with tests", "write tests as I implement". Do NOT activate
+  for generating missing tests for existing code without implementation
+  (use ${PROJECT_NAME}-test-suite), fixing failing tests when the
+  production code is already correct (use ${PROJECT_NAME}-debugging), or
+  audit-style cleanup without behavior change (use ${PROJECT_NAME}-refactoring).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 7
 ---
 
-# {{name}}
+# {{name}} — TDD
 
 ## When to Activate
 
@@ -30,6 +37,13 @@ Apply TDD to:
 - Configuration files with no executable logic
 
 Thinking "skip TDD just this once"? Stop. That is rationalization.
+
+## Skip When (routing to another skill)
+
+- User wants to backfill tests for existing code only — use ${PROJECT_NAME}-test-suite
+- User is debugging an existing failing test — use ${PROJECT_NAME}-debugging
+- User wants dead-code cleanup without behavior change — use ${PROJECT_NAME}-refactoring
+- User is planning the feature, not implementing it yet — use ${PROJECT_NAME}-plan-writer
 
 ## The Iron Law
 
@@ -269,7 +283,7 @@ Cannot check all boxes? TDD was skipped. Start over.
 | Everything requires mocking | Code is too coupled — apply dependency injection to break the coupling |
 | Test setup is enormous (arrange phase > 20 lines) | Extract setup helpers; if still complex, simplify the design |
 
-When adding mocks or test utilities, read \\\`@testing-anti-patterns.md\\\` to avoid common pitfalls such as testing mock behavior instead of real behavior, adding test-only methods to production classes, and mocking without understanding dependencies.
+When adding mocks or test utilities, read \\\`\${CLAUDE_SKILL_DIR}[[/references/testing-anti-patterns.md]]\\\` to avoid common pitfalls such as testing mock behavior instead of real behavior, adding test-only methods to production classes, and mocking without understanding dependencies.
 
 ## Integration
 

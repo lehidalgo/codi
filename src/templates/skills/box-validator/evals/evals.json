@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-box-validator",
+  "cases": [
+    {
+      "id": "instagram-post",
+      "description": "Instagram post HTML triggers validation",
+      "prompt": "create an Instagram post HTML at 1080x1350 about our Q3 numbers",
+      "expectations": [
+        "Generates the HTML",
+        "Saves the file to an absolute path (e.g., /tmp/design.html)",
+        "Runs `node scripts/validate.mjs --input <path> --width 1080 --height 1350`",
+        "Iterates on the HTML until the validator returns valid=true or reaches 4 iterations",
+        "Summarizes the final score to the user without dumping raw JSON"
+      ]
+    },
+    {
+      "id": "slide-deck",
+      "description": "Slide deck HTML triggers validation at 16:9",
+      "prompt": "build a 1920x1080 slide for our all-hands on roadmap progress",
+      "expectations": [
+        "Generates the HTML with fixed aspect ratio",
+        "Runs validate.mjs with --width 1920 --height 1080",
+        "Reads violations by rule (R1–R10) and applies `fix` instructions",
+        "Delivers only the validated HTML to the user"
+      ]
+    },
+    {
+      "id": "a4-document-page",
+      "description": "A4 document page triggers validation",
+      "prompt": "render an A4 portrait page summarizing the board update in HTML",
+      "expectations": [
+        "Uses A4 dimensions 794x1123",
+        "Runs box-validator on the output",
+        "Fixes any R4 padding=gap mismatches before delivering",
+        "Checks Rule 9 (leaf atomicity) for icon+text leaves"
+      ]
+    },
+    {
+      "id": "negative-prose-article",
+      "description": "Prose-only article does NOT trigger box validation",
+      "prompt": "write a 500-word blog post about our engineering culture",
+      "expectations": [
+        "Does NOT run validate.mjs",
+        "Does NOT load Playwright",
+        "Produces prose without a fixed-aspect HTML layout"
+      ]
+    },
+    {
+      "id": "negative-chart-image",
+      "description": "Standalone chart/plot request does NOT trigger box validation",
+      "prompt": "plot the monthly active users as a line chart",
+      "expectations": [
+        "Does NOT activate box-validator",
+        "Does NOT run validate.mjs",
+        "Produces a chart via a charting library or image, not a box layout"
+      ]
+    }
+  ]
+}

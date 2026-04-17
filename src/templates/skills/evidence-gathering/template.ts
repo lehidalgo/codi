@@ -3,19 +3,26 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Structured investigation before proposing changes. Use when you need to gather
-  concrete evidence about actual vs intended behavior before suggesting a fix,
-  evaluating an audit item, or validating a step. Called by guided-execution and
-  audit-fix, but also usable standalone for any "investigate X before we change it" task.
+  Structured investigation before proposing changes. Use when you need to
+  gather concrete evidence about actual vs intended behavior before
+  suggesting a fix, evaluating an audit item, or validating a step. Also
+  activate for phrases like "gather evidence", "investigate before fixing",
+  "actual vs intended behavior", "structured investigation", "verify my
+  assumption", "check before proposing", "investigate X before we change
+  it". Called by ${PROJECT_NAME}-audit-fix and
+  ${PROJECT_NAME}-guided-execution, also usable standalone. Do NOT activate
+  when you already have fresh, direct tool output from the current session,
+  when the user wants to write new code (use ${PROJECT_NAME}-plan-writer),
+  or when the investigation is already complete and a fix is the next step.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
-# {{name}}
+# {{name}} — Evidence Gathering
 
 ## When to Activate
 
@@ -25,7 +32,12 @@ version: 7
 - When you are uncertain about actual behavior — not assumed behavior
 - Standalone: "Investigate X before we change it"
 
-Do NOT activate when you already have direct, fresh evidence from this session.
+## Skip When
+
+- You already have direct, fresh tool output from this session that answers the question
+- The user wants to write new code or features — use ${PROJECT_NAME}-plan-writer
+- The investigation is already complete and the next step is a fix — move to ${PROJECT_NAME}-verification
+- The question is about general concepts, not this codebase's actual behavior — answer from docs/knowledge directly
 
 ## The Iron Law
 

@@ -32,11 +32,10 @@ function setActiveProject(dir) {
   if (!fs.existsSync(resolved)) return;
   if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
   activeProject = workspace.projectDirs(resolved);
-  knownFiles = new Set(
-    fs.existsSync(activeProject.contentDir)
-      ? fs.readdirSync(activeProject.contentDir).filter(f => f.endsWith('.html'))
-      : []
-  );
+  // Ensure the platform folder tree exists so the file panel can render it
+  // as an empty scaffold before any variant is authored.
+  workspace.scaffoldPlatformTree(activeProject.contentDir);
+  knownFiles = new Set(workspace.scanContentFiles(activeProject.contentDir));
   if (fs.existsSync(activeProject.contentDir)) startContentWatcher();
   workspace.saveActiveProjectDir(workspaceDir, resolved);
 }
@@ -44,9 +43,7 @@ function setActiveProject(dir) {
 function writeProjectManifest() {
   if (!activeProject) return;
   try {
-    const files = fs.existsSync(activeProject.contentDir)
-      ? fs.readdirSync(activeProject.contentDir).filter(f => f.endsWith('.html'))
-      : [];
+    const files = workspace.scanContentFiles(activeProject.contentDir);
     const presetFile = path.join(activeProject.stateDir, 'preset.json');
     const preset = fs.existsSync(presetFile) ? JSON.parse(fs.readFileSync(presetFile, 'utf-8')) : null;
     const manifestPath = path.join(activeProject.stateDir, 'manifest.json');
@@ -59,11 +56,12 @@ function writeProjectManifest() {
 
 function getContentFiles() {
   if (!activeProject || !fs.existsSync(activeProject.contentDir)) return [];
-  return fs.readdirSync(activeProject.contentDir)
-    .filter(f => f.endsWith('.html'))
-    .map(f => {
-      const fp = path.join(activeProject.contentDir, f);
-      return { name: f, path: fp, mtime: fs.statSync(fp).mtime.getTime() };
+  return workspace.scanContentFiles(activeProject.contentDir)
+    .map((relPath) => {
+      const fp = path.join(activeProject.contentDir, relPath);
+      let mtime = 0;
+      try { mtime = fs.statSync(fp).mtime.getTime(); } catch { /* file may have vanished */ }
+      return { name: relPath, path: fp, mtime };
     })
     .sort((a, b) => b.mtime - a.mtime);
 }
@@ -78,26 +76,40 @@ function broadcast(msg) {
 function startContentWatcher() {
   if (!activeProject || !fs.existsSync(activeProject.contentDir)) return;
   if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
-  const watcher = fs.watch(activeProject.contentDir, (eventType, filename) => {
-    if (!filename || !filename.endsWith('.html')) return;
-    if (debounceTimers.has(filename)) clearTimeout(debounceTimers.get(filename));
-    debounceTimers.set(filename, setTimeout(() => {
-      debounceTimers.delete(filename);
-      const filePath = path.join(activeProject.contentDir, filename);
-      if (!fs.existsSync(filePath)) return;
-      touchActivity();
-      if (!knownFiles.has(filename)) {
-        knownFiles.add(filename);
-        const eventsFile = path.join(activeProject.stateDir, 'events');
-        if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
-        console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
-      } else {
-        console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
-      }
-      writeProjectManifest();
-      broadcast({ type: 'reload' });
-    }, 100));
-  });
+  // Recursive watch so changes in platform subfolders (linkedin/, instagram/,
+  // etc.) trigger reloads. `recursive: true` is supported on macOS and
+  // Windows; on Linux it is silently ignored by fs.watch prior to Node 20.
+  // For .md anchors we watch the same dirs — the watcher is file-extension
+  // agnostic at the fs level.
+  const watcher = fs.watch(
+    activeProject.contentDir,
+    { recursive: true },
+    (eventType, filename) => {
+      if (!filename) return;
+      // Normalize to POSIX separators so keys in knownFiles match what
+      // scanContentFiles emits (forward slashes even on Windows).
+      const rel = filename.split(path.sep).join('/');
+      const ext = path.extname(rel).toLowerCase();
+      if (ext !== '.html' && ext !== '.md') return;
+      if (debounceTimers.has(rel)) clearTimeout(debounceTimers.get(rel));
+      debounceTimers.set(rel, setTimeout(() => {
+        debounceTimers.delete(rel);
+        const filePath = path.join(activeProject.contentDir, rel);
+        if (!fs.existsSync(filePath)) return;
+        touchActivity();
+        if (!knownFiles.has(rel)) {
+          knownFiles.add(rel);
+          const eventsFile = path.join(activeProject.stateDir, 'events');
+          if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
+          console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
+        } else {
+          console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
+        }
+        writeProjectManifest();
+        broadcast({ type: 'reload' });
+      }, 100));
+    },
+  );
   watcher.on('error', (err) => console.error('content watcher error:', err.message));
   contentWatcher = watcher;
 }

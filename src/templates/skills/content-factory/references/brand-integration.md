@@ -1,8 +1,15 @@
 # Brand Integration
 
-How to detect, activate, and apply a brand skill to generated content. This runs
-as **Step 1c** of the Content Factory workflow — after creating a project, before
-generating any HTML.
+How to detect, activate, and apply a brand skill to generated content. Runs
+after creating a project, before authoring any HTML — whether that HTML is
+an anchor article, a distilled variant, or a fast-path one-off.
+
+The brand layer is orthogonal to the anchor-first methodology. An anchor
+inherits brand tokens, voice, fonts, and logo just like any other content
+type. Every distilled variant re-inlines the same tokens — the brand is the
+single source of truth across the anchor and all its derivatives. See
+`[[/references/methodology.md]]` for when anchor-first applies; this reference covers the
+brand-application mechanics for every case.
 
 ## 1. Discover installed brands
 
@@ -94,9 +101,10 @@ as the style guide when writing card HTML and CSS.
 
 ## 8. Gallery templates (if available)
 
-If the brand has a `templates/` directory, those files appear in the Gallery →
-Templates tab. Ask the user if they want to start from one of those instead of a
-generic built-in.
+If the brand has a `templates/` directory, those files appear in the Gallery
+alongside the built-in templates, grouped under the Social / Slides / Document
+filters by each template's `type` meta. Ask the user if they want to start
+from one of those instead of a generic built-in.
 
 ## 9. Copy and voice
 

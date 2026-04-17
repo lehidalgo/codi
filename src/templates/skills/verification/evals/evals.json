@@ -45,7 +45,7 @@
     },
     {
       "id": "negative-run-tests-only",
-      "description": "Running tests without a completion claim should trigger test-run, not verification",
+      "description": "Running tests without a completion claim should trigger test-suite, not verification",
       "prompt": "run the test suite and show me the results",
       "expectations": [
         "Does NOT invoke the verification skill",

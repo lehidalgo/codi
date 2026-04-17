@@ -1,9 +1,34 @@
 'use strict';
 /**
- * exports.cjs — Heavy export handlers for PDF and DOCX.
- * Extracted from server.cjs to keep it within the 700-line limit.
+ * exports.cjs — Heavy export handlers for PNG, PDF, and DOCX.
  * Each handler receives (req, res) and returns a Promise.
+ * All handlers share the warm Playwright browser from renderer.cjs
+ * instead of launching a fresh one per request.
  */
+
+const { getBrowser } = require('./box-layout/renderer.cjs');
+
+// Run async tasks with bounded concurrency.
+async function mapConcurrent(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+  return results;
+}
+
+const RENDER_CONCURRENCY = 3;
+
+// Device scale factor for all export pipelines (PNG, PDF, DOCX, and by
+// extension PPTX + ZIP which both route through /api/export-png).
+// 3× is the retina print-quality standard — sharp on high-DPI displays
+// and print output, without the file-size and OOM cost of 4×.
+const EXPORT_DEVICE_SCALE = 3;
 
 // ── PNG ──────────────────────────────────────────────────────────────────────
 
@@ -15,14 +40,13 @@ async function handleExportPng(req, res) {
       try {
         const { html, width, height } = JSON.parse(body);
         if (!html || !width || !height) { res.writeHead(400); res.end('Missing html/width/height'); return resolve(); }
-        const { chromium } = require('playwright');
-        const browser = await chromium.launch({ headless: true });
-        const page = await browser.newPage({ deviceScaleFactor: 2 });
+        const browser = await getBrowser();
+        const page = await browser.newPage({ deviceScaleFactor: EXPORT_DEVICE_SCALE });
         await page.setViewportSize({ width, height });
         await page.setContent(html, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(500);
+        await page.waitForFunction(() => document.fonts.ready);
         const png = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
-        await browser.close();
+        await page.close();
         res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length });
         res.end(png);
       } catch (e) {
@@ -46,22 +70,19 @@ async function handleExportPdf(req, res) {
         if (!Array.isArray(slides) || slides.length === 0) {
           res.writeHead(400); res.end('Missing slides array'); return resolve();
         }
-        const { chromium } = require('playwright');
-        const browser = await chromium.launch({ headless: true });
-        const scale = 1.5;
-        const pngDataUrls = [];
-        for (const slide of slides) {
+        const browser = await getBrowser();
+        const PDF_DEVICE_SCALE = EXPORT_DEVICE_SCALE;
+        const validSlides = slides.filter(s => s.html && s.width && s.height);
+        const pngDataUrls = await mapConcurrent(validSlides, RENDER_CONCURRENCY, async (slide) => {
           const { html, width, height } = slide;
-          if (!html || !width || !height) continue;
-          const page = await browser.newPage({ deviceScaleFactor: scale });
+          const page = await browser.newPage({ deviceScaleFactor: PDF_DEVICE_SCALE });
           await page.setViewportSize({ width, height });
           await page.setContent(html, { waitUntil: 'networkidle' });
-          await page.waitForTimeout(300);
+          await page.waitForFunction(() => document.fonts.ready);
           const png = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
-          pngDataUrls.push({ dataUrl: 'data:image/png;base64,' + png.toString('base64'), width, height });
           await page.close();
-        }
-        await browser.close();
+          return { dataUrl: 'data:image/png;base64,' + png.toString('base64'), width, height };
+        });
         if (pngDataUrls.length === 0) { res.writeHead(500); res.end('No slides rendered'); return resolve(); }
         const { width: pw, height: ph } = pngDataUrls[0];
         const pageItems = pngDataUrls.map((s, i) => {
@@ -74,16 +95,15 @@ async function handleExportPdf(req, res) {
 body{background:#fff;}
 div.break{page-break-after:always;}
 </style></head><body>${pageItems}</body></html>`;
-        const browser2 = await chromium.launch({ headless: true });
-        const pdfPage = await browser2.newPage();
+        const pdfPage = await browser.newPage();
         await pdfPage.setViewportSize({ width: pw, height: ph });
         await pdfPage.setContent(combinedHtml, { waitUntil: 'networkidle' });
-        await pdfPage.waitForTimeout(200);
+        await pdfPage.waitForFunction(() => document.fonts.ready);
         const pdfBuffer = await pdfPage.pdf({
           width: pw + 'px', height: ph + 'px', printBackground: true,
           margin: { top: '0', right: '0', bottom: '0', left: '0' },
         });
-        await browser2.close();
+        await pdfPage.close();
         res.writeHead(200, {
           'Content-Type': 'application/pdf',
           'Content-Length': pdfBuffer.length,
@@ -113,7 +133,6 @@ async function handleExportDocx(req, res) {
         if (!Array.isArray(slides) || slides.length === 0) {
           res.writeHead(400); res.end('Missing slides array'); return resolve();
         }
-        const { chromium } = require('playwright');
         const { Document, Packer, Paragraph, TextRun, BorderStyle, PageBreak, ShadingType,
                 Table, TableRow, TableCell, WidthType, ImageRun } = require('docx');
 
@@ -127,15 +146,11 @@ async function handleExportDocx(req, res) {
           return { w: w / deviceScaleFactor, h: h / deviceScaleFactor };
         }
 
-        const DOCX_DEVICE_SCALE = 2;
-        const browser = await chromium.launch({ headless: true });
-        const allPageElements = [];
-
-        for (const slide of slides) {
+        const DOCX_DEVICE_SCALE = EXPORT_DEVICE_SCALE;
+        const browser = await getBrowser();
+        const slideResults = await mapConcurrent(slides, RENDER_CONCURRENCY, async (slide) => {
           const { html, width, height } = slide;
-          // deviceScaleFactor:2 captures retina-quality screenshots so diagram/image
-          // PNGs are high-resolution enough to look sharp in Word at their display size.
-          const page = await browser.newPage({ deviceScaleFactor: 2 });
+          const page = await browser.newPage({ deviceScaleFactor: DOCX_DEVICE_SCALE });
           await page.setViewportSize({ width: width || 794, height: height || 1123 });
           await page.setContent(html, { waitUntil: 'networkidle' });
 
@@ -455,8 +470,7 @@ async function handleExportDocx(req, res) {
             } catch (_) { /* element may be offscreen — skip */ }
           }
 
-          // Also collect <img> data URLs (they come through via evaluated src)
-          const imgPngs = {};
+          // Attach screenshot PNGs to their matching elements
           for (const pg of pageData) {
             for (const el of pg.elements) {
               if (el.role === 'diagram' && diagramPngs[el.diagramIndex] !== undefined) {
@@ -482,10 +496,10 @@ async function handleExportDocx(req, res) {
             }
           }
 
-          allPageElements.push(...pageData);
           await page.close();
-        }
-        await browser.close();
+          return pageData;
+        });
+        const allPageElements = slideResults.flat();
 
         // Convert a run descriptor array → docx TextRun array
         function makeRuns(el, overrides) {
@@ -640,7 +654,7 @@ async function handleExportDocx(req, res) {
                   const imgBuf = Buffer.from(el.pngBase64, 'base64');
                   // Derive CSS dimensions from PNG header so the ImageRun exactly matches
                   // what Playwright captured (getBoundingClientRect can be unreliable).
-                  // deviceScaleFactor=2 means PNG pixels are 2× CSS pixels.
+                  // PNG pixels are DOCX_DEVICE_SCALE× CSS pixels.
                   const pngDims = pngCssDimensions(imgBuf, DOCX_DEVICE_SCALE);
                   const maxW = 600;
                   const srcW = pngDims ? pngDims.w : (el.capturedWidth || maxW);

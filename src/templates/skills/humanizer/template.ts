@@ -2,13 +2,24 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: "Remove AI writing patterns from generated content. Use when text sounds robotic, formulaic, or AI-generated. Applies a two-pass rewrite to eliminate documented AI tells. Also activate when the user wants text to sound more natural or less stiff."
+description: |
+  Remove AI writing patterns from generated content. Use when the user says
+  text sounds robotic, formulaic, AI-generated, too formal, stiff, corporate,
+  or "like ChatGPT / Claude". Also activate for phrases like "humanize
+  this", "sounds too AI", "dehumanize AI content", "make this natural",
+  "remove AI tells", "natural tone", "strip AI voice". Applies a two-pass
+  rewrite against 29 documented AI patterns (vocabulary, structure, style,
+  communication, filler) plus a Soul Check for substance and point-of-view.
+  Do NOT activate for writing new content from scratch (use
+  ${PROJECT_NAME}-content-factory), code comments (use
+  ${PROJECT_NAME}-refactoring or direct edits), translation, or
+  copy-editing for grammar only.
 category: ${SKILL_CATEGORY.CONTENT_REFINEMENT}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 8
 ---
 
 # {{name}} — Content Humanizer
@@ -20,6 +31,14 @@ version: 4
 - User asks to make content sound more natural or human
 - User wants to post or publish content and it sounds AI-generated
 - Another skill has finished generating content and asks the user if they want to humanize
+
+## Skip When
+
+- User wants to write new content from scratch — use ${PROJECT_NAME}-content-factory
+- User wants to edit code comments — use ${PROJECT_NAME}-refactoring or direct edits
+- User wants translation between languages
+- User wants grammar-only copy-editing without stylistic rewriting
+- The source text is already the user's own voice (not AI-generated)
 
 ## Step 1: Gather Input
 
@@ -129,8 +148,6 @@ If the user wants to iterate, accept feedback and revise — do not restart the 
 
 ## Related Skills
 
-- **${PROJECT_NAME}-content-factory** — Generate blog posts and social media content (includes opt-in humanizer step)
-- **${PROJECT_NAME}-doc-engine** — Generate branded reports and proposals (includes opt-in humanizer step)
-- **${PROJECT_NAME}-deck-engine** — Generate HTML slide decks (includes opt-in humanizer step)
-- **${PROJECT_NAME}-documentation** — Write technical documentation (includes opt-in humanizer step)
+- **${PROJECT_NAME}-content-factory** — Generate blog posts, social content, slide decks, and branded business documents (includes opt-in humanizer step)
+- **${PROJECT_NAME}-project-documentation** — Write technical documentation (includes opt-in humanizer step)
 `;

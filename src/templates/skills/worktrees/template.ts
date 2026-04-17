@@ -4,25 +4,40 @@ export const template = `---
 name: {{name}}
 description: |
   Git workspace setup for feature development. Use before executing an
-  implementation plan. Evaluates whether a worktree or a simple branch is the right
-  approach, then sets up the workspace accordingly.
+  implementation plan, when the user wants a clean workspace, when parallel
+  features need isolation, or when dirty local changes must be preserved.
+  Also activate for phrases like "git worktree", "new branch for feature",
+  "workspace isolation", "parallel feature work", "feature branch setup",
+  "before plan-execution", "clean workspace", "isolate this feature".
+  Evaluates worktree vs simple branch and sets up the chosen option.
+  Do NOT activate for finishing a branch (use ${PROJECT_NAME}-branch-finish),
+  committing changes (use ${PROJECT_NAME}-commit), executing the plan
+  itself (use ${PROJECT_NAME}-plan-execution), or resolving merge conflicts.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 8
 ---
 
-# {{name}}
+# {{name}} — Worktrees
 
 **Announce at start:** "I'm using ${PROJECT_NAME}-worktrees to choose an isolation strategy."
 
 ## When to Activate
 
-- Before ${PROJECT_NAME}-plan-executor and ${PROJECT_NAME}-subagent-dev begin task execution
+- Before ${PROJECT_NAME}-plan-execution begins task execution
 - User wants to work on a feature without touching the main working tree
 - User has multiple features in parallel that need isolation
+
+## Skip When
+
+- User wants to finish or merge a branch — use ${PROJECT_NAME}-branch-finish
+- User wants to commit staged changes — use ${PROJECT_NAME}-commit
+- User wants to execute the implementation plan — use ${PROJECT_NAME}-plan-execution
+- User wants to resolve merge conflicts — handle those in the existing tree, not a new workspace
+- Change is trivial (typo fix, single-line) and no plan exists — just edit directly
 
 ## Step 0: Isolation Strategy Decision
 
@@ -42,13 +57,13 @@ Also assess task scope: is this a small targeted change or a large multi-task pl
 **Recommend a simple branch when:**
 - The change is small (bug fix, config tweak, single feature with few tasks)
 - The working tree is clean and no parallel work is active
-- The execution method is ${PROJECT_NAME}-plan-executor (sequential, same working tree is fine)
+- The execution method is ${PROJECT_NAME}-plan-execution INLINE mode (sequential, same working tree is fine)
 - No uncommitted experiments need to be preserved in the current tree
 
 **Recommend a worktree when:**
 - Multiple features need to run in parallel simultaneously
 - The working tree has uncommitted work the user wants to preserve
-- The execution method is ${PROJECT_NAME}-subagent-dev (subagents benefit from path isolation)
+- The execution method is ${PROJECT_NAME}-plan-execution SUBAGENT mode (subagents benefit from path isolation)
 - The plan has many tasks (roughly 5+) and long-running isolation is valuable
 - User explicitly asked for a worktree
 
@@ -190,7 +205,7 @@ Branch fix/null-check created. Ready to work.
 You: I'm using ${PROJECT_NAME}-worktrees to choose an isolation strategy.
 
 [git status --porcelain - 3 modified files]
-[Task scope: large plan, 8 tasks, ${PROJECT_NAME}-subagent-dev]
+[Task scope: large plan, 8 tasks, ${PROJECT_NAME}-plan-execution SUBAGENT mode]
 
 I recommend a worktree because the working tree has uncommitted changes and
 subagent execution benefits from path isolation.
@@ -235,7 +250,7 @@ Ready to execute the implementation plan.
 |-----------|-----------------|
 | Small change, clean tree | Simple branch |
 | Large plan (5+ tasks) | Worktree |
-| ${PROJECT_NAME}-subagent-dev execution | Worktree |
+| ${PROJECT_NAME}-plan-execution SUBAGENT mode | Worktree |
 | Uncommitted work to preserve | Worktree |
 | User asks for worktree | Worktree |
 | \\\`.worktrees/\\\` exists (Path B) | Use it (verify gitignored) |

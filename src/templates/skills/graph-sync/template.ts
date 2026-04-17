@@ -2,22 +2,38 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Choose full re-index for major changes or incremental update for recent edits.
+description: |
+  Synchronize the code knowledge graph. Use when the graph is stale, files
+  have changed significantly, or queries return outdated results. Also
+  activate for phrases like "reindex repo", "refresh graph", "update code
+  graph", "graph is out of date", "graph-code is stale", or on
+  /update_graph and /index_graph. Choose full re-index for major
+  refactors / first-time indexing; choose incremental update for routine
+  post-edit refreshes. Do NOT activate for querying the graph (use
+  ${PROJECT_NAME}-codebase-explore) or for regular code edits that do not
+  require fresh graph state.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# {{name}}
+# {{name}} — Graph Sync
 
 ## When to Activate
 
 - User asks to index or re-index the repository
 - User wants to refresh the code graph after changes
 - User mentions the graph feels stale or incorrect
+- User invokes /update_graph or /index_graph
+
+## Skip When
+
+- User wants to query the graph (find callers, trace dependencies) — use ${PROJECT_NAME}-codebase-explore
+- User edits a single file — the graph is already close enough for most queries
+- graph-code MCP is not configured — report the missing dependency instead of proceeding
 
 ## Sync Modes
 
@@ -55,7 +71,7 @@ version: 4
 
 ## After Sync
 
-**[CODING AGENT]** Report the outcome (confirmation, errors/warnings) and suggest using the codebase-explore skill to explore the updated graph.
+**[CODING AGENT]** Report the outcome (confirmation, errors/warnings) and suggest using the ${PROJECT_NAME}-codebase-explore skill to explore the updated graph.
 
 ## Supported Languages
 

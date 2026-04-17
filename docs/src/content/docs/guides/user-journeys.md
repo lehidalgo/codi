@@ -257,7 +257,7 @@ codi add rule --all
 
 ```bash
 # From a template:
-codi add skill my-deploy-guide --template codi-doc-engine
+codi add skill my-deploy-guide --template codi-content-factory
 
 # Blank skill:
 codi add skill my-skill

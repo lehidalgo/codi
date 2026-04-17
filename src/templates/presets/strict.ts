@@ -47,9 +47,8 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("code-review"),
     prefixedName("security-scan"),
     prefixedName("commit"),
-    prefixedName("test-coverage"),
+    prefixedName("test-suite"),
     prefixedName("project-documentation"),
-    prefixedName("test-run"),
   ],
   agents: [
     prefixedName("code-reviewer"),

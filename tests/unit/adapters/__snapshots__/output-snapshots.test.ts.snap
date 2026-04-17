@@ -12,12 +12,6 @@ Shell commands are allowed.
 Keep source code files under 700 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
-## Skill Routing
-
-| Skill | When to use |
-|-------|-------------|
-| review | Code review skill |
-
 ## Development Notes
 
 - Force push is not allowed

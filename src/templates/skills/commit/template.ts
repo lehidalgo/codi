@@ -8,16 +8,27 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code, creating a commit, or fixing a pre-commit hook failure. Also activate on /commit.
+description: |
+  Git commit workflow with conventional commits, pre-commit checks, and
+  staged-change review. Use when the user asks to commit code, stage changes,
+  create a commit, write a commit message, use conventional commit format,
+  split a commit, or troubleshoot a pre-commit hook failure. Also activate for
+  phrases like "commit these changes", "git commit", "stage these files",
+  "write a conventional commit", "pre-commit failed", "hook failed", "commit
+  message rejected", "commit-msg hook". Activates on /commit. Do NOT activate
+  for pushing to remote (use direct \\\`git push\\\`), creating pull requests
+  (use ${PROJECT_NAME}-artifact-contributor or ${PROJECT_NAME}-branch-finish),
+  merging branches (use ${PROJECT_NAME}-branch-finish), or resolving merge
+  conflicts.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 8
 ---
 
-# {{name}}
+# {{name}} — Commit
 
 ## When to Activate
 
@@ -25,6 +36,15 @@ version: 4
 - User has completed a feature, bug fix, or refactor and needs to commit
 - User needs help writing a conventional commit message
 - Pre-commit hooks fail and the user needs troubleshooting guidance
+- User invokes the /commit slash command
+
+## Skip When
+
+- User wants to push to remote — use \\\`git push\\\` directly
+- User wants to open a PR — use ${PROJECT_NAME}-artifact-contributor (contribution PRs) or ${PROJECT_NAME}-branch-finish (feature PRs)
+- User wants to merge or rebase branches — use ${PROJECT_NAME}-branch-finish
+- User has merge conflicts to resolve — resolve manually before re-invoking this skill
+- User wants to amend or rewrite published history — stop and confirm explicitly (destructive)
 
 ## Commit Workflow
 
@@ -138,11 +158,11 @@ If the commit-msg hook rejects your message:
 
 ## Available Agents
 
-For pre-commit review, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-code-reviewer** — Review staged changes before committing
+For pre-commit review, delegate to this agent:
+- **${PROJECT_NAME}-code-reviewer** — Review staged changes before committing. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/code-reviewer.md]]\\\`
 
 ## Related Skills
 
 - **${PROJECT_NAME}-code-review** — Full code review workflow for complex changes
-- **${PROJECT_NAME}-test-coverage** — Verify test coverage before committing
+- **${PROJECT_NAME}-test-suite** — Run or verify test coverage before committing
 `;

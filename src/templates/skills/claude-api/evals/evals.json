@@ -1,0 +1,61 @@
+{
+  "skillName": "codi-claude-api",
+  "cases": [
+    {
+      "id": "anthropic-import-python",
+      "description": "Python file importing anthropic triggers the skill",
+      "prompt": "I'm using `import anthropic` and want to call Claude for text classification — how do I set it up?",
+      "expectations": [
+        "Activates claude-api skill",
+        "Detects Python as the language",
+        "Points at references/python/claude-api/README.md",
+        "Recommends claude-opus-4-6 as default model",
+        "Recommends adaptive thinking (thinking: {type: \"adaptive\"}) for non-trivial tasks"
+      ]
+    },
+    {
+      "id": "prompt-cache-optimization",
+      "description": "Prompt-caching optimization triggers the skill",
+      "prompt": "my cache hit rate is 0% on repeated requests, what am I doing wrong?",
+      "expectations": [
+        "Activates claude-api skill",
+        "Points at references/shared/prompt-caching.md",
+        "Mentions the silent-invalidator audit (datetime.now(), unsorted JSON, varying tool set)",
+        "Mentions usage.cache_read_input_tokens as the verification signal",
+        "Explains the tools → system → messages render order"
+      ]
+    },
+    {
+      "id": "tool-use-typescript",
+      "description": "Tool use in TypeScript triggers the skill",
+      "prompt": "I need to add function calling to my @anthropic-ai/sdk TypeScript app",
+      "expectations": [
+        "Activates claude-api skill",
+        "Detects TypeScript as the language",
+        "Points at references/shared/tool-use-concepts.md AND references/typescript/claude-api/tool-use.md",
+        "Mentions betaZodTool + Zod for TypeScript tool definitions",
+        "Does NOT recommend reimplementing the tool-call loop manually if the tool runner fits"
+      ]
+    },
+    {
+      "id": "negative-openai-import",
+      "description": "OpenAI SDK import does NOT trigger claude-api",
+      "prompt": "I'm using `from openai import OpenAI` and want to add streaming — help",
+      "expectations": [
+        "Does NOT activate claude-api skill",
+        "Does NOT read any references/python/ or references/shared/ files from this skill",
+        "Does NOT recommend claude-opus-4-6 or Anthropic SDK patterns"
+      ]
+    },
+    {
+      "id": "negative-generic-ml",
+      "description": "Generic ML task does NOT trigger claude-api",
+      "prompt": "train a random forest classifier on this CSV",
+      "expectations": [
+        "Does NOT activate claude-api skill",
+        "Does NOT mention the Anthropic SDK",
+        "Routes to a data-science / ML skill or scikit-learn instead"
+      ]
+    }
+  ]
+}

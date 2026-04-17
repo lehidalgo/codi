@@ -1,0 +1,10 @@
+{
+  "name": "box-validator-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Runtime scripts for the box-validator skill. Installed via setup.sh on first use.",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

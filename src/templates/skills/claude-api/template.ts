@@ -8,18 +8,26 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
 
-# Building LLM-Powered Applications with Claude
+# {{name}} — Claude API
 
 ## When to Activate
 
 - Code imports \\\`anthropic\\\`, \\\`@anthropic-ai/sdk\\\`, or \\\`claude_agent_sdk\\\`
 - User asks to use the Claude API, Anthropic SDK, or Agent SDK
 - User needs to build a Claude-powered application, chatbot, or workflow
+- User asks about prompt caching, extended thinking, tool use, batch, files, or compaction in an Anthropic-SDK project
+- User asks to migrate a Claude app between model versions (Opus/Sonnet/Haiku)
 
-Do NOT activate when code imports \\\`openai\\\` or other non-Anthropic AI SDKs.
+## Skip When
+
+- Code imports \\\`openai\\\`, \\\`google-generativeai\\\`, \\\`mistralai\\\`, \\\`cohere\\\`, or any other non-Anthropic AI SDK
+- File name is provider-scoped (e.g., \\\`*-openai.py\\\`, \\\`*-gemini.ts\\\`, \\\`*-generic.py\\\`)
+- Provider-neutral code that abstracts over multiple model providers
+- General programming, ML training, or data-science tasks unrelated to LLM integration
+- Agent-framework questions that are not Claude-specific (LangChain, LlamaIndex, Instructor)
 
 This skill helps you build LLM-powered applications with Claude. Choose the right surface based on your needs, detect the project language, then read the relevant language-specific documentation.
 
@@ -155,11 +163,11 @@ Everything goes through \\\`POST /v1/messages\\\`. Tools and output constraints 
 
 **ALWAYS use \\\`claude-opus-4-6\\\` unless the user explicitly names a different model.** This is non-negotiable. Do not use \\\`claude-sonnet-4-6\\\`, \\\`claude-sonnet-4-5\\\`, or any other model unless the user literally says "use sonnet" or "use haiku". Never downgrade for cost — that's the user's decision, not yours.
 
-**CRITICAL: Use only the exact model ID strings from the table above — they are complete as-is. Do not append date suffixes.** For example, use \\\`claude-sonnet-4-5\\\`, never \\\`claude-sonnet-4-5-20250514\\\` or any other date-suffixed variant you might recall from training data. If the user requests an older model not in the table (e.g., "opus 4.5", "sonnet 3.7"), read \\\`shared/models.md\\\` for the exact ID — do not construct one yourself.
+**CRITICAL: Use only the exact model ID strings from the table above — they are complete as-is. Do not append date suffixes.** For example, use \\\`claude-sonnet-4-5\\\`, never \\\`claude-sonnet-4-5-20250514\\\` or any other date-suffixed variant you might recall from training data. If the user requests an older model not in the table (e.g., "opus 4.5", "sonnet 3.7"), read \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/models.md]]\\\` for the exact ID — do not construct one yourself.
 
 A note: if any of the model strings above look unfamiliar to you, that's to be expected — that just means they were released after your training data cutoff. Rest assured they are real models; we wouldn't mess with you like that.
 
-**Live capability lookup:** The table above is cached. When the user asks "what's the context window for X", "does X support vision/thinking/effort", or "which models support Y", query the Models API (\\\`client.models.retrieve(id)\\\` / \\\`client.models.list()\\\`) — see \\\`shared/models.md\\\` for the field reference and capability-filter examples.
+**Live capability lookup:** The table above is cached. When the user asks "what's the context window for X", "does X support vision/thinking/effort", or "which models support Y", query the Models API (\\\`client.models.retrieve(id)\\\` / \\\`client.models.list()\\\`) — see \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/models.md]]\\\` for the field reference and capability-filter examples.
 
 ---
 
@@ -181,7 +189,7 @@ A note: if any of the model strings above look unfamiliar to you, that's to be e
 
 **Critical:** Append \\\`response.content\\\` (not just the text) back to your messages on every turn. Compaction blocks in the response must be preserved — the API uses them to replace the compacted history on the next request. Extracting only the text string and appending that will silently lose the compaction state.
 
-See \\\`{lang}/claude-api/README.md\\\` (Compaction section) for code examples. Full docs via WebFetch in \\\`shared/live-sources.md\\\`.
+See \\\`{lang}/claude-api/README.md\\\` (Compaction section) for code examples. Full docs via WebFetch in \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/live-sources.md]]\\\`.
 
 ---
 
@@ -193,7 +201,7 @@ See \\\`{lang}/claude-api/README.md\\\` (Compaction section) for code examples. 
 
 **Verify with \\\`usage.cache_read_input_tokens\\\`** — if it's zero across repeated requests, a silent invalidator is at work (\\\`datetime.now()\\\` in system prompt, unsorted JSON, varying tool set).
 
-For placement patterns, architectural guidance, and the silent-invalidator audit checklist: read \\\`shared/prompt-caching.md\\\`. Language-specific syntax: \\\`{lang}/claude-api/README.md\\\` (Prompt Caching section).
+For placement patterns, architectural guidance, and the silent-invalidator audit checklist: read \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/prompt-caching.md]]\\\`. Language-specific syntax: \\\`{lang}/claude-api/README.md\\\` (Prompt Caching section).
 
 ---
 
@@ -213,10 +221,10 @@ After detecting the language, read the relevant files based on what the user nee
 → Read \\\`{lang}/claude-api/README.md\\\` — see Compaction section
 
 **Prompt caching / optimize caching / "why is my cache hit rate low":**
-→ Read \\\`shared/prompt-caching.md\\\` + \\\`{lang}/claude-api/README.md\\\` (Prompt Caching section)
+→ Read \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/prompt-caching.md]]\\\` + \\\`{lang}/claude-api/README.md\\\` (Prompt Caching section)
 
 **Function calling / tool use / agents:**
-→ Read \\\`{lang}/claude-api/README.md\\\` + \\\`shared/tool-use-concepts.md\\\` + \\\`{lang}/claude-api/tool-use.md\\\`
+→ Read \\\`{lang}/claude-api/README.md\\\` + \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/tool-use-concepts.md]]\\\` + \\\`{lang}/claude-api/tool-use.md\\\`
 
 **Batch processing (non-latency-sensitive):**
 → Read \\\`{lang}/claude-api/README.md\\\` + \\\`{lang}/claude-api/batches.md\\\`
@@ -232,16 +240,16 @@ After detecting the language, read the relevant files based on what the user nee
 Read the **language-specific Claude API folder** (\\\`{language}/claude-api/\\\`):
 
 1. **\\\`{language}/claude-api/README.md\\\`** — **Read this first.** Installation, quick start, common patterns, error handling.
-2. **\\\`shared/tool-use-concepts.md\\\`** — Read when the user needs function calling, code execution, memory, or structured outputs. Covers conceptual foundations.
+2. **\\\`\${CLAUDE_SKILL_DIR}[[/references/shared/tool-use-concepts.md]]\\\`** — Read when the user needs function calling, code execution, memory, or structured outputs. Covers conceptual foundations.
 3. **\\\`{language}/claude-api/tool-use.md\\\`** — Read for language-specific tool use code examples (tool runner, manual loop, code execution, memory, structured outputs).
 4. **\\\`{language}/claude-api/streaming.md\\\`** — Read when building chat UIs or interfaces that display responses incrementally.
 5. **\\\`{language}/claude-api/batches.md\\\`** — Read when processing many requests offline (not latency-sensitive). Runs asynchronously at 50% cost.
 6. **\\\`{language}/claude-api/files-api.md\\\`** — Read when sending the same file across multiple requests without re-uploading.
-7. **\\\`shared/prompt-caching.md\\\`** — Read when adding or optimizing prompt caching. Covers prefix-stability design, breakpoint placement, and anti-patterns that silently invalidate cache.
-8. **\\\`shared/error-codes.md\\\`** — Read when debugging HTTP errors or implementing error handling.
-9. **\\\`shared/live-sources.md\\\`** — WebFetch URLs for fetching the latest official documentation.
+7. **\\\`\${CLAUDE_SKILL_DIR}[[/references/shared/prompt-caching.md]]\\\`** — Read when adding or optimizing prompt caching. Covers prefix-stability design, breakpoint placement, and anti-patterns that silently invalidate cache.
+8. **\\\`\${CLAUDE_SKILL_DIR}[[/references/shared/error-codes.md]]\\\`** — Read when debugging HTTP errors or implementing error handling.
+9. **\\\`\${CLAUDE_SKILL_DIR}[[/references/shared/live-sources.md]]\\\`** — WebFetch URLs for fetching the latest official documentation.
 
-> **Note:** For Java, Go, Ruby, C#, PHP, and cURL — these have a single file each covering all basics. Read that file plus \\\`shared/tool-use-concepts.md\\\` and \\\`shared/error-codes.md\\\` as needed.
+> **Note:** For Java, Go, Ruby, C#, PHP, and cURL — these have a single file each covering all basics. Read that file plus \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/tool-use-concepts.md]]\\\` and \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/error-codes.md]]\\\` as needed.
 
 ### Agent SDK
 
@@ -249,7 +257,7 @@ Read the **language-specific Agent SDK folder** (\\\`{language}/agent-sdk/\\\`).
 
 1. **\\\`{language}/agent-sdk/README.md\\\`** — Installation, quick start, built-in tools, permissions, MCP, hooks.
 2. **\\\`{language}/agent-sdk/patterns.md\\\`** — Custom tools, hooks, subagents, MCP integration, session resumption.
-3. **\\\`shared/live-sources.md\\\`** — WebFetch URLs for current Agent SDK docs.
+3. **\\\`\${CLAUDE_SKILL_DIR}[[/references/shared/live-sources.md]]\\\`** — WebFetch URLs for current Agent SDK docs.
 
 ---
 
@@ -261,7 +269,7 @@ Use WebFetch to get the latest documentation when:
 - Cached data seems incorrect
 - User asks about features not covered here
 
-Live documentation URLs are in \\\`shared/live-sources.md\\\`.
+Live documentation URLs are in \\\`\${CLAUDE_SKILL_DIR}[[/references/shared/live-sources.md]]\\\`.
 
 ## Common Pitfalls
 

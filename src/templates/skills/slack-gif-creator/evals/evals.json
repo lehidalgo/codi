@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-slack-gif-creator",
+  "cases": [
+    {
+      "id": "custom-emoji-gif",
+      "description": "Slack custom emoji request triggers the skill",
+      "prompt": "make me a custom Slack emoji — a spinning coffee cup",
+      "expectations": [
+        "Activates slack-gif-creator skill",
+        "Produces a 128x128 GIF (emoji dimensions)",
+        "Uses FPS 10-30 and limits colors to 48-128 for file size",
+        "Keeps duration under 3 seconds",
+        "Detects runtime (TypeScript preferred, Python fallback)"
+      ]
+    },
+    {
+      "id": "message-reaction-gif",
+      "description": "Slack message GIF request triggers the skill",
+      "prompt": "create a 480x480 animated GIF showing progress bar filling up",
+      "expectations": [
+        "Activates slack-gif-creator skill",
+        "Produces a 480x480 GIF (message dimensions)",
+        "Uses easing functions for smooth animation",
+        "Validates output size against Slack constraints"
+      ]
+    },
+    {
+      "id": "animated-concept",
+      "description": "Concept animation triggers the skill",
+      "prompt": "animate a rocket launch for our #deploys channel",
+      "expectations": [
+        "Activates slack-gif-creator skill",
+        "Chooses appropriate dimensions (128 or 480)",
+        "Produces a valid .gif file",
+        "Uses PIL primitives (circles, polygons) or frame composition"
+      ]
+    },
+    {
+      "id": "negative-static-image",
+      "description": "Static image request does NOT trigger slack-gif-creator",
+      "prompt": "design a logo for a coffee shop",
+      "expectations": [
+        "Does NOT activate slack-gif-creator skill",
+        "Routes to codi-canvas-design instead",
+        "Does NOT produce an animated GIF"
+      ]
+    },
+    {
+      "id": "negative-generative-sketch",
+      "description": "Generative p5.js art does NOT trigger slack-gif-creator",
+      "prompt": "create a flow-field generative art sketch",
+      "expectations": [
+        "Does NOT activate slack-gif-creator skill",
+        "Routes to codi-algorithmic-art instead",
+        "Does NOT emit a 128x128 GIF"
+      ]
+    }
+  ]
+}

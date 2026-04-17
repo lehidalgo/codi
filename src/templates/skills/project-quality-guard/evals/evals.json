@@ -1,0 +1,60 @@
+{
+  "skillName": "codi-project-quality-guard",
+  "cases": [
+    {
+      "id": "new-project-setup",
+      "description": "New project setup triggers the skill",
+      "prompt": "I just scaffolded a new Python project — make sure we have all the quality infrastructure",
+      "expectations": [
+        "Activates project-quality-guard skill",
+        "Runs scripts/audit-project.sh against the project",
+        "Reports missing items across the 9 categories with WARNING messages",
+        "Asks per-category if the user wants each fix before writing",
+        "Reads the matching references/<category>.md when fixing"
+      ]
+    },
+    {
+      "id": "ci-audit",
+      "description": "Pipeline audit triggers the skill",
+      "prompt": "why does CI fail when everything passes locally? check the pipeline",
+      "expectations": [
+        "Activates project-quality-guard skill",
+        "Runs the Pipeline Continuity Check (Local vs CI)",
+        "Compares pre-commit hooks vs CI steps and tool versions",
+        "Identifies the gap (e.g., tsc version mismatch, missing rule in CI config)",
+        "Proposes a fix that aligns both layers"
+      ]
+    },
+    {
+      "id": "missing-env-example",
+      "description": "Missing .env.example triggers the skill",
+      "prompt": "add a .env.example and env management to this repo",
+      "expectations": [
+        "Activates project-quality-guard skill",
+        "Reads references/env-management.md before writing",
+        "Writes .env.example with placeholder values only (no real secrets)",
+        "Updates .gitignore to exclude .env if missing"
+      ]
+    },
+    {
+      "id": "negative-write-feature",
+      "description": "Feature implementation does NOT trigger this skill",
+      "prompt": "implement the dark-mode toggle feature",
+      "expectations": [
+        "Does NOT activate project-quality-guard skill",
+        "Routes to codi-plan-writer / codi-plan-execution",
+        "Does NOT audit .gitignore or pre-commit hooks as part of feature work"
+      ]
+    },
+    {
+      "id": "negative-runtime-debug",
+      "description": "Runtime bug does NOT trigger this skill",
+      "prompt": "the API is returning 500 errors — debug this",
+      "expectations": [
+        "Does NOT activate project-quality-guard skill",
+        "Routes to codi-debugging",
+        "Does NOT run scripts/audit-project.sh"
+      ]
+    }
+  ]
+}

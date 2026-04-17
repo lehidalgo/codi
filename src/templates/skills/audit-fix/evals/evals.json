@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-audit-fix",
+  "cases": [
+    {
+      "id": "process-audit-report",
+      "description": "Audit-report processing request triggers the skill",
+      "prompt": "I have an audit report with 12 findings. Work through them one by one and fix each",
+      "expectations": [
+        "Activates audit-fix skill",
+        "Creates one TaskCreate entry per finding (12 tasks total)",
+        "Presents the full list to the user before starting and waits for confirmation",
+        "Processes items one at a time, gathering evidence before proposing a fix",
+        "Produces one commit per item in the format `fix(<scope>): <what was fixed>`"
+      ]
+    },
+    {
+      "id": "lint-backlog",
+      "description": "Lint backlog processing triggers the skill",
+      "prompt": "eslint is reporting 38 issues across the repo. process the backlog",
+      "expectations": [
+        "Activates audit-fix skill",
+        "Creates one task per lint issue",
+        "Invokes codi-evidence-gathering in Phase 2a for each item",
+        "Waits for explicit user approval per fix — does NOT auto-implement"
+      ]
+    },
+    {
+      "id": "migration-checklist",
+      "description": "Deprecated API migration triggers the skill",
+      "prompt": "we're migrating all usages of the deprecated useAuth() hook — go through each callsite",
+      "expectations": [
+        "Activates audit-fix skill",
+        "Builds the TODO list of callsites as Phase 1",
+        "Detects and surfaces the shared root cause if 3+ consecutive items follow the same pattern (pattern-detection escalation)",
+        "One commit per callsite"
+      ]
+    },
+    {
+      "id": "negative-single-bug",
+      "description": "Single bug does NOT trigger audit-fix",
+      "prompt": "the login button crashes on Safari. fix it",
+      "expectations": [
+        "Does NOT activate audit-fix skill",
+        "Routes to codi-debugging or a direct fix flow instead",
+        "Does NOT build a TODO list of one item"
+      ]
+    },
+    {
+      "id": "negative-new-feature",
+      "description": "New feature work does NOT trigger audit-fix",
+      "prompt": "add a dark mode toggle to the settings page",
+      "expectations": [
+        "Does NOT activate audit-fix skill",
+        "Routes to codi-plan-writer or codi-plan-execution instead",
+        "Does NOT enforce the one-item-at-a-time iron law"
+      ]
+    }
+  ]
+}

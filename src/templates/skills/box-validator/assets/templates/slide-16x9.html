@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Slide 16:9 starter</title>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { width: 1920px; height: 1080px; font-family: system-ui, sans-serif; }
+  .canvas {
+    width: 1920px;
+    height: 1080px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: 60px;
+    gap: 60px;
+    background: #fff;
+  }
+  .canvas > * { flex: 1; min-height: 0; }
+  .top, .bottom {
+    display: flex;
+    flex-direction: row;
+    padding: 36px;
+    gap: 36px;
+    box-sizing: border-box;
+    background: #F5F5F5;
+    border-radius: 20px;
+  }
+  .top > *, .bottom > * { flex: 1; min-width: 0; }
+  .leaf {
+    color: #111; font-size: 40px;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="top">
+      <div class="leaf">Left panel</div>
+      <div class="leaf">Right panel</div>
+    </div>
+    <div class="bottom">
+      <div class="leaf">Bottom left</div>
+      <div class="leaf">Bottom right</div>
+    </div>
+  </div>
+</body>
+</html>

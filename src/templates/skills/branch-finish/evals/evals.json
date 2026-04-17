@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-branch-finish",
+  "cases": [
+    {
+      "id": "finish-this-branch",
+      "description": "Explicit branch completion phrasing triggers the skill",
+      "prompt": "I'm done with this branch, how do I finish it?",
+      "expectations": [
+        "Activates branch-finish skill",
+        "Runs the full test suite before offering options",
+        "Presents exactly four options (Merge locally / Create PR / Keep as-is / Discard)",
+        "Waits for the user's choice before taking any git action"
+      ]
+    },
+    {
+      "id": "ready-to-pr",
+      "description": "PR submission request triggers the skill",
+      "prompt": "tests pass, ready to open a PR for this feature branch",
+      "expectations": [
+        "Activates branch-finish skill",
+        "Re-runs the test suite despite the user's claim",
+        "Routes to Option 2 (Create PR) after user confirms",
+        "Does NOT remove the worktree"
+      ]
+    },
+    {
+      "id": "discard-requires-typed-confirm",
+      "description": "Discard option requires typed confirmation",
+      "prompt": "throw away this branch, I don't need the changes",
+      "expectations": [
+        "Activates branch-finish skill",
+        "Asks the user to type exactly \"discard\" before destructive operations",
+        "Does NOT delete the branch or worktree until the typed confirmation arrives",
+        "If user types anything else, aborts and reports branch preserved"
+      ]
+    },
+    {
+      "id": "negative-failing-tests",
+      "description": "Failing tests block all options",
+      "prompt": "merge this branch into main",
+      "expectations": [
+        "Runs the test suite before anything else",
+        "If tests fail, refuses to offer merge/PR options",
+        "Surfaces the failing tests to the user and asks them to fix first"
+      ]
+    },
+    {
+      "id": "negative-commit-request",
+      "description": "A plain commit request does NOT trigger the skill",
+      "prompt": "commit my latest changes",
+      "expectations": [
+        "Does NOT activate branch-finish skill",
+        "Does NOT run the full test suite",
+        "Does NOT present the four-option menu",
+        "Routes to the commit skill or a plain git add+commit flow"
+      ]
+    }
+  ]
+}
