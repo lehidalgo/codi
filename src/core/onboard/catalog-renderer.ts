@@ -222,7 +222,7 @@ Present your recommendation in this exact format:
 - ...
 
 ### Agent platforms detected:
-- [list platforms found: claude-code, cursor, codex, windsurf, cline]
+- [list platforms found: claude-code, cursor, codex, windsurf, cline, copilot]
 
 ### Notable artifacts I did NOT recommend (and why):
 - [artifact] — [why it doesn't fit this project]

@@ -66,7 +66,7 @@ codi init
 The interactive wizard walks you through three choices:
 
 1. **Languages** -- auto-detected from your project files. Confirm or adjust.
-2. **AI agents** -- select the ones your team uses (Claude Code, Cursor, Codex, Windsurf, Cline).
+2. **AI agents** -- select the ones your team uses (Claude Code, Cursor, Codex, Windsurf, Cline, GitHub Copilot).
 3. **Config mode** -- start with **preset** and select **balanced** (recommended). This gives you sensible defaults for security, typing, and git workflow.
 
 ### Non-Interactive Alternative

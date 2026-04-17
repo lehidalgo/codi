@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Define your rules, skills, and workflows once in <code>.codi/</code> — Codi generates the correct configuration for Claude Code, Cursor, Codex, Windsurf, and Cline automatically.
+  Define your rules, skills, and workflows once in <code>.codi/</code> — Codi generates the correct configuration for Claude Code, Cursor, Codex, Windsurf, Cline, and GitHub Copilot automatically.
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 ## Who Is Codi For?
 
-- **Teams using multiple AI agents** — ensure consistent rules across Claude Code, Cursor, Codex, Windsurf, and Cline
+- **Teams using multiple AI agents** — ensure consistent rules across Claude Code, Cursor, Codex, Windsurf, Cline, and GitHub Copilot
 - **Tech leads enforcing standards** — define security policies, coding conventions, and testing requirements once and deploy them to every developer's agent
 - **Individual developers** — get a structured, version-controlled configuration with 100+ built-in templates instead of writing agent configs from scratch
 
@@ -52,7 +52,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 
 | | |
 |:--|:--|
-| **5 agents, 1 config** | Generate native config files for all supported agents from a single `.codi/` directory |
+| **6 agents, 1 config** | Generate native config files for all supported agents from a single `.codi/` directory |
 | **100+ built-in templates** | Rules, skills, and agents covering security, testing, 11 languages, and 3 frameworks |
 | **6 presets** | From minimal to strict — choose your starting point and customize |
 | **Pre-commit hooks** | Automated testing, secret scanning, type checking, and file size limits |
@@ -81,7 +81,7 @@ codi generate
 codi status
 ```
 
-Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, and other agent files are generated and ready to commit.
+Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.github/copilot-instructions.md`, and other agent files are generated and ready to commit.
 
 > **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 20**.
 
@@ -100,6 +100,7 @@ flowchart LR
     E --> H["AGENTS.md"]
     E --> I[".windsurfrules"]
     E --> J[".clinerules"]
+    E --> K[".github/copilot-instructions.md"]
 ```
 
 `codi init` and `codi add` scaffold templates from the built-in library into `.codi/`. Then `codi generate` reads `.codi/`, resolves configuration across 3 layers (preset defaults → repo → user), and passes the result through agent-specific adapters that produce each platform's native format. Flags marked `locked: true` cannot be overridden by later layers.
@@ -123,10 +124,11 @@ flowchart LR
 | Agent | Config File | Rules | Skills | Agents | MCP |
 |:------|:-----------|:-----:|:------:|:------:|:---:|
 | **Claude Code** | `CLAUDE.md` | `.claude/rules` | `.claude/skills` | `.claude/agents` | `.mcp.json` |
-| **Cursor** | `.cursorrules` | `.cursor/rules` | `—` | — | `.cursor/mcp.json` |
+| **Cursor** | `.cursorrules` | `.cursor/rules` | `.cursor/skills` | — | `.cursor/mcp.json` |
 | **Codex** | `AGENTS.md` | `.` | `.agents/skills` | `.codex/agents` | `.codex/config.toml` |
 | **Windsurf** | `.windsurfrules` | `.` | `.windsurf/skills` | — | — |
 | **Cline** | `.clinerules` | `.cline` | `.cline/skills` | — | — |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | `.github/instructions` | `.github/skills` | `.github/agents` | `.vscode/mcp.json` |
 <!-- GENERATED:END:supported_agents -->
 
 ---

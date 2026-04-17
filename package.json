@@ -68,7 +68,9 @@
     "cli",
     "claude",
     "cursor",
-    "codex"
+    "codex",
+    "copilot",
+    "github-copilot"
   ],
   "dependencies": {
     "@clack/prompts": "^1.1.0",

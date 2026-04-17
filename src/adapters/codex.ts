@@ -9,6 +9,7 @@ import type {
 } from "../types/agent.js";
 import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
+import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
@@ -162,7 +163,7 @@ export const codexAdapter: AgentAdapter = {
         lines.push(`model_reasoning_effort = "${codexEffort}"`);
       }
       const tomlContent = addGeneratedFooter(lines.join("\n"), "toml");
-      const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".toml";
+      const fileName = `${sanitizeNameForPath(agent.name)}.toml`;
       files.push({
         path: `.codex/agents/${fileName}`,
         content: tomlContent,

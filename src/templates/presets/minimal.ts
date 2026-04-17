@@ -10,7 +10,7 @@ export const preset: BuiltinPresetDefinition = {
   tags: ["minimal", "permissive", "starter"],
   compatibility: {
     engine: ">=0.3.0",
-    agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
+    agents: ["claude-code", "cursor", "windsurf", "codex", "cline", "copilot"],
   },
   flags: {
     auto_commit: { mode: "enabled", value: false },

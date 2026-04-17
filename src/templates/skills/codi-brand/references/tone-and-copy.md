@@ -28,7 +28,7 @@
 - Short declarative sentences. One idea per sentence.
 - Second person: "you", "your team", "your agents" — never "users" or "developers" in copy
 - Lead with the concrete problem or outcome, then explain the solution
-- Name specific agents: Claude Code, Cursor, Codex, Windsurf, Cline
+- Name specific agents: Claude Code, Cursor, Codex, Windsurf, Cline, GitHub Copilot
 - Concrete and specific: name commands, file paths, exact counts
 
 ## Phrases to USE
@@ -54,7 +54,7 @@
 
 | Fact | Value |
 |------|-------|
-| Supported agents | 5 (Claude Code, Cursor, Codex, Windsurf, Cline) |
+| Supported agents | 6 (Claude Code, Cursor, Codex, Windsurf, Cline, GitHub Copilot) |
 | Built-in templates | 148+ |
 | Install command | `npm install -g codi-cli@latest` |
 | Source directory | `.codi/` |

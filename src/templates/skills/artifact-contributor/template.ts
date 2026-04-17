@@ -25,7 +25,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 13
 ---
 
 # {{name}} — Artifact Contributor
@@ -145,7 +145,24 @@ See \\\`\${CLAUDE_SKILL_DIR}[[/references/github-mcp.md]]\\\` for the
 - [ ] Uses \\\`{{name}}\\\` placeholder where applicable (templates only)
 - [ ] Skeleton directories (\\\`scripts/\\\`, \\\`references/\\\`, \\\`assets/\\\`, \\\`evals/\\\`) are present **only as needed** — empty dirs add noise
 
-## Step 5 — Troubleshooting
+## Step 5 — Adapter-Specific Contributions
+
+**[CODING AGENT]** When the contribution is a **new adapter** or **adapter
+extension** (e.g., adding a new AI agent platform, extending an existing
+adapter with missing formats), the work has extra requirements beyond a
+standard rule/skill/agent contribution:
+
+- Official platform specification must be validated before coding
+- A capability matrix is required (platform formats vs. adapter coverage)
+- Path sanitization and YAML injection prevention must be reviewed
+- Test infrastructure must use real file I/O (tmpDir + beforeEach/afterEach)
+- Documentation must stay in sync with implementation
+
+Consult \\\`\${CLAUDE_SKILL_DIR}[[/references/adapter-development.md]]\\\`
+for the full adapter contribution checklist and lessons learned from prior
+adapter remediations.
+
+## Step 6 — Troubleshooting
 
 **[CODING AGENT]** If the contribution stalls, consult
 \\\`\${CLAUDE_SKILL_DIR}[[/references/troubleshooting.md]]\\\` for fixes

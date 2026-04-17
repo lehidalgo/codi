@@ -158,7 +158,7 @@ export const BACKUPS_DIR = "backups";
 
 // --- Supported platforms ---
 /** Agent platform IDs — single source of truth for compatibility fields. */
-export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline"] as const;
+export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline", "copilot"] as const;
 /** YAML-ready inline list for template interpolation. */
 export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
 
