@@ -26,12 +26,39 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Preset Creator
 
 Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs.
+
+## What Is a Preset?
+
+A preset is a **named bundle** of Codi artifacts (rules, skills, agents, flags, MCP servers) that a team or organization can install as a single package. Presets answer the question "what should every project in our org look like?" — one \\\`${PROJECT_CLI} init --preset <name>\\\` produces a configured \\\`${PROJECT_DIR}/\\\` ready to use.
+
+### Built-in presets (check these first)
+
+Before creating a custom preset, see if one of these already fits:
+
+| Preset | Intended audience |
+|--------|-------------------|
+| \`minimal\` | Just the self-improvement core — user decides everything else |
+| \`balanced\` | **Recommended default** — security on, type-checking strict, no force-push |
+| \`strict\` | Security-first teams, regulated environments |
+| \`fullstack\` | Full application teams — backend + frontend + testing + deploy |
+| \`development\` | Contributor-heavy setup — adds artifact-contributor and preset-creator |
+| \`power-user\` | Heavy agent users — every productivity + exploration skill enabled |
+
+Run \\\`${PROJECT_CLI} preset list --builtin\\\` to see them. **Create a custom preset only when:**
+
+- A built-in does not fit your team's stack or policies
+- You need to enforce org-specific flag defaults or artifact locks
+- You want to distribute your configuration across many repos (monorepo, org-wide standards)
+
+For a single project's customization, you often do not need a preset — just edit \\\`${PROJECT_DIR}/\\\` directly. Presets are for **distribution and reuse**.
+
+---
 
 ## When to Activate
 
@@ -47,14 +74,48 @@ Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable 
 - User wants to contribute an artifact back to ${PROJECT_NAME_DISPLAY} upstream — use ${PROJECT_NAME}-artifact-contributor
 - User just wants to create a single custom rule/skill/agent (not a bundle) — use the matching creator skill
 
-## Step 1: Define Identity
+## Step 1: Define Purpose and Audience
 
-**[CODING AGENT]** Ask the user:
-1. **Name**: kebab-case, max ${MAX_NAME_LENGTH} chars (e.g., \`fullstack\`, \`org-security\`)
-2. **Description**: one sentence describing the preset's purpose
-3. **Version**: semver format (default: \`1.0.0\`)
-4. **Tags**: comma-separated tags for discoverability
-5. **Reference preset**: use an existing preset as a starting point to copy from? (e.g., \`balanced\`, \`strict\`, or start blank)
+**[CODING AGENT]** Before asking about metadata, establish **why** the preset exists. A preset without a clear audience becomes another \`balanced\` variant that nobody uses.
+
+**Required (agent blocks until answered):**
+
+1. **What problem does this preset solve that the built-ins don't?**
+   - Good: *"Our fintech org requires security-scan + project-quality-guard + stricter TypeScript than \`strict\` — this preset codifies that."*
+   - Good: *"My team builds Next.js apps and needs nextjs-researcher + frontend-design + webapp-testing in every new project."*
+   - Bad: *"I just want my own preset."* (not a reason — presets are for distribution)
+   - **Not sure?** Compare your intended configuration against \`balanced\` and \`strict\`. List what you are adding and what you are removing. If the delta is small, consider extending a built-in via \`compare-preset\` instead.
+
+2. **Who is the audience?** Pick one:
+   - (a) Personal — just me, across my own projects
+   - (b) Team — a small group (5-20 people) sharing a stack
+   - (c) Organization — company-wide standard across many teams
+   - (d) Open-source — public distribution via GitHub
+   - **Not sure?** Default to (a) personal. You can promote to team/org later.
+
+3. **Reference preset**: start from which built-in?
+   - \`minimal\` — start with almost nothing, add only what you need
+   - \`balanced\` — recommended default, tune from here for most cases
+   - \`strict\` — start here for security-first orgs
+   - \`fullstack\` / \`development\` / \`power-user\` — start here if one matches your archetype
+   - Blank — only if building something fundamentally different
+
+**Identity metadata (after Purpose is clear):**
+
+4. **Name**: kebab-case, max ${MAX_NAME_LENGTH} chars. Use a name that signals the audience:
+   - Good: \`acme-fintech\`, \`frontend-team\`, \`org-security\`
+   - Bad: \`my-preset\`, \`custom\`, \`preset-v2\` (no audience signal)
+5. **Description**: one sentence describing who should use it and why (not what it contains — the artifact list is separate).
+6. **Version**: semver format (default: \`1.0.0\`). Bump on every distributed change.
+7. **Tags**: comma-separated tags for discoverability — stack names (react, django), domains (fintech, medical), org names, etc.
+
+### "Not sure?" escape hatches
+
+- **"I don't know what to put in my preset."** Pick the reference preset closest to what you want, install it into a temp project (\`codi init --preset <name>\` in \`/tmp/test\`), use it for a week, then list the edits you made. Those edits become your preset's delta.
+- **"A built-in almost fits but not quite."** Do NOT fork. Instead, use \`compare-preset\` + \`refine-rules\` to contribute the gap upstream. If the gap is truly org-specific, then fork.
+- **"The preset keeps growing."** A preset with 30+ skills is suspicious. Most teams need 5-15 skills beyond the self-improvement core. Audit what everyone actually uses before bundling.
+
+**Block rule:** Do NOT proceed to Step 2 until Questions 1-3 have clear answers.
 
 ## Step 2: Select Artifacts
 

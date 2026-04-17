@@ -24,10 +24,34 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 12
 ---
 
 # {{name}} — Agent Creator
+
+## What Is an Agent (vs. a Skill)?
+
+An **agent** is a dispatchable specialist that the primary coding agent calls for deep, focused analysis. It runs in its own context (does not see the main conversation), produces a structured report with severity-ranked findings, and returns. Think of it as a consultant you hire for one task: code review, security audit, performance analysis.
+
+A **skill** is a workflow the primary agent follows inline; an **agent** is a worker the primary agent dispatches.
+
+| Dimension | Skill | Agent |
+|-----------|-------|-------|
+| Who runs it | Primary agent, inline in your chat | Dispatched — runs in its own context |
+| Output | Conversational + maybe a file | Structured report with severity ranking |
+| Scope | Full workflow (many steps) | One focused analysis |
+| Example | "Run the tests and triage failures" | "Review this diff for security issues" |
+| Invoked by | User slash command or model auto-trigger | Another agent (via the \`Agent\` tool) |
+
+**Rule of thumb:** create an agent when you want a second opinion with isolated context. Create a skill when you want a repeatable process in the main conversation.
+
+### Do you actually need a new agent?
+
+Run \`codi list agents\` first — built-in agents include: \`code-reviewer\`, \`security-analyzer\`, \`performance-auditor\`, \`test-generator\`, \`refactorer\`, \`codebase-explorer\`, \`ai-engineering-expert\`, and domain specialists (data, mobile, MLOps, Next.js, etc.). If one of them fits, use it directly — skip this creator.
+
+Create a custom agent only when: you need a specialist role not covered by built-ins, the role is reused across many sessions (one-offs are usually skills), and the output is a structured report rather than a free-form answer.
+
+---
 
 ## When to Activate
 
@@ -47,15 +71,47 @@ version: 10
 
 ### Step 1 — Capture Intent
 
-**[CODING AGENT]** Interview the user before writing anything:
+**[CODING AGENT]** Interview the user before writing anything. Offer concrete examples for every question; if the user is unsure, propose 2-3 options and let them pick.
 
-1. **What role should this agent fill?** — One-sentence purpose.
-2. **What triggers it?** — 3-5 specific scenarios.
-3. **What does it produce?** — Structured report, inline comments, or file edits?
-4. **What tools does it need?** — Read, Write, Edit, Bash, Glob, Grep, or MCP tools?
-5. **What model should it use?** — \\\`inherit\\\`, \\\`sonnet\\\`, or \\\`opus\\\`?
+**Required (agent blocks until answered):**
 
-Do NOT proceed until questions 1-3 have clear answers.
+1. **What role should this agent fill?** — One-sentence purpose that fits the pattern "<agent> analyzes X and reports Y".
+   - Good: *"Reviews migration SQL files for unsafe patterns and reports severity-ranked findings."*
+   - Bad: *"Helps with databases."*
+   - **Not sure?** Describe the specialist you wish you could hire for an hour. That is the agent.
+
+2. **What triggers it?** — 3-5 specific scenarios where the primary agent should dispatch this one.
+   - Good: *"When a .sql file is committed", "when the user says 'review this migration'", "after codi-plan-execution finishes a database task"*.
+   - Bad: *"When working on the database."*
+
+3. **What does it produce?** — Pick one:
+   - (a) Severity-ranked findings report (CRITICAL / HIGH / MEDIUM / LOW) — most common; use for reviewers and auditors
+   - (b) Generated artifact (code, tests, docs) — use for generators
+   - (c) Verbal analysis with evidence citations — use for exploratory specialists
+   - **Not sure?** Default to (a). It forces structure and matches the reviewer/analyzer archetype.
+
+**Optional (helpful but not blocking):**
+
+4. **What tools does it need?** — Keep minimal; agents should request the fewest tools possible.
+   - (a) Read-only (\`Read\`, \`Grep\`, \`Glob\`) — reviewers, analyzers
+   - (b) Writes files (\`Write\`, \`Edit\`) — generators
+   - (c) Runs commands (\`Bash\`) — only when needed
+   - (d) MCP tools (code-graph, docs search) — deep specialists
+   - **Not sure?** Start with (a) read-only. Add writes/bash only when the role requires them.
+
+5. **What model should it use?**
+   - \\\`inherit\\\` — use whatever the primary agent is using (default, cheapest)
+   - \\\`sonnet\\\` — standard capability
+   - \\\`opus\\\` — complex reasoning, architecture reviews, multi-file analysis
+   - **Not sure?** Leave as \\\`inherit\\\`. Bump to \\\`opus\\\` only if the agent's analyses show shallow reasoning in practice.
+
+### "Not sure?" escape hatches
+
+- **"I don't know what makes an agent different from a skill."** Re-read the comparison table at the top. If you want a workflow the main agent runs, make a skill. If you want a specialist with fresh context, make an agent.
+- **"My idea overlaps with a built-in agent."** Extend the built-in by creating a variant skill that calls it with project-specific context, rather than a new agent.
+- **"The scope keeps growing."** Cap agents at 5-8 numbered process steps. Beyond that, split into multiple narrower agents.
+
+**Block rule:** Do NOT proceed to Step 2 until Questions 1-3 have clear answers.
 
 ### Step 2 — Scaffold & Frontmatter
 

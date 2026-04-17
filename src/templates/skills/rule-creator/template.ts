@@ -29,10 +29,39 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
 # {{name}} — Rule Creator
+
+## What Is a Rule?
+
+A rule is a **constraint** that every coding agent follows — not a workflow, not a task. Rules are always-loaded instructions that sit in the agent's context and shape every response. Examples: "use Zod for input validation", "files stay under 700 lines", "no \`any\` in TypeScript", "commit messages follow Conventional Commits".
+
+**Rules vs. skills vs. agents:**
+
+| You want... | Use |
+|-------------|-----|
+| A constraint on how code is written | **Rule** (this flow) |
+| A workflow the agent runs end-to-end | **Skill** (\`${PROJECT_NAME}-skill-creator\`) |
+| A specialist that produces a structured report | **Agent** (\`${PROJECT_NAME}-agent-creator\`) |
+
+### Do you actually need a new rule?
+
+Codi ships 28 built-in rule templates covering security, architecture, testing, TypeScript, Python, Go, Rust, React, Next.js, Django, Spring Boot, and more. **Check them first:**
+
+\\\`\\\`\\\`bash
+${PROJECT_CLI} add rule --all   # lists every built-in template
+\\\`\\\`\\\`
+
+Pick an existing template if it matches — rule duplication creates conflicting guidance. Create a custom rule only when:
+
+- The constraint is specific to your project, team, or stack and not covered by a built-in
+- The behavior is **always-true** — not "sometimes, if X" (those become skills)
+- A linter or formatter cannot enforce it (if it can, configure the tool instead)
+- You have evidence it matters — ideally 2+ times someone in the codebase has gotten it wrong
+
+---
 
 ## When to Activate
 
@@ -52,14 +81,37 @@ version: 9
 
 ## Step 1 — Capture Intent
 
-**[CODING AGENT]** Before writing anything, interview the user:
+**[CODING AGENT]** Before writing anything, interview the user. If they are unsure, offer concrete examples and let them pick.
 
-1. **What behavior to enforce?** — Get a specific, actionable constraint. Example: "All API endpoints must validate request bodies with Zod schemas."
-2. **For what language/framework?** — Is this universal or scoped to TypeScript, Python, React, etc.?
-3. **Universal or scoped?** — Should it apply everywhere or only to specific directories/file patterns?
-4. **Why this rule?** — What problem does it prevent? (This becomes the rationale.)
+**Required (agent blocks until answered):**
 
-Do NOT proceed until you have clear answers for at least questions 1 and 2.
+1. **What behavior to enforce?** — State the constraint as a single imperative sentence.
+   - Good: *"All API endpoints must validate request bodies with Zod schemas."*
+   - Good: *"Never use \`any\` in TypeScript — use \`unknown\` and narrow with type guards."*
+   - Bad: *"Better validation" / "Be more careful with types"* (too vague)
+   - **Not sure?** Start with a BAD example from the codebase: "This broke because X happened. The rule should prevent X."
+
+2. **For what language/framework?** — Pick one:
+   - (a) Universal — applies to all files, all languages
+   - (b) Language-specific — TypeScript / Python / Go / Rust / Swift / Kotlin / etc.
+   - (c) Framework-specific — React / Next.js / Django / Spring Boot / etc.
+   - (d) Path-scoped — only for \`src/api/**\` or similar
+
+**Optional (helpful but not blocking):**
+
+3. **Why this rule?** — What problem does it prevent? This becomes the rationale that the agent cites when applying the rule.
+   - Good: *"Prevents injection attacks and data corruption in public endpoints."*
+   - **Not sure?** If you cannot articulate the problem, the rule probably is not needed. Close the flow and revisit when you hit the problem.
+
+4. **Evidence** — How many times has this gotten wrong in the codebase? 0 = speculative, skip. 1 = one-off, maybe a code review comment instead. 2+ = real pattern, rule justified.
+
+### "Not sure?" escape hatches
+
+- **"I don't know if this should be a rule, skill, or agent."** Re-read the comparison table above. Rules = always-true constraints. Skills = triggered workflows. Agents = dispatched specialists.
+- **"A linter could catch this."** Configure the linter instead. Rules are for what linters cannot enforce (architectural decisions, naming conventions with rationale, cross-cutting patterns).
+- **"I can't phrase the constraint cleanly."** That is a signal the rule is not clear yet. Walk through 2-3 concrete examples; the rule should read cleanly from them.
+
+**Block rule:** Do NOT proceed to Step 2 until Questions 1 and 2 have clear answers.
 
 ## Step 2 — Choose Scope
 

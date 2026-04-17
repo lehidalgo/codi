@@ -27,10 +27,28 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 31
+version: 33
 ---
 
 # {{name}} — Skill Creator
+
+## What Is a Skill?
+
+A skill is a reusable workflow that a coding agent can invoke by name. Think of it as a playbook: "when the user says X, follow these steps." A skill has a trigger description (so the agent knows when to load it), a process (the steps to follow), and optional scripts / references / examples the steps rely on.
+
+**Examples of good skills:** "run the test suite and triage failures", "create a branded slide deck", "refactor a Python module to remove dead code", "generate an OpenAPI spec from a code-first API".
+
+**When do you need a custom skill vs. something built-in?**
+
+- Run \`codi list skills\` first — there are 60+ built-in skills. If one fits, use it.
+- Create a custom skill only when: the workflow is specific to your project / team, repeats often (3+ times), has clear start and end, and would benefit from an agent driving the steps rather than the human.
+
+If you are not sure whether you need a skill, a rule, or an agent, answer this:
+- You want to enforce **constraints** on all code — that is a **rule** (\`${PROJECT_NAME}-rule-creator\`).
+- You want the agent to perform a **task** end-to-end — that is a **skill** (this flow).
+- You want to dispatch a **specialist worker** that produces a structured report — that is an **agent** (\`${PROJECT_NAME}-agent-creator\`).
+
+---
 
 ## When to Activate
 
@@ -53,18 +71,48 @@ version: 31
 
 ### Step 1 — Capture Intent
 
-**[CODING AGENT]** Before writing anything, interview the user to gather requirements. Ask these questions:
+**[CODING AGENT]** Before writing anything, interview the user. For every question, offer concrete examples. If the user says "I don't know", propose 2-3 options and let them pick.
+
+**Required (agent blocks until answered):**
 
 1. **What should this skill do?** — Get a clear one-sentence purpose.
-2. **When should it trigger?** — Ask for 3-5 specific scenarios (not vague categories). Example: "When the user says 'review this PR'" not "when doing code stuff."
-3. **What output should it produce?** — A file? Terminal output? A structured report?
-4. **What tools does it need?** — Read, Write, Edit, Bash, Glob, Grep, or external MCP tools?
-5. **Are there existing skills to reference?** — Check \\\`${PROJECT_DIR}/skills/\\\` for similar skills to learn from.
-6. **Project skill or built-in template?**
-   - **(a) Project skill** — installs to \\\`${PROJECT_DIR}/skills/\\\`. Available immediately in this project. Default for most users.
-   - **(b) Built-in template** — installs to \\\`src/templates/skills/\\\`. Becomes available to all codi users after a build. Choose only if contributing to the codi source.
+   - Good: *"Review a pull request and produce severity-ranked findings."*
+   - Bad: *"Help with code stuff."*
+   - **Not sure?** Describe the last time you wished an agent had a playbook — the gap is often a skill.
 
-Do NOT proceed until you have clear answers for at least questions 1-3 and 6.
+2. **When should it trigger?** — List 3-5 specific phrases or scenarios. The description that triggers the skill depends on these.
+   - Good: *"When the user says 'review this PR'", "when a diff is pasted into chat", "after git push on a feature branch".*
+   - Bad: *"When working on quality."*
+   - **Not sure?** Think of the last 5 times you manually typed this kind of workflow. What were the first words?
+
+3. **What output should it produce?** — Pick the shape:
+   - (a) Verbal answer / stdout only (e.g. "tests passing")
+   - (b) A file or directory (e.g. report markdown, generated test file)
+   - (c) Structured JSON (e.g. CI-friendly machine-readable)
+   - (d) Mixed — file + stdout summary
+
+4. **Project skill or built-in template?**
+   - **(a) Project skill** — installs to \\\`${PROJECT_DIR}/skills/\\\`. Available immediately in this project. **Default for most users.**
+   - **(b) Built-in template** — installs to \\\`src/templates/skills/\\\`. Becomes available to all codi users after a build. Choose only if contributing to codi itself.
+
+**Optional (helpful but not blocking):**
+
+5. **What tools does it need?**
+   - (a) Read-only (\`Read\`, \`Grep\`, \`Glob\`) — analysis, exploration
+   - (b) Writes files (\`Write\`, \`Edit\`) — generates or modifies content
+   - (c) Runs commands (\`Bash\`) — tests, builds, scripts
+   - (d) External MCP tools (code-graph, GitHub, etc.)
+   - **Not sure?** Start with Read + Grep only. Widen later when the skill needs to actually change something.
+
+6. **Are there existing skills to reference?** — Run \\\`ls ${PROJECT_DIR}/skills/\\\` and suggest 1-2 close neighbors as style references for the new SKILL.md. Novice users should not write a skill from scratch — copy structure from a similar one.
+
+### "Not sure?" escape hatches
+
+- **"I don't know if I need a skill."** Ask the user to describe the last 3 times they did the workflow manually. If the description becomes a playbook, the skill is justified. If it is a one-off, skip.
+- **"I don't know what to name it."** Use a verb-first kebab-case name: \`review-pr\`, \`deploy-preview\`, \`analyze-errors\`. The skill name becomes a slash command, so pick something the user would naturally type.
+- **"The scope keeps growing."** That is a signal to split. If the skill has more than 8 steps, propose splitting into two skills with clear boundaries.
+
+**Block rule:** Do NOT proceed to Step 2 until Questions 1-4 have clear answers.
 
 ### Step 2 — Scaffold
 

@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
 user-invocable: true
 disable-model-invocation: false
-version: 13
+version: 15
 ---
 
 # {{name}}
@@ -36,6 +36,82 @@ version: 13
 - Generic design request where the user specifies their own palette and fonts
 - Content unrelated to {{name}} — do not force brand tokens onto someone else's design
 - Pure code or infrastructure tasks
+
+## What Is a Brand Skill?
+
+A brand skill is a bundle of visual and written identity rules — colors, fonts, logo placement, tone of voice, example phrases — that any other skill can consult when producing content. When Content Factory generates a slide deck, a branded report, or a social carousel, it reads this brand skill to decide how the output looks and sounds. One brand skill = one identity. A team with three product lines would have three brand skills.
+
+You do not need design skills to create one. This skill will interview you, then fill in the files for you.
+
+---
+
+## Before You Start — First-Time Brand Intake
+
+**Trigger:** If \`brand/tokens.json\` still contains placeholder values (e.g. \`#000000\` primary color, \`"Brand phrase 1"\`, \`"Arial"\` fonts), the brand has not been filled in yet. Run this intake **before** applying the brand anywhere.
+
+### What the agent needs from you
+
+Gather anything you already have before answering the questions:
+
+- Logo files (SVG preferred, PNG/JPG OK) — for light background and dark background if different
+- Existing brand guidelines PDF or Figma link (optional)
+- Your current website URL (if you have one)
+- 2-4 screenshots or links of brands you admire — these become "style references", not to copy
+- 2-4 screenshots or links of **competitors** — the agent uses these to differentiate your brand, not to imitate
+
+Drop any of these into the chat before answering. It is fine to have none — the intake still works.
+
+### The 9 intake questions
+
+**Identity (required — agent stops until answered):**
+
+1. **Brand name + one-liner.** Example: "Codi — AI agent configuration for teams."
+2. **Industry or category.** Pick or describe: developer tools / fintech / agency / e-commerce / SaaS / media / physical product / service / non-profit / personal brand / other.
+3. **Primary audience.** Who sees this brand most? Pick: developers / designers / executives / small-business owners / general consumers / students / internal team only / other.
+
+**Personality (required):**
+
+4. **Pick 3 adjectives** from this list that describe the brand's feel. If none fit, propose your own:
+   minimal · bold · playful · serious · retro · corporate · warm · technical · rebellious · editorial · luxurious · friendly · clinical · raw · handcrafted · futuristic · nostalgic · calm · energetic · trustworthy
+5. **Competitors or peers to differentiate from.** Share 1-3 brands you do NOT want to look like. Prevents the agent from producing a convergent "generic AI slop" aesthetic.
+
+**Assets (optional but recommended):**
+
+6. **What exists today?** Answer any that apply:
+   - Logo files: yes (share paths) / no — agent scaffolds placeholder assets
+   - Existing colors: yes (list hex codes or describe) / no — agent proposes 3 palette options
+   - Existing fonts: yes (Google Fonts name or font file) / no — agent proposes 3 pairings
+   - Inspiration references: yes (share URLs/screenshots) / no
+
+**Voice (required):**
+
+7. **Tone axis.** Pick one and optionally shade: formal ↔ casual, technical ↔ warm, serious ↔ playful. Example: "casual and warm, leaning technical."
+8. **Sample sentences.** Write 2 sentences you *would* publish under this brand, and 2 you *would not*. Short is fine.
+
+**Scope (required):**
+
+9. **Where will this brand appear?** Check all that apply: slide decks / branded documents (reports, one-pagers) / social posts (carousels, single cards) / email templates / web page / print deliverable / internal docs only. Drives which template files the brand ships.
+
+### "Not sure?" escape hatches
+
+- **"I don't know my brand personality."** Agent proposes 3 archetypes (e.g. "Minimal Dev Tool", "Warm Consumer SaaS", "Serious Enterprise") with color+font examples; you pick one.
+- **"I don't have a logo."** Agent scaffolds a wordmark-style placeholder using the chosen display font. You can replace later without re-running the intake.
+- **"I have no idea what colors I want."** Agent proposes 3 palettes per chosen personality (e.g. Minimal Dev Tool → monochrome / dusk blue / forest green). Pick one, agent fills \`tokens.json\`.
+- **"What if this changes later?"** Edit \`brand/tokens.json\` at any time. Everything downstream re-reads from it — no regeneration of the skill needed.
+
+### After the intake
+
+**[CODING AGENT]** Only once you have answers for Identity (Q1-3), Personality (Q4-5), Voice (Q7-8), and Scope (Q9):
+
+1. Populate \`brand/tokens.json\` with the gathered values
+2. Generate \`brand/tokens.css\` from the tokens
+3. Replace any placeholder asset paths; if no logo, create a simple SVG wordmark using the chosen display font
+4. Write 1-2 reference HTML files in \`references/\` showing the brand applied to a card and a document
+5. Update the description at the top of this SKILL.md to reflect the brand (optional — the description is the file a consumer sees first)
+6. Run \`codi generate\` to propagate
+7. Report to the user: summary of identity/personality/voice decisions, path to tokens.json, and suggested next step (generate a sample deck with Content Factory to see the brand in action)
+
+---
 
 ## How to Apply This Brand
 
