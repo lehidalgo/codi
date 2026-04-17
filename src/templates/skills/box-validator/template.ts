@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
 
 # {{name}} — Box Layout Validator
@@ -23,6 +23,13 @@ a score and actionable fix instructions. You read the report and iterate.
 
 The validator runs in your own bash environment. No API, no server, no user
 involvement. You generate → save → validate → fix → deliver, all in one turn.
+
+## Skip When
+
+- Pure prose output (articles, blog posts, READMEs) — no fixed-aspect layout
+- Standalone chart or plot without a surrounding card or slide layout
+- Exporting an existing PDF or image, not generating new HTML
+- CLI or terminal output — no HTML layer at all
 
 ---
 
@@ -128,7 +135,7 @@ Save to an absolute path, e.g. \`/tmp/design.html\`.
 ### 4. Ensure Playwright is installed (first run only).
 
 \`\`\`bash
-bash \${CLAUDE_SKILL_DIR}/scripts/setup.sh
+bash \${CLAUDE_SKILL_DIR}[[/scripts/setup.sh]]
 \`\`\`
 
 Idempotent. Skips install if already present. Takes ~30s on first run.
@@ -136,7 +143,7 @@ Idempotent. Skips install if already present. Takes ~30s on first run.
 ### 5. Run the validator.
 
 \`\`\`bash
-node \${CLAUDE_SKILL_DIR}/scripts/validate.mjs \\
+node \${CLAUDE_SKILL_DIR}[[/scripts/validate.mjs]] \\
   --input /tmp/design.html \\
   --width 1080 --height 1350 \\
   --threshold 0.85

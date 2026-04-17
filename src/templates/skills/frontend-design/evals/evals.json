@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-frontend-design",
+  "cases": [
+    {
+      "id": "build-landing-page",
+      "description": "Landing page request triggers the skill",
+      "prompt": "build me a landing page for our new developer tool",
+      "expectations": [
+        "Activates frontend-design skill",
+        "Commits to a specific aesthetic direction before coding (brutalist / maximalist / editorial / etc.)",
+        "Avoids generic fonts (Arial, Inter, Roboto) unless intentionally ironic",
+        "Produces production-grade HTML/CSS with at least one high-impact animation moment"
+      ]
+    },
+    {
+      "id": "style-dashboard",
+      "description": "Dashboard styling request triggers the skill",
+      "prompt": "beautify this admin dashboard — right now it looks like bootstrap defaults",
+      "expectations": [
+        "Activates frontend-design skill",
+        "Identifies the current generic aesthetic and commits to an alternative direction",
+        "Applies distinctive typography and color system",
+        "Delivers working CSS / component overrides"
+      ]
+    },
+    {
+      "id": "react-component",
+      "description": "React component build triggers the skill",
+      "prompt": "make a React hero section with a clear design point-of-view",
+      "expectations": [
+        "Activates frontend-design skill",
+        "Produces a functional React component (JSX/TSX) with refined styling",
+        "Uses Motion library or CSS animations for micro-interactions where appropriate",
+        "Avoids generic AI aesthetics (no purple gradients on white by default)"
+      ]
+    },
+    {
+      "id": "negative-slide-deck",
+      "description": "Slide deck request does NOT trigger frontend-design",
+      "prompt": "create a 10-slide pitch deck for investors",
+      "expectations": [
+        "Does NOT activate frontend-design skill",
+        "Routes to codi-content-factory or codi-pptx instead"
+      ]
+    },
+    {
+      "id": "negative-static-poster",
+      "description": "Static poster art does NOT trigger frontend-design",
+      "prompt": "design a concert poster for a jazz trio",
+      "expectations": [
+        "Does NOT activate frontend-design skill",
+        "Routes to codi-canvas-design (static art)",
+        "Does NOT produce a web component"
+      ]
+    }
+  ]
+}

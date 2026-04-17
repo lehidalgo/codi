@@ -1,13 +1,20 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 import type { TemplateCounts } from "../types.js";
 
-function buildBrandPrompt(brandSkillNames: string[]): string {
+function buildBrandPrompt(brandSkillNames: string[], projectName: string): string {
   const lines = brandSkillNames.map((name, i) => {
     const label = name.replace(/-brand$/, "");
     const brandLabel =
       label.length <= 4 ? label.toUpperCase() : label.charAt(0).toUpperCase() + label.slice(1);
     const suffix =
-      i === 0 ? " (default — uses bundled tokens)" : `  — requires codi-${name} skill active`;
+      i === 0
+        ? " (default — uses bundled tokens)"
+        : `  — requires ${projectName}-${name} skill active`;
     return `  ${i + 1}. ${brandLabel}${suffix}`;
   });
   lines.push(`  ${brandSkillNames.length + 1}. Custom — provide a path to brand_tokens.json`);
@@ -15,19 +22,30 @@ function buildBrandPrompt(brandSkillNames: string[]): string {
 }
 
 export function getTemplate(counts: TemplateCounts): string {
-  const brandPrompt = buildBrandPrompt(counts.brandSkillNames);
+  const brandPrompt = buildBrandPrompt(counts.brandSkillNames, PROJECT_NAME);
   return `---
 name: {{name}}
-description: "Use when creating, editing, or working with Word documents (.docx). Also activate when extracting content, adding tracked changes, comments, or images, or producing reports, memos, and letters as .docx. Do NOT activate for PDFs or spreadsheets."
+description: |
+  Create, edit, read, or analyze Word documents (.docx). Use when the user
+  mentions "Word doc", "Word document", ".docx", "convert doc to docx", or
+  any .docx workflow. Also activate when adding tracked changes, accepting
+  or rejecting changes, adding comments, inserting images, extracting text
+  or tables from a .docx, producing reports, memos, letters, or templates
+  as Word files, or generating a branded DOCX with design tokens. Handles
+  unpack → edit XML → pack for existing docs, or docx-js/python-docx for
+  new docs. Do NOT activate for PDF files (use ${PROJECT_NAME}-pdf),
+  spreadsheets (use ${PROJECT_NAME}-xlsx), PowerPoint files (use
+  ${PROJECT_NAME}-pptx), or plain Markdown docs (use
+  ${PROJECT_NAME}-project-documentation).
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 27
+version: 28
 ---
 
-# DOCX creation, editing, and analysis
+# {{name}} — DOCX
 
 ## When to Activate
 
@@ -35,6 +53,14 @@ version: 27
 - User mentions 'Word doc', 'Word document', or \\\`.docx\\\`
 - User needs tracked changes, comments, or images in a document
 - User wants a report, memo, letter, or template as a Word file
+
+## Skip When
+
+- User wants a PDF — use ${PROJECT_NAME}-pdf
+- User wants an Excel spreadsheet — use ${PROJECT_NAME}-xlsx
+- User wants a PowerPoint deck — use ${PROJECT_NAME}-pptx
+- User wants a Markdown README or docs site — use ${PROJECT_NAME}-project-documentation
+- User wants a branded HTML document for PDF export (not Word) — use ${PROJECT_NAME}-doc-engine
 
 A .docx file is a ZIP archive containing XML files.
 
@@ -83,10 +109,10 @@ python \${CLAUDE_SKILL_DIR}[[/scripts/accept_changes.py]] input.docx output.docx
 
 ## Brand Integration
 
-When a brand skill is active or the user names a brand (e.g., codi), use the brand skill's generators instead of building the document manually.
+When a brand skill is active or the user names a brand (e.g., ${PROJECT_NAME}), use the brand skill's generators instead of building the document manually.
 
 1. **If the brand skill is already active** in this session, its generator commands are in its content with paths already resolved — use them directly.
-2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`codi-brand\\\`) and re-run.
+2. **If the brand skill is not active**, tell the user to enable it (e.g., \\\`${PROJECT_NAME}-brand\\\`) and re-run.
 3. Write \\\`content.json\\\` using the schema from the brand skill, then run its TypeScript generator (DEFAULT) or Python fallback.
 
 **content.json schema:**
@@ -138,13 +164,13 @@ elif command -v uv &>/dev/null; then
   uv run --with python-docx python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_docx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.docx
 else
   # Python via venv fallback
-  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  SKILL_VENV="/tmp/${PROJECT_NAME}-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
   "\$SKILL_VENV/bin/pip" install -q python-docx
   "\$SKILL_VENV/bin/python3" \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_docx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.docx
 fi
 \`\`\`
 
-Omit \`--tokens\` to use Codi default brand. Replace \`dark\` with \`light\` for the light theme.
+Omit \`--tokens\` to use ${PROJECT_NAME_DISPLAY} default brand. Replace \`dark\` with \`light\` for the light theme.
 
 ---
 

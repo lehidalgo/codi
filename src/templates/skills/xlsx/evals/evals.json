@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-xlsx",
+  "cases": [
+    {
+      "id": "financial-model",
+      "description": "Financial model request triggers the skill",
+      "prompt": "build a 3-year financial model with revenue, costs, and margin sheets",
+      "expectations": [
+        "Activates xlsx skill",
+        "Follows the standards.md color-coding + number-formatting + formula rules",
+        "Detects runtime (npx tsx first, uv run, venv fallback)",
+        "Produces a valid .xlsx file",
+        "Uses formulas (not hardcoded values) for derived cells"
+      ]
+    },
+    {
+      "id": "clean-messy-csv",
+      "description": "CSV cleanup triggers the skill",
+      "prompt": "clean this messy CSV and output an .xlsx with proper headers and types",
+      "expectations": [
+        "Activates xlsx skill",
+        "Reads the .csv and normalizes columns",
+        "Writes a clean .xlsx with typed columns",
+        "Uses openpyxl (Python) or the ts generator"
+      ]
+    },
+    {
+      "id": "convert-xlsx-to-csv",
+      "description": "Format conversion triggers the skill",
+      "prompt": "convert this quarterly-report.xlsx sheet to CSV",
+      "expectations": [
+        "Activates xlsx skill",
+        "Extracts the target sheet as CSV",
+        "Preserves formulas as computed values in the CSV output"
+      ]
+    },
+    {
+      "id": "negative-google-sheets-api",
+      "description": "Google Sheets API does NOT trigger xlsx",
+      "prompt": "write to our Google Sheet via the Sheets API",
+      "expectations": [
+        "Does NOT activate xlsx skill",
+        "Routes to a Google Sheets / gspread flow instead",
+        "Does NOT emit a .xlsx file"
+      ]
+    },
+    {
+      "id": "negative-word-doc",
+      "description": "Word document request does NOT trigger xlsx",
+      "prompt": "write a report in Word format",
+      "expectations": [
+        "Does NOT activate xlsx skill",
+        "Routes to codi-docx instead"
+      ]
+    }
+  ]
+}

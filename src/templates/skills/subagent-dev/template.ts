@@ -2,16 +2,29 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Subagent-driven plan execution. Use after ${PROJECT_NAME}-plan-writer produces an implementation plan. Dispatches a fresh subagent per task with two-stage review. Recommended over ${PROJECT_NAME}-plan-executor for complex or multi-file tasks.
+description: |
+  Subagent-driven plan execution. Use after ${PROJECT_NAME}-plan-writer
+  produces an implementation plan and the user wants to dispatch a fresh
+  subagent per task with a two-stage review (spec compliance + code
+  quality). Also activate for phrases like "dispatch subagents for each
+  task", "multi-file implementation", "subagent orchestration",
+  "two-stage review", "plan execution with subagents", "fresh subagent
+  per task", "run the plan with subagents". Recommended over
+  ${PROJECT_NAME}-plan-executor for complex or multi-file tasks. Do NOT
+  activate without an approved plan (use ${PROJECT_NAME}-brainstorming
+  → ${PROJECT_NAME}-plan-writer first), for trivial single-file edits,
+  for inline sequential execution preference (use
+  ${PROJECT_NAME}-plan-executor), or when the baseline test suite is
+  already failing (fix the baseline first).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
-# {{name}}
+# {{name}} — Subagent Dev
 
 Announce at start: "I'm using ${PROJECT_NAME}-subagent-dev to execute this plan."
 
@@ -21,6 +34,14 @@ Announce at start: "I'm using ${PROJECT_NAME}-subagent-dev to execute this plan.
 - User prefers subagent isolation per task over sequential inline execution
 - Tasks involve multiple files or significant complexity
 - Recommended default for most implementation plans
+
+## Skip When
+
+- No approved plan yet — run ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer first
+- Single-file trivial edit that doesn't warrant the review overhead — edit directly
+- User prefers inline sequential execution with checkpoints — use ${PROJECT_NAME}-plan-executor
+- Baseline tests are already failing — fix the baseline first (never execute on red)
+- Bug investigation without a plan — use ${PROJECT_NAME}-debugging
 
 ## Prerequisites
 

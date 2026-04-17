@@ -1,0 +1,58 @@
+{
+  "skillName": "codi-codebase-explore",
+  "cases": [
+    {
+      "id": "how-does-feature-work",
+      "description": "Feature exploration triggers the skill",
+      "prompt": "how does the authentication flow work in this codebase?",
+      "expectations": [
+        "Activates codebase-explore skill",
+        "Queries the code graph with natural language",
+        "Traces callers and callees to build the feature's dependency chain",
+        "Returns an explanation grounded in the actual code (not assumptions)"
+      ]
+    },
+    {
+      "id": "find-callers",
+      "description": "Caller lookup triggers the skill",
+      "prompt": "what functions call UserService.create_user?",
+      "expectations": [
+        "Activates codebase-explore skill",
+        "Queries the code graph for callers",
+        "Lists each caller with module and qualified name"
+      ]
+    },
+    {
+      "id": "impact-analysis-before-refactor",
+      "description": "Pre-refactor impact analysis triggers the skill",
+      "prompt": "I want to rename processPayment — what would be affected?",
+      "expectations": [
+        "Activates codebase-explore skill",
+        "Queries callers of processPayment",
+        "Queries modules that import processPayment",
+        "Presents the full impact radius before any refactor"
+      ]
+    },
+    {
+      "id": "architecture-overview",
+      "description": "Architecture overview request triggers the skill",
+      "prompt": "give me an overview of the main modules and how they relate",
+      "expectations": [
+        "Activates codebase-explore skill",
+        "Queries for main modules",
+        "Queries for relationships between services",
+        "Returns a structured overview with module names and relationships"
+      ]
+    },
+    {
+      "id": "negative-bug-fix",
+      "description": "Bug fix request does NOT trigger codebase-explore",
+      "prompt": "the login button crashes on Safari, fix it",
+      "expectations": [
+        "Does NOT activate codebase-explore as the primary skill",
+        "Routes to codi-debugging for root cause analysis",
+        "Does NOT stop at exploration — proceeds to debug/fix flow"
+      ]
+    }
+  ]
+}

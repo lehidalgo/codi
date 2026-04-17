@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 2
+version: 3
 ---
 
 # {{name}} — HTML Live Inspect
@@ -26,13 +26,13 @@ did. When enabled, the agent can also run JavaScript inside the live page to
 drive the UI, highlight things, fill forms, or trigger actions — a true
 collaboratory.
 
-This skill is the HTML twin of \`codi-content-factory\`: same Node CJS +
+This skill is the HTML twin of \`${PROJECT_NAME}-content-factory\`: same Node CJS +
 stdlib \`http\` stack, same start/stop shell scripts, same workspace layout
 under \`.codi_output/\`.
 
 ---
 
-## When to activate
+## When to Activate
 
 - The user asks you to open a local HTML file or folder so you can see what
   they click.
@@ -44,13 +44,14 @@ under \`.codi_output/\`.
 - The user is designing HTML and wants you to know which element they mean
   without pasting selectors.
 
-Do NOT activate when:
-- The user wants to test a live remote URL — that is \`codi-webapp-testing\`
+## Skip When
+
+- The user wants to test a live remote URL — use \`${PROJECT_NAME}-webapp-testing\`
   (Playwright-backed).
-- The user wants to generate social cards or slides — that is
-  \`codi-content-factory\`.
-- The user wants to build frontend components from scratch — that is
-  \`codi-frontend-design\`.
+- The user wants to generate social cards or slides — use
+  \`${PROJECT_NAME}-content-factory\`.
+- The user wants to build frontend components from scratch — use
+  \`${PROJECT_NAME}-frontend-design\`.
 
 ---
 
@@ -301,5 +302,5 @@ When activated, you must:
 - Do NOT leave the server running across unrelated tasks. Stop it when
   done.
 - Do NOT use this skill to inspect remote production sites — use
-  \`codi-webapp-testing\` (Playwright) for that.
+  \`${PROJECT_NAME}-webapp-testing\` (Playwright) for that.
 `;

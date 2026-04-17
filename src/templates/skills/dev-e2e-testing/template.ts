@@ -3,6 +3,7 @@ import {
   PROJECT_CLI,
   PROJECT_DIR,
   PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
   SKILL_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
@@ -17,26 +18,41 @@ export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
 description: |
-  End-to-end validation of the ${PROJECT_NAME} installation. Use when asked to test
-  or audit the full ${PROJECT_NAME} feature set — artifacts, presets, hooks, verification,
-  and commit workflow — in a clean test project.
+  End-to-end validation of the ${PROJECT_NAME_DISPLAY} installation (for
+  ${PROJECT_NAME_DISPLAY} contributors). Use when the user asks to test or
+  audit the full ${PROJECT_NAME_DISPLAY} feature set — artifacts, presets,
+  hooks, verification, commit workflow, MCP, pre-commit discipline — in a
+  clean test project. Also activate for phrases like "validate codi
+  installation", "e2e sweep", "full feature test", "release validation",
+  "regression sweep", "system test", "Codi installation audit". Do NOT
+  activate for testing a single skill in isolation (use ${PROJECT_NAME}-test-run),
+  consumer application e2e (use ${PROJECT_NAME}-webapp-testing), or unit
+  test generation (use ${PROJECT_NAME}-tdd).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 12
+version: 14
 ---
 
-# {{name}}
+# {{name}} — E2E Testing
 
 ## When to Activate
 
-- User asks to run end-to-end tests or audit the full ${PROJECT_NAME} installation
+- User asks to run end-to-end tests or audit the full ${PROJECT_NAME_DISPLAY} installation
 - User wants to validate artifacts, presets, hooks, and verification in a clean project
 - User is preparing a release and needs a full feature sweep
 
-This skill guides systematic validation of ALL ${PROJECT_NAME} features in a test project. Each step is labeled:
+## Skip When
+
+- User wants to test a single skill in isolation — use ${PROJECT_NAME}-test-run
+- User wants e2e tests for a consumer web app — use ${PROJECT_NAME}-webapp-testing
+- User wants to generate new tests from scratch — use ${PROJECT_NAME}-tdd
+- User wants to run the existing test suite (not a full feature sweep) — use ${PROJECT_NAME}-test-run
+- User is not working on the ${PROJECT_NAME_DISPLAY} source repo — this skill is contributor-only
+
+This skill guides systematic validation of ALL ${PROJECT_NAME_DISPLAY} features in a test project. Each step is labeled:
 - **[SYSTEM]** — run this CLI command
 - **[HUMAN]** — STOP and ask the human to perform this action
 - **[CODING AGENT]** — the AI agent performs this
@@ -415,13 +431,13 @@ Note: May fail if repo doesn't exist. Verifies the --from flag is accepted and a
 
 ## Available Agents
 
-For specialized analysis during e2e validation, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-test-generator** — Generate automated tests from e2e findings
-- **${PROJECT_NAME}-security-analyzer** — Security validation of auth flows and data handling
+For specialized analysis during e2e validation, delegate to these agents:
+- **${PROJECT_NAME}-test-generator** — Generate automated tests from e2e findings. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/test-generator.md]]\\\`
+- **${PROJECT_NAME}-security-analyzer** — Security validation of auth flows and data handling. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/security-analyzer.md]]\\\`
 
 ## Related Skills
 
-- **${PROJECT_NAME}-operations** — Day-to-day ${PROJECT_NAME} management (not full e2e validation)
+- **${PROJECT_NAME}-dev-operations** — Day-to-day ${PROJECT_NAME_DISPLAY} management (not full e2e validation)
 - **${PROJECT_NAME}-security-scan** — Dedicated security audit for the test project
 `;
 }

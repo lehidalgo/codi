@@ -2,22 +2,40 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Detect and run the project test suite, then report results with failure diagnosis. Use when running tests, checking if tests pass, or diagnosing test failures. Also activate when the user says 'run tests' or 'are tests passing'.
+description: |
+  Detect and run the project test suite, then report results with quick
+  failure triage. Use when the user wants to run tests, check if tests
+  pass, confirm the suite is green, or identify failures. Also activate
+  for phrases like "run the tests", "are the tests green", "test
+  results", "run the test suite", "unit tests pass?", "vitest", "pytest",
+  "go test", "cargo test", "npm test", "pnpm test". Auto-detects the
+  framework. Do NOT activate for fixing failing tests (use
+  ${PROJECT_NAME}-debugging), generating new tests (use ${PROJECT_NAME}-tdd),
+  measuring test coverage (use ${PROJECT_NAME}-test-coverage), or
+  multi-phase QA sweeps (use ${PROJECT_NAME}-guided-qa-testing).
 category: ${SKILL_CATEGORY.TESTING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Test Run
 
 ## When to Activate
 
 - User asks to run the project's tests
 - User wants to check if tests pass
 - User needs test results before committing or merging
+
+## Skip When
+
+- User wants to fix a failing test — use ${PROJECT_NAME}-debugging
+- User wants to generate new tests — use ${PROJECT_NAME}-tdd
+- User wants to measure or improve coverage — use ${PROJECT_NAME}-test-coverage
+- User wants a systematic multi-phase QA sweep — use ${PROJECT_NAME}-guided-qa-testing
+- User wants the full Codi installation audit (contributor-only) — use ${PROJECT_NAME}-dev-e2e-testing
 
 ## Workflow
 

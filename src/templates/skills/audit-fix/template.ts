@@ -3,32 +3,38 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Iterative audit-and-fix agent. Use when processing a list of items that each
-  require evidence gathering, a fix proposal, and explicit user approval before
-  implementation. Enforces strict one-item-at-a-time discipline with a commit
-  per item. Use for code quality audits, security fix lists, migration checklists,
-  linting backlogs, or any batch of items requiring individual evidence + approval.
+  Iterative audit-and-fix workflow. Use when processing a list of audit
+  findings, a batch of fixes, an issue backlog, a lint or static-analysis
+  backlog, a security-fix list, a migration checklist, a TODO list of
+  improvements, or any set of items where each one needs: evidence gathering →
+  fix proposal → explicit user approval → implementation → commit. Also
+  activate for phrases like "work through a list", "go through these one by
+  one", "batch of fixes", "process the backlog", "iterate through findings".
+  Enforces strict one-item-at-a-time discipline with a commit per item. Do
+  NOT activate for a single bug (use ${PROJECT_NAME}-debugging), new feature
+  work, or exploratory review without a fix list.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 9
 ---
 
-# {{name}}
+# {{name}} — Audit & Fix
 
 ## When to Activate
 
 - Processing a list of audit findings, code quality issues, or security items
+- Working through a lint, static analysis, or issue backlog
 - Systematic migration of a codebase pattern (e.g., updating all usages of a deprecated API)
-- Working through a linting or static analysis backlog
 - Any batch of items where each requires: investigation → proposal → approval → fix → commit
 
-**Skip this skill for:**
+## Skip When
+
 - A single bug (use ${PROJECT_NAME}-debugging)
 - New feature work (use ${PROJECT_NAME}-plan-executor or ${PROJECT_NAME}-subagent-dev)
-- Exploratory review without a fix list (use ${PROJECT_NAME}-codebase-explorer)
+- Exploratory review without a fix list (use ${PROJECT_NAME}-codebase-explore)
 
 ## The Iron Laws
 

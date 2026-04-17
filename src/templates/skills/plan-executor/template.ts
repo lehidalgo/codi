@@ -2,16 +2,26 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Sequential plan execution with checkpoints. Use after ${PROJECT_NAME}-plan-writer when subagent orchestration is not preferred. Executes tasks inline with mandatory verification at each step. Use ${PROJECT_NAME}-subagent-dev instead when subagents are available.
+description: |
+  Sequential plan execution with checkpoints. Use after
+  ${PROJECT_NAME}-plan-writer produces an approved implementation plan and
+  subagent orchestration is not preferred. Also activate for phrases like
+  "execute this plan", "implement the plan", "run the plan inline", "walk
+  through the plan step by step", "TDD per task". Executes tasks inline
+  with mandatory verification at each checkpoint and strict
+  no-improvisation discipline. Do NOT activate without an approved plan
+  (use ${PROJECT_NAME}-plan-writer first), when subagents are available
+  and the plan has independent tasks (use ${PROJECT_NAME}-subagent-dev),
+  or for exploratory / single-file edits that don't need a plan.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# {{name}}
+# {{name}} — Plan Executor
 
 **Announce at start:** "I'm using ${PROJECT_NAME}-plan-executor to implement this plan."
 
@@ -21,6 +31,13 @@ version: 4
 - Subagents are not available or not preferred
 - User wants to watch implementation happen inline
 - Note: ${PROJECT_NAME}-subagent-dev is recommended when subagents are available
+
+## Skip When
+
+- No approved plan yet — run ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer first
+- Plan has many independent tasks and subagents are available — use ${PROJECT_NAME}-subagent-dev for parallel execution
+- Exploratory or single-file edits that don't warrant a plan — just edit directly
+- Bug investigation without a fix plan — use ${PROJECT_NAME}-debugging
 
 ## Prerequisites
 

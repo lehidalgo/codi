@@ -1,20 +1,32 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
 description: |
-  Design exploration before implementation. Use before starting any non-trivial feature,
-  change, or document. Explores context, asks clarifying questions, proposes approaches,
-  and produces an approved design spec before invoking any implementation skill.
+  Design exploration before implementation. Use before starting any non-trivial
+  feature, change, refactor, or document. Also activate for phrases like
+  "let's brainstorm", "let's think through", "design this feature", "plan this
+  feature", "what's the best way to", "what's the right approach", "before we
+  code", "should we use X or Y", "help me think about". Explores context, asks
+  clarifying questions one at a time, proposes 2-3 approaches with trade-offs,
+  and produces an approved design spec before invoking any implementation
+  skill. Do NOT activate for pure quality tasks (security scan, code review,
+  test coverage), one-liner fixes with zero design ambiguity, or content with
+  fully specified requirements.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
-# {{name}}
+# {{name}} — Brainstorming
 
 ## HARD GATE
 
@@ -34,8 +46,9 @@ Skipping the design for "simple" tasks is the most common way to waste an hour r
 - Another skill detects a complex multi-step task that needs design before execution
 - User says "let's brainstorm", "help me think through", "what's the best way to"
 
-**Skip this skill for:**
-- Pure quality tasks (security scan, code review, test coverage) - these have their own activation criteria
+## Skip When
+
+- Pure quality tasks (security scan, code review, test coverage) — these have their own activation criteria
 - Pure content tasks where requirements are already fully specified with zero ambiguity
 - One-liner fixes with absolutely zero design ambiguity (e.g., "fix this typo")
 
@@ -48,7 +61,7 @@ Execute these steps in order. Do not skip steps.
 3. **Propose 2-3 approaches** - with trade-offs and recommendation
 4. **Present design sections** - get approval after each major section
 5. **Detect task type and pipeline** - determine which pipeline applies (see Pipeline Detection below)
-6. **Write design spec** - save to \\\`docs/\\\` using codi naming convention
+6. **Write design spec** - save to \\\`docs/\\\` using ${PROJECT_NAME_DISPLAY} naming convention
 7. **Spec self-review** - placeholder scan, consistency check, ambiguity check
 8. **User review gate** - ask user to review the written spec
 9. **Invoke next skill** - based on detected pipeline
@@ -120,7 +133,7 @@ After design approval, save the spec:
 
 - Path: \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature-name>.md\\\`
 - Follow codi's doc naming convention (from ${PROJECT_NAME}-documentation rule)
-- Use Mermaid for all diagrams - no ASCII art, no custom colors, no \\\`\\\\n\\\` in labels (codi convention)
+- Use Mermaid for all diagrams - no ASCII art, no custom colors, no \\\`\\\\n\\\` in labels (${PROJECT_NAME_DISPLAY} convention)
 - Commit the spec to git before invoking any next skill
 
 **Spec self-review** (fix inline before presenting to user - no need to re-review these):

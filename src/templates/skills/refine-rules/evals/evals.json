@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-refine-rules",
+  "cases": [
+    {
+      "id": "review-collected-feedback",
+      "description": "Rule feedback review triggers the skill",
+      "prompt": "review the collected rule feedback and propose improvements",
+      "expectations": [
+        "Activates refine-rules skill",
+        "Reads JSON files from .codi/feedback/rules/",
+        "Groups observations by ruleName and sorts by priority (user-correction first)",
+        "Presents a summary table before diving into individual reviews",
+        "Proposes changes one at a time, waiting for Approve/Reject/Skip/Edit"
+      ]
+    },
+    {
+      "id": "slash-refine-rules",
+      "description": "/codi-refine-rules slash triggers the skill",
+      "prompt": "/codi-refine-rules",
+      "expectations": [
+        "Activates refine-rules skill",
+        "Loads feedback and presents the priority table"
+      ]
+    },
+    {
+      "id": "no-feedback-case",
+      "description": "Empty feedback directory surfaces clear guidance",
+      "prompt": "refine my rules",
+      "expectations": [
+        "Activates refine-rules skill",
+        "Detects the feedback directory is empty or absent",
+        "Explains that codi-rule-feedback collects observations during coding sessions",
+        "Does NOT fabricate observations"
+      ]
+    },
+    {
+      "id": "negative-create-new-rule",
+      "description": "Creating a new rule does NOT trigger refine-rules",
+      "prompt": "create a new rule for our Python naming conventions",
+      "expectations": [
+        "Does NOT activate refine-rules skill",
+        "Routes to codi-rule-creator instead",
+        "Does NOT read .codi/feedback/rules/"
+      ]
+    },
+    {
+      "id": "negative-general-rule-audit",
+      "description": "General rule audit without collected feedback routes elsewhere",
+      "prompt": "audit all our rules for quality",
+      "expectations": [
+        "Does NOT activate refine-rules skill (it reviews collected feedback, not raw rules)",
+        "Routes to codi-compare-preset for upstream comparison or a direct review",
+        "Does NOT invent feedback entries"
+      ]
+    }
+  ]
+}

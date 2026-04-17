@@ -7,13 +7,26 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with ${PROJECT_NAME_DISPLAY} brand artifacts.
+description: |
+  Document generation engine for branded reports, proposals, one-pagers, case
+  studies, and executive summaries. Use when the user needs a formatted
+  document — HTML with print CSS for PDF export, optional pandoc DOCX, or a
+  data-table export. Also activate for phrases like "business report",
+  "client proposal", "board report", "quarterly report", "case study",
+  "executive summary", "one-page summary", "printable HTML", "export to
+  PDF", "client deliverable", "data report". Integrates with any
+  ${PROJECT_NAME_DISPLAY} brand artifact (category: brand) in the project.
+  Do NOT activate for slide decks or presentations (use
+  ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx), README /
+  Markdown docs (use ${PROJECT_NAME}-project-documentation), claude.ai
+  HTML artifacts (use ${PROJECT_NAME}-claude-artifacts-builder), or
+  spreadsheet modeling (use ${PROJECT_NAME}-xlsx).
 category: ${SKILL_CATEGORY.DOCUMENT_GENERATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 7
 ---
 
 # {{name}} — Document Engine
@@ -24,6 +37,14 @@ version: 6
 - User needs a formatted document with brand identity
 - User wants to generate DOCX, PDF, or printable HTML documents
 - User asks to create a spreadsheet-style table or data export
+
+## Skip When
+
+- User wants slides or a presentation — use ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx
+- User wants a README or Markdown documentation — use ${PROJECT_NAME}-project-documentation
+- User wants a claude.ai interactive HTML artifact — use ${PROJECT_NAME}-claude-artifacts-builder
+- User wants a spreadsheet model or financial workbook — use ${PROJECT_NAME}-xlsx
+- User wants a static poster or design art — use ${PROJECT_NAME}-canvas-design
 
 ## Step 1: Gather Requirements
 
@@ -196,15 +217,15 @@ Choose structure based on document type:
 
 ## Step 4b: Validate layout structure
 
-After writing the HTML file, run the Box Layout Validator to catch spacing, hierarchy, and sibling-consistency bugs before delivering:
+After writing the HTML file, invoke the **${PROJECT_NAME}-box-validator** skill
+to catch spacing, hierarchy, and sibling-consistency bugs before delivering.
+That skill owns its own setup + validator paths (portable across agents) —
+hand it the HTML path plus target dimensions.
 
-\\\`\\\`\\\`bash
-bash ~/.claude/skills/codi-box-validator/scripts/setup.sh   # first run only
-node ~/.claude/skills/codi-box-validator/scripts/validate.mjs \\\\
-  --input <absolute-path> --width 794 --height 1123 --threshold 0.85
-\\\`\\\`\\\`
-
-For A4 portrait use 794×1123, landscape 1123×794, US Letter 816×1056. If \\\`valid: false\\\`, read the JSON \\\`fixInstructions\\\` field, patch the HTML, revalidate. Max 4 iterations. Only deliver when valid or at final attempt.
+For A4 portrait use 794×1123, landscape 1123×794, US Letter 816×1056. If
+\\\`valid: false\\\`, read the JSON \\\`fixInstructions\\\` field, patch the
+HTML, re-invoke the validator. Max 4 iterations. Only deliver when valid or
+at final attempt.
 
 ## Step 5: Output Formats
 
@@ -229,8 +250,8 @@ For tabular data, generate:
 
 ## Available Agents
 
-For content research during document generation, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-docs-lookup** — Research and verify technical content accuracy
+For content research during document generation, delegate to this agent:
+- **${PROJECT_NAME}-docs-lookup** — Research and verify technical content accuracy. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/docs-lookup.md]]\\\`
 
 ## Related Skills
 

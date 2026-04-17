@@ -2,22 +2,41 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: MCP-powered diagnosis for escalated errors. Use when standard debugging has not resolved the issue, or when structured MCP analysis is needed. Not the first-line debugging tool — start with codi-debugging.
+description: |
+  MCP-powered diagnosis for escalated errors. Use when standard debugging has
+  not resolved the issue, when multiple fix attempts have failed, or when a
+  structured MCP-based investigation is needed. Also activate for phrases like
+  "stuck on this error", "multiple attempts failed", "deep diagnosis", "MCP
+  investigation", "structured analysis", "sequential thinking", "escalate
+  debugging", "call graph analysis before fix". Combines code-graph queries,
+  documentation search, and sequential thinking with a strict
+  reasoning-confirmation-execution loop. Do NOT activate as a first-line
+  debugging tool — start with ${PROJECT_NAME}-debugging; only escalate to
+  diagnostics when that workflow has not resolved the issue. Also skip for
+  writing new code or planning features.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# {{name}}
+# {{name}} — Diagnostics
 
 ## When to Activate
 
-- User hits an error and needs structured diagnosis
-- User asks to debug or investigate a problem
-- User needs root cause analysis before attempting a fix
+- User hits an error and needs structured diagnosis after standard debugging failed
+- User has tried 2+ fixes and the problem persists
+- User needs root cause analysis via MCP-backed tools (code graph, docs, sequential thinking)
+- User asks for a "deep diagnosis" or "structured investigation"
+
+## Skip When
+
+- First-line bug investigation — use ${PROJECT_NAME}-debugging (diagnostics is escalation only)
+- Writing new code or features — use ${PROJECT_NAME}-plan-writer
+- Planning architecture — use ${PROJECT_NAME}-brainstorming
+- Running tests without a known failure to diagnose — use ${PROJECT_NAME}-test-run
 
 ## Workflow
 

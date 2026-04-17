@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-guided-qa-testing",
+  "cases": [
+    {
+      "id": "full-project-qa",
+      "description": "Systematic QA request triggers the skill",
+      "prompt": "let's QA the whole app before the release",
+      "expectations": [
+        "Activates guided-qa-testing skill",
+        "Discovers or creates the phase list",
+        "Classifies each phase as [AGENT] or [HUMAN]",
+        "Presents the full phase list before starting",
+        "Writes a living QA report document that updates after each phase"
+      ]
+    },
+    {
+      "id": "execute-existing-qa-doc",
+      "description": "User with existing QA doc triggers the skill",
+      "prompt": "I have docs/qa/release-qa.md — help me execute it step by step",
+      "expectations": [
+        "Activates guided-qa-testing skill",
+        "Reads the existing QA document",
+        "Extracts phases and classifies them",
+        "Runs one phase at a time, waiting for approval between phases"
+      ]
+    },
+    {
+      "id": "pre-release-regression",
+      "description": "Pre-release regression sweep triggers the skill",
+      "prompt": "run a regression pass on the new release",
+      "expectations": [
+        "Activates guided-qa-testing skill",
+        "Distinguishes AGENT-automatable checks (CLI, JSON, config) from HUMAN-only checks (IDE, visual, interactive)",
+        "Reads source code before diagnosing any check as PASS/FAIL",
+        "Never jumps phases without explicit human approval"
+      ]
+    },
+    {
+      "id": "negative-single-unit-test",
+      "description": "Running a single unit test does NOT trigger guided-qa-testing",
+      "prompt": "run the auth unit tests",
+      "expectations": [
+        "Does NOT activate guided-qa-testing skill",
+        "Routes to codi-test-run instead",
+        "Does NOT build a phase list or write a QA report"
+      ]
+    },
+    {
+      "id": "negative-codi-install-audit",
+      "description": "Codi installation audit routes to a different skill",
+      "prompt": "audit the full Codi installation end-to-end",
+      "expectations": [
+        "Does NOT activate guided-qa-testing skill (that's for consumer projects)",
+        "Routes to codi-dev-e2e-testing instead",
+        "Does NOT produce a living QA report for Codi itself"
+      ]
+    }
+  ]
+}

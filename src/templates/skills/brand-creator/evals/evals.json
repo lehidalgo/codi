@@ -1,0 +1,60 @@
+{
+  "skillName": "{{name}}",
+  "_note": "Starter evals for a brand-identity skill. Replace the {{name}} placeholders in expectations with your actual brand name and adjust prompts to your voice.",
+  "cases": [
+    {
+      "id": "social-card",
+      "description": "Social card request applies the brand identity",
+      "prompt": "create a social card announcing our Q3 product launch",
+      "expectations": [
+        "Reads brand/tokens.json before generating the HTML",
+        "Inlines the full content of brand/tokens.css in the HTML output (no <link href=...>)",
+        "Uses brand colors, headline font, and body font from tokens.json",
+        "Copy follows voice.tone and uses phrases from voice.phrases_use",
+        "Copy avoids every phrase in voice.phrases_avoid"
+      ]
+    },
+    {
+      "id": "slide-deck",
+      "description": "Slide deck request applies the brand identity",
+      "prompt": "build a 5-slide deck for our leadership update",
+      "expectations": [
+        "Each slide uses brand colors and typography from tokens.json",
+        "Logo is placed per references/brandguide.html conventions",
+        "tokens.css is inlined on every slide HTML",
+        "Headline font and body font match tokens.json"
+      ]
+    },
+    {
+      "id": "document-report",
+      "description": "Branded document keeps the identity",
+      "prompt": "write a one-page report summarizing last month's metrics",
+      "expectations": [
+        "Document HTML inlines tokens.css",
+        "Typography pairs match tokens.json (headlines + body)",
+        "Brand colors appear in headings and accents",
+        "Tone matches voice.tone"
+      ]
+    },
+    {
+      "id": "negative-generic-design",
+      "description": "Generic design request without brand intent does NOT apply this skill's tokens over user-specified tokens",
+      "prompt": "design a landing page with a red-and-black palette for a coffee shop",
+      "expectations": [
+        "Does NOT override the user-specified color palette with brand tokens",
+        "Uses the user's requested palette",
+        "Brand-creator activates only when the user asks for this brand specifically"
+      ]
+    },
+    {
+      "id": "negative-unrelated",
+      "description": "Unrelated task does not activate brand-creator",
+      "prompt": "refactor the auth middleware for better testability",
+      "expectations": [
+        "Does NOT activate brand-creator",
+        "Does NOT read brand/tokens.json",
+        "Routes to a code-level skill (refactoring / debugging)"
+      ]
+    }
+  ]
+}

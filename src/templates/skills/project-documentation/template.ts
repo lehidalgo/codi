@@ -1,17 +1,33 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: "Documentation creation and maintenance workflows. Use when writing docs, updating README, generating API docs, creating ADRs, drafting specs, proposals, or decision docs. Also activate when the user mentions writing or structured content authoring."
+description: |
+  Documentation creation and maintenance for consumer projects. Use when the
+  user asks to write or update a README, API reference, OpenAPI spec, ADR,
+  contributing guide, changelog, RFC, spec document, JSDoc, docstrings, or
+  inline code documentation. Also activate for phrases like "write the
+  README", "document this API", "technical writing", "draft a proposal",
+  "write an RFC", "author a decision doc", "co-author a spec". Applies the
+  Diataxis framework (tutorial / how-to / reference / explanation). Do NOT
+  activate for branded PDF reports or proposals (use ${PROJECT_NAME}-doc-engine),
+  Word documents (use ${PROJECT_NAME}-docx), slide decks (use
+  ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx), or
+  ${PROJECT_NAME_DISPLAY}'s own self-documentation (use ${PROJECT_NAME}-dev-docs-manager).
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# {{name}}
+# {{name}} — Project Documentation
 
 ## When to Activate
 
@@ -22,6 +38,14 @@ version: 4
 - User needs to create an onboarding guide or contributing guide
 - User mentions writing docs, drafting proposals, specs, decision docs, or RFCs
 - User wants to co-author a document through structured iteration
+
+## Skip When
+
+- User wants a branded PDF report or proposal — use ${PROJECT_NAME}-doc-engine
+- User wants a Word document (.docx) — use ${PROJECT_NAME}-docx
+- User wants a slide deck or presentation — use ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx
+- User wants to regenerate ${PROJECT_NAME_DISPLAY}'s own docs site — use ${PROJECT_NAME}-dev-docs-manager
+- User wants to humanize AI-sounding text — use ${PROJECT_NAME}-humanizer after this skill
 
 ## Diataxis Framework
 
@@ -138,8 +162,8 @@ After 80%+ of sections are done, re-read the entire document checking for: flow 
 
 ## Available Agents
 
-For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-docs-lookup** — Research API signatures, verify deprecations, find examples
+For specialized analysis, delegate to this agent:
+- **${PROJECT_NAME}-docs-lookup** — Research API signatures, verify deprecations, find examples. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/docs-lookup.md]]\\\`
 
 ## Related Skills
 

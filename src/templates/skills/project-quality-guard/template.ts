@@ -2,14 +2,30 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when setting up a new project, auditing project quality infrastructure, or checking for missing CI/CD, pre-commit hooks, linting, testing, security scanning, Docker, or environment config.
+description: |
+  Audit and enforce project quality infrastructure. Use when the user sets
+  up a new project, scaffolds from scratch, audits CI/CD, checks for
+  missing .gitignore / .gitattributes / .editorconfig, adds pre-commit
+  hooks, linting, testing, security scanning, Docker, or environment
+  config. Also activate for phrases like "project audit", "quality
+  infrastructure", "pipeline continuity", "CI passes locally but not in
+  CI", "setup from scratch", "new project setup", "what's missing in my
+  config". Covers 9 categories (git / security / pre-commit / Python /
+  TypeScript / testing / CI/CD / Docker / env). Do NOT activate for
+  writing application code (use ${PROJECT_NAME}-plan-writer), debugging
+  runtime errors (use ${PROJECT_NAME}-debugging), or one-off formatter
+  questions.
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 10
 ---
+
+# {{name}} — Project Quality Guard
+
+Audits and enforces complete project quality infrastructure across 9 categories. Runs checks, warns about missing components, and adds fixes on user approval.
 
 ## When to Activate
 
@@ -21,15 +37,13 @@ version: 9
 - User clones a repo and wants to verify local setup
 - Pipeline passes locally but fails in CI (or vice versa)
 
-## When NOT to Use
+## Skip When
 
-- Writing application code (use domain-specific skills)
-- Debugging runtime errors (use systematic-debugging)
-- Single-file formatting questions (just run the formatter)
-
-# Project Quality Guard
-
-Audits and enforces complete project quality infrastructure across 9 categories. Runs checks, warns about missing components, and adds fixes on user approval.
+- Writing application code — use domain-specific skills (${PROJECT_NAME}-plan-writer, ${PROJECT_NAME}-subagent-dev)
+- Debugging runtime errors — use ${PROJECT_NAME}-debugging
+- Single-file formatting questions — just run the formatter
+- Security vulnerability scan of existing code — use ${PROJECT_NAME}-security-scan
+- Test coverage measurement — use ${PROJECT_NAME}-test-coverage
 
 **Core principle:** A project is not set up until ALL quality layers are verified — local hooks, CI pipeline, and deployment config must form a continuous, gap-free chain.
 

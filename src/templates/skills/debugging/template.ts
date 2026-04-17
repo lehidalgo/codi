@@ -2,26 +2,44 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: First-line debugging with root cause analysis. Use when investigating bugs, test failures, unexpected behavior, or build failures. Enforces root cause before any fix. Also activate on /${PROJECT_NAME}-check or when stuck on an error.
+description: |
+  First-line debugging with root-cause analysis. Use when investigating a
+  bug, test failure, crash, exception, unexpected behavior, build failure,
+  integration issue, flaky test, test pollution, or production incident.
+  Also activate for phrases like "why is X broken", "can't figure out why",
+  "debug this", "error investigation", "stack trace", "root cause", and on
+  /${PROJECT_NAME}-check or when the user is stuck on an error. Enforces
+  root cause before any fix — no fixes may be proposed until Phase 1
+  investigation is complete. Do NOT activate for writing new code or
+  features (use ${PROJECT_NAME}-plan-writer), planning architecture (use
+  ${PROJECT_NAME}-brainstorming), or running tests without a failure to
+  investigate (use ${PROJECT_NAME}-test-run).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
-# {{name}}
+# {{name}} — Debugging
 
 ## When to Activate
 
 Use for ANY technical issue:
-- Test failures
+- Test failures (including flaky tests and test pollution)
 - Bugs in production or development
-- Unexpected behavior
+- Unexpected behavior, crashes, exceptions, stack traces
 - Performance problems
 - Build failures
 - Integration issues
+
+## Skip When
+
+- Writing new code or features (no existing bug to investigate) — use ${PROJECT_NAME}-plan-writer
+- Planning architecture or exploring approaches — use ${PROJECT_NAME}-brainstorming
+- Running tests as a general health check (no failure yet) — use ${PROJECT_NAME}-test-run
+- Reviewing code without a specific bug to fix — use ${PROJECT_NAME}-code-review
 
 Use this ESPECIALLY when:
 - Under time pressure (emergencies make guessing tempting)
@@ -222,5 +240,5 @@ These techniques are in the \\\`references/\\\` directory:
 
 - Use **${PROJECT_NAME}-tdd** when Phase 4 requires writing a failing test
 - Use **${PROJECT_NAME}-verification** before claiming the fix is complete
-- Use the **${PROJECT_NAME}-codebase-explorer** agent to trace call graphs in Phase 1
+- Use the **${PROJECT_NAME}-codebase-explore** skill to trace call graphs in Phase 1
 `;

@@ -854,7 +854,7 @@ too empty" and it will rewrite the card applying the density rules.
 
 - Check the activity log in the sidebar — the WebSocket dot should be green
 - Restart the server: `bash scripts/stop-server.sh <workspace>` then
-  `bash scripts/start-server.sh --name content-factory --project-dir .`
+  `bash scripts/start-server.sh --project-dir .`
 - Check that the port from the startup JSON is not blocked by a firewall
 
 ### Cards look clipped or have content falling off the edge

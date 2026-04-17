@@ -2,21 +2,46 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user asks to build web components, pages, or UI interfaces. Also activate when styling or beautifying any web application. Generates distinctive, production-grade frontends and avoids generic AI aesthetics.
+description: |
+  Distinctive, production-grade frontend interfaces. Use when the user asks
+  to build a website, landing page, dashboard, hero section, navbar, or
+  any React / Vue / HTML component. Also activate when styling, restyling,
+  or beautifying an existing web app, redesigning a UI, setting up a
+  design system, using shadcn/ui components, or working on CSS styling.
+  Also trigger for phrases like "beautify this app", "make this look
+  better", "redesign this page", "elevate the UI", "design system", "hero
+  section". Avoids generic AI aesthetics (overused fonts like Inter /
+  Roboto, purple gradients on white, predictable layouts). Do NOT activate
+  for slide decks or presentations (use ${PROJECT_NAME}-content-factory or
+  ${PROJECT_NAME}-pptx), static posters / album covers (use
+  ${PROJECT_NAME}-canvas-design), multi-component claude.ai artifacts (use
+  ${PROJECT_NAME}-claude-artifacts-builder), or PDF documents (use
+  ${PROJECT_NAME}-doc-engine).
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
+
+# {{name}} — Frontend Design
 
 ## When to Activate
 
 - User asks to build a website, landing page, dashboard, or React/HTML component
 - User wants to style or beautify an existing web interface
-- User needs a visually distinctive frontend artifact or poster
+- User needs a visually distinctive frontend artifact
 - User asks to avoid generic or "AI slop" aesthetics
+- User mentions a design system, hero section, navbar, or shadcn component
+
+## Skip When
+
+- User wants a slide deck or presentation — use ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx
+- User wants a static poster or album cover — use ${PROJECT_NAME}-canvas-design
+- User wants a multi-component claude.ai HTML artifact — use ${PROJECT_NAME}-claude-artifacts-builder
+- User wants a PDF report or branded document — use ${PROJECT_NAME}-doc-engine
+- User wants a generative art sketch — use ${PROJECT_NAME}-algorithmic-art
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 
@@ -57,6 +82,6 @@ Remember: Claude is capable of extraordinary creative work. Don't hold back, sho
 
 ## Available Agents
 
-For performance validation of frontend implementations, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-performance-auditor** — Core Web Vitals and rendering performance analysis
+For performance validation of frontend implementations, delegate to this agent:
+- **${PROJECT_NAME}-performance-auditor** — Core Web Vitals and rendering performance analysis. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/performance-auditor.md]]\\\`
 `;

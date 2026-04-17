@@ -9,18 +9,27 @@ import {
 export const template = `---
 name: {{name}}
 description: |
-  Error recovery and session health skill. Activate when you have corrected
-  your own mistakes 2 or more times in the current conversation. Produces a
-  diagnostic report analyzing what went wrong, why, and how to prevent it.
+  Agent self-diagnosis after repeated mistakes. Activate when you have
+  corrected your own mistakes 2 or more times in the current conversation,
+  when the user flags the same mistake more than once, or when you notice
+  yourself reverting changes or trying a third approach. Also activate for
+  phrases like "after multiple mistakes", "self-diagnosis", "stop and
+  reflect", "error pattern", "session degraded", "repeated corrections",
+  "context contaminated". Produces a REVIEW-category diagnostic report
+  under \\\`docs/\\\` and recommends a context reset. Do NOT activate for a
+  single first-time mistake (just fix and continue), user-reported
+  codebase bugs (use ${PROJECT_NAME}-debugging), end-of-day logs (use
+  ${PROJECT_NAME}-daily-log), or session handoff to a new chat (use
+  ${PROJECT_NAME}-session-handoff).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Session Recovery
 
 ## When to Activate
 
@@ -30,6 +39,13 @@ Activate this skill when **any** of these are true:
 - You have encountered repeated test failures, lint errors, or type errors caused by your own output
 - The user has pointed out the same kind of mistake more than once
 - You notice yourself reverting changes you just made or trying a third approach to the same problem
+
+## Skip When
+
+- First-time mistake that you caught and fixed once — just continue
+- User-reported bug in the codebase (not your own output) — use ${PROJECT_NAME}-debugging
+- End-of-day work log — use ${PROJECT_NAME}-daily-log /close_day
+- Handoff to a new chat because context is full — use ${PROJECT_NAME}-session-handoff
 
 **Self-check trigger:** Before continuing after a second correction, pause and ask yourself:
 > "Have I already fixed a mistake I introduced earlier in this conversation?"

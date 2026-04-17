@@ -10,16 +10,27 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream templates. Use when checking customizations, reviewing upstream updates, or preparing to contribute improvements. Also activate on /${PROJECT_NAME}-compare-preset.
+description: |
+  Compare local ${PROJECT_NAME_DISPLAY} artifacts against upstream templates.
+  Use when the user wants to check customizations, review pending upstream
+  updates, or prepare to contribute improvements. Also activate for phrases
+  like "what have I customized", "diff against upstream", "see my changes vs
+  ${PROJECT_NAME_DISPLAY}", "pending upstream updates", "show differences",
+  "review my local config", "upgrade ${PROJECT_NAME_DISPLAY} artifacts", or
+  on /${PROJECT_NAME}-compare-preset. Produces a report of local improvements
+  (contribution candidates), upstream updates available, and conflicts. Do
+  NOT activate for installing a preset (use \\\`${PROJECT_CLI} preset install\\\`),
+  creating a new preset (use ${PROJECT_NAME}-preset-creator), or opening the
+  PR itself (use ${PROJECT_NAME}-artifact-contributor).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Compare Preset
 
 ## When to Activate
 
@@ -28,6 +39,13 @@ version: 4
 - User is preparing to contribute improvements back to ${PROJECT_NAME_DISPLAY}
 - User asks about upgrading or updating ${PROJECT_NAME_DISPLAY} artifacts
 - User runs \`/${PROJECT_NAME}-compare-preset\`
+
+## Skip When
+
+- User wants to install a preset from a ZIP — use \\\`${PROJECT_CLI} preset install <path>\\\`
+- User wants to create or package a new preset — use ${PROJECT_NAME}-preset-creator
+- User wants to open a PR with their improvements — use ${PROJECT_NAME}-artifact-contributor (this skill only identifies candidates)
+- User wants to pull upstream updates — run \\\`${PROJECT_CLI} update\\\` directly
 
 ## Step 1: Identify Local State
 
@@ -157,5 +175,5 @@ If upstream clone fails, present a local-only report:
 ## Related Skills
 
 - **${PROJECT_NAME}-preset-creator** — Create or package a preset before comparing it
-- **${PROJECT_NAME}-contribute** — Contribute local improvements found during comparison back upstream
+- **${PROJECT_NAME}-artifact-contributor** — Contribute local improvements found during comparison back upstream
 `;

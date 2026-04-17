@@ -8,16 +8,27 @@ import {
 
 export const template = `---
 name: {{name}}
-description: ${PROJECT_NAME_DISPLAY} self-documentation skill. Use when building, updating, or checking ${PROJECT_NAME_DISPLAY} docs. Also activate for stale documentation, docs site builds, or skill catalog HTML generation.
+description: |
+  ${PROJECT_NAME_DISPLAY} self-documentation skill (for ${PROJECT_NAME_DISPLAY}
+  contributors only). Use when building, updating, regenerating, or checking
+  ${PROJECT_NAME_DISPLAY}'s own docs site. Also activate for phrases like
+  "regenerate docs", "are the docs stale", "update the docs", "rebuild docs
+  site", "validate docs freshness", "skill catalog", "pre-release doc sweep",
+  or when the user runs \\\`${PROJECT_CLI} docs --generate\\\` / \\\`--validate\\\`.
+  Maintains 20 auto-generated sections across artifacts.md, configuration.md,
+  architecture.md, presets.md, and README.md. Do NOT activate for consumer
+  project documentation (use ${PROJECT_NAME}-project-documentation), branded
+  reports or proposals (use ${PROJECT_NAME}-doc-engine), or user-facing
+  tutorials.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 7
 ---
 
-# ${PROJECT_NAME_DISPLAY} Documentation Manager
+# {{name}} — Documentation Manager
 
 Maintains ${PROJECT_NAME_DISPLAY}'s own documentation using a **marker-based code-driven generator**.
 Data tables (flag lists, schema fields, template catalogs, preset comparisons) are
@@ -142,13 +153,13 @@ docs/
   deprecated/            # Archive of old docs (spec, QA, roadmaps, research)
 \\\`\\\`\\\`
 
-## Boundaries
+## Skip When
 
-This skill does NOT:
-- Replace the \\\`documentation\\\` skill (which handles user project docs, READMEs, ADRs)
-- Replace the \\\`doc-engine\\\` skill (which produces branded reports and proposals)
-- Modify source code — it only reads code to check doc freshness
-- Auto-commit changes — all edits require user approval
+- User wants consumer-project docs, READMEs, or ADRs — use ${PROJECT_NAME}-project-documentation
+- User wants branded reports or proposals — use ${PROJECT_NAME}-doc-engine
+- User asks to modify source code — this skill only reads code to check doc freshness
+- User asks for an auto-commit — all edits require explicit user approval first
+- User is not working on the ${PROJECT_NAME_DISPLAY} source repo — this skill is contributor-only
 
 ## Related Skills
 

@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-roadmap",
+  "cases": [
+    {
+      "id": "feature-roadmap",
+      "description": "Feature roadmap request triggers the skill",
+      "prompt": "create a roadmap for the multi-tenant migration",
+      "expectations": [
+        "Activates roadmap skill",
+        "Asks about scope, target, and dependencies",
+        "Saves a JSON file under docs/roadmaps/ with timestamped filename",
+        "Includes priority + status + dependencies per task",
+        "Does NOT produce a markdown implementation plan"
+      ]
+    },
+    {
+      "id": "q3-milestones",
+      "description": "Quarterly milestone plan triggers the skill",
+      "prompt": "plan our Q3 milestones for the platform team",
+      "expectations": [
+        "Activates roadmap skill",
+        "Organizes into phases / milestones",
+        "Saves the JSON with a roadmap filename in docs/roadmaps/"
+      ]
+    },
+    {
+      "id": "epic-breakdown",
+      "description": "Epic breakdown triggers the skill",
+      "prompt": "break down the checkout epic into a tracked task list",
+      "expectations": [
+        "Activates roadmap skill",
+        "Lists tasks with priority, status, and dependencies",
+        "Writes to docs/roadmaps/ as JSON"
+      ]
+    },
+    {
+      "id": "negative-implementation-plan",
+      "description": "Implementation plan does NOT trigger roadmap",
+      "prompt": "write the implementation plan for the auth refactor",
+      "expectations": [
+        "Does NOT activate roadmap skill",
+        "Routes to codi-plan-writer instead (after codi-brainstorming)",
+        "Produces a markdown [PLAN] doc, not a JSON roadmap"
+      ]
+    },
+    {
+      "id": "negative-task-tracking",
+      "description": "In-conversation task tracking does NOT trigger roadmap",
+      "prompt": "let's keep track of the things we need to do in this session",
+      "expectations": [
+        "Does NOT activate roadmap skill",
+        "Uses TaskCreate / task tracking inline",
+        "Does NOT write a JSON roadmap for short-lived session tasks"
+      ]
+    }
+  ]
+}

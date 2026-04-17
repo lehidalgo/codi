@@ -8,16 +8,41 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Review collected rule feedback and propose targeted improvements one at a time with human approval. Use when asked to improve rules, refine rules, or review rule feedback. Reads observations from ${PROJECT_DIR}/feedback/rules/.
+description: |
+  Review rule feedback collected by ${PROJECT_NAME}-rule-feedback and propose
+  targeted improvements one at a time with human approval. Use when the
+  user asks to improve rules, refine rules, process rule feedback, review
+  collected observations, apply rule updates, or fix outdated rules. Also
+  activate for phrases like "review .codi/feedback", "process rule
+  feedback", "improve our rules", "update outdated rule", or on
+  /${PROJECT_NAME}-refine-rules. Reads observations from
+  \\\`${PROJECT_DIR}/feedback/rules/\\\`. Do NOT activate for creating a new
+  rule from scratch (use ${PROJECT_NAME}-rule-creator) or for general
+  quality audits without collected feedback (use
+  ${PROJECT_NAME}-compare-preset or a direct review).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# Rule Refinement
+# {{name}} — Rule Refinement
+
+## When to Activate
+
+- User asks to review collected rule feedback or improve rules
+- User asks to process observations accumulated in \\\`${PROJECT_DIR}/feedback/rules/\\\`
+- User mentions an outdated rule, missing guidance, or wants a rule update
+- User invokes /${PROJECT_NAME}-refine-rules
+
+## Skip When
+
+- User wants to create a brand-new rule — use ${PROJECT_NAME}-rule-creator
+- User wants to diff local rules vs upstream — use ${PROJECT_NAME}-compare-preset
+- No feedback has been collected yet — wait for ${PROJECT_NAME}-rule-feedback to accumulate observations
+- User wants to refine skills, not rules — similar workflow via ${PROJECT_NAME}-skill-feedback-reporter + skill-creator
 
 ## Purpose
 
@@ -109,5 +134,5 @@ Check the current rule content against the suggestion. If already addressed, mar
 
 - **${PROJECT_NAME}-rule-feedback** — Collects the observations this skill reviews
 - **${PROJECT_NAME}-rule-creator** — Create entirely new rules (when observations suggest gaps)
-- **${PROJECT_NAME}-operations** — General artifact management including rules
+- **${PROJECT_NAME}-dev-operations** — General artifact management including rules
 `;

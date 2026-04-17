@@ -3,21 +3,28 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Collaborative step-by-step execution for first-time technical processes. Use when
-  the user wants to perform a setup, configuration, infrastructure task, deployment,
-  or operational workflow for the first time and needs structured guidance with
-  documentation at each step. Agent and user work as a team: agent reasons, plans,
-  and executes what it can; user performs actions that require credentials, browser
-  access, or external systems.
+  Collaborative step-by-step execution for first-time technical processes.
+  Use when the user wants to perform a setup, configuration, infrastructure
+  task, deployment, or operational workflow for the first time and needs
+  structured guidance with documentation at each step. Also activate for
+  phrases like "first-time setup", "step by step", "walk me through", "guide
+  me through", "OAuth configuration", "cloud provider setup", "CI/CD setup",
+  "interactive deployment", "configure from scratch". Agent and user work
+  as a team: agent reasons, plans, and executes what it can; user performs
+  actions that require credentials, browser access, or external systems.
+  Every completed step produces a written document. Do NOT activate for
+  pure code changes (use ${PROJECT_NAME}-plan-executor), audits of
+  existing code (use ${PROJECT_NAME}-audit-fix), or design-only tasks
+  (use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
-# {{name}}
+# {{name}} — Guided Execution
 
 ## When to Activate
 
@@ -27,10 +34,13 @@ version: 7
 - User wants the process documented as a reusable guide while executing it
 - Any workflow where agent and user must collaborate step by step
 
-**Skip this skill for:**
-- Pure code changes within the codebase (use ${PROJECT_NAME}-plan-executor)
-- Systematic audits of existing code (use ${PROJECT_NAME}-audit-fix)
-- Design and planning only (use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer)
+## Skip When
+
+- Pure code changes within the codebase — use ${PROJECT_NAME}-plan-executor
+- Systematic audits of existing code — use ${PROJECT_NAME}-audit-fix
+- Design and planning only — use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer
+- Running tests without collaborative setup — use ${PROJECT_NAME}-test-run
+- Committing finished work — use ${PROJECT_NAME}-commit
 
 ## The Iron Laws
 

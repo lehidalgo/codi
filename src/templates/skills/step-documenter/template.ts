@@ -4,24 +4,39 @@ export const template = `---
 name: {{name}}
 description: |
   Step completion document generator. Invoked after each validated step in a
-  guided-execution workflow to produce a structured, reusable guide. Writes to
-  docs/executions/<workflow-name>/. Also usable standalone to document a
-  completed task retroactively.
+  ${PROJECT_NAME}-guided-execution workflow to produce a structured,
+  reusable guide under \\\`docs/executions/<workflow-name>/\\\`. Also
+  usable standalone to document a completed task retroactively. Activate
+  for phrases like "document this step", "write up what we just did",
+  "turn this into a reusable procedure", "document the completed task",
+  "step doc", "runbook entry", "reproducible guide". Do NOT activate for
+  README / ADR / general project docs (use
+  ${PROJECT_NAME}-project-documentation), branded reports (use
+  ${PROJECT_NAME}-doc-engine), or daily progress logs (use
+  ${PROJECT_NAME}-daily-log).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
-# {{name}}
+# {{name}} — Step Documenter
 
 ## When to Activate
 
 - After ${PROJECT_NAME}-guided-execution validates a step as complete
 - Standalone: "Document what we just did as a reusable guide"
 - When you want to turn completed work into a reproducible procedure
+
+## Skip When
+
+- User wants a README or general project docs — use ${PROJECT_NAME}-project-documentation
+- User wants an ADR (architecture decision record) — use ${PROJECT_NAME}-project-documentation
+- User wants a branded PDF report — use ${PROJECT_NAME}-doc-engine
+- User wants a daily work log — use ${PROJECT_NAME}-daily-log
+- The step has not been validated yet — run ${PROJECT_NAME}-verification first
 
 ## The Iron Law
 

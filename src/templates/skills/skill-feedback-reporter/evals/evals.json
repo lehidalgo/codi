@@ -1,0 +1,58 @@
+{
+  "skillName": "codi-skill-feedback-reporter",
+  "cases": [
+    {
+      "id": "show-top-observations",
+      "description": "Feedback summary request triggers the skill",
+      "prompt": "show me what feedback has accumulated in .codi/feedback/",
+      "expectations": [
+        "Activates skill-feedback-reporter skill",
+        "Reads all JSON files in .codi/feedback/",
+        "Groups by artifact name (skill or rule)",
+        "Sorts by severity then timestamp",
+        "Shows the top 3 most actionable observations"
+      ]
+    },
+    {
+      "id": "pre-refine-rules-review",
+      "description": "Pre-refine-rules check triggers the skill",
+      "prompt": "before I run /codi-refine-rules, show me what's accumulated",
+      "expectations": [
+        "Activates skill-feedback-reporter",
+        "Produces the summary",
+        "Suggests /codi-refine-rules as the next step"
+      ]
+    },
+    {
+      "id": "empty-feedback",
+      "description": "Empty feedback dir produces clear message",
+      "prompt": "audit the collected feedback",
+      "expectations": [
+        "Activates skill-feedback-reporter",
+        "Detects empty .codi/feedback/",
+        "Reports 'No observations yet' with guidance that observations are collected automatically",
+        "Does NOT fabricate observations"
+      ]
+    },
+    {
+      "id": "negative-apply-changes",
+      "description": "Applying rule changes does NOT trigger this skill",
+      "prompt": "apply the collected rule feedback to the rules",
+      "expectations": [
+        "Does NOT activate skill-feedback-reporter",
+        "Routes to codi-refine-rules instead",
+        "Does NOT only summarize — proceeds to one-at-a-time approval flow"
+      ]
+    },
+    {
+      "id": "negative-emit-observation",
+      "description": "Emitting a new observation does NOT trigger this skill",
+      "prompt": "I noticed codi-testing still references Jest but we use Vitest now",
+      "expectations": [
+        "Does NOT activate skill-feedback-reporter",
+        "codi-rule-feedback handles the observation emission (CODI-OBSERVATION marker)",
+        "Does NOT read .codi/feedback/ in response"
+      ]
+    }
+  ]
+}

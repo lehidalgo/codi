@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-diagnostics",
+  "cases": [
+    {
+      "id": "escalated-after-debugging",
+      "description": "Escalation after failed debugging triggers the skill",
+      "prompt": "I've tried 3 fixes and the bug persists — help me diagnose deeper",
+      "expectations": [
+        "Activates diagnostics skill (not debugging — debugging already ran)",
+        "Gathers context via MCP: documentation search, code graph, web as last resort",
+        "Applies sequential thinking to break the analysis into numbered steps",
+        "Asks for confirmation before each proposed step"
+      ]
+    },
+    {
+      "id": "mcp-structured-analysis",
+      "description": "Structured MCP-based investigation triggers the skill",
+      "prompt": "run a structured MCP investigation on this integration failure",
+      "expectations": [
+        "Activates diagnostics skill",
+        "Uses indexed knowledge base and code graph before web search",
+        "Validates the solution against best practices before proposing any fix",
+        "Explains reasoning with references to findings"
+      ]
+    },
+    {
+      "id": "sequential-thinking",
+      "description": "Sequential-thinking request triggers the skill",
+      "prompt": "think through this bug step by step using sequential reasoning",
+      "expectations": [
+        "Activates diagnostics skill",
+        "Uses the sequential-thinking MCP tool (or equivalent structured breakdown)",
+        "Produces numbered reasoning steps with checkable intermediate conclusions"
+      ]
+    },
+    {
+      "id": "negative-first-line-debug",
+      "description": "First-line bug investigation does NOT trigger diagnostics",
+      "prompt": "the login button crashes on Safari — debug this",
+      "expectations": [
+        "Does NOT activate diagnostics skill",
+        "Routes to codi-debugging instead (first-line tool)",
+        "Diagnostics only kicks in if debugging fails to resolve"
+      ]
+    },
+    {
+      "id": "negative-new-feature",
+      "description": "Writing a feature does NOT trigger diagnostics",
+      "prompt": "add a dark mode toggle to the settings page",
+      "expectations": [
+        "Does NOT activate diagnostics skill",
+        "Does NOT gather context via MCP for debugging",
+        "Routes to plan-writer or brainstorming"
+      ]
+    }
+  ]
+}

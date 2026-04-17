@@ -1,0 +1,56 @@
+{
+  "skillName": "codi-pdf",
+  "cases": [
+    {
+      "id": "merge-pdfs",
+      "description": "PDF merge triggers the skill",
+      "prompt": "merge these 3 PDFs into one file",
+      "expectations": [
+        "Activates pdf skill",
+        "Uses pypdf PdfWriter/PdfReader for merge",
+        "Produces a single merged .pdf",
+        "Does NOT lose pages from any source"
+      ]
+    },
+    {
+      "id": "extract-text",
+      "description": "Text extraction triggers the skill",
+      "prompt": "extract all text from this report.pdf",
+      "expectations": [
+        "Activates pdf skill",
+        "Uses pypdf.PdfReader.pages.extract_text()",
+        "Returns concatenated text across all pages",
+        "Offers OCR fallback if the PDF is scanned/image-only"
+      ]
+    },
+    {
+      "id": "fill-form",
+      "description": "PDF form fill triggers the skill",
+      "prompt": "fill out the fields in tax-form.pdf with these values",
+      "expectations": [
+        "Activates pdf skill",
+        "Reads references/forms.md for the form-fill procedure",
+        "Uses pypdf or pdf-lib to write form fields",
+        "Produces a filled .pdf"
+      ]
+    },
+    {
+      "id": "negative-word-doc",
+      "description": "Word doc request does NOT trigger pdf",
+      "prompt": "edit this Word document",
+      "expectations": [
+        "Does NOT activate pdf skill",
+        "Routes to codi-docx instead"
+      ]
+    },
+    {
+      "id": "negative-spreadsheet",
+      "description": "Excel request does NOT trigger pdf",
+      "prompt": "build a financial model in Excel",
+      "expectations": [
+        "Does NOT activate pdf skill",
+        "Routes to codi-xlsx instead"
+      ]
+    }
+  ]
+}

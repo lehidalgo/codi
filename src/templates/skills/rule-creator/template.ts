@@ -13,18 +13,26 @@ import {
 export const template = `---
 name: {{name}}
 description: |
-  Rule creation workflow. Use when the user asks to create, write, or define
-  a coding rule, standard, or convention. Also activate when the user wants
-  to enforce behavior, set constraints, or establish coding standards.
+  Rule creation workflow. Use when the user asks to create, write, define,
+  scaffold, or add a coding rule, standard, or convention. Also activate
+  for phrases like "add a rule", "new coding standard", "team coding
+  standard", "enforce pattern", "project convention", "scaffold rule",
+  "framework rule", "rule for TypeScript/Python/React". Produces a
+  validated rule with frontmatter + BAD/GOOD examples + measurable
+  criteria. Do NOT activate for creating a skill (use
+  ${PROJECT_NAME}-skill-creator), creating an agent (use
+  ${PROJECT_NAME}-agent-creator), reviewing existing rule feedback (use
+  ${PROJECT_NAME}-refine-rules), or enforcing what a linter/formatter
+  already covers.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
-# Rule Creator
+# {{name}} — Rule Creator
 
 ## When to Activate
 
@@ -33,6 +41,14 @@ version: 8
 - User needs to define constraints for a language or framework
 - User asks about rule frontmatter or rule structure
 - User wants to add a project-specific coding guideline
+
+## Skip When
+
+- User wants to create a skill — use ${PROJECT_NAME}-skill-creator
+- User wants to create an agent — use ${PROJECT_NAME}-agent-creator
+- User wants to refine existing rules from collected feedback — use ${PROJECT_NAME}-refine-rules
+- The rule duplicates what an existing linter/formatter already enforces — configure the tool instead
+- User wants to bundle multiple rules into a preset — use ${PROJECT_NAME}-preset-creator
 
 ## Step 1 — Capture Intent
 
@@ -89,7 +105,8 @@ version: 1
 priority: high | medium | low
 alwaysApply: true | false
 managed_by: user
-user-invocable: truelanguage: typescript        # optional — omit for universal rules
+user-invocable: true
+language: typescript        # optional — omit for universal rules
 scope: [src/api/**]         # optional — omit for universal rules
 ---
 \\\`\\\`\\\`

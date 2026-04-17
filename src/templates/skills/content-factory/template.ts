@@ -8,10 +8,19 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 65
+version: 67
 ---
 
 # {{name}} — Content Factory
+
+## Skip When
+
+- User wants a single static poster, album cover, or museum-quality art piece — use ${PROJECT_NAME}-canvas-design
+- User wants a generative / interactive p5.js sketch — use ${PROJECT_NAME}-algorithmic-art
+- User wants to edit a \\\`.pptx\\\` directly (binary format) — use ${PROJECT_NAME}-pptx
+- User wants a Word document with tracked changes — use ${PROJECT_NAME}-docx
+- User wants a PDF report without an HTML intermediate — use ${PROJECT_NAME}-doc-engine
+- User wants a multi-component React artifact — use ${PROJECT_NAME}-claude-artifacts-builder
 
 ## Overview
 
@@ -52,7 +61,7 @@ These terms appear throughout the skill and references. They are stable — use 
 
 | Asset | Purpose |
 |-------|---------|
-| \`\${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]\` | Node.js HTTP + WebSocket server (no dependencies) |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]\` | Node.js HTTP + WebSocket server. Minimal deps: \`docx\` (DOCX export), optional \`playwright\` (box-layout validation). See \`scripts/package.json\`. |
 | \`\${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]\` | Start the server, outputs JSON with URL and paths |
 | \`\${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]\` | Stop the server gracefully |
 | \`\${CLAUDE_SKILL_DIR}[[/scripts/setup-validation.sh]]\` | Install Playwright and validator deps (first-time) |
@@ -541,9 +550,12 @@ When \`mode\` is \`"template"\` in \`/api/state\`:
 3. **Also edit the source** so the change persists across \`codi generate\`:
 
    \`\`\`
-   \${CLAUDE_SKILL_DIR}/generators/templates/<name>.html
-   src/templates/skills/content-factory/generators/templates/<name>.html
+   \${CLAUDE_SKILL_DIR}/generators/templates/<name>.html   (installed copy)
+   src/templates/skills/content-factory/generators/templates/<name>.html  (self-dev only — Codi repo)
    \`\`\`
+
+   The \`src/templates/\` path only exists when working on the Codi source
+   repo itself; skip it in consumer projects.
 
 Editing a template changes it for all future sessions. If the user only wants a one-off
 variation without touching the original, generate a new content file (Step 3) and use the

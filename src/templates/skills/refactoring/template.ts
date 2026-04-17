@@ -2,16 +2,28 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Safe dead code removal and refactoring workflow. Use when removing unused code, consolidating duplicates, or simplifying a module without changing behavior. Classifies safety level and verifies tests after each deletion.
+description: |
+  Safe dead-code removal and behavior-preserving refactoring workflow. Use
+  when the user wants to remove dead code, cleanup unused imports, delete
+  unused exports, consolidate duplicates, DRY up a module, merge
+  near-identical functions, or simplify code without changing behavior.
+  Also activate for phrases like "remove dead code", "cleanup unused",
+  "simplify this module", "DRY up", "delete unused imports", or when the
+  user runs dead-code detection tools (knip, vulture, deadcode, udeps).
+  Classifies each finding as SAFE / CAUTION / DANGER and re-runs tests
+  after every deletion. Do NOT activate for new features (use
+  ${PROJECT_NAME}-plan-writer), bug fixes (use ${PROJECT_NAME}-debugging),
+  behavior-changing rewrites (use ${PROJECT_NAME}-plan-writer with tests),
+  or performance tuning.
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Refactoring
 
 ## When to Activate
 
@@ -19,6 +31,14 @@ version: 5
 - User wants to consolidate duplicate functions or redundant abstractions
 - User asks to refactor a module for simplicity without changing behavior
 - User needs to identify and safely delete code that is no longer referenced
+
+## Skip When
+
+- User wants to add a new feature or change behavior — use ${PROJECT_NAME}-plan-writer
+- User wants to fix a bug — use ${PROJECT_NAME}-debugging
+- User wants performance improvements that change implementation — use ${PROJECT_NAME}-plan-writer with a benchmark gate
+- User wants test generation without removing code — use ${PROJECT_NAME}-test-coverage
+- Baseline tests are already failing — fix the baseline first, never refactor on red
 
 ## Refactoring Process
 
@@ -112,9 +132,9 @@ Stop the refactoring process if:
 
 ## Available Agents
 
-For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-refactorer** — Autonomous dead code removal with classification system
-- **${PROJECT_NAME}-test-generator** — Generate tests for refactored code
+For specialized analysis, delegate to these agents:
+- **${PROJECT_NAME}-refactorer** — Autonomous dead code removal with classification system. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/refactorer.md]]\\\`
+- **${PROJECT_NAME}-test-generator** — Generate tests for refactored code. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/test-generator.md]]\\\`
 
 ## Related Skills
 

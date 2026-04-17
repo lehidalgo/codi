@@ -1,0 +1,58 @@
+{
+  "skillName": "codi-worktrees",
+  "cases": [
+    {
+      "id": "prep-before-plan",
+      "description": "Workspace prep before plan execution triggers the skill",
+      "prompt": "set up the workspace before we start the implementation plan",
+      "expectations": [
+        "Activates worktrees skill",
+        "Gathers context (git status, git worktree list, task scope)",
+        "Recommends worktree vs simple branch with one-line reasoning",
+        "Waits for user confirmation before creating the workspace",
+        "Reports the selected path with setup commands"
+      ]
+    },
+    {
+      "id": "parallel-feature",
+      "description": "Parallel feature work triggers worktree path",
+      "prompt": "I need to work on the auth migration without touching my current dirty tree",
+      "expectations": [
+        "Activates worktrees skill",
+        "Recommends Path B (worktree) based on dirty-tree + isolation criteria",
+        "Creates the worktree after confirmation",
+        "Installs dependencies in the new worktree using the detected package manager"
+      ]
+    },
+    {
+      "id": "small-fix-branch-path",
+      "description": "Small fix routes to Path A (simple branch)",
+      "prompt": "create a workspace for a tiny config tweak",
+      "expectations": [
+        "Activates worktrees skill",
+        "Recommends Path A (simple branch) since scope is small and tree is clean",
+        "Runs `git checkout -b <name>` with a proper branch prefix (fix/, feature/, chore/)"
+      ]
+    },
+    {
+      "id": "negative-finish-branch",
+      "description": "Finishing a branch does NOT trigger worktrees",
+      "prompt": "I'm done with this feature — how do I merge it?",
+      "expectations": [
+        "Does NOT activate worktrees skill",
+        "Routes to codi-branch-finish instead",
+        "Does NOT create a new workspace"
+      ]
+    },
+    {
+      "id": "negative-commit",
+      "description": "Committing does NOT trigger worktrees",
+      "prompt": "commit my changes",
+      "expectations": [
+        "Does NOT activate worktrees skill",
+        "Routes to codi-commit instead",
+        "Does NOT prompt for isolation strategy"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-algorithmic-art",
+  "cases": [
+    {
+      "id": "generative-art-request",
+      "description": "Explicit generative art request triggers the skill",
+      "prompt": "create a generative art piece with flow fields and particles",
+      "expectations": [
+        "Activates algorithmic-art skill",
+        "Produces an algorithmic philosophy (markdown, 4-6 paragraphs) before any code",
+        "Reads the viewer.html asset from the skill's assets/ directory before writing HTML",
+        "Outputs a single self-contained HTML artifact embedding p5.js from CDN",
+        "Uses randomSeed() and noiseSeed() for reproducibility"
+      ]
+    },
+    {
+      "id": "p5js-sketch",
+      "description": "Request phrased as 'p5.js sketch' triggers the skill",
+      "prompt": "write a p5.js sketch exploring Perlin noise fields",
+      "expectations": [
+        "Activates algorithmic-art skill",
+        "Philosophy phase precedes implementation",
+        "Final HTML includes Seed / Parameters / Actions sidebar sections"
+      ]
+    },
+    {
+      "id": "parametric-art",
+      "description": "Parametric art phrasing triggers the skill",
+      "prompt": "build an interactive parametric art piece using seeded randomness",
+      "expectations": [
+        "Activates algorithmic-art skill",
+        "HTML includes range sliders for parameters",
+        "HTML includes prev/next/random/jump seed navigation"
+      ]
+    },
+    {
+      "id": "negative-static-illustration",
+      "description": "Static illustration request does NOT trigger algorithmic-art",
+      "prompt": "design a logo for a coffee shop",
+      "expectations": [
+        "Does NOT activate algorithmic-art skill",
+        "Does NOT produce an algorithmic philosophy markdown",
+        "Does NOT output a p5.js sketch"
+      ]
+    },
+    {
+      "id": "negative-data-viz",
+      "description": "Data visualization request does NOT trigger algorithmic-art",
+      "prompt": "plot the monthly revenue from this CSV as a bar chart",
+      "expectations": [
+        "Does NOT activate algorithmic-art skill",
+        "Does NOT produce an algorithmic philosophy markdown",
+        "Produces a standard data-viz approach (e.g., matplotlib, vega-lite, or similar)"
+      ]
+    }
+  ]
+}

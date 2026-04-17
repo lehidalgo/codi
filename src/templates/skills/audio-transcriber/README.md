@@ -43,3 +43,22 @@ open http://localhost:8765
 ## Google Sheets (optional)
 
 Place a `credentials.json` file (Google Cloud service account or OAuth client) in the project root before starting the server. The UI exposes a sheet ID input when credentials are detected.
+
+## Runtime Compatibility — Intentional Deviation
+
+The skill-creator standard says executable scripts must ship both a Python
+and a TypeScript version (`scripts/python/` + `scripts/ts/`). This skill
+deviates by design: the scripts are a full Flask web application
+(`server.py`, `transcriber.py`, `sheets_handler.py`, `index.html`), and
+porting the server to Node.js would double maintenance with no runtime
+benefit — the skill already runs in both Claude Code and Claude.ai
+because Python is available in both. The scripts live at `scripts/*.py`
+directly rather than under `scripts/python/`.
+
+## Follow-ups
+
+No Python test suite yet. Candidate units for `tests/python/`:
+
+- `transcriber.py` — chunk-boundary logic, overlap handling, reassembly order
+- `sheets_handler.py` — spreadsheet URL parsing, worksheet resolution
+

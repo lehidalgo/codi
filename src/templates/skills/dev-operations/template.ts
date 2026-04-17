@@ -11,23 +11,45 @@ import type { TemplateCounts } from "../types.js";
 export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
-description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, skills, agents, configuration, verification, or troubleshooting ${PROJECT_NAME} setup.
+description: |
+  Unified ${PROJECT_NAME_DISPLAY} operations skill. Use when the user wants to
+  add, update, or remove rules, skills, or agents; configure flags, presets,
+  or MCP servers; run \\\`${PROJECT_CLI} generate\\\`, \\\`add\\\`, \\\`update\\\`,
+  \\\`verify\\\`, \\\`doctor\\\`, \\\`validate\\\`, or \\\`preset\\\` commands;
+  resolve \\\`generate\\\` exit-2 conflicts; check drift; clean or revert
+  backups; or follow the self-dev clean + reinstall flow for source-layer
+  edits. Also activate for phrases like "codi generate didn't propagate",
+  "my source edit isn't showing up", "three-layer pipeline", "conflict
+  resolution". Do NOT activate for writing a new skill from scratch (use
+  ${PROJECT_NAME}-skill-creator), creating a new rule (use
+  ${PROJECT_NAME}-rule-creator), or scaffolding a new agent (use
+  ${PROJECT_NAME}-agent-creator) — those have their own lifecycle workflows.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 15
+version: 17
 ---
 
-# ${PROJECT_NAME_DISPLAY} Operations
+# {{name}} — Operations
 
 ## When to Activate
 
 - User wants to add, update, or remove rules, skills, or agents
 - User needs to configure flags, presets, or MCP servers
-- User asks to verify, diagnose, or troubleshoot the ${PROJECT_NAME} installation
+- User asks to verify, diagnose, or troubleshoot the ${PROJECT_NAME_DISPLAY} installation
 - User asks about drift, backups, or regenerating agent config files
+- \\\`${PROJECT_CLI} generate\\\` exited with code 2 and a conflicts payload
+- User edited \\\`src/templates/\\\` and is not seeing changes take effect
+
+## Skip When
+
+- User wants to **create** a new skill from scratch — use ${PROJECT_NAME}-skill-creator
+- User wants to **create** a new rule from scratch — use ${PROJECT_NAME}-rule-creator
+- User wants to **create** a new agent from scratch — use ${PROJECT_NAME}-agent-creator
+- User wants to package and contribute artifacts to a repo — use ${PROJECT_NAME}-artifact-contributor
+- User wants to diff local vs upstream — use ${PROJECT_NAME}-compare-preset
 
 ## Artifact Lifecycle
 
@@ -298,6 +320,6 @@ consumers see the change on their next update.
 ## Related Skills
 
 - **${PROJECT_NAME}-compare-preset** — Compare local artifacts against upstream templates
-- **${PROJECT_NAME}-error-recovery** — Recover from repeated agent mistakes during operations
+- **${PROJECT_NAME}-session-recovery** — Recover from repeated agent mistakes during operations
 `;
 }

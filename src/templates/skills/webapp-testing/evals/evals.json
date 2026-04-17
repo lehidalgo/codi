@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-webapp-testing",
+  "cases": [
+    {
+      "id": "test-local-webapp",
+      "description": "Testing local web app triggers the skill",
+      "prompt": "use Playwright to test my local dev server at localhost:5173",
+      "expectations": [
+        "Activates webapp-testing skill",
+        "Runs --help on with-server helper first",
+        "Uses with-server.ts (TypeScript) or with_server.py to manage lifecycle",
+        "Waits for networkidle before inspecting DOM",
+        "Closes the browser when done"
+      ]
+    },
+    {
+      "id": "screenshot-and-console",
+      "description": "Screenshot + console capture triggers the skill",
+      "prompt": "capture a screenshot and the console logs of my running app",
+      "expectations": [
+        "Activates webapp-testing skill",
+        "Takes a full-page screenshot",
+        "Captures console messages (references/console_logging.py pattern)",
+        "Reports both outputs back to the user"
+      ]
+    },
+    {
+      "id": "multi-server",
+      "description": "Multi-server test triggers the skill",
+      "prompt": "I need to test the frontend at :5173 that calls the backend at :3000",
+      "expectations": [
+        "Activates webapp-testing skill",
+        "Uses the multi-server form of with-server",
+        "Starts both servers before running the automation",
+        "Runs the test with proper wait states"
+      ]
+    },
+    {
+      "id": "negative-html-inspect",
+      "description": "Local HTML collaborative inspect does NOT trigger webapp-testing",
+      "prompt": "open this HTML file so you can see what I click",
+      "expectations": [
+        "Does NOT activate webapp-testing skill",
+        "Routes to codi-html-live-inspect instead",
+        "Does NOT launch Playwright"
+      ]
+    },
+    {
+      "id": "negative-ui-design",
+      "description": "New UI design does NOT trigger webapp-testing",
+      "prompt": "build a beautiful landing page hero section",
+      "expectations": [
+        "Does NOT activate webapp-testing skill",
+        "Routes to codi-frontend-design instead",
+        "Does NOT produce a Playwright script"
+      ]
+    }
+  ]
+}

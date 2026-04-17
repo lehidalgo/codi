@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-dev-e2e-testing",
+  "cases": [
+    {
+      "id": "full-e2e-sweep",
+      "description": "Full E2E validation request triggers the skill",
+      "prompt": "run the full Codi e2e validation sweep",
+      "expectations": [
+        "Activates dev-e2e-testing skill",
+        "Creates an isolated test project under /tmp",
+        "Executes all 18 suites in order (Setup, Initialization, Artifacts, ...)",
+        "Labels each step [SYSTEM] / [HUMAN] / [CODING AGENT] before executing",
+        "Reports expected vs actual for each suite"
+      ]
+    },
+    {
+      "id": "release-validation",
+      "description": "Pre-release validation triggers the skill",
+      "prompt": "we're cutting v0.3.2 — validate the installation end-to-end",
+      "expectations": [
+        "Activates dev-e2e-testing skill",
+        "Runs each suite against a clean /tmp test project",
+        "Verifies preset management suite (create / list / validate / export / install / remove)",
+        "Pauses at [HUMAN] steps and prompts the user"
+      ]
+    },
+    {
+      "id": "feature-audit",
+      "description": "Full-feature audit request triggers the skill",
+      "prompt": "audit all Codi features — artifacts, presets, hooks, verification, commit workflow",
+      "expectations": [
+        "Activates dev-e2e-testing skill",
+        "Covers artifacts (rules/skills/agents/commands), presets, pre-commit hooks, verification, commit workflow",
+        "Produces a pass/fail report per suite",
+        "Cleans up /tmp test project at the end"
+      ]
+    },
+    {
+      "id": "negative-single-skill-test",
+      "description": "Single-skill test does NOT trigger the full e2e sweep",
+      "prompt": "test the commit skill in isolation",
+      "expectations": [
+        "Does NOT activate dev-e2e-testing skill",
+        "Does NOT create a /tmp test project or run 18 suites",
+        "Routes to codi-test-run or direct manual testing instead"
+      ]
+    },
+    {
+      "id": "negative-consumer-app-e2e",
+      "description": "Consumer application e2e does NOT trigger this skill",
+      "prompt": "write Playwright e2e tests for our checkout flow",
+      "expectations": [
+        "Does NOT activate dev-e2e-testing skill (that's for Codi itself)",
+        "Routes to codi-webapp-testing or codi-tdd instead",
+        "Does NOT create /tmp/codi-validation"
+      ]
+    }
+  ]
+}

@@ -14,7 +14,8 @@ category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-version: 18
+disable-model-invocation: false
+version: 20
 ---
 
 # {{name}} — Codi Brand Identity
@@ -25,6 +26,13 @@ version: 18
   document, report, one-pager, social post, carousel, blog, proposal)
 - User mentions 'codi brand', 'codi design system', or 'codi style'
 - User needs a deliverable that carries Codi visual identity or voice
+
+## Skip When
+
+- Generic design work where the user has not asked for Codi identity — do not force Codi tokens onto unrelated content
+- Another brand is specified (non-Codi client, personal project) — use brand-creator to scaffold that brand's own skill
+- Production UI or product code — use ${PROJECT_NAME}-frontend-design
+- Rendering, preview, or export — use ${PROJECT_NAME}-content-factory (this skill ships no rendering code)
 
 ## How to Apply This Brand
 

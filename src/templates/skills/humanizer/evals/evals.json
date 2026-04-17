@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-humanizer",
+  "cases": [
+    {
+      "id": "humanize-blog-post",
+      "description": "Generated blog sounds too AI — humanize triggers the skill",
+      "prompt": "this blog post sounds like ChatGPT — humanize it",
+      "expectations": [
+        "Activates humanizer skill",
+        "Runs Pass 1 — identifies at least one pattern from each of Content / Language / Style / Communication / Filler categories",
+        "Runs Pass 2 Anti-AI audit",
+        "Runs Soul Check to verify substance",
+        "Produces revised text with a brief summary of patterns fixed"
+      ]
+    },
+    {
+      "id": "too-stiff-email",
+      "description": "Stiff email text triggers the skill",
+      "prompt": "rewrite this email to sound less stiff and more natural",
+      "expectations": [
+        "Activates humanizer skill",
+        "Removes chatbot pleasantries, sycophantic openers, knowledge-cutoff disclaimers",
+        "Uses active voice where appropriate",
+        "Final text has at least one specific detail or clear stance (Soul Check)"
+      ]
+    },
+    {
+      "id": "voice-calibration",
+      "description": "Voice calibration from samples triggers the skill",
+      "prompt": "humanize this and match my voice — my samples are in .codi/skills/codi-humanizer/references/voice-samples/",
+      "expectations": [
+        "Reads voice samples from the referenced directory",
+        "Extracts sentence length distribution, punctuation habits, formality level",
+        "Applies the voice profile in the rewrite",
+        "Cross-checks output against the profile in Soul Check"
+      ]
+    },
+    {
+      "id": "negative-write-from-scratch",
+      "description": "Writing new content from scratch does NOT trigger humanizer",
+      "prompt": "write a blog post about our Q3 product launch",
+      "expectations": [
+        "Does NOT activate humanizer skill",
+        "Routes to codi-content-factory for new content generation",
+        "Humanizer is only for rewriting existing AI-sounding text"
+      ]
+    },
+    {
+      "id": "negative-code-comments",
+      "description": "Code comments do NOT trigger humanizer",
+      "prompt": "clean up the comments in this TypeScript file",
+      "expectations": [
+        "Does NOT activate humanizer skill",
+        "Routes to codi-refactoring or direct edits instead",
+        "Does NOT treat code comments as prose in need of humanization"
+      ]
+    }
+  ]
+}

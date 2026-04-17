@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 10
 ---
 
 # {{name}} — NotebookLM Research Assistant
@@ -22,6 +22,13 @@ Query Google NotebookLM notebooks for source-grounded, citation-backed answers. 
 - User wants to add documentation to the NotebookLM library
 - User wants to generate Audio Overviews, study guides, FAQs, or other outputs
 - User uses phrases like "ask my NotebookLM", "check my docs", "query my notebook"
+
+## Skip When
+
+- User wants general web search — use WebSearch directly
+- User wants to query this project's own codebase — use ${PROJECT_NAME}-codebase-explore
+- User wants to upload new documents to NotebookLM — that is a manual step in the web UI; this skill only queries
+- User wants to convert audio to text — use ${PROJECT_NAME}-audio-transcriber (Whisper) instead of NotebookLM Audio Overviews
 
 ## Critical: Always Use run.py Wrapper
 

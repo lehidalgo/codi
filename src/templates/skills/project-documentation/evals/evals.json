@@ -1,0 +1,56 @@
+{
+  "skillName": "codi-project-documentation",
+  "cases": [
+    {
+      "id": "write-readme",
+      "description": "README request triggers the skill",
+      "prompt": "write a README for this repo",
+      "expectations": [
+        "Activates project-documentation skill",
+        "Uses the README structure (Overview / Quick Start / Usage / Configuration / Contributing)",
+        "Keeps it under 300 lines",
+        "Classifies as Diataxis 'reference' or 'how-to' before writing"
+      ]
+    },
+    {
+      "id": "adr-decision",
+      "description": "ADR request triggers the skill",
+      "prompt": "draft an ADR for our choice to use PostgreSQL over MongoDB",
+      "expectations": [
+        "Activates project-documentation skill",
+        "Uses the ADR format (Title / Status / Context / Decision / Consequences)",
+        "Proposes a filename like docs/adr/NNN-use-postgres.md"
+      ]
+    },
+    {
+      "id": "openapi-reference",
+      "description": "API docs request triggers the skill",
+      "prompt": "generate OpenAPI reference for our user service endpoints",
+      "expectations": [
+        "Activates project-documentation skill",
+        "Produces endpoint docs with method, path, parameters, request/response schemas, and working examples",
+        "Classifies as Diataxis 'reference'"
+      ]
+    },
+    {
+      "id": "negative-branded-report",
+      "description": "Branded PDF report does NOT trigger project-documentation",
+      "prompt": "build a branded PDF report for the client board",
+      "expectations": [
+        "Does NOT activate project-documentation skill",
+        "Routes to codi-doc-engine instead",
+        "Does NOT produce plain Markdown as the primary deliverable"
+      ]
+    },
+    {
+      "id": "negative-codi-self-docs",
+      "description": "Codi self-docs do NOT trigger project-documentation",
+      "prompt": "regenerate the Codi docs site",
+      "expectations": [
+        "Does NOT activate project-documentation skill",
+        "Routes to codi-dev-docs-manager instead",
+        "Does NOT treat Codi's own docs/ as consumer-project documentation"
+      ]
+    }
+  ]
+}

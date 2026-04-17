@@ -2,16 +2,26 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Coding agent drives automatable phases, flags human-only phases, and tracks all results in a living QA report document.
+description: |
+  Step-by-step QA testing methodology. Use when the user wants to test,
+  validate, or QA a project systematically. Also activate for phrases like
+  "QA this project", "validate the release", "test the whole app",
+  "systematic testing", "pre-release QA", "regression pass", "user
+  acceptance testing", "UAT", "check if everything works". Coding agent
+  drives automatable [AGENT] phases, flags [HUMAN]-only phases, and
+  tracks all results in a living QA report document. Do NOT activate for
+  running a single test (use ${PROJECT_NAME}-test-run), measuring test
+  coverage (use ${PROJECT_NAME}-test-coverage), or auditing the
+  ${PROJECT_NAME} installation itself (use ${PROJECT_NAME}-dev-e2e-testing).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Guided QA Testing
 
 ## When to Activate
 
@@ -19,6 +29,14 @@ version: 5
 - User says "let's check if everything works"
 - User has a QA document and wants help executing it
 - After a release or major feature merge that needs verification
+
+## Skip When
+
+- User wants to run a single test or the existing test suite — use ${PROJECT_NAME}-test-run
+- User wants to measure or improve test coverage — use ${PROJECT_NAME}-test-coverage
+- User wants to audit the ${PROJECT_NAME} installation itself — use ${PROJECT_NAME}-dev-e2e-testing
+- User wants to generate new automated tests from scratch — use ${PROJECT_NAME}-tdd
+- User wants to investigate a specific bug — use ${PROJECT_NAME}-debugging
 
 ## Phase Types
 
@@ -227,11 +245,11 @@ Report structure:
 
 ## Available Agents
 
-For automated test generation from QA findings, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-test-generator** — Convert QA findings into automated regression tests
+For automated test generation from QA findings, delegate to this agent:
+- **${PROJECT_NAME}-test-generator** — Convert QA findings into automated regression tests. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/test-generator.md]]\\\`
 
 ## Related Skills
 
-- **${PROJECT_NAME}-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
+- **${PROJECT_NAME}-dev-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
 - **${PROJECT_NAME}-test-coverage** — Measure and improve test coverage after QA
 `;

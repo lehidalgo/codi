@@ -7,16 +7,27 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Test coverage analysis workflow. Use when measuring coverage, identifying gaps below ${MIN_CODE_COVERAGE_PERCENT}% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.
+description: |
+  Test coverage analysis workflow. Use when the user wants to measure,
+  report, or improve code coverage, identify test gaps below the
+  ${MIN_CODE_COVERAGE_PERCENT}% threshold, generate missing tests for
+  uncovered lines, or produce a before/after coverage comparison. Also
+  activate for phrases like "code coverage", "test gaps", "uncovered
+  lines", "coverage report", "measure coverage", "fill coverage gaps",
+  "coverage metric", "what's my coverage". Detects test framework
+  (Jest / Vitest / Pytest / Go / Rust) automatically. Do NOT activate
+  for implementing new features with tests (use ${PROJECT_NAME}-tdd),
+  fixing a specific failing test (use ${PROJECT_NAME}-debugging), or
+  quality-reviewing existing tests (use ${PROJECT_NAME}-code-review).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Test Coverage
 
 ## When to Activate
 
@@ -25,6 +36,14 @@ version: 5
 - User asks to generate tests for uncovered code paths
 - User needs a before/after coverage comparison after adding tests
 - New feature has been implemented and needs test coverage verification
+
+## Skip When
+
+- User is implementing a new feature with tests (RED-GREEN-REFACTOR) — use ${PROJECT_NAME}-tdd
+- User is debugging a specific failing test — use ${PROJECT_NAME}-debugging
+- User wants to quality-review existing tests — use ${PROJECT_NAME}-code-review
+- User wants to remove dead / uncovered code — use ${PROJECT_NAME}-refactoring
+- User wants systematic multi-phase QA — use ${PROJECT_NAME}-guided-qa-testing
 
 ## Coverage Analysis Process
 
@@ -93,9 +112,9 @@ Skip generating tests for:
 
 ## Available Agents
 
-For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-test-generator** — Expert test creation with TDD workflow
-- **${PROJECT_NAME}-code-reviewer** — Review generated tests for quality and correctness
+For specialized analysis, delegate to these agents:
+- **${PROJECT_NAME}-test-generator** — Expert test creation with TDD workflow. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/test-generator.md]]\\\`
+- **${PROJECT_NAME}-code-reviewer** — Review generated tests for quality and correctness. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/code-reviewer.md]]\\\`
 
 ## Related Skills
 

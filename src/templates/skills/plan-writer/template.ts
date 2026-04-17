@@ -3,18 +3,27 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Implementation plan generator. Use after brainstorming produces an approved design spec.
-  Breaks the spec into atomic 2-5 minute TDD tasks with exact file paths, complete code,
-  and verification commands. Produces an executable plan document.
+  Implementation plan generator. Use after ${PROJECT_NAME}-brainstorming
+  produces an approved design spec and the user wants the spec broken into
+  atomic 2-5 minute TDD tasks with exact file paths, complete code, and
+  runnable verification commands. Also activate for phrases like "break
+  this into tasks", "write the plan", "plan from spec", "TDD task
+  breakdown", "atomic tasks", "implementation task list", "turn this spec
+  into an execution plan". Produces an executable plan document at
+  \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature>-impl.md\\\`. Do NOT activate
+  without an approved spec (use ${PROJECT_NAME}-brainstorming first), for
+  executing an existing plan (use ${PROJECT_NAME}-subagent-dev or
+  ${PROJECT_NAME}-plan-executor), or for single-file edits that don't
+  warrant a plan.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
-# {{name}}
+# {{name}} — Plan Writer
 
 **Announce at start:** "I'm using ${PROJECT_NAME}-plan-writer to create the implementation plan."
 
@@ -23,6 +32,13 @@ version: 8
 - After ${PROJECT_NAME}-brainstorming produces an approved design spec
 - User asks to break a spec or requirements into atomic implementation tasks
 - User provides a design document and wants an execution plan
+
+## Skip When
+
+- No approved spec yet — run ${PROJECT_NAME}-brainstorming first
+- Plan already exists and user wants to execute it — use ${PROJECT_NAME}-subagent-dev or ${PROJECT_NAME}-plan-executor
+- Single-file edit or trivial change that doesn't warrant a plan — just edit directly
+- Bug investigation without a spec — use ${PROJECT_NAME}-debugging
 
 ## Iron Law
 

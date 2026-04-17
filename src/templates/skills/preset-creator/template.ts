@@ -10,16 +10,26 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.
+description: |
+  Guided creation of ${PROJECT_NAME_DISPLAY} presets. Use when the user wants
+  to create, package, scaffold, fork, share, publish, or customize a
+  ${PROJECT_NAME_DISPLAY} preset — a reusable bundle of rules, skills, agents,
+  commands, flags, and MCP configs. Also activate for phrases like "bundle
+  my rules and skills", "make a preset for my team", "org-wide preset",
+  "fork the balanced preset", "share preset via ZIP", "publish preset to
+  GitHub". Do NOT activate for installing an existing preset (use
+  \\\`${PROJECT_CLI} preset install\\\` directly), diffing local vs upstream
+  (use ${PROJECT_NAME}-compare-preset), or contributing artifacts back to
+  ${PROJECT_NAME_DISPLAY} upstream (use ${PROJECT_NAME}-artifact-contributor).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Preset Creator
 
 Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs.
 
@@ -29,6 +39,13 @@ Guide the user through creating a ${PROJECT_NAME_DISPLAY} preset — a reusable 
 - User wants to bundle existing rules, skills, and agents into a reusable configuration
 - User needs to export a preset as a ZIP or publish it to a GitHub repository
 - User asks how to customize or fork a built-in preset
+
+## Skip When
+
+- User wants to install an existing preset — use \\\`${PROJECT_CLI} preset install <path|github:org/repo|zip>\\\` directly
+- User wants to compare local vs upstream or audit their preset — use ${PROJECT_NAME}-compare-preset
+- User wants to contribute an artifact back to ${PROJECT_NAME_DISPLAY} upstream — use ${PROJECT_NAME}-artifact-contributor
+- User just wants to create a single custom rule/skill/agent (not a bundle) — use the matching creator skill
 
 ## Step 1: Define Identity
 

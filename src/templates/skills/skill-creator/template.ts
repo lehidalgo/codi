@@ -9,14 +9,28 @@ import {
 
 export const template = `---
 name: {{name}}
-description: "Skill creation, improvement, and migration workflow. Use when creating, building, or improving a skill. Also activate when the user mentions evals, skill testing, description optimization, skill packaging, or importing skills from external sources."
+description: |
+  Skill creation, improvement, and migration workflow. Use when the user
+  asks to create, build, scaffold, add, or improve a skill. Also activate
+  for phrases like "new skill from scratch", "add a skill", "optimize
+  skill description", "tune skill triggers", "write SKILL.md", "skill
+  evals", "skill testing", "benchmark skill", "package skill",
+  "import external skill", "migrate skill from <url/path/zip>",
+  "security-review a skill", or on skill.test.json / SKILL.md file
+  mentions. Do NOT activate for creating a rule (use
+  ${PROJECT_NAME}-rule-creator), creating an agent (use
+  ${PROJECT_NAME}-agent-creator), packaging multiple artifacts as a
+  preset (use ${PROJECT_NAME}-preset-creator), or writing general
+  project documentation (use ${PROJECT_NAME}-project-documentation).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
-version: 27
+user-invocable: true
+disable-model-invocation: false
+version: 28
 ---
 
-# Skill Creator
+# {{name}} — Skill Creator
 
 ## When to Activate
 
@@ -26,6 +40,14 @@ version: 27
 - User wants to optimize a skill's description for better triggering
 - User wants to import or migrate an existing skill from a git repo, local directory, or exported ZIP
 - User wants to verify the security of an imported or third-party skill
+
+## Skip When
+
+- User wants to create a rule — use ${PROJECT_NAME}-rule-creator
+- User wants to create an agent — use ${PROJECT_NAME}-agent-creator
+- User wants to bundle multiple artifacts as a preset — use ${PROJECT_NAME}-preset-creator
+- User wants to write plain project documentation — use ${PROJECT_NAME}-project-documentation
+- User wants to refine skill descriptions from collected feedback — use ${PROJECT_NAME}-skill-feedback-reporter first
 
 ## The 11-Step Lifecycle
 

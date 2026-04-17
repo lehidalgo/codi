@@ -7,16 +7,40 @@ import {
 
 export const template = `---
 name: {{name}}
-description: Review accumulated skill and rule observations collected in .codi/feedback/. Groups findings by artifact, shows the top 3 worth acting on. Use before running /${PROJECT_NAME}-refine-rules to see what has accumulated.
+description: |
+  Review accumulated skill and rule observations collected in
+  \\\`${PROJECT_DIR}/feedback/\\\`. Groups findings by artifact, shows the
+  top 3 worth acting on. Use before running /${PROJECT_NAME}-refine-rules
+  to see what has accumulated. Also activate for phrases like "show
+  accumulated feedback", "skill observations", "feedback summary",
+  "what's in my feedback dir", "audit collected feedback", "review
+  observations". Do NOT activate for applying rule changes (use
+  ${PROJECT_NAME}-refine-rules), emitting new observations during work
+  (that happens automatically via ${PROJECT_NAME}-rule-feedback), or
+  creating new rules (use ${PROJECT_NAME}-rule-creator).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: true
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 6
+version: 7
 ---
 
-# Feedback Reviewer
+# {{name}} — Feedback Reporter
+
+## When to Activate
+
+- User asks to review collected observations or feedback
+- User asks what has accumulated in \\\`${PROJECT_DIR}/feedback/\\\`
+- User is about to run /${PROJECT_NAME}-refine-rules and wants a summary first
+- User asks "is there any feedback worth acting on?"
+
+## Skip When
+
+- User wants to apply changes to rules or skills — use ${PROJECT_NAME}-refine-rules
+- User is emitting a new observation during coding work — ${PROJECT_NAME}-rule-feedback handles it automatically
+- User wants to create a brand-new rule or skill — use ${PROJECT_NAME}-rule-creator / ${PROJECT_NAME}-skill-creator
+- Feedback directory is empty — this skill still works but just reports "no observations"
 
 ## Purpose
 

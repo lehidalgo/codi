@@ -2,23 +2,40 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user needs a complex, multi-component claude.ai HTML artifact built with React, Tailwind CSS, and shadcn/ui. Do NOT activate for simple single-file HTML or JSX artifacts.
+description: |
+  Build complex, multi-component claude.ai HTML artifacts. Use when the user
+  asks for a React-based claude.ai artifact, a multi-component artifact with
+  state or routing, a single-file bundle of a React app, or any artifact that
+  needs shadcn/ui or Radix UI components. Also activate for phrases like
+  "claude.ai artifact", "React artifact", "bundle React app to HTML",
+  "multi-component artifact", "single-file bundle", "Vite bundle", "shadcn
+  artifact". Stack: React 18 + TypeScript + Vite + Parcel + Tailwind CSS +
+  shadcn/ui, bundled to a single self-contained HTML. Do NOT activate for
+  simple single-file HTML or JSX artifacts, static posters/visual art, or
+  production Next.js / web app development.
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
 ---
 
-# Web Artifacts Builder
+# {{name}} — Web Artifacts Builder
 
 ## When to Activate
 
 - User needs a multi-component claude.ai HTML artifact with state management or routing
 - User wants to use shadcn/ui or Radix UI components in an artifact
 - User asks to build a complex React app that bundles to a single HTML file
-- Do NOT activate for simple single-file HTML or JSX artifacts
+- User asks to share an interactive React demo as a claude.ai artifact
+
+## Skip When
+
+- Simple single-file HTML or JSX artifact — author directly or use ${PROJECT_NAME}-frontend-design
+- Static poster, illustration, or visual art — use ${PROJECT_NAME}-canvas-design
+- Production Next.js or web app development (not a bundled artifact) — use ${PROJECT_NAME}-frontend-design
+- Pure HTML fixed-aspect layout (Instagram post, slide deck) — use ${PROJECT_NAME}-box-validator with a content-factory flow
 
 To build powerful frontend claude.ai artifacts, follow these steps:
 1. Initialize the frontend repo using \\\`\${CLAUDE_SKILL_DIR}[[/scripts/init-artifact.sh]]\\\`

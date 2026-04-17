@@ -3,18 +3,25 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Development branch completion. Use when implementation is complete and the branch
-  needs to be merged, submitted as a PR, kept, or discarded. Verifies tests, presents
-  four deterministic options, and cleans up worktrees.
+  Development branch completion. Use when implementation is complete and
+  the branch needs to be merged, submitted as a PR, kept, or discarded. Also
+  activate for phrases like "finish this branch", "done with this branch",
+  "wrap up the branch", "ship this branch", "ready to merge", "ready to open
+  a PR", "clean up the worktree", "what's next for this feature branch".
+  Verifies tests pass, presents four deterministic options (merge locally /
+  open PR / keep as-is / discard), and cleans up worktrees for merge and
+  discard paths. Do NOT activate for a plain commit (use ${PROJECT_NAME}-commit),
+  for starting a new branch (use ${PROJECT_NAME}-worktrees), or for
+  reviewing an open PR.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Branch Finish
 
 **Announce at start:** "I'm using ${PROJECT_NAME}-branch-finish to complete this work."
 
@@ -24,6 +31,13 @@ version: 4
 - User says implementation is done and wants to merge or submit
 - User wants to clean up a worktree after development
 - User used a simple branch (via ${PROJECT_NAME}-worktrees Path A) and is ready to merge or submit
+
+## Skip When
+
+- User wants to commit pending changes (use ${PROJECT_NAME}-commit)
+- User wants to start a new feature branch (use ${PROJECT_NAME}-worktrees)
+- User wants to review an open PR (use ${PROJECT_NAME}-code-review)
+- Tests are known to be failing — the user should fix failures first
 
 ## Hard Gate: Tests Must Pass
 

@@ -2,22 +2,41 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Explore and understand the codebase using the code graph. Use when exploring structure, tracing dependencies, finding callers, or navigating unfamiliar code. Also activate before refactoring or when asked how something works.
+description: |
+  Explore and understand the codebase using the code graph. Use when the
+  user wants to trace dependencies, find callers, navigate unfamiliar code,
+  run an impact analysis, or get an architecture overview. Also activate for
+  phrases like "how does X work", "where is X defined", "find all callers of",
+  "who calls this function", "what does X depend on", "trace the flow", "show
+  relationships", "dependency map", "impact analysis", "before I refactor",
+  "architecture overview". Do NOT activate for fixing bugs (use
+  ${PROJECT_NAME}-debugging), writing new code, running tests, or making
+  edits — this skill is read-only exploration.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Codebase Explore
 
 ## When to Activate
 
 - User wants to understand how parts of the codebase relate to each other
 - User needs to trace callers or dependencies before making a change
 - User wants an architecture overview or dependency map
+- User asks "how does X work" or "where is X defined"
+- User wants an impact analysis before renaming, removing, or refactoring
+
+## Skip When
+
+- User wants a bug fixed, not just explored — use ${PROJECT_NAME}-debugging
+- User wants new code written — use ${PROJECT_NAME}-plan-writer
+- User wants tests run — use ${PROJECT_NAME}-test-run
+- User wants an onboarding doc produced — use ${PROJECT_NAME}-codebase-onboarding
+- User asks to perform an edit, refactor, or migration — explore first, then route to the right action skill
 
 ## Available Tools
 

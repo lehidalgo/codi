@@ -4,17 +4,26 @@ export const template = `---
 name: {{name}}
 description: |
   Git workspace setup for feature development. Use before executing an
-  implementation plan. Evaluates whether a worktree or a simple branch is the right
-  approach, then sets up the workspace accordingly.
+  implementation plan, when the user wants a clean workspace, when parallel
+  features need isolation, or when dirty local changes must be preserved.
+  Also activate for phrases like "git worktree", "new branch for feature",
+  "workspace isolation", "parallel feature work", "feature branch setup",
+  "before plan-executor", "before subagent-dev", "clean workspace",
+  "isolate this feature". Evaluates worktree vs simple branch and sets
+  up the chosen option. Do NOT activate for finishing a branch (use
+  ${PROJECT_NAME}-branch-finish), committing changes (use
+  ${PROJECT_NAME}-commit), executing the plan itself (use
+  ${PROJECT_NAME}-plan-executor or ${PROJECT_NAME}-subagent-dev), or
+  resolving merge conflicts.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Worktrees
 
 **Announce at start:** "I'm using ${PROJECT_NAME}-worktrees to choose an isolation strategy."
 
@@ -23,6 +32,14 @@ version: 5
 - Before ${PROJECT_NAME}-plan-executor and ${PROJECT_NAME}-subagent-dev begin task execution
 - User wants to work on a feature without touching the main working tree
 - User has multiple features in parallel that need isolation
+
+## Skip When
+
+- User wants to finish or merge a branch — use ${PROJECT_NAME}-branch-finish
+- User wants to commit staged changes — use ${PROJECT_NAME}-commit
+- User wants to execute the implementation plan — use ${PROJECT_NAME}-plan-executor or ${PROJECT_NAME}-subagent-dev
+- User wants to resolve merge conflicts — handle those in the existing tree, not a new workspace
+- Change is trivial (typo fix, single-line) and no plan exists — just edit directly
 
 ## Step 0: Isolation Strategy Decision
 

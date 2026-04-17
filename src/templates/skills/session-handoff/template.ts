@@ -2,22 +2,41 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Summarize the current session and prepare a handoff prompt for a new chat. Use when the context window is filling up, switching to a new conversation, or handing off work. Also activate on /session-handoff.
+description: |
+  Summarize the current session and prepare a handoff prompt for a new
+  chat. Use when the context window is filling up, the user is switching
+  to a new conversation, handing off work to another session, or cloning
+  session state. Also activate for phrases like "context is full",
+  "create a new chat", "new conversation", "handoff to next session",
+  "session summary for handoff", "context window limit",
+  "continue in another conversation", and on /session-handoff. Produces
+  a dense, ready-to-paste handoff block (<400 words). Do NOT activate
+  for end-of-day progress logs (use ${PROJECT_NAME}-daily-log), resuming
+  from yesterday (use ${PROJECT_NAME}-daily-log /open_day), or recovery
+  from in-session mistakes (use ${PROJECT_NAME}-session-recovery).
 category: ${SKILL_CATEGORY.WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# {{name}}
+# {{name}} — Session Handoff
 
 ## When to Activate
 
 - User is ending a session and wants to continue in a new chat
 - User asks for a session summary to hand off to another agent
 - Context window is approaching its limit
+- User invokes /session-handoff
+
+## Skip When
+
+- User wants an end-of-day progress log — use ${PROJECT_NAME}-daily-log /close_day
+- User wants to resume yesterday's work — use ${PROJECT_NAME}-daily-log /open_day
+- User wants to recover from repeated in-session mistakes — use ${PROJECT_NAME}-session-recovery
+- User wants a PR description or release notes — use ${PROJECT_NAME}-commit / ${PROJECT_NAME}-branch-finish
 
 ## Workflow
 

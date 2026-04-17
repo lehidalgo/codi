@@ -2,16 +2,40 @@ import { SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Brand identity skill for {{name}}. Use when creating any branded deliverable — social cards, slides, documents, or any visual output that must carry {{name}} brand identity. Provides design tokens (colors, fonts), voice guidelines, and Content Factory templates.
+description: |
+  Brand identity scaffold for {{name}}. Use when creating any branded
+  deliverable — social cards, slides, documents, posters, email templates,
+  or any visual output that must carry {{name}} brand identity. Also activate
+  when the user mentions "brand guidelines", "brand standard", "corporate
+  identity", "visual identity", "color palette", "brand colors", "brand fonts",
+  "typography pair", "logo placement", "brand voice", or applies this brand's
+  design tokens to new content. Provides design tokens (colors, fonts),
+  voice guidelines, and Content Factory templates. Do NOT override a
+  user-specified palette when the user has not asked for this brand, and do
+  not activate for generic design work unrelated to {{name}}.
 category: ${SKILL_CATEGORY.BRAND_IDENTITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
-# {{name}} — Brand Identity
+# {{name}}
+
+## When to Activate
+
+- User asks to create a social card, slide, document, poster, or email that carries {{name}} identity
+- User mentions brand guidelines, brand standard, corporate identity, or visual identity for {{name}}
+- User asks for the color palette, brand colors, brand fonts, or typography for {{name}}
+- User wants to follow {{name}} voice and tone in copy
+- Another skill (Content Factory, doc-engine, deck-engine) needs brand tokens
+
+## Skip When
+
+- Generic design request where the user specifies their own palette and fonts
+- Content unrelated to {{name}} — do not force brand tokens onto someone else's design
+- Pure code or infrastructure tasks
 
 ## How to Apply This Brand
 

@@ -2,14 +2,29 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user wants to create animated GIFs optimized for Slack. Provides Slack size constraints, validation tools, easing functions, and animation concept guides.
+description: |
+  Create animated GIFs optimized for Slack (custom emoji and message
+  reactions). Use when the user asks to create a Slack GIF, custom Slack
+  emoji, animated emoji, animated reaction, 128x128 GIF, 480x480 GIF, or
+  any looped animation for a Slack channel. Also activate for phrases like
+  "make an emoji", "Slack GIF for #channel", "animate this concept for
+  Slack", "progress bar GIF". Provides Slack size constraints (128x128
+  emoji / 480x480 message), validation tools, easing functions, and PIL
+  drawing helpers. Detects ts/python runtime automatically. Do NOT
+  activate for static images (use ${PROJECT_NAME}-canvas-design),
+  generative p5.js art (use ${PROJECT_NAME}-algorithmic-art), or screen
+  recordings.
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
+
+# {{name}} — Slack GIF Creator
+
+A toolkit providing utilities and knowledge for creating animated GIFs optimized for Slack.
 
 ## When to Activate
 
@@ -17,9 +32,12 @@ version: 4
 - User asks to animate an uploaded image or concept for Slack
 - User needs a GIF that meets Slack's size and format constraints
 
-# Slack GIF Creator
+## Skip When
 
-A toolkit providing utilities and knowledge for creating animated GIFs optimized for Slack.
+- User wants a static logo or poster — use ${PROJECT_NAME}-canvas-design
+- User wants generative / interactive p5.js art — use ${PROJECT_NAME}-algorithmic-art
+- User wants a screen recording or video — this skill produces frame-composed GIFs only
+- User wants a web artifact with CSS animation — use ${PROJECT_NAME}-frontend-design
 
 ## Slack Requirements
 

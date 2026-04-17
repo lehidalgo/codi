@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-audio-transcriber",
+  "cases": [
+    {
+      "id": "transcribe-mp3",
+      "description": "Explicit audio transcription request triggers the skill",
+      "prompt": "transcribe this mp3 file to text",
+      "expectations": [
+        "Activates audio-transcriber skill",
+        "Proposes starting the local Flask server via `python scripts/server.py`",
+        "Points the user to http://localhost:8765",
+        "Notes the OpenAI API key is required (browser-session only, never stored server-side)",
+        "Does NOT attempt to call Whisper directly from the chat"
+      ]
+    },
+    {
+      "id": "transcribe-video",
+      "description": "Video transcription request triggers the skill",
+      "prompt": "get the text out of this mp4 interview recording",
+      "expectations": [
+        "Activates audio-transcriber skill",
+        "Mentions ffmpeg extracts audio from the video before transcription",
+        "Lists mp4 as a supported video format"
+      ]
+    },
+    {
+      "id": "podcast-to-sheets",
+      "description": "Podcast transcription with Sheets output triggers the skill",
+      "prompt": "transcribe this podcast episode and save the transcript to a Google Sheet",
+      "expectations": [
+        "Activates audio-transcriber skill",
+        "References the Google Sheets setup guide in references/google-sheets-setup.md",
+        "Explains each saved row includes timestamp, source file, duration, cost estimate, and full transcript"
+      ]
+    },
+    {
+      "id": "negative-realtime-mic",
+      "description": "Real-time microphone transcription does NOT trigger the skill",
+      "prompt": "transcribe my microphone in real time",
+      "expectations": [
+        "Does NOT activate audio-transcriber skill",
+        "Explains the skill processes existing files, not live streams",
+        "Does NOT start the Flask server"
+      ]
+    },
+    {
+      "id": "negative-text-to-speech",
+      "description": "Text-to-speech request does NOT trigger the skill",
+      "prompt": "generate an audio narration from this script",
+      "expectations": [
+        "Does NOT activate audio-transcriber skill",
+        "Explains this is a TTS task, not transcription",
+        "Does NOT propose starting the Flask server"
+      ]
+    }
+  ]
+}

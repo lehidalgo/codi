@@ -1,13 +1,20 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import {
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 import type { TemplateCounts } from "../types.js";
 
-function buildBrandPrompt(brandSkillNames: string[]): string {
+function buildBrandPrompt(brandSkillNames: string[], projectName: string): string {
   const lines = brandSkillNames.map((name, i) => {
     const label = name.replace(/-brand$/, "");
     const brandLabel =
       label.length <= 4 ? label.toUpperCase() : label.charAt(0).toUpperCase() + label.slice(1);
     const suffix =
-      i === 0 ? " (default — uses bundled tokens)" : `  — requires codi-${name} skill active`;
+      i === 0
+        ? " (default — uses bundled tokens)"
+        : `  — requires ${projectName}-${name} skill active`;
     return `  ${i + 1}. ${brandLabel}${suffix}`;
   });
   lines.push(`  ${brandSkillNames.length + 1}. Custom — provide a path to brand_tokens.json`);
@@ -15,17 +22,31 @@ function buildBrandPrompt(brandSkillNames: string[]): string {
 }
 
 export function getTemplate(counts: TemplateCounts): string {
-  const brandPrompt = buildBrandPrompt(counts.brandSkillNames);
+  const brandPrompt = buildBrandPrompt(counts.brandSkillNames, PROJECT_NAME);
   return `---
 name: {{name}}
-description: "Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations."
+description: |
+  Create, edit, read, or fix spreadsheet files (.xlsx, .xlsm, .csv, .tsv).
+  Use when the user wants to work with Excel, build a financial model,
+  clean tabular data, generate a pivot table, apply formulas, or convert
+  between tabular formats. Also activate for phrases like "Excel file",
+  "spreadsheet", "financial model", "data cleaning", "pivot table",
+  "formulas", "openpyxl", "csv to xlsx", "xlsx to csv", "messy tabular
+  data". Handles .xlsx / .xlsm / .csv / .tsv via python (openpyxl) and
+  TypeScript runtimes. Do NOT activate for Word documents (use
+  ${PROJECT_NAME}-docx), PDF files (use ${PROJECT_NAME}-pdf),
+  PowerPoint decks (use ${PROJECT_NAME}-pptx), branded HTML reports
+  (use ${PROJECT_NAME}-doc-engine), or Google Sheets API integrations
+  (use a gspread / Sheets API flow).
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 20
+version: 21
 ---
+
+# {{name}} — XLSX
 
 ## When to Activate
 
@@ -33,6 +54,14 @@ version: 20
 - User needs to clean or restructure messy tabular data
 - User wants to build a financial model with formulas and color coding
 - User needs to convert between tabular file formats
+
+## Skip When
+
+- User wants a Word document — use ${PROJECT_NAME}-docx
+- User wants a PDF — use ${PROJECT_NAME}-pdf
+- User wants a PowerPoint deck — use ${PROJECT_NAME}-pptx
+- User wants a branded HTML report for PDF export — use ${PROJECT_NAME}-doc-engine
+- User wants to call the Google Sheets API — use a gspread or Google Sheets API flow
 
 # Requirements for Outputs
 
@@ -165,13 +194,13 @@ elif command -v uv &>/dev/null; then
   uv run --with openpyxl python3 \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_xlsx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.xlsx
 else
   # Python via venv fallback
-  SKILL_VENV="/tmp/codi-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
+  SKILL_VENV="/tmp/${PROJECT_NAME}-skill-venv" && python3 -m venv "\$SKILL_VENV" 2>/dev/null || true
   "\$SKILL_VENV/bin/pip" install -q openpyxl
   "\$SKILL_VENV/bin/python3" \${CLAUDE_SKILL_DIR}[[/scripts/python/generate_xlsx.py]] --content content.json --tokens /path/to/brand_tokens.json --theme dark --output output.xlsx
 fi
 \`\`\`
 
-Omit \`--tokens\` to use Codi default brand. Replace \`dark\` with \`light\` for the light theme.
+Omit \`--tokens\` to use ${PROJECT_NAME_DISPLAY} default brand. Replace \`dark\` with \`light\` for the light theme.
 
 ---
 

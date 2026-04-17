@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-step-documenter",
+  "cases": [
+    {
+      "id": "document-guided-execution-step",
+      "description": "Called by guided-execution after a step validates",
+      "prompt": "Step 3 (configure PostgreSQL connection) is complete — document it",
+      "expectations": [
+        "Activates step-documenter skill",
+        "Writes to docs/executions/<workflow>/step-03-<slug>.md",
+        "Includes all 11 sections or marks them N/A",
+        "Produces a Reusable Guide section that can be followed standalone",
+        "Updates the workflow README index"
+      ]
+    },
+    {
+      "id": "standalone-retroactive",
+      "description": "Standalone retroactive documentation triggers the skill",
+      "prompt": "document what we just did as a reusable guide for the team",
+      "expectations": [
+        "Activates step-documenter skill",
+        "Captures Initial Situation + Actions + Outcome",
+        "Produces numbered Reusable Guide",
+        "Quality checklist: commands are exact and reproducible"
+      ]
+    },
+    {
+      "id": "first-step-of-workflow",
+      "description": "First step of a new workflow triggers directory setup",
+      "prompt": "document step 1 of the staging-deploy workflow",
+      "expectations": [
+        "Creates docs/executions/staging-deploy/ directory",
+        "Writes a README.md index with workflow title + status",
+        "Writes step-01-<slug>.md",
+        "Adds the new step to the README index table"
+      ]
+    },
+    {
+      "id": "negative-readme",
+      "description": "README request does NOT trigger step-documenter",
+      "prompt": "write a README for this repo",
+      "expectations": [
+        "Does NOT activate step-documenter skill",
+        "Routes to codi-project-documentation instead",
+        "Does NOT write to docs/executions/"
+      ]
+    },
+    {
+      "id": "negative-daily-log",
+      "description": "Daily work log does NOT trigger step-documenter",
+      "prompt": "log today's work summary",
+      "expectations": [
+        "Does NOT activate step-documenter skill",
+        "Routes to codi-daily-log instead",
+        "Does NOT create a step doc in docs/executions/"
+      ]
+    }
+  ]
+}
