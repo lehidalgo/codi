@@ -1,8 +1,17 @@
 # Platform Distillation Rules
 
+> **Read `[[/references/distillation-principles.md]]` first.** That reference
+> is the source of truth for the compression philosophy — it explicitly
+> states these are principles, not a recipe. This file is a **convenience
+> appendix**: one possible concrete recipe per platform. Treat every rule
+> below as a starting point, not a contract. Two agents can distill the
+> same anchor to the same platform and produce distinct, both-valid
+> outputs. File names, slot counts, and hashtag patterns are conventions —
+> not structural requirements enforced by the app or validator.
+
 How to adapt an approved anchor (blog, docs, or deck) into platform-specific
-variants. Each section defines the hook, length, format, density, hashtag, and
-CTA rules for one platform.
+variants. Each section defines suggested hook, length, format, density,
+hashtag, and CTA patterns for one platform.
 
 **Universal distillation principles:**
 
@@ -243,9 +252,10 @@ linking it back to the brief. This lets the agent locate the variant's
 provenance without reading `brief.json`:
 
 ```html
-<meta name="codi:variant" content='{"platform":"linkedin-carousel","derived_from":"00-anchor-blog.html","derived_from_revision":3}'>
+<meta name="codi:variant" content='{"platform":"linkedin-carousel","derivedFrom":"00-anchor-blog.html","derivedFromRevision":3}'>
 ```
 
-Update `derived_from_revision` whenever the variant is re-distilled. The agent
+Update `derivedFromRevision` whenever the variant is re-distilled. The agent
 reads this tag on re-open to verify the variant is still in sync with the
-anchor.
+anchor. Field names use camelCase (matches the server API and `brief.json`
+schema).

@@ -339,8 +339,10 @@ Four gates apply to every variant:
    maps to the anchor's CTA.
 3. **Voice rules honored.** No `phrases_avoid` hits. `phrases_use`
    where natural.
-4. **Box-validator score.** ≥ 0.85 on every card/slide/frame/page at
-   the target canvas size.
+4. **Box-validator score.** Meets the session threshold on every
+   card/slide/frame/page at the target canvas size. Defaults: slides
+   and documents ≥ 0.9, social cards ≥ 0.8. Check
+   `GET /api/validation-config` for the active thresholds.
 
 Grep the variant for `phrases_avoid` as a fast check before running
 the validator. Cheap and catches most voice violations.

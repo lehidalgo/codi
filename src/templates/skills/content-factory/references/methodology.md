@@ -209,16 +209,18 @@ Four non-negotiables wrap everything you ship:
    in a `<style>` block). No `<link>` to external CSS.
 2. **Voice rules honored** — no `voice.phrases_avoid` entries appear in
    generated copy. Use `voice.phrases_use` phrases where natural.
-3. **Design-system rules** in `references/design-system.md` applied
+3. **Design-system rules** in `[[/references/design-system.md]]` applied
    per-card (the 13 rules). Read them, hold them as a checklist.
-4. **Box-validator score** meets the session's threshold
-   (default 0.85) for every card, slide, or page.
+4. **Box-validator score** meets the session threshold for every card,
+   slide, or page. Defaults: slides and documents strict at ≥ 0.9;
+   social cards lenient at ≥ 0.8. Override per session or globally via
+   `PATCH /api/validation-config`.
 
 Don't ship content that fails these gates. Iterate until they pass.
 Report final scores to the user when you present.
 
-See `references/brand-integration.md` for how to apply brand tokens and
-`references/design-system.md` for the 13 design rules.
+See `[[/references/brand-integration.md]]` for how to apply brand tokens and
+`[[/references/design-system.md]]` for the 13 design rules.
 
 ---
 

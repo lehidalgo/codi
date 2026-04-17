@@ -16,7 +16,7 @@ import { join, sep } from "node:path";
 
 const SRC = "src/templates/skills";
 const DEST = "dist/templates/skills";
-const SUBDIRS = ["assets", "references", "scripts", "agents", "brand", "generators", "templates"];
+const SUBDIRS = ["assets", "references", "scripts", "agents", "brand", "generators", "templates", "evals"];
 
 let copied = 0;
 

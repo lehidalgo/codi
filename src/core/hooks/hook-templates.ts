@@ -178,10 +178,15 @@ try {
 
 export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 // ${PROJECT_NAME_DISPLAY} file size checker
+//
+// The line cap applies to CODE only — TypeScript, JavaScript, Python,
+// and similar source files. Documentation (.md, .mdx, .txt, .rst),
+// markup/styling (.html, .css, .svg), and generated/vendored files
+// are excluded. Docs have no line limit per project convention.
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/vendor\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/, /\\.css$/];
+const EXCLUDED = [/^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^\\.(claude|cursor|windsurf|cline|codex|agents|codi)\\//, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/vendor\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/, /\\.css$/, /\\.svg$/, /\\.md$/, /\\.mdx$/, /\\.txt$/, /\\.rst$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {

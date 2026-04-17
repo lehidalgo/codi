@@ -197,7 +197,7 @@ describe("POST /api/brief", () => {
           format: "4:5",
           type: "social",
           status: "pending",
-          derived_from_revision: null,
+          derivedFromRevision: null,
         },
       ],
     };

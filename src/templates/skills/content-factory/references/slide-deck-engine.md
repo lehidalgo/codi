@@ -140,7 +140,7 @@ requirement is `class="slide"` + `data-type` on the `<section>`. You may
 invent your own inner class names as long as the result meets the 13
 design-system rules and passes the box-validator.
 
-### 2.8 Narrative structure
+### 2.6 Narrative structure
 
 Pick a narrative arc that matches the deck's purpose:
 
@@ -158,7 +158,7 @@ Slide budgets:
 Pacing rule: ~2 minutes per slide, max 5 bullets per slide, lead with
 the most important point.
 
-### 2.6 Navigation behavior
+### 2.7 Navigation behavior
 
 Navigation is **not** a requirement of the source file. Content Factory
 drives navigation from its own UI (card strip, arrow buttons, keyboard
@@ -195,7 +195,7 @@ the end-of-body driver are optional — omitting them gives a readable
 stacked file with autoplay animations, which is a valid alternative for
 decks meant to be read rather than presented.
 
-### 2.7 Self-containment
+### 2.8 Self-containment
 
 The file must open and work with only the HTML file itself and
 (optionally) a network connection for Google Fonts. Everything else is
@@ -241,7 +241,7 @@ deterministic in full page, deterministic under screenshot.
 - **Colors, typography, spacing** come from the active brand's tokens. Read `brand/tokens.json` for structured values; read `brand/tokens.css` to copy CSS custom properties into the inline `<style>` block.
 - **Voice and copy** follow the brand's tone-and-copy reference. Do not invent taglines, do not import external marketing copy.
 - **Logo** — for Codi, render the CSS gradient wordmark (see `codi-brand`). For other brands, follow their logo rules.
-- **The 13 design-system rules apply** — see `[[/references/design-system.md]]` for the full rule set and `template.ts` (SKILL.md) for the short summary.
+- **The 13 design-system rules apply** — see `[[/references/design-system.md]]` for the full rule set and SKILL.md for the short summary.
 
 ### 4.1 Fonts
 
@@ -457,7 +457,7 @@ unchecked item is a blocker.
 
 **Quality floor**
 
-- [ ] Box validator passes for every slide at 1280×720 (threshold ≥ 0.80 on the content-factory preset).
+- [ ] Box validator passes for every slide at 1280×720 using the session threshold. Default for slides is strict ≥ 0.9 — check `GET /api/validation-config` if unsure.
 - [ ] No overflow on any slide (every element visible, nothing clipped).
 - [ ] The 13 design-system rules hold on a spot-check.
 

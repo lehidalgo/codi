@@ -271,7 +271,7 @@ See `[[/references/brand-integration.md]]` for the full procedure.
 Topic: "Why Codi uses anchor-first content."
 
 ```html
-<article class="anchor" data-type="article">
+<article class="doc-page" data-type="article">
   <header class="anchor-cover">
     <p class="anchor-eyebrow">Codi · methodology</p>
     <h1>One idea, every format</h1>

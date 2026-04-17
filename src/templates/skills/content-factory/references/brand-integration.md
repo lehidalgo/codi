@@ -101,9 +101,10 @@ as the style guide when writing card HTML and CSS.
 
 ## 8. Gallery templates (if available)
 
-If the brand has a `templates/` directory, those files appear in the Gallery →
-Templates tab. Ask the user if they want to start from one of those instead of a
-generic built-in.
+If the brand has a `templates/` directory, those files appear in the Gallery
+alongside the built-in templates, grouped under the Social / Slides / Document
+filters by each template's `type` meta. Ask the user if they want to start
+from one of those instead of a generic built-in.
 
 ## 9. Copy and voice
 

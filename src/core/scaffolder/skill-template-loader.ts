@@ -80,8 +80,10 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("html-live-inspect")]: skillTemplates.htmlLiveInspect,
 };
 
-/** Maps template names to their static asset directories (when available). */
-const STATIC_DIR_MAP: Record<string, string> = {
+/** Maps template names to their static asset directories (when available).
+ * Values may be `null` when the template has no static assets — consumers
+ * already guard against a missing staticDir. */
+const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("algorithmic-art")]: skillTemplates.algorithmicArtStaticDir,
   [prefixedName("canvas-design")]: skillTemplates.canvasDesignStaticDir,
   [prefixedName("claude-api")]: skillTemplates.claudeApiStaticDir,

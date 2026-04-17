@@ -9,7 +9,7 @@
     "behavior": {
       "server": "scripts/server.cjs",
       "startScript": "scripts/start-server.sh",
-      "tests": "tests/e2e/"
+      "tests": "tests/integration/"
     }
   }
 }

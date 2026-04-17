@@ -44,32 +44,17 @@ em.acc {
 
 ---
 
-## Document pages (`.doc-page`) — fixed A4 canvas
+## Document pages (`.doc-page`) — overflow rules
 
-Each `.doc-page` is a **fixed A4 canvas** (794×1123px). The Content Factory preview renders every page at exactly this height — the viewer never auto-expands iframes. Content that overflows `1123px` is clipped in the preview and may be silently missing from DOCX export.
+Document pages are a fixed 794×1123px A4 canvas that uses `overflow: visible`
+so content grows vertically. The full page-discipline rules, content budget
+per page, and DOCX-specific class conventions live in
+`[[/references/docx-export.md]]`. This section covers only the clipping
+behavior.
 
-**Page discipline rules (mandatory):**
-- One `.doc-page` = one printed page. Plan content per page before writing HTML.
-- If content does not fit, split it into a new `<article class="doc-page">` element.
-- Every page must use the same three-part structure: `.page-header` + `.page-body` + `.page-footer`.
-- `.page-body` must have `display: flex; flex-direction: column; flex: 1; overflow: hidden` so it fills the space between header and footer exactly.
-- Never set `min-height` on `.doc-page` or `.page-body` to a value that exceeds the available height — the available body height is approximately 1123px − header height − footer height ≈ ~950px.
-
-**Content budget** (approximate at default font sizes):
-- `h1` ~50px, `h2` ~40px, `h3` ~32px
-- `p` (~3 lines, 1.5 line-height) ~70px
-- `ul`/`ol` (4–5 items) ~120px
-- `table` (3 data rows + header) ~160px
-- `.code-block` (10 lines) ~180px
-- `.callout` (2 lines) ~80px
-- `.stat-row` / `.two-col` ~120–150px
-- `.diagram-wrap` (SVG ~200px) ~220px
-- Page padding top + bottom ~80px
-- **Available body height ~950px** — fits 2–3 major sections maximum
-
-Always verify the sum of element heights fits within ~950px before writing a page. When in doubt, use fewer elements and add a new page.
-
-Document pages use `overflow: visible` (not `hidden`) so content grows vertically without clipping. Horizontal overflow still renders poorly — keep content within the 794px page width.
+**Horizontal overflow still renders poorly** — keep content within the 794px
+page width. Wide tables and code blocks need the flex-column fix in the next
+section.
 
 **CRITICAL — never use `overflow: hidden` on content containers inside `.doc-page`.**
 

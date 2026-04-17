@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 // File size checker
+//
+// The line cap applies to CODE only — TypeScript, JavaScript, Python,
+// and similar source files. Documentation (.md, .mdx, .txt, .rst),
+// markup/styling (.html, .css, .svg), and generated/vendored files
+// are excluded. Docs have no line limit per project convention.
 const fs = require('fs');
 
 const maxLines = {{MAX_LINES}};
-const files = process.argv.slice(2);
+const EXCLUDED = [/\.html$/, /\.css$/, /\.svg$/, /\.md$/, /\.mdx$/, /\.txt$/, /\.rst$/, /\.pdf$/, /-lock\.(json|yaml)$/, /\/assets\//, /\/vendor\//];
+const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {
   try {

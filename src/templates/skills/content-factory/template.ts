@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 64
+version: 65
 ---
 
 # {{name}} — Content Factory
@@ -32,6 +32,22 @@ that the app picks up automatically via WebSocket.
 
 ---
 
+## Terminology
+
+These terms appear throughout the skill and references. They are stable — use them consistently.
+
+| Term | Meaning |
+|------|---------|
+| **Project** / **Session** | Same thing. A named directory under \`.codi_output/\` containing one or more content files plus state. The HTTP API uses \`session\` in URL params and path names (e.g. \`sessionDir\`, \`/api/sessions\`); the workflow prose uses \`project\`. When reading the code, both refer to the same on-disk folder |
+| **Content file** | One HTML file in a project's \`content/\` directory. Carries a \`<meta name="codi:template">\` tag and one or more cards. One file = one logical content unit (a carousel, a deck, a document) |
+| **Card** | One rendered page inside a content file. Three element types: \`.social-card\`, \`.slide\`, \`.doc-page\`. The app scanner only recognizes these three class names |
+| **Preset** / **Template** | Same thing at the Gallery level. A "preset" is what the user picks from the Gallery. A "template" is the underlying HTML file in \`generators/templates/\` (built-in) or a brand skill's \`templates/\` directory |
+| **Anchor** | The long-form master file in an anchor-first flow. Always a \`document\` content type (A4 pages). Named \`00-anchor.html\` by convention |
+| **Variant** | A platform-specific content file distilled from an anchor. Carries a \`<meta name="codi:variant">\` tag linking back to the anchor's revision |
+| **Brief** | A project's \`brief.json\` — arbitrary JSON (no schema enforcement) capturing intake, anchor revision, and variant registry |
+
+---
+
 ## Skill Assets
 
 | Asset | Purpose |
@@ -39,174 +55,142 @@ that the app picks up automatically via WebSocket.
 | \`\${CLAUDE_SKILL_DIR}[[/scripts/server.cjs]]\` | Node.js HTTP + WebSocket server (no dependencies) |
 | \`\${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]]\` | Start the server, outputs JSON with URL and paths |
 | \`\${CLAUDE_SKILL_DIR}[[/scripts/stop-server.sh]]\` | Stop the server gracefully |
+| \`\${CLAUDE_SKILL_DIR}[[/scripts/setup-validation.sh]]\` | Install Playwright and validator deps (first-time) |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.html]]\` | App shell — always served at \`/\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.css]]\` | App styles — served at \`/static/app.css\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/app.js]]\` | App logic — served at \`/static/app.js\` |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/social-base.html]]\` | HTML template for agent-generated social cards |
 | \`\${CLAUDE_SKILL_DIR}[[/generators/document-base.html]]\` | HTML template for agent-generated documents |
-| \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under the All / Social / Slides / Document filters based on each template's \`type\` |
-| \`\${CLAUDE_SKILL_DIR}[[/references/methodology.md]]\` | Content methodology — anchor-first flow, fast-path, quality gates, principles. Read this before any non-trivial content request. |
-| \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\` | How to read user requests and decide anchor-first vs. fast-path. |
-| \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\` | How to write a great anchor — shapes, length classes, semantic tagging, worked examples. |
-| \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\` | How to compress an anchor into any target format — platform norms, five compression moves, thesis + CTA preservation. |
-| \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` | Creative brief for slide decks — structural contract, motion principles, brand alignment, anti-patterns. Read this before authoring any deck. |
+| \`\${CLAUDE_SKILL_DIR}[[/generators/templates/]]\` | Stock template HTML files — appear in the Gallery under All / Social / Slides / Document filters |
+| \`\${CLAUDE_SKILL_DIR}[[/references/server-api.md]]\` | Full Server API reference — every endpoint, grouped by concern. Read on demand when you need a specific route |
+| \`\${CLAUDE_SKILL_DIR}[[/references/url-pinning.md]]\` | URL-pinned tab state — how to construct deep-link URLs |
+| \`\${CLAUDE_SKILL_DIR}[[/references/app-ui.md]]\` | Browser app UI layout — sidebar, tabs, filters. Rarely needed by agents |
+| \`\${CLAUDE_SKILL_DIR}[[/references/methodology.md]]\` | Content methodology — anchor-first flow, fast-path, quality gates, principles. Read this before any non-trivial content request |
+| \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\` | How to read user requests and decide anchor-first vs. fast-path |
+| \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\` | How to write a great anchor — shapes, length classes, semantic tagging, worked examples |
+| \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\` | How to compress an anchor into any target format — platform norms, five compression moves, thesis + CTA preservation |
+| \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` | Creative brief for slide decks — structural contract, motion principles, anti-patterns |
+| \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` | The 13 design rules. Read before authoring any slide |
+| \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
+| \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
+| \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
+| \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |
+| \`\${CLAUDE_SKILL_DIR}[[/references/platform-rules.md]]\` | Convenience appendix: per-platform distillation recipes |
+| \`\${CLAUDE_SKILL_DIR}[[/references/promote-template.md]]\` | Promote a My Work project into a built-in Gallery template |
 
 ---
 
-## Server API
+## Server API — overview
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| \`/\` | GET | Serve the content factory web app |
-| \`/static/*\` | GET | Serve app assets (app.css, app.js) |
-| \`/vendor/*\` | GET | Serve vendor scripts (html2canvas, jszip) |
-| \`/api/files\` | GET | Return list of HTML files in the active project's content dir |
-| \`/api/content?file=xxx\` | GET | Return raw HTML for a content file in the active project |
-| \`/api/preset\` | GET | Read the currently selected preset from active project state |
-| \`/api/preset\` | POST | Write preset selection \`{id, name, type, timestamp}\` |
-| \`/api/active-file\` | GET | Read which file/preset the user currently has loaded |
-| \`/api/active-file\` | POST | Record which file/preset the user just loaded \`{file, preset, sessionDir}\` |
-| \`/api/active-card\` | GET | Read which **individual card/slide/page** the user currently has selected in Preview — returns \`{index, total, dataType, dataIdx, file, timestamp}\` |
-| \`/api/active-card\` | POST | App-only — automatically posted by the browser app whenever the user clicks a card, navigates with arrows, or loads a new file. The agent does not call this. |
-| \`/api/active-element\` | GET | **Live element inspection.** Returns the DOM element the user most recently clicked inside the preview — full context (selector, tag, id, classes, attributes, text, outerHTML snippet, bounding rect, curated computed styles, parent chain). \`null\` if no click yet. Combine with \`/api/active-card\` to know which card the element belongs to. |
-| \`/api/active-elements\` | GET | Multi-selection set — everything the user has Cmd/Ctrl-clicked. Returns \`{count, selections:[...]}\`. Use this to apply an operation to many elements at once. |
-| \`/api/active-elements\` | DELETE | Clear the multi-selection set. |
-| \`/api/inspect-events?since=<seq>\` | GET | Ring buffer of user interactions in the preview (clicks, inputs, submits, scrolls). Poll with \`?since=<lastSeq>\` for incremental updates. |
-| \`/api/eval\` | POST | Run JavaScript inside the currently-previewed HTML page. Body: \`{js, timeoutMs?}\`. Returns \`{ok, result, error}\`. Use this for **ephemeral** live-preview only — changes revert on reload. Eval is on by default; disable with env \`CONTENT_FACTORY_ALLOW_EVAL=0\`. |
-| \`/api/persist-style\` | POST | **Persist a style edit to the card source file.** Body: \`{project, file, targetSelector, patches: {prop: value}, snapshot?}\`. Response: \`{ok, cfId, selector, rule, sourceModified}\`. On first use against an element, the server assigns a stable \`data-cf-id\` attribute and writes it into the HTML; subsequent edits reuse it. The CSS rule is upserted inside a \`/* === cf:user-edits === */\` region of the card's \`<style>\` block. Idempotent: re-applying the same edit is a no-op. Returns \`409\` if the selector no longer matches (source drift) — refresh the selection and retry. Edits **survive reload, regeneration, and export**. |
-| \`/api/persist-style\` | DELETE | Revert a persisted edit. Query: \`?cfId=<id>&project=<dir>&file=<basename>\`. Removes the rule from the user-edits region and strips the \`data-cf-id\` attribute if no other rule references it. |
-| \`/api/persist-style\` | GET | List all persisted edits for a card. Query: \`?project=<dir>&file=<basename>\`. Returns \`{count, rules: [{selector, declarations: [{property, value}]}]}\`. |
-| \`/api/brief\` | GET | Read the active project's \`brief.json\` (intake + variants registry) — returns \`null\` if no project is active or no brief has been written |
-| \`/api/brief\` | POST | Write the active project's \`brief.json\` — body is an arbitrary JSON object; no schema enforcement. Returns 400 if no project is active. |
-| \`/api/distill-status\` | GET | Anchor revision + per-variant staleness. Returns \`{anchor:{file,revision,status}, variants:[{file,format,derivedFromRevision,status,staleBy}], stale:[files]}\`. Returns \`null\` when no project is active. Use at the start of every iteration turn to detect stale variants. |
-| \`/api/anchor/revise\` | POST | Bump \`brief.anchor.revision\` and mark variants where \`derivedFromRevision < new revision\` as \`status: "stale"\`. Optional body: \`{reason?}\`. Call after a substantive anchor edit. |
-| \`/api/anchor/approve\` | POST | Set \`brief.anchor.status = "approved"\` and record \`approvedAt\`. Idempotent. Call when the user explicitly approves the anchor for distillation. |
-| \`/api/state\` | GET | Aggregate: \`{activeFile, activePreset, activeSessionDir, activeFilePath, mode, contentId, status, preset, activeCard, brief}\` — use this to orient before editing |
-| \`/api/create-project\` | POST | Create a new named project dir, activate it — body: \`{name, type}\`, returns \`{projectDir, contentDir, stateDir, exportsDir}\`. **\`type\` is required** and must be one of: \`social\`, \`slides\`, \`document\`. The server rejects unknown types with HTTP 400. |
-| \`/api/open-project\` | POST | Activate an existing project — body: \`{projectDir}\` |
-| \`/api/sessions\` | GET | List all projects from the workspace directory |
-| \`/api/session-content?session=&file=\` | GET | Serve an HTML file from a specific project's content dir |
-| \`/api/content-metadata?kind=&id=\` | GET | **Unified content descriptor.** Returns a single shape for both built-in templates and My Work sessions: \`{kind, id, name, type, format, cardCount, status, createdAt, modifiedAt, readOnly, source}\`. \`kind\` is \`template\` or \`session\`. \`readOnly=true\` for templates (edits refused); \`readOnly=false\` for sessions. \`source.sessionDir\` is the absolute project path for sessions; \`source.templateId\` is the template id for templates. Use this to populate the preview header, resolve URL pins, or verify a selection's origin before calling \`/api/persist-style\`. |
-| \`/api/content-list\` | GET | Debug/utility: returns every content descriptor the server knows about, templates and sessions merged into one list. |
-| \`/api/clone-template-to-session\` | POST | **Copy a built-in template into a new editable session.** Body: \`{templateId, name?}\`. The server creates a new session directory under the workspace, copies the template HTML byte-for-byte into \`<session>/content/\`, writes a manifest with provenance (\`preset\` pointing at the origin template), and returns \`{ok, session: <unified descriptor>, sessionDir, file}\`. Use this when the user wants to edit a template — call this first, then drive all subsequent edits against the returned session. The Gallery also exposes this via a "Save to My Work" button on every template card. |
-| \`/api/validate-card\` | POST | **Box Layout Theory validation.** Body: \`{project, file, cardIndex, force?}\`. Runs the content-factory box-layout validator (vendored from box-validator) and returns \`{ok, pass, score, violations:[{rule, severity, path, message, fix}], summary, fixInstructions}\`. Cached by SHA-1 of HTML + dimensions + preset. Returns \`{ok:true, skipped:"master-switch-off"}\` when the session has validation disabled. |
-| \`/api/validate-cards?project=&file=\` | GET | Batch validation for all cards in a file. Returns \`{ok, pass, cards:[...], failingCards:[...]}\`. Used by Layer 4 (export preflight) and Layer 5 (status gate). |
-| \`/api/validation-config?project=<dir>[&file=<basename>]\` | GET | Returns the resolved validation config cascade \`{config, source, contentType}\`. The cascade order is type-default → user default → session → per-file. The \`source\` map shows which scope produced each top-level field. |
-| \`/api/validation-config\` | PATCH | Body: \`{project|user:true, patch}\`. Merges a partial patch into session or user defaults. Returns the new resolved config. |
-| \`/api/validation-config/toggle\` | POST | Body: \`{project, layer, value}\`. Flip a layer on or off. Layers: \`all\` (master), \`endpoint\`, \`badge\`, \`agentDiscipline\`, \`exportPreflight\`, \`statusGate\`. |
-| \`/api/validation-config/ignore-violation\` | POST | Body: \`{project, file, rule, selector?, cardIndex?}\`. Adds a per-file exemption to the session manifest so future validation runs skip that specific violation. |
-| \`/api/validator-health\` | GET | Returns \`{degraded, workers, cacheSize, cacheHits, cacheMisses, avgLatencyMs, lastError}\`. Use this to check if Playwright is installed (\`degraded: true\` means it is missing and all layers default to pass). |
+The full reference lives in \`\${CLAUDE_SKILL_DIR}[[/references/server-api.md]]\`. Read it on
+demand. The endpoints agents use most frequently:
 
-## URL-pinned tab state
-
-The app URL is the **single source of truth** for what a tab is viewing.
-Every reload lands on exactly the same project, file, and card. Two tabs
-with different URLs show two independent states. The server-side
-\`_workspace.json\` is a home-screen convenience — it is never consulted
-on reload.
-
-Query parameters (unified):
-
-| Param | Meaning |
+| Route | Purpose |
 |-------|---------|
-| \`kind\` | \`template\` or \`session\` |
-| \`id\` | Stable content id (template id, or session dir basename) |
-| \`file\` | Content file basename, e.g. \`social.html\` |
-| \`card\` | Active card index (0-based), default 0 |
+| \`GET /api/state\` | Orient before every action — returns mode, contentId, activeFilePath, activeCard, brief, activeBrand |
+| \`POST /api/create-project\` | Start a new project — body \`{name, type}\`, \`type\` required (\`social\`\\|\`slides\`\\|\`document\`) |
+| \`POST /api/active-brand\` | Set or clear the active brand |
+| \`POST /api/validate-card\` | Box Layout validator (Layer 1 primitive) |
+| \`GET /api/active-element\` | Read what the user most recently clicked in the preview |
+| \`POST /api/persist-style\` | Persist a style edit to the card source file |
+| \`POST /api/anchor/revise\` | Bump anchor revision, mark stale variants |
+| \`POST /api/anchor/approve\` | Record anchor approval timestamp |
 
-Example (template): \`http://localhost:PORT/?kind=template&id=linkedin-carousel-concept-story&file=social.html&card=2\`
-Example (session): \`http://localhost:PORT/?kind=session&id=my-campaign-oct&file=social.html&card=0\`
+Field names use camelCase throughout (\`activeFilePath\`, \`derivedFromRevision\`,
+\`activeSessionDir\`). Older references may show snake_case — camelCase is authoritative.
 
-Legacy \`?project=\` and \`?preset=\` parameters are honored for one release so existing bookmarks keep working.
+---
 
-The agent can construct a URL directly and send it to the user for deep-linking.
+## URL-pinned tab state — overview
+
+Tab state is fully addressable by URL. Every reload lands on the same project, file, and
+card. The agent can construct a URL and send it to the user for deep-linking. Full schema
+in \`\${CLAUDE_SKILL_DIR}[[/references/url-pinning.md]]\`.
+
+Query params: \`kind\` (\`template\`\\|\`session\`), \`id\` (stable content id), \`file\`
+(content file basename), \`card\` (index, 0-based).
+
+Example: \`http://localhost:PORT/?kind=session&id=my-campaign-oct&file=social.html&card=0\`
+
+---
+
+## App UI — overview
+
+Sidebar controls format / handle / zoom / logo / files / export. Main area has **Preview**
+(scrollable card strip, arrow-key navigation) and **Gallery** (5 filters: All / Social /
+Slides / Document / My Work). Full layout in \`\${CLAUDE_SKILL_DIR}[[/references/app-ui.md]]\`.
+
+---
 
 ## Persisting element-level edits
 
-The robust edit flow for element styling is:
+The robust edit flow for element styling:
 
-1. **Read the selection**: \`GET /api/active-element\` (or \`/api/active-elements\` for multi-set). The response includes a \`context\` field carrying \`{kind, id, name, file, sessionDir?, templateId?, cardIndex, readOnly}\` — captured by the iframe that hosted the click.
-2. **Check \`context.readOnly\`**: if \`true\`, the selection came from a built-in template. Call \`POST /api/clone-template-to-session\` with \`{templateId: context.templateId}\` to create an editable copy in My Work. The response includes the new session descriptor — load it via the normal session flow (URL \`?kind=session&id=<newId>&file=<basename>\`), ask the user to re-click the element in the new session, then retry \`/api/persist-style\`. The 409 response from \`persist-style\` also includes a ready-to-use \`cloneSuggestion\` payload so you do not have to construct it yourself.
+1. **Read the selection.** Call \`GET /api/active-element\` (or \`/api/active-elements\`
+   for multi-select). The response includes a \`context\` field carrying
+   \`{kind, id, name, file, sessionDir?, templateId?, cardIndex, readOnly}\` captured by
+   the iframe that hosted the click.
+2. **If \`context.readOnly\` is \`true\`**, the selection came from a built-in template.
+   Call \`POST /api/clone-template-to-session\` with \`{templateId: context.templateId}\`
+   to create an editable copy in My Work. Load the new session via
+   \`?kind=session&id=<newId>&file=<basename>\`, ask the user to re-click the element,
+   then retry \`persist-style\`. The 409 response from \`persist-style\` also includes a
+   ready-to-use \`cloneSuggestion\` payload.
+3. **Persist to source.** Call \`POST /api/persist-style\` with \`{targetSelector, patches}\`.
+   The server reads context from the selection (no project/file needed in the body). It
+   writes a stable \`data-cf-id\` into the card HTML and upserts a CSS rule inside a
+   bounded \`/* === cf:user-edits === */\` region of the card's \`<style>\` block. Returns
+   \`409\` with \`{templateId, suggestion}\` if context is read-only.
+4. **(Optional) Live preview.** Call \`POST /api/eval\` for instant visual feedback without
+   waiting for the iframe to rebuild. The persisted source still takes effect on the next
+   render cycle.
+
+Persisted edits survive reloads, card regeneration, and exports. They are byte-additive:
+everything outside the user-edits region is untouched. Revert with
+\`DELETE /api/persist-style?cfId=<id>&project=<sessionDir>&file=<basename>\`.
+
+---
 
 ## Validation — Box Layout Theory enforcement
 
-content-factory vendors the box-validator rule engine. Five layers all
-on by default, toggleable via \`POST /api/validation-config/toggle\`:
-L1 \`/api/validate-card\` primitive, L2 score badges, L3 agent discipline,
-L4 export preflight, L5 session-status gate. Defaults: slides/document
-strict@0.9, social lenient@0.8. If Playwright is not installed,
-\`/api/validator-health\` reports \`degraded:true\` and all layers
-degrade to pass silently. Install with
-\`bash \${CLAUDE_SKILL_DIR}[[/scripts/setup-validation.sh]]\`.
+Content Factory vendors the box-validator rule engine. Five layers are all **on by default**,
+each toggleable via \`POST /api/validation-config/toggle\`:
 
-**Agent workflow (L3)**: after every \`persist-style\` write, check
-\`GET /api/validation-config\` — if \`enabled===false\` or
-\`layers.agentDiscipline===false\`, skip. Otherwise call
-\`POST /api/validate-card {project, file, cardIndex}\`. If \`pass:false\`,
-read \`violations[].fix\`, apply fixes via more \`persist-style\` calls,
-re-validate, iterate up to \`config.iterateLimit\` (default 3), then
-report remaining violations and stop.
-3. **Persist to source**: \`POST /api/persist-style\` with \`{targetSelector, patches}\`. The server reads the context from the selection (no project/file needed in the body). It writes a stable \`data-cf-id\` into the card HTML and upserts a CSS rule inside a bounded \`/* === cf:user-edits === */\` region of the \`<style>\` block. Returns \`409\` with \`{templateId, suggestion}\` if the context is read-only — the server refuses cleanly even if the agent skipped step 2.
-4. **(Optional) Live-preview**: \`POST /api/eval\` for instant visual feedback without waiting for the iframe to rebuild. The persisted source will take effect on the next render cycle anyway.
+- **L1** \`/api/validate-card\` primitive
+- **L2** score badges on preview cards
+- **L3** agent discipline (validate after each \`persist-style\`)
+- **L4** export preflight
+- **L5** session-status gate
 
-Persisted edits survive reloads, card regeneration, and exports. They are
-byte-additive: everything outside the user-edits region is untouched.
-Revert with \`DELETE /api/persist-style?cfId=...&project=<sessionDir>&file=<basename>\` — the rule and the \`data-cf-id\` attribute both go away cleanly.
-| \`/api/session-status\` | POST | Persist status \`{sessionDir, status}\` to a project's manifest |
-| \`/api/templates\` | GET | List template files with metadata (id, type, format, url) — includes templates from brand skills' \`templates/\` dirs |
-| \`/api/template?file=xxx[&brand=yyy]\` | GET | Serve a single template HTML file; \`brand\` param routes to brand skill's \`templates/\` dir |
-| \`/api/brands\` | GET | List available brand skills (those with \`brand/tokens.json\`) |
-| \`/api/active-brand\` | POST | Set or clear the active brand — body: \`{name}\` or \`{}\` to clear |
-| \`/api/brand/:name/assets/*\` | GET | Serve a file from a brand skill's \`assets/\` directory — use this URL for logos and fonts in generated HTML |
-| \`/api/export-png\` | POST | Render card HTML to PNG via Playwright at 2× resolution |
-| \`/api/export-pdf\` | POST | Render slides array to multi-page PDF — body: \`{slides:[{html,width,height}]}\`, returns \`application/pdf\` |
+**Defaults:** slides and documents strict at ≥ 0.9; social cards lenient at ≥ 0.8.
 
-The server also runs a WebSocket endpoint at the same port. The app connects automatically
-and receives \`{type:"reload"}\` messages whenever a content file changes, triggering a live update.
+If Playwright is not installed, \`GET /api/validator-health\` reports \`degraded: true\` and
+all layers silently pass. Install with:
+
+\`\`\`bash
+bash \${CLAUDE_SKILL_DIR}[[/scripts/setup-validation.sh]]
+\`\`\`
+
+**Agent workflow (Layer 3):** after every \`persist-style\` write, check
+\`GET /api/validation-config\` — if \`enabled === false\` or \`layers.agentDiscipline === false\`,
+skip. Otherwise call \`POST /api/validate-card {project, file, cardIndex}\`. If \`pass: false\`,
+read \`violations[].fix\`, apply fixes via more \`persist-style\` calls, re-validate, iterate
+up to \`config.iterateLimit\` (default 3), then report remaining violations and stop.
 
 ---
 
 ## Template Library
 
-Built-in templates are standalone HTML files in \`generators/templates/\`.
-They are served via \`/api/templates\` and loaded by the browser into the Gallery.
+Built-in templates are standalone HTML files in \`generators/templates/\`. Each file must
+include a \`<meta name="codi:template">\` tag:
 
-Each template HTML file must include a \`<meta name="codi:template">\` tag:
 \`\`\`json
 {"id":"<kebab-id>","name":"<Human Name>","type":"<social|slides|document>","format":{"w":<w>,"h":<h>}}
 \`\`\`
 
-When the user clicks a template in the Gallery:
-1. The app fetches and parses the HTML file
-2. All \`social-card\` / \`slide\` / \`doc-page\` elements load into the Preview strip
-3. The selection is saved to \`state_dir/preset.json\` so the agent can read it
-
----
-
-## App UI Reference
-
-### Sidebar (left panel, scrollable)
-
-| Control | Description |
-|---------|-------------|
-| **Format** | 6 buttons: 1:1 (1080×1080), 4:5 (1080×1350), 9:16 (1080×1920), OG (1200×630), 16:9 (1280×720), A4 (794×1123). Active format applies to all content — social and slides presets adapt to the selected format. A4 (Doc) is the only fixed format; document cards always render at 794×1123 regardless of the selector. |
-| **Handle** | \`@username\` placeholder replaced in agent-generated content. Preset thumbnails show \`@preview\`; preview cards show \`@[handle]\`. |
-| **Zoom** | Slider from 15% to 120%. Scales all card frames in the Preview strip. Default: 40%. |
-| **Logo** | ON/OFF toggle + Size / X% / Y% sliders. Adds a \`codi\` gradient wordmark overlay positioned absolutely over every card frame. Does not modify iframe content. |
-| **Content files** | List of HTML files written by the agent to the content dir. Click to load. |
-| **Export** | Context-aware buttons based on content type: **social** → PNG (current slide) + PDF (all); **slides** → PPTX (all, primary) + PDF (all) + PNG (current); **document** → PDF (all, primary) + PNG (current). PNG uses Playwright 2× resolution; PDF renders via Playwright server-side; PPTX embeds PNG images using PptxGenJS. |
-| **Activity log** | Timestamped log of server events and user actions. WebSocket status dot (green = connected). |
-
-### Main area (tabs)
-
-**Preview tab** — horizontal card strip. Keyboard arrow keys navigate between slides. Active card highlighted with accent border. Click any card to select it. A **metadata bar** above the canvas shows the active content name, type chip, pixel dimensions, and slide count — updated whenever content changes.
-
-**Gallery tab** — vertical list of preset cards. Each shows a horizontal strip of all slide thumbnails (IntersectionObserver lazy-loaded). Filter buttons: **All / Social / Slides / Document / My Work** (5 filters, no separate Templates tab).
-- **All** — every built-in template plus every installed brand skill template, regardless of type. Session cards are excluded from this view.
-- **Social** / **Slides** / **Document** — narrow to templates whose \`type\` meta matches the filter. Built-in templates and brand templates appear side by side, grouped only by type.
-- **My Work** — past projects loaded from \`.codi_output/\`. Shows project date, preset name, and resolved content name. Click any project card to activate it and load its content files. A secondary status filter row appears (All / Draft / In Progress / Review / Done) when this filter is active.
-
-Stock template HTML files in \`generators/templates/\` and brand templates (from any installed brand skill's \`templates/\` dir) land in the same flat list — the Gallery does not separate them into their own tab. Each card's \`type\` attribute decides which type filter it shows up under.
+When the user clicks a template in the Gallery, the app fetches and parses the HTML, loads
+all \`social-card\` / \`slide\` / \`doc-page\` elements into Preview, and saves the selection
+to \`state_dir/preset.json\`.
 
 ---
 
@@ -219,6 +203,7 @@ bash \${CLAUDE_SKILL_DIR}[[/scripts/start-server.sh]] --project-dir .
 \`\`\`
 
 Save the JSON output:
+
 \`\`\`json
 {
   "type": "server-started",
@@ -233,8 +218,8 @@ Tell the user:
 
 ### Step 1b — Create a project (when generating new content)
 
-Before writing any files, create a named project. **You must specify a content type.**
-The only valid types are: \`social\`, \`slides\`, \`document\`. The server rejects anything else.
+Before writing any files, create a named project. **The \`type\` field is required.** Valid
+types: \`social\`, \`slides\`, \`document\`. The server rejects anything else with HTTP 400.
 
 \`\`\`bash
 curl -s -X POST <url>/api/create-project \\
@@ -242,48 +227,57 @@ curl -s -X POST <url>/api/create-project \\
   -d '{"name": "acme-social-campaign", "type": "social"}'
 \`\`\`
 
-Response:
-\`\`\`json
-{
-  "ok": true,
-  "projectDir": "/path/to/.codi_output/acme-social-campaign",
-  "contentDir": "/path/to/.codi_output/acme-social-campaign/content",
-  "stateDir": "/path/to/.codi_output/acme-social-campaign/state",
-  "exportsDir": "/path/to/.codi_output/acme-social-campaign/exports"
-}
-\`\`\`
+Response: \`{ok, projectDir, contentDir, stateDir, exportsDir}\`. Save \`contentDir\` — this
+is where you write HTML files. The project is now active.
 
-Save \`contentDir\` — this is where you write HTML files. The project is now active.
+**Skip Step 1b** when the user opens an existing My Work project from the gallery — the
+server activates the project automatically when the user clicks it.
 
-**Skip Step 1b** when the user opens an existing My Work project from the gallery — the server
-activates the project automatically when the user clicks it.
+### Step 1c — Content methodology
 
-### Step 1b.ii — Content methodology (default)
+Read \`\${CLAUDE_SKILL_DIR}[[/references/methodology.md]]\` before any non-trivial content
+request. It covers the anchor-first flow, the fast-path for one-off requests, quality gates,
+and the principles you apply with judgment. You are framed as a senior content strategist +
+designer — the methodology gives you principles and tools, not a script.
 
-Read \`\${CLAUDE_SKILL_DIR}[[/references/methodology.md]]\` before any non-trivial content request. It covers the anchor-first flow, the fast-path for one-off requests, quality gates, and the principles you apply with judgment. The skill frames you as a senior content strategist + designer — the methodology gives you principles and tools, not a script.
+High-level shape:
 
-The high-level shape:
+1. **Read the request.** Classify intent via
+   \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\`. Decide anchor-first vs. fast-path.
+2. **Intake (adaptive).** Ask the user only what you need. Persist answers to
+   \`brief.json\` via \`POST /api/brief\` (no schema enforcement).
+3. **Author the anchor.** For anchor-first paths, write one self-contained long-form
+   document first. Read \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\`. The
+   anchor is a \`document\` content type (A4 article). Iterate until the user approves; call
+   \`POST /api/anchor/approve\`.
+4. **Distill each requested format.** For each variant, read
+   \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\`. Make creative
+   decisions. Write one HTML file per variant with a \`codi:variant\` meta tag carrying
+   \`derivedFromRevision\`.
+5. **Revisions.** When the anchor changes substantively, call \`POST /api/anchor/revise\`.
+   The server marks stale variants. At the start of the next iteration, call
+   \`GET /api/distill-status\` to surface staleness; let the user choose what to re-distill.
+   Never auto-propagate.
+6. **Fast-path.** When the user signals a one-off ("quick", "just", "one tweet"), skip
+   anchor authoring. Write a single HTML file of the requested type. No \`brief.json\`.
 
-1. **Read the request.** Classify intent via \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\`. Decide anchor-first vs. fast-path. Infer which formats to produce.
-2. **Intake (adaptive).** Ask the user only what you need. Persist answers to \`brief.json\` via \`POST /api/brief\` (no schema enforcement — arbitrary JSON).
-3. **Author the anchor.** For anchor-first paths, write one self-contained long-form document first. Read \`\${CLAUDE_SKILL_DIR}[[/references/anchor-authoring.md]]\` for shape, semantic tagging, and worked examples. The anchor is a \`document\` content type (A4-width article). Iterate until the user approves; call \`POST /api/anchor/approve\`.
-4. **Distill each requested format.** For each variant, read \`\${CLAUDE_SKILL_DIR}[[/references/distillation-principles.md]]\` for platform norms and the five compression moves. Make creative decisions. Write one HTML file per variant with a \`codi:variant\` meta tag carrying \`derivedFromRevision\`.
-5. **Revisions.** When the anchor changes substantively, call \`POST /api/anchor/revise\`. The server marks stale variants. At the start of the next iteration, call \`GET /api/distill-status\` to surface staleness to the user; let them choose what to re-distill. Never auto-propagate.
-6. **Fast-path.** When the user signals a one-off ("quick", "just", "one tweet"), skip anchor authoring. Write a single HTML file of the requested type. No \`brief.json\`, no revision tracking.
+**File naming** (convention, not enforcement): \`00-anchor.html\` for the master · \`10-19\`
+LinkedIn · \`20-29\` Instagram · \`30-39\` TikTok · \`40-49\` Twitter · \`50-59\` decks ·
+\`60-69\` email / ads / other.
 
-**File naming** (numeric prefixes give natural sort order — a convention, not enforcement): \`00-anchor.html\` for the master · \`10-19\` LinkedIn · \`20-29\` Instagram · \`30-39\` TikTok · \`40-49\` Twitter · \`50-59\` decks · \`60-69\` email/ads/other.
+**Marketing-skills soft dependency:** if the external \`marketing-skills\` plugin is
+installed (\`content-strategy\`, \`copywriting\`, \`social-content\`, \`humanizer\`), use it
+for audience research and copy polish. If absent, inline-generate. Output files are
+identical either way.
 
-**Marketing-skills soft dependency**: if the external \`marketing-skills\` plugin is installed (\`content-strategy\`, \`copywriting\`, \`social-content\`, \`humanizer\`, etc.), use it for audience research and copy polish. If absent, inline-generate. Output files are identical either way.
-
-### Step 1c — Detect and apply a brand (optional)
+### Step 1d — Detect and apply a brand (optional)
 
 Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\`
 
-After creating a project, query \`GET /api/brands\` to discover installed brand
-skills. If any exist and the user has not specified one, ask whether to apply it.
-If the user confirms, \`POST /api/active-brand\` with \`{name}\`, then apply the
-brand end-to-end (tokens, fonts, logo, voice) using the full procedure in the
-reference file.
+After creating a project, query \`GET /api/brands\` to discover installed brand skills. If
+any exist and the user has not specified one, ask whether to apply it. If the user confirms,
+\`POST /api/active-brand\` with \`{name}\`, then apply the brand end-to-end (tokens, fonts,
+logo, voice) using the full procedure in the reference file.
 
 **Skip this step** if the user explicitly provides a template or says "no brand".
 
@@ -305,44 +299,39 @@ Example responses:
 
 // My Work project open
 { "mode": "mywork", "contentId": "a3f9c2d1", "activePreset": null,
-  "activeFilePath": "/abs/path/.codi_output/acme-social-campaign/content/social.html",
-  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/acme-social-campaign",
+  "activeFilePath": "/abs/path/.codi_output/acme-campaign/content/social.html",
+  "activeFile": "social.html", "activeSessionDir": "/abs/path/.codi_output/acme-campaign",
   "status": "in-progress", "preset": null }
 
 // Nothing selected
 { "mode": null, "contentId": null, "activeFilePath": null, ... }
-
-// With an active brand
-{ ..., "activeBrand": { "name": "codi-codi-brand", "display_name": "Codi Platform" } }
 \`\`\`
 
-**Use \`contentId\` as the anchor — not the template name.** The \`contentId\` is a hash of
-\`activeFilePath\` and is always unique. If you are ever unsure which item is open, re-read
-\`/api/state\` and confirm the \`contentId\` matches what the user is looking at.
+**Use \`contentId\` as the anchor — not the template name.** \`contentId\` is a hash of
+\`activeFilePath\` and is always unique. If unsure which item is open, re-read \`/api/state\`
+and confirm \`contentId\` matches what the user is looking at.
 
-**Use \`activeFilePath\` for all file edits.** Never reconstruct the path from name fragments — the
-server has already resolved the absolute path for you.
+**Use \`activeFilePath\` for all file edits.** Never reconstruct the path from name fragments.
 
-| \`mode\` value | Meaning | What to do |
-|----------------|---------|------------|
-| \`"template"\` | User opened a **Gallery template** | → Step 1b + Step 3: create a project, then generate content styled after that template |
-| \`"mywork"\` | User opened a **My Work project** | → Step 4b: edit \`activeFilePath\` in place |
-| \`null\` | Nothing selected yet | → Tell the user: "Open the Gallery tab, pick a template to start fresh, or pick a My Work project to continue editing." |
+| \`mode\` | Meaning | What to do |
+|--------|---------|------------|
+| \`"template"\` | User opened a **Gallery template** | Step 1b + Step 3: create a project, generate content styled after that template |
+| \`"mywork"\` | User opened a **My Work project** | Step 4b: edit \`activeFilePath\` in place |
+| \`null\` | Nothing selected yet | Tell the user to pick a template or a My Work project |
 
-**Template mode** means the user is looking at a read-only built-in template as a style reference.
-Your job is to create a new project (Step 1b) and generate a new HTML file in \`contentDir\` that
-follows that template's visual identity — colors, typography, layout — but with the user's content.
+**Template mode** means the user is looking at a read-only built-in template as a style
+reference. Your job is to create a new project (Step 1b) and generate a new HTML file in
+\`contentDir\` that follows that template's visual identity — colors, typography, layout —
+but with the user's content.
 
-**My Work mode** means the user is looking at content they already created.
-Your job is to edit the existing HTML file at \`activeFilePath\` in place.
-
-If the user skipped the gallery, ask them to pick a template or a My Work project before proceeding.
-Do not assume a default — mode selection determines where changes are written.
+**My Work mode** means the user is looking at content they already created. Edit the
+existing HTML file at \`activeFilePath\` in place.
 
 ### Step 3 — Generate content (Template mode)
 
 After creating a project (Step 1b), write \`<contentDir>/social.html\` (or \`slides.html\` /
-\`document.html\`). The app detects the new file via WebSocket and adds it to the Content Files list.
+\`document.html\`). The app detects the new file via WebSocket and adds it to the Content
+Files list.
 
 #### Required HTML structure
 
@@ -355,43 +344,36 @@ After creating a project (Step 1b), write \`<contentDir>/social.html\` (or \`sli
   <meta name="codi:template" content='{"id":"my-content","name":"My Content Title","type":"social","format":{"w":1080,"h":1080}}'>
   <title>My Content Title</title>
   <!-- FONTS: if a brand is active and tokens.json.fonts.google_fonts_url is set, use that URL.
-       If the brand has local fonts (google_fonts_url is null), generate @font-face blocks in <style> below
-       using http://localhost:PORT/api/brand/<name>/assets/fonts/<file>.woff2 URLs.
+       If the brand has local fonts, generate @font-face blocks using
+       http://localhost:PORT/api/brand/<name>/assets/fonts/<file>.woff2 URLs.
        If no brand is active, use the default: -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* If brand is active: paste full content of brand/tokens.css here (inline — not a <link>) */
-    /* Then add any @font-face blocks for local fonts (see Step 1c for URL pattern) */
-    /* Then add card-specific styles */
+    /* If brand is active: paste full content of brand/tokens.css here (inline — not <link>) */
+    /* Then @font-face blocks for local fonts */
+    /* Then card-specific styles */
   </style>
 </head>
 <body>
-  <article class="social-card" data-type="cover" data-index="01">
-    <!-- slide HTML matching the selected preset's structure -->
-  </article>
-  <article class="social-card" data-type="content" data-index="02">
-    <!-- slide HTML -->
-  </article>
-  <article class="social-card" data-type="cta" data-index="03">
-    <!-- slide HTML -->
-  </article>
+  <article class="social-card" data-type="cover" data-index="01"><!-- slide HTML --></article>
+  <article class="social-card" data-type="content" data-index="02"><!-- slide HTML --></article>
+  <article class="social-card" data-type="cta" data-index="03"><!-- slide HTML --></article>
 </body>
 </html>
 \`\`\`
 
 #### Content identity — REQUIRED
 
-Every generated HTML file MUST include a \`<meta name="codi:template">\` tag and a \`<title>\` in \`<head>\`.
-These power the preview metadata bar (name · type · format · slide count) shown above the canvas.
+Every generated HTML file MUST include a \`<meta name="codi:template">\` tag and a \`<title>\`
+in \`<head>\`:
 
 \`\`\`json
-{"id":"<kebab-case-id>","name":"<Human Readable Name>","type":"<social|slides|document>","format":{"w":<width>,"h":<height>}}
+{"id":"<kebab-case-id>","name":"<Human Readable Name>","type":"<social|slides|document>","format":{"w":<w>,"h":<h>}}
 \`\`\`
 
 - \`type\` must match: \`social\` for cards, \`slides\` for decks, \`document\` for A4 pages
 - \`format\` must match the active format button dimensions
 - \`name\` describes the content topic, not the template (e.g. "AI Agents Series", not "Dark Editorial")
-- Set \`<title>\` to the same human-readable name as a fallback
 
 #### Card rules
 
@@ -399,7 +381,7 @@ These power the preview metadata bar (name · type · format · slide count) sho
   - \`class="social-card"\` — social media cards (1:1, 4:5, 9:16, OG)
   - \`class="slide"\` — slide deck pages (16:9)
   - \`class="doc-page"\` — document pages (A4)
-- Required attributes: \`data-type\` (cover | content | stat | quote | cta | title | closing) and \`data-index\` (zero-padded: 01, 02…)
+- Required attributes: \`data-type\` (cover / content / stat / quote / cta / title / closing) and \`data-index\` (zero-padded: 01, 02, ...)
 - Dimensions come from the active format button, not the HTML itself
 - Replace \`@handle\` with the user's actual handle
 - All CSS goes in \`<style>\` — the app extracts styles per card and renders each in its own iframe
@@ -409,63 +391,76 @@ These power the preview metadata bar (name · type · format · slide count) sho
 
 Full rules: \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\`
 
-**Key points:**
-- Social cards and slides: \`overflow: hidden\` — every pixel beyond the boundary is clipped. Test all content at the intended format.
-- Document pages (\`.doc-page\`): \`overflow: visible\` — content grows vertically. Never use \`overflow: hidden\` on \`.code-block\`, \`pre\`, or \`table\` — it clips content in the browser preview and breaks DOCX screenshot capture.
-- Tables inside \`.doc-page\` (a flex column container): the flex-column wrapper (e.g. \`.page-body\`) MUST have \`width: 100%\` — without it, \`width: 100%\` on a child table resolves against an indefinite width and columns collapse to near-zero even with \`table-layout: fixed\`. Also add \`min-width: 0\` on flex children.
+- Social cards and slides: \`overflow: hidden\` — every pixel beyond the boundary is clipped
+- Document pages (\`.doc-page\`): \`overflow: visible\` — content grows vertically. Never
+  use \`overflow: hidden\` on \`.code-block\`, \`pre\`, or \`table\`
+- Tables inside \`.doc-page\`: the flex-column wrapper MUST have \`width: 100%\` — without
+  it, \`width: 100%\` on a child table resolves against an indefinite width and columns collapse
 
 #### Document template conventions — DOCX export
 
 Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\`
 
-**Key points:**
-- Standard HTML tags (\`h1\`–\`h3\`, \`p\`, \`ul\`/\`ol\`, \`strong\`, \`em\`, \`code\`) map automatically to DOCX paragraph styles
+- Standard HTML tags (\`h1\`–\`h3\`, \`p\`, \`ul\`/\`ol\`, \`strong\`, \`em\`, \`code\`) map
+  automatically to DOCX paragraph styles
 - Use \`.page-header\`, \`.page-footer\`, \`.callout\`, \`.eyebrow\` for page chrome
-- Use \`<table class="data-table">\` for DOCX tables — always include \`table-layout: fixed\` in CSS; this prevents column collapse in the HTML preview (flex container context) and ensures Google Docs renders column widths correctly via the DOCX \`<w:tblGrid>\`
-- Use \`<div class="code-block">\` for syntax-highlighted code — exported as Playwright screenshot PNG; \`overflow: visible\` is required on both \`.code-block\` and \`pre\` — \`overflow: hidden\` clips code in the browser and corrupts the screenshot
-- Use \`<div class="diagram-wrap"><svg ...>\` for SVG diagrams — SVG must be a **direct child** of the wrapper; apply \`max-width\` + \`align-self: center\` to constrain diagram width in the DOCX output
-- \`.doc-page\` is \`display: flex; flex-direction: column\` — all direct flex children need \`min-width: 0\` to prevent tables and code blocks from overflowing the 794px page boundary
-- Remote \`https://\` image URLs are not fetched during DOCX export — use data URIs or \`file://\` paths
+- Use \`<table class="data-table">\` with \`table-layout: fixed\` in CSS
+- Use \`<div class="code-block">\` for syntax-highlighted code — exported as Playwright
+  screenshot PNG; \`overflow: visible\` required
+- Use \`<div class="diagram-wrap"><svg ...>\` — SVG must be a **direct child** of the wrapper
+- \`.doc-page\` is \`display: flex; flex-direction: column\` — all direct children need
+  \`min-width: 0\`
+- Remote \`https://\` image URLs not fetched during DOCX export — use data URIs or \`file://\` paths
 
 #### Visual density — MANDATORY for all card types
 
 Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\`
 
-**The rule**: every card must visibly occupy **≥85% of its canvas** with purposeful content.
-A single centered headline on a blank canvas reads as unfinished work — treat every card as
-a composed layout, not a text slot.
-
-**Quick check before writing each card**: mentally draw a 3×3 grid. At least 7 of the 9 cells
-must contain content or a purposeful decorative element. If 3+ cells are empty, add content
-from the fill techniques list in the reference file (multi-column layout, supporting elements,
-decorative accents, code/data mockups, edge-anchored chrome, oversized typography, background
-fills). The reference also has per-card-type minimum element checklists and anti-patterns.
+Every card must visibly occupy **≥85% of its canvas** with purposeful content. Mentally
+draw a 3×3 grid over each card — at least 7 of 9 cells must contain content or a purposeful
+decorative element. If 3+ cells are empty, add content from the fill techniques list in the
+reference.
 
 #### Design system — MANDATORY for all slides
 
-Read \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` before authoring any slide. The reference holds the 13 design rules (fixed frame, chrome match, text tiers, two-color titles, equidistant spacing, pinned card layout, feature hierarchy, bullet spacing, stretch rows, no overflow, quote box, per-slide checklist, cover exception), full CSS patterns, before/after examples, and verification scripts. Every slide must pass every rule before shipping.
+Read \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` before authoring any slide.
+The reference holds the 13 design rules, full CSS patterns, before/after examples, and
+verification scripts. Every slide must pass every rule before shipping.
 
 #### Slide deck generation — single-file authoring (MANDATORY)
 
-Read \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` before authoring any deck. The brief is the single source of truth for the structural contract (per-slide isolation, canvas size, document shape), motion principles (CSS-only autoplay, no JS-gated visibility), the \`data-type\` slide-type table, narrative arcs and slide budgets, dual-mode standalone presentation, anti-patterns, and the pre-ship self-audit.
+Read \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` before authoring any deck.
+The brief is the single source of truth for the structural contract (per-slide isolation,
+canvas size, document shape), motion principles, and anti-patterns.
 
-Every deck is one self-contained HTML file authored from scratch. No sibling \`deck.css\`/\`deck.js\`. No external refs except Google Fonts. The "HTML · all" export downloads the source byte-for-byte — the agent's output IS the export.
+Every deck is one self-contained HTML file authored from scratch. No sibling \`deck.css\`
+/ \`deck.js\`. No external refs except Google Fonts. The HTML export downloads the source
+byte-for-byte.
 
 #### Document page discipline — MANDATORY
 
-Read \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` for the full rules on \`.doc-page\` canvas (794×1123 fixed), per-page structure (\`.page-header\` + \`.page-body\` + \`.page-footer\`), content height budget (~950px usable), page-split checklist, and DOCX mapping. One \`.doc-page\` per printed page. If content overflows, split into another \`<article class="doc-page">\` — never squeeze. Anchor articles follow this pattern: a long-form anchor is a \`document\` with multiple \`.doc-page\` elements at natural section breaks.
+Read \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` for the full rules on
+\`.doc-page\` canvas (794×1123 fixed), per-page structure
+(\`.page-header\` + \`.page-body\` + \`.page-footer\`), content height budget (~950px usable),
+page-split checklist, and DOCX mapping.
 
-### Step 3b — Validate layout structure (all modes)
+### Step 3b — Validate layout structure
 
-After writing any HTML file, validate it with the Box Layout Validator skill before showing anything to the user. This catches spacing, hierarchy, and sibling-consistency bugs you cannot see by reading the code.
+After writing any HTML file, validate every card via the vendored Box Layout validator before
+showing anything to the user:
 
 \`\`\`bash
-bash ~/.claude/skills/codi-box-validator/scripts/setup.sh   # first run only
-node ~/.claude/skills/codi-box-validator/scripts/validate.mjs \\
-  --input <absolute-path-to-html> --width <W> --height <H> --threshold 0.85
+curl -s -X POST <url>/api/validate-card \\
+  -H "Content-Type: application/json" \\
+  -d '{"project":"<sessionDir>","file":"<basename>","cardIndex":0}'
 \`\`\`
 
-If \`valid: false\` in the JSON output, read \`fixInstructions\`, patch the HTML, and revalidate. Max 4 iterations. Only show the user the final validated result.
+If \`pass: false\`, read \`violations[].fix\`, patch the HTML, and re-validate. Iterate up
+to 3 times (\`config.iterateLimit\`), then report remaining violations and stop. Only show
+the user the final validated result.
+
+For batch validation across all cards in a file, use
+\`GET /api/validate-cards?project=<sessionDir>&file=<basename>\`.
 
 ### Step 4 — Iterate (loop until done)
 
@@ -473,44 +468,26 @@ Content creation is a back-and-forth process. This step repeats until the user i
 
 #### Campaign propagation check — run FIRST when a brief exists
 
-Before applying any new feedback, if the project has a campaign brief, read it and
-check whether the anchor has drifted ahead of any variants:
+Before applying any new feedback, if the project has a brief, read it and check whether
+the anchor has drifted ahead of any variants:
 
 \`\`\`bash
-curl -s <url>/api/brief
+curl -s <url>/api/distill-status
 \`\`\`
 
-If the response is non-null, scan \`variants[]\` for entries where
-\`derived_from_revision < anchor.revision\` AND \`status !== "manual"\`. If any exist,
-**ask the user before processing new feedback**:
+If \`stale\` is non-empty, ask the user before processing new feedback — which variants
+to re-distill, which to mark \`manual\`. See methodology.md §6 for the full re-distill
+semantics. If no brief exists, skip this check entirely.
 
-> "Before I apply this change — the anchor changed since I distilled these variants:
-> - \`10-linkedin-carousel.html\` (was rev 1, now rev 3)
-> - \`20-instagram-feed.html\` (was rev 1, now rev 3)
->
-> Want me to re-distill them? (\`all\` / name a file / \`skip\`)"
-
-On \`skip\`, set each stale variant's \`status = "manual"\` in \`brief.json\` and POST
-it back — this prevents the same prompt from firing again for the same revision.
-On \`all\` or a named file, re-run Phase 3 distillation for the selected variants
-(see \`\${CLAUDE_SKILL_DIR}[[/references/campaign-pipeline.md]]\` Phase 5). Only
-then proceed to apply the user's new feedback.
-
-**When the current edit IS an anchor edit**, increment \`anchor.revision\` in
-\`brief.json\` after writing the file. This is what makes the next invocation's
-propagation check fire.
-
-**If no brief exists** (quick one-off flow), skip this check entirely.
+**When the current edit IS an anchor edit**, call \`POST /api/anchor/revise\` after writing
+the file. This is what makes the next invocation's propagation check fire.
 
 **The loop:**
+
 1. User opens the Preview tab and reviews the rendered cards
-2. User gives feedback in chat: "change the headline on slide 2", "make the background darker", "add a stat slide"
-3. Agent reads current state to confirm what the user has open:
-   \`\`\`bash
-   curl -s <url>/api/state
-   # {"activeFile":"social.html","activePreset":null,"preset":{...}}
-   \`\`\`
-4. Agent fetches the current HTML, applies the changes, and rewrites the file
+2. User gives feedback in chat: "change the headline on slide 2", "make the background darker"
+3. Agent reads \`/api/state\` to confirm what the user has open
+4. Agent fetches the current HTML, applies the changes, rewrites the file
 5. App reloads in under 200ms — user sees the update immediately
 6. Repeat from step 1
 
@@ -518,138 +495,73 @@ propagation check fire.
 
 #### Targeted card edits — "this slide", "this page", "update this"
 
-When the user says "change **this** slide", "fix **this** page", "update the card I'm looking at",
-or gives feedback without naming a specific slide number, they are referring to the card
-currently highlighted in the Preview strip. The app automatically reports the selected card
-to the server — you can read it from \`/api/state\` under \`activeCard\`:
+When the user says "change **this** slide", "fix **this** page", or gives feedback without
+naming a specific slide number, they are referring to the card currently highlighted in
+Preview. The app posts the selected card to \`/api/active-card\` automatically.
 
-\`\`\`bash
-curl -s <url>/api/state
-\`\`\`
+**Resolution rule — use \`dataIdx\` first, then \`dataType\`, then \`index\` as fallback.**
+\`dataIdx\` is the stable identifier baked into the HTML; \`index\` shifts when cards are
+added or removed.
 
-\`\`\`jsonc
-{
-  "mode": "mywork",
-  "activeFilePath": "/abs/path/.codi_output/acme/content/slides.html",
-  "activeCard": {
-    "index": 2,          // zero-based position in state.cards
-    "total": 7,          // total cards in the file
-    "dataType": "stat",  // the card's data-type attribute
-    "dataIdx": "03",     // the card's data-index attribute (zero-padded string)
-    "file": "slides.html",
-    "timestamp": 1744478800000
-  },
-  ...
-}
-\`\`\`
+**Workflow:**
 
-**Resolution rule — use \`dataIdx\` first, then \`dataType\`, then \`index\` as fallback.** The
-\`dataIdx\` is the stable identifier baked into the HTML; \`index\` shifts when cards are added
-or removed. To locate the exact element in the file:
+1. Read \`/api/state\`, confirm \`activeCard\` matches what the user is looking at
+2. Read the file at \`activeFilePath\`, locate the element whose \`data-index\` matches
+   \`activeCard.dataIdx\`
+3. Edit only that element. Preserve \`data-type\` and \`data-index\` unless asked to change them
+4. Rewrite the whole file (the watcher needs a file write to trigger reload)
+5. Confirm to the user which card changed: "Updated slide 3 of 7 (stat card) — new value is 42%"
 
-\`\`\`
-<article class="slide" data-type="stat" data-index="03">
-\`\`\`
+**If \`activeCard\` is \`null\`**, ask the user to click the card they want to change, then
+re-read \`/api/state\`.
 
-**Targeted edit workflow:**
-
-1. **Read \`/api/state\`** and confirm \`activeCard\` matches what the user is looking at (the
-   Preview strip highlights it with the accent border).
-2. **Read the file** at \`activeFilePath\` and locate the element whose \`data-index\` matches
-   \`activeCard.dataIdx\`.
-3. **Edit only that element** — leave all other cards untouched. Preserve the \`data-type\`
-   and \`data-index\` attributes unless the user asked to change them.
-4. **Rewrite the whole file** (the watcher needs a file write to trigger reload). Even though
-   you only changed one card's inner HTML, the file rewrite is the signal.
-5. **Confirm to the user** which card changed using its human-readable position: "Updated
-   slide 3 of 7 (stat card) — new value is 42%." Do not say "updated the active card" — be
-   specific so the user can verify immediately.
-
-**If \`activeCard\` is \`null\`** (user has not clicked any card yet, or no file is loaded), ask
-the user to click the card they want to change in the Preview strip, then re-read \`/api/state\`.
-
-**Ambiguity guard:** if the user names a slide explicitly ("change slide 5"), trust the user's
-number — do NOT silently remap it to \`activeCard\`. Only use \`activeCard\` when the user uses
-deictic language ("this", "here", "the one I'm on") or gives feedback without any position
-reference at all.
-
-**Multi-card selection is not supported yet** — \`activeCard\` always refers to a single card
-(the most recently clicked one). If the user says "update these three cards", ask which ones
-by slide number.
-
-**After each rewrite, confirm what changed** — tell the user exactly which slides were updated and what changed so they can review quickly without hunting for the difference.
-
-**Do not stop at one pass.** Keep iterating until the user says they are done, satisfied, or wants to export.
+**Ambiguity guard:** if the user names a slide explicitly ("change slide 5"), trust the
+number — do NOT silently remap it to \`activeCard\`. Only use \`activeCard\` for deictic
+language ("this", "here", "the one I'm on").
 
 ### Step 4b — Edit a My Work project
 
-When \`mode\` is \`"mywork"\` in \`/api/state\`, the user has a past project open.
+When \`mode\` is \`"mywork"\` in \`/api/state\`:
 
-1. **Read state** — \`activeFilePath\` is the absolute path to edit:
-   \`\`\`bash
-   curl -s <url>/api/state
-   # { "mode": "mywork", "contentId": "a3f9c2d1",
-   #   "activeFilePath": "/abs/path/.codi_output/acme-social-campaign/content/social.html",
-   #   "activeSessionDir": "/abs/path/.codi_output/acme-social-campaign",
-   #   "activeFile": "social.html", "status": "in-progress", ... }
-   \`\`\`
-
-2. **Read the current HTML** from disk:
-   \`\`\`bash
-   cat "<activeFilePath>"
-   \`\`\`
-
-3. **Edit and rewrite** \`activeFilePath\` directly on disk.
-   The WebSocket watcher broadcasts a reload — the user sees the update in under 200ms.
-
+1. **Read state.** \`activeFilePath\` is the absolute path to edit
+2. **Read the current HTML** from disk
+3. **Edit and rewrite** \`activeFilePath\` directly
 4. **Do not create a new file** — this is an edit of the user's existing work. Preserve all
-   slides they did not ask to change.
+   slides they did not ask to change
 
-**Never reconstruct the path from name fragments** — always use \`activeFilePath\` verbatim.
-A built-in template and a My Work project can have the same name; \`activeFilePath\` and
-\`contentId\` are the only unambiguous identifiers.
+Never reconstruct the path from name fragments — always use \`activeFilePath\` verbatim.
 
 ### Step 4c — Modify a built-in template
 
-When \`mode\` is \`"template"\` in \`/api/state\`, the user has a built-in template open.
+When \`mode\` is \`"template"\` in \`/api/state\`:
 
-1. **Read state** — \`activeFilePath\` is the absolute path to the template file:
-   \`\`\`bash
-   curl -s <url>/api/state
-   # { "mode": "template", "contentId": "b2e4a9f3",
-   #   "activeFilePath": "/abs/path/generators/templates/earthy-bold.html",
-   #   "activePreset": "earthy-bold", "activeSessionDir": null, ... }
+1. **Read state.** \`activeFilePath\` is the absolute path to the template file
+2. **Edit \`activeFilePath\` in place** — change CSS, copy, colors, structure. The server's
+   template watcher fires within 150ms and broadcasts \`reload-templates\`
+3. **Also edit the source** so the change persists across \`codi generate\`:
+
+   \`\`\`
+   \${CLAUDE_SKILL_DIR}/generators/templates/<name>.html
+   src/templates/skills/content-factory/generators/templates/<name>.html
    \`\`\`
 
-2. **Edit \`activeFilePath\` in place** — change CSS, slide copy, colors, structure, whatever
-   the user asked. The server's template watcher fires within 150ms and broadcasts
-   \`reload-templates\`. The browser gallery and filmstrip update automatically.
-
-4. **Also edit the source** so the change persists across \`codi generate\`:
-   \`\`\`bash
-   # Edit both paths — they are the same file in two locations
-   \${CLAUDE_SKILL_DIR}/generators/templates/earthy-bold.html
-   src/templates/skills/content-factory/generators/templates/earthy-bold.html
-   \`\`\`
-
-**Important**: editing a template changes it for all future sessions. If the user only
-wants a one-off variation without touching the original, generate a new content file
-(Step 3) and use the template as a style reference only.
+Editing a template changes it for all future sessions. If the user only wants a one-off
+variation without touching the original, generate a new content file (Step 3) and use the
+template as a style reference only.
 
 ### Step 4d — Promote a My Work project to a built-in template
 
 Full reference: \`\${CLAUDE_SKILL_DIR}[[/references/promote-template.md]]\`
 
-**Trigger phrases**: "save this as a template", "add this to my presets", "make this reusable",
-"add my project from .codi_output as a new template".
+**Trigger phrases:** "save this as a template", "add this to my presets", "make this
+reusable", "add my project from .codi_output as a new template".
 
-This follows the \`codi-improvement-dev\` principle: you are both a consumer and an improver of
-Codi skills. Read the reference for the full 8-step workflow (read state → verify doc
-conventions → confirm name → copy to both installed and source paths → update meta → verify
-in Gallery → log feedback → optional upstream contribution).
+Read the reference for the full 8-step workflow (read state → verify doc conventions →
+confirm name → copy to both installed and source paths → update meta → verify in Gallery →
+log feedback → optional upstream contribution).
 
-**Do not run \`codi generate\`** unless the user explicitly asks — copying the source file is
-sufficient to persist the template.
+**Do not run \`codi generate\`** unless the user explicitly asks — copying the source file
+is sufficient.
 
 ### Step 5 — Export and stop
 
