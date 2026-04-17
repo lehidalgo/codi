@@ -70,7 +70,7 @@ codi generate
 3. Asks you to choose a preset or build a custom selection of rules, skills, agents, and MCP servers
 4. Creates `.codi/` with all selected artifacts
 5. Writes `flags.yaml`, `state.json`, and `.artifact-manifest.yaml`
-6. Generates `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.windsurfrules`, `.clinerules`
+6. Generates `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.windsurfrules`, `.clinerules`, `.github/copilot-instructions.md`
 7. Installs pre-commit hooks into `.git/hooks/` (or Husky, if present)
 
 **What you commit:**
@@ -332,7 +332,7 @@ codi add mcp-server --all
 **Gotchas:**
 
 - MCP servers are YAML files, not Markdown.
-- Only Claude Code, Cursor, and Codex fully support MCP.
+- Only Claude Code, Cursor, Codex, and GitHub Copilot fully support MCP.
 - The `managed_by: codi` field is how `codi update --mcp-servers` knows which servers to refresh. Do not remove it.
 
 ---
@@ -884,8 +884,9 @@ codi clean --dry-run
 
 **What is removed by `codi clean`:**
 
-- `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.windsurfrules`, `.clinerules`
-- Agent subdirectories: `.claude/`, `.cursor/`, `.codex/`, `.windsurf/`, `.cline/`
+- `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.windsurfrules`, `.clinerules`, `.github/copilot-instructions.md`
+- Agent subdirectories: `.claude/`, `.cursor/`, `.codex/`, `.windsurf/`, `.cline/`, `.github/prompts/`, `.github/skills/`, `.github/agents/`, `.github/instructions/`
+- Per-adapter hook/settings files (`.claude/settings.json`, `.cursor/hooks.json`, `.codex/hooks.json`, `.github/hooks/codi-hooks.json`)
 - Empty parent directories
 
 **What is additionally removed by `codi clean --all`:**

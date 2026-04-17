@@ -33,7 +33,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 16
+version: 18
 ---
 
 # {{name}} — E2E Testing
@@ -120,7 +120,7 @@ npx ${PROJECT_CLI} generate --json
 \\\`\\\`\\\`
 Expected: hasDrift true, then false after regenerate.
 
-**[SYSTEM]** Verify per-agent: .claude/rules/, .cursor/rules/*.mdc, AGENTS.md, .codex/agents/*.toml, .windsurfrules, .clinerules, .claude/skills/, .windsurf/skills/.
+**[SYSTEM]** Verify per-agent: .claude/rules/, .cursor/rules/*.mdc, AGENTS.md, .codex/agents/*.toml, .windsurfrules, .clinerules, .github/copilot-instructions.md, .claude/skills/, .windsurf/skills/, .github/skills/.
 
 ## Suite 5: Verification & Compliance
 

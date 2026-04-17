@@ -124,11 +124,11 @@ flowchart LR
 | Agent | Config File | Rules | Skills | Agents | MCP |
 |:------|:-----------|:-----:|:------:|:------:|:---:|
 | **Claude Code** | `CLAUDE.md` | `.claude/rules` | `.claude/skills` | `.claude/agents` | `.mcp.json` |
-| **Cursor** | `.cursorrules` | `.cursor/rules` | `—` | — | `.cursor/mcp.json` |
+| **Cursor** | `.cursorrules` | `.cursor/rules` | `.cursor/skills` | — | `.cursor/mcp.json` |
 | **Codex** | `AGENTS.md` | `.` | `.agents/skills` | `.codex/agents` | `.codex/config.toml` |
 | **Windsurf** | `.windsurfrules` | `.` | `.windsurf/skills` | — | — |
 | **Cline** | `.clinerules` | `.cline` | `.cline/skills` | — | — |
-| **GitHub Copilot** | `.github/copilot-instructions.md` | `.github/instructions` | `.github/prompts` | `.github/agents` | `.vscode/mcp.json` |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | `.github/instructions` | `.github/skills` | `.github/agents` | `.vscode/mcp.json` |
 <!-- GENERATED:END:supported_agents -->
 
 ---

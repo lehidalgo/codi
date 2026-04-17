@@ -128,8 +128,8 @@
     "hash": "1acbd68c7ac70179c61924b36743ec6e70e77908f30510adb0b6f32f2299f86f"
   },
   "codi-dev-e2e-testing": {
-    "version": 17,
-    "hash": "06f1d664c16eb1b3b38af93d7ae8873943fd7aea2b48f1a5bba4d9b4508e068b"
+    "version": 18,
+    "hash": "53afd8899096403c6e6ffea7684a8a1938218b639f14e915c070a158a575b4e6"
   },
   "codi-security-scan": {
     "version": 6,
@@ -160,8 +160,8 @@
     "hash": "c9e5c9260403db84ed0a9c6c5e7d982a693a531d9e899b6b882d2adb29a1fceb"
   },
   "codi-artifact-contributor": {
-    "version": 12,
-    "hash": "c6b5119af6377bc4df7e50ef96154d1079d3445304a5d56d9ccbf8d10565566f"
+    "version": 13,
+    "hash": "f6df4fd4eea7627baaf6f43f95252d107313e56f5394b0a048d0861b4a58c283"
   },
   "codi-skill-creator": {
     "version": 33,

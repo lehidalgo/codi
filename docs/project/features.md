@@ -53,10 +53,11 @@ Codi's core value: edit artifacts once in `.codi/`, and all agent config files u
 | Agent | Instruction File | Separate Artifacts | MCP Config | Settings |
 |:------|:----------------|:-------------------|:-----------|:---------|
 | Claude Code | `CLAUDE.md` | `.claude/rules/`, `.claude/skills/`, `.claude/agents/` | `.mcp.json` | `.claude/settings.json` |
-| Codex | `AGENTS.md` | `.codex/agents/*.toml` | `.codex/config.toml` | -- |
-| Cursor | `.cursorrules` | -- | `.cursor/mcp.json` | `.cursor/hooks.json` |
+| Codex | `AGENTS.md` | `.codex/agents/*.toml` | `.codex/config.toml` | `.codex/hooks.json` |
+| Cursor | `.cursorrules` | `.cursor/rules/`, `.cursor/skills/` | `.cursor/mcp.json` | `.cursor/hooks.json` |
 | Windsurf | `.windsurfrules` | `.windsurf/skills/` | -- | -- |
 | Cline | `.clinerules` | `.cline/skills/` | -- | -- |
+| GitHub Copilot | `.github/copilot-instructions.md` | `.github/instructions/`, `.github/prompts/`, `.github/skills/`, `.github/agents/` | `.vscode/mcp.json` | `.github/hooks/codi-hooks.json` |
 
 The generated instruction files include: project overview, active rules (inline or referenced), skill routing table, agent definitions, MCP server list, permission restrictions, and a verification section.
 

@@ -159,7 +159,7 @@ The same mechanism powers the catalog page regeneration at docs build time: `gen
 
 ## The adapter system
 
-Codi supports multiple AI agents (Claude Code, Cursor, Codex, Cline, Windsurf) through a single `AgentAdapter` interface. Each adapter knows:
+Codi supports multiple AI agents (Claude Code, Cursor, Codex, Cline, Windsurf, GitHub Copilot) through a single `AgentAdapter` interface. Each adapter knows:
 
 - How to detect whether its agent is present in the project (`detect()`)
 - Where to write generated files (`paths`)
@@ -175,6 +175,7 @@ Codi supports multiple AI agents (Claude Code, Cursor, Codex, Cline, Windsurf) t
 | `codex` | `.codex/` + `AGENTS.md` | `hooks.json`, skills as `.md` |
 | `cline` | `.cline/` + `.clinerules/` | Rules split into files |
 | `windsurf` | `.windsurf/` | Rules and skills |
+| `copilot` | `.github/` + `.vscode/` | `copilot-instructions.md`, prompt files, SKILL.md, `.agent.md`, `.vscode/mcp.json`, `.github/hooks/codi-hooks.json` |
 
 Adapters live in `src/adapters/`. Each one produces `GeneratedFile[]` from the same `NormalizedConfig` input — the normalization step happens once, every adapter consumes the same truth.
 

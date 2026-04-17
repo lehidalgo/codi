@@ -24,7 +24,7 @@ var TRANSLATIONS = {
     "why.problem-h3": "Different coding agents, different configs. Zero coordination.",
     "why.problem-p":
       "Every tool uses a different file \u2014 CLAUDE.md, .cursorrules, AGENTS.md. Update one, but the others stay behind.",
-    "why.problem-li1": "Five tools, five different file formats to maintain separately",
+    "why.problem-li1": "Six tools, six different file formats to maintain separately",
     "why.problem-li2": "Update one agent\u2019s rules \u2014 the others don\u2019t get it",
     "why.problem-li3": "New developer joins with no shared baseline \u2014 sets up from zero",
     "why.problem-li4": "No way to enforce the same standards across every tool and every developer",
@@ -32,8 +32,10 @@ var TRANSLATIONS = {
     "why.solution-h3": "One folder. Every agent in sync.",
     "why.solution-p":
       "Define your rules, skills, agents, and MCPs once in <code>.codi/</code> \u2014 Codi generates the native format each tool understands. Publish as a preset and your team installs the full setup with one command.",
-    "why.solution-li1": "One source generates all agent configs \u2014 CLAUDE.md, .cursorrules, AGENTS.md, and more",
-    "why.solution-li2": "New teammate runs <code>codi init</code> \u2014 full team setup, instantly",
+    "why.solution-li1":
+      "One source generates all agent configs \u2014 CLAUDE.md, .cursorrules, AGENTS.md, and more",
+    "why.solution-li2":
+      "New teammate runs <code>codi init</code> \u2014 full team setup, instantly",
     "why.solution-li3": "Git-tracked \u2014 every artifact change is versioned and auditable",
     "why.solution-li4": "Lock rules the team can\u2019t accidentally override",
     "feat.label": "Features",
@@ -42,7 +44,7 @@ var TRANSLATIONS = {
     "feat.h2": 'What does <span class="gradient-text">Codi</span> bring you?',
     "feat.multi-h4": "One source. Every agent.",
     "feat.multi-p":
-      "Write your rules, skills, agents, and MCPs once in <code>.codi/</code>. Codi generates CLAUDE.md, .cursorrules, AGENTS.md, .windsurfrules, .clinerules \u2014 every tool, every time.",
+      "Write your rules, skills, agents, and MCPs once in <code>.codi/</code>. Codi generates CLAUDE.md, .cursorrules, AGENTS.md, .windsurfrules, .clinerules, .github/copilot-instructions.md \u2014 every tool, every time.",
     "feat.templates-h4": "{templates}+ ready-made artifacts",
     "feat.templates-p":
       "28 rules, 67 skills, and 22 agents ready to install. Pick what fits your stack.",
@@ -68,7 +70,7 @@ var TRANSLATIONS = {
     "feat.verify-p":
       "Every generated file gets an embedded SHA-256 token. Add <code>codi verify</code> to CI and it fails the build if anything was modified outside of Codi.",
     "who.label": "Solo or team. Same tool, different payoff.",
-    "who.h2": 'Solo developer or for your Team',
+    "who.h2": "Solo developer or for your Team",
     "who.sub":
       "The problem is the same whether you work alone or with twenty people \u2014 your AI tools don\u2019t share artifacts.",
     "who.solo-badge": "Solo Developer",
@@ -84,9 +86,12 @@ var TRANSLATIONS = {
     "who.team-h3": "Tech lead defines the setup. Team inherits it.",
     "who.team-p":
       "The tech lead defines a preset once \u2014 rules, skills, agents, and MCPs for the project. Every developer installs it and is up to speed from day one.",
-    "who.team-li1": "Tech lead defines the preset once \u2014 team installs with <code>codi init</code>",
-    "who.team-li2": "Worth it from two developers \u2014 drift starts the moment you\u2019re not the only one",
-    "who.team-li3": "Lock the rules that matter \u2014 security, testing, whatever the project requires",
+    "who.team-li1":
+      "Tech lead defines the preset once \u2014 team installs with <code>codi init</code>",
+    "who.team-li2":
+      "Worth it from two developers \u2014 drift starts the moment you\u2019re not the only one",
+    "who.team-li3":
+      "Lock the rules that matter \u2014 security, testing, whatever the project requires",
     "who.team-li4": "<code>codi verify</code> in CI catches anything modified outside Codi",
     "who.team-li5": "New developers inherit the full team setup on day one",
     "improve.label": "How it gets better over time",
@@ -128,7 +133,8 @@ var TRANSLATIONS = {
     "about.bio":
       "Several AI coding agents, several different configs \u2014 they always drifted. When my Claude quota ran out and I switched to Codex, nothing was in sync. Codi was what I needed.",
     "contact.label": "Get in touch",
-    "contact.h2": 'Found a bug? Have feedback?<br><span class="gradient-text">I want to hear it.</span>',
+    "contact.h2":
+      'Found a bug? Have feedback?<br><span class="gradient-text">I want to hear it.</span>',
     "contact.sub":
       "Drop me a message \u2014 bug reports, feature requests, or questions about AI coding agents.",
     "bar.total": "Total artifacts",
@@ -214,23 +220,28 @@ var TRANSLATIONS = {
     "hero.stat3": "Comparte como preset",
     "hero.stat4": "Configs desincronizadas",
     "why.label": "Por qu\u00e9 existe Codi",
-    "why.h2": 'M\u00e1s herramientas. M\u00e1s devs.<br><span class="gradient-text">M\u00e1s desincronizaci\u00f3n.</span>',
+    "why.h2":
+      'M\u00e1s herramientas. M\u00e1s devs.<br><span class="gradient-text">M\u00e1s desincronizaci\u00f3n.</span>',
     "why.sub":
       "Imagina que a\u00f1ades una regla de seguridad en Claude Code. El Cursor de tu compa\u00f1ero no la va a cargar \u2014 y tu CI sigue corriendo con reglas desactualizadas.",
     "why.problem-badge": "Sin Codi",
-    "why.problem-h3": "Diferentes Agentes de C\u00f3digo, diferente configuraci\u00f3n. Cero coordinaci\u00f3n.",
+    "why.problem-h3":
+      "Diferentes Agentes de C\u00f3digo, diferente configuraci\u00f3n. Cero coordinaci\u00f3n.",
     "why.problem-p":
       "Cada herramienta usa un archivo diferente \u2014 CLAUDE.md, .cursorrules, AGENTS.md. Actualizas uno, pero los dem\u00e1s se quedan atr\u00e1s.",
-    "why.problem-li1": "Cinco herramientas, cinco formatos distintos que mantener por separado",
+    "why.problem-li1": "Seis herramientas, seis formatos distintos que mantener por separado",
     "why.problem-li2": "Actualizas las reglas de un agente \u2014 los dem\u00e1s no lo reciben",
     "why.problem-li3": "Nuevo desarrollador sin base compartida \u2014 configura desde cero",
-    "why.problem-li4": "Sin forma de aplicar los mismos est\u00e1ndares en todas las herramientas y todo el equipo",
+    "why.problem-li4":
+      "Sin forma de aplicar los mismos est\u00e1ndares en todas las herramientas y todo el equipo",
     "why.solution-badge": "Con Codi",
     "why.solution-h3": "Una carpeta. Todos los agentes sincronizados.",
     "why.solution-p":
       "Define tus reglas, skills, agentes y MCPs una vez en <code>.codi/</code> \u2014 Codi genera el formato nativo que cada herramienta entiende. Publ\u00edcalo como preset y tu equipo instala el setup completo con un solo comando.",
-    "why.solution-li1": "Una fuente genera todas las configs \u2014 CLAUDE.md, .cursorrules, AGENTS.md y m\u00e1s",
-    "why.solution-li2": "El nuevo compa\u00f1ero ejecuta <code>codi init</code> \u2014 setup completo del equipo, al instante",
+    "why.solution-li1":
+      "Una fuente genera todas las configs \u2014 CLAUDE.md, .cursorrules, AGENTS.md y m\u00e1s",
+    "why.solution-li2":
+      "El nuevo compa\u00f1ero ejecuta <code>codi init</code> \u2014 setup completo del equipo, al instante",
     "why.solution-li3": "En git \u2014 cada cambio de artefacto queda versionado y auditado",
     "why.solution-li4": "Bloquea las reglas que el equipo no puede ignorar por accidente",
     "feat.label": "Caracter\u00edsticas",
@@ -239,7 +250,7 @@ var TRANSLATIONS = {
     "feat.h2": '\u00bfQu\u00e9 te ofrece <span class="gradient-text">Codi</span>?',
     "feat.multi-h4": "Una fuente. Todos los agentes.",
     "feat.multi-p":
-      "Escribe tus reglas, skills, agentes y MCPs una vez en <code>.codi/</code>. Codi genera CLAUDE.md, .cursorrules, AGENTS.md, .windsurfrules, .clinerules \u2014 todas las herramientas, siempre.",
+      "Escribe tus reglas, skills, agentes y MCPs una vez en <code>.codi/</code>. Codi genera CLAUDE.md, .cursorrules, AGENTS.md, .windsurfrules, .clinerules, .github/copilot-instructions.md \u2014 todas las herramientas, siempre.",
     "feat.templates-h4": "{templates}+ artefactos listos para usar",
     "feat.templates-p":
       "28 reglas, 67 skills y 22 agentes listos para instalar. Elige lo que encaja en tu stack.",
@@ -265,7 +276,7 @@ var TRANSLATIONS = {
     "feat.verify-p":
       "Cada archivo generado lleva un token SHA-256 embebido. A\u00f1ade <code>codi verify</code> al CI y fallar\u00e1 el build si algo fue modificado fuera de Codi.",
     "who.label": "Solo o en equipo. La misma herramienta, distinto impacto.",
-    "who.h2": 'Para ti o para tu equipo',
+    "who.h2": "Para ti o para tu equipo",
     "who.sub":
       "El problema es el mismo tanto si trabajas solo como con veinte personas \u2014 tus herramientas de IA no comparten artefactos.",
     "who.solo-badge": "Desarrollador Solo",
@@ -281,11 +292,15 @@ var TRANSLATIONS = {
     "who.team-h3": "El tech lead define el setup. El equipo lo hereda.",
     "who.team-p":
       "El tech lead define el preset \u2014 reglas, skills, agentes y MCPs para el proyecto. Cada desarrollador lo instala y lo adopta desde el primer d\u00eda.",
-    "who.team-li1": "El tech lead define el preset una vez \u2014 el equipo instala con <code>codi init</code>",
-    "who.team-li2": "Vale la pena desde dos desarrolladores \u2014 la desincronizaci\u00f3n empieza en cuanto no eres el \u00fanico",
-    "who.team-li3": "Bloquea las reglas que importan \u2014 seguridad, testing, lo que el proyecto requiera",
+    "who.team-li1":
+      "El tech lead define el preset una vez \u2014 el equipo instala con <code>codi init</code>",
+    "who.team-li2":
+      "Vale la pena desde dos desarrolladores \u2014 la desincronizaci\u00f3n empieza en cuanto no eres el \u00fanico",
+    "who.team-li3":
+      "Bloquea las reglas que importan \u2014 seguridad, testing, lo que el proyecto requiera",
     "who.team-li4": "<code>codi verify</code> en CI detecta cualquier cambio hecho fuera de Codi",
-    "who.team-li5": "Los nuevos desarrolladores heredan el setup completo del equipo desde el primer d\u00eda",
+    "who.team-li5":
+      "Los nuevos desarrolladores heredan el setup completo del equipo desde el primer d\u00eda",
     "improve.label": "C\u00f3mo mejora con el tiempo",
     "improve.h2":
       'Tus artefactos mejoran con el tiempo.<br><span class="gradient-text">Igual que cada agente.</span>',
@@ -311,8 +326,7 @@ var TRANSLATIONS = {
     "agents.label": "Funciona con tus herramientas \u2014 y sigue creciendo",
     "agents.soon": "pronto",
     "qs.label": "Inicio r\u00e1pido",
-    "qs.sub":
-      "Tres comandos. Todos los agentes configurados. Sin setup manual.",
+    "qs.sub": "Tres comandos. Todos los agentes configurados. Sin setup manual.",
     "qs.h2": 'Operativo <span class="gradient-text">en 60 segundos.</span>',
     "qs.step1-h4": "Instalar",
     "qs.step2-h4": "Inicializar",
@@ -326,7 +340,8 @@ var TRANSLATIONS = {
     "about.bio":
       "Varias herramientas de IA, varias configs separadas \u2014 siempre se desincronizaban. Cuando se me acab\u00f3 la cuota de Claude y cambi\u00e9 a Codex, nada estaba en sincron\u00eda. Codi era lo que necesitaba.",
     "contact.label": "Contacto",
-    "contact.h2": '\u00bfEncontraste un bug? \u00bfTienes feedback?<br><span class="gradient-text">Quiero escucharlo.</span>',
+    "contact.h2":
+      '\u00bfEncontraste un bug? \u00bfTienes feedback?<br><span class="gradient-text">Quiero escucharlo.</span>',
     "contact.sub":
       "Manda un mensaje \u2014 bugs, ideas o preguntas sobre agentes de IA para programar.",
     "bar.total": "Artefactos totales",
@@ -584,46 +599,46 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
       id: "cursor",
       label: "Cursor",
       img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/cursor.png",
-      phase: (2 * Math.PI) / 5,
+      phase: (2 * Math.PI) / 6,
     },
     {
       id: "codex",
       label: "Codex",
       img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/openai.png",
-      phase: (4 * Math.PI) / 5,
+      phase: (4 * Math.PI) / 6,
     },
     {
       id: "windsurf",
       label: "Windsurf",
       img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/windsurf.png",
-      phase: (6 * Math.PI) / 5,
+      phase: (6 * Math.PI) / 6,
     },
     {
       id: "cline",
       label: "Cline",
       img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/cline.png",
-      phase: (8 * Math.PI) / 5,
+      phase: (8 * Math.PI) / 6,
+    },
+    {
+      id: "copilot",
+      label: "GitHub Copilot",
+      img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/copilot.png",
+      phase: (10 * Math.PI) / 6,
     },
   ];
 
   var soon = [
     {
-      id: "copilot",
-      label: "GitHub Copilot CLI",
-      img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/copilot.png",
-      phase: Math.PI / 6,
-    },
-    {
       id: "gemini",
       label: "Gemini CLI",
       img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/gemini.png",
-      phase: Math.PI / 6 + (2 * Math.PI) / 3,
+      phase: Math.PI / 4,
     },
     {
       id: "antigravity",
       label: "Antigravity",
       img: "https://unpkg.com/@lobehub/icons-static-png@latest/dark/antigravity.png",
-      phase: Math.PI / 6 + (4 * Math.PI) / 3,
+      phase: Math.PI / 4 + Math.PI,
     },
   ];
 

@@ -114,7 +114,7 @@ managed_by: codi
 | `description` | string | Yes | — | One-line description |
 | `version` | number | Yes | `1` |  |
 | `type` | `"skill"` | Yes | `skill` | Always `skill` |
-| `compatibility` | `claude-code` \| `cursor` \| `codex` \| `windsurf` \| `cline`[] | No | — | Compatible agent IDs |
+| `compatibility` | `claude-code` \| `cursor` \| `codex` \| `windsurf` \| `cline` \| `copilot`[] | No | — | Compatible agent IDs |
 | `tools` | string[] | No | — | Required MCP tools |
 | `model` | string | No | — | Preferred AI model |
 | `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
@@ -167,9 +167,9 @@ This means progressive loading quality depends on the agent, not Codi. As agents
 
 ### Skill Inlining (`progressive_loading` flag)
 
-The `progressive_loading` flag controls a separate concern: whether **single-file agents** (Windsurf, Cline) inline skill content directly in their main config file, or show a compact catalog table instead:
+The `progressive_loading` flag controls a separate concern: whether **single-file agents** (Windsurf, Cline, GitHub Copilot) inline skill content directly in their main config file, or show a compact catalog table instead:
 
-- **off** — Inline full skill content in `.windsurfrules` / `.clinerules` (larger file, all skills immediately visible)
+- **off** — Inline full skill content in `.windsurfrules` / `.clinerules` / `.github/copilot-instructions.md` (larger file, all skills immediately visible)
 - **metadata** — Show a skill catalog table in the main file; full content lives in separate skill files (smaller main file)
 
 This flag has **no effect** on agents that use separate skill files (Claude Code, Cursor, Codex) — those always get full-content SKILL.md files regardless.
