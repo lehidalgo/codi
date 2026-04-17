@@ -3,18 +3,25 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Verification before completion. Use before claiming any task is done, fixed, or
-  passing. Requires fresh evidence — not assumptions. Activate when about to say
-  work is complete, tests pass, or a bug is fixed.
+  Verification gate before completion. Use before claiming any task is done,
+  fixed, passing, or complete. Requires fresh evidence (a command run in
+  this session with its output read) — not assumptions or memory. Also
+  activate for phrases like "about to say done", "verify before claim",
+  "prove it works", "completion gate", "fresh evidence", "verification
+  check", "before marking complete", and whenever you notice weasel words
+  ("should pass", "probably works", "seems correct", "looks good"). Do
+  NOT activate for initial investigation (use ${PROJECT_NAME}-evidence-gathering),
+  debugging a specific failure (use ${PROJECT_NAME}-debugging), or
+  design / planning phases where nothing is yet implemented.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 7
 ---
 
-# {{name}}
+# {{name}} — Verification
 
 ## When to Activate
 
@@ -24,6 +31,13 @@ version: 4
 - Before any positive status update
 - Before requesting a code review
 - Before marking a task done in a plan
+
+## Skip When
+
+- You are in an investigation phase (no completion claim yet) — use ${PROJECT_NAME}-evidence-gathering
+- You are debugging a known failure — use ${PROJECT_NAME}-debugging
+- You are in a brainstorming / planning phase where nothing is implemented — use ${PROJECT_NAME}-brainstorming / ${PROJECT_NAME}-plan-writer
+- You already ran the exact command this turn and have the output in scope — just cite it; no need to re-run
 
 ## The Iron Law
 
@@ -130,6 +144,6 @@ The spirit of the rule: no unverified claims, ever.
 
 - Use at the end of every \\\`${PROJECT_NAME}-tdd\\\` cycle (Verify RED, Verify GREEN).
 - Use in \\\`${PROJECT_NAME}-debugging\\\` Phase 4 before claiming fix is complete.
-- Use in \\\`${PROJECT_NAME}-plan-executor\\\` and \\\`${PROJECT_NAME}-subagent-dev\\\` before marking tasks done.
+- Use in \\\`${PROJECT_NAME}-plan-execution\\\` before marking tasks done.
 - Use in \\\`${PROJECT_NAME}-branch-finish\\\` before presenting completion options.
 `;

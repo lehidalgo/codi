@@ -1,0 +1,119 @@
+{
+  "skillName": "codi-test-suite",
+  "cases": [
+    {
+      "id": "run-basic-request",
+      "description": "RUN mode: basic test-run request",
+      "prompt": "run the tests",
+      "expectations": [
+        "Detects the test framework from manifest",
+        "Executes the suite with the appropriate command",
+        "Reports pass/fail summary",
+        "Does NOT invoke coverage instrumentation"
+      ]
+    },
+    {
+      "id": "run-npm-test",
+      "description": "RUN mode: npm test framing",
+      "prompt": "npm test is failing — what's broken?",
+      "expectations": [
+        "Runs the suite via npm test",
+        "Reports failed tests with file paths and error messages",
+        "Suggests routing to codi-debugging for root-cause work on failures"
+      ]
+    },
+    {
+      "id": "run-python-pytest",
+      "description": "RUN mode: pytest detection",
+      "prompt": "are the tests green? we use pytest",
+      "expectations": [
+        "Runs pytest",
+        "Reports pass/fail counts",
+        "Does NOT add --cov flag (not coverage mode)"
+      ]
+    },
+    {
+      "id": "coverage-measure",
+      "description": "COVERAGE mode: measure current coverage",
+      "prompt": "what's my current test coverage?",
+      "expectations": [
+        "Runs the test suite WITH coverage instrumentation",
+        "Reports overall coverage percentage",
+        "Lists files below the 80% threshold (or project default)",
+        "Does NOT generate new test files"
+      ]
+    },
+    {
+      "id": "coverage-gaps",
+      "description": "COVERAGE mode: identify uncovered lines",
+      "prompt": "show me the test coverage gaps",
+      "expectations": [
+        "Parses coverage output to identify uncovered line ranges",
+        "Lists files sorted by coverage gap size (lowest first)",
+        "Shows zero-coverage functions separately",
+        "Does NOT write any new source or test files"
+      ]
+    },
+    {
+      "id": "generate-fill-gaps",
+      "description": "GENERATE mode: fill coverage gaps with new tests",
+      "prompt": "fill the coverage gaps with tests",
+      "expectations": [
+        "Runs coverage first to identify gaps",
+        "Prioritizes happy path → error handling → edge cases → branches",
+        "Delegates to codi-test-generator subagent for generation",
+        "Delegates to codi-code-reviewer subagent for review",
+        "Re-runs coverage to produce before/after comparison"
+      ]
+    },
+    {
+      "id": "generate-specific-file",
+      "description": "GENERATE mode: generate tests for a specific uncovered file",
+      "prompt": "write tests for the uncovered lines in src/auth/token.ts",
+      "expectations": [
+        "Reads src/auth/token.ts and identifies uncovered functions",
+        "Reads existing tests in the project for style match",
+        "Produces new test file following AAA pattern",
+        "Mocks only external dependencies, not internal modules"
+      ]
+    },
+    {
+      "id": "negative-write-new-feature-tests",
+      "description": "Writing tests for a NEW feature (TDD) should NOT trigger testing",
+      "prompt": "let's TDD a new checkout endpoint",
+      "expectations": [
+        "Does NOT activate testing skill",
+        "Routes to codi-tdd instead",
+        "Does NOT produce a coverage report"
+      ]
+    },
+    {
+      "id": "negative-debug-failing-test",
+      "description": "Debugging a specific failure should NOT trigger testing",
+      "prompt": "the user authentication test is failing — help me fix it",
+      "expectations": [
+        "Does NOT activate testing skill as the owner",
+        "Routes to codi-debugging for root-cause work",
+        "testing may be invoked only as part of the debug verification loop, not as primary"
+      ]
+    },
+    {
+      "id": "negative-review-test-quality",
+      "description": "Reviewing test quality should NOT trigger testing",
+      "prompt": "review the quality of our existing unit tests",
+      "expectations": [
+        "Does NOT activate testing skill",
+        "Routes to codi-code-review instead"
+      ]
+    },
+    {
+      "id": "ambiguous-ask-clarification",
+      "description": "Ambiguous request between RUN and COVERAGE asks for clarification",
+      "prompt": "let's check the tests",
+      "expectations": [
+        "Does NOT default silently to one mode",
+        "Asks whether the user wants pass/fail (RUN) or coverage metrics (COVERAGE)"
+      ]
+    }
+  ]
+}

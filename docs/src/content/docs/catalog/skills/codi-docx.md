@@ -1,7 +1,7 @@
 ---
 title: codi-docx
 description: >
-  Use when creating, editing, or working with Word documents (.docx). Also activate when extracting content, adding tracked changes, comments, or images, or producing reports, memos, and letters as .docx. Do NOT activate for PDFs or spreadsheets.
+  Create, edit, read, or analyze Word documents (.docx). Use when the user mentions "Word doc", "Word document", ".docx", "convert doc to docx", or any .docx workflow. Also activate when adding tracked changes, accepting or rejecting changes, adding comments, inserting images, extracting text or tables from a .docx, producing reports, memos, letters, or templates as Word files, or generating a branded DOCX with design tokens. Handles unpack → edit XML → pack for existing docs, or docx-js/python-docx for new docs. Do NOT activate for PDF files (use codi-pdf), spreadsheets (use codi-xlsx), PowerPoint files (use codi-pptx), or plain Markdown docs (use codi-project-documentation).
 sidebar:
   label: "codi-docx"
 artifactType: skill
@@ -75,6 +75,14 @@ python scripts/office/unpack.py document.docx unpacked/
 - User mentions 'Word doc', 'Word document', or `.docx`
 - User needs tracked changes, comments, or images in a document
 - User wants a report, memo, letter, or template as a Word file
+
+## Skip When
+
+- User wants a PDF — use codi-pdf
+- User wants an Excel spreadsheet — use codi-xlsx
+- User wants a PowerPoint deck — use codi-pptx
+- User wants a Markdown README or docs site — use codi-project-documentation
+- User wants a branded HTML document for PDF export (not Word) — use codi-content-factory
 
 A .docx file is a ZIP archive containing XML files.
 

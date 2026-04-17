@@ -732,6 +732,11 @@ footer { border-top: 1px solid var(--border); padding: 40px 0; background: var(-
   .hamburger { display: flex; z-index: 101; }
   .lang-switcher { z-index: 101; }
   .nav-inner { padding: 18px 20px; }
+  #nav.scrolled:has(.nav-links.open) {
+    background: rgba(7,10,15,0.97);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 @media (max-width: 480px) {

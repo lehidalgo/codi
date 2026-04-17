@@ -71,6 +71,7 @@ interface UpdateOptions extends GlobalOptions {
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
   force?: boolean;
+  onConflict?: "keep-current" | "keep-incoming";
 }
 
 interface UpdateData {
@@ -99,7 +100,7 @@ interface RefreshArtifactOptions {
   nameMappings?: Record<string, string>;
   dryRun: boolean;
   force?: boolean;
-  json?: boolean;
+  keepCurrent?: boolean;
   log: Logger;
 }
 
@@ -164,7 +165,7 @@ async function refreshManagedArtifacts(
   if (conflicts.length > 0) {
     const resolution = await resolveConflicts(conflicts, {
       force: opts.force,
-      json: opts.json,
+      keepCurrent: opts.keepCurrent,
     });
 
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
@@ -262,7 +263,7 @@ async function pullFromSource(
   configDir: string,
   dryRun: boolean,
   log: Logger,
-  options: { force?: boolean; json?: boolean } = {},
+  options: { force?: boolean; keepCurrent?: boolean } = {},
 ): Promise<string[]> {
   const updated: string[] = [];
   const cloneDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
@@ -506,7 +507,7 @@ export async function updateHandler(
       if (!options.dryRun) {
         const applyResult = await applyPresetArtifacts(configDir, loaded, {
           force: false,
-          json: options.json,
+          keepCurrent: options.onConflict === "keep-current",
         });
         log.info(
           `Applied preset artifacts: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
@@ -540,7 +541,7 @@ export async function updateHandler(
       dryRun,
       log,
       force: options.force,
-      json: options.json,
+      keepCurrent: options.onConflict === "keep-current",
       availableTemplates: AVAILABLE_TEMPLATES,
       loadTemplate,
       getTemplateVersion,
@@ -560,7 +561,7 @@ export async function updateHandler(
       dryRun,
       log,
       force: options.force,
-      json: options.json,
+      keepCurrent: options.onConflict === "keep-current",
       availableTemplates: AVAILABLE_SKILL_TEMPLATES,
       loadTemplate: loadSkillTemplateContent,
       getTemplateVersion: getSkillTemplateVersion,
@@ -579,7 +580,7 @@ export async function updateHandler(
       dryRun,
       log,
       force: options.force,
-      json: options.json,
+      keepCurrent: options.onConflict === "keep-current",
       availableTemplates: AVAILABLE_AGENT_TEMPLATES,
       loadTemplate: loadAgentTemplate,
       getTemplateVersion: getAgentTemplateVersion,
@@ -600,7 +601,7 @@ export async function updateHandler(
   if (options.from) {
     sourceUpdated = await pullFromSource(options.from, configDir, options.dryRun ?? false, log, {
       force: options.force,
-      json: options.json,
+      keepCurrent: options.onConflict === "keep-current",
     });
   }
 
@@ -610,8 +611,8 @@ export async function updateHandler(
     const configResult = await resolveConfig(projectRoot);
     if (configResult.ok) {
       const genResult = await generate(configResult.data, projectRoot, {
-        json: options.json,
-        force: options.force,
+        keepCurrent: options.onConflict === "keep-current",
+        force: options.force || options.onConflict === "keep-incoming",
       });
       regenerated = genResult.ok;
     }
@@ -698,6 +699,10 @@ export function registerUpdateCommand(program: Command): void {
     .option("--mcp-servers", "Refresh template-managed MCP servers to latest versions")
     .option("--dry-run", "Show what would change without writing")
     .option("--force", "Accept all incoming changes without prompting (overwrites local)")
+    .option(
+      "--on-conflict <strategy>",
+      "Conflict strategy when updated files have local changes: keep-current or keep-incoming",
+    )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
       const options: UpdateOptions = { ...globalOptions, ...cmdOptions };

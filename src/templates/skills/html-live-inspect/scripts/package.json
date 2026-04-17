@@ -1,0 +1,7 @@
+{
+  "name": "codi-html-live-inspect-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zero-dep Node HTTP server for html-live-inspect skill",
+  "main": "server.cjs"
+}

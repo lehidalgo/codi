@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-04-12T15:59:25.338Z",
+  "generatedAt": "2026-04-17T15:03:33.687Z",
   "counts": {
-    "skills": 65,
+    "skills": 60,
     "rules": 28,
-    "agents": 22,
+    "agents": 21,
     "presets": 6,
-    "total": 121
+    "total": 115
   },
   "categories": [
     "Brand Identity",
@@ -16,7 +16,6 @@
     "Creative and Design",
     "Developer Tools",
     "Developer Workflow",
-    "Document Generation",
     "File Format Tools",
     "Planning",
     "Productivity",
@@ -34,7 +33,7 @@
     {
       "type": "skill",
       "name": "codi-agent-creator",
-      "description": "Agent creation workflow. Use when the user asks to create, build, or define a specialized agent. Also activate when the user wants to add a code reviewer, security analyzer, test generator, or any autonomous worker role.",
+      "description": "Agent creation workflow. Use when the user asks to create, build, scaffold, or define a new agent, subagent, specialist worker, or autonomous reviewer. Also activate for phrases like \"add an agent\", \"new agent for\", \"code reviewer agent\", \"security analyzer\", \"test generator\", \"worker role\", \"assistant role\", or when the user configures agent frontmatter, tools, model, confidence filtering, or severity matrices. Do NOT activate for editing an existing agent without the user asking to create — redirect to direct file edits instead.",
       "slug": "catalog/skills/codi-agent-creator",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -49,7 +48,7 @@
     {
       "type": "skill",
       "name": "codi-algorithmic-art",
-      "description": "Use when the user wants to create generative art, algorithmic art, flow fields, or particle systems using p5.js with seeded randomness. Creates original computational art with interactive parameter exploration.",
+      "description": "Generative and algorithmic art with p5.js. Use when the user wants to create generative art, algorithmic art, computational art, creative coding sketches, p5.js sketches, flow fields, particle systems, Perlin noise fields, L-systems, recursive or parametric art, or any interactive artwork driven by seeded randomness. Also activate for phrases like \"generative sketch\", \"noise field\", \"algorithmic composition\", or \"generative aesthetic movement\". Do NOT activate for static illustrations, logo design, or data visualization — those have their own skills.",
       "slug": "catalog/skills/codi-algorithmic-art",
       "category": "Creative and Design",
       "userInvocable": true,
@@ -64,7 +63,7 @@
     {
       "type": "skill",
       "name": "codi-artifact-contributor",
-      "description": "Use when contributing artifacts to GitHub or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation, ZIP export, and manual workflows. Also activate when the user says 'share my skill', 'contribute to Codi', or 'open a PR with my rule'.",
+      "description": "Contribute or share custom codi artifacts (rules, skills, agents, commands). Use when the user wants to open a PR to the codi repo, submit a PR to a team preset repository, share artifacts as a ZIP package, publish an agent or rule, push a preset to a custom repo, fork and PR, or set up GitHub CLI / GitHub MCP for contributions. Also activate for phrases like \"share my skill\", \"contribute to codi\", \"open a PR with my rule\", \"publish my agent\", \"export preset\", \"send this to the codi repo\". Do NOT activate for ordinary code commits, installing a preset (use codi-preset-creator or \\`codi preset install\\` directly), or releasing a package to npm.",
       "slug": "catalog/skills/codi-artifact-contributor",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -79,7 +78,7 @@
     {
       "type": "skill",
       "name": "codi-audio-transcriber",
-      "description": "Use when transcribing audio or video files to text using OpenAI Whisper. Launches a local web interface with file upload, concurrent chunk processing, copy/download transcript, and optional Google Sheets output.",
+      "description": "Audio and video transcription via OpenAI Whisper. Use when transcribing an mp3, wav, m4a, mp4, webm, or mov file; converting speech to text; generating a podcast transcript, meeting transcript, interview transcript, or subtitle text; or extracting text from a video recording. Also activate for phrases like \"transcribe this audio\", \"convert audio to text\", \"get the text from this recording\", or when the user wants transcripts written to Google Sheets. Launches a local Flask web UI on port 8765 with concurrent chunk processing, clipboard copy, and .txt download. Do NOT activate for real-time microphone transcription (files only) or for text-to-speech / speech synthesis.",
       "slug": "catalog/skills/codi-audio-transcriber",
       "category": "Productivity",
       "userInvocable": true,
@@ -94,7 +93,7 @@
     {
       "type": "skill",
       "name": "codi-audit-fix",
-      "description": "Iterative audit-and-fix agent. Use when processing a list of items that each require evidence gathering, a fix proposal, and explicit user approval before implementation. Enforces strict one-item-at-a-time discipline with a commit per item. Use for code quality audits, security fix lists, migration checklists, linting backlogs, or any batch of items requiring individual evidence + approval.",
+      "description": "Iterative audit-and-fix workflow. Use when processing a list of audit findings, a batch of fixes, an issue backlog, a lint or static-analysis backlog, a security-fix list, a migration checklist, a TODO list of improvements, or any set of items where each one needs: evidence gathering → fix proposal → explicit user approval → implementation → commit. Also activate for phrases like \"work through a list\", \"go through these one by one\", \"batch of fixes\", \"process the backlog\", \"iterate through findings\". Enforces strict one-item-at-a-time discipline with a commit per item. Do NOT activate for a single bug (use codi-debugging), new feature work, or exploratory review without a fix list.",
       "slug": "catalog/skills/codi-audit-fix",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -108,8 +107,23 @@
     },
     {
       "type": "skill",
+      "name": "codi-box-validator",
+      "description": "Validate and enforce uniform spacing, hierarchy, and structural consistency in HTML layouts. Use ALWAYS when generating HTML for visual designs — Instagram posts, LinkedIn carousels, slide decks, A4 pages, stories, posters, cards, or any fixed-aspect-ratio HTML layout. Also use when the user mentions 'layout', 'design', 'post', 'slide', 'carousel', 'poster', 'social media', 'presentation template', 'validate my design', 'spacing', 'uniform layout', 'box theory', or asks to create any visual HTML content. This skill enforces the 8-rule Box Layout Theory and must run AFTER every HTML generation step — iterate until the layout passes. If in doubt whether a design task needs validation, use this skill.",
+      "slug": "catalog/skills/codi-box-validator",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
       "name": "codi-brainstorming",
-      "description": "Design exploration before implementation. Use before starting any non-trivial feature, change, or document. Explores context, asks clarifying questions, proposes approaches, and produces an approved design spec before invoking any implementation skill.",
+      "description": "Design exploration before implementation. Use before starting any non-trivial feature, change, refactor, or document. Also activate for phrases like \"let's brainstorm\", \"let's think through\", \"design this feature\", \"plan this feature\", \"what's the best way to\", \"what's the right approach\", \"before we code\", \"should we use X or Y\", \"help me think about\". Explores context, asks clarifying questions one at a time, proposes 2-3 approaches with trade-offs, and produces an approved design spec before invoking any implementation skill. Do NOT activate for pure quality tasks (security scan, code review, test coverage), one-liner fixes with zero design ambiguity, or content with fully specified requirements.",
       "slug": "catalog/skills/codi-brainstorming",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -124,7 +138,7 @@
     {
       "type": "skill",
       "name": "codi-branch-finish",
-      "description": "Development branch completion. Use when implementation is complete and the branch needs to be merged, submitted as a PR, kept, or discarded. Verifies tests, presents four deterministic options, and cleans up worktrees.",
+      "description": "Development branch completion. Use when implementation is complete and the branch needs to be merged, submitted as a PR, kept, or discarded. Also activate for phrases like \"finish this branch\", \"done with this branch\", \"wrap up the branch\", \"ship this branch\", \"ready to merge\", \"ready to open a PR\", \"clean up the worktree\", \"what's next for this feature branch\". Verifies tests pass, presents four deterministic options (merge locally / open PR / keep as-is / discard), and cleans up worktrees for merge and discard paths. Do NOT activate for a plain commit (use codi-commit), for starting a new branch (use codi-worktrees), or for reviewing an open PR.",
       "slug": "catalog/skills/codi-branch-finish",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -139,7 +153,7 @@
     {
       "type": "skill",
       "name": "codi-brand-creator",
-      "description": "Brand identity skill for codi-brand-creator. Use when creating any branded deliverable — social cards, slides, documents, or any visual output that must carry codi-brand-creator brand identity. Provides design tokens (colors, fonts), voice guidelines, and Content Factory templates.",
+      "description": "Brand identity scaffold for codi-brand-creator. Use when creating any branded deliverable — social cards, slides, documents, posters, email templates, or any visual output that must carry codi-brand-creator brand identity. Also activate when the user mentions \"brand guidelines\", \"brand standard\", \"corporate identity\", \"visual identity\", \"color palette\", \"brand colors\", \"brand fonts\", \"typography pair\", \"logo placement\", \"brand voice\", or applies this brand's design tokens to new content. Provides design tokens (colors, fonts), voice guidelines, and Content Factory templates. Do NOT override a user-specified palette when the user has not asked for this brand, and do not activate for generic design work unrelated to codi-brand-creator.",
       "slug": "catalog/skills/codi-brand-creator",
       "category": "Brand Identity",
       "userInvocable": true,
@@ -154,7 +168,7 @@
     {
       "type": "skill",
       "name": "codi-canvas-design",
-      "description": "Use when the user asks to create a poster, visual art, or a static design piece as a .png or .pdf. Creates original visual designs through a two-step philosophy + canvas approach. Never copies existing artists' work.",
+      "description": "Original static visual design — posters, illustrations, album covers, book covers, editorial spreads, zine pages, print design, magazine layouts, gig posters, minimalist art pieces, brutalist or swiss-design compositions. Use when the user asks for any static .png or .pdf design piece, visual art, or museum-quality design-forward output. Also activate for phrases like \"poster\", \"album cover\", \"book cover\", \"editorial design\", \"print design\", \"illustration\", \"design-forward piece\", \"minimalist art\", \"brutalist poster\", \"swiss design\". Creates originals through a two-step philosophy + canvas approach. Never copies existing artists' work. Do NOT activate for animated content (use algorithmic-art or slack-gif-creator), data visualization (charts, plots, dashboards), logo design as a brand identity (use brand-creator), or UI components.",
       "slug": "catalog/skills/codi-canvas-design",
       "category": "Creative and Design",
       "userInvocable": true,
@@ -184,7 +198,7 @@
     {
       "type": "skill",
       "name": "codi-claude-artifacts-builder",
-      "description": "Use when the user needs a complex, multi-component claude.ai HTML artifact built with React, Tailwind CSS, and shadcn/ui. Do NOT activate for simple single-file HTML or JSX artifacts.",
+      "description": "Build complex, multi-component claude.ai HTML artifacts. Use when the user asks for a React-based claude.ai artifact, a multi-component artifact with state or routing, a single-file bundle of a React app, or any artifact that needs shadcn/ui or Radix UI components. Also activate for phrases like \"claude.ai artifact\", \"React artifact\", \"bundle React app to HTML\", \"multi-component artifact\", \"single-file bundle\", \"Vite bundle\", \"shadcn artifact\". Stack: React 18 + TypeScript + Vite + Parcel + Tailwind CSS + shadcn/ui, bundled to a single self-contained HTML. Do NOT activate for simple single-file HTML or JSX artifacts, static posters/visual art, or production Next.js / web app development.",
       "slug": "catalog/skills/codi-claude-artifacts-builder",
       "category": "Creative and Design",
       "userInvocable": true,
@@ -199,7 +213,7 @@
     {
       "type": "skill",
       "name": "codi-code-review",
-      "description": "Structured code review workflow. Use when reviewing PRs, examining code changes, or auditing code quality. Analyzes changes against project rules and produces severity-ranked findings.",
+      "description": "Structured code review workflow. Use when reviewing a pull request, examining code changes, auditing code quality, or producing severity-ranked findings against project rules. Also activate for phrases like \"review my code\", \"review my PR\", \"PR review\", \"check my changes\", \"audit this file\", \"look at this diff\", \"feedback on implementation\", \"pre-merge review\", \"review before I merge\". Produces findings with file path, line number, severity (Critical / Warning / Suggestion), and suggested fixes. Do NOT activate for fixing bugs the user identifies (use codi-debugging), writing new code (use a content/plan/subagent skill), running a full security scan (use codi-security-scan), or measuring test coverage (use codi-test-suite).",
       "slug": "catalog/skills/codi-code-review",
       "category": "Code Quality",
       "userInvocable": true,
@@ -214,7 +228,7 @@
     {
       "type": "skill",
       "name": "codi-codebase-explore",
-      "description": "Explore and understand the codebase using the code graph. Use when exploring structure, tracing dependencies, finding callers, or navigating unfamiliar code. Also activate before refactoring or when asked how something works.",
+      "description": "Explore and understand the codebase using the code graph. Use when the user wants to trace dependencies, find callers, navigate unfamiliar code, run an impact analysis, or get an architecture overview. Also activate for phrases like \"how does X work\", \"where is X defined\", \"find all callers of\", \"who calls this function\", \"what does X depend on\", \"trace the flow\", \"show relationships\", \"dependency map\", \"impact analysis\", \"before I refactor\", \"architecture overview\". Do NOT activate for fixing bugs (use codi-debugging), writing new code, running tests, or making edits — this skill is read-only exploration.",
       "slug": "catalog/skills/codi-codebase-explore",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -229,7 +243,7 @@
     {
       "type": "skill",
       "name": "codi-codebase-onboarding",
-      "description": "Codebase onboarding workflow. Use when exploring an unfamiliar project or creating an onboarding guide. Analyzes architecture, conventions, and key files to produce a concise guide for new team members or AI agents.",
+      "description": "Codebase onboarding workflow. Use when exploring an unfamiliar project, creating an onboarding guide, setting up project context for future agent sessions, or persisting a Project Context block into CLAUDE.md / AGENTS.md / .cursorrules. Also activate for phrases like \"new to this codebase\", \"first time in this repo\", \"orient me\", \"onboard me\", \"what does this project do\", \"project overview\", \"get started with this codebase\", \"set up project context\", \"set up CLAUDE.md\". Analyzes architecture, conventions, and key files to produce a concise guide for new team members or AI agents. Do NOT activate for fixing bugs, writing new code, single-file reviews, or dependency tracing — those have dedicated skills.",
       "slug": "catalog/skills/codi-codebase-onboarding",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -244,7 +258,7 @@
     {
       "type": "skill",
       "name": "codi-codi-brand",
-      "description": "Codi brand content studio. Use when creating any branded deliverable for Codi — presentations, documents, social content, reports, or any HTML/PDF/PPTX/DOCX output that must carry Codi brand identity. Also activate when the user mentions 'codi brand', 'codi design system', 'codi style', or asks for Codi-branded output of any kind.",
+      "description": "Codi brand identity. Use when creating any branded deliverable for Codi — slides, documents, social cards, reports, or any HTML/PDF/PPTX/DOCX output that must carry Codi visual identity. Also activate when the user mentions 'codi brand', 'codi design system', or asks for Codi-branded output of any kind. Provides design tokens (colors, fonts), voice guidelines, references, and Content Factory templates. Rendering and export are handled by the codi-content-factory skill — this skill ships no preview server or code.",
       "slug": "catalog/skills/codi-codi-brand",
       "category": "Brand Identity",
       "userInvocable": true,
@@ -259,7 +273,7 @@
     {
       "type": "skill",
       "name": "codi-commit",
-      "description": "Git commit workflow with conventional commits, pre-commit checks, and staged change review. Use when committing code, creating a commit, or fixing a pre-commit hook failure. Also activate on /commit.",
+      "description": "Git commit workflow with conventional commits, pre-commit checks, and staged-change review. Use when the user asks to commit code, stage changes, create a commit, write a commit message, use conventional commit format, split a commit, or troubleshoot a pre-commit hook failure. Also activate for phrases like \"commit these changes\", \"git commit\", \"stage these files\", \"write a conventional commit\", \"pre-commit failed\", \"hook failed\", \"commit message rejected\", \"commit-msg hook\". Activates on /commit. Do NOT activate for pushing to remote (use direct \\`git push\\`), creating pull requests (use codi-artifact-contributor or codi-branch-finish), merging branches (use codi-branch-finish), or resolving merge conflicts.",
       "slug": "catalog/skills/codi-commit",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -274,7 +288,7 @@
     {
       "type": "skill",
       "name": "codi-compare-preset",
-      "description": "Compare local Codi artifacts against upstream templates. Use when checking customizations, reviewing upstream updates, or preparing to contribute improvements. Also activate on /codi-compare-preset.",
+      "description": "Compare local Codi artifacts against upstream templates. Use when the user wants to check customizations, review pending upstream updates, or prepare to contribute improvements. Also activate for phrases like \"what have I customized\", \"diff against upstream\", \"see my changes vs Codi\", \"pending upstream updates\", \"show differences\", \"review my local config\", \"upgrade Codi artifacts\", or on /codi-compare-preset. Produces a report of local improvements (contribution candidates), upstream updates available, and conflicts. Do NOT activate for installing a preset (use \\`codi preset install\\`), creating a new preset (use codi-preset-creator), or opening the PR itself (use codi-artifact-contributor).",
       "slug": "catalog/skills/codi-compare-preset",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -289,7 +303,7 @@
     {
       "type": "skill",
       "name": "codi-content-factory",
-      "description": "Use when the user wants to create blog posts or repurpose content across platforms (LinkedIn, Instagram, TikTok, Medium, Substack). Generates branded visual assets with an interactive web app — gallery of style presets, live card preview, and context-aware export (PNG, PDF, PPTX).",
+      "description": "Use when the user wants to create content — articles, blog posts, slide decks, social carousels, documents, business deliverables (reports, proposals, one-pagers, case studies, executive summaries), single-format social posts, or multi-format campaigns (blog + deck + carousel about the same topic). Authors substance first (an anchor article) and distills into every requested visual format. Explicit fast path for one-off requests. Generates branded HTML with an interactive web app — live preview and context-aware export (PNG, PDF, PPTX, DOCX, HTML, ZIP). For branded business documents specifically, see references/business-documents.md.",
       "slug": "catalog/skills/codi-content-factory",
       "category": "Content Creation",
       "userInvocable": true,
@@ -303,23 +317,8 @@
     },
     {
       "type": "skill",
-      "name": "codi-daily-log",
-      "description": "Resume daily work context or log today's work summary. Use when starting a new session, checking what was worked on, or recording end-of-day progress. Also activate on /open_day or /close_day.",
-      "slug": "catalog/skills/codi-daily-log",
-      "category": "Workflow",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
       "name": "codi-debugging",
-      "description": "First-line debugging with root cause analysis. Use when investigating bugs, test failures, unexpected behavior, or build failures. Enforces root cause before any fix. Also activate on /codi-check or when stuck on an error.",
+      "description": "Root-cause debugging with tiered escalation. Phases 1-4 = first-line workflow (Root Cause → Pattern → Hypothesis → Implementation). Phase 5 = MCP-powered deep diagnosis when standard phases fail (code-graph, docs search, sequential thinking, reasoning-confirmation-execution loop). Use when investigating a bug, test failure, crash, exception, unexpected behavior, build failure, integration issue, flaky test, test pollution, or production incident. Also activate for phrases like \"why is X broken\", \"can't figure out why\", \"debug this\", \"error investigation\", \"stack trace\", \"root cause\", \"stuck on this error\", \"multiple attempts failed\", \"deep diagnosis\", \"MCP investigation\", \"sequential thinking\", and on /codi-check. Enforces root cause before any fix — no fixes may be proposed until Phase 1 investigation is complete. Do NOT activate for writing new code or features (use codi-plan-writer), planning architecture (use codi-brainstorming), or running tests without a failure to investigate (use codi-test-suite).",
       "slug": "catalog/skills/codi-debugging",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -333,23 +332,8 @@
     },
     {
       "type": "skill",
-      "name": "codi-deck-engine",
-      "description": "HTML slide deck generator with brand token integration. Use when the user needs a self-contained HTML presentation with navigation, animations, and PDF export. Also activate for pitch decks or technical presentations needing brand tokens.",
-      "slug": "catalog/skills/codi-deck-engine",
-      "category": "Document Generation",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
       "name": "codi-dev-docs-manager",
-      "description": "Codi self-documentation skill. Use when building, updating, or checking Codi docs. Also activate for stale documentation, docs site builds, or skill catalog HTML generation.",
+      "description": "Codi self-documentation skill (for Codi contributors only). Use when building, updating, regenerating, or checking Codi's own docs site. Also activate for phrases like \"regenerate docs\", \"are the docs stale\", \"update the docs\", \"rebuild docs site\", \"validate docs freshness\", \"skill catalog\", \"pre-release doc sweep\", or when the user runs \\`codi docs --generate\\` / \\`--validate\\`. Maintains 20 auto-generated sections across artifacts.md, configuration.md, architecture.md, presets.md, and README.md. Do NOT activate for consumer project documentation (use codi-project-documentation), branded reports or proposals (use codi-content-factory), or user-facing tutorials.",
       "slug": "catalog/skills/codi-dev-docs-manager",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -364,7 +348,7 @@
     {
       "type": "skill",
       "name": "codi-dev-e2e-testing",
-      "description": "End-to-end validation of the codi installation. Use when asked to test or audit the full codi feature set — artifacts, presets, hooks, verification, and commit workflow — in a clean test project.",
+      "description": "End-to-end validation of the Codi installation (for Codi contributors). Use when the user asks to test or audit the full Codi feature set — artifacts, presets, hooks, verification, commit workflow, MCP, pre-commit discipline — in a clean test project. Also activate for phrases like \"validate codi installation\", \"e2e sweep\", \"full feature test\", \"release validation\", \"regression sweep\", \"system test\", \"Codi installation audit\". Do NOT activate for testing a single skill in isolation (use codi-test-suite), consumer application e2e (use codi-webapp-testing), or unit test generation (use codi-tdd).",
       "slug": "catalog/skills/codi-dev-e2e-testing",
       "category": "Code Quality",
       "userInvocable": true,
@@ -379,7 +363,7 @@
     {
       "type": "skill",
       "name": "codi-dev-operations",
-      "description": "Unified codi operations skill. Use when managing rules, skills, agents, configuration, verification, or troubleshooting codi setup.",
+      "description": "Unified Codi operations skill. Use when the user wants to add, update, or remove rules, skills, or agents; configure flags, presets, or MCP servers; run \\`codi generate\\`, \\`add\\`, \\`update\\`, \\`verify\\`, \\`doctor\\`, \\`validate\\`, or \\`preset\\` commands; resolve \\`generate\\` exit-2 conflicts; check drift; clean or revert backups; or follow the self-dev clean + reinstall flow for source-layer edits. Also activate for phrases like \"codi generate didn't propagate\", \"my source edit isn't showing up\", \"three-layer pipeline\", \"conflict resolution\". Do NOT activate for writing a new skill from scratch (use codi-skill-creator), creating a new rule (use codi-rule-creator), or scaffolding a new agent (use codi-agent-creator) — those have their own lifecycle workflows.",
       "slug": "catalog/skills/codi-dev-operations",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -393,38 +377,8 @@
     },
     {
       "type": "skill",
-      "name": "codi-diagnostics",
-      "description": "MCP-powered diagnosis for escalated errors. Use when standard debugging has not resolved the issue, or when structured MCP analysis is needed. Not the first-line debugging tool — start with codi-debugging.",
-      "slug": "catalog/skills/codi-diagnostics",
-      "category": "Developer Tools",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
-      "name": "codi-doc-engine",
-      "description": "Document generation engine for branded reports, proposals, one-pagers, and case studies. Use when the user needs a formatted document — HTML with print CSS for PDF export, optional pandoc DOCX. Integrates with Codi brand artifacts.",
-      "slug": "catalog/skills/codi-doc-engine",
-      "category": "Document Generation",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
       "name": "codi-docx",
-      "description": "Use when creating, editing, or working with Word documents (.docx). Also activate when extracting content, adding tracked changes, comments, or images, or producing reports, memos, and letters as .docx. Do NOT activate for PDFs or spreadsheets.",
+      "description": "Create, edit, read, or analyze Word documents (.docx). Use when the user mentions \"Word doc\", \"Word document\", \".docx\", \"convert doc to docx\", or any .docx workflow. Also activate when adding tracked changes, accepting or rejecting changes, adding comments, inserting images, extracting text or tables from a .docx, producing reports, memos, letters, or templates as Word files, or generating a branded DOCX with design tokens. Handles unpack → edit XML → pack for existing docs, or docx-js/python-docx for new docs. Do NOT activate for PDF files (use codi-pdf), spreadsheets (use codi-xlsx), PowerPoint files (use codi-pptx), or plain Markdown docs (use codi-project-documentation).",
       "slug": "catalog/skills/codi-docx",
       "category": "File Format Tools",
       "userInvocable": true,
@@ -439,7 +393,7 @@
     {
       "type": "skill",
       "name": "codi-evidence-gathering",
-      "description": "Structured investigation before proposing changes. Use when you need to gather concrete evidence about actual vs intended behavior before suggesting a fix, evaluating an audit item, or validating a step. Called by guided-execution and audit-fix, but also usable standalone for any \"investigate X before we change it\" task.",
+      "description": "Structured investigation before proposing changes. Use when you need to gather concrete evidence about actual vs intended behavior before suggesting a fix, evaluating an audit item, or validating a step. Also activate for phrases like \"gather evidence\", \"investigate before fixing\", \"actual vs intended behavior\", \"structured investigation\", \"verify my assumption\", \"check before proposing\", \"investigate X before we change it\". Called by codi-audit-fix and codi-guided-execution, also usable standalone. Do NOT activate when you already have fresh, direct tool output from the current session, when the user wants to write new code (use codi-plan-writer), or when the investigation is already complete and a fix is the next step.",
       "slug": "catalog/skills/codi-evidence-gathering",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -454,7 +408,7 @@
     {
       "type": "skill",
       "name": "codi-frontend-design",
-      "description": "Use when the user asks to build web components, pages, or UI interfaces. Also activate when styling or beautifying any web application. Generates distinctive, production-grade frontends and avoids generic AI aesthetics.",
+      "description": "Distinctive, production-grade frontend interfaces. Use when the user asks to build a website, landing page, dashboard, hero section, navbar, or any React / Vue / HTML component. Also activate when styling, restyling, or beautifying an existing web app, redesigning a UI, setting up a design system, using shadcn/ui components, or working on CSS styling. Also trigger for phrases like \"beautify this app\", \"make this look better\", \"redesign this page\", \"elevate the UI\", \"design system\", \"hero section\". Avoids generic AI aesthetics (overused fonts like Inter / Roboto, purple gradients on white, predictable layouts). Do NOT activate for slide decks or presentations (use codi-content-factory or codi-pptx), static posters / album covers (use codi-canvas-design), multi-component claude.ai artifacts (use codi-claude-artifacts-builder), or PDF documents (use codi-content-factory).",
       "slug": "catalog/skills/codi-frontend-design",
       "category": "Creative and Design",
       "userInvocable": true,
@@ -469,7 +423,7 @@
     {
       "type": "skill",
       "name": "codi-graph-sync",
-      "description": "Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Choose full re-index for major changes or incremental update for recent edits.",
+      "description": "Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Also activate for phrases like \"reindex repo\", \"refresh graph\", \"update code graph\", \"graph is out of date\", \"graph-code is stale\", or on /update_graph and /index_graph. Choose full re-index for major refactors / first-time indexing; choose incremental update for routine post-edit refreshes. Do NOT activate for querying the graph (use codi-codebase-explore) or for regular code edits that do not require fresh graph state.",
       "slug": "catalog/skills/codi-graph-sync",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -484,7 +438,7 @@
     {
       "type": "skill",
       "name": "codi-guided-execution",
-      "description": "Collaborative step-by-step execution for first-time technical processes. Use when the user wants to perform a setup, configuration, infrastructure task, deployment, or operational workflow for the first time and needs structured guidance with documentation at each step. Agent and user work as a team: agent reasons, plans, and executes what it can; user performs actions that require credentials, browser access, or external systems.",
+      "description": "Collaborative step-by-step execution for first-time technical processes. Use when the user wants to perform a setup, configuration, infrastructure task, deployment, or operational workflow for the first time and needs structured guidance with documentation at each step. Also activate for phrases like \"first-time setup\", \"step by step\", \"walk me through\", \"guide me through\", \"OAuth configuration\", \"cloud provider setup\", \"CI/CD setup\", \"interactive deployment\", \"configure from scratch\". Agent and user work as a team: agent reasons, plans, and executes what it can; user performs actions that require credentials, browser access, or external systems. Every completed step produces a written document. Do NOT activate for pure code changes (use codi-plan-execution), audits of existing code (use codi-audit-fix), or design-only tasks (use codi-brainstorming → codi-plan-writer).",
       "slug": "catalog/skills/codi-guided-execution",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -499,7 +453,7 @@
     {
       "type": "skill",
       "name": "codi-guided-qa-testing",
-      "description": "Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Coding agent drives automatable phases, flags human-only phases, and tracks all results in a living QA report document.",
+      "description": "Step-by-step QA testing methodology. Use when the user wants to test, validate, or QA a project systematically. Also activate for phrases like \"QA this project\", \"validate the release\", \"test the whole app\", \"systematic testing\", \"pre-release QA\", \"regression pass\", \"user acceptance testing\", \"UAT\", \"check if everything works\". Coding agent drives automatable [AGENT] phases, flags [HUMAN]-only phases, and tracks all results in a living QA report document. Do NOT activate for running a single test or measuring coverage (use codi-test-suite), or auditing the codi installation itself (use codi-dev-e2e-testing).",
       "slug": "catalog/skills/codi-guided-qa-testing",
       "category": "Code Quality",
       "userInvocable": true,
@@ -513,8 +467,23 @@
     },
     {
       "type": "skill",
+      "name": "codi-html-live-inspect",
+      "description": "Use when the user wants to open a local HTML file or static website in \"live inspect\" mode so the coding agent can see which elements the user is clicking on in real time. Also activate when the user says \"open this html and watch what I click\", \"start html live inspect\", \"inspect this page with me\", \"collaboratory mode for this site\", \"let me select elements in the browser and tell you what they are\", or wants the agent to drive a local web page. Runs a local HTTP server that injects a DOM inspector into every served page, exposes REST endpoints for the agent to read the current selection, recent user interactions, and (optionally) to run JavaScript inside the page.",
+      "slug": "catalog/skills/codi-html-live-inspect",
+      "category": "Developer Tools",
+      "userInvocable": true,
+      "compatibility": [
+        "claude-code",
+        "cursor",
+        "codex",
+        "windsurf",
+        "cline"
+      ]
+    },
+    {
+      "type": "skill",
       "name": "codi-humanizer",
-      "description": "Remove AI writing patterns from generated content. Use when text sounds robotic, formulaic, or AI-generated. Applies a two-pass rewrite to eliminate documented AI tells. Also activate when the user wants text to sound more natural or less stiff.",
+      "description": "Remove AI writing patterns from generated content. Use when the user says text sounds robotic, formulaic, AI-generated, too formal, stiff, corporate, or \"like ChatGPT / Claude\". Also activate for phrases like \"humanize this\", \"sounds too AI\", \"dehumanize AI content\", \"make this natural\", \"remove AI tells\", \"natural tone\", \"strip AI voice\". Applies a two-pass rewrite against 29 documented AI patterns (vocabulary, structure, style, communication, filler) plus a Soul Check for substance and point-of-view. Do NOT activate for writing new content from scratch (use codi-content-factory), code comments (use codi-refactoring or direct edits), translation, or copy-editing for grammar only.",
       "slug": "catalog/skills/codi-humanizer",
       "category": "Content Refinement",
       "userInvocable": true,
@@ -529,7 +498,7 @@
     {
       "type": "skill",
       "name": "codi-internal-comms",
-      "description": "Use when the user needs to write internal communications such as status reports, 3P updates, leadership updates, newsletters, FAQs, or incident reports.",
+      "description": "Write internal communications — status reports, 3P updates (Progress / Plans / Problems), leadership updates, team newsletters, company-wide newsletters, FAQ responses, incident reports, internal memos, internal emails, all-hands summaries, weekly/bi-weekly/monthly updates. Use when the user says \"write the 3P update\", \"draft the newsletter\", \"write the team update\", \"answer this FAQ\", \"internal memo\", \"leadership email\", \"status update for the team\". Follows structured guideline files per comm type. Do NOT activate for external press releases, customer-facing emails, marketing copy (use a copywriting skill), or personal 1:1 communications.",
       "slug": "catalog/skills/codi-internal-comms",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -544,7 +513,7 @@
     {
       "type": "skill",
       "name": "codi-mcp-ops",
-      "description": "MCP (Model Context Protocol) operations. Use when setting up, calling, debugging, or building MCP servers. Also activate when the user mentions mcp.yaml, MCP tools, Model Context Protocol, or connecting external APIs to Claude agents.",
+      "description": "MCP (Model Context Protocol) operations. Use when the user wants to set up, configure, call, debug, or build an MCP server. Also activate for phrases like \"add MCP server\", \"configure MCP\", \"MCP tool call failed\", \"MCP Inspector\", \"stdio transport\", \"http MCP\", \"build custom MCP\", \"connect external API as MCP\", or when the user mentions mcp.yaml, Model Context Protocol, or MCP tools. Handles mcp.yaml config, tool discovery and calling, scaffolding (\\`codi add mcp-server\\`), building custom servers with @modelcontextprotocol/sdk, and distribution via \\`codi generate\\`. Do NOT activate for the Claude API or Anthropic SDK (use codi-claude-api) or generic REST API design (use a general api-designer flow).",
       "slug": "catalog/skills/codi-mcp-ops",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -559,7 +528,7 @@
     {
       "type": "skill",
       "name": "codi-mobile-development",
-      "description": "Mobile development for iOS (SwiftUI/UIKit), Android (Jetpack Compose), and cross-platform (React Native, Flutter, KMP). Use when building, reviewing, or architecting mobile apps. Also activate for mobile testing, accessibility, or store guidelines.",
+      "description": "Mobile development for iOS (SwiftUI / UIKit), Android (Jetpack Compose / XML), and cross-platform (React Native, Flutter, Kotlin Multiplatform). Use when the user is building, reviewing, or architecting a mobile app. Also activate for phrases like \"iOS app\", \"Android app\", \"SwiftUI view\", \"Jetpack Compose screen\", \"@Observable\", \"React Native component\", \"Flutter widget\", \"KMP module\", \"App Store\", \"Play Store\", \"mobile testing\", \"mobile accessibility\", \"mobile performance\", \"deep linking\", \"push notifications\", \"mobile architecture\". Do NOT activate for web UI (use codi-frontend-design), desktop apps, game engines, or pure backend API work.",
       "slug": "catalog/skills/codi-mobile-development",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -589,7 +558,7 @@
     {
       "type": "skill",
       "name": "codi-pdf",
-      "description": "Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.",
+      "description": "PDF processing — read, create, edit, merge, split, rotate, watermark, encrypt, OCR. Use when the user mentions a .pdf file, asks to extract text, tables, or images from a PDF, fill a PDF form, sign a PDF, merge or split PDFs, convert a page range, or make a scanned PDF searchable via OCR. Also activate for phrases like \"PDF to text\", \"extract tables\", \"OCR scanned PDF\", \"fill this form\", \"merge PDFs\", \"rotate pages\", \"add watermark\", \"encrypt PDF\", \"PDF metadata\". Handles both Python (pypdf, pypdfium2) and JavaScript (pdf-lib). Do NOT activate for Word documents (use codi-docx), Excel spreadsheets (use codi-xlsx), HTML-to-PDF rendering from scratch (use codi-content-factory), or plain Markdown docs (use codi-project-documentation).",
       "slug": "catalog/skills/codi-pdf",
       "category": "File Format Tools",
       "userInvocable": true,
@@ -603,9 +572,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-plan-executor",
-      "description": "Sequential plan execution with checkpoints. Use after codi-plan-writer when subagent orchestration is not preferred. Executes tasks inline with mandatory verification at each step. Use codi-subagent-dev instead when subagents are available.",
-      "slug": "catalog/skills/codi-plan-executor",
+      "name": "codi-plan-execution",
+      "description": "Execute an approved implementation plan in one of two modes — INLINE (sequential checkpoint-driven execution by the primary agent) or SUBAGENT (fresh subagent per task with two-stage review). Use after codi-plan-writer produces an approved plan. Always asks the user to pick the mode — never auto-selects. Activates on phrases like \"execute this plan\", \"implement the plan\", \"run the plan\", \"walk through the plan step by step\", \"TDD per task\", \"dispatch subagents for each task\", \"subagent orchestration\", \"two-stage review\", \"plan execution\", \"multi-file implementation\". Do NOT activate without an approved plan (use codi-brainstorming → codi-plan-writer first), for trivial single-file edits, for bug investigation without a fix plan (use codi-debugging), or when the baseline test suite is already failing (fix the baseline first, never execute on red).",
+      "slug": "catalog/skills/codi-plan-execution",
       "category": "Developer Workflow",
       "userInvocable": true,
       "compatibility": [
@@ -619,7 +588,7 @@
     {
       "type": "skill",
       "name": "codi-plan-writer",
-      "description": "Implementation plan generator. Use after brainstorming produces an approved design spec. Breaks the spec into atomic 2-5 minute TDD tasks with exact file paths, complete code, and verification commands. Produces an executable plan document.",
+      "description": "Implementation plan generator. Use after codi-brainstorming produces an approved design spec and the user wants the spec broken into atomic 2-5 minute TDD tasks with exact file paths, complete code, and runnable verification commands. Also activate for phrases like \"break this into tasks\", \"write the plan\", \"plan from spec\", \"TDD task breakdown\", \"atomic tasks\", \"implementation task list\", \"turn this spec into an execution plan\". Produces an executable plan document at \\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature>-impl.md\\`. Do NOT activate without an approved spec (use codi-brainstorming first), for executing an existing plan (use codi-plan-execution), or for single-file edits that don't warrant a plan.",
       "slug": "catalog/skills/codi-plan-writer",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -634,7 +603,7 @@
     {
       "type": "skill",
       "name": "codi-pptx",
-      "description": "Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations.",
+      "description": "Create, edit, or read PowerPoint (.pptx) files. Use when the user mentions a .pptx file, \"deck\", \"slides\", \"presentation\", \"PowerPoint\", \"pitch deck\", \"investor deck\", \"sales deck\", \"keynote file\", or when the user wants to extract speaker notes, insert a slide, edit a deck, or build a branded deck. Also activate for phrases like \"update slide N\", \"add a slide to the deck\", \"pull text from the pptx\", \"combine two decks\". Stack: python-pptx + pptxgenjs via runtime-detected ts/python scripts. Do NOT activate for PDF slide exports (use codi-pdf), HTML slide decks (use codi-content-factory), Word documents (use codi-docx), or Excel spreadsheets (use codi-xlsx).",
       "slug": "catalog/skills/codi-pptx",
       "category": "File Format Tools",
       "userInvocable": true,
@@ -649,7 +618,7 @@
     {
       "type": "skill",
       "name": "codi-preset-creator",
-      "description": "Guided creation of Codi presets. Use when the user wants to create, package, or scaffold a new preset for sharing rules, skills, and configurations.",
+      "description": "Guided creation of Codi presets. Use when the user wants to create, package, scaffold, fork, share, publish, or customize a Codi preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs. Also activate for phrases like \"bundle my rules and skills\", \"make a preset for my team\", \"org-wide preset\", \"fork the balanced preset\", \"share preset via ZIP\", \"publish preset to GitHub\". Do NOT activate for installing an existing preset (use \\`codi preset install\\` directly), diffing local vs upstream (use codi-compare-preset), or contributing artifacts back to Codi upstream (use codi-artifact-contributor).",
       "slug": "catalog/skills/codi-preset-creator",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -664,7 +633,7 @@
     {
       "type": "skill",
       "name": "codi-project-documentation",
-      "description": "Documentation creation and maintenance workflows. Use when writing docs, updating README, generating API docs, creating ADRs, drafting specs, proposals, or decision docs. Also activate when the user mentions writing or structured content authoring.",
+      "description": "Documentation creation and maintenance for consumer projects. Use when the user asks to write or update a README, API reference, OpenAPI spec, ADR, contributing guide, changelog, RFC, spec document, JSDoc, docstrings, or inline code documentation. Also activate for phrases like \"write the README\", \"document this API\", \"technical writing\", \"draft a proposal\", \"write an RFC\", \"author a decision doc\", \"co-author a spec\". Applies the Diataxis framework (tutorial / how-to / reference / explanation). Do NOT activate for branded PDF reports or proposals (use codi-content-factory), Word documents (use codi-docx), slide decks (use codi-content-factory or codi-pptx), or Codi's own self-documentation (use codi-dev-docs-manager).",
       "slug": "catalog/skills/codi-project-documentation",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -679,7 +648,7 @@
     {
       "type": "skill",
       "name": "codi-project-quality-guard",
-      "description": "Use when setting up a new project, auditing project quality infrastructure, or checking for missing CI/CD, pre-commit hooks, linting, testing, security scanning, Docker, or environment config.",
+      "description": "Audit and enforce project quality infrastructure. Use when the user sets up a new project, scaffolds from scratch, audits CI/CD, checks for missing .gitignore / .gitattributes / .editorconfig, adds pre-commit hooks, linting, testing, security scanning, Docker, or environment config. Also activate for phrases like \"project audit\", \"quality infrastructure\", \"pipeline continuity\", \"CI passes locally but not in CI\", \"setup from scratch\", \"new project setup\", \"what's missing in my config\". Covers 9 categories (git / security / pre-commit / Python / TypeScript / testing / CI/CD / Docker / env). Do NOT activate for writing application code (use codi-plan-writer), debugging runtime errors (use codi-debugging), or one-off formatter questions.",
       "slug": "catalog/skills/codi-project-quality-guard",
       "category": "Code Quality",
       "userInvocable": true,
@@ -694,7 +663,7 @@
     {
       "type": "skill",
       "name": "codi-refactoring",
-      "description": "Safe dead code removal and refactoring workflow. Use when removing unused code, consolidating duplicates, or simplifying a module without changing behavior. Classifies safety level and verifies tests after each deletion.",
+      "description": "Safe dead-code removal and behavior-preserving refactoring workflow. Use when the user wants to remove dead code, cleanup unused imports, delete unused exports, consolidate duplicates, DRY up a module, merge near-identical functions, or simplify code without changing behavior. Also activate for phrases like \"remove dead code\", \"cleanup unused\", \"simplify this module\", \"DRY up\", \"delete unused imports\", or when the user runs dead-code detection tools (knip, vulture, deadcode, udeps). Classifies each finding as SAFE / CAUTION / DANGER and re-runs tests after every deletion. Do NOT activate for new features (use codi-plan-writer), bug fixes (use codi-debugging), behavior-changing rewrites (use codi-plan-writer with tests), or performance tuning.",
       "slug": "catalog/skills/codi-refactoring",
       "category": "Code Quality",
       "userInvocable": true,
@@ -709,7 +678,7 @@
     {
       "type": "skill",
       "name": "codi-refine-rules",
-      "description": "Review collected rule feedback and propose targeted improvements one at a time with human approval. Use when asked to improve rules, refine rules, or review rule feedback. Reads observations from .codi/feedback/rules/.",
+      "description": "Review and refine rules from collected feedback. Two modes: REVIEW (read-only summary of \\`.codi/feedback/\\` grouped by artifact with top 3 actions) and REFINE (interactive one-at-a-time approval flow that edits rule files and runs \\`codi generate\\`). Use when the user asks to review collected observations, show accumulated feedback, audit \\`.codi/feedback/\\`, improve rules, refine rules, process rule feedback, apply rule updates, or fix outdated rules. Also activates on /codi-refine-rules or phrases like \"show feedback summary\", \"what's accumulated\", \"review observations\", \"process rule feedback\", \"update outdated rule\". Do NOT activate for creating a brand-new rule (use codi-rule-creator), emitting new observations during work (that happens automatically via codi-rule-feedback), or general quality audits without collected feedback (use codi-compare-preset).",
       "slug": "catalog/skills/codi-refine-rules",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -724,7 +693,7 @@
     {
       "type": "skill",
       "name": "codi-roadmap",
-      "description": "Create a structured roadmap or todo list as a JSON file in docs/roadmaps/. Use when planning features, tracking milestones, or organizing implementation phases. Also activate when the user says 'create a roadmap' or 'plan next steps'.",
+      "description": "Create a structured roadmap or persistent todo list as a JSON file in \\`docs/roadmaps/\\`. Use when the user plans features, tracks milestones, breaks down an epic, organizes phase-based work, or drafts a product roadmap. Also activate for phrases like \"create a roadmap\", \"plan next steps\", \"feature roadmap\", \"Q3 plan\", \"milestone tracking\", \"epic breakdown\", \"phase-based plan\", \"multi-phase rollout\", \"product roadmap\". Output is JSON (priority, status, dependencies). Do NOT activate for in-session task tracking (use TaskCreate), implementation plans (use codi-plan-writer after codi-brainstorming), or daily progress logs (use codi-session-log).",
       "slug": "catalog/skills/codi-roadmap",
       "category": "Planning",
       "userInvocable": true,
@@ -739,7 +708,7 @@
     {
       "type": "skill",
       "name": "codi-rule-creator",
-      "description": "Rule creation workflow. Use when the user asks to create, write, or define a coding rule, standard, or convention. Also activate when the user wants to enforce behavior, set constraints, or establish coding standards.",
+      "description": "Rule creation workflow. Use when the user asks to create, write, define, scaffold, or add a coding rule, standard, or convention. Also activate for phrases like \"add a rule\", \"new coding standard\", \"team coding standard\", \"enforce pattern\", \"project convention\", \"scaffold rule\", \"framework rule\", \"rule for TypeScript/Python/React\". Produces a validated rule with frontmatter + BAD/GOOD examples + measurable criteria. Do NOT activate for creating a skill (use codi-skill-creator), creating an agent (use codi-agent-creator), reviewing existing rule feedback (use codi-refine-rules), or enforcing what a linter/formatter already covers.",
       "slug": "catalog/skills/codi-rule-creator",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -754,7 +723,7 @@
     {
       "type": "skill",
       "name": "codi-rule-feedback",
-      "description": "Rule observation skill. Activates when the agent notices a gap, outdated guidance, or missing example in a loaded rule. Emits a CODI-OBSERVATION marker — the Stop hook collects and structures it automatically.",
+      "description": "Rule observation skill. Activates automatically when the agent notices a gap, outdated guidance, missing example, or user correction related to a loaded rule. Emits an inline \\`[CODI-OBSERVATION: rule | category | text]\\` marker — the Stop hook collects and structures it to \\`.codi/feedback/rules/\\`. Categories: \\`missing-step\\`, \\`outdated-rule\\`, \\`missing-example\\`, \\`user-correction\\`, \\`trigger-miss\\`, \\`trigger-false\\`, \\`wrong-output\\`. Background observer — the agent does not write files. Do NOT emit for single-occurrence anecdotes (require 2+ evidence points), do NOT directly edit rule files (use codi-refine-rules), and do NOT emit during time-critical operations (bug incidents, blocking hot fixes).",
       "slug": "catalog/skills/codi-rule-feedback",
       "category": "Codi Platform",
       "userInvocable": false,
@@ -769,7 +738,7 @@
     {
       "type": "skill",
       "name": "codi-security-scan",
-      "description": "Security analysis workflow. Use when the user wants to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.",
+      "description": "Security analysis workflow. Use when the user wants to audit the codebase for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, dependency CVEs, input-validation gaps, or supply-chain issues. Also activate for phrases like \"audit security\", \"vulnerability scan\", \"check for secrets\", \"CVE scan\", \"SAST\", \"security review\", \"pentest findings\", \"threat model\", \"OWASP audit\", \"supply chain check\". Produces severity-ranked findings (Critical / High / Medium / Low) with actionable fixes. Do NOT activate for general code review (use codi-code-review), fixing a specific bug (use codi-debugging), or project-setup CI/CD scaffolding (use codi-project-quality-guard).",
       "slug": "catalog/skills/codi-security-scan",
       "category": "Code Quality",
       "userInvocable": true,
@@ -783,9 +752,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-session-handoff",
-      "description": "Summarize the current session and prepare a handoff prompt for a new chat. Use when the context window is filling up, switching to a new conversation, or handing off work. Also activate on /session-handoff.",
-      "slug": "catalog/skills/codi-session-handoff",
+      "name": "codi-session-log",
+      "description": "Session log and handoff — unified markdown work journal in \\`docs/sessions/\\`. Three modes. HANDOFF: user is switching to a new chat or context is near limit; writes a dense ready-to-paste handoff markdown file. LOG (close-day): end-of-day summary appended to today's log markdown. RESUME (open-day): start-of-day recap reading the latest session files. Activates on phrases like \"context is full\", \"switch conversation\", \"handoff to next session\", \"wrap up the session\", \"end of day summary\", \"what did I do yesterday\", \"pick up where we left off\", \"/session-handoff\", \"/open_day\", \"/close_day\". Do NOT activate for recovery from repeated in-session agent mistakes (use codi-session-recovery), commit messages (use codi-commit), architecture decision records (use codi-project-documentation), or PR descriptions.",
+      "slug": "catalog/skills/codi-session-log",
       "category": "Workflow",
       "userInvocable": true,
       "compatibility": [
@@ -799,7 +768,7 @@
     {
       "type": "skill",
       "name": "codi-session-recovery",
-      "description": "Error recovery and session health skill. Activate when you have corrected your own mistakes 2 or more times in the current conversation. Produces a diagnostic report analyzing what went wrong, why, and how to prevent it.",
+      "description": "Agent self-diagnosis after repeated mistakes. Activate when you have corrected your own mistakes 2 or more times in the current conversation, when the user flags the same mistake more than once, or when you notice yourself reverting changes or trying a third approach. Also activate for phrases like \"after multiple mistakes\", \"self-diagnosis\", \"stop and reflect\", \"error pattern\", \"session degraded\", \"repeated corrections\", \"context contaminated\". Produces a REVIEW-category diagnostic report under \\`docs/\\` and recommends a context reset. Do NOT activate for a single first-time mistake (just fix and continue), user-reported codebase bugs (use codi-debugging), end-of-day logs (use codi-session-log /close_day), or session handoff to a new chat (use codi-session-log /session-handoff).",
       "slug": "catalog/skills/codi-session-recovery",
       "category": "Code Quality",
       "userInvocable": true,
@@ -814,7 +783,7 @@
     {
       "type": "skill",
       "name": "codi-skill-creator",
-      "description": "Skill creation, improvement, and migration workflow. Use when creating, building, or improving a skill. Also activate when the user mentions evals, skill testing, description optimization, skill packaging, or importing skills from external sources.",
+      "description": "Skill creation, improvement, and migration workflow. Use when the user asks to create, build, scaffold, add, or improve a skill. Also activate for phrases like \"new skill from scratch\", \"add a skill\", \"optimize skill description\", \"tune skill triggers\", \"write SKILL.md\", \"skill evals\", \"skill testing\", \"benchmark skill\", \"package skill\", \"import external skill\", \"migrate skill from <url/path/zip>\", \"security-review a skill\", or on skill.test.json / SKILL.md file mentions. Do NOT activate for creating a rule (use codi-rule-creator), creating an agent (use codi-agent-creator), packaging multiple artifacts as a preset (use codi-preset-creator), or writing general project documentation (use codi-project-documentation).",
       "slug": "catalog/skills/codi-skill-creator",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -828,23 +797,8 @@
     },
     {
       "type": "skill",
-      "name": "codi-skill-feedback-reporter",
-      "description": "Review accumulated skill and rule observations collected in .codi/feedback/. Groups findings by artifact, shows the top 3 worth acting on. Use before running /codi-refine-rules to see what has accumulated.",
-      "slug": "catalog/skills/codi-skill-feedback-reporter",
-      "category": "Codi Platform",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
       "name": "codi-slack-gif-creator",
-      "description": "Use when the user wants to create animated GIFs optimized for Slack. Provides Slack size constraints, validation tools, easing functions, and animation concept guides.",
+      "description": "Create animated GIFs optimized for Slack (custom emoji and message reactions). Use when the user asks to create a Slack GIF, custom Slack emoji, animated emoji, animated reaction, 128x128 GIF, 480x480 GIF, or any looped animation for a Slack channel. Also activate for phrases like \"make an emoji\", \"Slack GIF for #channel\", \"animate this concept for Slack\", \"progress bar GIF\". Provides Slack size constraints (128x128 emoji / 480x480 message), validation tools, easing functions, and PIL drawing helpers. Detects ts/python runtime automatically. Do NOT activate for static images (use codi-canvas-design), generative p5.js art (use codi-algorithmic-art), or screen recordings.",
       "slug": "catalog/skills/codi-slack-gif-creator",
       "category": "Creative and Design",
       "userInvocable": true,
@@ -859,7 +813,7 @@
     {
       "type": "skill",
       "name": "codi-step-documenter",
-      "description": "Step completion document generator. Invoked after each validated step in a guided-execution workflow to produce a structured, reusable guide. Writes to docs/executions/<workflow-name>/. Also usable standalone to document a completed task retroactively.",
+      "description": "Step completion document generator. Invoked after each validated step in a codi-guided-execution workflow to produce a structured, reusable guide under \\`docs/executions/<workflow-name>/\\`. Also usable standalone to document a completed task retroactively. Activate for phrases like \"document this step\", \"write up what we just did\", \"turn this into a reusable procedure\", \"document the completed task\", \"step doc\", \"runbook entry\", \"reproducible guide\". Do NOT activate for README / ADR / general project docs (use codi-project-documentation), branded reports (use codi-content-factory), or daily progress logs (use codi-session-log).",
       "slug": "catalog/skills/codi-step-documenter",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -873,23 +827,8 @@
     },
     {
       "type": "skill",
-      "name": "codi-subagent-dev",
-      "description": "Subagent-driven plan execution. Use after codi-plan-writer produces an implementation plan. Dispatches a fresh subagent per task with two-stage review. Recommended over codi-plan-executor for complex or multi-file tasks.",
-      "slug": "catalog/skills/codi-subagent-dev",
-      "category": "Developer Workflow",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
       "name": "codi-tdd",
-      "description": "Test-Driven Development discipline. Use when implementing any feature, bug fix, refactor, or behavior change. Enforces RED-GREEN-REFACTOR with iron-law verification. Also activate when the user mentions writing tests, fixing a bug, or adding functionality.",
+      "description": "Test-Driven Development discipline. Use when implementing any feature, bug fix, refactor, or behavior change. Enforces RED-GREEN-REFACTOR with iron-law verification (no production code without a failing test first). Also activate for phrases like \"RED-GREEN-REFACTOR\", \"failing test first\", \"test-first\", \"write the test before the code\", \"TDD workflow\", \"implement with tests\", \"write tests as I implement\". Do NOT activate for generating missing tests for existing code without implementation (use codi-test-suite), fixing failing tests when the production code is already correct (use codi-debugging), or audit-style cleanup without behavior change (use codi-refactoring).",
       "slug": "catalog/skills/codi-tdd",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -903,24 +842,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-test-coverage",
-      "description": "Test coverage analysis workflow. Use when measuring coverage, identifying gaps below 80% threshold, or generating missing tests. Detects framework automatically and produces before/after comparison.",
-      "slug": "catalog/skills/codi-test-coverage",
-      "category": "Code Quality",
-      "userInvocable": true,
-      "compatibility": [
-        "claude-code",
-        "cursor",
-        "codex",
-        "windsurf",
-        "cline"
-      ]
-    },
-    {
-      "type": "skill",
-      "name": "codi-test-run",
-      "description": "Detect and run the project test suite, then report results with failure diagnosis. Use when running tests, checking if tests pass, or diagnosing test failures. Also activate when the user says 'run tests' or 'are tests passing'.",
-      "slug": "catalog/skills/codi-test-run",
+      "name": "codi-test-suite",
+      "description": "Unified testing skill with three modes. RUN: detect the framework and execute the test suite, report pass/fail with quick triage. COVERAGE: run with coverage instrumentation, identify files and lines below the 80% threshold, produce a gap report. GENERATE: COVERAGE + generate tests for uncovered code paths (delegates to codi-test-generator and codi-code-reviewer subagents). Auto-detects Jest, Vitest, Pytest, Go, Rust, and .NET. Activates on phrases like \"run the tests\", \"are the tests green\", \"test results\", \"npm test\", \"pytest\", \"go test\", \"cargo test\", \"vitest\", \"code coverage\", \"test gaps\", \"uncovered lines\", \"measure coverage\", \"fill coverage gaps\", \"what's my coverage\". Do NOT activate for writing new feature tests (use codi-tdd), fixing a failing test (use codi-debugging), quality-reviewing existing tests (use codi-code-review), full codi installation audits (use codi-dev-e2e-testing), or multi-phase QA sweeps (use codi-guided-qa-testing).",
+      "slug": "catalog/skills/codi-test-suite",
       "category": "Testing",
       "userInvocable": true,
       "compatibility": [
@@ -934,7 +858,7 @@
     {
       "type": "skill",
       "name": "codi-theme-factory",
-      "description": "Use when the user wants to apply a visual theme to slides, documents, HTML artifacts, or other deliverables. Provides 10 pre-set themes with color palettes and font pairings, or generates a custom theme on demand.",
+      "description": "Apply a visual theme (color palette + font pairing) to slides, documents, HTML artifacts, or other deliverables. Use when the user wants to apply a theme, change colors or fonts, rebrand a deck, re-theme an artifact, or pick from 10 pre-set themes (Ocean Depths, Sunset Boulevard, Forest Canopy, Modern Minimalist, Golden Hour, Arctic Frost, Desert Rose, Tech Innovation, Botanical Garden, Midnight Galaxy). Also activate for phrases like \"apply a theme\", \"change colors\", \"rebrand this deck\", \"font pair\", \"visual theme\", \"theme a slide deck\", \"custom theme from description\". Do NOT activate for a full brand identity system (use codi-brand-creator or codi-codi-brand), a new design from scratch (use codi-canvas-design or codi-frontend-design), or generative art (use codi-algorithmic-art).",
       "slug": "catalog/skills/codi-theme-factory",
       "category": "Creative and Design",
       "userInvocable": true,
@@ -949,7 +873,7 @@
     {
       "type": "skill",
       "name": "codi-verification",
-      "description": "Verification before completion. Use before claiming any task is done, fixed, or passing. Requires fresh evidence — not assumptions. Activate when about to say work is complete, tests pass, or a bug is fixed.",
+      "description": "Verification gate before completion. Use before claiming any task is done, fixed, passing, or complete. Requires fresh evidence (a command run in this session with its output read) — not assumptions or memory. Also activate for phrases like \"about to say done\", \"verify before claim\", \"prove it works\", \"completion gate\", \"fresh evidence\", \"verification check\", \"before marking complete\", and whenever you notice weasel words (\"should pass\", \"probably works\", \"seems correct\", \"looks good\"). Do NOT activate for initial investigation (use codi-evidence-gathering), debugging a specific failure (use codi-debugging), or design / planning phases where nothing is yet implemented.",
       "slug": "catalog/skills/codi-verification",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -964,7 +888,7 @@
     {
       "type": "skill",
       "name": "codi-webapp-testing",
-      "description": "Use when the user wants to test, debug, or automate a local web application using Playwright. Supports verifying frontend functionality, capturing screenshots, and reading browser logs.",
+      "description": "Test, debug, or automate a local web application with Playwright. Use when the user wants to verify frontend functionality, capture screenshots, read browser console logs, check network requests, or drive a local dev server. Also activate for phrases like \"Playwright\", \"local server test\", \"browser automation\", \"screenshot this page\", \"check console logs\", \"test my webapp\", \"automate UI\", \"headless browser\", \"multi-server test\", \"end-to-end UI check\". Runtime-compat helpers manage server lifecycle. Do NOT activate for collaborative local-HTML element inspection (use codi-html-live-inspect), designing a new UI (use codi-frontend-design), generative art sketches (use codi-algorithmic-art), or full multi-phase QA sweeps (use codi-guided-qa-testing).",
       "slug": "catalog/skills/codi-webapp-testing",
       "category": "Code Quality",
       "userInvocable": true,
@@ -979,7 +903,7 @@
     {
       "type": "skill",
       "name": "codi-worktrees",
-      "description": "Git workspace setup for feature development. Use before executing an implementation plan. Evaluates whether a worktree or a simple branch is the right approach, then sets up the workspace accordingly.",
+      "description": "Git workspace setup for feature development. Use before executing an implementation plan, when the user wants a clean workspace, when parallel features need isolation, or when dirty local changes must be preserved. Also activate for phrases like \"git worktree\", \"new branch for feature\", \"workspace isolation\", \"parallel feature work\", \"feature branch setup\", \"before plan-execution\", \"clean workspace\", \"isolate this feature\". Evaluates worktree vs simple branch and sets up the chosen option. Do NOT activate for finishing a branch (use codi-branch-finish), committing changes (use codi-commit), executing the plan itself (use codi-plan-execution), or resolving merge conflicts.",
       "slug": "catalog/skills/codi-worktrees",
       "category": "Developer Workflow",
       "userInvocable": true,
@@ -994,7 +918,7 @@
     {
       "type": "skill",
       "name": "codi-xlsx",
-      "description": "Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations.",
+      "description": "Create, edit, read, or fix spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Use when the user wants to work with Excel, build a financial model, clean tabular data, generate a pivot table, apply formulas, or convert between tabular formats. Also activate for phrases like \"Excel file\", \"spreadsheet\", \"financial model\", \"data cleaning\", \"pivot table\", \"formulas\", \"openpyxl\", \"csv to xlsx\", \"xlsx to csv\", \"messy tabular data\". Handles .xlsx / .xlsm / .csv / .tsv via python (openpyxl) and TypeScript runtimes. Do NOT activate for Word documents (use codi-docx), PDF files (use codi-pdf), PowerPoint decks (use codi-pptx), branded HTML reports (use codi-content-factory), or Google Sheets API integrations (use a gspread / Sheets API flow).",
       "slug": "catalog/skills/codi-xlsx",
       "category": "File Format Tools",
       "userInvocable": true,
@@ -1417,19 +1341,6 @@
         "Bash",
         "WebFetch",
         "WebSearch"
-      ],
-      "model": "inherit"
-    },
-    {
-      "type": "agent",
-      "name": "codi-onboarding-guide",
-      "description": "Use when onboarding new developers. Explores the codebase and produces a concise guide covering architecture, key modules, conventions, and local setup steps.",
-      "slug": "catalog/agents/codi-onboarding-guide",
-      "tools": [
-        "Read",
-        "Grep",
-        "Glob",
-        "Bash"
       ],
       "model": "inherit"
     },

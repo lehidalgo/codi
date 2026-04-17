@@ -158,7 +158,7 @@ export const BACKUPS_DIR = "backups";
 
 // --- Supported platforms ---
 /** Agent platform IDs — single source of truth for compatibility fields. */
-export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline"] as const;
+export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline", "copilot"] as const;
 /** YAML-ready inline list for template interpolation. */
 export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
 
@@ -306,3 +306,11 @@ export const MAX_COMPONENT_LINES = 150;
 export const PROJECT_CONTEXT_START = "<!-- codi:project-context:start -->";
 /** Closing HTML comment marker that delimits the injected project-context block. */
 export const PROJECT_CONTEXT_END = "<!-- codi:project-context:end -->";
+/**
+ * Anchor marker emitted at the top of every adapter instruction file.
+ * The onboarding skill/playbook replaces this anchor with a
+ * `<!-- codi:project-context:start --> ... <!-- codi:project-context:end -->`
+ * block. `codi generate` preserves that block across regenerations by
+ * re-inserting it in place of this anchor on the next run.
+ */
+export const PROJECT_CONTEXT_ANCHOR = "<!-- codi:project-context:insert-here -->";

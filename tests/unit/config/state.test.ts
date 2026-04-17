@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { StateManager } from "#src/core/config/state.js";
 import type { StateData, GeneratedFileState } from "#src/core/config/state.js";
 import { hashContent } from "#src/utils/hash.js";
@@ -167,9 +167,7 @@ describe("StateManager", () => {
       expect(readResult.ok).toBe(true);
       if (!readResult.ok) return;
       expect(readResult.data.hooks).toHaveLength(1);
-      expect(readResult.data.hooks[0]!.path).toBe(
-        `.git/hooks/${PROJECT_NAME}-secret-scan.mjs`,
-      );
+      expect(readResult.data.hooks[0]!.path).toBe(`.git/hooks/${PROJECT_NAME}-secret-scan.mjs`);
     });
 
     it("replaces previous hooks on update", async () => {
@@ -326,9 +324,7 @@ describe("StateManager", () => {
       if (!result.ok) return;
       expect(result.data).toHaveLength(1);
       expect(result.data[0]!.status).toBe("drifted");
-      expect(result.data[0]!.expectedHash).toBe(
-        hashContent("original content"),
-      );
+      expect(result.data[0]!.expectedHash).toBe(hashContent("original content"));
     });
 
     it("detects missing preset artifacts", async () => {
@@ -417,6 +413,125 @@ describe("StateManager", () => {
       if (!result.ok) return;
       expect(result.data).toHaveLength(1);
       expect(result.data[0]!.status).toBe("missing");
+    });
+  });
+
+  describe("detectOrphans + deleteOrphans", () => {
+    async function seedFile(relPath: string, content: string): Promise<string> {
+      const fullPath = path.join(tmpDir, relPath);
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, content, "utf-8");
+      return fullPath;
+    }
+
+    function stateEntry(relPath: string, content: string): GeneratedFileState {
+      return {
+        path: relPath,
+        sourceHash: "src",
+        generatedHash: hashContent(content),
+        sources: ["manifest.yaml"],
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    it("returns a clean orphan when the file exists unchanged and is no longer generated", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      await seedFile(".claude/skills/foo/scripts/server.cjs", "keep-me");
+      await mgr.updateAgentsBatch({
+        "claude-code": [stateEntry(".claude/skills/foo/scripts/server.cjs", "keep-me")],
+      });
+
+      const result = await mgr.detectOrphans({ "claude-code": [] });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.clean).toHaveLength(1);
+      expect(result.data.drifted).toHaveLength(0);
+      expect(result.data.clean[0]!.path).toBe(".claude/skills/foo/scripts/server.cjs");
+    });
+
+    it("returns a drifted orphan when the file was user-edited after generation", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      await seedFile(".claude/skills/foo/README.md", "user-edited");
+      // State records the original hash of "original", but disk now has "user-edited"
+      await mgr.updateAgentsBatch({
+        "claude-code": [stateEntry(".claude/skills/foo/README.md", "original")],
+      });
+
+      const result = await mgr.detectOrphans({ "claude-code": [] });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.clean).toHaveLength(0);
+      expect(result.data.drifted).toHaveLength(1);
+    });
+
+    it("treats already-missing files as clean (state gets trimmed)", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      // Never write the file to disk
+      await mgr.updateAgentsBatch({
+        "claude-code": [stateEntry(".claude/skills/foo/gone.txt", "ghost")],
+      });
+
+      const result = await mgr.detectOrphans({ "claude-code": [] });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.clean).toHaveLength(1);
+      expect(result.data.drifted).toHaveLength(0);
+    });
+
+    it("does not report files that are still in the next generation", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      await seedFile(".claude/skills/foo/SKILL.md", "content");
+      await mgr.updateAgentsBatch({
+        "claude-code": [stateEntry(".claude/skills/foo/SKILL.md", "content")],
+      });
+
+      const result = await mgr.detectOrphans({
+        "claude-code": [stateEntry(".claude/skills/foo/SKILL.md", "content")],
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.clean).toHaveLength(0);
+      expect(result.data.drifted).toHaveLength(0);
+    });
+
+    it("deleteOrphans unlinks files and prunes empty parent directories", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const full = await seedFile(".claude/skills/foo/scripts/nested/server.cjs", "bye");
+      await mgr.updateAgentsBatch({
+        "claude-code": [stateEntry(".claude/skills/foo/scripts/nested/server.cjs", "bye")],
+      });
+
+      const orphans = await mgr.detectOrphans({ "claude-code": [] });
+      expect(orphans.ok).toBe(true);
+      if (!orphans.ok) return;
+
+      const deleted = await mgr.deleteOrphans(orphans.data.clean);
+      expect(deleted).toEqual([".claude/skills/foo/scripts/nested/server.cjs"]);
+
+      // File is gone
+      await expect(fs.access(full)).rejects.toThrow();
+      // And the now-empty scripts/nested and scripts/ directories were pruned
+      await expect(
+        fs.access(path.join(tmpDir, ".claude/skills/foo/scripts/nested")),
+      ).rejects.toThrow();
+      await expect(fs.access(path.join(tmpDir, ".claude/skills/foo/scripts"))).rejects.toThrow();
+      // But the skill directory itself still exists (because it was empty of generated files)
+      // Actually it too is empty and should have been pruned. Verify directory-up pruning stops
+      // at the project root — in this test we don't seed any other files so it may climb all the way
+      // to tmpDir itself, which is fine. What we care about is that nothing below the skill survives.
+    });
+
+    it("deleteOrphans is idempotent when the file is already gone", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      // Set up state with a ghost file
+      await mgr.updateAgentsBatch({
+        "claude-code": [stateEntry(".claude/skills/foo/ghost.txt", "never-written")],
+      });
+
+      const deleted = await mgr.deleteOrphans([
+        stateEntry(".claude/skills/foo/ghost.txt", "never-written"),
+      ]);
+      expect(deleted).toEqual([".claude/skills/foo/ghost.txt"]);
     });
   });
 });

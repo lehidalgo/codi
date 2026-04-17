@@ -3,42 +3,55 @@ import {
   PROJECT_DIR,
   PROJECT_NAME,
   PROJECT_REPO,
-  PROJECT_URL,
   PLATFORM_CATEGORY,
   SUPPORTED_PLATFORMS_YAML,
 } from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Use when contributing artifacts to GitHub or sharing them as ZIP packages. Covers GitHub CLI setup, PR creation, ZIP export, and manual workflows. Also activate when the user says 'share my skill', 'contribute to Codi', or 'open a PR with my rule'.
+description: |
+  Contribute or share custom ${PROJECT_NAME} artifacts (rules, skills, agents,
+  commands). Use when the user wants to open a PR to the ${PROJECT_NAME} repo,
+  submit a PR to a team preset repository, share artifacts as a ZIP package,
+  publish an agent or rule, push a preset to a custom repo, fork and PR, or
+  set up GitHub CLI / GitHub MCP for contributions. Also activate for phrases
+  like "share my skill", "contribute to ${PROJECT_NAME}", "open a PR with my
+  rule", "publish my agent", "export preset", "send this to the ${PROJECT_NAME}
+  repo". Do NOT activate for ordinary code commits, installing a preset
+  (use ${PROJECT_NAME}-preset-creator or \\\`${PROJECT_CLI} preset install\\\` directly), or releasing a
+  package to npm.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 13
 ---
 
-# {{name}}
+# {{name}} — Artifact Contributor
 
-Help the user contribute their custom artifacts (rules, skills, agents, commands) back to the official ${PROJECT_NAME} project or share them privately with their team.
+Help the user contribute their custom artifacts (rules, skills, agents,
+commands) back to the official ${PROJECT_NAME} project or share them
+privately with their team.
 
 ## When to Activate
 
-- User wants to contribute a rule, skill, agent, or command back to the ${PROJECT_NAME} project
+- User wants to contribute a rule, skill, agent, or command to ${PROJECT_NAME} or any GitHub repo
 - User asks how to share artifacts with the community or their team
-- User wants to open a pull request to the ${PROJECT_NAME} repository or any other GitHub repo
-- User wants to contribute presets to a custom or team GitHub repository
+- User wants to open a pull request, submit a PR, or fork-and-PR an artifact
+- User wants to push a preset to a custom or team repository
 - User asks to export artifacts as a ZIP for private sharing
-- User needs help setting up GitHub CLI or GitHub MCP for contributions
+- User needs help setting up GitHub CLI or the GitHub MCP server
 
-## Step 1: Prerequisites
+## Skip When
 
-**[CODING AGENT]** Check prerequisites before proceeding.
+- User wants to commit ordinary code (use the commit skill)
+- User wants to **install** a preset, not contribute one (use \\\`${PROJECT_CLI} preset install <path>\\\`)
+- User wants to publish an npm package or tag a release (not in scope)
 
-### GitHub CLI Authentication
+## Step 1 — Prerequisites
 
-Check if the GitHub CLI is installed and authenticated:
+**[CODING AGENT]** Check the GitHub CLI is installed and authenticated:
 
 \\\`\\\`\\\`bash
 gh auth status
@@ -47,35 +60,15 @@ gh auth status
 If not authenticated, guide the user:
 
 \\\`\\\`\\\`bash
-# Install GitHub CLI (macOS)
-brew install gh
-
-# Authenticate with GitHub
-gh auth login
-# Select: GitHub.com → HTTPS → Login with browser
+brew install gh         # macOS — substitute for other OSes
+gh auth login           # GitHub.com → HTTPS → Login with browser
 \\\`\\\`\\\`
 
-### GitHub MCP Server (Optional — enhances workflow)
+If the user's agent supports MCP, the GitHub MCP server is an optional
+enhancement — see \\\`\${CLAUDE_SKILL_DIR}[[/references/github-mcp.md]]\\\`
+for setup and usage.
 
-If the user's AI agent supports MCP, suggest configuring the GitHub MCP server for richer integration:
-
-\\\`\\\`\\\`json
-{
-  "mcpServers": {
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<token>"
-      }
-    }
-  }
-}
-\\\`\\\`\\\`
-
-The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://github.com/settings/tokens
-
-## Step 2: Identify What to Contribute
+## Step 2 — Identify What to Contribute
 
 **[CODING AGENT]** List the user's custom artifacts:
 
@@ -83,154 +76,102 @@ The token needs \\\`repo\\\` and \\\`read:org\\\` scopes. Create at: https://git
 ls ${PROJECT_DIR}/rules/ ${PROJECT_DIR}/skills/ ${PROJECT_DIR}/agents/ 2>/dev/null
 \\\`\\\`\\\`
 
-Help the user identify:
-- Custom rules, skills, or agents they created or improved
-- Artifacts with \\\`managed_by: user\\\` (user-created) or \\\`managed_by: ${PROJECT_NAME}\\\` (improved built-in)
-- Artifacts that have been tested and proven useful in real workflows
+Help the user pick artifacts that:
 
-## Step 3: Choose Contribution Method
+- Were created or meaningfully improved by them
+- Have \\\`managed_by: user\\\` (user-created) or \\\`managed_by: ${PROJECT_NAME}\\\` (improved built-in)
+- Have been tested and proven useful in real workflows
 
-**[CODING AGENT]** Present options and execute the chosen method.
+## Step 3 — Choose Contribution Method
 
-### Option A: Interactive CLI (Recommended)
+**[CODING AGENT]** Present these options and execute the chosen path.
+
+### Option A — Interactive CLI (default)
 
 \\\`\\\`\\\`bash
 ${PROJECT_CLI} contribute
 \\\`\\\`\\\`
 
-The wizard will:
-1. Discover all artifacts in \\\`${PROJECT_DIR}/\\\`
-2. Present a multi-select list for choosing which to contribute
-3. Offer two distribution methods:
-   - **Open PR to a GitHub repository** — requires GitHub CLI auth
-   - **Export as ZIP** — creates a re-importable preset package
+The wizard discovers all artifacts in \\\`${PROJECT_DIR}/\\\`, presents a
+multi-select list, and offers two distribution methods:
 
-For the PR method, the wizard asks which repo to target:
-- The official ${PROJECT_NAME} repository (default)
-- Repos detected from installed presets (contribute back to source)
-- Any custom repository via free text input
+- **Open PR to a GitHub repository** (requires GitHub CLI auth)
+- **Export as ZIP** (creates a re-importable preset package)
 
-To skip the interactive prompt, pass flags directly:
+For the PR method, the wizard asks which repo to target: the official
+${PROJECT_NAME} repo (default), a repo detected from installed presets,
+or any custom repository.
+
+Skip the prompt with flags:
 
 \\\`\\\`\\\`bash
-# Contribute to the official codi repo (default)
 ${PROJECT_CLI} contribute --repo ${PROJECT_REPO} --branch develop
-
-# Contribute to a custom or team repository
 ${PROJECT_CLI} contribute --repo myorg/shared-presets
-
-# Contribute to a specific branch
 ${PROJECT_CLI} contribute --repo myorg/shared-presets --branch main
 \\\`\\\`\\\`
 
-The PR method forks the target repo (if needed), pushes a branch, and opens a PR.
+### Option B — Manual PR (advanced)
 
-### Option B: Manual PR (Advanced Users)
+See \\\`\${CLAUDE_SKILL_DIR}[[/references/manual-pr.md]]\\\` for the full
+clone → branch → template conversion → push → \\\`gh pr create\\\` flow.
 
-1. Clone the official ${PROJECT_NAME} repository:
-   \\\`\\\`\\\`bash
-   git clone ${PROJECT_URL}.git /tmp/${PROJECT_NAME}-contrib
-   cd /tmp/${PROJECT_NAME}-contrib
-   \\\`\\\`\\\`
-
-2. Create a contribution branch:
-   \\\`\\\`\\\`bash
-   git checkout -b contrib/add-my-artifact
-   \\\`\\\`\\\`
-
-3. Convert your artifact to a TypeScript template:
-   - Rules go in \\\`src/templates/rules/{name}.ts\\\`
-   - Skills go in \\\`src/templates/skills/{name}.ts\\\`
-   - Agents go in \\\`src/templates/agents/{name}.ts\\\`
-
-4. Export as a template string:
-   \\\`\\\`\\\`typescript
-   export const template = \\\\\\\`---
-   name: {{name}}
-   description: Your artifact description
-   managed_by: ${PROJECT_NAME}
-   ---
-
-   # {{name}}
-
-   Your artifact content here...
-   \\\\\\\`;
-   \\\`\\\`\\\`
-
-5. Register in the corresponding \\\`index.ts\\\` file
-
-6. Push to your GitHub account and open a PR:
-   \\\`\\\`\\\`bash
-   git remote add user https://github.com/YOUR_USERNAME/${PROJECT_NAME}.git
-   git push user contrib/add-my-artifact
-   gh pr create --repo ${PROJECT_REPO} --base develop \\\\
-     --title "feat: add my-artifact template" \\\\
-     --body "Description of the contribution"
-   \\\`\\\`\\\`
-
-### Option C: Private Sharing (ZIP)
+### Option C — Private Sharing (ZIP)
 
 \\\`\\\`\\\`bash
-${PROJECT_CLI} contribute
-# Select artifacts → choose "Export as ZIP"
+${PROJECT_CLI} contribute      # Select artifacts → choose "Export as ZIP"
 \\\`\\\`\\\`
 
-The ZIP contains a complete preset package with \\\`preset.yaml\\\` manifest. Recipients install with:
+Recipients install with:
 
 \\\`\\\`\\\`bash
 ${PROJECT_CLI} preset install ./contribution.zip
 \\\`\\\`\\\`
 
-### Option D: Using GitHub MCP Tools
+### Option D — GitHub MCP tools
 
-If the GitHub MCP server is configured, you can assist the contribution directly:
+See \\\`\${CLAUDE_SKILL_DIR}[[/references/github-mcp.md]]\\\` for the
+\\\`mcp__github__*\\\` sequence (get_me → create_repository → create_branch
+→ push_files → create_pull_request).
 
-1. Check authentication: \\\`mcp__github__get_me\\\`
-2. Create a fork or repo: \\\`mcp__github__create_repository\\\`
-3. Create a branch: \\\`mcp__github__create_branch\\\`
-4. Push files: \\\`mcp__github__push_files\\\`
-5. Open PR: \\\`mcp__github__create_pull_request\\\` with base \\\`develop\\\`
-
-## Step 4: Quality Checklist
+## Step 4 — Quality Checklist
 
 **[CODING AGENT]** Before contributing, verify the artifact:
 
-- [ ] Has valid YAML frontmatter: \\\`name\\\`, \\\`description\\\`, \\\`managed_by\\\`
-- [ ] Uses clear, actionable language with concrete examples
-- [ ] Follows existing template patterns (check built-in templates for reference)
-- [ ] Does NOT contain secrets, API keys, or company-specific information
-- [ ] Has been tested in at least one AI agent (Claude Code, Cursor, etc.)
-- [ ] Uses \\\`{{name}}\\\` placeholder for the artifact name (templates only)
-- [ ] Skills include all skeleton directories: scripts/, references/, assets/, evals/
+- [ ] Valid YAML frontmatter: \\\`name\\\`, \\\`description\\\`, \\\`managed_by\\\`
+- [ ] Clear, actionable language with concrete examples
+- [ ] Follows existing template patterns (cross-check a built-in template)
+- [ ] Contains NO secrets, API keys, tokens, or company-specific information
+- [ ] Tested in at least one AI agent (Claude Code, Cursor, Codex, etc.)
+- [ ] Uses \\\`{{name}}\\\` placeholder where applicable (templates only)
+- [ ] Skeleton directories (\\\`scripts/\\\`, \\\`references/\\\`, \\\`assets/\\\`, \\\`evals/\\\`) are present **only as needed** — empty dirs add noise
 
-## Step 5: Troubleshooting
+## Step 5 — Adapter-Specific Contributions
 
-**[CODING AGENT]** Diagnose and fix based on the symptom below.
+**[CODING AGENT]** When the contribution is a **new adapter** or **adapter
+extension** (e.g., adding a new AI agent platform, extending an existing
+adapter with missing formats), the work has extra requirements beyond a
+standard rule/skill/agent contribution:
 
-### GitHub CLI not authenticated
-\\\`\\\`\\\`bash
-gh auth login
-gh auth status  # Verify
-\\\`\\\`\\\`
+- Official platform specification must be validated before coding
+- A capability matrix is required (platform formats vs. adapter coverage)
+- Path sanitization and YAML injection prevention must be reviewed
+- Test infrastructure must use real file I/O (tmpDir + beforeEach/afterEach)
+- Documentation must stay in sync with implementation
 
-### Cannot push to remote
-The CLI creates a repo on your GitHub account to push the branch. Ensure:
-- You have GitHub CLI authenticated (\\\`gh auth status\\\`)
-- Your account can create public repositories
+Consult \\\`\${CLAUDE_SKILL_DIR}[[/references/adapter-development.md]]\\\`
+for the full adapter contribution checklist and lessons learned from prior
+adapter remediations.
 
-### PR has merge conflicts
-\\\`\\\`\\\`bash
-cd /tmp/${PROJECT_NAME}-contrib
-git fetch origin develop
-git rebase origin/develop
-# Resolve conflicts, then:
-git push user contrib/my-branch --force-with-lease
-\\\`\\\`\\\`
+## Step 6 — Troubleshooting
 
-### ZIP import fails
-Ensure the ZIP was created by \\\`${PROJECT_CLI} contribute\\\` — it must contain a \\\`preset.yaml\\\` manifest at the root or one level deep.
+**[CODING AGENT]** If the contribution stalls, consult
+\\\`\${CLAUDE_SKILL_DIR}[[/references/troubleshooting.md]]\\\` for fixes
+covering auth failures, push errors, PR merge conflicts, ZIP import
+failures, and the source-layer \\\`${PROJECT_CLI} generate\\\` caveat.
 
 ## Related Skills
 
 - **${PROJECT_NAME}-preset-creator** — Create and package a preset before contributing it
+- **${PROJECT_NAME}-dev-operations** — Clean + reinstall + regenerate for source-layer edits
+- **${PROJECT_NAME}-commit** — Commit the PR branch when contributing manually
 `;

@@ -2,16 +2,26 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: "Mobile development for iOS (SwiftUI/UIKit), Android (Jetpack Compose), and cross-platform (React Native, Flutter, KMP). Use when building, reviewing, or architecting mobile apps. Also activate for mobile testing, accessibility, or store guidelines."
+description: |
+  Mobile development for iOS (SwiftUI / UIKit), Android (Jetpack Compose /
+  XML), and cross-platform (React Native, Flutter, Kotlin Multiplatform).
+  Use when the user is building, reviewing, or architecting a mobile app.
+  Also activate for phrases like "iOS app", "Android app", "SwiftUI view",
+  "Jetpack Compose screen", "@Observable", "React Native component",
+  "Flutter widget", "KMP module", "App Store", "Play Store", "mobile
+  testing", "mobile accessibility", "mobile performance", "deep linking",
+  "push notifications", "mobile architecture". Do NOT activate for web UI
+  (use ${PROJECT_NAME}-frontend-design), desktop apps, game engines, or
+  pure backend API work.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 5
 ---
 
-# {{name}}
+# {{name}} — Mobile Development
 
 ## When to Activate
 
@@ -20,6 +30,14 @@ version: 4
 - User needs guidance on SwiftUI, UIKit, Jetpack Compose, or React Native code
 - User wants to review mobile code for platform-specific best practices
 - User asks about mobile testing strategies, accessibility, or app store guidelines
+
+## Skip When
+
+- User wants a web UI or React landing page — use ${PROJECT_NAME}-frontend-design
+- User wants a desktop app (Electron, Tauri, macOS AppKit) — this skill is mobile-only
+- User wants game development — this skill covers apps, not game engines
+- User wants a backend API — mobile clients only; backend has its own flows
+- User wants systematic multi-phase testing (QA sweep) — use ${PROJECT_NAME}-guided-qa-testing
 
 ## Platform Guidelines
 
@@ -123,5 +141,5 @@ version: 4
 
 ## Related Skills
 
-- **${PROJECT_NAME}-e2e-testing** — End-to-end testing strategy for mobile flows
+- **${PROJECT_NAME}-guided-qa-testing** — Systematic multi-phase QA methodology applicable to mobile flows
 `;

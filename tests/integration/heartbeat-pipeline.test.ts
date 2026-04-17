@@ -68,8 +68,11 @@ describe("heartbeat pipeline — skill-observer script", () => {
     );
     await mkdir(tmpDir, { recursive: true });
 
-    // Write the observer script to a temp file so we can run it.
-    scriptPath = join(tmpDir, "skill-observer.cjs");
+    // Write the observer script to .codi/hooks/ (mirrors real deployment layout)
+    // so __dirname-based project root resolution works correctly.
+    const hooksDir = join(tmpDir, `.${PROJECT_NAME}`, "hooks");
+    await mkdir(hooksDir, { recursive: true });
+    scriptPath = join(hooksDir, "skill-observer.cjs");
     await writeFile(scriptPath, buildSkillObserverScript(), { mode: 0o755 });
   });
 

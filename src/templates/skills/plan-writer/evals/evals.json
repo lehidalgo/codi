@@ -45,7 +45,7 @@
     },
     {
       "id": "negative-execute-plan",
-      "description": "Executing an existing plan should trigger plan-executor, not plan-writer",
+      "description": "Executing an existing plan should trigger plan-execution, not plan-writer",
       "prompt": "execute the implementation plan we just wrote",
       "expectations": [
         "Does NOT invoke the plan-writer skill",

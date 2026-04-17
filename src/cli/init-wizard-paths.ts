@@ -144,7 +144,48 @@ async function editPresetFlags(
   return result;
 }
 
-export async function handleZipPath(agents: string[]): Promise<WizardResult | null | symbol> {
+/**
+ * Warn the user when importing a preset on top of an existing install would
+ * replace modified or user-owned artifacts. Returns false if the user cancels.
+ * `managed_by: user` artifacts are preserved by the installer — the warning
+ * is informational for `[modified]` (managed_by: codi with local edits).
+ */
+async function confirmPresetReplace(
+  source: string,
+  existingInstall: ExistingInstallContext,
+): Promise<boolean | symbol> {
+  const inventory = existingInstall.inventory ?? [];
+  const modified = inventory.filter((e) => e.status === "builtin-modified");
+  const userOwned = inventory.filter((e) => e.status === "custom-user");
+
+  p.log.warn(`Importing "${source}" replaces the active preset's artifacts.`);
+  if (modified.length > 0) {
+    p.log.info(
+      `${modified.length} artifact(s) with local modifications will be overwritten:\n` +
+        modified
+          .slice(0, 10)
+          .map((e) => `  • ${e.type}/${e.name}`)
+          .join("\n") +
+        (modified.length > 10 ? `\n  (… and ${modified.length - 10} more)` : ""),
+    );
+  }
+  if (userOwned.length > 0) {
+    p.log.info(`${userOwned.length} custom artifact(s) (managed_by: user) will be preserved.`);
+  }
+  if (modified.length === 0 && userOwned.length === 0) {
+    p.log.info("No modified or custom artifacts detected — safe to replace.");
+  }
+
+  return await wizardConfirm({
+    message: "Proceed with import?",
+    initialValue: modified.length === 0,
+  });
+}
+
+export async function handleZipPath(
+  agents: string[],
+  existingInstall?: ExistingInstallContext,
+): Promise<WizardResult | null | symbol> {
   const zipPath = await p.text({
     message: "Path to preset ZIP file",
     validate: (v) => {
@@ -152,6 +193,15 @@ export async function handleZipPath(agents: string[]): Promise<WizardResult | nu
     },
   });
   if (isBack(zipPath)) return BACK;
+
+  if (existingInstall) {
+    const proceed = await confirmPresetReplace(zipPath as string, existingInstall);
+    if (isBack(proceed)) return BACK;
+    if (!proceed) {
+      p.cancel("Import cancelled.");
+      return null;
+    }
+  }
 
   p.outro("Importing preset from ZIP.");
   return {
@@ -168,11 +218,23 @@ export async function handleZipPath(agents: string[]): Promise<WizardResult | nu
   };
 }
 
-export async function handleGithubPath(agents: string[]): Promise<WizardResult | null | symbol> {
+export async function handleGithubPath(
+  agents: string[],
+  existingInstall?: ExistingInstallContext,
+): Promise<WizardResult | null | symbol> {
   const repo = await p.text({
     message: "GitHub repo (e.g., org/preset-name or github:org/repo@v1.0)",
   });
   if (isBack(repo)) return BACK;
+
+  if (existingInstall) {
+    const proceed = await confirmPresetReplace(repo as string, existingInstall);
+    if (isBack(proceed)) return BACK;
+    if (!proceed) {
+      p.cancel("Import cancelled.");
+      return null;
+    }
+  }
 
   p.outro("Importing preset from GitHub.");
   return {

@@ -187,6 +187,114 @@ describe("handleGithubPath", () => {
   });
 });
 
+describe("handleZipPath — modify-mode overwrite confirmation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsCancel.mockReturnValue(false);
+  });
+
+  it("prompts for confirmation when modified artifacts exist, proceeds on confirm", async () => {
+    mockText.mockResolvedValueOnce("/path/to/preset.zip");
+    mockWizardConfirm.mockResolvedValueOnce(true);
+
+    const existingInstall = {
+      selections: { preset: "balanced", rules: [], skills: [], agents: [], mcpServers: [] },
+      inventory: [
+        {
+          name: "codi-security",
+          type: "rule" as const,
+          status: "builtin-modified" as const,
+          installed: true,
+          managedBy: "codi" as const,
+          installedArtifactVersion: null,
+          hint: "",
+        },
+      ],
+    };
+
+    const result = await handleZipPath(["claude-code"], existingInstall);
+
+    expect(mockWizardConfirm).toHaveBeenCalledTimes(1);
+    expect(result).not.toBeNull();
+    const wizardResult = result as { configMode: string; importSource: string };
+    expect(wizardResult.configMode).toBe("zip");
+    expect(wizardResult.importSource).toBe("/path/to/preset.zip");
+  });
+
+  it("cancels import when user declines overwrite confirmation", async () => {
+    mockText.mockResolvedValueOnce("/path/to/preset.zip");
+    mockWizardConfirm.mockResolvedValueOnce(false);
+
+    const existingInstall = {
+      selections: { preset: "balanced", rules: [], skills: [], agents: [], mcpServers: [] },
+      inventory: [
+        {
+          name: "codi-testing",
+          type: "rule" as const,
+          status: "builtin-modified" as const,
+          installed: true,
+          managedBy: "codi" as const,
+          installedArtifactVersion: null,
+          hint: "",
+        },
+      ],
+    };
+
+    const result = await handleZipPath(["claude-code"], existingInstall);
+
+    expect(mockWizardConfirm).toHaveBeenCalledTimes(1);
+    expect(result).toBeNull();
+  });
+
+  it("skips confirmation when no existing install is passed (fresh install)", async () => {
+    mockText.mockResolvedValueOnce("/path/to/preset.zip");
+
+    const result = await handleZipPath(["claude-code"]);
+
+    expect(mockWizardConfirm).not.toHaveBeenCalled();
+    expect(result).not.toBeNull();
+  });
+});
+
+describe("handleGithubPath — modify-mode overwrite confirmation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsCancel.mockReturnValue(false);
+  });
+
+  it("prompts for confirmation when existing install is provided", async () => {
+    mockText.mockResolvedValueOnce("org/my-preset");
+    mockWizardConfirm.mockResolvedValueOnce(true);
+
+    const existingInstall = {
+      selections: { preset: "balanced", rules: [], skills: [], agents: [], mcpServers: [] },
+      inventory: [],
+    };
+
+    const result = await handleGithubPath(["claude-code"], existingInstall);
+
+    expect(mockWizardConfirm).toHaveBeenCalledTimes(1);
+    expect(result).not.toBeNull();
+    const wizardResult = result as { configMode: string; importSource: string };
+    expect(wizardResult.configMode).toBe("github");
+    expect(wizardResult.importSource).toBe("org/my-preset");
+  });
+
+  it("cancels import when user declines overwrite confirmation", async () => {
+    mockText.mockResolvedValueOnce("org/my-preset");
+    mockWizardConfirm.mockResolvedValueOnce(false);
+
+    const existingInstall = {
+      selections: { preset: "balanced", rules: [], skills: [], agents: [], mcpServers: [] },
+      inventory: [],
+    };
+
+    const result = await handleGithubPath(["claude-code"], existingInstall);
+
+    expect(result).toBeNull();
+  });
+});
+
 describe("handleCustomPath — groupMultiselect messages include counts", () => {
   beforeEach(() => {
     vi.clearAllMocks();

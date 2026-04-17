@@ -1,7 +1,7 @@
 ---
 title: codi-pptx
 description: >
-  Use when the user wants to create, edit, or read a .pptx file. Also activate when the user mentions 'deck', 'slides', or 'presentation', or references a .pptx filename. Do NOT activate for PDF slide exports or HTML presentations.
+  Create, edit, or read PowerPoint (.pptx) files. Use when the user mentions a .pptx file, "deck", "slides", "presentation", "PowerPoint", "pitch deck", "investor deck", "sales deck", "keynote file", or when the user wants to extract speaker notes, insert a slide, edit a deck, or build a branded deck. Also activate for phrases like "update slide N", "add a slide to the deck", "pull text from the pptx", "combine two decks". Stack: python-pptx + pptxgenjs via runtime-detected ts/python scripts. Do NOT activate for PDF slide exports (use codi-pdf), HTML slide decks (use codi-content-factory), Word documents (use codi-docx), or Excel spreadsheets (use codi-xlsx).
 sidebar:
   label: "codi-pptx"
 artifactType: skill
@@ -84,14 +84,22 @@ For branded presentations, a `brand_tokens.json` file provides color palette, fo
 - User needs to extract text, speaker notes, or content from a presentation
 - User needs to combine, split, or convert slide files
 
+## Skip When
+
+- User wants a PDF — use codi-pdf
+- User wants an HTML slide deck (for browser / Content Factory) — use codi-content-factory
+- User wants a Word document — use codi-docx
+- User wants an Excel spreadsheet — use codi-xlsx
+- User wants a branded one-pager / report — use codi-content-factory
+
 
 ## Quick Reference
 
 | Task | Guide |
 |------|-------|
 | Read/analyze content | `python -m markitdown presentation.pptx` |
-| Edit or create from template | Read [editing.md](editing.md) |
-| Create from scratch | Read [pptxgenjs.md](pptxgenjs.md) |
+| Edit or create from template | Read `${CLAUDE_SKILL_DIR}[[/references/editing.md]]` |
+| Create from scratch | Read `${CLAUDE_SKILL_DIR}[[/references/pptxgenjs.md]]` |
 
 ---
 
@@ -112,7 +120,7 @@ python ${CLAUDE_SKILL_DIR}[[/scripts/office/unpack.py]] presentation.pptx unpack
 
 ## Editing Workflow
 
-**Read [editing.md](editing.md) for full details.**
+**Read `${CLAUDE_SKILL_DIR}[[/references/editing.md]]` for full details.**
 
 1. Analyze template with `thumbnail.py`
 2. Unpack → manipulate slides → edit content → clean → pack
@@ -159,7 +167,7 @@ Omit `--tokens` to use Codi default brand. Replace `dark` with `light` for the l
 
 ## Creating from Scratch
 
-**Read [pptxgenjs.md](pptxgenjs.md) for full details.**
+**Read `${CLAUDE_SKILL_DIR}[[/references/pptxgenjs.md]]` for full details.**
 
 Use when no template or reference presentation is available.
 

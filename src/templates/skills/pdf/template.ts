@@ -2,16 +2,27 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user mentions a .pdf file or asks to work with PDFs. Handles reading, extracting text/tables, merging, splitting, rotating, watermarking, creating, filling forms, encrypting, image extraction, and OCR on scanned PDFs.
+description: |
+  PDF processing — read, create, edit, merge, split, rotate, watermark,
+  encrypt, OCR. Use when the user mentions a .pdf file, asks to extract
+  text, tables, or images from a PDF, fill a PDF form, sign a PDF, merge
+  or split PDFs, convert a page range, or make a scanned PDF searchable
+  via OCR. Also activate for phrases like "PDF to text", "extract tables",
+  "OCR scanned PDF", "fill this form", "merge PDFs", "rotate pages", "add
+  watermark", "encrypt PDF", "PDF metadata". Handles both Python (pypdf,
+  pypdfium2) and JavaScript (pdf-lib). Do NOT activate for Word documents
+  (use ${PROJECT_NAME}-docx), Excel spreadsheets (use ${PROJECT_NAME}-xlsx),
+  HTML-to-PDF rendering from scratch (use ${PROJECT_NAME}-content-factory), or
+  plain Markdown docs (use ${PROJECT_NAME}-project-documentation).
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 7
 ---
 
-# PDF Processing Guide
+# {{name}} — PDF
 
 ## When to Activate
 
@@ -20,7 +31,15 @@ version: 4
 - User wants to extract text, tables, or images from a PDF
 - User needs to fill out a PDF form or make a scanned PDF searchable (OCR)
 
-This guide covers essential PDF processing operations using Python libraries and command-line tools. For advanced features, JavaScript libraries, and detailed examples, see REFERENCE.md. If you need to fill out a PDF form, read FORMS.md and follow its instructions.
+## Skip When
+
+- User wants to edit a Word document — use ${PROJECT_NAME}-docx
+- User wants an Excel spreadsheet — use ${PROJECT_NAME}-xlsx
+- User wants to generate a branded PDF from HTML (not manipulate an existing PDF) — use ${PROJECT_NAME}-content-factory
+- User wants plain Markdown documentation — use ${PROJECT_NAME}-project-documentation
+- User wants a PowerPoint deck — use ${PROJECT_NAME}-pptx
+
+This guide covers essential PDF processing operations using Python libraries and command-line tools. For advanced features, JavaScript libraries, and detailed examples, see \\\`\${CLAUDE_SKILL_DIR}[[/references/reference.md]]\\\`. If you need to fill out a PDF form, read \\\`\${CLAUDE_SKILL_DIR}[[/references/forms.md]]\\\` and follow its instructions.
 
 ## Quick Start
 
@@ -325,14 +344,14 @@ Check availability: \\\`which python3 > /dev/null 2>&1\\\` — if Python is not 
 | Create PDFs | reportlab | Canvas or Platypus |
 | Command line merge | qpdf | \\\`qpdf --empty --pages ...\\\` |
 | OCR scanned PDFs | pytesseract | Convert to image first |
-| Fill PDF forms | pdf-lib or pypdf (see FORMS.md) | See FORMS.md |
+| Fill PDF forms | pdf-lib or pypdf | See \\\`\${CLAUDE_SKILL_DIR}[[/references/forms.md]]\\\` |
 
 ## Next Steps
 
-- For advanced pypdfium2 usage, see REFERENCE.md
-- For JavaScript libraries (pdf-lib), see REFERENCE.md
-- If you need to fill out a PDF form, follow the instructions in FORMS.md
-- For troubleshooting guides, see REFERENCE.md
+- For advanced pypdfium2 usage, see \\\`\${CLAUDE_SKILL_DIR}[[/references/reference.md]]\\\`
+- For JavaScript libraries (pdf-lib), see \\\`\${CLAUDE_SKILL_DIR}[[/references/reference.md]]\\\`
+- If you need to fill out a PDF form, follow the instructions in \\\`\${CLAUDE_SKILL_DIR}[[/references/forms.md]]\\\`
+- For troubleshooting guides, see \\\`\${CLAUDE_SKILL_DIR}[[/references/reference.md]]\\\`
 
 ## Related Skills
 

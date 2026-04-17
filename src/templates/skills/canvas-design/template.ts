@@ -2,23 +2,45 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user asks to create a poster, visual art, or a static design piece as a .png or .pdf. Creates original visual designs through a two-step philosophy + canvas approach. Never copies existing artists' work.
+description: |
+  Original static visual design — posters, illustrations, album covers, book
+  covers, editorial spreads, zine pages, print design, magazine layouts, gig
+  posters, minimalist art pieces, brutalist or swiss-design compositions.
+  Use when the user asks for any static .png or .pdf design piece, visual art,
+  or museum-quality design-forward output. Also activate for phrases like
+  "poster", "album cover", "book cover", "editorial design", "print design",
+  "illustration", "design-forward piece", "minimalist art", "brutalist poster",
+  "swiss design". Creates originals through a two-step philosophy + canvas
+  approach. Never copies existing artists' work. Do NOT activate for animated
+  content (use algorithmic-art or slack-gif-creator), data visualization
+  (charts, plots, dashboards), logo design as a brand identity (use
+  brand-creator), or UI components.
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 4
+version: 6
 ---
+
+# {{name}} — Canvas Design
 
 ## When to Activate
 
-- User asks to create a poster, piece of art, or other static visual design
+- User asks to create a poster, album cover, book cover, editorial spread, or other static visual design
 - User wants output as a .png or .pdf file
 - User needs a visually sophisticated design piece for print or digital use
-- Do NOT activate for animated content (use algorithmic-art or slack-gif-creator instead)
+- User mentions brutalist, swiss, minimalist, or museum-quality aesthetics
+- User wants design-forward work that prioritizes visual language over text
 
-These are instructions for creating design philosophies - aesthetic movements that are then EXPRESSED VISUALLY. Output only .md files, .pdf files, and .png files.
+## Skip When
+
+- Animated content (GIFs, motion graphics) — use slack-gif-creator or algorithmic-art
+- Data visualization (charts, plots, dashboards) — use a charting tool
+- Logo as part of a full brand identity system — use brand-creator
+- Web UI components or production frontend — use frontend-design
+
+These are instructions for creating design philosophies — aesthetic movements that are then expressed visually. Output only .md files, .pdf files, and .png files.
 
 Complete this in two steps:
 1. Design Philosophy Creation (.md file)
@@ -119,7 +141,7 @@ With both the philosophy and the conceptual framework established, express it on
 
 To create museum or magazine quality work, use the design philosophy as the foundation. Create one single page, highly visual, design-forward PDF or PNG output (unless asked for more pages). Generally use repeating patterns and perfect shapes. Treat the abstract philosophical design as if it were a scientific bible, borrowing the visual language of systematic observation--dense accumulation of marks, repeated elements, or layered patterns that build meaning through patient repetition and reward sustained viewing. Add sparse, clinical typography and systematic reference markers that suggest this could be a diagram from an imaginary discipline, treating the invisible subject with the same reverence typically reserved for documenting observable phenomena. Anchor the piece with simple phrase(s) or details positioned subtly, using a limited color palette that feels intentional and cohesive. Embrace the paradox of using analytical visual language to express ideas about human experience: the result should feel like an artifact that proves something ephemeral can be studied, mapped, and understood through careful attention. This is true art.
 
-**Text as a contextual element**: Text is always minimal and visual-first, but let context guide whether that means whisper-quiet labels or bold typographic gestures. A punk venue poster might have larger, more aggressive type than a minimalist ceramics studio identity. Most of the time, font should be thin. All use of fonts must be design-forward and prioritize visual communication. Regardless of text scale, nothing falls off the page and nothing overlaps. Every element must be contained within the canvas boundaries with proper margins. Check carefully that all text, graphics, and visual elements have breathing room and clear separation. This is non-negotiable for professional execution. **IMPORTANT: Use different fonts if writing text. Search the \\\`./canvas-fonts\\\` directory. Regardless of approach, sophistication is non-negotiable.**
+**Text as a contextual element**: Text is always minimal and visual-first, but let context guide whether that means whisper-quiet labels or bold typographic gestures. A punk venue poster might have larger, more aggressive type than a minimalist ceramics studio identity. Most of the time, font should be thin. All use of fonts must be design-forward and prioritize visual communication. Regardless of text scale, nothing falls off the page and nothing overlaps. Every element must be contained within the canvas boundaries with proper margins. Check carefully that all text, graphics, and visual elements have breathing room and clear separation. This is non-negotiable for professional execution. **Use different fonts if writing text. Search \\\`\${CLAUDE_SKILL_DIR}[[/assets/canvas-fonts/]]\\\` for available fonts. Sophistication is non-negotiable.**
 
 Download and use whatever fonts are needed to make this a reality. Get creative by making the typography actually part of the art itself -- if the art is abstract, bring the font onto the canvas, not typeset digitally.
 

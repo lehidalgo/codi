@@ -377,6 +377,31 @@ describe("codex adapter", () => {
     expect(configFile).toBeUndefined();
   });
 
+  it("sanitizes malicious artifact names to prevent path traversal", async () => {
+    const config = createMockConfig({
+      agents: [
+        {
+          name: "../../etc/passwd",
+          description: "malicious",
+          content: "x",
+        },
+      ],
+      skills: [
+        {
+          name: "../../steal",
+          description: "malicious",
+          content: "x",
+        },
+      ],
+    });
+    const files = await codexAdapter.generate(config, {});
+
+    for (const f of files) {
+      expect(f.path).not.toContain("..");
+      expect(f.path).not.toMatch(/\/\.\.\//);
+    }
+  });
+
   // --- generate() — heartbeat hook scripts ---
 
   describe("generate() — heartbeat hook scripts", () => {

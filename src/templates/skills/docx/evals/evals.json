@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-docx",
+  "cases": [
+    {
+      "id": "create-branded-report",
+      "description": "Branded Word report triggers the skill",
+      "prompt": "create a Word doc report about our Q3 metrics using our Codi brand",
+      "expectations": [
+        "Activates docx skill",
+        "Asks for brand selection if not already set (Codi default vs custom tokens)",
+        "Detects runtime (tries npx tsx first, falls back to python via uv, then venv)",
+        "Runs the generator with content.json and --tokens pointing at brand tokens",
+        "Produces a valid .docx file"
+      ]
+    },
+    {
+      "id": "edit-tracked-changes",
+      "description": "Adding tracked changes to a .docx triggers the skill",
+      "prompt": "add tracked changes to contract.docx to change \"30 days\" to \"60 days\"",
+      "expectations": [
+        "Activates docx skill",
+        "Follows the unpack → edit XML → pack 3-step flow",
+        "Uses <w:ins> and <w:del> with w:author=\"Claude\" by default",
+        "Preserves <w:rPr> formatting from the original run",
+        "Repacks with scripts/office/pack.py"
+      ]
+    },
+    {
+      "id": "accept-all-changes",
+      "description": "Accepting tracked changes triggers the skill",
+      "prompt": "accept all tracked changes in feedback.docx and produce a clean copy",
+      "expectations": [
+        "Activates docx skill",
+        "Runs scripts/accept_changes.py with input and output paths",
+        "Notes that LibreOffice is required"
+      ]
+    },
+    {
+      "id": "negative-pdf",
+      "description": "PDF request does NOT trigger docx",
+      "prompt": "fill the form fields in this PDF",
+      "expectations": [
+        "Does NOT activate docx skill",
+        "Routes to codi-pdf instead",
+        "Does NOT attempt unpack/pack pipeline"
+      ]
+    },
+    {
+      "id": "negative-spreadsheet",
+      "description": "Spreadsheet request does NOT trigger docx",
+      "prompt": "build a financial model in Excel",
+      "expectations": [
+        "Does NOT activate docx skill",
+        "Routes to codi-xlsx instead",
+        "Does NOT emit .docx output"
+      ]
+    }
+  ]
+}

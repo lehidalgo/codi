@@ -2,32 +2,43 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when transcribing audio or video files to text using OpenAI Whisper. Launches a local web interface with file upload, concurrent chunk processing, copy/download transcript, and optional Google Sheets output.
+description: |
+  Audio and video transcription via OpenAI Whisper. Use when transcribing an
+  mp3, wav, m4a, mp4, webm, or mov file; converting speech to text; generating
+  a podcast transcript, meeting transcript, interview transcript, or subtitle
+  text; or extracting text from a video recording. Also activate for phrases
+  like "transcribe this audio", "convert audio to text", "get the text from
+  this recording", or when the user wants transcripts written to Google Sheets.
+  Launches a local Flask web UI on port 8765 with concurrent chunk processing,
+  clipboard copy, and .txt download. Do NOT activate for real-time microphone
+  transcription (files only) or for text-to-speech / speech synthesis.
 category: ${SKILL_CATEGORY.PRODUCTIVITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
 ---
+
+# {{name}} — Audio Transcriber
+
+Runs a local web server with a clean UI for audio/video transcription using OpenAI Whisper.
+
+**Features**: File upload · Concurrent chunk processing · Copy to clipboard · Download as .txt · Google Sheets output
 
 ## When to Activate
 
 - User wants to transcribe audio or video files (mp3, wav, m4a, mp4, webm, mov, etc.)
 - User asks to convert speech to text
+- User wants a podcast, meeting, or interview transcript
 - User wants to save transcriptions to Google Sheets
 - User needs to process large audio files with concurrent chunking
 
-## When NOT to Use
+## Skip When
 
-- Real-time microphone transcription (this processes existing files)
+- Real-time microphone transcription (this skill processes existing files)
 - Speech synthesis / text-to-speech tasks
-
-# Audio Transcriber
-
-Runs a local web server with a clean UI for audio/video transcription using OpenAI Whisper.
-
-**Features**: File upload · Concurrent chunk processing · Copy to clipboard · Download as .txt · Google Sheets output
+- Translation between languages (Whisper detects, does not translate)
 
 ---
 

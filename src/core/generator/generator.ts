@@ -13,7 +13,11 @@ import {
   makeConflictEntry,
   type ConflictEntry,
 } from "#src/utils/conflict-resolver.js";
-import { extractProjectContext, injectProjectContext } from "#src/utils/project-context-preserv.js";
+import {
+  extractProjectContext,
+  injectProjectContext,
+  ensureProjectContextAnchor,
+} from "#src/utils/project-context-preserv.js";
 
 /**
  * Aggregated result returned by {@link generate}.
@@ -92,6 +96,10 @@ export async function generate(
       if (file.path === adapter.paths.instructionFile) {
         file.content = file.content + "\n\n" + verifySection;
 
+        // Ensure the onboarding playbook/skill always has a deterministic
+        // insertion point at the top of the file.
+        file.content = ensureProjectContextAnchor(file.content);
+
         // Preserve any user-written project-context block from the existing file.
         // This prevents codi generate from overwriting the context the agent wrote.
         const fullPath = join(projectRoot, file.path);
@@ -164,7 +172,7 @@ export async function generate(
     if (potentialConflicts.length > 0) {
       const resolution = await resolveConflicts(potentialConflicts, {
         force: options.force,
-        json: options.json,
+        keepCurrent: options.keepCurrent,
       });
 
       await Promise.all(

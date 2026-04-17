@@ -12,7 +12,7 @@ export const preset: BuiltinPresetDefinition = {
   tags: ["fullstack", "web", "app", "api"],
   compatibility: {
     engine: ">=0.3.0",
-    agents: ["claude-code", "cursor", "windsurf", "codex", "cline"],
+    agents: ["claude-code", "cursor", "windsurf", "codex", "cline", "copilot"],
   },
   flags: {
     auto_commit: { mode: "enabled", value: false },
@@ -51,10 +51,9 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("dev-e2e-testing"),
     prefixedName("refactoring"),
     prefixedName("security-scan"),
-    prefixedName("test-coverage"),
+    prefixedName("test-suite"),
     prefixedName("commit"),
-    prefixedName("test-run"),
-    prefixedName("diagnostics"),
+    prefixedName("debugging"),
   ],
   agents: [
     prefixedName("code-reviewer"),

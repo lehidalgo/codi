@@ -9,16 +9,27 @@ import {
 
 export const template = `---
 name: {{name}}
-description: "MCP (Model Context Protocol) operations. Use when setting up, calling, debugging, or building MCP servers. Also activate when the user mentions mcp.yaml, MCP tools, Model Context Protocol, or connecting external APIs to Claude agents."
+description: |
+  MCP (Model Context Protocol) operations. Use when the user wants to set
+  up, configure, call, debug, or build an MCP server. Also activate for
+  phrases like "add MCP server", "configure MCP", "MCP tool call failed",
+  "MCP Inspector", "stdio transport", "http MCP", "build custom MCP",
+  "connect external API as MCP", or when the user mentions mcp.yaml,
+  Model Context Protocol, or MCP tools. Handles mcp.yaml config, tool
+  discovery and calling, scaffolding (\\\`${PROJECT_CLI} add mcp-server\\\`),
+  building custom servers with @modelcontextprotocol/sdk, and
+  distribution via \\\`${PROJECT_CLI} generate\\\`. Do NOT activate for the
+  Claude API or Anthropic SDK (use ${PROJECT_NAME}-claude-api) or generic
+  REST API design (use a general api-designer flow).
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 12
 ---
 
-# {{name}}
+# {{name}} — MCP Ops
 
 ## When to Activate
 
@@ -30,6 +41,13 @@ version: 9
 - User asks to create or build a new MCP server from scratch
 - User wants to connect an external tool, database, or API as an MCP server
 - User mentions Model Context Protocol servers or tool integrations
+
+## Skip When
+
+- User wants to use the Claude API / Anthropic SDK — use ${PROJECT_NAME}-claude-api
+- User wants to design a generic REST API — use a generic api-designer approach
+- User wants to query the code graph — use ${PROJECT_NAME}-codebase-explore
+- User wants to generate tests or run test suites — use ${PROJECT_NAME}-tdd or ${PROJECT_NAME}-test-suite
 
 ## Configuration
 
@@ -198,6 +216,6 @@ Before finishing, verify:
 
 ## Available Agents
 
-For API design review of MCP server interfaces, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-api-designer** — Review tool naming, parameters, and error handling
+For API design review of MCP server interfaces, delegate to this agent:
+- **${PROJECT_NAME}-api-designer** — Review tool naming, parameters, and error handling. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/api-designer.md]]\\\`
 `;

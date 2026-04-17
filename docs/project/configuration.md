@@ -67,7 +67,6 @@ presets:
 | `name` | string | Yes | — | Project name (alphanumeric + hyphens) |
 | `version` | `1` | Yes | — | Manifest version (always `1`) |
 | `description` | string | No | — | Project description |
-| `project_context` | string | No | — | Free-form markdown injected into the AI instruction file as a Project Context section |
 | `agents` | string[] | No | — | Agent IDs to generate for |
 | `layers` | object | No | — | Toggle content types |
 | `layers.rules` | boolean | Yes | `true` | Include rules in generation |
@@ -257,7 +256,7 @@ Install a server template: `codi add mcp-server github --template github`
 
 Generated MCP configs include environment variable instructions so developers know exactly which variables to set:
 
-- **Claude Code / Cursor** (JSON): `_instructions` object listing each required env var with a description
+- **Claude Code / Cursor / GitHub Copilot** (JSON): `_instructions` object listing each required env var with a description
 - **Codex** (TOML): Inline comments above each `env` entry
 - **`.mcp.env.example`**: Generated alongside MCP config files, listing all required environment variables as `VAR_NAME=` entries for use with `.env` tooling
 
@@ -267,3 +266,4 @@ MCP config is distributed to each agent in its native format:
 - **Claude Code**: `.mcp.json`
 - **Cursor**: `.cursor/mcp.json`
 - **Codex**: `.codex/config.toml`
+- **GitHub Copilot**: `.vscode/mcp.json`

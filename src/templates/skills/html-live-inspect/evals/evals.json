@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-html-live-inspect",
+  "cases": [
+    {
+      "id": "open-html-collaboratively",
+      "description": "Collaborative HTML inspection triggers the skill",
+      "prompt": "open this HTML file in collaboratory mode so I can click and you can see what I'm picking",
+      "expectations": [
+        "Activates html-live-inspect skill",
+        "Runs scripts/start-server.sh with --site-dir pointing to the file/folder",
+        "Returns a URL to the user and explains the DOM inspector is injected",
+        "Polls /api/selection or /api/events to observe the user's picks"
+      ]
+    },
+    {
+      "id": "drive-local-page",
+      "description": "Agent driving a local page triggers the skill",
+      "prompt": "start html live inspect and fill this form for me while I watch",
+      "expectations": [
+        "Activates html-live-inspect skill",
+        "Starts the local server",
+        "Uses /api/eval (if enabled) to run JavaScript that fills the form",
+        "Reports back what was filled and asks the user to verify in the browser"
+      ]
+    },
+    {
+      "id": "watch-clicks",
+      "description": "User-driven selection triggers the skill",
+      "prompt": "watch what I click on this page and tell me the selectors",
+      "expectations": [
+        "Activates html-live-inspect skill",
+        "Starts the server pointed at the current directory or specified file",
+        "Reads /api/selection to return CSS selector, tag, classes, text for each user interaction",
+        "Does NOT require the user to paste selectors manually"
+      ]
+    },
+    {
+      "id": "negative-remote-url",
+      "description": "Remote URL testing does NOT trigger this skill",
+      "prompt": "test this production page at example.com/checkout",
+      "expectations": [
+        "Does NOT activate html-live-inspect skill (local files only)",
+        "Routes to codi-webapp-testing (Playwright) instead"
+      ]
+    },
+    {
+      "id": "negative-generate-slides",
+      "description": "Slide generation does NOT trigger this skill",
+      "prompt": "create a 10-slide pitch deck as HTML",
+      "expectations": [
+        "Does NOT activate html-live-inspect skill",
+        "Routes to codi-content-factory instead",
+        "Does NOT start a local inspector server"
+      ]
+    }
+  ]
+}

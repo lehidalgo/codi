@@ -4,6 +4,7 @@ import { stringify as stringifyYaml, parse as yamlParse } from "yaml";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashContent } from "../utils/hash.js";
+import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { Logger } from "../core/output/logger.js";
 import { fmStr } from "../utils/yaml-serialize.js";
 import { addGeneratedFooter } from "./generated-header.js";
@@ -62,6 +63,15 @@ const PLATFORM_SKILL_FIELDS: Record<PlatformId, Set<string>> = {
     "description",
     "disable-model-invocation",
     "allowed-tools",
+    "license",
+    "metadata",
+  ]),
+  copilot: new Set([
+    "name",
+    "description",
+    "allowed-tools",
+    "model",
+    "argument-hint",
     "license",
     "metadata",
   ]),
@@ -240,7 +250,7 @@ export async function generateSkillFiles(
 ): Promise<GeneratedFile[]> {
   const files: GeneratedFile[] = [];
   for (const skill of skills) {
-    const dirName = skill.name.toLowerCase().replace(/\s+/g, "-");
+    const dirName = sanitizeNameForPath(skill.name);
     const skillBasePath = `${basePath}/${dirName}`;
 
     // 1. Generate SKILL.md — filtered to platform-supported fields

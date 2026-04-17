@@ -29,7 +29,7 @@ import { execFileAsync } from "../utils/exec.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
-import type { PresetInstallOptions } from "./preset-handlers.js";
+import { updateActivePreset, type PresetInstallOptions } from "./preset-handlers.js";
 import { regenerateConfigs } from "./shared.js";
 import type { PresetData } from "./preset.js";
 import type { parsePresetIdentifier } from "../core/preset/preset-resolver.js";
@@ -83,10 +83,7 @@ export async function installFromGithub(
   const ref = descriptor.ref ?? "main";
   log.info(`Cloning preset from ${repoUrl} (ref: ${ref})...`);
 
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `${PROJECT_NAME}-preset-gh-${Date.now()}`,
-  );
+  const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-gh-${Date.now()}`);
   try {
     const cloneArgs = ["clone", "--depth", GIT_CLONE_DEPTH];
     if (descriptor.ref) cloneArgs.push("--branch", descriptor.ref);
@@ -258,15 +255,15 @@ export async function installFromGithub(
 
     const loadResult = await loadPreset(name, presetsDir);
     if (loadResult.ok) {
-      const applyResult = await applyPresetArtifacts(
-        configDir,
-        loadResult.data,
-        { force: installOptions.force, json: installOptions.json },
-      );
+      const applyResult = await applyPresetArtifacts(configDir, loadResult.data, {
+        force: installOptions.force,
+        keepCurrent: installOptions.keepCurrent,
+      });
       log.info(
         `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
       );
       await mergePresetFlagsFromGithub(configDir, loadResult.data, log);
+      await updateActivePreset(configDir, loadResult.data);
       await regenerateConfigs(projectRoot);
     }
 

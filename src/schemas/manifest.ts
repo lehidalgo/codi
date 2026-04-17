@@ -21,13 +21,6 @@ export const ProjectManifestSchema = z.object({
     .max(MAX_DESCRIPTION_LENGTH)
     .optional()
     .describe("Optional human-readable description of the project."),
-  project_context: z
-    .string()
-    .optional()
-    .describe(
-      "Free-form markdown injected into the AI instruction file as a 'Project Context' section. " +
-        "Use for project-specific AI guidance that does not belong in any rule or skill.",
-    ),
   agents: z
     .array(z.string())
     .optional()

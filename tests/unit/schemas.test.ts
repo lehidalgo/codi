@@ -518,34 +518,3 @@ describe("version field — RuleFrontmatterSchema", () => {
     expect(result.success).toBe(false);
   });
 });
-
-describe("ProjectManifestSchema — project_context", () => {
-  it("accepts a manifest with project_context", () => {
-    const result = ProjectManifestSchema.safeParse({
-      name: "my-project",
-      version: "1",
-      project_context: "## Context\n\nSome guidance here.",
-    });
-    expect(result.success).toBe(true);
-    if (result.success)
-      expect(result.data.project_context).toBe("## Context\n\nSome guidance here.");
-  });
-
-  it("accepts a manifest without project_context (optional field)", () => {
-    const result = ProjectManifestSchema.safeParse({
-      name: "my-project",
-      version: "1",
-    });
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.project_context).toBeUndefined();
-  });
-
-  it("accepts an empty string for project_context", () => {
-    const result = ProjectManifestSchema.safeParse({
-      name: "my-project",
-      version: "1",
-      project_context: "",
-    });
-    expect(result.success).toBe(true);
-  });
-});

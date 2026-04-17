@@ -29,7 +29,7 @@ Append-only JSONL log records every generation event with timestamp, artifacts i
 
 ## Multi-Agent Support
 
-Five agents supported via an adapter pattern. Each adapter translates the unified `.codi/` artifacts into the agent's native config format.
+Six agents supported via an adapter pattern. Each adapter translates the unified `.codi/` artifacts into the agent's native config format.
 
 | Agent | Config File | Rules | Skills | Agents | MCP Config | Skill Files |
 |:------|:-----------|:-----:|:------:|:------:|:----------:|:----------:|
@@ -38,6 +38,7 @@ Five agents supported via an adapter pattern. Each adapter translates the unifie
 | Codex | `AGENTS.md` | Yes | Yes | Yes | `.codex/config.toml` | Yes |
 | Windsurf | `.windsurfrules` | Yes | Yes | -- | -- | Yes |
 | Cline | `.clinerules` | Yes | Yes | -- | -- | Yes |
+| GitHub Copilot | `.github/copilot-instructions.md` | Yes | Yes | Yes | `.vscode/mcp.json` | Yes |
 
 ---
 
@@ -52,10 +53,11 @@ Codi's core value: edit artifacts once in `.codi/`, and all agent config files u
 | Agent | Instruction File | Separate Artifacts | MCP Config | Settings |
 |:------|:----------------|:-------------------|:-----------|:---------|
 | Claude Code | `CLAUDE.md` | `.claude/rules/`, `.claude/skills/`, `.claude/agents/` | `.mcp.json` | `.claude/settings.json` |
-| Codex | `AGENTS.md` | `.codex/agents/*.toml` | `.codex/config.toml` | -- |
-| Cursor | `.cursorrules` | -- | `.cursor/mcp.json` | `.cursor/hooks.json` |
+| Codex | `AGENTS.md` | `.codex/agents/*.toml` | `.codex/config.toml` | `.codex/hooks.json` |
+| Cursor | `.cursorrules` | `.cursor/rules/`, `.cursor/skills/` | `.cursor/mcp.json` | `.cursor/hooks.json` |
 | Windsurf | `.windsurfrules` | `.windsurf/skills/` | -- | -- |
 | Cline | `.clinerules` | `.cline/skills/` | -- | -- |
+| GitHub Copilot | `.github/copilot-instructions.md` | `.github/instructions/`, `.github/prompts/`, `.github/skills/`, `.github/agents/` | `.vscode/mcp.json` | `.github/hooks/codi-hooks.json` |
 
 The generated instruction files include: project overview, active rules (inline or referenced), skill routing table, agent definitions, MCP server list, permission restrictions, and a verification section.
 
@@ -110,24 +112,23 @@ Each `codi generate` run computes a SHA256-based verification token from the man
 | Category | Skills |
 |:---------|:-------|
 | Brand Identity | codi-brand-identity, codi-codi-brand |
-| Code Quality | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-test-coverage, codi-webapp-testing |
-| Codi Platform | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-feedback-reporter |
+| Code Quality | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing |
+| Codi Platform | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator |
 | Content Creation | codi-content-factory |
 | Content Refinement | codi-humanizer |
 | Creative and Design | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory |
-| Developer Tools | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-diagnostics, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
-| Document Generation | codi-deck-engine, codi-doc-engine |
+| Developer Tools | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
 | File Format Tools | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
 | Planning | codi-roadmap |
 | Productivity | codi-audio-transcriber |
-| Testing | codi-test-run |
-| Workflow | codi-daily-log, codi-session-handoff |
+| Testing | codi-test-suite |
+| Workflow | codi-session-log |
 
 ### Built-in Eval Cases
 
 Tier 1 skill templates ship with pre-written eval cases in `evals/evals.json`. Each eval set contains 5-7 cases with realistic prompts and objectively verifiable expectations. Cases include positive triggers (skill should activate) and negative cross-cluster cases (skill should NOT activate for a confusable prompt).
 
-Skills with built-in evals: codi-commit, codi-debugging, codi-tdd, codi-code-review, codi-verification, codi-brainstorming, codi-plan-writer, codi-plan-executor, codi-subagent-dev, codi-session-handoff, codi-skill-creator, codi-refactoring, codi-security-scan, codi-test-coverage.
+Skills with built-in evals: codi-commit, codi-debugging, codi-tdd, codi-code-review, codi-verification, codi-brainstorming, codi-plan-writer, codi-plan-execution, codi-session-log, codi-skill-creator, codi-refactoring, codi-security-scan, codi-test-suite.
 
 During `codi init`, these evals propagate to `.codi/skills/{name}/evals/evals.json`. The eval runner (`run-eval.ts`) and improvement loop (`run-loop.ts`) in the skill-creator scripts use these cases to test and refine skill descriptions.
 

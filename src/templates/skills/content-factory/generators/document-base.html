@@ -29,6 +29,23 @@
     /* ── Brand Tokens — paste full contents of brand/tokens.css here ── */
     /* Use .theme-light on <html> for documents                                */
 
+    /* ── Default light palette ──────────────────────────────────────────────
+       Documents render light by default when no brand is applied. Any brand
+       tokens pasted above (or below) beat these because :where() has zero
+       specificity — brand overrides always win regardless of paste order.
+       To change the document theme, apply a brand skill or override these
+       variables explicitly. */
+    :where(:root) {
+      --brand-bg:            #ffffff;
+      --brand-surface:       #f5f5f7;
+      --brand-text:          #111115;
+      --brand-text-muted:    #5c6370;
+      --brand-primary:       #1a1a1f;
+      --brand-accent:        #0969da;
+      --brand-font-body:     "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --brand-font-headline: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
     /* ── Reset ─────────────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

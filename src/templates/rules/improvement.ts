@@ -6,7 +6,7 @@ description: Continuous artifact improvement — observe patterns, emit CODI-OBS
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 2
+version: 4
 ---
 
 # Continuous Artifact Improvement
@@ -26,6 +26,27 @@ to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has these mech
 2. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
 3. **Rule refinement** — use \`/${PROJECT_NAME}-refine-rules\` to review collected feedback and propose improvements with human approval
 4. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
+
+## Source-layer improvements (${PROJECT_NAME_DISPLAY} repo only)
+
+When editing an artifact at its source in the ${PROJECT_NAME_DISPLAY} source repository
+(\`src/templates/rules/\`, \`src/templates/skills/\`, or \`src/templates/agents/\`), plain
+\`${PROJECT_CLI} generate\` will NOT propagate the change. \`generate\` reads from
+\`${PROJECT_DIR}/\`, not from \`src/templates/\`. Follow the clean + reinstall flow
+documented in the \`${PROJECT_NAME}-dev-operations\` skill (and mirrored in CLAUDE.md /
+AGENTS.md under **Self-Development Mode → The three-layer pipeline**):
+
+\`\`\`bash
+pnpm build
+rm -rf ${PROJECT_DIR}/<artifact-type>/${PROJECT_NAME}-<name>
+# prune the artifact-manifest entry
+${PROJECT_CLI} add <artifact-type> ${PROJECT_NAME}-<name> --template ${PROJECT_NAME}-<name>
+${PROJECT_CLI} generate --force
+\`\`\`
+
+Bump \`version:\` in the template frontmatter so downstream consumers see the
+change on their next update. If you skip the clean + reinstall, your edit will
+stay stranded at the source layer and never reach the per-agent output.
 
 What makes configuration quality matter:
 - **Better descriptions** = skills trigger at the right time
@@ -58,6 +79,22 @@ The Stop hook scans your response, extracts valid markers, and writes structured
 - A BAD/GOOD example in a rule could be more relevant to this specific codebase
 - A rule references a deprecated API, outdated pattern, or superseded best practice
 - A skill should have triggered but did not (or triggered when it should not have)
+- Two skills have overlapping triggers for the same use case — the wrong one activates due to priority rules
+
+## Skill Trigger Overlap — Iterate Before Resuming
+
+When two skills' descriptions both claim the same use case (e.g. both mention "document"
+or both trigger on "create X"), stop the current task and iterate with the user before
+resuming. An overlap is a source-template defect, not a workaround situation.
+
+1. Name both skills and quote the colliding phrases from each description
+2. Propose the minimal fix — usually narrow one trigger + add an explicit "Skip When"
+   pointing at the other skill
+3. Wait for approval, edit the source template, bump \`version:\`
+4. Resume the original task only after the overlap is resolved
+
+One observed overlap is enough evidence — do not wait for a second occurrence, because
+the same wrong-skill activation will repeat every session until the source is fixed.
 
 ## How to Propose Approved Changes
 

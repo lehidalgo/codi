@@ -98,6 +98,7 @@ Each supported agent has an adapter that translates `NormalizedConfig` into that
 | **Codex** | `AGENTS.md` | Yes | Yes | Yes | Yes |
 | **Windsurf** | `.windsurfrules` | Yes | Yes | — | — |
 | **Cline** | `.clinerules` | Yes | Yes | — | — |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | Yes | Yes | Yes | Yes |
 <!-- GENERATED:END:adapter_table -->
 
 **Adapter interface:**

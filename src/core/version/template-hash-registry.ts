@@ -45,6 +45,9 @@ export function getCLIVersion(): string {
   }
 }
 
+/** Hash content with normalized line endings so baselines are cross-platform. */
+const hashLF = (s: string): string => hashContent(s.replace(/\r\n/g, "\n"));
+
 function buildRegistry(): TemplateHashRegistry {
   const cliVersion = getCLIVersion();
   const templates: Record<string, TemplateFingerprint> = {};
@@ -55,7 +58,7 @@ function buildRegistry(): TemplateHashRegistry {
       templates[name] = {
         name,
         type: "rule",
-        contentHash: hashContent(result.data),
+        contentHash: hashLF(result.data),
         artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }
@@ -67,7 +70,7 @@ function buildRegistry(): TemplateHashRegistry {
       templates[name] = {
         name,
         type: "skill",
-        contentHash: hashContent(result.data),
+        contentHash: hashLF(result.data),
         artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }
@@ -79,7 +82,7 @@ function buildRegistry(): TemplateHashRegistry {
       templates[name] = {
         name,
         type: "agent",
-        contentHash: hashContent(result.data),
+        contentHash: hashLF(result.data),
         artifactVersion: parseVersionFromFrontmatter(result.data),
       };
     }

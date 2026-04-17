@@ -27,7 +27,7 @@ async function startServer() {
   tempDir = mkdtempSync(path.join(tmpdir(), "codi-cf-test-"));
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("Server did not start within 10s")), 10_000);
-    const proc = spawn("bash", [START_SCRIPT, "--name", "test", "--project-dir", tempDir]);
+    const proc = spawn("bash", [START_SCRIPT, "--project-dir", tempDir]);
     serverProcess = proc;
     proc.stdout.on("data", (chunk) => {
       const lines = chunk.toString().split("\n");
@@ -114,7 +114,7 @@ describe("POST /api/preset", () => {
     await fetch(`${baseUrl}/api/create-project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "preset-test" }),
+      body: JSON.stringify({ name: "preset-test", type: "social" }),
     });
 
     const payload = {
@@ -175,7 +175,7 @@ describe("POST /api/brief", () => {
     await fetch(`${baseUrl}/api/create-project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "brief-test" }),
+      body: JSON.stringify({ name: "brief-test", type: "social" }),
     });
 
     const brief = {
@@ -197,7 +197,7 @@ describe("POST /api/brief", () => {
           format: "4:5",
           type: "social",
           status: "pending",
-          derived_from_revision: null,
+          derivedFromRevision: null,
         },
       ],
     };

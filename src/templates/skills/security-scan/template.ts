@@ -2,16 +2,26 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Security analysis workflow. Use when the user wants to audit codebases for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, and dependency CVEs. Produces severity-ranked findings with actionable fixes.
+description: |
+  Security analysis workflow. Use when the user wants to audit the codebase
+  for vulnerabilities, hardcoded secrets, OWASP Top 10 risks, dependency
+  CVEs, input-validation gaps, or supply-chain issues. Also activate for
+  phrases like "audit security", "vulnerability scan", "check for secrets",
+  "CVE scan", "SAST", "security review", "pentest findings", "threat model",
+  "OWASP audit", "supply chain check". Produces severity-ranked findings
+  (Critical / High / Medium / Low) with actionable fixes. Do NOT activate
+  for general code review (use ${PROJECT_NAME}-code-review), fixing a
+  specific bug (use ${PROJECT_NAME}-debugging), or project-setup CI/CD
+  scaffolding (use ${PROJECT_NAME}-project-quality-guard).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 6
 ---
 
-# {{name}}
+# {{name}} — Security Scan
 
 ## When to Activate
 
@@ -20,6 +30,14 @@ version: 5
 - User needs a dependency audit to check for known CVEs
 - User asks for an OWASP Top 10 analysis of their application
 - User wants to verify input validation and sanitization across endpoints
+
+## Skip When
+
+- User wants a general code review (quality + style + logic, not security-focused) — use ${PROJECT_NAME}-code-review
+- User is debugging a specific bug — use ${PROJECT_NAME}-debugging
+- User is setting up project quality infrastructure (CI/CD, hooks) — use ${PROJECT_NAME}-project-quality-guard
+- User wants to review the security of a skill they are importing — use ${PROJECT_NAME}-skill-creator's security-review step
+- User wants ${PROJECT_NAME}-installation-level validation — use ${PROJECT_NAME}-dev-e2e-testing
 
 ## Security Scan Process
 
@@ -128,9 +146,9 @@ For each finding include:
 
 ## Available Agents
 
-For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-security-analyzer** — Deep vulnerability analysis with trust boundary mapping
-- **${PROJECT_NAME}-code-reviewer** — Broader code quality context for security findings
+For specialized analysis, delegate to these agents:
+- **${PROJECT_NAME}-security-analyzer** — Deep vulnerability analysis with trust boundary mapping. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/security-analyzer.md]]\\\`
+- **${PROJECT_NAME}-code-reviewer** — Broader code quality context for security findings. Prompt at \\\`\${CLAUDE_SKILL_DIR}[[/agents/code-reviewer.md]]\\\`
 
 ## Related Skills
 

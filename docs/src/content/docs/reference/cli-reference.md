@@ -108,12 +108,17 @@ codi generate [options]
 |--------|-------------|
 | `--agent <agents...>` | Generate for specific agents only |
 | `--dry-run` | Show what would be generated without writing |
-| `--force` | Force regeneration even if unchanged |
+| `--force` | Skip no-op detection and rewrite every generated file (implies `--on-conflict keep-incoming`) |
+| `--on-conflict <strategy>` | How to resolve local edits to generated files: `keep-current` (skip) or `keep-incoming` (overwrite). Defaults to interactive prompts on a TTY, auto-merge off-TTY. |
 
 ```bash
 codi generate --agent claude-code --dry-run
 codi gen --force
+codi generate --on-conflict keep-incoming   # overwrite any local edits
+codi generate --on-conflict keep-current    # preserve all local edits, skip incoming
 ```
+
+**Pruning:** `codi generate` automatically deletes generated files that no longer exist in the source templates. Files with local edits are preserved unless you pass `--on-conflict keep-incoming` or `--force`.
 
 ---
 
@@ -259,11 +264,14 @@ codi update [options]
 | `--agents` | Refresh template-managed agents |
 | `--mcp-servers` | Refresh template-managed MCP servers |
 | `--dry-run` | Show what would change without writing |
+| `--force` | Accept all incoming changes without prompting (overwrites local edits) |
+| `--on-conflict <strategy>` | How to resolve local edits: `keep-current` (skip) or `keep-incoming` (overwrite). Defaults to interactive on a TTY. |
 
 ```bash
 codi update --rules --skills
 codi update --preset strict --dry-run
 codi update --from org/shared-config
+codi update --skills --on-conflict keep-incoming   # accept upstream changes
 ```
 
 ---

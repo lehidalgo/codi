@@ -42,8 +42,7 @@ export const RULE_CATEGORIES: Record<string, string[]> = {
 
 // Artifacts that are always pre-selected regardless of preset or custom choice.
 // These are the Codi Platform artifacts — they govern how Codi itself operates in the project.
-export const PLATFORM_RULE_DEFAULTS: readonly string[] =
-  RULE_CATEGORIES[PLATFORM_CATEGORY] ?? [];
+export const PLATFORM_RULE_DEFAULTS: readonly string[] = RULE_CATEGORIES[PLATFORM_CATEGORY] ?? [];
 
 // Platform skill defaults are derived at runtime from frontmatter because skill
 // categories live in template content, not in a static map.
@@ -87,7 +86,7 @@ export const AGENT_CATEGORIES: Record<string, string[]> = {
     "codi-openai-agents-specialist",
     "codi-python-expert",
   ],
-  "Exploration & Docs": ["codi-docs-lookup", "codi-onboarding-guide"],
+  "Exploration & Docs": ["codi-docs-lookup"],
 };
 
 // MCP server categories derived from the grouped registry in the template index.

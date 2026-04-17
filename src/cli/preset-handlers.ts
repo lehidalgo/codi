@@ -34,6 +34,7 @@ import { loadPreset } from "../core/preset/preset-loader.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
 import { FLAGS_FILENAME } from "../constants.js";
+import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 
 /**
  * Merges a loaded preset's flags into the project's flags.yaml.
@@ -75,11 +76,39 @@ async function mergePresetFlags(
 }
 
 /**
+ * Updates the activePreset field in operations.json after a successful preset install.
+ * Best-effort: logs a warning on failure instead of throwing.
+ */
+export async function updateActivePreset(configDir: string, preset: LoadedPreset): Promise<void> {
+  try {
+    const ledger = new OperationsLedgerManager(configDir);
+    const mcpServerNames = Object.keys(preset.mcp.servers);
+    await ledger.setActivePreset({
+      name: preset.name,
+      installedAt: new Date().toISOString(),
+      artifactSelection: {
+        rules: preset.rules.map((r) => r.name),
+        skills: preset.skills.map((s) => s.name),
+        agents: preset.agents.map((a) => a.name),
+        mcpServers: mcpServerNames.length > 0 ? mcpServerNames : undefined,
+      },
+    });
+  } catch {
+    const log = Logger.getInstance();
+    log.warn(`Failed to update activePreset in operations.json for "${preset.name}"`);
+  }
+}
+
+/**
  * Unified install handler: auto-detects source type from the argument.
  */
 export interface PresetInstallOptions {
+  /** Overwrite all conflicting files without prompting. */
   force?: boolean;
+  /** JSON output mode detection for non-interactive handlers. */
   json?: boolean;
+  /** Skip all conflicting files without prompting (keep existing content). */
+  keepCurrent?: boolean;
 }
 
 export async function presetInstallUnifiedHandler(
@@ -168,12 +197,13 @@ export async function presetInstallUnifiedHandler(
       if (loadResult.ok) {
         const applyResult = await applyPresetArtifacts(configDir, loadResult.data, {
           force: installOptions.force,
-          json: installOptions.json,
+          keepCurrent: installOptions.keepCurrent,
         });
         log.info(
           `Applied: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
         );
         await mergePresetFlags(configDir, loadResult.data, log);
+        await updateActivePreset(configDir, loadResult.data);
         await regenerateConfigs(projectRoot);
       }
 

@@ -11,23 +11,45 @@ import type { TemplateCounts } from "../types.js";
 export function getTemplate(counts: TemplateCounts): string {
   return `---
 name: {{name}}
-description: Unified ${PROJECT_NAME} operations skill. Use when managing rules, skills, agents, configuration, verification, or troubleshooting ${PROJECT_NAME} setup.
+description: |
+  Unified ${PROJECT_NAME_DISPLAY} operations skill. Use when the user wants to
+  add, update, or remove rules, skills, or agents; configure flags, presets,
+  or MCP servers; run \\\`${PROJECT_CLI} generate\\\`, \\\`add\\\`, \\\`update\\\`,
+  \\\`verify\\\`, \\\`doctor\\\`, \\\`validate\\\`, or \\\`preset\\\` commands;
+  resolve \\\`generate\\\` exit-2 conflicts; check drift; clean or revert
+  backups; or follow the self-dev clean + reinstall flow for source-layer
+  edits. Also activate for phrases like "codi generate didn't propagate",
+  "my source edit isn't showing up", "three-layer pipeline", "conflict
+  resolution". Do NOT activate for writing a new skill from scratch (use
+  ${PROJECT_NAME}-skill-creator), creating a new rule (use
+  ${PROJECT_NAME}-rule-creator), or scaffolding a new agent (use
+  ${PROJECT_NAME}-agent-creator) — those have their own lifecycle workflows.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 19
 ---
 
-# ${PROJECT_NAME_DISPLAY} Operations
+# {{name}} — Operations
 
 ## When to Activate
 
 - User wants to add, update, or remove rules, skills, or agents
 - User needs to configure flags, presets, or MCP servers
-- User asks to verify, diagnose, or troubleshoot the ${PROJECT_NAME} installation
+- User asks to verify, diagnose, or troubleshoot the ${PROJECT_NAME_DISPLAY} installation
 - User asks about drift, backups, or regenerating agent config files
+- \\\`${PROJECT_CLI} generate\\\` exited with code 2 and a conflicts payload
+- User edited \\\`src/templates/\\\` and is not seeing changes take effect
+
+## Skip When
+
+- User wants to **create** a new skill from scratch — use ${PROJECT_NAME}-skill-creator
+- User wants to **create** a new rule from scratch — use ${PROJECT_NAME}-rule-creator
+- User wants to **create** a new agent from scratch — use ${PROJECT_NAME}-agent-creator
+- User wants to package and contribute artifacts to a repo — use ${PROJECT_NAME}-artifact-contributor
+- User wants to diff local vs upstream — use ${PROJECT_NAME}-compare-preset
 
 ## Artifact Lifecycle
 
@@ -217,6 +239,70 @@ ${PROJECT_CLI} revert --last         # Restore most recent backup
 ${PROJECT_CLI} watch                 # Auto-regenerate on ${PROJECT_DIR}/ changes
 \`\`\`
 
+## Self-Development Workflow (editing \`src/templates/\`)
+
+> **This section applies only when you are working on the ${PROJECT_NAME_DISPLAY} source
+> repository itself** — i.e. the template source of truth shipped to every consumer.
+> When editing a project's own \`${PROJECT_DIR}/\` artifacts, use the standard
+> generate flow above. CLAUDE.md and AGENTS.md carry the same guidance for readers
+> arriving from the agent instruction file.
+
+${PROJECT_NAME_DISPLAY} moves content through three distinct layers. Understanding which
+command reads from which layer prevents the most common self-dev mistake: editing
+\`src/templates/\` and wondering why \`${PROJECT_CLI} generate\` did nothing.
+
+| Layer | Path | What lives here |
+|-------|------|-----------------|
+| 1. Source | \`src/templates/\` | The template shipped to consumers (the artifact) |
+| 2. Installed | \`${PROJECT_DIR}/<artifact-type>/<name>/\` | A project's local copy of an installed artifact |
+| 3. Generated | \`.claude/\` / \`.cursor/\` / \`.codex/\` / ... | Per-agent output produced from the installed copy |
+
+Pipeline:
+
+- \`pnpm build\` compiles \`src/templates/\` into \`dist/\`.
+- \`${PROJECT_CLI} add <artifact-type> <name> --template <name>\` copies \`dist/\` into \`${PROJECT_DIR}/\`.
+- \`${PROJECT_CLI} generate\` reads \`${PROJECT_DIR}/\` and writes the per-agent directories.
+
+### Source-layer changes require clean + reinstall
+
+**\`${PROJECT_CLI} generate\` does NOT read from \`src/templates/\`.** It only reads from
+\`${PROJECT_DIR}/\`. To make source edits take effect, refresh the installed copy first:
+
+\`\`\`bash
+# 1. Edit src/templates/skills/<name>/
+# 2. Rebuild compiled templates
+pnpm build
+
+# 3. Clean the stale installed copy
+rm -rf ${PROJECT_DIR}/skills/${PROJECT_NAME}-<name>
+
+# 4. Remove the entry from the artifact manifest
+node -e "const fs=require('fs'); const p='${PROJECT_DIR}/artifact-manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); if(m.artifacts) delete m.artifacts['${PROJECT_NAME}-<name>']; fs.writeFileSync(p, JSON.stringify(m, null, 2)+'\\n');"
+
+# 5. Reinstall from the freshly built template
+${PROJECT_CLI} add skill ${PROJECT_NAME}-<name> --template ${PROJECT_NAME}-<name>
+
+# 6. Regenerate per-agent output
+${PROJECT_CLI} generate --force
+\`\`\`
+
+The same pattern applies to rules and agents — swap \`skill\` for \`rule\` or
+\`agent\`. \`${PROJECT_CLI} update --skills --force\` is documented as a refresh path
+but does not consistently overwrite \`${PROJECT_DIR}/\` when the installed artifact
+already exists; prefer the explicit clean + reinstall above for deterministic behavior.
+
+### When it is safe to use plain \`${PROJECT_CLI} generate\`
+
+- Editing \`${PROJECT_DIR}/\` artifacts directly (adding a custom rule, tweaking a
+  \`managed_by: user\` skill) — \`generate\` correctly propagates to per-agent output.
+- Running verification, migration, or drift commands that only read from \`${PROJECT_DIR}/\`.
+
+If you are editing \`src/templates/\` and only run \`${PROJECT_CLI} generate\`, your
+changes will never reach \`.claude/\` or any other agent directory. Always follow
+the clean + reinstall flow above when the edit is at the source layer. After the
+edit reaches the target, bump \`version:\` in the template frontmatter so downstream
+consumers see the change on their next update.
+
 ## Troubleshooting
 
 **Config validation fails:** Run \`${PROJECT_CLI} validate --json\` to see specific errors.
@@ -234,6 +320,6 @@ ${PROJECT_CLI} watch                 # Auto-regenerate on ${PROJECT_DIR}/ change
 ## Related Skills
 
 - **${PROJECT_NAME}-compare-preset** — Compare local artifacts against upstream templates
-- **${PROJECT_NAME}-error-recovery** — Recover from repeated agent mistakes during operations
+- **${PROJECT_NAME}-session-recovery** — Recover from repeated agent mistakes during operations
 `;
 }

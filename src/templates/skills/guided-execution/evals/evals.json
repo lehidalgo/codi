@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-guided-execution",
+  "cases": [
+    {
+      "id": "first-time-oauth-setup",
+      "description": "First-time OAuth setup triggers the skill",
+      "prompt": "walk me through setting up GitHub OAuth for our app — I've never done this before",
+      "expectations": [
+        "Activates guided-execution skill",
+        "Builds a task list via TaskCreate before executing",
+        "Presents the full plan with agent-vs-user responsibility split before starting",
+        "Executes one step at a time through the 7-phase protocol",
+        "Documents each completed step via codi-step-documenter"
+      ]
+    },
+    {
+      "id": "infra-setup-step-by-step",
+      "description": "Cloud infrastructure setup triggers the skill",
+      "prompt": "guide me step by step through provisioning our first AWS RDS instance",
+      "expectations": [
+        "Activates guided-execution skill",
+        "Identifies which steps require user action (credentials, AWS console) vs agent action (IaC files, scripts)",
+        "Waits for user confirmation after each user-action step",
+        "Runs codi-evidence-gathering + codi-verification to validate each step"
+      ]
+    },
+    {
+      "id": "ci-cd-pipeline-setup",
+      "description": "CI/CD pipeline setup triggers the skill",
+      "prompt": "help me configure a GitHub Actions CI/CD pipeline from scratch",
+      "expectations": [
+        "Activates guided-execution skill",
+        "Decomposes into phases and steps",
+        "Produces step documents under docs/executions/<workflow-name>/",
+        "Writes a final workflow summary README.md linking all step docs"
+      ]
+    },
+    {
+      "id": "negative-code-changes",
+      "description": "Pure code changes do NOT trigger guided-execution",
+      "prompt": "implement the user authentication feature per our spec",
+      "expectations": [
+        "Does NOT activate guided-execution skill",
+        "Routes to codi-plan-execution instead",
+        "Does NOT produce per-step execution docs"
+      ]
+    },
+    {
+      "id": "negative-audit-items",
+      "description": "Audit findings batch does NOT trigger guided-execution",
+      "prompt": "work through these 15 security audit findings one by one",
+      "expectations": [
+        "Does NOT activate guided-execution skill",
+        "Routes to codi-audit-fix instead",
+        "Does NOT produce step docs in docs/executions/"
+      ]
+    }
+  ]
+}

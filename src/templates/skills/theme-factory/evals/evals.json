@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-theme-factory",
+  "cases": [
+    {
+      "id": "pick-preset-theme",
+      "description": "Preset theme selection triggers the skill",
+      "prompt": "apply a theme to my slide deck — show me what's available",
+      "expectations": [
+        "Activates theme-factory skill",
+        "Shows references to the 10 themes listed (or the theme-showcase.pdf)",
+        "Waits for explicit theme selection",
+        "Reads the chosen theme file from references/themes/",
+        "Applies colors and fonts consistently to the deck"
+      ]
+    },
+    {
+      "id": "rebrand-deck",
+      "description": "Rebrand-deck phrasing triggers the skill",
+      "prompt": "re-theme this deck with a more corporate look",
+      "expectations": [
+        "Activates theme-factory skill",
+        "Suggests themes matching 'corporate' (e.g., Modern Minimalist, Tech Innovation)",
+        "Applies the chosen theme to every slide",
+        "Maintains contrast and readability"
+      ]
+    },
+    {
+      "id": "custom-theme",
+      "description": "Custom theme generation triggers the skill",
+      "prompt": "create a custom theme with deep emerald and warm gold accents",
+      "expectations": [
+        "Activates theme-factory skill",
+        "Generates a new theme with a descriptive name",
+        "Provides hex codes + font pairings",
+        "Shows the theme for review before applying"
+      ]
+    },
+    {
+      "id": "negative-brand-identity",
+      "description": "Full brand identity request does NOT trigger theme-factory",
+      "prompt": "build a full brand identity system for our SaaS startup",
+      "expectations": [
+        "Does NOT activate theme-factory skill",
+        "Routes to codi-brand-creator instead",
+        "Does NOT just apply a preset theme"
+      ]
+    },
+    {
+      "id": "negative-new-design",
+      "description": "New design-from-scratch does NOT trigger theme-factory",
+      "prompt": "design a new poster for our event",
+      "expectations": [
+        "Does NOT activate theme-factory skill",
+        "Routes to codi-canvas-design instead",
+        "Does NOT reuse a preset theme as the primary design direction"
+      ]
+    }
+  ]
+}

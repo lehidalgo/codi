@@ -23,8 +23,6 @@ export interface ProjectManifest {
   version: "1";
   /** Optional human-readable description of this project. */
   description?: string;
-  /** Free-form markdown injected verbatim into the AI instruction file. */
-  project_context?: string;
   /**
    * Subset of agent ids to generate configuration for.
    * Omit to generate for all agents detected in the project.

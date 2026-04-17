@@ -7,6 +7,7 @@ import { cursorAdapter } from "#src/adapters/cursor.js";
 import { codexAdapter } from "#src/adapters/codex.js";
 import { windsurfAdapter } from "#src/adapters/windsurf.js";
 import { clineAdapter } from "#src/adapters/cline.js";
+import { copilotAdapter } from "#src/adapters/copilot.js";
 import { createMockConfig } from "./mock-config.js";
 import { PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
 import type { AgentAdapter } from "#src/types/agent.js";
@@ -17,6 +18,7 @@ const adapters: AgentAdapter[] = [
   codexAdapter,
   windsurfAdapter,
   clineAdapter,
+  copilotAdapter,
 ];
 
 describe("generated output snapshots", () => {

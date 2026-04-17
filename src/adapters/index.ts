@@ -4,6 +4,7 @@ import { cursorAdapter } from "./cursor.js";
 import { codexAdapter } from "./codex.js";
 import { windsurfAdapter } from "./windsurf.js";
 import { clineAdapter } from "./cline.js";
+import { copilotAdapter } from "./copilot.js";
 import type { AgentAdapter } from "../types/agent.js";
 
 export { claudeCodeAdapter } from "./claude-code.js";
@@ -11,6 +12,7 @@ export { cursorAdapter } from "./cursor.js";
 export { codexAdapter } from "./codex.js";
 export { windsurfAdapter } from "./windsurf.js";
 export { clineAdapter } from "./cline.js";
+export { copilotAdapter } from "./copilot.js";
 
 /**
  * The canonical registry of all supported agent adapters.
@@ -23,7 +25,7 @@ export { clineAdapter } from "./cline.js";
  * ```ts
  * import { ALL_ADAPTERS } from 'codi-cli';
  * const ids = ALL_ADAPTERS.map(a => a.id);
- * // ["claude-code", "cursor", "codex", "windsurf", "cline"]
+ * // ["claude-code", "cursor", "codex", "windsurf", "cline", "copilot"]
  * ```
  */
 export const ALL_ADAPTERS: AgentAdapter[] = [
@@ -32,6 +34,7 @@ export const ALL_ADAPTERS: AgentAdapter[] = [
   codexAdapter,
   windsurfAdapter,
   clineAdapter,
+  copilotAdapter,
 ];
 
 /**

@@ -51,7 +51,7 @@ When 5 or more observations accumulate, Codi prompts you at the end of a turn:
 
 > [Codi] 6 observations in .codi/feedback/ — run /codi-refine-rules to review
 
-You can also check at any time by running `/codi-skill-feedback-reporter`. It shows:
+You can also check at any time by running `/codi-refine-rules (REVIEW mode)`. It shows:
 
 ```
 ## Feedback Summary — 6 observations across 3 artifacts

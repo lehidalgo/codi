@@ -571,9 +571,16 @@ Run this mental checklist on every slide you edit:
    `flex: 0 0 auto`
 8. **Bullet uniform spacing** — `space-evenly` with zero container vertical
    padding
-9. **No overflow** — run the verification script; all slides return 0
-10. **Equidistant recursive** — every nested card also uses `gap`, no inner
-    `margin-top`/`margin-bottom` shortcuts
+9. **Stretch rows** — bullet rows and card grids use `flex: 1` so every
+   slide fills the content zone; no trailing white space
+10. **No overflow** — run the verification script; all slides return 0
+11. **Quote box** — on `data-type="quote"` slides, the `<blockquote>` has
+    even padding, left accent bar, and attribution pinned to the bottom
+12. **Per-slide checklist applied** — every slide individually passes rules
+    1–11 (not just spot-checked at deck scope)
+13. **Cover exception honored** — if the first slide diverges from rule 1,
+    rules 3 (text size), 5 (equidistance), and 10 (no overflow) still
+    apply (see §13 below)
 
 If any item fails, fix before continuing. Do not ship a slide that violates
 the design system.

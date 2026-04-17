@@ -114,7 +114,7 @@ managed_by: codi
 | `description` | string | Yes | — | One-line description |
 | `version` | number | Yes | `1` |  |
 | `type` | `"skill"` | Yes | `skill` | Always `skill` |
-| `compatibility` | `claude-code` \| `cursor` \| `codex` \| `windsurf` \| `cline`[] | No | — | Compatible agent IDs |
+| `compatibility` | `claude-code` \| `cursor` \| `codex` \| `windsurf` \| `cline` \| `copilot`[] | No | — | Compatible agent IDs |
 | `tools` | string[] | No | — | Required MCP tools |
 | `model` | string | No | — | Preferred AI model |
 | `managed_by` | `codi` \| `user` | Yes | `user` | Who manages this artifact |
@@ -139,19 +139,18 @@ managed_by: codi
 | Category | Skills |
 |----------|--------|
 | **Brand Identity** | codi-brand-creator, codi-codi-brand |
-| **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-test-coverage, codi-webapp-testing |
-| **Codi Platform** | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-feedback-reporter |
+| **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing |
+| **Codi Platform** | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator |
 | **Content Creation** | codi-content-factory |
 | **Content Refinement** | codi-humanizer |
 | **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory |
-| **Developer Tools** | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-diagnostics, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
-| **Developer Workflow** | codi-audit-fix, codi-brainstorming, codi-branch-finish, codi-debugging, codi-evidence-gathering, codi-guided-execution, codi-plan-executor, codi-plan-writer, codi-step-documenter, codi-subagent-dev, codi-tdd, codi-verification, codi-worktrees |
-| **Document Generation** | codi-deck-engine, codi-doc-engine |
+| **Developer Tools** | codi-box-validator, codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-graph-sync, codi-html-live-inspect, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
+| **Developer Workflow** | codi-audit-fix, codi-brainstorming, codi-branch-finish, codi-debugging, codi-evidence-gathering, codi-guided-execution, codi-plan-execution, codi-plan-writer, codi-step-documenter, codi-tdd, codi-verification, codi-worktrees |
 | **File Format Tools** | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
 | **Planning** | codi-roadmap |
 | **Productivity** | codi-audio-transcriber, codi-notebooklm |
-| **Testing** | codi-test-run |
-| **Workflow** | codi-daily-log, codi-session-handoff |
+| **Testing** | codi-test-suite |
+| **Workflow** | codi-session-log |
 <!-- GENERATED:END:skill_templates -->
 
 ### Progressive Loading — Agent-Native, Not Codi-Managed
@@ -168,9 +167,9 @@ This means progressive loading quality depends on the agent, not Codi. As agents
 
 ### Skill Inlining (`progressive_loading` flag)
 
-The `progressive_loading` flag controls a separate concern: whether **single-file agents** (Windsurf, Cline) inline skill content directly in their main config file, or show a compact catalog table instead:
+The `progressive_loading` flag controls a separate concern: whether **single-file agents** (Windsurf, Cline, GitHub Copilot) inline skill content directly in their main config file, or show a compact catalog table instead:
 
-- **off** — Inline full skill content in `.windsurfrules` / `.clinerules` (larger file, all skills immediately visible)
+- **off** — Inline full skill content in `.windsurfrules` / `.clinerules` / `.github/copilot-instructions.md` (larger file, all skills immediately visible)
 - **metadata** — Show a skill catalog table in the main file; full content lives in separate skill files (smaller main file)
 
 This flag has **no effect** on agents that use separate skill files (Claude Code, Cursor, Codex) — those always get full-content SKILL.md files regardless.
@@ -219,7 +218,7 @@ managed_by: codi
 ### Built-in Agent Templates
 
 <!-- GENERATED:START:agent_templates -->
-`codi-ai-engineering-expert`, `codi-api-designer`, `codi-code-reviewer`, `codi-codebase-explorer`, `codi-data-analytics-bi-expert`, `codi-data-engineering-expert`, `codi-data-intensive-architect`, `codi-data-science-specialist`, `codi-docs-lookup`, `codi-legal-compliance-eu`, `codi-marketing-seo-specialist`, `codi-mlops-engineer`, `codi-nextjs-researcher`, `codi-onboarding-guide`, `codi-openai-agents-specialist`, `codi-payload-cms-auditor`, `codi-performance-auditor`, `codi-python-expert`, `codi-refactorer`, `codi-scalability-expert`, `codi-security-analyzer`, `codi-test-generator`
+`codi-ai-engineering-expert`, `codi-api-designer`, `codi-code-reviewer`, `codi-codebase-explorer`, `codi-data-analytics-bi-expert`, `codi-data-engineering-expert`, `codi-data-intensive-architect`, `codi-data-science-specialist`, `codi-docs-lookup`, `codi-legal-compliance-eu`, `codi-marketing-seo-specialist`, `codi-mlops-engineer`, `codi-nextjs-researcher`, `codi-openai-agents-specialist`, `codi-payload-cms-auditor`, `codi-performance-auditor`, `codi-python-expert`, `codi-refactorer`, `codi-scalability-expert`, `codi-security-analyzer`, `codi-test-generator`
 <!-- GENERATED:END:agent_templates -->
 
 ---

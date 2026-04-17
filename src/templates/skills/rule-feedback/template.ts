@@ -2,16 +2,43 @@ import { PROJECT_NAME, PLATFORM_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/
 
 export const template = `---
 name: {{name}}
-description: "Rule observation skill. Activates when the agent notices a gap, outdated guidance, or missing example in a loaded rule. Emits a CODI-OBSERVATION marker — the Stop hook collects and structures it automatically."
+description: |
+  Rule observation skill. Activates automatically when the agent notices a
+  gap, outdated guidance, missing example, or user correction related to a
+  loaded rule. Emits an inline \\\`[CODI-OBSERVATION: rule | category |
+  text]\\\` marker — the Stop hook collects and structures it to
+  \\\`.codi/feedback/rules/\\\`. Categories: \\\`missing-step\\\`,
+  \\\`outdated-rule\\\`, \\\`missing-example\\\`, \\\`user-correction\\\`,
+  \\\`trigger-miss\\\`, \\\`trigger-false\\\`, \\\`wrong-output\\\`.
+  Background observer — the agent does not write files. Do NOT emit for
+  single-occurrence anecdotes (require 2+ evidence points), do NOT directly
+  edit rule files (use ${PROJECT_NAME}-refine-rules), and do NOT emit during
+  time-critical operations (bug incidents, blocking hot fixes).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 6
+version: 9
 ---
 
-# Rule Feedback
+# {{name}} — Rule Feedback
+
+## When to Activate
+
+- A codebase pattern repeats 2+ times but no loaded rule covers it
+- A loaded rule recommends something the project has moved away from
+- A loaded rule covers a topic but lacks a relevant BAD/GOOD example
+- The user corrects behavior that contradicts or extends a loaded rule
+- A loaded rule's trigger fired when it should not have, or failed to fire when it should have
+
+## Skip When
+
+- Time-critical operations (bug incidents, blocking hot fixes) — observations can wait
+- Single-occurrence anecdotes without 2+ evidence points (except user corrections)
+- Applying rule changes to the codebase — use ${PROJECT_NAME}-refine-rules
+- Creating a brand-new rule from scratch — use ${PROJECT_NAME}-rule-creator
+- The session has already emitted 3 observations — focus on the most impactful
 
 ## Purpose
 
@@ -70,6 +97,5 @@ The Stop hook scans your response, extracts the marker, and writes a structured 
 
 ## Related Skills
 
-- **${PROJECT_NAME}-refine-rules** — Review and apply collected rule feedback
-- **${PROJECT_NAME}-skill-feedback-reporter** — Review accumulated skill and rule observations
+- **${PROJECT_NAME}-refine-rules** — Review (summary) and refine (interactive edits) rules from collected feedback
 `;

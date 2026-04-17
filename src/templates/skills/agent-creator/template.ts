@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # Agent Creator

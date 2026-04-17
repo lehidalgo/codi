@@ -1,0 +1,59 @@
+{
+  "skillName": "codi-session-recovery",
+  "cases": [
+    {
+      "id": "activate-after-two-corrections",
+      "description": "Second self-correction triggers the skill",
+      "prompt": "hmm, I realize my last two fixes were wrong — let me try a different approach",
+      "expectations": [
+        "Activates session-recovery skill",
+        "Stops further task work before recovering",
+        "Builds the error timeline with what/when/root-cause/fix/time-wasted per error",
+        "Classifies patterns using the 7-pattern table (stale context / assumption cascade / etc.)",
+        "Writes a docs/YYYYMMDD_HHMM_REVIEW_error-recovery.md report"
+      ]
+    },
+    {
+      "id": "user-points-out-repeat",
+      "description": "User flagging the same mistake twice triggers the skill",
+      "prompt": "you're making the same path mistake again — that's the third time",
+      "expectations": [
+        "Activates session-recovery skill",
+        "Acknowledges the pattern to the user",
+        "Produces the diagnostic report",
+        "Recommends context reset (/clear or new session)"
+      ]
+    },
+    {
+      "id": "propose-preventive-rule",
+      "description": "Systemic error pattern proposes a preventive rule",
+      "prompt": "I keep referencing functions that don't exist in this codebase",
+      "expectations": [
+        "Activates session-recovery skill",
+        "Identifies \"Hallucinated API/path\" as the pattern",
+        "Proposes a codi rule to verify paths/functions via code graph before referencing",
+        "Writes rule feedback to .codi/feedback/rules/ if user declines creating a rule now"
+      ]
+    },
+    {
+      "id": "negative-first-mistake",
+      "description": "A single first-time mistake does NOT trigger the skill",
+      "prompt": "oh, I got that wrong — let me fix it",
+      "expectations": [
+        "Does NOT activate session-recovery skill (only one correction so far)",
+        "Fixes the mistake and continues normally",
+        "Does NOT produce a diagnostic report"
+      ]
+    },
+    {
+      "id": "negative-user-reported-bug",
+      "description": "User-reported codebase bug does NOT trigger session-recovery",
+      "prompt": "we found a bug in production — logs show a crash on empty payloads",
+      "expectations": [
+        "Does NOT activate session-recovery skill (not about the agent's own mistakes)",
+        "Routes to codi-debugging instead",
+        "Does NOT produce an error-recovery report"
+      ]
+    }
+  ]
+}

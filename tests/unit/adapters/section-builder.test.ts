@@ -9,7 +9,6 @@ import {
   getEnabledMcpServers,
   collectMcpEnvVars,
   buildMcpEnvExample,
-  buildProjectContext,
   buildSelfDevWarning,
 } from "#src/adapters/section-builder.js";
 import { MANIFEST_FILENAME, PROJECT_NAME } from "#src/constants.js";
@@ -330,53 +329,6 @@ describe("buildSkillRoutingTable", () => {
       ],
     });
     expect(buildSkillRoutingTable(config)).toBeNull();
-  });
-});
-
-describe("buildProjectContext", () => {
-  it("returns a section when project_context is set", () => {
-    const config = createMockConfig({
-      manifest: {
-        name: "my-proj",
-        version: "1",
-        agents: [],
-        project_context: "## My Context\n\nSome guidance.",
-      },
-    });
-    const result = buildProjectContext(config);
-    expect(result).not.toBeNull();
-    expect(result).toContain("## Project Context");
-    expect(result).toContain("## My Context");
-    expect(result).toContain("Some guidance.");
-  });
-
-  it("returns null when project_context is absent", () => {
-    const config = createMockConfig();
-    expect(buildProjectContext(config)).toBeNull();
-  });
-
-  it("returns null when project_context is empty string", () => {
-    const config = createMockConfig({
-      manifest: {
-        name: "my-proj",
-        version: "1",
-        agents: [],
-        project_context: "",
-      },
-    });
-    expect(buildProjectContext(config)).toBeNull();
-  });
-
-  it("returns null when project_context is only whitespace", () => {
-    const config = createMockConfig({
-      manifest: {
-        name: "my-proj",
-        version: "1",
-        agents: [],
-        project_context: "   \n  ",
-      },
-    });
-    expect(buildProjectContext(config)).toBeNull();
   });
 });
 

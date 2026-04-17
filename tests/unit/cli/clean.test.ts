@@ -125,6 +125,83 @@ describe("clean command handler", () => {
     expect(result.data.filesDeleted).toContain("CLAUDE.md");
     expect(result.data.filesDeleted).toContain(".mcp.env.example");
   });
+
+  it("removes Copilot generated files and subdirs, preserves user-owned .github/ entries", async () => {
+    // Simulate user-owned .github/ entries that MUST be preserved
+    await fs.mkdir(path.join(tmpDir, ".github", "workflows"), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, ".github", "workflows", "ci.yml"), "name: CI", "utf-8");
+    await fs.writeFile(path.join(tmpDir, ".github", "dependabot.yml"), "version: 2", "utf-8");
+
+    // Simulate Copilot-generated files
+    await fs.writeFile(path.join(tmpDir, ".github", "copilot-instructions.md"), "# Gen", "utf-8");
+    await fs.mkdir(path.join(tmpDir, ".github", "prompts"), { recursive: true });
+    await fs.writeFile(
+      path.join(tmpDir, ".github", "prompts", "code-review.prompt.md"),
+      "# Prompt",
+      "utf-8",
+    );
+    await fs.mkdir(path.join(tmpDir, ".github", "skills", "commit"), { recursive: true });
+    await fs.writeFile(
+      path.join(tmpDir, ".github", "skills", "commit", "SKILL.md"),
+      "# Skill",
+      "utf-8",
+    );
+    await fs.mkdir(path.join(tmpDir, ".github", "agents"), { recursive: true });
+    await fs.writeFile(
+      path.join(tmpDir, ".github", "agents", "reviewer.agent.md"),
+      "# Agent",
+      "utf-8",
+    );
+    await fs.mkdir(path.join(tmpDir, ".github", "instructions"), { recursive: true });
+    await fs.writeFile(
+      path.join(tmpDir, ".github", "instructions", "rule.instructions.md"),
+      "# Rule",
+      "utf-8",
+    );
+    await fs.mkdir(path.join(tmpDir, ".github", "hooks"), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, ".github", "hooks", "codi-hooks.json"), "{}", "utf-8");
+    await fs.mkdir(path.join(tmpDir, ".vscode"), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, ".vscode", "mcp.json"), "{}", "utf-8");
+    await fs.writeFile(
+      path.join(tmpDir, ".vscode", "settings.json"),
+      '{"user": "setting"}',
+      "utf-8",
+    );
+
+    const result = await cleanHandler(tmpDir, { json: true });
+    expect(result.success).toBe(true);
+
+    // Codi-generated files removed
+    await expect(
+      fs.access(path.join(tmpDir, ".github", "copilot-instructions.md")),
+    ).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".github", "prompts"))).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".github", "skills"))).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".github", "agents"))).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".github", "instructions"))).rejects.toThrow();
+    await expect(
+      fs.access(path.join(tmpDir, ".github", "hooks", "codi-hooks.json")),
+    ).rejects.toThrow();
+    await expect(fs.access(path.join(tmpDir, ".vscode", "mcp.json"))).rejects.toThrow();
+
+    // User-owned files preserved
+    const workflow = await fs.readFile(
+      path.join(tmpDir, ".github", "workflows", "ci.yml"),
+      "utf-8",
+    );
+    expect(workflow).toBe("name: CI");
+    const dependabot = await fs.readFile(path.join(tmpDir, ".github", "dependabot.yml"), "utf-8");
+    expect(dependabot).toBe("version: 2");
+    const userSettings = await fs.readFile(path.join(tmpDir, ".vscode", "settings.json"), "utf-8");
+    expect(userSettings).toBe('{"user": "setting"}');
+
+    // The .github/ directory itself must still exist — it is user-owned
+    const githubStat = await fs.stat(path.join(tmpDir, ".github"));
+    expect(githubStat.isDirectory()).toBe(true);
+    // Same for .vscode/
+    const vscodeStat = await fs.stat(path.join(tmpDir, ".vscode"));
+    expect(vscodeStat.isDirectory()).toBe(true);
+  });
 });
 
 describe("clean hook files", () => {

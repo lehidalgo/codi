@@ -1,6 +1,10 @@
 import type { NormalizedConfig, NormalizedSkill, McpConfig } from "../types/config.js";
 import { PROJECT_NAME, PROJECT_NAME_DISPLAY, PROJECT_URL, BRAND_CATEGORY } from "../constants.js";
 
+function sanitizeTableCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\n|\r/g, " ");
+}
+
 /** Build a project overview section from manifest metadata. */
 export function buildProjectOverview(config: NormalizedConfig): string {
   const { manifest } = config;
@@ -45,7 +49,7 @@ export function buildAgentsTable(config: NormalizedConfig): string | null {
   const lines = ["## Available Agents", "", "| Agent | Purpose |", "|-------|---------|"];
 
   for (const agent of config.agents) {
-    lines.push(`| ${agent.name} | ${agent.description} |`);
+    lines.push(`| ${sanitizeTableCell(agent.name)} | ${sanitizeTableCell(agent.description)} |`);
   }
 
   return lines.join("\n");
@@ -67,7 +71,7 @@ export function buildSkillRoutingTable(config: NormalizedConfig): string | null 
 
 function buildSkillRow(skill: NormalizedSkill): string {
   const summary = extractRoutingSummary(skill.description);
-  return `| ${skill.name} | ${summary} |`;
+  return `| ${sanitizeTableCell(skill.name)} | ${sanitizeTableCell(summary)} |`;
 }
 
 function extractRoutingSummary(description: string): string {
@@ -201,13 +205,6 @@ export function buildMcpEnvExample(servers: McpConfig["servers"]): string | null
   return lines.join("\n");
 }
 
-/** Build a Project Context section from the manifest's project_context field. */
-export function buildProjectContext(config: NormalizedConfig): string | null {
-  const ctx = config.manifest.project_context;
-  if (!ctx?.trim()) return null;
-  return `## Project Context\n\n${ctx.trim()}`;
-}
-
 /** Build a Self-Development Mode warning when working on the Codi source repo. */
 export function buildSelfDevWarning(config: NormalizedConfig): string | null {
   if (config.manifest.name !== PROJECT_NAME) return null;
@@ -224,7 +221,62 @@ export function buildSelfDevWarning(config: NormalizedConfig): string | null {
     "| An agent template | `src/templates/agents/<name>.md` | `.claude/agents/` (generated) |",
     "| This project's own rules | `.codi/rules/<name>.md` | `.claude/rules/` (generated) |",
     "",
-    "Run `pnpm build && codi generate` in a test project to verify template changes.",
     "Bump `version:` in template frontmatter whenever content changes.",
+    "",
+    "### The three-layer pipeline",
+    "",
+    "Codi moves content through three distinct layers. Understanding which layer",
+    "a command reads from prevents the most common mistake in self-dev mode:",
+    "editing `src/templates/` and wondering why `codi generate` did nothing.",
+    "",
+    "| Layer | Path | What lives here |",
+    "|-------|------|-----------------|",
+    "| 1. Source | `src/templates/` | The template shipped to consumers |",
+    "| 2. Installed | `.codi/<artifact-type>/<name>/` | A project's **local copy** of an installed artifact |",
+    "| 3. Generated | `.claude/` / `.cursor/` / `.codex/` / ... | Per-agent output produced from the installed copy |",
+    "",
+    "`pnpm build` compiles `src/templates/` into `dist/`.",
+    "`codi add <artifact-type> <name> --template <name>` copies `dist/` into `.codi/`.",
+    "`codi generate` reads `.codi/` and writes the per-agent directories.",
+    "",
+    "### When editing `src/templates/` (framework development)",
+    "",
+    "**`codi generate` does NOT read from `src/templates/`.** It only reads from",
+    "`.codi/`. To make source edits take effect, refresh the installed copy first:",
+    "",
+    "```bash",
+    "# 1. Edit src/templates/skills/<name>/",
+    "# 2. Rebuild compiled templates",
+    "pnpm build",
+    "",
+    "# 3. Clean the stale installed copy",
+    "rm -rf .codi/skills/codi-<name>",
+    "",
+    "# 4. Remove the entry from the artifact manifest",
+    "node -e \"const fs=require('fs'); const p='.codi/artifact-manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); if(m.artifacts) delete m.artifacts['codi-<name>']; fs.writeFileSync(p, JSON.stringify(m, null, 2)+'\\n');\"",
+    "",
+    "# 5. Reinstall from the freshly built template",
+    "codi add skill codi-<name> --template codi-<name>",
+    "",
+    "# 6. Regenerate per-agent output",
+    "codi generate --force",
+    "```",
+    "",
+    "The same pattern applies to rules and agents — swap `skill` for `rule` or",
+    "`agent`. `codi update --skills --force` is documented as a refresh path but",
+    "does not consistently overwrite `.codi/` when the installed artifact already",
+    "exists; prefer the explicit clean + reinstall above for deterministic behavior.",
+    "",
+    "### When editing `.codi/` directly (consumer workflow)",
+    "",
+    "This is the flow for a regular consumer. A user edits their own `.codi/`",
+    "artifacts (custom rules, `managed_by: user` overrides), then runs",
+    "`codi generate` to propagate changes into the per-agent directories.",
+    "`codi generate` is **only for this case** — it does not pull source edits.",
+    "",
+    "If you are editing `src/templates/` and only run `codi generate`, your",
+    "changes will never reach `.claude/` or any other agent output. Always",
+    "follow the clean + reinstall flow above when the edit is at the source",
+    "layer.",
   ].join("\n");
 }

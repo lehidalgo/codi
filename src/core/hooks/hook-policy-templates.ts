@@ -146,7 +146,7 @@ const VALID_CATEGORIES = [
   'Testing', 'Workflow', '${PROJECT_NAME_DISPLAY} Platform',
 ];
 // Mirrors SUPPORTED_PLATFORMS in src/constants.ts
-const VALID_PLATFORMS = ['claude-code', 'cursor', 'codex', 'windsurf', 'cline'];
+const VALID_PLATFORMS = ['claude-code', 'cursor', 'codex', 'windsurf', 'cline', 'copilot'];
 const VALID_EFFORT = ['low', 'medium', 'high', 'max'];
 const VALID_SHELL = ['bash', 'powershell'];
 

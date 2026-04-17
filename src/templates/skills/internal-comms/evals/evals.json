@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-internal-comms",
+  "cases": [
+    {
+      "id": "3p-update",
+      "description": "3P team update triggers the skill",
+      "prompt": "write this week's 3P update for the platform team",
+      "expectations": [
+        "Activates internal-comms skill",
+        "Identifies the comm type as 3P update",
+        "Reads references/3p-updates.md for format guidance",
+        "Produces the update with Progress / Plans / Problems sections"
+      ]
+    },
+    {
+      "id": "newsletter",
+      "description": "Company newsletter triggers the skill",
+      "prompt": "draft the monthly company newsletter",
+      "expectations": [
+        "Activates internal-comms skill",
+        "Reads references/company-newsletter.md",
+        "Follows the newsletter format (sections, tone, length) from that guideline",
+        "Does NOT free-style its own structure"
+      ]
+    },
+    {
+      "id": "faq-answer",
+      "description": "FAQ response triggers the skill",
+      "prompt": "answer this FAQ from the #support channel about our new pricing",
+      "expectations": [
+        "Activates internal-comms skill",
+        "Reads references/faq-answers.md",
+        "Produces a concise FAQ-style answer per the guideline"
+      ]
+    },
+    {
+      "id": "negative-external-press",
+      "description": "External press release does NOT trigger internal-comms",
+      "prompt": "draft a press release for our Series B announcement",
+      "expectations": [
+        "Does NOT activate internal-comms skill",
+        "Routes to a marketing/PR skill or a copywriting flow",
+        "Does NOT load internal guideline files"
+      ]
+    },
+    {
+      "id": "negative-customer-email",
+      "description": "Customer-facing email does NOT trigger internal-comms",
+      "prompt": "write an email to our customer explaining the outage",
+      "expectations": [
+        "Does NOT activate internal-comms skill",
+        "Uses an external comms / customer-communication approach",
+        "Does NOT load references/faq-answers.md as if internal"
+      ]
+    }
+  ]
+}

@@ -192,7 +192,10 @@ export async function initHandler(
       wizardResult.preset ??
       presetName;
     displayPresetName =
-      wizardResult.saveAsPreset ?? wizardResult.selectedPresetName ?? artifactPresetName;
+      wizardResult.saveAsPreset ??
+      wizardResult.selectedPresetName ??
+      artifactPresetName ??
+      (wizardResult.configMode === "custom" ? "custom" : undefined);
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 
@@ -473,7 +476,7 @@ export async function initHandler(
   if (!importRegenerated && configResult.ok) {
     const genResult = await generate(configResult.data, projectRoot, {
       force: options.force || options.onConflict === "keep-incoming",
-      json: options.json || options.onConflict === "keep-current",
+      keepCurrent: options.onConflict === "keep-current",
     });
     generated = genResult.ok;
     if (!genResult.ok) {

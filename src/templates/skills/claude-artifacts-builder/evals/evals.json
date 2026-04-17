@@ -1,0 +1,58 @@
+{
+  "skillName": "codi-claude-artifacts-builder",
+  "cases": [
+    {
+      "id": "multi-component-artifact",
+      "description": "Multi-component claude.ai artifact triggers the skill",
+      "prompt": "build me a claude.ai artifact with multiple screens, routing, and shadcn/ui components",
+      "expectations": [
+        "Activates claude-artifacts-builder skill",
+        "Runs init-artifact.sh to scaffold React + TypeScript + Vite + Tailwind + shadcn/ui",
+        "Develops the artifact in the scaffolded project",
+        "Runs bundle-artifact.sh to produce a single bundle.html",
+        "Shares the final bundle.html back to the user"
+      ]
+    },
+    {
+      "id": "shadcn-artifact",
+      "description": "shadcn/ui artifact request triggers the skill",
+      "prompt": "make an artifact using shadcn Button, Card, and Dialog components",
+      "expectations": [
+        "Activates claude-artifacts-builder skill",
+        "Uses the pre-installed shadcn/ui component set",
+        "Produces a bundled single-file HTML output"
+      ]
+    },
+    {
+      "id": "radix-state-artifact",
+      "description": "Artifact needing state and Radix primitives triggers the skill",
+      "prompt": "create a claude.ai artifact for a kanban board with drag-and-drop and Radix dropdowns",
+      "expectations": [
+        "Activates claude-artifacts-builder skill",
+        "Scaffolds a React project via init-artifact.sh",
+        "Bundles with bundle-artifact.sh",
+        "Final HTML is self-contained (inlined CSS + JS, no external assets)"
+      ]
+    },
+    {
+      "id": "negative-single-file-html",
+      "description": "Simple single-file HTML does NOT trigger the skill",
+      "prompt": "give me a single HTML file with a hero section and a button",
+      "expectations": [
+        "Does NOT activate claude-artifacts-builder skill",
+        "Does NOT run init-artifact.sh",
+        "Produces a plain HTML/JSX artifact directly (frontend-design or direct authoring)"
+      ]
+    },
+    {
+      "id": "negative-production-nextjs",
+      "description": "Production Next.js app does NOT trigger the skill",
+      "prompt": "set up a production Next.js app with App Router for our marketing site",
+      "expectations": [
+        "Does NOT activate claude-artifacts-builder skill",
+        "Does NOT produce a single bundle.html (production apps deploy, not bundle)",
+        "Routes to frontend-design or a Next.js-specific skill"
+      ]
+    }
+  ]
+}

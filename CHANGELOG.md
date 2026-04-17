@@ -6,14 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-04-18
+
 ### Added
 
+- **GitHub Copilot support (6th agent platform)** — `codi generate` now emits `.github/copilot-instructions.md`, path-scoped `.github/instructions/{name}.instructions.md`, VS Code Prompt Files in `.github/prompts/`, Agent Skills in `.github/skills/{name}/SKILL.md`, custom agents in `.github/agents/{name}.agent.md`, MCP config at `.vscode/mcp.json`, and heartbeat hooks via `.github/hooks/codi-hooks.json`. Supports both Copilot Chat (IDE) and Copilot CLI / Coding Agent (Agent Skills) in a dual-format single pass.
+- **`sanitizeNameForPath()` shared utility** — single source of truth for adapter-level filename sanitization across all 6 adapters; prevents path traversal via artifact names (`../`, `/`, special chars).
+- **Adapter-derived `codi clean`** — `AGENT_SUBDIRS` / `AGENT_FILES` / `knownFiles` now derived from `ALL_ADAPTERS` so new adapters auto-register for cleanup. `isSafeSubdir` guard prevents recursive deletion of the project root when an adapter declares `paths.rules = "."` (Codex).
+- **content-factory — plan-first operating system** — six-phase validation-gated workflow (Discovery → Master → Validation → Planning → Validation → Generation) with Markdown anchor, Markdown variant plans, and HTML rendering only after explicit user approval
+- **content-factory — platform subfolder structure** — `content/{linkedin,instagram,facebook,tiktok,x,blog,deck}/` scaffolded per project with per-platform playbooks and traversal-safe path resolution
+- **content-factory — My Work tab** — promoted from Gallery filter to top-level tab
+- **content-factory — external-skill soft deps** — integration with `marketingskills`, `claude-blog`, `claude-seo`, `banana-claude`
+- **content-factory — UI polish** — format picker gated by type, preview-bar card controls, scrollable filmstrip, 3× export resolution, default light palette
+- **`codi generate` prunes orphaned files** — files that were generated in a previous run but are no longer present in the source templates are now automatically deleted. Files with local edits are preserved unless `--on-conflict keep-incoming` (or `--force`) is passed. Implemented via new `StateManager.detectOrphans()` + `deleteOrphans()` methods with unit test coverage.
+- **`codi update --on-conflict <strategy>`** — `codi update` now accepts the same `keep-current` / `keep-incoming` strategies as `codi generate` for non-interactive conflict resolution.
 - **`--on-conflict` flag** — `codi init` and `codi generate` accept `--on-conflict keep-current|keep-incoming` to control conflict resolution in non-interactive/CI mode; `--force` remains an alias for `keep-incoming`
 - **heartbeat hooks** — `codi generate` writes `codi-skill-tracker.cjs` and `codi-skill-observer.cjs` to `.codi/hooks/` and wires them into `.claude/settings.json` and `.codex/hooks.json`
 - **skill-observer** — Stop hook extracts `[CODI-OBSERVATION: ...]` markers from the transcript and writes feedback JSON to `.codi/feedback/`
 - **skill-tracker** — InstructionsLoaded hook records active Codi skills to `.codi/.session/active-skills.json`
-- **core-platform** — all 6 built-in presets now include the self-improvement rule and 6 feedback-loop skills by default
-- **skill-feedback-reporter** — repurposed to read `.codi/feedback/` and show the top 3 most actionable observations
+- **core-platform** — all 6 built-in presets now include the self-improvement rule and 5 self-improvement skills by default (verification, session-recovery, rule-feedback, refine-rules, compare-preset)
+- **refine-rules** — two-mode skill (REVIEW + REFINE) that reads `.codi/feedback/` and edits rule files with approval
 - **brand-creator** — new skill replacing `brand-identity`; generates brand skills with `brand/tokens.json` (themes, fonts, assets, voice)
 - **content-factory** — brand API endpoints (`/api/brands`, `/api/active-brand`) and brand template support
 - **content-factory** — campaign pipeline: `/api/active-card`, `/api/brief`, brief-driven variant propagation, promote-to-template workflow
@@ -23,6 +35,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **skills consolidation (66 → 60)** — six merges collapse redundant skills while preserving all functionality:
+  - `skill-feedback-reporter` absorbed into `refine-rules` as REVIEW mode
+  - `session-handoff` + `daily-log` → `session-log` (HANDOFF / LOG / RESUME modes, markdown journal in `docs/sessions/`)
+  - `diagnostics` absorbed into `debugging` as Phase 5 (MCP-powered deep diagnosis)
+  - `test-run` + `test-coverage` → `test-suite` (RUN / COVERAGE / GENERATE modes)
+  - `plan-executor` + `subagent-dev` → `plan-execution` (INLINE / SUBAGENT modes, always asks user)
+  - `doc-engine` absorbed into `content-factory` (business documents as a reference template)
 - **rule-feedback** — `user-invocable: false`; uses `[CODI-OBSERVATION: ...]` markers instead of writing JSON files
 - **improvement rule** — agent emits observation markers instead of writing files; max 3 per session
 - **settings.json** — always generated; always includes heartbeat hook wiring
@@ -30,8 +49,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- **content-factory** — gallery grid renders empty when templates load after gallery init; force rebuild after `loadTemplates()` resolves
+- **`codi generate` / `codi update` — conflict flag name collision** — `GenerateOptions` and `ConflictOptions` used a misnamed `json` field that meant "skip conflicts silently", colliding with the CLI's global `--json` output flag. Passing `--json` for JSON output silently activated skip-conflicts mode, causing unintended preservation of stale files. Renamed to `keepCurrent` throughout the codebase. The CLI's `--json` flag now controls output format only; `--on-conflict keep-current` controls conflict behavior independently.
+- **content-factory — per-file type inference** — preview header derives type/canvas from the active file's card class, not the project-level preset
+- **content-factory — subfolder path handling** — content/session-content/persist-style routes accept relative paths like `linkedin/carousel.html` with a path-traversal guard
+- **content-factory — gallery grid renders empty when templates load after gallery init** — force rebuild after `loadTemplates()` resolves
 - **conflict resolver** — unresolvable conflict data in non-TTY mode now writes to stderr instead of stdout, preventing raw JSON from polluting piped output
+- **conflict resolver error message** — `UnresolvableConflictError` hint now references `--on-conflict keep-incoming` / `--on-conflict keep-current` instead of the misleading `--force` / `--json` pair.
 - **heartbeat hooks** — use `.cjs` extension so CommonJS `require()` works in ESM projects
 - **run-eval** — creates temp skills in `.claude/skills/` instead of deprecated `.claude/commands/`
 - **settings.json hooks** — wrap hook commands in `{ matcher, hooks: [...] }` objects to match Claude Code's required format

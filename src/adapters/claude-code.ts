@@ -9,19 +9,17 @@ import type {
 } from "../types/agent.js";
 import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
+import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
-  buildAgentsTable,
-  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
   buildMcpEnvExample,
   buildSelfDevWarning,
-  buildProjectContext,
 } from "./section-builder.js";
 import {
   CONTEXT_TOKENS_LARGE,
@@ -115,21 +113,14 @@ export const claudeCodeAdapter: AgentAdapter = {
     const selfDevWarning = buildSelfDevWarning(config);
     if (selfDevWarning) sections.push(selfDevWarning);
 
-    // Project context from manifest.project_context
-    const projectContext = buildProjectContext(config);
-    if (projectContext) sections.push(projectContext);
-
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);
     }
 
-    // Agents table
-    const agentsTable = buildAgentsTable(config);
-    if (agentsTable) sections.push(agentsTable);
-
-    // Skill routing table
-    const routingTable = buildSkillRoutingTable(config);
-    if (routingTable) sections.push(routingTable);
+    // Claude Code auto-discovers skills (.claude/skills/) and subagents
+    // (.claude/agents/) from their own description frontmatter. Listing them
+    // again here would duplicate context and bloat CLAUDE.md per
+    // https://code.claude.com/docs/en/best-practices.
 
     // Development notes from flags
     const devNotes = buildDevelopmentNotes(config);
@@ -160,7 +151,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       const ruleContent = addGeneratedFooter(
         `${header}# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
       );
-      const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(rule.name)}.md`;
       files.push({
         path: `.claude/rules/${fileName}`,
         content: ruleContent,
@@ -202,7 +193,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       if (agent.color) lines.push(`color: ${agent.color}`);
       lines.push("---");
       const agentContent = addGeneratedFooter(`${lines.join("\n")}\n\n${agent.content}`);
-      const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(agent.name)}.md`;
       files.push({
         path: `.claude/agents/${fileName}`,
         content: agentContent,
@@ -216,7 +207,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       const brandContent = addGeneratedFooter(
         `# (${PROJECT_NAME}-brand) ${brand.name}\n\n${brand.content}`,
       );
-      const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(brand.name)}.md`;
       files.push({
         path: `.claude/brands/${fileName}`,
         content: brandContent,
@@ -329,7 +320,13 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
 
   // Heartbeat hooks — always present so the feedback loop works out of the box.
   // Users who need personal hooks must use .claude/settings.local.json (auto-merged by Claude Code).
+  //
+  // Commands resolve the script via $CLAUDE_PROJECT_DIR (officially guaranteed for every
+  // hook event, per https://code.claude.com/docs/en/hooks) so they survive session CWD drift
+  // into subdirectories. The ${VAR:-.} fallback preserves today's relative-path behavior if
+  // the env var is somehow unset, so there is no regression in edge environments.
   const hooksDir = `${PROJECT_DIR}/${HOOKS_SUBDIR}`;
+  const projectRootRef = '"${CLAUDE_PROJECT_DIR:-.}"';
   settings.hooks = {
     InstructionsLoaded: [
       {
@@ -337,7 +334,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `${hooksDir}/${SKILL_TRACKER_FILENAME}`,
+            command: `node ${projectRootRef}/${hooksDir}/${SKILL_TRACKER_FILENAME}`,
             timeout: 5,
             async: true,
           },
@@ -350,7 +347,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
+            command: `node ${projectRootRef}/${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
             timeout: 15,
           },
         ],

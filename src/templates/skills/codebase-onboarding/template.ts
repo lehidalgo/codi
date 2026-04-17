@@ -1,17 +1,33 @@
-import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/constants.js";
+import {
+  PROJECT_CLI,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS_YAML,
+  SKILL_CATEGORY,
+} from "#src/constants.js";
 
 export const template = `---
 name: {{name}}
-description: Codebase onboarding workflow. Use when exploring an unfamiliar project or creating an onboarding guide. Analyzes architecture, conventions, and key files to produce a concise guide for new team members or AI agents.
+description: |
+  Codebase onboarding workflow. Use when exploring an unfamiliar project,
+  creating an onboarding guide, setting up project context for future agent
+  sessions, or persisting a Project Context block into CLAUDE.md / AGENTS.md /
+  .cursorrules. Also activate for phrases like "new to this codebase", "first
+  time in this repo", "orient me", "onboard me", "what does this project do",
+  "project overview", "get started with this codebase", "set up project
+  context", "set up CLAUDE.md". Analyzes architecture, conventions, and key
+  files to produce a concise guide for new team members or AI agents. Do NOT
+  activate for fixing bugs, writing new code, single-file reviews, or
+  dependency tracing — those have dedicated skills.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 17
+version: 22
 ---
 
-# {{name}}
+# {{name}} — Codebase Onboarding
 
 ## When to Activate
 
@@ -20,7 +36,16 @@ version: 17
 - User wants to understand the architecture, conventions, or key files of a codebase
 - User asks what the project does, how it is structured, or how to get started
 - A new AI agent needs context about the project before starting work
-- After running \\\`codi init\\\` to add project-specific context to the generated configuration files
+- User wants a persistent Project Context block in CLAUDE.md / AGENTS.md
+- After running \\\`${PROJECT_CLI} init\\\` to add project-specific context to the generated configuration files
+
+## Skip When
+
+- User wants a specific bug fixed — use ${PROJECT_NAME}-debugging
+- User wants a single-file or PR review — use ${PROJECT_NAME}-code-review
+- User wants to trace callers or a dependency graph — use ${PROJECT_NAME}-codebase-explore
+- User wants new code written — use ${PROJECT_NAME}-plan-writer
+- User wants to run tests or check coverage — use ${PROJECT_NAME}-test-suite
 
 ## Onboarding Process
 
@@ -144,7 +169,7 @@ version: 17
 
 ### Phase 6: Create Project Commands Rule
 
-**[CODING AGENT]** Create a dedicated Codi rule file so every future agent session loads the project's common commands without searching through scripts or manifests.
+**[CODING AGENT]** Create a dedicated ${PROJECT_NAME_DISPLAY} rule file so every future agent session loads the project's common commands without searching through scripts or manifests.
 
 1. Collect commands discovered in Phase 1:
    - \\\`package.json\\\` → \\\`scripts\\\` field: extract dev, start, test, build, lint, format, typecheck, clean
@@ -208,11 +233,6 @@ managed_by: user
 - Do not duplicate the README — add insights the README does not cover
 - Flag unknowns honestly — say "unclear" rather than guessing
 - Do not generate architecture diagrams unless specifically requested
-
-## Available Agents
-
-For specialized analysis, delegate to these agents (see \\\`agents/\\\` directory):
-- **${PROJECT_NAME}-onboarding-guide** — Autonomous codebase analysis and guide generation
 
 ## Related Skills
 

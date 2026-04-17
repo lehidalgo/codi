@@ -1,8 +1,39 @@
 # Platform Distillation Rules
 
+> **Read `[[/references/distillation-principles.md]]` first.** That reference
+> is the source of truth for the compression philosophy — it explicitly
+> states these are principles, not a recipe. This file is a **convenience
+> appendix**: one possible concrete recipe per platform. Treat every rule
+> below as a starting point, not a contract. Two agents can distill the
+> same anchor to the same platform and produce distinct, both-valid
+> outputs. File names, slot counts, and hashtag patterns are conventions —
+> not structural requirements enforced by the app or validator.
+
 How to adapt an approved anchor (blog, docs, or deck) into platform-specific
-variants. Each section defines the hook, length, format, density, hashtag, and
-CTA rules for one platform.
+variants. Each section defines suggested hook, length, format, density,
+hashtag, and CTA patterns for one platform.
+
+---
+
+## Card class contract — read before authoring any variant
+
+The `codi:template` meta's `type` field and the HTML card wrapper class MUST
+match. Mismatch breaks the preview header (which infers type from card class),
+the format picker (which gates allowed aspect ratios by type), and the export
+pipeline (which routes per card class).
+
+| `type` in meta | Card wrapper                       | Allowed canvases                                     |
+|----------------|------------------------------------|------------------------------------------------------|
+| `social`       | `<article class="social-card">`    | 1080×1080 · 1080×1350 · 1080×1920 · 1200×630         |
+| `slides`       | `<article class="slide">`          | 1280×720                                             |
+| `document`     | `<article class="doc-page">`       | 794×1123 (A4 96dpi)                                  |
+
+Every platform section below assumes this mapping. Do not substitute one
+card class for another because a platform uses the English word "slide" —
+`.slide` means "deck slide at 1280×720", nothing else. A LinkedIn carousel
+uses `.social-card` even though each card is called "slide 03" in prose.
+
+---
 
 **Universal distillation principles:**
 
@@ -14,7 +45,7 @@ CTA rules for one platform.
    exactly one call to action. Do not stack CTAs.
 4. **Preserve key numbers.** Statistics, quotes, and specific figures from the
    anchor must appear verbatim — these are what people remember and share.
-5. **Apply visual density rules.** See `visual-density.md` — every card must
+5. **Apply visual density rules.** See `[[/references/visual-density.md]]` — every card must
    occupy ≥85% of its canvas regardless of platform.
 6. **Run through humanizer.** If the `humanizer` skill is installed, pass every
    variant through it before saving. Social platforms punish AI-sounding copy.
@@ -23,8 +54,9 @@ CTA rules for one platform.
 
 ## LinkedIn carousel
 
-**File:** `10-linkedin-carousel.html`
+**File:** `content/linkedin/carousel.html` (see also `[[/references/platforms/linkedin.md]]` for the full playbook)
 **Meta:** `{"id":"linkedin-carousel","name":"<topic> — LinkedIn Carousel","type":"social","format":{"w":1080,"h":1350}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 4:5 (1080×1350)
 **Slides:** 6-10 cards (cover + 4-8 content + CTA)
 **Audience mode:** Professional, credentialed, skimmable
@@ -63,8 +95,9 @@ CTA rules for one platform.
 
 ## LinkedIn single post (image card)
 
-**File:** `11-linkedin-post.html`
+**File:** `content/linkedin/post.html` (see also `[[/references/platforms/linkedin.md]]`)
 **Meta:** `{"id":"linkedin-post","name":"<topic> — LinkedIn Post","type":"social","format":{"w":1080,"h":1080}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 1:1 (1080×1080)
 **Slides:** 1 card
 
@@ -90,8 +123,9 @@ also expose it through the app later.
 
 ## Instagram feed post
 
-**File:** `20-instagram-feed.html`
+**File:** `content/instagram/feed.html` (see also `[[/references/platforms/instagram.md]]`)
 **Meta:** `{"id":"instagram-feed","name":"<topic> — Instagram Feed","type":"social","format":{"w":1080,"h":1350}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 4:5 (1080×1350)
 **Slides:** 1-10 cards (carousel-eligible)
 
@@ -125,8 +159,9 @@ also expose it through the app later.
 
 ## Instagram story
 
-**File:** `21-instagram-story.html`
+**File:** `content/instagram/story.html` (see also `[[/references/platforms/instagram.md]]`)
 **Meta:** `{"id":"instagram-story","name":"<topic> — Instagram Story","type":"social","format":{"w":1080,"h":1920}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 9:16 (1080×1920)
 **Slides:** 3-5 cards
 
@@ -156,8 +191,9 @@ also expose it through the app later.
 
 ## TikTok cover / static frame
 
-**File:** `30-tiktok-cover.html`
+**File:** `content/tiktok/cover.html` (see also `[[/references/platforms/tiktok.md]]`)
 **Meta:** `{"id":"tiktok-cover","name":"<topic> — TikTok Cover","type":"social","format":{"w":1080,"h":1920}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** 9:16 (1080×1920)
 **Slides:** 1 card (TikTok cover frame only)
 
@@ -188,8 +224,9 @@ for the video itself.
 
 ## Twitter/X card
 
-**File:** `40-twitter-card.html`
+**File:** `content/x/card.html` (see also `[[/references/platforms/x.md]]`)
 **Meta:** `{"id":"twitter-card","name":"<topic> — Twitter/X Card","type":"social","format":{"w":1200,"h":630}}`
+**Card wrapper:** `<article class="social-card">`
 **Format:** OG (1200×630)
 **Slides:** 1 card
 
@@ -213,8 +250,9 @@ a destination.
 
 ## Summary deck (optional)
 
-**File:** `50-summary-deck.html`
+**File:** `content/deck/slides.html` (see also `[[/references/platforms/deck.md]]`)
 **Meta:** `{"id":"summary-deck","name":"<topic> — Summary Deck","type":"slides","format":{"w":1280,"h":720}}`
+**Card wrapper:** `<article class="slide">`
 **Format:** 16:9 (1280×720)
 **Slides:** 5-8 cards
 
@@ -228,7 +266,7 @@ a distilled summary of any anchor into slide form.
 - Takeaway slide: "3 things to remember"
 - CTA slide: link to anchor source + author contact
 
-**Density:** Apply slides content rules from `visual-density.md` — every slide
+**Density:** Apply slides content rules from `[[/references/visual-density.md]]` — every slide
 needs a title, body, footer strip (brand · page · date), and one decorative
 accent.
 
@@ -243,9 +281,10 @@ linking it back to the brief. This lets the agent locate the variant's
 provenance without reading `brief.json`:
 
 ```html
-<meta name="codi:variant" content='{"platform":"linkedin-carousel","derived_from":"00-anchor-blog.html","derived_from_revision":3}'>
+<meta name="codi:variant" content='{"platform":"linkedin-carousel","derivedFrom":"00-anchor-blog.html","derivedFromRevision":3}'>
 ```
 
-Update `derived_from_revision` whenever the variant is re-distilled. The agent
+Update `derivedFromRevision` whenever the variant is re-distilled. The agent
 reads this tag on re-open to verify the variant is still in sync with the
-anchor.
+anchor. Field names use camelCase (matches the server API and `brief.json`
+schema).

@@ -1,0 +1,104 @@
+{
+  "skillName": "codi-session-log",
+  "cases": [
+    {
+      "id": "handoff-context-limit",
+      "description": "HANDOFF mode: context near limit produces markdown file + copy-paste block",
+      "prompt": "we're approaching the context limit. prepare a handoff for the next session",
+      "expectations": [
+        "Reads git log, git status, and MEMORY.md if available",
+        "Writes docs/sessions/YYYYMMDD_HHMMSS_handoff.md",
+        "Prints the same content to stdout in a fenced block for copy-paste",
+        "Keeps the body under 400 words"
+      ]
+    },
+    {
+      "id": "handoff-team-transfer",
+      "description": "HANDOFF mode: handing off to another developer",
+      "prompt": "I need to hand this off to another developer. create a handoff document",
+      "expectations": [
+        "Activates session-log in HANDOFF mode",
+        "Writes docs/sessions/YYYYMMDD_HHMMSS_handoff.md with current state and next steps",
+        "Documents files modified and known gotchas"
+      ]
+    },
+    {
+      "id": "handoff-slash",
+      "description": "HANDOFF mode: /codi-session-handoff slash activates the skill",
+      "prompt": "/codi-session-handoff",
+      "expectations": [
+        "Activates session-log in HANDOFF mode",
+        "Produces the handoff markdown file in docs/sessions/"
+      ]
+    },
+    {
+      "id": "log-close-day",
+      "description": "LOG mode: end-of-day summary appended to today's log file",
+      "prompt": "let's wrap up — log today's work",
+      "expectations": [
+        "Writes to docs/sessions/YYYYMMDD_log.md",
+        "If file exists, appends a new ## Session block instead of overwriting",
+        "Summary stays under 300 words",
+        "Mentions decisions, PRs, and files touched this session"
+      ]
+    },
+    {
+      "id": "log-close-day-slash",
+      "description": "LOG mode: /close_day triggers the close-day flow",
+      "prompt": "/close_day",
+      "expectations": [
+        "Writes or appends to docs/sessions/YYYYMMDD_log.md",
+        "Produces a structured summary with Done / Decisions / Next sections"
+      ]
+    },
+    {
+      "id": "resume-open-day",
+      "description": "RESUME mode: pick-up-where-we-left-off reads latest session files",
+      "prompt": "what were we working on yesterday? catch me up",
+      "expectations": [
+        "Reads the latest 3-5 markdown files in docs/sessions/",
+        "Produces a verbal recap of the most recent work",
+        "Does NOT write a new file in this mode"
+      ]
+    },
+    {
+      "id": "resume-open-day-slash",
+      "description": "RESUME mode: /open_day triggers read-only recap",
+      "prompt": "/open_day",
+      "expectations": [
+        "Reads docs/sessions/ (latest entries only)",
+        "Produces a concise recap",
+        "Does NOT write any files"
+      ]
+    },
+    {
+      "id": "negative-session-recovery",
+      "description": "Recovering from repeated mistakes should NOT trigger session-log",
+      "prompt": "I'm stuck in a loop. help me recover and get back on track",
+      "expectations": [
+        "Does NOT activate session-log skill",
+        "Routes to codi-session-recovery instead"
+      ]
+    },
+    {
+      "id": "negative-commit-message",
+      "description": "Writing a commit message does NOT trigger session-log",
+      "prompt": "write a commit message for the auth changes",
+      "expectations": [
+        "Does NOT activate session-log skill",
+        "Does NOT write to docs/sessions/",
+        "Routes to codi-commit instead"
+      ]
+    },
+    {
+      "id": "negative-adr",
+      "description": "Architecture decision record does NOT trigger session-log",
+      "prompt": "write an ADR for the database sharding decision",
+      "expectations": [
+        "Does NOT activate session-log skill",
+        "Does NOT touch docs/sessions/",
+        "Routes to codi-project-documentation instead"
+      ]
+    }
+  ]
+}

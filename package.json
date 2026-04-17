@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -68,7 +68,9 @@
     "cli",
     "claude",
     "cursor",
-    "codex"
+    "codex",
+    "copilot",
+    "github-copilot"
   ],
   "dependencies": {
     "@clack/prompts": "^1.1.0",

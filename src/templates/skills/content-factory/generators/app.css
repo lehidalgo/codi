@@ -100,6 +100,13 @@ body {
   overflow: hidden;
 }
 
+.inspect-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
 .panel-label {
   font-size: 10px;
   font-weight: 600;
@@ -142,6 +149,20 @@ body {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(86, 182, 194, 0.08);
+}
+
+.fmt.disabled,
+.fmt[disabled] {
+  cursor: not-allowed;
+  opacity: 0.35;
+  background: transparent;
+  border-style: dashed;
+}
+
+.fmt.disabled:hover,
+.fmt[disabled]:hover {
+  border-color: var(--border);
+  color: var(--text-muted);
 }
 
 .fmt small { font-size: 9px; font-weight: 400; opacity: 0.7; }
@@ -300,6 +321,27 @@ input[type="range"] {
   padding: 4px 2px;
 }
 
+.file-folder {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 2px 4px;
+  font-family: 'Geist Mono', monospace;
+  border-top: 1px dashed transparent;
+}
+
+.file-folder:not(:first-child) {
+  margin-top: 6px;
+  border-top-color: var(--border);
+  padding-top: 12px;
+}
+
+.file-list .file-folder + .file-item {
+  padding-left: 18px;
+}
+
 .file-item {
   display: flex;
   align-items: center;
@@ -355,6 +397,12 @@ input[type="range"] {
   border: 1px solid rgba(86, 182, 194, 0.35);
 }
 
+.file-badge-plan {
+  background: rgba(254, 188, 46, 0.14);
+  color: #febc2e;
+  border: 1px solid rgba(254, 188, 46, 0.35);
+}
+
 /* ====== Export buttons ====== */
 .btn-export {
   display: flex;
@@ -382,6 +430,30 @@ input[type="range"] {
 }
 
 .btn-export:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.btn-export__icon,
+.btn-export__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.btn-export__spinner { display: none; color: var(--accent); }
+
+.btn-export.is-busy { cursor: progress; opacity: 1; }
+.btn-export.is-busy:disabled { opacity: 1; cursor: progress; }
+.btn-export.is-busy .btn-export__icon { display: none; }
+.btn-export.is-busy .btn-export__spinner { display: inline-flex; }
+.btn-export.is-busy .btn-export__spinner svg { animation: btn-export-spin 720ms linear infinite; }
+
+@keyframes btn-export-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-export.is-busy .btn-export__spinner svg { animation-duration: 2s; }
+}
 
 .btn-export.primary {
   background: rgba(86, 182, 194, 0.1);
@@ -524,6 +596,7 @@ input[type="range"] {
 
 /* ====== Preview metadata bar ====== */
 .preview-meta {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -536,6 +609,18 @@ input[type="range"] {
   white-space: nowrap;
   overflow: hidden;
 }
+
+/* Left-side controls (select + validation) pull out of flex flow so the
+   metadata stays visually centered in the bar regardless of their width. */
+.preview-meta #preview-meta-select,
+.preview-meta #preview-meta-validation {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.preview-meta #preview-meta-select { left: 14px; }
+.preview-meta #preview-meta-validation { left: 44px; display: inline-flex; align-items: center; }
+.preview-meta #preview-meta-validation .validation-badge { position: static; transform: none; }
 
 .preview-meta-name {
   color: var(--text);
@@ -704,6 +789,7 @@ input[type="range"] {
   align-items: center;
   justify-content: center;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   padding-bottom: 2px;
 }
@@ -747,17 +833,33 @@ input[type="range"] {
   height: 92px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* `safe center` keeps thumbnails visually centered when they all fit in
+     the bar, but falls back to start-alignment when total width exceeds
+     the container — otherwise `center` silently clips the first thumbs
+     off the left edge and they become unreachable via horizontal scroll. */
+  justify-content: safe center;
   gap: 7px;
   padding: 0 24px;
   background: #050709;
   border-top: 1px solid var(--border);
   overflow-x: auto;
   overflow-y: hidden;
+  overscroll-behavior-x: contain;
   z-index: 18;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  scrollbar-color: rgba(255,255,255,0.18) transparent;
+  scroll-snap-type: x proximity;
 }
+
+.filmstrip::-webkit-scrollbar { height: 6px; }
+.filmstrip::-webkit-scrollbar-track { background: transparent; }
+.filmstrip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+}
+.filmstrip::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }
+
+.filmstrip-thumb { scroll-snap-align: center; }
 
 .filmstrip-thumb {
   flex-shrink: 0;
@@ -851,52 +953,82 @@ input[type="range"] {
 /* ====== Card frame ====== */
 .card-frame {
   flex-shrink: 0;
-  overflow: hidden;
-  border-radius: 10px;
-  box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06);
+  display: flex;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
   position: relative;
 }
 
 .card-frame:hover {
   transform: translateY(-2px);
+}
+
+/* ====== Card rail (left strip: selection circle + validation badge) ====== */
+.card-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 32px;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.card-frame.active-card .card-rail {
+  border-left: 2px solid var(--accent);
+  border-radius: 2px 0 0 2px;
+}
+
+/* ====== Card content (iframe + logo wrapper) ====== */
+.card-content {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06);
+  position: relative;
+}
+
+.card-frame:hover .card-content {
   box-shadow: 0 12px 50px rgba(0,0,0,.7), 0 0 0 1px rgba(86,182,194,.3);
 }
 
-.card-frame.active-card {
+.card-frame.active-card .card-content {
   box-shadow: 0 8px 40px rgba(0,0,0,.6);
 }
 
-.card-frame.selected-card {
+.card-frame.selected-card .card-content {
   box-shadow: 0 8px 40px rgba(0,0,0,.6);
 }
 
-.card-frame iframe {
+.card-content iframe {
   border: none;
   display: block;
   transform-origin: top left;
   pointer-events: none;
 }
 
-/* ====== Card selection circle ====== */
+/* When inspect mode is on, let clicks reach card content in the main
+   preview iframe so the injected inspector can capture DOM elements.
+   Filmstrip thumbnails are left as-is so thumbnail navigation still
+   works by clicking through to the wrapper. */
+body.inspect-on .card-content iframe {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+/* ====== Card selection circle (inside .card-rail) ====== */
 .card-select-circle {
-  position: absolute;
-  top: 8px;
-  left: 8px;
   width: 20px;
   height: 20px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.28);
   background: rgba(13, 17, 23, 0.6);
   cursor: pointer;
-  z-index: 15;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: border-color 0.15s, background 0.15s;
-  backdrop-filter: blur(4px);
 }
 
 .card-select-circle:hover { border-color: var(--accent); }
@@ -934,24 +1066,42 @@ input[type="range"] {
 }
 
 /* ====== Gallery ====== */
-#view-gallery { overflow-y: auto; }
+#view-gallery, #view-work { overflow-y: auto; }
 
-.gallery-hero {
-  padding: 24px 32px 14px;
+/* Compact single-row bar used by both Preset Library and My Work panels.
+   Replaces the former two-row (hero + filters) layout for a minimal
+   look — title on the left, filter pills on the right, one border. */
+.panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 32px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 48px;
+  flex-wrap: wrap;
+}
+
+.panel-bar-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  cursor: help;
+}
+
+.panel-bar-filters {
+  padding: 0;
+  border: none;
   flex-shrink: 0;
 }
 
-.gallery-hero h1 { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
-.gallery-hero p { color: var(--text-muted); font-size: 13px; }
-
-/* ====== Gallery filter bar ====== */
+/* ====== Gallery filter bar (shared by preset + work grids) ====== */
 .gallery-filters {
   display: flex;
   gap: 6px;
-  padding: 12px 32px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
 }
 
 .filter-btn {
@@ -986,6 +1136,7 @@ input[type="range"] {
 
 /* ====== Preset card ====== */
 .preset-card {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
@@ -998,6 +1149,112 @@ input[type="range"] {
   border-color: var(--border-hover);
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Card overflow menu — shared button for template + session cards.
+   A conventional three-dots trigger in the top-right; clicking it opens
+   a small dropdown anchored to the card. One menu open at a time. */
+.card-menu-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(13, 17, 23, 0.85);
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.15s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.card-menu-btn:hover,
+.card-menu-btn:focus-visible,
+.card-menu-btn.is-open {
+  background: rgba(86, 182, 194, 0.15);
+  color: var(--text);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.card-menu-btn[disabled] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Dropdown popup — fixed-positioned so it never clips against card
+   overflow or the gallery grid. */
+.card-menu-popup {
+  position: fixed;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border-hover);
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: card-menu-pop 0.12s ease;
+}
+
+@keyframes card-menu-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.card-menu-item:hover,
+.card-menu-item:focus-visible {
+  background: rgba(86, 182, 194, 0.12);
+  color: var(--text);
+  outline: none;
+}
+
+.card-menu-item.danger {
+  color: var(--danger);
+}
+
+.card-menu-item.danger:hover,
+.card-menu-item.danger:focus-visible {
+  background: rgba(224, 108, 117, 0.14);
+  color: var(--danger);
+}
+
+.card-menu-item-glyph {
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  opacity: 0.75;
 }
 
 .preset-card.selected {
@@ -1090,30 +1347,37 @@ input[type="range"] {
 .status-review      { background: rgba(198,120,221,.12); color: #c678dd; }
 .status-done        { background: rgba(152,195,121,.14); color: #98c379; }
 
-/* ====== Work status sub-filter bar ====== */
+/* ====== Work status filter bar ====== */
 .work-status-filters {
   display: flex;
   gap: 6px;
-  padding: 0 24px 14px;
   flex-wrap: wrap;
 }
 
+/* Match the Gallery preset filter-btn pill style exactly so the two
+   tabs feel cohesive. */
 .status-filter-btn {
-  font-size: 11px;
-  font-family: 'Geist Mono', monospace;
-  padding: 3px 10px;
-  border-radius: 3px;
+  padding: 5px 14px;
+  background: var(--surface);
   border: 1px solid var(--border);
-  background: transparent;
+  border-radius: 99px;
   color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: all 0.15s;
 }
-.status-filter-btn:hover,
-.status-filter-btn.active {
-  background: rgba(86,182,194,.08);
+
+.status-filter-btn:hover {
+  border-color: var(--border-hover);
   color: var(--text);
-  border-color: var(--accent);
+}
+
+.status-filter-btn.active {
+  background: rgba(86, 182, 194, 0.1);
+  border-color: rgba(86, 182, 194, 0.4);
+  color: var(--accent);
 }
 
 .preset-badge {
