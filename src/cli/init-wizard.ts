@@ -138,36 +138,57 @@ export async function runInitWizard(
         break;
       }
       case 3: {
-        if (installMode === "modify") {
-          savedConfigMode = "custom";
-          step++;
-          break;
-        }
-        p.log.step("Configuration");
+        const isModify = installMode === "modify";
+        p.log.step(isModify ? "Update Source" : "Configuration");
         const configMode = await wizardSelect({
-          message: "How do you want to configure?",
-          options: [
-            {
-              label: "Use a built-in preset",
-              value: "preset" as const,
-              hint: "Curated configuration bundles",
-            },
-            {
-              label: "Import from ZIP file",
-              value: "zip" as const,
-              hint: "Load a preset from a .zip package",
-            },
-            {
-              label: "Import from GitHub",
-              value: "github" as const,
-              hint: "Load a preset from a GitHub repository",
-            },
-            {
-              label: "Custom selection",
-              value: "custom" as const,
-              hint: "Pick individual artifacts (searchable)",
-            },
-          ],
+          message: isModify
+            ? "How do you want to update your installation?"
+            : "How do you want to configure?",
+          options: isModify
+            ? [
+                {
+                  label: "Customize current artifacts",
+                  value: "custom" as const,
+                  hint: "Edit the current selection (default)",
+                },
+                {
+                  label: "Import from ZIP file",
+                  value: "zip" as const,
+                  hint: "Replace the active preset with a .zip package",
+                },
+                {
+                  label: "Import from GitHub",
+                  value: "github" as const,
+                  hint: "Replace the active preset with a GitHub repository",
+                },
+                {
+                  label: "Switch to a built-in preset",
+                  value: "preset" as const,
+                  hint: "Reset the selection to a named built-in preset",
+                },
+              ]
+            : [
+                {
+                  label: "Use a built-in preset",
+                  value: "preset" as const,
+                  hint: "Curated configuration bundles",
+                },
+                {
+                  label: "Import from ZIP file",
+                  value: "zip" as const,
+                  hint: "Load a preset from a .zip package",
+                },
+                {
+                  label: "Import from GitHub",
+                  value: "github" as const,
+                  hint: "Load a preset from a GitHub repository",
+                },
+                {
+                  label: "Custom selection",
+                  value: "custom" as const,
+                  hint: "Pick individual artifacts (searchable)",
+                },
+              ],
         });
         if (isBack(configMode)) {
           step--;
@@ -181,10 +202,16 @@ export async function runInitWizard(
         let result: WizardResult | null | symbol;
         switch (savedConfigMode) {
           case "zip":
-            result = await handleZipPath(savedAgents!);
+            result = await handleZipPath(
+              savedAgents!,
+              installMode === "modify" ? existingInstall : undefined,
+            );
             break;
           case "github":
-            result = await handleGithubPath(savedAgents!);
+            result = await handleGithubPath(
+              savedAgents!,
+              installMode === "modify" ? existingInstall : undefined,
+            );
             break;
           case "preset":
             result = await handlePresetPath(

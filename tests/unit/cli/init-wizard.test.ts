@@ -282,6 +282,7 @@ describe("runInitWizard", () => {
   it("lets the user choose modify current installation for existing installs", async () => {
     vi.mocked(wizardSelect)
       .mockResolvedValueOnce("modify" as never) // existing install action
+      .mockResolvedValueOnce("custom" as never) // update source: customize current artifacts
       .mockResolvedValueOnce(prefixedName("balanced") as never); // flag preset inside handleCustomPath
     vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["typescript"] as never) // languages
@@ -310,8 +311,12 @@ describe("runInitWizard", () => {
 
     expect(result).not.toBeNull();
     expect(vi.mocked(wizardSelect).mock.calls[0]?.[0]?.message).toContain("already installed");
-    // config mode prompt is skipped for modify — goes directly to artifact selection
-    expect(vi.mocked(wizardSelect).mock.calls).toHaveLength(2);
+    // modify mode: 3 wizardSelect calls (existing-install action, update source, flag preset)
+    expect(vi.mocked(wizardSelect).mock.calls).toHaveLength(3);
+    // second prompt is the update-source selector with modify-aware wording
+    expect(vi.mocked(wizardSelect).mock.calls[1]?.[0]?.message).toContain(
+      "update your installation",
+    );
   });
 
   it("returns null when existing-install choice is cancelled", async () => {
