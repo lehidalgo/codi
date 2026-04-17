@@ -201,13 +201,6 @@ export function buildMcpEnvExample(servers: McpConfig["servers"]): string | null
   return lines.join("\n");
 }
 
-/** Build a Project Context section from the manifest's project_context field. */
-export function buildProjectContext(config: NormalizedConfig): string | null {
-  const ctx = config.manifest.project_context;
-  if (!ctx?.trim()) return null;
-  return `## Project Context\n\n${ctx.trim()}`;
-}
-
 /** Build a Self-Development Mode warning when working on the Codi source repo. */
 export function buildSelfDevWarning(config: NormalizedConfig): string | null {
   if (config.manifest.name !== PROJECT_NAME) return null;

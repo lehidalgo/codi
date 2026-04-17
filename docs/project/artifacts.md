@@ -219,7 +219,7 @@ managed_by: codi
 ### Built-in Agent Templates
 
 <!-- GENERATED:START:agent_templates -->
-`codi-ai-engineering-expert`, `codi-api-designer`, `codi-code-reviewer`, `codi-codebase-explorer`, `codi-data-analytics-bi-expert`, `codi-data-engineering-expert`, `codi-data-intensive-architect`, `codi-data-science-specialist`, `codi-docs-lookup`, `codi-legal-compliance-eu`, `codi-marketing-seo-specialist`, `codi-mlops-engineer`, `codi-nextjs-researcher`, `codi-onboarding-guide`, `codi-openai-agents-specialist`, `codi-payload-cms-auditor`, `codi-performance-auditor`, `codi-python-expert`, `codi-refactorer`, `codi-scalability-expert`, `codi-security-analyzer`, `codi-test-generator`
+`codi-ai-engineering-expert`, `codi-api-designer`, `codi-code-reviewer`, `codi-codebase-explorer`, `codi-data-analytics-bi-expert`, `codi-data-engineering-expert`, `codi-data-intensive-architect`, `codi-data-science-specialist`, `codi-docs-lookup`, `codi-legal-compliance-eu`, `codi-marketing-seo-specialist`, `codi-mlops-engineer`, `codi-nextjs-researcher`, `codi-openai-agents-specialist`, `codi-payload-cms-auditor`, `codi-performance-auditor`, `codi-python-expert`, `codi-refactorer`, `codi-scalability-expert`, `codi-security-analyzer`, `codi-test-generator`
 <!-- GENERATED:END:agent_templates -->
 
 ---

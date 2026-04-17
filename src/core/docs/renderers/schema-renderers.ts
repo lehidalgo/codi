@@ -270,8 +270,6 @@ const MANIFEST_DESCRIPTIONS: Record<string, string> = {
   name: "Project name (alphanumeric + hyphens)",
   version: "Manifest version (always `1`)",
   description: "Project description",
-  project_context:
-    "Free-form markdown injected into the AI instruction file as a Project Context section",
   agents: "Agent IDs to generate for",
   layers: "Toggle content types",
   "layers.rules": "Include rules in generation",

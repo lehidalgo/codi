@@ -27,7 +27,7 @@ async function startServer() {
   tempDir = mkdtempSync(path.join(tmpdir(), "codi-cf-test-"));
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("Server did not start within 10s")), 10_000);
-    const proc = spawn("bash", [START_SCRIPT, "--name", "test", "--project-dir", tempDir]);
+    const proc = spawn("bash", [START_SCRIPT, "--project-dir", tempDir]);
     serverProcess = proc;
     proc.stdout.on("data", (chunk) => {
       const lines = chunk.toString().split("\n");

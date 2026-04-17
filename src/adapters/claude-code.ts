@@ -14,14 +14,11 @@ import { addGeneratedFooter } from "./generated-header.js";
 import { generateSkillFiles } from "./skill-generator.js";
 import {
   buildProjectOverview,
-  buildAgentsTable,
-  buildSkillRoutingTable,
   buildDevelopmentNotes,
   buildWorkflowSection,
   getEnabledMcpServers,
   buildMcpEnvExample,
   buildSelfDevWarning,
-  buildProjectContext,
 } from "./section-builder.js";
 import {
   CONTEXT_TOKENS_LARGE,
@@ -115,21 +112,14 @@ export const claudeCodeAdapter: AgentAdapter = {
     const selfDevWarning = buildSelfDevWarning(config);
     if (selfDevWarning) sections.push(selfDevWarning);
 
-    // Project context from manifest.project_context
-    const projectContext = buildProjectContext(config);
-    if (projectContext) sections.push(projectContext);
-
     if (flagText) {
       sections.push("## Permissions\n\n" + flagText);
     }
 
-    // Agents table
-    const agentsTable = buildAgentsTable(config);
-    if (agentsTable) sections.push(agentsTable);
-
-    // Skill routing table
-    const routingTable = buildSkillRoutingTable(config);
-    if (routingTable) sections.push(routingTable);
+    // Claude Code auto-discovers skills (.claude/skills/) and subagents
+    // (.claude/agents/) from their own description frontmatter. Listing them
+    // again here would duplicate context and bloat CLAUDE.md per
+    // https://code.claude.com/docs/en/best-practices.
 
     // Development notes from flags
     const devNotes = buildDevelopmentNotes(config);
@@ -329,7 +319,13 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
 
   // Heartbeat hooks — always present so the feedback loop works out of the box.
   // Users who need personal hooks must use .claude/settings.local.json (auto-merged by Claude Code).
+  //
+  // Commands resolve the script via $CLAUDE_PROJECT_DIR (officially guaranteed for every
+  // hook event, per https://code.claude.com/docs/en/hooks) so they survive session CWD drift
+  // into subdirectories. The ${VAR:-.} fallback preserves today's relative-path behavior if
+  // the env var is somehow unset, so there is no regression in edge environments.
   const hooksDir = `${PROJECT_DIR}/${HOOKS_SUBDIR}`;
+  const projectRootRef = '"${CLAUDE_PROJECT_DIR:-.}"';
   settings.hooks = {
     InstructionsLoaded: [
       {
@@ -337,7 +333,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `node ${hooksDir}/${SKILL_TRACKER_FILENAME}`,
+            command: `node ${projectRootRef}/${hooksDir}/${SKILL_TRACKER_FILENAME}`,
             timeout: 5,
             async: true,
           },
@@ -350,7 +346,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `node ${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
+            command: `node ${projectRootRef}/${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
             timeout: 15,
           },
         ],

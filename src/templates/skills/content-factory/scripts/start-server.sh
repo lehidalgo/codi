@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start the content factory server and output connection info.
-# Usage: start-server.sh [--project-dir <path>] [--name <skill-name>] [--host <host>] [--url-host <host>] [--foreground] [--background]
+# Usage: start-server.sh [--project-dir <path>] [--host <host>] [--url-host <host>] [--foreground] [--background]
 #
 # Workspace layout:
 #   <project-dir>/.codi_output/         ← workspace root (WORKSPACE_DIR)
@@ -16,7 +16,6 @@
 #
 # Options:
 #   --project-dir <path>  Root of the project; workspace is stored under .codi_output/
-#   --name <skill>        Unused (kept for backward compat)
 #   --host <bind-host>    Host/interface to bind (default: 127.0.0.1)
 #   --url-host <host>     Hostname shown in returned URL JSON
 #   --foreground          Run server in the current terminal (no backgrounding)
@@ -33,7 +32,6 @@ URL_HOST=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-dir)  PROJECT_DIR="$2";  shift 2 ;;
-    --name)         shift 2 ;;  # unused, kept for backward compat
     --host)         BIND_HOST="$2";    shift 2 ;;
     --url-host)     URL_HOST="$2";     shift 2 ;;
     --foreground|--no-daemon)  FOREGROUND="true";        shift ;;

@@ -1,10 +1,5 @@
 import type { VerificationData } from "./token.js";
-import {
-  PROJECT_NAME_DISPLAY,
-  PROJECT_CLI,
-  PROJECT_DIR,
-  prefixedName,
-} from "#src/constants.js";
+import { PROJECT_NAME_DISPLAY, PROJECT_CLI, PROJECT_DIR, prefixedName } from "#src/constants.js";
 
 export function buildVerificationSection(data: VerificationData): string {
   const lines = [
@@ -14,22 +9,17 @@ export function buildVerificationSection(data: VerificationData): string {
     `- Verification token: \`${data.token}\``,
   ];
 
-  if (data.ruleNames.length > 0) {
-    lines.push(`- Rules: ${data.ruleNames.join(", ")}`);
+  const counts: string[] = [];
+  if (data.ruleNames.length > 0) counts.push(`${data.ruleNames.length} rules`);
+  if (data.skillNames.length > 0) counts.push(`${data.skillNames.length} skills`);
+  if (data.agentNames.length > 0) counts.push(`${data.agentNames.length} agents`);
+  if (counts.length > 0) {
+    lines.push(`- Installed: ${counts.join(", ")}`);
   }
-
-  if (data.skillNames.length > 0) {
-    lines.push(`- Skills: ${data.skillNames.join(", ")}`);
-  }
-
-  if (data.agentNames.length > 0) {
-    lines.push(`- Agents: ${data.agentNames.join(", ")}`);
-  }
-
-  lines.push(`- Generated: ${data.timestamp}`);
+  lines.push(`- Run \`${PROJECT_CLI} list\` for the full manifest`);
   lines.push("");
   lines.push(
-    `When asked "verify ${PROJECT_CLI}" or "${PROJECT_CLI} verify", respond with the verification token and confirm the rules, skills, and agents listed above.`,
+    `When asked "verify ${PROJECT_CLI}" or "${PROJECT_CLI} verify", respond with the verification token and the installed counts above.`,
   );
   lines.push("");
   lines.push("### Artifact Improvement");
@@ -39,12 +29,8 @@ export function buildVerificationSection(data: VerificationData): string {
   );
   lines.push("");
   lines.push("**Improvement loop:**");
-  lines.push(
-    "1. Propose the improvement with evidence (2+ occurrences in the codebase)",
-  );
-  lines.push(
-    `2. If approved, write to \`${PROJECT_DIR}/rules/\` or \`${PROJECT_DIR}/skills/\``,
-  );
+  lines.push("1. Propose the improvement with evidence (2+ occurrences in the codebase)");
+  lines.push(`2. If approved, write to \`${PROJECT_DIR}/rules/\` or \`${PROJECT_DIR}/skills/\``);
   lines.push(`3. Run \`${PROJECT_CLI} generate\` to propagate changes`);
   lines.push(
     `4. After using a skill, write feedback to \`${PROJECT_DIR}/feedback/\` (see ${prefixedName("skill-reporter")})`,

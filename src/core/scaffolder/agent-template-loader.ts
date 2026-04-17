@@ -11,7 +11,6 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("security-analyzer")]: agentTemplates.securityAnalyzer,
   [prefixedName("docs-lookup")]: agentTemplates.docsLookup,
   [prefixedName("refactorer")]: agentTemplates.refactorer,
-  [prefixedName("onboarding-guide")]: agentTemplates.onboardingGuide,
   [prefixedName("performance-auditor")]: agentTemplates.performanceAuditor,
   [prefixedName("api-designer")]: agentTemplates.apiDesigner,
   [prefixedName("codebase-explorer")]: agentTemplates.codebaseExplorer,
