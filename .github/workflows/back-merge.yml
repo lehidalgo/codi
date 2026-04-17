@@ -10,6 +10,7 @@ jobs:
 
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v6
@@ -22,8 +23,29 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge main into develop
+      - name: Prepare back-merge branch
         run: |
-          git checkout develop
-          git merge main --no-edit
-          git push origin develop
+          git fetch origin main develop
+          git checkout -B chore/back-merge-main origin/develop
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "develop already contains main — nothing to back-merge."
+            echo "SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          git merge origin/main --no-edit --no-ff -m "chore: back-merge main into develop"
+          git push --force-with-lease origin chore/back-merge-main
+
+      - name: Open or update back-merge PR
+        if: env.SKIP != '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh pr view chore/back-merge-main --json number >/dev/null 2>&1; then
+            echo "Existing back-merge PR updated via push."
+          else
+            gh pr create \
+              --base develop \
+              --head chore/back-merge-main \
+              --title "chore: back-merge main into develop" \
+              --body "Automated back-merge of main into develop after a release."
+          fi
