@@ -288,6 +288,41 @@ describe("claude-code adapter", () => {
       const skillFiles = files.filter((f) => f.path.startsWith(".claude/skills/"));
       expect(skillFiles).toHaveLength(0);
     });
+
+    it("sanitizes malicious artifact names to prevent path traversal", async () => {
+      const config = createMockConfig({
+        rules: [
+          {
+            name: "../../etc/passwd",
+            description: "malicious",
+            content: "x",
+            priority: "low",
+            alwaysApply: true,
+            managedBy: "user",
+          },
+        ],
+        agents: [
+          {
+            name: "../../../evil",
+            description: "malicious",
+            content: "x",
+          },
+        ],
+        skills: [
+          {
+            name: "../../steal",
+            description: "malicious",
+            content: "x",
+          },
+        ],
+      });
+      const files = await claudeCodeAdapter.generate(config, {});
+
+      for (const f of files) {
+        expect(f.path).not.toContain("..");
+        expect(f.path).not.toMatch(/\/\.\.\//);
+      }
+    });
   });
 
   // ── generate() — agent files ───────────────────────────────────────

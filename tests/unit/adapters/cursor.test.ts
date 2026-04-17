@@ -43,7 +43,7 @@ describe("cursor adapter", () => {
   it("has correct paths", () => {
     expect(cursorAdapter.paths.configRoot).toBe(".cursor");
     expect(cursorAdapter.paths.rules).toBe(".cursor/rules");
-    expect(cursorAdapter.paths.skills).toBeNull();
+    expect(cursorAdapter.paths.skills).toBe(".cursor/skills");
     expect(cursorAdapter.paths.agents).toBeNull();
     expect(cursorAdapter.paths.instructionFile).toBe(".cursorrules");
     expect(cursorAdapter.paths.mcpConfig).toBe(".cursor/mcp.json");
@@ -164,6 +164,34 @@ describe("cursor adapter", () => {
     const ruleFile = files.find((f) => f.path.includes("my-complex"));
     expect(ruleFile).toBeDefined();
     expect(ruleFile!.path).toBe(".cursor/rules/my-complex-rule.mdc");
+  });
+
+  it("sanitizes malicious artifact names to prevent path traversal", async () => {
+    const config = createMockConfig({
+      rules: [
+        {
+          name: "../../etc/passwd",
+          description: "malicious",
+          content: "x",
+          priority: "low",
+          alwaysApply: true,
+          managedBy: PROJECT_NAME,
+        },
+      ],
+      skills: [
+        {
+          name: "../../steal",
+          description: "malicious",
+          content: "x",
+        },
+      ],
+    });
+    const files = await cursorAdapter.generate(config, {});
+
+    for (const f of files) {
+      expect(f.path).not.toContain("..");
+      expect(f.path).not.toMatch(/\/\.\.\//);
+    }
   });
 
   // --- generate() with skills ---

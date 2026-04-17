@@ -19,6 +19,19 @@ import { createMockConfig } from "../unit/adapters/mock-config.js";
 import { PROJECT_NAME, PROJECT_NAME_DISPLAY, MANIFEST_FILENAME } from "#src/constants.js";
 import type { NormalizedConfig } from "#src/types/config.js";
 
+// --- Shared test infrastructure ---
+const tmpDir = join(tmpdir(), `${PROJECT_NAME}-qa-copilot-` + Date.now());
+
+async function setupTestEnv() {
+  // Create .codi/skills/ directories for the skills in createRealisticConfig()
+  await mkdir(join(tmpDir, ".codi/skills/commit"), { recursive: true });
+  await mkdir(join(tmpDir, ".codi/skills/code-review"), { recursive: true });
+}
+
+async function cleanupTestEnv() {
+  await rm(tmpDir, { recursive: true, force: true });
+}
+
 // --- Helper: extract YAML frontmatter from markdown ---
 function extractFrontmatter(content: string): Record<string, unknown> | null {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
@@ -123,12 +136,21 @@ function createRealisticConfig(): NormalizedConfig {
 }
 
 describe("QA-1: Functional Simulation", () => {
+  beforeEach(async () => {
+    await setupTestEnv();
+  });
+
+  afterEach(async () => {
+    await cleanupTestEnv();
+  });
+
   it("generates all expected file types from a realistic config", async () => {
     const config = createRealisticConfig();
-    const files = await copilotAdapter.generate(config, {});
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
 
-    // 1 main + 1 scoped rule + 2 prompts + 2 agents + 1 MCP + 1 hooks JSON + 2 heartbeat scripts = 10
-    expect(files).toHaveLength(10);
+    // 1 main + 1 scoped rule + 2 prompts + 2 agents + 1 MCP + 1 hooks JSON + 2 heartbeat scripts
+    // + 2 SKILL.md + 8 .gitkeep (4 dirs × 2 skills) = 20
+    expect(files).toHaveLength(20);
     expect(files.map((f) => f.path).sort()).toEqual([
       ".codi/hooks/codi-skill-observer.cjs",
       ".codi/hooks/codi-skill-tracker.cjs",
@@ -139,18 +161,28 @@ describe("QA-1: Functional Simulation", () => {
       ".github/instructions/python-style.instructions.md",
       ".github/prompts/code-review.prompt.md",
       ".github/prompts/commit.prompt.md",
+      ".github/skills/code-review/SKILL.md",
+      ".github/skills/code-review/agents/.gitkeep",
+      ".github/skills/code-review/assets/.gitkeep",
+      ".github/skills/code-review/references/.gitkeep",
+      ".github/skills/code-review/scripts/.gitkeep",
+      ".github/skills/commit/SKILL.md",
+      ".github/skills/commit/agents/.gitkeep",
+      ".github/skills/commit/assets/.gitkeep",
+      ".github/skills/commit/references/.gitkeep",
+      ".github/skills/commit/scripts/.gitkeep",
       ".vscode/mcp.json",
     ]);
   });
 
   it("main instruction file has all required sections", async () => {
     const config = createRealisticConfig();
-    const files = await copilotAdapter.generate(config, {});
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
     const main = files.find((f) => f.path === ".github/copilot-instructions.md")!;
 
-    // Project context from manifest
-    expect(main.content).toContain("## Project Context");
-    expect(main.content).toContain("Next.js 15");
+    // Project overview from manifest
+    expect(main.content).toContain("## Project Overview");
+    expect(main.content).toContain("my-webapp");
 
     // Flag restrictions
     expect(main.content).toContain("Do NOT execute shell commands");
@@ -190,7 +222,7 @@ describe("QA-1: Functional Simulation", () => {
 
   it("generates .vscode/mcp.json when MCP servers are configured", async () => {
     const config = createRealisticConfig();
-    const files = await copilotAdapter.generate(config, {});
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
     const mcpFile = files.find((f) => f.path === ".vscode/mcp.json");
     expect(mcpFile).toBeDefined();
     const parsed = JSON.parse(mcpFile!.content);
@@ -310,7 +342,7 @@ describe("QA-3: Edge Cases", () => {
       skills: [
         {
           name: "test-skill",
-          description: 'Handle "edge cases" and \'special\' chars',
+          description: "Handle \"edge cases\" and 'special' chars",
           content: "Test content",
         },
       ],
@@ -375,6 +407,7 @@ describe("QA-3: Edge Cases", () => {
   });
 
   it("handles skills with ${CLAUDE_SKILL_DIR} references", async () => {
+    await mkdir(join(tmpDir, ".codi/skills/templated"), { recursive: true });
     const config = createMockConfig({
       skills: [
         {
@@ -385,16 +418,16 @@ describe("QA-3: Edge Cases", () => {
       ],
       flags: {},
     });
-    const files = await copilotAdapter.generate(config, {});
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
     const prompt = files.find((f) => f.path === ".github/prompts/templated.prompt.md")!;
-    // [[]] markers should be stripped
+    // [[]] markers should be stripped, but paths resolved to .github/skills/templated/
     expect(prompt.content).not.toContain("[[");
     expect(prompt.content).not.toContain("]]");
-    // ${CLAUDE_SKILL_DIR} should be stripped
+    // ${CLAUDE_SKILL_DIR} should be resolved to concrete skill path
     expect(prompt.content).not.toContain("CLAUDE_SKILL_DIR");
-    // Paths should remain
-    expect(prompt.content).toContain("/scripts/run.sh");
-    expect(prompt.content).toContain("/data.json");
+    // Paths should be resolved to .github/skills/templated/
+    expect(prompt.content).toContain(".github/skills/templated/scripts/run.sh");
+    expect(prompt.content).toContain(".github/skills/templated/data.json");
   });
 
   it("progressive_loading shows catalog instead of inline skills", async () => {
@@ -432,9 +465,77 @@ describe("QA-3: Edge Cases", () => {
       skills: [],
       flags: {},
     });
-    const files = await copilotAdapter.generate(config, {});
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
     const main = files.find((f) => f.path === ".github/copilot-instructions.md")!;
     expect(main.content).toContain("Self-Development Mode");
+  });
+});
+
+describe("QA-5: Agent Skills Format Validation", () => {
+  beforeEach(async () => {
+    await setupTestEnv();
+  });
+
+  afterEach(async () => {
+    await cleanupTestEnv();
+  });
+
+  it("verifies SKILL.md generated for each regular skill", async () => {
+    const config = createRealisticConfig();
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
+
+    const skillFiles = files.filter((f) => f.path.endsWith("SKILL.md"));
+    expect(skillFiles).toHaveLength(2);
+    expect(skillFiles.find((f) => f.path === ".github/skills/commit/SKILL.md")).toBeDefined();
+    expect(skillFiles.find((f) => f.path === ".github/skills/code-review/SKILL.md")).toBeDefined();
+  });
+
+  it("brand skills produce no .github/skills/ entries", async () => {
+    const config = createRealisticConfig();
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
+
+    // Brand skill "my-brand" should NOT generate any .github/skills/ files
+    const brandSkillFiles = files.filter(
+      (f) => f.path.includes(".github/skills/") && f.path.includes("my-brand"),
+    );
+    expect(brandSkillFiles).toHaveLength(0);
+  });
+
+  it("both .prompt.md and SKILL.md generated for same skill (dual format)", async () => {
+    const config = createRealisticConfig();
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
+
+    // For each regular skill, both formats should exist
+    for (const skillName of ["commit", "code-review"]) {
+      const promptFile = files.find((f) => f.path === `.github/prompts/${skillName}.prompt.md`);
+      const skillFile = files.find((f) => f.path === `.github/skills/${skillName}/SKILL.md`);
+      expect(promptFile).toBeDefined(`${skillName}.prompt.md should exist`);
+      expect(skillFile).toBeDefined(`${skillName}/SKILL.md should exist`);
+    }
+  });
+
+  it("SKILL.md stripped ${CLAUDE_SKILL_DIR} but keeps [[/path]] markers", async () => {
+    const config = createMockConfig({
+      skills: [
+        {
+          name: "test-skill",
+          description: "Test",
+          content:
+            "Guide: ${CLAUDE_SKILL_DIR}[[/references/guide.md]]\nScript: ${CLAUDE_SKILL_DIR}/scripts/run.ts",
+        },
+      ],
+      flags: {},
+    });
+    // Create the skill directory for this test
+    await mkdir(join(tmpDir, ".codi/skills/test-skill"), { recursive: true });
+    const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
+
+    const skillFile = files.find((f) => f.path === ".github/skills/test-skill/SKILL.md");
+    expect(skillFile).toBeDefined();
+    // In SKILL.md, ${CLAUDE_SKILL_DIR} is stripped to "", but [[]] markers are kept as /path
+    expect(skillFile!.content).not.toContain("${CLAUDE_SKILL_DIR}");
+    expect(skillFile!.content).toContain("/references/guide.md");
+    expect(skillFile!.content).toContain("/scripts/run.ts");
   });
 });
 
@@ -465,8 +566,8 @@ describe("QA-4: Regression — Existing Adapters Unaffected", () => {
     const copilotFiles = await copilotAdapter.generate(baseConfig, {});
     const clineFiles = await clineAdapter.generate(baseConfig, {});
 
-    const copilotHash = copilotFiles.find((f) =>
-      f.path === ".github/copilot-instructions.md",
+    const copilotHash = copilotFiles.find(
+      (f) => f.path === ".github/copilot-instructions.md",
     )!.hash;
     const clineHash = clineFiles.find((f) => f.path === ".clinerules")!.hash;
 

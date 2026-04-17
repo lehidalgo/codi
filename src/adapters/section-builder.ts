@@ -1,6 +1,10 @@
 import type { NormalizedConfig, NormalizedSkill, McpConfig } from "../types/config.js";
 import { PROJECT_NAME, PROJECT_NAME_DISPLAY, PROJECT_URL, BRAND_CATEGORY } from "../constants.js";
 
+function sanitizeTableCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\n|\r/g, " ");
+}
+
 /** Build a project overview section from manifest metadata. */
 export function buildProjectOverview(config: NormalizedConfig): string {
   const { manifest } = config;
@@ -45,7 +49,7 @@ export function buildAgentsTable(config: NormalizedConfig): string | null {
   const lines = ["## Available Agents", "", "| Agent | Purpose |", "|-------|---------|"];
 
   for (const agent of config.agents) {
-    lines.push(`| ${agent.name} | ${agent.description} |`);
+    lines.push(`| ${sanitizeTableCell(agent.name)} | ${sanitizeTableCell(agent.description)} |`);
   }
 
   return lines.join("\n");
@@ -67,7 +71,7 @@ export function buildSkillRoutingTable(config: NormalizedConfig): string | null 
 
 function buildSkillRow(skill: NormalizedSkill): string {
   const summary = extractRoutingSummary(skill.description);
-  return `| ${skill.name} | ${summary} |`;
+  return `| ${sanitizeTableCell(skill.name)} | ${sanitizeTableCell(summary)} |`;
 }
 
 function extractRoutingSummary(description: string): string {

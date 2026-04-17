@@ -9,6 +9,7 @@ import type {
 } from "../types/agent.js";
 import type { NormalizedConfig, NormalizedRule } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
+import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { partitionBrandSkills } from "./brand-filter.js";
@@ -63,7 +64,7 @@ export const cursorAdapter: AgentAdapter = {
   paths: {
     configRoot: ".cursor",
     rules: ".cursor/rules",
-    skills: null,
+    skills: ".cursor/skills",
     agents: null,
     instructionFile: ".cursorrules",
     mcpConfig: ".cursor/mcp.json",
@@ -124,7 +125,7 @@ export const cursorAdapter: AgentAdapter = {
     for (const rule of config.rules) {
       const frontmatter = buildMdcFrontmatter(rule);
       const ruleContent = addGeneratedFooter(`${frontmatter}\n\n# ${rule.name}\n\n${rule.content}`);
-      const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".mdc";
+      const fileName = `${sanitizeNameForPath(rule.name)}.mdc`;
       files.push({
         path: `.cursor/rules/${fileName}`,
         content: ruleContent,
@@ -150,7 +151,7 @@ export const cursorAdapter: AgentAdapter = {
     // Generate .cursor/brands/{name}.md from brand-category skills
     for (const brand of brandSkills) {
       const brandContent = addGeneratedFooter(`# ${brand.name}\n\n${brand.content}`);
-      const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(brand.name)}.md`;
       files.push({
         path: `.cursor/brands/${fileName}`,
         content: brandContent,

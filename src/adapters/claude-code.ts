@@ -9,6 +9,7 @@ import type {
 } from "../types/agent.js";
 import type { NormalizedConfig } from "../types/config.js";
 import { hashContent } from "../utils/hash.js";
+import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import { generateSkillFiles } from "./skill-generator.js";
@@ -150,7 +151,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       const ruleContent = addGeneratedFooter(
         `${header}# (${PROJECT_NAME}-rule) ${rule.name}\n\n${rule.content}`,
       );
-      const fileName = rule.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(rule.name)}.md`;
       files.push({
         path: `.claude/rules/${fileName}`,
         content: ruleContent,
@@ -192,7 +193,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       if (agent.color) lines.push(`color: ${agent.color}`);
       lines.push("---");
       const agentContent = addGeneratedFooter(`${lines.join("\n")}\n\n${agent.content}`);
-      const fileName = agent.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(agent.name)}.md`;
       files.push({
         path: `.claude/agents/${fileName}`,
         content: agentContent,
@@ -206,7 +207,7 @@ export const claudeCodeAdapter: AgentAdapter = {
       const brandContent = addGeneratedFooter(
         `# (${PROJECT_NAME}-brand) ${brand.name}\n\n${brand.content}`,
       );
-      const fileName = brand.name.toLowerCase().replace(/\s+/g, "-") + ".md";
+      const fileName = `${sanitizeNameForPath(brand.name)}.md`;
       files.push({
         path: `.claude/brands/${fileName}`,
         content: brandContent,
