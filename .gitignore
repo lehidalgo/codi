@@ -18,7 +18,7 @@ site/docs/
 docs/src/content/docs/api/
 .astro/
 .docs
-
+superpowers/
 # Artifact catalog — generated at build time
 docs/src/content/docs/catalog/
 docs/generated/
@@ -38,6 +38,15 @@ AGENTS.md
 .clinerules
 .mcp.json
 .mcp.env.example
+# Copilot-generated files — .github/ and .vscode/ are shared with the user
+# (workflows, dependabot, launch configs), so ignore per-file, not wholesale.
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
+.github/skills/
+.github/agents/
+.github/hooks/codi-hooks.json
+.vscode/mcp.json
 .husky/
 .playwright-mcp/
 .superpowers/
