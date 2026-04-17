@@ -12,13 +12,13 @@ description: |
   roadmap". Output is JSON (priority, status, dependencies). Do NOT
   activate for in-session task tracking (use TaskCreate), implementation
   plans (use ${PROJECT_NAME}-plan-writer after ${PROJECT_NAME}-brainstorming),
-  or daily progress logs (use ${PROJECT_NAME}-daily-log).
+  or daily progress logs (use ${PROJECT_NAME}-session-log).
 category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — Roadmap
@@ -34,7 +34,7 @@ version: 5
 - Short-lived in-session task tracking — use TaskCreate instead of a persistent roadmap
 - Concrete implementation plan (file paths + TDD steps) — use ${PROJECT_NAME}-plan-writer
 - Design exploration before the roadmap — use ${PROJECT_NAME}-brainstorming first
-- Daily session log or end-of-day summary — use ${PROJECT_NAME}-daily-log
+- Daily session log or end-of-day summary — use ${PROJECT_NAME}-session-log
 
 ## Workflow
 

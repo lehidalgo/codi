@@ -25,7 +25,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Commit
@@ -164,5 +164,5 @@ For pre-commit review, delegate to this agent:
 ## Related Skills
 
 - **${PROJECT_NAME}-code-review** — Full code review workflow for complex changes
-- **${PROJECT_NAME}-test-coverage** — Verify test coverage before committing
+- **${PROJECT_NAME}-test-suite** — Run or verify test coverage before committing
 `;

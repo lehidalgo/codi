@@ -38,7 +38,7 @@
       "prompt": "build a branded PDF report for the client board",
       "expectations": [
         "Does NOT activate project-documentation skill",
-        "Routes to codi-doc-engine instead",
+        "Routes to codi-content-factory instead (branded business docs live there)",
         "Does NOT produce plain Markdown as the primary deliverable"
       ]
     },

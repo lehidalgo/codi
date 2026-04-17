@@ -41,7 +41,7 @@
       "prompt": "run the auth unit tests",
       "expectations": [
         "Does NOT activate guided-qa-testing skill",
-        "Routes to codi-test-run instead",
+        "Routes to codi-test-suite instead",
         "Does NOT build a phase list or write a QA report"
       ]
     },

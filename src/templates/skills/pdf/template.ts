@@ -12,14 +12,14 @@ description: |
   watermark", "encrypt PDF", "PDF metadata". Handles both Python (pypdf,
   pypdfium2) and JavaScript (pdf-lib). Do NOT activate for Word documents
   (use ${PROJECT_NAME}-docx), Excel spreadsheets (use ${PROJECT_NAME}-xlsx),
-  HTML-to-PDF rendering from scratch (use ${PROJECT_NAME}-doc-engine), or
+  HTML-to-PDF rendering from scratch (use ${PROJECT_NAME}-content-factory), or
   plain Markdown docs (use ${PROJECT_NAME}-project-documentation).
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — PDF
@@ -35,7 +35,7 @@ version: 5
 
 - User wants to edit a Word document — use ${PROJECT_NAME}-docx
 - User wants an Excel spreadsheet — use ${PROJECT_NAME}-xlsx
-- User wants to generate a branded PDF from HTML (not manipulate an existing PDF) — use ${PROJECT_NAME}-doc-engine
+- User wants to generate a branded PDF from HTML (not manipulate an existing PDF) — use ${PROJECT_NAME}-content-factory
 - User wants plain Markdown documentation — use ${PROJECT_NAME}-project-documentation
 - User wants a PowerPoint deck — use ${PROJECT_NAME}-pptx
 

@@ -18,14 +18,14 @@ description: |
   Maintains 20 auto-generated sections across artifacts.md, configuration.md,
   architecture.md, presets.md, and README.md. Do NOT activate for consumer
   project documentation (use ${PROJECT_NAME}-project-documentation), branded
-  reports or proposals (use ${PROJECT_NAME}-doc-engine), or user-facing
+  reports or proposals (use ${PROJECT_NAME}-content-factory), or user-facing
   tutorials.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 9
 ---
 
 # {{name}} — Documentation Manager
@@ -156,7 +156,7 @@ docs/
 ## Skip When
 
 - User wants consumer-project docs, READMEs, or ADRs — use ${PROJECT_NAME}-project-documentation
-- User wants branded reports or proposals — use ${PROJECT_NAME}-doc-engine
+- User wants branded reports or proposals — use ${PROJECT_NAME}-content-factory
 - User asks to modify source code — this skill only reads code to check doc freshness
 - User asks for an auto-commit — all edits require explicit user approval first
 - User is not working on the ${PROJECT_NAME_DISPLAY} source repo — this skill is contributor-only
@@ -164,5 +164,5 @@ docs/
 ## Related Skills
 
 - **${PROJECT_NAME}-documentation** — Document user project code, READMEs, and ADRs
-- **${PROJECT_NAME}-doc-engine** — Generate branded reports and proposals
+- **${PROJECT_NAME}-content-factory** — Generate branded reports and proposals
 `;

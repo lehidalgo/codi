@@ -21,7 +21,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Theme Factory
@@ -36,7 +36,7 @@ version: 6
 ## Skip When
 
 - User wants a full brand identity system — use ${PROJECT_NAME}-brand-creator (or ${PROJECT_NAME}-codi-brand for Codi)
-- User wants to design a new deck or document from scratch — use ${PROJECT_NAME}-content-factory / ${PROJECT_NAME}-doc-engine
+- User wants to design a new deck or document from scratch — use ${PROJECT_NAME}-content-factory
 - User wants a static poster or illustration — use ${PROJECT_NAME}-canvas-design
 - User wants a frontend UI redesign — use ${PROJECT_NAME}-frontend-design
 - User wants generative art — use ${PROJECT_NAME}-algorithmic-art
@@ -94,7 +94,6 @@ To handle cases where none of the existing themes work for an artifact, create a
 
 ## Related Skills
 
-- **${PROJECT_NAME}-content-factory** — Presentation and slide engine whose output can be themed
-- **${PROJECT_NAME}-doc-engine** — Document engine whose output can be themed
+- **${PROJECT_NAME}-content-factory** — Slide decks, documents, and business deliverables — output can be themed
 - **${PROJECT_NAME}-frontend-design** — Frontend interfaces that can use theme tokens
 `;

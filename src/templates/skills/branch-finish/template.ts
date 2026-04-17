@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Branch Finish
@@ -27,7 +27,7 @@ version: 6
 
 ## When to Activate
 
-- After ${PROJECT_NAME}-subagent-dev or ${PROJECT_NAME}-plan-executor completes all tasks
+- After ${PROJECT_NAME}-plan-execution completes all tasks
 - User says implementation is done and wants to merge or submit
 - User wants to clean up a worktree after development
 - User used a simple branch (via ${PROJECT_NAME}-worktrees Path A) and is ready to merge or submit
@@ -171,7 +171,7 @@ Report: "Branch discarded. All changes deleted."
 
 ## Integration
 
-- Called by: ${PROJECT_NAME}-subagent-dev, ${PROJECT_NAME}-plan-executor
+- Called by: ${PROJECT_NAME}-plan-execution
 - Uses: ${PROJECT_NAME}-verification (test gate), ${PROJECT_NAME}-commit (merge commit refinement)
 - ${PROJECT_NAME}-git-workflow rule governs branch naming and PR conventions
 `;

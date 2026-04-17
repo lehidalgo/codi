@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: user
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 13
 ---
 
 # {{name}}
@@ -29,7 +29,7 @@ version: 11
 - User mentions brand guidelines, brand standard, corporate identity, or visual identity for {{name}}
 - User asks for the color palette, brand colors, brand fonts, or typography for {{name}}
 - User wants to follow {{name}} voice and tone in copy
-- Another skill (Content Factory, doc-engine, deck-engine) needs brand tokens
+- Another skill (Content Factory) needs brand tokens for slides, documents, or business deliverables
 
 ## Skip When
 

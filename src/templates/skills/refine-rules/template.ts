@@ -9,48 +9,87 @@ import {
 export const template = `---
 name: {{name}}
 description: |
-  Review rule feedback collected by ${PROJECT_NAME}-rule-feedback and propose
-  targeted improvements one at a time with human approval. Use when the
-  user asks to improve rules, refine rules, process rule feedback, review
-  collected observations, apply rule updates, or fix outdated rules. Also
-  activate for phrases like "review .codi/feedback", "process rule
-  feedback", "improve our rules", "update outdated rule", or on
-  /${PROJECT_NAME}-refine-rules. Reads observations from
-  \\\`${PROJECT_DIR}/feedback/rules/\\\`. Do NOT activate for creating a new
-  rule from scratch (use ${PROJECT_NAME}-rule-creator) or for general
-  quality audits without collected feedback (use
-  ${PROJECT_NAME}-compare-preset or a direct review).
+  Review and refine rules from collected feedback. Two modes: REVIEW (read-only
+  summary of \\\`${PROJECT_DIR}/feedback/\\\` grouped by artifact with top 3
+  actions) and REFINE (interactive one-at-a-time approval flow that edits rule
+  files and runs \\\`${PROJECT_CLI} generate\\\`). Use when the user asks to
+  review collected observations, show accumulated feedback, audit
+  \\\`${PROJECT_DIR}/feedback/\\\`, improve rules, refine rules, process rule
+  feedback, apply rule updates, or fix outdated rules. Also activates on
+  /${PROJECT_NAME}-refine-rules or phrases like "show feedback summary",
+  "what's accumulated", "review observations", "process rule feedback",
+  "update outdated rule". Do NOT activate for creating a brand-new rule (use
+  ${PROJECT_NAME}-rule-creator), emitting new observations during work (that
+  happens automatically via ${PROJECT_NAME}-rule-feedback), or general quality
+  audits without collected feedback (use ${PROJECT_NAME}-compare-preset).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
-# {{name}} — Rule Refinement
+# {{name}} — Review and Refine Rules
 
-## When to Activate
+Two modes on one pipeline:
 
-- User asks to review collected rule feedback or improve rules
-- User asks to process observations accumulated in \\\`${PROJECT_DIR}/feedback/rules/\\\`
-- User mentions an outdated rule, missing guidance, or wants a rule update
-- User invokes /${PROJECT_NAME}-refine-rules
+| Mode | Trigger | Output | Modifies rules? |
+|------|---------|--------|-----------------|
+| **REVIEW** | "show feedback", "what's accumulated", "summary" | Read-only grouped summary | No |
+| **REFINE** | "refine rules", "improve rules", "process feedback", /${PROJECT_NAME}-refine-rules | Interactive one-at-a-time approval + edits | Yes |
+
+Start in REVIEW mode when the user just wants visibility. Move to REFINE when they are ready to apply changes.
 
 ## Skip When
 
 - User wants to create a brand-new rule — use ${PROJECT_NAME}-rule-creator
-- User wants to diff local rules vs upstream — use ${PROJECT_NAME}-compare-preset
+- User is emitting a new observation during coding work — ${PROJECT_NAME}-rule-feedback handles it automatically
+- User wants to diff local rules vs upstream templates — use ${PROJECT_NAME}-compare-preset
 - No feedback has been collected yet — wait for ${PROJECT_NAME}-rule-feedback to accumulate observations
-- User wants to refine skills, not rules — similar workflow via ${PROJECT_NAME}-skill-feedback-reporter + skill-creator
+- Feedback directory is empty — this skill still works but reports "no observations"
 
-## Purpose
+---
 
-This skill reviews structured feedback collected by the rule-feedback skill and proposes targeted improvements to rules — always with human approval.
+## Mode: REVIEW (read-only summary)
+
+Read the observations collected in \\\`${PROJECT_DIR}/feedback/\\\` and show a concise summary grouped by artifact. This is the first step before running the REFINE mode.
+
+Observations are written automatically by the Stop hook — the agent emits a \\\`[CODI-OBSERVATION: ...]\\\` marker in its response and the hook structures it into JSON. You do not write feedback files manually.
+
+### REVIEW Steps
+
+1. Read all JSON files in \\\`${PROJECT_DIR}/feedback/\\\`
+2. Group observations by \\\`artifactName\\\` (skill or rule)
+3. Within each group, sort by severity (high → medium → low), then by timestamp (newest first)
+4. Show the top 3 most actionable observations across all groups
+5. For each, show: artifact name, category, observation text, severity, and date
+
+### REVIEW Output Format
+
+\\\`\\\`\\\`
+## Feedback Summary — N observations across M artifacts
+
+### ${PROJECT_NAME}-commit (2 observations)
+1. [HIGH] trigger-miss — skill did not activate when user typed /${PROJECT_NAME}-commit directly (2026-04-10)
+2. [LOW] missing-step — no step to verify staged files are not empty before committing (2026-04-08)
+
+### ${PROJECT_NAME}-testing (1 observation)
+3. [MEDIUM] outdated-rule — rule says use Jest but project migrated to Vitest (2026-04-09)
+
+---
+Run /${PROJECT_NAME}-refine-rules to review these one by one and propose changes.
+\\\`\\\`\\\`
+
+If no feedback exists, report: "No observations in \\\`${PROJECT_DIR}/feedback/\\\` yet. The system collects them automatically as you work."
+
+---
+
+## Mode: REFINE (interactive one-at-a-time edits)
+
+Review collected feedback and propose targeted improvements to rules — always with human approval.
 
 **Design principle:** Rules are sacred. Feedback is data. You propose; the human decides.
-
-## Workflow
 
 ### Step 1 — Load Feedback
 
@@ -134,5 +173,6 @@ Check the current rule content against the suggestion. If already addressed, mar
 
 - **${PROJECT_NAME}-rule-feedback** — Collects the observations this skill reviews
 - **${PROJECT_NAME}-rule-creator** — Create entirely new rules (when observations suggest gaps)
-- **${PROJECT_NAME}-dev-operations** — General artifact management including rules
+- **${PROJECT_NAME}-skill-creator** — Refine or create new skills
+- **${PROJECT_NAME}-dev-operations** — General artifact management
 `;

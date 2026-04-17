@@ -41,7 +41,7 @@
       "prompt": "implement the user authentication feature per our spec",
       "expectations": [
         "Does NOT activate guided-execution skill",
-        "Routes to codi-plan-executor or codi-subagent-dev instead",
+        "Routes to codi-plan-execution instead",
         "Does NOT produce per-step execution docs"
       ]
     },

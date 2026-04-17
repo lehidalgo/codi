@@ -51,7 +51,7 @@
       "prompt": "add a dark mode toggle to the settings page",
       "expectations": [
         "Does NOT activate audit-fix skill",
-        "Routes to codi-plan-writer or codi-subagent-dev / codi-plan-executor instead",
+        "Routes to codi-plan-writer or codi-plan-execution instead",
         "Does NOT enforce the one-item-at-a-time iron law"
       ]
     }

@@ -36,14 +36,14 @@ description: |
   TypeScript runtimes. Do NOT activate for Word documents (use
   ${PROJECT_NAME}-docx), PDF files (use ${PROJECT_NAME}-pdf),
   PowerPoint decks (use ${PROJECT_NAME}-pptx), branded HTML reports
-  (use ${PROJECT_NAME}-doc-engine), or Google Sheets API integrations
+  (use ${PROJECT_NAME}-content-factory), or Google Sheets API integrations
   (use a gspread / Sheets API flow).
 category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 21
+version: 23
 ---
 
 # {{name}} — XLSX
@@ -60,7 +60,7 @@ version: 21
 - User wants a Word document — use ${PROJECT_NAME}-docx
 - User wants a PDF — use ${PROJECT_NAME}-pdf
 - User wants a PowerPoint deck — use ${PROJECT_NAME}-pptx
-- User wants a branded HTML report for PDF export — use ${PROJECT_NAME}-doc-engine
+- User wants a branded HTML report for PDF export — use ${PROJECT_NAME}-content-factory
 - User wants to call the Google Sheets API — use a gspread or Google Sheets API flow
 
 # Requirements for Outputs

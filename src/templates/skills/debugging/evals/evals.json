@@ -34,12 +34,24 @@
     },
     {
       "id": "stuck-after-multiple-fixes",
-      "description": "After 3+ failed fixes, escalates rather than trying more patches",
+      "description": "After 3+ failed fixes, escalates to Phase 5 deep diagnosis",
       "prompt": "I've already tried three different fixes for this database connection timeout but none worked",
       "expectations": [
         "Recognizes the 3+ failed fixes escalation signal",
-        "Suggests questioning the architecture or fundamental approach",
-        "Does NOT propose a fourth fix without architectural discussion"
+        "Enters Phase 5 (MCP-Powered Deep Diagnosis): gathers context via code graph and docs, applies sequential thinking",
+        "Uses reasoning-confirmation-execution loop before any further action",
+        "Does NOT propose a fourth fix without either Phase 5 investigation or architectural discussion"
+      ]
+    },
+    {
+      "id": "phase5-explicit-mcp-request",
+      "description": "Explicit request for MCP-backed deep diagnosis enters Phase 5 directly",
+      "prompt": "use MCP tools and sequential thinking to diagnose why the memory graph is out of sync",
+      "expectations": [
+        "Activates debugging skill and enters Phase 5",
+        "Gathers context via code-graph queries and documentation search",
+        "Applies sequential thinking structured across numbered steps",
+        "Requests confirmation before each action via the reasoning-confirmation-execution loop"
       ]
     },
     {
@@ -61,14 +73,5 @@
         "Does NOT follow the 4-phase debugging process"
       ]
     },
-    {
-      "id": "negative-diagnostics",
-      "description": "Escalated MCP-based diagnosis should trigger diagnostics, not debugging",
-      "prompt": "use MCP tools to diagnose why the memory graph is out of sync",
-      "expectations": [
-        "Does NOT invoke the standard debugging skill",
-        "Routes to the diagnostics skill which uses MCP tools"
-      ]
-    }
   ]
 }

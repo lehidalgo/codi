@@ -15,7 +15,7 @@ description: |
   README", "document this API", "technical writing", "draft a proposal",
   "write an RFC", "author a decision doc", "co-author a spec". Applies the
   Diataxis framework (tutorial / how-to / reference / explanation). Do NOT
-  activate for branded PDF reports or proposals (use ${PROJECT_NAME}-doc-engine),
+  activate for branded PDF reports or proposals (use ${PROJECT_NAME}-content-factory),
   Word documents (use ${PROJECT_NAME}-docx), slide decks (use
   ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx), or
   ${PROJECT_NAME_DISPLAY}'s own self-documentation (use ${PROJECT_NAME}-dev-docs-manager).
@@ -24,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — Project Documentation
@@ -41,7 +41,7 @@ version: 5
 
 ## Skip When
 
-- User wants a branded PDF report or proposal — use ${PROJECT_NAME}-doc-engine
+- User wants a branded PDF report or proposal — use ${PROJECT_NAME}-content-factory
 - User wants a Word document (.docx) — use ${PROJECT_NAME}-docx
 - User wants a slide deck or presentation — use ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx
 - User wants to regenerate ${PROJECT_NAME_DISPLAY}'s own docs site — use ${PROJECT_NAME}-dev-docs-manager

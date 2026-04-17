@@ -13,7 +13,7 @@ description: |
   as a team: agent reasons, plans, and executes what it can; user performs
   actions that require credentials, browser access, or external systems.
   Every completed step produces a written document. Do NOT activate for
-  pure code changes (use ${PROJECT_NAME}-plan-executor), audits of
+  pure code changes (use ${PROJECT_NAME}-plan-execution), audits of
   existing code (use ${PROJECT_NAME}-audit-fix), or design-only tasks
   (use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
@@ -21,7 +21,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 11
 ---
 
 # {{name}} — Guided Execution
@@ -36,10 +36,10 @@ version: 8
 
 ## Skip When
 
-- Pure code changes within the codebase — use ${PROJECT_NAME}-plan-executor
+- Pure code changes within the codebase — use ${PROJECT_NAME}-plan-execution
 - Systematic audits of existing code — use ${PROJECT_NAME}-audit-fix
 - Design and planning only — use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer
-- Running tests without collaborative setup — use ${PROJECT_NAME}-test-run
+- Running tests without collaborative setup — use ${PROJECT_NAME}-test-suite
 - Committing finished work — use ${PROJECT_NAME}-commit
 
 ## The Iron Laws

@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 13
 ---
 
 # {{name}} — Project Quality Guard
@@ -39,11 +39,11 @@ Audits and enforces complete project quality infrastructure across 9 categories.
 
 ## Skip When
 
-- Writing application code — use domain-specific skills (${PROJECT_NAME}-plan-writer, ${PROJECT_NAME}-subagent-dev)
+- Writing application code — use domain-specific skills (${PROJECT_NAME}-plan-writer, ${PROJECT_NAME}-plan-execution)
 - Debugging runtime errors — use ${PROJECT_NAME}-debugging
 - Single-file formatting questions — just run the formatter
 - Security vulnerability scan of existing code — use ${PROJECT_NAME}-security-scan
-- Test coverage measurement — use ${PROJECT_NAME}-test-coverage
+- Test coverage measurement — use ${PROJECT_NAME}-test-suite
 
 **Core principle:** A project is not set up until ALL quality layers are verified — local hooks, CI pipeline, and deployment config must form a continuous, gap-free chain.
 

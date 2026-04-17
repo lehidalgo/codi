@@ -13,17 +13,15 @@ export const CORE_PLATFORM_RULES = [devArtifactName("improvement")] as const;
 /**
  * Skills that every preset includes by default.
  *
- * - verification       — confirm tasks are complete before claiming done
- * - session-recovery   — recover when the agent has made repeated errors
- * - skill-feedback-reporter — review accumulated skill observations
- * - rule-feedback      — background observation of rule quality
- * - refine-rules       — propose improvements from collected feedback
- * - compare-preset     — check local artifacts against upstream
+ * - verification     — confirm tasks are complete before claiming done
+ * - session-recovery — recover when the agent has made repeated errors
+ * - rule-feedback    — background observation of rule quality
+ * - refine-rules     — REVIEW collected feedback and REFINE rules with approval
+ * - compare-preset   — check local artifacts against upstream
  */
 export const CORE_PLATFORM_SKILLS = [
   prefixedName("verification"),
   prefixedName("session-recovery"),
-  prefixedName("skill-feedback-reporter"),
   prefixedName("rule-feedback"),
   prefixedName("refine-rules"),
   prefixedName("compare-preset"),

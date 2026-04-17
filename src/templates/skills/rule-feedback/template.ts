@@ -19,7 +19,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 7
+version: 9
 ---
 
 # {{name}} — Rule Feedback
@@ -97,6 +97,5 @@ The Stop hook scans your response, extracts the marker, and writes a structured 
 
 ## Related Skills
 
-- **${PROJECT_NAME}-refine-rules** — Review and apply collected rule feedback
-- **${PROJECT_NAME}-skill-feedback-reporter** — Review accumulated skill and rule observations
+- **${PROJECT_NAME}-refine-rules** — Review (summary) and refine (interactive edits) rules from collected feedback
 `;

@@ -46,7 +46,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 28
+version: 30
 ---
 
 # {{name}} — PPTX
@@ -64,7 +64,7 @@ version: 28
 - User wants an HTML slide deck (for browser / Content Factory) — use ${PROJECT_NAME}-content-factory
 - User wants a Word document — use ${PROJECT_NAME}-docx
 - User wants an Excel spreadsheet — use ${PROJECT_NAME}-xlsx
-- User wants a branded one-pager / report — use ${PROJECT_NAME}-doc-engine
+- User wants a branded one-pager / report — use ${PROJECT_NAME}-content-factory
 
 
 ## Quick Reference

@@ -42,7 +42,7 @@
       "prompt": "implement the dark-mode toggle feature",
       "expectations": [
         "Does NOT activate project-quality-guard skill",
-        "Routes to codi-plan-writer / codi-subagent-dev",
+        "Routes to codi-plan-writer / codi-plan-execution",
         "Does NOT audit .gitignore or pre-commit hooks as part of feature work"
       ]
     },

@@ -42,7 +42,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 28
+version: 30
 ---
 
 # {{name}} — DOCX
@@ -60,7 +60,7 @@ version: 28
 - User wants an Excel spreadsheet — use ${PROJECT_NAME}-xlsx
 - User wants a PowerPoint deck — use ${PROJECT_NAME}-pptx
 - User wants a Markdown README or docs site — use ${PROJECT_NAME}-project-documentation
-- User wants a branded HTML document for PDF export (not Word) — use ${PROJECT_NAME}-doc-engine
+- User wants a branded HTML document for PDF export (not Word) — use ${PROJECT_NAME}-content-factory
 
 A .docx file is a ZIP archive containing XML files.
 

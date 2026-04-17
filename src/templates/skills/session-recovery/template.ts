@@ -19,14 +19,14 @@ description: |
   under \\\`docs/\\\` and recommends a context reset. Do NOT activate for a
   single first-time mistake (just fix and continue), user-reported
   codebase bugs (use ${PROJECT_NAME}-debugging), end-of-day logs (use
-  ${PROJECT_NAME}-daily-log), or session handoff to a new chat (use
-  ${PROJECT_NAME}-session-handoff).
+  ${PROJECT_NAME}-session-log /close_day), or session handoff to a new chat
+  (use ${PROJECT_NAME}-session-log /session-handoff).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Session Recovery
@@ -44,8 +44,8 @@ Activate this skill when **any** of these are true:
 
 - First-time mistake that you caught and fixed once — just continue
 - User-reported bug in the codebase (not your own output) — use ${PROJECT_NAME}-debugging
-- End-of-day work log — use ${PROJECT_NAME}-daily-log /close_day
-- Handoff to a new chat because context is full — use ${PROJECT_NAME}-session-handoff
+- End-of-day work log — use ${PROJECT_NAME}-session-log /close_day
+- Handoff to a new chat because context is full — use ${PROJECT_NAME}-session-log /session-handoff
 
 **Self-check trigger:** Before continuing after a second correction, pause and ask yourself:
 > "Have I already fixed a mistake I introduced earlier in this conversation?"

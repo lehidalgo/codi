@@ -12,14 +12,14 @@ description: |
   "step doc", "runbook entry", "reproducible guide". Do NOT activate for
   README / ADR / general project docs (use
   ${PROJECT_NAME}-project-documentation), branded reports (use
-  ${PROJECT_NAME}-doc-engine), or daily progress logs (use
-  ${PROJECT_NAME}-daily-log).
+  ${PROJECT_NAME}-content-factory), or daily progress logs (use
+  ${PROJECT_NAME}-session-log).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 11
 ---
 
 # {{name}} — Step Documenter
@@ -34,8 +34,8 @@ version: 8
 
 - User wants a README or general project docs — use ${PROJECT_NAME}-project-documentation
 - User wants an ADR (architecture decision record) — use ${PROJECT_NAME}-project-documentation
-- User wants a branded PDF report — use ${PROJECT_NAME}-doc-engine
-- User wants a daily work log — use ${PROJECT_NAME}-daily-log
+- User wants a branded PDF report — use ${PROJECT_NAME}-content-factory
+- User wants a daily work log — use ${PROJECT_NAME}-session-log
 - The step has not been validated yet — run ${PROJECT_NAME}-verification first
 
 ## The Iron Law

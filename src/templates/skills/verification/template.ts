@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — Verification
@@ -144,6 +144,6 @@ The spirit of the rule: no unverified claims, ever.
 
 - Use at the end of every \\\`${PROJECT_NAME}-tdd\\\` cycle (Verify RED, Verify GREEN).
 - Use in \\\`${PROJECT_NAME}-debugging\\\` Phase 4 before claiming fix is complete.
-- Use in \\\`${PROJECT_NAME}-plan-executor\\\` and \\\`${PROJECT_NAME}-subagent-dev\\\` before marking tasks done.
+- Use in \\\`${PROJECT_NAME}-plan-execution\\\` before marking tasks done.
 - Use in \\\`${PROJECT_NAME}-branch-finish\\\` before presenting completion options.
 `;

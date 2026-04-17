@@ -16,13 +16,13 @@ description: |
   ${PROJECT_NAME}-pptx), static posters / album covers (use
   ${PROJECT_NAME}-canvas-design), multi-component claude.ai artifacts (use
   ${PROJECT_NAME}-claude-artifacts-builder), or PDF documents (use
-  ${PROJECT_NAME}-doc-engine).
+  ${PROJECT_NAME}-content-factory).
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — Frontend Design
@@ -40,7 +40,7 @@ version: 5
 - User wants a slide deck or presentation — use ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx
 - User wants a static poster or album cover — use ${PROJECT_NAME}-canvas-design
 - User wants a multi-component claude.ai HTML artifact — use ${PROJECT_NAME}-claude-artifacts-builder
-- User wants a PDF report or branded document — use ${PROJECT_NAME}-doc-engine
+- User wants a PDF report or branded document — use ${PROJECT_NAME}-content-factory
 - User wants a generative art sketch — use ${PROJECT_NAME}-algorithmic-art
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

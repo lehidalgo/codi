@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
 # {{name}} — Audit & Fix
@@ -33,7 +33,7 @@ version: 9
 ## Skip When
 
 - A single bug (use ${PROJECT_NAME}-debugging)
-- New feature work (use ${PROJECT_NAME}-plan-executor or ${PROJECT_NAME}-subagent-dev)
+- New feature work (use ${PROJECT_NAME}-plan-execution)
 - Exploratory review without a fix list (use ${PROJECT_NAME}-codebase-explore)
 
 ## The Iron Laws

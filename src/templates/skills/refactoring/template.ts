@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Refactoring
@@ -37,7 +37,7 @@ version: 6
 - User wants to add a new feature or change behavior — use ${PROJECT_NAME}-plan-writer
 - User wants to fix a bug — use ${PROJECT_NAME}-debugging
 - User wants performance improvements that change implementation — use ${PROJECT_NAME}-plan-writer with a benchmark gate
-- User wants test generation without removing code — use ${PROJECT_NAME}-test-coverage
+- User wants test generation without removing code — use ${PROJECT_NAME}-test-suite
 - Baseline tests are already failing — fix the baseline first, never refactor on red
 
 ## Refactoring Process
@@ -138,6 +138,6 @@ For specialized analysis, delegate to these agents:
 
 ## Related Skills
 
-- **${PROJECT_NAME}-test-coverage** — Verify coverage after refactoring changes
+- **${PROJECT_NAME}-test-suite** — Verify coverage after refactoring changes
 - **${PROJECT_NAME}-code-review** — Review refactored code for quality
 `;

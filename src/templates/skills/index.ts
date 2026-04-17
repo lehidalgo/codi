@@ -16,10 +16,7 @@ export {
   template as securityScan,
   staticDir as securityScanStaticDir,
 } from "./security-scan/index.js";
-export {
-  template as testCoverage,
-  staticDir as testCoverageStaticDir,
-} from "./test-coverage/index.js";
+export { template as testSuite, staticDir as testSuiteStaticDir } from "./test-suite/index.js";
 export { template as refactoring, staticDir as refactoringStaticDir } from "./refactoring/index.js";
 export {
   template as codebaseOnboarding,
@@ -62,11 +59,6 @@ export {
   template as sessionRecovery,
   staticDir as sessionRecoveryStaticDir,
 } from "./session-recovery/index.js";
-export { template as docEngine, staticDir as docEngineStaticDir } from "./doc-engine/index.js";
-export {
-  template as skillFeedbackReporter,
-  staticDir as skillFeedbackReporterStaticDir,
-} from "./skill-feedback-reporter/index.js";
 export {
   template as ruleFeedback,
   staticDir as ruleFeedbackStaticDir,
@@ -134,18 +126,12 @@ export {
   staticDir as audioTranscriberStaticDir,
 } from "./audio-transcriber/index.js";
 export { template as humanizer, staticDir as humanizerStaticDir } from "./humanizer/index.js";
-export { template as testRun, staticDir as testRunStaticDir } from "./test-run/index.js";
-export { template as diagnostics, staticDir as diagnosticsStaticDir } from "./diagnostics/index.js";
-export {
-  template as sessionHandoff,
-  staticDir as sessionHandoffStaticDir,
-} from "./session-handoff/index.js";
+export { template as sessionLog, staticDir as sessionLogStaticDir } from "./session-log/index.js";
 export {
   template as codebaseExplore,
   staticDir as codebaseExploreStaticDir,
 } from "./codebase-explore/index.js";
 export { template as graphSync, staticDir as graphSyncStaticDir } from "./graph-sync/index.js";
-export { template as dailyLog, staticDir as dailyLogStaticDir } from "./daily-log/index.js";
 export { template as roadmap, staticDir as roadmapStaticDir } from "./roadmap/index.js";
 export {
   template as verification,
@@ -164,13 +150,9 @@ export {
   staticDir as branchFinishStaticDir,
 } from "./branch-finish/index.js";
 export {
-  template as subagentDev,
-  staticDir as subagentDevStaticDir,
-} from "./subagent-dev/index.js";
-export {
-  template as planExecutor,
-  staticDir as planExecutorStaticDir,
-} from "./plan-executor/index.js";
+  template as planExecution,
+  staticDir as planExecutionStaticDir,
+} from "./plan-execution/index.js";
 export { template as notebooklm, staticDir as notebooklmStaticDir } from "./notebooklm/index.js";
 export {
   template as evidenceGathering,

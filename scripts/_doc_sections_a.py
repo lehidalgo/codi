@@ -379,7 +379,7 @@ def build_core_concepts(doc: Document) -> None:
         [
             [
                 "Code Quality",
-                "codi-code-review, codi-security-scan, codi-test-coverage, codi-e2e-testing",
+                "codi-code-review, codi-security-scan, codi-test-suite, codi-dev-e2e-testing",
             ],
             [
                 "Git Workflow",
@@ -391,7 +391,7 @@ def build_core_concepts(doc: Document) -> None:
             ],
             [
                 "Document Generation",
-                "codi-doc-engine, codi-content-factory, codi-documentation",
+                "codi-content-factory, codi-project-documentation",
             ],
             ["Design", "codi-frontend-design, codi-canvas-design, codi-rl3-brand"],
             [
@@ -467,16 +467,12 @@ def build_core_concepts(doc: Document) -> None:
                 "Review recent code changes for quality, security, and best practices",
             ],
             [
-                "/codi-test-run",
-                "Run the project test suite and report results with coverage",
+                "/codi-test-suite",
+                "Run tests, measure coverage, or generate tests for uncovered lines (RUN / COVERAGE / GENERATE modes)",
             ],
             [
                 "/codi-security-scan",
                 "Run a comprehensive security scan and report vulnerabilities",
-            ],
-            [
-                "/codi-test-coverage",
-                "Measure test coverage and identify untested code paths",
             ],
             [
                 "/codi-refactor",

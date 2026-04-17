@@ -1,7 +1,7 @@
 ---
 title: codi-xlsx
 description: >
-  Use when working with spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Also activate when cleaning tabular data, building financial models, or converting between formats. Do NOT activate for Word docs, HTML reports, or Google Sheets API integrations.
+  Create, edit, read, or fix spreadsheet files (.xlsx, .xlsm, .csv, .tsv). Use when the user wants to work with Excel, build a financial model, clean tabular data, generate a pivot table, apply formulas, or convert between tabular formats. Also activate for phrases like "Excel file", "spreadsheet", "financial model", "data cleaning", "pivot table", "formulas", "openpyxl", "csv to xlsx", "xlsx to csv", "messy tabular data". Handles .xlsx / .xlsm / .csv / .tsv via python (openpyxl) and TypeScript runtimes. Do NOT activate for Word documents (use codi-docx), PDF files (use codi-pdf), PowerPoint decks (use codi-pptx), branded HTML reports (use codi-content-factory), or Google Sheets API integrations (use a gspread / Sheets API flow).
 sidebar:
   label: "codi-xlsx"
 artifactType: skill
@@ -71,6 +71,14 @@ See `references/standards.md` for the full financial model color coding standard
 - User needs to clean or restructure messy tabular data
 - User wants to build a financial model with formulas and color coding
 - User needs to convert between tabular file formats
+
+## Skip When
+
+- User wants a Word document — use codi-docx
+- User wants a PDF — use codi-pdf
+- User wants a PowerPoint deck — use codi-pptx
+- User wants a branded HTML report for PDF export — use codi-content-factory
+- User wants to call the Google Sheets API — use a gspread or Google Sheets API flow
 
 # Requirements for Outputs
 

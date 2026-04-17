@@ -110,24 +110,23 @@ Each `codi generate` run computes a SHA256-based verification token from the man
 | Category | Skills |
 |:---------|:-------|
 | Brand Identity | codi-brand-identity, codi-codi-brand |
-| Code Quality | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-test-coverage, codi-webapp-testing |
-| Codi Platform | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator, codi-skill-feedback-reporter |
+| Code Quality | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing |
+| Codi Platform | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator |
 | Content Creation | codi-content-factory |
 | Content Refinement | codi-humanizer |
 | Creative and Design | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory |
-| Developer Tools | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-diagnostics, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
-| Document Generation | codi-deck-engine, codi-doc-engine |
+| Developer Tools | codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-graph-sync, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
 | File Format Tools | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
 | Planning | codi-roadmap |
 | Productivity | codi-audio-transcriber |
-| Testing | codi-test-run |
-| Workflow | codi-daily-log, codi-session-handoff |
+| Testing | codi-test-suite |
+| Workflow | codi-session-log |
 
 ### Built-in Eval Cases
 
 Tier 1 skill templates ship with pre-written eval cases in `evals/evals.json`. Each eval set contains 5-7 cases with realistic prompts and objectively verifiable expectations. Cases include positive triggers (skill should activate) and negative cross-cluster cases (skill should NOT activate for a confusable prompt).
 
-Skills with built-in evals: codi-commit, codi-debugging, codi-tdd, codi-code-review, codi-verification, codi-brainstorming, codi-plan-writer, codi-plan-executor, codi-subagent-dev, codi-session-handoff, codi-skill-creator, codi-refactoring, codi-security-scan, codi-test-coverage.
+Skills with built-in evals: codi-commit, codi-debugging, codi-tdd, codi-code-review, codi-verification, codi-brainstorming, codi-plan-writer, codi-plan-execution, codi-session-log, codi-skill-creator, codi-refactoring, codi-security-scan, codi-test-suite.
 
 During `codi init`, these evals propagate to `.codi/skills/{name}/evals/evals.json`. The eval runner (`run-eval.ts`) and improvement loop (`run-loop.ts`) in the skill-creator scripts use these cases to test and refine skill descriptions.
 

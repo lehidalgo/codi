@@ -10,7 +10,7 @@ description: |
   first", "test-first", "write the test before the code", "TDD workflow",
   "implement with tests", "write tests as I implement". Do NOT activate
   for generating missing tests for existing code without implementation
-  (use ${PROJECT_NAME}-test-coverage), fixing failing tests when the
+  (use ${PROJECT_NAME}-test-suite), fixing failing tests when the
   production code is already correct (use ${PROJECT_NAME}-debugging), or
   audit-style cleanup without behavior change (use ${PROJECT_NAME}-refactoring).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 5
+version: 7
 ---
 
 # {{name}} — TDD
@@ -40,7 +40,7 @@ Thinking "skip TDD just this once"? Stop. That is rationalization.
 
 ## Skip When (routing to another skill)
 
-- User wants to backfill tests for existing code only — use ${PROJECT_NAME}-test-coverage
+- User wants to backfill tests for existing code only — use ${PROJECT_NAME}-test-suite
 - User is debugging an existing failing test — use ${PROJECT_NAME}-debugging
 - User wants dead-code cleanup without behavior change — use ${PROJECT_NAME}-refactoring
 - User is planning the feature, not implementing it yet — use ${PROJECT_NAME}-plan-writer

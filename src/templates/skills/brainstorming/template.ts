@@ -9,21 +9,23 @@ export const template = `---
 name: {{name}}
 description: |
   Design exploration before implementation. Use before starting any non-trivial
-  feature, change, refactor, or document. Also activate for phrases like
-  "let's brainstorm", "let's think through", "design this feature", "plan this
+  feature, change, or refactor. Also activate for phrases like "let's
+  brainstorm", "let's think through", "design this feature", "plan this
   feature", "what's the best way to", "what's the right approach", "before we
   code", "should we use X or Y", "help me think about". Explores context, asks
   clarifying questions one at a time, proposes 2-3 approaches with trade-offs,
   and produces an approved design spec before invoking any implementation
   skill. Do NOT activate for pure quality tasks (security scan, code review,
-  test coverage), one-liner fixes with zero design ambiguity, or content with
-  fully specified requirements.
+  test coverage), one-liner fixes with zero design ambiguity, content creation
+  tasks (articles, decks, documents, carousels — use ${PROJECT_NAME}-content-factory
+  which has its own adaptive intake), or content with fully specified
+  requirements.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 13
 ---
 
 # {{name}} — Brainstorming
@@ -49,6 +51,7 @@ Skipping the design for "simple" tasks is the most common way to waste an hour r
 ## Skip When
 
 - Pure quality tasks (security scan, code review, test coverage) — these have their own activation criteria
+- Content creation tasks (articles, blog posts, decks, documents, carousels, reports, proposals) — use ${PROJECT_NAME}-content-factory; it runs its own adaptive intake and has an explicit fast path for one-off requests, so brainstorming here duplicates work
 - Pure content tasks where requirements are already fully specified with zero ambiguity
 - One-liner fixes with absolutely zero design ambiguity (e.g., "fix this typo")
 
@@ -122,7 +125,7 @@ After design is approved, identify the pipeline and tell the user which one was 
 | Task Type | Detection Signals | Next Skill |
 |-----------|-------------------|------------|
 | **Implementation** | New feature, bug fix, refactor, API change, database change | \\\`${PROJECT_NAME}-plan-writer\\\` |
-| **Content** | Blog post, report, deck, documentation, README | Appropriate content skill (\\\`${PROJECT_NAME}-content-factory\\\` / \\\`${PROJECT_NAME}-doc-engine\\\` / \\\`${PROJECT_NAME}-project-documentation\\\`) |
+| **Content** | Blog post, report, deck, documentation, README | Appropriate content skill (\\\`${PROJECT_NAME}-content-factory\\\` / \\\`${PROJECT_NAME}-project-documentation\\\`) |
 | **Quality** | Security audit, code review, test coverage | Skip brainstorming entirely - go directly to quality skill |
 
 Say explicitly: "This is an [implementation / content / quality] task. I will invoke [skill name] next."

@@ -41,10 +41,9 @@ describe("CORE_PLATFORM_SKILLS", () => {
     expect(CORE_PLATFORM_SKILLS.length).toBeGreaterThan(0);
   });
 
-  it("contains all 6 expected self-improvement skills", () => {
+  it("contains all 5 expected self-improvement skills", () => {
     expect(CORE_PLATFORM_SKILLS).toContain("codi-verification");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-session-recovery");
-    expect(CORE_PLATFORM_SKILLS).toContain("codi-skill-feedback-reporter");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-rule-feedback");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-refine-rules");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-compare-preset");
@@ -80,7 +79,7 @@ describe("All presets include CORE_PLATFORM_RULES", () => {
 
 describe("All presets include CORE_PLATFORM_SKILLS", () => {
   for (const preset of ALL_PRESETS) {
-    it(`${preset.name} includes all 6 core platform skills`, () => {
+    it(`${preset.name} includes all 5 core platform skills`, () => {
       for (const skill of CORE_PLATFORM_SKILLS) {
         expect(preset.skills).toContain(skill);
       }

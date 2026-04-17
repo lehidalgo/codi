@@ -46,12 +46,12 @@
       ]
     },
     {
-      "id": "negative-daily-log",
+      "id": "negative-session-log",
       "description": "Daily work log does NOT trigger step-documenter",
       "prompt": "log today's work summary",
       "expectations": [
         "Does NOT activate step-documenter skill",
-        "Routes to codi-daily-log instead",
+        "Routes to codi-session-log instead",
         "Does NOT create a step doc in docs/executions/"
       ]
     }

@@ -50,7 +50,7 @@
       "prompt": "generate a branded case-study PDF for our client deliverable",
       "expectations": [
         "Does NOT activate dev-docs-manager skill",
-        "Routes to codi-doc-engine instead",
+        "Routes to codi-content-factory instead (branded business docs are absorbed there)",
         "Does NOT run `codi docs --generate`"
       ]
     }

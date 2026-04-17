@@ -18,13 +18,13 @@ description: |
   activate for fixing bugs the user identifies (use ${PROJECT_NAME}-debugging),
   writing new code (use a content/plan/subagent skill), running a full
   security scan (use ${PROJECT_NAME}-security-scan), or measuring test
-  coverage (use ${PROJECT_NAME}-test-coverage).
+  coverage (use ${PROJECT_NAME}-test-suite).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 10
 ---
 
 # {{name}} — Code Review
@@ -40,9 +40,9 @@ version: 7
 ## Skip When
 
 - User wants the bug fixed, not reviewed — use ${PROJECT_NAME}-debugging
-- User wants new code written — use ${PROJECT_NAME}-plan-writer or ${PROJECT_NAME}-subagent-dev
+- User wants new code written — use ${PROJECT_NAME}-plan-writer or ${PROJECT_NAME}-plan-execution
 - User needs a dedicated security audit — use ${PROJECT_NAME}-security-scan
-- User needs coverage measurement — use ${PROJECT_NAME}-test-coverage
+- User needs coverage measurement — use ${PROJECT_NAME}-test-suite
 - User wants refactoring suggestions without finding bugs — use ${PROJECT_NAME}-refactoring
 
 ## Review Process
@@ -121,10 +121,10 @@ For specialized analysis, delegate to these agents:
 
 ## Requesting a Review
 
-Code reviews are not optional. Request a review after each implementation task completes (in ${PROJECT_NAME}-subagent-dev workflow), after completing a major feature, and always before merging to main.
+Code reviews are not optional. Request a review after each implementation task completes (in ${PROJECT_NAME}-plan-execution workflow), after completing a major feature, and always before merging to main.
 
 **When to request:**
-- After ${PROJECT_NAME}-subagent-dev completes all tasks — dispatch a full-changeset review
+- After ${PROJECT_NAME}-plan-execution completes all tasks — dispatch a full-changeset review
 - After completing a significant feature or bug fix
 - Before invoking ${PROJECT_NAME}-branch-finish
 
@@ -169,8 +169,8 @@ Read each piece of feedback and check it against the actual code before doing an
 ## Related Skills
 
 - **${PROJECT_NAME}-security-scan** — Dedicated security audits beyond code review scope
-- **${PROJECT_NAME}-test-coverage** — Verify test coverage for reviewed changes
+- **${PROJECT_NAME}-test-suite** — Verify test coverage for reviewed changes
 - **${PROJECT_NAME}-brainstorming** — Design before the code being reviewed was written
-- **${PROJECT_NAME}-subagent-dev** — Requests reviews after each task via this skill
+- **${PROJECT_NAME}-plan-execution** — Requests reviews after each task via this skill
 - **${PROJECT_NAME}-branch-finish** — Runs a final review before merge options
 `;

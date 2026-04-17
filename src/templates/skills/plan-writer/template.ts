@@ -12,15 +12,15 @@ description: |
   into an execution plan". Produces an executable plan document at
   \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature>-impl.md\\\`. Do NOT activate
   without an approved spec (use ${PROJECT_NAME}-brainstorming first), for
-  executing an existing plan (use ${PROJECT_NAME}-subagent-dev or
-  ${PROJECT_NAME}-plan-executor), or for single-file edits that don't
+  executing an existing plan (use ${PROJECT_NAME}-plan-execution), or
+  for single-file edits that don't
   warrant a plan.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
 # {{name}} — Plan Writer
@@ -36,7 +36,7 @@ version: 9
 ## Skip When
 
 - No approved spec yet — run ${PROJECT_NAME}-brainstorming first
-- Plan already exists and user wants to execute it — use ${PROJECT_NAME}-subagent-dev or ${PROJECT_NAME}-plan-executor
+- Plan already exists and user wants to execute it — use ${PROJECT_NAME}-plan-execution
 - Single-file edit or trivial change that doesn't warrant a plan — just edit directly
 - Bug investigation without a spec — use ${PROJECT_NAME}-debugging
 
@@ -72,7 +72,7 @@ The plan is saved to \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature-name>-impl.md\\\`.
 \\\`\\\`\\\`markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** Use \\\`${PROJECT_NAME}-subagent-dev\\\` (recommended) or \\\`${PROJECT_NAME}-plan-executor\\\` to implement this plan task-by-task. Steps use checkbox (\`- [ ]\`) syntax for tracking.
+> **For agentic workers:** Use \\\`${PROJECT_NAME}-plan-execution\\\` to implement this plan task-by-task. That skill asks the user to pick INLINE (sequential) or SUBAGENT (fresh subagent per task with two-stage review) mode. Steps use checkbox (\`- [ ]\`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -153,18 +153,14 @@ If you find issues, fix them inline. If you find a spec requirement with no task
 
 After self-review passes, dispatch a subagent with \\\`\${CLAUDE_SKILL_DIR}[[/references/plan-document-reviewer-prompt.md]]\\\` to do a final check before presenting the plan to the user.
 
-## Execution Options
+## Execution
 
-After writing the plan, present two options:
-1. **${PROJECT_NAME}-subagent-dev** (recommended) — fresh subagent per task, two-stage review after each
-2. **${PROJECT_NAME}-plan-executor** — execute tasks sequentially in this session with checkpoints
-
-Ask the user which they prefer.
+After writing the plan, hand off to **${PROJECT_NAME}-plan-execution**. That skill asks the user to pick the execution mode — **INLINE** (sequential, watch-along) or **SUBAGENT** (fresh subagent per task with two-stage review).
 
 ## Integration
 
 - Consumes: output spec from ${PROJECT_NAME}-brainstorming
 - References: ${PROJECT_NAME}-tdd cycle in every task structure
-- Invokes: ${PROJECT_NAME}-subagent-dev or ${PROJECT_NAME}-plan-executor (user's choice)
-- Both execution skills require ${PROJECT_NAME}-worktrees as a prerequisite (worktree or branch)
+- Invokes: ${PROJECT_NAME}-plan-execution (which prompts the user for INLINE vs SUBAGENT mode)
+- Requires ${PROJECT_NAME}-worktrees as a prerequisite (worktree or branch)
 `;

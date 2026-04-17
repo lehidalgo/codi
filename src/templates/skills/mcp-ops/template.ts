@@ -26,7 +26,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 12
 ---
 
 # {{name}} — MCP Ops
@@ -47,7 +47,7 @@ version: 10
 - User wants to use the Claude API / Anthropic SDK — use ${PROJECT_NAME}-claude-api
 - User wants to design a generic REST API — use a generic api-designer approach
 - User wants to query the code graph — use ${PROJECT_NAME}-codebase-explore
-- User wants to generate tests or run test suites — use ${PROJECT_NAME}-tdd or ${PROJECT_NAME}-test-run
+- User wants to generate tests or run test suites — use ${PROJECT_NAME}-tdd or ${PROJECT_NAME}-test-suite
 
 ## Configuration
 

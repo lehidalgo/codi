@@ -10,15 +10,15 @@ description: |
   acceptance testing", "UAT", "check if everything works". Coding agent
   drives automatable [AGENT] phases, flags [HUMAN]-only phases, and
   tracks all results in a living QA report document. Do NOT activate for
-  running a single test (use ${PROJECT_NAME}-test-run), measuring test
-  coverage (use ${PROJECT_NAME}-test-coverage), or auditing the
+  running a single test or measuring coverage (use
+  ${PROJECT_NAME}-test-suite), or auditing the
   ${PROJECT_NAME} installation itself (use ${PROJECT_NAME}-dev-e2e-testing).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Guided QA Testing
@@ -32,8 +32,7 @@ version: 6
 
 ## Skip When
 
-- User wants to run a single test or the existing test suite — use ${PROJECT_NAME}-test-run
-- User wants to measure or improve test coverage — use ${PROJECT_NAME}-test-coverage
+- User wants to run tests, check pass/fail, or measure coverage — use ${PROJECT_NAME}-test-suite
 - User wants to audit the ${PROJECT_NAME} installation itself — use ${PROJECT_NAME}-dev-e2e-testing
 - User wants to generate new automated tests from scratch — use ${PROJECT_NAME}-tdd
 - User wants to investigate a specific bug — use ${PROJECT_NAME}-debugging
@@ -251,5 +250,5 @@ For automated test generation from QA findings, delegate to this agent:
 ## Related Skills
 
 - **${PROJECT_NAME}-dev-e2e-testing** — Full end-to-end validation of the ${PROJECT_NAME} installation
-- **${PROJECT_NAME}-test-coverage** — Measure and improve test coverage after QA
+- **${PROJECT_NAME}-test-suite** — Run, measure coverage, or generate tests
 `;

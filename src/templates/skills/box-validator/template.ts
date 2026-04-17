@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Box Layout Validator
@@ -220,7 +220,7 @@ must have matching widths, heights, and relative positions.
 This skill validates STRUCTURE, not aesthetics. It pairs with:
 - Brand skills (\`codi-brand\`, \`brand-creator\`) for colors and typography
 - \`frontend-design\` for aesthetic guidelines
-- \`content-factory\`, \`deck-engine\`, \`doc-engine\` for HTML generation
+- \`content-factory\` for HTML generation (slides, documents, business deliverables)
 
 Run this validator AFTER applying visual styling from those skills.
 

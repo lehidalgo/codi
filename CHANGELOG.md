@@ -14,8 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **heartbeat hooks** — `codi generate` writes `codi-skill-tracker.cjs` and `codi-skill-observer.cjs` to `.codi/hooks/` and wires them into `.claude/settings.json` and `.codex/hooks.json`
 - **skill-observer** — Stop hook extracts `[CODI-OBSERVATION: ...]` markers from the transcript and writes feedback JSON to `.codi/feedback/`
 - **skill-tracker** — InstructionsLoaded hook records active Codi skills to `.codi/.session/active-skills.json`
-- **core-platform** — all 6 built-in presets now include the self-improvement rule and 6 feedback-loop skills by default
-- **skill-feedback-reporter** — repurposed to read `.codi/feedback/` and show the top 3 most actionable observations
+- **core-platform** — all 6 built-in presets now include the self-improvement rule and 5 self-improvement skills by default (verification, session-recovery, rule-feedback, refine-rules, compare-preset)
+- **refine-rules** — two-mode skill (REVIEW + REFINE) that reads `.codi/feedback/` and edits rule files with approval
 - **brand-creator** — new skill replacing `brand-identity`; generates brand skills with `brand/tokens.json` (themes, fonts, assets, voice)
 - **content-factory** — brand API endpoints (`/api/brands`, `/api/active-brand`) and brand template support
 - **content-factory** — campaign pipeline: `/api/active-card`, `/api/brief`, brief-driven variant propagation, promote-to-template workflow
@@ -25,6 +25,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **skills consolidation (66 → 60)** — six merges collapse redundant skills while preserving all functionality:
+  - `skill-feedback-reporter` absorbed into `refine-rules` as REVIEW mode
+  - `session-handoff` + `daily-log` → `session-log` (HANDOFF / LOG / RESUME modes, markdown journal in `docs/sessions/`)
+  - `diagnostics` absorbed into `debugging` as Phase 5 (MCP-powered deep diagnosis)
+  - `test-run` + `test-coverage` → `test-suite` (RUN / COVERAGE / GENERATE modes)
+  - `plan-executor` + `subagent-dev` → `plan-execution` (INLINE / SUBAGENT modes, always asks user)
+  - `doc-engine` absorbed into `content-factory` (business documents as a reference template)
 - **rule-feedback** — `user-invocable: false`; uses `[CODI-OBSERVATION: ...]` markers instead of writing JSON files
 - **improvement rule** — agent emits observation markers instead of writing files; max 3 per session
 - **settings.json** — always generated; always includes heartbeat hook wiring

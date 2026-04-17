@@ -27,7 +27,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 28
+version: 31
 ---
 
 # {{name}} — Skill Creator
@@ -47,7 +47,7 @@ version: 28
 - User wants to create an agent — use ${PROJECT_NAME}-agent-creator
 - User wants to bundle multiple artifacts as a preset — use ${PROJECT_NAME}-preset-creator
 - User wants to write plain project documentation — use ${PROJECT_NAME}-project-documentation
-- User wants to refine skill descriptions from collected feedback — use ${PROJECT_NAME}-skill-feedback-reporter first
+- User wants to review or refine from collected feedback — use ${PROJECT_NAME}-refine-rules (REVIEW mode)
 
 ## The 11-Step Lifecycle
 

@@ -42,7 +42,7 @@
       "expectations": [
         "Does NOT activate dev-e2e-testing skill",
         "Does NOT create a /tmp test project or run 18 suites",
-        "Routes to codi-test-run or direct manual testing instead"
+        "Routes to codi-test-suite or direct manual testing instead"
       ]
     },
     {

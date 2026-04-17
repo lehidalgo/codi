@@ -19,7 +19,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
 ---
 
 # {{name}} — Content Humanizer
@@ -148,7 +148,6 @@ If the user wants to iterate, accept feedback and revise — do not restart the 
 
 ## Related Skills
 
-- **${PROJECT_NAME}-content-factory** — Generate blog posts, social content, and HTML slide decks (includes opt-in humanizer step)
-- **${PROJECT_NAME}-doc-engine** — Generate branded reports and proposals (includes opt-in humanizer step)
+- **${PROJECT_NAME}-content-factory** — Generate blog posts, social content, slide decks, and branded business documents (includes opt-in humanizer step)
 - **${PROJECT_NAME}-project-documentation** — Write technical documentation (includes opt-in humanizer step)
 `;

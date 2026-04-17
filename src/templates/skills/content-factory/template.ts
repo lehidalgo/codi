@@ -2,13 +2,13 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 
 export const template = `---
 name: {{name}}
-description: Use when the user wants to create content — articles, blog posts, slide decks, social carousels, documents, single-format social posts, or multi-format campaigns (blog + deck + carousel about the same topic). Authors substance first (an anchor article) and distills into every requested visual format. Explicit fast path for one-off requests. Generates branded HTML with an interactive web app — live preview and context-aware export (PNG, PDF, PPTX, DOCX, HTML, ZIP).
+description: Use when the user wants to create content — articles, blog posts, slide decks, social carousels, documents, business deliverables (reports, proposals, one-pagers, case studies, executive summaries), single-format social posts, or multi-format campaigns (blog + deck + carousel about the same topic). Authors substance first (an anchor article) and distills into every requested visual format. Explicit fast path for one-off requests. Generates branded HTML with an interactive web app — live preview and context-aware export (PNG, PDF, PPTX, DOCX, HTML, ZIP). For branded business documents specifically, see references/business-documents.md.
 category: ${SKILL_CATEGORY.CONTENT_CREATION}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 67
+version: 69
 ---
 
 # {{name}} — Content Factory
@@ -19,7 +19,6 @@ version: 67
 - User wants a generative / interactive p5.js sketch — use ${PROJECT_NAME}-algorithmic-art
 - User wants to edit a \\\`.pptx\\\` directly (binary format) — use ${PROJECT_NAME}-pptx
 - User wants a Word document with tracked changes — use ${PROJECT_NAME}-docx
-- User wants a PDF report without an HTML intermediate — use ${PROJECT_NAME}-doc-engine
 - User wants a multi-component React artifact — use ${PROJECT_NAME}-claude-artifacts-builder
 
 ## Overview
@@ -83,6 +82,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
 | \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
 | \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
+| \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
 | \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |
 | \`\${CLAUDE_SKILL_DIR}[[/references/platform-rules.md]]\` | Convenience appendix: per-platform distillation recipes |
 | \`\${CLAUDE_SKILL_DIR}[[/references/promote-template.md]]\` | Promote a My Work project into a built-in Gallery template |

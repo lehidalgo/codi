@@ -25,7 +25,7 @@ description: |
   clean test project. Also activate for phrases like "validate codi
   installation", "e2e sweep", "full feature test", "release validation",
   "regression sweep", "system test", "Codi installation audit". Do NOT
-  activate for testing a single skill in isolation (use ${PROJECT_NAME}-test-run),
+  activate for testing a single skill in isolation (use ${PROJECT_NAME}-test-suite),
   consumer application e2e (use ${PROJECT_NAME}-webapp-testing), or unit
   test generation (use ${PROJECT_NAME}-tdd).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
@@ -33,7 +33,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 14
+version: 16
 ---
 
 # {{name}} — E2E Testing
@@ -46,10 +46,10 @@ version: 14
 
 ## Skip When
 
-- User wants to test a single skill in isolation — use ${PROJECT_NAME}-test-run
+- User wants to test a single skill in isolation — use ${PROJECT_NAME}-test-suite
 - User wants e2e tests for a consumer web app — use ${PROJECT_NAME}-webapp-testing
 - User wants to generate new tests from scratch — use ${PROJECT_NAME}-tdd
-- User wants to run the existing test suite (not a full feature sweep) — use ${PROJECT_NAME}-test-run
+- User wants to run the existing test suite (not a full feature sweep) — use ${PROJECT_NAME}-test-suite
 - User is not working on the ${PROJECT_NAME_DISPLAY} source repo — this skill is contributor-only
 
 This skill guides systematic validation of ALL ${PROJECT_NAME_DISPLAY} features in a test project. Each step is labeled:
