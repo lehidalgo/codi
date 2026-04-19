@@ -3,7 +3,7 @@
 
 import { buildThumbDoc as _buildThumbDoc } from "/static/lib/card-builder.js";
 
-import { state, STATUS_CYCLE, STATUS_LABEL } from "./state.js";
+import { state, STATUS_CYCLE, STATUS_LABEL, setActiveFormat } from "./state.js";
 import { $, clearEl, log, setView, _registerInitGallery } from "./dom.js";
 import {
   buildTemplateContentFromRegistry,
@@ -23,9 +23,40 @@ export function setGalleryStale() {
   galleryInit = false;
 }
 
-function buildThumbDoc(card) {
-  const fmt = cardFormat(card);
+function buildThumbDoc(card, fmtOverride) {
+  // fmtOverride lets the caller force a specific format — used by the My
+  // Work thumbnails where the active card format may not match the
+  // document's own (A4 document viewed from a Square-format session).
+  const fmt = fmtOverride || cardFormat(card);
   return _buildThumbDoc(card, fmt);
+}
+
+// Thumbnail scale box: fit a {w,h} canvas inside 320x200 while preserving
+// aspect. Kept out of inline string concat so multiple call sites stay in
+// sync and the padding factor lives in one place.
+const THUMB_BOX_W = 320;
+const THUMB_BOX_H = 200;
+const THUMB_PADDING = 0.98;
+
+function applyThumbFormat(inner, iframe, fmt) {
+  const sc = Math.min(THUMB_BOX_W / fmt.w, THUMB_BOX_H / fmt.h) * THUMB_PADDING;
+  inner.style.cssText =
+    "position:absolute;top:50%;left:50%;" +
+    "transform:translate(-50%,-50%) scale(" +
+    sc +
+    ");" +
+    "width:" +
+    fmt.w +
+    "px;height:" +
+    fmt.h +
+    "px;transform-origin:center;";
+  iframe.style.cssText =
+    "width:" +
+    fmt.w +
+    "px;height:" +
+    fmt.h +
+    "px;" +
+    "border:none;display:block;pointer-events:none;";
 }
 
 function buildTemplateCoverEl(template, BOX_W, BOX_H) {
@@ -228,25 +259,14 @@ async function renderSessions(grid) {
       const presetMeta = session.preset
         ? state.templates.find((t) => t.id === session.preset.id)
         : null;
-      const fmt = (presetMeta ? presetMeta.format : null) || { w: 1080, h: 1080 };
-      const sc = Math.min(320 / fmt.w, 200 / fmt.h) * 0.98;
+      // Provisional format — used only until the actual first card is parsed
+      // and its native format takes over. Without this swap, A4 documents
+      // (794x1123) get rendered inside a 1080x1080 iframe and crop.
+      const initialFmt = (presetMeta ? presetMeta.format : null) || { w: 1080, h: 1080 };
       const inner = document.createElement("div");
-      inner.style.cssText =
-        "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(" +
-        sc +
-        ");width:" +
-        fmt.w +
-        "px;height:" +
-        fmt.h +
-        "px;transform-origin:center;";
       const iframe = document.createElement("iframe");
       iframe.setAttribute("sandbox", "allow-same-origin");
-      iframe.style.cssText =
-        "width:" +
-        fmt.w +
-        "px;height:" +
-        fmt.h +
-        "px;border:none;display:block;pointer-events:none;";
+      applyThumbFormat(inner, iframe, initialFmt);
       inner.appendChild(iframe);
       cover.appendChild(inner);
       fetch(
@@ -272,7 +292,14 @@ async function renderSessions(grid) {
           if (nameEl && contentName) nameEl.textContent = contentName;
           const firstCard = t.cards[0];
           if (!firstCard) return;
-          iframe.srcdoc = buildThumbDoc({ ...firstCard, format: fmt });
+          // Prefer the card's native format over the provisional one so the
+          // thumbnail matches the real aspect ratio (A4, 16:9 slide, square).
+          const cardFmt =
+            firstCard.format && firstCard.format.w && firstCard.format.h
+              ? firstCard.format
+              : initialFmt;
+          applyThumbFormat(inner, iframe, cardFmt);
+          iframe.srcdoc = buildThumbDoc(firstCard, cardFmt);
         })
         .catch(() => {});
     } else {
@@ -481,7 +508,7 @@ export async function loadSessionContent(session) {
           ? presetMeta.format
           : state.format;
     template.cards.forEach((c) => (c.format = fmt));
-    state.format = fmt;
+    setActiveFormat(fmt);
     state.cards = template.cards;
     state.cardRevision++;
     const genericName = file
@@ -569,7 +596,7 @@ export async function selectTemplate(filename) {
   if (fmtBtn) {
     document.querySelectorAll(".fmt").forEach((b) => b.classList.remove("active"));
     fmtBtn.classList.add("active");
-    state.format = template.format;
+    setActiveFormat(template.format);
   }
 
   setView("preview");

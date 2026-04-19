@@ -92,8 +92,8 @@
       <div id="logo-controls">
         <div class="slider-row">
           <span class="slider-label">Size</span>
-          <input id="logo-size" type="range" min="16" max="120" value="48">
-          <span id="logo-size-val" class="slider-val">48</span>
+          <input id="logo-size" type="range" min="10" max="1000" value="200">
+          <span id="logo-size-val" class="slider-val">200</span>
         </div>
         <div class="slider-row">
           <span class="slider-label">X</span>
@@ -129,45 +129,56 @@
     </section>
   </aside>
 
-  <div id="main">
-    <nav class="tabs" role="tablist">
-      <button class="tab active" data-view="preview" role="tab" aria-selected="true">Preview</button>
-      <button class="tab" data-view="gallery" role="tab" aria-selected="false">Gallery</button>
-      <button class="tab" data-view="work" role="tab" aria-selected="false">My Work</button>
-      <div class="tabs-fill"></div>
+  <div id="sidebar-resize" class="resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" title="Drag to resize · double-click to reset"></div>
+  <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
+    <svg class="sidebar-toggle-icon" width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="7.5 2.5 3.5 6 7.5 9.5"></polyline>
+    </svg>
+  </button>
 
-      <!-- View mode toggle — only visible in Preview tab -->
-      <div id="view-mode-bar" class="view-mode-bar">
-        <button id="btn-vm-grid" class="vm-btn" title="Overview — all slides at once" type="button">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            <rect x="0" y="0" width="6" height="6" rx="1"/>
-            <rect x="8" y="0" width="6" height="6" rx="1"/>
-            <rect x="0" y="8" width="6" height="6" rx="1"/>
-            <rect x="8" y="8" width="6" height="6" rx="1"/>
-          </svg>
-          Grid
-        </button>
-        <button id="btn-vm-app" class="vm-btn active" title="App mode — presentation or scroll view" type="button">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            <rect x="1" y="1" width="12" height="12" rx="2"/>
-          </svg>
-          App
-        </button>
-      </div>
+  <div class="workspace">
 
-      <span id="card-nav" class="card-nav" hidden>
-        <button id="btn-prev" class="nav-btn" aria-label="Previous slide">&#8249;</button>
-        <span id="card-idx" aria-live="polite">1 / 1</span>
-        <button id="btn-next" class="nav-btn" aria-label="Next slide">&#8250;</button>
-      </span>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="preview" role="tab" aria-selected="true">Preview</button>
+    <button class="tab" data-view="gallery" role="tab" aria-selected="false">Gallery</button>
+    <button class="tab" data-view="work" role="tab" aria-selected="false">My Work</button>
+    <div class="tabs-fill"></div>
 
-      <button id="btn-refresh" class="refresh-btn" title="Reload content" hidden aria-label="Reload content">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-          <path d="M10.5 6A4.5 4.5 0 1 1 6 1.5V0L8.5 2 6 4V2.5A3.5 3.5 0 1 0 9.5 6h1z"/>
+    <!-- View mode toggle — only visible in Preview tab -->
+    <div id="view-mode-bar" class="view-mode-bar">
+      <button id="btn-vm-grid" class="vm-btn" title="Overview — all slides at once" type="button">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <rect x="0" y="0" width="6" height="6" rx="1"/>
+          <rect x="8" y="0" width="6" height="6" rx="1"/>
+          <rect x="0" y="8" width="6" height="6" rx="1"/>
+          <rect x="8" y="8" width="6" height="6" rx="1"/>
         </svg>
+        Grid
       </button>
-    </nav>
+      <button id="btn-vm-app" class="vm-btn active" title="App mode — presentation or scroll view" type="button">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <rect x="1" y="1" width="12" height="12" rx="2"/>
+        </svg>
+        App
+      </button>
+    </div>
 
+    <span id="card-nav" class="card-nav" hidden>
+      <button id="btn-prev" class="nav-btn" aria-label="Previous slide">&#8249;</button>
+      <span id="card-idx" aria-live="polite">1 / 1</span>
+      <button id="btn-next" class="nav-btn" aria-label="Next slide">&#8250;</button>
+    </span>
+
+    <button id="btn-refresh" class="refresh-btn" title="Reload content" hidden aria-label="Reload content">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M10.5 6A4.5 4.5 0 1 1 6 1.5V0L8.5 2 6 4V2.5A3.5 3.5 0 1 0 9.5 6h1z"/>
+      </svg>
+    </button>
+  </nav>
+
+  <div class="workspace-body">
+
+  <div id="main">
     <div id="update-toast" class="update-toast" role="status" aria-live="polite"></div>
 
     <div id="view-preview" class="view active" role="tabpanel">
@@ -204,7 +215,6 @@
         </div>
         <div id="card-strip" class="card-strip grid-view" hidden></div>
         <button id="app-next" class="app-nav-btn" hidden aria-label="Next slide">&#8250;</button>
-        <div id="filmstrip" class="filmstrip" hidden></div>
       </div>
     </div>
 
@@ -235,6 +245,13 @@
       <div id="work-grid" class="gallery-grid"></div>
     </div>
   </div>
+
+  <aside id="filmstrip-rail" class="filmstrip-rail" hidden aria-label="Card thumbnails">
+    <div id="filmstrip" class="filmstrip vertical"></div>
+  </aside>
+
+  </div><!-- /.workspace-body -->
+  </div><!-- /.workspace -->
 
 </div>
 <script src="/vendor/jszip.min.js"></script>

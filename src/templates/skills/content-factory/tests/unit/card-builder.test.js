@@ -97,9 +97,43 @@ describe("buildCardDoc", () => {
     expect(doc).not.toContain("<svg");
   });
 
+  it("uses logo.svg when provided (project/brand logo)", () => {
+    const logo = {
+      visible: true,
+      x: 50,
+      y: 90,
+      size: 24,
+      svg: '<svg id="brand-mark"><circle r="10"/></svg>',
+    };
+    const doc = buildCardDoc(baseCard, fmt, logo, "handle", true);
+    expect(doc).toContain('id="brand-mark"');
+    expect(doc).not.toContain("codi</text>");
+  });
+
+  it("falls back to built-in default when logo.svg is missing or invalid", () => {
+    const logo = { visible: true, x: 50, y: 90, size: 24, svg: "not-an-svg" };
+    const doc = buildCardDoc(baseCard, fmt, logo, "handle", true);
+    expect(doc).toContain("codi</text>");
+  });
+
   it("overrides .social-card dimensions with !important", () => {
     const doc = buildCardDoc(baseCard, fmt);
     expect(doc).toContain(".social-card{width:1080px!important;height:1080px!important}");
+  });
+
+  it("overrides .slide dimensions with !important", () => {
+    const doc = buildCardDoc(baseCard, { w: 1280, h: 720 });
+    expect(doc).toContain(".slide{width:1280px!important;height:720px!important}");
+  });
+
+  it("overrides .doc-page min-height (allows content growth for R11)", () => {
+    const doc = buildCardDoc(baseCard, { w: 794, h: 1123 });
+    expect(doc).toContain(".doc-page{width:794px!important;min-height:1123px!important}");
+  });
+
+  it("resets margin on all canvas-root classes to prevent body-background stripes", () => {
+    const doc = buildCardDoc(baseCard, fmt);
+    expect(doc).toContain(".social-card,.slide,.doc-page{margin:0!important}");
   });
 });
 

@@ -6,12 +6,29 @@
 // Downstream (preview header, URL pinning, card-builder context,
 // persist-style) reads from this field and never branches on kind except
 // for the `readOnly` flag.
+
+import { defaultLogoSize } from "./logo-defaults.js";
+
+const INITIAL_FORMAT = { w: 1080, h: 1080 };
+
 export const state = {
-  format: { w: 1080, h: 1080 },
+  format: INITIAL_FORMAT,
   handle: "handle",
   zoom: 1.0, // 1.0 = fit content to canvas height; slider scales relative to fit
-  logo: { visible: true, size: 48, x: 85, y: 85 }, // global defaults
+  // Global logo defaults. `size` is computed from the active format unless
+  // `userOverridden` is true (flipped when the user drags the size slider).
+  logo: {
+    visible: true,
+    size: defaultLogoSize(INITIAL_FORMAT),
+    x: 85,
+    y: 85,
+    userOverridden: false,
+  },
   cardLogos: {}, // { [cardIndex]: partial logo overrides per card }
+  // Resolved SVG bytes for the active project's logo (project > brand >
+  // builtin). Populated lazily by logo-loader.loadLogo() on first render.
+  logoSvg: null,
+  logoSource: null,
   selectedCards: new Set([0]),
   galleryFilter: "all",
   workStatusFilter: "all",
@@ -34,6 +51,22 @@ export const state = {
   inspectOn: false,
   _inspectorSource: "",
 };
+
+/**
+ * Update the active canvas format. When the user has not manually overridden
+ * the logo size, recompute the default so overlays stay proportional across
+ * formats (8% of the shortest side).
+ *
+ * Named `setActiveFormat` (not `setFormat`) because `app.js` already hosts a
+ * local `setFormat(btn)` click handler — reusing the name would shadow the
+ * import at module eval time and throw a re-declaration error.
+ */
+export function setActiveFormat(format) {
+  state.format = format;
+  if (!state.logo.userOverridden) {
+    state.logo.size = defaultLogoSize(format);
+  }
+}
 
 export const STATUS_CYCLE = ["draft", "in-progress", "review", "done"];
 export const STATUS_LABEL = {

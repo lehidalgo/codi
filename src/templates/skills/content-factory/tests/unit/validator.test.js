@@ -225,12 +225,16 @@ describe("validator wrapper", () => {
     const captured = [];
     validator.__setRenderer({
       renderAndExtract: async ({ html, width, height }) => {
+        // Scope class detection to the <body> so the canvas-root
+        // normalization rule injected in <head> (which names all three
+        // classes) does not create false positives.
+        const body = (html.match(/<body>([\s\S]*)<\/body>/i) || [, ""])[1];
         captured.push({
           width,
           height,
-          hasSocial: /social-card/.test(html),
-          hasSlide: /class="slide/.test(html),
-          hasDoc: /doc-page/.test(html),
+          hasSocial: /social-card/.test(body),
+          hasSlide: /class="slide/.test(body),
+          hasDoc: /doc-page/.test(body),
         });
         return leafTree();
       },

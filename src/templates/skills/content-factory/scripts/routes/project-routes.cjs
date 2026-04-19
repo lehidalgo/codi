@@ -188,6 +188,89 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
+  // /api/project/logo-state GET?file=<rel> — return persisted logo state
+  // for the given content file, sanitized against cardCount. 404 when no
+  // state has been saved yet. Used on project load to restore overlay
+  // positions that the user adjusted in a previous session.
+  if (req.method === 'GET' && pathname === '/api/project/logo-state') {
+    const project = state.getActiveProject();
+    if (!project) { res.writeHead(404); res.end('No active project'); return true; }
+    const file = parsed.searchParams.get('file');
+    const cardCount = Number(parsed.searchParams.get('cardCount'));
+    const { readLogoState, sanitizeLogoState, isSafeFileKey } = require('../lib/logo-state.cjs');
+    if (!isSafeFileKey(file)) { res.writeHead(400); res.end('invalid file'); return true; }
+    const raw = readLogoState(project.dir, file);
+    if (!raw) { res.writeHead(404); res.end('no state'); return true; }
+    const clean = sanitizeLogoState(raw, { cardCount: Number.isFinite(cardCount) ? cardCount : Infinity });
+    sendJson(res, 200, clean);
+    return true;
+  }
+
+  // /api/project/logo-state POST — persist logo state for one content
+  // file. Body: { file, logo, cardLogos }. Server sanitizes before write,
+  // so callers cannot corrupt the on-disk JSON with malformed values.
+  if (req.method === 'POST' && pathname === '/api/project/logo-state') {
+    const project = state.getActiveProject();
+    if (!project) { res.writeHead(404); res.end('No active project'); return true; }
+    readJsonBody(req, (err, body) => {
+      if (err) { res.writeHead(400); res.end('Bad request'); return; }
+      const file = body && body.file;
+      const logo = body && body.logo;
+      const cardLogos = body && body.cardLogos;
+      const cardCount = body && Number(body.cardCount);
+      const { writeLogoState, sanitizeLogoState } = require('../lib/logo-state.cjs');
+      const clean = sanitizeLogoState(
+        { logo, cardLogos },
+        { cardCount: Number.isFinite(cardCount) ? cardCount : Infinity },
+      );
+      try {
+        writeLogoState(project.dir, file, clean);
+        sendJson(res, 200, { ok: true });
+      } catch (e) {
+        sendJson(res, e.status || 500, { ok: false, error: e.message });
+      }
+    });
+    return true;
+  }
+
+  // /api/project/logo GET — resolve the active project's logo.
+  //
+  // 7-step chain documented in references/logo-convention.md:
+  //   1-2. project assets/logo.{svg,png}
+  //   3-4. brand assets/logo.{svg,png} (the standard)
+  //   5-6. auto-discovered candidates under the brand directory
+  //   7.   built-in codi default
+  //
+  // On first call for a project that has no logo yet, the resolver's
+  // bootstrap copies whatever it found (steps 3-6) into the project's
+  // canonical path — so the project owns the file from that point.
+  if (req.method === 'GET' && pathname === '/api/project/logo') {
+    const project = state.getActiveProject();
+    if (!project) { res.writeHead(404); res.end('No active project'); return true; }
+    const projectDir = project.dir;
+    // setActiveBrand stores the full discovered brand record for other
+    // consumers; the resolver only needs the skill-name string.
+    const brandState = state.getActiveBrand ? state.getActiveBrand() : null;
+    const activeBrand = brandState && typeof brandState === 'object' ? brandState.name : brandState;
+    const { bootstrapProjectLogo, resolveLogo } = require('../lib/logo-resolver.cjs');
+    bootstrapProjectLogo({ projectDir, skillsDir: ctx.SKILLS_DIR, activeBrand });
+    const result = resolveLogo({ projectDir, skillsDir: ctx.SKILLS_DIR, activeBrand });
+    if (result.source === 'builtin' && !activeBrand) {
+      res.writeHead(404); res.end('No project or brand logo');
+      return true;
+    }
+    const headers = {
+      'Content-Type': result.contentType || 'image/svg+xml',
+      'Cache-Control': 'no-cache',
+      'X-Logo-Source': result.source,
+    };
+    if (typeof result.conforming === 'boolean') headers['X-Logo-Conforming'] = String(result.conforming);
+    res.writeHead(200, headers);
+    if (result.binary) res.end(result.binary);
+    else res.end(result.svg);
+    return true;
+  }
+
   return false;
 }
 
