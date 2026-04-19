@@ -79,6 +79,14 @@ Check `tokens.json.fonts.google_fonts_url`:
 
 ## 6. Embed the logo
 
+There are two distinct logo concerns — they serve different purposes and
+read from different paths.
+
+### 6a. In-content logos (inside the HTML you author)
+
+These are the logos that appear **inside the card design** — e.g. a
+header mark in a document, a corner mark in a slide.
+
 Determine the card's background color:
 
 - If dark: use `assets.logo_light_bg` (light logo on dark background)
@@ -89,8 +97,61 @@ Fetch the SVG file via the brand asset route:
 GET http://localhost:PORT/api/brand/<brand-name>/assets/<logo-filename>
 ```
 
-Inline the SVG source directly in the HTML. Do NOT use `<img src="...">` with a
-file path — the path will not resolve inside an iframe.
+Inline the SVG source directly in the HTML. Do NOT use `<img src="...">`
+with a file path — the path will not resolve inside an iframe.
+
+### 6b. Overlay logo (managed by the factory)
+
+The content-factory UI shows a **logo overlay** positioned on top of the
+card (controlled by the size/x/y sliders in the inspector). This is
+separate from whatever you embed inside the HTML in step 6a.
+
+**The logo convention is documented in full at
+`references/logo-convention.md` — read it before creating a project.**
+The short version:
+
+**Standard path (brand skill root):**
+
+```
+<brand-skill>/assets/logo.svg    <- REQUIRED
+<brand-skill>/assets/logo.png    <- accepted when SVG unavailable
+```
+
+**Project path (mirrors the brand):**
+
+```
+<project>/assets/logo.svg
+<project>/assets/logo.png
+```
+
+**Resolution order:** project → brand standard path → auto-discovered
+candidate in the brand skill → built-in codi mark. First match wins and
+is copied into the project on first render, so the project owns the
+file from that point.
+
+**Agent pre-flight — MANDATORY before first render:**
+
+1. Call `GET /api/brand/<name>/conformance` — returns `{ conforming,
+   standardPath, discovered, advice }`
+2. If the brand conforms → proceed, factory handles everything
+3. If non-conforming with a strong candidate (score ≥ 100) → auto-fix by
+   copying to `<brand>/assets/logo.svg`, note in the brand's README
+4. If non-conforming with ambiguous candidates → ask the user
+5. If no logo at all → ask the user to supply one
+
+Full decision tree and migration recipes live in `logo-convention.md`.
+
+**Do NOT:**
+
+- Do NOT write files to `<project>/assets/logo.svg` manually during a
+  content render — the factory bootstraps it automatically.
+- Do NOT embed the overlay logo inside the HTML — that duplicates the
+  mark. The overlay is drawn on top by the browser app.
+- Do NOT work around a non-conforming brand in content code — fix the
+  brand instead (auto-fix or ask the user).
+
+**Brand-skill authors:** ship `<brand>/assets/logo.svg`. That is the
+only promise the factory requires.
 
 ## 7. Visual style reference
 

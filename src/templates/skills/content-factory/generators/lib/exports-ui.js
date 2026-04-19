@@ -103,22 +103,37 @@ function svgNodeFrom(svgString) {
 
 /**
  * Wrap an async export handler to toggle the button's busy state.
- * Adds `.is-busy`, disables the button while the handler runs, and
- * restores normal state in `finally` — even on error.
+ * Adds `.is-busy`, swaps the label to "Exporting…", disables the button
+ * while the handler runs, and restores normal state in `finally` — even
+ * on error. Enforces a minimum visible duration so that near-instant
+ * exports (HTML byte-for-byte streams in ~100ms) still register as
+ * feedback to the user.
  */
+const MIN_BUSY_MS = 450;
+
 async function runWithBusy(btn, handler) {
   if (!btn || btn.classList.contains("is-busy")) return;
+  const labelEl = btn.querySelector(".btn-export__label");
+  const originalLabel = labelEl ? labelEl.textContent : null;
+  if (labelEl) labelEl.textContent = "Exporting…";
   btn.classList.add("is-busy");
   btn.setAttribute("aria-busy", "true");
   btn.disabled = true;
+  const started = performance.now();
   try {
     await handler();
   } catch (e) {
     log("export error: " + (e && e.message ? e.message : String(e)), "error");
   } finally {
+    const elapsed = performance.now() - started;
+    const remaining = MIN_BUSY_MS - elapsed;
+    if (remaining > 0) {
+      await new Promise((r) => setTimeout(r, remaining));
+    }
     btn.classList.remove("is-busy");
     btn.removeAttribute("aria-busy");
     btn.disabled = false;
+    if (labelEl && originalLabel != null) labelEl.textContent = originalLabel;
   }
 }
 
@@ -207,12 +222,22 @@ async function renderCardToPngBlob(card, cardIndex) {
 }
 
 function downloadBlob(blob, filename) {
+  // Some browsers (notably Safari) silently ignore `.click()` on a
+  // detached <a>. Attach to the DOM, click, detach — standard defensive
+  // pattern that works across every browser engine.
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.download = filename;
   a.href = url;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  try {
+    a.click();
+  } finally {
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
 }
 
 // ====== Export functions ======
@@ -340,8 +365,11 @@ export async function exportDocx() {
 }
 
 export async function exportHtmlBundle() {
-  const preflight = await exportPreflight();
-  if (!preflight.proceed) return;
+  // HTML export ships the source file byte-for-byte — no Playwright
+  // render, no rasterization. Box-layout preflight (R1-R10) exists to
+  // protect rasterized outputs from shipping broken pixels; for HTML
+  // the author can inspect and edit the source directly, so blocking
+  // here adds friction without preventing any real defect.
   log("Building HTML bundle...");
   try {
     const payload = buildExportHtmlBundlePayload();

@@ -4,7 +4,7 @@
 // URL-pinned project state stays here because the URL-pinning structural
 // test asserts specific strings live in this file.
 
-import { state, STATUS_LABEL } from "./lib/state.js";
+import { state, STATUS_LABEL, setActiveFormat } from "./lib/state.js";
 import { $, clearEl, log, setView, registerOnLeavePreview } from "./lib/dom.js";
 import { buildTemplateContentFromRegistry } from "./lib/content-descriptor.js";
 import { connectWS, registerWsHandlers, registerGalleryStaleSetter } from "./lib/ws.js";
@@ -21,7 +21,6 @@ import {
   loadTemplateAsCards,
   toggleSelectAll,
   applyLogoChange,
-  applyLogoToAllCards,
   syncLogoSlidersToSelection,
   registerUpdateExportPanel,
   registerUpdateFormatGrid,
@@ -31,6 +30,7 @@ import { initGallery, filterGallery, loadSessionContent, setGalleryStale } from 
 import { registerPanelOpener } from "./lib/validation-badge.js";
 import { openValidationPanel, closeValidationPanel } from "./lib/validation-panel.js";
 import { initValidationSettings } from "./lib/validation-settings.js";
+import { initSidebarResize } from "./lib/sidebar-resize.js";
 
 // Wire forward-references so cycles resolve at runtime.
 registerRenderCards(renderCards);
@@ -60,7 +60,7 @@ function setFormat(btn) {
   }
   document.querySelectorAll(".fmt").forEach((b) => b.classList.remove("active"));
   btn.classList.add("active");
-  state.format = { w: Number(btn.dataset.w), h: Number(btn.dataset.h) };
+  setActiveFormat({ w: Number(btn.dataset.w), h: Number(btn.dataset.h) });
   log(
     "Format: " +
       btn.querySelector("b").textContent +
@@ -102,6 +102,10 @@ export function updateFormatGrid(type) {
 
 // ====== Init ======
 function init() {
+  // Sidebar resize + collapse — restore persisted state before any
+  // downstream layout measurement runs.
+  initSidebarResize();
+
   // Format grid
   $("format-grid").addEventListener("click", (e) => {
     const btn = e.target.closest(".fmt");
@@ -136,15 +140,24 @@ function init() {
     }, 60);
   });
 
-  // Logo controls
+  // Logo controls — all four (toggle + 3 sliders) go through
+  // applyLogoChange so they share the same selection logic (single page
+  // vs. multi-select vs. all) and the same debounced persistence path.
   $("logo-toggle").addEventListener("click", () => {
-    const newVisible = !state.logo.visible;
-    state.logo.visible = newVisible;
-    state.cards.forEach((_, i) => {
-      if (!state.cardLogos[i]) state.cardLogos[i] = {};
-      state.cardLogos[i].visible = newVisible;
-    });
-    applyLogoToAllCards();
+    // Read the current visibility from the perspective of whichever card
+    // the sidebar is showing, so "toggle" flips what the user sees —
+    // not a stale global flag that may not match the per-card override.
+    const ref =
+      state.selectedCards.size > 0
+        ? [...state.selectedCards][0]
+        : state.cards.length > 0
+          ? state.activeCard
+          : null;
+    const curr =
+      ref !== null && state.cardLogos[ref] && typeof state.cardLogos[ref].visible === "boolean"
+        ? state.cardLogos[ref].visible
+        : state.logo.visible;
+    applyLogoChange("visible", !curr);
     syncLogoSlidersToSelection();
   });
   $("logo-size").addEventListener("input", () => {
@@ -179,6 +192,21 @@ function init() {
     document.querySelectorAll(".status-filter-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     state.workStatusFilter = btn.dataset.status;
+    filterGallery();
+  });
+
+  // Content-type filter for My Work. Scope the active-class update to
+  // this filter bar only — the Gallery tab uses the same `.filter-btn`
+  // class for its own content-type filter, so a document-wide
+  // querySelectorAll would clear both bars when one is clicked.
+  $("work-type-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-btn");
+    if (!btn) return;
+    $("work-type-filters")
+      .querySelectorAll(".filter-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.workTypeFilter = btn.dataset.type;
     filterGallery();
   });
 

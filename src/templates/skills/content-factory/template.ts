@@ -8,10 +8,36 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 83
+version: 107
 ---
 
 # {{name}} — Content Factory
+
+## Non-negotiable rules
+
+- **The brand logo lives at \`<brand-skill>/assets/logo.{svg,png}\`. Always.** If a brand doesn't
+  conform, fix the brand or ask the user — do not build workarounds in content code. Full
+  convention + pre-flight decision tree: \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\`
+- **Never embed the brand logo inside content HTML (\`<img>\`, background-image, inline SVG).**
+  Content Factory renders the brand logo as an overlay on every card, automatically sized
+  to the canvas (≈20% of the shortest side, top-right by default) and positioned/scaled via the inspector. Embedding
+  a second logo in the HTML duplicates the mark on export and desyncs when the brand changes.
+  Author content with chrome only (title bars, eyebrows, accent bars) — the factory adds the logo.
+- **Slide decks are animated, single-file HTML. Always.** Every \`.slide\` deck ships
+  as one self-contained HTML file with all CSS, \`@keyframes\`, fonts, and per-slide
+  inline \`<script>\` bundled in. No sibling \`deck.css\` / \`deck.js\`. Motion is
+  deliberate: staggered entry animations, compositor-only \`transform\` / \`opacity\`,
+  \`@media (prefers-reduced-motion: reduce)\` honored, final state always visible.
+  Quality floor: premium, modern, brand-aligned. HTML export is byte-for-byte —
+  what you author is exactly what downloads. Full brief:
+  \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\`. Read it before writing any deck.
+- **Run validation after every content write; fix every violation before declaring done.**
+  Call \`GET /api/validate-cards?project=<dir>&file=<file>\` and iterate on the returned
+  \`violations[]\` until the report is clean (\`valid: true\`). Canvas overflow (\`rule: R11\`,
+  "Canvas Fit") is a standard validation violation alongside the box-layout rules — its
+  \`fix\` field prescribes \`paginate\`/\`split\`/\`tighten\` with the exact overflow numbers.
+  Full protocol, including the content-fit remediation decision tree, lives at
+  \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`.
 
 ## Skip When
 
@@ -82,6 +108,8 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` | The 13 design rules. Read before authoring any slide |
 | \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
 | \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
+| \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\` | **R11 Canvas Fit rule.** Canvas overflow is emitted by \`/api/validate-cards\` as a standard box-layout violation (\`rule: R11\`). The \`fix\` field prescribes \`paginate\`/\`split\`/\`tighten\`. Handled by the same validate-before-done loop as R1–R10 |
+| \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\` | **Logo standard + pre-flight.** Brand logos live at \`<brand>/assets/logo.{svg,png}\`. Call \`GET /api/brand/<name>/conformance\` at project creation; auto-fix or ask the user when non-conforming |
 | \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
 | \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
 | \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |
@@ -435,11 +463,35 @@ in \`<head>\`:
 
 Full rules: \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\`
 
-- Social cards and slides: \`overflow: hidden\` — every pixel beyond the boundary is clipped
+- Social cards and slides: \`overflow: hidden\` on export — content beyond the canvas is
+  clipped in the final PNG/PDF/PPTX. In preview the factory relaxes this so you can
+  see overflow visually (and the validator can measure it).
 - Document pages (\`.doc-page\`): \`overflow: visible\` — content grows vertically. Never
   use \`overflow: hidden\` on \`.code-block\`, \`pre\`, or \`table\`
 - Tables inside \`.doc-page\`: the flex-column wrapper MUST have \`width: 100%\` — without
   it, \`width: 100%\` on a child table resolves against an indefinite width and columns collapse
+
+#### Canvas-fit validation — part of the standard validate-before-done loop
+
+Full protocol: \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`
+
+Canvas overflow is emitted as **R11 "Canvas Fit"** by the same
+\`/api/validate-cards\` endpoint that runs R1–R10. There is no separate
+state file to read, no parallel notification channel. The agent's normal
+validate-before-done loop catches overflow automatically.
+
+For every R11 violation in \`violations[]\`:
+
+- \`remediation: "paginate"\` (documents, overflow > 15%) — add a new
+  \`.doc-page\` sibling inside \`.doc-container\`, move overflow content into
+  it, preserve header/footer on every page
+- \`remediation: "split"\` (slides, overflow > 15%) — cut the offending slide
+  at the next \`h2\`/\`hr\` boundary
+- \`remediation: "tighten"\` (small overflow, or any social card) — reduce
+  padding, condense copy, or drop one line-height / font-size notch
+
+The \`fix\` field is prefixed with the remediation name and includes the
+exact overflow numbers — patch the HTML and re-validate until \`valid: true\`.
 
 #### Document template conventions — DOCX export
 

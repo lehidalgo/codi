@@ -6,6 +6,7 @@ import { renderMarkdownAsDocument } from "/static/lib/markdown.js";
 
 import { state } from "./state.js";
 import { $, clearEl, log, showToast } from "./dom.js";
+import { loadLogoState } from "./logo-state-sync.js";
 
 // Forward-bind renderCards from card-strip.js to avoid a hard cycle.
 let _renderCards = () => {};
@@ -172,16 +173,33 @@ export async function loadContent(filename, { preserveCard = false } = {}) {
     state.cards = cards;
     state.cardRevision++;
     state.activeCard = preserveCard && prevCard < cards.length ? prevCard : 0;
-    state.cardLogos = {};
     state.selectedCards = new Set([state.activeCard]);
     if (!preserveCard) {
+      // Hard load — a different file is being opened. Reset per-card
+      // overrides; the subsequent loadLogoState call will restore the
+      // new file's persisted state (or leave defaults if none).
+      state.cardLogos = {};
       state.zoom = 1.0;
       const zoomSlider = $("zoom-slider");
       const zoomVal = $("zoom-val");
       if (zoomSlider) zoomSlider.value = "100";
       if (zoomVal) zoomVal.textContent = "100%";
+    } else {
+      // Soft reload — same file, watcher-triggered. Drop cardLogos
+      // entries for indices that no longer exist (e.g. user removed a
+      // page) but keep everything else so the user's layout survives.
+      for (const key of Object.keys(state.cardLogos)) {
+        const idx = Number(key);
+        if (!Number.isInteger(idx) || idx < 0 || idx >= cards.length) {
+          delete state.cardLogos[key];
+        }
+      }
     }
-    requestAnimationFrame(_renderCards);
+    // Restore persisted logo state for this file before the first render
+    // so overlays paint at the right position on the first frame, not a
+    // default-then-snap. Fire and forget — loadLogoState is idempotent
+    // and the render path picks up whatever it applied.
+    loadLogoState().finally(() => requestAnimationFrame(_renderCards));
     log("Loaded " + cards.length + " card" + (cards.length === 1 ? "" : "s"), "ok");
   } catch (e) {
     log("Error: " + e.message, "err");
