@@ -4,7 +4,7 @@
 // URL-pinned project state stays here because the URL-pinning structural
 // test asserts specific strings live in this file.
 
-import { state, STATUS_LABEL } from "./lib/state.js";
+import { state, STATUS_LABEL, setFormat } from "./lib/state.js";
 import { $, clearEl, log, setView, registerOnLeavePreview } from "./lib/dom.js";
 import { buildTemplateContentFromRegistry } from "./lib/content-descriptor.js";
 import { connectWS, registerWsHandlers, registerGalleryStaleSetter } from "./lib/ws.js";
@@ -60,7 +60,7 @@ function setFormat(btn) {
   }
   document.querySelectorAll(".fmt").forEach((b) => b.classList.remove("active"));
   btn.classList.add("active");
-  state.format = { w: Number(btn.dataset.w), h: Number(btn.dataset.h) };
+  setFormat({ w: Number(btn.dataset.w), h: Number(btn.dataset.h) });
   log(
     "Format: " +
       btn.querySelector("b").textContent +

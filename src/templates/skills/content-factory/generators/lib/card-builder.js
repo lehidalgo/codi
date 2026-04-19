@@ -1,11 +1,13 @@
 /**
  * card-builder.js — pure srcdoc HTML builders for Codi content-factory.
  *
- * No DOM reads, no global state. All external values (format, handle) are
- * passed as parameters. Safe to import in Node/Vitest without jsdom.
+ * No DOM reads, no global state. All external values (format, handle, logo)
+ * are passed as parameters. Safe to import in Node/Vitest without jsdom.
  *
  * @module card-builder
  */
+
+import { BUILTIN_DEFAULT_SVG } from "./builtin-logo.js";
 
 /**
  * Resolve the effective format for a card.
@@ -46,36 +48,29 @@ export function buildCardDoc(
   let logoHtml = "";
   let logoFontLink = "";
   if (forExport && logo && logo.visible) {
-    logoFontLink =
-      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap">';
-    const svgStyle = [
+    const usingDefault = !(logo.svg && logo.svg.includes("<svg"));
+    const svg = usingDefault ? BUILTIN_DEFAULT_SVG : logo.svg;
+    // Only the built-in mark depends on Geist Mono; project/brand SVGs ship
+    // their own glyph data.
+    if (usingDefault) {
+      logoFontLink =
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap">';
+    }
+    const wrapStyle = [
       "position:absolute",
       "left:" + logo.x + "%",
       "top:" + logo.y + "%",
       "transform:translate(-50%,-50%)",
-      "overflow:visible",
+      "height:" + logo.size + "px",
+      "width:auto",
       "z-index:999",
       "pointer-events:none",
       "opacity:0.88",
+      "display:flex",
+      "align-items:center",
+      "justify-content:center",
     ].join(";");
-    logoHtml = [
-      '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" style="' + svgStyle + '">',
-      "<defs>",
-      '<linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">',
-      '<stop offset="0%" stop-color="#56b6c2"/>',
-      '<stop offset="100%" stop-color="#61afef"/>',
-      "</linearGradient>",
-      "</defs>",
-      '<text x="0" y="0"',
-      " font-family=\"'Geist Mono',monospace\"",
-      ' font-size="' + logo.size + '"',
-      ' font-weight="500"',
-      ' fill="url(#cg)"',
-      ' text-anchor="middle"',
-      ' dominant-baseline="middle"',
-      ">codi</text>",
-      "</svg>",
-    ].join("");
+    logoHtml = '<div style="' + wrapStyle + '">' + svg + "</div>";
   }
 
   const bodyOverflow = forExport ? "overflow:visible" : "overflow:hidden";

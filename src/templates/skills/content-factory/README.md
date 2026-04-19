@@ -700,6 +700,102 @@ Use the `codi-brand-creator` skill to build a brand package.
 
 ---
 
+## Logo discovery
+
+Every content project loads its overlay logo from the canonical path:
+
+```
+.codi_output/<project>/assets/logo.svg
+```
+
+The browser app requests it via `GET /api/project/logo`. The server runs a
+three-step fallback chain:
+
+1. `<project>/assets/logo.svg` — the project's own logo (wins when present)
+2. `<active-brand>/brand/assets/logo.svg` — the active brand skill's logo
+3. Built-in `codi` mark — last resort
+
+The first time the factory needs a logo for a project that has none, it
+copies the active brand's logo to the canonical project path. From that
+moment the project owns the file — subsequent edits to the brand skill do
+not retroactively flow into existing projects. This keeps projects portable
+(zipping one ships its identity with it) and predictable (the convention
+path is always where the logo lives).
+
+Both the in-page preview overlay and exported HTML inline the resolved
+SVG, so exports are self-contained (no external `<img src>`). The overlay
+size tracks the inspector's size slider; see *Logo defaults* below for the
+format-derived starting value.
+
+---
+
+## Content fit
+
+Every render measures each canvas page (`.doc-page`, `.slide`,
+`.social-card`) against the active format. When content overflows, the
+browser app:
+
+1. Shows an inline notice in the bottom-right corner with the overflow
+   amount (in pixels and percent) and a content-type-aware remediation
+2. Persists the same payload to `<project>/state/fit-report.json` via
+   `POST /api/validate/fit-report`, so agents and scripts can act on it
+   without scraping the UI
+
+The remediation is content-type aware:
+
+| Type | Overflow > 15% | Overflow ≤ 15% |
+|------|----------------|----------------|
+| `document` | paginate (add a new `.doc-page` sibling) | tighten |
+| `slides` | split into multiple slides at the next section break | tighten |
+| `social` | tighten (single canvas, no pagination) | tighten |
+
+**Pagination contract** — a multi-page document is a sequence of sibling
+`.doc-page` elements inside `.doc-container`. Each `.doc-page` is its own
+canvas (e.g. `794×1123` for A4) and ships its own header and footer. The
+validator measures *per page*, not the whole document; adding pages
+legitimately resolves overflow only when every page fits. The report's
+`pageIndex` field (1-indexed) names the offending page.
+
+The canvas-root `overflow: hidden` that templates ship for export is
+overridden in preview by an injected stylesheet
+(`scripts/lib/injector.cjs`), so authors see overflow while editing
+instead of silent clipping. Exports still clip per the template's own CSS.
+
+### `fit-report.json` schema
+
+```json
+{
+  "file": "document/onepager.html",
+  "canvas": { "w": 794, "h": 1123 },
+  "measured": { "scrollHeight": 1410, "scrollWidth": 794 },
+  "overflowPx": 287,
+  "overflowPct": 25.6,
+  "pageIndex": 1,
+  "type": "document",
+  "remediation": "paginate",
+  "options": ["paginate", "tighten"],
+  "directive": "Page 1 exceeds 794x1123 by 287px (25.6%). Add a new .doc-page sibling..."
+}
+```
+
+---
+
+## Logo defaults
+
+The overlay logo size defaults to 8% of the active canvas's shortest side:
+
+| Format | Canvas | Default size |
+|--------|--------|--------------|
+| Document (A4) | 794 × 1123 | 64 px |
+| Social (square) | 1080 × 1080 | 86 px |
+| Slides (16:9) | 1280 × 720 | 58 px |
+
+Switching the active format recomputes the size automatically — until the
+user moves the size slider, at which point the flag `logo.userOverridden`
+flips to `true` and the user's value sticks across future format changes.
+
+---
+
 ## URL-pinned tab state
 
 Every preview tab is addressable by URL. Reloads land on exactly the same
@@ -859,11 +955,16 @@ too empty" and it will rewrite the card applying the density rules.
 
 ### Cards look clipped or have content falling off the edge
 
-- Social cards and slides use `overflow: hidden` — content beyond the
-  canvas is clipped
-- Reduce headline length, shrink body copy, or use a larger format
-- For document pages, check that each page's total height fits within
-  ~950 px of body space (see `references/docx-export.md`)
+- The preview now *shows* overflow (it used to clip silently). The
+  content-fit validator raises an inline notice with a remediation
+  directive whenever content exceeds the active format
+- Check `<project>/state/fit-report.json` — the JSON payload names the
+  overflowing page and the recommended remediation (`paginate`, `split`,
+  or `tighten`)
+- For documents, either tighten the layout or add a new `.doc-page` sibling
+- For slides, split at the next natural section break
+- Exports still clip per each template's own CSS — the relaxation applies
+  to the in-app preview only, so the validator can detect overflow
 
 ### Fonts look wrong
 

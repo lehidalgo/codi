@@ -269,7 +269,35 @@ function handle(req, res, parsed, ctx) {
     handleHealth(req, res);
     return true;
   }
+  if (pathname === '/api/validate/fit-report' && method === 'POST') {
+    handleFitReportPost(req, res, ctx);
+    return true;
+  }
   return false;
+}
+
+// POST /api/validate/fit-report
+// Persist the latest content-fit measurement for the active project so
+// agents can pick up the remediation directive without reparsing the UI.
+function handleFitReportPost(req, res, ctx) {
+  readJsonBody(req, MAX_BODY, (err, body) => {
+    if (err) return sendJson(res, 400, { ok: false, error: 'invalid JSON body' });
+    const project = body && body.project;
+    const report = body && body.report;
+    if (!project || !report) {
+      return sendJson(res, 400, { ok: false, error: 'project and report are required' });
+    }
+    if (!isInsideWorkspace(project, ctx)) {
+      return sendJson(res, 403, { ok: false, error: 'project outside workspace' });
+    }
+    try {
+      const { writeFitReport } = require('../lib/fit-report.cjs');
+      writeFitReport(project, report);
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      sendJson(res, 500, { ok: false, error: e.message || String(e) });
+    }
+  });
 }
 
 module.exports = {
@@ -283,6 +311,7 @@ module.exports = {
     handleToggle,
     handleIgnoreViolation,
     handleHealth,
+    handleFitReportPost,
   },
   _validator: validator,
   _cfgLib: cfgLib,

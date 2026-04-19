@@ -3,7 +3,7 @@
 
 import { buildThumbDoc as _buildThumbDoc } from "/static/lib/card-builder.js";
 
-import { state, STATUS_CYCLE, STATUS_LABEL } from "./state.js";
+import { state, STATUS_CYCLE, STATUS_LABEL, setFormat } from "./state.js";
 import { $, clearEl, log, setView, _registerInitGallery } from "./dom.js";
 import {
   buildTemplateContentFromRegistry,
@@ -481,7 +481,7 @@ export async function loadSessionContent(session) {
           ? presetMeta.format
           : state.format;
     template.cards.forEach((c) => (c.format = fmt));
-    state.format = fmt;
+    setFormat(fmt);
     state.cards = template.cards;
     state.cardRevision++;
     const genericName = file
@@ -569,7 +569,7 @@ export async function selectTemplate(filename) {
   if (fmtBtn) {
     document.querySelectorAll(".fmt").forEach((b) => b.classList.remove("active"));
     fmtBtn.classList.add("active");
-    state.format = template.format;
+    setFormat(template.format);
   }
 
   setView("preview");

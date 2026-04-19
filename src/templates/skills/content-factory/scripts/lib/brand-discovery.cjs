@@ -16,12 +16,15 @@ function discoverBrands(skillsDir) {
     if (!fs.existsSync(tokensPath)) continue;
     try {
       const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+      const candidate = path.join(skillDir, 'brand', 'assets', 'logo.svg');
+      const logoPath = fs.existsSync(candidate) ? candidate : null;
       brands.push({
         name: entry,
         dir: skillDir,
         display_name: tokens.display_name || entry,
         version: tokens.version || 1,
         tokens,
+        logoPath,
       });
     } catch { /* skip malformed tokens.json */ }
   }

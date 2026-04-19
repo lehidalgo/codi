@@ -188,6 +188,32 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
+  // /api/project/logo GET — resolve the active project's logo SVG.
+  // Order: <project>/assets/logo.svg → <active-brand>/brand/assets/logo.svg
+  // → built-in default. Lazily copies the brand logo to the project on
+  // first call when the project has none, so subsequent requests are
+  // served from disk and the project owns the file.
+  if (req.method === 'GET' && pathname === '/api/project/logo') {
+    const project = state.getActiveProject();
+    if (!project) { res.writeHead(404); res.end('No active project'); return true; }
+    const projectDir = project.dir;
+    const activeBrand = state.getActiveBrand ? state.getActiveBrand() : null;
+    const { bootstrapProjectLogo, resolveLogo } = require('../lib/logo-resolver.cjs');
+    bootstrapProjectLogo({ projectDir, skillsDir: ctx.SKILLS_DIR, activeBrand });
+    const result = resolveLogo({ projectDir, skillsDir: ctx.SKILLS_DIR, activeBrand });
+    if (result.source === 'builtin' && !activeBrand) {
+      res.writeHead(404); res.end('No project or brand logo');
+      return true;
+    }
+    res.writeHead(200, {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'no-cache',
+      'X-Logo-Source': result.source,
+    });
+    res.end(result.svg);
+    return true;
+  }
+
   return false;
 }
 

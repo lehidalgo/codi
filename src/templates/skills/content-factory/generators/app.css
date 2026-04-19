@@ -1048,6 +1048,10 @@ body.inspect-on .card-content iframe {
 }
 
 /* ====== Logo overlay ====== */
+/* The overlay hosts either the built-in "codi" text fallback or an inline
+   SVG fetched from /api/project/logo. Both cases scale via `font-size` for
+   text (line-height matches) and via the inner <svg>'s `height` attribute
+   applied by applyLogoStyle(). */
 .card-logo-overlay {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -1063,6 +1067,11 @@ body.inspect-on .card-content iframe {
   user-select: none;
   opacity: 0.88;
   line-height: 1;
+}
+.card-logo-overlay > svg {
+  display: block;
+  width: auto;
+  /* height set inline by applyLogoStyle() so the slider controls it */
 }
 
 /* ====== Gallery ====== */

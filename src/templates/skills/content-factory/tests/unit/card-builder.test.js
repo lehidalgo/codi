@@ -97,6 +97,25 @@ describe("buildCardDoc", () => {
     expect(doc).not.toContain("<svg");
   });
 
+  it("uses logo.svg when provided (project/brand logo)", () => {
+    const logo = {
+      visible: true,
+      x: 50,
+      y: 90,
+      size: 24,
+      svg: '<svg id="brand-mark"><circle r="10"/></svg>',
+    };
+    const doc = buildCardDoc(baseCard, fmt, logo, "handle", true);
+    expect(doc).toContain('id="brand-mark"');
+    expect(doc).not.toContain("codi</text>");
+  });
+
+  it("falls back to built-in default when logo.svg is missing or invalid", () => {
+    const logo = { visible: true, x: 50, y: 90, size: 24, svg: "not-an-svg" };
+    const doc = buildCardDoc(baseCard, fmt, logo, "handle", true);
+    expect(doc).toContain("codi</text>");
+  });
+
   it("overrides .social-card dimensions with !important", () => {
     const doc = buildCardDoc(baseCard, fmt);
     expect(doc).toContain(".social-card{width:1080px!important;height:1080px!important}");

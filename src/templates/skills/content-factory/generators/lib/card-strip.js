@@ -12,6 +12,8 @@ import { state } from "./state.js";
 import { $, clearEl, setAppNavVisible } from "./dom.js";
 import { formatTimeAgo } from "./content-descriptor.js";
 import { createValidationBadge, runBatchValidation } from "./validation-badge.js";
+import { loadLogo } from "./logo-loader.js";
+import { runFitCheck } from "./fit-check.js";
 
 // ====== Card format + inspector-context-aware buildCardDoc ======
 
@@ -21,6 +23,9 @@ export function cardFormat(card) {
 
 export function buildCardDoc(card, forExport = false, logo = null, cardIndex = null) {
   const fmt = cardFormat(card);
+  // Inject the resolved project/brand logo bytes so exports render the
+  // correct mark instead of the hardcoded built-in default.
+  const logoWithSvg = logo ? { ...logo, svg: state.logoSvg || logo.svg } : logo;
   // Derive the inspector context directly from the unified active-content
   // descriptor. The shape matches what persist-style reads, so the agent
   // never has to reconcile two different models.
@@ -41,7 +46,7 @@ export function buildCardDoc(card, forExport = false, logo = null, cardIndex = n
   return _buildCardDoc(
     card,
     fmt,
-    logo,
+    logoWithSvg,
     state.handle || "handle",
     forExport,
     state._inspectorSource || "",
@@ -81,6 +86,10 @@ export function applyLogoChange(prop, val) {
       state.cardLogos[i][prop] = val;
     });
   }
+  // Mark the logo as user-controlled so switching active format does not
+  // overwrite the size. Only `size` triggers the override — x/y are
+  // position-only and independent of the format-derived default.
+  if (prop === "size") state.logo.userOverridden = true;
   applyLogoToAllCards();
 }
 
@@ -88,7 +97,15 @@ export function applyLogoStyle(el, sz, logo) {
   el.style.display = logo.visible ? "flex" : "none";
   el.style.left = logo.x + "%";
   el.style.top = logo.y + "%";
-  el.style.fontSize = Math.round(logo.size * sz.scale) + "px";
+  const scaled = Math.round(logo.size * sz.scale);
+  el.style.fontSize = scaled + "px";
+  // Size the inner SVG (when present) to match so the resolved project
+  // logo tracks the slider value the same way the text fallback does.
+  const inlineSvg = el.querySelector(":scope > svg");
+  if (inlineSvg) {
+    inlineSvg.setAttribute("height", scaled);
+    inlineSvg.removeAttribute("width");
+  }
 }
 
 export function applyLogoToAllCards() {
@@ -209,13 +226,25 @@ function buildCardEl(card, i, container) {
       } else {
         w.__HLI_DORMANT__ = !isActiveIframe;
       }
+      // Only measure the active card — avoids redundant posts when the
+      // filmstrip mounts multiple frames.
+      if (isActiveIframe || state.viewMode === "app") {
+        runFitCheck(iframe);
+      }
     } catch {}
   });
   iframe.srcdoc = buildCardDoc(card, false, null, i);
 
   const logoEl = document.createElement("div");
   logoEl.className = "card-logo-overlay";
-  logoEl.textContent = "codi";
+  // Use the resolved project/brand SVG when available; fall back to the
+  // historical "codi" text while loadLogo() is still in flight. renderCards
+  // triggers applyLogoToAllCards() when the fetch resolves.
+  if (state.logoSvg) {
+    logoEl.innerHTML = state.logoSvg;
+  } else {
+    logoEl.textContent = "codi";
+  }
   applyLogoStyle(logoEl, sz, getCardLogo(i));
 
   contentEl.append(iframe, logoEl);
@@ -362,6 +391,15 @@ export function renderCards() {
   renderFilmstrip();
   updatePreviewMeta();
   runBatchValidation();
+  // Resolve the project/brand/builtin logo in the background. When the
+  // fetch settles, re-apply overlays so cards rendered before the response
+  // arrived pick up the correct SVG on the next tick.
+  loadLogo().then((svg) => {
+    if (!svg) return;
+    document.querySelectorAll(".card-logo-overlay").forEach((el) => {
+      el.innerHTML = svg;
+    });
+  });
 }
 
 export function reportActiveCard() {
