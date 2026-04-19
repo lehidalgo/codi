@@ -21,7 +21,7 @@ export const state = {
     visible: true,
     size: defaultLogoSize(INITIAL_FORMAT),
     x: 85,
-    y: 85,
+    y: 15,
     userOverridden: false,
   },
   cardLogos: {}, // { [cardIndex]: partial logo overrides per card }
@@ -32,6 +32,7 @@ export const state = {
   selectedCards: new Set([0]),
   galleryFilter: "all",
   workStatusFilter: "all",
+  workTypeFilter: "all", // "all" | "social" | "slides" | "document"
   activeStatus: null, // status of the open My Work project; null for built-in templates
   viewMode: "app", // default is app view
   files: [],

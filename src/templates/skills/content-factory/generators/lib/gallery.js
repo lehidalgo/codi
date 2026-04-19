@@ -89,13 +89,18 @@ function buildTemplateCoverEl(template, BOX_W, BOX_H) {
 export function filterGallery() {
   const type = state.galleryFilter;
   const workStatus = state.workStatusFilter || "all";
+  const workType = state.workTypeFilter || "all";
   document.querySelectorAll("#gallery-grid .preset-card").forEach((c) => {
     if (type === "all") c.style.display = "";
     else c.style.display = c.dataset.type === type ? "" : "none";
   });
+  // A session card with no known type yet (metadata fetch pending) stays
+  // visible under "all" and is hidden by any specific type filter —
+  // otherwise it would flicker between filters as metadata arrives.
   document.querySelectorAll("#work-grid .session-card").forEach((c) => {
     const statusMatch = workStatus === "all" || c.dataset.status === workStatus;
-    c.style.display = statusMatch ? "" : "none";
+    const typeMatch = workType === "all" || c.dataset.type === workType;
+    c.style.display = statusMatch && typeMatch ? "" : "none";
   });
 }
 
@@ -345,8 +350,9 @@ async function renderSessions(grid) {
 
     const metaEl = document.createElement("div");
     metaEl.className = "preset-meta";
-    metaEl.textContent =
-      fileCount + " file" + (fileCount === 1 ? "" : "s") + " \xb7 " + presetLabel;
+    // The preset label often resolves to an opaque id or "No preset" on
+    // fresh sessions; wait for the real content-type from metadata below.
+    metaEl.textContent = fileCount + " file" + (fileCount === 1 ? "" : "s");
     info.appendChild(metaEl);
 
     const timeEl = document.createElement("div");
@@ -360,7 +366,17 @@ async function renderSessions(grid) {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return;
+        // Tag the card with its content type so the type filter can
+        // hide/show without a round-trip. Values match the filter data-type
+        // values: "social" | "slides" | "document".
+        if (d.type) {
+          card.dataset.type = d.type;
+          // Reapply current filter so the card appears or hides correctly
+          // for the active selection.
+          filterGallery();
+        }
         const slideLabel = d.cardCount + " slide" + (d.cardCount === 1 ? "" : "s");
+        const typeLabel = d.type ? d.type.charAt(0).toUpperCase() + d.type.slice(1) : presetLabel;
         metaEl.textContent =
           fileCount +
           " file" +
@@ -368,7 +384,7 @@ async function renderSessions(grid) {
           " \xb7 " +
           slideLabel +
           " \xb7 " +
-          presetLabel;
+          typeLabel;
         if (d.modifiedAt) {
           timeEl.textContent = "edited " + formatTimeAgo(d.modifiedAt);
           timeEl.title = new Date(d.modifiedAt).toLocaleString();

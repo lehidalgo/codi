@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 99
+version: 106
 ---
 
 # {{name}} — Content Factory
@@ -20,9 +20,17 @@ version: 99
   convention + pre-flight decision tree: \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\`
 - **Never embed the brand logo inside content HTML (\`<img>\`, background-image, inline SVG).**
   Content Factory renders the brand logo as an overlay on every card, automatically sized
-  to the canvas (≈8% of the shortest side) and positioned/scaled via the inspector. Embedding
+  to the canvas (≈20% of the shortest side, top-right by default) and positioned/scaled via the inspector. Embedding
   a second logo in the HTML duplicates the mark on export and desyncs when the brand changes.
   Author content with chrome only (title bars, eyebrows, accent bars) — the factory adds the logo.
+- **Slide decks are animated, single-file HTML. Always.** Every \`.slide\` deck ships
+  as one self-contained HTML file with all CSS, \`@keyframes\`, fonts, and per-slide
+  inline \`<script>\` bundled in. No sibling \`deck.css\` / \`deck.js\`. Motion is
+  deliberate: staggered entry animations, compositor-only \`transform\` / \`opacity\`,
+  \`@media (prefers-reduced-motion: reduce)\` honored, final state always visible.
+  Quality floor: premium, modern, brand-aligned. HTML export is byte-for-byte —
+  what you author is exactly what downloads. Full brief:
+  \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\`. Read it before writing any deck.
 - **Run validation after every content write; fix every violation before declaring done.**
   Call \`GET /api/validate-cards?project=<dir>&file=<file>\` and iterate on the returned
   \`violations[]\` until the report is clean (\`valid: true\`). Canvas overflow (\`rule: R11\`,

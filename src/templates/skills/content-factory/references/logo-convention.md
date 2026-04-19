@@ -11,10 +11,13 @@ Content Factory renders the brand logo as an **overlay** on every card
 (preview, PNG, PDF, PPTX). The overlay is:
 
 - Sourced from the discovery chain below (project → brand → built-in).
-- Auto-sized to the canvas: **≈8% of the shortest side** by default
-  (64px on A4 document, 86px on 1080 social, 58px on 16:9 slide). The
-  user can adjust size and position per format / per card via the
-  inspector; their value persists.
+- Auto-sized to the canvas: **≈20% of the shortest side** by default
+  (159px on A4 document, 216px on 1080 social, 144px on 16:9 slide).
+  Positioned at **top-right** (x=85%, y=15%) by default. Visual weight
+  at this size depends on the SVG's own viewBox padding — brand marks
+  with tight bounding boxes read larger than marks with generous
+  internal whitespace. The user can adjust size and position per format
+  / per card via the inspector; their value persists.
 - Inlined as SVG in exports, so there is no external `<img src>`.
 
 **Do NOT embed the brand logo in content HTML.** No `<img src=".../logo.svg">`,

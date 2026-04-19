@@ -775,13 +775,14 @@ Rule source: `scripts/lib/box-layout/rules/r11-canvas-fit.cjs`.
 
 ## Logo defaults
 
-The overlay logo size defaults to 8% of the active canvas's shortest side:
+The overlay logo size defaults to 20% of the active canvas's shortest
+side, positioned at top-right (x=85%, y=15%):
 
 | Format | Canvas | Default size |
 |--------|--------|--------------|
-| Document (A4) | 794 × 1123 | 64 px |
-| Social (square) | 1080 × 1080 | 86 px |
-| Slides (16:9) | 1280 × 720 | 58 px |
+| Document (A4) | 794 × 1123 | 159 px |
+| Social (square) | 1080 × 1080 | 216 px |
+| Slides (16:9) | 1280 × 720 | 144 px |
 
 Switching the active format recomputes the size automatically — until the
 user moves the size slider, at which point the flag `logo.userOverridden`

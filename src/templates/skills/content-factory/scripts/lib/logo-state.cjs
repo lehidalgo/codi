@@ -51,7 +51,7 @@ const DEFAULT_LOGO = Object.freeze({
   visible: true,
   size: 64,
   x: 85,
-  y: 85,
+  y: 15,
   userOverridden: false,
 });
 

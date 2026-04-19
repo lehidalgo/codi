@@ -170,6 +170,19 @@ browser), the recommended pattern is **fullscreen presentation mode**
 and click navigation and animation replay on every slide change. This is
 implemented as a **dual-mode** file:
 
+#### On-screen chrome — the one rule
+
+When presentation mode is active:
+
+- **Always render a page counter** (e.g. `3 / 5`) — small, unobtrusive,
+  bottom-right. Readers use it to track position and plan pacing.
+- **Never render navigation instructions** (no "press ← →", no "click to
+  advance", no keyboard hints). Arrow-key and click navigation is
+  universal and intuitive for anyone consuming an HTML slide deck; on-screen
+  instructions add visual noise and treat the reader as a novice.
+
+This is the only chrome standard. Author the counter; omit the hints.
+
 - **Base CSS** (no class hook) renders stacked slides at canvas size —
   the behavior Content Factory's isolated iframes, thumbnails, and
   Playwright exports all consume.

@@ -57,7 +57,7 @@ describe("writeLogoState", () => {
   it("creates the state directory if missing", () => {
     fs.rmSync(path.join(projectDir, "state"), { recursive: true, force: true });
     writeLogoState(projectDir, "document/onepager.html", {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: {},
     });
     expect(fs.existsSync(path.join(projectDir, "state", "logo-state.json"))).toBe(true);
@@ -74,7 +74,7 @@ describe("writeLogoState", () => {
 
   it("preserves unrelated file entries when updating one", () => {
     writeLogoState(projectDir, "document/a.html", {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: { 0: { y: 5 } },
     });
     writeLogoState(projectDir, "document/b.html", {
@@ -87,11 +87,11 @@ describe("writeLogoState", () => {
 
   it("overwrites a file's existing entry atomically", () => {
     writeLogoState(projectDir, "document/a.html", {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: { 0: { y: 5 } },
     });
     writeLogoState(projectDir, "document/a.html", {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: { 0: { y: 95 } },
     });
     expect(readLogoState(projectDir, "document/a.html").cardLogos).toEqual({ 0: { y: 95 } });
@@ -99,7 +99,7 @@ describe("writeLogoState", () => {
 
   it("leaves no temp files behind after a successful write", () => {
     writeLogoState(projectDir, "document/a.html", {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: {},
     });
     const files = fs.readdirSync(path.join(projectDir, "state"));
@@ -110,7 +110,7 @@ describe("writeLogoState", () => {
 describe("sanitizeLogoState", () => {
   it("drops cardLogos keys beyond the current card count", () => {
     const input = {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: { 0: { y: 5 }, 1: { y: 10 }, 5: { y: 50 } },
     };
     const out = sanitizeLogoState(input, { cardCount: 2 });
@@ -119,7 +119,7 @@ describe("sanitizeLogoState", () => {
 
   it("drops non-numeric cardLogos keys", () => {
     const input = {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: { 0: { y: 5 }, abc: { y: 10 } },
     };
     const out = sanitizeLogoState(input, { cardCount: 3 });
@@ -143,7 +143,7 @@ describe("sanitizeLogoState", () => {
 
   it("preserves valid cardLogos partial overrides", () => {
     const input = {
-      logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+      logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
       cardLogos: { 0: { y: 5 }, 1: { size: 120, x: 72 } },
     };
     const out = sanitizeLogoState(input, { cardCount: 5 });
@@ -159,7 +159,7 @@ describe("path traversal safety", () => {
   it("writeLogoState refuses paths with .. segments", () => {
     expect(() =>
       writeLogoState(projectDir, "../escape.html", {
-        logo: { visible: true, size: 64, x: 85, y: 85, userOverridden: false },
+        logo: { visible: true, size: 64, x: 85, y: 15, userOverridden: false },
         cardLogos: {},
       }),
     ).toThrow(/invalid file path/);

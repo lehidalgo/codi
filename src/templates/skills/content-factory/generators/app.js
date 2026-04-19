@@ -195,6 +195,21 @@ function init() {
     filterGallery();
   });
 
+  // Content-type filter for My Work. Scope the active-class update to
+  // this filter bar only — the Gallery tab uses the same `.filter-btn`
+  // class for its own content-type filter, so a document-wide
+  // querySelectorAll would clear both bars when one is clicked.
+  $("work-type-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-btn");
+    if (!btn) return;
+    $("work-type-filters")
+      .querySelectorAll(".filter-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.workTypeFilter = btn.dataset.type;
+    filterGallery();
+  });
+
   // Preview status dropdown
   $("preview-status-select").addEventListener("change", async (e) => {
     const next = e.target.value;
