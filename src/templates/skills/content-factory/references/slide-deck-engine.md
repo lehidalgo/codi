@@ -199,9 +199,42 @@ This is the only chrome standard. Author the counter; omit the hints.
   animations on inactive slides.
 - **An end-of-body `<script>`** computes the fit scale, drives keyboard
   (`←` / `→` / `PageUp` / `PageDown` / `Home` / `End`) and click
-  navigation, and replays entry animations on the newly active slide by
-  clearing and restoring each target's inline `animation` property (with
-  a forced reflow in between).
+  navigation, and replays entry animations on the newly active slide.
+
+#### Animation replay — the universal pattern
+
+Do NOT replay by walking a fixed list of helper classes (`.anim`,
+`.anim-scale`, …). That approach silently drops any animation declared
+directly on a specific selector (e.g. `.chart .bar { animation: barGrow }`)
+and any animation on a pseudo-element (`::before`, `::after`). Those
+animations fire once on page load while the slide is still hidden, and
+never run again.
+
+Use a **class-based reset** that covers every rule:
+
+```css
+html[data-presenting] .slide.replay,
+html[data-presenting] .slide.replay *,
+html[data-presenting] .slide.replay *::before,
+html[data-presenting] .slide.replay *::after {
+  animation: none !important;
+}
+```
+
+```js
+function replayAnims(slide) {
+  slide.classList.add('replay');
+  void slide.offsetWidth;   // force reflow
+  slide.classList.remove('replay');
+}
+```
+
+Adding `.replay` cancels every animation descriptor on every descendant
+(and pseudo-element). The forced reflow commits that "no animation"
+frame. Removing the class restores the authored rules, which now fire
+from the top. This works for helper-class animations, selector-scoped
+animations (bars, accent lines, card rails), and pseudo-element
+animations — all from one hook.
 
 See snippet 5.2 for the reference implementation. Both the head hook and
 the end-of-body driver are optional — omitting them gives a readable
