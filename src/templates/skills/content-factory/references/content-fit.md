@@ -1,83 +1,78 @@
 # Content-fit validation
 
-Every card render is automatically measured against the active canvas. When
-content overflows, the factory emits a machine-readable directive the
-coding agent MUST act on before declaring the work done.
+Canvas overflow is treated exactly like any other box-layout defect: it is
+emitted by the validator as rule **R11 "Canvas Fit"** alongside the R1–R10
+sibling and coverage rules. The agent's normal validate-before-done loop
+catches and fixes it automatically.
 
-## What triggers the check
+## The principle
 
-After an iframe loads in preview, `fit-check.js` queries every canvas-root
-element inside it — `.doc-page`, `.slide`, `.social-card` — and compares:
+There is one validation API. Call it. Fix every violation. Ship.
 
+```bash
+GET /api/validate-cards?project=<dir>&file=<file>
 ```
-overflowPx  = max(scrollHeight - canvas.h, scrollWidth - canvas.w, 0)
-overflowPct = overflowPx / canvas.h * 100
-```
 
-If `overflowPx > 0`, the check:
-
-1. Renders a red notice bottom-right in the preview UI
-2. `POST /api/validate/fit-report` → writes `<project>/state/fit-report.json`
-
-If `overflowPx === 0`, no notice, no file write (or the notice is cleared).
-
-## Authoritative source of truth
-
-`<project>/state/fit-report.json` is the canonical location for the latest
-fit measurement. It is overwritten on every render — there is no history.
-
-### Schema
+The response shape is the same for every rule:
 
 ```json
 {
-  "file": "document/onepager.html",
-  "canvas":   { "w": 794, "h": 1123 },
-  "measured": { "scrollHeight": 1410, "scrollWidth": 794 },
-  "overflowPx":  287,
-  "overflowPct": 25.6,
-  "pageIndex":   1,
-  "type":        "document",
-  "remediation": "paginate",
-  "options":     ["paginate", "tighten"],
-  "directive":   "Page 1 exceeds 794x1123 by 287px (25.6%). Add a new .doc-page sibling..."
+  "valid": false,
+  "violations": [
+    {
+      "rule": "R11",
+      "severity": "error",
+      "path": "body > div.doc-container > section.doc-page[0]",
+      "message": "Canvas overflow on .doc-page — content is 287px larger than 794x1123 (25.6%)",
+      "fix": "paginate: Page exceeds 794x1123 by 287px (25.6%). Add a new .doc-page sibling after this one and move overflow content into it. Preserve the existing header and footer on every page.",
+      "remediation": "paginate",
+      "overflowPx": 287,
+      "overflowPct": 25.6,
+      "canvasType": "document"
+    }
+  ]
 }
 ```
 
-| Field | Meaning |
-|-------|---------|
-| `file` | Path of the content file, relative to `content/` |
-| `canvas` | Active format in CSS pixels |
-| `measured` | The worst page's `scrollHeight` / `scrollWidth` |
-| `overflowPx` | Pixels over the canvas — worst dimension across all pages |
-| `overflowPct` | `overflowPx / canvas.h * 100`, rounded to 1 decimal |
-| `pageIndex` | 1-indexed; the page that overflowed. `null` when `overflowPx === 0` |
-| `type` | `document`, `slides`, or `social` |
-| `remediation` | The suggested action: `paginate`, `split`, or `tighten` |
-| `options` | All allowed remediations for this content type |
-| `directive` | Human + agent-readable instruction |
+Follow the same loop you already run for R1–R10: read the `fix` field, patch
+the HTML, re-validate, repeat until `valid: true`.
+
+## What R11 checks
+
+R11 walks the rendered DOM for every canvas-root element — `.doc-page`,
+`.slide`, `.social-card` — and compares:
+
+```
+overflowH = scrollHeight - clientHeight
+overflowW = scrollWidth  - clientWidth
+```
+
+If either exceeds the 2px tolerance, R11 emits a violation. The `overflowPx`
+and `overflowPct` fields carry the measurement; `remediation` carries the
+prescribed action; `fix` carries the human-readable directive that begins
+with the remediation name (`paginate:`, `split:`, or `tighten:`).
 
 ## The remediation matrix
 
-The suggested remediation depends on content type and severity:
+| Canvas type      | Overflow > 15% | Overflow ≤ 15% |
+|------------------|----------------|----------------|
+| `.doc-page`      | `paginate`     | `tighten`      |
+| `.slide`         | `split`        | `tighten`      |
+| `.social-card`   | `tighten`      | `tighten`      |
 
-| Type | Overflow > 15% | Overflow ≤ 15% | Always allowed |
-|------|----------------|----------------|----------------|
-| `document` | `paginate` | `tighten` | `paginate` or `tighten` |
-| `slides` | `split` | `tighten` | `split` or `tighten` |
-| `social` | `tighten` | `tighten` | `tighten` only (single canvas) |
-
-The 15% threshold lives in `generators/lib/fit-measure.js`
-(`HIGH_OVERFLOW_PCT`).
+The 15% threshold and matrix live in
+`scripts/lib/box-layout/rules/r11-canvas-fit.cjs` (`HIGH_OVERFLOW_PCT`,
+`REMEDIATION_MATRIX`). Social cards never split or paginate — they are
+single-canvas content by definition.
 
 ## What each remediation means
 
 ### `paginate` (document only)
 
-The document exceeds one page by a lot. Add a new `.doc-page` sibling
-after the offending page inside `.doc-container` and move overflow content
-into it. Every `.doc-page` is its own canvas — the validator measures
-per-page. Adding pages legitimately resolves overflow only when *every*
-page fits.
+The document exceeds one page by more than 15%. Add a new `.doc-page`
+sibling after the offending page inside `.doc-container` and move the
+overflow content into it. Every `.doc-page` is its own canvas — R11
+re-measures per page on the next validation call.
 
 Preserve the existing header and footer on every page. Keep the header's
 eyebrow/title consistent; the footer may carry a page number.
@@ -106,7 +101,8 @@ numbering if the template shows it.
 
 ### `tighten` (any type)
 
-Overflow is small enough to fix in place. In order of preference:
+Overflow is small enough to fix in place, or the canvas type does not
+support splitting. In order of preference:
 
 1. Reduce horizontal or vertical padding on the offending element
 2. Condense copy — cut filler words, merge bullets, shorten headings
@@ -116,49 +112,53 @@ Overflow is small enough to fix in place. In order of preference:
 Never shrink headings below the brand's defined scale. Never rewrite in a
 different voice to squeeze words in — rewrite only to sharpen.
 
-## Pagination contract
-
-When the remediation is `paginate`:
-
-- A multi-page document is a sequence of sibling `.doc-page` elements
-  inside `.doc-container`.
-- Each `.doc-page` is its own canvas (`794×1123` for A4).
-- The validator measures *per page*, not document-total.
-- `pageIndex` names the offending page — fix that page first; then re-run
-  the preview; the validator re-measures the new page layout automatically.
-
 ## Agent workflow
 
-Before declaring content work complete:
+This is the same loop as every other box-layout rule. No special case.
 
-1. Read `<project>/state/fit-report.json`
-2. If it does not exist OR `overflowPx === 0` → content fits, you are done
-3. Otherwise, apply `remediation`:
-   - `paginate` → add a `.doc-page` sibling
-   - `split` → cut the slide at the next section break
-   - `tighten` → reduce padding / copy / font sizes in place
-4. Save the file and let the preview re-render
-5. Re-read `fit-report.json`; loop until `overflowPx === 0`
+1. Write the HTML
+2. `GET /api/validate-cards?project=<dir>&file=<file>`
+3. For each violation, read `violations[].fix` and patch the HTML
+   - If `rule === "R11"`, the `remediation` field tells you which action
+     to take (`paginate` / `split` / `tighten`); the `path` field names
+     the overflowing canvas element
+4. Re-validate — loop up to `config.iterateLimit` times (default 3)
+5. When `valid: true`, the work is done
 
-A stale `fit-report.json` (from a pre-fix render) is still valid on disk.
-Only the *latest* render is authoritative — re-open the preview to force
-a new measurement.
-
-## What does NOT trigger the check
+## What does NOT trigger R11
 
 - Export flows (PNG, PDF, PPTX, DOCX) — exports use the template's original
-  CSS (which typically clips with `overflow: hidden`). The check runs on
+  CSS (which typically clips with `overflow: hidden`). Validation runs on
   authoring, not export.
-- Cards that fit exactly. Edge-case equality (`scrollHeight === canvas.h`)
-  is treated as fitting.
+- Canvases that fit within the 2px tolerance.
 - Non-canvas content (tooltips, overlays, modals).
+- Leaf text overflow inside a fitting canvas — that is R10's job.
+
+## R10 vs R11
+
+Both rules detect overflow, at different scopes:
+
+- **R10 Content Fit** — a leaf element (text, image, table) overflows its
+  parent box. The parent and canvas may still fit.
+- **R11 Canvas Fit** — the canvas root itself overflows the declared
+  format (A4, 1280×720, 1080×1080). The whole page is too big.
+
+R10 fires when a table column is too narrow; R11 fires when the page is
+too long. Both show up in the same `violations[]` array.
+
+## Seeing overflow in the browser
+
+The preview relaxes `overflow: hidden` on slides and social cards so
+overflowing content is visible at authoring time — no red banner is
+needed. The agent confirms fit by calling `/api/validate-cards` and
+reading the `violations[]` array. That is the single source of truth.
 
 ## Relationship to `html-clipping.md`
 
 `html-clipping.md` explains per-type overflow policy from a CSS authoring
-perspective. This document explains the runtime validation that catches
-when authoring policy is violated. Both are required reading for any
-agent producing content:
+perspective. This document explains the validator that catches when
+authoring policy is violated. Both are required reading for any agent
+producing content:
 
 - Use `html-clipping.md` to write layouts that fit.
-- Use this file to interpret the validator when they don't.
+- Use this file to interpret R11 when they don't.

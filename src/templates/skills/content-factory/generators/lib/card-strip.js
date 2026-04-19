@@ -13,7 +13,6 @@ import { $, clearEl, setAppNavVisible } from "./dom.js";
 import { formatTimeAgo } from "./content-descriptor.js";
 import { createValidationBadge, runBatchValidation } from "./validation-badge.js";
 import { loadLogo } from "./logo-loader.js";
-import { runFitCheck } from "./fit-check.js";
 import { scheduleSave as scheduleLogoStateSave } from "./logo-state-sync.js";
 
 // ====== Card format + inspector-context-aware buildCardDoc ======
@@ -240,11 +239,6 @@ function buildCardEl(card, i, container) {
       } else {
         w.__HLI_DORMANT__ = !isActiveIframe;
       }
-      // Only measure the active card — avoids redundant posts when the
-      // filmstrip mounts multiple frames.
-      if (isActiveIframe || state.viewMode === "app") {
-        runFitCheck(iframe);
-      }
     } catch {}
   });
   iframe.srcdoc = buildCardDoc(card, false, null, i);
@@ -469,19 +463,25 @@ export function updateCardNav() {
 
 export function renderFilmstrip() {
   const strip = $("filmstrip");
+  const rail = document.getElementById("filmstrip-rail");
   if (!strip) return;
   const show = state.viewMode === "app" && state.cards.length > 1;
-  strip.style.display = show ? "" : "none";
-  if (show) strip.removeAttribute("hidden");
+  if (rail) {
+    if (show) rail.removeAttribute("hidden");
+    else rail.setAttribute("hidden", "");
+  }
   if (!show) {
     clearEl(strip);
     return;
   }
 
+  // Vertical rail: fix thumbnail width, derive height from the card's
+  // native aspect ratio. Keeps portrait docs tall, landscape slides wide,
+  // and square social cards square — without ever overflowing the rail.
   const fmt = cardFormat(state.cards[0]);
-  const THUMB_H = 62;
-  const THUMB_W = Math.round((THUMB_H * fmt.w) / fmt.h);
-  const scale = THUMB_H / fmt.h;
+  const THUMB_W = 92;
+  const THUMB_H = Math.round((THUMB_W * fmt.h) / fmt.w);
+  const scale = THUMB_W / fmt.w;
 
   const sourceKey = (state.activeFile || "preset:" + state.preset) + "@" + state.cardRevision;
   const existing = strip.querySelectorAll(".filmstrip-thumb");
@@ -525,7 +525,8 @@ export function renderFilmstrip() {
 
 export function updateFilmstripStates() {
   const strip = $("filmstrip");
-  if (!strip || strip.style.display === "none") return;
+  const rail = document.getElementById("filmstrip-rail");
+  if (!strip || (rail && rail.hasAttribute("hidden"))) return;
   strip.querySelectorAll(".filmstrip-thumb").forEach((t) => {
     const i = Number(t.dataset.index);
     t.classList.toggle("active", i === state.activeCard);
@@ -534,7 +535,7 @@ export function updateFilmstripStates() {
   });
   const activeThumb = strip.querySelector(".filmstrip-thumb.active");
   if (activeThumb)
-    activeThumb.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    activeThumb.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
 }
 
 export function setViewMode(mode) {

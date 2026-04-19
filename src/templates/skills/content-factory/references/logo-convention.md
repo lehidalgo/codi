@@ -5,6 +5,44 @@
 This is the canonical rule. Everything else in this document is the
 mechanics that support it.
 
+## The overlay is the only logo — never embed a second one
+
+Content Factory renders the brand logo as an **overlay** on every card
+(preview, PNG, PDF, PPTX). The overlay is:
+
+- Sourced from the discovery chain below (project → brand → built-in).
+- Auto-sized to the canvas: **≈8% of the shortest side** by default
+  (64px on A4 document, 86px on 1080 social, 58px on 16:9 slide). The
+  user can adjust size and position per format / per card via the
+  inspector; their value persists.
+- Inlined as SVG in exports, so there is no external `<img src>`.
+
+**Do NOT embed the brand logo in content HTML.** No `<img src=".../logo.svg">`,
+no `background-image: url(.../logo.svg)`, no inline `<svg>` of the brand
+mark in a page header or hero block. Any of these creates a duplicate —
+the factory's overlay AND the authored mark — which on export
+produces two logos, desyncs when the brand changes, and forces export
+sizes you can't tune from the inspector.
+
+```html
+BAD — brand logo hardcoded into the hero
+<header class="hero">
+  <img src="/api/brand/.../assets/logo.svg" alt="BBVA">
+  <h1>Title</h1>
+</header>
+
+GOOD — chrome only; the factory overlays the logo on top
+<header class="hero">
+  <h1>Title</h1>
+</header>
+```
+
+Exceptions (write-up, not a carve-out): content that *describes* or
+compares multiple brands (e.g. a competitive deck showing several
+marks) may inline the OTHER brands' logos — never the active brand's.
+If you need the active brand inline for a semantic reason, that's a
+design flag, not a workaround: surface it to the user before shipping.
+
 ---
 
 ## The standard

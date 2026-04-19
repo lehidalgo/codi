@@ -292,12 +292,46 @@ for (const [, entry] of Object.entries(CONTENT_TYPES)) {
   DEFAULT_CANVAS[entry.cardClass] = entry.canvas;
 }
 
+function extractDeclaredFormat(rawHtml) {
+  // A content file can declare its own canvas via
+  // `<meta name="codi:template" content='{"format":{"w":...,"h":...}}'>`
+  // or the legacy `<meta name="template-format" content="794x1123">`. The
+  // validator must honor that declaration — otherwise R11 measures
+  // against a generic default (e.g. 1240x1754) while the file itself is
+  // authored for 794x1123, and real overflow (the one the PDF export
+  // sees) slips through undetected.
+  // The content attribute may be wrapped in `"` or `'` and contain the
+  // opposite quote literally (e.g. `content='{"format":{"w":794,...}}'`).
+  // Capture the opening quote and match up to the same closing quote, so
+  // embedded quotes inside JSON don't prematurely terminate the match.
+  const codiMeta = rawHtml.match(/<meta[^>]+name=["']codi:template["'][^>]*content=(["'])([\s\S]*?)\1/i);
+  if (codiMeta) {
+    try {
+      const obj = JSON.parse(codiMeta[2].replace(/&quot;/g, '"'));
+      const f = obj && obj.format;
+      if (f && Number(f.w) > 0 && Number(f.h) > 0) return { w: Number(f.w), h: Number(f.h) };
+    } catch { /* fall through to legacy meta */ }
+  }
+  const legacy = rawHtml.match(/<meta[^>]+name=["']template-format["'][^>]*content=(["'])([\s\S]*?)\1/i);
+  if (legacy) {
+    const m = legacy[2].match(/^\s*(\d+)\s*x\s*(\d+)\s*$/i);
+    if (m) return { w: Number(m[1]), h: Number(m[2]) };
+  }
+  return null;
+}
+
 function extractAllCardsHtml(rawHtml, cfg = {}) {
   // Parse out each top-level card block. Supports <article|section> with any
   // recognized card class. We wrap each card in a minimal host document with
   // the declared canvas dimensions so computed styles reflect what the
   // browser would render inside the content-factory preview.
+  //
+  // Format resolution order (most specific wins):
+  //   1. cfg.format      — explicit override from the caller (active format selector)
+  //   2. file meta       — `codi:template` / `template-format` in the source
+  //   3. DEFAULT_CANVAS  — type-level fallback (doc / slide / social)
   const formatOverride = cfg.format || null;
+  const declared = formatOverride ? null : extractDeclaredFormat(rawHtml);
 
   // Pull out <style> blocks from the source — they apply to all cards.
   const styleMatches = [];
@@ -327,8 +361,9 @@ function extractAllCardsHtml(rawHtml, cfg = {}) {
     const articleHtml = m[0];
     const cardClass = m[2];
     const defaults = DEFAULT_CANVAS[cardClass] || DEFAULT_CANVAS['social-card'];
-    const width = formatOverride ? formatOverride.w : defaults.w;
-    const height = formatOverride ? formatOverride.h : defaults.h;
+    const source = formatOverride || declared || defaults;
+    const width = source.w;
+    const height = source.h;
     const hostHtml = buildHostHtml(articleHtml, styleMatches, linkMatches, width, height, cardClass);
     cards.push({ html: hostHtml, width, height, cardClass });
   }
@@ -336,7 +371,18 @@ function extractAllCardsHtml(rawHtml, cfg = {}) {
 }
 
 function buildHostHtml(article, styles, links, width, height, cardClass) {
-  const sizedSelector = cardClass ? '.' + cardClass : '.social-card';
+  // Pin the canvas-root to the declared format exactly and force
+  // `overflow: hidden` on it. Templates often declare
+  // `overflow: visible` so authors can see content bleed during editing,
+  // but when the canvas-root is overflow:visible, `scrollHeight` equals
+  // `clientHeight` and R11 cannot detect any overflow. Forcing hidden
+  // here makes `scrollHeight` report the full content height, so the
+  // difference `scrollHeight - clientHeight` is the actual overflow.
+  // The margin reset catches templates that apply layout margin to the
+  // canvas-root (e.g. `.doc-page { margin: 24px auto }`).
+  const size = cardClass === 'doc-page'
+    ? `.doc-page { width: ${width}px !important; height: ${height}px !important; overflow: hidden !important; }`
+    : `.${cardClass || 'social-card'} { width: ${width}px !important; height: ${height}px !important; overflow: hidden !important; }`;
   const head = [
     '<meta charset="utf-8">',
     ...links,
@@ -344,7 +390,8 @@ function buildHostHtml(article, styles, links, width, height, cardClass) {
     '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }',
     `html, body { width: ${width}px; height: ${height}px; position: relative; overflow: hidden; }`,
     `:root { --w: ${width}px; --h: ${height}px; }`,
-    `${sizedSelector} { width: ${width}px !important; height: ${height}px !important; }`,
+    '.social-card, .slide, .doc-page { margin: 0 !important; }',
+    size,
     '</style>',
     ...styles,
   ].join('\n');

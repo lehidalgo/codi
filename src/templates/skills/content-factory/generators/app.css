@@ -30,13 +30,44 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ====== Root layout ====== */
-#app { display: flex; height: 100vh; overflow: hidden; }
+/* ====== Root layout ======
+   Three-part shell:
+     #app          flex row  — sidebar | handle | toggle | workspace
+     .workspace    flex col  — tab bar above the main + rail row
+     .workspace-body flex row — main canvas | filmstrip rail
+
+   The sidebar is full height (from viewport top to bottom). The tab bar
+   only spans the workspace width — it starts at the sidebar's right
+   edge, not at the viewport edge. The filmstrip rail starts below the
+   tab bar so both the rail and the main canvas share the same ceiling. */
+#app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
 
 /* ====== Sidebar ====== */
 #sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
+  flex-shrink: 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -45,7 +76,68 @@ body {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+  transition: width 0.18s ease, min-width 0.18s ease, border-right-color 0.18s ease;
 }
+
+/* When collapsed, the column fully retracts and its contents hide. The
+   resize handle also disappears — the floating toggle button becomes the
+   only affordance to restore the sidebar. */
+#app.sidebar-collapsed #sidebar {
+  width: 0;
+  min-width: 0;
+  border-right-color: transparent;
+}
+#app.sidebar-collapsed #sidebar-resize {
+  display: none;
+}
+
+/* ====== Resize handle ====== */
+.resize-handle {
+  flex: 0 0 4px;
+  cursor: col-resize;
+  background: transparent;
+  border-right: 1px solid transparent;
+  transition: background 0.15s ease, border-right-color 0.15s ease;
+  user-select: none;
+  position: relative;
+  z-index: 19;
+}
+.resize-handle:hover,
+body.sidebar-dragging .resize-handle {
+  background: rgba(86, 182, 194, 0.18);
+  border-right-color: rgba(86, 182, 194, 0.4);
+}
+/* Disable selection everywhere during drag so text does not get picked up. */
+body.sidebar-dragging { user-select: none; cursor: col-resize; }
+
+/* ====== Sidebar toggle (floating chevron) ====== */
+.sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--sidebar-w) + 4px);
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.88);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 25;
+  transition: left 0.18s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+.sidebar-toggle:hover {
+  background: rgba(20, 26, 34, 0.95);
+  color: var(--text);
+  border-color: rgba(86, 182, 194, 0.45);
+}
+.sidebar-toggle-icon { transition: transform 0.18s ease; }
+#app.sidebar-collapsed .sidebar-toggle { left: 4px; }
+#app.sidebar-collapsed .sidebar-toggle-icon { transform: rotate(180deg); }
 
 .sidebar-header {
   padding: 18px 20px 14px;
@@ -743,20 +835,26 @@ input[type="range"] {
   min-height: 0;
 }
 
-/* Grid mode: wrap all cards */
+/* Grid mode: wrap all cards, center the wrapped rows horizontally.
+   `safe center` falls back to flex-start when a single card exceeds the
+   container width — prevents the classic centered-overflow bug where the
+   left edge of a zoomed card becomes unscrollable. */
 .canvas.mode-grid {
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: safe center;
   overflow: auto;
   padding: 32px;
 }
 
-/* Single card (social/slides app mode) */
+/* Single card (social/slides app mode). `overflow: auto` so zooming past
+   100% shows scrollbars instead of clipping; `safe center` keeps the card
+   scrollable-to-origin when it exceeds the viewport. The filmstrip lives
+   in its own column outside the canvas now, so no bottom-padding reserve
+   is required here. */
 .canvas.mode-single {
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 0 0 92px 0; /* reserve space for filmstrip */
+  align-items: safe center;
+  justify-content: safe center;
+  overflow: auto;
 }
 
 /* Document mode: vertical scroll of pages */
@@ -776,13 +874,13 @@ input[type="range"] {
   top: 50%;
   transform: translateY(-50%);
   z-index: 20;
-  width: 48px;
-  height: 96px;
+  width: 26px;
+  height: 44px;
   background: rgba(13, 17, 23, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text);
-  font-size: 36px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   display: none; /* hidden by default; JS sets display:flex when needed */
@@ -791,12 +889,12 @@ input[type="range"] {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  padding-bottom: 2px;
+  padding-bottom: 1px;
 }
 
 .app-nav-btn:hover { background: rgba(86, 182, 194, 0.15); border-color: var(--accent); color: var(--accent); }
-#app-prev { left: 16px; }
-#app-next { right: 16px; }
+#app-prev { left: 12px; }
+#app-next { right: 12px; }
 
 .empty-state {
   position: absolute;
@@ -824,40 +922,45 @@ input[type="range"] {
 .empty-title { font-size: 16px; font-weight: 600; color: var(--text); }
 .empty-body { font-size: 13px; color: var(--text-muted); line-height: 1.65; }
 
-/* ====== Filmstrip (App mode thumbnail bar) ====== */
-.filmstrip {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 92px;
+/* ====== Filmstrip rail (vertical thumbnail column) ======
+   Sits immediately right of the sidebar's resize handle, before #main.
+   Fixed width column; thumbnails stack top-to-bottom. Replaces the
+   legacy bottom bar so main-canvas scroll and zoom are unobstructed. */
+.filmstrip-rail {
+  flex: 0 0 120px;
+  width: 120px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
   display: flex;
-  align-items: center;
-  /* `safe center` keeps thumbnails visually centered when they all fit in
-     the bar, but falls back to start-alignment when total width exceeds
-     the container — otherwise `center` silently clips the first thumbs
-     off the left edge and they become unreachable via horizontal scroll. */
-  justify-content: safe center;
-  gap: 7px;
-  padding: 0 24px;
-  background: #050709;
-  border-top: 1px solid var(--border);
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
   z-index: 18;
+}
+.filmstrip-rail[hidden] { display: none; }
+
+.filmstrip.vertical {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.18) transparent;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: y proximity;
 }
 
-.filmstrip::-webkit-scrollbar { height: 6px; }
-.filmstrip::-webkit-scrollbar-track { background: transparent; }
-.filmstrip::-webkit-scrollbar-thumb {
+.filmstrip.vertical::-webkit-scrollbar { width: 6px; }
+.filmstrip.vertical::-webkit-scrollbar-track { background: transparent; }
+.filmstrip.vertical::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.18);
   border-radius: 3px;
 }
-.filmstrip::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }
+.filmstrip.vertical::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }
 
 .filmstrip-thumb { scroll-snap-align: center; }
 
@@ -924,21 +1027,28 @@ input[type="range"] {
 /* ====== Card strip ====== */
 .card-strip { display: flex; }
 
-/* Grid: wrap all cards */
+/* Grid: wrap all cards. `safe center` keeps rows centered when they fit,
+   and falls back to flex-start when a single card is wider than the row —
+   so oversized zoomed cards stay fully scrollable instead of clipping on
+   the left. */
 .card-strip.grid-view {
   flex-wrap: wrap;
   align-items: flex-start;
   align-content: flex-start;
+  justify-content: safe center;
   gap: 20px;
   width: 100%;
 }
 
-/* Single: center one card */
+/* Single: center one card. Use `safe center` on both axes so zoomed
+   cards taller or wider than the canvas remain fully scrollable — plain
+   `center` forces the overflow to straddle both sides and becomes
+   unreachable via scrolling. */
 .card-strip.single-view {
-  align-items: center;
-  justify-content: center;
+  align-items: safe center;
+  justify-content: safe center;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
 }
 
 /* Document: vertical stack */

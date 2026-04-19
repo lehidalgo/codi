@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 89
+version: 99
 ---
 
 # {{name}} — Content Factory
@@ -18,9 +18,18 @@ version: 89
 - **The brand logo lives at \`<brand-skill>/assets/logo.{svg,png}\`. Always.** If a brand doesn't
   conform, fix the brand or ask the user — do not build workarounds in content code. Full
   convention + pre-flight decision tree: \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\`
-- **Before declaring any content work done, check \`<project>/state/fit-report.json\`.** If it
-  exists and \`overflowPx > 0\`, apply the \`remediation\` field (paginate / split / tighten)
-  before claiming done. Full protocol: \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`
+- **Never embed the brand logo inside content HTML (\`<img>\`, background-image, inline SVG).**
+  Content Factory renders the brand logo as an overlay on every card, automatically sized
+  to the canvas (≈8% of the shortest side) and positioned/scaled via the inspector. Embedding
+  a second logo in the HTML duplicates the mark on export and desyncs when the brand changes.
+  Author content with chrome only (title bars, eyebrows, accent bars) — the factory adds the logo.
+- **Run validation after every content write; fix every violation before declaring done.**
+  Call \`GET /api/validate-cards?project=<dir>&file=<file>\` and iterate on the returned
+  \`violations[]\` until the report is clean (\`valid: true\`). Canvas overflow (\`rule: R11\`,
+  "Canvas Fit") is a standard validation violation alongside the box-layout rules — its
+  \`fix\` field prescribes \`paginate\`/\`split\`/\`tighten\` with the exact overflow numbers.
+  Full protocol, including the content-fit remediation decision tree, lives at
+  \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`.
 
 ## Skip When
 
@@ -91,7 +100,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` | The 13 design rules. Read before authoring any slide |
 | \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
 | \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
-| \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\` | **Content-fit validator protocol.** Read \`state/fit-report.json\` after every render; apply \`paginate\`/\`split\`/\`tighten\` remediation. Mandatory before declaring work complete |
+| \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\` | **R11 Canvas Fit rule.** Canvas overflow is emitted by \`/api/validate-cards\` as a standard box-layout violation (\`rule: R11\`). The \`fix\` field prescribes \`paginate\`/\`split\`/\`tighten\`. Handled by the same validate-before-done loop as R1–R10 |
 | \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\` | **Logo standard + pre-flight.** Brand logos live at \`<brand>/assets/logo.{svg,png}\`. Call \`GET /api/brand/<name>/conformance\` at project creation; auto-fix or ask the user when non-conforming |
 | \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
 | \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
@@ -454,26 +463,27 @@ Full rules: \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\`
 - Tables inside \`.doc-page\`: the flex-column wrapper MUST have \`width: 100%\` — without
   it, \`width: 100%\` on a child table resolves against an indefinite width and columns collapse
 
-#### Content-fit validation — MANDATORY before completion
+#### Canvas-fit validation — part of the standard validate-before-done loop
 
 Full protocol: \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`
 
-Every render measures each canvas page against the active format and writes
-\`<project>/state/fit-report.json\` when content overflows. Before declaring any
-content work done, you MUST:
+Canvas overflow is emitted as **R11 "Canvas Fit"** by the same
+\`/api/validate-cards\` endpoint that runs R1–R10. There is no separate
+state file to read, no parallel notification channel. The agent's normal
+validate-before-done loop catches overflow automatically.
 
-1. Read \`<project>/state/fit-report.json\`
-2. If missing or \`overflowPx === 0\` → content fits, you're done
-3. Otherwise apply the \`remediation\` field:
-   - \`paginate\` (documents) — add a new \`.doc-page\` sibling after the overflowing
-     page (named by \`pageIndex\`) and move the overflow content into it; preserve
-     header/footer on every page
-   - \`split\` (slides) — cut the offending slide at the next \`h2\`/\`hr\` boundary
-   - \`tighten\` (any type, or social always) — reduce padding, condense copy, or
-     drop one line-height / font-size notch
+For every R11 violation in \`violations[]\`:
 
-The directive string in \`fit-report.json\` names the overflowing page and the
-exact action to take — use it verbatim when communicating the fix to the user.
+- \`remediation: "paginate"\` (documents, overflow > 15%) — add a new
+  \`.doc-page\` sibling inside \`.doc-container\`, move overflow content into
+  it, preserve header/footer on every page
+- \`remediation: "split"\` (slides, overflow > 15%) — cut the offending slide
+  at the next \`h2\`/\`hr\` boundary
+- \`remediation: "tighten"\` (small overflow, or any social card) — reduce
+  padding, condense copy, or drop one line-height / font-size notch
+
+The \`fix\` field is prefixed with the remediation name and includes the
+exact overflow numbers — patch the HTML and re-validate until \`valid: true\`.
 
 #### Document template conventions — DOCX export
 

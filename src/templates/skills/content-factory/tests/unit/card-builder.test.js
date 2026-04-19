@@ -120,6 +120,21 @@ describe("buildCardDoc", () => {
     const doc = buildCardDoc(baseCard, fmt);
     expect(doc).toContain(".social-card{width:1080px!important;height:1080px!important}");
   });
+
+  it("overrides .slide dimensions with !important", () => {
+    const doc = buildCardDoc(baseCard, { w: 1280, h: 720 });
+    expect(doc).toContain(".slide{width:1280px!important;height:720px!important}");
+  });
+
+  it("overrides .doc-page min-height (allows content growth for R11)", () => {
+    const doc = buildCardDoc(baseCard, { w: 794, h: 1123 });
+    expect(doc).toContain(".doc-page{width:794px!important;min-height:1123px!important}");
+  });
+
+  it("resets margin on all canvas-root classes to prevent body-background stripes", () => {
+    const doc = buildCardDoc(baseCard, fmt);
+    expect(doc).toContain(".social-card,.slide,.doc-page{margin:0!important}");
+  });
 });
 
 describe("buildThumbDoc", () => {

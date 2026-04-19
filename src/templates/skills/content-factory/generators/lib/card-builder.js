@@ -94,17 +94,32 @@ export function buildCardDoc(
       bg +
       "}",
     card.styleText +
-      // Override format vars and card dimensions to match the active format selector.
-      // Injected after template CSS so it wins the cascade without !important on vars.
-      // !important on .social-card catches templates that hardcode px instead of using vars.
+      // Override format vars and canvas-root dimensions to match the active
+      // format selector. Injected after template CSS so it wins the cascade.
+      // The margin reset catches the common template bug where a
+      // canvas-root carries layout margin meant for a multi-page container
+      // (e.g. `.doc-page { margin: 24px auto }`). In the isolated per-card
+      // iframe, that margin exposes the body's background as a stripe above
+      // or beside the card.
       ":root{--w:" +
       fmt.w +
       "px;--h:" +
       fmt.h +
       "px}" +
+      ".social-card,.slide,.doc-page{margin:0!important}" +
       ".social-card{width:" +
       fmt.w +
       "px!important;height:" +
+      fmt.h +
+      "px!important}" +
+      ".slide{width:" +
+      fmt.w +
+      "px!important;height:" +
+      fmt.h +
+      "px!important}" +
+      ".doc-page{width:" +
+      fmt.w +
+      "px!important;min-height:" +
       fmt.h +
       "px!important}" +
       "</style></head><body>",
@@ -148,9 +163,20 @@ export function buildThumbDoc(card, fmt) {
       "px;--h:" +
       fmt.h +
       "px}" +
+      ".social-card,.slide,.doc-page{margin:0!important}" +
       ".social-card{width:" +
       fmt.w +
       "px!important;height:" +
+      fmt.h +
+      "px!important}" +
+      ".slide{width:" +
+      fmt.w +
+      "px!important;height:" +
+      fmt.h +
+      "px!important}" +
+      ".doc-page{width:" +
+      fmt.w +
+      "px!important;min-height:" +
       fmt.h +
       "px!important}" +
       "</style></head><body>",

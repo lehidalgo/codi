@@ -50,13 +50,21 @@ function computeScore(violations, context) {
 }
 
 function cleanViolation(v) {
-  return {
+  // Preserve machine-readable fields when the rule emits them (R11 uses
+  // `remediation`, `overflowPx`, `overflowPct`, `canvasType` so agents
+  // can branch on intent without parsing the `fix` string).
+  const out = {
     rule: v.rule,
     severity: v.severity,
     path: v.path,
     message: v.message,
     fix: v.fix,
   };
+  if (v.remediation != null) out.remediation = v.remediation;
+  if (v.overflowPx != null) out.overflowPx = v.overflowPx;
+  if (v.overflowPct != null) out.overflowPct = v.overflowPct;
+  if (v.canvasType != null) out.canvasType = v.canvasType;
+  return out;
 }
 
 function buildFixInstructions(violations, summary) {

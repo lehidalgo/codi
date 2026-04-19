@@ -1,18 +1,18 @@
 # HTML Clipping and Overflow Rules
 
-> **Companion reference:** overflow is validated automatically on every
-> render. Before declaring any content work done, check
-> `<project>/state/fit-report.json`. Full protocol in
-> `references/content-fit.md` — including the per-type remediation matrix
-> (paginate / split / tighten).
+> **Companion reference:** canvas overflow is caught by the standard
+> validator. Call `GET /api/validate-cards` after every write; any R11
+> "Canvas Fit" violation in the response names the overflowing page and
+> prescribes `paginate`/`split`/`tighten`. Full protocol in
+> `references/content-fit.md`.
 
 ## Social cards and slides — `overflow: hidden`
 
 Content beyond the card boundary is clipped on **export**. In **preview**
 the factory relaxes this to `overflow: visible` (via an injected
 stylesheet) so you can see overflow instead of losing it silently. The
-content-fit validator measures the same pages and raises a notice + writes
-`fit-report.json` whenever overflow is detected.
+validator measures the same pages and emits an R11 violation whenever
+a canvas exceeds its declared format.
 
 Author defensively — do not rely on the preview's visible overflow; the
 exported PNG / PDF / PPTX will clip per the template's own CSS.

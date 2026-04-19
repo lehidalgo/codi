@@ -11,8 +11,9 @@ const r7 = require('./rules/r7-no-empty.cjs');
 const r8 = require('./rules/r8-sibling-consistency.cjs');
 const r9 = require('./rules/r9-leaf-atomicity.cjs');
 const r10 = require('./rules/r10-content-fit.cjs');
+const r11 = require('./rules/r11-canvas-fit.cjs');
 
-const NODE_RULES = [r1, r2, r3, r4, r7, r9, r10];
+const NODE_RULES = [r1, r2, r3, r4, r7, r9, r10, r11];
 const GROUP_RULES = [r8];
 
 function runRules(root, siblingGroups, context) {

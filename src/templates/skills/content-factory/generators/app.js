@@ -30,6 +30,7 @@ import { initGallery, filterGallery, loadSessionContent, setGalleryStale } from 
 import { registerPanelOpener } from "./lib/validation-badge.js";
 import { openValidationPanel, closeValidationPanel } from "./lib/validation-panel.js";
 import { initValidationSettings } from "./lib/validation-settings.js";
+import { initSidebarResize } from "./lib/sidebar-resize.js";
 
 // Wire forward-references so cycles resolve at runtime.
 registerRenderCards(renderCards);
@@ -101,6 +102,10 @@ export function updateFormatGrid(type) {
 
 // ====== Init ======
 function init() {
+  // Sidebar resize + collapse — restore persisted state before any
+  // downstream layout measurement runs.
+  initSidebarResize();
+
   // Format grid
   $("format-grid").addEventListener("click", (e) => {
     const btn = e.target.closest(".fmt");
