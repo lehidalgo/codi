@@ -49,26 +49,31 @@ export function buildCardDoc(
   let logoFontLink = "";
   if (forExport && logo && logo.visible) {
     const usingDefault = !(logo.svg && logo.svg.includes("<svg"));
-    const svg = usingDefault ? BUILTIN_DEFAULT_SVG : logo.svg;
+    let svg = usingDefault ? BUILTIN_DEFAULT_SVG : logo.svg;
     // Only the built-in mark depends on Geist Mono; project/brand SVGs ship
     // their own glyph data.
     if (usingDefault) {
       logoFontLink =
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap">';
     }
+    // Force an explicit height on the <svg> root so renderers (Playwright
+    // screenshot, print layout) always allocate a concrete box. SVGs without
+    // width/height attributes fall back to the CSS default 300x150 or zero
+    // inside a flex container, and the export ends up blank.
+    svg = svg.replace(/<svg\b([^>]*)>/i, (_m, attrs) => {
+      let a = attrs;
+      a = a.replace(/\s(width|height)="[^"]*"/gi, ""); // drop any existing
+      return "<svg" + a + ' height="' + logo.size + '">';
+    });
     const wrapStyle = [
       "position:absolute",
       "left:" + logo.x + "%",
       "top:" + logo.y + "%",
       "transform:translate(-50%,-50%)",
-      "height:" + logo.size + "px",
-      "width:auto",
       "z-index:999",
       "pointer-events:none",
       "opacity:0.88",
-      "display:flex",
-      "align-items:center",
-      "justify-content:center",
+      "line-height:0",
     ].join(";");
     logoHtml = '<div style="' + wrapStyle + '">' + svg + "</div>";
   }

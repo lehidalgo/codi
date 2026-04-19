@@ -188,6 +188,51 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
+  // /api/project/logo-state GET?file=<rel> — return persisted logo state
+  // for the given content file, sanitized against cardCount. 404 when no
+  // state has been saved yet. Used on project load to restore overlay
+  // positions that the user adjusted in a previous session.
+  if (req.method === 'GET' && pathname === '/api/project/logo-state') {
+    const project = state.getActiveProject();
+    if (!project) { res.writeHead(404); res.end('No active project'); return true; }
+    const file = parsed.searchParams.get('file');
+    const cardCount = Number(parsed.searchParams.get('cardCount'));
+    const { readLogoState, sanitizeLogoState, isSafeFileKey } = require('../lib/logo-state.cjs');
+    if (!isSafeFileKey(file)) { res.writeHead(400); res.end('invalid file'); return true; }
+    const raw = readLogoState(project.dir, file);
+    if (!raw) { res.writeHead(404); res.end('no state'); return true; }
+    const clean = sanitizeLogoState(raw, { cardCount: Number.isFinite(cardCount) ? cardCount : Infinity });
+    sendJson(res, 200, clean);
+    return true;
+  }
+
+  // /api/project/logo-state POST — persist logo state for one content
+  // file. Body: { file, logo, cardLogos }. Server sanitizes before write,
+  // so callers cannot corrupt the on-disk JSON with malformed values.
+  if (req.method === 'POST' && pathname === '/api/project/logo-state') {
+    const project = state.getActiveProject();
+    if (!project) { res.writeHead(404); res.end('No active project'); return true; }
+    readJsonBody(req, (err, body) => {
+      if (err) { res.writeHead(400); res.end('Bad request'); return; }
+      const file = body && body.file;
+      const logo = body && body.logo;
+      const cardLogos = body && body.cardLogos;
+      const cardCount = body && Number(body.cardCount);
+      const { writeLogoState, sanitizeLogoState } = require('../lib/logo-state.cjs');
+      const clean = sanitizeLogoState(
+        { logo, cardLogos },
+        { cardCount: Number.isFinite(cardCount) ? cardCount : Infinity },
+      );
+      try {
+        writeLogoState(project.dir, file, clean);
+        sendJson(res, 200, { ok: true });
+      } catch (e) {
+        sendJson(res, e.status || 500, { ok: false, error: e.message });
+      }
+    });
+    return true;
+  }
+
   // /api/project/logo GET — resolve the active project's logo.
   //
   // 7-step chain documented in references/logo-convention.md:

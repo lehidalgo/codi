@@ -14,6 +14,7 @@ import { formatTimeAgo } from "./content-descriptor.js";
 import { createValidationBadge, runBatchValidation } from "./validation-badge.js";
 import { loadLogo } from "./logo-loader.js";
 import { runFitCheck } from "./fit-check.js";
+import { scheduleSave as scheduleLogoStateSave } from "./logo-state-sync.js";
 
 // ====== Card format + inspector-context-aware buildCardDoc ======
 
@@ -72,6 +73,14 @@ export function getCardLogo(i) {
 }
 
 export function applyLogoChange(prop, val) {
+  // Scoping rule:
+  //  - No explicit selection OR all pages selected → apply globally
+  //    (state.logo + every cardLogos entry). This is the "document-wide"
+  //    tweak path.
+  //  - Subset of pages selected → apply per-selected-card only. This is
+  //    the "per-page adjust" path: each selected page keeps its own
+  //    position/size, and navigation preserves the override thanks to
+  //    state.cardLogos[i].
   const noneSelected = state.selectedCards.size === 0;
   const allSelected = state.cards.length > 0 && state.selectedCards.size === state.cards.length;
   if (noneSelected || allSelected) {
@@ -91,6 +100,9 @@ export function applyLogoChange(prop, val) {
   // position-only and independent of the format-derived default.
   if (prop === "size") state.logo.userOverridden = true;
   applyLogoToAllCards();
+  // Persist to disk so the position survives file-watcher reloads,
+  // browser refresh, and server restarts. Debounced inside.
+  scheduleLogoStateSave();
 }
 
 export function applyLogoStyle(el, sz, logo) {
@@ -101,7 +113,9 @@ export function applyLogoStyle(el, sz, logo) {
   el.style.fontSize = scaled + "px";
   // Size the inner SVG (when present) to match so the resolved project
   // logo tracks the slider value the same way the text fallback does.
-  const inlineSvg = el.querySelector(":scope > svg");
+  // Using plain `svg` (no `:scope >`) tolerates wrappers that some
+  // pipelines insert (e.g. source maps, hydration helpers).
+  const inlineSvg = el.querySelector("svg");
   if (inlineSvg) {
     inlineSvg.setAttribute("height", scaled);
     inlineSvg.removeAttribute("width");
@@ -392,13 +406,15 @@ export function renderCards() {
   updatePreviewMeta();
   runBatchValidation();
   // Resolve the project/brand/builtin logo in the background. When the
-  // fetch settles, re-apply overlays so cards rendered before the response
-  // arrived pick up the correct SVG on the next tick.
+  // fetch settles, inject the SVG into each overlay AND re-run
+  // applyLogoToAllCards so the inner <svg>'s `height` attribute is
+  // reapplied (innerHTML replaces children and strips any earlier sizing).
   loadLogo().then((svg) => {
     if (!svg) return;
     document.querySelectorAll(".card-logo-overlay").forEach((el) => {
       el.innerHTML = svg;
     });
+    applyLogoToAllCards();
   });
 }
 

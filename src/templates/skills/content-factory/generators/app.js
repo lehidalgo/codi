@@ -21,7 +21,6 @@ import {
   loadTemplateAsCards,
   toggleSelectAll,
   applyLogoChange,
-  applyLogoToAllCards,
   syncLogoSlidersToSelection,
   registerUpdateExportPanel,
   registerUpdateFormatGrid,
@@ -136,15 +135,24 @@ function init() {
     }, 60);
   });
 
-  // Logo controls
+  // Logo controls — all four (toggle + 3 sliders) go through
+  // applyLogoChange so they share the same selection logic (single page
+  // vs. multi-select vs. all) and the same debounced persistence path.
   $("logo-toggle").addEventListener("click", () => {
-    const newVisible = !state.logo.visible;
-    state.logo.visible = newVisible;
-    state.cards.forEach((_, i) => {
-      if (!state.cardLogos[i]) state.cardLogos[i] = {};
-      state.cardLogos[i].visible = newVisible;
-    });
-    applyLogoToAllCards();
+    // Read the current visibility from the perspective of whichever card
+    // the sidebar is showing, so "toggle" flips what the user sees —
+    // not a stale global flag that may not match the per-card override.
+    const ref =
+      state.selectedCards.size > 0
+        ? [...state.selectedCards][0]
+        : state.cards.length > 0
+          ? state.activeCard
+          : null;
+    const curr =
+      ref !== null && state.cardLogos[ref] && typeof state.cardLogos[ref].visible === "boolean"
+        ? state.cardLogos[ref].visible
+        : state.logo.visible;
+    applyLogoChange("visible", !curr);
     syncLogoSlidersToSelection();
   });
   $("logo-size").addEventListener("input", () => {

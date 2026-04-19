@@ -43,7 +43,13 @@ export async function loadLogo(force = false) {
     .then((svg) => {
       // Fall back to the inline built-in if the server could not resolve
       // a project or brand logo; consumers always have something to render.
-      state.logoSvg = svg && svg.includes("<svg") ? svg : BUILTIN_DEFAULT_SVG;
+      // Defensive: strip any XML prolog / DOCTYPE that would break inline
+      // HTML embedding (the server-side resolver strips these too, but the
+      // cache may pre-date the fix).
+      const clean = svg
+        ? svg.replace(/^\s*<\?xml[^?]*\?>\s*/i, "").replace(/^\s*<!DOCTYPE[^>]*>\s*/i, "")
+        : null;
+      state.logoSvg = clean && clean.includes("<svg") ? clean : BUILTIN_DEFAULT_SVG;
       if (!state.logoSource) state.logoSource = "builtin";
       cachedForProject = projectKey;
       inflight = null;

@@ -32,12 +32,22 @@ function readBytes(p) {
   try { return fs.readFileSync(p); } catch { return null; }
 }
 
+// Strip the XML prolog and DOCTYPE so the SVG markup can be safely inlined
+// inside an HTML document. Browsers render a standalone SVG that starts with
+// `<?xml ...?>` fine, but HTML parsers treat the PI as a bogus comment and
+// can skip the following SVG entirely (surfaces as "logo missing in exports").
+function stripXmlProlog(text) {
+  let cleaned = text.replace(/^\s*<\?xml[^?]*\?>\s*/i, '');
+  cleaned = cleaned.replace(/^\s*<!DOCTYPE[^>]*>\s*/i, '');
+  return cleaned;
+}
+
 function readSvgSafe(p) {
   const bytes = readBytes(p);
   if (!bytes) return null;
   const text = bytes.toString('utf-8');
   if (!text.includes('<svg')) return null;
-  return text;
+  return stripXmlProlog(text);
 }
 
 function isSvgContent(text) {
