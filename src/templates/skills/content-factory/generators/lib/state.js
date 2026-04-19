@@ -56,8 +56,12 @@ export const state = {
  * Update the active canvas format. When the user has not manually overridden
  * the logo size, recompute the default so overlays stay proportional across
  * formats (8% of the shortest side).
+ *
+ * Named `setActiveFormat` (not `setFormat`) because `app.js` already hosts a
+ * local `setFormat(btn)` click handler — reusing the name would shadow the
+ * import at module eval time and throw a re-declaration error.
  */
-export function setFormat(format) {
+export function setActiveFormat(format) {
   state.format = format;
   if (!state.logo.userOverridden) {
     state.logo.size = defaultLogoSize(format);
