@@ -12,6 +12,8 @@ import { state } from "./state.js";
 import { $, clearEl, setAppNavVisible } from "./dom.js";
 import { formatTimeAgo } from "./content-descriptor.js";
 import { createValidationBadge, runBatchValidation } from "./validation-badge.js";
+import { loadLogo } from "./logo-loader.js";
+import { scheduleSave as scheduleLogoStateSave } from "./logo-state-sync.js";
 
 // ====== Card format + inspector-context-aware buildCardDoc ======
 
@@ -21,6 +23,9 @@ export function cardFormat(card) {
 
 export function buildCardDoc(card, forExport = false, logo = null, cardIndex = null) {
   const fmt = cardFormat(card);
+  // Inject the resolved project/brand logo bytes so exports render the
+  // correct mark instead of the hardcoded built-in default.
+  const logoWithSvg = logo ? { ...logo, svg: state.logoSvg || logo.svg } : logo;
   // Derive the inspector context directly from the unified active-content
   // descriptor. The shape matches what persist-style reads, so the agent
   // never has to reconcile two different models.
@@ -41,7 +46,7 @@ export function buildCardDoc(card, forExport = false, logo = null, cardIndex = n
   return _buildCardDoc(
     card,
     fmt,
-    logo,
+    logoWithSvg,
     state.handle || "handle",
     forExport,
     state._inspectorSource || "",
@@ -67,6 +72,14 @@ export function getCardLogo(i) {
 }
 
 export function applyLogoChange(prop, val) {
+  // Scoping rule:
+  //  - No explicit selection OR all pages selected → apply globally
+  //    (state.logo + every cardLogos entry). This is the "document-wide"
+  //    tweak path.
+  //  - Subset of pages selected → apply per-selected-card only. This is
+  //    the "per-page adjust" path: each selected page keeps its own
+  //    position/size, and navigation preserves the override thanks to
+  //    state.cardLogos[i].
   const noneSelected = state.selectedCards.size === 0;
   const allSelected = state.cards.length > 0 && state.selectedCards.size === state.cards.length;
   if (noneSelected || allSelected) {
@@ -81,14 +94,31 @@ export function applyLogoChange(prop, val) {
       state.cardLogos[i][prop] = val;
     });
   }
+  // Mark the logo as user-controlled so switching active format does not
+  // overwrite the size. Only `size` triggers the override — x/y are
+  // position-only and independent of the format-derived default.
+  if (prop === "size") state.logo.userOverridden = true;
   applyLogoToAllCards();
+  // Persist to disk so the position survives file-watcher reloads,
+  // browser refresh, and server restarts. Debounced inside.
+  scheduleLogoStateSave();
 }
 
 export function applyLogoStyle(el, sz, logo) {
   el.style.display = logo.visible ? "flex" : "none";
   el.style.left = logo.x + "%";
   el.style.top = logo.y + "%";
-  el.style.fontSize = Math.round(logo.size * sz.scale) + "px";
+  const scaled = Math.round(logo.size * sz.scale);
+  el.style.fontSize = scaled + "px";
+  // Size the inner SVG (when present) to match so the resolved project
+  // logo tracks the slider value the same way the text fallback does.
+  // Using plain `svg` (no `:scope >`) tolerates wrappers that some
+  // pipelines insert (e.g. source maps, hydration helpers).
+  const inlineSvg = el.querySelector("svg");
+  if (inlineSvg) {
+    inlineSvg.setAttribute("height", scaled);
+    inlineSvg.removeAttribute("width");
+  }
 }
 
 export function applyLogoToAllCards() {
@@ -215,7 +245,14 @@ function buildCardEl(card, i, container) {
 
   const logoEl = document.createElement("div");
   logoEl.className = "card-logo-overlay";
-  logoEl.textContent = "codi";
+  // Use the resolved project/brand SVG when available; fall back to the
+  // historical "codi" text while loadLogo() is still in flight. renderCards
+  // triggers applyLogoToAllCards() when the fetch resolves.
+  if (state.logoSvg) {
+    logoEl.innerHTML = state.logoSvg;
+  } else {
+    logoEl.textContent = "codi";
+  }
   applyLogoStyle(logoEl, sz, getCardLogo(i));
 
   contentEl.append(iframe, logoEl);
@@ -362,6 +399,17 @@ export function renderCards() {
   renderFilmstrip();
   updatePreviewMeta();
   runBatchValidation();
+  // Resolve the project/brand/builtin logo in the background. When the
+  // fetch settles, inject the SVG into each overlay AND re-run
+  // applyLogoToAllCards so the inner <svg>'s `height` attribute is
+  // reapplied (innerHTML replaces children and strips any earlier sizing).
+  loadLogo().then((svg) => {
+    if (!svg) return;
+    document.querySelectorAll(".card-logo-overlay").forEach((el) => {
+      el.innerHTML = svg;
+    });
+    applyLogoToAllCards();
+  });
 }
 
 export function reportActiveCard() {
@@ -415,19 +463,25 @@ export function updateCardNav() {
 
 export function renderFilmstrip() {
   const strip = $("filmstrip");
+  const rail = document.getElementById("filmstrip-rail");
   if (!strip) return;
   const show = state.viewMode === "app" && state.cards.length > 1;
-  strip.style.display = show ? "" : "none";
-  if (show) strip.removeAttribute("hidden");
+  if (rail) {
+    if (show) rail.removeAttribute("hidden");
+    else rail.setAttribute("hidden", "");
+  }
   if (!show) {
     clearEl(strip);
     return;
   }
 
+  // Vertical rail: fix thumbnail width, derive height from the card's
+  // native aspect ratio. Keeps portrait docs tall, landscape slides wide,
+  // and square social cards square — without ever overflowing the rail.
   const fmt = cardFormat(state.cards[0]);
-  const THUMB_H = 62;
-  const THUMB_W = Math.round((THUMB_H * fmt.w) / fmt.h);
-  const scale = THUMB_H / fmt.h;
+  const THUMB_W = 92;
+  const THUMB_H = Math.round((THUMB_W * fmt.h) / fmt.w);
+  const scale = THUMB_W / fmt.w;
 
   const sourceKey = (state.activeFile || "preset:" + state.preset) + "@" + state.cardRevision;
   const existing = strip.querySelectorAll(".filmstrip-thumb");
@@ -471,7 +525,8 @@ export function renderFilmstrip() {
 
 export function updateFilmstripStates() {
   const strip = $("filmstrip");
-  if (!strip || strip.style.display === "none") return;
+  const rail = document.getElementById("filmstrip-rail");
+  if (!strip || (rail && rail.hasAttribute("hidden"))) return;
   strip.querySelectorAll(".filmstrip-thumb").forEach((t) => {
     const i = Number(t.dataset.index);
     t.classList.toggle("active", i === state.activeCard);
@@ -480,7 +535,7 @@ export function updateFilmstripStates() {
   });
   const activeThumb = strip.querySelector(".filmstrip-thumb.active");
   if (activeThumb)
-    activeThumb.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    activeThumb.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
 }
 
 export function setViewMode(mode) {

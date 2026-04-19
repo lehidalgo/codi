@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80" role="img" aria-label="codi">
+  <title>codi</title>
+  <defs>
+    <linearGradient id="codiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#56b6c2"/>
+      <stop offset="100%" stop-color="#61afef"/>
+    </linearGradient>
+  </defs>
+  <!-- Static wordmark fallback for contexts where CSS cannot render the gradient span -->
+  <text x="120" y="56" text-anchor="middle"
+        font-family="'Geist Mono', 'SFMono-Regular', 'Menlo', 'Consolas', monospace"
+        font-size="56" font-weight="500" letter-spacing="-2"
+        fill="url(#codiGrad)">codi</text>
+</svg>

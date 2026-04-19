@@ -124,6 +124,20 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
+  // /api/brand/:name/conformance GET — report how well a brand skill
+  // conforms to the logo standard. Agents consult this at project
+  // creation / brand activation to decide whether to auto-fix, ask the
+  // user, or proceed. See references/logo-convention.md for the full
+  // ranking behind the `discovered` array.
+  const conformanceMatch = pathname.match(/^\/api\/brand\/([^/]+)\/conformance$/);
+  if (req.method === 'GET' && conformanceMatch) {
+    const brandName = conformanceMatch[1];
+    const { checkBrandConformance } = require('../lib/logo-resolver.cjs');
+    const report = checkBrandConformance({ skillsDir: ctx.SKILLS_DIR, brandName });
+    sendJson(res, report.found ? 200 : 404, report);
+    return true;
+  }
+
   return false;
 }
 
