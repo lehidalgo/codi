@@ -79,6 +79,14 @@ Check `tokens.json.fonts.google_fonts_url`:
 
 ## 6. Embed the logo
 
+There are two distinct logo concerns — they serve different purposes and
+read from different paths.
+
+### 6a. In-content logos (inside the HTML you author)
+
+These are the logos that appear **inside the card design** — e.g. a
+header mark in a document, a corner mark in a slide.
+
 Determine the card's background color:
 
 - If dark: use `assets.logo_light_bg` (light logo on dark background)
@@ -89,8 +97,40 @@ Fetch the SVG file via the brand asset route:
 GET http://localhost:PORT/api/brand/<brand-name>/assets/<logo-filename>
 ```
 
-Inline the SVG source directly in the HTML. Do NOT use `<img src="...">` with a
-file path — the path will not resolve inside an iframe.
+Inline the SVG source directly in the HTML. Do NOT use `<img src="...">`
+with a file path — the path will not resolve inside an iframe.
+
+### 6b. Overlay logo (managed by the factory, not by you)
+
+The content-factory UI shows a **logo overlay** positioned on top of the
+card (controlled by the size/x/y sliders in the inspector). This is
+separate from whatever you embed inside the HTML.
+
+The overlay resolves its SVG **automatically**, in this order:
+
+1. `.codi_output/<project>/assets/logo.svg` — project-level canonical path
+2. `<active-brand>/brand/assets/logo.svg` — brand-skill default
+3. Built-in `codi` mark — last resort
+
+On the first request for a project with no logo, the server copies the
+active brand's logo into the project path — from that moment the project
+owns the file. This lazy bootstrap is handled by `scripts/lib/logo-resolver.cjs`;
+you do NOT manage the copy step yourself.
+
+**Agent responsibilities for the overlay logo:**
+
+- Do NOT write files to `<project>/assets/logo.svg` manually as part of a
+  content render — the factory handles it.
+- If you want a specific non-brand logo for a one-off project, drop the
+  SVG at that exact path before running the preview. Any SVG there wins.
+- Do NOT embed the overlay's logo inside the HTML — that duplicates the
+  mark. The overlay is drawn on top by the browser app.
+
+**Brand-skill authors:**
+
+If you are building a brand skill and want projects created under it to
+inherit the overlay mark, ship `brand/assets/logo.svg` in your brand
+skill. The factory will copy it into each new project on first render.
 
 ## 7. Visual style reference
 

@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 85
+version: 88
 ---
 
 # {{name}} — Content Factory
@@ -82,6 +82,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/design-system.md]]\` | The 13 design rules. Read before authoring any slide |
 | \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
 | \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
+| \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\` | **Content-fit validator protocol.** Read \`state/fit-report.json\` after every render; apply \`paginate\`/\`split\`/\`tighten\` remediation. Mandatory before declaring work complete |
 | \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
 | \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
 | \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |
@@ -435,11 +436,34 @@ in \`<head>\`:
 
 Full rules: \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\`
 
-- Social cards and slides: \`overflow: hidden\` — every pixel beyond the boundary is clipped
+- Social cards and slides: \`overflow: hidden\` on export — content beyond the canvas is
+  clipped in the final PNG/PDF/PPTX. In preview the factory relaxes this so you can
+  see overflow visually (and the validator can measure it).
 - Document pages (\`.doc-page\`): \`overflow: visible\` — content grows vertically. Never
   use \`overflow: hidden\` on \`.code-block\`, \`pre\`, or \`table\`
 - Tables inside \`.doc-page\`: the flex-column wrapper MUST have \`width: 100%\` — without
   it, \`width: 100%\` on a child table resolves against an indefinite width and columns collapse
+
+#### Content-fit validation — MANDATORY before completion
+
+Full protocol: \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`
+
+Every render measures each canvas page against the active format and writes
+\`<project>/state/fit-report.json\` when content overflows. Before declaring any
+content work done, you MUST:
+
+1. Read \`<project>/state/fit-report.json\`
+2. If missing or \`overflowPx === 0\` → content fits, you're done
+3. Otherwise apply the \`remediation\` field:
+   - \`paginate\` (documents) — add a new \`.doc-page\` sibling after the overflowing
+     page (named by \`pageIndex\`) and move the overflow content into it; preserve
+     header/footer on every page
+   - \`split\` (slides) — cut the offending slide at the next \`h2\`/\`hr\` boundary
+   - \`tighten\` (any type, or social always) — reduce padding, condense copy, or
+     drop one line-height / font-size notch
+
+The directive string in \`fit-report.json\` names the overflowing page and the
+exact action to take — use it verbatim when communicating the fix to the user.
 
 #### Document template conventions — DOCX export
 

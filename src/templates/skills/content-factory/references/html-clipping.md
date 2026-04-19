@@ -1,8 +1,21 @@
 # HTML Clipping and Overflow Rules
 
+> **Companion reference:** overflow is validated automatically on every
+> render. Before declaring any content work done, check
+> `<project>/state/fit-report.json`. Full protocol in
+> `references/content-fit.md` — including the per-type remediation matrix
+> (paginate / split / tighten).
+
 ## Social cards and slides — `overflow: hidden`
 
-Every pixel beyond the card boundary is clipped — hard, with no warning. This applies to text, decorative elements, absolute-positioned glows, and images. Never assume content will wrap gracefully; test every card at the intended format before declaring it done.
+Content beyond the card boundary is clipped on **export**. In **preview**
+the factory relaxes this to `overflow: visible` (via an injected
+stylesheet) so you can see overflow instead of losing it silently. The
+content-fit validator measures the same pages and raises a notice + writes
+`fit-report.json` whenever overflow is detected.
+
+Author defensively — do not rely on the preview's visible overflow; the
+exported PNG / PDF / PPTX will clip per the template's own CSS.
 
 ### Large headline text
 
