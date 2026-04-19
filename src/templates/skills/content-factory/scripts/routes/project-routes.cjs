@@ -197,7 +197,10 @@ function handle(req, res, parsed, ctx) {
     const project = state.getActiveProject();
     if (!project) { res.writeHead(404); res.end('No active project'); return true; }
     const projectDir = project.dir;
-    const activeBrand = state.getActiveBrand ? state.getActiveBrand() : null;
+    // setActiveBrand stores the full discovered brand record for other
+    // consumers; the resolver only needs the skill name string.
+    const brandState = state.getActiveBrand ? state.getActiveBrand() : null;
+    const activeBrand = brandState && typeof brandState === 'object' ? brandState.name : brandState;
     const { bootstrapProjectLogo, resolveLogo } = require('../lib/logo-resolver.cjs');
     bootstrapProjectLogo({ projectDir, skillsDir: ctx.SKILLS_DIR, activeBrand });
     const result = resolveLogo({ projectDir, skillsDir: ctx.SKILLS_DIR, activeBrand });
