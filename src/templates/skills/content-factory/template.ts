@@ -8,10 +8,19 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 88
+version: 89
 ---
 
 # {{name}} — Content Factory
+
+## Non-negotiable rules
+
+- **The brand logo lives at \`<brand-skill>/assets/logo.{svg,png}\`. Always.** If a brand doesn't
+  conform, fix the brand or ask the user — do not build workarounds in content code. Full
+  convention + pre-flight decision tree: \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\`
+- **Before declaring any content work done, check \`<project>/state/fit-report.json\`.** If it
+  exists and \`overflowPx > 0\`, apply the \`remediation\` field (paginate / split / tighten)
+  before claiming done. Full protocol: \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\`
 
 ## Skip When
 
@@ -83,6 +92,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
 | \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
 | \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\` | **Content-fit validator protocol.** Read \`state/fit-report.json\` after every render; apply \`paginate\`/\`split\`/\`tighten\` remediation. Mandatory before declaring work complete |
+| \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\` | **Logo standard + pre-flight.** Brand logos live at \`<brand>/assets/logo.{svg,png}\`. Call \`GET /api/brand/<name>/conformance\` at project creation; auto-fix or ask the user when non-conforming |
 | \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
 | \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
 | \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |

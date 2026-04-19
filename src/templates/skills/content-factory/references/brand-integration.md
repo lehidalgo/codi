@@ -100,37 +100,58 @@ GET http://localhost:PORT/api/brand/<brand-name>/assets/<logo-filename>
 Inline the SVG source directly in the HTML. Do NOT use `<img src="...">`
 with a file path — the path will not resolve inside an iframe.
 
-### 6b. Overlay logo (managed by the factory, not by you)
+### 6b. Overlay logo (managed by the factory)
 
 The content-factory UI shows a **logo overlay** positioned on top of the
 card (controlled by the size/x/y sliders in the inspector). This is
-separate from whatever you embed inside the HTML.
+separate from whatever you embed inside the HTML in step 6a.
 
-The overlay resolves its SVG **automatically**, in this order:
+**The logo convention is documented in full at
+`references/logo-convention.md` — read it before creating a project.**
+The short version:
 
-1. `.codi_output/<project>/assets/logo.svg` — project-level canonical path
-2. `<active-brand>/brand/assets/logo.svg` — brand-skill default
-3. Built-in `codi` mark — last resort
+**Standard path (brand skill root):**
 
-On the first request for a project with no logo, the server copies the
-active brand's logo into the project path — from that moment the project
-owns the file. This lazy bootstrap is handled by `scripts/lib/logo-resolver.cjs`;
-you do NOT manage the copy step yourself.
+```
+<brand-skill>/assets/logo.svg    <- REQUIRED
+<brand-skill>/assets/logo.png    <- accepted when SVG unavailable
+```
 
-**Agent responsibilities for the overlay logo:**
+**Project path (mirrors the brand):**
 
-- Do NOT write files to `<project>/assets/logo.svg` manually as part of a
-  content render — the factory handles it.
-- If you want a specific non-brand logo for a one-off project, drop the
-  SVG at that exact path before running the preview. Any SVG there wins.
-- Do NOT embed the overlay's logo inside the HTML — that duplicates the
+```
+<project>/assets/logo.svg
+<project>/assets/logo.png
+```
+
+**Resolution order:** project → brand standard path → auto-discovered
+candidate in the brand skill → built-in codi mark. First match wins and
+is copied into the project on first render, so the project owns the
+file from that point.
+
+**Agent pre-flight — MANDATORY before first render:**
+
+1. Call `GET /api/brand/<name>/conformance` — returns `{ conforming,
+   standardPath, discovered, advice }`
+2. If the brand conforms → proceed, factory handles everything
+3. If non-conforming with a strong candidate (score ≥ 100) → auto-fix by
+   copying to `<brand>/assets/logo.svg`, note in the brand's README
+4. If non-conforming with ambiguous candidates → ask the user
+5. If no logo at all → ask the user to supply one
+
+Full decision tree and migration recipes live in `logo-convention.md`.
+
+**Do NOT:**
+
+- Do NOT write files to `<project>/assets/logo.svg` manually during a
+  content render — the factory bootstraps it automatically.
+- Do NOT embed the overlay logo inside the HTML — that duplicates the
   mark. The overlay is drawn on top by the browser app.
+- Do NOT work around a non-conforming brand in content code — fix the
+  brand instead (auto-fix or ask the user).
 
-**Brand-skill authors:**
-
-If you are building a brand skill and want projects created under it to
-inherit the overlay mark, ship `brand/assets/logo.svg` in your brand
-skill. The factory will copy it into each new project on first render.
+**Brand-skill authors:** ship `<brand>/assets/logo.svg`. That is the
+only promise the factory requires.
 
 ## 7. Visual style reference
 

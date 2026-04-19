@@ -9,62 +9,84 @@ const {
   discoverBrands,
 } = require("#src/templates/skills/content-factory/scripts/lib/brand-discovery.cjs");
 
-// The fixture is built in a tmpdir so the repo never checks in a `-brand`
-// directory (which the brand-skill-validate pre-commit hook would flag as
-// a real, incomplete brand skill).
 let skillsDir;
 
 beforeAll(() => {
   skillsDir = fs.mkdtempSync(path.join(os.tmpdir(), "cf-brand-discovery-"));
-  const brandDir = path.join(skillsDir, "brand-fixture-brand");
-  const assetsDir = path.join(brandDir, "brand", "assets");
-  fs.mkdirSync(assetsDir, { recursive: true });
+  // Conforming brand: logo at assets/logo.svg, tokens at brand/tokens.json.
+  const conforming = path.join(skillsDir, "conforming-brand");
+  fs.mkdirSync(path.join(conforming, "assets"), { recursive: true });
+  fs.mkdirSync(path.join(conforming, "brand"), { recursive: true });
   fs.writeFileSync(
-    path.join(brandDir, "brand", "tokens.json"),
-    '{ "display_name": "Brand Fixture", "version": 1 }',
+    path.join(conforming, "brand", "tokens.json"),
+    '{ "display_name": "Conforming", "version": 2 }',
   );
   fs.writeFileSync(
-    path.join(assetsDir, "logo.svg"),
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#0066cc"/></svg>',
+    path.join(conforming, "assets", "logo.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg"><circle/></svg>',
   );
+
+  // Legacy brand: no brand/ dir, tokens under scripts/, logo non-standard name.
+  const legacy = path.join(skillsDir, "legacy-brand");
+  fs.mkdirSync(path.join(legacy, "assets"), { recursive: true });
+  fs.mkdirSync(path.join(legacy, "scripts"), { recursive: true });
+  fs.writeFileSync(
+    path.join(legacy, "scripts", "brand_tokens.json"),
+    '{ "display_name": "Legacy" }',
+  );
+  fs.writeFileSync(
+    path.join(legacy, "assets", "LEGACY_RGB.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>',
+  );
+
+  // Minimal brand: no tokens at all, just a standard logo.png.
+  const minimal = path.join(skillsDir, "minimal-brand");
+  fs.mkdirSync(path.join(minimal, "assets"), { recursive: true });
+  fs.writeFileSync(path.join(minimal, "assets", "logo.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
 });
 
 afterAll(() => {
   if (skillsDir) fs.rmSync(skillsDir, { recursive: true, force: true });
 });
 
-describe("discoverBrands logoPath", () => {
-  it("exposes logoPath when brand/assets/logo.svg exists", () => {
-    const brands = discoverBrands(skillsDir);
-    const fixture = brands.find((b) => b.name === "brand-fixture-brand");
-    expect(fixture).toBeTruthy();
-    expect(fixture.logoPath).toBeTruthy();
-    expect(fs.existsSync(fixture.logoPath)).toBe(true);
-    expect(fixture.logoPath.endsWith(path.join("brand", "assets", "logo.svg"))).toBe(true);
+describe("discoverBrands", () => {
+  it("discovers every directory ending in -brand", () => {
+    const names = discoverBrands(skillsDir)
+      .map((b) => b.name)
+      .sort();
+    expect(names).toEqual(["conforming-brand", "legacy-brand", "minimal-brand"]);
   });
 
-  it("returns logoPath as string or null on every record", () => {
-    const brands = discoverBrands(skillsDir);
-    for (const b of brands) {
-      expect(b.logoPath === null || typeof b.logoPath === "string").toBe(true);
-    }
+  it("populates logoPath for conforming brands (assets/logo.svg)", () => {
+    const conforming = discoverBrands(skillsDir).find((b) => b.name === "conforming-brand");
+    expect(conforming.logoPath).toMatch(/assets\/logo\.svg$/);
+    expect(fs.existsSync(conforming.logoPath)).toBe(true);
   });
 
-  it("returns logoPath=null when brand has no logo asset", () => {
-    const extraSkills = fs.mkdtempSync(path.join(os.tmpdir(), "cf-brand-nologo-"));
-    try {
-      const brandDir = path.join(extraSkills, "nologo-brand");
-      fs.mkdirSync(path.join(brandDir, "brand"), { recursive: true });
-      fs.writeFileSync(
-        path.join(brandDir, "brand", "tokens.json"),
-        '{ "display_name": "No Logo", "version": 1 }',
-      );
-      const brands = discoverBrands(extraSkills);
-      const brand = brands.find((b) => b.name === "nologo-brand");
-      expect(brand).toBeTruthy();
-      expect(brand.logoPath).toBeNull();
-    } finally {
-      fs.rmSync(extraSkills, { recursive: true, force: true });
-    }
+  it("accepts PNG at the standard path", () => {
+    const minimal = discoverBrands(skillsDir).find((b) => b.name === "minimal-brand");
+    expect(minimal.logoPath).toMatch(/assets\/logo\.png$/);
+  });
+
+  it("reads tokens from brand/tokens.json when present", () => {
+    const conforming = discoverBrands(skillsDir).find((b) => b.name === "conforming-brand");
+    expect(conforming.display_name).toBe("Conforming");
+    expect(conforming.version).toBe(2);
+  });
+
+  it("falls back to scripts/brand_tokens.json when brand/tokens.json is absent", () => {
+    const legacy = discoverBrands(skillsDir).find((b) => b.name === "legacy-brand");
+    expect(legacy.display_name).toBe("Legacy");
+  });
+
+  it("leaves logoPath=null for legacy non-conforming brands", () => {
+    const legacy = discoverBrands(skillsDir).find((b) => b.name === "legacy-brand");
+    expect(legacy.logoPath).toBeNull();
+  });
+
+  it("discovers brands even without any tokens file", () => {
+    const minimal = discoverBrands(skillsDir).find((b) => b.name === "minimal-brand");
+    expect(minimal).toBeTruthy();
+    expect(minimal.tokens).toEqual({});
   });
 });

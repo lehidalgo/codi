@@ -188,17 +188,23 @@ function handle(req, res, parsed, ctx) {
     return true;
   }
 
-  // /api/project/logo GET — resolve the active project's logo SVG.
-  // Order: <project>/assets/logo.svg → <active-brand>/brand/assets/logo.svg
-  // → built-in default. Lazily copies the brand logo to the project on
-  // first call when the project has none, so subsequent requests are
-  // served from disk and the project owns the file.
+  // /api/project/logo GET — resolve the active project's logo.
+  //
+  // 7-step chain documented in references/logo-convention.md:
+  //   1-2. project assets/logo.{svg,png}
+  //   3-4. brand assets/logo.{svg,png} (the standard)
+  //   5-6. auto-discovered candidates under the brand directory
+  //   7.   built-in codi default
+  //
+  // On first call for a project that has no logo yet, the resolver's
+  // bootstrap copies whatever it found (steps 3-6) into the project's
+  // canonical path — so the project owns the file from that point.
   if (req.method === 'GET' && pathname === '/api/project/logo') {
     const project = state.getActiveProject();
     if (!project) { res.writeHead(404); res.end('No active project'); return true; }
     const projectDir = project.dir;
     // setActiveBrand stores the full discovered brand record for other
-    // consumers; the resolver only needs the skill name string.
+    // consumers; the resolver only needs the skill-name string.
     const brandState = state.getActiveBrand ? state.getActiveBrand() : null;
     const activeBrand = brandState && typeof brandState === 'object' ? brandState.name : brandState;
     const { bootstrapProjectLogo, resolveLogo } = require('../lib/logo-resolver.cjs');
@@ -208,12 +214,15 @@ function handle(req, res, parsed, ctx) {
       res.writeHead(404); res.end('No project or brand logo');
       return true;
     }
-    res.writeHead(200, {
-      'Content-Type': 'image/svg+xml',
+    const headers = {
+      'Content-Type': result.contentType || 'image/svg+xml',
       'Cache-Control': 'no-cache',
       'X-Logo-Source': result.source,
-    });
-    res.end(result.svg);
+    };
+    if (typeof result.conforming === 'boolean') headers['X-Logo-Conforming'] = String(result.conforming);
+    res.writeHead(200, headers);
+    if (result.binary) res.end(result.binary);
+    else res.end(result.svg);
     return true;
   }
 
