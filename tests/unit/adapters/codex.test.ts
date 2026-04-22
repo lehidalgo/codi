@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -332,13 +332,19 @@ describe("codex adapter", () => {
     expect(configFile!.content).toContain('env.TOKEN = "abc"');
   });
 
-  it("generates config.toml with HTTP MCP server (url + headers)", async () => {
+  it("skips HTTP MCP servers (codex is stdio-only) and warns", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const config = createMockConfig({
       mcp: {
         servers: {
           "http-mcp": {
             url: "https://mcp.example.com",
             headers: { Authorization: "Bearer token123" },
+            enabled: true,
+          },
+          "stdio-mcp": {
+            command: "npx",
+            args: ["-y", "mcp-server"],
             enabled: true,
           },
         },
@@ -348,8 +354,18 @@ describe("codex adapter", () => {
 
     const configFile = files.find((f) => f.path === ".codex/config.toml");
     expect(configFile).toBeDefined();
-    expect(configFile!.content).toContain('url = "https://mcp.example.com"');
-    expect(configFile!.content).toContain('http_headers.Authorization = "Bearer token123"');
+    // HTTP server must not appear — Codex rejects `url` at load time.
+    expect(configFile!.content).not.toContain("mcp_servers.http-mcp");
+    expect(configFile!.content).not.toContain("url =");
+    expect(configFile!.content).not.toContain("http_headers.");
+    // The stdio server should still be emitted.
+    expect(configFile!.content).toContain("[mcp_servers.stdio-mcp]");
+    expect(configFile!.content).toContain('command = "npx"');
+    // User-facing warning names the skipped server.
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain("http-mcp");
+    expect(warnSpy.mock.calls[0][0]).toMatch(/stdio/i);
+    warnSpy.mockRestore();
   });
 
   it("excludes disabled MCP servers from config.toml", async () => {
@@ -369,12 +385,17 @@ describe("codex adapter", () => {
     expect(configFile!.content).not.toContain("[mcp_servers.inactive]");
   });
 
-  it("does not generate config.toml when no MCP and no flag restrictions", async () => {
+  it("always generates config.toml with network_access opt-in (needed for local dev servers)", async () => {
     const config = createMockConfig({ mcp: { servers: {} }, flags: {} });
     const files = await codexAdapter.generate(config, {});
 
     const configFile = files.find((f) => f.path === ".codex/config.toml");
-    expect(configFile).toBeUndefined();
+    expect(configFile).toBeDefined();
+    expect(configFile!.content).toContain("[sandbox_workspace_write]");
+    expect(configFile!.content).toContain("network_access = true");
+    // Without MCP or flag restrictions the rest of the file is minimal.
+    expect(configFile!.content).not.toContain("[mcp_servers.");
+    expect(configFile!.content).not.toContain("developer_instructions");
   });
 
   it("sanitizes malicious artifact names to prevent path traversal", async () => {
