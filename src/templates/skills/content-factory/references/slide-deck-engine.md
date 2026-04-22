@@ -160,15 +160,17 @@ the most important point.
 
 ### 2.7 Navigation behavior
 
-Navigation is **not** a requirement of the source file. Content Factory
-drives navigation from its own UI (card strip, arrow buttons, keyboard
-arrows forwarded to the preview).
+Inside Content Factory, navigation is driven by the app's own UI (card
+strip, arrow buttons, keyboard arrows forwarded to the preview). The
+source file does not implement navigation for that context.
 
-For standalone viewing (the exported `.html` opened directly in a
-browser), the recommended pattern is **fullscreen presentation mode**
-— one slide visible at a time, scaled to fit the viewport, with keyboard
-and click navigation and animation replay on every slide change. This is
-implemented as a **dual-mode** file:
+**For standalone viewing (the exported `.html` opened directly in a
+browser), the deck MUST ship with fullscreen presentation mode.** One
+slide visible at a time, scaled to fit the viewport, with keyboard and
+click navigation, a page counter, and animation replay on every slide
+change. Users expect decks to behave like Google Slides or PowerPoint —
+vertical scrolling through stacked slides is not an acceptable
+standalone experience. This is implemented as a **dual-mode** file:
 
 #### On-screen chrome — the one rule
 
@@ -236,10 +238,11 @@ from the top. This works for helper-class animations, selector-scoped
 animations (bars, accent lines, card rails), and pseudo-element
 animations — all from one hook.
 
-See snippet 5.2 for the reference implementation. Both the head hook and
-the end-of-body driver are optional — omitting them gives a readable
-stacked file with autoplay animations, which is a valid alternative for
-decks meant to be read rather than presented.
+See snippet 5.2 for the reference implementation. The head hook, the
+presentation-mode CSS block, the end-of-body driver, and the page
+counter are **all four mandatory** in every deck. Shipping a deck
+without them — so that standalone viewing falls back to vertical
+scrolling — is a defect.
 
 ### 2.8 Self-containment
 
@@ -339,7 +342,7 @@ Key properties:
 - Grid-based staggers (e.g. a metric grid or card grid where
   `:nth-child` doesn't match the visual order) use `animation-delay: calc(var(--i) * 80ms)` with `style="--i: 0"` markers.
 
-### 5.2 Optional — dual-mode standalone presentation (recommended)
+### 5.2 MANDATORY — dual-mode standalone presentation
 
 Head hook (runs before first paint; dropped by Content Factory extraction):
 

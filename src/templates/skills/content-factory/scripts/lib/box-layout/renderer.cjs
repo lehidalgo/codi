@@ -32,13 +32,40 @@ async function probePlaywright() {
   }
 }
 
-// Persistent browser reused across calls. Launched lazily on first use.
+// Persistent browser reused across calls. Launched lazily on first use and
+// self-healing: a crashed Chromium (common on macOS — e.g. Mach port
+// rendezvous failures) used to strand the singleton in a broken state
+// forever, because the cached handle was still returned. Export endpoints
+// then served the same stale error until the Node server itself restarted.
+// Now every call verifies the cached handle via isConnected() and relaunches
+// if the browser is dead. Concurrent calls share a single in-flight launch
+// promise to avoid spawning duplicate browsers under parallel export load.
 let _browser = null;
+let _launchPromise = null;
+
 async function getBrowser() {
-  if (_browser) return _browser;
+  if (_browser && _browser.isConnected()) return _browser;
+  if (_launchPromise) return _launchPromise;
+
+  if (_browser) {
+    const stale = _browser;
+    _browser = null;
+    stale.close().catch(() => { /* already dead */ });
+  }
+
   const { chromium } = await loadPlaywright();
-  _browser = await chromium.launch();
-  return _browser;
+  _launchPromise = chromium.launch()
+    .then((browser) => {
+      _browser = browser;
+      // Clear the cache proactively when Chromium exits so the next request
+      // relaunches instead of polling isConnected() on a disconnected handle.
+      browser.on('disconnected', () => {
+        if (_browser === browser) _browser = null;
+      });
+      return browser;
+    })
+    .finally(() => { _launchPromise = null; });
+  return _launchPromise;
 }
 
 async function closeBrowser() {

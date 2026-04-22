@@ -18,8 +18,16 @@
 
 const fs = require('fs');
 const path = require('path');
+const workspace = require('./workspace.cjs');
 
 // ── Source file resolution ──────────────────────────────────────────────────
+//
+// Content files may live in platform subfolders (content/deck/slides.html,
+// content/linkedin/carousel.html, etc.) per the workspace folder contract.
+// Using path.basename() to strip the subfolder — as a previous iteration
+// did — 404'd every non-root file. We now preserve the relative path and
+// defer path-traversal safety to workspace.resolveContentPath, which
+// rejects any target that escapes the project's content/ root.
 
 function resolveActiveSource(ctx) {
   const { activeProject, GENERATORS_DIR } = ctx;
@@ -29,8 +37,10 @@ function resolveActiveSource(ctx) {
       try {
         const active = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
         if (active.file) {
+          const filePath = workspace.resolveContentPath(activeProject.dir, active.file);
+          if (!filePath) return null;
           return {
-            filePath: path.join(activeProject.contentDir, path.basename(active.file)),
+            filePath,
             baseName: path.basename(active.file, path.extname(active.file)) || 'bundle',
           };
         }
@@ -56,6 +66,8 @@ function resolveSourceFromPayload(payload, ctx) {
   if (!payload || typeof payload !== 'object') return null;
   const { source, file, brand, sessionDir } = payload;
 
+  // Templates are flat files in templates/<name>.html — no subfolders ever
+  // live there, so path.basename is a safe traversal guard.
   if (source === 'template' && file) {
     let filePath;
     if (brand) {
@@ -72,17 +84,15 @@ function resolveSourceFromPayload(payload, ctx) {
     const resolved = path.normalize(path.resolve(sessionDir));
     const ws = path.normalize(ctx.WORKSPACE_DIR);
     if (!resolved.startsWith(ws + path.sep)) return null;
-    return {
-      filePath: path.join(resolved, 'content', path.basename(file)),
-      baseName: path.basename(file, path.extname(file)),
-    };
+    const filePath = workspace.resolveContentPath(resolved, file);
+    if (!filePath) return null;
+    return { filePath, baseName: path.basename(file, path.extname(file)) };
   }
 
   if (source === 'content' && file && ctx.activeProject) {
-    return {
-      filePath: path.join(ctx.activeProject.contentDir, path.basename(file)),
-      baseName: path.basename(file, path.extname(file)),
-    };
+    const filePath = workspace.resolveContentPath(ctx.activeProject.dir, file);
+    if (!filePath) return null;
+    return { filePath, baseName: path.basename(file, path.extname(file)) };
   }
 
   return null;
@@ -95,13 +105,39 @@ function handleExportHtmlBundle(req, res, ctx) {
   req.on('data', d => { body += d; });
   return new Promise(resolve => {
     req.on('end', () => {
+      // Body shapes:
+      //   (a) empty / whitespace → use active source
+      //   (b) valid JSON, no `source` key → caller sent no explicit request,
+      //       treat as (a) — the UI button sends `{}` on its default path
+      //   (c) valid JSON with `source` key → caller is explicit; honor their
+      //       intent. If resolution fails (invalid shape, path-traversal
+      //       rejected by resolveContentPath, unknown source value), 400
+      //       instead of silently falling back — otherwise a malformed
+      //       request silently returns a different file than requested.
+      //   (d) body present but invalid JSON → 400
       let src = null;
-      if (body) {
+      const hasBody = typeof body === 'string' && body.trim().length > 0;
+      if (hasBody) {
         let payload;
         try { payload = JSON.parse(body); } catch { payload = null; }
-        src = resolveSourceFromPayload(payload, ctx);
+        if (!payload || typeof payload !== 'object') {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+          return resolve();
+        }
+        if (typeof payload.source === 'string' && payload.source.length > 0) {
+          src = resolveSourceFromPayload(payload, ctx);
+          if (!src) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Could not resolve source from payload (missing or invalid source/file, or path escapes project root)' }));
+            return resolve();
+          }
+        } else {
+          src = resolveActiveSource(ctx);
+        }
+      } else {
+        src = resolveActiveSource(ctx);
       }
-      if (!src) src = resolveActiveSource(ctx);
 
       if (!src) {
         res.writeHead(400, { 'Content-Type': 'application/json' });

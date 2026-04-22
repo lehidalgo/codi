@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 107
+version: 114
 ---
 
 # {{name}} — Content Factory
@@ -31,6 +31,18 @@ version: 107
   Quality floor: premium, modern, brand-aligned. HTML export is byte-for-byte —
   what you author is exactly what downloads. Full brief:
   \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\`. Read it before writing any deck.
+- **Slide decks MUST bundle dual-mode presentation.** Every deck must open
+  standalone (double-click the downloaded \`.html\`) as a Google-Slides-style
+  fullscreen presentation with keyboard (\`← → Space PageUp PageDown Home End\`)
+  and click navigation, viewport-fit scaling, animation replay on every slide
+  change, and a bottom-right page counter. Vertical scrolling through stacked
+  slides is a defect in standalone mode. The pattern is dual-mode — base CSS
+  stacks (Content Factory preview / thumbnails / Playwright export see stacked),
+  a head \`<script>\` adds \`.js-presentation\` which switches CSS into fullscreen
+  horizontal. Content Factory drops the top-level script during extraction, so
+  preview stays stacked. All four pieces (head hook, presentation CSS, end-of-body
+  driver, page counter element) are required. Reference implementation:
+  \`\${CLAUDE_SKILL_DIR}[[/references/slide-deck-engine.md]]\` § 2.7 and § 5.2.
 - **Run validation after every content write; fix every violation before declaring done.**
   Call \`GET /api/validate-cards?project=<dir>&file=<file>\` and iterate on the returned
   \`violations[]\` until the report is clean (\`valid: true\`). Canvas overflow (\`rule: R11\`,
@@ -171,10 +183,25 @@ Slides / Document / My Work). Full layout in \`\${CLAUDE_SKILL_DIR}[[/references
 
 The robust edit flow for element styling:
 
-1. **Read the selection.** Call \`GET /api/active-element\` (or \`/api/active-elements\`
-   for multi-select). The response includes a \`context\` field carrying
-   \`{kind, id, name, file, sessionDir?, templateId?, cardIndex, readOnly}\` captured by
-   the iframe that hosted the click.
+1. **Read the selection — check multi first, then single.** Call
+   \`GET /api/active-elements\` first. If \`count > 0\`, the user is in
+   multi-selection mode (orange overlays) — work off \`selections[]\`.
+   Only if \`count === 0\` fall back to \`GET /api/active-element\` (blue
+   overlay). The two modes are mutually exclusive at the client: a
+   plain click clears the orange set, a Cmd/Ctrl+click clears the blue
+   single selection. Each response includes a \`context\` field carrying
+   \`{kind, id, name, file, sessionDir?, templateId?, cardIndex, readOnly}\`
+   captured by the iframe that hosted the click.
+
+   **If \`GET /api/active-element\` returns \`null\` AND
+   \`/api/active-elements\` returns \`count: 0\`**, no element has been
+   clicked — the user may have navigated to the card (updating
+   \`/api/state.activeCard\`) but not clicked inside it. Ask the user
+   to click inside the card preview iframe (not the sidebar, not the
+   card border, not the preview-strip thumbnail) on the exact element
+   they want to target. Cross-check with \`GET /api/inspect-events\` —
+   if that is also empty, the inspector client has not received any
+   clicks in this session yet.
 2. **If \`context.readOnly\` is \`true\`**, the selection came from a built-in template.
    Call \`POST /api/clone-template-to-session\` with \`{templateId: context.templateId}\`
    to create an editable copy in My Work. Load the new session via
@@ -260,6 +287,12 @@ Save the JSON output:
 Tell the user:
 > "Content factory is ready at \`<url>\` — open it in your browser.
 > Go to the Gallery tab, pick a preset, then describe the content you want."
+
+**If \`curl <url>/api/state\` fails but the log shows \`server-started\`:**
+
+- Read \`<workspace_dir>/_server.log\` first — a real crash has a stack trace. No stack trace = the server is fine and the failure is on your side.
+- **Codex agents:** \`curl: (7) Failed to connect\` against localhost while the log shows a healthy start means your workspace-write sandbox is blocking outbound loopback. The project \`.codex/config.toml\` grants \`sandbox_workspace_write.network_access = true\`, but the setting only takes effect on a fresh Codex session. Ask the user to restart Codex — do NOT patch the server, the watchers, or any file under \`.agents/skills/\`.
+- Scripts under \`[[/scripts/]]\` are generated. Editing \`.agents/skills/\`, \`.claude/skills/\`, \`.cursor/skills/\`, or any other installed copy is lost on the next \`codi generate\`. If a fix is genuinely needed, report via \`codi contribute\` so the change lands in \`src/templates/\`.
 
 ### Step 1b — Create a project (when generating new content)
 
