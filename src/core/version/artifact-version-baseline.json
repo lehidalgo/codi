@@ -119,17 +119,21 @@
     "version": 10,
     "hash": "fe53d0eef9cc1abe934a1937b50b5d8ced65b9af6395d871455f3fb0ae38d14c"
   },
+  "codi-pr-review": {
+    "version": 2,
+    "hash": "84400a46ca11243c077f24c1fd77aee634efcd1b138dca0a539a1d2ab97a1a8b"
+  },
   "codi-project-documentation": {
     "version": 7,
     "hash": "7ec0840886fb58cbe662ce8e984065a6b828152e6b4ba87640ea79a36167512d"
   },
   "codi-dev-operations": {
     "version": 19,
-    "hash": "1acbd68c7ac70179c61924b36743ec6e70e77908f30510adb0b6f32f2299f86f"
+    "hash": "e02285a9afbfdcb376bd65d0c2f5d0bcf38d1fd8cad47f7d7e005249a064b2c5"
   },
   "codi-dev-e2e-testing": {
     "version": 18,
-    "hash": "53afd8899096403c6e6ffea7684a8a1938218b639f14e915c070a158a575b4e6"
+    "hash": "1ddeb21fb71a2e89785d611da8e577bc7178e62b6fd23882edd667edf0580ba5"
   },
   "codi-security-scan": {
     "version": 6,
