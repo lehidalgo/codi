@@ -218,6 +218,7 @@ One type, differentiated by `kind`. Phase 1 uses only two kinds: `decision` and 
 | `confidence` | string | `EXTRACTED` for user-authored notes. |
 | `created_at` | ISO-8601 | Set server-side on insert. |
 | `updated_at` | ISO-8601 | Equal to `created_at` for immutable notes; differs for `kind=hot`. |
+| `deleted_at` | ISO-8601 \| null | Nullable. Set by the Week 2A Reconciler's tombstone path when a Memgraph Note node has no corresponding file on disk. Soft-delete by default; hard-delete opt-in via `RECONCILE_TOMBSTONE_MODE=hard`. |
 
 Unique constraint: `(project_id, kind=hot)` allows only one hot note per project.
 
