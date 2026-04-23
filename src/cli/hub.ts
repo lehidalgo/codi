@@ -53,6 +53,12 @@ export const NORMAL_MENU: HubTopLevelEntry[] = [
     requiresProject: true,
   },
   {
+    value: "update",
+    label: "Update artifacts",
+    hint: "Refresh rules, skills, agents, MCP servers from the current codi version",
+    requiresProject: true,
+  },
+  {
     value: "export",
     label: "Export & share",
     hint: "Export skill, export preset, or contribute to GitHub",
@@ -78,12 +84,6 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
     value: "preset",
     label: "Manage presets",
     hint: "List, create, install, export, edit, or remove presets",
-    requiresProject: true,
-  },
-  {
-    value: "update",
-    label: "Update templates",
-    hint: "Rules, skills, agents, MCP servers with dry run",
     requiresProject: true,
   },
   {

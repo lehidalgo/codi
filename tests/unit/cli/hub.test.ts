@@ -3,8 +3,8 @@ import { NORMAL_MENU, ADVANCED_MENU } from "#src/cli/hub.js";
 
 describe("Command Center hub", () => {
   describe("NORMAL_MENU", () => {
-    it("has exactly 4 entries", () => {
-      expect(NORMAL_MENU).toHaveLength(4);
+    it("has exactly 5 entries", () => {
+      expect(NORMAL_MENU).toHaveLength(5);
     });
 
     it("every entry has required fields", () => {
@@ -27,17 +27,18 @@ describe("Command Center hub", () => {
       expect(init!.requiresProject).toBe(false);
     });
 
-    it("contains generate, export, and clean", () => {
+    it("contains generate, update, export, and clean", () => {
       const values = NORMAL_MENU.map((e) => e.value);
       expect(values).toContain("generate");
+      expect(values).toContain("update");
       expect(values).toContain("export");
       expect(values).toContain("clean");
     });
   });
 
   describe("ADVANCED_MENU", () => {
-    it("has exactly 10 entries", () => {
-      expect(ADVANCED_MENU).toHaveLength(10);
+    it("has exactly 9 entries", () => {
+      expect(ADVANCED_MENU).toHaveLength(9);
     });
 
     it("every entry has required fields", () => {
