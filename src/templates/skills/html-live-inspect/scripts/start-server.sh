@@ -63,7 +63,9 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 # Auto-foreground in environments that reap detached processes
-if [[ -n "${CODEX_CI:-}" && "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
+if [[ ( -n "${CODEX_CI:-}" || -n "${CODEX_SANDBOX:-}" ) && "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
+  # Codex Seatbelt sandbox reaps detached descendants when the bash tool
+  # returns; CODEX_SANDBOX is always set in interactive Codex CLI sessions.
   FOREGROUND="true"
 fi
 if [[ "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then

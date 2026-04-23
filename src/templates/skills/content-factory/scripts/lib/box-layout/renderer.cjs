@@ -54,7 +54,11 @@ async function getBrowser() {
   }
 
   const { chromium } = await loadPlaywright();
-  _launchPromise = chromium.launch()
+  // chromiumSandbox: false disables Chromium's internal sandbox so the
+  // browser can boot inside outer sandboxes (Codex Seatbelt, Docker, CI
+  // containers) where Chromium would otherwise SIGTRAP at launch. The
+  // outer sandbox remains the security boundary.
+  _launchPromise = chromium.launch({ chromiumSandbox: false })
     .then((browser) => {
       _browser = browser;
       // Clear the cache proactively when Chromium exits so the next request
