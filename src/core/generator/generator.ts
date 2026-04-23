@@ -173,6 +173,7 @@ export async function generate(
       const resolution = await resolveConflicts(potentialConflicts, {
         force: options.force,
         keepCurrent: options.keepCurrent,
+        unionMerge: options.unionMerge,
       });
 
       await Promise.all(

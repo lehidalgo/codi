@@ -28,6 +28,8 @@ interface GenerateCommandOptions extends GlobalOptions {
   dryRun?: boolean;
   force?: boolean;
   onConflict?: "keep-current" | "keep-incoming";
+  /** Opt into the legacy 7-option per-file prompt. Default is union merge. */
+  interactive?: boolean;
 }
 
 interface GenerateSummary {
@@ -62,11 +64,21 @@ export async function generateHandler(
     await createBackup(projectRoot, configDirForBackup);
   }
 
+  // Default conflict strategy: union merge (auto-accept both, in-editor markers)
+  // unless the user opted into interactive prompts or specified a strategy.
+  const unionMerge =
+    !options.interactive &&
+    !options.force &&
+    !options.onConflict &&
+    process.stdout.isTTY &&
+    !options.dryRun;
+
   const genResult = await generate(configResult.data, projectRoot, {
     agents: options.agent,
     dryRun: options.dryRun,
     force: options.force || options.onConflict === "keep-incoming",
     keepCurrent: options.onConflict === "keep-current",
+    unionMerge,
   });
 
   if (!genResult.ok) {
@@ -295,8 +307,12 @@ export function registerGenerateCommand(program: Command): void {
       "Skip no-op detection and rewrite every generated file (implies --on-conflict keep-incoming)",
     )
     .option(
+      "--interactive",
+      "Prompt per-file for each conflict (overrides the default union-merge behavior)",
+    )
+    .option(
       "--on-conflict <strategy>",
-      "How to resolve local edits to generated files: keep-current (skip) or keep-incoming (overwrite). Defaults to interactive prompts on a TTY, auto-merge off-TTY.",
+      "How to resolve local edits to generated files: keep-current (skip) or keep-incoming (overwrite). Default is union merge with in-editor markers on a TTY, auto-merge off-TTY.",
     )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
