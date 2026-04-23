@@ -21,6 +21,8 @@ export interface ConflictEntry {
   incomingContent: string;
   additions: number;
   removals: number;
+  /** Set when union-merge produced git-style markers the user must resolve. */
+  hasMarkers?: boolean;
 }
 
 export interface ConflictOptions {
@@ -28,6 +30,12 @@ export interface ConflictOptions {
   force?: boolean;
   /** Skip all conflicting files without prompting (keep existing content). */
   keepCurrent?: boolean;
+  /**
+   * Auto-merge every conflict with git-style markers (union strategy):
+   * non-overlapping hunks applied, overlapping hunks keep both sides
+   * wrapped in <<<<<<< / ======= / >>>>>>> so the user can resolve in-editor.
+   */
+  unionMerge?: boolean;
 }
 
 export interface ConflictResolution {
@@ -244,6 +252,22 @@ export async function resolveConflicts(
 
   if (options.keepCurrent) {
     return { accepted: [], skipped: conflicts, merged: [] };
+  }
+
+  // Union merge: non-overlapping hunks applied, overlapping hunks keep both sides
+  // wrapped in git-style markers the user resolves in-editor. Never prompts, never fails.
+  if (options.unionMerge) {
+    const merged: ConflictEntry[] = [];
+    for (const conflict of conflicts) {
+      const { content, hasConflicts } = buildConflictMarkers(
+        conflict.currentContent,
+        conflict.incomingContent,
+      );
+      conflict.incomingContent = content;
+      conflict.hasMarkers = hasConflicts;
+      merged.push(conflict);
+    }
+    return { accepted: [], skipped: [], merged };
   }
 
   // Non-TTY: CI, git hooks, watch mode — auto-merge non-overlapping, fail on true conflicts
