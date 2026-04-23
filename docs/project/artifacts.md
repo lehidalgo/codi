@@ -139,7 +139,7 @@ managed_by: codi
 | Category | Skills |
 |----------|--------|
 | **Brand Identity** | codi-brand-creator, codi-codi-brand |
-| **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing |
+| **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-pr-review, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing |
 | **Codi Platform** | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator |
 | **Content Creation** | codi-content-factory |
 | **Content Refinement** | codi-humanizer |
