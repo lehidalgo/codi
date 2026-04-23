@@ -2,6 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const chokidar = require('chokidar');
 const workspace = require('./lib/workspace.cjs');
 const wsProtocol = require('./lib/ws-protocol.cjs');
 const state = require('./lib/project-state.cjs');
@@ -129,12 +130,27 @@ function startServer() {
   const server = http.createServer(handleRequest);
   server.on('upgrade', handleUpgrade);
 
-  // Watch generators/templates/ for gallery live reload
+  // Watch generators/templates/ for gallery live reload. Uses chokidar to
+  // dodge fs.watch's EMFILE failure mode under sandboxed environments
+  // (e.g. Codex Seatbelt) where FSEvents/kqueue registration is restricted.
   const TEMPLATES_DIR = path.join(GENERATORS_DIR, 'templates');
   if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
   const templatesDebounce = new Map();
-  const presetsWatcher = fs.watch(TEMPLATES_DIR, (eventType, filename) => {
-    if (!filename || !filename.endsWith('.html')) return;
+  const presetsWatcher = chokidar.watch(TEMPLATES_DIR, {
+    depth: 0,
+    ignored: (p) => {
+      const base = path.basename(p);
+      if (base.startsWith('.')) return true;
+      const ext = path.extname(p).toLowerCase();
+      if (!ext) return false;
+      return ext !== '.html';
+    },
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 50 },
+    persistent: true,
+  });
+  const fireTemplateEvent = (absPath) => {
+    const filename = path.basename(absPath);
     const key = 'tpl:' + filename;
     if (templatesDebounce.has(key)) clearTimeout(templatesDebounce.get(key));
     templatesDebounce.set(key, setTimeout(() => {
@@ -143,7 +159,9 @@ function startServer() {
       console.log(JSON.stringify({ type: 'template-updated', file: filename }));
       state.broadcast({ type: 'reload-templates' });
     }, 150));
-  });
+  };
+  presetsWatcher.on('add', fireTemplateEvent);
+  presetsWatcher.on('change', fireTemplateEvent);
   presetsWatcher.on('error', (err) => console.error('templates watcher error:', err.message));
 
   function shutdown(reason) {

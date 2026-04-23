@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { copilotAdapter } from "#src/adapters/copilot.js";
 import { createMockConfig } from "./mock-config.js";
 import { CONTEXT_TOKENS_LARGE, PROJECT_NAME, MANIFEST_FILENAME } from "#src/constants.js";
+import { parse as yamlParse } from "yaml";
 
 describe("copilot adapter", () => {
   const tmpDir = join(tmpdir(), `${PROJECT_NAME}-test-copilot-` + Date.now());
@@ -604,7 +605,7 @@ describe("copilot adapter", () => {
       expect(agentFile?.path).not.toContain("..");
     });
 
-    it("YAML injection in skill description: escapes newlines and special chars", async () => {
+    it("YAML injection in skill description: flattens newlines and prevents field injection", async () => {
       const config = createMockConfig({
         skills: [
           {
@@ -618,12 +619,16 @@ describe("copilot adapter", () => {
 
       const skillFile = files.find((f) => f.path.includes(".prompt.md"));
       const content = skillFile!.content;
-      const frontmatter = content.split("---")[1];
+      const frontmatter = content.split("---")[1] ?? "";
 
-      // Parse YAML to verify it's valid and has no injected fields
-      expect(() => JSON.parse("{" + frontmatter.split("\n").join(", ") + "}")).toThrow();
-      // The important thing is the frontmatter is not broken and parseable as YAML
-      expect(content.includes('tools: ["*"]')).toBe(false);
+      // Real safety check: YAML parsing must not yield an injected `tools` field
+      // derived from a malicious description. Single-quoted scalars contain the
+      // literal substring `tools: [...]`, but the YAML parser reads it as part
+      // of the description value, not as a separate field.
+      const parsed = yamlParse(frontmatter) as Record<string, unknown>;
+      expect(parsed.tools).toBeUndefined(); // no injection from the hostile description
+      expect(typeof parsed.description).toBe("string");
+      expect(parsed.description).toContain("tools:"); // literal, inside the string value
     });
 
     it("YAML injection in agent name: escapes newlines and special chars", async () => {

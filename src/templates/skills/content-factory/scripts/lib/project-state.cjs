@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const chokidar = require('chokidar');
 const workspace = require('./workspace.cjs');
 const { encodeFrame, OPCODES } = require('./ws-protocol.cjs');
 
@@ -30,7 +31,7 @@ function setActiveProject(dir) {
   const ws = path.normalize(workspaceDir);
   if (!resolved.startsWith(ws + path.sep) && resolved !== ws) return;
   if (!fs.existsSync(resolved)) return;
-  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
+  closeContentWatcher();
   activeProject = workspace.projectDirs(resolved);
   // Ensure the platform folder tree exists so the file panel can render it
   // as an empty scaffold before any variant is authored.
@@ -75,47 +76,63 @@ function broadcast(msg) {
 
 function startContentWatcher() {
   if (!activeProject || !fs.existsSync(activeProject.contentDir)) return;
-  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
-  // Recursive watch so changes in platform subfolders (linkedin/, instagram/,
-  // etc.) trigger reloads. `recursive: true` is supported on macOS and
-  // Windows; on Linux it is silently ignored by fs.watch prior to Node 20.
-  // For .md anchors we watch the same dirs — the watcher is file-extension
-  // agnostic at the fs level.
-  const watcher = fs.watch(
-    activeProject.contentDir,
-    { recursive: true },
-    (eventType, filename) => {
-      if (!filename) return;
-      // Normalize to POSIX separators so keys in knownFiles match what
-      // scanContentFiles emits (forward slashes even on Windows).
-      const rel = filename.split(path.sep).join('/');
-      const ext = path.extname(rel).toLowerCase();
-      if (ext !== '.html' && ext !== '.md') return;
-      if (debounceTimers.has(rel)) clearTimeout(debounceTimers.get(rel));
-      debounceTimers.set(rel, setTimeout(() => {
-        debounceTimers.delete(rel);
-        const filePath = path.join(activeProject.contentDir, rel);
-        if (!fs.existsSync(filePath)) return;
-        touchActivity();
-        if (!knownFiles.has(rel)) {
-          knownFiles.add(rel);
-          const eventsFile = path.join(activeProject.stateDir, 'events');
-          if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
-          console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
-        } else {
-          console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
-        }
-        writeProjectManifest();
-        broadcast({ type: 'reload' });
-      }, 100));
+  closeContentWatcher();
+  // chokidar uses FSEvents on macOS when reachable and falls back to polling
+  // when the platform watcher is unavailable (e.g. inside a Codex Seatbelt
+  // sandbox where fseventsd cannot be reached). This avoids the chronic EMFILE
+  // failure of fs.watch(recursive:true) under sandboxed environments.
+  const watcher = chokidar.watch(activeProject.contentDir, {
+    ignored: (p) => {
+      const base = path.basename(p);
+      if (base.startsWith('.')) return true;
+      // Filter file events by extension; let directory events through so new
+      // platform subfolders are observed as soon as they appear.
+      const ext = path.extname(p).toLowerCase();
+      if (!ext) return false;
+      return ext !== '.html' && ext !== '.md';
     },
-  );
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 50 },
+    persistent: true,
+  });
+
+  const handleEvent = (event, absPath) => {
+    if (!absPath) return;
+    const rel = path.relative(activeProject.contentDir, absPath).split(path.sep).join('/');
+    if (!rel) return;
+    if (debounceTimers.has(rel)) clearTimeout(debounceTimers.get(rel));
+    debounceTimers.set(rel, setTimeout(() => {
+      debounceTimers.delete(rel);
+      const filePath = path.join(activeProject.contentDir, rel);
+      if (event !== 'unlink' && !fs.existsSync(filePath)) return;
+      touchActivity();
+      if (event === 'add') {
+        knownFiles.add(rel);
+        const eventsFile = path.join(activeProject.stateDir, 'events');
+        if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
+        console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
+      } else if (event === 'change') {
+        console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
+      } else if (event === 'unlink') {
+        knownFiles.delete(rel);
+      }
+      writeProjectManifest();
+      broadcast({ type: 'reload' });
+    }, 100));
+  };
+
+  watcher.on('add', (p) => handleEvent('add', p));
+  watcher.on('change', (p) => handleEvent('change', p));
+  watcher.on('unlink', (p) => handleEvent('unlink', p));
   watcher.on('error', (err) => console.error('content watcher error:', err.message));
   contentWatcher = watcher;
 }
 
 function closeContentWatcher() {
-  if (contentWatcher) { contentWatcher.close(); contentWatcher = null; }
+  if (contentWatcher) {
+    Promise.resolve(contentWatcher.close()).catch(() => {});
+    contentWatcher = null;
+  }
 }
 
 module.exports = {

@@ -9,10 +9,15 @@
 
 /**
  * Parse card elements from an HTML string.
- * Extracts .social-card, .doc-page, and .slide elements along with shared styles.
+ * Extracts .social-card, .doc-page, and .slide elements along with shared
+ * styles. Also reads the document-level `<meta name="codi:template">` so every
+ * card carries the authored canvas (`nativeFormat`) and its content-type
+ * classification (`elementType`). Slides and documents are fixed-pixel
+ * layouts authored for ONE canvas; cardFormat() honors nativeFormat for
+ * those types so preview proportions match what will ship.
  *
  * @param {string} html - Raw HTML string of a content template file
- * @returns {Array<{index:number, dataType:string, dataIdx:string, html:string, styleText:string, linkTags:string, format:null}>}
+ * @returns {Array<{index:number, dataType:string, dataIdx:string, html:string, styleText:string, linkTags:string, format:{w:number,h:number}|null, nativeFormat:{w:number,h:number}|null, elementType:'slide'|'document'|'social'}>}
  */
 export function parseCards(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -22,15 +27,39 @@ export function parseCards(html) {
   const linkTags = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
     .map((l) => l.outerHTML)
     .join("\n");
-  return Array.from(doc.querySelectorAll(".social-card, .doc-page, .slide")).map((el, i) => ({
-    index: i,
-    dataType: el.getAttribute("data-type") || "card",
-    dataIdx: el.getAttribute("data-index") || String(i + 1).padStart(2, "0"),
-    html: el.outerHTML,
-    styleText,
-    linkTags,
-    format: null,
-  }));
+
+  // Read the shared <meta name="codi:template"> once per document; all cards
+  // inherit its format as their authored canvas. Malformed JSON is tolerated
+  // (returns null nativeFormat) so partial files still render something.
+  const metaEl = doc.querySelector('meta[name="codi:template"]');
+  let nativeFormat = null;
+  if (metaEl) {
+    try {
+      const m = JSON.parse(metaEl.getAttribute("content") || "{}");
+      if (m && m.format && typeof m.format.w === "number" && typeof m.format.h === "number") {
+        nativeFormat = { w: m.format.w, h: m.format.h };
+      }
+    } catch {
+      /* malformed — leave nativeFormat null */
+    }
+  }
+
+  return Array.from(doc.querySelectorAll(".social-card, .doc-page, .slide")).map((el, i) => {
+    let elementType = "social";
+    if (el.classList.contains("slide")) elementType = "slide";
+    else if (el.classList.contains("doc-page")) elementType = "document";
+    return {
+      index: i,
+      dataType: el.getAttribute("data-type") || "card",
+      dataIdx: el.getAttribute("data-index") || String(i + 1).padStart(2, "0"),
+      html: el.outerHTML,
+      styleText,
+      linkTags,
+      format: nativeFormat,
+      nativeFormat,
+      elementType,
+    };
+  });
 }
 
 /**

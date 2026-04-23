@@ -123,35 +123,43 @@ export function generateHooksConfig(
     });
   }
 
-  allHooks.push({
-    name: "skill-yaml-validate",
-    command: `node .git/hooks/${PROJECT_NAME}-skill-yaml-validate.mjs`,
-    stagedFilter: "**/SKILL.md",
-  });
+  // Codi-authoring hooks — skills, artifacts, brand. Only install in repos
+  // that actually author Codi artifacts (Codi source repo or preset repos).
+  // Detection: presence of src/templates/ signals an authoring context.
+  // Consumer projects (the common case) skip all of these — they just use
+  // Codi's generated output and would never trigger these validators anyway.
+  const authoringContext = isCodiAuthoringContext();
+  if (authoringContext) {
+    allHooks.push({
+      name: "skill-yaml-validate",
+      command: `node .git/hooks/${PROJECT_NAME}-skill-yaml-validate.mjs`,
+      stagedFilter: "**/SKILL.md",
+    });
 
-  allHooks.push({
-    name: "skill-resource-check",
-    command: `node .git/hooks/${PROJECT_NAME}-skill-resource-check.mjs`,
-    stagedFilter: "**/{SKILL.md,template.ts,*.md}",
-  });
+    allHooks.push({
+      name: "skill-resource-check",
+      command: `node .git/hooks/${PROJECT_NAME}-skill-resource-check.mjs`,
+      stagedFilter: "**/{SKILL.md,template.ts,*.md}",
+    });
 
-  allHooks.push({
-    name: "skill-path-wrap-check",
-    command: `node .git/hooks/${PROJECT_NAME}-skill-path-wrap-check.mjs`,
-    stagedFilter: "**/{SKILL.md,template.ts,*.md}",
-  });
+    allHooks.push({
+      name: "skill-path-wrap-check",
+      command: `node .git/hooks/${PROJECT_NAME}-skill-path-wrap-check.mjs`,
+      stagedFilter: "**/{SKILL.md,template.ts,*.md}",
+    });
 
-  allHooks.push({
-    name: "brand-skill-validate",
-    command: `node .git/hooks/${PROJECT_NAME}-brand-skill-validate.mjs`,
-    stagedFilter: "**/*.{json,css,html,svg,md}",
-  });
+    allHooks.push({
+      name: "brand-skill-validate",
+      command: `node .git/hooks/${PROJECT_NAME}-brand-skill-validate.mjs`,
+      stagedFilter: "**/*.{json,css,html,svg,md}",
+    });
 
-  allHooks.push({
-    name: "artifact-validate",
-    command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
-    stagedFilter: ".codi/**",
-  });
+    allHooks.push({
+      name: "artifact-validate",
+      command: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
+      stagedFilter: ".codi/**",
+    });
+  }
 
   // ── Stage 3: Environment / tooling checks ────────────────────────────────
   // These invoke external tools or make network calls — run after cheap checks.
@@ -230,14 +238,14 @@ export function generateHooksConfig(
     testBeforeCommit,
     templateWiringCheck,
     docNamingCheck,
-    artifactValidation: true,
+    artifactValidation: authoringContext,
     importDepthCheck: true,
-    skillYamlValidation: true,
-    skillResourceCheck: true,
-    skillPathWrapCheck: true,
+    skillYamlValidation: authoringContext,
+    skillResourceCheck: authoringContext,
+    skillPathWrapCheck: authoringContext,
     stagedJunkCheck: true,
     versionBump,
-    brandSkillValidation: true,
+    brandSkillValidation: authoringContext,
     docCheck,
     docProtectedBranches,
   };
@@ -245,6 +253,16 @@ export function generateHooksConfig(
 
 function hasTemplateWiringCheck(): boolean {
   // Only enable for projects that have a src/templates/ directory (codi contributors)
+  return existsSync("src/templates");
+}
+
+/**
+ * True when the current project authors Codi artifacts (rules/skills/agents).
+ * Signals: presence of src/templates/ (Codi source repo) or an explicit
+ * authoring-repo flag set by preset maintainers.
+ * Consumer projects return false — they consume Codi output, not author it.
+ */
+function isCodiAuthoringContext(): boolean {
   return existsSync("src/templates");
 }
 

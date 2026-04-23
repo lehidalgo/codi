@@ -213,3 +213,85 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
     expect(parsed.items[0]!.label).toBe("rules/conflict");
   });
 });
+
+describe("resolveConflicts - unionMerge", () => {
+  it("applies non-overlapping changes cleanly with no markers", async () => {
+    const current = "# Rule\n\nOriginal content\n";
+    const incoming = "# Rule\n\nOriginal content\n\n## New Section\nUpstream addition\n";
+    const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", current, incoming);
+
+    const resolution = await resolveConflicts([conflict], { unionMerge: true });
+
+    expect(resolution.merged).toHaveLength(1);
+    expect(resolution.accepted).toHaveLength(0);
+    expect(resolution.skipped).toHaveLength(0);
+    expect(resolution.merged[0]!.hasMarkers).toBe(false);
+    expect(resolution.merged[0]!.incomingContent).not.toContain("<<<<<<<");
+    expect(resolution.merged[0]!.incomingContent).toContain("Upstream addition");
+  });
+
+  it("wraps overlapping changes in git-style markers and flags hasMarkers", async () => {
+    const current = "line1\nUSER-VERSION\nline3\n";
+    const incoming = "line1\nUPSTREAM-VERSION\nline3\n";
+    const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", current, incoming);
+
+    const resolution = await resolveConflicts([conflict], { unionMerge: true });
+
+    expect(resolution.merged).toHaveLength(1);
+    expect(resolution.merged[0]!.hasMarkers).toBe(true);
+    const content = resolution.merged[0]!.incomingContent;
+    expect(content).toContain("<<<<<<< current");
+    expect(content).toContain("=======");
+    expect(content).toContain(">>>>>>> incoming");
+    expect(content).toContain("USER-VERSION");
+    expect(content).toContain("UPSTREAM-VERSION");
+  });
+
+  it("never prompts or fails — returns every conflict as merged", async () => {
+    const c1 = makeConflictEntry(
+      "rules/clean",
+      "/tmp/a.md",
+      "# A\nbase\n",
+      "# A\nbase\n## New\nadded\n",
+    );
+    const c2 = makeConflictEntry(
+      "rules/overlap",
+      "/tmp/b.md",
+      "line1\nLOCAL\nline3\n",
+      "line1\nREMOTE\nline3\n",
+    );
+
+    const resolution = await resolveConflicts([c1, c2], { unionMerge: true });
+
+    expect(resolution.merged).toHaveLength(2);
+    expect(resolution.accepted).toHaveLength(0);
+    expect(resolution.skipped).toHaveLength(0);
+    expect(resolution.merged[0]!.hasMarkers).toBe(false);
+    expect(resolution.merged[1]!.hasMarkers).toBe(true);
+  });
+
+  it("force takes precedence over unionMerge", async () => {
+    const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", "LOCAL\n", "INCOMING\n");
+
+    const resolution = await resolveConflicts([conflict], {
+      unionMerge: true,
+      force: true,
+    });
+
+    expect(resolution.accepted).toHaveLength(1);
+    expect(resolution.merged).toHaveLength(0);
+    expect(resolution.accepted[0]!.incomingContent).toBe("INCOMING\n");
+  });
+
+  it("keepCurrent takes precedence over unionMerge", async () => {
+    const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", "LOCAL\n", "INCOMING\n");
+
+    const resolution = await resolveConflicts([conflict], {
+      unionMerge: true,
+      keepCurrent: true,
+    });
+
+    expect(resolution.skipped).toHaveLength(1);
+    expect(resolution.merged).toHaveLength(0);
+  });
+});

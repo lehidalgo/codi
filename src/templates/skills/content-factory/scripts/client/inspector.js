@@ -405,9 +405,17 @@
     const snapshot = describe(target);
     const sel = snapshot ? snapshot.selector : buildSelector(target);
 
-    // Cmd/Ctrl+click = toggle membership in the multi-selection set
+    // Cmd/Ctrl+click = toggle membership in the multi-selection set.
+    // Multi and single selection are mutually exclusive: entering multi
+    // mode clears any stale single (blue) selection so agents polling
+    // /api/active-element don't see a stale target.
     if (e.metaKey || e.ctrlKey) {
       e.preventDefault();
+      if (lockedTarget) {
+        lockedTarget = null;
+        positionOverlay(lockedOverlay, null);
+        post(API.ingest, { clearSelection: true });
+      }
       if (multiOverlays.has(sel)) {
         const node = multiOverlays.get(sel);
         if (node) node.remove();
@@ -424,7 +432,14 @@
       return;
     }
 
-    // Plain click = replace the single current selection
+    // Plain click = replace the single current selection. Clear any
+    // orange multi-overlays first so the two modes stay mutually
+    // exclusive — a plain click always means "I want just this one".
+    if (multiOverlays.size > 0) {
+      for (const node of multiOverlays.values()) node.remove();
+      multiOverlays.clear();
+      post(API.ingest, { clearSelectionSet: true });
+    }
     lockedTarget = target;
     positionOverlay(lockedOverlay, target);
     if (snapshot) sendSelection(snapshot);
