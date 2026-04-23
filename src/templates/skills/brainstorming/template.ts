@@ -25,7 +25,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 15
+version: 18
 ---
 
 # {{name}} — Brainstorming
@@ -195,4 +195,20 @@ If the user agrees to the companion, read the detailed guide before proceeding: 
 ## Spec Review Subagent
 
 Before presenting the spec to the user, dispatch a subagent with \\\`\${CLAUDE_SKILL_DIR}[[/references/spec-document-reviewer-prompt.md]]\\\` to review for completeness, consistency, and clarity. Fix any issues the subagent reports inline before asking the user to review.
+
+## Codi Brain capture (Layer 6)
+
+After the spec is approved by the user, emit one marker per major decision in the spec so the Stop hook captures them for future sessions. Also emit a CODI-HOT marker summarizing the session's focus.
+
+\\\`\\\`\\\`
+<CODI-DECISION@v1>
+{"title": "<decision title from spec>", "reason": "<one-sentence rationale>", "tags": ["brainstorm", "<feature-name>"]}
+</CODI-DECISION@v1>
+\\\`\\\`\\\`
+
+\\\`\\\`\\\`
+<CODI-HOT@v1>
+{"body": "Working on <feature-name>"}
+</CODI-HOT@v1>
+\\\`\\\`\\\`
 `;

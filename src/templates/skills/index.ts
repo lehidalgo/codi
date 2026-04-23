@@ -176,3 +176,27 @@ export {
   template as htmlLiveInspect,
   staticDir as htmlLiveInspectStaticDir,
 } from "./html-live-inspect/index.js";
+export {
+  template as codiBrainDecide,
+  staticDir as codiBrainDecideStaticDir,
+} from "./brain-decide/index.js";
+export {
+  template as codiBrainRecall,
+  staticDir as codiBrainRecallStaticDir,
+} from "./brain-recall/index.js";
+export {
+  template as codiBrainHotSet,
+  staticDir as codiBrainHotSetStaticDir,
+} from "./brain-hot-set/index.js";
+export {
+  template as codiBrainHotGet,
+  staticDir as codiBrainHotGetStaticDir,
+} from "./brain-hot-get/index.js";
+export {
+  template as codiBrainReview,
+  staticDir as codiBrainReviewStaticDir,
+} from "./brain-review/index.js";
+export {
+  template as codiBrainUndoSession,
+  staticDir as codiBrainUndoSessionStaticDir,
+} from "./brain-undo-session/index.js";

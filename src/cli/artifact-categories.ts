@@ -37,7 +37,7 @@ export const RULE_CATEGORIES: Record<string, string[]> = {
     "codi-spanish-orthography",
     "codi-output-discipline",
   ],
-  [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev"],
+  [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev", "codi-brain-capture"],
 };
 
 // Artifacts that are always pre-selected regardless of preset or custom choice.

@@ -26,3 +26,4 @@ export { template as spanishOrthography } from "./spanish-orthography.js";
 export { template as agentUsage } from "./agent-usage.js";
 export { template as outputDiscipline } from "./output-discipline.js";
 export { template as improvement } from "./improvement.js";
+export { template as codiBrainCapture } from "./brain-capture.js";

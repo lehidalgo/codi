@@ -26,6 +26,7 @@ import { registerContributeCommand } from "./cli/contribute.js";
 import { registerSkillCommand } from "./cli/skill.js";
 import { registerOnboardCommand } from "./cli/onboard.js";
 import { registerHooksCommand } from "./cli/hooks.js";
+import { registerBrainCommand } from "./cli/brain.js";
 import { runCommandCenter } from "./cli/hub.js";
 import { Logger } from "./core/output/logger.js";
 import { PROJECT_NAME } from "./constants.js";
@@ -68,6 +69,7 @@ registerContributeCommand(program);
 registerSkillCommand(program);
 registerOnboardCommand(program);
 registerHooksCommand(program);
+registerBrainCommand(program);
 
 // Bare command (no subcommand) → launch Command Center
 program.action(async () => {

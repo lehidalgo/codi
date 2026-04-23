@@ -24,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 12
+version: 15
 ---
 
 # {{name}} — Debugging
@@ -287,4 +287,14 @@ These techniques are in the \\\`references/\\\` directory:
 - Use **${PROJECT_NAME}-tdd** when Phase 4 requires writing a failing test
 - Use **${PROJECT_NAME}-verification** before claiming the fix is complete
 - Use the **${PROJECT_NAME}-codebase-explore** skill to trace call graphs in Phase 1
+
+## Codi Brain capture (Layer 6)
+
+Once the root cause is confirmed and the fix is applied, emit a marker so future sessions find the fix quickly:
+
+\\\`\\\`\\\`
+<CODI-DECISION@v1>
+{"title": "root cause: <cause>", "reason": "fix: <fix>", "tags": ["debugging", "<area>"]}
+</CODI-DECISION@v1>
+\\\`\\\`\\\`
 `;

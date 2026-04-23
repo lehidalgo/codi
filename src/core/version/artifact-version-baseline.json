@@ -111,6 +111,10 @@
     "version": 4,
     "hash": "cddec97170401a2cafe87a1d9e28df2c564e12d0843491457c347f6ed941c116"
   },
+  "codi-brain-capture": {
+    "version": 3,
+    "hash": "4982a0445b97e2cdce59227171240bff4678eeec6a63c5644fbc019496f81e1b"
+  },
   "codi-mcp-ops": {
     "version": 12,
     "hash": "9219ee69d0026e615dd69a888e94314abbd3f4fa8929a1511d0607a2b45399fc"
@@ -129,11 +133,11 @@
   },
   "codi-dev-operations": {
     "version": 19,
-    "hash": "e02285a9afbfdcb376bd65d0c2f5d0bcf38d1fd8cad47f7d7e005249a064b2c5"
+    "hash": "97237f42fe01cd254fbc0f7f709edee115e9303bcc158ba73f3107865ae3c081"
   },
   "codi-dev-e2e-testing": {
     "version": 18,
-    "hash": "1ddeb21fb71a2e89785d611da8e577bc7178e62b6fd23882edd667edf0580ba5"
+    "hash": "0889350d15c0b52527ec7d0258a9b2363f07ff4f5e33b58d3a447beea8e45f5b"
   },
   "codi-security-scan": {
     "version": 6,
@@ -256,8 +260,8 @@
     "hash": "37b3c61e1437e2ef1cea3eef91cb6550a2d5a416f9be37dad9d67834cf6d69a9"
   },
   "codi-content-factory": {
-    "version": 118,
-    "hash": "b8693651b839c0fbddace74b57b777af6dc927e49ee495134255cc55573612fe"
+    "version": 119,
+    "hash": "3f77a033098c712626783600424d8b4f52430eae4278b5bd125a12bec88ae488"
   },
   "codi-project-quality-guard": {
     "version": 13,
@@ -300,16 +304,16 @@
     "hash": "7893cb78f9bfb12216b822de28e6a112f7ab0e2121e985c3a1b65c647465b63d"
   },
   "codi-debugging": {
-    "version": 12,
-    "hash": "f53340f30cea26c24edf79335f758e72557a9532432070a4241380ffc7d013e5"
+    "version": 15,
+    "hash": "fa99f237f31f4ee83451d09605ee63206e1f9b0e5a21775cd2881ff87d756117"
   },
   "codi-tdd": {
     "version": 7,
     "hash": "376cdf10353433b9d0dcfc6be8df30a1929fa1b8ca1c41e62f1d2bfca7e4e877"
   },
   "codi-brainstorming": {
-    "version": 15,
-    "hash": "04d0f26b49dd385527056ccf15e238aa4fdda8854ef5772564c0c775610ef784"
+    "version": 18,
+    "hash": "ecdb2d8145952b6b06150a97d4a56f1da229f7f4875aaa23e8dc15b5c61b3dd0"
   },
   "codi-plan-writer": {
     "version": 11,
@@ -320,8 +324,8 @@
     "hash": "9bc1d45344a03026be6b88c34e48b1251070559cdcf9f1ec8fa1742442f34f23"
   },
   "codi-branch-finish": {
-    "version": 8,
-    "hash": "4ab739fa3575a1420972ed9a6029e79774a2dce2e982949758db9165b3d9d4f2"
+    "version": 11,
+    "hash": "0798588a9e247a1a2eb214ca61e56f8d99fe45eb1adfa44b516356064213e41e"
   },
   "codi-plan-execution": {
     "version": 3,
@@ -354,6 +358,30 @@
   "codi-html-live-inspect": {
     "version": 5,
     "hash": "f898bcddb7ead8b7abe985e429e7ab39ef59436585d3b426749633417669f024"
+  },
+  "codi-brain-decide": {
+    "version": 3,
+    "hash": "1dc51db4f61c3f4274a39cd12eaf62e92ced1dd256682c49c65e516b81d9a6f4"
+  },
+  "codi-brain-recall": {
+    "version": 3,
+    "hash": "202e247dfe8e6849112705b1c5d3a8ee99e84af223e721fdffb6e0d20ba97e12"
+  },
+  "codi-brain-hot-set": {
+    "version": 3,
+    "hash": "ed84d0ed20c05a0bac82f3718a92b32442fc21da4127c57feede1384fedaeb95"
+  },
+  "codi-brain-hot-get": {
+    "version": 3,
+    "hash": "a913592b36ea8abefd7ebb972d2704b4ceb71f010aa411417af080aae5c93fcc"
+  },
+  "codi-brain-review": {
+    "version": 3,
+    "hash": "1020c89e5c9e02db298d3056218ae0071153d88817675c2abe5ba232e5d356e1"
+  },
+  "codi-brain-undo-session": {
+    "version": 3,
+    "hash": "940f66b88be273aeac647a0978b372cdeb40860cd5c318edb0d6d58e42365055"
   },
   "codi-code-reviewer": {
     "version": 1,

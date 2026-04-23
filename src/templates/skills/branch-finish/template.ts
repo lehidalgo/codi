@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 11
 ---
 
 # {{name}} — Branch Finish
@@ -174,4 +174,14 @@ Report: "Branch discarded. All changes deleted."
 - Called by: ${PROJECT_NAME}-plan-execution
 - Uses: ${PROJECT_NAME}-verification (test gate), ${PROJECT_NAME}-commit (merge commit refinement)
 - ${PROJECT_NAME}-git-workflow rule governs branch naming and PR conventions
+
+## Codi Brain capture (Layer 6)
+
+After a successful merge, emit a marker so the Stop hook captures what shipped:
+
+\\\`\\\`\\\`
+<CODI-DECISION@v1>
+{"title": "merged PR #<num> — <one-line summary>", "reason": "<what this shipped>", "tags": ["merge", "<area>"]}
+</CODI-DECISION@v1>
+\\\`\\\`\\\`
 `;

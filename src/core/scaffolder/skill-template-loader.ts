@@ -73,6 +73,12 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("guided-execution")]: skillTemplates.guidedExecution,
   [prefixedName("box-validator")]: skillTemplates.boxValidator,
   [prefixedName("html-live-inspect")]: skillTemplates.htmlLiveInspect,
+  [prefixedName("brain-decide")]: skillTemplates.codiBrainDecide,
+  [prefixedName("brain-recall")]: skillTemplates.codiBrainRecall,
+  [prefixedName("brain-hot-set")]: skillTemplates.codiBrainHotSet,
+  [prefixedName("brain-hot-get")]: skillTemplates.codiBrainHotGet,
+  [prefixedName("brain-review")]: skillTemplates.codiBrainReview,
+  [prefixedName("brain-undo-session")]: skillTemplates.codiBrainUndoSession,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -140,6 +146,12 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("session-recovery")]: skillTemplates.sessionRecoveryStaticDir,
   [prefixedName("step-documenter")]: skillTemplates.stepDocumenterStaticDir,
   [prefixedName("worktrees")]: skillTemplates.worktreesStaticDir,
+  [prefixedName("brain-decide")]: skillTemplates.codiBrainDecideStaticDir,
+  [prefixedName("brain-recall")]: skillTemplates.codiBrainRecallStaticDir,
+  [prefixedName("brain-hot-set")]: skillTemplates.codiBrainHotSetStaticDir,
+  [prefixedName("brain-hot-get")]: skillTemplates.codiBrainHotGetStaticDir,
+  [prefixedName("brain-review")]: skillTemplates.codiBrainReviewStaticDir,
+  [prefixedName("brain-undo-session")]: skillTemplates.codiBrainUndoSessionStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

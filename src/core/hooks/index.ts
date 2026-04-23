@@ -23,3 +23,12 @@ export { checkHookDependencies, filterMissing } from "./hook-dependency-checker.
 export type { DependencyCheck, DependencyDiagnostic } from "./hook-dependency-checker.js";
 
 export { installMissingDeps, logMissingDeps } from "./hook-dep-installer.js";
+
+export {
+  buildBrainSessionStartScript,
+  buildBrainStopScript,
+  buildBrainPostCommitScript,
+  BRAIN_SESSION_START_FILENAME,
+  BRAIN_STOP_FILENAME,
+  BRAIN_POST_COMMIT_FILENAME,
+} from "./brain-hooks.js";

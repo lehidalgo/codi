@@ -36,6 +36,20 @@ import {
   SKILL_TRACKER_FILENAME,
   SKILL_OBSERVER_FILENAME,
 } from "../core/hooks/heartbeat-hooks.js";
+import {
+  buildBrainSessionStartScript,
+  buildBrainStopScript,
+  buildBrainPostCommitScript,
+  BRAIN_SESSION_START_FILENAME,
+  BRAIN_STOP_FILENAME,
+  BRAIN_POST_COMMIT_FILENAME,
+} from "../core/hooks/brain-hooks.js";
+
+/** Whether this project has any codi-brain-* skill installed. Used to gate
+ *  brain hook generation — dead weight in projects that do not opt in. */
+function hasBrainSkills(config: { skills?: Array<{ name: string }> }): boolean {
+  return (config.skills ?? []).some((s) => s.name.startsWith("codi-brain-"));
+}
 
 /**
  * Maps the `language` field on a rule to Claude Code `paths:` glob patterns.
@@ -266,6 +280,32 @@ export const claudeCodeAdapter: AgentAdapter = {
       hash: hashContent(observerScript),
     });
 
+    // Brain hooks — only when any codi-brain-* skill is installed, so projects
+    // that do not opt in do not get extra files or settings entries.
+    if (hasBrainSkills(config)) {
+      const sessionStart = buildBrainSessionStartScript();
+      files.push({
+        path: `${PROJECT_DIR}/${HOOKS_SUBDIR}/${BRAIN_SESSION_START_FILENAME}`,
+        content: sessionStart,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(sessionStart),
+      });
+      const stop = buildBrainStopScript();
+      files.push({
+        path: `${PROJECT_DIR}/${HOOKS_SUBDIR}/${BRAIN_STOP_FILENAME}`,
+        content: stop,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(stop),
+      });
+      const postCommit = buildBrainPostCommitScript();
+      files.push({
+        path: `${PROJECT_DIR}/${HOOKS_SUBDIR}/${BRAIN_POST_COMMIT_FILENAME}`,
+        content: postCommit,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(postCommit),
+      });
+    }
+
     // Generate .claude/settings.json (permissions + heartbeat hooks)
     const settingsJson = buildSettingsJson(config);
     const settingsContent = JSON.stringify(settingsJson, null, 2);
@@ -354,6 +394,46 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
       },
     ],
   };
+
+  // Brain hook registration — only when codi-brain-* skills are installed.
+  if (hasBrainSkills(config)) {
+    settings.hooks.SessionStart = [
+      {
+        matcher: "",
+        hooks: [
+          {
+            type: "command",
+            command: `node ${projectRootRef}/${hooksDir}/${BRAIN_SESSION_START_FILENAME}`,
+            timeout: 10,
+            async: true,
+          },
+        ],
+      },
+    ];
+    (settings.hooks.Stop ??= []).push({
+      matcher: "",
+      hooks: [
+        {
+          type: "command",
+          command: `node ${projectRootRef}/${hooksDir}/${BRAIN_STOP_FILENAME}`,
+          timeout: 30,
+        },
+      ],
+    });
+    settings.hooks.PostToolUse = [
+      {
+        matcher: "Bash",
+        hooks: [
+          {
+            type: "command",
+            command: `node ${projectRootRef}/${hooksDir}/${BRAIN_POST_COMMIT_FILENAME}`,
+            timeout: 10,
+            async: true,
+          },
+        ],
+      },
+    ];
+  }
 
   return settings;
 }
