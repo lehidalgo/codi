@@ -93,16 +93,19 @@ function cacheSet(key, value) {
   _cache.set(key, value);
 }
 
-function degradedResponse() {
+function degradedResponse(reason = 'playwright-missing', hint = null) {
   return {
     ok: true,
-    skipped: 'playwright-missing',
-    installHint: 'bash scripts/setup-validation.sh',
+    skipped: reason,
+    installHint: hint || 'bash scripts/setup-validation.sh',
     valid: true,
     score: null,
     violations: [],
   };
 }
+
+const SANDBOX_BLOCK_HINT =
+  'Chromium cannot launch under this sandbox. Set sandbox_mode = "danger-full-access" in .codex/config.toml, or run validation outside the sandbox.';
 
 async function probeRenderer() {
   if (_degraded !== null) return !_degraded;
@@ -140,6 +143,17 @@ function isMissingPlaywrightError(err) {
   if (!err) return false;
   const msg = String(err.message || err);
   return /playwright not installed/i.test(msg);
+}
+
+// Detects Chromium launch failures caused by an outer sandbox (Codex Seatbelt
+// most commonly) denying Mach IPC or killing chrome-headless-shell at boot.
+// Even with --single-process the kernel can still reject the process if the
+// sandbox profile is restrictive enough; in that case we degrade instead of
+// returning a stack trace to the agent.
+function isSandboxedChromiumError(err) {
+  if (!err) return false;
+  const msg = String(err.message || err);
+  return /(MachPortRendezvous|signal=SIGTRAP|browserType\.launch.*has been closed)/i.test(msg);
 }
 
 // Queue so only one validation runs at a time against the shared browser.
@@ -212,6 +226,12 @@ async function validateHtml(html, opts = {}) {
       if (isMissingPlaywrightError(e)) {
         _degraded = true;
         const degraded = degradedResponse();
+        cacheSet(key, degraded);
+        return degraded;
+      }
+      if (isSandboxedChromiumError(e)) {
+        _degraded = true;
+        const degraded = degradedResponse('sandbox-blocks-chromium', SANDBOX_BLOCK_HINT);
         cacheSet(key, degraded);
         return degraded;
       }

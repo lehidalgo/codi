@@ -58,7 +58,19 @@ async function getBrowser() {
   // browser can boot inside outer sandboxes (Codex Seatbelt, Docker, CI
   // containers) where Chromium would otherwise SIGTRAP at launch. The
   // outer sandbox remains the security boundary.
-  _launchPromise = chromium.launch({ chromiumSandbox: false })
+  const launchOptions = { chromiumSandbox: false };
+  // Under Codex's Seatbelt sandbox, Chromium's multi-process model breaks:
+  // the renderer/GPU/network helpers talk to the browser process via Mach
+  // IPC, and Seatbelt denies `org.chromium.Chromium.MachPortRendezvousServer`
+  // lookups. --single-process collapses every Chromium subsystem into a
+  // single OS process, eliminating the IPC dependency. Slower (no parallel
+  // renderers) but boots reliably inside the sandbox. Gated on CODEX_SANDBOX
+  // (set by Codex per its public contract) so Claude Code, Docker, CI, and
+  // local terminals keep the faster multi-process default.
+  if (process.env.CODEX_SANDBOX) {
+    launchOptions.args = ['--single-process'];
+  }
+  _launchPromise = chromium.launch(launchOptions)
     .then((browser) => {
       _browser = browser;
       // Clear the cache proactively when Chromium exits so the next request
