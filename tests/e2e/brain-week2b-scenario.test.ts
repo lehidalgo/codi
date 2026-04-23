@@ -51,10 +51,11 @@ runSuite("Week 2B E2E scenario (requires brain running)", () => {
 
     const sessionId = `e2e-${Date.now()}`;
     const titleUniq = `Use Gemini for E2E ${sessionId}`;
+    const uniqueTag = `e2e-${sessionId}`;
     const marker = `<CODI-DECISION@v1>${JSON.stringify({
       title: titleUniq,
       reason: "cheapest",
-      tags: ["e2e", "llm"],
+      tags: [uniqueTag, "llm"],
     })}</CODI-DECISION@v1>`;
     const payload = JSON.stringify({
       session_id: sessionId,
@@ -73,11 +74,12 @@ runSuite("Week 2B E2E scenario (requires brain running)", () => {
     expect(result.status).toBe(0);
 
     // Give the brain a beat to index.
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 1200));
 
-    // Verify via brain search.
+    // Verify via tag-filter (deterministic — vector similarity on opaque
+    // session IDs is not reliable for this assertion).
     const res = await fetch(
-      `http://127.0.0.1:8000/notes/search?q=${encodeURIComponent(sessionId)}`,
+      `http://127.0.0.1:8000/notes/search?tag=${encodeURIComponent(uniqueTag)}&limit=5`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const body = (await res.json()) as {
