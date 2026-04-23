@@ -72,6 +72,8 @@ interface UpdateOptions extends GlobalOptions {
   dryRun?: boolean;
   force?: boolean;
   onConflict?: "keep-current" | "keep-incoming";
+  /** Opt into the legacy 7-option per-file prompt. Default is union merge. */
+  interactive?: boolean;
 }
 
 interface UpdateData {
@@ -101,21 +103,23 @@ interface RefreshArtifactOptions {
   dryRun: boolean;
   force?: boolean;
   keepCurrent?: boolean;
+  unionMerge?: boolean;
   log: Logger;
 }
 
 async function refreshManagedArtifacts(
   opts: RefreshArtifactOptions,
-): Promise<{ updated: string[]; skipped: string[] }> {
+): Promise<{ updated: string[]; skipped: string[]; filesWithMarkers: string[] }> {
   const dir = path.join(opts.configDir, opts.subDir);
   const updated: string[] = [];
   const skipped: string[] = [];
+  const filesWithMarkers: string[] = [];
 
   let entries: string[];
   try {
     entries = await fs.readdir(dir);
   } catch {
-    return { updated, skipped };
+    return { updated, skipped, filesWithMarkers };
   }
 
   const conflicts: ConflictEntry[] = [];
@@ -159,13 +163,14 @@ async function refreshManagedArtifacts(
       opts.log.info(`Would update ${opts.label}: ${name}`);
       updated.push(name);
     }
-    return { updated, skipped };
+    return { updated, skipped, filesWithMarkers };
   }
 
   if (conflicts.length > 0) {
     const resolution = await resolveConflicts(conflicts, {
       force: opts.force,
       keepCurrent: opts.keepCurrent,
+      unionMerge: opts.unionMerge,
     });
 
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
@@ -173,6 +178,7 @@ async function refreshManagedArtifacts(
       const name = entry.label.split("/")[1] ?? entry.label;
       opts.log.info(`Updated ${opts.label}: ${name}`);
       updated.push(name);
+      if (entry.hasMarkers) filesWithMarkers.push(entry.fullPath);
     }
 
     for (const entry of resolution.skipped) {
@@ -181,7 +187,7 @@ async function refreshManagedArtifacts(
     }
   }
 
-  return { updated, skipped };
+  return { updated, skipped, filesWithMarkers };
 }
 
 function findMatchingTemplate(
@@ -263,9 +269,10 @@ async function pullFromSource(
   configDir: string,
   dryRun: boolean,
   log: Logger,
-  options: { force?: boolean; keepCurrent?: boolean } = {},
-): Promise<string[]> {
+  options: { force?: boolean; keepCurrent?: boolean; unionMerge?: boolean } = {},
+): Promise<{ updated: string[]; filesWithMarkers: string[] }> {
   const updated: string[] = [];
+  const filesWithMarkers: string[] = [];
   const cloneDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
 
   try {
@@ -273,7 +280,7 @@ async function pullFromSource(
     await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, cloneDir]);
   } catch (cause) {
     log.warn(`Failed to clone source repo: ${repo}`, cause);
-    return updated;
+    return { updated, filesWithMarkers };
   }
 
   const sourcePaths = ["rules", "skills", "agents"];
@@ -328,7 +335,7 @@ async function pullFromSource(
       log.info(`Would pull: ${label}`);
       updated.push(label);
     }
-    return updated;
+    return { updated, filesWithMarkers };
   }
 
   for (const { localFile, content, label } of directWrites) {
@@ -343,10 +350,11 @@ async function pullFromSource(
       await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
       log.info(`Pulled: ${entry.label}`);
       updated.push(entry.label);
+      if (entry.hasMarkers) filesWithMarkers.push(entry.fullPath);
     }
   }
 
-  return updated;
+  return { updated, filesWithMarkers };
 }
 
 export async function updateHandler(
@@ -531,6 +539,17 @@ export async function updateHandler(
 
   const dryRun = options.dryRun ?? false;
 
+  // Default conflict strategy: union merge (auto-accept both, in-editor markers)
+  // unless the user opted into interactive prompts or specified a strategy.
+  const unionMerge =
+    !options.interactive &&
+    !options.force &&
+    !options.onConflict &&
+    process.stdout.isTTY &&
+    !dryRun;
+
+  const filesWithMarkers: string[] = [];
+
   let rulesUpdated: string[] = [];
   let rulesSkipped: string[] = [];
   if (options.rules) {
@@ -542,6 +561,7 @@ export async function updateHandler(
       log,
       force: options.force,
       keepCurrent: options.onConflict === "keep-current",
+      unionMerge,
       availableTemplates: AVAILABLE_TEMPLATES,
       loadTemplate,
       getTemplateVersion,
@@ -549,6 +569,7 @@ export async function updateHandler(
     });
     rulesUpdated = result.updated;
     rulesSkipped = result.skipped;
+    filesWithMarkers.push(...result.filesWithMarkers);
   }
 
   let skillsUpdated: string[] = [];
@@ -562,12 +583,14 @@ export async function updateHandler(
       log,
       force: options.force,
       keepCurrent: options.onConflict === "keep-current",
+      unionMerge,
       availableTemplates: AVAILABLE_SKILL_TEMPLATES,
       loadTemplate: loadSkillTemplateContent,
       getTemplateVersion: getSkillTemplateVersion,
     });
     skillsUpdated = result.updated;
     skillsSkipped = result.skipped;
+    filesWithMarkers.push(...result.filesWithMarkers);
   }
 
   let agentsUpdated: string[] = [];
@@ -581,12 +604,14 @@ export async function updateHandler(
       log,
       force: options.force,
       keepCurrent: options.onConflict === "keep-current",
+      unionMerge,
       availableTemplates: AVAILABLE_AGENT_TEMPLATES,
       loadTemplate: loadAgentTemplate,
       getTemplateVersion: getAgentTemplateVersion,
     });
     agentsUpdated = result.updated;
     agentsSkipped = result.skipped;
+    filesWithMarkers.push(...result.filesWithMarkers);
   }
 
   let mcpServersUpdated: string[] = [];
@@ -599,10 +624,18 @@ export async function updateHandler(
 
   let sourceUpdated: string[] = [];
   if (options.from) {
-    sourceUpdated = await pullFromSource(options.from, configDir, options.dryRun ?? false, log, {
+    const result = await pullFromSource(options.from, configDir, options.dryRun ?? false, log, {
       force: options.force,
       keepCurrent: options.onConflict === "keep-current",
+      unionMerge,
     });
+    sourceUpdated = result.updated;
+    filesWithMarkers.push(...result.filesWithMarkers);
+  }
+
+  if (filesWithMarkers.length > 0 && !dryRun) {
+    log.warn(`${filesWithMarkers.length} file(s) have conflict markers — resolve in your editor:`);
+    for (const f of filesWithMarkers) log.warn(`  ${f}`);
   }
 
   let regenerated = false;
@@ -700,8 +733,12 @@ export function registerUpdateCommand(program: Command): void {
     .option("--dry-run", "Show what would change without writing")
     .option("--force", "Accept all incoming changes without prompting (overwrites local)")
     .option(
+      "--interactive",
+      "Prompt per-file for each conflict (overrides the default union-merge behavior)",
+    )
+    .option(
       "--on-conflict <strategy>",
-      "Conflict strategy when updated files have local changes: keep-current or keep-incoming",
+      "Conflict strategy when updated files have local changes: keep-current or keep-incoming (default: union merge with in-editor markers)",
     )
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;

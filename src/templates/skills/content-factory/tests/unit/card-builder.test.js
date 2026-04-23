@@ -25,6 +25,35 @@ describe("cardFormat", () => {
     expect(cardFormat(card, stateFormat)).toEqual({ w: 1080, h: 1080 });
   });
 
+  it("returns nativeFormat for slide cards regardless of sidebar selector", () => {
+    // Slides are authored for ONE canvas; fixed-pixel CSS distorts at
+    // other sizes. Preview must match what will ship.
+    const card = { elementType: "slide", nativeFormat: { w: 1600, h: 900 } };
+    const stateFormat = { w: 1280, h: 720 };
+    expect(cardFormat(card, stateFormat)).toEqual({ w: 1600, h: 900 });
+  });
+
+  it("returns nativeFormat for document cards regardless of sidebar selector", () => {
+    const card = { elementType: "document", nativeFormat: { w: 794, h: 1123 } };
+    const stateFormat = { w: 1080, h: 1920 };
+    expect(cardFormat(card, stateFormat)).toEqual({ w: 794, h: 1123 });
+  });
+
+  it("returns stateFormat for social cards even when nativeFormat is present (responsive contract)", () => {
+    const card = {
+      elementType: "social",
+      nativeFormat: { w: 1080, h: 1080 },
+    };
+    const stateFormat = { w: 1080, h: 1920 }; // user picked story format
+    expect(cardFormat(card, stateFormat)).toEqual({ w: 1080, h: 1920 });
+  });
+
+  it("falls back to stateFormat when slide card has no nativeFormat (graceful)", () => {
+    const card = { elementType: "slide", nativeFormat: null };
+    const stateFormat = { w: 1280, h: 720 };
+    expect(cardFormat(card, stateFormat)).toEqual({ w: 1280, h: 720 });
+  });
+
   it("returns stateFormat when card is null", () => {
     const stateFormat = { w: 1080, h: 1080 };
     expect(cardFormat(null, stateFormat)).toEqual(stateFormat);

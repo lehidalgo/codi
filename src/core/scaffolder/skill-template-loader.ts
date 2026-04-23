@@ -14,6 +14,7 @@ type TemplateEntry = string | ((counts: TemplateCounts) => string);
 const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("mcp-ops")]: skillTemplates.mcpOps,
   [prefixedName("code-review")]: skillTemplates.codeReview,
+  [prefixedName("pr-review")]: skillTemplates.prReview,
   [prefixedName("project-documentation")]: skillTemplates.projectDocumentation,
   [prefixedName("dev-operations")]: skillTemplates.getCodidevOperationsTemplate,
   [prefixedName("dev-e2e-testing")]: skillTemplates.getCodidevE2eTestingTemplate,
@@ -97,6 +98,7 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("project-quality-guard")]: skillTemplates.projectQualityGuardStaticDir,
   [prefixedName("audio-transcriber")]: skillTemplates.audioTranscriberStaticDir,
   [prefixedName("code-review")]: skillTemplates.codeReviewStaticDir,
+  [prefixedName("pr-review")]: skillTemplates.prReviewStaticDir,
   [prefixedName("security-scan")]: skillTemplates.securityScanStaticDir,
   [prefixedName("test-suite")]: skillTemplates.testSuiteStaticDir,
   [prefixedName("refactoring")]: skillTemplates.refactoringStaticDir,

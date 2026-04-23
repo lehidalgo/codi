@@ -1,0 +1,108 @@
+{
+  "skillName": "codi-pr-review",
+  "cases": [
+    {
+      "id": "review-pr-by-number",
+      "description": "User asks to review a PR by number — triggers the full 5-phase workflow",
+      "prompt": "Review PR #42",
+      "expectations": [
+        "Runs gh pr view to pull metadata and description",
+        "Runs gh pr diff to inventory changed files",
+        "Produces findings with CRITICAL / HIGH / MEDIUM / LOW severity",
+        "Every CRITICAL and HIGH finding includes file_path:line_number",
+        "Findings include Conventional Comments labels (issue, suggestion, nitpick, etc.)",
+        "Includes a Claims vs. reality section verifying PR description against diff",
+        "Ends with a severity summary table and a verdict (approve / request changes / comment)"
+      ]
+    },
+    {
+      "id": "review-open-pr-no-number",
+      "description": "User asks to review the open PR without specifying a number",
+      "prompt": "review this pull request",
+      "expectations": [
+        "Runs gh pr list to find open PRs",
+        "Asks the user to confirm which PR if more than one is open",
+        "Does not guess the PR number silently"
+      ]
+    },
+    {
+      "id": "save-review-document",
+      "description": "Review completes with a persisted document under docs/",
+      "prompt": "review PR #5 and save the review",
+      "expectations": [
+        "Creates a file matching pattern docs/YYYYMMDD_HHMMSS_\\[PR_REVIEW\\]_pr-5-.*.md",
+        "Document contains the required sections: recommendation, severity summary, findings, claims-vs-reality, minimum fixes",
+        "Header includes PR URL, branch, author, scope (files, additions, deletions)",
+        "Does not commit the document automatically"
+      ]
+    },
+    {
+      "id": "post-review-confirmation",
+      "description": "Publishing to GitHub requires explicit user confirmation",
+      "prompt": "review PR #5 and post it",
+      "expectations": [
+        "Asks the user to confirm the verdict before posting",
+        "Uses gh pr review --request-changes --body-file when findings block merge",
+        "Uses gh pr review --approve --body-file when no findings block merge",
+        "Does NOT post before receiving explicit user approval",
+        "Returns the review URL after posting"
+      ]
+    },
+    {
+      "id": "two-pass-verification",
+      "description": "Skill runs Phase 3 verification before producing the document",
+      "prompt": "Review PR #5 — the author claims they added webhook signature verification",
+      "expectations": [
+        "Greps the diff for the claimed signature verification symbol",
+        "Flags a CRITICAL finding if the symbol is defined but has zero callers",
+        "Classifies unsupported security claims as CRITICAL in the Claims vs. reality section"
+      ]
+    },
+    {
+      "id": "slash-command-trigger",
+      "description": "/codi-pr-review activates the skill with optional PR argument",
+      "prompt": "/codi-pr-review 42",
+      "expectations": [
+        "Treats 42 as the PR number via $ARGUMENTS",
+        "Runs gh pr view 42 as the first action",
+        "Does not list open PRs (PR was specified)"
+      ]
+    },
+    {
+      "id": "negative-local-diff-review",
+      "description": "Reviewing an uncommitted local diff should NOT trigger this skill — use codi-code-review instead",
+      "prompt": "review my uncommitted changes before I commit",
+      "expectations": [
+        "Does NOT invoke codi-pr-review",
+        "Does NOT run gh pr commands"
+      ]
+    },
+    {
+      "id": "negative-fix-bug",
+      "description": "User wants a bug fixed, not a review — use codi-debugging",
+      "prompt": "the login endpoint returns 500 when email is missing — please fix it",
+      "expectations": [
+        "Does NOT invoke codi-pr-review",
+        "Does NOT produce a severity-ranked findings document"
+      ]
+    },
+    {
+      "id": "negative-write-readme",
+      "description": "General documentation request is not a PR review — use codi-project-documentation",
+      "prompt": "write a README for this repo",
+      "expectations": [
+        "Does NOT invoke codi-pr-review",
+        "Does NOT run gh pr commands"
+      ]
+    },
+    {
+      "id": "negative-security-scan",
+      "description": "Whole-codebase security audit is not a PR review — use codi-security-scan",
+      "prompt": "run an OWASP audit across the whole backend",
+      "expectations": [
+        "Does NOT invoke codi-pr-review",
+        "Does NOT scope to a single PR"
+      ]
+    }
+  ]
+}

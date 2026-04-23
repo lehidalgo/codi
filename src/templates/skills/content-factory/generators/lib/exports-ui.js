@@ -402,18 +402,26 @@ function buildExportHtmlBundlePayload() {
     return { source: "template", file: tmpl.filename, brand: tmpl.brand || undefined };
   }
   if (state.activeFile) {
-    const filename = String(state.activeFile).split("/").pop();
+    // Preserve the full relative path (e.g. "deck/slides.html") — content
+    // files live in platform subfolders per the workspace folder contract.
+    // Stripping to the basename here 404s the server since the physical
+    // file is at content/<platform>/<file>, not content/<file>.
+    // resolveContentPath on the server guards against path-traversal.
+    const relPath = String(state.activeFile);
     if (state.activeSessionDir) {
-      return { source: "session", sessionDir: state.activeSessionDir, file: filename };
+      return { source: "session", sessionDir: state.activeSessionDir, file: relPath };
     }
-    return { source: "content", file: filename };
+    return { source: "content", file: relPath };
   }
   return null;
 }
 
 function resolveBundleBaseName(payload) {
   if (!payload || !payload.file) return "bundle";
-  return payload.file.replace(/\.html$/i, "") || "bundle";
+  // File may be "deck/slides.html" — basename-it for the download filename
+  // so the browser saves "slides.html" not "deck-slides.html" or similar.
+  const basename = String(payload.file).split("/").pop() || "bundle";
+  return basename.replace(/\.html$/i, "") || "bundle";
 }
 
 export async function exportAll() {

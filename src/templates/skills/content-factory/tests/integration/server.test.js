@@ -6,7 +6,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-vi.setConfig({ testTimeout: 20_000 });
+// Under full-suite parallel load, spawning bash + booting the HTTP
+// server can exceed vitest's default 10s hook timeout. Bump both test
+// and hook timeouts so beforeAll has enough headroom.
+vi.setConfig({ testTimeout: 20_000, hookTimeout: 30_000 });
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 // __dirname = src/templates/skills/content-factory/tests/integration/
@@ -21,12 +24,14 @@ let tempDir;
 /**
  * Spawns scripts/start-server.sh, waits for the JSON startup line,
  * and resolves with { url, screen_dir, state_dir }.
- * Rejects after 10s if no "server-started" JSON is received.
+ * Rejects after 25s if no "server-started" JSON is received — leaves
+ * 5s headroom before vitest's 30s hookTimeout fires, so the internal
+ * reject wins the race and produces a clearer error.
  */
 async function startServer() {
   tempDir = mkdtempSync(path.join(tmpdir(), "codi-cf-test-"));
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Server did not start within 10s")), 10_000);
+    const timer = setTimeout(() => reject(new Error("Server did not start within 25s")), 25_000);
     const proc = spawn("bash", [START_SCRIPT, "--project-dir", tempDir]);
     serverProcess = proc;
     proc.stdout.on("data", (chunk) => {

@@ -25,7 +25,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 13
+version: 15
 ---
 
 # {{name}} — Brainstorming

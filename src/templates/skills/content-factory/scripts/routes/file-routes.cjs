@@ -11,13 +11,18 @@ const { serveFile, sendJson } = require('../lib/http-utils.cjs');
  */
 function handle(req, res, parsed, ctx) {
   const { pathname } = parsed;
+  // HEAD is semantically identical to GET for idempotent reads; treat
+  // them the same so health probes (`curl -I`) and proxies don't 404
+  // on a healthy server. Node's http module automatically drops the
+  // body for HEAD responses so no extra work is needed.
+  const isRead = req.method === 'GET' || req.method === 'HEAD';
 
   // /api/content?file=xxx GET — raw HTML or Markdown from active project's
   // content dir. Accepts relative paths that include platform subfolders
   // (e.g. "linkedin/carousel.html", "00-anchor.md"). Path-traversal guard
   // lives in workspace.resolveContentPath — any path that escapes
   // content/ resolves to null.
-  if (req.method === 'GET' && pathname === '/api/content') {
+  if (isRead && pathname === '/api/content') {
     const fileParam = parsed.searchParams.get('file');
     const active = state.getActiveProject();
     if (!fileParam || !active) {
@@ -45,14 +50,14 @@ function handle(req, res, parsed, ctx) {
   }
 
   // /api/files GET — sorted list of HTML files in active project's content dir
-  if (req.method === 'GET' && pathname === '/api/files') {
+  if (isRead && pathname === '/api/files') {
     const files = state.getContentFiles().map(f => f.name);
     sendJson(res, 200, files);
     return true;
   }
 
   // /static/* GET — serve generator app assets
-  if (req.method === 'GET' && pathname.startsWith('/static/')) {
+  if (isRead && pathname.startsWith('/static/')) {
     const rel = pathname.slice(8);
     const filePath = path.resolve(ctx.GENERATORS_DIR, rel);
     if (!filePath.startsWith(ctx.GENERATORS_DIR + path.sep) && filePath !== ctx.GENERATORS_DIR) {
@@ -64,7 +69,7 @@ function handle(req, res, parsed, ctx) {
   }
 
   // /vendor/* GET — serve vendor scripts
-  if (req.method === 'GET' && pathname.startsWith('/vendor/')) {
+  if (isRead && pathname.startsWith('/vendor/')) {
     const filePath = path.join(ctx.VENDOR_DIR, path.basename(pathname.slice(8)));
     if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return true; }
     serveFile(res, filePath);
@@ -72,7 +77,7 @@ function handle(req, res, parsed, ctx) {
   }
 
   // / GET — serve app shell
-  if (req.method === 'GET' && pathname === '/') {
+  if (isRead && pathname === '/') {
     const appPath = path.join(ctx.GENERATORS_DIR, 'app.html');
     if (!fs.existsSync(appPath)) { res.writeHead(503); res.end('App not found'); return true; }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
