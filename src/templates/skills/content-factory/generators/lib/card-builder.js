@@ -11,14 +11,31 @@ import { BUILTIN_DEFAULT_SVG } from "./builtin-logo.js";
 
 /**
  * Resolve the effective format for a card.
- * A4 document cards (w=794) always use their native format regardless of the
- * active format selector. All other card types follow stateFormat.
  *
- * @param {{format:{w:number,h:number}|null}} card
+ * Slides and documents are fixed-pixel layouts authored for ONE canvas.
+ * Their internal CSS uses absolute pixel values for padding, font-size,
+ * card gutters, etc. — rendering at a different canvas size distorts the
+ * proportions and the preview stops matching what ships. For these card
+ * types we return the authored `nativeFormat` regardless of the sidebar
+ * selector. The sidebar selector still governs display fit (via
+ * `computeCardSize` → CSS transform-scale in the preview panel) and export
+ * dimensions (callers of /api/export-* can override).
+ *
+ * Social cards are responsive by design — one authored card re-layouts at
+ * Instagram feed / story / reel / OG sizes — so they continue to follow
+ * the sidebar selector.
+ *
+ * The legacy `w === 794` branch is preserved as backward compatibility for
+ * cards parsed before `elementType`/`nativeFormat` were introduced.
+ *
+ * @param {{format:{w:number,h:number}|null, nativeFormat?:{w:number,h:number}|null, elementType?:'slide'|'document'|'social'}} card
  * @param {{w:number,h:number}} stateFormat - The active format from the sidebar
  * @returns {{w:number,h:number}}
  */
 export function cardFormat(card, stateFormat) {
+  if (card && (card.elementType === "slide" || card.elementType === "document")) {
+    if (card.nativeFormat) return card.nativeFormat;
+  }
   if (card && card.format && card.format.w === 794) return card.format;
   return stateFormat;
 }

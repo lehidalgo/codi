@@ -39,7 +39,9 @@ describe("buildSkillMd", () => {
       "",
       "codex",
     );
-    expect(result).toContain('description: "TRIGGER when: user asks for MCP setup"');
+    // Single-quoted YAML avoids the Codex parser bug with backslash-escape
+    // sequences in double-quoted scalars (openai/codex#11495).
+    expect(result).toContain(`description: 'TRIGGER when: user asks for MCP setup'`);
   });
 
   it("includes disableModelInvocation when set", () => {

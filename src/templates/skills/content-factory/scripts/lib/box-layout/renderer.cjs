@@ -32,13 +32,56 @@ async function probePlaywright() {
   }
 }
 
-// Persistent browser reused across calls. Launched lazily on first use.
+// Persistent browser reused across calls. Launched lazily on first use and
+// self-healing: a crashed Chromium (common on macOS — e.g. Mach port
+// rendezvous failures) used to strand the singleton in a broken state
+// forever, because the cached handle was still returned. Export endpoints
+// then served the same stale error until the Node server itself restarted.
+// Now every call verifies the cached handle via isConnected() and relaunches
+// if the browser is dead. Concurrent calls share a single in-flight launch
+// promise to avoid spawning duplicate browsers under parallel export load.
 let _browser = null;
+let _launchPromise = null;
+
 async function getBrowser() {
-  if (_browser) return _browser;
+  if (_browser && _browser.isConnected()) return _browser;
+  if (_launchPromise) return _launchPromise;
+
+  if (_browser) {
+    const stale = _browser;
+    _browser = null;
+    stale.close().catch(() => { /* already dead */ });
+  }
+
   const { chromium } = await loadPlaywright();
-  _browser = await chromium.launch();
-  return _browser;
+  // chromiumSandbox: false disables Chromium's internal sandbox so the
+  // browser can boot inside outer sandboxes (Codex Seatbelt, Docker, CI
+  // containers) where Chromium would otherwise SIGTRAP at launch. The
+  // outer sandbox remains the security boundary.
+  const launchOptions = { chromiumSandbox: false };
+  // Under Codex's Seatbelt sandbox, Chromium's multi-process model breaks:
+  // the renderer/GPU/network helpers talk to the browser process via Mach
+  // IPC, and Seatbelt denies `org.chromium.Chromium.MachPortRendezvousServer`
+  // lookups. --single-process collapses every Chromium subsystem into a
+  // single OS process, eliminating the IPC dependency. Slower (no parallel
+  // renderers) but boots reliably inside the sandbox. Gated on CODEX_SANDBOX
+  // (set by Codex per its public contract) so Claude Code, Docker, CI, and
+  // local terminals keep the faster multi-process default.
+  if (process.env.CODEX_SANDBOX) {
+    launchOptions.args = ['--single-process'];
+  }
+  _launchPromise = chromium.launch(launchOptions)
+    .then((browser) => {
+      _browser = browser;
+      // Clear the cache proactively when Chromium exits so the next request
+      // relaunches instead of polling isConnected() on a disconnected handle.
+      browser.on('disconnected', () => {
+        if (_browser === browser) _browser = null;
+      });
+      return browser;
+    })
+    .finally(() => { _launchPromise = null; });
+  return _launchPromise;
 }
 
 async function closeBrowser() {

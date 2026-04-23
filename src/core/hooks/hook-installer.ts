@@ -28,6 +28,15 @@ import {
 import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
+import {
+  PRE_COMMIT_BEGIN_MARKER,
+  PRE_COMMIT_END_MARKER,
+  globToPythonRegex,
+  renderPreCommitBlock,
+  findReposInsertionPoint,
+  stripPreCommitGeneratedBlock,
+  installPreCommitFramework,
+} from "./pre-commit-framework.js";
 
 /** Internal result type for helper functions (no dep checks) */
 interface HookFileResult {
@@ -409,49 +418,6 @@ async function installHusky(
   }
 }
 
-async function installPreCommitFramework(
-  projectRoot: string,
-  hooks: HookEntry[],
-): Promise<Result<HookFileResult>> {
-  const configPath = path.join(projectRoot, ".pre-commit-config.yaml");
-
-  const localHooks = hooks
-    .map((h) => {
-      const lines = [
-        `  - id: ${h.name}`,
-        `    name: ${h.name}`,
-        `    entry: ${h.command}`,
-        `    language: system`,
-        `    files: '${h.stagedFilter}'`,
-      ];
-      if (h.passFiles === false) {
-        lines.push(`    pass_filenames: false`);
-      }
-      return lines.join("\n");
-    })
-    .join("\n");
-
-  const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n- repo: local\n  hooks:\n${localHooks}\n`;
-
-  try {
-    let existing = "";
-    try {
-      existing = await fs.readFile(configPath, "utf-8");
-    } catch {
-      // file doesn't exist yet
-    }
-    await fs.writeFile(configPath, existing + block, "utf-8");
-    return ok({ files: [path.relative(projectRoot, configPath)] });
-  } catch (cause) {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "pre-commit-config",
-        reason: `Failed to write config: ${(cause as Error).message}`,
-      }),
-    ]);
-  }
-}
-
 async function installCommitMsgHook(
   projectRoot: string,
   runner: string,
@@ -649,6 +615,13 @@ export {
   buildVersionBumpScript,
   buildStagedJunkCheckScript,
   stripGeneratedSection,
+  stripPreCommitGeneratedBlock,
   globToGrepPattern,
+  globToPythonRegex,
+  renderPreCommitBlock,
+  findReposInsertionPoint,
   buildHuskyCommands,
+  installPreCommitFramework,
+  PRE_COMMIT_BEGIN_MARKER,
+  PRE_COMMIT_END_MARKER,
 };

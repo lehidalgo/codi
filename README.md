@@ -139,7 +139,7 @@ flowchart LR
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 28 |
-| **Skills** | 60 |
+| **Skills** | 61 |
 | **Agents** | 21 |
 <!-- GENERATED:END:template_counts_compact -->
 

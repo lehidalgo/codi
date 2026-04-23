@@ -60,7 +60,9 @@ if [[ -z "$URL_HOST" ]]; then
 fi
 
 # Some environments reap detached/background processes. Auto-foreground when detected.
-if [[ -n "${CODEX_CI:-}" && "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
+if [[ ( -n "${CODEX_CI:-}" || -n "${CODEX_SANDBOX:-}" ) && "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
+  # Codex Seatbelt sandbox reaps detached descendants when the bash tool
+  # returns; CODEX_SANDBOX is always set in interactive Codex CLI sessions.
   FOREGROUND="true"
 fi
 

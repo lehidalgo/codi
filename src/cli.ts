@@ -31,6 +31,7 @@ import { Logger } from "./core/output/logger.js";
 import { PROJECT_NAME } from "./constants.js";
 import type { GlobalOptions } from "./cli/shared.js";
 import { checkTemplateRegistry } from "./core/scaffolder/template-registry-check.js";
+import { checkForUpdate } from "./cli/update-check.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8")) as {
@@ -85,6 +86,7 @@ program.action(async () => {
     process.exit(1);
   }
   Logger.init({ level: "info", mode: "human", noColor: opts.noColor ?? false });
+  await checkForUpdate(pkg.version);
   await runCommandCenter(process.cwd());
 });
 

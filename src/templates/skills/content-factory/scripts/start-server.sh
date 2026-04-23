@@ -48,8 +48,12 @@ if [[ -z "$URL_HOST" ]]; then
   fi
 fi
 
-# Auto-foreground in environments that reap detached processes
-if [[ -n "${CODEX_CI:-}" && "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
+# Auto-foreground in environments that reap detached processes after the
+# spawning shell exits. CODEX_CI fires in Codex CI runs; CODEX_SANDBOX
+# (always set under Codex's Seatbelt sandbox in interactive sessions) covers
+# the regular Codex CLI where backgrounded children are reaped when the
+# bash tool returns.
+if [[ ( -n "${CODEX_CI:-}" || -n "${CODEX_SANDBOX:-}" ) && "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
   FOREGROUND="true"
 fi
 if [[ "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
@@ -83,6 +87,20 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 cd "$SCRIPT_DIR" || exit
+
+# Ensure runtime deps are present. The script bundle ships package.json but
+# node_modules/ is excluded from the published artifact (would bloat the
+# package by hundreds of MB due to playwright). Chokidar is required eagerly
+# by lib/project-state.cjs, so the server cannot start without it. This is
+# idempotent: npm exits in milliseconds when node_modules already satisfies
+# package.json. --omit=optional keeps playwright/chromium opt-in via
+# setup-validation.sh.
+if [[ ! -d "$SCRIPT_DIR/node_modules/chokidar" ]]; then
+  npm install --silent --no-audit --no-fund --omit=dev --omit=optional 1>&2 || {
+    echo '{"error": "Failed to install runtime deps for content-factory scripts. Try: cd '"$SCRIPT_DIR"' && npm install --omit=dev --omit=optional"}'
+    exit 1
+  }
+fi
 
 # Resolve the harness PID (grandparent of this script)
 OWNER_PID="$(ps -o ppid= -p "$PPID" 2>/dev/null | tr -d ' ')"

@@ -154,3 +154,62 @@ describe("parseTemplate", () => {
     expect(t.cards).toHaveLength(2);
   });
 });
+
+describe("parseCards — nativeFormat and elementType propagation", () => {
+  // Fixed-pixel slide/document decks author internal CSS for ONE canvas.
+  // parseCards must propagate the <meta name="codi:template">.format and
+  // the per-card element type so cardFormat() can honor the authored
+  // canvas during preview (avoid distortion when sidebar ≠ native).
+  it("reads nativeFormat from codi:template meta and attaches to every slide", () => {
+    const meta = JSON.stringify({
+      id: "d",
+      name: "Deck",
+      type: "slides",
+      format: { w: 1600, h: 900 },
+    });
+    const html = `<!DOCTYPE html><html><head><meta name="codi:template" content='${meta}'></head><body>
+      <section class="slide" data-type="cover" data-index="01"></section>
+      <section class="slide" data-type="content" data-index="02"></section>
+    </body></html>`;
+    const cards = parseCards(html);
+    expect(cards).toHaveLength(2);
+    expect(cards[0].nativeFormat).toEqual({ w: 1600, h: 900 });
+    expect(cards[1].nativeFormat).toEqual({ w: 1600, h: 900 });
+  });
+
+  it("derives elementType from class (slide / document / social)", () => {
+    const meta = JSON.stringify({
+      id: "mixed",
+      name: "Mixed",
+      type: "slides",
+      format: { w: 1600, h: 900 },
+    });
+    const html = `<!DOCTYPE html><html><head><meta name="codi:template" content='${meta}'></head><body>
+      <section class="slide" data-type="cover" data-index="01"></section>
+      <article class="doc-page" data-type="body" data-index="02"></article>
+      <article class="social-card" data-type="content" data-index="03"></article>
+    </body></html>`;
+    const cards = parseCards(html);
+    expect(cards[0].elementType).toBe("slide");
+    expect(cards[1].elementType).toBe("document");
+    expect(cards[2].elementType).toBe("social");
+  });
+
+  it("sets nativeFormat to null when no meta is present (graceful)", () => {
+    const html = `<!DOCTYPE html><html><body>
+      <section class="slide" data-type="cover" data-index="01"></section>
+    </body></html>`;
+    const cards = parseCards(html);
+    expect(cards[0].nativeFormat).toBeNull();
+    expect(cards[0].elementType).toBe("slide");
+  });
+
+  it("tolerates malformed meta JSON without throwing", () => {
+    const html = `<!DOCTYPE html><html><head><meta name="codi:template" content='{not valid json'></head><body>
+      <section class="slide" data-type="cover" data-index="01"></section>
+    </body></html>`;
+    const cards = parseCards(html);
+    expect(cards[0].nativeFormat).toBeNull();
+    expect(cards[0].elementType).toBe("slide");
+  });
+});

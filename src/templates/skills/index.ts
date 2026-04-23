@@ -1,5 +1,6 @@
 export { template as mcpOps, staticDir as mcpOpsStaticDir } from "./mcp-ops/index.js";
 export { template as codeReview, staticDir as codeReviewStaticDir } from "./code-review/index.js";
+export { template as prReview, staticDir as prReviewStaticDir } from "./pr-review/index.js";
 export {
   template as projectDocumentation,
   staticDir as projectDocumentationStaticDir,
