@@ -7,17 +7,21 @@
 ## Summary
 
 Week 2A — brain-side Notes API + Vault integration — is shipped on
-`main` in `github.com/lehidalgo/codi-brain`. 55 of 55 plan tasks
-executed (48 original + 7 follow-up fixes from plan review). Full
-pytest gate is green: **879 passed, 12 skipped, 2 xfailed** on the
-latest commit. All pre-commit gates clean (pyright, bandit, ruff,
-gitleaks, secret-scan, shellcheck, test-py).
+`main` in `github.com/lehidalgo/codi-brain` at commit `ab3ce83`.
+55 of 55 plan tasks executed (48 original + 7 follow-up fixes from
+plan review) plus 1 post-ship bug fix. Full pytest gate is green:
+**882 passed, 12 skipped, 2 xfailed** on the latest commit. All
+pre-commit gates clean (pyright, bandit, ruff, gitleaks, secret-scan,
+shellcheck, test-py).
 
-Ship criterion met: `tests/test_scenario_c.py` (write, edit,
+Ship criterion met twice: `tests/test_scenario_c.py` (write, edit,
 reconcile, search) passes end-to-end against live Memgraph + Qdrant
-Testcontainers. The docker-compose smoke script
-(`scripts/week2a_smoke.sh`) is written and committed; it's for manual
-verification against a running stack and was not run in CI.
+Testcontainers, AND the docker-compose smoke script
+(`scripts/week2a_smoke.sh`) prints `Week 2A smoke: OK` against a real
+running stack. The vault at
+`~/projects/codi-brain/data/vaults/codi-brain/` is populated with
+Obsidian-compatible markdown files (YAML frontmatter + wikilinks) and
+opens natively in the Obsidian desktop app.
 
 ## Phase-by-phase commit map
 
@@ -136,17 +140,42 @@ verification against a running stack and was not run in CI.
   extended `/healthz` now reports `vault_worktree`, `git_remote`,
   `watcher_alive`, `scheduler_alive`, `push_retry_alive`.
 
+## Post-ship addendum — smoke bug + fix (commit `ab3ce83`)
+
+Running `scripts/week2a_smoke.sh` against a live docker-compose stack
+surfaced one bug the pytest suite missed: the lifespan called
+`vault_root.mkdir(parents=True, exist_ok=True)` but never initialized
+the directory as a git worktree. Test suites pass because the
+`tmp_vault` fixture pre-inits git; real-world first-run does not.
+`/healthz` returned 503 with `vault_worktree=fail: no-git`, and any
+`POST /notes` would have failed at step 5/6 of `VaultWriteContext`
+(git add/commit/push). Fixed by adding a lifespan helper
+`_ensure_vault_git(vault_root, vault_remote)` that idempotently runs
+`git init -b main` + empty initial commit when `.git` is absent, and
+optionally adds `origin` when `VAULT_REMOTE` is set. Also updated the
+`/healthz` `git_remote` check to report `ok: local-only` when no
+remote is configured (valid config for local-dev stacks). Added 3
+regression tests in `tests/test_app_vault_init.py`.
+
+Smoke now prints `Week 2A smoke: OK` on first run against a bare
+host directory. Commit `ab3ce83`, 882 tests passing (+3 regression).
+
 ## Next steps
 
-Week 2B (client-side adoption): wire the Codi CLI + `.claude` agent
-layer to consume `POST /notes` + `GET /notes/search` + `GET/PUT /hot`
-from real development sessions. Depends on parent Phase 1 spec §6
-client integration design.
+Week 2B (client-side adoption) is the next milestone — wire the
+Codi CLI + `.claude` agent layer to consume `POST /notes`,
+`GET /notes/search`, and `GET/PUT /hot` from real development
+sessions. Parent Phase 1 spec §6 covers the client integration design
+at high level; a dedicated Week 2B design spec + impl plan should be
+brainstormed next.
 
-Until Week 2B lands, Week 2A is dormant but production-grade: the
-brain stack (Memgraph + Qdrant + brain-api) can run standalone and
-accept notes via curl or any HTTP client. The smoke script verifies
-the full loop.
+Full forward roadmap (Week 2B, Week 3, Phase 2 preview) is in
+`docs/20260423_170000_[ROADMAP]_codi-brain-phase-1-next-phases.md`.
+
+Until Week 2B lands, Week 2A is dormant-but-production-grade: the
+brain stack (Memgraph + Qdrant + brain-api) runs standalone locally,
+the vault is a real Obsidian vault on disk, and the full loop is
+exercisable via curl or any HTTP client.
 
 ## References
 

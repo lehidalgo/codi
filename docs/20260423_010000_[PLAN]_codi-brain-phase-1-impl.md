@@ -21,7 +21,9 @@
 
 ## Progress log
 
-Execution is under way. **Week 0 and Week 1 are both complete.** 40 commits on `main` in `~/projects/codi-brain` (standalone repo, no remote yet). Full pytest suite: 788 passed, 12 skipped, 2 xfailed. Week 1 smoke (`docker compose up` + real ingest + real search) runs clean end-to-end.
+Execution is under way. **Weeks 0, 1, and 2A are complete.** `~/projects/codi-brain` is pushed to `github.com/lehidalgo/codi-brain` (private) at commit `ab3ce83` on `main`. Full pytest suite: **882 passed, 12 skipped, 2 xfailed**. Both smoke scripts run clean end-to-end against a live docker-compose stack: `scripts/week0_smoke.sh` (code-graph ingest + search) and `scripts/week2a_smoke.sh` (notes API + vault round-trip).
+
+**Remaining in Phase 1:** Week 2B (Codi CLI client-side integration — the piece that wires the brain into real Claude Code / Cursor / Codex sessions) and Week 3 (production hardening + VPS deployment + retention policies). See `docs/20260423_170000_[ROADMAP]_codi-brain-phase-1-next-phases.md` for the forward plan.
 
 ### Week 0 status: 12 of 12 tasks shipped ✅
 
