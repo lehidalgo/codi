@@ -1,6 +1,6 @@
 # Logo convention
 
-> **The brand logo lives at `<brand-skill>/assets/logo.{svg,png}`. Always. If a brand doesn't have it there, fix the brand before using it — do not add workarounds in content code.**
+> **The brand logo lives in `<brand-skill>/assets/`. Any file whose basename contains "logo" counts — `logo.svg`, `logo.png`, `logo-light.svg`, `logo-dark.svg`, `bbva-logo.svg`, etc. Preferred name is `logo.svg`, but the resolver accepts the broader pattern set without triggering an auto-fix.**
 
 This is the canonical rule. Everything else in this document is the
 mechanics that support it.
@@ -10,7 +10,7 @@ mechanics that support it.
 Content Factory renders the brand logo as an **overlay** on every card
 (preview, PNG, PDF, PPTX). The overlay is:
 
-- Sourced from the discovery chain below (project → brand → built-in).
+- Sourced from the discovery chain below (project → brand assets → recursive fallback → built-in).
 - Auto-sized to the canvas: **≈20% of the shortest side** by default
   (159px on A4 document, 216px on 1080 social, 144px on 16:9 slide).
   Positioned at **top-right** (x=85%, y=15%) by default. Visual weight
@@ -56,10 +56,12 @@ design flag, not a workaround: surface it to the user before shipping.
 <brand-skill>/
   SKILL.md
   assets/
-    logo.svg          <- REQUIRED (primary)
+    logo.svg          <- preferred canonical name
     logo.png          <- accepted when SVG is unavailable
-    logo-light.svg    <- optional, use on dark backgrounds
-    logo-dark.svg     <- optional, use on light backgrounds
+    logo-light.svg    <- accepted; themed variant (colored on light bg)
+    logo-dark.svg     <- accepted; themed variant (white on dark bg)
+    logo-black.svg    <- accepted; monochrome variant
+    bbva-logo.svg     <- accepted; any filename containing "logo"
     fonts/
     icons/
   references/
@@ -71,20 +73,38 @@ SVG is strongly preferred — it scales perfectly for every canvas size
 without pixelation. PNG is accepted for raster-only corporate marks
 that cannot be vectorized.
 
-### Content project layout (mirrors the brand)
+### Acceptance tiers (highest preference first)
+
+| Tier | Pattern | Example |
+|------|---------|---------|
+| 1 | `assets/logo.svg` | — |
+| 2 | `assets/logo.png` | — |
+| 3 | `assets/logo[-_]*.svg` | `logo-light.svg`, `logo_horizontal.svg` |
+| 4 | `assets/logo[-_]*.png` | `logo-light.png` |
+| 5 | `assets/*logo*.svg` (basename contains "logo") | `bbva-logo.svg`, `BBVA_LOGO.svg` |
+| 6 | `assets/*logo*.png` | `brand-logo-primary.png` |
+
+Any file matching tiers 1-6 is **conforming** — no auto-fix, no user
+prompt. Within each tier the scanner picks alphabetically. If you need
+a specific variant to win, add `assets/logo.svg` as a copy of the
+preferred file — tier 1 always beats the rest.
+
+### Content project layout (mirrors the brand canonical path)
 
 ```
 <project>/
   assets/
-    logo.svg          <- primary
+    logo.svg          <- canonical
     logo.png          <- fallback
   content/
   state/
   exports/
 ```
 
-The project layout is identical to the brand layout so a project is
-fully portable — zip it and the identity travels with it.
+The project layout uses the canonical filenames only. When the brand
+ships a pattern-matched variant (e.g. `logo-light.svg`) and the
+overlay bootstraps the project, the file is copied and renamed to
+`assets/logo.svg` so the project stays fully portable (zip and ship).
 
 ---
 
@@ -97,11 +117,10 @@ render. First match wins:
 |------|------|----------|:----------:|
 | 1 | `<project>/assets/logo.svg` | `project` | yes |
 | 2 | `<project>/assets/logo.png` | `project` | yes |
-| 3 | `<brand>/assets/logo.svg` | `brand` | yes |
-| 4 | `<brand>/assets/logo.png` | `brand` | yes |
-| 5 | `<brand>` recursive — top candidate by filename signal | `brand-discovered` | **no** |
-| 6 | `<brand>` recursive — fallback to best remaining `.svg` | `brand-discovered` | **no** |
-| 7 | built-in codi mark | `builtin` | yes |
+| 3 | `<brand>/assets/` — top match across tiers 1-6 | `brand` | yes |
+| 4 | `<brand>` recursive — top candidate by filename signal outside `assets/` | `brand-discovered` | **no** |
+| 5 | `<brand>` recursive — fallback to best remaining `.svg` | `brand-discovered` | **no** |
+| 6 | built-in codi mark | `builtin` | yes |
 
 Response headers reveal which step fired:
 
@@ -110,16 +129,17 @@ X-Logo-Source: project | brand | brand-discovered | builtin
 X-Logo-Conforming: true | false
 ```
 
-When any of steps 3-6 fire, the server **also copies** the resolved
-bytes into the project's canonical path as `assets/logo.svg` or
-`.png` (matching the source format). After the first render, the
-project owns the file — the brand is no longer consulted unless the
-project file is deleted.
+When step 3 fires with a pattern-matched file (tier 3-6), the server
+**also copies** the resolved bytes into the project's canonical path as
+`assets/logo.svg` or `.png` (matching the source format). After the
+first render the project owns the canonical name — the brand is no
+longer consulted for that project unless the project file is deleted.
 
-## Auto-discovery ranking (steps 5-6)
+## Auto-discovery ranking (steps 4-5, outside `assets/`)
 
-When the standard paths miss, the scanner walks the brand skill
-recursively (max depth 4; skips `node_modules`, `.git`, `dist`,
+Only fires for legacy brands that ship logos at the skill root or in
+other directories — not inside `assets/`. The scanner walks the brand
+skill recursively (max depth 4; skips `node_modules`, `.git`, `dist`,
 `build`, `evals`) and scores every `.svg` and `.png`:
 
 | Signal | Weight |
@@ -149,20 +169,20 @@ decision tree **before** generating any content HTML:
 1. Determine the active brand (or "none").
 
 2. Call: GET /api/brand/<name>/conformance
-   Response: { conforming, standardPath, discovered, advice }
+   Response: { conforming, standardPath, logoPath, discovered, advice }
 
 3. If conforming === true
-     -> proceed. The factory will seed <project>/assets/logo.svg
-        on first render automatically.
+     -> proceed. `logoPath` reveals which tier was used. The factory
+        will seed <project>/assets/logo.svg on first render automatically.
 
 4. If conforming === false AND discovered[0].score >= 100
-     -> AUTO-FIX: copy discovered[0].path to
-        <brand>/assets/logo.svg, record the change in the brand's
-        README or CHANGELOG, inform the user.
+     -> AUTO-FIX: copy discovered[0].path into <brand>/assets/
+        (preferably renaming to logo.svg), record the change in the
+        brand's README or CHANGELOG, inform the user.
 
 5. If conforming === false AND discovered has results but top score < 100
      -> ASK THE USER: present the top candidates with their scores
-        and let the user pick which should become assets/logo.svg.
+        and let the user pick which should move into assets/.
 
 6. If conforming === false AND discovered is empty
      -> ASK THE USER: "Brand <name> ships no logo. Paste SVG markup,
@@ -173,45 +193,39 @@ decision tree **before** generating any content HTML:
         Missing? Ask the user if they want to supply one.
         Otherwise the built-in codi mark is used.
 
-Only proceed with content generation once the standard path exists
-(steps 3-5) or the user has explicitly accepted the built-in fallback.
+Only proceed with content generation once conformance passes
+(step 3) or the user has explicitly accepted the built-in fallback.
 ```
 
-The auto-fix step (4) is the preferred path for unambiguous cases —
-every minute saved here is a minute the agent doesn't spend asking
-questions the user already answered by picking a brand.
+The auto-fix step (4) now only fires for brands that bury their logo
+outside `assets/` — themed variants like `logo-light.svg` in `assets/`
+are accepted as-is.
 
 ---
 
-## Migration recipes for non-conforming brands
+## Migration recipes for legacy brands
 
-### Pattern 1 — Brand-named SVG at `assets/<BRAND>_RGB.svg`
+### Pattern 1 — Brand-named SVG at skill root
 
-Example: `codi-bbva-brand/assets/BBVA_RGB.svg`
-
-```sh
-cp <brand>/assets/BBVA_RGB.svg <brand>/assets/logo.svg
-```
-
-Keep the original file for backwards-compat if other tooling reads
-it by name; the new `logo.svg` is the canonical entry point.
-
-### Pattern 2 — Theme-split logos at `assets/logo-{light,dark}.svg`
-
-Example: `codi-codi-brand/assets/logo-light.svg` + `logo-dark.svg`
-
-Pick the default variant (usually light) and copy it to `logo.svg`:
+Example: `codi-bbva-brand/BBVA_RGB.svg` (at the skill root, not under `assets/`)
 
 ```sh
-cp <brand>/assets/logo-light.svg <brand>/assets/logo.svg
+mv <brand>/BBVA_RGB.svg <brand>/assets/logo.svg
 ```
 
-Keep the variants for theme-aware callers.
-
-### Pattern 3 — Logo buried somewhere weird
+### Pattern 2 — Logo buried somewhere weird
 
 If the scanner ranks the top candidate with a low score (< 100), do
 not auto-fix — ask the user to confirm before renaming anything.
+
+### Pattern 3 — Themed variants already in `assets/` (no migration needed)
+
+Example: `codi-bbva-brand/assets/logo-light.svg` + `logo-dark.svg`
+
+**No action required.** Both files are conforming tier-3 matches.
+If you want to pick a specific default for the overlay, add
+`assets/logo.svg` as a copy of the preferred variant — it will win over
+the themed files on future renders.
 
 ---
 
@@ -223,9 +237,9 @@ external) ships assets at the skill root under `assets/`. The
 convention should match the observed reality, not invent a new one.
 
 **What about multiple variants (light, dark, horizontal, stacked)?**
-Add them as `assets/logo-<variant>.svg`. The resolver ignores them
-unless the consumer explicitly asks for a variant; `logo.svg` stays
-the single default.
+Add them as `assets/logo-<variant>.svg`. All conform. The resolver
+picks alphabetically within a tier — if you want a specific default,
+copy the preferred variant to `assets/logo.svg`.
 
 **Can I link a hosted logo (CDN URL)?**
 Not today. The convention is a local file so projects stay portable
@@ -237,6 +251,7 @@ All exporters read the same `/api/project/logo` endpoint so they
 pick up exactly the mark the preview shows. No separate pipeline.
 
 **Does the auto-discovery slow down renders?**
-Scan runs only when the standard paths miss. Results are cached
-per-brand per-server-lifetime. For conforming brands the cost is one
-`fs.access` call.
+The `assets/` scan is non-recursive and runs once per brand per
+server lifetime. Recursive auto-discovery (steps 4-5) only fires
+when `assets/` is empty and results are cached. For conforming
+brands the cost is one `fs.readdir` call.

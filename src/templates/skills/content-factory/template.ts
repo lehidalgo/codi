@@ -8,16 +8,19 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 119
+version: 124
 ---
 
 # {{name}} — Content Factory
 
 ## Non-negotiable rules
 
-- **The brand logo lives at \`<brand-skill>/assets/logo.{svg,png}\`. Always.** If a brand doesn't
-  conform, fix the brand or ask the user — do not build workarounds in content code. Full
-  convention + pre-flight decision tree: \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\`
+- **The brand logo lives in \`<brand-skill>/assets/\`.** Preferred name is \`logo.svg\` /
+  \`logo.png\`, but the resolver also accepts themed variants (\`logo-light.svg\`, \`logo-dark.svg\`,
+  \`logo-black.svg\`) and any file whose basename contains "logo" (e.g. \`bbva-logo.svg\`). All
+  conform — no auto-fix needed. If the brand ships the logo OUTSIDE \`assets/\`, fix the brand
+  or ask the user — do not build workarounds in content code. Full convention + pre-flight
+  decision tree: \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\`
 - **Never embed the brand logo inside content HTML (\`<img>\`, background-image, inline SVG).**
   Content Factory renders the brand logo as an overlay on every card, automatically sized
   to the canvas (≈20% of the shortest side, top-right by default) and positioned/scaled via the inspector. Embedding
@@ -121,7 +124,7 @@ These terms appear throughout the skill and references. They are stable — use 
 | \`\${CLAUDE_SKILL_DIR}[[/references/visual-density.md]]\` | 85% canvas fill rule and per-type element minimums |
 | \`\${CLAUDE_SKILL_DIR}[[/references/html-clipping.md]]\` | Overflow rules per card type |
 | \`\${CLAUDE_SKILL_DIR}[[/references/content-fit.md]]\` | **R11 Canvas Fit rule.** Canvas overflow is emitted by \`/api/validate-cards\` as a standard box-layout violation (\`rule: R11\`). The \`fix\` field prescribes \`paginate\`/\`split\`/\`tighten\`. Handled by the same validate-before-done loop as R1–R10 |
-| \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\` | **Logo standard + pre-flight.** Brand logos live at \`<brand>/assets/logo.{svg,png}\`. Call \`GET /api/brand/<name>/conformance\` at project creation; auto-fix or ask the user when non-conforming |
+| \`\${CLAUDE_SKILL_DIR}[[/references/logo-convention.md]]\` | **Logo standard + pre-flight.** Brand logos live in \`<brand>/assets/\`: \`logo.svg\`/\`.png\`, \`logo-*.{svg,png}\`, or any \`*logo*.{svg,png}\` all conform. Call \`GET /api/brand/<name>/conformance\` at project creation; auto-fix or ask the user only when the logo sits OUTSIDE \`assets/\` |
 | \`\${CLAUDE_SKILL_DIR}[[/references/docx-export.md]]\` | Document page discipline + DOCX class conventions |
 | \`\${CLAUDE_SKILL_DIR}[[/references/business-documents.md]]\` | Branded business deliverables — report, proposal, one-pager, case study, executive summary. Use for report/proposal/case-study requests |
 | \`\${CLAUDE_SKILL_DIR}[[/references/brand-integration.md]]\` | Apply an installed brand skill end-to-end |
@@ -318,12 +321,37 @@ request. It covers the anchor-first flow, the fast-path for one-off requests, qu
 and the principles you apply with judgment. You are framed as a senior content strategist +
 designer — the methodology gives you principles and tools, not a script.
 
+**The agent never decides the workflow path silently.** The default is the full
+anchor-first workflow (Discovery → Master Anchor → Plans → Render). Fast-path
+runs only when the user explicitly authorizes it in Step 1 below. Intent
+signals inform the conversation with the user — they do not authorize the
+agent to skip steps on its own.
+
 High-level shape:
 
-1. **Read the request.** Classify intent via
-   \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\`. Decide anchor-first vs. fast-path.
-2. **Campaign intake — always ask which platforms.** For any anchor-first request,
-   present the platform checklist before authoring: LinkedIn (carousel, post) ·
+1. **Read the request, then present the workflow choice to the user.** Never
+   pick anchor-first vs. fast-path unilaterally, even when the request looks
+   trivially one-off. Present these three options verbatim at the start of
+   every new content request:
+
+   > "I can run this two ways:
+   > (A) **Default — full workflow.** Discovery intake → master anchor
+   >     document → per-variant plans → render. Best for multi-format
+   >     campaigns, substantive topics, or anything you'll iterate on.
+   > (B) **Fast-path — single artifact.** Skip intake and anchor; go straight
+   >     to one rendered file. Best for one-off quick requests.
+   > (C) **You choose for me.** I'll read the signals in your request and
+   >     pick A or B, then confirm with you before proceeding.
+   > Which? (Default is A.)"
+
+   Only proceed past this prompt after the user picks A, B, or C. If the user
+   picks C, classify per
+   \`\${CLAUDE_SKILL_DIR}[[/references/intent-detection.md]]\`, state your pick
+   and the signals behind it, and wait for explicit user confirmation before
+   running Step 2 (for A) or Step 8 (for B).
+2. **Campaign intake — always ask which platforms.** Runs only after the user
+   has confirmed option A (directly or via option C resolved to A). Present
+   the platform checklist before authoring: LinkedIn (carousel, post) ·
    Instagram (feed, story, reel cover) · Facebook (post, story, reel) · TikTok (cover) ·
    X/Twitter (card/thread) · blog · slide deck. Also ask: topic, audience, voice, CTA,
    anchor \`length_class\` (default \`standard\`). Persist to \`brief.json\` via \`POST /api/brief\`.
@@ -348,9 +376,12 @@ High-level shape:
    Plans AND rendered HTML both become stale. At the start of the next iteration,
    surface staleness; let the user choose what to re-plan and re-render. Never
    auto-propagate.
-8. **Fast-path.** When the user signals a one-off ("quick", "just", "one tweet"), skip
-   anchor authoring. Still plan the single variant in Markdown, get approval, then
-   render. No \`brief.json\`.
+8. **Fast-path.** Runs only when the user explicitly selected option B in
+   Step 1 (directly, or via option C resolved to B with user confirmation).
+   Never enter fast-path based on inferred signals alone — phrases like
+   "quick", "just", "one tweet" hint at fast-path but do not authorize the
+   skip. Once the user has authorized fast-path, plan the single variant in
+   Markdown, get plan approval, then render. No \`brief.json\`.
 
 **Folder contract** (enforced by the scanner + workspace scaffolder):
 

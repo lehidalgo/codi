@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const { discoverBrands } = require('./brand-discovery.cjs');
+const { discoverBrands, findStandardLogo } = require('./brand-discovery.cjs');
 
 // Built-in default SVG (matches the legacy hardcoded "codi" overlay).
 // Kept inlined to avoid a runtime file read for the always-available fallback.
@@ -15,8 +15,10 @@ const BUILTIN_DEFAULT_SVG = [
   '</svg>',
 ].join('');
 
-// Project/brand canonical filenames. Order encodes preference (SVG first,
-// PNG second). Consumers iterate these against both project and brand roots.
+// Project canonical filenames. Order encodes preference (SVG first,
+// PNG second). Consumers iterate these against the project root.
+// Brands accept a broader pattern set via findStandardLogo — see
+// brand-discovery.cjs.
 const LOGO_FILENAMES = ['logo.svg', 'logo.png'];
 
 // Extensions accepted by the auto-discovery scanner.
@@ -59,6 +61,9 @@ function isSvgContent(text) {
  * The scorer rewards filename signals (logo, brand-name pattern), shallow
  * paths, preferred parent directories, and SVG over PNG. See
  * references/logo-convention.md for the full ranking table.
+ *
+ * Used only as a fallback when the brand ships no logo in `assets/` —
+ * see steps 5-6 of resolveLogo.
  */
 function discoverLogoCandidates(rootDir, options = {}) {
   const out = [];
@@ -117,16 +122,19 @@ function firstExisting(dir, filenames, relRoot) {
  *
  *   1. <projectDir>/assets/logo.svg
  *   2. <projectDir>/assets/logo.png
- *   3. <brandDir>/assets/logo.svg
- *   4. <brandDir>/assets/logo.png
- *   5. <brandDir> recursive — best filename signal (logo*, brand-name)
- *   6. <brandDir> recursive — fallback to any SVG anywhere in the skill
- *   7. BUILTIN_DEFAULT_SVG
+ *   3. <brandDir>/assets/ — findStandardLogo match (logo.svg, logo.png,
+ *      logo-*.{svg,png}, or any *logo*.{svg,png} in assets/)
+ *   4. <brandDir> recursive — best filename signal outside assets/
+ *      (legacy brands with files like `BRAND_RGB.svg` at skill root)
+ *   5. <brandDir> recursive — fallback to any SVG anywhere in the skill
+ *   6. BUILTIN_DEFAULT_SVG
  *
  * Returns { source, svg?, binary?, contentType, path, conforming }.
  *   - `source`: 'project' | 'brand' | 'brand-discovered' | 'builtin'
  *   - `svg` for text payloads, `binary` (Buffer) for PNG/raster.
- *   - `conforming`: true when resolved via steps 1-4 (standard paths).
+ *   - `conforming`: true when resolved from <project>/assets/ or
+ *     <brand>/assets/ (the canonical logo locations). False when the
+ *     logo was auto-discovered from a non-standard location.
  */
 function resolveLogo({ projectDir, skillsDir, activeBrand }) {
   // Steps 1-2 — project standard paths.
@@ -145,15 +153,20 @@ function resolveLogo({ projectDir, skillsDir, activeBrand }) {
     : null;
 
   if (brand) {
-    // Steps 3-4 — brand standard paths.
-    const svgPath = path.join(brand.dir, 'assets', 'logo.svg');
-    const svg = readSvgSafe(svgPath);
-    if (svg) return { source: 'brand', svg, contentType: 'image/svg+xml', path: svgPath, conforming: true };
-    const pngPath = path.join(brand.dir, 'assets', 'logo.png');
-    const png = readBytes(pngPath);
-    if (png) return { source: 'brand', binary: png, contentType: 'image/png', path: pngPath, conforming: true };
+    // Step 3 — brand assets/ (canonical + pattern matches).
+    const logoPath = brand.logoPath || findStandardLogo(brand.dir);
+    if (logoPath) {
+      const ext = path.extname(logoPath).toLowerCase();
+      if (ext === '.svg') {
+        const svg = readSvgSafe(logoPath);
+        if (svg) return { source: 'brand', svg, contentType: 'image/svg+xml', path: logoPath, conforming: true };
+      } else if (ext === '.png') {
+        const png = readBytes(logoPath);
+        if (png) return { source: 'brand', binary: png, contentType: 'image/png', path: logoPath, conforming: true };
+      }
+    }
 
-    // Steps 5-6 — auto-discovery for non-conforming brands.
+    // Steps 4-5 — auto-discovery for brands shipping the logo outside assets/.
     const candidates = discoverLogoCandidates(brand.dir, { brandName: brand.name });
     if (candidates.length > 0) {
       const top = candidates[0];
@@ -167,7 +180,7 @@ function resolveLogo({ projectDir, skillsDir, activeBrand }) {
     }
   }
 
-  // Step 7 — built-in default.
+  // Step 6 — built-in default.
   return { source: 'builtin', svg: BUILTIN_DEFAULT_SVG, contentType: 'image/svg+xml', path: null, conforming: true };
 }
 
@@ -175,6 +188,11 @@ function resolveLogo({ projectDir, skillsDir, activeBrand }) {
  * Seed `<projectDir>/assets/logo.{svg,png}` from whatever the resolver finds.
  * Idempotent: no-op when a project logo already exists in either format.
  * Returns { copied, source, filename } — copied=true when a new file landed.
+ *
+ * When the brand ships a pattern-matched file (e.g. `logo-light.svg`), the
+ * content is still written to the project as the canonical `logo.svg` /
+ * `logo.png`. The project owns the canonical name going forward — brand-side
+ * variants stay available for other consumers that explicitly read them.
  */
 function bootstrapProjectLogo({ projectDir, skillsDir, activeBrand }) {
   if (!projectDir) return { copied: false, source: null, filename: null };
@@ -200,6 +218,10 @@ function bootstrapProjectLogo({ projectDir, skillsDir, activeBrand }) {
  * Report on a brand skill's conformance with the logo standard.
  * Agents call this at project creation / brand activation to decide
  * whether to auto-fix, ask the user, or proceed.
+ *
+ * A brand is conforming when it ships ANY acceptable logo in `assets/`
+ * (canonical `logo.svg`/`logo.png`, themed variants like
+ * `logo-light.svg`, or any `*logo*.{svg,png}` in that directory).
  */
 function checkBrandConformance({ skillsDir, brandName }) {
   const brand = discoverBrands(skillsDir).find((b) => b.name === brandName);
@@ -217,19 +239,24 @@ function checkBrandConformance({ skillsDir, brandName }) {
   const discovered = conforming ? [] : discoverLogoCandidates(brand.dir, { brandName });
   let advice;
   if (conforming) {
-    advice = `Brand "${brandName}" conforms. Standard logo at ${path.relative(brand.dir, brand.logoPath)}.`;
+    const rel = path.relative(brand.dir, brand.logoPath);
+    const isCanonical = rel === path.join('assets', 'logo.svg') || rel === path.join('assets', 'logo.png');
+    advice = isCanonical
+      ? `Brand "${brandName}" conforms. Standard logo at ${rel}.`
+      : `Brand "${brandName}" conforms via pattern match at ${rel}. Rename or copy to assets/logo.svg for canonical placement (optional).`;
   } else if (discovered.length === 0) {
-    advice = `Brand "${brandName}" ships no logo. Ask the user to add one at assets/logo.svg (or .png).`;
+    advice = `Brand "${brandName}" ships no logo. Ask the user to add one at assets/logo.svg (or a themed variant like assets/logo-light.svg).`;
   } else if (discovered[0].score >= 100) {
-    advice = `Brand "${brandName}" has a strong candidate at ${discovered[0].relpath} (score ${discovered[0].score}). Copy or rename it to assets/logo.svg to conform.`;
+    advice = `Brand "${brandName}" has a strong candidate at ${discovered[0].relpath} (score ${discovered[0].score}). Copy or rename it into assets/ to conform.`;
   } else {
-    advice = `Brand "${brandName}" has ${discovered.length} possible candidate(s). Top: ${discovered[0].relpath} (score ${discovered[0].score}). Confirm with the user which should become assets/logo.svg.`;
+    advice = `Brand "${brandName}" has ${discovered.length} possible candidate(s). Top: ${discovered[0].relpath} (score ${discovered[0].score}). Confirm with the user which should be moved into assets/.`;
   }
   return {
     brandName,
     found: true,
     conforming,
     standardPath: 'assets/logo.svg',
+    logoPath: brand.logoPath ? path.relative(brand.dir, brand.logoPath) : null,
     discovered: discovered.slice(0, 5).map(({ relpath, score, reasons, ext }) => ({ relpath, score, reasons, ext })),
     advice,
   };
