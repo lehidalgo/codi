@@ -55,6 +55,12 @@ interface InitOptions extends GlobalOptions {
   agents?: string[];
   preset?: string;
   onConflict?: "keep-current" | "keep-incoming";
+  /**
+   * Skip the wizard's "Modify vs Fresh" prompt and go straight to the modify
+   * submenu. Only meaningful when .codi/ already exists. Set by the hub's
+   * "Customize codi setup" entry. Has no effect on a fresh install.
+   */
+  customize?: boolean;
 }
 
 interface InitData {
@@ -156,7 +162,13 @@ export async function initHandler(
     const detectedAgentIds = detectedAdapters.map((a) => a.id);
     const allAgentIds = getAllAdapters().map((a) => a.id);
 
-    const wizardResult = await runInitWizard(stack, detectedAgentIds, allAgentIds, existingInstall);
+    const wizardResult = await runInitWizard(
+      stack,
+      detectedAgentIds,
+      allAgentIds,
+      existingInstall,
+      { forceModify: options.customize === true && existingInstall !== undefined },
+    );
     if (!wizardResult) {
       return createCommandResult({
         success: false,

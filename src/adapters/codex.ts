@@ -33,7 +33,10 @@ import {
 } from "../constants.js";
 import {
   buildSkillObserverScript,
+  buildLauncherFile,
+  launcherCommand,
   HOOKS_SUBDIR,
+  LAUNCHER_FILENAME,
   SKILL_OBSERVER_FILENAME,
 } from "../core/hooks/heartbeat-hooks.js";
 
@@ -275,17 +278,29 @@ export const codexAdapter: AgentAdapter = {
       hash: hashContent(observerScript),
     });
 
+    // Ship the node-resolver launcher next to the observer (see Claude Code
+    // adapter for rationale).
+    const launcher = buildLauncherFile();
+    files.push({
+      path: launcher.path,
+      content: launcher.content,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(launcher.content),
+    });
+
     // Codex injects no project-dir env variable (see codex-rs/hooks/src/engine/command_runner.rs),
     // and the docs explicitly recommend resolving via `git rev-parse --show-toplevel` because
     // "Codex may be started from a subdirectory". The `|| echo .` fallback preserves today's
     // behavior when git is unavailable so there is no regression. Codex disables hooks on
     // Windows, so POSIX command substitution is safe here.
     const codexProjectRootRef = '"$(git rev-parse --show-toplevel 2>/dev/null || echo .)"';
+    const launcherRef = `${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${LAUNCHER_FILENAME}`;
+    const observerRef = `${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
     const codexHooks = {
       Stop: [
         {
           type: "command",
-          command: `node ${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`,
+          command: launcherCommand(launcherRef, observerRef),
           timeout: 15,
         },
       ],

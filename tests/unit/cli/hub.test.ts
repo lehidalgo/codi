@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { NORMAL_MENU, ADVANCED_MENU } from "#src/cli/hub.js";
+import { NORMAL_MENU, ADVANCED_MENU, buildFirstEntry } from "#src/cli/hub.js";
 
 describe("Command Center hub", () => {
   describe("NORMAL_MENU", () => {
-    it("has exactly 5 entries", () => {
-      expect(NORMAL_MENU).toHaveLength(5);
+    it("has exactly 4 entries (init/customize is built separately)", () => {
+      expect(NORMAL_MENU).toHaveLength(4);
     });
 
     it("every entry has required fields", () => {
@@ -21,18 +21,39 @@ describe("Command Center hub", () => {
       expect(new Set(values).size).toBe(values.length);
     });
 
-    it("init does not require a project", () => {
-      const init = NORMAL_MENU.find((e) => e.value === "init");
-      expect(init).toBeDefined();
-      expect(init!.requiresProject).toBe(false);
-    });
-
     it("contains generate, update, export, and clean", () => {
       const values = NORMAL_MENU.map((e) => e.value);
       expect(values).toContain("generate");
       expect(values).toContain("update");
       expect(values).toContain("export");
       expect(values).toContain("clean");
+    });
+
+    it("does not contain init or customize (those are built per-render)", () => {
+      const values = NORMAL_MENU.map((e) => e.value);
+      expect(values).not.toContain("init");
+      expect(values).not.toContain("customize");
+    });
+  });
+
+  describe("buildFirstEntry", () => {
+    it("returns the init entry when no project exists", () => {
+      const entry = buildFirstEntry(false);
+      expect(entry.value).toBe("init");
+      expect(entry.label).toBe("Initialize project");
+      expect(entry.requiresProject).toBe(false);
+    });
+
+    it("returns the customize entry when a project exists", () => {
+      const entry = buildFirstEntry(true);
+      expect(entry.value).toBe("customize");
+      expect(entry.label).toBe("Customize codi setup");
+      expect(entry.requiresProject).toBe(false);
+    });
+
+    it("always sets requiresProject to false (the entry itself is always shown)", () => {
+      expect(buildFirstEntry(true).requiresProject).toBe(false);
+      expect(buildFirstEntry(false).requiresProject).toBe(false);
     });
   });
 

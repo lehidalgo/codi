@@ -88,6 +88,16 @@ Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.github/copilot-instructions.md`
 
 > **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 24**. If your Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 for you.
 
+### Supported platforms
+
+| Platform | Status |
+|----------|--------|
+| macOS | Supported |
+| Linux | Supported |
+| Windows | Not supported. WSL2 is untested but should work since Codi is POSIX-only end-to-end. |
+
+Codi targets POSIX environments. The installer is bash-only, hooks are POSIX shell, and CI runs only on Ubuntu and macOS. Native Windows is not on the roadmap.
+
 ---
 
 ## How It Works

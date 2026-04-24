@@ -12,6 +12,7 @@ vi.mock("@clack/prompts", () => ({
   log: {
     info: vi.fn(),
     warn: vi.fn(),
+    error: vi.fn(),
     step: vi.fn(),
   },
 }));
@@ -99,7 +100,20 @@ vi.mock("../../../src/cli/preset-wizard.js", () => ({
 }));
 
 vi.mock("../../../src/core/generator/adapter-registry.js", () => ({
-  getAllAdapters: vi.fn().mockReturnValue([{ id: "claude-code" }]),
+  getAllAdapters: vi
+    .fn()
+    .mockReturnValue([
+      { id: "claude-code" },
+      { id: "cursor" },
+      { id: "codex" },
+      { id: "windsurf" },
+      { id: "cline" },
+      { id: "copilot" },
+    ]),
+}));
+
+vi.mock("../../../src/core/config/resolver.js", () => ({
+  resolveConfig: vi.fn(),
 }));
 
 vi.mock("../../../src/adapters/index.js", () => ({
@@ -108,8 +122,16 @@ vi.mock("../../../src/adapters/index.js", () => ({
 
 import fs from "node:fs/promises";
 import * as p from "@clack/prompts";
-import { isCancelled, handleInit, handleAdd, handlePresetMenu } from "#src/cli/hub-handlers.js";
+import {
+  isCancelled,
+  handleInit,
+  handleAdd,
+  handlePresetMenu,
+  handleGenerate,
+} from "#src/cli/hub-handlers.js";
 import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
+import { resolveConfig } from "#src/core/config/resolver.js";
+import { generateHandler } from "#src/cli/generate.js";
 
 describe("hub-handlers", () => {
   beforeEach(() => {
@@ -160,6 +182,80 @@ describe("hub-handlers", () => {
 
       await handleAdd("/tmp/test");
       expect(p.outro).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("handleGenerate (agent filter)", () => {
+    function mockManifestAgents(agents: string[] | undefined) {
+      vi.mocked(resolveConfig).mockResolvedValueOnce({
+        ok: true,
+        data: { manifest: { agents } },
+      } as never);
+    }
+
+    it("restricts the multiselect to agents declared in the manifest", async () => {
+      mockManifestAgents(["claude-code", "cursor"]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce(["claude-code", "cursor"] as never);
+      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
+
+      await handleGenerate("/tmp/test");
+
+      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+      expect(multiselectCall?.options).toHaveLength(2);
+      expect(multiselectCall?.options.map((o) => o.value)).toEqual(["claude-code", "cursor"]);
+      expect(multiselectCall?.initialValues).toEqual(["claude-code", "cursor"]);
+    });
+
+    it("falls back to all adapters and warns when manifest is unreadable", async () => {
+      vi.mocked(resolveConfig).mockResolvedValueOnce({
+        ok: false,
+        errors: [],
+      } as never);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
+      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
+
+      await handleGenerate("/tmp/test");
+
+      expect(p.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining("falling back to all registered adapters"),
+      );
+      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+      expect(multiselectCall?.options).toHaveLength(6);
+    });
+
+    it("errors and returns without prompting when manifest declares zero usable agents", async () => {
+      mockManifestAgents([]);
+
+      await handleGenerate("/tmp/test");
+
+      expect(p.log.error).toHaveBeenCalledWith(
+        expect.stringContaining("No usable agents configured"),
+      );
+      expect(p.multiselect).not.toHaveBeenCalled();
+      expect(generateHandler).not.toHaveBeenCalled();
+    });
+
+    it("treats undefined manifest.agents as 'all detected' (use all adapters)", async () => {
+      mockManifestAgents(undefined);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
+      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
+
+      await handleGenerate("/tmp/test");
+
+      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+      expect(multiselectCall?.options).toHaveLength(6);
+    });
+
+    it("filters unknown adapters from manifest and warns", async () => {
+      mockManifestAgents(["claude-code", "made-up-adapter", "cursor"]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
+      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
+
+      await handleGenerate("/tmp/test");
+
+      expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("made-up-adapter"));
+      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+      expect(multiselectCall?.options.map((o) => o.value)).toEqual(["claude-code", "cursor"]);
     });
   });
 

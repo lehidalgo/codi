@@ -1,0 +1,3 @@
+name: sample-server
+description: A sample MCP server fixture for external-source tests
+url: stdio:fixture-only

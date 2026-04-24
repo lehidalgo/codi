@@ -93,6 +93,48 @@ If `codi.requiredVersion` is set in `codi.yaml` and your installed version is to
 npm install -D codi-cli@latest
 ```
 
+## Adding artifacts from external sources
+
+The "Customize codi setup → Add from local directory / ZIP / GitHub repo" workflow installs artifacts into `.codi/` from outside the codi-cli package.
+
+### Source layout requirements
+
+The source must follow the standard codi layout. Codi walks four directories:
+
+- `rules/` — `.md` files with frontmatter
+- `agents/` — `.md` files with frontmatter
+- `skills/` — sub-directories, each containing a `SKILL.md`
+- `mcp-servers/` — `.yaml` files
+
+Missing directories are silently skipped (a source can carry just one type). Files without valid frontmatter or skills missing `SKILL.md` are skipped with a warning.
+
+### Where externally-added artifacts live
+
+Each installed artifact is copied verbatim into the matching `.codi/` subdirectory and recorded in `artifact-manifest.json` with `managedBy: user` plus a `source:` field (e.g. `"github:org/repo@v1"`). The `managedBy: user` flag tells `codi update` to leave the file alone — your imported artifacts will not be overwritten when codi templates change.
+
+### Filename collisions
+
+When an imported artifact has the same name as one already in `.codi/`, codi prompts per artifact:
+
+- **Keep current** — skip the import (default)
+- **Overwrite with imported** — replace the existing file
+- **Rename imported to `<name>-from-<source>`** — keep both, suffix the new one
+
+After the first prompt, an "apply to remaining" option lets you bulk-resolve the rest with one choice.
+
+### "No codi artifacts found"
+
+The source directory does not contain any of the four standard subdirectories at its root, or all entries failed validation. Verify the source layout matches the requirements above.
+
+### GitHub: "Failed to clone"
+
+The installer uses `git clone --depth 1` and supports public repos only. Private repositories require manual clone + "Add from local directory" instead. Specs can take any of:
+
+- `org/repo`
+- `org/repo@v1.2.0`
+- `github:org/repo@<sha>`
+- `https://github.com/org/repo.git`
+
 ## Generation Issues
 
 ### Drift detected
