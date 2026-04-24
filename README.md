@@ -86,7 +86,7 @@ codi status
 
 Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.github/copilot-instructions.md`, and other agent files are generated and ready to commit.
 
-> **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 20**.
+> **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 24**. If your Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 for you.
 
 ---
 

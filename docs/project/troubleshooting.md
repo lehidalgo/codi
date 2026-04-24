@@ -4,30 +4,67 @@ Common issues and their solutions when working with Codi.
 
 ## Installation Issues
 
-### Node.js version too old
+### EACCES: permission denied during `npm install -g codi-cli`
 
-**Error**: Codi requires Node >= 20.
+**Error**: `EACCES: permission denied, mkdir '/usr/local/lib/node_modules/codi-cli'`
 
-**Fix**:
+This happens when system Node is installed under `/usr/local` (root-owned) and `npm install -g` cannot create the package directory without `sudo`.
+
+**Fix (recommended)**: use the curl installer, which sets up nvm + Node 24 under `~/.nvm` (no sudo, no root):
 
 ```bash
-nvm install 20
-nvm use 20
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+```
+
+**Why not `sudo npm install -g`?** It works once but leaves root-owned files in your `~/.npm` cache that break future installs and updates.
+
+### Node.js version too old
+
+**Error**: Codi requires Node >= 24 (npm 11+ for OIDC publish).
+
+**Fix (recommended)** — let the installer handle it:
+
+```bash
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+```
+
+**Or manually** with nvm:
+
+```bash
+nvm install 24
+nvm use 24
+nvm alias default 24
 ```
 
 ### `codi` command not found
 
-**Fix**: Use npx or install globally:
+**Fix**: Use npx, install via the curl installer, or install globally:
 
 ```bash
+# Via curl installer (handles Node setup if missing)
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+
 # Via npx (no global install needed)
 npx codi --version
 
-# Or install globally
+# Or install globally (requires Node 24+ and a writable npm prefix)
 npm install -g codi-cli
 ```
 
 If installed as a dev dependency, use `npx codi` or add a script to `package.json`.
+
+### Verifying the installer before running it
+
+For security-conscious environments, verify the script's checksum before piping to bash:
+
+```bash
+curl -fsSL https://lehidalgo.github.io/codi/install.sh -o install.sh
+curl -fsSL https://lehidalgo.github.io/codi/install.sh.sha256 -o install.sh.sha256
+shasum -a 256 -c install.sh.sha256
+bash install.sh
+```
+
+The installer also supports `CODI_DRY_RUN=1` to preview the actions without executing them.
 
 ## Configuration Issues
 
