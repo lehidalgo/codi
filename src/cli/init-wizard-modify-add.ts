@@ -51,8 +51,9 @@ async function promptSource(kind: ExternalSourceKind): Promise<ExternalSource | 
     return await connectZipFile(value as string);
   }
   const value = await p.text({
-    message: "GitHub repo (org/repo, org/repo@ref, or full URL)",
-    placeholder: "lehidalgo/codi",
+    message:
+      "GitHub repo — accepts org/repo, github:org/repo[@tag|#branch], or full https://github.com/... URL",
+    placeholder: "https://github.com/lehidalgo/codi",
   });
   if (isCancelled(value)) return null;
   return await connectGithubRepo(value as string);

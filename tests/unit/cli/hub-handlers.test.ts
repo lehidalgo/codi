@@ -116,6 +116,10 @@ vi.mock("../../../src/core/config/resolver.js", () => ({
   resolveConfig: vi.fn(),
 }));
 
+vi.mock("../../../src/cli/init-wizard-modify-add.js", () => ({
+  runAddFromExternal: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("../../../src/adapters/index.js", () => ({
   registerAllAdapters: vi.fn(),
 }));
@@ -125,6 +129,7 @@ import * as p from "@clack/prompts";
 import {
   isCancelled,
   handleInit,
+  handleCustomize,
   handleAdd,
   handlePresetMenu,
   handleGenerate,
@@ -132,6 +137,8 @@ import {
 import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
 import { resolveConfig } from "#src/core/config/resolver.js";
 import { generateHandler } from "#src/cli/generate.js";
+import { initHandler } from "#src/cli/init.js";
+import { runAddFromExternal } from "#src/cli/init-wizard-modify-add.js";
 
 describe("hub-handlers", () => {
   beforeEach(() => {
@@ -165,6 +172,72 @@ describe("hub-handlers", () => {
     it("runs init handler when no project exists", async () => {
       await handleInit("/tmp/test");
       expect(process.stdout.write).toHaveBeenCalled();
+    });
+  });
+
+  describe("handleCustomize (dispatcher)", () => {
+    it("returns early when the dispatcher is cancelled", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
+      vi.mocked(p.isCancel).mockReturnValueOnce(true);
+
+      await handleCustomize("/tmp/test");
+
+      expect(initHandler).not.toHaveBeenCalled();
+      expect(runAddFromExternal).not.toHaveBeenCalled();
+    });
+
+    it("routes 'customize' to initHandler with customize:true", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("customize" as never);
+
+      await handleCustomize("/tmp/test");
+
+      expect(initHandler).toHaveBeenCalledWith("/tmp/test", { customize: true });
+      expect(runAddFromExternal).not.toHaveBeenCalled();
+    });
+
+    it("routes 'replace' through initHandler with customize:true (wizard handles replace submenu)", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("replace" as never);
+
+      await handleCustomize("/tmp/test");
+
+      expect(initHandler).toHaveBeenCalledWith("/tmp/test", { customize: true });
+      expect(runAddFromExternal).not.toHaveBeenCalled();
+    });
+
+    it("routes 'add-local' to runAddFromExternal('local')", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("add-local" as never);
+
+      await handleCustomize("/tmp/test");
+
+      expect(runAddFromExternal).toHaveBeenCalledWith(expect.any(String), "local");
+      expect(initHandler).not.toHaveBeenCalled();
+    });
+
+    it("routes 'add-zip' to runAddFromExternal('zip')", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("add-zip" as never);
+
+      await handleCustomize("/tmp/test");
+
+      expect(runAddFromExternal).toHaveBeenCalledWith(expect.any(String), "zip");
+    });
+
+    it("routes 'add-github' to runAddFromExternal('github')", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce("add-github" as never);
+
+      await handleCustomize("/tmp/test");
+
+      expect(runAddFromExternal).toHaveBeenCalledWith(expect.any(String), "github");
+    });
+
+    it("offers all five choices in the dispatcher menu", async () => {
+      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
+      vi.mocked(p.isCancel).mockReturnValueOnce(true);
+
+      await handleCustomize("/tmp/test");
+
+      const menuCall = vi.mocked(p.select).mock.calls[0]?.[0];
+      const values = menuCall?.options.map((o) => o.value).sort();
+      expect(values).toEqual(["add-github", "add-local", "add-zip", "customize", "replace"]);
     });
   });
 
