@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Curl installer** — one-liner install at `https://lehidalgo.github.io/codi/install.sh` that detects the host environment and installs nvm + Node 24 if missing, then runs `npm install -g codi-cli`. Avoids the EACCES failure mode that hits users with system-managed Node on `/usr/local`. Honors `CODI_VERSION`, `CODI_INSTALL_NVM`, `CODI_DRY_RUN`, `CODI_NO_COLOR` overrides. Published checksum at `install.sh.sha256` for verification. Hosted via the existing GitHub Pages deploy.
+
+### Changed
+
+- **Minimum Node version bumped from 20 to 24** — `engines.node` now `>=24` to match the project's `.nvmrc`, all CI workflows, and release pipeline (npm 11+ for OIDC). Users on Node 20 will see a clear engine error from npm before EACCES instead of a confusing permissions failure.
+
 ## [2.9.0] - 2026-04-18
 
 ### Added

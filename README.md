@@ -65,7 +65,10 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 ## Quick Start
 
 ```bash
-# 1. Install
+# 1. Install (curl one-liner — handles Node setup if missing)
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+
+# Or install manually if you already manage Node 24+ yourself
 npm install -g codi-cli@latest
 
 # 2. Initialize (interactive wizard)

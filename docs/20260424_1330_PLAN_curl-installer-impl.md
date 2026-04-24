@@ -4,6 +4,7 @@
 - **Document**: 20260424_1330_PLAN_curl-installer-impl.md
 - **Category**: PLAN
 - **Spec**: 20260424_1327_SPEC_curl-installer.md
+- **Status**: PR #1 implemented (7/7 tasks). PR #2 and PR #3 pending. PR #1 also bumped `.nvmrc` (20 → 24) and updated CONTRIBUTING.md + docs/getting-started.md to keep documentation aligned with the engines change — those edits were not in the original plan but were required for consistency.
 
 ## Overview
 
