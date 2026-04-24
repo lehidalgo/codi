@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Welcome banner now renders inside a rounded box** — the ASCII logo, tagline + version, and Stack/Agents status lines are framed with `╭─...─╮` borders (matching the Codex CLI visual style). Auto-sizes to the widest content line. Falls back to the un-boxed layout on terminals narrower than the box width.
+
 ### Fixed
 
 - **`npm version` now ships the tag in the same step** — `postversion` script switched from bare `git push` to `git push --follow-tags`. Previously every release required a manual `git push origin vX.Y.Z` follow-up, or the tag stayed local-only.
