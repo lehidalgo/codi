@@ -57,6 +57,26 @@ describe("banner", () => {
       expect(output).toContain("none detected");
     });
 
+    it("renders inside a rounded box on wide terminals", () => {
+      Object.defineProperty(process.stdout, "columns", {
+        value: 120,
+        configurable: true,
+      });
+
+      printWelcomeBanner({
+        detectedStack: ["typescript"],
+        detectedAgents: ["claude-code"],
+      });
+
+      // Top corners + bottom corners + vertical sides
+      expect(output).toContain("╭");
+      expect(output).toContain("╮");
+      expect(output).toContain("╰");
+      expect(output).toContain("╯");
+      expect(output).toContain("│");
+      expect(output).toContain("─");
+    });
+
     it("falls back to text header on narrow terminals", () => {
       Object.defineProperty(process.stdout, "columns", {
         value: 40,

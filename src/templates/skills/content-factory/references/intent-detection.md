@@ -47,47 +47,59 @@ usually answers questions you'd otherwise ask.
 
 ---
 
-## 2. The decision
+## 2. Signals to present, not a decision to make alone
 
-Anchor-first or fast-path is a judgment call. Some patterns that
-usually resolve it:
+**The agent never decides anchor-first vs. fast-path unilaterally.** Every
+new content request starts with the Step 1 workflow-choice prompt defined
+in SKILL.md — the user picks A (default, full workflow), B (fast-path),
+or C (delegate the pick to the agent, with confirmation before
+proceeding).
 
-- **Fast-path** when the user explicitly signals one-off ("quick",
-  "just", "simple", "real fast", "one tweet"), when the request is a
-  single small artifact, when the user pastes full substance and wants
-  pure formatting.
-- **Anchor-first** when the user names multiple formats, when the
-  topic needs argument construction, when the content will be iterated
-  on, when the user is uncertain what they want.
-- **Ambiguous** when the signals pull in different directions.
-  Default to anchor-first with an explicit offer to skip: "I can draft
-  a quick article first so every format tells the same story, or skip
-  straight to the [format] — which?"
+Use the signals below to help the user choose during that conversation, or
+— if the user selected C — to justify the pick you report back for
+explicit confirmation before running Step 2 or Step 8.
 
-Ask once, at the start. Don't re-prompt on every iteration.
+Signals that point at **fast-path** (user is likely to pick B):
+
+- Explicit one-off phrasing ("quick", "just", "simple", "real fast",
+  "one tweet").
+- Single small artifact request (one tweet, one story, one share card).
+- User pastes full substance and wants pure formatting.
+
+Signals that point at **anchor-first** (user is likely to pick A):
+
+- Multiple formats named (campaign-style request).
+- Topic requires argument construction (position piece, case study,
+  manifesto).
+- User plans to iterate, revise, or re-share.
+- User expresses uncertainty about what they want — an anchor gives them
+  something to react to.
+
+Ambiguous signals are normal. Present the workflow-choice prompt anyway;
+never pick silently. The prompt runs once, at the start — don't re-prompt
+on every iteration unless the user expands scope.
 
 ---
 
-## 3. When to ask, when to proceed
+## 3. Clarifying questions during intake (after the path is chosen)
 
-Ask a clarifying question when the answer materially changes the work:
+After the user has picked option A or B in Step 1, ask clarifying questions
+only when the answer materially changes the work:
 
 - Topic is missing or vague enough that guessing would waste a round.
 - Audience is unknown and the right audience would change the shape
   significantly (executive deck vs. engineering deep-dive).
-- Format is ambiguous ("make content about X" with no format named).
+- Format is ambiguous within the chosen path.
 - The user seems uncertain and needs the question as a prompt to think.
 
-Proceed without asking when:
+Never ask more than one question at a time. A six-question questionnaire
+kills momentum. If you need multiple pieces of information, gather them
+conversationally across the first few turns rather than upfront.
 
-- The request is clear enough that a reasonable default won't be wrong.
-- Prior project state answers the question.
-- The cost of being wrong is low (you can fix on iteration).
-
-Never ask more than one question at a time. A six-question
-questionnaire kills momentum. If you need multiple pieces of
-information, gather them conversationally across the first few turns
-rather than upfront.
+**This section governs intake within a chosen path.** It does NOT authorize
+the agent to skip the Step 1 workflow-choice prompt. That prompt is always
+presented, even when the request looks obvious — the user makes the call,
+not the agent.
 
 ---
 
@@ -127,15 +139,18 @@ first, or compress to a single card?"
 
 - **Don't run a fixed questionnaire.** Ask what you actually need; skip
   what you don't.
-- **Don't force anchor-first on clearly trivial requests.** "Quick
-  tweet about X" becomes a single tweet, not a campaign.
+- **Don't pick either path silently.** The Step 1 workflow-choice prompt
+  is always presented. Even a "quick tweet about X" gets the prompt — the
+  user will pick B in one word, but the choice is theirs to make.
 - **Don't re-classify on every iteration.** The first-turn decision
   sticks unless the user explicitly expands scope ("actually, let's
-  also make a deck").
-- **Don't pick the anchor-first branch silently when the user expected
-  fast-path.** If the answer's ambiguous, ask once.
+  also make a deck") — at that point, re-present the workflow-choice
+  prompt.
+- **Don't treat one-off phrasing as authorization.** "Quick", "just",
+  "real fast" are signals, not approvals. Surface the prompt; let the
+  user pick B if that's what they want.
 
-The goal is speed without cutting corners. Anchor-first is the default
-for non-trivial work because it produces better content; fast-path is
-the exception that stays fast when speed matters more than
-multi-format consistency.
+Anchor-first is the default the user will usually pick for non-trivial
+work, and fast-path is the exception the user picks when speed matters
+more than multi-format consistency. In both cases the user picks — not
+the agent.

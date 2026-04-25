@@ -48,6 +48,12 @@ import { StateManager } from "../core/config/state.js";
 import type { ArtifactFileState } from "../core/config/state.js";
 import { hashContent } from "../utils/hash.js";
 import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
+import { runArtifactSelectionFromSource } from "./init-wizard-modify-add.js";
+import {
+  connectGithubRepo,
+  connectLocalDirectory,
+  connectZipFile,
+} from "../core/external-source/connectors.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -55,6 +61,12 @@ interface InitOptions extends GlobalOptions {
   agents?: string[];
   preset?: string;
   onConflict?: "keep-current" | "keep-incoming";
+  /**
+   * Skip the wizard's "Modify vs Fresh" prompt and go straight to the modify
+   * submenu. Only meaningful when .codi/ already exists. Set by the hub's
+   * "Customize codi setup" entry. Has no effect on a fresh install.
+   */
+  customize?: boolean;
 }
 
 interface InitData {
@@ -68,6 +80,39 @@ interface InitData {
 
 function isInteractive(options: InitOptions): boolean {
   return !options.json && !options.quiet && !options.agents;
+}
+
+/**
+ * Connects to the user's import source and routes through the artifact
+ * selection UI. Used as a fallback when the regular preset-style installer
+ * fails because the source carries no preset.yaml. Always cleans up the
+ * temp source on exit so callers do not have to.
+ */
+async function runArtifactSelectionFallback(
+  configDir: string,
+  kind: "zip" | "github" | "local",
+  importSource: string,
+): Promise<void> {
+  const log = Logger.getInstance();
+  try {
+    let source;
+    if (kind === "zip") {
+      source = await connectZipFile(importSource);
+    } else if (kind === "github") {
+      source = await connectGithubRepo(importSource);
+    } else {
+      source = await connectLocalDirectory(importSource);
+    }
+    try {
+      await runArtifactSelectionFromSource(configDir, source);
+    } finally {
+      await source.cleanup();
+    }
+  } catch (cause) {
+    log.warn(
+      `Artifact-selection fallback failed: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
 }
 
 function hasSelections(selections: ExistingSelections): boolean {
@@ -156,7 +201,13 @@ export async function initHandler(
     const detectedAgentIds = detectedAdapters.map((a) => a.id);
     const allAgentIds = getAllAdapters().map((a) => a.id);
 
-    const wizardResult = await runInitWizard(stack, detectedAgentIds, allAgentIds, existingInstall);
+    const wizardResult = await runInitWizard(
+      stack,
+      detectedAgentIds,
+      allAgentIds,
+      existingInstall,
+      { forceModify: options.customize === true && existingInstall !== undefined },
+    );
     if (!wizardResult) {
       return createCommandResult({
         success: false,
@@ -199,8 +250,13 @@ export async function initHandler(
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 
-    if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
-      // Import: will be handled after createProjectStructure via preset install
+    if (
+      wizardResult.configMode === "zip" ||
+      wizardResult.configMode === "github" ||
+      wizardResult.configMode === "local"
+    ) {
+      // Import: will be handled after createProjectStructure via preset
+      // install (zip / github) or directly via artifact-selection (local).
     } else {
       // Preset or custom: wizard always returns the full artifact selections
       ruleTemplates = wizardResult.rules;
@@ -223,18 +279,41 @@ export async function initHandler(
     // presetInstallUnifiedHandler calls regenerateConfigs internally,
     // so we track success to skip the duplicate generate() call later.
     if (wizardResult.importSource) {
-      const { presetInstallUnifiedHandler } = await import("./preset-handlers.js");
-      const installResult = await presetInstallUnifiedHandler(
-        projectRoot,
-        wizardResult.importSource,
-      );
-      if (!installResult.success) {
-        log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`);
-      } else {
+      // Local directory imports always go through artifact-selection — they
+      // are user-pointed paths, not packaged presets, so the preset-style
+      // installer would just fail and the fallback would run anyway. Skip
+      // the round trip and call the selection workflow directly.
+      if (wizardResult.configMode === "local") {
+        log.info("Importing artifacts from local directory...");
+        await runArtifactSelectionFallback(configDir, "local", wizardResult.importSource);
         importRegenerated = true;
-        if (installResult.data?.name) {
-          presetName = installResult.data.name;
-          displayPresetName = installResult.data.name;
+      } else {
+        const { presetInstallUnifiedHandler } = await import("./preset-handlers.js");
+        const installResult = await presetInstallUnifiedHandler(
+          projectRoot,
+          wizardResult.importSource,
+        );
+        if (!installResult.success) {
+          log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`);
+          // Fallback: many community sources (a GitHub repo, a ZIP of bare
+          // artifact dirs) carry no preset.yaml. Re-attempt the import via the
+          // artifact-selection workflow — discover candidate roots in the
+          // source and let the user pick which artifacts to install.
+          if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
+            log.info("Trying artifact-selection fallback (source has no preset.yaml)...");
+            await runArtifactSelectionFallback(
+              configDir,
+              wizardResult.configMode,
+              wizardResult.importSource,
+            );
+            importRegenerated = true;
+          }
+        } else {
+          importRegenerated = true;
+          if (installResult.data?.name) {
+            presetName = installResult.data.name;
+            displayPresetName = installResult.data.name;
+          }
         }
       }
     }

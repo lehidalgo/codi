@@ -1,0 +1,44 @@
+name: Installer test
+
+on:
+  pull_request:
+    paths:
+      - 'site/install.sh'
+      - 'site/install.sh.sha256'
+      - '.github/workflows/installer-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  happy-path:
+    name: Happy path on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Verify published checksum matches install.sh
+        run: |
+          cd site
+          shasum -a 256 -c install.sh.sha256
+      - name: Run installer
+        env:
+          CODI_NO_COLOR: '1'
+        run: bash site/install.sh
+      - name: Verify codi command available
+        run: codi --version
+
+  syntax-only:
+    name: Syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: bash -n
+        run: bash -n site/install.sh

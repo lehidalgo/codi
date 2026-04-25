@@ -70,9 +70,25 @@ export class UnresolvableConflictError extends Error {
 }
 
 /**
+ * Returns true when `cmd` is found in PATH. Explicit status check avoids
+ * false positives when the `which` binary itself fails to spawn (status=null).
+ */
+function isCommandAvailable(cmd: string): boolean {
+  const result = spawnSync("which", [cmd], { stdio: "ignore" });
+  return result.status === 0;
+}
+
+/**
  * Resolves the editor command and arguments.
- * Priority: $VISUAL → $EDITOR → VS Code (if `code` is in PATH) → vi
- * Splits the env var on whitespace so "code --wait" works correctly with spawnSync.
+ * Priority:
+ *   1. $VISUAL / $EDITOR (explicit user override)
+ *   2. Cursor, if running in a Cursor terminal and the binary is available
+ *   3. VS Code, if running in a VS Code terminal and the binary is available
+ *      (detected via TERM_PROGRAM, VSCODE_IPC_HOOK_CLI, or VSCODE_INJECTION —
+ *      any single signal can be absent during shell-init race conditions)
+ *   4. Any GUI editor that IS in PATH (code → cursor) even without env hints
+ *   5. vi as last-resort fallback
+ * Splits env vars on whitespace so "code --wait" works correctly with spawnSync.
  */
 function resolveEditor(): { command: string; args: string[] } {
   const raw = process.env["VISUAL"] ?? process.env["EDITOR"];
@@ -80,25 +96,81 @@ function resolveEditor(): { command: string; args: string[] } {
     const parts = raw.trim().split(/\s+/);
     return { command: parts[0]!, args: parts.slice(1) };
   }
-  // Auto-detect VS Code: check TERM_PROGRAM or if `code` CLI is in PATH
-  if (
+
+  const inVscode =
     process.env["TERM_PROGRAM"] === "vscode" ||
-    !spawnSync("which", ["code"], { stdio: "ignore" }).status
-  ) {
+    process.env["VSCODE_IPC_HOOK_CLI"] !== undefined ||
+    process.env["VSCODE_INJECTION"] !== undefined;
+  const inCursor = process.env["TERM_PROGRAM"] === "cursor";
+  const inJetBrains = process.env["TERMINAL_EMULATOR"] === "JetBrains-JediTerm";
+
+  // Prefer the editor matching the current terminal
+  if (inCursor && isCommandAvailable("cursor")) {
+    return { command: "cursor", args: ["--wait"] };
+  }
+  if (inVscode && isCommandAvailable("code")) {
     return { command: "code", args: ["--wait"] };
+  }
+  if (inJetBrains) {
+    // Try each JetBrains CLI launcher in order; take the first one in PATH.
+    // We cannot tell which JetBrains IDE opened the terminal from env alone,
+    // so if several are installed the user should set $EDITOR explicitly.
+    const jetBrainsLaunchers = [
+      "idea",
+      "webstorm",
+      "pycharm",
+      "goland",
+      "rubymine",
+      "clion",
+      "rider",
+      "phpstorm",
+      "datagrip",
+      "dataspell",
+      "appcode",
+      "studio",
+    ];
+    for (const cmd of jetBrainsLaunchers) {
+      if (isCommandAvailable(cmd)) {
+        return { command: cmd, args: ["--wait"] };
+      }
+    }
+  }
+  // Otherwise use any known GUI editor found in PATH
+  if (isCommandAvailable("code")) {
+    return { command: "code", args: ["--wait"] };
+  }
+  if (isCommandAvailable("cursor")) {
+    return { command: "cursor", args: ["--wait"] };
   }
   return { command: "vi", args: [] };
 }
 
 const GUI_EDITORS = new Set([
+  // VS Code family
   "code",
+  "cursor",
+  "codium",
+  "windsurf",
+  // JetBrains family (each IDE ships its own CLI launcher)
+  "idea",
+  "webstorm",
+  "pycharm",
+  "goland",
+  "rubymine",
+  "clion",
+  "rider",
+  "phpstorm",
+  "datagrip",
+  "dataspell",
+  "appcode",
+  "studio",
+  "fleet",
+  // Others
   "subl",
   "sublime",
-  "atom",
   "zed",
-  "webstorm",
-  "idea",
-  "fleet",
+  "atom",
+  "nova",
 ]);
 
 /** Opens content in the user's editor and returns the saved result. */

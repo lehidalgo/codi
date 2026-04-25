@@ -37,8 +37,11 @@ import {
 import {
   buildSkillTrackerScript,
   buildSkillObserverScript,
+  buildLauncherFile,
+  launcherCommand,
   SKILL_TRACKER_FILENAME,
   SKILL_OBSERVER_FILENAME,
+  LAUNCHER_FILENAME,
   HOOKS_SUBDIR,
 } from "../core/hooks/heartbeat-hooks.js";
 
@@ -156,14 +159,24 @@ function buildCopilotHooksFiles(): GeneratedFile[] {
   const observerScript = buildSkillObserverScript();
   const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
 
+  const launcher = buildLauncherFile();
+  const launcherPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${LAUNCHER_FILENAME}`;
+
+  // Copilot's hook schema requires both `bash` and `powershell` fields. Codi
+  // targets macOS + Linux only (see README) — emitting the same launcher
+  // invocation in both slots satisfies the schema without claiming Windows
+  // support that does not exist elsewhere in the framework.
+  const trackerCmd = launcherCommand(`"${launcherPath}"`, `"${trackerPath}"`);
+  const observerCmd = launcherCommand(`"${launcherPath}"`, `"${observerPath}"`);
+
   const copilotHooks: CopilotHooksConfig = {
     version: 1,
     hooks: {
       sessionStart: [
         {
           type: "command",
-          bash: `node "${trackerPath}"`,
-          powershell: `node "${trackerPath}"`,
+          bash: trackerCmd,
+          powershell: trackerCmd,
           cwd: ".",
           timeoutSec: HOOK_TIMEOUT_SESSION_START,
         },
@@ -171,8 +184,8 @@ function buildCopilotHooksFiles(): GeneratedFile[] {
       sessionEnd: [
         {
           type: "command",
-          bash: `node "${observerPath}"`,
-          powershell: `node "${observerPath}"`,
+          bash: observerCmd,
+          powershell: observerCmd,
           cwd: ".",
           timeoutSec: HOOK_TIMEOUT_SESSION_END,
         },
@@ -193,6 +206,12 @@ function buildCopilotHooksFiles(): GeneratedFile[] {
       content: observerScript,
       sources: [MANIFEST_FILENAME],
       hash: hashContent(observerScript),
+    },
+    {
+      path: launcher.path,
+      content: launcher.content,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(launcher.content),
     },
     {
       path: COPILOT_PATHS.hooksFile,

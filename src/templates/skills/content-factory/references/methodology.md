@@ -81,11 +81,21 @@ standards don't.
 
 ---
 
-## 3. When to use an anchor
+## 3. Who chooses the workflow path
 
-Anchor-first is the default for anything beyond a trivial one-off.
+**The user chooses. Always.** Anchor-first (the full six-phase workflow) is
+the default, but the agent never selects it — or its fast-path exception —
+unilaterally. At the start of every new content request, present the Step 1
+workflow-choice prompt (see SKILL.md Step 1c) and let the user pick A
+(default), B (fast-path), or C (delegate the pick back to the agent, with
+confirmation before proceeding).
 
-### Anchor warranted
+The lists below are **signals you surface during that conversation** to help
+the user pick, or — if the user selected C — to justify the pick you
+report back for confirmation. They are never criteria the agent applies
+alone.
+
+### Signals that point at anchor-first (likely user pick: A)
 
 - The request involves substance the agent needs to construct (topic,
   argument, evidence) rather than just formatting.
@@ -97,7 +107,7 @@ Anchor-first is the default for anything beyond a trivial one-off.
 - The user is uncertain what they want — an anchor gives them something
   to react to.
 
-### Fast-path warranted
+### Signals that point at fast-path (likely user pick: B)
 
 - The user explicitly signals a one-off ("quick", "just", "simple",
   "one-off", "real fast").
@@ -107,13 +117,10 @@ Anchor-first is the default for anything beyond a trivial one-off.
 - Time pressure signals — the user is in a hurry and the content is
   low-stakes.
 
-When the signal is ambiguous, default to anchor-first but offer the
-alternative:
-
-> "I can draft a quick outline/article first so every format tells the
-> same story, or skip straight to the [requested format]. Which?"
-
-Ask this once, at the start. Don't re-prompt on every iteration.
+Ambiguous signals are normal. Present the workflow-choice prompt anyway;
+never pick silently. The prompt runs once at the start of a request — don't
+re-prompt on every iteration unless the user explicitly expands scope
+("actually, let's also make a deck").
 
 ---
 
@@ -253,8 +260,14 @@ choose.
 
 ## 5. Fast-path
 
-Some requests don't justify the full flow. When the user signals a
-one-off, skip anchor authoring entirely.
+Fast-path is the single authorized exception to the full six-phase workflow.
+It runs **only when the user has explicitly selected option B** in the
+Step 1 workflow-choice prompt (or option C resolved to B with user
+confirmation). The agent never picks fast-path on its own, even when intent
+signals look strongly one-off — signals inform the conversation, the user
+makes the call.
+
+Once the user has authorized fast-path:
 
 - Create the project as usual (`POST /api/create-project`).
 - Write a single HTML file in `contentDir/` of the requested type.
@@ -262,9 +275,9 @@ one-off, skip anchor authoring entirely.
 
 No `brief.json`, no anchor file, no revision tracking. Same behavior as
 before anchor-first existed. If the user iterates and the request grows
-(adds formats, expands scope), you can retroactively promote to
-anchor-first by writing an anchor that captures what's in the
-fast-path file. But don't do this preemptively.
+(adds formats, expands scope), re-present the workflow-choice prompt and
+let the user decide whether to promote to anchor-first. Don't auto-promote
+and don't auto-stay on fast-path.
 
 ---
 

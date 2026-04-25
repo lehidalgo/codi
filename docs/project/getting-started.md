@@ -18,18 +18,43 @@ By the end, your project will have a `.codi/` directory (source of truth) and ge
 
 ## Prerequisites
 
-- **Node.js >= 20** (check with `node -v`)
+- **Node.js >= 24** (check with `node -v`)
 - **npm** (comes with Node.js)
 - **A project directory** (new or existing)
+
+If your system Node is older or installed under `/usr/local` (root-owned), the curl installer in Step 1 will set up nvm + Node 24 for you.
 
 ---
 
 ## Step 1: Install
 
-Pick one of three options:
+### Quick install (recommended)
 
 ```bash
-# Global (recommended) — puts `codi` on your PATH
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+```
+
+This detects your environment and:
+
+- Installs nvm + Node 24 if missing or too old (under `~/.nvm`, no sudo)
+- Refuses to touch a root-owned npm prefix unless you explicitly opt in
+- Runs `npm install -g codi-cli` and verifies the result
+
+Override with `CODI_VERSION=2.x.y`, `CODI_INSTALL_NVM=0`, or `CODI_DRY_RUN=1`. Verify the script before piping it to bash:
+
+```bash
+curl -fsSL https://lehidalgo.github.io/codi/install.sh -o install.sh
+curl -fsSL https://lehidalgo.github.io/codi/install.sh.sha256 -o install.sh.sha256
+shasum -a 256 -c install.sh.sha256
+bash install.sh
+```
+
+### Manual install
+
+If you already manage Node 24+ yourself, install directly via npm:
+
+```bash
+# Global — puts `codi` on your PATH
 npm install -g codi-cli
 
 # Without installing — good for one-off use

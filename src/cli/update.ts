@@ -646,6 +646,7 @@ export async function updateHandler(
       const genResult = await generate(configResult.data, projectRoot, {
         keepCurrent: options.onConflict === "keep-current",
         force: options.force || options.onConflict === "keep-incoming",
+        unionMerge,
       });
       regenerated = genResult.ok;
     }

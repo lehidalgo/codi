@@ -21,6 +21,15 @@ const ArtifactEntrySchema = z.object({
   installedArtifactVersion: z.union([z.number().int().positive(), z.literal("unknown")]),
   installedAt: z.string(),
   managedBy: z.enum(["codi", "user"]),
+  /**
+   * Optional provenance for externally-added artifacts. Set when an artifact
+   * is added from outside the codi-cli package (local dir / ZIP / GitHub repo
+   * via the "Customize codi setup → Add from external" workflow).
+   * Format: "github:org/repo@<sha>", "zip:<basename>", or "local:<abs-path>".
+   * Informational in V1 — not used by `codi update`. Future versions may add
+   * a refresh-from-source flag.
+   */
+  source: z.string().optional(),
 });
 
 const ArtifactManifestSchema = z.object({

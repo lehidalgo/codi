@@ -9,6 +9,7 @@ import { registerAllAdapters } from "../adapters/index.js";
 import { detectAdapters, getAllAdapters } from "../core/generator/adapter-registry.js";
 import {
   handleInit,
+  handleCustomize,
   handleGenerate,
   handleExport,
   handleClean,
@@ -38,18 +39,22 @@ export interface HubTopLevelEntry {
   requiresProject: boolean;
 }
 
-/** Normal mode: the 5 most common user journeys, shown by default. */
+/**
+ * Normal mode: the 4 entries that always behave the same way.
+ * The first menu entry (init OR customize) is built at render time inside
+ * runCommandCenter — it depends on whether .codi/ exists in the project.
+ */
 export const NORMAL_MENU: HubTopLevelEntry[] = [
-  {
-    value: "init",
-    label: "Initialize project",
-    hint: "Preset, import ZIP, import GitHub, or custom selection",
-    requiresProject: false,
-  },
   {
     value: "generate",
     label: "Generate configs",
     hint: "Normal, dry run, or force rebuild per agent",
+    requiresProject: true,
+  },
+  {
+    value: "update",
+    label: "Update artifacts",
+    hint: "Refresh rules, skills, agents, MCP servers from the current codi version",
     requiresProject: true,
   },
   {
@@ -66,6 +71,28 @@ export const NORMAL_MENU: HubTopLevelEntry[] = [
   },
 ];
 
+/**
+ * Build the context-sensitive first entry — "Initialize project" when there
+ * is no .codi/, "Customize codi setup" when one exists. Both are shown
+ * regardless of project state (`requiresProject: false`); only the label,
+ * hint, and target handler change.
+ */
+export function buildFirstEntry(hasProject: boolean): HubTopLevelEntry {
+  return hasProject
+    ? {
+        value: "customize",
+        label: "Customize codi setup",
+        hint: "Add or remove artifacts, switch preset, import from external source",
+        requiresProject: false,
+      }
+    : {
+        value: "init",
+        label: "Initialize project",
+        hint: "Preset, import ZIP, import GitHub, or custom selection",
+        requiresProject: false,
+      };
+}
+
 /** Advanced mode: power-user actions, revealed via toggle. */
 export const ADVANCED_MENU: HubTopLevelEntry[] = [
   {
@@ -78,12 +105,6 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
     value: "preset",
     label: "Manage presets",
     hint: "List, create, install, export, edit, or remove presets",
-    requiresProject: true,
-  },
-  {
-    value: "update",
-    label: "Update templates",
-    hint: "Rules, skills, agents, MCP servers with dry run",
     requiresProject: true,
   },
   {
@@ -160,6 +181,7 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
     }
 
     const visibleEntries = [
+      buildFirstEntry(hasProject),
       ...NORMAL_MENU.filter((e) => !e.requiresProject || hasProject),
       ...(advancedMode ? ADVANCED_MENU.filter((e) => !e.requiresProject || hasProject) : []),
     ];
@@ -202,6 +224,7 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
 async function routeAction(action: string, projectRoot: string): Promise<void> {
   const handlers: Record<string, (root: string) => Promise<void>> = {
     init: handleInit,
+    customize: handleCustomize,
     generate: handleGenerate,
     export: handleExport,
     clean: handleClean,

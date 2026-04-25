@@ -42,6 +42,11 @@ jobs:
         run: node scripts/generate_site_stats.mjs
       - name: Build Astro docs into site/docs/
         run: npm run docs:build
+      - name: Regenerate installer checksum
+        run: |
+          cd site
+          shasum -a 256 install.sh > install.sh.sha256
+          shasum -a 256 -c install.sh.sha256
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

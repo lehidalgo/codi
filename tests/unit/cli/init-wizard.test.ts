@@ -337,4 +337,66 @@ describe("runInitWizard", () => {
     expect(result).toBeNull();
     expect(p.cancel).toHaveBeenCalled();
   });
+
+  describe("forceModify option", () => {
+    const existingInstall = {
+      selections: {
+        preset: "current-install",
+        rules: [],
+        skills: [],
+        agents: [],
+        commands: [],
+        mcpServers: [],
+      },
+      inventory: [],
+    };
+
+    it("skips the Modify-vs-Fresh prompt when forceModify is true", async () => {
+      // Step 0 (install-mode prompt) should be skipped entirely.
+      // Step 1 (Languages) → cancel via isBack symbol on the first multiselect.
+      vi.mocked(wizardMultiselect).mockResolvedValueOnce(Symbol("cancel") as never);
+
+      const result = await runInitWizard(
+        [],
+        [],
+        ["claude-code"],
+        existingInstall,
+        { forceModify: true },
+      );
+
+      // No wizardSelect was called for the install-mode prompt.
+      expect(wizardSelect).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("already installed") }),
+      );
+      // The wizard advanced to step 1 (Languages multiselect) before being cancelled.
+      expect(wizardMultiselect).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("languages") }),
+      );
+      expect(result).toBeNull();
+    });
+
+    it("shows the Modify-vs-Fresh prompt when forceModify is false / omitted", async () => {
+      vi.mocked(wizardSelect).mockResolvedValueOnce(Symbol("cancel") as never);
+
+      await runInitWizard([], [], ["claude-code"], existingInstall);
+
+      // Step 0 was reached: the install-mode prompt was shown.
+      expect(wizardSelect).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("already installed") }),
+      );
+    });
+
+    it("forceModify has no effect when no existingInstall is provided", async () => {
+      // No existing install → wizard always starts at step 1 anyway. Languages prompt cancels.
+      vi.mocked(wizardMultiselect).mockResolvedValueOnce(Symbol("cancel") as never);
+
+      await runInitWizard([], [], ["claude-code"], undefined, { forceModify: true });
+
+      // No install-mode prompt because there is nothing existing to modify.
+      expect(wizardSelect).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("already installed") }),
+      );
+      expect(wizardMultiselect).toHaveBeenCalled();
+    });
+  });
 });
