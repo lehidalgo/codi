@@ -29,6 +29,69 @@ const LAYOUTS: Record<ArtifactType, TypeLayout> = {
   "mcp-server": { dir: "mcp-servers", kind: "file", ext: ".yaml" },
 };
 
+const ARTIFACT_DIR_NAMES = Object.values(LAYOUTS).map((l) => l.dir);
+
+export interface ArtifactRoot {
+  /** Absolute path to the directory containing artifact subdirs. */
+  path: string;
+  /** Source-relative path for display. "." when the source root is itself the candidate. */
+  relPath: string;
+  /** Names of the artifact subdirs found in this candidate (e.g. ["rules","skills"]). */
+  presentTypes: string[];
+}
+
+/**
+ * Walks a source tree (up to maxDepth levels) and returns every directory
+ * that contains at least one codi artifact subdir (rules/, skills/, agents/,
+ * mcp-servers/). Use the result to let the user pick when a source contains
+ * multiple presets, or to follow a wrapper folder when the source extracts
+ * to e.g. `repo-name/preset-name/{rules,skills,...}`.
+ *
+ * Stops descending into a directory once it qualifies as an artifact root —
+ * we do not want to count its inner `rules/`, `skills/` etc. as separate
+ * presets. Skips dotfiles and common noise dirs (`node_modules`, `.git`).
+ */
+export async function findArtifactRoots(sourceRoot: string, maxDepth = 2): Promise<ArtifactRoot[]> {
+  const out: ArtifactRoot[] = [];
+  const SKIP_NAMES = new Set(["node_modules", ".git", ".github", "dist", "build"]);
+
+  async function probe(dir: string): Promise<string[]> {
+    const present: string[] = [];
+    for (const name of ARTIFACT_DIR_NAMES) {
+      const exists = await fs
+        .stat(path.join(dir, name))
+        .then((s) => s.isDirectory())
+        .catch(() => false);
+      if (exists) present.push(name);
+    }
+    return present;
+  }
+
+  async function walk(dir: string, depth: number): Promise<void> {
+    const present = await probe(dir);
+    if (present.length > 0) {
+      out.push({
+        path: dir,
+        relPath: path.relative(sourceRoot, dir) || ".",
+        presentTypes: present,
+      });
+      // Do not descend further from a qualifying root — its subdirs are
+      // its artifacts, not nested presets.
+      return;
+    }
+    if (depth >= maxDepth) return;
+    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name.startsWith(".") || SKIP_NAMES.has(entry.name)) continue;
+      await walk(path.join(dir, entry.name), depth + 1);
+    }
+  }
+
+  await walk(sourceRoot, 0);
+  return out;
+}
+
 /**
  * Walk an external source root and return every codi artifact discovered.
  * Missing type directories are silently skipped (a source may carry only

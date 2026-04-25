@@ -8,6 +8,8 @@ import {
 } from "../core/external-source/connectors.js";
 import {
   discoverArtifacts,
+  findArtifactRoots,
+  type ArtifactRoot,
   type ArtifactType,
   type DiscoveredArtifact,
 } from "../core/external-source/discovery.js";
@@ -175,15 +177,44 @@ export async function runAddFromExternal(
     source = await promptSource(kind);
     if (!source) return;
 
+    // Find candidate "preset roots" anywhere in the source tree. Handles:
+    //   - source root has rules/skills/etc. directly → 1 candidate (".")
+    //   - source has a wrapper folder (e.g. repo-name/) → 1 candidate
+    //   - source has multiple presets → prompt the user to pick one
+    const roots = await findArtifactRoots(source.rootPath);
+    if (roots.length === 0) {
+      p.log.error(
+        `No codi artifacts found in ${source.id}. Source must contain rules/, skills/, agents/, or mcp-servers/ directories (anywhere up to 2 levels deep).`,
+      );
+      return;
+    }
+
+    let chosenRoot: ArtifactRoot;
+    if (roots.length === 1) {
+      chosenRoot = roots[0]!;
+    } else {
+      const picked = await p.select<ArtifactRoot>({
+        message: `Found ${roots.length} presets in this source. Which one to import from?`,
+        options: roots.map((r) => ({
+          label: r.relPath,
+          value: r,
+          hint: `${r.presentTypes.join(", ")}`,
+        })),
+      });
+      if (isCancelled(picked)) return;
+      chosenRoot = picked;
+    }
+    if (chosenRoot.relPath !== ".") {
+      p.log.info(`Using preset at ${chosenRoot.relPath}`);
+    }
+
     const skipped: string[] = [];
-    const artifacts = await discoverArtifacts(source.rootPath, (rel, reason) =>
+    const artifacts = await discoverArtifacts(chosenRoot.path, (rel, reason) =>
       skipped.push(`${rel} (${reason})`),
     );
 
     if (artifacts.length === 0) {
-      p.log.error(
-        `No codi artifacts found in ${source.id}. Source must contain rules/, skills/, agents/, or mcp-servers/ directories.`,
-      );
+      p.log.error(`No valid artifacts in ${chosenRoot.relPath} — every entry failed validation.`);
       return;
     }
     if (skipped.length > 0) {

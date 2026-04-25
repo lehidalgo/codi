@@ -22,6 +22,7 @@ vi.mock("../../../src/core/external-source/connectors.js", () => ({
 
 vi.mock("../../../src/core/external-source/discovery.js", () => ({
   discoverArtifacts: vi.fn(),
+  findArtifactRoots: vi.fn(),
 }));
 
 vi.mock("../../../src/core/external-source/installer.js", () => ({
@@ -40,7 +41,7 @@ import {
   connectZipFile,
   connectGithubRepo,
 } from "#src/core/external-source/connectors.js";
-import { discoverArtifacts } from "#src/core/external-source/discovery.js";
+import { discoverArtifacts, findArtifactRoots } from "#src/core/external-source/discovery.js";
 import { detectCollisions, installSelected } from "#src/core/external-source/installer.js";
 import { regenerateConfigs } from "#src/cli/shared.js";
 
@@ -65,10 +66,16 @@ const skillArtifact = {
   absPath: "/fake/extracted/skills/beta",
 };
 
+function singleRoot(absPath = "/fake/extracted") {
+  return [{ path: absPath, relPath: ".", presentTypes: ["rules"] }];
+}
+
 describe("runAddFromExternal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(p.isCancel).mockReturnValue(false);
+    // Default: source root is the only candidate (most common case).
+    vi.mocked(findArtifactRoots).mockResolvedValue(singleRoot());
   });
 
   describe("source-kind plumbing", () => {
@@ -116,17 +123,79 @@ describe("runAddFromExternal", () => {
   });
 
   describe("discovery + selection", () => {
-    it("errors and cleans up when no artifacts are discovered", async () => {
+    it("errors and cleans up when no artifact roots are found in the source tree", async () => {
       const source = makeMockSource();
       vi.mocked(p.text).mockResolvedValueOnce("/some/path" as never);
       vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
-      vi.mocked(discoverArtifacts).mockResolvedValueOnce([]);
+      vi.mocked(findArtifactRoots).mockResolvedValueOnce([]);
 
       await runAddFromExternal("/cfg", "local");
 
       expect(p.log.error).toHaveBeenCalledWith(expect.stringContaining("No codi artifacts found"));
       expect(source.cleanup).toHaveBeenCalledTimes(1);
       expect(p.multiselect).not.toHaveBeenCalled();
+    });
+
+    it("auto-uses a single artifact root without prompting", async () => {
+      const source = makeMockSource();
+      vi.mocked(p.text).mockResolvedValueOnce("/some/path" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      vi.mocked(findArtifactRoots).mockResolvedValueOnce(singleRoot("/fake/extracted"));
+      vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
+
+      await runAddFromExternal("/cfg", "local");
+
+      // No "which preset?" select prompt was shown for the single-root case.
+      expect(p.select).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("Which one") }),
+      );
+      // discoverArtifacts was called against the single root path.
+      expect(discoverArtifacts).toHaveBeenCalledWith("/fake/extracted", expect.any(Function));
+    });
+
+    it("prompts the user to pick when multiple presets are found in the source", async () => {
+      const source = makeMockSource();
+      vi.mocked(p.text).mockResolvedValueOnce("/some/path" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      const rootA = {
+        path: "/fake/extracted/preset-a",
+        relPath: "preset-a",
+        presentTypes: ["rules", "skills"],
+      };
+      const rootB = {
+        path: "/fake/extracted/preset-b",
+        relPath: "preset-b",
+        presentTypes: ["agents"],
+      };
+      vi.mocked(findArtifactRoots).mockResolvedValueOnce([rootA, rootB]);
+      vi.mocked(p.select).mockResolvedValueOnce(rootB as never);
+      vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
+
+      await runAddFromExternal("/cfg", "local");
+
+      const presetPrompt = vi.mocked(p.select).mock.calls[0]?.[0];
+      expect(presetPrompt?.message).toContain("Found 2 presets");
+      expect(presetPrompt?.options.map((o) => o.value)).toEqual([rootA, rootB]);
+      expect(discoverArtifacts).toHaveBeenCalledWith(rootB.path, expect.any(Function));
+    });
+
+    it("returns cleanly when the preset selection is cancelled", async () => {
+      const source = makeMockSource();
+      vi.mocked(p.text).mockResolvedValueOnce("/some/path" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      vi.mocked(findArtifactRoots).mockResolvedValueOnce([
+        { path: "/a", relPath: "preset-a", presentTypes: ["rules"] },
+        { path: "/b", relPath: "preset-b", presentTypes: ["rules"] },
+      ]);
+      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
+      vi.mocked(p.isCancel).mockImplementation((v) => typeof v === "symbol");
+
+      await runAddFromExternal("/cfg", "local");
+
+      expect(discoverArtifacts).not.toHaveBeenCalled();
+      expect(source.cleanup).toHaveBeenCalled();
     });
 
     it("warns about skipped invalid entries reported by discovery", async () => {
