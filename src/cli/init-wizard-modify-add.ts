@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import path from "node:path";
 import {
   connectGithubRepo,
   connectLocalDirectory,
@@ -17,6 +18,7 @@ import {
   type InstallEntry,
 } from "../core/external-source/installer.js";
 import { isCancelled } from "./hub-handlers.js";
+import { regenerateConfigs } from "./shared.js";
 
 export type ExternalSourceKind = "local" | "zip" | "github";
 
@@ -212,8 +214,23 @@ export async function runAddFromExternal(
 
     const summary = await installSelected(configDir, entries, source);
     p.log.success(
-      `Installed ${summary.installed} (renamed: ${summary.renamed}, skipped: ${summary.skipped}). Run 'codi generate' to apply.`,
+      `Installed ${summary.installed} (renamed: ${summary.renamed}, skipped: ${summary.skipped}).`,
     );
+
+    // Auto-generate so the user does not have to run `codi generate` manually
+    // after every customize action. regenerateConfigs respects the project's
+    // manifest.agents — only the configured coding agents are refreshed.
+    if (summary.installed > 0) {
+      // configDir is .codi/; the project root is its parent.
+      const projectRoot = path.dirname(configDir);
+      p.log.step("Regenerating agent configs...");
+      const ok = await regenerateConfigs(projectRoot);
+      if (ok) {
+        p.log.success("Agent configs regenerated.");
+      } else {
+        p.log.warn("Auto-generate skipped — run `codi generate` manually.");
+      }
+    }
   } catch (cause) {
     p.log.error(`Import failed: ${cause instanceof Error ? cause.message : String(cause)}`);
   } finally {

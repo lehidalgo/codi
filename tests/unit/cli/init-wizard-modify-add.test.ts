@@ -29,6 +29,10 @@ vi.mock("../../../src/core/external-source/installer.js", () => ({
   installSelected: vi.fn(),
 }));
 
+vi.mock("../../../src/cli/shared.js", () => ({
+  regenerateConfigs: vi.fn().mockResolvedValue(true),
+}));
+
 import * as p from "@clack/prompts";
 import { runAddFromExternal } from "#src/cli/init-wizard-modify-add.js";
 import {
@@ -37,10 +41,8 @@ import {
   connectGithubRepo,
 } from "#src/core/external-source/connectors.js";
 import { discoverArtifacts } from "#src/core/external-source/discovery.js";
-import {
-  detectCollisions,
-  installSelected,
-} from "#src/core/external-source/installer.js";
+import { detectCollisions, installSelected } from "#src/core/external-source/installer.js";
+import { regenerateConfigs } from "#src/cli/shared.js";
 
 function makeMockSource(id = "local:/fake/path") {
   return {
@@ -122,9 +124,7 @@ describe("runAddFromExternal", () => {
 
       await runAddFromExternal("/cfg", "local");
 
-      expect(p.log.error).toHaveBeenCalledWith(
-        expect.stringContaining("No codi artifacts found"),
-      );
+      expect(p.log.error).toHaveBeenCalledWith(expect.stringContaining("No codi artifacts found"));
       expect(source.cleanup).toHaveBeenCalledTimes(1);
       expect(p.multiselect).not.toHaveBeenCalled();
     });
@@ -162,7 +162,7 @@ describe("runAddFromExternal", () => {
   describe("happy path + collisions", () => {
     it("installs selected artifacts when there are no collisions", async () => {
       const source = makeMockSource();
-      vi.mocked(p.text).mockResolvedValueOnce("/some/path" as never);
+      vi.mocked(p.text).mockResolvedValueOnce("/path/to/project/.codi" as never);
       vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
       vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact, skillArtifact]);
       vi.mocked(p.multiselect).mockResolvedValueOnce([ruleArtifact, skillArtifact] as never);
@@ -178,14 +178,82 @@ describe("runAddFromExternal", () => {
         renamed: 0,
       });
 
-      await runAddFromExternal("/cfg", "local");
+      await runAddFromExternal("/path/to/project/.codi", "local");
 
       const installCallArgs = vi.mocked(installSelected).mock.calls[0]!;
-      expect(installCallArgs[0]).toBe("/cfg");
+      expect(installCallArgs[0]).toBe("/path/to/project/.codi");
       expect(installCallArgs[1]).toHaveLength(2);
       // Default resolution for non-colliding artifacts is overwrite
       expect(installCallArgs[1]?.[0]?.resolution).toEqual({ kind: "overwrite" });
       expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Installed 2"));
+    });
+
+    it("auto-triggers regenerateConfigs against the project root after a successful install", async () => {
+      const source = makeMockSource();
+      vi.mocked(p.text).mockResolvedValueOnce("/path/to/project/.codi" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([ruleArtifact] as never);
+      vi.mocked(detectCollisions).mockResolvedValueOnce(
+        new Map([[ruleArtifact, "fresh"]]) as never,
+      );
+      vi.mocked(installSelected).mockResolvedValueOnce({
+        installed: 1,
+        skipped: 0,
+        renamed: 0,
+      });
+
+      await runAddFromExternal("/path/to/project/.codi", "local");
+
+      // Project root is the parent of configDir (.codi/).
+      expect(regenerateConfigs).toHaveBeenCalledWith("/path/to/project");
+      expect(p.log.success).toHaveBeenCalledWith(
+        expect.stringContaining("Agent configs regenerated"),
+      );
+    });
+
+    it("skips auto-generate when nothing was installed", async () => {
+      const source = makeMockSource();
+      vi.mocked(p.text).mockResolvedValueOnce("/cfg" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([ruleArtifact] as never);
+      vi.mocked(detectCollisions).mockResolvedValueOnce(
+        new Map([[ruleArtifact, "exists"]]) as never,
+      );
+      vi.mocked(p.select).mockResolvedValueOnce("skip" as never);
+      vi.mocked(installSelected).mockResolvedValueOnce({
+        installed: 0,
+        skipped: 1,
+        renamed: 0,
+      });
+
+      await runAddFromExternal("/cfg", "local");
+
+      expect(regenerateConfigs).not.toHaveBeenCalled();
+    });
+
+    it("warns the user to run codi generate manually if auto-generate fails", async () => {
+      const source = makeMockSource();
+      vi.mocked(p.text).mockResolvedValueOnce("/cfg" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact]);
+      vi.mocked(p.multiselect).mockResolvedValueOnce([ruleArtifact] as never);
+      vi.mocked(detectCollisions).mockResolvedValueOnce(
+        new Map([[ruleArtifact, "fresh"]]) as never,
+      );
+      vi.mocked(installSelected).mockResolvedValueOnce({
+        installed: 1,
+        skipped: 0,
+        renamed: 0,
+      });
+      vi.mocked(regenerateConfigs).mockResolvedValueOnce(false);
+
+      await runAddFromExternal("/cfg", "local");
+
+      expect(p.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining("run `codi generate` manually"),
+      );
     });
 
     it("prompts per collision with skip / overwrite / rename options", async () => {
@@ -258,9 +326,7 @@ describe("runAddFromExternal", () => {
 
       await runAddFromExternal("/cfg", "local");
 
-      expect(p.log.error).toHaveBeenCalledWith(
-        expect.stringContaining("Import failed: not a dir"),
-      );
+      expect(p.log.error).toHaveBeenCalledWith(expect.stringContaining("Import failed: not a dir"));
     });
   });
 });
