@@ -251,6 +251,47 @@ export async function handleGithubPath(
   };
 }
 
+/**
+ * "Import from local directory" path. Prompts for an absolute or relative
+ * path, optionally confirms preset replacement on existing installs, then
+ * returns a WizardResult with configMode: "local". The actual install is
+ * handled in init.ts via the artifact-selection fallback (local sources
+ * rarely carry preset.yaml, so we skip the preset-style installer entirely).
+ */
+export async function handleLocalPath(
+  agents: string[],
+  existingInstall?: ExistingInstallContext,
+): Promise<WizardResult | null | symbol> {
+  const dirPath = await p.text({
+    message: "Path to the directory containing rules/, skills/, agents/, mcp-servers/",
+    placeholder: "/path/to/external/preset",
+  });
+  if (isBack(dirPath)) return BACK;
+
+  if (existingInstall) {
+    const proceed = await confirmPresetReplace(dirPath as string, existingInstall);
+    if (isBack(proceed)) return BACK;
+    if (!proceed) {
+      p.cancel("Import cancelled.");
+      return null;
+    }
+  }
+
+  p.outro("Importing artifacts from local directory.");
+  return {
+    agents,
+    configMode: "local",
+    importSource: dirPath as string,
+    languages: [],
+    rules: [],
+    skills: [],
+    agentTemplates: [],
+    mcpServers: [],
+    preset: DEFAULT_PRESET,
+    versionPin: true,
+  };
+}
+
 export async function handlePresetPath(
   agents: string[],
   existingInstall?: ExistingInstallContext,

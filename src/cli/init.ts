@@ -49,7 +49,11 @@ import type { ArtifactFileState } from "../core/config/state.js";
 import { hashContent } from "../utils/hash.js";
 import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
 import { runArtifactSelectionFromSource } from "./init-wizard-modify-add.js";
-import { connectGithubRepo, connectZipFile } from "../core/external-source/connectors.js";
+import {
+  connectGithubRepo,
+  connectLocalDirectory,
+  connectZipFile,
+} from "../core/external-source/connectors.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -86,13 +90,19 @@ function isInteractive(options: InitOptions): boolean {
  */
 async function runArtifactSelectionFallback(
   configDir: string,
-  kind: "zip" | "github",
+  kind: "zip" | "github" | "local",
   importSource: string,
 ): Promise<void> {
   const log = Logger.getInstance();
   try {
-    const source =
-      kind === "zip" ? await connectZipFile(importSource) : await connectGithubRepo(importSource);
+    let source;
+    if (kind === "zip") {
+      source = await connectZipFile(importSource);
+    } else if (kind === "github") {
+      source = await connectGithubRepo(importSource);
+    } else {
+      source = await connectLocalDirectory(importSource);
+    }
     try {
       await runArtifactSelectionFromSource(configDir, source);
     } finally {
@@ -240,8 +250,13 @@ export async function initHandler(
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 
-    if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
-      // Import: will be handled after createProjectStructure via preset install
+    if (
+      wizardResult.configMode === "zip" ||
+      wizardResult.configMode === "github" ||
+      wizardResult.configMode === "local"
+    ) {
+      // Import: will be handled after createProjectStructure via preset
+      // install (zip / github) or directly via artifact-selection (local).
     } else {
       // Preset or custom: wizard always returns the full artifact selections
       ruleTemplates = wizardResult.rules;
@@ -264,31 +279,41 @@ export async function initHandler(
     // presetInstallUnifiedHandler calls regenerateConfigs internally,
     // so we track success to skip the duplicate generate() call later.
     if (wizardResult.importSource) {
-      const { presetInstallUnifiedHandler } = await import("./preset-handlers.js");
-      const installResult = await presetInstallUnifiedHandler(
-        projectRoot,
-        wizardResult.importSource,
-      );
-      if (!installResult.success) {
-        log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`);
-        // Fallback: many community sources (a GitHub repo, a ZIP of bare
-        // artifact dirs) carry no preset.yaml. Re-attempt the import via the
-        // artifact-selection workflow — discover candidate roots in the
-        // source and let the user pick which artifacts to install.
-        if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
-          log.info("Trying artifact-selection fallback (source has no preset.yaml)...");
-          await runArtifactSelectionFallback(
-            configDir,
-            wizardResult.configMode,
-            wizardResult.importSource,
-          );
-          importRegenerated = true;
-        }
-      } else {
+      // Local directory imports always go through artifact-selection — they
+      // are user-pointed paths, not packaged presets, so the preset-style
+      // installer would just fail and the fallback would run anyway. Skip
+      // the round trip and call the selection workflow directly.
+      if (wizardResult.configMode === "local") {
+        log.info("Importing artifacts from local directory...");
+        await runArtifactSelectionFallback(configDir, "local", wizardResult.importSource);
         importRegenerated = true;
-        if (installResult.data?.name) {
-          presetName = installResult.data.name;
-          displayPresetName = installResult.data.name;
+      } else {
+        const { presetInstallUnifiedHandler } = await import("./preset-handlers.js");
+        const installResult = await presetInstallUnifiedHandler(
+          projectRoot,
+          wizardResult.importSource,
+        );
+        if (!installResult.success) {
+          log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`);
+          // Fallback: many community sources (a GitHub repo, a ZIP of bare
+          // artifact dirs) carry no preset.yaml. Re-attempt the import via the
+          // artifact-selection workflow — discover candidate roots in the
+          // source and let the user pick which artifacts to install.
+          if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
+            log.info("Trying artifact-selection fallback (source has no preset.yaml)...");
+            await runArtifactSelectionFallback(
+              configDir,
+              wizardResult.configMode,
+              wizardResult.importSource,
+            );
+            importRegenerated = true;
+          }
+        } else {
+          importRegenerated = true;
+          if (installResult.data?.name) {
+            presetName = installResult.data.name;
+            displayPresetName = installResult.data.name;
+          }
         }
       }
     }

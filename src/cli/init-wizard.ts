@@ -4,6 +4,7 @@ import { getSupportedLanguages } from "../core/hooks/hook-registry.js";
 import {
   handleZipPath,
   handleGithubPath,
+  handleLocalPath,
   handlePresetPath,
   handleCustomPath,
   formatLabel,
@@ -15,7 +16,7 @@ import { wizardSelect, wizardMultiselect } from "./wizard-prompts.js";
 export interface WizardResult {
   languages: string[];
   agents: string[];
-  configMode: "preset" | "custom" | "zip" | "github";
+  configMode: "preset" | "custom" | "zip" | "github" | "local";
   presetName?: string;
   selectedPresetName?: string;
   importSource?: string;
@@ -200,6 +201,11 @@ export async function runInitWizard(
                   hint: "Load a preset from a GitHub repository",
                 },
                 {
+                  label: "Import from local directory",
+                  value: "local" as const,
+                  hint: "Pick artifacts from any folder with rules/, skills/, agents/, mcp-servers/",
+                },
+                {
                   label: "Custom selection",
                   value: "custom" as const,
                   hint: "Pick individual artifacts (searchable)",
@@ -225,6 +231,12 @@ export async function runInitWizard(
             break;
           case "github":
             result = await handleGithubPath(
+              savedAgents!,
+              installMode === "modify" ? existingInstall : undefined,
+            );
+            break;
+          case "local":
+            result = await handleLocalPath(
               savedAgents!,
               installMode === "modify" ? existingInstall : undefined,
             );
