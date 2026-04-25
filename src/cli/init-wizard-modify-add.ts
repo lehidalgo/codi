@@ -63,21 +63,39 @@ async function promptSource(kind: ExternalSourceKind): Promise<ExternalSource | 
   return await connectGithubRepo(value as string);
 }
 
-function buildArtifactOptions(artifacts: DiscoveredArtifact[]): Array<{
-  label: string;
-  value: DiscoveredArtifact;
-  hint: string;
-}> {
-  // Sort by type then name for stable, scannable display.
-  const sorted = [...artifacts].sort((a, b) => {
-    if (a.type !== b.type) return a.type.localeCompare(b.type);
-    return a.name.localeCompare(b.name);
-  });
-  return sorted.map((a) => ({
-    label: `[${TYPE_PLURAL[a.type]}] ${a.name}`,
-    value: a,
-    hint: a.relPath,
-  }));
+/**
+ * Order in which we present per-type multi-selects, matching the regular
+ * init wizard's "Rules → Skills → Agents → MCP Servers" sequence.
+ */
+const TYPE_ORDER: readonly ArtifactType[] = ["rule", "skill", "agent", "mcp-server"] as const;
+
+/**
+ * Run one multi-select per artifact type (in the same order the init wizard
+ * uses), then concatenate the picks. Returns null if the user cancels at any
+ * step.
+ */
+async function selectArtifactsByType(
+  artifacts: DiscoveredArtifact[],
+): Promise<DiscoveredArtifact[] | null> {
+  const all: DiscoveredArtifact[] = [];
+  for (const type of TYPE_ORDER) {
+    const ofType = artifacts
+      .filter((a) => a.type === type)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (ofType.length === 0) continue;
+    const picked = await p.multiselect<DiscoveredArtifact>({
+      message: `${TYPE_PLURAL[type]} (${ofType.length} available) — space to toggle, enter to confirm`,
+      options: ofType.map((a) => ({
+        label: a.name,
+        value: a,
+        hint: a.relPath,
+      })),
+      required: false,
+    });
+    if (isCancelled(picked)) return null;
+    all.push(...picked);
+  }
+  return all;
 }
 
 async function resolveCollisions(
@@ -254,12 +272,9 @@ async function runSelectionBody(configDir: string, source: ExternalSource): Prom
     );
   }
 
-  const selected = await p.multiselect<DiscoveredArtifact>({
-    message: "Select artifacts to add (space to toggle, enter to confirm)",
-    options: buildArtifactOptions(artifacts),
-    required: false,
-  });
-  if (isCancelled(selected) || selected.length === 0) {
+  const selected = await selectArtifactsByType(artifacts);
+  if (selected === null) return; // user cancelled mid-flow
+  if (selected.length === 0) {
     p.log.info("No artifacts selected. Nothing changed.");
     return;
   }

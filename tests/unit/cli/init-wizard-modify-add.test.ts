@@ -72,10 +72,16 @@ function singleRoot(absPath = "/fake/extracted") {
 
 describe("runAddFromExternal", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // resetAllMocks (not just clearAllMocks) wipes the mockResolvedValueOnce
+    // queue and any mockImplementation set by earlier tests. clearAllMocks
+    // only resets call history. Without this, leaked mock state from one
+    // test bleeds into the next.
+    vi.resetAllMocks();
     vi.mocked(p.isCancel).mockReturnValue(false);
     // Default: source root is the only candidate (most common case).
     vi.mocked(findArtifactRoots).mockResolvedValue(singleRoot());
+    // regenerateConfigs default: succeeds (used by happy-path tests).
+    vi.mocked(regenerateConfigs).mockResolvedValue(true);
   });
 
   describe("source-kind plumbing", () => {
@@ -234,7 +240,11 @@ describe("runAddFromExternal", () => {
       vi.mocked(p.text).mockResolvedValueOnce("/path/to/project/.codi" as never);
       vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
       vi.mocked(discoverArtifacts).mockResolvedValueOnce([ruleArtifact, skillArtifact]);
-      vi.mocked(p.multiselect).mockResolvedValueOnce([ruleArtifact, skillArtifact] as never);
+      // selectArtifactsByType calls multiselect once per artifact type — one
+      // call for the rule, one for the skill (in TYPE_ORDER).
+      vi.mocked(p.multiselect)
+        .mockResolvedValueOnce([ruleArtifact] as never)
+        .mockResolvedValueOnce([skillArtifact] as never);
       vi.mocked(detectCollisions).mockResolvedValueOnce(
         new Map([
           [ruleArtifact, "fresh"],
@@ -255,6 +265,35 @@ describe("runAddFromExternal", () => {
       // Default resolution for non-colliding artifacts is overwrite
       expect(installCallArgs[1]?.[0]?.resolution).toEqual({ kind: "overwrite" });
       expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Installed 2"));
+    });
+
+    it("renders one multi-select per artifact type, in canonical order", async () => {
+      const source = makeMockSource();
+      const agentArtifact = {
+        type: "agent" as const,
+        name: "gamma",
+        relPath: "agents/gamma.md",
+        absPath: "/fake/extracted/agents/gamma.md",
+      };
+      vi.mocked(p.text).mockResolvedValueOnce("/cfg" as never);
+      vi.mocked(connectLocalDirectory).mockResolvedValueOnce(source);
+      vi.mocked(discoverArtifacts).mockResolvedValueOnce([
+        agentArtifact,
+        ruleArtifact,
+        skillArtifact,
+      ]);
+      vi.mocked(p.multiselect)
+        .mockResolvedValueOnce([] as never) // rule
+        .mockResolvedValueOnce([] as never) // skill
+        .mockResolvedValueOnce([] as never); // agent
+
+      await runAddFromExternal("/cfg", "local");
+
+      const calls = vi.mocked(p.multiselect).mock.calls;
+      expect(calls).toHaveLength(3);
+      expect(calls[0]?.[0]?.message).toContain("Rules");
+      expect(calls[1]?.[0]?.message).toContain("Skills");
+      expect(calls[2]?.[0]?.message).toContain("Agents");
     });
 
     it("auto-triggers regenerateConfigs against the project root after a successful install", async () => {
