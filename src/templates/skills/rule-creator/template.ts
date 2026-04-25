@@ -15,13 +15,18 @@ name: {{name}}
 description: |
   Rule creation workflow. Use when the user asks to create, write, or define
   a coding rule, standard, or convention. Also activate when the user wants
-  to enforce behavior, set constraints, or establish coding standards.
+  to enforce behavior, set constraints, or establish coding standards. After
+  creation, use ${PROJECT_NAME}-artifact-contributor to share, package as
+  ZIP, or open a PR with the new rule. Do NOT activate for creating a skill
+  (use ${PROJECT_NAME}-skill-creator), creating an agent (use
+  ${PROJECT_NAME}-agent-creator), or refining an existing rule from
+  collected feedback (use ${PROJECT_NAME}-refine-rules).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
 # Rule Creator

@@ -3,26 +3,27 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  End-to-end pull request review workflow. Use when the user asks to review
-  a PR, audit a pull request, comment on a PR, post a review on GitHub, or
-  document PR findings. Also activate for phrases like "review PR #N",
+  End-to-end pull request review — the PRODUCING side. Use when reviewing a
+  PR, auditing a pull request, commenting on a PR, posting a review on
+  GitHub, or documenting PR findings. Trigger phrases: "review PR #N",
   "review this pull request", "review my PR", "audit the PR", "post review
-  on PR", "PR review doc", "check PR against claims", "review before merge",
-  "pre-merge review for the PR". Produces a severity-ranked findings
-  document (OWASP-aligned Critical/High/Medium/Low + Conventional Comments
-  labels), saves it under docs/, and posts it to the PR via gh CLI. Do NOT
-  activate for reviewing a single file or uncommitted diff (use
-  ${PROJECT_NAME}-code-review), fixing issues already found (use
-  ${PROJECT_NAME}-debugging), running a dedicated security audit on the
-  whole codebase (use ${PROJECT_NAME}-security-scan), or writing general
-  project documentation (use ${PROJECT_NAME}-project-documentation).
+  on PR", "PR review doc", "check PR against claims". Produces a
+  severity-ranked findings document (OWASP-aligned Critical/High/Medium/Low
+  + Conventional Comments labels), saves it under docs/, and posts it to
+  the PR via gh CLI. Do NOT activate when the user RECEIVED feedback on
+  their own PR and is deciding how to respond (use
+  ${PROJECT_NAME}-receiving-code-review), for reviewing a single file or
+  uncommitted diff (use ${PROJECT_NAME}-code-review), for fixing issues
+  already found (use ${PROJECT_NAME}-debugging), for a dedicated security
+  audit on the whole codebase (use ${PROJECT_NAME}-security-scan), or for
+  general project documentation (use ${PROJECT_NAME}-project-documentation).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
 argument-hint: [pr-number]
-version: 2
+version: 4
 ---
 
 # {{name}} — Pull Request Review
@@ -199,11 +200,7 @@ PR #<N> review complete
 
 ## Receiving a PR Review (for the author side)
 
-If the user asks you to act on a review posted by this skill (or any PR review), apply the same verification bar in reverse:
-
-- Read each finding and check it against the actual code before changing anything
-- Push back with evidence when the reviewer is wrong ("This is intentional — see design doc section 3")
-- Fix real issues tersely: "Fixed at file:line" — no "You're absolutely right!" padding
+When feedback ARRIVES on YOUR PR, switch to **${PROJECT_NAME}-receiving-code-review** — that skill enforces the iron law (external feedback is suggestions to evaluate, not orders to follow), the forbidden-phrase list, and the 4-step READ → VERIFY → DECIDE → RESPOND workflow.
 
 ## Available Agents
 
@@ -215,4 +212,5 @@ If the user asks you to act on a review posted by this skill (or any PR review),
 - **${PROJECT_NAME}-security-scan** — deep OWASP scan across the whole codebase, not just the PR
 - **${PROJECT_NAME}-project-documentation** — general documentation (README, ADR, API) outside PR context
 - **${PROJECT_NAME}-branch-finish** — complete a feature branch; triggers this skill before merge
+- **${PROJECT_NAME}-receiving-code-review** — sibling skill for the consuming side: how to evaluate and respond to PR review feedback on YOUR work
 `;

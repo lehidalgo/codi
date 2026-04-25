@@ -8,23 +8,25 @@ import {
 export const template = `---
 name: {{name}}
 description: |
-  Structured code review workflow. Use when reviewing a pull request,
-  examining code changes, auditing code quality, or producing severity-ranked
-  findings against project rules. Also activate for phrases like "review my
-  code", "review my PR", "PR review", "check my changes", "audit this file",
-  "look at this diff", "feedback on implementation", "pre-merge review",
-  "review before I merge". Produces findings with file path, line number,
-  severity (Critical / Warning / Suggestion), and suggested fixes. Do NOT
-  activate for fixing bugs the user identifies (use ${PROJECT_NAME}-debugging),
-  writing new code (use a content/plan/subagent skill), running a full
-  security scan (use ${PROJECT_NAME}-security-scan), or measuring test
-  coverage (use ${PROJECT_NAME}-test-suite).
+  Structured code review on an uncommitted diff, single file, or local
+  branch — the PRODUCING side. Use when reviewing code changes, auditing
+  code quality, or producing severity-ranked findings against project
+  rules. Activate for phrases like "review my code", "check my changes",
+  "audit this file", "look at this diff", "feedback on implementation".
+  Produces findings with file path, line number, severity (Critical /
+  Warning / Suggestion), and suggested fixes. Do NOT activate when
+  feedback ARRIVED on YOUR work (use ${PROJECT_NAME}-receiving-code-review),
+  for full GitHub PR review with gh-CLI posting (use
+  ${PROJECT_NAME}-pr-review), for fixing bugs (use
+  ${PROJECT_NAME}-debugging), writing new code (use a content/plan/subagent
+  skill), running a full security scan (use ${PROJECT_NAME}-security-scan),
+  or measuring test coverage (use ${PROJECT_NAME}-test-suite).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 12
 ---
 
 # {{name}} — Code Review
@@ -142,29 +144,7 @@ Code reviews are not optional. Request a review after each implementation task c
 
 ## Receiving a Code Review
 
-**The one rule: verify before implementing.**
-
-Read each piece of feedback and check it against the actual code before doing anything. Reviewers can be wrong. The test is technical correctness for this specific codebase, not whether the reviewer sounds authoritative.
-
-**What not to say:**
-- "You're absolutely right!" (performative, means nothing)
-- "Great point!" (sycophantic, skips verification)
-- "I'll fix that right away!" (before checking if the fix is actually correct)
-
-**What to say instead:**
-- State what you verified: "Checked — the function at line 42 does lack error handling. Fixed."
-- Ask for specifics if unclear: "Can you clarify which edge case you mean? I see X but not Y."
-- Push back with evidence when the reviewer is wrong: "This pattern is intentional — see the design spec section 3. Changing it would break [X]."
-
-**When to push back:**
-- The suggested change breaks existing functionality
-- The reviewer lacks context about a deliberate design decision
-- The change violates YAGNI (adds scope not in the spec)
-- The suggestion contradicts the ${PROJECT_NAME}-architecture or ${PROJECT_NAME}-testing rules
-- The reviewer is correct about a style preference but wrong about it being a bug
-
-**Acknowledging valid feedback tersely:**
-"Fixed" or "Good catch on [issue]. Fixed at [location]." Let the corrected code demonstrate understanding — no extended apology or praise needed.
+When feedback ARRIVES on YOUR work, this is no longer the right skill — switch to **${PROJECT_NAME}-receiving-code-review**, which enforces the iron law (external feedback is suggestions to evaluate, not orders to follow), the forbidden-phrase list, and the 4-step READ → VERIFY → DECIDE → RESPOND workflow.
 
 ## Related Skills
 
@@ -172,5 +152,6 @@ Read each piece of feedback and check it against the actual code before doing an
 - **${PROJECT_NAME}-test-suite** — Verify test coverage for reviewed changes
 - **${PROJECT_NAME}-brainstorming** — Design before the code being reviewed was written
 - **${PROJECT_NAME}-plan-execution** — Requests reviews after each task via this skill
+- **${PROJECT_NAME}-receiving-code-review** — Sibling skill for the consuming side: how to evaluate and respond to feedback on YOUR work
 - **${PROJECT_NAME}-branch-finish** — Runs a final review before merge options
 `;

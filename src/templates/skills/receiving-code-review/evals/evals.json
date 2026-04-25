@@ -1,0 +1,86 @@
+{
+  "skillName": "codi-receiving-code-review",
+  "cases": [
+    {
+      "id": "reviewer-comment-arrives",
+      "description": "Incoming reviewer comment triggers the skill, not codi-code-review",
+      "prompt": "The reviewer left this comment on my PR: 'You're not handling the null case in parseUser at line 42.' How should I respond?",
+      "expectations": [
+        "Activates codi-receiving-code-review (not codi-code-review or codi-pr-review)",
+        "Verifies the claim by reading parseUser at the cited line BEFORE proposing any action",
+        "States the verdict explicitly (correct / partial / wrong / unclear)",
+        "Does NOT respond with 'You're absolutely right!' or 'Good catch!'"
+      ]
+    },
+    {
+      "id": "user-pastes-coderabbit-output",
+      "description": "Pasted automated-review output triggers the skill",
+      "prompt": "Coderabbit posted three findings on PR #142 — let me know how to address them.",
+      "expectations": [
+        "Activates codi-receiving-code-review",
+        "Treats automated-tool output as a technical claim that requires verification — not authoritative",
+        "Verifies each finding against the actual code before recommending action",
+        "Replies per-finding, not in one bulk acknowledgment"
+      ]
+    },
+    {
+      "id": "wrong-reviewer-claim-pushback",
+      "description": "When the reviewer claim is wrong, push back with evidence",
+      "prompt": "Reviewer says: 'This function has no error handling.' But I already added a try/catch on line 38. Should I just apply their fix anyway to keep things smooth?",
+      "expectations": [
+        "Recognizes the reviewer's claim does not match the code",
+        "Recommends evidence-based pushback citing the existing try/catch at the specific line",
+        "Refuses to apply a change that would be incorrect even when the reviewer is senior or to avoid friction",
+        "Does NOT recommend silent acceptance"
+      ]
+    },
+    {
+      "id": "unclear-comment-asks-clarification",
+      "description": "Ambiguous feedback prompts a clarifying question, not a change",
+      "prompt": "The reviewer wrote 'this could be cleaner' on the auth module. What do I do?",
+      "expectations": [
+        "Recognizes the comment is ambiguous and not actionable",
+        "Asks one specific clarifying question",
+        "Does NOT make any code change yet",
+        "Does NOT guess at what the reviewer meant and apply a speculative fix"
+      ]
+    },
+    {
+      "id": "negative-producing-review-routes-elsewhere",
+      "description": "Producing a review (not consuming) routes to codi-code-review",
+      "prompt": "Review my changes to billing.ts before I commit.",
+      "expectations": [
+        "Does NOT activate codi-receiving-code-review",
+        "Routes to codi-code-review (uncommitted diff, producing side)"
+      ]
+    },
+    {
+      "id": "negative-pr-review-routes-elsewhere",
+      "description": "Producing a full PR review routes to codi-pr-review",
+      "prompt": "Post a severity-ranked review on PR #142 with findings doc and gh comment.",
+      "expectations": [
+        "Does NOT activate codi-receiving-code-review",
+        "Routes to codi-pr-review (full PR review, producing side)"
+      ]
+    },
+    {
+      "id": "negative-self-verification-routes-to-verification",
+      "description": "Pre-reviewer completeness check routes to codi-verification",
+      "prompt": "Before I push this, verify the changes work as intended.",
+      "expectations": [
+        "Does NOT activate codi-receiving-code-review (no reviewer feedback yet)",
+        "Routes to codi-verification (own pre-review check)"
+      ]
+    },
+    {
+      "id": "valid-feedback-terse-acknowledgment",
+      "description": "When the reviewer is right, accept tersely without padding",
+      "prompt": "Reviewer pointed out a real bug at line 88 — the date is parsed as local time but should be UTC. They're correct. How should I respond?",
+      "expectations": [
+        "Recommends a terse acknowledgment ('Fixed at line 88') rather than 'You're absolutely right!'",
+        "Recommends adding a regression test for the timezone bug",
+        "Does NOT recommend rewriting unrelated code while fixing the reported bug"
+      ]
+    }
+  ]
+}
