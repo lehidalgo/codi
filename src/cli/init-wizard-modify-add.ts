@@ -162,6 +162,22 @@ function shortenSourceId(id: string): string {
 }
 
 /**
+ * Run the artifact-selection workflow against an already-connected source.
+ * Shared between the hub "Add from external" entry (which prompts for the
+ * source first) and the init.ts ZIP/GitHub fallback (which already has a
+ * source path). The caller owns source.cleanup() — this function does not
+ * call it so the same source can be used for follow-up steps if needed.
+ */
+export async function runArtifactSelectionFromSource(
+  configDir: string,
+  source: ExternalSource,
+): Promise<void> {
+  // Inlined helper to keep the original try/finally + cleanup contract
+  // outside this function; this body assumes source is already connected.
+  await runSelectionBody(configDir, source);
+}
+
+/**
  * End-to-end "Add from external source" workflow. Connects to the source,
  * discovers artifacts, asks the user which to install, resolves collisions,
  * and copies them into .codi/ with managed_by:user provenance. Always cleans
@@ -177,94 +193,104 @@ export async function runAddFromExternal(
     source = await promptSource(kind);
     if (!source) return;
 
-    // Find candidate "preset roots" anywhere in the source tree. Handles:
-    //   - source root has rules/skills/etc. directly → 1 candidate (".")
-    //   - source has a wrapper folder (e.g. repo-name/) → 1 candidate
-    //   - source has multiple presets → prompt the user to pick one
-    const roots = await findArtifactRoots(source.rootPath);
-    if (roots.length === 0) {
-      p.log.error(
-        `No codi artifacts found in ${source.id}. Source must contain rules/, skills/, agents/, or mcp-servers/ directories (anywhere up to 2 levels deep).`,
-      );
-      return;
-    }
-
-    let chosenRoot: ArtifactRoot;
-    if (roots.length === 1) {
-      chosenRoot = roots[0]!;
-    } else {
-      const picked = await p.select<ArtifactRoot>({
-        message: `Found ${roots.length} presets in this source. Which one to import from?`,
-        options: roots.map((r) => ({
-          label: r.relPath,
-          value: r,
-          hint: `${r.presentTypes.join(", ")}`,
-        })),
-      });
-      if (isCancelled(picked)) return;
-      chosenRoot = picked;
-    }
-    if (chosenRoot.relPath !== ".") {
-      p.log.info(`Using preset at ${chosenRoot.relPath}`);
-    }
-
-    const skipped: string[] = [];
-    const artifacts = await discoverArtifacts(chosenRoot.path, (rel, reason) =>
-      skipped.push(`${rel} (${reason})`),
-    );
-
-    if (artifacts.length === 0) {
-      p.log.error(`No valid artifacts in ${chosenRoot.relPath} — every entry failed validation.`);
-      return;
-    }
-    if (skipped.length > 0) {
-      p.log.warn(
-        `Skipped ${skipped.length} invalid entries: ${skipped.slice(0, 3).join(", ")}${skipped.length > 3 ? "…" : ""}`,
-      );
-    }
-
-    const selected = await p.multiselect<DiscoveredArtifact>({
-      message: "Select artifacts to add (space to toggle, enter to confirm)",
-      options: buildArtifactOptions(artifacts),
-      required: false,
-    });
-    if (isCancelled(selected) || selected.length === 0) {
-      p.log.info("No artifacts selected. Nothing changed.");
-      return;
-    }
-
-    const collisionMap = await detectCollisions(configDir, selected);
-    const colliding = selected.filter((a) => collisionMap.get(a) === "exists");
-    const collisionResolutions =
-      colliding.length > 0 ? await resolveCollisions(colliding, source.id) : new Map();
-
-    const entries: InstallEntry[] = selected.map((artifact) => ({
-      artifact,
-      resolution: collisionResolutions.get(artifact) ?? { kind: "overwrite" },
-    }));
-
-    const summary = await installSelected(configDir, entries, source);
-    p.log.success(
-      `Installed ${summary.installed} (renamed: ${summary.renamed}, skipped: ${summary.skipped}).`,
-    );
-
-    // Auto-generate so the user does not have to run `codi generate` manually
-    // after every customize action. regenerateConfigs respects the project's
-    // manifest.agents — only the configured coding agents are refreshed.
-    if (summary.installed > 0) {
-      // configDir is .codi/; the project root is its parent.
-      const projectRoot = path.dirname(configDir);
-      p.log.step("Regenerating agent configs...");
-      const ok = await regenerateConfigs(projectRoot);
-      if (ok) {
-        p.log.success("Agent configs regenerated.");
-      } else {
-        p.log.warn("Auto-generate skipped — run `codi generate` manually.");
-      }
-    }
+    await runSelectionBody(configDir, source);
   } catch (cause) {
     p.log.error(`Import failed: ${cause instanceof Error ? cause.message : String(cause)}`);
   } finally {
     if (source) await source.cleanup();
+  }
+}
+
+/**
+ * Internal: the post-connection workflow. Discovers artifact roots, prompts
+ * the user to pick one when multiple are found, runs the multi-select UI,
+ * resolves collisions, copies artifacts, and triggers an auto-regenerate.
+ * Shared by runAddFromExternal and runArtifactSelectionFromSource.
+ */
+async function runSelectionBody(configDir: string, source: ExternalSource): Promise<void> {
+  // Find candidate "preset roots" anywhere in the source tree. Handles:
+  //   - source root has rules/skills/etc. directly → 1 candidate (".")
+  //   - source has a wrapper folder (e.g. repo-name/) → 1 candidate
+  //   - source has multiple presets → prompt the user to pick one
+  const roots = await findArtifactRoots(source.rootPath);
+  if (roots.length === 0) {
+    p.log.error(
+      `No codi artifacts found in ${source.id}. Source must contain rules/, skills/, agents/, or mcp-servers/ directories (anywhere up to 2 levels deep).`,
+    );
+    return;
+  }
+
+  let chosenRoot: ArtifactRoot;
+  if (roots.length === 1) {
+    chosenRoot = roots[0]!;
+  } else {
+    const picked = await p.select<ArtifactRoot>({
+      message: `Found ${roots.length} presets in this source. Which one to import from?`,
+      options: roots.map((r) => ({
+        label: r.relPath,
+        value: r,
+        hint: `${r.presentTypes.join(", ")}`,
+      })),
+    });
+    if (isCancelled(picked)) return;
+    chosenRoot = picked;
+  }
+  if (chosenRoot.relPath !== ".") {
+    p.log.info(`Using preset at ${chosenRoot.relPath}`);
+  }
+
+  const skipped: string[] = [];
+  const artifacts = await discoverArtifacts(chosenRoot.path, (rel, reason) =>
+    skipped.push(`${rel} (${reason})`),
+  );
+
+  if (artifacts.length === 0) {
+    p.log.error(`No valid artifacts in ${chosenRoot.relPath} — every entry failed validation.`);
+    return;
+  }
+  if (skipped.length > 0) {
+    p.log.warn(
+      `Skipped ${skipped.length} invalid entries: ${skipped.slice(0, 3).join(", ")}${skipped.length > 3 ? "…" : ""}`,
+    );
+  }
+
+  const selected = await p.multiselect<DiscoveredArtifact>({
+    message: "Select artifacts to add (space to toggle, enter to confirm)",
+    options: buildArtifactOptions(artifacts),
+    required: false,
+  });
+  if (isCancelled(selected) || selected.length === 0) {
+    p.log.info("No artifacts selected. Nothing changed.");
+    return;
+  }
+
+  const collisionMap = await detectCollisions(configDir, selected);
+  const colliding = selected.filter((a) => collisionMap.get(a) === "exists");
+  const collisionResolutions =
+    colliding.length > 0 ? await resolveCollisions(colliding, source.id) : new Map();
+
+  const entries: InstallEntry[] = selected.map((artifact) => ({
+    artifact,
+    resolution: collisionResolutions.get(artifact) ?? { kind: "overwrite" },
+  }));
+
+  const summary = await installSelected(configDir, entries, source);
+  p.log.success(
+    `Installed ${summary.installed} (renamed: ${summary.renamed}, skipped: ${summary.skipped}).`,
+  );
+
+  // Auto-generate so the user does not have to run `codi generate` manually
+  // after every customize action. regenerateConfigs respects the project's
+  // manifest.agents — only the configured coding agents are refreshed.
+  if (summary.installed > 0) {
+    // configDir is .codi/; the project root is its parent.
+    const projectRoot = path.dirname(configDir);
+    p.log.step("Regenerating agent configs...");
+    const ok = await regenerateConfigs(projectRoot);
+    if (ok) {
+      p.log.success("Agent configs regenerated.");
+    } else {
+      p.log.warn("Auto-generate skipped — run `codi generate` manually.");
+    }
   }
 }

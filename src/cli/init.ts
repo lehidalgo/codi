@@ -48,6 +48,8 @@ import { StateManager } from "../core/config/state.js";
 import type { ArtifactFileState } from "../core/config/state.js";
 import { hashContent } from "../utils/hash.js";
 import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
+import { runArtifactSelectionFromSource } from "./init-wizard-modify-add.js";
+import { connectGithubRepo, connectZipFile } from "../core/external-source/connectors.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -74,6 +76,33 @@ interface InitData {
 
 function isInteractive(options: InitOptions): boolean {
   return !options.json && !options.quiet && !options.agents;
+}
+
+/**
+ * Connects to the user's import source and routes through the artifact
+ * selection UI. Used as a fallback when the regular preset-style installer
+ * fails because the source carries no preset.yaml. Always cleans up the
+ * temp source on exit so callers do not have to.
+ */
+async function runArtifactSelectionFallback(
+  configDir: string,
+  kind: "zip" | "github",
+  importSource: string,
+): Promise<void> {
+  const log = Logger.getInstance();
+  try {
+    const source =
+      kind === "zip" ? await connectZipFile(importSource) : await connectGithubRepo(importSource);
+    try {
+      await runArtifactSelectionFromSource(configDir, source);
+    } finally {
+      await source.cleanup();
+    }
+  } catch (cause) {
+    log.warn(
+      `Artifact-selection fallback failed: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
 }
 
 function hasSelections(selections: ExistingSelections): boolean {
@@ -242,6 +271,19 @@ export async function initHandler(
       );
       if (!installResult.success) {
         log.warn(`Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`);
+        // Fallback: many community sources (a GitHub repo, a ZIP of bare
+        // artifact dirs) carry no preset.yaml. Re-attempt the import via the
+        // artifact-selection workflow — discover candidate roots in the
+        // source and let the user pick which artifacts to install.
+        if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
+          log.info("Trying artifact-selection fallback (source has no preset.yaml)...");
+          await runArtifactSelectionFallback(
+            configDir,
+            wizardResult.configMode,
+            wizardResult.importSource,
+          );
+          importRegenerated = true;
+        }
       } else {
         importRegenerated = true;
         if (installResult.data?.name) {
