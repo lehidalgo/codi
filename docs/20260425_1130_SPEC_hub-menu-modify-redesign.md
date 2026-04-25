@@ -3,7 +3,7 @@
 - **Date**: 2026-04-25 11:30
 - **Document**: 20260425_1130_SPEC_hub-menu-modify-redesign.md
 - **Category**: SPEC
-- **Status**: Approved (decisions locked, ready for plan)
+- **Status**: Shipped in PR #79 at v2.12.0. PR A (menu rewiring), PR B (Generate filter), and PR C (Add-from-external) all delivered. Post-spec follow-ups also shipped: depth-aware preset discovery (multi-preset bundles), init-time fallback when source has no `preset.yaml`, per-type sequential multi-select, "Import from local directory" option in the regular init wizard, auto-generate after a successful import, and the canonical GitHub URL parser.
 - **Companion plan**: 20260425_1135_PLAN_hub-menu-modify-redesign-impl.md
 
 ## 1. Problem & Context

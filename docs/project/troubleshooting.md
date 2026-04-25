@@ -133,7 +133,25 @@ The installer uses `git clone --depth 1` and supports public repos only. Private
 - `org/repo`
 - `org/repo@v1.2.0`
 - `github:org/repo@<sha>`
+- `https://github.com/org/repo`
 - `https://github.com/org/repo.git`
+- `https://github.com/org/repo/tree/branch`
+
+### "Preset import failed: ZIP does not contain a valid preset"
+
+You imported a ZIP or GitHub repo via `codi init` that has no `preset.yaml`. As of v2.12, codi falls through to the artifact-selection workflow automatically — the warning is informational only. The next prompt will let you pick which artifacts to install from the source. If you do not see that prompt, your codi-cli is older than 2.12; upgrade and retry.
+
+### "Customize codi setup" — modifying an existing install without re-init
+
+When `.codi/` already exists, the first hub entry reads "Customize codi setup" instead of "Initialize project". It opens a dispatcher with five options:
+
+- Customize current artifacts (edit installed rules / skills / agents in place)
+- Add from local directory
+- Add from ZIP file
+- Add from GitHub repo
+- Replace preset (advanced) — switch to a different preset entirely
+
+The first four use the same depth-aware discovery + per-type multi-select as `codi init` and trigger `codi generate` automatically when at least one artifact lands.
 
 ## Generation Issues
 

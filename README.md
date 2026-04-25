@@ -59,6 +59,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 | **Drift detection** | Know instantly when generated files diverge from your source config |
 | **Interactive wizard** | Guided setup, or go fully non-interactive for CI |
 | **Artifact catalog** | Browse all 123 built-in artifacts at the [docs site](https://lehidalgo.github.io/codi/docs/catalog/) |
+| **Import from anywhere** | Pull rules / skills / agents / MCP servers from a local directory, ZIP file, or GitHub repo into your existing project — no `preset.yaml` required |
 
 ---
 

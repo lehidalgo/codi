@@ -9,25 +9,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **Hub: "Customize codi setup" entry** — when `.codi/` exists, the first hub entry now reads "Customize codi setup" and routes directly into the modify menu, skipping the previous "Force reinitialize? Yes/No" prompt that hid the modify-mode wizard. When `.codi/` is absent, the entry stays "Initialize project". Selecting "Customize codi setup" opens a top-level dispatcher: customize current artifacts, add from local directory / ZIP / GitHub repo, or replace preset (advanced).
-- **Add artifacts from external source** — new workflow under "Customize codi setup". Connect to a local directory, ZIP file, or public GitHub repository; codi walks the source for `rules/`, `skills/`, `agents/`, `mcp-servers/` and lists every artifact found. Multi-select which to install. Per-collision prompts (keep current / overwrite / rename with `-from-<source>` suffix) with an "apply to remaining" affordance. Externally-added artifacts are recorded in `artifact-manifest.json` with `managedBy: user` and a new `source:` provenance field, so subsequent `codi update` runs leave them untouched.
-
-### Changed
-
-- **Generate respects the project's configured agents** — `codi hub` → "Generate configs" now lists and pre-selects only the agents declared in `.codi/codi.yaml`'s `agents:` field, instead of always offering all six registered adapters. Unknown adapters in the manifest are skipped with a warning. If the manifest is unreadable, falls back to all-adapters with a warning. If zero usable agents are configured, errors out before prompting.
-- **Welcome banner now renders inside a rounded box** — the ASCII logo, tagline + version, and Stack/Agents status lines are framed with `╭─...─╮` borders (matching the Codex CLI visual style). Auto-sizes to the widest content line. Falls back to the un-boxed layout on terminals narrower than the box width.
-- **Artifact manifest schema** — `ArtifactEntry` gained an optional `source` field (e.g. `"github:org/repo@ref"`, `"zip:bundle.zip"`, `"local:/abs/path"`). Additive — existing manifests parse unchanged.
-
-### Fixed
-
-- **`npm version` now ships the tag in the same step** — `postversion` script switched from bare `git push` to `git push --follow-tags`. Previously every release required a manual `git push origin vX.Y.Z` follow-up, or the tag stayed local-only.
-
-### Added
-
+- **Add artifacts from external source** — new workflow under "Customize codi setup". Connect to a local directory, ZIP file, or public GitHub repository; codi walks the source for `rules/`, `skills/`, `agents/`, `mcp-servers/` and lists every artifact found. Per-type sequential multi-select (Rules → Skills → Agents → MCP servers) matching the regular init wizard's pattern. Per-collision prompts (keep current / overwrite / rename with `-from-<source>` suffix) with an "apply to remaining" affordance. Externally-added artifacts are recorded in `artifact-manifest.json` with `managedBy: user` and a new `source:` provenance field, so subsequent `codi update` runs leave them untouched.
+- **Depth-aware preset discovery** — `findArtifactRoots` walks the source tree up to 2 levels deep, so a GitHub-zip layout like `repo-name/{rules,skills,…}` or a multi-preset bundle like `repo-name/{preset-a,preset-b}/{rules,skills,…}` is discovered automatically. When multiple candidate presets are found in one source, the user is prompted to pick one. Skips dotfiles, `node_modules`, `.git`, `dist`, `build`.
+- **Init: "Import from local directory" option** — the regular `codi init` wizard's Configuration step now offers the same external-source import as `Customize codi setup`. Picking it routes through the artifact-selection workflow (skips the preset-style installer for local paths, since they are user-pointed paths rather than packaged presets).
+- **Init: artifact-selection fallback for ZIP / GitHub without `preset.yaml`** — when the regular preset-style installer fails because the source has no `preset.yaml` (community bundles like `codi-presets-main.zip`), codi now re-attempts via the same artifact-selection workflow rather than silently falling back to the default preset.
+- **Auto-generate after Add from external** — `runAddFromExternal` now triggers `regenerateConfigs(projectRoot)` automatically when at least one artifact is installed. Falls back to a clear "run codi generate manually" warning if auto-generate fails. The user no longer has to type `codi generate` after every external import.
 - **Curl installer** — one-liner install at `https://lehidalgo.github.io/codi/install.sh` that detects the host environment and installs nvm + Node 24 if missing, then runs `npm install -g codi-cli`. Avoids the EACCES failure mode that hits users with system-managed Node on `/usr/local`. Honors `CODI_VERSION`, `CODI_INSTALL_NVM`, `CODI_DRY_RUN`, `CODI_NO_COLOR` overrides. Published checksum at `install.sh.sha256` for verification. Hosted via the existing GitHub Pages deploy.
 
 ### Changed
 
+- **Generate respects the project's configured agents** — `codi hub` → "Generate configs" now lists and pre-selects only the agents declared in `.codi/codi.yaml`'s `agents:` field, instead of always offering all six registered adapters. Unknown adapters in the manifest are skipped with a warning. If the manifest is unreadable, falls back to all-adapters with a warning. If zero usable agents are configured, errors out before prompting.
+- **GitHub URL parser uses canonical resolver** — the "Add from GitHub" flow now resolves the repo via `parsePresetIdentifier` (the same parser the rest of the CLI uses), so it accepts every form codi accepts elsewhere: `org/repo`, `org/repo@v1.2.0`, `github:org/repo#branch`, `https://github.com/org/repo[.git]`, and `https://github.com/org/repo/tree/branch`. Bare `org/repo` no longer fails with "Not a GitHub identifier".
+- **Welcome banner now renders inside a rounded box** — the ASCII logo, tagline + version, and Stack/Agents status lines are framed with `╭─...─╮` borders (matching the Codex CLI visual style). Auto-sizes to the widest content line. Falls back to the un-boxed layout on terminals narrower than the box width.
+- **Artifact manifest schema** — `ArtifactEntry` gained an optional `source` field (e.g. `"github:org/repo@ref"`, `"zip:bundle.zip"`, `"local:/abs/path"`). Additive — existing manifests parse unchanged.
 - **Minimum Node version bumped from 20 to 24** — `engines.node` now `>=24` to match the project's `.nvmrc`, all CI workflows, and release pipeline (npm 11+ for OIDC). Users on Node 20 will see a clear engine error from npm before EACCES instead of a confusing permissions failure.
+
+### Fixed
+
+- **`npm version` now ships the tag in the same step** — `postversion` script switched from bare `git push` to `git push --follow-tags`. Previously every release required a manual `git push origin vX.Y.Z` follow-up, or the tag stayed local-only.
 
 ## [2.9.0] - 2026-04-18
 
