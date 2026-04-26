@@ -43,6 +43,25 @@ beforeAll(() => {
   const minimal = path.join(skillsDir, "minimal-brand");
   fs.mkdirSync(path.join(minimal, "assets"), { recursive: true });
   fs.writeFileSync(path.join(minimal, "assets", "logo.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+  // Themed brand: ships only themed variants (no canonical logo.svg).
+  // logo-black.svg, logo-dark.svg, logo-light.svg — all in assets/.
+  const themed = path.join(skillsDir, "themed-brand");
+  fs.mkdirSync(path.join(themed, "assets"), { recursive: true });
+  for (const name of ["logo-black.svg", "logo-dark.svg", "logo-light.svg"]) {
+    fs.writeFileSync(
+      path.join(themed, "assets", name),
+      `<svg xmlns="http://www.w3.org/2000/svg" id="${name}"/>`,
+    );
+  }
+
+  // Branded-name brand: ships `<brand>-logo.svg` in assets/.
+  const branded = path.join(skillsDir, "branded-name-brand");
+  fs.mkdirSync(path.join(branded, "assets"), { recursive: true });
+  fs.writeFileSync(
+    path.join(branded, "assets", "acme-logo.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg" id="acme-logo"/>',
+  );
 });
 
 afterAll(() => {
@@ -54,7 +73,13 @@ describe("discoverBrands", () => {
     const names = discoverBrands(skillsDir)
       .map((b) => b.name)
       .sort();
-    expect(names).toEqual(["conforming-brand", "legacy-brand", "minimal-brand"]);
+    expect(names).toEqual([
+      "branded-name-brand",
+      "conforming-brand",
+      "legacy-brand",
+      "minimal-brand",
+      "themed-brand",
+    ]);
   });
 
   it("populates logoPath for conforming brands (assets/logo.svg)", () => {
@@ -88,5 +113,18 @@ describe("discoverBrands", () => {
     const minimal = discoverBrands(skillsDir).find((b) => b.name === "minimal-brand");
     expect(minimal).toBeTruthy();
     expect(minimal.tokens).toEqual({});
+  });
+
+  it("accepts themed variants (logo-light.svg / logo-dark.svg) as conforming", () => {
+    const themed = discoverBrands(skillsDir).find((b) => b.name === "themed-brand");
+    expect(themed.logoPath).not.toBeNull();
+    // SVG over PNG, then alphabetical within `logo-*` tier.
+    expect(themed.logoPath).toMatch(/assets\/logo-black\.svg$/);
+  });
+
+  it("accepts any filename containing 'logo' in assets/ as conforming", () => {
+    const branded = discoverBrands(skillsDir).find((b) => b.name === "branded-name-brand");
+    expect(branded.logoPath).not.toBeNull();
+    expect(branded.logoPath).toMatch(/assets\/acme-logo\.svg$/);
   });
 });

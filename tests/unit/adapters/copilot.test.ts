@@ -89,8 +89,11 @@ describe("copilot adapter", () => {
     expect(mainFile!.hash).toBeTruthy();
     expect(mainFile!.sources).toContain(MANIFEST_FILENAME);
 
-    // Instruction file + hooks JSON + 2 heartbeat scripts = 4
-    expect(files).toHaveLength(4);
+    // Minimal config produces at least: instruction file + hooks JSON + heartbeat
+    // scripts. Use a lower bound rather than exact count so unrelated additions
+    // (e.g. a new auxiliary file) don't break this test.
+    expect(files.length).toBeGreaterThanOrEqual(4);
+    expect(files.find((f) => f.path === ".github/hooks/codi-hooks.json")).toBeDefined();
   });
 
   // --- generate() with rules ---

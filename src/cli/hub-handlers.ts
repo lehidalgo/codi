@@ -28,6 +28,8 @@ import { runPresetWizard } from "./preset-wizard.js";
 import { selectArtifactType, runAddWizard } from "./add-wizard.js";
 import { addRuleHandler, addSkillHandler, addAgentHandler, addBrandHandler } from "./add.js";
 import { getAllAdapters } from "../core/generator/adapter-registry.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { runAddFromExternal, type ExternalSourceKind } from "./init-wizard-modify-add.js";
 import { PROJECT_DIR } from "../constants.js";
 
 // --- Helpers ---
@@ -68,6 +70,63 @@ export async function handleInit(projectRoot: string): Promise<void> {
   process.stdout.write(formatHuman(result) + "\n");
 }
 
+/**
+ * Hub entry for "Customize codi setup" — only shown when .codi/ exists.
+ * Top-level dispatcher: in-place customize, add-from-external (local /
+ * zip / github), or fall through to the wizard's full modify flow for
+ * preset replacement. Add-from-external bypasses the wizard entirely
+ * since adding artifacts does not change languages or agents.
+ */
+export async function handleCustomize(projectRoot: string): Promise<void> {
+  const action = await p.select({
+    message: "Customize codi setup — what would you like to do?",
+    options: [
+      {
+        value: "customize",
+        label: "Customize current artifacts",
+        hint: "Edit installed rules, skills, agents (add or remove)",
+      },
+      {
+        value: "add-local",
+        label: "Add artifacts from local directory",
+        hint: "Pick artifacts from any folder with rules/, skills/, agents/, mcp-servers/",
+      },
+      {
+        value: "add-zip",
+        label: "Add artifacts from ZIP file",
+        hint: "Pick artifacts from a zipped preset bundle",
+      },
+      {
+        value: "add-github",
+        label: "Add artifacts from GitHub repo",
+        hint: "Pick artifacts from a public repository",
+      },
+      {
+        value: "replace",
+        label: "Replace preset (advanced)...",
+        hint: "Switch to a different preset, or import a full ZIP / GitHub preset",
+      },
+    ],
+  });
+  if (isCancelled(action)) return;
+
+  const configDir = resolveProjectDir(projectRoot);
+
+  if (action === "customize" || action === "replace") {
+    const result = await initHandler(projectRoot, { customize: true });
+    process.stdout.write(formatHuman(result) + "\n");
+    return;
+  }
+
+  const kindMap: Record<string, ExternalSourceKind> = {
+    "add-local": "local",
+    "add-zip": "zip",
+    "add-github": "github",
+  };
+  const kind = kindMap[action as string];
+  if (kind) await runAddFromExternal(configDir, kind);
+}
+
 export async function handleAdd(projectRoot: string): Promise<void> {
   const type = await selectArtifactType();
   if (!type) return;
@@ -94,12 +153,40 @@ export async function handleAdd(projectRoot: string): Promise<void> {
 }
 
 export async function handleGenerate(projectRoot: string): Promise<void> {
-  const allAgents = getAllAdapters().map((a) => a.id);
+  const allAdapters = getAllAdapters().map((a) => a.id);
+
+  // Restrict the multiselect to agents the project actually uses.
+  // Manifest agents=undefined means "all detected" per the schema; empty array
+  // means the user has no agents wired up — that's a hard error worth flagging.
+  const cfg = await resolveConfig(projectRoot);
+  let agentChoices: string[];
+  if (!cfg.ok) {
+    p.log.warn("Could not read .codi/codi.yaml — falling back to all registered adapters.");
+    agentChoices = allAdapters;
+  } else {
+    const manifestAgents = cfg.data.manifest.agents;
+    if (manifestAgents === undefined) {
+      agentChoices = allAdapters;
+    } else {
+      const known = manifestAgents.filter((id) => allAdapters.includes(id));
+      const unknown = manifestAgents.filter((id) => !allAdapters.includes(id));
+      if (unknown.length > 0) {
+        p.log.warn(`Manifest declares unknown adapter(s): ${unknown.join(", ")}. Skipping.`);
+      }
+      if (known.length === 0) {
+        p.log.error(
+          "No usable agents configured in .codi/codi.yaml. Run `codi init` to add at least one.",
+        );
+        return;
+      }
+      agentChoices = known;
+    }
+  }
 
   const agentFilter = await p.multiselect({
     message: "Generate for which agents? (select all for full rebuild)",
-    options: allAgents.map((id) => ({ label: id, value: id })),
-    initialValues: allAgents,
+    options: agentChoices.map((id) => ({ label: id, value: id })),
+    initialValues: agentChoices,
     required: true,
   });
   if (isCancelled(agentFilter)) return;
@@ -126,7 +213,7 @@ export async function handleGenerate(projectRoot: string): Promise<void> {
   });
   if (isCancelled(mode)) return;
 
-  const selectedAgents = agentFilter.length === allAgents.length ? undefined : agentFilter;
+  const selectedAgents = agentFilter.length === agentChoices.length ? undefined : agentFilter;
   const result = await generateHandler(projectRoot, {
     agent: selectedAgents,
     dryRun: mode === "dry-run" || undefined,

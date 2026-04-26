@@ -12,7 +12,7 @@ npm run build
 npm test
 ```
 
-**Requirements**: Node.js >= 20 (see `.nvmrc`).
+**Requirements**: Node.js >= 24 (see `.nvmrc`). If your system Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) installs nvm + Node 24 for you.
 
 ### Running the Local Build
 

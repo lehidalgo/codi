@@ -149,9 +149,10 @@ describe("QA-1: Functional Simulation", () => {
     const files = await copilotAdapter.generate(config, { projectRoot: tmpDir });
 
     // 1 main + 1 scoped rule + 2 prompts + 2 agents + 1 MCP + 1 hooks JSON + 2 heartbeat scripts
-    // + 2 SKILL.md + 8 .gitkeep (4 dirs × 2 skills) = 20
-    expect(files).toHaveLength(20);
+    // + 1 _run-node launcher + 2 SKILL.md + 8 .gitkeep (4 dirs × 2 skills) = 21
+    expect(files).toHaveLength(21);
     expect(files.map((f) => f.path).sort()).toEqual([
+      ".codi/hooks/_run-node",
       ".codi/hooks/codi-skill-observer.cjs",
       ".codi/hooks/codi-skill-tracker.cjs",
       ".github/agents/reviewer.agent.md",
@@ -359,8 +360,8 @@ describe("QA-3: Edge Cases", () => {
   it("handles empty skills, rules, and agents gracefully", async () => {
     const config = createMockConfig({ rules: [], skills: [], agents: [], flags: {} });
     const files = await copilotAdapter.generate(config, {});
-    // Instruction file + hooks JSON + 2 heartbeat scripts = 4
-    expect(files).toHaveLength(4);
+    // Instruction file + hooks JSON + 2 heartbeat scripts + 1 _run-node launcher = 5
+    expect(files).toHaveLength(5);
     const main = files.find((f) => f.path === ".github/copilot-instructions.md");
     expect(main).toBeDefined();
     expect(main!.content.length).toBeGreaterThan(0);

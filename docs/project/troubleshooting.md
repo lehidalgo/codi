@@ -4,30 +4,67 @@ Common issues and their solutions when working with Codi.
 
 ## Installation Issues
 
-### Node.js version too old
+### EACCES: permission denied during `npm install -g codi-cli`
 
-**Error**: Codi requires Node >= 20.
+**Error**: `EACCES: permission denied, mkdir '/usr/local/lib/node_modules/codi-cli'`
 
-**Fix**:
+This happens when system Node is installed under `/usr/local` (root-owned) and `npm install -g` cannot create the package directory without `sudo`.
+
+**Fix (recommended)**: use the curl installer, which sets up nvm + Node 24 under `~/.nvm` (no sudo, no root):
 
 ```bash
-nvm install 20
-nvm use 20
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+```
+
+**Why not `sudo npm install -g`?** It works once but leaves root-owned files in your `~/.npm` cache that break future installs and updates.
+
+### Node.js version too old
+
+**Error**: Codi requires Node >= 24 (npm 11+ for OIDC publish).
+
+**Fix (recommended)** — let the installer handle it:
+
+```bash
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+```
+
+**Or manually** with nvm:
+
+```bash
+nvm install 24
+nvm use 24
+nvm alias default 24
 ```
 
 ### `codi` command not found
 
-**Fix**: Use npx or install globally:
+**Fix**: Use npx, install via the curl installer, or install globally:
 
 ```bash
+# Via curl installer (handles Node setup if missing)
+curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
+
 # Via npx (no global install needed)
 npx codi --version
 
-# Or install globally
+# Or install globally (requires Node 24+ and a writable npm prefix)
 npm install -g codi-cli
 ```
 
 If installed as a dev dependency, use `npx codi` or add a script to `package.json`.
+
+### Verifying the installer before running it
+
+For security-conscious environments, verify the script's checksum before piping to bash:
+
+```bash
+curl -fsSL https://lehidalgo.github.io/codi/install.sh -o install.sh
+curl -fsSL https://lehidalgo.github.io/codi/install.sh.sha256 -o install.sh.sha256
+shasum -a 256 -c install.sh.sha256
+bash install.sh
+```
+
+The installer also supports `CODI_DRY_RUN=1` to preview the actions without executing them.
 
 ## Configuration Issues
 
@@ -55,6 +92,66 @@ If `codi.requiredVersion` is set in `codi.yaml` and your installed version is to
 ```bash
 npm install -D codi-cli@latest
 ```
+
+## Adding artifacts from external sources
+
+The "Customize codi setup → Add from local directory / ZIP / GitHub repo" workflow installs artifacts into `.codi/` from outside the codi-cli package.
+
+### Source layout requirements
+
+The source must follow the standard codi layout. Codi walks four directories:
+
+- `rules/` — `.md` files with frontmatter
+- `agents/` — `.md` files with frontmatter
+- `skills/` — sub-directories, each containing a `SKILL.md`
+- `mcp-servers/` — `.yaml` files
+
+Missing directories are silently skipped (a source can carry just one type). Files without valid frontmatter or skills missing `SKILL.md` are skipped with a warning.
+
+### Where externally-added artifacts live
+
+Each installed artifact is copied verbatim into the matching `.codi/` subdirectory and recorded in `artifact-manifest.json` with `managedBy: user` plus a `source:` field (e.g. `"github:org/repo@v1"`). The `managedBy: user` flag tells `codi update` to leave the file alone — your imported artifacts will not be overwritten when codi templates change.
+
+### Filename collisions
+
+When an imported artifact has the same name as one already in `.codi/`, codi prompts per artifact:
+
+- **Keep current** — skip the import (default)
+- **Overwrite with imported** — replace the existing file
+- **Rename imported to `<name>-from-<source>`** — keep both, suffix the new one
+
+After the first prompt, an "apply to remaining" option lets you bulk-resolve the rest with one choice.
+
+### "No codi artifacts found"
+
+The source directory does not contain any of the four standard subdirectories at its root, or all entries failed validation. Verify the source layout matches the requirements above.
+
+### GitHub: "Failed to clone"
+
+The installer uses `git clone --depth 1` and supports public repos only. Private repositories require manual clone + "Add from local directory" instead. Specs can take any of:
+
+- `org/repo`
+- `org/repo@v1.2.0`
+- `github:org/repo@<sha>`
+- `https://github.com/org/repo`
+- `https://github.com/org/repo.git`
+- `https://github.com/org/repo/tree/branch`
+
+### "Preset import failed: ZIP does not contain a valid preset"
+
+You imported a ZIP or GitHub repo via `codi init` that has no `preset.yaml`. As of v2.12, codi falls through to the artifact-selection workflow automatically — the warning is informational only. The next prompt will let you pick which artifacts to install from the source. If you do not see that prompt, your codi-cli is older than 2.12; upgrade and retry.
+
+### "Customize codi setup" — modifying an existing install without re-init
+
+When `.codi/` already exists, the first hub entry reads "Customize codi setup" instead of "Initialize project". It opens a dispatcher with five options:
+
+- Customize current artifacts (edit installed rules / skills / agents in place)
+- Add from local directory
+- Add from ZIP file
+- Add from GitHub repo
+- Replace preset (advanced) — switch to a different preset entirely
+
+The first four use the same depth-aware discovery + per-type multi-select as `codi init` and trigger `codi generate` automatically when at least one artifact lands.
 
 ## Generation Issues
 

@@ -68,6 +68,12 @@ export interface GenerateOptions {
   force?: boolean;
   /** Non-interactive mode: skip all conflicting files without prompting (maps to --on-conflict keep-current). */
   keepCurrent?: boolean;
+  /**
+   * Auto-merge every conflict with git-style markers (union strategy).
+   * Non-overlapping hunks apply cleanly; overlapping hunks keep both sides
+   * wrapped in `<<<<<<<` / `=======` / `>>>>>>>` so the user resolves in-editor.
+   */
+  unionMerge?: boolean;
   /** Absolute path to the project root; defaults to the current working directory. */
   projectRoot?: string;
 }

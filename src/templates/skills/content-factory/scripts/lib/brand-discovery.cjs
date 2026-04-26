@@ -10,13 +10,17 @@ const TOKEN_CANDIDATES = [
   path.join('scripts', 'brand_tokens.json'),
 ];
 
-// Logo lives at the SKILL ROOT under `assets/`. SVG is preferred, PNG is
-// accepted. Variants (logo-light / logo-dark) are read opportunistically
-// for theme-aware callers but never substitute for `logo.svg|png`.
-const LOGO_STANDARD = [
-  path.join('assets', 'logo.svg'),
-  path.join('assets', 'logo.png'),
-];
+// Canonical logo filenames. `logo.svg` / `logo.png` are the preferred
+// names. The resolver additionally accepts any file in `assets/` whose
+// basename contains "logo" — this covers brands that ship themed
+// variants (`logo-light.svg`, `logo-dark.svg`, `logo-black.svg`) or
+// descriptive names (`bbva-logo.svg`, `brand-logo-primary.svg`). All
+// such files count as conforming. See logo-convention.md for the full
+// ranking.
+const LOGO_EXACT = ['logo.svg', 'logo.png'];
+
+// Extensions the logo scanner accepts.
+const LOGO_EXTENSIONS = new Set(['.svg', '.png']);
 
 function readTokens(skillDir) {
   for (const rel of TOKEN_CANDIDATES) {
@@ -30,12 +34,56 @@ function readTokens(skillDir) {
   return { tokens: {}, tokensPath: null };
 }
 
+/**
+ * Find the most preferred logo file in `<skillDir>/assets/`.
+ *
+ * Ranking:
+ *   1. Exact `assets/logo.svg`                   (canonical, SVG)
+ *   2. Exact `assets/logo.png`                   (canonical, PNG)
+ *   3. Any SVG in assets/ matching `logo[-_]*`   (e.g. logo-light.svg, logo_horizontal.svg)
+ *   4. Any PNG in assets/ matching `logo[-_]*`
+ *   5. Any SVG in assets/ whose basename contains "logo" (e.g. bbva-logo.svg)
+ *   6. Any PNG in assets/ whose basename contains "logo"
+ *
+ * Within each tier, files are ordered alphabetically for deterministic
+ * selection. Returns the absolute path of the first match, or null.
+ */
 function findStandardLogo(skillDir) {
-  for (const rel of LOGO_STANDARD) {
-    const p = path.join(skillDir, rel);
+  // Tier 1-2 — exact canonical names.
+  for (const name of LOGO_EXACT) {
+    const p = path.join(skillDir, 'assets', name);
     if (fs.existsSync(p)) return p;
   }
-  return null;
+
+  // Tiers 3-6 — pattern matches in assets/ (non-recursive).
+  const assetsDir = path.join(skillDir, 'assets');
+  let entries;
+  try { entries = fs.readdirSync(assetsDir, { withFileTypes: true }); }
+  catch { return null; }
+
+  const matches = [];
+  for (const ent of entries) {
+    if (!ent.isFile()) continue;
+    const ext = path.extname(ent.name).toLowerCase();
+    if (!LOGO_EXTENSIONS.has(ext)) continue;
+    const base = path.basename(ent.name, ext);
+    if (!/logo/i.test(base)) continue;
+    matches.push(ent.name);
+  }
+  if (matches.length === 0) return null;
+
+  // Sort by tier: SVG > PNG, `logo[-_]*` prefix > `*logo*`, then A-Z.
+  matches.sort((a, b) => {
+    const aSvg = a.toLowerCase().endsWith('.svg') ? 0 : 1;
+    const bSvg = b.toLowerCase().endsWith('.svg') ? 0 : 1;
+    if (aSvg !== bSvg) return aSvg - bSvg;
+    const aPrefix = /^logo[-_]/i.test(a) ? 0 : 1;
+    const bPrefix = /^logo[-_]/i.test(b) ? 0 : 1;
+    if (aPrefix !== bPrefix) return aPrefix - bPrefix;
+    return a.localeCompare(b);
+  });
+
+  return path.join(assetsDir, matches[0]);
 }
 
 /**
@@ -45,8 +93,8 @@ function findStandardLogo(skillDir) {
  * Each returned record carries:
  *   - name, dir, display_name, version
  *   - tokens (parsed tokens.json or empty object)
- *   - logoPath: absolute path to the standard logo file, or null when
- *     the brand does not yet conform (callers can run auto-discovery).
+ *   - logoPath: absolute path to an acceptable logo file (see
+ *     findStandardLogo), or null when no logo is present in assets/.
  */
 function discoverBrands(skillsDir) {
   const brands = [];
@@ -71,4 +119,12 @@ function discoverBrands(skillsDir) {
   return brands;
 }
 
-module.exports = { discoverBrands, LOGO_STANDARD };
+module.exports = {
+  discoverBrands,
+  findStandardLogo,
+  LOGO_EXACT,
+  LOGO_EXTENSIONS,
+  // Legacy alias — kept to avoid breaking consumers that imported
+  // LOGO_STANDARD previously. Points at the exact canonical names.
+  LOGO_STANDARD: LOGO_EXACT.map((n) => path.join('assets', n)),
+};

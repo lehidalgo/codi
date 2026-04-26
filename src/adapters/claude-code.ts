@@ -32,7 +32,10 @@ import { partitionBrandSkills } from "./brand-filter.js";
 import {
   buildSkillTrackerScript,
   buildSkillObserverScript,
+  buildLauncherFile,
+  launcherCommand,
   HOOKS_SUBDIR,
+  LAUNCHER_FILENAME,
   SKILL_TRACKER_FILENAME,
   SKILL_OBSERVER_FILENAME,
 } from "../core/hooks/heartbeat-hooks.js";
@@ -266,6 +269,17 @@ export const claudeCodeAdapter: AgentAdapter = {
       hash: hashContent(observerScript),
     });
 
+    // Ship the node-resolver launcher next to the hook scripts. The hook command
+    // in settings.json invokes `/bin/sh <launcher> <script>` so non-interactive
+    // hook shells (which do not source ~/.zshrc) can still find a node binary.
+    const launcher = buildLauncherFile();
+    files.push({
+      path: launcher.path,
+      content: launcher.content,
+      sources: [MANIFEST_FILENAME],
+      hash: hashContent(launcher.content),
+    });
+
     // Generate .claude/settings.json (permissions + heartbeat hooks)
     const settingsJson = buildSettingsJson(config);
     const settingsContent = JSON.stringify(settingsJson, null, 2);
@@ -327,6 +341,9 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
   // the env var is somehow unset, so there is no regression in edge environments.
   const hooksDir = `${PROJECT_DIR}/${HOOKS_SUBDIR}`;
   const projectRootRef = '"${CLAUDE_PROJECT_DIR:-.}"';
+  const launcherRef = `${projectRootRef}/${hooksDir}/${LAUNCHER_FILENAME}`;
+  const trackerRef = `${projectRootRef}/${hooksDir}/${SKILL_TRACKER_FILENAME}`;
+  const observerRef = `${projectRootRef}/${hooksDir}/${SKILL_OBSERVER_FILENAME}`;
   settings.hooks = {
     InstructionsLoaded: [
       {
@@ -334,7 +351,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `node ${projectRootRef}/${hooksDir}/${SKILL_TRACKER_FILENAME}`,
+            command: launcherCommand(launcherRef, trackerRef),
             timeout: 5,
             async: true,
           },
@@ -347,7 +364,7 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         hooks: [
           {
             type: "command",
-            command: `node ${projectRootRef}/${hooksDir}/${SKILL_OBSERVER_FILENAME}`,
+            command: launcherCommand(launcherRef, observerRef),
             timeout: 15,
           },
         ],

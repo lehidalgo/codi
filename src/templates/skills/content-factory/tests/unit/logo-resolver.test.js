@@ -56,6 +56,30 @@ beforeAll(() => {
   const empty = path.join(skillsDir, "empty-brand");
   fs.mkdirSync(path.join(empty, "brand"), { recursive: true });
   fs.writeFileSync(path.join(empty, "brand", "tokens.json"), "{}");
+
+  // Themed brand — only `logo-light.svg` and `logo-dark.svg` in assets/.
+  const themed = path.join(skillsDir, "themed-brand");
+  fs.mkdirSync(path.join(themed, "assets"), { recursive: true });
+  fs.writeFileSync(
+    path.join(themed, "assets", "logo-dark.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg" id="themed-dark"/>',
+  );
+  fs.writeFileSync(
+    path.join(themed, "assets", "logo-light.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg" id="themed-light"/>',
+  );
+  fs.mkdirSync(path.join(themed, "brand"), { recursive: true });
+  fs.writeFileSync(path.join(themed, "brand", "tokens.json"), "{}");
+
+  // Branded-name brand — a single `<brand>-logo.svg` in assets/.
+  const branded = path.join(skillsDir, "branded-name-brand");
+  fs.mkdirSync(path.join(branded, "assets"), { recursive: true });
+  fs.writeFileSync(
+    path.join(branded, "assets", "acme-logo.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg" id="acme-mark"/>',
+  );
+  fs.mkdirSync(path.join(branded, "brand"), { recursive: true });
+  fs.writeFileSync(path.join(branded, "brand", "tokens.json"), "{}");
 });
 
 afterAll(() => {
@@ -115,6 +139,25 @@ describe("resolveLogo fallback chain", () => {
     expect(r.svg).toMatch(/id="legacy-mark"/);
     expect(r.conforming).toBe(false);
     expect(r.score).toBeGreaterThan(50);
+  });
+
+  it("step 3 — picks a themed variant (logo-light.svg / logo-dark.svg) as conforming", () => {
+    const project = tmpProject();
+    const r = resolveLogo({ projectDir: project, skillsDir, activeBrand: "themed-brand" });
+    expect(r.source).toBe("brand");
+    expect(r.conforming).toBe(true);
+    // SVG tier, alphabetical within `logo-*` → logo-dark.svg comes first.
+    expect(r.path).toMatch(/assets\/logo-dark\.svg$/);
+    expect(r.svg).toMatch(/id="themed-dark"/);
+  });
+
+  it("step 3 — picks a branded-name file (*logo*.svg) as conforming", () => {
+    const project = tmpProject();
+    const r = resolveLogo({ projectDir: project, skillsDir, activeBrand: "branded-name-brand" });
+    expect(r.source).toBe("brand");
+    expect(r.conforming).toBe(true);
+    expect(r.path).toMatch(/assets\/acme-logo\.svg$/);
+    expect(r.svg).toMatch(/id="acme-mark"/);
   });
 
   it("step 7 — built-in when brand is empty", () => {
@@ -226,6 +269,19 @@ describe("checkBrandConformance", () => {
     expect(report.conforming).toBe(false);
     expect(report.discovered.length).toBeGreaterThan(0);
     expect(report.advice).toMatch(/LEGACY_RGB\.svg|candidate/);
+  });
+
+  it("reports conforming=true for a themed-variant-only brand", () => {
+    const report = checkBrandConformance({ skillsDir, brandName: "themed-brand" });
+    expect(report.conforming).toBe(true);
+    expect(report.logoPath).toMatch(/assets\/logo-dark\.svg$/);
+    expect(report.advice).toMatch(/pattern match|conforms/);
+  });
+
+  it("reports conforming=true for a branded-name brand (*logo*.svg)", () => {
+    const report = checkBrandConformance({ skillsDir, brandName: "branded-name-brand" });
+    expect(report.conforming).toBe(true);
+    expect(report.logoPath).toMatch(/assets\/acme-logo\.svg$/);
   });
 
   it("advises asking the user when brand ships no logo", () => {

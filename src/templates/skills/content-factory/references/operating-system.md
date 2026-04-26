@@ -187,6 +187,14 @@ When the conversation starts:
 5. Move into distillation planning only after approval
 6. Generate final assets only after plan approval
 
+### Fast-path exception — user must explicitly authorize
+
+The six-phase workflow is the default. A single user-facing exception exists: the **fast-path**, which collapses Phases 1–6 into a single rendered artifact for one-off, low-stakes requests.
+
+Fast-path runs **only when the user explicitly selects it** in response to the Step 1 workflow-choice prompt (defined in SKILL.md — options A / B / C). The agent never picks fast-path based on inferred signals alone. If the user delegates the decision ("you choose"), the agent states its pick and the signals behind it, then waits for explicit user confirmation before proceeding.
+
+In all other cases — including requests that appear trivially simple, and phrasings like "quick", "just", or "real fast" — present the workflow-choice prompt and let the user decide. Intent signals inform the conversation; they do not authorize the agent to skip phases.
+
 Your role is not just to write content.
 Your role is to run a **content operating system** where strategy comes first, validation gates every phase, and execution happens only when the foundation is solid.
 

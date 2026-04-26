@@ -4,6 +4,7 @@ import { getSupportedLanguages } from "../core/hooks/hook-registry.js";
 import {
   handleZipPath,
   handleGithubPath,
+  handleLocalPath,
   handlePresetPath,
   handleCustomPath,
   formatLabel,
@@ -15,7 +16,7 @@ import { wizardSelect, wizardMultiselect } from "./wizard-prompts.js";
 export interface WizardResult {
   languages: string[];
   agents: string[];
-  configMode: "preset" | "custom" | "zip" | "github";
+  configMode: "preset" | "custom" | "zip" | "github" | "local";
   presetName?: string;
   selectedPresetName?: string;
   importSource?: string;
@@ -47,11 +48,22 @@ export interface ExistingInstallContext {
   inventory: InstalledArtifactInventoryEntry[];
 }
 
+export interface RunInitWizardOptions {
+  /**
+   * When true and existingInstall is set, skip step 0 (the Modify-vs-Fresh
+   * prompt) and start at step 1 with installMode='modify'. Used by the hub's
+   * "Customize codi setup" entry to avoid asking the user a question they
+   * already answered by picking that menu item.
+   */
+  forceModify?: boolean;
+}
+
 export async function runInitWizard(
   detectedStack: string[],
   detectedAgents: string[],
   allAgents: string[],
   existingInstall?: ExistingInstallContext,
+  options: RunInitWizardOptions = {},
 ): Promise<WizardResult | null> {
   printWelcomeBanner({
     detectedStack,
@@ -60,11 +72,16 @@ export async function runInitWizard(
 
   p.intro(`${PROJECT_CLI} — Project Setup`);
 
-  let step = 0;
+  const forceModify = options.forceModify === true && existingInstall !== undefined;
+  let step = forceModify ? 1 : 0;
   let savedLanguages: string[] | undefined;
   let savedAgents: string[] | undefined;
   let savedConfigMode: WizardResult["configMode"] | undefined;
-  let installMode: "modify" | "fresh" = existingInstall ? "modify" : "fresh";
+  let installMode: "modify" | "fresh" = forceModify
+    ? "modify"
+    : existingInstall
+      ? "modify"
+      : "fresh";
 
   while (step >= 0) {
     switch (step) {
@@ -184,6 +201,11 @@ export async function runInitWizard(
                   hint: "Load a preset from a GitHub repository",
                 },
                 {
+                  label: "Import from local directory",
+                  value: "local" as const,
+                  hint: "Pick artifacts from any folder with rules/, skills/, agents/, mcp-servers/",
+                },
+                {
                   label: "Custom selection",
                   value: "custom" as const,
                   hint: "Pick individual artifacts (searchable)",
@@ -209,6 +231,12 @@ export async function runInitWizard(
             break;
           case "github":
             result = await handleGithubPath(
+              savedAgents!,
+              installMode === "modify" ? existingInstall : undefined,
+            );
+            break;
+          case "local":
+            result = await handleLocalPath(
               savedAgents!,
               installMode === "modify" ? existingInstall : undefined,
             );
