@@ -14,13 +14,18 @@ name: {{name}}
 description: |
   Agent creation workflow. Use when the user asks to create, build, or define
   a specialized agent. Also activate when the user wants to add a code reviewer,
-  security analyzer, test generator, or any autonomous worker role.
+  security analyzer, test generator, or any autonomous worker role. After
+  creation, use ${PROJECT_NAME}-artifact-contributor to share, package as
+  ZIP, or open a PR with the new agent. Do NOT activate for creating a skill
+  (use ${PROJECT_NAME}-skill-creator), creating a rule (use
+  ${PROJECT_NAME}-rule-creator), or bundling multiple artifacts as a preset
+  (use ${PROJECT_NAME}-preset-creator).
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 11
 ---
 
 # Agent Creator

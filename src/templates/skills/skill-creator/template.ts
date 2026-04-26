@@ -27,7 +27,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 33
+version: 35
 ---
 
 # {{name}} — Skill Creator
@@ -66,6 +66,14 @@ If you are not sure whether you need a skill, a rule, or an agent, answer this:
 - User wants to bundle multiple artifacts as a preset — use ${PROJECT_NAME}-preset-creator
 - User wants to write plain project documentation — use ${PROJECT_NAME}-project-documentation
 - User wants to review or refine from collected feedback — use ${PROJECT_NAME}-refine-rules (REVIEW mode)
+
+## TDD for Skills
+
+**Writing a skill IS test-driven development applied to documentation.** Iron law: **NO SKILL WITHOUT A FAILING TEST FIRST.** Before writing the SKILL.md body, write at least one eval where the BASELINE agent fails — wrong skill fires, wrong workflow runs, falls into a known anti-pattern. RED = failing eval. GREEN = SKILL.md body that flips it to pass. REFACTOR = tighten description (≤1024 chars), close loophole phrases, add cross-refs; re-run all evals.
+
+See \\\`\${CLAUDE_SKILL_DIR}[[/references/tdd-for-skills.md]]\\\` for the full phase mapping table, pressure-scenario taxonomy (time / authority / sycophancy / ambiguity / negative), what counts as RED vs GREEN, and refactor triggers.
+
+The 11-Step Lifecycle below operationalizes this discipline. Steps 4-7 are the eval loop: write evals → run baseline → write/refine SKILL.md → re-run evals.
 
 ## The 11-Step Lifecycle
 

@@ -59,7 +59,7 @@ describe("skill scaffolder", () => {
     if (!result.ok) return;
 
     const content = await fs.readFile(result.data, "utf-8");
-    expect(content).toContain("Structured code review workflow");
+    expect(content).toContain("Structured code review on an uncommitted diff");
   });
 
   it("creates a skill file with documentation template", async () => {
