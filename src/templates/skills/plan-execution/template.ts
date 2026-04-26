@@ -15,14 +15,15 @@ description: |
   an approved plan (use ${PROJECT_NAME}-brainstorming →
   ${PROJECT_NAME}-plan-writer first), for trivial single-file edits, for
   bug investigation without a fix plan (use ${PROJECT_NAME}-debugging),
-  or when the baseline test suite is already failing (fix the baseline
-  first, never execute on red).
+  for parallel dispatch across INDEPENDENT failure domains (use
+  ${PROJECT_NAME}-dispatching-parallel-agents), or when the baseline test
+  suite is already failing (fix the baseline first, never execute on red).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 6
 ---
 
 # {{name}} — Plan Execution
@@ -50,6 +51,7 @@ Wait for the user's choice before proceeding. Do not pick a default.
 - No approved plan yet — run ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer first
 - Exploratory or single-file edit that does not warrant a plan — edit directly
 - Bug investigation without a fix plan — use ${PROJECT_NAME}-debugging
+- Parallel dispatch across INDEPENDENT failure domains — use ${PROJECT_NAME}-dispatching-parallel-agents (SUBAGENT mode here is sequential by contract)
 - Baseline test suite is already failing — fix the baseline first, never execute on red
 
 ## Prerequisites (both modes)
@@ -171,7 +173,7 @@ Choose model complexity based on task:
 
 ### What Never to Do (SUBAGENT)
 
-- Never dispatch multiple implementer subagents in parallel (review is sequential; feedback loops require order)
+- Never dispatch multiple implementer subagents in parallel (review is sequential; feedback loops require order — for parallel dispatch across INDEPENDENT failure domains, use ${PROJECT_NAME}-dispatching-parallel-agents instead)
 - Never skip a review stage because "the task was simple"
 - Never proceed with DONE_WITH_CONCERNS without including the concern in review context
 - Never let subagents read plan files directly — extract and provide the specific task text
@@ -194,7 +196,10 @@ Choose model complexity based on task:
 ## Integration
 
 - **Requires**: ${PROJECT_NAME}-worktrees (workspace), ${PROJECT_NAME}-plan-writer (plan)
-- **Uses**: ${PROJECT_NAME}-tdd (implementation steps), ${PROJECT_NAME}-verification (task completion), ${PROJECT_NAME}-code-reviewer agent (SUBAGENT mode reviews)
-- **Invokes**: ${PROJECT_NAME}-branch-finish (after all tasks)
+- **Iron-law gates** (wrap every task, both modes): ${PROJECT_NAME}-tdd (RED-GREEN-REFACTOR per task — failing test before any production code) and ${PROJECT_NAME}-verification (fresh evidence before claiming a task done — no weasel words)
+- **On task failure**: ${PROJECT_NAME}-debugging (Phases 1-5) for root-cause investigation; never apply a second fix without completing Phase 1
+- **SUBAGENT-mode review**: ${PROJECT_NAME}-code-reviewer agent for the per-task quality gate (two-stage review)
+- **Invokes after all tasks**: ${PROJECT_NAME}-branch-finish (merge / PR / keep / discard)
 - **Never starts** implementation on main/master without explicit user consent
+- **Parallel sibling**: ${PROJECT_NAME}-dispatching-parallel-agents — for fan-out across INDEPENDENT failure domains (this skill's SUBAGENT mode is sequential by contract)
 `;

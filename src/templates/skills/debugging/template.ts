@@ -24,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 12
+version: 15
 ---
 
 # {{name}} — Debugging
@@ -45,6 +45,7 @@ Use for ANY technical issue:
 - Planning architecture or exploring approaches — use ${PROJECT_NAME}-brainstorming
 - Running tests as a general health check (no failure yet) — use ${PROJECT_NAME}-test-suite
 - Reviewing code without a specific bug to fix — use ${PROJECT_NAME}-code-review
+- Investigation BEFORE proposing a change to working code (no failure yet, gathering evidence about actual vs intended behavior) — use ${PROJECT_NAME}-evidence-gathering. Phase 1 of this skill is root-cause investigation FOR a known failure; ${PROJECT_NAME}-evidence-gathering is investigation BEFORE the failure exists.
 
 Use this ESPECIALLY when:
 - Under time pressure (emergencies make guessing tempting)
@@ -287,4 +288,5 @@ These techniques are in the \\\`references/\\\` directory:
 - Use **${PROJECT_NAME}-tdd** when Phase 4 requires writing a failing test
 - Use **${PROJECT_NAME}-verification** before claiming the fix is complete
 - Use the **${PROJECT_NAME}-codebase-explore** skill to trace call graphs in Phase 1
+- When Phase 1 reveals **3+ INDEPENDENT failure domains** (unrelated test files, unrelated subsystems with no shared cause, no shared state, no sequential dependency), hand off to **${PROJECT_NAME}-dispatching-parallel-agents** for fan-out instead of running serial Phases 2-4 N times.
 `;
