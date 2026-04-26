@@ -1,0 +1,78 @@
+{
+  "skillName": "codi-dispatching-parallel-agents",
+  "cases": [
+    {
+      "id": "three-independent-test-failures",
+      "description": "Three unrelated failing test files trigger parallel dispatch",
+      "prompt": "auth.test.ts, payments.test.ts, and search.test.ts all started failing this morning. Each file has a different error and they cover different subsystems. Investigate.",
+      "expectations": [
+        "Activates the dispatching-parallel-agents skill",
+        "Applies the three-part independence test (no shared state, no sequential dependency, no coordination need) before dispatching",
+        "Writes down the three domains explicitly before dispatch",
+        "Dispatches all three Agent tool calls in a SINGLE message (parallel) — not three sequential turns",
+        "Builds a self-contained per-agent prompt for each domain with the relevant error context",
+        "Performs mechanical integration (concatenate per-domain findings) without re-running the diagnosis"
+      ]
+    },
+    {
+      "id": "explicit-parallel-trigger-phrase",
+      "description": "Explicit 'dispatch in parallel' phrasing activates the skill",
+      "prompt": "Fan out to subagents and investigate these four migration tasks in parallel — they touch disjoint code.",
+      "expectations": [
+        "Activates the dispatching-parallel-agents skill",
+        "Verifies the four tasks are actually independent before dispatching (does not trust user grouping blindly)",
+        "Dispatches all four agents concurrently in one message"
+      ]
+    },
+    {
+      "id": "negative-single-failure-routes-to-debugging",
+      "description": "A single failure routes to debugging, not parallel dispatch",
+      "prompt": "The login flow is broken — users get a 500 after submitting credentials.",
+      "expectations": [
+        "Does NOT activate the dispatching-parallel-agents skill",
+        "Routes to codi-debugging Phases 1-5 instead",
+        "Does NOT dispatch parallel agents for a single failure"
+      ]
+    },
+    {
+      "id": "negative-plan-execution-subagent-conflict",
+      "description": "Sequential plan execution must NOT trigger parallel dispatch",
+      "prompt": "Run my approved plan with the SUBAGENT pattern — dispatch a fresh subagent per task.",
+      "expectations": [
+        "Does NOT activate the dispatching-parallel-agents skill",
+        "Routes to codi-plan-execution SUBAGENT mode (sequential by contract)",
+        "Recognizes that 'dispatch a subagent per task' is sequential plan execution, not parallel-domain dispatch"
+      ]
+    },
+    {
+      "id": "negative-shared-state-rejected",
+      "description": "Tasks that share state are rejected for parallel dispatch",
+      "prompt": "These three refactors all touch user.ts and the User type — can we run them in parallel?",
+      "expectations": [
+        "Recognizes shared state (same file user.ts) violates the independence test",
+        "Refuses to dispatch in parallel",
+        "Recommends either sequential execution or splitting the file before dispatch"
+      ]
+    },
+    {
+      "id": "negative-two-task-threshold",
+      "description": "Two tasks are below the 3+ threshold and stay inline",
+      "prompt": "Investigate these two unrelated test failures in parallel.",
+      "expectations": [
+        "Recognizes the case is below the 3+ threshold",
+        "Recommends handling the two failures inline rather than dispatching parallel agents",
+        "Cites coordination cost vs serial-work cost as the rationale"
+      ]
+    },
+    {
+      "id": "post-integration-handoff",
+      "description": "After integration, hands off to the correct next skill",
+      "prompt": "I dispatched four parallel agents to investigate four independent test failures and they all returned root-cause hypotheses. What now?",
+      "expectations": [
+        "Performs mechanical integration of the four findings",
+        "Identifies the correct downstream skill (codi-plan-writer if multiple fixes need bundling, or codi-debugging Phase 4 per domain for direct implementation)",
+        "Does NOT re-run the per-domain diagnosis during integration"
+      ]
+    }
+  ]
+}

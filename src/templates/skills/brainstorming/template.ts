@@ -25,14 +25,16 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 15
+version: 17
 ---
 
 # {{name}} — Brainstorming
 
-## HARD GATE
+## The Iron Law
 
-> **DO NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has explicitly approved it. This applies to ALL requests regardless of perceived simplicity.**
+**NO IMPLEMENTATION UNTIL DESIGN IS APPROVED.**
+
+DO NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has explicitly approved it. This applies to ALL requests regardless of perceived simplicity. A design can be three sentences for truly simple things — but it MUST be presented and approved before any implementation action runs.
 
 ## Anti-Pattern: This Is Too Simple To Need A Design
 
