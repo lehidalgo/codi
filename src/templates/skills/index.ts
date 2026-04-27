@@ -176,3 +176,11 @@ export {
   template as htmlLiveInspect,
   staticDir as htmlLiveInspectStaticDir,
 } from "./html-live-inspect/index.js";
+export {
+  template as dispatchingParallelAgents,
+  staticDir as dispatchingParallelAgentsStaticDir,
+} from "./dispatching-parallel-agents/index.js";
+export {
+  template as receivingCodeReview,
+  staticDir as receivingCodeReviewStaticDir,
+} from "./receiving-code-review/index.js";

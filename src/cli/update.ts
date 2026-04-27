@@ -20,7 +20,7 @@ import {
 } from "../constants.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
-import { generate } from "../core/generator/generator.js";
+import { applyConfiguration } from "../core/generator/apply.js";
 import {
   loadTemplate,
   AVAILABLE_TEMPLATES,
@@ -643,12 +643,18 @@ export async function updateHandler(
     registerAllAdapters();
     const configResult = await resolveConfig(projectRoot);
     if (configResult.ok) {
-      const genResult = await generate(configResult.data, projectRoot, {
+      const applyResult = await applyConfiguration(configResult.data, projectRoot, {
         keepCurrent: options.onConflict === "keep-current",
         force: options.force || options.onConflict === "keep-incoming",
         unionMerge,
+        forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
       });
-      regenerated = genResult.ok;
+      regenerated = applyResult.ok;
+      if (applyResult.ok && applyResult.data.reconciliation.pruned.length > 0) {
+        log.info(
+          `Pruned ${applyResult.data.reconciliation.pruned.length} orphaned file(s) removed from source templates`,
+        );
+      }
     }
   }
 

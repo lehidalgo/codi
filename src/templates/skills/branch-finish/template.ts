@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
 ---
 
 # {{name}} — Branch Finish
@@ -38,6 +38,12 @@ version: 8
 - User wants to start a new feature branch (use ${PROJECT_NAME}-worktrees)
 - User wants to review an open PR (use ${PROJECT_NAME}-code-review)
 - Tests are known to be failing — the user should fix failures first
+
+## The Iron Law
+
+**TESTS MUST PASS BEFORE ANY OPTION IS OFFERED. THE USER PICKS EXACTLY ONE OF FOUR OPTIONS — NEVER AN OPEN-ENDED QUESTION.**
+
+This skill never asks "what would you like to do next?" It runs the test suite, then presents exactly four deterministic choices: merge locally / open PR / keep as-is / discard. Open-ended phrasing leaks ambiguity into the finish step and makes the cleanup logic non-deterministic.
 
 ## Hard Gate: Tests Must Pass
 

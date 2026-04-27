@@ -12,17 +12,19 @@ description: |
   better", "redesign this page", "elevate the UI", "design system", "hero
   section". Avoids generic AI aesthetics (overused fonts like Inter /
   Roboto, purple gradients on white, predictable layouts). Do NOT activate
-  for slide decks or presentations (use ${PROJECT_NAME}-content-factory or
-  ${PROJECT_NAME}-pptx), static posters / album covers (use
-  ${PROJECT_NAME}-canvas-design), multi-component claude.ai artifacts (use
-  ${PROJECT_NAME}-claude-artifacts-builder), or PDF documents (use
-  ${PROJECT_NAME}-content-factory).
+  for marketing one-pagers, landing pages, or PDF documents whose primary
+  output is exported HTML/PDF — use ${PROJECT_NAME}-content-factory (this
+  skill is for app UIs only: Next.js, Vite), for slide decks or
+  presentations (use ${PROJECT_NAME}-content-factory or
+  ${PROJECT_NAME}-pptx), for static posters / album covers (use
+  ${PROJECT_NAME}-canvas-design), or for multi-component claude.ai
+  artifacts (use ${PROJECT_NAME}-claude-artifacts-builder).
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 9
 ---
 
 # {{name}} — Frontend Design

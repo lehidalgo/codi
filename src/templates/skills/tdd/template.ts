@@ -10,15 +10,17 @@ description: |
   first", "test-first", "write the test before the code", "TDD workflow",
   "implement with tests", "write tests as I implement". Do NOT activate
   for generating missing tests for existing code without implementation
-  (use ${PROJECT_NAME}-test-suite), fixing failing tests when the
-  production code is already correct (use ${PROJECT_NAME}-debugging), or
-  audit-style cleanup without behavior change (use ${PROJECT_NAME}-refactoring).
+  (use ${PROJECT_NAME}-test-suite), running tests without writing new
+  behavior (use ${PROJECT_NAME}-test-suite RUN mode), fixing failing
+  tests when the production code is already correct (use
+  ${PROJECT_NAME}-debugging), or audit-style cleanup without behavior
+  change (use ${PROJECT_NAME}-refactoring).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 10
 ---
 
 # {{name}} — TDD

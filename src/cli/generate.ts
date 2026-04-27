@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { resolveConfig } from "../core/config/resolver.js";
 import { registerAllAdapters } from "../adapters/index.js";
-import { generate } from "../core/generator/generator.js";
+import { applyConfiguration } from "../core/generator/apply.js";
 import { StateManager } from "../core/config/state.js";
 import type { GeneratedFileState } from "../core/config/state.js";
 import { resolveProjectDir } from "../utils/paths.js";
@@ -73,71 +73,48 @@ export async function generateHandler(
     process.stdout.isTTY &&
     !options.dryRun;
 
-  const genResult = await generate(configResult.data, projectRoot, {
+  const result = await applyConfiguration(configResult.data, projectRoot, {
     agents: options.agent,
     dryRun: options.dryRun,
     force: options.force || options.onConflict === "keep-incoming",
     keepCurrent: options.onConflict === "keep-current",
     unionMerge,
+    forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
   });
 
-  if (!genResult.ok) {
+  if (!result.ok) {
     return createCommandResult({
       success: false,
       command: "generate",
       data: { agents: [], filesGenerated: 0, files: [] },
-      errors: genResult.errors,
+      errors: result.errors,
       exitCode: EXIT_CODES.GENERATION_FAILED,
     });
   }
 
-  if (!options.dryRun) {
-    const configDir = resolveProjectDir(projectRoot);
-    const stateManager = new StateManager(configDir, projectRoot);
+  const generation = result.data.generation;
+  const reconciliation = result.data.reconciliation;
 
-    const agentUpdates: Record<string, GeneratedFileState[]> = {};
-    for (const agentId of genResult.data.agents) {
-      agentUpdates[agentId] = (genResult.data.filesByAgent[agentId] ?? []).map(
-        (f): GeneratedFileState => ({
-          path: f.path,
-          sourceHash: hashContent(f.sources.join(",")),
-          generatedHash: f.hash,
-          sources: f.sources,
-          timestamp: new Date().toISOString(),
-        }),
+  if (!options.dryRun) {
+    if (reconciliation.pruned.length > 0) {
+      log.info(
+        `Pruned ${reconciliation.pruned.length} orphaned file(s) removed from source templates`,
+      );
+    }
+    if (reconciliation.preservedDrifted.length > 0) {
+      log.warn(
+        `${reconciliation.preservedDrifted.length} orphaned file(s) have local edits — preserved. ` +
+          `Use --on-conflict keep-incoming to force delete.`,
       );
     }
 
-    // Detect and delete orphans BEFORE updating state — otherwise the previous
-    // file list is lost. Drifted orphans (user-edited after generation) are
-    // preserved unless --on-conflict keep-incoming was requested.
-    const orphanResult = await stateManager.detectOrphans(agentUpdates);
-    if (orphanResult.ok) {
-      const { clean, drifted } = orphanResult.data;
-      const forceDelete = options.force || options.onConflict === "keep-incoming";
-      const toDelete = forceDelete ? [...clean, ...drifted] : clean;
-      if (toDelete.length > 0) {
-        const deleted = await stateManager.deleteOrphans(toDelete);
-        if (deleted.length > 0) {
-          log.info(`Pruned ${deleted.length} orphaned file(s) removed from source templates`);
-        }
-      }
-      if (drifted.length > 0 && !forceDelete) {
-        log.warn(
-          `${drifted.length} orphaned file(s) have local edits — preserved. ` +
-            `Use --on-conflict keep-incoming to force delete.`,
-        );
-      }
-    }
-
-    await stateManager.updateAgentsBatch(agentUpdates);
-
+    const configDir = resolveProjectDir(projectRoot);
     await writeAuditEntry(configDir, {
       type: "generate",
       timestamp: new Date().toISOString(),
       details: {
-        agents: genResult.data.agents,
-        filesGenerated: genResult.data.files.length,
+        agents: generation.agents,
+        filesGenerated: generation.files.length,
       },
     });
   }
@@ -239,8 +216,8 @@ export async function generateHandler(
       const configDirLedger = resolveProjectDir(projectRoot);
       const ledger = new OperationsLedgerManager(configDirLedger);
       const now = new Date().toISOString();
-      const ledgerFiles = genResult.data.agents.flatMap((agentId) =>
-        (genResult.data.filesByAgent[agentId] ?? []).map((f) => ({
+      const ledgerFiles = generation.agents.flatMap((agentId) =>
+        (generation.filesByAgent[agentId] ?? []).map((f) => ({
           path: f.path,
           agent: agentId,
           type: inferGeneratedFileType(f.path),
@@ -253,8 +230,8 @@ export async function generateHandler(
         type: "generate",
         timestamp: now,
         details: {
-          agents: genResult.data.agents,
-          filesGenerated: genResult.data.files.length,
+          agents: generation.agents,
+          filesGenerated: generation.files.length,
         },
       });
     } catch (cause) {
@@ -266,9 +243,9 @@ export async function generateHandler(
     success: true,
     command: "generate",
     data: {
-      agents: genResult.data.agents,
-      filesGenerated: genResult.data.files.length,
-      files: genResult.data.files.map((f) => f.path),
+      agents: generation.agents,
+      filesGenerated: generation.files.length,
+      files: generation.files.map((f) => f.path),
     },
     exitCode: EXIT_CODES.SUCCESS,
   });
