@@ -1,12 +1,9 @@
 import type { Command } from "commander";
 import fs from "node:fs";
 import { resolveProjectDir } from "../utils/paths.js";
-import { hashContent } from "../utils/hash.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
-import { generate } from "../core/generator/generator.js";
-import { StateManager } from "../core/config/state.js";
-import type { GeneratedFileState } from "../core/config/state.js";
+import { applyConfiguration } from "../core/generator/apply.js";
 import { Logger } from "../core/output/logger.js";
 import {
   WATCH_DEBOUNCE_MS,
@@ -31,33 +28,25 @@ async function runGenerate(projectRoot: string, log: Logger): Promise<boolean> {
     return false;
   }
 
-  const genResult = await generate(configResult.data, projectRoot, { force: true });
-  if (!genResult.ok) {
+  const applyResult = await applyConfiguration(configResult.data, projectRoot, {
+    force: true,
+    forceDeleteDriftedOrphans: true,
+  });
+  if (!applyResult.ok) {
     log.warn("Generation failed during watch.");
     return false;
   }
 
-  const configDir = resolveProjectDir(projectRoot);
-  const stateManager = new StateManager(configDir, projectRoot);
-  for (const agentId of genResult.data.agents) {
-    const agentFiles = (
-      genResult.data.filesByAgent?.[agentId] ?? genResult.data.files
-    ).map(
-      (f): GeneratedFileState => ({
-        path: f.path,
-        sourceHash: hashContent(f.sources.join(",")),
-        generatedHash: f.hash,
-        sources: f.sources,
-        timestamp: new Date().toISOString(),
-      }),
-    );
-    await stateManager.updateAgent(agentId, agentFiles);
+  const { generation, reconciliation } = applyResult.data;
+  if (reconciliation.pruned.length > 0) {
+    log.debug(`Watch: pruned ${reconciliation.pruned.length} orphaned file(s).`);
   }
 
+  const configDir = resolveProjectDir(projectRoot);
   await writeAuditEntry(configDir, {
     type: "generate",
     timestamp: new Date().toISOString(),
-    details: { trigger: "watch", agents: genResult.data.agents },
+    details: { trigger: "watch", agents: generation.agents },
   });
 
   return true;
@@ -66,9 +55,7 @@ async function runGenerate(projectRoot: string, log: Logger): Promise<boolean> {
 export function registerWatchCommand(program: Command): void {
   program
     .command("watch")
-    .description(
-      `Watch ${PROJECT_DIR}/ for changes and auto-regenerate agent configs`,
-    )
+    .description(`Watch ${PROJECT_DIR}/ for changes and auto-regenerate agent configs`)
     .option("--once", "Run once and exit (useful for scripts)")
     .action(async (cmdOptions: Record<string, unknown>) => {
       const globalOptions = program.opts() as GlobalOptions;
@@ -91,9 +78,7 @@ export function registerWatchCommand(program: Command): void {
         log.warn(
           `auto_generate_on_change flag is disabled. Enable it in ${PROJECT_DIR}/flags.yaml to use watch mode.`,
         );
-        log.info(
-          "Set: auto_generate_on_change: { mode: enabled, value: true }",
-        );
+        log.info("Set: auto_generate_on_change: { mode: enabled, value: true }");
         process.exit(0);
       }
 
@@ -109,27 +94,22 @@ export function registerWatchCommand(program: Command): void {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let generating = false;
 
-      const watcher = fs.watch(
-        configDir,
-        { recursive: true },
-        (_event, filename) => {
-          if (!filename) return;
-          if (filename === STATE_FILENAME || filename === AUDIT_FILENAME)
-            return;
+      const watcher = fs.watch(configDir, { recursive: true }, (_event, filename) => {
+        if (!filename) return;
+        if (filename === STATE_FILENAME || filename === AUDIT_FILENAME) return;
 
-          if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(async () => {
-            if (generating) return;
-            generating = true;
-            log.info(`Change detected: ${filename} — regenerating...`);
-            const ok = await runGenerate(projectRoot, log);
-            if (ok) {
-              log.info("Regeneration complete.");
-            }
-            generating = false;
-          }, WATCH_DEBOUNCE_MS);
-        },
-      );
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+          if (generating) return;
+          generating = true;
+          log.info(`Change detected: ${filename} — regenerating...`);
+          const ok = await runGenerate(projectRoot, log);
+          if (ok) {
+            log.info("Regeneration complete.");
+          }
+          generating = false;
+        }, WATCH_DEBOUNCE_MS);
+      });
 
       process.on("SIGINT", () => {
         watcher.close();

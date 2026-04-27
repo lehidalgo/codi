@@ -220,4 +220,183 @@ describe("init command handler", () => {
     expect(lock.presets[prefixedName("balanced")]).toBeDefined();
     expect(lock.presets[prefixedName("balanced")]!.sourceType).toBe("builtin");
   });
+
+  // Regression: an existing install + a re-init that adds a new agent must
+  // refresh manifest.agents and produce the new agent's per-agent output.
+  // Prior to the fix, createProjectStructure was gated on !isUpdate, so the
+  // manifest kept the original agents list and generate() emitted nothing
+  // for the newly-added agent.
+  it("update mode persists newly-added agent in manifest and generates its output", async () => {
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
+
+    let manifest = await fs.readFile(path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME), "utf-8");
+    expect(manifest).toContain("claude-code");
+    expect(manifest).not.toContain("codex");
+
+    const result = await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code", "codex"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toEqual(expect.arrayContaining(["claude-code", "codex"]));
+
+    manifest = await fs.readFile(path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME), "utf-8");
+    expect(manifest).toContain("claude-code");
+    expect(manifest).toContain("codex");
+
+    // Codex's primary instruction file is AGENTS.md at the project root.
+    const agentsMdExists = await fs
+      .access(path.join(tmpDir, "AGENTS.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(agentsMdExists).toBe(true);
+  });
+
+  // Regression: switching flag preset on update must rewrite flags.yaml.
+  // Prior to the fix, persistFlags was only invoked on fresh install, so
+  // a customize pass that picked a different preset was silently ignored.
+  it("update mode rewrites flags.yaml when the flag preset changes", async () => {
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("minimal"),
+      agents: ["claude-code"],
+    });
+    const flagsBefore = await fs.readFile(path.join(tmpDir, PROJECT_DIR, "flags.yaml"), "utf-8");
+
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("strict"),
+      agents: ["claude-code"],
+    });
+    const flagsAfter = await fs.readFile(path.join(tmpDir, PROJECT_DIR, "flags.yaml"), "utf-8");
+
+    expect(flagsAfter).not.toBe(flagsBefore);
+  });
+
+  // Regression: dropping an agent on a re-init must prune its per-agent output
+  // dirs across every category (root instruction file, agent dir, skill dir).
+  // Prior to the applyConfiguration façade, init.ts called generate() directly,
+  // bypassing StateManager.detectOrphans/deleteOrphans entirely — so the
+  // dropped agent's files (AGENTS.md, .codex/, .agents/skills/) were stranded.
+  // We test via agent-drop because it is the only orphan-producing scenario
+  // expressible in the non-interactive --agents/--preset path; the wizard's
+  // artifact-deselect path produces orphans through the same code (apply.ts
+  // unit tests cover the orphan-detection logic directly).
+  it("update mode prunes a dropped agent's outputs across all its categories", async () => {
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code", "codex"],
+    });
+
+    const codexInstructionFile = path.join(tmpDir, "AGENTS.md");
+    const codexDir = path.join(tmpDir, ".codex");
+    const codexSkillsDir = path.join(tmpDir, ".agents", "skills");
+
+    expect(
+      await fs
+        .access(codexInstructionFile)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+    expect(
+      await fs
+        .access(codexDir)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+    const codexSkillsBefore = await fs.readdir(codexSkillsDir).catch(() => [] as string[]);
+    expect(codexSkillsBefore.length).toBeGreaterThan(0);
+
+    const result = await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toEqual(["claude-code"]);
+
+    expect(
+      await fs
+        .access(codexInstructionFile)
+        .then(() => false)
+        .catch(() => true),
+    ).toBe(true);
+    const codexSkillsAfter = await fs.readdir(codexSkillsDir).catch(() => [] as string[]);
+    expect(codexSkillsAfter.length).toBe(0);
+  });
+
+  // Regression complement: dropping the OTHER agent must prune its outputs
+  // and leave the remaining agent's outputs intact. Catches per-agent path
+  // confusion in the orphan logic — pruning must be targeted, not wholesale.
+  it("update mode pruning is per-agent — keeps retained agent's outputs intact", async () => {
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code", "codex"],
+    });
+
+    const claudeRulesDir = path.join(tmpDir, ".claude", "rules");
+    const codexInstructionFile = path.join(tmpDir, "AGENTS.md");
+
+    const claudeRulesBefore = await fs.readdir(claudeRulesDir).catch(() => [] as string[]);
+    expect(claudeRulesBefore.length).toBeGreaterThan(0);
+
+    // Drop claude-code; keep codex.
+    const result = await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["codex"],
+    });
+    expect(result.success).toBe(true);
+
+    // claude's per-agent dir should be empty (or gone).
+    const claudeRulesAfter = await fs.readdir(claudeRulesDir).catch(() => [] as string[]);
+    expect(claudeRulesAfter.length).toBe(0);
+
+    // codex's outputs should still be there.
+    expect(
+      await fs
+        .access(codexInstructionFile)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+  });
+
+  // Regression: read-merge-write semantics — user-set manifest fields
+  // (description, presets, layers) must survive an update pass. The previous
+  // implementation skipped the manifest write entirely on update; the fix
+  // now rewrites the manifest, so it must not clobber unrelated fields.
+  it("update mode preserves user-set manifest fields (description, presets, layers)", async () => {
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code"],
+    });
+
+    const manifestPath = path.join(tmpDir, PROJECT_DIR, MANIFEST_FILENAME);
+    const original = await fs.readFile(manifestPath, "utf-8");
+    await fs.writeFile(
+      manifestPath,
+      `${original}description: hand-edited summary\nlayers:\n  rules: false\npresets:\n  - my-team-preset\n`,
+      "utf-8",
+    );
+
+    await initHandler(tmpDir, {
+      json: true,
+      preset: prefixedName("balanced"),
+      agents: ["claude-code", "codex"],
+    });
+
+    const merged = await fs.readFile(manifestPath, "utf-8");
+    expect(merged).toContain("description: hand-edited summary");
+    expect(merged).toContain("rules: false");
+    expect(merged).toContain("my-team-preset");
+    expect(merged).toContain("codex");
+  });
 });

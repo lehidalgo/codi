@@ -5,7 +5,7 @@ import { formatHuman, formatJson } from "../core/output/formatter.js";
 import type { CommandResult } from "../core/output/types.js";
 import { registerAllAdapters } from "../adapters/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
-import { generate } from "../core/generator/generator.js";
+import { applyConfiguration } from "../core/generator/apply.js";
 import { printCompactBanner } from "./banner.js";
 
 export interface GlobalOptions {
@@ -25,9 +25,7 @@ export function addGlobalOptions(cmd: Command): Command {
 
 export function initFromOptions(options: GlobalOptions): void {
   if (options.verbose && options.quiet) {
-    process.stderr.write(
-      "[ERR] --verbose and --quiet are mutually exclusive\n",
-    );
+    process.stderr.write("[ERR] --verbose and --quiet are mutually exclusive\n");
     process.exit(1);
   }
 
@@ -52,8 +50,18 @@ export async function regenerateConfigs(projectRoot: string): Promise<boolean> {
       log.warn("Auto-generate skipped: config resolution failed.");
       return false;
     }
-    const genResult = await generate(configResult.data, projectRoot, { force: true });
-    return genResult.ok;
+    const applyResult = await applyConfiguration(configResult.data, projectRoot, {
+      force: true,
+      forceDeleteDriftedOrphans: true,
+    });
+    if (!applyResult.ok) return false;
+    const { reconciliation } = applyResult.data;
+    if (reconciliation.pruned.length > 0) {
+      log.info(
+        `Pruned ${reconciliation.pruned.length} orphaned file(s) removed from source templates`,
+      );
+    }
+    return true;
   } catch {
     log.warn(`Auto-generate failed. Run \`${PROJECT_CLI} generate\` manually.`);
     return false;
@@ -76,10 +84,7 @@ export function printSection(label: string): void {
   log.info(`  \u25B8 ${label}`);
 }
 
-export function handleOutput(
-  result: CommandResult<unknown>,
-  options: { json?: boolean },
-): void {
+export function handleOutput(result: CommandResult<unknown>, options: { json?: boolean }): void {
   if (options.json) {
     process.stdout.write(formatJson(result) + "\n");
   } else {
