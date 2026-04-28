@@ -151,13 +151,24 @@ export function generateHooksConfig(
   // ── Stage 2: Fast content checks ─────────────────────────────────────────
   // Read file contents but no compilation or external tool startup cost.
 
-  // Global hooks (gitleaks) — controlled by security_scan flag
-  if (isSecurityScanEnabled(flags)) {
-    for (const globalHook of getGlobalHooks()) {
-      if (globalHook.name !== `${PROJECT_NAME}-doctor`) {
-        allHooks.push(globalHook);
-      }
+  // Global hooks: gitleaks gated by security_scan, commitlint gated by
+  // commitMsgValidation (always-on for now), doctor only when manifest
+  // declares a version requirement (handled separately below).
+  for (const globalHook of getGlobalHooks()) {
+    if (globalHook.name === `${PROJECT_NAME}-doctor`) continue;
+    if (globalHook.name === "gitleaks") {
+      if (isSecurityScanEnabled(flags)) allHooks.push(globalHook);
+      continue;
     }
+    if (globalHook.name === "commitlint") {
+      // commit-msg stage hook — always added when commit-msg validation is on
+      // (which it is, by default). The yaml-renderer wires the commit-msg
+      // stage into the generated config via the spec's stages: ['commit-msg'].
+      allHooks.push(globalHook);
+      continue;
+    }
+    // Future global hooks fall through here.
+    allHooks.push(globalHook);
   }
 
   const secretScan = isSecurityScanEnabled(flags);
@@ -239,14 +250,27 @@ export function generateHooksConfig(
   // ── Stage 4: Language hooks (lint → format → type-check → security) ──────
   // Ordered within each language from fastest to slowest by hook-registry.
 
+  const pyChecker = selectedPythonTypeChecker(flags);
+  const jsToolchain = selectedJsFormatLint(flags);
+  const commitTypeCheck = selectedCommitTypeCheck(flags);
+
   for (const lang of languages) {
     const langHooks = getHooksForLanguage(lang);
     for (const hook of langHooks) {
-      if (isHookEnabled(hook.name, flags)) {
-        const alreadyAdded = allHooks.some((h) => h.name === hook.name);
-        if (!alreadyAdded) {
-          allHooks.push(hook);
-        }
+      if (!isHookEnabled(hook.name, flags)) continue;
+      if (!isPythonTypeCheckerSelected(hook.name, pyChecker)) continue;
+      if (!isJsToolchainSelected(hook, jsToolchain)) continue;
+
+      // Promote type-check hooks to pre-commit when commit_type_check === 'on'.
+      // Default registry stages are already ['pre-push'] for type-check hooks.
+      const final =
+        commitTypeCheck === "on" && hook.category === "type-check"
+          ? { ...hook, stages: ["pre-commit"] as HookSpec["stages"] }
+          : hook;
+
+      const alreadyAdded = allHooks.some((h) => h.name === final.name);
+      if (!alreadyAdded) {
+        allHooks.push(final);
       }
     }
   }
@@ -363,10 +387,74 @@ function getDocProtectedBranches(flags: ResolvedFlags): string[] {
 }
 
 function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
+  // commit_test_run is the new canonical flag; falls back to legacy
+  // test_before_commit only when commit_test_run is missing.
+  const newFlag = flags["commit_test_run"];
+  if (newFlag && newFlag.mode !== "disabled") {
+    return newFlag.value === "on";
+  }
   const flag = flags["test_before_commit"];
-  if (!flag) return true;
+  if (!flag) return false;
   if (flag.mode === "disabled") return false;
   return flag.value !== false;
+}
+
+/** Resolve the python_type_checker flag value, with safe fallback. */
+function selectedPythonTypeChecker(
+  flags: ResolvedFlags,
+): "mypy" | "basedpyright" | "pyright" | "off" {
+  const f = flags["python_type_checker"];
+  if (!f || f.mode === "disabled" || f.value === "auto") return "basedpyright";
+  return f.value as "mypy" | "basedpyright" | "pyright" | "off";
+}
+
+/** Resolve the js_format_lint flag value, with safe fallback. */
+function selectedJsFormatLint(flags: ResolvedFlags): "eslint-prettier" | "biome" | "off" {
+  const f = flags["js_format_lint"];
+  if (!f || f.mode === "disabled" || f.value === "auto") return "eslint-prettier";
+  return f.value as "eslint-prettier" | "biome" | "off";
+}
+
+/** Resolve the commit_type_check flag value, with safe fallback. */
+function selectedCommitTypeCheck(flags: ResolvedFlags): "on" | "off" {
+  const f = flags["commit_type_check"];
+  if (!f || f.mode === "disabled" || f.value === "auto") return "off";
+  return f.value as "on" | "off";
+}
+
+/**
+ * Filter Python type checker hooks by the user's python_type_checker flag.
+ * Only the selected checker survives; the others are dropped from the spec
+ * list. Non-Python hooks pass through unchanged.
+ */
+function isPythonTypeCheckerSelected(
+  hookName: string,
+  selected: "mypy" | "basedpyright" | "pyright" | "off",
+): boolean {
+  const isPyChecker = hookName === "mypy" || hookName === "basedpyright" || hookName === "pyright";
+  if (!isPyChecker) return true;
+  if (selected === "off") return false;
+  return hookName === selected;
+}
+
+/**
+ * Filter JS/TS lint+format hooks by the user's js_format_lint flag.
+ * 'eslint-prettier' keeps eslint + prettier. 'biome' currently has no
+ * registry entry (added in a follow-up); falls back to keeping eslint+prettier.
+ * 'off' drops eslint + prettier.
+ */
+function isJsToolchainSelected(
+  hook: HookSpec,
+  selected: "eslint-prettier" | "biome" | "off",
+): boolean {
+  const isJsTooling =
+    (hook.language === "typescript" || hook.language === "javascript") &&
+    (hook.name === "eslint" || hook.name === "prettier");
+  if (!isJsTooling) return true;
+  if (selected === "off") return false;
+  // 'biome' has no registry entry yet — leave eslint+prettier in place
+  // until commit 8 / the Biome support follow-up adds the spec.
+  return true;
 }
 
 // Pre-commit test command for npm projects:

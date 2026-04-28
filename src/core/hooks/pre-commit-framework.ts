@@ -6,6 +6,8 @@ import { createError } from "../output/errors.js";
 import type { HookEntry } from "./hook-registry.js";
 import { PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import { renderPreCommitConfig } from "./renderers/yaml-renderer.js";
+import { loadOrEmptyDoc } from "./yaml-document.js";
+import { stripLegacyTextMarkers } from "./legacy-cleanup.js";
 
 interface HookFileResult {
   files: string[];
@@ -237,16 +239,21 @@ export async function installPreCommitFramework(
       existing = null;
     }
 
-    let nextContent: string;
-    try {
-      nextContent = renderPreCommitConfig(hooks, existing);
-    } catch {
-      // Malformed YAML — back it up and regenerate from scratch.
-      if (existing) {
+    // Parse-pre-flight: if the existing file is malformed YAML (after legacy-
+    // marker stripping), back it up before the renderer falls back to a
+    // fresh document. The renderer swallows parse errors silently, so we
+    // detect them here so the user's old content is never lost.
+    let parseable: string | null = existing;
+    if (existing !== null) {
+      try {
+        loadOrEmptyDoc(stripLegacyTextMarkers(existing));
+      } catch {
         await fs.writeFile(backupPath, existing, "utf-8");
+        parseable = null;
       }
-      nextContent = renderPreCommitConfig(hooks, null);
     }
+
+    const nextContent = renderPreCommitConfig(hooks, parseable);
 
     if (existing !== null && existing === nextContent) {
       // Idempotent no-op: skip the write to keep `git status` clean.

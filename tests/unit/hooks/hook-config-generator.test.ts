@@ -32,10 +32,40 @@ describe("generateHooksConfig", () => {
     expect(config.hooks.map((h) => h.name)).toContain("tsc");
   });
 
-  it("generates hooks for python", () => {
+  it("generates hooks for python (default type checker = basedpyright)", () => {
     const config = generateHooksConfig(makeFlags({}), ["python"]);
     expect(config.hooks.map((h) => h.name)).toContain("ruff-check");
-    expect(config.hooks.map((h) => h.name)).toContain("pyright");
+    // Default Python type-checker is now basedpyright (the others get filtered).
+    expect(config.hooks.map((h) => h.name)).toContain("basedpyright");
+    expect(config.hooks.map((h) => h.name)).not.toContain("mypy");
+    expect(config.hooks.map((h) => h.name)).not.toContain("pyright");
+  });
+
+  it("python_type_checker=mypy keeps only mypy", () => {
+    const flags = makeFlags({ python_type_checker: { value: "mypy", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["python"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("mypy");
+    expect(names).not.toContain("basedpyright");
+    expect(names).not.toContain("pyright");
+  });
+
+  it("python_type_checker=pyright keeps only pyright", () => {
+    const flags = makeFlags({ python_type_checker: { value: "pyright", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["python"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("pyright");
+    expect(names).not.toContain("mypy");
+    expect(names).not.toContain("basedpyright");
+  });
+
+  it("python_type_checker=off drops all three checkers", () => {
+    const flags = makeFlags({ python_type_checker: { value: "off", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["python"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).not.toContain("mypy");
+    expect(names).not.toContain("basedpyright");
+    expect(names).not.toContain("pyright");
   });
 
   it("excludes typecheck hooks when type_checking is off", () => {
