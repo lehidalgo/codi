@@ -32,10 +32,67 @@ describe("generateHooksConfig", () => {
     expect(config.hooks.map((h) => h.name)).toContain("tsc");
   });
 
-  it("generates hooks for python", () => {
+  it("generates hooks for python (default type checker = basedpyright)", () => {
     const config = generateHooksConfig(makeFlags({}), ["python"]);
     expect(config.hooks.map((h) => h.name)).toContain("ruff-check");
-    expect(config.hooks.map((h) => h.name)).toContain("pyright");
+    // Default Python type-checker is now basedpyright (the others get filtered).
+    expect(config.hooks.map((h) => h.name)).toContain("basedpyright");
+    expect(config.hooks.map((h) => h.name)).not.toContain("mypy");
+    expect(config.hooks.map((h) => h.name)).not.toContain("pyright");
+  });
+
+  it("python_type_checker=mypy keeps only mypy", () => {
+    const flags = makeFlags({ python_type_checker: { value: "mypy", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["python"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("mypy");
+    expect(names).not.toContain("basedpyright");
+    expect(names).not.toContain("pyright");
+  });
+
+  it("python_type_checker=pyright keeps only pyright", () => {
+    const flags = makeFlags({ python_type_checker: { value: "pyright", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["python"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("pyright");
+    expect(names).not.toContain("mypy");
+    expect(names).not.toContain("basedpyright");
+  });
+
+  it("python_type_checker=off drops all three checkers", () => {
+    const flags = makeFlags({ python_type_checker: { value: "off", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["python"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).not.toContain("mypy");
+    expect(names).not.toContain("basedpyright");
+    expect(names).not.toContain("pyright");
+  });
+
+  it("js_format_lint=eslint-prettier keeps eslint+prettier, drops biome", () => {
+    const flags = makeFlags({ js_format_lint: { value: "eslint-prettier", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("eslint");
+    expect(names).toContain("prettier");
+    expect(names).not.toContain("biome");
+  });
+
+  it("js_format_lint=biome keeps biome, drops eslint+prettier", () => {
+    const flags = makeFlags({ js_format_lint: { value: "biome", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("biome");
+    expect(names).not.toContain("eslint");
+    expect(names).not.toContain("prettier");
+  });
+
+  it("js_format_lint=off drops all three (eslint, prettier, biome)", () => {
+    const flags = makeFlags({ js_format_lint: { value: "off", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).not.toContain("eslint");
+    expect(names).not.toContain("prettier");
+    expect(names).not.toContain("biome");
   });
 
   it("excludes typecheck hooks when type_checking is off", () => {
@@ -83,6 +140,7 @@ describe("generateHooksConfig", () => {
     const langHooks = config.hooks.filter(
       (h) =>
         h.name !== "gitleaks" &&
+        h.name !== "commitlint" &&
         h.name !== "secret-scan" &&
         h.name !== "file-size-check" &&
         h.name !== "artifact-validate" &&
@@ -130,10 +188,10 @@ describe("generateHooksConfig", () => {
     expect(ruff?.language).toBe("python");
   });
 
-  it("language field is undefined on global hooks", () => {
+  it('language field is "global" on global meta hooks', () => {
     const config = generateHooksConfig(makeFlags({}), ["python"]);
     const secretScan = config.hooks.find((h) => h.name === "secret-scan");
-    expect(secretScan?.language).toBeUndefined();
+    expect(secretScan?.language).toBe("global");
   });
 
   it("enables test hooks when test_before_commit is true", () => {

@@ -15,8 +15,8 @@ const testCatalog: Record<string, FlagSpec> = {
 };
 
 describe("FLAG_CATALOG", () => {
-  it("has exactly 17 entries", () => {
-    expect(Object.keys(FLAG_CATALOG)).toHaveLength(17);
+  it("has exactly 21 entries", () => {
+    expect(Object.keys(FLAG_CATALOG)).toHaveLength(21);
   });
 
   it("contains all expected flag names", () => {
@@ -38,6 +38,10 @@ describe("FLAG_CATALOG", () => {
       "progressive_loading",
       "drift_detection",
       "auto_generate_on_change",
+      "python_type_checker",
+      "js_format_lint",
+      "commit_type_check",
+      "commit_test_run",
     ];
     expect(Object.keys(FLAG_CATALOG).sort()).toEqual(expected.sort());
   });
@@ -132,8 +136,8 @@ describe("buildFlagSchema", () => {
 describe("getDefaultFlags", () => {
   const defaults = getDefaultFlags();
 
-  it("returns all 17 flags", () => {
-    expect(Object.keys(defaults)).toHaveLength(17);
+  it("returns all 21 flags", () => {
+    expect(Object.keys(defaults)).toHaveLength(21);
   });
 
   it("auto_commit defaults to false", () => {
@@ -190,5 +194,37 @@ describe("getDefaultFlags", () => {
     for (const flag of Object.values(defaults)) {
       expect(flag.locked).toBe(false);
     }
+  });
+
+  it.each([
+    "python_type_checker",
+    "js_format_lint",
+    "commit_type_check",
+    "commit_test_run",
+  ] as const)("%s is registered with default 'auto'", (key) => {
+    const spec = FLAG_CATALOG[key];
+    expect(spec).toBeDefined();
+    expect(spec!.default).toBe("auto");
+    expect(spec!.type).toBe("enum");
+    expect(spec!.values).toContain("auto");
+  });
+
+  it("python_type_checker enumerates mypy, basedpyright, pyright, off", () => {
+    expect(FLAG_CATALOG["python_type_checker"]!.values).toEqual([
+      "auto",
+      "mypy",
+      "basedpyright",
+      "pyright",
+      "off",
+    ]);
+  });
+
+  it("js_format_lint enumerates eslint-prettier, biome, off", () => {
+    expect(FLAG_CATALOG["js_format_lint"]!.values).toEqual([
+      "auto",
+      "eslint-prettier",
+      "biome",
+      "off",
+    ]);
   });
 });

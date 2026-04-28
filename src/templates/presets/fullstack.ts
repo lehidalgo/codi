@@ -32,6 +32,10 @@ export const preset: BuiltinPresetDefinition = {
     progressive_loading: { mode: "enabled", value: "metadata" },
     drift_detection: { mode: "enabled", value: "warn" },
     auto_generate_on_change: { mode: "enabled", value: false },
+    python_type_checker: { mode: "enabled", value: "auto" },
+    js_format_lint: { mode: "enabled", value: "auto" },
+    commit_type_check: { mode: "enabled", value: "auto" },
+    commit_test_run: { mode: "enabled", value: "auto" },
   } satisfies Record<string, FlagDefinition>,
   rules: [
     ...CORE_PLATFORM_RULES,

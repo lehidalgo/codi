@@ -38,6 +38,7 @@ import {
   resolveFlagsForPreset,
   syncManifestOnInit,
   recordPresetLock,
+  applyToolingPicks,
 } from "./init-helpers.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
@@ -45,6 +46,7 @@ import { installHooks } from "../core/hooks/hook-installer.js";
 import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
+import { promptToolingDefaults, type ToolingPromptResult } from "./wizard-summary.js";
 import { checkTemplateRegistry } from "../core/scaffolder/template-registry-check.js";
 import type { GlobalOptions } from "./shared.js";
 import { VERSION } from "../index.js";
@@ -197,6 +199,7 @@ export async function initHandler(
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
   let mcpServerTemplates: string[] = [];
+  let tooling: ToolingPromptResult | null = null;
 
   if (isInteractive(options)) {
     const detectedAdapters = await detectAdapters(projectRoot);
@@ -251,6 +254,18 @@ export async function initHandler(
       (wizardResult.configMode === "custom" ? "custom" : undefined);
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
+
+    // Tooling defaults summary screen — runs once, after language selection.
+    // The user sees the auto-resolved python/js/typecheck/test picks and can
+    // press Enter (accept), c (customize each), or s (skip hooks entirely).
+    // The accepted picks are merged into resolvedFlags below before
+    // generateHooksConfig is called, so they reach the renderer.
+    try {
+      tooling = await promptToolingDefaults(projectRoot);
+    } catch {
+      // Non-interactive environment or prompt cancelled — fall back to auto.
+      tooling = null;
+    }
 
     if (
       wizardResult.configMode === "zip" ||
@@ -600,8 +615,14 @@ export async function initHandler(
     try {
       const hookSetup = await detectHookSetup(projectRoot);
       const resolvedFlags = configResult.data.flags;
+      // Merge the wizard's tooling-default picks into resolvedFlags so the
+      // generator + renderer see the user's choices.
+      if (tooling) applyToolingPicks(resolvedFlags, tooling);
+      if (tooling?.skipped) {
+        log.info("Skipped pre-commit hook installation per user request");
+      }
       const hooksConfig = generateHooksConfig(resolvedFlags, stack);
-      if (hooksConfig.hooks.length > 0 || hooksConfig.docCheck) {
+      if (!tooling?.skipped && (hooksConfig.hooks.length > 0 || hooksConfig.docCheck)) {
         const hookResult = await installHooks({
           projectRoot,
           runner: hookSetup.runner,

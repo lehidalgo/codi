@@ -91,7 +91,7 @@ export async function checkHookDependencies(
   const uniqueEntries: { tool: string; hook: HookEntry; isNodePkg: boolean }[] = [];
 
   for (const hook of hooks) {
-    const tool = extractToolName(hook.command);
+    const tool = extractToolName(hook.shell.command);
     if (seen.has(tool)) continue;
     seen.add(tool);
     uniqueEntries.push({ tool, hook, isNodePkg: NODE_PACKAGES.has(tool) });
@@ -109,9 +109,13 @@ export async function checkHookDependencies(
       }
       const found = resolvedPath !== undefined;
 
-      // Build installHint: prefer hook's own installHint, fall back to INSTALL_HINTS record
+      // Prefer hook's own installHint, fall back to INSTALL_HINTS record when
+      // missing or empty. (HookSpec requires installHint to be set, but allows
+      // an empty command string for hooks that have no install action — e.g.
+      // Codi-internal .mjs scripts.)
+      const ownHint = hook.installHint && hook.installHint.command ? hook.installHint : undefined;
       const installHint: InstallHint | undefined =
-        hook.installHint ?? (INSTALL_HINTS[tool] ? { command: INSTALL_HINTS[tool]! } : undefined);
+        ownHint ?? (INSTALL_HINTS[tool] ? { command: INSTALL_HINTS[tool]! } : undefined);
 
       let severity: DependencyDiagnostic["severity"] = "ok";
       if (!found) {

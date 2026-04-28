@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import type { FlagDefinition } from "../types/flags.js";
+import type { FlagDefinition, ResolvedFlags } from "../types/flags.js";
+import type { ToolingPromptResult } from "./wizard-summary.js";
 import {
   DEFAULT_PRESET,
   MANIFEST_FILENAME,
@@ -391,4 +392,30 @@ export async function recordPresetLock(
     };
   }
   await writeLockFile(configDir, lock);
+}
+
+/**
+ * Merge a `promptToolingDefaults` result into the resolved flags map so the
+ * generator + renderer see the user's wizard picks. Mutates `flags` in place.
+ * No-op when the user picked Skip (caller checks `tooling.skipped` separately).
+ */
+export function applyToolingPicks(flags: ResolvedFlags, tooling: ToolingPromptResult): void {
+  if (tooling.skipped) return;
+  const a = tooling.accepted;
+  flags["python_type_checker"] = {
+    ...flags["python_type_checker"]!,
+    value: a.python_type_checker,
+  };
+  flags["js_format_lint"] = {
+    ...flags["js_format_lint"]!,
+    value: a.js_format_lint,
+  };
+  flags["commit_type_check"] = {
+    ...flags["commit_type_check"]!,
+    value: a.commit_type_check,
+  };
+  flags["commit_test_run"] = {
+    ...flags["commit_test_run"]!,
+    value: a.commit_test_run,
+  };
 }

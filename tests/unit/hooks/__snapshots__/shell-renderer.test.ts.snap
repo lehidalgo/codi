@@ -1,0 +1,71 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`shell renderer parity (golden snapshot) > matches snapshot for typescript+python+global hooks (excluding commitlint) 1`] = `
+"STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+# — typescript —
+ESLINT=$(echo "$STAGED" | grep -E '\\.(ts|tsx|js|jsx)$' || true)
+[ -n "$ESLINT" ] && printf '%s\\n' $ESLINT | xargs npx eslint --fix
+PRETTIER=$(echo "$STAGED" | grep -E '\\.(ts|tsx|js|jsx|mjs|cjs|json|md|mdx|yaml|yml|css|scss|html)$' || true)
+[ -n "$PRETTIER" ] && printf '%s\\n' $PRETTIER | xargs npx prettier --write
+TSC=$(echo "$STAGED" | grep -E '\\.(ts|tsx)$' || true)
+if [ -n "$TSC" ]; then
+  if ! command -v tsc > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/tsc" ]; then
+    echo "  ✗ BLOCKING — install tsc to commit: npm install -D typescript"
+    exit 1
+  fi
+  npx tsc --noEmit
+fi
+BIOME=$(echo "$STAGED" | grep -E '\\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc|css)$' || true)
+[ -n "$BIOME" ] && printf '%s\\n' $BIOME | xargs npx @biomejs/biome check --write --no-errors-on-unmatched
+# — python —
+RUFF_CHECK=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
+if [ -n "$RUFF_CHECK" ]; then
+  if ! command -v ruff > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/ruff" ]; then
+    echo "  ✗ BLOCKING — install ruff-check to commit: pip install ruff"
+    exit 1
+  fi
+  printf '%s\\n' $RUFF_CHECK | xargs ruff check --fix
+fi
+RUFF_FORMAT=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
+[ -n "$RUFF_FORMAT" ] && printf '%s\\n' $RUFF_FORMAT | xargs ruff format
+BASEDPYRIGHT=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
+if [ -n "$BASEDPYRIGHT" ]; then
+  if ! command -v basedpyright > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/basedpyright" ]; then
+    echo "  ✗ BLOCKING — install basedpyright to commit: pip install basedpyright"
+    exit 1
+  fi
+  basedpyright
+fi
+MYPY=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
+if [ -n "$MYPY" ]; then
+  if ! command -v mypy > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/mypy" ]; then
+    echo "  ✗ BLOCKING — install mypy to commit: pip install mypy"
+    exit 1
+  fi
+  mypy
+fi
+PYRIGHT=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
+if [ -n "$PYRIGHT" ]; then
+  if ! command -v pyright > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/pyright" ]; then
+    echo "  ✗ BLOCKING — install pyright to commit: npm install -D pyright"
+    exit 1
+  fi
+  npx pyright
+fi
+BANDIT=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
+if [ -n "$BANDIT" ]; then
+  if ! command -v bandit > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/bandit" ]; then
+    echo "  ✗ BLOCKING — install bandit to commit: pip install "bandit[toml]""
+    exit 1
+  fi
+  printf '%s\\n' $BANDIT | xargs bandit -c pyproject.toml -lll -r
+fi
+# — global —
+[ -n "$STAGED" ] && gitleaks protect --staged --no-banner
+npx codi doctor --ci
+[ -n "$ESLINT" ] && printf '%s\\n' $ESLINT | xargs git add || true
+[ -n "$PRETTIER" ] && printf '%s\\n' $PRETTIER | xargs git add || true
+[ -n "$BIOME" ] && printf '%s\\n' $BIOME | xargs git add || true
+[ -n "$RUFF_CHECK" ] && printf '%s\\n' $RUFF_CHECK | xargs git add || true
+[ -n "$RUFF_FORMAT" ] && printf '%s\\n' $RUFF_FORMAT | xargs git add || true"
+`;

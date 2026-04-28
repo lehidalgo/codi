@@ -19,6 +19,7 @@ import {
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
+import { renderShellHooks } from "./renderers/shell-renderer.js";
 import {
   COMMIT_MSG_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
@@ -302,53 +303,55 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
       lastLanguage = currentLang;
     }
 
-    if (!h.stagedFilter) {
+    const cmd = h.shell.command;
+    const passFiles = h.shell.passFiles;
+    const modifiesFiles = h.shell.modifiesFiles;
+
+    if (!h.files) {
       // Global hook (no filter) — always runs; guard tool presence for required hooks
-      const globalTool = h.command.split(/\s+/)[0]!;
+      const globalTool = cmd.split(/\s+/)[0]!;
       if (h.required === true) {
-        const hint = h.installHint?.command ?? `install ${globalTool}`;
+        const hint = h.installHint.command || `install ${globalTool}`;
         lines.push(
           `if ! command -v ${globalTool} > /dev/null 2>&1; then`,
           `  echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
           `  exit 1`,
           `fi`,
-          h.command,
+          cmd,
         );
       } else {
-        lines.push(h.command);
+        lines.push(cmd);
       }
       continue;
     }
 
-    const grepPattern = globToGrepPattern(h.stagedFilter);
+    const grepPattern = globToGrepPattern(h.files);
     const varName = h.name.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase();
 
     if (!grepPattern) {
       // Catch-all filter (e.g. **/*) — use all staged files directly
-      if (h.passFiles === false) {
-        lines.push(`[ -n "$STAGED" ] && ${h.command}`);
+      if (passFiles === false) {
+        lines.push(`[ -n "$STAGED" ] && ${cmd}`);
       } else {
-        // Use printf + xargs to safely handle filenames with spaces or special chars
-        lines.push(`[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${h.command}`);
+        lines.push(`[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${cmd}`);
       }
-      if (h.modifiesFiles) modifiedVars.push("STAGED");
+      if (modifiesFiles) modifiedVars.push("STAGED");
       continue;
     }
 
     lines.push(`${varName}=$(echo "$STAGED" | grep -E '${grepPattern}' || true)`);
 
     if (h.required === true) {
-      // Required tool: check presence before running; block commit if missing
-      const tool = h.command.split(/\s+/).find((p) => p !== "npx") ?? h.name;
-      const hint = h.installHint?.command ?? `install ${tool}`;
-      if (h.passFiles === false) {
+      const tool = h.shell.toolBinary;
+      const hint = h.installHint.command || `install ${tool}`;
+      if (passFiles === false) {
         lines.push(
           `if [ -n "$${varName}" ]; then`,
           `  if ! command -v ${tool} > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/${tool}" ]; then`,
           `    echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
           `    exit 1`,
           `  fi`,
-          `  ${h.command}`,
+          `  ${cmd}`,
           `fi`,
         );
       } else {
@@ -358,19 +361,17 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
           `    echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
           `    exit 1`,
           `  fi`,
-          `  printf '%s\\n' $${varName} | xargs ${h.command}`,
+          `  printf '%s\\n' $${varName} | xargs ${cmd}`,
           `fi`,
         );
       }
-    } else if (h.passFiles === false) {
-      // Tool uses project config — run without file args when matching files exist
-      lines.push(`[ -n "$${varName}" ] && ${h.command}`);
+    } else if (passFiles === false) {
+      lines.push(`[ -n "$${varName}" ] && ${cmd}`);
     } else {
-      // Use printf + xargs to safely handle filenames with spaces or special chars
-      lines.push(`[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${h.command}`);
+      lines.push(`[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${cmd}`);
     }
 
-    if (h.modifiesFiles) modifiedVars.push(varName);
+    if (modifiesFiles) modifiedVars.push(varName);
   }
 
   // Re-stage files after formatters modify them on disk
@@ -390,7 +391,7 @@ async function installHusky(
 ): Promise<Result<HookFileResult>> {
   const huskyFile = path.join(projectRoot, ".husky", "pre-commit");
 
-  const commands = buildHuskyCommands(hooks);
+  const commands = renderShellHooks(hooks, "husky");
   const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n${commands}\n`;
 
   try {
