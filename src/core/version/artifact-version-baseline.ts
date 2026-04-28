@@ -29,7 +29,9 @@ export function checkArtifactVersionBaseline(
 
     if (fingerprint.contentHash !== prior.hash && fingerprint.artifactVersion <= prior.version) {
       errors.push(
-        `${fingerprint.type} "${name}": content changed without artifact version bump (current ${fingerprint.artifactVersion}, previous ${prior.version})`,
+        `${fingerprint.type} "${name}": content changed without artifact version bump (current v${fingerprint.artifactVersion}, previous v${prior.version})\n` +
+          `      runtime  hash: ${fingerprint.contentHash}\n` +
+          `      baseline hash: ${prior.hash}`,
       );
     }
   }
