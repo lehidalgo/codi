@@ -72,27 +72,29 @@ interface PreCommitHookYaml {
 }
 
 function renderPreCommitHook(h: HookEntry, indent: string): PreCommitHookYaml {
+  // Legacy renderer for the text-based path. The yaml-renderer (commit 6) will
+  // supersede this. For the duration of the migration we read entry/files/
+  // pass_filenames from the new HookSpec.shell + HookSpec.files fields.
+  const entry = h.shell.command;
   const lines: string[] = [
     `${indent}- id: ${h.name}`,
     `${indent}  name: ${h.name}`,
-    `${indent}  entry: ${h.command}`,
+    `${indent}  entry: ${entry}`,
     `${indent}  language: system`,
   ];
 
-  const regex = globToPythonRegex(h.stagedFilter);
+  const regex = globToPythonRegex(h.files);
   if (regex) {
     lines.push(`${indent}  files: '${regex.replace(/'/g, "''")}'`);
   } else {
-    // No file filter — run once per commit
     lines.push(`${indent}  always_run: true`);
   }
 
-  if (h.passFiles === false || !regex) {
+  if (h.shell.passFiles === false || !regex) {
     lines.push(`${indent}  pass_filenames: false`);
   }
 
-  if (h.stagedFilter === "") {
-    // Global hooks tied to no files at all
+  if (h.files === "") {
     lines.push(`${indent}  always_run: true`);
   }
 

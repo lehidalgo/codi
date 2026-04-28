@@ -83,6 +83,7 @@ describe("generateHooksConfig", () => {
     const langHooks = config.hooks.filter(
       (h) =>
         h.name !== "gitleaks" &&
+        h.name !== "commitlint" &&
         h.name !== "secret-scan" &&
         h.name !== "file-size-check" &&
         h.name !== "artifact-validate" &&
@@ -130,10 +131,10 @@ describe("generateHooksConfig", () => {
     expect(ruff?.language).toBe("python");
   });
 
-  it("language field is undefined on global hooks", () => {
+  it('language field is "global" on global meta hooks', () => {
     const config = generateHooksConfig(makeFlags({}), ["python"]);
     const secretScan = config.hooks.find((h) => h.name === "secret-scan");
-    expect(secretScan?.language).toBeUndefined();
+    expect(secretScan?.language).toBe("global");
   });
 
   it("enables test hooks when test_before_commit is true", () => {

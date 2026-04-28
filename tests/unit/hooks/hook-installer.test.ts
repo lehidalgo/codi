@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import {
   installHooks,
   buildRunnerScript,
@@ -15,25 +15,20 @@ import {
 import type { HookEntry } from "#src/core/hooks/hook-registry.js";
 import type { InstallOptions } from "#src/core/hooks/hook-installer.js";
 import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { legacyHook } from "./_legacy-shape.js";
 
 let tmpDir: string;
 
 const testHooks: HookEntry[] = [
-  {
-    name: "eslint",
-    command: "npx eslint --fix",
-    stagedFilter: "**/*.{ts,tsx,js,jsx}",
-  },
-  {
+  legacyHook({ name: "eslint", command: "npx eslint --fix", stagedFilter: "**/*.{ts,tsx,js,jsx}" }),
+  legacyHook({
     name: "prettier",
     command: "npx prettier --write",
     stagedFilter: "**/*.{ts,tsx,js,jsx}",
-  },
+  }),
 ];
 
-const baseOptions = (
-  overrides: Partial<InstallOptions> = {},
-): InstallOptions => ({
+const baseOptions = (overrides: Partial<InstallOptions> = {}): InstallOptions => ({
   projectRoot: tmpDir,
   runner: "none",
   hooks: testHooks,
@@ -42,9 +37,7 @@ const baseOptions = (
 });
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-hooks-install-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-hooks-install-`));
 });
 
 afterEach(async () => {
@@ -67,9 +60,7 @@ describe("installHooks", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.files).toContain(
-        path.join(".git", "hooks", "pre-commit"),
-      );
+      expect(result.data.files).toContain(path.join(".git", "hooks", "pre-commit"));
       expect(result.data.files.length).toBeGreaterThanOrEqual(1);
       // missingDeps is populated (eslint/prettier likely not installed in test env)
       expect(Array.isArray(result.data.missingDeps)).toBe(true);
@@ -93,27 +84,18 @@ describe("installHooks", () => {
   it(`appends ${PROJECT_NAME_DISPLAY} hooks block to existing husky pre-commit file`, async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
     const existingContent = '#!/bin/sh\necho "existing"\n';
-    await fs.writeFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      existingContent,
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".husky", "pre-commit"), existingContent, "utf-8");
 
     const result = await installHooks(baseOptions({ runner: "husky" }));
 
     expect(result.ok).toBe(true);
-    const content = await fs.readFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(tmpDir, ".husky", "pre-commit"), "utf-8");
     expect(content).toContain("existing");
     expect(content).toContain(`# ${PROJECT_NAME_DISPLAY} hooks`);
     expect(content).toContain("npx eslint --fix");
     expect(content).toContain("npx prettier --write");
     // Staged files collected once, then filtered per hook with grep
-    expect(content).toContain(
-      "STAGED=$(git diff --cached --name-only --diff-filter=ACMR)",
-    );
+    expect(content).toContain("STAGED=$(git diff --cached --name-only --diff-filter=ACMR)");
     expect(content).toContain("grep -E");
     if (result.ok) {
       expect(result.data.files).toContain(path.join(".husky", "pre-commit"));
@@ -123,22 +105,16 @@ describe("installHooks", () => {
   it("runs global hooks without grep filtering for empty stagedFilter", async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
     const noFilterHooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "version-check",
         command: `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
-        stagedFilter: "",
-      },
+      }),
     ];
 
     await installHooks(baseOptions({ runner: "husky", hooks: noFilterHooks }));
 
-    const content = await fs.readFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      "utf-8",
-    );
-    expect(content).toContain(
-      `node .git/hooks/${PROJECT_NAME}-version-check.mjs`,
-    );
+    const content = await fs.readFile(path.join(tmpDir, ".husky", "pre-commit"), "utf-8");
+    expect(content).toContain(`node .git/hooks/${PROJECT_NAME}-version-check.mjs`);
     // Global hooks run unconditionally — no grep filter applied
     expect(content).not.toContain("grep");
   });
@@ -146,19 +122,12 @@ describe("installHooks", () => {
   it("replaces existing generated section instead of appending duplicates", async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
     const existingContent = `npm run lint\n\n# ${PROJECT_NAME_DISPLAY} hooks\nold-command --check\n\nnpm run other\n`;
-    await fs.writeFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      existingContent,
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".husky", "pre-commit"), existingContent, "utf-8");
 
     const result = await installHooks(baseOptions({ runner: "husky" }));
 
     expect(result.ok).toBe(true);
-    const content = await fs.readFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(tmpDir, ".husky", "pre-commit"), "utf-8");
 
     // Should have exactly one generated section
     const hookHeaderRegex = new RegExp(`# ${PROJECT_NAME_DISPLAY} hooks`, "g");
@@ -177,21 +146,14 @@ describe("installHooks", () => {
 
   it("handles multiple consecutive installs without duplication", async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
-    await fs.writeFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      "npm run lint\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".husky", "pre-commit"), "npm run lint\n", "utf-8");
 
     // Install 3 times
     await installHooks(baseOptions({ runner: "husky" }));
     await installHooks(baseOptions({ runner: "husky" }));
     await installHooks(baseOptions({ runner: "husky" }));
 
-    const content = await fs.readFile(
-      path.join(tmpDir, ".husky", "pre-commit"),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(tmpDir, ".husky", "pre-commit"), "utf-8");
     const hookHeaderRegex2 = new RegExp(`# ${PROJECT_NAME_DISPLAY} hooks`, "g");
     const sectionCount2 = (content.match(hookHeaderRegex2) ?? []).length;
     expect(sectionCount2).toBe(1);
@@ -213,11 +175,7 @@ describe("installHooks", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const secretRelPath = path.join(
-        ".git",
-        "hooks",
-        `${PROJECT_NAME}-secret-scan.mjs`,
-      );
+      const secretRelPath = path.join(".git", "hooks", `${PROJECT_NAME}-secret-scan.mjs`);
       expect(result.data.files).toContain(secretRelPath);
 
       const secretPath = path.join(tmpDir, secretRelPath);
@@ -235,11 +193,7 @@ describe("installHooks", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const sizeRelPath = path.join(
-        ".git",
-        "hooks",
-        `${PROJECT_NAME}-file-size-check.mjs`,
-      );
+      const sizeRelPath = path.join(".git", "hooks", `${PROJECT_NAME}-file-size-check.mjs`);
       expect(result.data.files).toContain(sizeRelPath);
 
       const sizePath = path.join(tmpDir, sizeRelPath);
@@ -255,25 +209,17 @@ describe("installHooks", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const versionRelPath = path.join(
-        ".git",
-        "hooks",
-        `${PROJECT_NAME}-version-check.mjs`,
-      );
+      const versionRelPath = path.join(".git", "hooks", `${PROJECT_NAME}-version-check.mjs`);
       expect(result.data.files).toContain(versionRelPath);
 
       const versionPath = path.join(tmpDir, versionRelPath);
       const content = await fs.readFile(versionPath, "utf-8");
-      expect(content).toContain(
-        `${PROJECT_NAME_DISPLAY} version and freshness checker`,
-      );
+      expect(content).toContain(`${PROJECT_NAME_DISPLAY} version and freshness checker`);
     }
   });
 
   it("installs commit-msg hook in .git/hooks for standalone runner", async () => {
-    const result = await installHooks(
-      baseOptions({ commitMsgValidation: true }),
-    );
+    const result = await installHooks(baseOptions({ commitMsgValidation: true }));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -282,9 +228,7 @@ describe("installHooks", () => {
 
       const commitMsgPath = path.join(tmpDir, commitMsgRelPath);
       const content = await fs.readFile(commitMsgPath, "utf-8");
-      expect(content).toContain(
-        `${PROJECT_NAME_DISPLAY} commit message validator`,
-      );
+      expect(content).toContain(`${PROJECT_NAME_DISPLAY} commit message validator`);
 
       const stat = await fs.stat(commitMsgPath);
       expect(stat.mode & 0o111).toBeGreaterThan(0);
@@ -309,9 +253,7 @@ describe("installHooks", () => {
       const commitMsgPath = path.join(tmpDir, commitMsgRelPath);
       const content = await fs.readFile(commitMsgPath, "utf-8");
       expect(content).toContain(`# ${PROJECT_NAME_DISPLAY} hooks`);
-      expect(content).toContain(
-        `${PROJECT_NAME_DISPLAY} commit message validator`,
-      );
+      expect(content).toContain(`${PROJECT_NAME_DISPLAY} commit message validator`);
     }
   });
 
@@ -327,12 +269,8 @@ describe("installHooks", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.files).toContain(
-        path.join(".git", "hooks", "commit-msg"),
-      );
-      expect(result.data.files).toContain(
-        path.join(".git", "hooks", "pre-commit"),
-      );
+      expect(result.data.files).toContain(path.join(".git", "hooks", "commit-msg"));
+      expect(result.data.files).toContain(path.join(".git", "hooks", "pre-commit"));
       expect(result.data.files).toContain(
         path.join(".git", "hooks", `${PROJECT_NAME}-secret-scan.mjs`),
       );
@@ -423,9 +361,7 @@ describe("globToGrepPattern", () => {
   });
 
   it("converts multi-extension glob with braces", () => {
-    expect(globToGrepPattern("**/*.{ts,tsx,js,jsx}")).toBe(
-      "\\.(ts|tsx|js|jsx)$",
-    );
+    expect(globToGrepPattern("**/*.{ts,tsx,js,jsx}")).toBe("\\.(ts|tsx|js|jsx)$");
   });
 
   it("converts cpp extension glob", () => {
@@ -441,16 +377,14 @@ describe("globToGrepPattern", () => {
 describe("buildHuskyCommands", () => {
   it("generates STAGED variable and per-hook grep filters with xargs", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "eslint",
         command: "npx eslint --fix",
         stagedFilter: "**/*.{ts,tsx,js,jsx}",
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
-    expect(result).toContain(
-      "STAGED=$(git diff --cached --name-only --diff-filter=ACMR)",
-    );
+    expect(result).toContain("STAGED=$(git diff --cached --name-only --diff-filter=ACMR)");
     expect(result).toContain("grep -E '\\.(ts|tsx|js|jsx)$'");
     // Files passed safely via xargs to prevent command injection
     expect(result).toContain("printf '%s\\n' $ESLINT | xargs npx eslint --fix");
@@ -458,12 +392,12 @@ describe("buildHuskyCommands", () => {
 
   it("does not pass files when passFiles is false", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "tsc",
         command: "npx tsc --noEmit",
         stagedFilter: "**/*.{ts,tsx}",
         passFiles: false,
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
     expect(result).toContain('[ -n "$TSC" ] && npx tsc --noEmit');
@@ -471,9 +405,7 @@ describe("buildHuskyCommands", () => {
   });
 
   it("runs global hooks without filtering", () => {
-    const hooks: HookEntry[] = [
-      { name: "test", command: "npm test", stagedFilter: "" },
-    ];
+    const hooks: HookEntry[] = [legacyHook({ name: "test", command: "npm test" })];
     const result = buildHuskyCommands(hooks);
     expect(result).toContain("npm test");
     expect(result).not.toContain("grep");
@@ -481,18 +413,18 @@ describe("buildHuskyCommands", () => {
 
   it("generates correct output for mixed hooks", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "eslint",
         command: "npx eslint --fix",
         stagedFilter: "**/*.{ts,tsx,js,jsx}",
-      },
-      {
+      }),
+      legacyHook({
         name: "tsc",
         command: "npx tsc --noEmit",
         stagedFilter: "**/*.{ts,tsx}",
         passFiles: false,
-      },
-      { name: "test", command: "npm test", stagedFilter: "" },
+      }),
+      legacyHook({ name: "test", command: "npm test" }),
     ];
     const result = buildHuskyCommands(hooks);
 
@@ -507,46 +439,42 @@ describe("buildHuskyCommands", () => {
 
   it("re-stages files after hooks with modifiesFiles", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "eslint",
         command: "npx eslint --fix",
         stagedFilter: "**/*.{ts,tsx,js,jsx}",
         modifiesFiles: true,
-      },
-      {
+      }),
+      legacyHook({
         name: "prettier",
         command: "npx prettier --write",
         stagedFilter: "**/*.{ts,tsx,js,jsx}",
         modifiesFiles: true,
-      },
-      {
+      }),
+      legacyHook({
         name: "tsc",
         command: "npx tsc --noEmit",
         stagedFilter: "**/*.{ts,tsx}",
         passFiles: false,
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
 
     // Formatters should trigger a git add to re-stage (via xargs for safety)
-    expect(result).toContain(
-      "[ -n \"$ESLINT\" ] && printf '%s\\n' $ESLINT | xargs git add",
-    );
-    expect(result).toContain(
-      "[ -n \"$PRETTIER\" ] && printf '%s\\n' $PRETTIER | xargs git add",
-    );
+    expect(result).toContain("[ -n \"$ESLINT\" ] && printf '%s\\n' $ESLINT | xargs git add");
+    expect(result).toContain("[ -n \"$PRETTIER\" ] && printf '%s\\n' $PRETTIER | xargs git add");
     // Non-modifying hooks should NOT trigger git add
     expect(result).not.toContain("git add $TSC");
   });
 
   it("does not add git add when no hooks modify files", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "tsc",
         command: "npx tsc --noEmit",
         stagedFilter: "**/*.{ts,tsx}",
         passFiles: false,
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
     expect(result).not.toContain("git add");
@@ -554,12 +482,12 @@ describe("buildHuskyCommands", () => {
 
   it("deduplicates re-stage variables", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "eslint",
         command: "npx eslint --fix",
         stagedFilter: "**/*.{ts,tsx,js,jsx}",
         modifiesFiles: true,
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
     const addLines = result.split("\n").filter((l) => l.includes("git add"));
@@ -568,7 +496,7 @@ describe("buildHuskyCommands", () => {
 
   it("generates command -v guard with exit 1 for a required hook", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "tsc",
         command: "npx tsc --noEmit",
         stagedFilter: "**/*.{ts,tsx}",
@@ -576,7 +504,7 @@ describe("buildHuskyCommands", () => {
         category: "type-check",
         required: true,
         installHint: { command: "npm install -D typescript" },
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
     expect(result).toContain("command -v");
@@ -587,7 +515,7 @@ describe("buildHuskyCommands", () => {
 
   it("does not generate exit 1 for a non-required hook", () => {
     const hooks: HookEntry[] = [
-      {
+      legacyHook({
         name: "prettier",
         command: "npx prettier --write",
         stagedFilter: "**/*.{ts,tsx}",
@@ -595,7 +523,7 @@ describe("buildHuskyCommands", () => {
         category: "format",
         required: false,
         installHint: { command: "npm install -D prettier" },
-      },
+      }),
     ];
     const result = buildHuskyCommands(hooks);
     expect(result).not.toContain("exit 1");
