@@ -12,9 +12,6 @@ vi.mock("#src/core/version/template-hash-registry.js", () => ({
   getAllFingerprints: vi.fn(() => []),
   _resetRegistryCache: vi.fn(),
 }));
-vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
-  checkTemplateRegistry: vi.fn().mockReturnValue([]),
-}));
 import fs from "node:fs/promises";
 import path from "node:path";
 import { cleanupTmpDir } from "../helpers/fs.js";

@@ -27,6 +27,7 @@ import {
   SKILL_YAML_VALIDATE_TEMPLATE,
 } from "./hook-policy-templates.js";
 import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
+import { VERSION_VERIFY_PRE_PUSH_TEMPLATE } from "./version-verify-pre-push-template.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import {
@@ -67,6 +68,7 @@ export interface InstallOptions {
   skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
   versionBump?: boolean;
+  versionVerify?: boolean;
   brandSkillValidation?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
@@ -203,6 +205,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, versionBumpPath));
+  }
+  if (options.versionVerify) {
+    const versionVerifyPath = path.join(hookDir, `${PROJECT_NAME}-version-verify.mjs`);
+    await fs.writeFile(versionVerifyPath, VERSION_VERIFY_PRE_PUSH_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, versionVerifyPath));
   }
   if (options.brandSkillValidation) {
     const brandSkillPath = path.join(hookDir, `${PROJECT_NAME}-brand-skill-validate.mjs`);

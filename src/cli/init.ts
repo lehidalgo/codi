@@ -47,7 +47,6 @@ import { checkHookDependencies, filterMissing } from "../core/hooks/hook-depende
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { promptToolingDefaults, type ToolingPromptResult } from "./wizard-summary.js";
-import { checkTemplateRegistry } from "../core/scaffolder/template-registry-check.js";
 import type { GlobalOptions } from "./shared.js";
 import { VERSION } from "../index.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
@@ -133,16 +132,6 @@ export async function initHandler(
   options: InitOptions,
 ): Promise<CommandResult<InitData>> {
   const log = Logger.getInstance();
-
-  const registryErrors = checkTemplateRegistry();
-  if (registryErrors.length > 0) {
-    console.error(`\n[codi] Template registry integrity check failed:`);
-    for (const e of registryErrors) console.error(`  • ${e}`);
-    console.error(
-      `\nThe CLI cannot run with broken templates. This is a bug — please report it.\n`,
-    );
-    process.exit(1);
-  }
 
   const configDir = resolveProjectDir(projectRoot);
 
@@ -635,6 +624,7 @@ export async function initHandler(
           templateWiringCheck: hooksConfig.templateWiringCheck,
           docNamingCheck: hooksConfig.docNamingCheck,
           versionBump: hooksConfig.versionBump,
+          versionVerify: hooksConfig.versionVerify,
           artifactValidation: hooksConfig.artifactValidation,
           importDepthCheck: hooksConfig.importDepthCheck,
           skillYamlValidation: hooksConfig.skillYamlValidation,
