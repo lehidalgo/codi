@@ -183,37 +183,30 @@ export function stripPreCommitGeneratedBlock(content: string): string {
 export function findReposInsertionPoint(
   lines: string[],
 ): { insertAt: number; listIndent: string } | null {
-  // Find the line that starts the repos: block (root-level key).
   const reposIdx = lines.findIndex((l) => /^repos\s*:\s*$/.test(l));
   if (reposIdx === -1) return null;
 
-  // Default list indent for pre-commit is two spaces.
-  let listIndent = "  ";
+  // Lock the list indent to the FIRST list item under repos: encountered.
+  // Nested list items inside an existing repo's hooks: must NOT redefine it,
+  // otherwise the inserted block lands inside that repo's hooks: list (C1).
+  let listIndent: string | null = null;
   let lastMemberIdx = reposIdx;
 
   for (let i = reposIdx + 1; i < lines.length; i++) {
     const line = lines[i]!;
-    if (line === "" || /^\s*#/.test(line)) {
-      // blank or comment inside the block — keep scanning
-      continue;
-    }
-    // Stop at the next root-level key (no leading whitespace, ends with ":").
+    if (line === "" || /^\s*#/.test(line)) continue;
     if (/^[A-Za-z_][\w-]*\s*:/.test(line)) break;
 
     const indentMatch = line.match(/^(\s+)- /);
-    if (indentMatch) {
+    if (indentMatch && listIndent === null) {
       listIndent = indentMatch[1]!;
-      lastMemberIdx = i;
-      continue;
     }
-    // Lines that belong to an existing list item (further indented than the
-    // list indent). Track them as part of the current member.
     if (/^\s+\S/.test(line)) {
       lastMemberIdx = i;
     }
   }
 
-  return { insertAt: lastMemberIdx + 1, listIndent };
+  return { insertAt: lastMemberIdx + 1, listIndent: listIndent ?? "  " };
 }
 
 export async function installPreCommitFramework(
