@@ -19,6 +19,7 @@ import {
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
+import { renderShellHooks } from "./renderers/shell-renderer.js";
 import {
   COMMIT_MSG_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
@@ -390,7 +391,7 @@ async function installHusky(
 ): Promise<Result<HookFileResult>> {
   const huskyFile = path.join(projectRoot, ".husky", "pre-commit");
 
-  const commands = buildHuskyCommands(hooks);
+  const commands = renderShellHooks(hooks, "husky");
   const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n${commands}\n`;
 
   try {

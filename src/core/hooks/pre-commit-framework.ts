@@ -5,6 +5,7 @@ import { ok, err } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import type { HookEntry } from "./hook-registry.js";
 import { PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { renderPreCommitConfig } from "./renderers/yaml-renderer.js";
 
 interface HookFileResult {
   files: string[];
@@ -211,46 +212,45 @@ export function findReposInsertionPoint(
   return { insertAt: lastMemberIdx + 1, listIndent: listIndent ?? "  " };
 }
 
+/**
+ * Write the .pre-commit-config.yaml using the YAML AST round-trip renderer.
+ * On parse error, the existing content is backed up to
+ * .pre-commit-config.yaml.codi-backup before regenerating from scratch.
+ *
+ * The legacy text-based renderer (renderPreCommitBlock /
+ * findReposInsertionPoint / stripPreCommitGeneratedBlock) is retained as a
+ * named export for the legacy-cleanup migration path and historical tests,
+ * but is no longer called by this function.
+ */
 export async function installPreCommitFramework(
   projectRoot: string,
   hooks: HookEntry[],
 ): Promise<Result<HookFileResult>> {
   const configPath = path.join(projectRoot, ".pre-commit-config.yaml");
+  const backupPath = configPath + ".codi-backup";
 
   try {
-    let existing = "";
+    let existing: string | null = null;
     try {
       existing = await fs.readFile(configPath, "utf-8");
     } catch {
-      // file doesn't exist yet
+      existing = null;
     }
 
-    const cleaned = stripPreCommitGeneratedBlock(existing);
-    const cleanedLines = cleaned.replace(/\n+$/, "").split("\n");
-
     let nextContent: string;
-    const insertion = findReposInsertionPoint(cleanedLines);
+    try {
+      nextContent = renderPreCommitConfig(hooks, existing);
+    } catch {
+      // Malformed YAML — back it up and regenerate from scratch.
+      if (existing) {
+        await fs.writeFile(backupPath, existing, "utf-8");
+      }
+      nextContent = renderPreCommitConfig(hooks, null);
+    }
 
-    if (insertion) {
-      const block = renderPreCommitBlock(hooks, insertion.listIndent);
-      const before = cleanedLines.slice(0, insertion.insertAt);
-      const after = cleanedLines.slice(insertion.insertAt);
-      // Ensure a blank line before the generated block for readability.
-      if (before.length > 0 && before[before.length - 1] !== "") {
-        before.push("");
-      }
-      nextContent = [...before, block, ...after].join("\n").replace(/\n+$/, "") + "\n";
-    } else {
-      // No repos: key (empty file or unrelated content). Synthesize a full
-      // document. Preserve any prior user content above repos:.
-      const prefix = cleaned.trim();
-      const block = renderPreCommitBlock(hooks, "  ");
-      const parts: string[] = [];
-      if (prefix.length > 0) {
-        parts.push(prefix, "");
-      }
-      parts.push("repos:", block);
-      nextContent = parts.join("\n").replace(/\n+$/, "") + "\n";
+    if (existing !== null && existing === nextContent) {
+      // Idempotent no-op: skip the write to keep `git status` clean.
+      return ok({ files: [path.relative(projectRoot, configPath)] });
     }
 
     await fs.writeFile(configPath, nextContent, "utf-8");
