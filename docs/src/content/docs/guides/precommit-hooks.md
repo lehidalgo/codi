@@ -21,7 +21,7 @@ Four flags control which tools Codi wires into the hook config. All default to `
 | Flag | Values | Auto picks |
 |---|---|---|
 | `python_type_checker` | `auto`, `mypy`, `basedpyright`, `pyright`, `off` | mypy when `[tool.mypy]` / mypy.ini / Django / SQLAlchemy is present; basedpyright for FastAPI / pydantic / SQLModel; basedpyright for codebases >20k python LOC; basedpyright as fallback. |
-| `js_format_lint` | `auto`, `eslint-prettier`, `biome`, `off` | biome when `biome.json` / `biome.jsonc` exists; eslint-prettier when `.eslintrc*` / `eslint.config.*` / `.prettierrc*` exists; eslint-prettier as fallback. (Biome registry entry deferred — currently falls back to eslint-prettier.) |
+| `js_format_lint` | `auto`, `eslint-prettier`, `biome`, `off` | biome when `biome.json` / `biome.jsonc` exists; eslint-prettier when `.eslintrc*` / `eslint.config.*` / `.prettierrc*` exists; eslint-prettier as fallback. Biome uses `biomejs/pre-commit` v0.6.1 with `additionalDependencies: ["@biomejs/biome@2.3.0"]`. |
 | `commit_type_check` | `auto`, `on`, `off` | always `off` — type-checking is deferred to `pre-push`. Set to `on` to run `tsc` / `mypy` / `basedpyright` on every commit (slower commits). |
 | `commit_test_run` | `auto`, `on`, `off` | always `off` — industry consensus rejects full test suites on every commit. Set to `on` to override. |
 

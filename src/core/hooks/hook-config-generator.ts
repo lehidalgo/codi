@@ -439,22 +439,24 @@ function isPythonTypeCheckerSelected(
 
 /**
  * Filter JS/TS lint+format hooks by the user's js_format_lint flag.
- * 'eslint-prettier' keeps eslint + prettier. 'biome' currently has no
- * registry entry (added in a follow-up); falls back to keeping eslint+prettier.
- * 'off' drops eslint + prettier.
+ * - 'eslint-prettier' keeps eslint + prettier, drops biome.
+ * - 'biome' keeps biome, drops eslint + prettier.
+ * - 'off' drops all three.
+ * Hooks outside the JS/TS lint+format set (tsc, etc.) pass through unchanged.
  */
 function isJsToolchainSelected(
   hook: HookSpec,
   selected: "eslint-prettier" | "biome" | "off",
 ): boolean {
-  const isJsTooling =
+  const isEslintPrettier =
     (hook.language === "typescript" || hook.language === "javascript") &&
     (hook.name === "eslint" || hook.name === "prettier");
-  if (!isJsTooling) return true;
+  const isBiome =
+    (hook.language === "typescript" || hook.language === "javascript") && hook.name === "biome";
+  if (!isEslintPrettier && !isBiome) return true;
   if (selected === "off") return false;
-  // 'biome' has no registry entry yet — leave eslint+prettier in place
-  // until commit 8 / the Biome support follow-up adds the spec.
-  return true;
+  if (selected === "biome") return isBiome;
+  return isEslintPrettier; // 'eslint-prettier'
 }
 
 // Pre-commit test command for npm projects:

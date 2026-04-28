@@ -15,6 +15,8 @@ if [ -n "$TSC" ]; then
   fi
   npx tsc --noEmit
 fi
+BIOME=$(echo "$STAGED" | grep -E '\\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc|css)$' || true)
+[ -n "$BIOME" ] && printf '%s\\n' $BIOME | xargs npx @biomejs/biome check --write --no-errors-on-unmatched
 # — python —
 RUFF_CHECK=$(echo "$STAGED" | grep -E '\\.(py)$' || true)
 if [ -n "$RUFF_CHECK" ]; then
@@ -63,6 +65,7 @@ fi
 npx codi doctor --ci
 [ -n "$ESLINT" ] && printf '%s\\n' $ESLINT | xargs git add || true
 [ -n "$PRETTIER" ] && printf '%s\\n' $PRETTIER | xargs git add || true
+[ -n "$BIOME" ] && printf '%s\\n' $BIOME | xargs git add || true
 [ -n "$RUFF_CHECK" ] && printf '%s\\n' $RUFF_CHECK | xargs git add || true
 [ -n "$RUFF_FORMAT" ] && printf '%s\\n' $RUFF_FORMAT | xargs git add || true"
 `;

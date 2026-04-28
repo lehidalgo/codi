@@ -25,11 +25,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Four new tooling-default flags**, all with default value `auto`:
   - `python_type_checker`: `auto | mypy | basedpyright | pyright | off`
-  - `js_format_lint`: `auto | eslint-prettier | biome | off` (Biome registry entry deferred to a follow-up; currently falls back to eslint-prettier)
+  - `js_format_lint`: `auto | eslint-prettier | biome | off`
   - `commit_type_check`: `auto | on | off` (default resolves to `off` — defer to pre-push)
   - `commit_test_run`: `auto | on | off` (default resolves to `off` — industry default)
 
   `auto` is resolved at `codi init` / `codi generate` time by `src/core/hooks/auto-detection.ts`, which reads `pyproject.toml`, `requirements.txt`, `package.json` (deps + workspaces signal), counts python/ts/js LOC, and probes for `mypy.ini`, `pyrightconfig.json`, `biome.json`, `.eslintrc`, `.prettierrc`. The four flags are added to all six builtin presets (minimal, balanced, strict, fullstack, development, power-user).
+
+- **Biome registry entry** as the alternative to eslint+prettier for JS/TS lint and format. Upstream hook is `biomejs/pre-commit` v0.6.1 with `additionalDependencies: ["@biomejs/biome@2.3.0"]`. When `js_format_lint=biome` is set, the hook-config-generator drops eslint and prettier from the spec list and emits the Biome `biome-check --write` hook instead.
+
+- **Interactive wizard summary screen** at the end of `codi init`. After language detection, Codi shows the four auto-resolved tooling defaults with their reasoning signals, then offers `Accept (Enter)` / `Customize each` / `Skip pre-commit hooks entirely`. Customize walks one prompt per flag with the auto-pick pre-highlighted; Skip bypasses hook installation entirely. The accepted picks are merged into `.codi/flags.yaml` so subsequent `codi generate` runs honour them.
 
 - **Commitlint global hook** (`alessandrojcm/commitlint-pre-commit-hook` with `additionalDependencies: [@commitlint/config-conventional]`) wired to the `commit-msg` stage, gated by the existing commit-msg-validation infrastructure.
 
@@ -45,7 +49,7 @@ On first `codi generate` after upgrading, Codi:
 2. If your `.pre-commit-config.yaml` is malformed, copies it to `.pre-commit-config.yaml.codi-backup` and rewrites from scratch.
 3. Re-emits Codi-managed entries with the new layout (upstream `repo:` references for canonical tools, pinned `rev:`, top-level keys). Your manually-edited `rev:` values on Codi-managed entries are preserved.
 
-The four new flags default to `auto` — existing projects do not need to set them. The wizard summary screen with interactive `[c] customize` UX is intentionally deferred to a follow-up release; for now, override resolved values by editing `.codi/flags.yaml` directly.
+The four new flags default to `auto` — existing projects do not need to set them. To override the auto-resolved values, either run the interactive wizard during `codi init` (Customize / Skip options) or edit `.codi/flags.yaml` directly between runs.
 
 - **Hub: "Customize codi setup" entry** — when `.codi/` exists, the first hub entry now reads "Customize codi setup" and routes directly into the modify menu, skipping the previous "Force reinitialize? Yes/No" prompt that hid the modify-mode wizard. When `.codi/` is absent, the entry stays "Initialize project". Selecting "Customize codi setup" opens a top-level dispatcher: customize current artifacts, add from local directory / ZIP / GitHub repo, or replace preset (advanced).
 - **Add artifacts from external source** — new workflow under "Customize codi setup". Connect to a local directory, ZIP file, or public GitHub repository; codi walks the source for `rules/`, `skills/`, `agents/`, `mcp-servers/` and lists every artifact found. Per-type sequential multi-select (Rules → Skills → Agents → MCP servers) matching the regular init wizard's pattern. Per-collision prompts (keep current / overwrite / rename with `-from-<source>` suffix) with an "apply to remaining" affordance. Externally-added artifacts are recorded in `artifact-manifest.json` with `managedBy: user` and a new `source:` provenance field, so subsequent `codi update` runs leave them untouched.

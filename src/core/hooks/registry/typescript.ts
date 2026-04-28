@@ -63,4 +63,31 @@ export const TYPESCRIPT_HOOKS: HookSpec[] = [
     },
     installHint: { command: "npm install -D typescript" },
   },
+  {
+    // Biome — single Rust-based tool covering both lint and format.
+    // Mutually exclusive with the eslint+prettier pair: when js_format_lint
+    // is set to 'biome' the filter logic in hook-config-generator drops
+    // eslint and prettier from the spec list and keeps this hook instead.
+    name: "biome",
+    language: "typescript",
+    category: "lint",
+    files: "**/*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}",
+    stages: ["pre-commit"],
+    required: false,
+    shell: {
+      command: "npx @biomejs/biome check --write --no-errors-on-unmatched",
+      passFiles: true,
+      modifiesFiles: true,
+      toolBinary: "biome",
+    },
+    preCommit: {
+      kind: "upstream",
+      repo: "https://github.com/biomejs/pre-commit",
+      rev: "v0.6.1",
+      id: "biome-check",
+      args: ["--write", "--no-errors-on-unmatched"],
+      additionalDependencies: ["@biomejs/biome@2.3.0"],
+    },
+    installHint: { command: "npm install -D @biomejs/biome" },
+  },
 ];

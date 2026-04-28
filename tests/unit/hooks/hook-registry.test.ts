@@ -7,20 +7,24 @@ import {
 } from "#src/core/hooks/hook-registry.js";
 
 describe("getHooksForLanguage", () => {
-  it("returns typescript hooks with npx prefix", () => {
+  it("returns typescript hooks with npx prefix (eslint, prettier, tsc, biome)", () => {
     const hooks = getHooksForLanguage("typescript");
-    expect(hooks).toHaveLength(3);
-    expect(hooks.map((h) => h.name)).toEqual(["eslint", "prettier", "tsc"]);
+    expect(hooks).toHaveLength(4);
+    expect(hooks.map((h) => h.name)).toEqual(["eslint", "prettier", "tsc", "biome"]);
     expect(hooks[0]!.shell.command).toBe("npx eslint --fix");
     expect(hooks[1]!.shell.command).toBe("npx prettier --write");
     expect(hooks[2]!.shell.command).toBe("npx tsc --noEmit");
+    expect(hooks[3]!.preCommit).toMatchObject({
+      kind: "upstream",
+      repo: "https://github.com/biomejs/pre-commit",
+    });
     expect(hooks[0]!.files).toBe("**/*.{ts,tsx,js,jsx}");
   });
 
-  it("returns javascript hooks", () => {
+  it("returns javascript hooks (eslint, prettier, biome)", () => {
     const hooks = getHooksForLanguage("javascript");
-    expect(hooks).toHaveLength(2);
-    expect(hooks.map((h) => h.name)).toEqual(["eslint", "prettier"]);
+    expect(hooks).toHaveLength(3);
+    expect(hooks.map((h) => h.name)).toEqual(["eslint", "prettier", "biome"]);
   });
 
   it("returns python hooks (ruff + basedpyright + mypy + pyright + bandit)", () => {

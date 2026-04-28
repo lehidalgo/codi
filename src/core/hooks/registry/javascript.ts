@@ -42,4 +42,29 @@ export const JAVASCRIPT_HOOKS: HookSpec[] = [
     },
     installHint: { command: "npm install -D prettier" },
   },
+  {
+    // Biome — see registry/typescript.ts for rationale. Duplicated here so
+    // pure-JS projects (no tsconfig.json) can opt into Biome too.
+    name: "biome",
+    language: "javascript",
+    category: "lint",
+    files: "**/*.{js,jsx,mjs,cjs,json,jsonc,css}",
+    stages: ["pre-commit"],
+    required: false,
+    shell: {
+      command: "npx @biomejs/biome check --write --no-errors-on-unmatched",
+      passFiles: true,
+      modifiesFiles: true,
+      toolBinary: "biome",
+    },
+    preCommit: {
+      kind: "upstream",
+      repo: "https://github.com/biomejs/pre-commit",
+      rev: "v0.6.1",
+      id: "biome-check",
+      args: ["--write", "--no-errors-on-unmatched"],
+      additionalDependencies: ["@biomejs/biome@2.3.0"],
+    },
+    installHint: { command: "npm install -D @biomejs/biome" },
+  },
 ];

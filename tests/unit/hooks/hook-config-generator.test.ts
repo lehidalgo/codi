@@ -68,6 +68,33 @@ describe("generateHooksConfig", () => {
     expect(names).not.toContain("pyright");
   });
 
+  it("js_format_lint=eslint-prettier keeps eslint+prettier, drops biome", () => {
+    const flags = makeFlags({ js_format_lint: { value: "eslint-prettier", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("eslint");
+    expect(names).toContain("prettier");
+    expect(names).not.toContain("biome");
+  });
+
+  it("js_format_lint=biome keeps biome, drops eslint+prettier", () => {
+    const flags = makeFlags({ js_format_lint: { value: "biome", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).toContain("biome");
+    expect(names).not.toContain("eslint");
+    expect(names).not.toContain("prettier");
+  });
+
+  it("js_format_lint=off drops all three (eslint, prettier, biome)", () => {
+    const flags = makeFlags({ js_format_lint: { value: "off", mode: "enabled" } });
+    const config = generateHooksConfig(flags, ["typescript"]);
+    const names = config.hooks.map((h) => h.name);
+    expect(names).not.toContain("eslint");
+    expect(names).not.toContain("prettier");
+    expect(names).not.toContain("biome");
+  });
+
   it("excludes typecheck hooks when type_checking is off", () => {
     const flags = makeFlags({
       type_checking: { value: "off", mode: "enabled" },
