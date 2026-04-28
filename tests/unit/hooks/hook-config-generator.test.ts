@@ -152,6 +152,7 @@ describe("generateHooksConfig", () => {
         h.name !== "template-wiring-check" &&
         h.name !== "doc-naming-check" &&
         h.name !== "version-bump" &&
+        h.name !== "version-verify" &&
         h.name !== "brand-skill-validate",
     );
     expect(langHooks).toHaveLength(0);
@@ -381,5 +382,25 @@ describe("FLAG_CATALOG hook field sync", () => {
     ];
 
     expect(flagsWithHooks.sort()).toEqual(expectedHookFlags.sort());
+  });
+
+  it("places version-bump first in pre-commit hook order", () => {
+    const config = generateHooksConfig(makeFlags({}), ["typescript"]);
+    const preCommit = config.hooks.filter((h) => h.stages.includes("pre-commit"));
+    if (config.versionBump) {
+      expect(preCommit[0].name).toBe("version-bump");
+    }
+  });
+
+  it("registers version-verify on pre-push when version-bump is active", () => {
+    const config = generateHooksConfig(makeFlags({}), ["typescript"]);
+    const verify = config.hooks.find((h) => h.name === "version-verify");
+    if (config.versionBump) {
+      expect(verify).toBeDefined();
+      expect(verify?.stages).toEqual(["pre-push"]);
+      expect(verify?.shell.command).toContain("codi-version-verify.mjs");
+    } else {
+      expect(verify).toBeUndefined();
+    }
   });
 });

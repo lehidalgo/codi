@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { ok } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
 import { satisfiesVersion } from "#src/utils/semver.js";
@@ -6,6 +8,15 @@ import { scanProjectDir } from "../config/parser.js";
 import { resolveProjectDir } from "#src/utils/paths.js";
 import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import { VERSION } from "#src/index.js";
+import { AVAILABLE_TEMPLATES, loadTemplate } from "../scaffolder/template-loader.js";
+import {
+  AVAILABLE_SKILL_TEMPLATES,
+  loadSkillTemplateContent,
+} from "../scaffolder/skill-template-loader.js";
+import {
+  AVAILABLE_AGENT_TEMPLATES,
+  loadAgentTemplate,
+} from "../scaffolder/agent-template-loader.js";
 
 export interface VersionCheckResult {
   check: string;
@@ -103,6 +114,57 @@ export async function checkGeneratedFreshness(
   return results;
 }
 
+function checkTemplatesLoadable(): VersionCheckResult {
+  const errors: string[] = [];
+
+  for (const name of AVAILABLE_TEMPLATES) {
+    const r = loadTemplate(name);
+    if (!r.ok || !r.data.trim()) errors.push(`rule "${name}": failed to load or empty`);
+  }
+  for (const name of AVAILABLE_SKILL_TEMPLATES) {
+    const r = loadSkillTemplateContent(name);
+    if (!r.ok || !r.data.trim()) errors.push(`skill "${name}": failed to load or empty`);
+  }
+  for (const name of AVAILABLE_AGENT_TEMPLATES) {
+    const r = loadAgentTemplate(name);
+    if (!r.ok || !r.data.trim()) errors.push(`agent "${name}": failed to load or empty`);
+  }
+
+  return {
+    check: "templates-loadable",
+    passed: errors.length === 0,
+    message:
+      errors.length === 0
+        ? "all bundled templates load with non-empty content"
+        : `${errors.length} template(s) failed to load:\n  ${errors.join("\n  ")}`,
+  };
+}
+
+async function checkHookInstalled(
+  projectRoot: string,
+  hookFileName: string,
+  checkName: string,
+): Promise<VersionCheckResult> {
+  const hookPath = path.join(projectRoot, ".git", "hooks", hookFileName);
+  try {
+    const stat = await fs.stat(hookPath);
+    const isExec = (stat.mode & 0o111) !== 0;
+    return {
+      check: checkName,
+      passed: isExec,
+      message: isExec
+        ? `${hookFileName} installed and executable`
+        : `${hookFileName} present but not executable — run: ${PROJECT_CLI} init --reinstall-hooks`,
+    };
+  } catch {
+    return {
+      check: checkName,
+      passed: false,
+      message: `${hookFileName} not installed — run: ${PROJECT_CLI} init --reinstall-hooks`,
+    };
+  }
+}
+
 export async function checkProjectDirectory(projectRoot: string): Promise<VersionCheckResult> {
   const result = await scanProjectDir(projectRoot);
   return {
@@ -134,6 +196,25 @@ export async function runAllChecks(
   // Check generated files freshness
   const freshnessResults = await checkGeneratedFreshness(projectRoot, driftMode);
   results.push(...freshnessResults);
+
+  // Check pre-commit and pre-push hooks are installed
+  results.push(
+    await checkHookInstalled(
+      projectRoot,
+      `${PROJECT_NAME}-version-bump.mjs`,
+      "pre-commit-hook-installed",
+    ),
+  );
+  results.push(
+    await checkHookInstalled(
+      projectRoot,
+      `${PROJECT_NAME}-version-verify.mjs`,
+      "pre-push-hook-installed",
+    ),
+  );
+
+  // Check that all bundled templates load with non-empty content
+  results.push(checkTemplatesLoadable());
 
   const allPassed = results.every((r) => r.passed);
 

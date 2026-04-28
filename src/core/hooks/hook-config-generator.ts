@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import type { ResolvedFlags } from "#src/types/flags.js";
 import { PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "#src/types/config.js";
-import type { HookCategory, HookSpec } from "./hook-spec.js";
+import type { HookCategory, HookSpec, HookStage } from "./hook-spec.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook, getGlobalHooks } from "./hook-registry.js";
 
@@ -18,6 +18,7 @@ function metaHook(opts: {
   files: string;
   passFiles?: boolean;
   category?: HookCategory;
+  stages?: HookStage[];
 }): HookSpec {
   const passFiles = opts.passFiles !== false;
   return {
@@ -25,7 +26,7 @@ function metaHook(opts: {
     language: "global",
     category: opts.category ?? "lint",
     files: opts.files,
-    stages: ["pre-commit"],
+    stages: opts.stages ?? ["pre-commit"],
     required: false,
     shell: {
       command: opts.entry,
@@ -59,6 +60,7 @@ export interface HooksConfig {
   skillPathWrapCheck: boolean;
   stagedJunkCheck: boolean;
   versionBump: boolean;
+  versionVerify: boolean;
   brandSkillValidation: boolean;
   docCheck: boolean;
   docProtectedBranches: string[];
@@ -108,6 +110,31 @@ export function generateHooksConfig(
   manifest?: ProjectManifest,
 ): HooksConfig {
   const allHooks: HookEntry[] = [];
+
+  // ── Stage 0: Version-bump auto-fix ───────────────────────────────────────
+  // Runs FIRST so the bump lands before lint/tsc/tests see the staged files.
+  // Pre-push companion (version-verify) runs at push time, not commit.
+
+  const versionBump = hasVersionBump();
+  if (versionBump) {
+    allHooks.push(
+      metaHook({
+        name: "version-bump",
+        entry: `node .git/hooks/${PROJECT_NAME}-version-bump.mjs`,
+        files: "src/templates/**",
+        passFiles: false,
+      }),
+    );
+    allHooks.push(
+      metaHook({
+        name: "version-verify",
+        entry: `node .git/hooks/${PROJECT_NAME}-version-verify.mjs`,
+        files: "**/*",
+        passFiles: false,
+        stages: ["pre-push"],
+      }),
+    );
+  }
 
   // ── Stage 1: Instant filename / pattern checks ───────────────────────────
   // These reject obvious problems in milliseconds before any file I/O or
@@ -278,18 +305,6 @@ export function generateHooksConfig(
   // ── Stage 5: Codi-dev hooks ───────────────────────────────────────────────
   // Only active inside the Codi repository itself.
 
-  const versionBump = hasVersionBump();
-  if (versionBump) {
-    allHooks.push(
-      metaHook({
-        name: "version-bump",
-        entry: `node .git/hooks/${PROJECT_NAME}-version-bump.mjs`,
-        files: "src/templates/**",
-        passFiles: false,
-      }),
-    );
-  }
-
   const templateWiringCheck = hasTemplateWiringCheck();
   if (templateWiringCheck) {
     allHooks.push(
@@ -337,6 +352,7 @@ export function generateHooksConfig(
     skillPathWrapCheck: authoringContext,
     stagedJunkCheck: true,
     versionBump,
+    versionVerify: versionBump,
     brandSkillValidation: authoringContext,
     docCheck,
     docProtectedBranches,
@@ -363,10 +379,9 @@ function hasDocNamingCheck(): boolean {
 }
 
 function hasVersionBump(): boolean {
-  // Only enable for projects that have templates + a baseline to compare against
-  return (
-    existsSync("src/templates") && existsSync("src/core/version/artifact-version-baseline.json")
-  );
+  // Enable for source-template authors (codi repo) and consumers with .codi/.
+  // Both layers are auto-bumped by the dual-mode hook; baseline file is gone.
+  return existsSync("src/templates") || existsSync(".codi");
 }
 
 function isDocCheckEnabled(flags: ResolvedFlags): boolean {

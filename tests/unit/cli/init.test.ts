@@ -17,10 +17,6 @@ vi.mock("#src/core/version/template-hash-registry.js", () => ({
   getAllFingerprints: vi.fn(() => []),
   _resetRegistryCache: vi.fn(),
 }));
-vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
-  checkTemplateRegistry: vi.fn().mockReturnValue([]),
-}));
-
 // Integration-level I/O under 150 parallel workers can exceed 10s.
 vi.setConfig({ testTimeout: 30_000 });
 

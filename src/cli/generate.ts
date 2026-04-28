@@ -192,6 +192,7 @@ export async function generateHandler(
           templateWiringCheck: hooksConfig.templateWiringCheck,
           docNamingCheck: hooksConfig.docNamingCheck,
           versionBump: hooksConfig.versionBump,
+          versionVerify: hooksConfig.versionVerify,
           artifactValidation: hooksConfig.artifactValidation,
           importDepthCheck: hooksConfig.importDepthCheck,
           skillYamlValidation: hooksConfig.skillYamlValidation,
