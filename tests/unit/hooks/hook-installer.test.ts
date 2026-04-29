@@ -328,6 +328,32 @@ describe("buildFileSizeScript", () => {
     expect(script).not.toContain("{{MAX_LINES}}");
     expect(script).toContain(`${PROJECT_NAME_DISPLAY} file size checker`);
   });
+
+  it("substitutes {{VENDORED_DIRS_PATTERNS}} with regex literals matching every vendored dir", () => {
+    const script = buildFileSizeScript(800);
+    expect(script).not.toContain("{{VENDORED_DIRS_PATTERNS}}");
+    expect(script).toContain("/^node_modules\\//");
+    expect(script).toContain("/^\\.codi\\//");
+    expect(script).toContain("/^\\.agents\\//");
+    expect(script).toContain("/^\\.claude\\//");
+    expect(script).toContain("/^\\.codex\\//");
+    expect(script).toContain("/^\\.cursor\\//");
+    expect(script).toContain("/^\\.windsurf\\//");
+    expect(script).toContain("/^\\.cline\\//");
+  });
+
+  it("produces a script whose EXCLUDED array parses as valid JavaScript", () => {
+    const script = buildFileSizeScript(800);
+    const match = script.match(/const EXCLUDED = (\[[\s\S]*?\]);/);
+    expect(match).not.toBeNull();
+    const arrayLiteral = match![1]!;
+    const arr = new Function(`return ${arrayLiteral}`)() as RegExp[];
+    expect(arr.every((r) => r instanceof RegExp)).toBe(true);
+    const allMatch = (p: string) => arr.some((r) => r.test(p));
+    expect(allMatch(".cursor/skills/foo/template.ts")).toBe(true);
+    expect(allMatch(".cline/skills/foo/SKILL.md")).toBe(true);
+    expect(allMatch("node_modules/foo/index.js")).toBe(true);
+  });
 });
 
 describe("stripGeneratedSection", () => {

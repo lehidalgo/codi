@@ -28,6 +28,7 @@ import {
 } from "./hook-policy-templates.js";
 import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
 import { VERSION_VERIFY_PRE_PUSH_TEMPLATE } from "./version-verify-pre-push-template.js";
+import { buildVendoredDirsTemplatePatterns } from "./exclusions.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import {
@@ -84,7 +85,10 @@ function buildSecretScanScript(): string {
 }
 
 function buildFileSizeScript(maxLines: number): string {
-  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines));
+  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines)).replace(
+    "{{VENDORED_DIRS_PATTERNS}}",
+    buildVendoredDirsTemplatePatterns(),
+  );
 }
 
 function buildTemplateWiringScript(): string {
