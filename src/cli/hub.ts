@@ -23,6 +23,8 @@ import {
   handleCompliance,
   handleRevert,
   printResult,
+  resetHubExitCode,
+  getHubExitCode,
 } from "./hub-handlers.js";
 import { validateHandler } from "./validate.js";
 
@@ -155,8 +157,14 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
  * Interactive Command Center — launched when user runs bare command.
  * Loops the main menu until the user selects Exit or presses Ctrl+C.
  * Toggle "Advanced options..." to reveal power-user actions.
+ *
+ * Returns the worst exit code observed across the session — `cli.ts` then
+ * propagates that to `process.exit`. Mirrors `npm test` and `pre-commit`
+ * semantics: any failure inside the loop yields a non-zero session exit.
  */
-export async function runCommandCenter(projectRoot: string): Promise<void> {
+export async function runCommandCenter(projectRoot: string): Promise<number> {
+  resetHubExitCode();
+
   const configDir = resolveProjectDir(projectRoot);
 
   registerAllAdapters();
@@ -205,7 +213,7 @@ export async function runCommandCenter(projectRoot: string): Promise<void> {
 
     if (typeof selected === "symbol" || selected === "_exit") {
       p.outro("Goodbye.");
-      return;
+      return getHubExitCode();
     }
 
     if (selected === "_toggle") {

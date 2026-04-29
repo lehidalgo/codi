@@ -77,7 +77,8 @@ program.action(async () => {
   }
   Logger.init({ level: "info", mode: "human", noColor: opts.noColor ?? false });
   await checkForUpdate(pkg.version);
-  await runCommandCenter(process.cwd());
+  const hubExitCode = await runCommandCenter(process.cwd());
+  process.exit(hubExitCode);
 });
 
 program.parse();

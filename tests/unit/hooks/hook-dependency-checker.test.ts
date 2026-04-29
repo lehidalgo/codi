@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   extractToolName,
+  resolveToolBinary,
   NODE_PACKAGES,
   checkHookDependencies,
   filterMissing,
@@ -8,7 +9,7 @@ import {
 import type { HookEntry } from "#src/core/hooks/hook-registry.js";
 import { legacyHook } from "./_legacy-shape.js";
 
-describe("extractToolName", () => {
+describe("extractToolName (argv fallback)", () => {
   it("extracts tool name from simple command", () => {
     expect(extractToolName("ruff check --fix")).toBe("ruff");
   });
@@ -27,6 +28,56 @@ describe("extractToolName", () => {
 
   it("handles cargo subcommands", () => {
     expect(extractToolName("cargo clippy")).toBe("cargo");
+  });
+
+  it("skips npx --no flag and honors -- separator (regression: commitlint)", () => {
+    expect(extractToolName("npx --no -- commitlint --edit")).toBe("commitlint");
+  });
+
+  it("skips npx -y flag", () => {
+    expect(extractToolName("npx -y prettier --write")).toBe("prettier");
+  });
+
+  it("skips npx --no-install flag", () => {
+    expect(extractToolName("npx --no-install eslint")).toBe("eslint");
+  });
+
+  it("consumes argument of -p / --package", () => {
+    expect(extractToolName("npx -p typescript@5 tsc --noEmit")).toBe("tsc");
+    expect(extractToolName("npx --package=typescript tsc --noEmit")).toBe("tsc");
+  });
+});
+
+describe("resolveToolBinary (HookSpec-aware)", () => {
+  it("prefers shell.toolBinary over argv parsing", () => {
+    const hook = legacyHook({
+      name: "commitlint",
+      command: "npx --no -- commitlint --edit",
+      stagedFilter: "**/*",
+    });
+    // legacyHook sets toolBinary = first command token. Override it explicitly.
+    hook.shell = { ...hook.shell, toolBinary: "commitlint" };
+    expect(resolveToolBinary(hook)).toBe("commitlint");
+  });
+
+  it("falls back to argv parsing when toolBinary is empty", () => {
+    const hook = legacyHook({
+      name: "x",
+      command: "npx -y prettier --write",
+      stagedFilter: "**/*",
+    });
+    hook.shell = { ...hook.shell, toolBinary: "" };
+    expect(resolveToolBinary(hook)).toBe("prettier");
+  });
+
+  it("uses toolBinary even when argv parse would yield a different value", () => {
+    const hook = legacyHook({
+      name: "x",
+      command: "npx eslint --fix",
+      stagedFilter: "**/*",
+    });
+    hook.shell = { ...hook.shell, toolBinary: "ruff" };
+    expect(resolveToolBinary(hook)).toBe("ruff");
   });
 });
 

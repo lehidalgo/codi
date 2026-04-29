@@ -10,6 +10,7 @@ import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
 import type { DependencyDiagnostic } from "../core/hooks/hook-dependency-checker.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
+import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
@@ -137,7 +138,8 @@ async function doctorHooks(
   const config = cfgResult.data;
 
   const stack = await detectStack(projectRoot);
-  const hooksConfig = generateHooksConfig(config.flags, stack, config.manifest);
+  const flagsForHooks = await resolveAutoFlags(projectRoot, config.flags);
+  const hooksConfig = generateHooksConfig(flagsForHooks, stack, config.manifest);
   const diagnostics = await checkHookDependencies(hooksConfig.hooks, projectRoot);
 
   renderHookDiagnosticsTable(diagnostics);

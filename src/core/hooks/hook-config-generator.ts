@@ -419,6 +419,7 @@ function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
   // test_before_commit only when commit_test_run is missing.
   const newFlag = flags["commit_test_run"];
   if (newFlag && newFlag.mode !== "disabled") {
+    if (newFlag.value === "auto") assertAutoResolved("commit_test_run");
     return newFlag.value === "on";
   }
   const flag = flags["test_before_commit"];
@@ -427,26 +428,42 @@ function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
   return flag.value !== false;
 }
 
-/** Resolve the python_type_checker flag value, with safe fallback. */
+/**
+ * Programmer-error guard: every CLI command that calls `generateHooksConfig`
+ * MUST first run `resolveAutoFlags` from `auto-detection.ts` to substitute
+ * `"auto"` flag values with the project's resolved choice. Reaching this
+ * point with `"auto"` means a caller forgot the resolver — fail loud so the
+ * test suite catches it instead of silently returning the wrong default.
+ */
+function assertAutoResolved(flagName: string): never {
+  throw new Error(
+    `Flag '${flagName}' has unresolved 'auto' value — call resolveAutoFlags(projectRoot, flags) before generateHooksConfig (see src/core/hooks/auto-detection.ts).`,
+  );
+}
+
+/** Resolve the python_type_checker flag value. Throws on unresolved 'auto'. */
 function selectedPythonTypeChecker(
   flags: ResolvedFlags,
 ): "mypy" | "basedpyright" | "pyright" | "off" {
   const f = flags["python_type_checker"];
-  if (!f || f.mode === "disabled" || f.value === "auto") return "basedpyright";
+  if (!f || f.mode === "disabled") return "basedpyright";
+  if (f.value === "auto") assertAutoResolved("python_type_checker");
   return f.value as "mypy" | "basedpyright" | "pyright" | "off";
 }
 
-/** Resolve the js_format_lint flag value, with safe fallback. */
+/** Resolve the js_format_lint flag value. Throws on unresolved 'auto'. */
 function selectedJsFormatLint(flags: ResolvedFlags): "eslint-prettier" | "biome" | "off" {
   const f = flags["js_format_lint"];
-  if (!f || f.mode === "disabled" || f.value === "auto") return "eslint-prettier";
+  if (!f || f.mode === "disabled") return "eslint-prettier";
+  if (f.value === "auto") assertAutoResolved("js_format_lint");
   return f.value as "eslint-prettier" | "biome" | "off";
 }
 
-/** Resolve the commit_type_check flag value, with safe fallback. */
+/** Resolve the commit_type_check flag value. Throws on unresolved 'auto'. */
 function selectedCommitTypeCheck(flags: ResolvedFlags): "on" | "off" {
   const f = flags["commit_type_check"];
-  if (!f || f.mode === "disabled" || f.value === "auto") return "off";
+  if (!f || f.mode === "disabled") return "off";
+  if (f.value === "auto") assertAutoResolved("commit_type_check");
   return f.value as "on" | "off";
 }
 

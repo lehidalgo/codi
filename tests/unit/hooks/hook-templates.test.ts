@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { RUNNER_TEMPLATE } from "#src/core/hooks/hook-templates.js";
+import { RUNNER_TEMPLATE } from "#src/core/hooks/runner-template.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "#src/core/hooks/brand-skill-validate-template.js";
 
 describe("RUNNER_TEMPLATE", () => {
-  it("contains ENOENT blocking logic for required tools", () => {
+  it("contains blocking logic for required missing tools", () => {
     expect(RUNNER_TEMPLATE).toContain("required");
     expect(RUNNER_TEMPLATE).toContain("BLOCKING");
     expect(RUNNER_TEMPLATE).toContain("installHint");
@@ -16,6 +16,18 @@ describe("RUNNER_TEMPLATE", () => {
 
   it("is a valid shell script starting with #!/bin/sh", () => {
     expect(RUNNER_TEMPLATE.trimStart()).toMatch(/^#!\/bin\/sh/);
+  });
+
+  it("reads the new HookSpec.shell.command field (post-#85)", () => {
+    expect(RUNNER_TEMPLATE).toContain("shell.command");
+    // Legacy flat-shape field references must be gone
+    expect(RUNNER_TEMPLATE).not.toContain("hook.stagedFilter");
+    expect(RUNNER_TEMPLATE).not.toContain("hook.command");
+  });
+
+  it("filters by stages.includes('pre-commit')", () => {
+    expect(RUNNER_TEMPLATE).toContain("'pre-commit'");
+    expect(RUNNER_TEMPLATE).toContain("hook.stages");
   });
 });
 

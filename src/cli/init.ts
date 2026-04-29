@@ -42,6 +42,7 @@ import {
 } from "./init-helpers.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
+import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
 import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
@@ -610,7 +611,8 @@ export async function initHandler(
       if (tooling?.skipped) {
         log.info("Skipped pre-commit hook installation per user request");
       }
-      const hooksConfig = generateHooksConfig(resolvedFlags, stack);
+      const flagsForHooks = await resolveAutoFlags(projectRoot, resolvedFlags);
+      const hooksConfig = generateHooksConfig(flagsForHooks, stack);
       if (!tooling?.skipped && (hooksConfig.hooks.length > 0 || hooksConfig.docCheck)) {
         const hookResult = await installHooks({
           projectRoot,

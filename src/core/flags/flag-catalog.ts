@@ -175,9 +175,9 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     values: ["auto", "on", "off"],
     hook: null,
     description: "Run type checker on pre-commit (vs deferring to pre-push)",
-    hint: "When 'on', the type checker runs on every commit; 'off' defers it to pre-push or CI. 'auto' picks 'off' on monorepos and codebases over 20k LOC where type-check time becomes painful.",
+    hint: "When 'on', the type checker runs on every commit; 'off' defers it to pre-push or CI. 'auto' resolves to 'off' (industry default — pytest team and husky+lint-staged guidance both recommend deferring type-check to pre-push).",
     valueHints: {
-      auto: "Detect from codebase size and monorepo signals",
+      auto: "Resolve to 'off' (industry default — defer to pre-push)",
       on: "Run type checker on every commit (slower commits)",
       off: "Defer type checker to pre-push (recommended)",
     },
