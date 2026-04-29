@@ -31,6 +31,8 @@ import { getAllAdapters } from "../core/generator/adapter-registry.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { runAddFromExternal, type ExternalSourceKind } from "./init-wizard-modify-add.js";
 import { PROJECT_DIR } from "../constants.js";
+import type { CommandResult } from "../core/output/types.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
 
 // --- Helpers ---
 
@@ -38,9 +40,45 @@ export function isCancelled<T>(value: T | symbol): value is symbol {
   return p.isCancel(value);
 }
 
-export async function printResult(promise: Promise<{ exitCode: number }>): Promise<void> {
+/**
+ * Hub session exit-code tracker.
+ *
+ * The Command Center is interactive: a single failure must NOT abort the
+ * loop, but it also must not be silently swallowed (CI integrations gate on
+ * the bare `codi` exit code). We aggregate the worst exit code seen across
+ * every action the user performs, and surface it when `runCommandCenter`
+ * returns. Mirrors `npm test` and `pre-commit` semantics: any failure means
+ * the session exits non-zero.
+ */
+let worstHubExitCode: number = EXIT_CODES.SUCCESS;
+
+/** Reset the hub exit-code tracker — call at the start of each session. */
+export function resetHubExitCode(): void {
+  worstHubExitCode = EXIT_CODES.SUCCESS;
+}
+
+/** Read the worst exit code observed during the current hub session. */
+export function getHubExitCode(): number {
+  return worstHubExitCode;
+}
+
+/**
+ * Render a CommandResult to stdout AND track its exit code in the session
+ * tracker. Replaces every ad-hoc `process.stdout.write(formatHuman(result))`
+ * call in this file. Never calls process.exit — that's the dispatcher's
+ * job (see src/cli.ts bare-action callback).
+ */
+export function renderResult(result: CommandResult<unknown>): void {
+  process.stdout.write(formatHuman(result) + "\n");
+  if (result.exitCode !== EXIT_CODES.SUCCESS && result.exitCode > worstHubExitCode) {
+    worstHubExitCode = result.exitCode;
+  }
+}
+
+/** Awaits a handler promise then renders + tracks. */
+export async function printResult(promise: Promise<CommandResult<unknown>>): Promise<void> {
   const result = await promise;
-  process.stdout.write(formatHuman(result as never) + "\n");
+  renderResult(result);
 }
 
 // --- Route Handlers ---
@@ -67,7 +105,7 @@ export async function handleInit(projectRoot: string): Promise<void> {
   }
 
   const result = await initHandler(projectRoot, { force });
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 /**
@@ -114,7 +152,7 @@ export async function handleCustomize(projectRoot: string): Promise<void> {
 
   if (action === "customize" || action === "replace") {
     const result = await initHandler(projectRoot, { customize: true });
-    process.stdout.write(formatHuman(result) + "\n");
+    renderResult(result);
     return;
   }
 
@@ -145,7 +183,7 @@ export async function handleAdd(projectRoot: string): Promise<void> {
   for (const name of wizardResult.names) {
     const opts = wizardResult.useTemplates ? { template: name } : {};
     const result = await handler(projectRoot, name, opts);
-    process.stdout.write(formatHuman(result) + "\n");
+    renderResult(result);
   }
 
   await regenerateConfigs(projectRoot);
@@ -219,7 +257,7 @@ export async function handleGenerate(projectRoot: string): Promise<void> {
     dryRun: mode === "dry-run" || undefined,
     force: mode === "force" || undefined,
   });
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleDoctor(projectRoot: string): Promise<void> {
@@ -280,7 +318,7 @@ export async function handleClean(projectRoot: string): Promise<void> {
     dryRun: dryRun || undefined,
     force: true,
   });
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleUpdate(projectRoot: string): Promise<void> {
@@ -314,7 +352,7 @@ export async function handleUpdate(projectRoot: string): Promise<void> {
     mcpServers: layerSet.has("mcp-servers") || undefined,
     dryRun: dryRun || undefined,
   });
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleVerify(projectRoot: string): Promise<void> {
@@ -341,10 +379,10 @@ export async function handleVerify(projectRoot: string): Promise<void> {
     });
     if (isCancelled(response) || !response) return;
     const result = await verifyHandler(projectRoot, { check: response });
-    process.stdout.write(formatHuman(result) + "\n");
+    renderResult(result);
   } else {
     const result = await verifyHandler(projectRoot, {});
-    process.stdout.write(formatHuman(result) + "\n");
+    renderResult(result);
   }
 }
 
@@ -378,7 +416,7 @@ export async function handleRevert(projectRoot: string): Promise<void> {
   switch (mode) {
     case "list": {
       const result = await revertHandler(projectRoot, { list: true });
-      process.stdout.write(formatHuman(result) + "\n");
+      renderResult(result);
       break;
     }
     case "last": {
@@ -395,7 +433,7 @@ export async function handleRevert(projectRoot: string): Promise<void> {
       });
       if (isCancelled(confirmed) || !confirmed) return;
       const result = await revertHandler(projectRoot, { last: true });
-      process.stdout.write(formatHuman(result) + "\n");
+      renderResult(result);
       break;
     }
     case "specific": {
@@ -404,7 +442,7 @@ export async function handleRevert(projectRoot: string): Promise<void> {
       });
       if (isCancelled(timestamp) || !timestamp) return;
       const result = await revertHandler(projectRoot, { backup: timestamp });
-      process.stdout.write(formatHuman(result) + "\n");
+      renderResult(result);
       break;
     }
   }
@@ -420,17 +458,17 @@ export async function handleSkillExport(projectRoot: string): Promise<void> {
     wizardResult.format,
     wizardResult.outputDir,
   );
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleContribute(projectRoot: string): Promise<void> {
   const result = await contributeHandler(projectRoot);
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleDocs(projectRoot: string): Promise<void> {
   const result = await docsHandler(projectRoot, {});
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleImport(projectRoot: string): Promise<void> {
@@ -452,7 +490,7 @@ export async function handleImport(projectRoot: string): Promise<void> {
   if (isCancelled(source) || !source) return;
 
   const result = await presetInstallUnifiedHandler(projectRoot, source);
-  process.stdout.write(formatHuman(result) + "\n");
+  renderResult(result);
 }
 
 export async function handleExport(projectRoot: string): Promise<void> {
@@ -480,7 +518,7 @@ export async function handleExport(projectRoot: string): Promise<void> {
       });
       if (isCancelled(output)) return;
       const result = await presetExportHandler(projectRoot, name, "zip", output ?? ".");
-      process.stdout.write(formatHuman(result) + "\n");
+      renderResult(result);
       break;
     }
     case "contribute":
@@ -548,7 +586,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
         });
         if (isCancelled(includeBuiltin)) break;
         const result = await presetListEnhancedHandler(projectRoot, includeBuiltin);
-        process.stdout.write(formatHuman(result) + "\n");
+        renderResult(result);
         break;
       }
       case "create": {
@@ -561,7 +599,7 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
         });
         if (isCancelled(source) || !source) break;
         const result = await presetInstallUnifiedHandler(projectRoot, source);
-        process.stdout.write(formatHuman(result) + "\n");
+        renderResult(result);
         break;
       }
       case "export": {
@@ -574,21 +612,21 @@ export async function handlePresetMenu(projectRoot: string): Promise<void> {
         });
         if (isCancelled(output)) break;
         const result = await presetExportHandler(projectRoot, name, "zip", output ?? ".");
-        process.stdout.write(formatHuman(result) + "\n");
+        renderResult(result);
         break;
       }
       case "edit": {
         const name = await p.text({ message: "Preset name to edit" });
         if (isCancelled(name) || !name) break;
         const result = await presetEditHandler(projectRoot, name);
-        process.stdout.write(formatHuman(result) + "\n");
+        renderResult(result);
         break;
       }
       case "remove": {
         const name = await p.text({ message: "Preset name to remove" });
         if (isCancelled(name) || !name) break;
         const result = await presetRemoveHandler(projectRoot, name);
-        process.stdout.write(formatHuman(result) + "\n");
+        renderResult(result);
         break;
       }
     }

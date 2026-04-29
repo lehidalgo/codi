@@ -6,8 +6,8 @@ import { createError } from "../output/errors.js";
 import type { HookSetup } from "./hook-detector.js";
 import type { HookEntry } from "./hook-registry.js";
 import type { ResolvedFlags } from "#src/types/flags.js";
+import { RUNNER_TEMPLATE } from "./runner-template.js";
 import {
-  RUNNER_TEMPLATE,
   SECRET_SCAN_TEMPLATE,
   FILE_SIZE_CHECK_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
@@ -77,8 +77,15 @@ export interface InstallOptions {
   docProtectedBranches?: string[];
 }
 
+/**
+ * Build the standalone .git/hooks/pre-commit script body. Hooks are
+ * pre-filtered to those that declare `stages.includes("pre-commit")` so
+ * pre-push and commit-msg specs do not leak into the pre-commit runner.
+ * (The runner also filters at runtime as defense-in-depth.)
+ */
 function buildRunnerScript(hooks: HookEntry[]): string {
-  const hooksJson = JSON.stringify(hooks, null, 2);
+  const preCommitHooks = hooks.filter((h) => h.stages.includes("pre-commit"));
+  const hooksJson = JSON.stringify(preCommitHooks, null, 2);
   return RUNNER_TEMPLATE.replace("{{HOOKS_JSON}}", hooksJson);
 }
 
@@ -312,14 +319,23 @@ function globToGrepPattern(glob: string): string {
   return `\\.(${extensions.join("|")})$`;
 }
 
+/**
+ * Legacy husky shell renderer. Retained as a byte-for-byte parity baseline
+ * for the test suite. Production code uses `renderShellHooks` from
+ * `./renderers/shell-renderer.js`. Both implementations filter hooks to
+ * those declaring `stages.includes("pre-commit")` — pre-push and commit-msg
+ * specs are routed to their own hook files by the installer.
+ */
 function buildHuskyCommands(hooks: HookEntry[]): string {
+  const stageHooks = hooks.filter((h) => h.stages.includes("pre-commit"));
+
   const lines: string[] = [`STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`];
 
   // Track which variable names hold files modified by formatters
   const modifiedVars: string[] = [];
   let lastLanguage: string | undefined;
 
-  for (const h of hooks) {
+  for (const h of stageHooks) {
     // Insert a language-group comment whenever the language changes
     const currentLang = h.language ?? "";
     if (currentLang !== lastLanguage) {

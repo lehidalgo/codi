@@ -8,8 +8,10 @@ import {
   resolveJsFormatLint,
   resolveCommitTypeCheck,
   resolveCommitTestRun,
+  resolveAutoFlags,
   type DetectionContext,
 } from "#src/core/hooks/auto-detection.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 
 async function fixture(files: Record<string, string>): Promise<string> {
   const dir = await mkdtemp(path.join(tmpdir(), "codi-detect-"));
@@ -64,6 +66,56 @@ describe("buildDetectionContext", () => {
     });
     const ctx = await buildDetectionContext(root);
     expect(ctx.has.mypyConfig).toBe(true);
+  });
+
+  it("detects [tool.mypy] in a realistic pyproject with [project] header", async () => {
+    const root = await fixture({
+      "pyproject.toml": `[project]
+name = "x"
+version = "0.1.0"
+
+[tool.mypy]
+strict = true
+`,
+    });
+    const ctx = await buildDetectionContext(root);
+    expect(ctx.has.mypyConfig).toBe(true);
+    expect(ctx.has.basedpyrightConfig).toBe(false);
+  });
+
+  it("detects setup.cfg [mypy] section when no pyproject", async () => {
+    const root = await fixture({
+      "setup.cfg": "[metadata]\nname = x\n\n[mypy]\nstrict = True\n",
+    });
+    const ctx = await buildDetectionContext(root);
+    expect(ctx.has.mypyConfig).toBe(true);
+  });
+
+  it("reads Poetry [tool.poetry.dependencies] without including 'python'", async () => {
+    const root = await fixture({
+      "pyproject.toml": `[tool.poetry]
+name = "x"
+version = "0.1"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^5.0"
+`,
+    });
+    const ctx = await buildDetectionContext(root);
+    expect(ctx.pythonDeps).toContain("django");
+    expect(ctx.pythonDeps).not.toContain("python");
+  });
+
+  it("ignores comments mentioning [tool.mypy] (TOML parser, not regex)", async () => {
+    const root = await fixture({
+      "pyproject.toml": `[project]
+name = "x"
+# this comment mentions [tool.mypy] but no actual section exists
+`,
+    });
+    const ctx = await buildDetectionContext(root);
+    expect(ctx.has.mypyConfig).toBe(false);
   });
 
   it("detects [tool.basedpyright] section", async () => {
@@ -161,20 +213,18 @@ describe("resolveJsFormatLint", () => {
 });
 
 describe("resolveCommitTypeCheck", () => {
-  it("off for large codebases", () => {
+  it("always resolves to off (spec §11 — defer to pre-push)", () => {
+    // The function is a constant by design: type-check on commit is rejected
+    // by upstream tooling (pytest #291, husky+lint-staged guidance). The ctx
+    // parameter is retained for symmetry with sibling resolvers and for the
+    // wizard reason text, but does not influence the outcome.
+    expect(resolveCommitTypeCheck(empty)).toBe("off");
     expect(
       resolveCommitTypeCheck({ ...empty, locFiles: { python: 15_000, ts: 10_000, js: 0 } }),
     ).toBe("off");
-  });
-
-  it("off for monorepos", () => {
     expect(resolveCommitTypeCheck({ ...empty, has: { ...empty.has, monorepoSignal: true } })).toBe(
       "off",
     );
-  });
-
-  it("falls back to off (industry default)", () => {
-    expect(resolveCommitTypeCheck(empty)).toBe("off");
   });
 });
 
@@ -182,5 +232,57 @@ describe("resolveCommitTestRun", () => {
   it("always off", () => {
     expect(resolveCommitTestRun(empty)).toBe("off");
     expect(resolveCommitTestRun({ ...empty, locFiles: { python: 1, ts: 1, js: 1 } })).toBe("off");
+  });
+});
+
+describe("resolveAutoFlags", () => {
+  function flagsWithAuto(): ResolvedFlags {
+    return {
+      python_type_checker: { mode: "enabled", value: "auto", source: "default", locked: false },
+      js_format_lint: { mode: "enabled", value: "auto", source: "default", locked: false },
+      commit_type_check: { mode: "enabled", value: "auto", source: "default", locked: false },
+      commit_test_run: { mode: "enabled", value: "auto", source: "default", locked: false },
+    };
+  }
+
+  it("substitutes 'auto' for resolved values from project signals (mypy wins)", async () => {
+    const root = await fixture({
+      "pyproject.toml": "[project]\nname='x'\nversion='0.1.0'\n\n[tool.mypy]\nstrict=true\n",
+    });
+    const out = await resolveAutoFlags(root, flagsWithAuto());
+    expect(out["python_type_checker"]?.value).toBe("mypy");
+    expect(out["js_format_lint"]?.value).toBe("eslint-prettier");
+    expect(out["commit_type_check"]?.value).toBe("off");
+    expect(out["commit_test_run"]?.value).toBe("off");
+  });
+
+  it("substitutes 'auto' to basedpyright for FastAPI projects", async () => {
+    const root = await fixture({
+      "pyproject.toml": `[project]\nname="x"\nversion="0.1.0"\ndependencies = ["fastapi"]\n`,
+    });
+    const out = await resolveAutoFlags(root, flagsWithAuto());
+    expect(out["python_type_checker"]?.value).toBe("basedpyright");
+  });
+
+  it("returns input unchanged when no flag is 'auto' (no detection cost)", async () => {
+    const explicit: ResolvedFlags = {
+      python_type_checker: { mode: "enabled", value: "mypy", source: "user", locked: false },
+      js_format_lint: { mode: "enabled", value: "biome", source: "user", locked: false },
+    };
+    const out = await resolveAutoFlags("/no/such/dir", explicit);
+    expect(out).toBe(explicit);
+  });
+
+  it("only resolves the flags that are 'auto', leaves others untouched", async () => {
+    const root = await fixture({
+      "pyproject.toml": "[tool.mypy]\nstrict=true\n",
+    });
+    const mixed: ResolvedFlags = {
+      python_type_checker: { mode: "enabled", value: "auto", source: "default", locked: false },
+      js_format_lint: { mode: "enabled", value: "biome", source: "user", locked: false },
+    };
+    const out = await resolveAutoFlags(root, mixed);
+    expect(out["python_type_checker"]?.value).toBe("mypy");
+    expect(out["js_format_lint"]?.value).toBe("biome");
   });
 });

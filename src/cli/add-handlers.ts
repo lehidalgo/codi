@@ -362,11 +362,14 @@ export async function handleWizardFlow(
     await regenerateConfigs(process.cwd());
     for (const name of added) await logAddToLedger(process.cwd(), type, name);
   }
+  // Surface partial-failure: any sub-add failure means the wizard exits non-zero
+  // so CI / shell scripts that pipe `codi add` get a usable signal.
+  const allSucceeded = results.every((r) => r.success);
   const summary = createCommandResult({
-    success: true,
+    success: allSucceeded,
     command: `add ${type}`,
     data: { added, total: wizardResult.names.length },
-    exitCode: EXIT_CODES.SUCCESS,
+    exitCode: allSucceeded ? EXIT_CODES.SUCCESS : EXIT_CODES.GENERAL_ERROR,
   });
   handleOutput(summary, options);
   process.exit(summary.exitCode);

@@ -48,7 +48,17 @@ export function findConflictMarkers(text: string): MarkerHit[] {
 
 /**
  * Fast yes/no check for callers that don't need line numbers.
+ * Early-returns on the first marker hit — does not allocate the hits array.
+ *
+ * Public API: companion to `findConflictMarkers` for callers that need
+ * O(1) memory (e.g., a future fast-path inside the conflict-marker hook
+ * template, or a config-validator short-circuit).
  */
 export function hasConflictMarkers(text: string): boolean {
-  return findConflictMarkers(text).length > 0;
+  const lines = text.split("\n");
+  for (const raw of lines) {
+    const line = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
+    if (MARKER_RE.test(line)) return true;
+  }
+  return false;
 }

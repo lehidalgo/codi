@@ -22,51 +22,7 @@ import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
-import {
-  buildDetectionContext,
-  resolvePythonTypeChecker,
-  resolveJsFormatLint,
-  resolveCommitTypeCheck,
-  resolveCommitTestRun,
-} from "../core/hooks/auto-detection.js";
-import type { ResolvedFlags } from "#src/types/flags.js";
-
-/**
- * Resolve any 'auto' values among the four tooling-default flags
- * (python_type_checker, js_format_lint, commit_type_check, commit_test_run)
- * using the project's filesystem signals. Explicit flag values pass through
- * unchanged. Skips the detection-context build entirely when no flag is set
- * to 'auto', so this is cheap on every-commit regenerates.
- */
-async function resolveAutoFlags(projectRoot: string, flags: ResolvedFlags): Promise<ResolvedFlags> {
-  const needs = (key: string): boolean => flags[key]?.value === "auto";
-  if (
-    !needs("python_type_checker") &&
-    !needs("js_format_lint") &&
-    !needs("commit_type_check") &&
-    !needs("commit_test_run")
-  ) {
-    return flags;
-  }
-  const ctx = await buildDetectionContext(projectRoot);
-  const out: ResolvedFlags = { ...flags };
-  if (needs("python_type_checker")) {
-    out["python_type_checker"] = {
-      ...out["python_type_checker"]!,
-      value: resolvePythonTypeChecker(ctx),
-    };
-  }
-  if (needs("js_format_lint")) {
-    out["js_format_lint"] = { ...out["js_format_lint"]!, value: resolveJsFormatLint(ctx) };
-  }
-  if (needs("commit_type_check")) {
-    out["commit_type_check"] = { ...out["commit_type_check"]!, value: resolveCommitTypeCheck(ctx) };
-  }
-  if (needs("commit_test_run")) {
-    out["commit_test_run"] = { ...out["commit_test_run"]!, value: resolveCommitTestRun(ctx) };
-  }
-  return out;
-}
+import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 
 interface GenerateCommandOptions extends GlobalOptions {
   agent?: string[];

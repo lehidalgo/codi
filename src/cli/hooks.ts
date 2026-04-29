@@ -3,7 +3,9 @@ import type { Command } from "commander";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { checkHookDependencies } from "../core/hooks/hook-dependency-checker.js";
+import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 import { resolveConfig } from "../core/config/resolver.js";
+import type { ResolvedFlags } from "#src/types/flags.js";
 import { Logger } from "../core/output/logger.js";
 import { initFromOptions } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
@@ -14,18 +16,16 @@ interface HooksDoctorOptions extends GlobalOptions {
   fix?: boolean;
 }
 
-async function hooksDoctorHandler(
-  projectRoot: string,
-  options: HooksDoctorOptions,
-): Promise<void> {
+async function hooksDoctorHandler(projectRoot: string, options: HooksDoctorOptions): Promise<void> {
   const logger = Logger.getInstance();
 
   const languages = await detectStack(projectRoot);
 
   const configResult = await resolveConfig(projectRoot);
-  const flags = configResult.ok ? configResult.data.flags : {};
+  const flags: ResolvedFlags = configResult.ok ? configResult.data.flags : {};
 
-  const config = generateHooksConfig(flags as never, languages);
+  const flagsForHooks = await resolveAutoFlags(projectRoot, flags);
+  const config = generateHooksConfig(flagsForHooks, languages);
 
   const diagnostics: DependencyDiagnostic[] = await checkHookDependencies(
     config.hooks,
@@ -37,9 +37,7 @@ async function hooksDoctorHandler(
   const ok = diagnostics.filter((d) => d.severity === "ok");
 
   logger.info(`\ncodi hooks doctor — ${projectRoot}\n`);
-  logger.info(
-    `  Languages detected: ${languages.length > 0 ? languages.join(", ") : "(none)"}`,
-  );
+  logger.info(`  Languages detected: ${languages.length > 0 ? languages.join(", ") : "(none)"}`);
   logger.info(`  Hooks checked: ${diagnostics.length}`);
   logger.info(`  ✓ Installed: ${ok.length}`);
 
@@ -54,9 +52,7 @@ async function hooksDoctorHandler(
   }
 
   if (errors.length > 0) {
-    logger.info(
-      `\n  Required tools not installed (${errors.length}) — commits will be BLOCKED:`,
-    );
+    logger.info(`\n  Required tools not installed (${errors.length}) — commits will be BLOCKED:`);
     for (const e of errors) {
       logger.error(`    ✗ ${e.name} [${e.category ?? "unknown"}]`);
       if (e.installHint) {
@@ -93,11 +89,10 @@ async function hooksReinstallHandler(projectRoot: string): Promise<void> {
   const logger = Logger.getInstance();
   logger.info("Reinstalling codi pre-commit hooks...");
   try {
-    execFileSync(
-      "node",
-      [`${projectRoot}/node_modules/.bin/${PROJECT_CLI}`, "generate"],
-      { stdio: "inherit", cwd: projectRoot },
-    );
+    execFileSync("node", [`${projectRoot}/node_modules/.bin/${PROJECT_CLI}`, "generate"], {
+      stdio: "inherit",
+      cwd: projectRoot,
+    });
   } catch {
     // Fall back to npx if local binary not found
     execFileSync("npx", [PROJECT_CLI, "generate"], {
@@ -108,9 +103,7 @@ async function hooksReinstallHandler(projectRoot: string): Promise<void> {
 }
 
 export function registerHooksCommand(program: Command): void {
-  const hooksCmd = program
-    .command("hooks")
-    .description("Manage and diagnose pre-commit hooks");
+  const hooksCmd = program.command("hooks").description("Manage and diagnose pre-commit hooks");
 
   hooksCmd
     .command("doctor")

@@ -1,4 +1,4 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { HookSpec, HookStage } from "../hook-spec.js";
 
 /**
  * Convert a HookSpec.files glob (e.g. `**\/*.{ts,tsx}`) to a `grep -E` pattern
@@ -14,27 +14,43 @@ export function globToGrepPattern(glob: string): string {
 }
 
 /**
- * Render a list of HookSpecs as a shell script body for husky / standalone /
- * lefthook runners. Output is a deterministic sequence of commands that:
- *  - collect the list of staged files into $STAGED once
+ * Render HookSpecs as a shell script body for husky / standalone / lefthook
+ * runners. Output is a deterministic sequence of commands that:
+ *  - collect the list of staged files into $STAGED once (pre-commit only)
  *  - filter per-hook with `grep -E` against the hook's file extensions
  *  - guard required tools with `command -v` and emit a blocking exit on missing tools
  *  - optionally pass filenames via `printf | xargs` (safe for spaces)
- *  - re-stage files after formatters modify them on disk
+ *  - re-stage files after formatters modify them on disk (pre-commit only)
+ *
+ * Stage filter: only specs whose `stages` array includes the requested stage
+ * are rendered. A `pre-push` HookSpec handed to the pre-commit renderer is
+ * silently dropped — each git-hook event gets its own per-stage hook file.
+ *
+ * Pre-push and commit-msg stages have no concept of staged files (`$1` is
+ * the message file at commit-msg, `$local_ref/$remote_ref` are the args at
+ * pre-push), so the staged-files prelude and the re-stage tail are emitted
+ * only at pre-commit.
  *
  * The renderer is pure — same input always yields the same output. A snapshot
  * test in tests/unit/hooks/shell-renderer.test.ts pins the byte-for-byte
- * baseline against the legacy buildHuskyCommands implementation.
+ * baseline.
  */
 export function renderShellHooks(
   specs: HookSpec[],
   _runner: "husky" | "standalone" | "lefthook",
+  stage: HookStage = "pre-commit",
 ): string {
-  const lines: string[] = [`STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`];
+  const stageSpecs = specs.filter((s) => s.stages.includes(stage));
+  if (stageSpecs.length === 0) return "";
+
+  const lines: string[] = [];
+  if (stage === "pre-commit") {
+    lines.push(`STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`);
+  }
   const modifiedVars: string[] = [];
   let lastLanguage: string | undefined;
 
-  for (const h of specs) {
+  for (const h of stageSpecs) {
     const currentLang = h.language ?? "";
     if (currentLang !== lastLanguage) {
       lines.push(currentLang ? `# — ${currentLang} —` : `# — global —`);
@@ -110,7 +126,9 @@ export function renderShellHooks(
     if (modifiesFiles) modifiedVars.push(varName);
   }
 
-  if (modifiedVars.length > 0) {
+  // Re-staging modified files is only valid at pre-commit time (pre-push
+  // and commit-msg do not have a staged-files concept).
+  if (stage === "pre-commit" && modifiedVars.length > 0) {
     const unique = [...new Set(modifiedVars)];
     for (const v of unique) {
       lines.push(`[ -n "$${v}" ] && printf '%s\\n' $${v} | xargs git add || true`);
