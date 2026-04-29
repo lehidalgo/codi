@@ -8,6 +8,7 @@ import {
   serialize,
 } from "../yaml-document.js";
 import { stripLegacyTextMarkers } from "../legacy-cleanup.js";
+import { buildVendoredDirsRegex } from "../exclusions.js";
 
 /**
  * Top-level keys we ensure exist when generating a fresh `.pre-commit-config.yaml`
@@ -17,7 +18,7 @@ const TOP_LEVEL_DEFAULTS: Array<[string, unknown]> = [
   ["default_install_hook_types", ["pre-commit", "commit-msg", "pre-push"]],
   ["default_language_version", { python: "python3.12", node: "22" }],
   ["minimum_pre_commit_version", "3.5.0"],
-  ["exclude", "^(node_modules|\\.venv|venv|dist|build|coverage|\\.next|\\.codi)/"],
+  ["exclude", buildVendoredDirsRegex()],
 ];
 
 /**

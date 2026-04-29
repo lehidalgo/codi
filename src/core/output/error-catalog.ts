@@ -24,6 +24,12 @@ export const ERROR_CATALOG = {
     severity: "error" as const,
     hintTemplate: "Config validation failed: {message}",
   },
+  E_CONFLICT_MARKERS: {
+    exitCode: EXIT_CODES.CONFIG_INVALID,
+    severity: "error" as const,
+    hintTemplate:
+      "Git merge-conflict markers in {file} (line {line}). Resolve the conflict and re-stage.",
+  },
   E_FLAG_CONFLICT: {
     exitCode: EXIT_CODES.FLAG_CONFLICT,
     severity: "error" as const,

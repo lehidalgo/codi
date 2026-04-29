@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  logMissingDeps,
-  installMissingDeps,
-} from "#src/core/hooks/hook-dep-installer.js";
+import { logMissingDeps, installMissingDeps } from "#src/core/hooks/hook-dep-installer.js";
 import type { DependencyCheck } from "#src/core/hooks/hook-dependency-checker.js";
 import type { Logger } from "#src/core/output/logger.js";
 
@@ -61,9 +58,7 @@ describe("logMissingDeps", () => {
     const deps = [createNodeDep("eslint")];
     logMissingDeps(deps, log);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      "Missing hook dependencies — install before committing:",
-    );
+    expect(log.warn).toHaveBeenCalledWith("Missing hook dependencies — install before committing:");
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("eslint"));
   });
 
@@ -83,9 +78,7 @@ describe("logMissingDeps", () => {
     const deps = [createSystemDep("shellcheck")];
     logMissingDeps(deps, log);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("brew install shellcheck"),
-    );
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("brew install shellcheck"));
   });
 });
 
@@ -105,9 +98,7 @@ describe("installMissingDeps — non-interactive mode", () => {
     const deps = [createNodeDep("eslint")];
     await installMissingDeps(deps, "/tmp", log, false);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      "Missing hook dependencies — install before committing:",
-    );
+    expect(log.warn).toHaveBeenCalledWith("Missing hook dependencies — install before committing:");
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("eslint"));
   });
 
@@ -115,9 +106,7 @@ describe("installMissingDeps — non-interactive mode", () => {
     const deps = [createSystemDep("shellcheck")];
     await installMissingDeps(deps, "/tmp", log, false);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("shellcheck"),
-    );
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("shellcheck"));
   });
 
   it("logs all dependencies in non-interactive mode", async () => {
@@ -180,9 +169,7 @@ describe("installMissingDeps — interactive mode", () => {
     await installMissingDeps(deps, "/tmp", log, true);
 
     expect(execFileAsync).not.toHaveBeenCalled();
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Install before committing"),
-    );
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Install before committing"));
   });
 
   it("handles user cancellation", async () => {
@@ -207,21 +194,15 @@ describe("installMissingDeps — interactive mode", () => {
     const deps = [createNodeDep("eslint")];
     await installMissingDeps(deps, "/tmp", log, true);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to install"),
-    );
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Failed to install"));
   });
 
   it("warns about system deps that need manual installation", async () => {
     const deps = [createSystemDep("shellcheck")];
     await installMissingDeps(deps, "/tmp", log, true);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Missing system tools"),
-    );
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("shellcheck"),
-    );
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Missing system tools"));
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("shellcheck"));
   });
 
   it("handles mixed npm and system deps", async () => {
@@ -231,8 +212,121 @@ describe("installMissingDeps — interactive mode", () => {
     const deps = [createNodeDep("eslint"), createSystemDep("shellcheck")];
     await installMissingDeps(deps, "/tmp", log, true);
 
-    expect(log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Missing system tools"),
-    );
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Missing system tools"));
+  });
+});
+
+describe("inferPackageManager", () => {
+  it("recognizes pip / pip3", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("pip install ruff")).toBe("pip");
+    expect(inferPackageManager("pip3 install ruff")).toBe("pip");
+  });
+  it("recognizes brew", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("brew install gitleaks")).toBe("brew");
+  });
+  it("recognizes gem", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("gem install rubocop")).toBe("gem");
+  });
+  it("recognizes go install", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("go install github.com/x/y@latest")).toBe("go");
+  });
+  it("recognizes cargo install", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("cargo install x")).toBe("cargo");
+  });
+  it("recognizes rustup component add as a separate manager", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("rustup component add clippy")).toBe("rustup");
+  });
+  it("returns manual for unknown hints", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("Install .NET SDK from https://dot.net")).toBe("manual");
+    expect(inferPackageManager("")).toBe("manual");
+  });
+  it("ignores leading whitespace", async () => {
+    const { inferPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(inferPackageManager("  pip install x")).toBe("pip");
+  });
+});
+
+describe("extractPackagesFromHint", () => {
+  it("returns empty array for manual", async () => {
+    const { extractPackagesFromHint } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(extractPackagesFromHint("Install .NET SDK from https://dot.net", "manual")).toEqual([]);
+  });
+  it("extracts a single pip package", async () => {
+    const { extractPackagesFromHint } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(extractPackagesFromHint("pip install ruff", "pip")).toEqual(["ruff"]);
+  });
+  it("extracts multiple brew packages", async () => {
+    const { extractPackagesFromHint } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(extractPackagesFromHint("brew install gitleaks clang-format", "brew")).toEqual([
+      "gitleaks",
+      "clang-format",
+    ]);
+  });
+  it("extracts a go package", async () => {
+    const { extractPackagesFromHint } = await import("#src/core/hooks/hook-dep-installer.js");
+    expect(extractPackagesFromHint("go install github.com/x/y@latest", "go")).toEqual([
+      "github.com/x/y@latest",
+    ]);
+  });
+});
+
+describe("groupByPackageManager — non-npm batching", () => {
+  const dep = (name: string, hint: string): DependencyCheck => ({
+    name,
+    available: false,
+    installHint: hint,
+    isNodePackage: false,
+  });
+
+  it("batches multiple brew tools into one group", async () => {
+    const { groupByPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    const groups = groupByPackageManager([
+      dep("gitleaks", "brew install gitleaks"),
+      dep("clang-format", "brew install clang-format"),
+    ]);
+    const brew = groups.find((g) => g.label.startsWith("brew install"));
+    expect(brew).toBeDefined();
+    expect(brew!.deps.length).toBe(2);
+    expect(brew!.label).toBe("brew install gitleaks clang-format");
+  });
+
+  it("keeps unknown hints as separate manual entries", async () => {
+    const { groupByPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    const groups = groupByPackageManager([dep("dotnet", "Install .NET SDK from https://dot.net")]);
+    const manual = groups.filter((g) => g.deps[0]?.name === "dotnet");
+    expect(manual.length).toBe(1);
+  });
+
+  it("emits separate groups per package manager", async () => {
+    const { groupByPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    const groups = groupByPackageManager([
+      dep("ruff", "pip install ruff"),
+      dep("gitleaks", "brew install gitleaks"),
+      dep("rubocop", "gem install rubocop"),
+    ]);
+    expect(groups.find((g) => g.label === "pip install ruff")).toBeDefined();
+    expect(groups.find((g) => g.label === "brew install gitleaks")).toBeDefined();
+    expect(groups.find((g) => g.label === "gem install rubocop")).toBeDefined();
+  });
+
+  it("keeps cargo install and rustup component add in separate groups", async () => {
+    const { groupByPackageManager } = await import("#src/core/hooks/hook-dep-installer.js");
+    const groups = groupByPackageManager([
+      dep("foo", "cargo install foo"),
+      dep("clippy", "rustup component add clippy"),
+    ]);
+    const cargo = groups.find((g) => g.label.startsWith("cargo install"));
+    const rustup = groups.find((g) => g.label.startsWith("rustup component add"));
+    expect(cargo).toBeDefined();
+    expect(rustup).toBeDefined();
+    expect(cargo!.label).toBe("cargo install foo");
+    expect(rustup!.label).toBe("rustup component add clippy");
   });
 });

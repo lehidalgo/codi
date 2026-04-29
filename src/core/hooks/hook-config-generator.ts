@@ -59,6 +59,7 @@ export interface HooksConfig {
   skillResourceCheck: boolean;
   skillPathWrapCheck: boolean;
   stagedJunkCheck: boolean;
+  conflictMarkerCheck: boolean;
   versionBump: boolean;
   versionVerify: boolean;
   brandSkillValidation: boolean;
@@ -136,15 +137,26 @@ export function generateHooksConfig(
     );
   }
 
-  // ── Stage 1: Instant filename / pattern checks ───────────────────────────
-  // These reject obvious problems in milliseconds before any file I/O or
-  // tool invocations. Always run first so the hook exits fast on bad input.
+  // ── Stage 1: Fast filename / pattern / lightweight content checks ────────
+  // Reject obvious problems quickly: filename pattern checks, plus a fast
+  // line-by-line scan for git merge-conflict markers. No compilation or
+  // external tool startup cost. Always run first so the hook exits fast
+  // on bad input.
 
   allHooks.push(
     metaHook({
       name: "staged-junk-check",
       entry: `node .git/hooks/${PROJECT_NAME}-staged-junk-check.mjs`,
       files: "**",
+    }),
+  );
+
+  allHooks.push(
+    metaHook({
+      name: "conflict-marker-check",
+      entry: `node .git/hooks/${PROJECT_NAME}-conflict-marker-check.mjs`,
+      files: "**/*",
+      category: "meta",
     }),
   );
 
@@ -351,6 +363,7 @@ export function generateHooksConfig(
     skillResourceCheck: authoringContext,
     skillPathWrapCheck: authoringContext,
     stagedJunkCheck: true,
+    conflictMarkerCheck: true,
     versionBump,
     versionVerify: versionBump,
     brandSkillValidation: authoringContext,

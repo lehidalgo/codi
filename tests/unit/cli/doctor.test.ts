@@ -80,4 +80,32 @@ describe("doctor command handler", () => {
     expect(result.data.results.length).toBeGreaterThan(0);
     expect(result.data.results.every((r) => typeof r.check === "string")).toBe(true);
   });
+
+  describe("--hooks mode", () => {
+    it("returns hookDiagnostics array on data", async () => {
+      const configDir = path.join(tmpDir, PROJECT_DIR);
+      await fs.mkdir(configDir, { recursive: true });
+      await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), `name: test\nversion: "1"\n`);
+
+      const result = await doctorHandler(tmpDir, { hooks: true });
+
+      expect(result.data).toHaveProperty("hookDiagnostics");
+      expect(Array.isArray(result.data.hookDiagnostics)).toBe(true);
+      // Each diagnostic must have name + severity fields
+      for (const d of result.data.hookDiagnostics ?? []) {
+        expect(typeof d.name).toBe("string");
+        expect(["ok", "warning", "error"]).toContain(d.severity);
+      }
+      expect([EXIT_CODES.SUCCESS, EXIT_CODES.DOCTOR_FAILED]).toContain(result.exitCode);
+    });
+
+    it("composes with --ci flag", async () => {
+      const configDir = path.join(tmpDir, PROJECT_DIR);
+      await fs.mkdir(configDir, { recursive: true });
+      await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), `name: test\nversion: "1"\n`);
+
+      const result = await doctorHandler(tmpDir, { hooks: true, ci: true });
+      expect(Array.isArray(result.data.hookDiagnostics)).toBe(true);
+    });
+  });
 });

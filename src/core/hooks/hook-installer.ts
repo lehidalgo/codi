@@ -18,6 +18,7 @@ import {
   SKILL_PATH_WRAP_CHECK_TEMPLATE,
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import { CONFLICT_MARKER_CHECK_TEMPLATE } from "./conflict-marker-template.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
 import { renderShellHooks } from "./renderers/shell-renderer.js";
 import {
@@ -28,6 +29,7 @@ import {
 } from "./hook-policy-templates.js";
 import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
 import { VERSION_VERIFY_PRE_PUSH_TEMPLATE } from "./version-verify-pre-push-template.js";
+import { buildVendoredDirsTemplatePatterns } from "./exclusions.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import {
@@ -67,6 +69,7 @@ export interface InstallOptions {
   skillResourceCheck?: boolean;
   skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
+  conflictMarkerCheck?: boolean;
   versionBump?: boolean;
   versionVerify?: boolean;
   brandSkillValidation?: boolean;
@@ -84,7 +87,10 @@ function buildSecretScanScript(): string {
 }
 
 function buildFileSizeScript(maxLines: number): string {
-  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines));
+  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines)).replace(
+    "{{VENDORED_DIRS_PATTERNS}}",
+    buildVendoredDirsTemplatePatterns(),
+  );
 }
 
 function buildTemplateWiringScript(): string {
@@ -196,6 +202,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, junkCheckPath));
+  }
+  if (options.conflictMarkerCheck) {
+    const cmPath = path.join(hookDir, `${PROJECT_NAME}-conflict-marker-check.mjs`);
+    await fs.writeFile(cmPath, CONFLICT_MARKER_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, cmPath));
   }
   if (options.versionBump) {
     const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);

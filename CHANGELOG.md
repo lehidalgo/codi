@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Per-language pre-commit hooks no longer lint vendored agent content** in `.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.windsurf/`, `.cline/`. The YAML `exclude:` regex previously covered only `.codi/`; the six other agent dirs are now part of a single source of truth (`src/core/hooks/exclusions.ts`) consumed by both the YAML renderer and the file-size check template.
 - **Pre-commit YAML insertion no longer corrupts `.pre-commit-config.yaml`** when the project already had `repos:` entries with nested `hooks:` lists. The legacy text-based renderer (`findReposInsertionPoint`) overwrote `listIndent` on every nested list item, causing the generated Codi block to land **inside** the external repo's `hooks:` list and produce invalid YAML. The function now locks `listIndent` to the first list item it encounters under `repos:` and never reassigns it. The renderer was subsequently superseded by a YAML AST round-trip implementation (see Changed).
 
 ### Changed
@@ -18,11 +19,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Type-checking (`tsc`, `mypy`, `basedpyright`, `pyright`, `dotnet-build`, `phpstan`) and full test suites default to `pre-push` stage** instead of `pre-commit`. Override via the new `commit_type_check` / `commit_test_run` flags or by editing `.codi/flags.yaml` directly. Industry consensus is to keep commits under 5s; the upstream `pre-commit` project explicitly rejects pytest as a pre-commit hook.
 - **Bandit invoked with `-lll` (high severity only)** by default and `additional_dependencies: ["bandit[toml]"]` so `[tool.bandit]` configuration in `pyproject.toml` works without separate setup. Install hint corrected to `pip install "bandit[toml]"`.
 - **Prettier scope expanded** to `**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,mdx,yaml,yml,css,scss,html}` (was `*.{ts,tsx,js,jsx}`).
-- **Generated `.pre-commit-config.yaml` includes top-level keys**: `default_install_hook_types: [pre-commit, commit-msg, pre-push]`, `default_language_version: {python: python3.12, node: '22'}`, `minimum_pre_commit_version: '3.5.0'`, and a global `exclude:` for `node_modules`, `.venv`, `dist`, `build`, `coverage`, `.next`, `.codi`. Existing user values are never overwritten.
+- **Generated `.pre-commit-config.yaml` includes top-level keys**: `default_install_hook_types: [pre-commit, commit-msg, pre-push]`, `default_language_version: {python: python3.12, node: '22'}`, `minimum_pre_commit_version: '3.5.0'`, and a global `exclude:` derived from the `VENDORED_DIRS` SSoT (see Fixed entry above). Existing user values are never overwritten.
 - **Hook registry split into per-language modules** under `src/core/hooks/registry/` (one file per language plus `global.ts` and a barrel `index.ts`). `src/core/hooks/hook-registry.ts` becomes a thin backward-compat shim. New `HookSpec` shape replaces flat `HookEntry` (`HookEntry` retained as a type alias). Each spec carries explicit `shell` and `preCommit` emission descriptors so each renderer reads its own field instead of sharing ambiguous fields.
 
 ### Added
 
+- **Conflict-marker detection** in `codi validate` and as a new global pre-commit hook (`conflict-marker-check`). `validate` scans rule, skill, and agent content for `<<<<<<<` / `=======` / `>>>>>>>` / `|||||||` (diff3) markers and emits `E_CONFLICT_MARKERS` with file and line. The pre-commit hook script (`codi-conflict-marker-check.mjs`) blocks commits containing markers in any non-binary staged file. Both consumers share a pure scanner in `src/core/hooks/conflict-markers.ts`.
+- **`codi doctor --hooks`** mode that lists per-hook tool availability with severity (ok / warning / error), category, and install hint. Exits non-zero if any required hook tool is missing. Uses the existing `checkHookDependencies` infrastructure; complements `installMissingDeps` which runs at `codi init` time.
+- **Batched install hints in `installMissingDeps`**: missing pip / brew / gem / go / cargo / rustup tools are now grouped into single commands per package manager (`pip install ruff pyright` instead of two separate fragments). cargo and rustup are kept as separate groups since rustup components are not crates.
 - **Four new tooling-default flags**, all with default value `auto`:
   - `python_type_checker`: `auto | mypy | basedpyright | pyright | off`
   - `js_format_lint`: `auto | eslint-prettier | biome | off`

@@ -189,4 +189,24 @@ describe("renderPreCommitConfig — case set", () => {
     // exclude was missing — we add it
     expect(out).toMatch(/exclude:/);
   });
+
+  it("13. emits a top-level exclude: regex covering every vendored agent dir", () => {
+    const out = renderPreCommitConfig([ruff], null);
+    const match = out.match(/^exclude: ['"]?(.+?)['"]?$/m);
+    expect(match).not.toBeNull();
+    const regex = new RegExp(match![1]!);
+    // Legacy build/output dirs
+    expect(regex.test("node_modules/foo")).toBe(true);
+    expect(regex.test("dist/x.js")).toBe(true);
+    // All seven supported agent dirs
+    expect(regex.test(".codi/skills/foo/SKILL.md")).toBe(true);
+    expect(regex.test(".agents/skills/foo/SKILL.md")).toBe(true);
+    expect(regex.test(".claude/skills/foo/SKILL.md")).toBe(true);
+    expect(regex.test(".codex/skills/foo/SKILL.md")).toBe(true);
+    expect(regex.test(".cursor/skills/foo/template.ts")).toBe(true);
+    expect(regex.test(".windsurf/skills/foo/SKILL.md")).toBe(true);
+    expect(regex.test(".cline/skills/foo/SKILL.md")).toBe(true);
+    // User source files must not be excluded
+    expect(regex.test("src/foo.ts")).toBe(false);
+  });
 });

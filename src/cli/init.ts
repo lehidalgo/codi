@@ -631,6 +631,7 @@ export async function initHandler(
           skillResourceCheck: hooksConfig.skillResourceCheck,
           skillPathWrapCheck: hooksConfig.skillPathWrapCheck,
           stagedJunkCheck: hooksConfig.stagedJunkCheck,
+          conflictMarkerCheck: hooksConfig.conflictMarkerCheck,
           brandSkillValidation: hooksConfig.brandSkillValidation,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,
