@@ -163,7 +163,7 @@ codi status [--diff]
 
 #### `codi doctor`
 
-Check project health: config validity, version compatibility, hook installation, drift detection.
+Check project health: config validity, version compatibility, hook installation, drift detection. With `--hooks`, switches to a per-hook tool availability diagnostic.
 
 ```bash
 codi doctor [options]
@@ -172,6 +172,7 @@ codi doctor [options]
 | Option | Description |
 |--------|-------------|
 | `--ci` | Exit non-zero on any failure (for CI/hooks) |
+| `--hooks` | List per-hook tool availability with severity, category, and install hint. Exits non-zero when any required tool is missing. |
 
 ---
 

@@ -24,9 +24,11 @@ function getKnownAdapterIds(): string[] {
 /**
  * Validates a `NormalizedConfig` and returns a list of errors.
  *
- * Checks agent ids against the registered adapter list, validates rule and skill
- * names and sizes, enforces flag references, and checks platform compatibility
- * for skills. Returns an empty array if the config is valid.
+ * Checks agent ids against the registered adapter list, validates rule and
+ * skill names and sizes, enforces flag references, checks platform
+ * compatibility for skills, and rejects rule/skill/agent content containing
+ * unresolved git merge-conflict markers (`E_CONFLICT_MARKERS`). Returns an
+ * empty array if the config is valid.
  *
  * @param config - The normalized config to validate
  * @returns An array of `ProjectError` objects. Empty array means valid.

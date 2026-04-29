@@ -46,7 +46,7 @@ default_language_version:
   python: python3.12
   node: '22'
 minimum_pre_commit_version: 3.5.0
-exclude: ^(node_modules|\.venv|venv|dist|build|coverage|\.next|\.codi)/
+exclude: ^(node_modules|\.venv|venv|dist|build|coverage|\.next|\.codi|\.agents|\.claude|\.codex|\.cursor|\.windsurf|\.cline)/
 
 repos:
   - repo: https://github.com/pre-commit/mirrors-prettier  # managed by codi

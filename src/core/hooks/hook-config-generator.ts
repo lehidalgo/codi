@@ -137,9 +137,11 @@ export function generateHooksConfig(
     );
   }
 
-  // ── Stage 1: Instant filename / pattern checks ───────────────────────────
-  // These reject obvious problems in milliseconds before any file I/O or
-  // tool invocations. Always run first so the hook exits fast on bad input.
+  // ── Stage 1: Fast filename / pattern / lightweight content checks ────────
+  // Reject obvious problems quickly: filename pattern checks, plus a fast
+  // line-by-line scan for git merge-conflict markers. No compilation or
+  // external tool startup cost. Always run first so the hook exits fast
+  // on bad input.
 
   allHooks.push(
     metaHook({

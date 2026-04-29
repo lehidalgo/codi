@@ -178,7 +178,9 @@ function renderHookDiagnosticsTable(diagnostics: DependencyDiagnostic[]): void {
 export function registerDoctorCommand(program: Command): void {
   program
     .command("doctor")
-    .description("Check project health: version, generated files, config validity")
+    .description(
+      "Check project health: version, generated files, config validity, drift, hook tool availability (--hooks)",
+    )
     .option("--ci", "Exit non-zero on any failure (for CI/hooks)")
     .option("--hooks", "Show per-hook tool availability diagnostics")
     .action(async (cmdOptions: Record<string, unknown>) => {
