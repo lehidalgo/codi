@@ -55,6 +55,22 @@ describe("installHooks", () => {
     }
   });
 
+  it("writes codi-conflict-marker-check.mjs when conflictMarkerCheck is true", async () => {
+    const result = await installHooks(baseOptions({ runner: "none", conflictMarkerCheck: true }));
+    expect(result.ok).toBe(true);
+    const scriptPath = path.join(
+      tmpDir,
+      ".git",
+      "hooks",
+      `${PROJECT_NAME}-conflict-marker-check.mjs`,
+    );
+    const stat = await fs.stat(scriptPath);
+    expect(stat.isFile()).toBe(true);
+    const content = await fs.readFile(scriptPath, "utf-8");
+    expect(content).toContain("MARKER_RE");
+    expect(content).toContain("Git merge-conflict markers detected");
+  });
+
   it("returns Result with file paths and missingDeps for standalone installation", async () => {
     const result = await installHooks(baseOptions());
 

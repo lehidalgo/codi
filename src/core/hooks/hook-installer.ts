@@ -18,6 +18,7 @@ import {
   SKILL_PATH_WRAP_CHECK_TEMPLATE,
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import { CONFLICT_MARKER_CHECK_TEMPLATE } from "./conflict-marker-template.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
 import { renderShellHooks } from "./renderers/shell-renderer.js";
 import {
@@ -68,6 +69,7 @@ export interface InstallOptions {
   skillResourceCheck?: boolean;
   skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
+  conflictMarkerCheck?: boolean;
   versionBump?: boolean;
   versionVerify?: boolean;
   brandSkillValidation?: boolean;
@@ -200,6 +202,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, junkCheckPath));
+  }
+  if (options.conflictMarkerCheck) {
+    const cmPath = path.join(hookDir, `${PROJECT_NAME}-conflict-marker-check.mjs`);
+    await fs.writeFile(cmPath, CONFLICT_MARKER_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, cmPath));
   }
   if (options.versionBump) {
     const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);

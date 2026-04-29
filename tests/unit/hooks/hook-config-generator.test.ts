@@ -149,6 +149,7 @@ describe("generateHooksConfig", () => {
         h.name !== "skill-resource-check" &&
         h.name !== "skill-path-wrap-check" &&
         h.name !== "staged-junk-check" &&
+        h.name !== "conflict-marker-check" &&
         h.name !== "template-wiring-check" &&
         h.name !== "doc-naming-check" &&
         h.name !== "version-bump" &&

@@ -774,3 +774,6 @@ console.error('  git rm --cached ' + junk.join(' '));
 console.error('And add them to .gitignore if needed.');
 process.exit(1);
 `;
+
+// CONFLICT_MARKER_CHECK_TEMPLATE moved to ./conflict-marker-template.ts
+// (kept hook-templates.ts under the per-file LOC limit).

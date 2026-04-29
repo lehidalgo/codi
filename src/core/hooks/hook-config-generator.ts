@@ -59,6 +59,7 @@ export interface HooksConfig {
   skillResourceCheck: boolean;
   skillPathWrapCheck: boolean;
   stagedJunkCheck: boolean;
+  conflictMarkerCheck: boolean;
   versionBump: boolean;
   versionVerify: boolean;
   brandSkillValidation: boolean;
@@ -145,6 +146,15 @@ export function generateHooksConfig(
       name: "staged-junk-check",
       entry: `node .git/hooks/${PROJECT_NAME}-staged-junk-check.mjs`,
       files: "**",
+    }),
+  );
+
+  allHooks.push(
+    metaHook({
+      name: "conflict-marker-check",
+      entry: `node .git/hooks/${PROJECT_NAME}-conflict-marker-check.mjs`,
+      files: "**/*",
+      category: "meta",
     }),
   );
 
@@ -351,6 +361,7 @@ export function generateHooksConfig(
     skillResourceCheck: authoringContext,
     skillPathWrapCheck: authoringContext,
     stagedJunkCheck: true,
+    conflictMarkerCheck: true,
     versionBump,
     versionVerify: versionBump,
     brandSkillValidation: authoringContext,
