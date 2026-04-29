@@ -4,9 +4,56 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [2.14.0] - 2026-04-29
+
+### Fixed
+
+- **Per-language pre-commit hooks no longer lint vendored agent content** in `.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.windsurf/`, `.cline/`. The YAML `exclude:` regex previously covered only `.codi/`; the six other agent dirs are now part of a single source of truth (`src/core/hooks/exclusions.ts`) consumed by both the YAML renderer and the file-size check template.
+- **Pre-commit YAML insertion no longer corrupts `.pre-commit-config.yaml`** when the project already had `repos:` entries with nested `hooks:` lists. The legacy text-based renderer (`findReposInsertionPoint`) overwrote `listIndent` on every nested list item, causing the generated Codi block to land **inside** the external repo's `hooks:` list and produce invalid YAML. The function now locks `listIndent` to the first list item it encounters under `repos:` and never reassigns it. The renderer was subsequently superseded by a YAML AST round-trip implementation (see Changed).
+
+### Changed
+
+- **Pre-commit framework runner emits canonical upstream `repo:` references with pinned `rev:` and `additional_dependencies` where required** — `astral-sh/ruff-pre-commit`, `pre-commit/mirrors-mypy`, `PyCQA/bandit`, `pre-commit/mirrors-prettier`, `gitleaks/gitleaks`, `alessandrojcm/commitlint-pre-commit-hook`, `koalaman/shellcheck-precommit`. Codi's own `.mjs` scripts remain `repo: local`. Users now get isolated tool envs, `pre-commit autoupdate` compatibility, and proper version pinning out of the box.
+- **`.pre-commit-config.yaml` write path is now a YAML AST round-trip via the `yaml` package** — Codi-managed entries carry a `# managed by codi` comment marker on their `repo:` line. On regeneration: non-marked entries pass through untouched, marked entries are rebuilt from the registry, and **user-edited `rev:` pins on marked entries are preserved**. Malformed YAML triggers a `.pre-commit-config.yaml.codi-backup` write before regeneration. Idempotent: re-running with no changes produces byte-identical output and skips the write.
+- **Default Python type checker is now `basedpyright`** (PyPI wheel, no npm dependency) when no project signals point elsewhere. Auto-detection picks `mypy` when `[tool.mypy]` / `mypy.ini` / Django / SQLAlchemy / `django-stubs` is present, `basedpyright` for FastAPI / pydantic / SQLModel projects or codebases over 20k Python LOC. The previous default was `npx pyright`, which forced an npm dependency on pure-Python repos.
+- **Type-checking (`tsc`, `mypy`, `basedpyright`, `pyright`, `dotnet-build`, `phpstan`) and full test suites default to `pre-push` stage** instead of `pre-commit`. Override via the new `commit_type_check` / `commit_test_run` flags or by editing `.codi/flags.yaml` directly. Industry consensus is to keep commits under 5s; the upstream `pre-commit` project explicitly rejects pytest as a pre-commit hook.
+- **Bandit invoked with `-lll` (high severity only)** by default and `additional_dependencies: ["bandit[toml]"]` so `[tool.bandit]` configuration in `pyproject.toml` works without separate setup. Install hint corrected to `pip install "bandit[toml]"`.
+- **Prettier scope expanded** to `**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,mdx,yaml,yml,css,scss,html}` (was `*.{ts,tsx,js,jsx}`).
+- **Generated `.pre-commit-config.yaml` includes top-level keys**: `default_install_hook_types: [pre-commit, commit-msg, pre-push]`, `default_language_version: {python: python3.12, node: '22'}`, `minimum_pre_commit_version: '3.5.0'`, and a global `exclude:` derived from the `VENDORED_DIRS` SSoT (see Fixed entry above). Existing user values are never overwritten.
+- **Hook registry split into per-language modules** under `src/core/hooks/registry/` (one file per language plus `global.ts` and a barrel `index.ts`). `src/core/hooks/hook-registry.ts` becomes a thin backward-compat shim. New `HookSpec` shape replaces flat `HookEntry` (`HookEntry` retained as a type alias). Each spec carries explicit `shell` and `preCommit` emission descriptors so each renderer reads its own field instead of sharing ambiguous fields.
 
 ### Added
+
+- **Conflict-marker detection** in `codi validate` and as a new global pre-commit hook (`conflict-marker-check`). `validate` scans rule, skill, and agent content for `<<<<<<<` / `=======` / `>>>>>>>` / `|||||||` (diff3) markers and emits `E_CONFLICT_MARKERS` with file and line. The pre-commit hook script (`codi-conflict-marker-check.mjs`) blocks commits containing markers in any non-binary staged file. Both consumers share a pure scanner in `src/core/hooks/conflict-markers.ts`.
+- **`codi doctor --hooks`** mode that lists per-hook tool availability with severity (ok / warning / error), category, and install hint. Exits non-zero if any required hook tool is missing. Uses the existing `checkHookDependencies` infrastructure; complements `installMissingDeps` which runs at `codi init` time.
+- **Batched install hints in `installMissingDeps`**: missing pip / brew / gem / go / cargo / rustup tools are now grouped into single commands per package manager (`pip install ruff pyright` instead of two separate fragments). cargo and rustup are kept as separate groups since rustup components are not crates.
+- **Four new tooling-default flags**, all with default value `auto`:
+  - `python_type_checker`: `auto | mypy | basedpyright | pyright | off`
+  - `js_format_lint`: `auto | eslint-prettier | biome | off`
+  - `commit_type_check`: `auto | on | off` (default resolves to `off` — defer to pre-push)
+  - `commit_test_run`: `auto | on | off` (default resolves to `off` — industry default)
+
+  `auto` is resolved at `codi init` / `codi generate` time by `src/core/hooks/auto-detection.ts`, which reads `pyproject.toml`, `requirements.txt`, `package.json` (deps + workspaces signal), counts python/ts/js LOC, and probes for `mypy.ini`, `pyrightconfig.json`, `biome.json`, `.eslintrc`, `.prettierrc`. The four flags are added to all six builtin presets (minimal, balanced, strict, fullstack, development, power-user).
+
+- **Biome registry entry** as the alternative to eslint+prettier for JS/TS lint and format. Upstream hook is `biomejs/pre-commit` v0.6.1 with `additionalDependencies: ["@biomejs/biome@2.3.0"]`. When `js_format_lint=biome` is set, the hook-config-generator drops eslint and prettier from the spec list and emits the Biome `biome-check --write` hook instead.
+
+- **Interactive wizard summary screen** at the end of `codi init`. After language detection, Codi shows the four auto-resolved tooling defaults with their reasoning signals, then offers `Accept (Enter)` / `Customize each` / `Skip pre-commit hooks entirely`. Customize walks one prompt per flag with the auto-pick pre-highlighted; Skip bypasses hook installation entirely. The accepted picks are merged into `.codi/flags.yaml` so subsequent `codi generate` runs honour them.
+
+- **Commitlint global hook** (`alessandrojcm/commitlint-pre-commit-hook` with `additionalDependencies: [@commitlint/config-conventional]`) wired to the `commit-msg` stage, gated by the existing commit-msg-validation infrastructure.
+
+- **Polyglot integration test** (`tests/integration/hook-install-precommit.test.ts`) covering: TS+Python managed-entries emission, migration from the legacy text-marker block, user-pinned `rev:` preservation, and malformed-YAML backup behaviour.
+
+- **E2E test** (`tests/e2e/precommit-multilanguage.test.ts`) that pipes the rendered config through `pre-commit validate-config`. Auto-skipped when `pre-commit` is not on PATH; CI now installs it via `pip install pre-commit` in `.github/workflows/ci.yml`.
+
+### Migration
+
+On first `codi generate` after upgrading, Codi:
+
+1. Strips any legacy `# Codi hooks: BEGIN ... END` text-marker block from your `.pre-commit-config.yaml` (and the older column-zero broken form).
+2. If your `.pre-commit-config.yaml` is malformed, copies it to `.pre-commit-config.yaml.codi-backup` and rewrites from scratch.
+3. Re-emits Codi-managed entries with the new layout (upstream `repo:` references for canonical tools, pinned `rev:`, top-level keys). Your manually-edited `rev:` values on Codi-managed entries are preserved.
+
+The four new flags default to `auto` — existing projects do not need to set them. To override the auto-resolved values, either run the interactive wizard during `codi init` (Customize / Skip options) or edit `.codi/flags.yaml` directly between runs.
 
 - **Hub: "Customize codi setup" entry** — when `.codi/` exists, the first hub entry now reads "Customize codi setup" and routes directly into the modify menu, skipping the previous "Force reinitialize? Yes/No" prompt that hid the modify-mode wizard. When `.codi/` is absent, the entry stays "Initialize project". Selecting "Customize codi setup" opens a top-level dispatcher: customize current artifacts, add from local directory / ZIP / GitHub repo, or replace preset (advanced).
 - **Add artifacts from external source** — new workflow under "Customize codi setup". Connect to a local directory, ZIP file, or public GitHub repository; codi walks the source for `rules/`, `skills/`, `agents/`, `mcp-servers/` and lists every artifact found. Per-type sequential multi-select (Rules → Skills → Agents → MCP servers) matching the regular init wizard's pattern. Per-collision prompts (keep current / overwrite / rename with `-from-<source>` suffix) with an "apply to remaining" affordance. Externally-added artifacts are recorded in `artifact-manifest.json` with `managedBy: user` and a new `source:` provenance field, so subsequent `codi update` runs leave them untouched.

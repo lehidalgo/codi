@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -31,7 +31,6 @@
     "test:e2e": "vitest run tests/e2e",
     "test:pre-commit": "vitest run tests/unit tests/integration",
     "test:pre-push": "vitest run tests/release",
-    "baseline:update": "vitest run tests/release/generate-baseline.test.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit",
@@ -82,6 +81,7 @@
     "gray-matter": "^4.0.3",
     "picocolors": "^1.1.0",
     "pptxgenjs": "^4.0.1",
+    "smol-toml": "^1.6.1",
     "yaml": "^2.8.2",
     "zod": "^4.3.6"
   },

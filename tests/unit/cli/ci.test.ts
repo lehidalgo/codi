@@ -2,15 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { ciHandler } from "#src/cli/ci.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("ci command handler", () => {
   let tmpDir: string;
@@ -42,6 +38,15 @@ describe("ci command handler", () => {
       'name: test\nversion: "1"\n',
       "utf-8",
     );
+
+    // Install fake hooks so the new hook-installed checks pass
+    const hookDir = path.join(tmpDir, ".git", "hooks");
+    await fs.mkdir(hookDir, { recursive: true });
+    for (const hookName of ["codi-version-bump.mjs", "codi-version-verify.mjs"]) {
+      const p = path.join(hookDir, hookName);
+      await fs.writeFile(p, "#!/usr/bin/env node\n", "utf-8");
+      await fs.chmod(p, 0o755);
+    }
 
     const result = await ciHandler(tmpDir);
 

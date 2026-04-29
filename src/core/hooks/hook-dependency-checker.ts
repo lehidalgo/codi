@@ -59,13 +59,61 @@ const INSTALL_HINTS: Record<string, string> = {
 /** Tools that are npm packages and can be installed via npm/npx */
 const NODE_PACKAGES = new Set(["eslint", "prettier", "tsc", "pyright"]);
 
-function extractToolName(command: string): string {
-  const parts = command.split(/\s+/);
-  // Skip 'npx' prefix to get the actual tool name
-  if (parts[0] === "npx" && parts[1]) {
-    return parts[1];
+/**
+ * Argv-only fallback used when a HookSpec omits `shell.toolBinary`.
+ * Strips npx flag tokens and honors the POSIX `--` end-of-options separator,
+ * so `npx --no -- commitlint --edit` resolves to `commitlint`, not `--no`.
+ *
+ * Production code should call resolveToolBinary(hook) which prefers the
+ * declared toolBinary field. This helper is exported only for backward
+ * compatibility with the legacy `extractToolName(command)` test contract.
+ */
+function parseToolBinaryFromCommand(command: string): string {
+  const tokens = command.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return command;
+
+  // Non-npx command: first token is the binary.
+  if (tokens[0] !== "npx") {
+    return tokens[0]!;
   }
-  return parts[0] ?? command;
+
+  // npx invocation: skip flag tokens until we hit `--` or a positional arg.
+  let i = 1;
+  while (i < tokens.length) {
+    const tok = tokens[i]!;
+    if (tok === "--") {
+      // Everything after `--` is the inner command.
+      return tokens[i + 1] ?? "npx";
+    }
+    if (tok.startsWith("-")) {
+      // npx flags that take an argument: -p / --package consumes the next token.
+      if (tok === "-p" || tok === "--package") {
+        i += 2;
+        continue;
+      }
+      i += 1;
+      continue;
+    }
+    // First non-flag, non-separator token is the binary.
+    return tok;
+  }
+  return "npx";
+}
+
+/**
+ * Resolve the binary that satisfies a hook's runtime dependency.
+ *
+ * Source of truth: HookSpec.shell.toolBinary. We argv-parse the command
+ * only when the spec omits toolBinary (legacy or hand-rolled HookEntry
+ * objects). This eliminates an entire class of bugs where commands like
+ * `npx --no -- commitlint --edit` would otherwise be parsed as `--no`.
+ */
+function resolveToolBinary(hook: HookEntry): string {
+  const declared = hook.shell?.toolBinary;
+  if (declared && declared.trim().length > 0) {
+    return declared.trim();
+  }
+  return parseToolBinaryFromCommand(hook.shell?.command ?? "");
 }
 
 async function resolveToolPath(tool: string): Promise<string | undefined> {
@@ -91,7 +139,7 @@ export async function checkHookDependencies(
   const uniqueEntries: { tool: string; hook: HookEntry; isNodePkg: boolean }[] = [];
 
   for (const hook of hooks) {
-    const tool = extractToolName(hook.command);
+    const tool = resolveToolBinary(hook);
     if (seen.has(tool)) continue;
     seen.add(tool);
     uniqueEntries.push({ tool, hook, isNodePkg: NODE_PACKAGES.has(tool) });
@@ -109,9 +157,13 @@ export async function checkHookDependencies(
       }
       const found = resolvedPath !== undefined;
 
-      // Build installHint: prefer hook's own installHint, fall back to INSTALL_HINTS record
+      // Prefer hook's own installHint, fall back to INSTALL_HINTS record when
+      // missing or empty. (HookSpec requires installHint to be set, but allows
+      // an empty command string for hooks that have no install action — e.g.
+      // Codi-internal .mjs scripts.)
+      const ownHint = hook.installHint && hook.installHint.command ? hook.installHint : undefined;
       const installHint: InstallHint | undefined =
-        hook.installHint ?? (INSTALL_HINTS[tool] ? { command: INSTALL_HINTS[tool]! } : undefined);
+        ownHint ?? (INSTALL_HINTS[tool] ? { command: INSTALL_HINTS[tool]! } : undefined);
 
       let severity: DependencyDiagnostic["severity"] = "ok";
       if (!found) {
@@ -145,4 +197,6 @@ export function filterMissing(diagnostics: DependencyDiagnostic[]): DependencyCh
     }));
 }
 
-export { extractToolName, NODE_PACKAGES };
+// Backward compatibility: existing tests import `extractToolName(command: string)`.
+// New code should use `resolveToolBinary(hook)` which prefers HookSpec.shell.toolBinary.
+export { resolveToolBinary, parseToolBinaryFromCommand as extractToolName, NODE_PACKAGES };

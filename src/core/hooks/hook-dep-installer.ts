@@ -3,28 +3,90 @@ import { execFileAsync } from "#src/utils/exec.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import type { Logger } from "../output/logger.js";
 
-interface InstallGroup {
+export interface InstallGroup {
   label: string;
   command: string;
   args: string[];
   deps: DependencyCheck[];
 }
 
+export type PackageManager = "npm" | "pip" | "brew" | "gem" | "go" | "cargo" | "rustup" | "manual";
+
+/**
+ * Infer the package manager from an installHint command string.
+ * Returns "manual" for hints that don't match a known prefix.
+ *
+ * cargo and rustup are kept separate because their command surfaces
+ * are not interchangeable (rustup components are not crates).
+ */
+export function inferPackageManager(installHint: string): PackageManager {
+  const trimmed = installHint.trimStart();
+  if (trimmed.startsWith("pip install ") || trimmed.startsWith("pip3 install ")) return "pip";
+  if (trimmed.startsWith("brew install ")) return "brew";
+  if (trimmed.startsWith("gem install ")) return "gem";
+  if (trimmed.startsWith("go install ")) return "go";
+  if (trimmed.startsWith("cargo install ")) return "cargo";
+  if (trimmed.startsWith("rustup component add ")) return "rustup";
+  return "manual";
+}
+
+/**
+ * Extract package names from an installHint given its inferred manager.
+ * Returns empty array when the manager is "manual" or "npm" (npm is handled separately).
+ */
+export function extractPackagesFromHint(installHint: string, pm: PackageManager): string[] {
+  if (pm === "manual" || pm === "npm") return [];
+  const trimmed = installHint.trimStart();
+  const prefixes: Record<Exclude<PackageManager, "manual" | "npm">, string[]> = {
+    pip: ["pip install ", "pip3 install "],
+    brew: ["brew install "],
+    gem: ["gem install "],
+    go: ["go install "],
+    cargo: ["cargo install "],
+    rustup: ["rustup component add "],
+  };
+  const list = prefixes[pm];
+  for (const p of list) {
+    if (trimmed.startsWith(p)) {
+      return trimmed.slice(p.length).split(/\s+/).filter(Boolean);
+    }
+  }
+  return [];
+}
+
+function pmCommandPrefix(pm: PackageManager): string {
+  switch (pm) {
+    case "pip":
+      return "pip install";
+    case "brew":
+      return "brew install";
+    case "gem":
+      return "gem install";
+    case "go":
+      return "go install";
+    case "cargo":
+      return "cargo install";
+    case "rustup":
+      return "rustup component add";
+    default:
+      return "";
+  }
+}
+
 /**
  * Groups missing dependencies by their package manager for batch installation.
+ * npm deps are batched into a single `npm install -D` command. Non-npm deps
+ * are batched per package manager (pip / brew / gem / go / cargo / rustup);
+ * unknown hints are kept as separate manual entries.
  */
-function groupByPackageManager(deps: DependencyCheck[]): InstallGroup[] {
+export function groupByPackageManager(deps: DependencyCheck[]): InstallGroup[] {
   const npmDeps = deps.filter((d) => d.isNodePackage);
   const otherDeps = deps.filter((d) => !d.isNodePackage);
 
   const groups: InstallGroup[] = [];
 
   if (npmDeps.length > 0) {
-    const packages = npmDeps.map((d) => {
-      // tsc is the binary, but the npm package is 'typescript'
-      if (d.name === "tsc") return "typescript";
-      return d.name;
-    });
+    const packages = npmDeps.map((d) => (d.name === "tsc" ? "typescript" : d.name));
     groups.push({
       label: `npm install -D ${packages.join(" ")}`,
       command: "npm",
@@ -33,13 +95,28 @@ function groupByPackageManager(deps: DependencyCheck[]): InstallGroup[] {
     });
   }
 
-  // Non-npm deps can't be batch-installed — list them separately
+  // Group non-npm deps by inferred package manager
+  const byPm = new Map<PackageManager, DependencyCheck[]>();
   for (const dep of otherDeps) {
+    const pm = inferPackageManager(dep.installHint);
+    const list = byPm.get(pm) ?? [];
+    list.push(dep);
+    byPm.set(pm, list);
+  }
+
+  for (const [pm, batchDeps] of byPm.entries()) {
+    if (pm === "manual") {
+      for (const dep of batchDeps) {
+        groups.push({ label: dep.installHint, command: "", args: [], deps: [dep] });
+      }
+      continue;
+    }
+    const allPackages = batchDeps.flatMap((d) => extractPackagesFromHint(d.installHint, pm));
     groups.push({
-      label: dep.installHint,
+      label: `${pmCommandPrefix(pm)} ${allPackages.join(" ")}`,
       command: "",
       args: [],
-      deps: [dep],
+      deps: batchDeps,
     });
   }
 

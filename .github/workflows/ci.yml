@@ -18,7 +18,22 @@ jobs:
           node-version: 24
           cache: npm
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pre-commit (for E2E config-validation test)
+        run: pip install pre-commit
+
       - run: npm ci
+
+      - name: Verify artifact version bumps
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=50
+          node scripts/verify-artifact-versions.mjs \
+            --base origin/${{ github.base_ref }} \
+            --head HEAD
 
       - name: Lint
         run: npm run lint

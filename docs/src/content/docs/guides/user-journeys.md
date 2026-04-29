@@ -654,10 +654,19 @@ codi doctor --ci
 | Documentation sync | Doc stamp up to date (if docs enabled) |
 | Pre-commit hooks | Hooks installed and executable |
 
+**Per-hook tool availability (`--hooks` mode):**
+
+```bash
+codi doctor --hooks
+```
+
+Switches the command into a focused diagnostic that lists every configured pre-commit hook with its current tool status: `ok`, `warning`, or `error`. Required tools that are missing produce an `error` row and a non-zero exit code. Missing optional tools produce a `warning` and exit 0. Each row includes the install-hint command (e.g., `brew install gitleaks`) so users can copy-paste the fix.
+
 **Gotchas:**
 
 - `--ci` flag causes a non-zero exit on drift or version failures, which fails the pipeline.
 - Content size and hook warnings are informational in both modes; they never cause a non-zero exit.
+- `--hooks` is its own diagnostic — it does NOT run the standard checks above. Use it specifically when triaging hook tool availability.
 
 ---
 
@@ -675,6 +684,7 @@ codi validate
 - Every rule `.md` has valid frontmatter (name, description, managed_by fields)
 - Every skill `SKILL.md` has valid frontmatter
 - Every agent `.md` has valid frontmatter
+- Rule, skill, and agent content does not contain unresolved git merge-conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`, `|||||||` for diff3) — emits `E_CONFLICT_MARKERS` with file and line if found
 
 Content size warnings (artifact > 6,000 chars or total > 12,000 chars) are reported but do not affect the exit code.
 

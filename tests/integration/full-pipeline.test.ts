@@ -12,10 +12,6 @@ vi.mock("#src/core/version/template-hash-registry.js", () => ({
   getAllFingerprints: vi.fn(() => []),
   _resetRegistryCache: vi.fn(),
 }));
-vi.mock("#src/core/scaffolder/template-registry-check.js", () => ({
-  checkTemplateRegistry: vi.fn().mockReturnValue([]),
-}));
-
 // Integration tests do real I/O; under 150 parallel workers contention can
 // exceed the default 10s timeout.
 vi.setConfig({ testTimeout: 30_000 });

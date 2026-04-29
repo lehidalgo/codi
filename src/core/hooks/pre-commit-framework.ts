@@ -5,6 +5,9 @@ import { ok, err } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import type { HookEntry } from "./hook-registry.js";
 import { PROJECT_NAME_DISPLAY } from "#src/constants.js";
+import { renderPreCommitConfig } from "./renderers/yaml-renderer.js";
+import { loadOrEmptyDoc } from "./yaml-document.js";
+import { stripLegacyTextMarkers } from "./legacy-cleanup.js";
 
 interface HookFileResult {
   files: string[];
@@ -72,27 +75,29 @@ interface PreCommitHookYaml {
 }
 
 function renderPreCommitHook(h: HookEntry, indent: string): PreCommitHookYaml {
+  // Legacy renderer for the text-based path. The yaml-renderer (commit 6) will
+  // supersede this. For the duration of the migration we read entry/files/
+  // pass_filenames from the new HookSpec.shell + HookSpec.files fields.
+  const entry = h.shell.command;
   const lines: string[] = [
     `${indent}- id: ${h.name}`,
     `${indent}  name: ${h.name}`,
-    `${indent}  entry: ${h.command}`,
+    `${indent}  entry: ${entry}`,
     `${indent}  language: system`,
   ];
 
-  const regex = globToPythonRegex(h.stagedFilter);
+  const regex = globToPythonRegex(h.files);
   if (regex) {
     lines.push(`${indent}  files: '${regex.replace(/'/g, "''")}'`);
   } else {
-    // No file filter — run once per commit
     lines.push(`${indent}  always_run: true`);
   }
 
-  if (h.passFiles === false || !regex) {
+  if (h.shell.passFiles === false || !regex) {
     lines.push(`${indent}  pass_filenames: false`);
   }
 
-  if (h.stagedFilter === "") {
-    // Global hooks tied to no files at all
+  if (h.files === "") {
     lines.push(`${indent}  always_run: true`);
   }
 
@@ -183,79 +188,76 @@ export function stripPreCommitGeneratedBlock(content: string): string {
 export function findReposInsertionPoint(
   lines: string[],
 ): { insertAt: number; listIndent: string } | null {
-  // Find the line that starts the repos: block (root-level key).
   const reposIdx = lines.findIndex((l) => /^repos\s*:\s*$/.test(l));
   if (reposIdx === -1) return null;
 
-  // Default list indent for pre-commit is two spaces.
-  let listIndent = "  ";
+  // Lock the list indent to the FIRST list item under repos: encountered.
+  // Nested list items inside an existing repo's hooks: must NOT redefine it,
+  // otherwise the inserted block lands inside that repo's hooks: list (C1).
+  let listIndent: string | null = null;
   let lastMemberIdx = reposIdx;
 
   for (let i = reposIdx + 1; i < lines.length; i++) {
     const line = lines[i]!;
-    if (line === "" || /^\s*#/.test(line)) {
-      // blank or comment inside the block — keep scanning
-      continue;
-    }
-    // Stop at the next root-level key (no leading whitespace, ends with ":").
+    if (line === "" || /^\s*#/.test(line)) continue;
     if (/^[A-Za-z_][\w-]*\s*:/.test(line)) break;
 
     const indentMatch = line.match(/^(\s+)- /);
-    if (indentMatch) {
+    if (indentMatch && listIndent === null) {
       listIndent = indentMatch[1]!;
-      lastMemberIdx = i;
-      continue;
     }
-    // Lines that belong to an existing list item (further indented than the
-    // list indent). Track them as part of the current member.
     if (/^\s+\S/.test(line)) {
       lastMemberIdx = i;
     }
   }
 
-  return { insertAt: lastMemberIdx + 1, listIndent };
+  return { insertAt: lastMemberIdx + 1, listIndent: listIndent ?? "  " };
 }
 
+/**
+ * Write the .pre-commit-config.yaml using the YAML AST round-trip renderer.
+ * On parse error, the existing content is backed up to
+ * .pre-commit-config.yaml.codi-backup before regenerating from scratch.
+ *
+ * The legacy text-based renderer (renderPreCommitBlock /
+ * findReposInsertionPoint / stripPreCommitGeneratedBlock) is retained as a
+ * named export for the legacy-cleanup migration path and historical tests,
+ * but is no longer called by this function.
+ */
 export async function installPreCommitFramework(
   projectRoot: string,
   hooks: HookEntry[],
 ): Promise<Result<HookFileResult>> {
   const configPath = path.join(projectRoot, ".pre-commit-config.yaml");
+  const backupPath = configPath + ".codi-backup";
 
   try {
-    let existing = "";
+    let existing: string | null = null;
     try {
       existing = await fs.readFile(configPath, "utf-8");
     } catch {
-      // file doesn't exist yet
+      existing = null;
     }
 
-    const cleaned = stripPreCommitGeneratedBlock(existing);
-    const cleanedLines = cleaned.replace(/\n+$/, "").split("\n");
-
-    let nextContent: string;
-    const insertion = findReposInsertionPoint(cleanedLines);
-
-    if (insertion) {
-      const block = renderPreCommitBlock(hooks, insertion.listIndent);
-      const before = cleanedLines.slice(0, insertion.insertAt);
-      const after = cleanedLines.slice(insertion.insertAt);
-      // Ensure a blank line before the generated block for readability.
-      if (before.length > 0 && before[before.length - 1] !== "") {
-        before.push("");
+    // Parse-pre-flight: if the existing file is malformed YAML (after legacy-
+    // marker stripping), back it up before the renderer falls back to a
+    // fresh document. The renderer swallows parse errors silently, so we
+    // detect them here so the user's old content is never lost.
+    let parseable: string | null = existing;
+    if (existing !== null) {
+      try {
+        loadOrEmptyDoc(stripLegacyTextMarkers(existing));
+      } catch {
+        await fs.writeFile(backupPath, existing, "utf-8");
+        parseable = null;
       }
-      nextContent = [...before, block, ...after].join("\n").replace(/\n+$/, "") + "\n";
-    } else {
-      // No repos: key (empty file or unrelated content). Synthesize a full
-      // document. Preserve any prior user content above repos:.
-      const prefix = cleaned.trim();
-      const block = renderPreCommitBlock(hooks, "  ");
-      const parts: string[] = [];
-      if (prefix.length > 0) {
-        parts.push(prefix, "");
-      }
-      parts.push("repos:", block);
-      nextContent = parts.join("\n").replace(/\n+$/, "") + "\n";
+    }
+
+    const nextContent = renderPreCommitConfig(hooks, parseable);
+
+    if (existing !== null && existing === nextContent) {
+      // Idempotent no-op: skip the write to keep `git status` clean.
+      return ok({ files: [path.relative(projectRoot, configPath)] });
     }
 
     await fs.writeFile(configPath, nextContent, "utf-8");

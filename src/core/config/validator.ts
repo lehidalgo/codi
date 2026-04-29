@@ -12,6 +12,7 @@ import {
   isKnownSkillCategory,
   SUPPORTED_PLATFORMS,
 } from "#src/constants.js";
+import { findConflictMarkers } from "#src/core/hooks/conflict-markers.js";
 
 type SupportedPlatform = (typeof SUPPORTED_PLATFORMS)[number];
 
@@ -23,9 +24,11 @@ function getKnownAdapterIds(): string[] {
 /**
  * Validates a `NormalizedConfig` and returns a list of errors.
  *
- * Checks agent ids against the registered adapter list, validates rule and skill
- * names and sizes, enforces flag references, and checks platform compatibility
- * for skills. Returns an empty array if the config is valid.
+ * Checks agent ids against the registered adapter list, validates rule and
+ * skill names and sizes, enforces flag references, checks platform
+ * compatibility for skills, and rejects rule/skill/agent content containing
+ * unresolved git merge-conflict markers (`E_CONFLICT_MARKERS`). Returns an
+ * empty array if the config is valid.
  *
  * @param config - The normalized config to validate
  * @returns An array of `ProjectError` objects. Empty array means valid.
@@ -48,6 +51,28 @@ export function validateConfig(config: NormalizedConfig): ProjectError[] {
   errors.push(...validateFlags(config));
   errors.push(...validateMetadata(config));
   errors.push(...validateSkillPlatformCompatibility(config));
+  errors.push(...validateNoConflictMarkers(config));
+
+  return errors;
+}
+
+function validateNoConflictMarkers(config: NormalizedConfig): ProjectError[] {
+  const errors: ProjectError[] = [];
+
+  const scan = (kind: string, name: string, content: string): void => {
+    const hits = findConflictMarkers(content);
+    if (hits.length === 0) return;
+    errors.push(
+      createError("E_CONFLICT_MARKERS", {
+        file: `${kind} "${name}"`,
+        line: hits[0]!.line,
+      }),
+    );
+  };
+
+  for (const rule of config.rules) scan("rule", rule.name, rule.content);
+  for (const skill of config.skills) scan("skill", skill.name, skill.content);
+  for (const agent of config.agents) scan("agent", agent.name, agent.content);
 
   return errors;
 }

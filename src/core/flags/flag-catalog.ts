@@ -140,6 +140,61 @@ export const FLAG_CATALOG: Record<string, FlagSpec> = {
     description: "Auto-generate on config change",
     hint: `Automatically regenerate agent configs when ${PROJECT_DIR}/ files change`,
   },
+  python_type_checker: {
+    type: "enum",
+    default: "auto",
+    values: ["auto", "mypy", "basedpyright", "pyright", "off"],
+    hook: null,
+    description: "Python type checker for pre-commit hooks",
+    hint: "Controls which Python type checker is wired into pre-commit hooks. 'auto' inspects pyproject.toml/requirements and project conventions to pick mypy or basedpyright.",
+    valueHints: {
+      auto: "Detect from project signals (django/sqlalchemy → mypy, fastapi/pydantic → basedpyright)",
+      mypy: "Python community reference checker — pure PyPI wheel, slower on cold runs",
+      basedpyright: "Pyright fork on PyPI — fast incremental, no npm dependency",
+      pyright: "Microsoft pyright via npm — requires Node",
+      off: "No Python type checking",
+    },
+  },
+  js_format_lint: {
+    type: "enum",
+    default: "auto",
+    values: ["auto", "eslint-prettier", "biome", "off"],
+    hook: null,
+    description: "JS/TS lint and format toolchain",
+    hint: "Controls which lint+format toolchain is wired for JavaScript and TypeScript. 'auto' respects existing biome.json or .eslintrc; otherwise defaults to eslint+prettier.",
+    valueHints: {
+      auto: "Detect from project config (biome.json → biome, .eslintrc → eslint-prettier)",
+      "eslint-prettier": "ESLint + Prettier — broadest plugin ecosystem",
+      biome: "Biome — single Rust binary, much faster, fewer plugins",
+      off: "No JS/TS linting or formatting",
+    },
+  },
+  commit_type_check: {
+    type: "enum",
+    default: "auto",
+    values: ["auto", "on", "off"],
+    hook: null,
+    description: "Run type checker on pre-commit (vs deferring to pre-push)",
+    hint: "When 'on', the type checker runs on every commit; 'off' defers it to pre-push or CI. 'auto' resolves to 'off' (industry default — pytest team and husky+lint-staged guidance both recommend deferring type-check to pre-push).",
+    valueHints: {
+      auto: "Resolve to 'off' (industry default — defer to pre-push)",
+      on: "Run type checker on every commit (slower commits)",
+      off: "Defer type checker to pre-push (recommended)",
+    },
+  },
+  commit_test_run: {
+    type: "enum",
+    default: "auto",
+    values: ["auto", "on", "off"],
+    hook: null,
+    description: "Run test suite on pre-commit (vs deferring to pre-push)",
+    hint: "When 'on', the full test suite runs on every commit. Industry consensus is to defer this to pre-push or CI to keep commits under 5s. 'auto' resolves to 'off'.",
+    valueHints: {
+      auto: "Resolve to 'off' (industry default)",
+      on: "Run tests on every commit (slow)",
+      off: "Defer tests to pre-push or CI (recommended)",
+    },
+  },
 };
 
 export function buildFlagSchema(catalog: Record<string, FlagSpec>): z.ZodType {

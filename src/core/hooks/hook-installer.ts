@@ -6,8 +6,8 @@ import { createError } from "../output/errors.js";
 import type { HookSetup } from "./hook-detector.js";
 import type { HookEntry } from "./hook-registry.js";
 import type { ResolvedFlags } from "#src/types/flags.js";
+import { RUNNER_TEMPLATE } from "./runner-template.js";
 import {
-  RUNNER_TEMPLATE,
   SECRET_SCAN_TEMPLATE,
   FILE_SIZE_CHECK_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
@@ -18,7 +18,9 @@ import {
   SKILL_PATH_WRAP_CHECK_TEMPLATE,
   STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import { CONFLICT_MARKER_CHECK_TEMPLATE } from "./conflict-marker-template.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
+import { renderShellHooks } from "./renderers/shell-renderer.js";
 import {
   COMMIT_MSG_TEMPLATE,
   PRE_PUSH_DOC_CHECK_TEMPLATE,
@@ -26,6 +28,8 @@ import {
   SKILL_YAML_VALIDATE_TEMPLATE,
 } from "./hook-policy-templates.js";
 import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
+import { VERSION_VERIFY_PRE_PUSH_TEMPLATE } from "./version-verify-pre-push-template.js";
+import { buildVendoredDirsTemplatePatterns } from "./exclusions.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import {
@@ -65,14 +69,23 @@ export interface InstallOptions {
   skillResourceCheck?: boolean;
   skillPathWrapCheck?: boolean;
   stagedJunkCheck?: boolean;
+  conflictMarkerCheck?: boolean;
   versionBump?: boolean;
+  versionVerify?: boolean;
   brandSkillValidation?: boolean;
   docCheck?: boolean;
   docProtectedBranches?: string[];
 }
 
+/**
+ * Build the standalone .git/hooks/pre-commit script body. Hooks are
+ * pre-filtered to those that declare `stages.includes("pre-commit")` so
+ * pre-push and commit-msg specs do not leak into the pre-commit runner.
+ * (The runner also filters at runtime as defense-in-depth.)
+ */
 function buildRunnerScript(hooks: HookEntry[]): string {
-  const hooksJson = JSON.stringify(hooks, null, 2);
+  const preCommitHooks = hooks.filter((h) => h.stages.includes("pre-commit"));
+  const hooksJson = JSON.stringify(preCommitHooks, null, 2);
   return RUNNER_TEMPLATE.replace("{{HOOKS_JSON}}", hooksJson);
 }
 
@@ -81,7 +94,10 @@ function buildSecretScanScript(): string {
 }
 
 function buildFileSizeScript(maxLines: number): string {
-  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines));
+  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines)).replace(
+    "{{VENDORED_DIRS_PATTERNS}}",
+    buildVendoredDirsTemplatePatterns(),
+  );
 }
 
 function buildTemplateWiringScript(): string {
@@ -194,6 +210,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
     });
     files.push(path.relative(options.projectRoot, junkCheckPath));
   }
+  if (options.conflictMarkerCheck) {
+    const cmPath = path.join(hookDir, `${PROJECT_NAME}-conflict-marker-check.mjs`);
+    await fs.writeFile(cmPath, CONFLICT_MARKER_CHECK_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, cmPath));
+  }
   if (options.versionBump) {
     const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);
     const versionBumpScript = buildVersionBumpScript();
@@ -202,6 +226,14 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
       mode: 0o755,
     });
     files.push(path.relative(options.projectRoot, versionBumpPath));
+  }
+  if (options.versionVerify) {
+    const versionVerifyPath = path.join(hookDir, `${PROJECT_NAME}-version-verify.mjs`);
+    await fs.writeFile(versionVerifyPath, VERSION_VERIFY_PRE_PUSH_TEMPLATE, {
+      encoding: "utf-8",
+      mode: 0o755,
+    });
+    files.push(path.relative(options.projectRoot, versionVerifyPath));
   }
   if (options.brandSkillValidation) {
     const brandSkillPath = path.join(hookDir, `${PROJECT_NAME}-brand-skill-validate.mjs`);
@@ -287,14 +319,23 @@ function globToGrepPattern(glob: string): string {
   return `\\.(${extensions.join("|")})$`;
 }
 
+/**
+ * Legacy husky shell renderer. Retained as a byte-for-byte parity baseline
+ * for the test suite. Production code uses `renderShellHooks` from
+ * `./renderers/shell-renderer.js`. Both implementations filter hooks to
+ * those declaring `stages.includes("pre-commit")` — pre-push and commit-msg
+ * specs are routed to their own hook files by the installer.
+ */
 function buildHuskyCommands(hooks: HookEntry[]): string {
+  const stageHooks = hooks.filter((h) => h.stages.includes("pre-commit"));
+
   const lines: string[] = [`STAGED=$(git diff --cached --name-only --diff-filter=ACMR)`];
 
   // Track which variable names hold files modified by formatters
   const modifiedVars: string[] = [];
   let lastLanguage: string | undefined;
 
-  for (const h of hooks) {
+  for (const h of stageHooks) {
     // Insert a language-group comment whenever the language changes
     const currentLang = h.language ?? "";
     if (currentLang !== lastLanguage) {
@@ -302,53 +343,55 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
       lastLanguage = currentLang;
     }
 
-    if (!h.stagedFilter) {
+    const cmd = h.shell.command;
+    const passFiles = h.shell.passFiles;
+    const modifiesFiles = h.shell.modifiesFiles;
+
+    if (!h.files) {
       // Global hook (no filter) — always runs; guard tool presence for required hooks
-      const globalTool = h.command.split(/\s+/)[0]!;
+      const globalTool = cmd.split(/\s+/)[0]!;
       if (h.required === true) {
-        const hint = h.installHint?.command ?? `install ${globalTool}`;
+        const hint = h.installHint.command || `install ${globalTool}`;
         lines.push(
           `if ! command -v ${globalTool} > /dev/null 2>&1; then`,
           `  echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
           `  exit 1`,
           `fi`,
-          h.command,
+          cmd,
         );
       } else {
-        lines.push(h.command);
+        lines.push(cmd);
       }
       continue;
     }
 
-    const grepPattern = globToGrepPattern(h.stagedFilter);
+    const grepPattern = globToGrepPattern(h.files);
     const varName = h.name.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase();
 
     if (!grepPattern) {
       // Catch-all filter (e.g. **/*) — use all staged files directly
-      if (h.passFiles === false) {
-        lines.push(`[ -n "$STAGED" ] && ${h.command}`);
+      if (passFiles === false) {
+        lines.push(`[ -n "$STAGED" ] && ${cmd}`);
       } else {
-        // Use printf + xargs to safely handle filenames with spaces or special chars
-        lines.push(`[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${h.command}`);
+        lines.push(`[ -n "$STAGED" ] && printf '%s\\n' $STAGED | xargs ${cmd}`);
       }
-      if (h.modifiesFiles) modifiedVars.push("STAGED");
+      if (modifiesFiles) modifiedVars.push("STAGED");
       continue;
     }
 
     lines.push(`${varName}=$(echo "$STAGED" | grep -E '${grepPattern}' || true)`);
 
     if (h.required === true) {
-      // Required tool: check presence before running; block commit if missing
-      const tool = h.command.split(/\s+/).find((p) => p !== "npx") ?? h.name;
-      const hint = h.installHint?.command ?? `install ${tool}`;
-      if (h.passFiles === false) {
+      const tool = h.shell.toolBinary;
+      const hint = h.installHint.command || `install ${tool}`;
+      if (passFiles === false) {
         lines.push(
           `if [ -n "$${varName}" ]; then`,
           `  if ! command -v ${tool} > /dev/null 2>&1 && ! [ -f "./node_modules/.bin/${tool}" ]; then`,
           `    echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
           `    exit 1`,
           `  fi`,
-          `  ${h.command}`,
+          `  ${cmd}`,
           `fi`,
         );
       } else {
@@ -358,19 +401,17 @@ function buildHuskyCommands(hooks: HookEntry[]): string {
           `    echo "  ✗ BLOCKING — install ${h.name} to commit: ${hint}"`,
           `    exit 1`,
           `  fi`,
-          `  printf '%s\\n' $${varName} | xargs ${h.command}`,
+          `  printf '%s\\n' $${varName} | xargs ${cmd}`,
           `fi`,
         );
       }
-    } else if (h.passFiles === false) {
-      // Tool uses project config — run without file args when matching files exist
-      lines.push(`[ -n "$${varName}" ] && ${h.command}`);
+    } else if (passFiles === false) {
+      lines.push(`[ -n "$${varName}" ] && ${cmd}`);
     } else {
-      // Use printf + xargs to safely handle filenames with spaces or special chars
-      lines.push(`[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${h.command}`);
+      lines.push(`[ -n "$${varName}" ] && printf '%s\\n' $${varName} | xargs ${cmd}`);
     }
 
-    if (h.modifiesFiles) modifiedVars.push(varName);
+    if (modifiesFiles) modifiedVars.push(varName);
   }
 
   // Re-stage files after formatters modify them on disk
@@ -390,7 +431,7 @@ async function installHusky(
 ): Promise<Result<HookFileResult>> {
   const huskyFile = path.join(projectRoot, ".husky", "pre-commit");
 
-  const commands = buildHuskyCommands(hooks);
+  const commands = renderShellHooks(hooks, "husky");
   const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n${commands}\n`;
 
   try {

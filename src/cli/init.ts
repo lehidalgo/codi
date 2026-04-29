@@ -14,7 +14,7 @@ import {
 } from "../constants.js";
 import { getBuiltinPresetDefinition, getBuiltinPresetNames } from "../templates/presets/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
-import { generate } from "../core/generator/generator.js";
+import { applyConfiguration } from "../core/generator/apply.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
@@ -31,22 +31,26 @@ import { initFromOptions, handleOutput } from "./shared.js";
 import {
   inferHookType,
   createProjectStructure,
+  ensureProjectDirs,
+  persistFlags,
+  persistManifest,
+  recordPresetArtifactStates,
+  resolveFlagsForPreset,
   syncManifestOnInit,
   recordPresetLock,
+  applyToolingPicks,
 } from "./init-helpers.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
+import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
 import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
-import { checkTemplateRegistry } from "../core/scaffolder/template-registry-check.js";
+import { promptToolingDefaults, type ToolingPromptResult } from "./wizard-summary.js";
 import type { GlobalOptions } from "./shared.js";
 import { VERSION } from "../index.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
-import { StateManager } from "../core/config/state.js";
-import type { ArtifactFileState } from "../core/config/state.js";
-import { hashContent } from "../utils/hash.js";
 import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
 import { runArtifactSelectionFromSource } from "./init-wizard-modify-add.js";
 import {
@@ -130,16 +134,6 @@ export async function initHandler(
 ): Promise<CommandResult<InitData>> {
   const log = Logger.getInstance();
 
-  const registryErrors = checkTemplateRegistry();
-  if (registryErrors.length > 0) {
-    console.error(`\n[codi] Template registry integrity check failed:`);
-    for (const e of registryErrors) console.error(`  • ${e}`);
-    console.error(
-      `\nThe CLI cannot run with broken templates. This is a bug — please report it.\n`,
-    );
-    process.exit(1);
-  }
-
   const configDir = resolveProjectDir(projectRoot);
 
   let isUpdate = false;
@@ -195,6 +189,7 @@ export async function initHandler(
   let skillTemplates: string[] = [];
   let agentTemplates: string[] = [];
   let mcpServerTemplates: string[] = [];
+  let tooling: ToolingPromptResult | null = null;
 
   if (isInteractive(options)) {
     const detectedAdapters = await detectAdapters(projectRoot);
@@ -250,6 +245,18 @@ export async function initHandler(
     // Use wizard language selection for hooks (overrides auto-detection)
     stack = wizardResult.languages;
 
+    // Tooling defaults summary screen — runs once, after language selection.
+    // The user sees the auto-resolved python/js/typecheck/test picks and can
+    // press Enter (accept), c (customize each), or s (skip hooks entirely).
+    // The accepted picks are merged into resolvedFlags below before
+    // generateHooksConfig is called, so they reach the renderer.
+    try {
+      tooling = await promptToolingDefaults(projectRoot);
+    } catch {
+      // Non-interactive environment or prompt cancelled — fall back to auto.
+      tooling = null;
+    }
+
     if (
       wizardResult.configMode === "zip" ||
       wizardResult.configMode === "github" ||
@@ -265,7 +272,17 @@ export async function initHandler(
       mcpServerTemplates = wizardResult.mcpServers;
     }
 
-    if (!isUpdate) {
+    if (isUpdate) {
+      // Update flow: persist the wizard's collected agents, version-pin, and
+      // flag selections so generate() sees them. Skips LICENSE.txt — that's a
+      // one-shot bootstrap concern owned by createProjectStructure.
+      await ensureProjectDirs(configDir);
+      await persistManifest(configDir, {
+        agents: agentIds,
+        versionPin: wizardResult.versionPin,
+      });
+      await persistFlags(configDir, resolveFlagsForPreset(presetName, wizardResult.flags));
+    } else {
       await createProjectStructure(
         configDir,
         agentIds,
@@ -402,7 +419,14 @@ export async function initHandler(
     log.info(`Using agents: ${agentIds.join(", ")}`);
     // Non-interactive always uses a named artifact preset
     artifactPresetName = presetName;
-    if (!isUpdate) {
+    if (isUpdate) {
+      // Update flow (non-interactive): persist agents/preset choice so a
+      // re-run with `--agents` actually changes the manifest. versionPin is
+      // not exposed in non-interactive mode, so leave it untouched.
+      await ensureProjectDirs(configDir);
+      await persistManifest(configDir, { agents: agentIds });
+      await persistFlags(configDir, resolveFlagsForPreset(presetName));
+    } else {
       await createProjectStructure(configDir, agentIds, presetName, false);
     }
 
@@ -416,7 +440,26 @@ export async function initHandler(
 
   const forceArtifacts = options.force || options.onConflict === "keep-incoming";
 
-  for (const template of ruleTemplates) {
+  // In update mode, only scaffold artifacts that are new in the selection.
+  // Already-installed artifacts would otherwise raise noisy "already exists"
+  // warnings from the scaffolders. Removals are handled by syncManifestOnInit
+  // → removeDeselectedArtifacts further below.
+  const subtract = (next: string[], prev: string[] | undefined): string[] =>
+    prev && prev.length > 0 ? next.filter((n) => !prev.includes(n)) : next;
+  const additiveRules = forceArtifacts
+    ? ruleTemplates
+    : subtract(ruleTemplates, existingSelections?.rules);
+  const additiveSkills = forceArtifacts
+    ? skillTemplates
+    : subtract(skillTemplates, existingSelections?.skills);
+  const additiveAgents = forceArtifacts
+    ? agentTemplates
+    : subtract(agentTemplates, existingSelections?.agents);
+  const additiveMcps = forceArtifacts
+    ? mcpServerTemplates
+    : subtract(mcpServerTemplates, existingSelections?.mcpServers);
+
+  for (const template of additiveRules) {
     const result = await createRule({
       name: template,
       configDir,
@@ -431,7 +474,7 @@ export async function initHandler(
   }
 
   const projectName = path.basename(projectRoot);
-  for (const template of skillTemplates) {
+  for (const template of additiveSkills) {
     const result = await createSkill({
       name: template,
       configDir,
@@ -446,7 +489,7 @@ export async function initHandler(
     }
   }
 
-  for (const template of agentTemplates) {
+  for (const template of additiveAgents) {
     const result = await createAgent({
       name: template,
       configDir,
@@ -460,7 +503,7 @@ export async function initHandler(
     }
   }
 
-  for (const template of mcpServerTemplates) {
+  for (const template of additiveMcps) {
     const result = await createMcpServer({
       name: template,
       configDir,
@@ -477,55 +520,14 @@ export async function initHandler(
   // Record preset artifacts in state for drift detection (only for named artifact presets)
   if (artifactPresetName) {
     try {
-      const stateManager = new StateManager(configDir, projectRoot);
-      const now = new Date().toISOString();
-      const artifactStates: ArtifactFileState[] = [];
-
-      for (const name of ruleTemplates) {
-        const filePath = path.join(configDir, "rules", `${name}.md`);
-        try {
-          const content = await fs.readFile(filePath, "utf-8");
-          artifactStates.push({
-            path: path.relative(projectRoot, filePath),
-            hash: hashContent(content),
-            preset: artifactPresetName,
-            timestamp: now,
-          });
-        } catch {
-          /* file may not exist if scaffolding failed */
-        }
-      }
-      for (const name of skillTemplates) {
-        const filePath = path.join(configDir, "skills", name, "SKILL.md");
-        try {
-          const content = await fs.readFile(filePath, "utf-8");
-          artifactStates.push({
-            path: path.relative(projectRoot, filePath),
-            hash: hashContent(content),
-            preset: artifactPresetName,
-            timestamp: now,
-          });
-        } catch {
-          /* file may not exist if scaffolding failed */
-        }
-      }
-      for (const name of agentTemplates) {
-        const filePath = path.join(configDir, "agents", `${name}.md`);
-        try {
-          const content = await fs.readFile(filePath, "utf-8");
-          artifactStates.push({
-            path: path.relative(projectRoot, filePath),
-            hash: hashContent(content),
-            preset: artifactPresetName,
-            timestamp: now,
-          });
-        } catch {
-          /* file may not exist if scaffolding failed */
-        }
-      }
-      if (artifactStates.length > 0) {
-        await stateManager.updatePresetArtifacts(artifactStates);
-      }
+      await recordPresetArtifactStates(
+        configDir,
+        projectRoot,
+        artifactPresetName,
+        ruleTemplates,
+        skillTemplates,
+        agentTemplates,
+      );
     } catch {
       log.warn("Preset artifact state tracking failed; this is non-critical.");
     }
@@ -553,12 +555,21 @@ export async function initHandler(
   let generated = importRegenerated;
   const configResult = await resolveConfig(projectRoot);
   if (!importRegenerated && configResult.ok) {
-    const genResult = await generate(configResult.data, projectRoot, {
+    const applyResult = await applyConfiguration(configResult.data, projectRoot, {
       force: options.force || options.onConflict === "keep-incoming",
       keepCurrent: options.onConflict === "keep-current",
+      forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
     });
-    generated = genResult.ok;
-    if (!genResult.ok) {
+    generated = applyResult.ok;
+    if (applyResult.ok) {
+      const { reconciliation } = applyResult.data;
+      if (reconciliation.pruned.length > 0) {
+        log.info(
+          `Pruned ${reconciliation.pruned.length} orphaned file(s) removed from source templates`,
+        );
+      }
+    }
+    if (!applyResult.ok) {
       log.warn(`Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`);
     }
   }
@@ -594,8 +605,15 @@ export async function initHandler(
     try {
       const hookSetup = await detectHookSetup(projectRoot);
       const resolvedFlags = configResult.data.flags;
-      const hooksConfig = generateHooksConfig(resolvedFlags, stack);
-      if (hooksConfig.hooks.length > 0 || hooksConfig.docCheck) {
+      // Merge the wizard's tooling-default picks into resolvedFlags so the
+      // generator + renderer see the user's choices.
+      if (tooling) applyToolingPicks(resolvedFlags, tooling);
+      if (tooling?.skipped) {
+        log.info("Skipped pre-commit hook installation per user request");
+      }
+      const flagsForHooks = await resolveAutoFlags(projectRoot, resolvedFlags);
+      const hooksConfig = generateHooksConfig(flagsForHooks, stack);
+      if (!tooling?.skipped && (hooksConfig.hooks.length > 0 || hooksConfig.docCheck)) {
         const hookResult = await installHooks({
           projectRoot,
           runner: hookSetup.runner,
@@ -608,12 +626,14 @@ export async function initHandler(
           templateWiringCheck: hooksConfig.templateWiringCheck,
           docNamingCheck: hooksConfig.docNamingCheck,
           versionBump: hooksConfig.versionBump,
+          versionVerify: hooksConfig.versionVerify,
           artifactValidation: hooksConfig.artifactValidation,
           importDepthCheck: hooksConfig.importDepthCheck,
           skillYamlValidation: hooksConfig.skillYamlValidation,
           skillResourceCheck: hooksConfig.skillResourceCheck,
           skillPathWrapCheck: hooksConfig.skillPathWrapCheck,
           stagedJunkCheck: hooksConfig.stagedJunkCheck,
+          conflictMarkerCheck: hooksConfig.conflictMarkerCheck,
           brandSkillValidation: hooksConfig.brandSkillValidation,
           docCheck: hooksConfig.docCheck,
           docProtectedBranches: hooksConfig.docProtectedBranches,

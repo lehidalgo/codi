@@ -2,23 +2,17 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { doctorHandler } from "#src/cli/doctor.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("doctor command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-doctor-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-doctor-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -29,10 +23,16 @@ describe("doctor command handler", () => {
   it("passes with valid project", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      `name: test\nversion: "1"\n`,
-    );
+    await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), `name: test\nversion: "1"\n`);
+
+    // Install fake hooks so the new pre-commit/pre-push hook-installed checks pass
+    const hookDir = path.join(tmpDir, ".git", "hooks");
+    await fs.mkdir(hookDir, { recursive: true });
+    for (const hookName of ["codi-version-bump.mjs", "codi-version-verify.mjs"]) {
+      const p = path.join(hookDir, hookName);
+      await fs.writeFile(p, "#!/usr/bin/env node\n");
+      await fs.chmod(p, 0o755);
+    }
 
     const result = await doctorHandler(tmpDir, {});
     expect(result.success).toBe(true);
@@ -74,15 +74,38 @@ describe("doctor command handler", () => {
   it("includes check results in data", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      `name: test\nversion: "1"\n`,
-    );
+    await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), `name: test\nversion: "1"\n`);
 
     const result = await doctorHandler(tmpDir, {});
     expect(result.data.results.length).toBeGreaterThan(0);
-    expect(result.data.results.every((r) => typeof r.check === "string")).toBe(
-      true,
-    );
+    expect(result.data.results.every((r) => typeof r.check === "string")).toBe(true);
+  });
+
+  describe("--hooks mode", () => {
+    it("returns hookDiagnostics array on data", async () => {
+      const configDir = path.join(tmpDir, PROJECT_DIR);
+      await fs.mkdir(configDir, { recursive: true });
+      await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), `name: test\nversion: "1"\n`);
+
+      const result = await doctorHandler(tmpDir, { hooks: true });
+
+      expect(result.data).toHaveProperty("hookDiagnostics");
+      expect(Array.isArray(result.data.hookDiagnostics)).toBe(true);
+      // Each diagnostic must have name + severity fields
+      for (const d of result.data.hookDiagnostics ?? []) {
+        expect(typeof d.name).toBe("string");
+        expect(["ok", "warning", "error"]).toContain(d.severity);
+      }
+      expect([EXIT_CODES.SUCCESS, EXIT_CODES.DOCTOR_FAILED]).toContain(result.exitCode);
+    });
+
+    it("composes with --ci flag", async () => {
+      const configDir = path.join(tmpDir, PROJECT_DIR);
+      await fs.mkdir(configDir, { recursive: true });
+      await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), `name: test\nversion: "1"\n`);
+
+      const result = await doctorHandler(tmpDir, { hooks: true, ci: true });
+      expect(Array.isArray(result.data.hookDiagnostics)).toBe(true);
+    });
   });
 });
