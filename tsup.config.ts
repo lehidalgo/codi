@@ -12,7 +12,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  target: "node24",
+  target: "node20",
   define: {
     __PKG_VERSION__: JSON.stringify(pkg.version),
   },

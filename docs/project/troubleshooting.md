@@ -10,7 +10,7 @@ Common issues and their solutions when working with Codi.
 
 This happens when system Node is installed under `/usr/local` (root-owned) and `npm install -g` cannot create the package directory without `sudo`.
 
-**Fix (recommended)**: use the curl installer, which sets up nvm + Node 24 under `~/.nvm` (no sudo, no root):
+**Fix (recommended)**: use the curl installer, which sets up nvm + Node 24 (latest LTS) under `~/.nvm` (no sudo, no root):
 
 ```bash
 curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
@@ -20,7 +20,7 @@ curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
 
 ### Node.js version too old
 
-**Error**: Codi requires Node >= 24 (npm 11+ for OIDC publish).
+**Error**: Codi requires Node >= 20.19.0 (npm 11+ for OIDC publish).
 
 **Fix (recommended)** — let the installer handle it:
 
@@ -47,7 +47,7 @@ curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
 # Via npx (no global install needed)
 npx codi --version
 
-# Or install globally (requires Node 24+ and a writable npm prefix)
+# Or install globally (requires Node 20.19+ and a writable npm prefix)
 npm install -g codi-cli
 ```
 

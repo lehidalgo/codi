@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Node engine requirement lowered from `>=24` to `>=20.19.0`** — the codi-cli runtime uses only `structuredClone` (Node 17+), `fetch` (Node 18+), and other APIs available since Node 20. The previous `>=24` floor produced an `EBADENGINE` warning for every Node 20 / 22 LTS user even though `codi` ran correctly on those versions. tsup `target` lowered from `node24` to `node20` to match. Documentation (`README.md`, `docs/project/getting-started.md`, `docs/project/troubleshooting.md`, `docs/src/content/docs/guides/getting-started.md`) updated to state the new minimum. The curl installer still installs Node 24 (latest LTS) for users who don't manage their own Node.
+
+### Changed
+
+- **`@clack/core` promoted to a direct `dependencies` entry (pinned to `1.2.0`)** — `src/cli/group-multiselect.ts` and `src/cli/wizard-prompts.ts` import from `@clack/core` directly, but the package was only available as a transitive of `@clack/prompts`. npm (with auto-hoisting) masked the missing dep; pnpm with strict `node_modules` isolation surfaced it as a `TS2307: Cannot find module '@clack/core'` build failure on CI. Pinning at `1.2.0` matches the version `@clack/prompts` ships with, so pnpm dedupes to a single copy.
+- **`exceljs` and `pptxgenjs` moved from `dependencies` to `devDependencies`** — both packages are imported only by skill template scripts (`src/templates/skills/xlsx/scripts/ts/generate_xlsx.ts`, `src/templates/skills/pptx/scripts/ts/generate_pptx.ts`) that run inside the user's project after scaffolding, never by the CLI runtime (`src/cli.ts` / `src/index.ts`). End users running `npm install -g codi-cli` now skip 91 transitive packages and 6 deprecation warnings (`fstream`, `glob@7`, `inflight`, `lodash.isequal`, `rimraf@2`, `uuid@8`) inherited from the legacy `archiver@5` / `unzipper@0.10` dep chains. Users who run the bundled TypeScript generators must install the packages in their own project first: `npm install exceljs` or `npm install pptxgenjs`. The `codi-xlsx` and `codi-pptx` skill READMEs document this prerequisite.
+- **CI workflows migrated from npm to pnpm** — `.github/workflows/{ci,release,pages}.yml` now use `pnpm/action-setup@v4`, `cache: pnpm` on `actions/setup-node`, and `pnpm install --frozen-lockfile`. Matches the project's canonical package manager. `npm publish --provenance` is retained in `release.yml` (the npm CLI publishes pnpm projects without modification). `node -p 'require(...)'` patterns replaced with `jq` (preinstalled on `ubuntu-latest`).
+
+### Removed
+
+- **`package-lock.json`** — pnpm is the canonical package manager (`pnpm-lock.yaml` is the source of truth). The stale `package-lock.json` (last seen at version 2.12.0) was deleted to prevent drift between two lockfile formats.
+
 ## [2.14.0] - 2026-04-29
 
 ### Fixed
@@ -69,7 +85,6 @@ The four new flags default to `auto` — existing projects do not need to set th
 - **GitHub URL parser uses canonical resolver** — the "Add from GitHub" flow now resolves the repo via `parsePresetIdentifier` (the same parser the rest of the CLI uses), so it accepts every form codi accepts elsewhere: `org/repo`, `org/repo@v1.2.0`, `github:org/repo#branch`, `https://github.com/org/repo[.git]`, and `https://github.com/org/repo/tree/branch`. Bare `org/repo` no longer fails with "Not a GitHub identifier".
 - **Welcome banner now renders inside a rounded box** — the ASCII logo, tagline + version, and Stack/Agents status lines are framed with `╭─...─╮` borders (matching the Codex CLI visual style). Auto-sizes to the widest content line. Falls back to the un-boxed layout on terminals narrower than the box width.
 - **Artifact manifest schema** — `ArtifactEntry` gained an optional `source` field (e.g. `"github:org/repo@ref"`, `"zip:bundle.zip"`, `"local:/abs/path"`). Additive — existing manifests parse unchanged.
-- **Minimum Node version bumped from 20 to 24** — `engines.node` now `>=24` to match the project's `.nvmrc`, all CI workflows, and release pipeline (npm 11+ for OIDC). Users on Node 20 will see a clear engine error from npm before EACCES instead of a confusing permissions failure.
 
 ### Fixed
 

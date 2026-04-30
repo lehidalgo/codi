@@ -13,10 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
       - uses: actions/setup-python@v5
         with:
@@ -25,7 +29,7 @@ jobs:
       - name: Install pre-commit (for E2E config-validation test)
         run: pip install pre-commit
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Verify artifact version bumps
         if: github.event_name == 'pull_request'
@@ -36,16 +40,16 @@ jobs:
             --head HEAD
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
   secrets-scan:
     runs-on: ubuntu-latest
@@ -81,7 +85,7 @@ jobs:
             echo "No package changes — skipping version bump check."
             exit 0
           fi
-          VERSION=$(node -p 'require("./package.json").version')
+          VERSION=$(jq -r .version package.json)
           PUBLISHED=$(npm view codi-cli version 2>/dev/null || echo "0.0.0")
           if [ "$VERSION" = "$PUBLISHED" ]; then
             echo "::error::Version v${VERSION} is already published to npm. Bump version before merging to main."

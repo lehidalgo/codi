@@ -69,7 +69,7 @@ Every AI coding agent speaks a different language. Claude Code reads `CLAUDE.md`
 # 1. Install (curl one-liner — handles Node setup if missing)
 curl -fsSL https://lehidalgo.github.io/codi/install.sh | bash
 
-# Or install manually if you already manage Node 24+ yourself
+# Or install manually if you already manage Node 20.19+ yourself
 npm install -g codi-cli@latest
 
 # 2. Initialize (interactive wizard)
@@ -87,7 +87,7 @@ codi status
 
 Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.github/copilot-instructions.md`, and other agent files are generated and ready to commit.
 
-> **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 24**. If your Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 for you.
+> **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 20.19.0**. If your Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 (latest LTS) for you.
 
 ### Supported platforms
 
@@ -153,7 +153,7 @@ flowchart LR
 | Artifact | Count |
 |:---------|:-----:|
 | **Rules** | 28 |
-| **Skills** | 61 |
+| **Skills** | 63 |
 | **Agents** | 21 |
 <!-- GENERATED:END:template_counts_compact -->
 
