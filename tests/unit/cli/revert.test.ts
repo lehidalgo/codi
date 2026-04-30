@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { revertHandler } from "#src/cli/revert.js";
 import { Logger } from "#src/core/output/logger.js";
 import {
@@ -13,8 +13,7 @@ import {
 } from "#src/constants.js";
 
 vi.mock("../../../src/cli/shared.js", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("../../../src/cli/shared.js")>();
+  const actual = await importOriginal<typeof import("../../../src/cli/shared.js")>();
   return {
     ...actual,
     regenerateConfigs: vi.fn().mockResolvedValue(true),
@@ -25,9 +24,7 @@ describe("revert command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-revert-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-revert-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -59,7 +56,7 @@ describe("revert command handler", () => {
     );
   }
 
-  it("returns error when no option specified", async () => {
+  it("returns E_NO_BACKUPS when no backups exist and no option specified", async () => {
     // Arrange
     const options = {};
 
@@ -69,9 +66,7 @@ describe("revert command handler", () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.errors).toBeDefined();
-    expect(result.errors![0]!.message).toContain(
-      "Specify --list, --last, or --backup",
-    );
+    expect(result.errors![0]!.code).toBe("E_NO_BACKUPS");
   });
 
   it("--list returns available backups", async () => {
@@ -159,10 +154,7 @@ describe("revert command handler", () => {
     expect(result.data.timestamp).toBe(targetTimestamp);
     expect(result.data.restoredFiles).toHaveLength(2);
 
-    const rulesContent = await fs.readFile(
-      path.join(tmpDir, ".cursorrules"),
-      "utf-8",
-    );
+    const rulesContent = await fs.readFile(path.join(tmpDir, ".cursorrules"), "utf-8");
     expect(rulesContent).toBe("# specific backup rules");
   });
 });

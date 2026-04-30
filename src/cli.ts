@@ -16,6 +16,7 @@ import { registerComplianceCommand } from "./cli/compliance.js";
 import { registerCiCommand } from "./cli/ci.js";
 import { registerWatchCommand } from "./cli/watch.js";
 import { registerRevertCommand } from "./cli/revert.js";
+import { registerBackupCommand } from "./cli/backup.js";
 
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
@@ -57,6 +58,7 @@ registerComplianceCommand(program);
 registerCiCommand(program);
 registerWatchCommand(program);
 registerRevertCommand(program);
+registerBackupCommand(program);
 
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);

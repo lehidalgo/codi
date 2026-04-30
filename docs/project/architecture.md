@@ -311,7 +311,17 @@ sequenceDiagram
 
 ### Backup System
 
-Automatic backups are created before each `codi generate` in `.codi/backups/{timestamp}/`. Maximum 5 backups are retained. Restore with `codi revert`.
+Snapshots are taken before every destructive operation (`codi init`, `codi init --customize`, `codi update`, `codi clean` non-`--all`, `codi preset install`, the "Add from external" wizard, and `codi revert` itself) via the `openBackup → handle.append → handle.finalise` lifecycle in `src/core/backup/backup-manager.ts`. Each snapshot can capture three scopes in one atomic dir under `.codi/backups/<ISO-timestamp>/`:
+
+- **source** — `.codi/` source artifacts (`includeSource: true`)
+- **output** — state-tracked agent files (`includeOutput: true`, default)
+- **pre-existing** — files at adapter target paths not yet tracked in `state.json` (`includePreExisting: true`)
+
+The v2 `backup-manifest.json` (read by `src/core/backup/backup-manifest.ts`, with v1 compat shim) records every captured file with its `scope` and optional `preExisting` / `deleted` flags. The manifest is written LAST as a commit marker; partial dirs left by a crash are swept by `pruneIncompleteBackups` at the start of the next `openBackup`.
+
+Backups are capped at `MAX_BACKUPS = 50`. When at the cap, retention runs either `evictOldest` (non-interactive) or `interactiveEvict` (TUI with double-confirm); cancelling aborts the destructive operation with `E_BACKUP_CANCELLED`.
+
+`codi revert` takes a `pre-revert` snapshot of the current state, then restores via `connectBackup` (adapts the backup's `.codi/` subtree into an `ExternalSource`) → `runArtifactSelectionFromSource` (the same wizard used by "Add from external"). Output-only legacy backups fall back to direct `restoreBackup` file copy. The `codi backup` command (`--list`, `--delete`, `--prune`) manages snapshots without restoring.
 
 ### Watch Mode
 

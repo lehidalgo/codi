@@ -185,6 +185,21 @@ export const ERROR_CATALOG = {
     severity: "error" as const,
     hintTemplate: 'Version {version} not found for skill "{name}"',
   },
+  E_BACKUP_CANCELLED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "{message}",
+  },
+  E_NO_BACKUPS: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "{message}",
+  },
+  E_GENERAL: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "{message}",
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;

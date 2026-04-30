@@ -7,6 +7,7 @@ import {
   createBackup,
   listBackups,
   restoreBackup,
+  openBackup,
 } from "#src/core/backup/backup-manager.js";
 import {
   STATE_FILENAME,
@@ -40,11 +41,7 @@ async function writeState(filePaths: string[]): Promise<void> {
   const agents: Record<string, Array<{ path: string }>> = {
     "claude-code": filePaths.map((p) => ({ path: p })),
   };
-  await fs.writeFile(
-    path.join(configDir, STATE_FILENAME),
-    JSON.stringify({ agents }),
-    "utf8",
-  );
+  await fs.writeFile(path.join(configDir, STATE_FILENAME), JSON.stringify({ agents }), "utf8");
 }
 
 /**
@@ -75,7 +72,9 @@ describe("createBackup", () => {
     const manifestPath = path.join(backupDir, BACKUP_MANIFEST_FILENAME);
     const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
     expect(manifest.timestamp).toBe(timestamp);
-    expect(manifest.files).toContain(".claude/rules/arch.md");
+    expect(manifest.files.some((f: { path: string }) => f.path === ".claude/rules/arch.md")).toBe(
+      true,
+    );
   });
 
   it("copies file contents correctly", async () => {
@@ -220,9 +219,7 @@ describe("restoreBackup", () => {
     await setup();
 
     // Act & Assert
-    await expect(
-      restoreBackup(projectRoot, configDir, "nonexistent-timestamp"),
-    ).rejects.toThrow();
+    await expect(restoreBackup(projectRoot, configDir, "nonexistent-timestamp")).rejects.toThrow();
   });
 });
 
@@ -243,9 +240,132 @@ describe("backup directory structure", () => {
     expect(stat.isDirectory()).toBe(true);
 
     // Manifest is inside the backup directory
-    const manifestStat = await fs.stat(
-      path.join(expectedPath, BACKUP_MANIFEST_FILENAME),
-    );
+    const manifestStat = await fs.stat(path.join(expectedPath, BACKUP_MANIFEST_FILENAME));
     expect(manifestStat.isFile()).toBe(true);
+  });
+});
+
+describe("openBackup / BackupHandle lifecycle", () => {
+  it("openBackup with includeSource captures .codi/ files", async () => {
+    await setup();
+    await fs.writeFile(path.join(configDir, "codi.yaml"), "name: t\nversion: '1'\nagents: []\n");
+    const r = await openBackup(projectRoot, configDir, {
+      trigger: "init-customize",
+      includeSource: true,
+      includeOutput: false,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const handle = r.data;
+    const sourceCopy = await fs.stat(path.join(handle.dir, ".codi", "codi.yaml")).catch(() => null);
+    expect(sourceCopy).not.toBeNull();
+    await handle.finalise();
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(handle.dir, BACKUP_MANIFEST_FILENAME), "utf8"),
+    );
+    expect(manifest.version).toBe(2);
+    expect(manifest.trigger).toBe("init-customize");
+    expect(
+      manifest.files.some(
+        (f: { path: string; scope: string }) =>
+          f.path === ".codi/codi.yaml" && f.scope === "source",
+      ),
+    ).toBe(true);
+  });
+
+  it("handle.append adds files mid-operation", async () => {
+    await setup();
+    await fs.writeFile(path.join(configDir, "codi.yaml"), "name: t\n");
+    await createFile("CLAUDE.md", "stale\n");
+    const r = await openBackup(projectRoot, configDir, {
+      trigger: "init-customize",
+      includeSource: true,
+      includeOutput: false,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const handle = r.data;
+    await handle.append(["CLAUDE.md"], "output", { deleted: true });
+    await handle.finalise();
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(handle.dir, BACKUP_MANIFEST_FILENAME), "utf8"),
+    );
+    const claudeEntry = manifest.files.find((f: { path: string }) => f.path === "CLAUDE.md");
+    expect(claudeEntry).toEqual({
+      path: "CLAUDE.md",
+      scope: "output",
+      deleted: true,
+    });
+    const claudeCopy = await fs.stat(path.join(handle.dir, "CLAUDE.md")).catch(() => null);
+    expect(claudeCopy).not.toBeNull();
+  });
+
+  it("handle.abort removes the partial backup", async () => {
+    await setup();
+    await fs.writeFile(path.join(configDir, "codi.yaml"), "name: t\n");
+    const r = await openBackup(projectRoot, configDir, {
+      trigger: "init-customize",
+      includeSource: true,
+      includeOutput: false,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const handle = r.data;
+    const dir = handle.dir;
+    await handle.abort();
+    const exists = await fs.stat(dir).catch(() => null);
+    expect(exists).toBeNull();
+  });
+
+  it("manifest is NOT present until finalise is called", async () => {
+    await setup();
+    await fs.writeFile(path.join(configDir, "codi.yaml"), "name: t\n");
+    const r = await openBackup(projectRoot, configDir, {
+      trigger: "init-customize",
+      includeSource: true,
+      includeOutput: false,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const handle = r.data;
+    const before = await fs.stat(path.join(handle.dir, BACKUP_MANIFEST_FILENAME)).catch(() => null);
+    expect(before).toBeNull();
+    await handle.finalise();
+    const after = await fs.stat(path.join(handle.dir, BACKUP_MANIFEST_FILENAME)).catch(() => null);
+    expect(after).not.toBeNull();
+  });
+
+  it("retention: evict-oldest deletes oldest when at MAX_BACKUPS", async () => {
+    await setup();
+    await fs.writeFile(path.join(configDir, "codi.yaml"), "name: t\n");
+    const backupsRoot = path.join(configDir, BACKUPS_DIR);
+    await fs.mkdir(backupsRoot, { recursive: true });
+    const { MAX_BACKUPS } = await import("#src/constants.js");
+    for (let i = 0; i < MAX_BACKUPS; i++) {
+      const ts = `2026-04-${String(i + 1).padStart(2, "0")}T00-00-00-000Z`;
+      await fs.mkdir(path.join(backupsRoot, ts));
+      await fs.writeFile(
+        path.join(backupsRoot, ts, BACKUP_MANIFEST_FILENAME),
+        JSON.stringify({
+          version: 2,
+          timestamp: ts,
+          trigger: "generate",
+          codiVersion: "x",
+          files: [],
+        }),
+      );
+    }
+    const r = await openBackup(projectRoot, configDir, {
+      trigger: "generate",
+      includeSource: true,
+      includeOutput: false,
+      retention: "evict-oldest",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    await r.data.finalise();
+    const remaining = await fs.readdir(backupsRoot);
+    expect(remaining.length).toBe(MAX_BACKUPS);
+    expect(remaining).not.toContain("2026-04-01T00-00-00-000Z");
   });
 });

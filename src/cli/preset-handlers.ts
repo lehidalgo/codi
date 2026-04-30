@@ -8,7 +8,15 @@ import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
-import { PRESET_MANIFEST_FILENAME, PROJECT_CLI, PROJECT_DIR } from "../constants.js";
+import {
+  PRESET_MANIFEST_FILENAME,
+  PROJECT_CLI,
+  PROJECT_DIR,
+  RETENTION_CANCELLED_ERROR,
+} from "../constants.js";
+import { openBackup } from "../core/backup/backup-manager.js";
+import type { BackupHandle } from "../core/backup/types.js";
+import { createError } from "../core/output/errors.js";
 import { StateManager } from "../core/config/state.js";
 import {
   readLockFile,
@@ -119,6 +127,52 @@ export async function presetInstallUnifiedHandler(
   const log = Logger.getInstance();
   const configDir = resolveProjectDir(projectRoot);
   const presetsDir = path.join(configDir, "presets");
+
+  const backupR = await openBackup(projectRoot, configDir, {
+    trigger: "preset-install",
+    includeSource: true,
+    includeOutput: true,
+  });
+  if (!backupR.ok && backupR.errors === "retention-cancelled") {
+    log.error(RETENTION_CANCELLED_ERROR);
+    return createCommandResult({
+      success: false,
+      command: "preset install",
+      data: { action: "install" },
+      errors: [createError("E_BACKUP_CANCELLED", { message: RETENTION_CANCELLED_ERROR })],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+  const presetBackupHandle: BackupHandle | null = backupR.ok ? backupR.data : null;
+  let result: CommandResult<PresetData>;
+  try {
+    result = await __presetInstallUnifiedBody(
+      projectRoot,
+      source,
+      installOptions,
+      log,
+      configDir,
+      presetsDir,
+    );
+  } catch (cause) {
+    if (presetBackupHandle) await presetBackupHandle.abort();
+    throw cause;
+  }
+  if (presetBackupHandle) {
+    if (result.success) await presetBackupHandle.finalise();
+    else await presetBackupHandle.abort();
+  }
+  return result;
+}
+
+async function __presetInstallUnifiedBody(
+  projectRoot: string,
+  source: string,
+  installOptions: PresetInstallOptions,
+  log: ReturnType<typeof Logger.getInstance>,
+  configDir: string,
+  presetsDir: string,
+): Promise<CommandResult<PresetData>> {
   const descriptor = parsePresetIdentifier(source);
 
   try {

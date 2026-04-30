@@ -146,3 +146,29 @@ test_before_commit:
 Then run `codi generate` to refresh the hook scripts.
 
 For codi-managed structural checks (Layer A above), there's no per-hook toggle — they enforce repository-wide invariants. If a check is genuinely wrong for your project, open an issue.
+
+## Backups
+
+Codi takes a backup before every destructive operation that mutates `.codi/` or generated agent files. Backups live under `.codi/backups/<ISO-timestamp>/` and are capped at 50. The manifest (`backup-manifest.json`) is written LAST as a commit marker, so a crash mid-snapshot leaves a partial dir that the next operation auto-sweeps.
+
+| Command                         | Trigger label     |
+| ------------------------------- | ----------------- |
+| `codi init` (first run)         | `init-first-time` |
+| `codi init --customize`         | `init-customize`  |
+| `codi update`                   | `update`          |
+| `codi clean` (without `--all`)  | `clean-reset`     |
+| `codi preset install`           | `preset-install`  |
+| Add from external source wizard | `init-customize`  |
+| `codi revert`                   | `pre-revert`      |
+
+`codi clean --all` skips the snapshot — it wipes `.codi/` entirely (including `.codi/backups/`), so a backup there cannot survive. Users who want pre-clean safety should run `codi backup --list` first.
+
+Manage backups with the `codi backup` command:
+
+```bash
+codi backup --list           # list sealed backups, newest first
+codi backup --delete <ts...> # remove specific backups by timestamp
+codi backup --prune          # interactive TUI to select backups to delete
+```
+
+Restore with `codi revert` (interactive picker), `codi revert --last` (most recent), `codi revert <ts>` (specific), or `codi revert --dry-run` (preview without writing). See [Backups & Recovery](./backups-and-recovery/) for the full guide.

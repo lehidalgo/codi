@@ -21,6 +21,9 @@ import {
 } from "../core/external-source/installer.js";
 import { isCancelled } from "./hub-handlers.js";
 import { regenerateConfigs } from "./shared.js";
+import { openBackup } from "../core/backup/backup-manager.js";
+import type { BackupHandle } from "../core/backup/types.js";
+import { RETENTION_CANCELLED_ERROR } from "../constants.js";
 
 export type ExternalSourceKind = "local" | "zip" | "github";
 
@@ -289,23 +292,50 @@ async function runSelectionBody(configDir: string, source: ExternalSource): Prom
     resolution: collisionResolutions.get(artifact) ?? { kind: "overwrite" },
   }));
 
-  const summary = await installSelected(configDir, entries, source);
-  p.log.success(
-    `Installed ${summary.installed} (renamed: ${summary.renamed}, skipped: ${summary.skipped}).`,
-  );
+  // configDir is .codi/; the project root is its parent.
+  const projectRoot = path.dirname(configDir);
+  let handle: BackupHandle | null = null;
+  try {
+    const backupR = await openBackup(projectRoot, configDir, {
+      trigger: "init-customize",
+      includeSource: true,
+      includeOutput: true,
+    });
+    if (!backupR.ok && backupR.errors === "retention-cancelled") {
+      p.log.error(RETENTION_CANCELLED_ERROR);
+      return;
+    }
+    handle = backupR.ok ? backupR.data : null;
+  } catch (cause) {
+    p.log.warn(
+      `Backup setup failed (${cause instanceof Error ? cause.message : String(cause)}); proceeding without a snapshot.`,
+    );
+  }
 
-  // Auto-generate so the user does not have to run `codi generate` manually
-  // after every customize action. regenerateConfigs respects the project's
-  // manifest.agents — only the configured coding agents are refreshed.
-  if (summary.installed > 0) {
-    // configDir is .codi/; the project root is its parent.
-    const projectRoot = path.dirname(configDir);
-    p.log.step("Regenerating agent configs...");
-    const ok = await regenerateConfigs(projectRoot);
-    if (ok) {
-      p.log.success("Agent configs regenerated.");
-    } else {
-      p.log.warn("Auto-generate skipped — run `codi generate` manually.");
+  let installSucceeded = false;
+  try {
+    const summary = await installSelected(configDir, entries, source);
+    p.log.success(
+      `Installed ${summary.installed} (renamed: ${summary.renamed}, skipped: ${summary.skipped}).`,
+    );
+
+    // Auto-generate so the user does not have to run `codi generate` manually
+    // after every customize action. regenerateConfigs respects the project's
+    // manifest.agents — only the configured coding agents are refreshed.
+    if (summary.installed > 0) {
+      p.log.step("Regenerating agent configs...");
+      const ok = await regenerateConfigs(projectRoot);
+      if (ok) {
+        p.log.success("Agent configs regenerated.");
+      } else {
+        p.log.warn("Auto-generate skipped — run `codi generate` manually.");
+      }
+    }
+    installSucceeded = true;
+  } finally {
+    if (handle) {
+      if (installSucceeded) await handle.finalise();
+      else await handle.abort();
     }
   }
 }

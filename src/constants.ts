@@ -95,7 +95,7 @@ export const WATCH_DEBOUNCE_MS = 500;
 
 // --- Backup ---
 /** Maximum number of configuration backups retained before the oldest is pruned. */
-export const MAX_BACKUPS = 5;
+export const MAX_BACKUPS = 50;
 
 // --- Managed by ---
 /** Valid values for the `managed_by` field in artifact frontmatter. */
@@ -156,9 +156,39 @@ export const REGISTRY_INDEX_FILENAME = "index.json";
 /** Name of the directory that stores configuration backups. */
 export const BACKUPS_DIR = "backups";
 
+/**
+ * Directories under .codi/ that are NEVER walked by the backup snapshotter.
+ * Exact-prefix match: a path is excluded iff it equals an entry exactly OR
+ * begins with `<entry>/`. Single source of truth — every walker that
+ * recurses .codi/ MUST import this list.
+ */
+export const BACKUP_EXCLUDE_DIRS: readonly string[] = [
+  ".codi/backups",
+  ".codi/.session",
+  ".codi/feedback",
+] as const;
+
+/**
+ * Standardised abort message when a destructive op cannot proceed because
+ * retention is full and the user declined to delete any backup. Callers
+ * emit this verbatim so log scrapers and tests can match it reliably.
+ */
+export const RETENTION_CANCELLED_ERROR =
+  "Backup retention is full and no backups were deleted.\n" +
+  "Cannot proceed without a recoverable snapshot.\n" +
+  "Run `codi backup --list` to inspect existing backups, or run\n" +
+  "`codi backup --prune` to interactively delete some, then retry.";
+
 // --- Supported platforms ---
 /** Agent platform IDs — single source of truth for compatibility fields. */
-export const SUPPORTED_PLATFORMS = ["claude-code", "cursor", "codex", "windsurf", "cline", "copilot"] as const;
+export const SUPPORTED_PLATFORMS = [
+  "claude-code",
+  "cursor",
+  "codex",
+  "windsurf",
+  "cline",
+  "copilot",
+] as const;
 /** YAML-ready inline list for template interpolation. */
 export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
 
@@ -240,6 +270,7 @@ export const CLI_COMMANDS = [
   "ci",
   "watch",
   "revert",
+  "backup",
 
   "preset",
   "docs-update",

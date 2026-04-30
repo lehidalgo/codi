@@ -12,7 +12,15 @@ import { Logger } from "../core/output/logger.js";
 import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
-import { PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "../constants.js";
+import {
+  PROJECT_DIR,
+  PROJECT_NAME,
+  PROJECT_NAME_DISPLAY,
+  RETENTION_CANCELLED_ERROR,
+} from "../constants.js";
+import { openBackup } from "../core/backup/backup-manager.js";
+import type { BackupHandle } from "../core/backup/types.js";
+import { createError } from "../core/output/errors.js";
 import { ALL_ADAPTERS } from "../adapters/index.js";
 
 interface CleanOptions extends GlobalOptions {
@@ -306,6 +314,38 @@ export async function cleanHandler(
   const filesDeleted: string[] = [];
   const dirsDeleted: string[] = [];
 
+  let cleanBackupHandle: BackupHandle | null = null;
+  // --all wipes .codi/ entirely (including .codi/backups/), so a backup
+  // there cannot survive. For --all the user has opted into total loss; skip
+  // the snapshot. Plain clean keeps .codi/ so the backup is safe.
+  if (!options.dryRun && !options.all) {
+    const backupR = await openBackup(projectRoot, configDir, {
+      trigger: "clean-reset",
+      includeSource: true,
+      includeOutput: true,
+    });
+    if (!backupR.ok && backupR.errors === "retention-cancelled") {
+      log.error(RETENTION_CANCELLED_ERROR);
+      return createCommandResult({
+        success: false,
+        command: "clean",
+        data: {
+          filesDeleted: [],
+          dirsDeleted: [],
+          hooksDeleted: [],
+          configDirRemoved: false,
+        },
+        errors: [
+          createError("E_BACKUP_CANCELLED", {
+            message: RETENTION_CANCELLED_ERROR,
+          }),
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+    cleanBackupHandle = backupR.ok ? backupR.data : null;
+  }
+
   const stateManager = new StateManager(configDir, projectRoot);
   const stateResult = await stateManager.read();
 
@@ -455,6 +495,8 @@ export async function cleanHandler(
       /* doesn't exist */
     }
   }
+
+  if (cleanBackupHandle) await cleanBackupHandle.finalise();
 
   return createCommandResult({
     success: true,

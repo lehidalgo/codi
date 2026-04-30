@@ -1,10 +1,12 @@
 import { generate } from "./generator.js";
 import type { GenerationResult } from "./generator.js";
+import { pruneEmptyAdapterDirs } from "./prune-empty-adapter-dirs.js";
 import { StateManager } from "#src/core/config/state.js";
 import type { GeneratedFileState } from "#src/core/config/state.js";
 import { resolveProjectDir } from "#src/utils/paths.js";
 import { hashContent } from "#src/utils/hash.js";
 import { Logger } from "#src/core/output/logger.js";
+import type { BackupHandle } from "#src/core/backup/types.js";
 import type { NormalizedConfig } from "#src/types/config.js";
 import type { Result } from "#src/types/result.js";
 import { ok } from "#src/types/result.js";
@@ -44,6 +46,8 @@ export interface ApplyResult {
     pruned: string[];
     /** Relative paths of drifted orphans kept (user-edited, not force-deleted). */
     preservedDrifted: string[];
+    /** Relative paths of empty adapter directories removed after orphan deletion. */
+    prunedDirs: string[];
     /** False on dryRun or if the state-write step failed (non-fatal). */
     stateUpdated: boolean;
   };
@@ -66,6 +70,7 @@ export async function applyConfiguration(
   config: NormalizedConfig,
   projectRoot: string,
   options: ApplyOptions = {},
+  backupHandle?: BackupHandle,
 ): Promise<Result<ApplyResult>> {
   const log = Logger.getInstance();
   const genResult = await generate(config, projectRoot, {
@@ -80,12 +85,20 @@ export async function applyConfiguration(
   if (options.dryRun) {
     return ok({
       generation: genResult.data,
-      reconciliation: { pruned: [], preservedDrifted: [], stateUpdated: false },
+      reconciliation: {
+        pruned: [],
+        preservedDrifted: [],
+        prunedDirs: [],
+        stateUpdated: false,
+      },
     });
   }
 
   const configDir = resolveProjectDir(projectRoot);
   const stateManager = new StateManager(configDir, projectRoot);
+
+  const prevStateResult = await stateManager.read();
+  const prevAgentIds = prevStateResult.ok ? Object.keys(prevStateResult.data.agents) : [];
 
   const agentUpdates: Record<string, GeneratedFileState[]> = {};
   for (const agentId of genResult.data.agents) {
@@ -109,6 +122,13 @@ export async function applyConfiguration(
     const forceDelete = options.forceDeleteDriftedOrphans ?? options.force ?? false;
     const toDelete = forceDelete ? [...clean, ...drifted] : clean;
     if (toDelete.length > 0) {
+      if (backupHandle) {
+        await backupHandle.append(
+          toDelete.map((o) => o.path),
+          "output",
+          { deleted: true },
+        );
+      }
       const deleted = await stateManager.deleteOrphans(toDelete);
       pruned.push(...deleted);
     }
@@ -116,6 +136,10 @@ export async function applyConfiguration(
       preservedDrifted.push(...drifted.map((d) => d.path));
     }
   }
+
+  const nextAgentIds = new Set(genResult.data.agents);
+  const removedAgentIds = prevAgentIds.filter((id) => !nextAgentIds.has(id));
+  const prunedDirs = await pruneEmptyAdapterDirs(projectRoot, pruned, removedAgentIds);
 
   let stateUpdated = false;
   try {
@@ -130,6 +154,6 @@ export async function applyConfiguration(
 
   return ok({
     generation: genResult.data,
-    reconciliation: { pruned, preservedDrifted, stateUpdated },
+    reconciliation: { pruned, preservedDrifted, prunedDirs, stateUpdated },
   });
 }
