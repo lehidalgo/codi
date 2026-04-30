@@ -33,6 +33,13 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
+      // Reporters:
+      //   text          — human-readable table on stdout (also during local dev)
+      //   text-summary  — short banner at the bottom of the run
+      //   html          — interactive coverage/index.html for local browsing
+      //   json-summary  — machine-readable totals for PR-comment scripts
+      //   lcov          — Codecov / Coveralls / SonarQube standard format
+      reporter: ["text", "text-summary", "html", "json-summary", "lcov"],
       include: ["src/**/*.ts"],
       exclude: [
         "src/**/*.d.ts",

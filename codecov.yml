@@ -1,0 +1,67 @@
+# Codecov configuration — https://docs.codecov.com/docs/codecov-yaml
+#
+# Coverage thresholds are still defined in vitest.config.ts and enforced by
+# pre-push + the CI `test` job. Codecov here is for PR comments + diff
+# annotations only — its `status` config below is INFORMATIONAL, not a
+# secondary gate. The single source of truth for "did the build pass?" is
+# the CI `test` job's exit code, not Codecov's status check.
+
+coverage:
+  precision: 2
+  round: down
+  range: "76...95" # red below 76% (the global lines threshold), green at 95%+
+
+  status:
+    # Project-level: never let total coverage drop by more than 1pp.
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        if_ci_failed: error
+    # Patch-level: every PR-touched line should be covered.
+    patch:
+      default:
+        target: 80%
+        if_ci_failed: error
+
+# What the PR comment looks like.
+comment:
+  layout: "header, diff, files, footer"
+  behavior: default
+  require_changes: false # comment on every PR, not only when coverage moves
+
+# Files Codecov should ignore — mirrors vitest.config.ts coverage.exclude
+# so the dashboard matches local + CI numbers. Keep these two lists in sync
+# when adding new exclusions.
+ignore:
+  - "src/**/*.d.ts"
+  - "src/**/index.ts"
+  - "src/**/types.ts"
+  - "src/types"
+  # Top-level Commander wiring + interactive @clack/prompts UI
+  - "src/cli.ts"
+  - "src/cli/watch.ts"
+  - "src/cli/contribute.ts"
+  - "src/cli/preset.ts"
+  - "src/cli/add.ts"
+  - "src/cli/hub.ts"
+  - "src/cli/skill.ts"
+  # Heavy @clack/prompts orchestration (test-debt — needs prompt-mock harness)
+  - "src/cli/wizard-prompts.ts"
+  - "src/cli/wizard-summary.ts"
+  - "src/cli/preset-handlers.ts"
+  - "src/cli/hub-handlers.ts"
+  - "src/cli/preset-wizard.ts"
+  - "src/utils/conflict-resolver.ts"
+  # Network/git boundary (test-debt — needs msw + git fixtures)
+  - "src/cli/contribute-git.ts"
+  - "src/cli/preset-github.ts"
+  - "src/cli/update-check.ts"
+  # Browser/worker frontend code
+  - "src/templates/skills/**/scripts"
+  - "src/templates/skills/**/generators"
+  - "src/templates/skills/**/static-dir.ts"
+  - "src/templates/skills/**/references"
+  # Other
+  - "src/core/preset/preset-zip.ts"
+  - "src/core/preset/preset-source.ts"
