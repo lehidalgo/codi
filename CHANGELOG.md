@@ -8,7 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- **Node engine requirement lowered from `>=24` to `>=20.19.0`** — the codi-cli runtime uses only `structuredClone` (Node 17+), `fetch` (Node 18+), and other APIs available since Node 20. The previous `>=24` floor produced an `EBADENGINE` warning for every Node 20 / 22 LTS user even though `codi` ran correctly on those versions. tsup `target` lowered from `node24` to `node20` to match. Documentation (`README.md`, `docs/project/getting-started.md`, `docs/project/troubleshooting.md`, `docs/src/content/docs/guides/getting-started.md`) updated to state the new minimum. The curl installer still installs Node 24 (latest LTS) for users who don't manage their own Node.
+- **Curl installer no longer force-upgrades users on Node 20.19+ to Node 24** — `site/install.sh` was checking `NODE_MAJOR < CODI_NODE_VERSION` (default `24`), so any user on Node 20 or 22 hitting `curl ...install.sh | bash` was unnecessarily routed through `nvm install 24` even though codi-cli@2.14.1 already supports Node 20.19+. Split the single variable into two: `CODI_NODE_MIN_MAJOR` (default `20`, the floor accepted as already-good) and `CODI_NODE_VERSION` (default `24`, the version installed when an upgrade is genuinely needed). Plan banner, error messages, exit-code descriptions, and `docs/20260424_1327_SPEC_curl-installer.md` updated to match. Closes the gap between the package's declared `engines.node: >=20.19.0` and the installer's behavior.
+
+## [2.14.1] - 2026-04-30
+
+### Fixed
+
+- **Node engine requirement lowered from `>=24` to `>=20.19.0`** — the codi-cli runtime uses only `structuredClone` (Node 17+), `fetch` (Node 18+), and other APIs available since Node 20. The previous `>=24` floor produced an `EBADENGINE` warning for every Node 20 / 22 LTS user even though `codi` ran correctly on those versions. tsup `target` lowered from `node24` to `node20` to match. Documentation (`README.md`, `docs/project/getting-started.md`, `docs/project/troubleshooting.md`, `docs/src/content/docs/guides/getting-started.md`) updated to state the new minimum. (Note: the curl installer was *intended* to keep installing Node 24 in this release but in fact still hard-required Node 24 on existing-Node-20 users; that gap was closed in 2.14.2.)
 
 ### Changed
 

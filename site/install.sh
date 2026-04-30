@@ -7,15 +7,16 @@
 # Spec:   docs/20260424_1327_SPEC_curl-installer.md
 #
 # Environment overrides:
-#   CODI_VERSION       Codi version to install (default: latest)
-#   CODI_NODE_VERSION  Node major to install via nvm (default: 24)
-#   CODI_INSTALL_NVM   Set 0 to refuse nvm install (default: 1)
-#   CODI_DRY_RUN       Set 1 to print actions without executing (default: 0)
-#   CODI_NO_COLOR      Set 1 to disable ANSI colors (default: auto-detect TTY)
+#   CODI_VERSION         Codi version to install (default: latest)
+#   CODI_NODE_MIN_MAJOR  Lowest accepted Node major (default: 20)
+#   CODI_NODE_VERSION    Node major to install via nvm if upgrade needed (default: 24, latest LTS)
+#   CODI_INSTALL_NVM     Set 0 to refuse nvm install (default: 1)
+#   CODI_DRY_RUN         Set 1 to print actions without executing (default: 0)
+#   CODI_NO_COLOR        Set 1 to disable ANSI colors (default: auto-detect TTY)
 #
 # Exit codes:
-#   0   ok            10  unsupported OS         13  npm install failed
-#   1   generic       11  node 24+ required      14  verify failed
+#   0   ok            10  unsupported OS               13  npm install failed
+#   1   generic       11  Node too old (below min)     14  verify failed
 #                     12  npm prefix root-owned, user opted out
 
 set -euo pipefail
@@ -26,6 +27,7 @@ IFS=$'\n\t'
 # ---------------------------------------------------------------------------
 
 readonly CODI_VERSION="${CODI_VERSION:-latest}"
+readonly CODI_NODE_MIN_MAJOR="${CODI_NODE_MIN_MAJOR:-20}"
 readonly CODI_NODE_VERSION="${CODI_NODE_VERSION:-24}"
 readonly CODI_INSTALL_NVM="${CODI_INSTALL_NVM:-1}"
 readonly CODI_DRY_RUN="${CODI_DRY_RUN:-0}"
@@ -167,7 +169,7 @@ print_plan() {
   printf "\n%sCodi installer%s\n\n" "$C_BOLD" "$C_RESET"
   printf "  OS:               %s\n" "$OS_KIND"
   printf "  Current Node:     %s\n" "$node_display"
-  printf "  Required Node:    >=%s\n" "$CODI_NODE_VERSION"
+  printf "  Required Node:    >=%s (will install Node %s if upgrade needed)\n" "$CODI_NODE_MIN_MAJOR" "$CODI_NODE_VERSION"
   printf "  npm prefix:       %s\n" "${NPM_PREFIX:-(none)}"
   printf "  Prefix writable:  %s\n" "$([ "$PREFIX_WRITABLE" = "1" ] && echo "yes" || echo "no")"
   printf "  Codi version:     %s\n" "$CODI_VERSION"
@@ -199,7 +201,7 @@ Recommended fix: switch to nvm-managed Node, then re-run.
   curl -fsSL ${INSTALLER_URL} | bash
 
 Or re-run this installer with CODI_INSTALL_NVM=1 (default) to let it
-install nvm + Node ${CODI_NODE_VERSION} for you under \$HOME/.nvm.
+install nvm + Node ${CODI_NODE_VERSION} (latest LTS) for you under \$HOME/.nvm.
 
 EOF
 }
@@ -216,14 +218,14 @@ main() {
 
   if [ "$NODE_PRESENT" = "0" ]; then
     if [ "$CODI_INSTALL_NVM" = "0" ]; then
-      die "$EXIT_NODE_REQUIRED" "Node not installed and CODI_INSTALL_NVM=0. Install Node ${CODI_NODE_VERSION}+ manually, then re-run."
+      die "$EXIT_NODE_REQUIRED" "Node not installed and CODI_INSTALL_NVM=0. Install Node ${CODI_NODE_MIN_MAJOR}+ manually, then re-run."
     fi
     install_nvm
     install_node
-  elif [ "$NODE_MAJOR" -lt "$CODI_NODE_VERSION" ]; then
-    log_warn "Node ${NODE_MAJOR} found; Codi requires ${CODI_NODE_VERSION}+."
+  elif [ "$NODE_MAJOR" -lt "$CODI_NODE_MIN_MAJOR" ]; then
+    log_warn "Node ${NODE_MAJOR} found; Codi requires ${CODI_NODE_MIN_MAJOR}+."
     if [ "$CODI_INSTALL_NVM" = "0" ]; then
-      die "$EXIT_NODE_REQUIRED" "CODI_INSTALL_NVM=0. Upgrade Node to ${CODI_NODE_VERSION}+ manually, then re-run."
+      die "$EXIT_NODE_REQUIRED" "CODI_INSTALL_NVM=0. Upgrade Node to ${CODI_NODE_MIN_MAJOR}+ manually, then re-run."
     fi
     install_nvm
     install_node
