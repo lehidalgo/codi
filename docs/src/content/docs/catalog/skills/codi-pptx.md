@@ -27,8 +27,8 @@ Creates, edits, and analyzes PowerPoint presentations (`.pptx`). Supports readin
 | Python 3.9+ | required | core runtime |
 | markitdown | `pip install markitdown` | quick text extraction from .pptx |
 | LibreOffice | `brew install --cask libreoffice` | convert .ppt → .pptx, export to PDF/images |
-| Node.js | required for creation | `pptxgenjs` for creating .pptx from scratch |
-| pptxgenjs | `npm install pptxgenjs` | programmatic .pptx creation |
+| Node.js | required for creation | running the bundled TypeScript generator |
+| pptxgenjs | `npm install pptxgenjs` (in your project) | programmatic .pptx creation — required only when running `scripts/ts/generate_pptx.ts` |
 
 ## Scripts
 

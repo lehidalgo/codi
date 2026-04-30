@@ -12,6 +12,7 @@ Creates, edits, and analyzes spreadsheet files (`.xlsx`, `.xlsm`, `.csv`, `.tsv`
 | xlsxwriter | `pip install xlsxwriter` | write `.xlsx` with rich formatting |
 | LibreOffice | `brew install --cask libreoffice` | recalculate formula values |
 | Node.js | optional | TypeScript xlsx utilities |
+| exceljs | `npm install exceljs` | required by `scripts/ts/generate_xlsx.ts` |
 
 Install core packages:
 
