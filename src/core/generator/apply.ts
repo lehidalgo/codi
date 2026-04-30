@@ -143,6 +143,9 @@ export async function applyConfiguration(
 
   let stateUpdated = false;
   try {
+    if (removedAgentIds.length > 0) {
+      await stateManager.removeAgents(removedAgentIds);
+    }
     const updateResult = await stateManager.updateAgentsBatch(agentUpdates);
     stateUpdated = updateResult.ok;
     if (!updateResult.ok) {

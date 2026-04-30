@@ -3,7 +3,7 @@ import path from "node:path";
 import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
-import { hashContent } from "#src/utils/hash.js";
+import { hashBuffer, EMPTY_INPUT_SHA256 } from "#src/utils/hash.js";
 import { STATE_FILENAME } from "#src/constants.js";
 
 /**
@@ -198,6 +198,28 @@ export class StateManager {
   }
 
   /**
+   * Removes agent entries that no longer appear in the active configuration.
+   * Called by apply.ts after a customize that unselects one or more agents,
+   * so stale entries do not linger and inflate future orphan counts.
+   */
+  async removeAgents(agentIds: readonly string[]): Promise<Result<void>> {
+    if (agentIds.length === 0) return ok(undefined);
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+    const state = stateResult.data;
+    let changed = false;
+    for (const id of agentIds) {
+      if (id in state.agents) {
+        delete state.agents[id];
+        changed = true;
+      }
+    }
+    if (!changed) return ok(undefined);
+    state.lastGenerated = new Date().toISOString();
+    return this.write(state);
+  }
+
+  /**
    * Detects orphaned generated files — files that exist in the previous state
    * but are not present in the next generation run. Called BEFORE
    * `updateAgentsBatch` so the previous state is still readable.
@@ -226,10 +248,18 @@ export class StateManager {
       const nextPaths = new Set((nextAgents[agentId] ?? []).map((f) => f.path));
       const orphans = prevFiles.filter((f) => !nextPaths.has(f.path));
       for (const orphan of orphans) {
+        // Generators that skip hashing binary assets (fonts, PDFs, archives,
+        // images) store EMPTY_INPUT_SHA256 as the placeholder. Any current
+        // on-disk hash will differ, which would misclassify them as drifted
+        // and survive agent unselect. Treat them as clean orphans.
+        if (orphan.generatedHash === EMPTY_INPUT_SHA256) {
+          clean.push(orphan);
+          continue;
+        }
         const fullPath = path.resolve(this.projectRoot, orphan.path);
         try {
-          const content = await fs.readFile(fullPath, "utf8");
-          const currentHash = hashContent(content);
+          const bytes = await fs.readFile(fullPath);
+          const currentHash = hashBuffer(bytes);
           if (currentHash === orphan.generatedHash) {
             clean.push(orphan);
           } else {
@@ -317,8 +347,8 @@ export class StateManager {
     for (const stored of storedFiles) {
       try {
         const fullPath = path.resolve(this.projectRoot, stored.path);
-        const content = await fs.readFile(fullPath, "utf8");
-        const currentHash = hashContent(content);
+        const bytes = await fs.readFile(fullPath);
+        const currentHash = hashBuffer(bytes);
         if (currentHash === stored.generatedHash) {
           driftFiles.push({ path: stored.path, status: "synced" });
         } else {
@@ -363,8 +393,8 @@ export class StateManager {
     for (const entry of stored) {
       try {
         const fullPath = path.resolve(this.projectRoot, entry.path);
-        const content = await fs.readFile(fullPath, "utf8");
-        const currentHash = hashContent(content);
+        const bytes = await fs.readFile(fullPath);
+        const currentHash = hashBuffer(bytes);
         if (currentHash === entry.hash) {
           driftFiles.push({ path: entry.path, status: "synced" });
         } else {
@@ -394,8 +424,8 @@ export class StateManager {
     for (const stored of storedHooks) {
       try {
         const fullPath = path.resolve(this.projectRoot, stored.path);
-        const content = await fs.readFile(fullPath, "utf8");
-        const currentHash = hashContent(content);
+        const bytes = await fs.readFile(fullPath);
+        const currentHash = hashBuffer(bytes);
         if (currentHash === stored.generatedHash) {
           driftFiles.push({ path: stored.path, status: "synced" });
         } else {
