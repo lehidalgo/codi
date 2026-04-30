@@ -80,6 +80,13 @@ interface InitData {
   generated: boolean;
   preset?: string;
   rules: string[];
+  /**
+   * Populated when `.codi/` was scaffolded but `resolveConfig` rejected the
+   * resulting state. Each entry carries the validator's error code, message,
+   * and remediation hint. When non-empty, `generated` is `false` and
+   * `hooksInstalled` is `false`.
+   */
+  validationErrors?: Array<{ code: string; message: string; hint: string }>;
 }
 
 function isInteractive(options: InitOptions): boolean {
@@ -553,8 +560,25 @@ export async function initHandler(
   }
 
   let generated = importRegenerated;
+  let validationErrors: InitData["validationErrors"];
   const configResult = await resolveConfig(projectRoot);
-  if (!importRegenerated && configResult.ok) {
+  if (!configResult.ok) {
+    validationErrors = configResult.errors.map((e) => ({
+      code: e.code,
+      message: e.message,
+      hint: e.hint,
+    }));
+    log.error(
+      `Configuration validation failed; ${PROJECT_CLI} cannot generate agent files until the listed errors are fixed.`,
+    );
+    for (const e of configResult.errors) {
+      log.error(`  ${e.code}: ${e.message}`);
+      if (e.hint && e.hint !== e.message) log.info(`    -> ${e.hint}`);
+    }
+    log.info(
+      `Fix the listed errors, then run \`${PROJECT_CLI} generate\` to finish initialization.`,
+    );
+  } else if (!importRegenerated) {
     const applyResult = await applyConfiguration(configResult.data, projectRoot, {
       force: options.force || options.onConflict === "keep-incoming",
       keepCurrent: options.onConflict === "keep-current",
@@ -740,6 +764,7 @@ export async function initHandler(
       preset: displayPresetName,
       rules: ruleTemplates,
       hooksInstalled,
+      ...(validationErrors && validationErrors.length > 0 ? { validationErrors } : {}),
     },
     exitCode: EXIT_CODES.SUCCESS,
   });

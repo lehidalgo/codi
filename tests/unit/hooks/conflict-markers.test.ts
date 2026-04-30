@@ -79,3 +79,56 @@ describe("hasConflictMarkers", () => {
     }
   });
 });
+
+describe("conflict-markers ignore literal blocks", () => {
+  it("skips markers inside fenced code blocks (regression for codi-dev-operations)", () => {
+    const text = [
+      "Here is the example for manual conflict resolution:",
+      "```",
+      "<<<<<<< current (your version)",
+      "[currentContent]",
+      "=======",
+      "[incomingContent]",
+      ">>>>>>> incoming (new template)",
+      "```",
+      "End of example.",
+    ].join("\n");
+    expect(findConflictMarkers(text)).toEqual([]);
+    expect(hasConflictMarkers(text)).toBe(false);
+  });
+
+  it("skips markers inside <example> regions", () => {
+    const text = [
+      "<example>",
+      "<<<<<<< HEAD",
+      "demo content",
+      ">>>>>>> branch-x",
+      "</example>",
+    ].join("\n");
+    expect(findConflictMarkers(text)).toEqual([]);
+    expect(hasConflictMarkers(text)).toBe(false);
+  });
+
+  it("still catches real markers outside literal blocks", () => {
+    const text = [
+      "Real conflict at the top:",
+      "<<<<<<< HEAD",
+      "real content",
+      ">>>>>>> branch",
+      "Then a fenced documentation example:",
+      "```",
+      "<<<<<<< example marker",
+      "```",
+    ].join("\n");
+    const hits = findConflictMarkers(text);
+    expect(hits).toHaveLength(2);
+    expect(hits[0]).toEqual({ line: 2, kind: "ours", text: "<<<<<<< HEAD" });
+    expect(hits[1]).toEqual({ line: 4, kind: "theirs", text: ">>>>>>> branch" });
+    expect(hasConflictMarkers(text)).toBe(true);
+  });
+
+  it("treats an unclosed fence as literal through end of file (no false positive after stray fence)", () => {
+    const text = ["intro", "```", "<<<<<<< not a real conflict — fence never closed"].join("\n");
+    expect(findConflictMarkers(text)).toEqual([]);
+  });
+});
