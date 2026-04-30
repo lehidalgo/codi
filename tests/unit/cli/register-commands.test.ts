@@ -123,3 +123,94 @@ describe("registerHooksCommand", () => {
     expect(fixOpt).toBeDefined();
   });
 });
+
+/**
+ * Smoke tests: every remaining top-level register*Command should register a
+ * sub-command on the supplied program without throwing. These cover the
+ * `program.command(...).description(...).action(...)` chain that lives at
+ * the bottom of every CLI source file. The .action callbacks themselves
+ * are exercised by the per-command Handler tests; what we lock in here is
+ * that registration itself stays wired and named correctly.
+ */
+describe("CLI command registrar smoke tests", () => {
+  type Registrar = (program: Command) => void;
+  const REGISTRARS: Array<{ commandName: string; load: () => Promise<Registrar> }> = [
+    {
+      commandName: "ci",
+      load: async () => (await import("../../../src/cli/ci.js")).registerCiCommand,
+    },
+    {
+      commandName: "clean",
+      load: async () => (await import("../../../src/cli/clean.js")).registerCleanCommand,
+    },
+    {
+      commandName: "compliance",
+      load: async () => (await import("../../../src/cli/compliance.js")).registerComplianceCommand,
+    },
+    {
+      commandName: "docs",
+      load: async () => (await import("../../../src/cli/docs.js")).registerDocsCommand,
+    },
+    {
+      commandName: "docs-check",
+      load: async () => (await import("../../../src/cli/docs-check.js")).registerDocsCheckCommand,
+    },
+    {
+      commandName: "docs-stamp",
+      load: async () => (await import("../../../src/cli/docs-stamp.js")).registerDocsStampCommand,
+    },
+    {
+      commandName: "docs-update",
+      load: async () => (await import("../../../src/cli/docs-update.js")).registerDocsUpdateCommand,
+    },
+    {
+      commandName: "doctor",
+      load: async () => (await import("../../../src/cli/doctor.js")).registerDoctorCommand,
+    },
+    {
+      commandName: "generate",
+      load: async () => (await import("../../../src/cli/generate.js")).registerGenerateCommand,
+    },
+    {
+      commandName: "init",
+      load: async () => (await import("../../../src/cli/init.js")).registerInitCommand,
+    },
+    {
+      commandName: "onboard",
+      load: async () => (await import("../../../src/cli/onboard.js")).registerOnboardCommand,
+    },
+    {
+      commandName: "skill",
+      load: async () => (await import("../../../src/cli/skill.js")).registerSkillCommand,
+    },
+    {
+      commandName: "status",
+      load: async () => (await import("../../../src/cli/status.js")).registerStatusCommand,
+    },
+    {
+      commandName: "validate",
+      load: async () => (await import("../../../src/cli/validate.js")).registerValidateCommand,
+    },
+    {
+      commandName: "verify",
+      load: async () => (await import("../../../src/cli/verify.js")).registerVerifyCommand,
+    },
+    {
+      commandName: "watch",
+      load: async () => (await import("../../../src/cli/watch.js")).registerWatchCommand,
+    },
+  ];
+
+  for (const { commandName, load } of REGISTRARS) {
+    it(`register${commandName.replace(/(?:^|-)([a-z])/g, (_, c) => c.toUpperCase())}Command registers "${commandName}" with a description`, async () => {
+      const program = new Command();
+      program.option("-j, --json");
+      const fn = await load();
+      expect(() => fn(program)).not.toThrow();
+      const cmd = program.commands.find((c) => c.name() === commandName);
+      expect(cmd, `Expected sub-command "${commandName}" to be registered`).toBeDefined();
+      expect(typeof cmd?.description()).toBe("string");
+      expect((cmd?.description() ?? "").length).toBeGreaterThan(0);
+    });
+  }
+});

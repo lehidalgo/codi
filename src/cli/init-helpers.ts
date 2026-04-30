@@ -419,3 +419,131 @@ export function applyToolingPicks(flags: ResolvedFlags, tooling: ToolingPromptRe
     value: a.commit_test_run,
   };
 }
+
+import { openBackup } from "../core/backup/backup-manager.js";
+import type { BackupHandle, BackupTrigger } from "../core/backup/types.js";
+import { Logger } from "../core/output/logger.js";
+import { RETENTION_CANCELLED_ERROR } from "../constants.js";
+import {
+  connectGithubRepo,
+  connectLocalDirectory,
+  connectZipFile,
+} from "../core/external-source/connectors.js";
+import { runArtifactSelectionFromSource } from "./init-wizard-modify-add.js";
+
+/**
+ * Connects to the user's import source and routes through the artifact
+ * selection UI. Used as a fallback when the regular preset-style installer
+ * fails because the source carries no preset.yaml. Always cleans up the
+ * temp source on exit so callers do not have to.
+ */
+export async function runArtifactSelectionFallback(
+  configDir: string,
+  kind: "zip" | "github" | "local",
+  importSource: string,
+): Promise<void> {
+  const log = Logger.getInstance();
+  try {
+    let source;
+    if (kind === "zip") {
+      source = await connectZipFile(importSource);
+    } else if (kind === "github") {
+      source = await connectGithubRepo(importSource);
+    } else {
+      source = await connectLocalDirectory(importSource);
+    }
+    try {
+      await runArtifactSelectionFromSource(configDir, source);
+    } finally {
+      await source.cleanup();
+    }
+  } catch (cause) {
+    log.warn(
+      `Artifact-selection fallback failed: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
+}
+
+export interface SetupBackupResult {
+  handle: BackupHandle | null;
+  /** True when the user cancelled retention eviction - caller MUST abort. */
+  cancelled: boolean;
+}
+
+export async function setupBackupForInit(
+  projectRoot: string,
+  configDir: string,
+  trigger: BackupTrigger,
+  isFirstTime: boolean,
+): Promise<SetupBackupResult> {
+  const log = Logger.getInstance();
+  const r = await openBackup(projectRoot, configDir, {
+    trigger,
+    includeSource: !isFirstTime,
+    includeOutput: true,
+    includePreExisting: isFirstTime,
+  });
+  if (r.ok) {
+    return { handle: r.data, cancelled: false };
+  }
+  if (r.errors === "retention-cancelled") {
+    log.error(RETENTION_CANCELLED_ERROR);
+    return { handle: null, cancelled: true };
+  }
+  return { handle: null, cancelled: false };
+}
+
+import { applyConfiguration } from "../core/generator/apply.js";
+import type { NormalizedConfig } from "../types/config.js";
+import { PROJECT_CLI } from "../constants.js";
+
+export interface ApplyWithBackupOutcome {
+  generated: boolean;
+  cancelled: boolean;
+  backupTimestamp?: string;
+}
+
+/**
+ * Wraps applyConfiguration with the openBackup -> finalise/abort lifecycle.
+ * Returns `cancelled: true` when retention TUI was cancelled - caller MUST
+ * abort the destructive operation and surface E_BACKUP_CANCELLED to the user.
+ */
+export async function applyConfigurationWithBackup(
+  projectRoot: string,
+  configDir: string,
+  config: NormalizedConfig,
+  applyOptions: Parameters<typeof applyConfiguration>[2],
+  isUpdate: boolean,
+): Promise<ApplyWithBackupOutcome> {
+  const log = Logger.getInstance();
+  const trigger: BackupTrigger = isUpdate ? "init-customize" : "init-first-time";
+  const { handle, cancelled } = await setupBackupForInit(
+    projectRoot,
+    configDir,
+    trigger,
+    !isUpdate,
+  );
+  if (cancelled) return { generated: false, cancelled: true };
+  try {
+    const r = await applyConfiguration(config, projectRoot, applyOptions, handle ?? undefined);
+    if (r.ok) {
+      const { reconciliation } = r.data;
+      if (reconciliation.pruned.length > 0) {
+        log.info(
+          `Pruned ${reconciliation.pruned.length} orphaned file(s) removed from source templates`,
+        );
+      }
+      if (handle) {
+        await handle.finalise();
+        return { generated: true, cancelled: false, backupTimestamp: handle.timestamp };
+      }
+      return { generated: true, cancelled: false };
+    }
+    if (handle) await handle.abort();
+    log.warn(`Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`);
+    return { generated: false, cancelled: false };
+  } catch (cause) {
+    if (handle) await handle.abort();
+    throw cause;
+  }
+}

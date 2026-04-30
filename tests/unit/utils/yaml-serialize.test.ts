@@ -10,6 +10,18 @@ function roundTrip(value: string): unknown {
 
 describe("fmStr", () => {
   describe("plain scalar (no quoting)", () => {
+    it("quotes empty strings — isPlainSafe rejects empty input", () => {
+      expect(fmStr("")).toBe("''");
+    });
+
+    it("quotes a colon-bearing string — isPlainSafe rejects YAML special chars", () => {
+      expect(fmStr("foo: bar")).toBe("'foo: bar'");
+    });
+
+    it("collapses internal newlines to spaces before serialization", () => {
+      expect(fmStr("foo\nbar")).toBe("foo bar");
+    });
+
     it("leaves simple identifiers unquoted", () => {
       expect(fmStr("codi-mobile-development")).toBe("codi-mobile-development");
     });

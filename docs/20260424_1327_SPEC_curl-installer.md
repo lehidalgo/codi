@@ -3,7 +3,8 @@
 - **Date**: 2026-04-24 13:27
 - **Document**: 20260424_1327_SPEC_curl-installer.md
 - **Category**: SPEC
-- **Status**: Implemented in PR #1 (commit pending). nvm pin updated from `v0.39.7` (planned) to `v0.40.4` (latest stable at implementation time).
+- **Status**: Implemented in PR #1. nvm pin updated from `v0.39.7` (planned) to `v0.40.4` (latest stable at implementation time).
+- **Superseded by v2.14.2 (2026-04-30)**: minimum accepted Node version lowered from `24` to `20` to match `package.json` `engines.node: >=20.19.0`. The installer now uses two variables: `CODI_NODE_MIN_MAJOR` (default `20`, the floor) and `CODI_NODE_VERSION` (default `24`, the install target when an upgrade is needed). Users on Node 20.19+ are no longer force-upgraded. See CHANGELOG `[2.14.2]` for rationale.
 
 ## 1. Problem & Context
 

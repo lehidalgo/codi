@@ -58,4 +58,68 @@ describe("conflict-marker hook script", () => {
     expect(status).toBe(1);
     expect(stderr).toMatch(/diff3\.txt/);
   });
+
+  it("exits 0 when markers appear only inside fenced code blocks (documentation)", async () => {
+    const docFile = path.join(tmp, "skill.md");
+    await fs.writeFile(
+      docFile,
+      [
+        "# Skill teaching manual conflict resolution",
+        "",
+        "Write the file with git-style conflict markers:",
+        "```",
+        "<<<<<<< current (your version)",
+        "[currentContent]",
+        "=======",
+        "[incomingContent]",
+        ">>>>>>> incoming (new template)",
+        "```",
+        "End of example.",
+      ].join("\n"),
+    );
+    const { status } = runScript([docFile]);
+    expect(status).toBe(0);
+  });
+
+  it("exits 0 when markers appear only inside <example> tag regions", async () => {
+    const docFile = path.join(tmp, "skill.md");
+    await fs.writeFile(
+      docFile,
+      ["# Skill", "<example>", "<<<<<<< HEAD", "demo", ">>>>>>> branch", "</example>"].join("\n"),
+    );
+    const { status } = runScript([docFile]);
+    expect(status).toBe(0);
+  });
+
+  it("still detects real markers when documentation examples are also present", async () => {
+    const docFile = path.join(tmp, "mixed.md");
+    await fs.writeFile(
+      docFile,
+      [
+        "<<<<<<< HEAD",
+        "real conflict at line 1",
+        ">>>>>>> branch",
+        "",
+        "Then a documentation example below:",
+        "```",
+        "<<<<<<< this is just an example",
+        "```",
+      ].join("\n"),
+    );
+    const { status, stderr } = runScript([docFile]);
+    expect(status).toBe(1);
+    // Real marker is on line 1; the example marker on line 7 should be ignored.
+    expect(stderr).toMatch(/mixed\.md:1/);
+    expect(stderr).not.toMatch(/mixed\.md:7/);
+  });
+
+  it("treats an unclosed fence as literal through end of file (no false positive)", async () => {
+    const f = path.join(tmp, "unclosed.md");
+    await fs.writeFile(
+      f,
+      ["intro", "```", "<<<<<<< not a real conflict — fence never closed"].join("\n"),
+    );
+    const { status } = runScript([f]);
+    expect(status).toBe(0);
+  });
 });

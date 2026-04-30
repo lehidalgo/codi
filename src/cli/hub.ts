@@ -22,6 +22,7 @@ import {
   handleVerify,
   handleCompliance,
   handleRevert,
+  handleBackup,
   printResult,
   resetHubExitCode,
   getHubExitCode,
@@ -57,6 +58,12 @@ export const NORMAL_MENU: HubTopLevelEntry[] = [
     value: "update",
     label: "Update artifacts",
     hint: "Refresh rules, skills, agents, MCP servers from the current codi version",
+    requiresProject: true,
+  },
+  {
+    value: "revert",
+    label: "Revert to a backup",
+    hint: "Restore .codi/ and generated files from a snapshot taken before a destructive op",
     requiresProject: true,
   },
   {
@@ -146,9 +153,9 @@ export const ADVANCED_MENU: HubTopLevelEntry[] = [
     requiresProject: true,
   },
   {
-    value: "revert",
-    label: "Revert to backup",
-    hint: "List backups, restore latest, or pick by timestamp",
+    value: "backup",
+    label: "Manage backups",
+    hint: "List sealed backups, delete by timestamp, or interactively prune",
     requiresProject: true,
   },
 ];
@@ -246,6 +253,7 @@ async function routeAction(action: string, projectRoot: string): Promise<void> {
     verify: handleVerify,
     compliance: handleCompliance,
     revert: handleRevert,
+    backup: handleBackup,
   };
   const handler = handlers[action];
   if (handler) await handler(projectRoot);

@@ -48,8 +48,19 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Test
-        run: pnpm test
+      - name: Test (with coverage)
+        run: pnpm test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/lcov.info
+          # Use slug to avoid the "missing token" warning on public repos.
+          slug: lehidalgo/codi
+          # Don't fail the job if Codecov is having a bad day.
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   secrets-scan:
     runs-on: ubuntu-latest

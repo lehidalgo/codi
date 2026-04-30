@@ -1,6 +1,6 @@
 {
   "name": "codi-cli",
-  "version": "2.14.1",
+  "version": "2.14.2",
   "description": "Unified configuration platform for AI coding agents",
   "type": "module",
   "bin": {
@@ -35,7 +35,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit",
     "dev": "tsup --watch",
-    "prepare": "husky",
+    "prepare": "husky && node scripts/setup-husky-hooks.mjs",
     "preversion": "npm run lint && npm run build && npm run test",
     "postversion": "git push --follow-tags",
     "prepublishOnly": "[ \"$CI\" = \"true\" ] || [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ] || (echo 'ERROR: publish only allowed from main branch' && exit 1) && npm run lint && npm run test && npm run build",

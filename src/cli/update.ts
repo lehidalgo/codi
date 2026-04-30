@@ -41,8 +41,11 @@ import {
   AVAILABLE_MCP_SERVER_TEMPLATES,
 } from "../core/scaffolder/mcp-template-loader.js";
 import { createCommandResult } from "../core/output/formatter.js";
+import { createError } from "../core/output/errors.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { Logger } from "../core/output/logger.js";
+import { withBackup } from "./backup-cli-helpers.js";
+import { RETENTION_CANCELLED_ERROR } from "../constants.js";
 import { writeAuditEntry } from "../core/audit/audit-log.js";
 import type { CommandResult } from "../core/output/types.js";
 import type { Result } from "../types/result.js";
@@ -357,6 +360,24 @@ async function pullFromSource(
   return { updated, filesWithMarkers };
 }
 
+function emptyUpdateData(): UpdateData {
+  return {
+    flagsAdded: [],
+    flagsReset: false,
+    preset: null,
+    rulesUpdated: [],
+    rulesSkipped: [],
+    skillsUpdated: [],
+    skillsSkipped: [],
+    agentsUpdated: [],
+    agentsSkipped: [],
+    mcpServersUpdated: [],
+    mcpServersSkipped: [],
+    sourceUpdated: [],
+    regenerated: false,
+  };
+}
+
 export async function updateHandler(
   projectRoot: string,
   options: UpdateOptions,
@@ -373,21 +394,7 @@ export async function updateHandler(
     return createCommandResult({
       success: false,
       command: "update",
-      data: {
-        flagsAdded: [],
-        flagsReset: false,
-        preset: null,
-        rulesUpdated: [],
-        rulesSkipped: [],
-        skillsUpdated: [],
-        skillsSkipped: [],
-        agentsUpdated: [],
-        agentsSkipped: [],
-        mcpServersUpdated: [],
-        mcpServersSkipped: [],
-        sourceUpdated: [],
-        regenerated: false,
-      },
+      data: emptyUpdateData(),
       errors: [
         {
           code: "E_CONFIG_NOT_FOUND",
@@ -643,18 +650,44 @@ export async function updateHandler(
     registerAllAdapters();
     const configResult = await resolveConfig(projectRoot);
     if (configResult.ok) {
-      const applyResult = await applyConfiguration(configResult.data, projectRoot, {
-        keepCurrent: options.onConflict === "keep-current",
-        force: options.force || options.onConflict === "keep-incoming",
-        unionMerge,
-        forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
-      });
-      regenerated = applyResult.ok;
-      if (applyResult.ok && applyResult.data.reconciliation.pruned.length > 0) {
-        log.info(
-          `Pruned ${applyResult.data.reconciliation.pruned.length} orphaned file(s) removed from source templates`,
-        );
+      const outcome = await withBackup(
+        projectRoot,
+        configDir,
+        { trigger: "update", includeSource: true, includeOutput: true },
+        async (handle) => {
+          const r = await applyConfiguration(
+            configResult.data,
+            projectRoot,
+            {
+              keepCurrent: options.onConflict === "keep-current",
+              force: options.force || options.onConflict === "keep-incoming",
+              unionMerge,
+              forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
+            },
+            handle ?? undefined,
+          );
+          if (r.ok && r.data.reconciliation.pruned.length > 0) {
+            log.info(
+              `Pruned ${r.data.reconciliation.pruned.length} orphaned file(s) removed from source templates`,
+            );
+          }
+          return r.ok ? { ok: true, data: r.data } : { ok: false };
+        },
+      );
+      if (!outcome.ok && outcome.cancelled) {
+        return createCommandResult({
+          success: false,
+          command: "update",
+          data: emptyUpdateData(),
+          errors: [
+            createError("E_BACKUP_CANCELLED", {
+              message: RETENTION_CANCELLED_ERROR,
+            }),
+          ],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
       }
+      regenerated = outcome.ok;
     }
   }
 

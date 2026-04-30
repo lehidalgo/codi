@@ -533,5 +533,90 @@ describe("StateManager", () => {
       ]);
       expect(deleted).toEqual([".claude/skills/foo/ghost.txt"]);
     });
+
+    it("treats binary assets (placeholder empty-input hash) as clean orphans", async () => {
+      // Generators that skip hashing binary assets store EMPTY_INPUT_SHA256
+      // as the placeholder. Without the binary-safe path, fs.readFile(..., utf8)
+      // corrupts the bytes and hash mismatch misclassifies them as drifted,
+      // which leaves them on disk after agent unselect.
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const binPath = ".cursor/skills/x/assets/font.ttf";
+      const fullPath = path.join(tmpDir, binPath);
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      // Write actual binary bytes (non-UTF-8)
+      await fs.writeFile(fullPath, Buffer.from([0x00, 0x01, 0xff, 0xfe, 0x80]));
+      const { EMPTY_INPUT_SHA256 } = await import("#src/utils/hash.js");
+      await mgr.updateAgentsBatch({
+        cursor: [
+          {
+            path: binPath,
+            sourceHash: "src",
+            generatedHash: EMPTY_INPUT_SHA256,
+            sources: ["codi.yaml"],
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      });
+
+      const result = await mgr.detectOrphans({ cursor: [] });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.clean).toHaveLength(1);
+      expect(result.data.drifted).toHaveLength(0);
+      expect(result.data.clean[0]!.path).toBe(binPath);
+    });
+  });
+
+  describe("removeAgents", () => {
+    it("clears state entries for fully-removed agents", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      await mgr.updateAgentsBatch({
+        "claude-code": [
+          {
+            path: "CLAUDE.md",
+            sourceHash: "x",
+            generatedHash: "y",
+            sources: [],
+            timestamp: "t",
+          },
+        ],
+        cursor: [
+          {
+            path: ".cursor/rules/a.md",
+            sourceHash: "x",
+            generatedHash: "y",
+            sources: [],
+            timestamp: "t",
+          },
+        ],
+      });
+
+      const result = await mgr.removeAgents(["cursor"]);
+      expect(result.ok).toBe(true);
+
+      const after = await mgr.read();
+      if (!after.ok) throw new Error("read failed");
+      expect(Object.keys(after.data.agents).sort()).toEqual(["claude-code"]);
+    });
+
+    it("is a no-op when no requested agents are present", async () => {
+      const mgr = new StateManager(tmpDir, tmpDir);
+      await mgr.updateAgentsBatch({
+        "claude-code": [
+          {
+            path: "CLAUDE.md",
+            sourceHash: "x",
+            generatedHash: "y",
+            sources: [],
+            timestamp: "t",
+          },
+        ],
+      });
+      const result = await mgr.removeAgents(["cursor", "windsurf"]);
+      expect(result.ok).toBe(true);
+      const after = await mgr.read();
+      if (!after.ok) throw new Error("read failed");
+      expect(Object.keys(after.data.agents)).toEqual(["claude-code"]);
+    });
   });
 });

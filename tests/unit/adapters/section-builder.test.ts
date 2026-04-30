@@ -247,6 +247,28 @@ describe("buildMcpEnvExample", () => {
     expect(result).toContain("neon-b");
     expect(result).toContain("NEON_API_KEY=");
   });
+
+  it("sorts env vars alphabetically when multiple distinct vars exist", () => {
+    // Exercises the sort comparator inside buildMcpEnvExample. Vars listed
+    // in non-alphabetical insertion order must come out sorted.
+    const result = buildMcpEnvExample({
+      "srv-a": {
+        command: "npx",
+        env: {
+          ZED_KEY: "${ZED_KEY}",
+          ALPHA_KEY: "${ALPHA_KEY}",
+          MIDDLE_KEY: "${MIDDLE_KEY}",
+        },
+      },
+    });
+    expect(result).not.toBeNull();
+    const alphaIdx = result!.indexOf("ALPHA_KEY=");
+    const middleIdx = result!.indexOf("MIDDLE_KEY=");
+    const zedIdx = result!.indexOf("ZED_KEY=");
+    expect(alphaIdx).toBeGreaterThan(-1);
+    expect(middleIdx).toBeGreaterThan(alphaIdx);
+    expect(zedIdx).toBeGreaterThan(middleIdx);
+  });
 });
 
 describe("buildSkillRoutingTable", () => {

@@ -47,4 +47,12 @@ describe("satisfiesVersion", () => {
     expect(satisfiesVersion("1.0.1", ">=1.0.0")).toBe(true);
     expect(satisfiesVersion("1.0.0", ">=1.0.1")).toBe(false);
   });
+
+  it("returns false when current version is not parseable under >= constraint", () => {
+    expect(satisfiesVersion("not-a-version", ">=1.0.0")).toBe(false);
+  });
+
+  it("returns false when required version is not parseable under >= constraint", () => {
+    expect(satisfiesVersion("1.0.0", ">=garbage")).toBe(false);
+  });
 });

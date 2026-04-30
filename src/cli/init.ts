@@ -14,7 +14,6 @@ import {
 } from "../constants.js";
 import { getBuiltinPresetDefinition, getBuiltinPresetNames } from "../templates/presets/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
-import { applyConfiguration } from "../core/generator/apply.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
@@ -39,7 +38,11 @@ import {
   syncManifestOnInit,
   recordPresetLock,
   applyToolingPicks,
+  applyConfigurationWithBackup,
+  runArtifactSelectionFallback,
 } from "./init-helpers.js";
+import { createError } from "../core/output/errors.js";
+import { RETENTION_CANCELLED_ERROR } from "../constants.js";
 import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
@@ -52,12 +55,6 @@ import type { GlobalOptions } from "./shared.js";
 import { VERSION } from "../index.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
-import { runArtifactSelectionFromSource } from "./init-wizard-modify-add.js";
-import {
-  connectGithubRepo,
-  connectLocalDirectory,
-  connectZipFile,
-} from "../core/external-source/connectors.js";
 // HookInstallResult used indirectly via hookResult.data.files
 
 interface InitOptions extends GlobalOptions {
@@ -80,43 +77,19 @@ interface InitData {
   generated: boolean;
   preset?: string;
   rules: string[];
+  /** Timestamp of the pre-init backup, when one was taken. */
+  backup?: string;
+  /**
+   * Populated when `.codi/` was scaffolded but `resolveConfig` rejected the
+   * resulting state. Each entry carries the validator's error code, message,
+   * and remediation hint. When non-empty, `generated` is `false` and
+   * `hooksInstalled` is `false`.
+   */
+  validationErrors?: Array<{ code: string; message: string; hint: string }>;
 }
 
 function isInteractive(options: InitOptions): boolean {
   return !options.json && !options.quiet && !options.agents;
-}
-
-/**
- * Connects to the user's import source and routes through the artifact
- * selection UI. Used as a fallback when the regular preset-style installer
- * fails because the source carries no preset.yaml. Always cleans up the
- * temp source on exit so callers do not have to.
- */
-async function runArtifactSelectionFallback(
-  configDir: string,
-  kind: "zip" | "github" | "local",
-  importSource: string,
-): Promise<void> {
-  const log = Logger.getInstance();
-  try {
-    let source;
-    if (kind === "zip") {
-      source = await connectZipFile(importSource);
-    } else if (kind === "github") {
-      source = await connectGithubRepo(importSource);
-    } else {
-      source = await connectLocalDirectory(importSource);
-    }
-    try {
-      await runArtifactSelectionFromSource(configDir, source);
-    } finally {
-      await source.cleanup();
-    }
-  } catch (cause) {
-    log.warn(
-      `Artifact-selection fallback failed: ${cause instanceof Error ? cause.message : String(cause)}`,
-    );
-  }
 }
 
 function hasSelections(selections: ExistingSelections): boolean {
@@ -553,25 +526,60 @@ export async function initHandler(
   }
 
   let generated = importRegenerated;
+  let validationErrors: InitData["validationErrors"];
+  let backupTimestamp: string | undefined;
   const configResult = await resolveConfig(projectRoot);
-  if (!importRegenerated && configResult.ok) {
-    const applyResult = await applyConfiguration(configResult.data, projectRoot, {
-      force: options.force || options.onConflict === "keep-incoming",
-      keepCurrent: options.onConflict === "keep-current",
-      forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
-    });
-    generated = applyResult.ok;
-    if (applyResult.ok) {
-      const { reconciliation } = applyResult.data;
-      if (reconciliation.pruned.length > 0) {
-        log.info(
-          `Pruned ${reconciliation.pruned.length} orphaned file(s) removed from source templates`,
-        );
-      }
+  if (!configResult.ok) {
+    validationErrors = configResult.errors.map((e) => ({
+      code: e.code,
+      message: e.message,
+      hint: e.hint,
+    }));
+    log.error(
+      `Configuration validation failed; ${PROJECT_CLI} cannot generate agent files until the listed errors are fixed.`,
+    );
+    for (const e of configResult.errors) {
+      log.error(`  ${e.code}: ${e.message}`);
+      if (e.hint && e.hint !== e.message) log.info(`    -> ${e.hint}`);
     }
-    if (!applyResult.ok) {
-      log.warn(`Generation after init failed; you can run \`${PROJECT_CLI} generate\` later.`);
+    log.info(
+      `Fix the listed errors, then run \`${PROJECT_CLI} generate\` to finish initialization.`,
+    );
+  } else if (!importRegenerated) {
+    const outcome = await applyConfigurationWithBackup(
+      projectRoot,
+      configDir,
+      configResult.data,
+      {
+        force: options.force || options.onConflict === "keep-incoming",
+        keepCurrent: options.onConflict === "keep-current",
+        forceDeleteDriftedOrphans: options.force || options.onConflict === "keep-incoming",
+      },
+      isUpdate,
+    );
+    if (outcome.cancelled) {
+      return createCommandResult({
+        success: false,
+        command: "init",
+        data: {
+          configDir,
+          agents: agentIds,
+          stack,
+          generated: false,
+          preset: displayPresetName,
+          rules: ruleTemplates,
+          hooksInstalled: false,
+        },
+        errors: [
+          createError("E_BACKUP_CANCELLED", {
+            message: RETENTION_CANCELLED_ERROR,
+          }),
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
     }
+    generated = outcome.generated;
+    backupTimestamp = outcome.backupTimestamp;
   }
 
   // Create docs/project/ directory and initial stamp when documentation check is enabled
@@ -740,6 +748,8 @@ export async function initHandler(
       preset: displayPresetName,
       rules: ruleTemplates,
       hooksInstalled,
+      ...(backupTimestamp ? { backup: backupTimestamp } : {}),
+      ...(validationErrors && validationErrors.length > 0 ? { validationErrors } : {}),
     },
     exitCode: EXIT_CODES.SUCCESS,
   });

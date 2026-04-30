@@ -5,12 +5,12 @@ description: How Codi installs pre-commit hooks for multi-language projects
 
 Codi installs a pre-commit hook configuration on `codi init`. The runner is auto-detected based on signals in your project root:
 
-| Signal | Runner |
-|---|---|
-| `.husky/` directory exists | husky |
-| `.pre-commit-config.yaml` exists | pre-commit framework |
-| `lefthook.yml` or `.lefthook.yml` exists | lefthook |
-| none of the above | standalone (`.git/hooks/pre-commit`) |
+| Signal                                   | Runner                               |
+| ---------------------------------------- | ------------------------------------ |
+| `.husky/` directory exists               | husky                                |
+| `.pre-commit-config.yaml` exists         | pre-commit framework                 |
+| `lefthook.yml` or `.lefthook.yml` exists | lefthook                             |
+| none of the above                        | standalone (`.git/hooks/pre-commit`) |
 
 For polyglot repos that mix Python with JavaScript/TypeScript, the **pre-commit framework** is recommended — it gives you isolated tool environments, `pre-commit autoupdate` compatibility, and pinned `rev:` per upstream repo.
 
@@ -18,12 +18,12 @@ For polyglot repos that mix Python with JavaScript/TypeScript, the **pre-commit 
 
 Four flags control which tools Codi wires into the hook config. All default to `auto` and are resolved from project signals at `codi init` / `codi generate` time.
 
-| Flag | Values | Auto picks |
-|---|---|---|
-| `python_type_checker` | `auto`, `mypy`, `basedpyright`, `pyright`, `off` | mypy when `[tool.mypy]` / mypy.ini / Django / SQLAlchemy is present; basedpyright for FastAPI / pydantic / SQLModel; basedpyright for codebases >20k python LOC; basedpyright as fallback. |
-| `js_format_lint` | `auto`, `eslint-prettier`, `biome`, `off` | biome when `biome.json` / `biome.jsonc` exists; eslint-prettier when `.eslintrc*` / `eslint.config.*` / `.prettierrc*` exists; eslint-prettier as fallback. Biome uses `biomejs/pre-commit` v0.6.1 with `additionalDependencies: ["@biomejs/biome@2.3.0"]`. |
-| `commit_type_check` | `auto`, `on`, `off` | always `off` — type-checking is deferred to `pre-push`. Set to `on` to run `tsc` / `mypy` / `basedpyright` on every commit (slower commits). |
-| `commit_test_run` | `auto`, `on`, `off` | always `off` — industry consensus rejects full test suites on every commit. Set to `on` to override. |
+| Flag                  | Values                                           | Auto picks                                                                                                                                                                                                                                                  |
+| --------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `python_type_checker` | `auto`, `mypy`, `basedpyright`, `pyright`, `off` | mypy when `[tool.mypy]` / mypy.ini / Django / SQLAlchemy is present; basedpyright for FastAPI / pydantic / SQLModel; basedpyright for codebases >20k python LOC; basedpyright as fallback.                                                                  |
+| `js_format_lint`      | `auto`, `eslint-prettier`, `biome`, `off`        | biome when `biome.json` / `biome.jsonc` exists; eslint-prettier when `.eslintrc*` / `eslint.config.*` / `.prettierrc*` exists; eslint-prettier as fallback. Biome uses `biomejs/pre-commit` v0.6.1 with `additionalDependencies: ["@biomejs/biome@2.3.0"]`. |
+| `commit_type_check`   | `auto`, `on`, `off`                              | always `off` — type-checking is deferred to `pre-push`. Set to `on` to run `tsc` / `mypy` / `basedpyright` on every commit (slower commits).                                                                                                                |
+| `commit_test_run`     | `auto`, `on`, `off`                              | always `off` — industry consensus rejects full test suites on every commit. Set to `on` to override.                                                                                                                                                        |
 
 To override the auto-resolved values, edit `.codi/flags.yaml`:
 
@@ -106,3 +106,20 @@ If the file fails YAML parsing on regeneration, Codi writes the broken content t
 ## Adding your own repos alongside Codi's
 
 Add any non-Codi `- repo:` entries to `repos:` — Codi only touches entries with the `# managed by codi` marker. Your additions pass through untouched on every `codi generate`.
+
+## Conflict-marker check (fence- and `<example>`-aware as of v2.14.2)
+
+Codi installs a `conflict-marker-check` hook (in both the husky and pre-commit-framework wirings) that scans staged files for unresolved git merge markers (`<<<<<<<`, `=======`, `>>>>>>>`, `|||||||`). Since v2.14.2, the scanner is **literal-block-aware** — it ignores markers inside:
+
+- Fenced code blocks (` ``` ` and `~~~`, with up to three leading spaces of indent per CommonMark)
+- `<example>...</example>` regions (case-insensitive, configurable tag list)
+
+This means skill content and documentation can show what unresolved conflict markers look like — for teaching purposes — without tripping the hook. Real markers in source code or unfenced prose still get caught.
+
+Implementation: the scanner lives in `src/core/scanner/literal-blocks.ts` (used by both `codi validate` and the inlined hook script in `.git/hooks/codi-conflict-marker-check.mjs`). Drift between the two implementations is pinned by an integration test.
+
+## Coverage at pre-push (codi-cli's own repo, v2.14.2+)
+
+Codi-cli now runs `pnpm test:coverage` at the pre-push stage of its own development repository. The hook is generated by `scripts/setup-husky-hooks.mjs` on `pnpm install` (via the `prepare` script), and enforces the global thresholds defined in `vitest.config.ts` (lines ≥ 76%, statements ≥ 75%, functions ≥ 79%, branches ≥ 66%) plus tighter per-subsystem bars.
+
+This is **not** something Codi installs into your project — it's specific to codi-cli's contributor workflow. For your own project's pre-push checks, configure them via the pre-commit framework's `pre-push` stage. The `commit_test_run` and `commit_type_check` flags handle the most common cases when set to `on`, with the right stage assignment.

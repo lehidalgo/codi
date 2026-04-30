@@ -52,4 +52,71 @@ describe("codi validate — conflict markers", () => {
 
     expect(result.data.errors.find((e) => e.code === "E_CONFLICT_MARKERS")).toBeUndefined();
   });
+
+  it("does not flag markers inside fenced code blocks (regression for codi-dev-operations)", async () => {
+    // The codi-dev-operations skill teaches manual conflict resolution by
+    // showing what unresolved markers look like inside a markdown code
+    // fence. The validator must treat that documentation as illustrative,
+    // not as a real unresolved conflict.
+    await writeMinimalProject(
+      [
+        "# Demo skill",
+        "",
+        "Write the file with git-style conflict markers:",
+        "```",
+        "<<<<<<< current (your version)",
+        "[currentContent]",
+        "=======",
+        "[incomingContent]",
+        ">>>>>>> incoming (new template)",
+        "```",
+        "",
+        "End of example.",
+      ].join("\n"),
+    );
+
+    const result = await validateHandler(tmp);
+
+    expect(result.data.errors.find((e) => e.code === "E_CONFLICT_MARKERS")).toBeUndefined();
+  });
+
+  it("does not flag markers inside <example> tag regions", async () => {
+    await writeMinimalProject(
+      [
+        "# Demo skill",
+        "",
+        "<example>",
+        "<<<<<<< HEAD",
+        "demo content showing what an unresolved conflict looks like",
+        ">>>>>>> branch-x",
+        "</example>",
+      ].join("\n"),
+    );
+
+    const result = await validateHandler(tmp);
+
+    expect(result.data.errors.find((e) => e.code === "E_CONFLICT_MARKERS")).toBeUndefined();
+  });
+
+  it("still fails when a real marker appears outside fences and example tags", async () => {
+    await writeMinimalProject(
+      [
+        "# Demo skill",
+        "",
+        "<<<<<<< HEAD",
+        "this is a real unresolved conflict in the body",
+        ">>>>>>> branch",
+        "",
+        "And here is a fenced documentation example that should be ignored:",
+        "```",
+        "<<<<<<< example marker shown to the agent",
+        "```",
+      ].join("\n"),
+    );
+
+    const result = await validateHandler(tmp);
+
+    expect(result.success).toBe(false);
+    expect(result.data.errors.some((e) => e.code === "E_CONFLICT_MARKERS")).toBe(true);
+  });
 });
