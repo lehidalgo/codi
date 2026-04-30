@@ -72,6 +72,7 @@
     "github-copilot"
   ],
   "dependencies": {
+    "@clack/core": "1.2.0",
     "@clack/prompts": "^1.1.0",
     "commander": "^14.0.3",
     "diff": "^8.0.4",
