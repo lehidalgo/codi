@@ -4,17 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.14.0] - 2026-04-29
+## [Unreleased]
 
 ### Fixed
 
 - **Node engine requirement lowered from `>=24` to `>=20.19.0`** — the codi-cli runtime uses only `structuredClone` (Node 17+), `fetch` (Node 18+), and other APIs available since Node 20. The previous `>=24` floor produced an `EBADENGINE` warning for every Node 20 / 22 LTS user even though `codi` ran correctly on those versions. tsup `target` lowered from `node24` to `node20` to match. Documentation (`README.md`, `docs/project/getting-started.md`, `docs/project/troubleshooting.md`, `docs/src/content/docs/guides/getting-started.md`) updated to state the new minimum. The curl installer still installs Node 24 (latest LTS) for users who don't manage their own Node.
+
+### Changed
+
+- **`exceljs` and `pptxgenjs` moved from `dependencies` to `devDependencies`** — both packages are imported only by skill template scripts (`src/templates/skills/xlsx/scripts/ts/generate_xlsx.ts`, `src/templates/skills/pptx/scripts/ts/generate_pptx.ts`) that run inside the user's project after scaffolding, never by the CLI runtime (`src/cli.ts` / `src/index.ts`). End users running `npm install -g codi-cli` now skip 91 transitive packages and 6 deprecation warnings (`fstream`, `glob@7`, `inflight`, `lodash.isequal`, `rimraf@2`, `uuid@8`) inherited from the legacy `archiver@5` / `unzipper@0.10` dep chains. Users who run the bundled TypeScript generators must install the packages in their own project first: `npm install exceljs` or `npm install pptxgenjs`. The `codi-xlsx` and `codi-pptx` skill READMEs document this prerequisite.
+- **CI workflows migrated from npm to pnpm** — `.github/workflows/{ci,release,pages}.yml` now use `pnpm/action-setup@v4`, `cache: pnpm` on `actions/setup-node`, and `pnpm install --frozen-lockfile`. Matches the project's canonical package manager. `npm publish --provenance` is retained in `release.yml` (the npm CLI publishes pnpm projects without modification). `node -p 'require(...)'` patterns replaced with `jq` (preinstalled on `ubuntu-latest`).
+
+### Removed
+
+- **`package-lock.json`** — pnpm is the canonical package manager (`pnpm-lock.yaml` is the source of truth). The stale `package-lock.json` (last seen at version 2.12.0) was deleted to prevent drift between two lockfile formats.
+
+## [2.14.0] - 2026-04-29
+
+### Fixed
+
 - **Per-language pre-commit hooks no longer lint vendored agent content** in `.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.windsurf/`, `.cline/`. The YAML `exclude:` regex previously covered only `.codi/`; the six other agent dirs are now part of a single source of truth (`src/core/hooks/exclusions.ts`) consumed by both the YAML renderer and the file-size check template.
 - **Pre-commit YAML insertion no longer corrupts `.pre-commit-config.yaml`** when the project already had `repos:` entries with nested `hooks:` lists. The legacy text-based renderer (`findReposInsertionPoint`) overwrote `listIndent` on every nested list item, causing the generated Codi block to land **inside** the external repo's `hooks:` list and produce invalid YAML. The function now locks `listIndent` to the first list item it encounters under `repos:` and never reassigns it. The renderer was subsequently superseded by a YAML AST round-trip implementation (see Changed).
 
 ### Changed
 
-- **`exceljs` and `pptxgenjs` moved from `dependencies` to `devDependencies`** — both packages are imported only by skill template scripts (`src/templates/skills/xlsx/scripts/ts/generate_xlsx.ts`, `src/templates/skills/pptx/scripts/ts/generate_pptx.ts`) that run inside the user's project after scaffolding, never by the CLI runtime (`src/cli.ts` / `src/index.ts`). End users running `npm install -g codi-cli` now skip 91 transitive packages and 6 deprecation warnings (`fstream`, `glob@7`, `inflight`, `lodash.isequal`, `rimraf@2`, `uuid@8`) inherited from the legacy `archiver@5` / `unzipper@0.10` dep chains. Users who run the bundled TypeScript generators must install the packages in their own project first: `npm install exceljs` or `npm install pptxgenjs`. The `codi-xlsx` and `codi-pptx` skill READMEs document this prerequisite.
 - **Pre-commit framework runner emits canonical upstream `repo:` references with pinned `rev:` and `additional_dependencies` where required** — `astral-sh/ruff-pre-commit`, `pre-commit/mirrors-mypy`, `PyCQA/bandit`, `pre-commit/mirrors-prettier`, `gitleaks/gitleaks`, `alessandrojcm/commitlint-pre-commit-hook`, `koalaman/shellcheck-precommit`. Codi's own `.mjs` scripts remain `repo: local`. Users now get isolated tool envs, `pre-commit autoupdate` compatibility, and proper version pinning out of the box.
 - **`.pre-commit-config.yaml` write path is now a YAML AST round-trip via the `yaml` package** — Codi-managed entries carry a `# managed by codi` comment marker on their `repo:` line. On regeneration: non-marked entries pass through untouched, marked entries are rebuilt from the registry, and **user-edited `rev:` pins on marked entries are preserved**. Malformed YAML triggers a `.pre-commit-config.yaml.codi-backup` write before regeneration. Idempotent: re-running with no changes produces byte-identical output and skips the write.
 - **Default Python type checker is now `basedpyright`** (PyPI wheel, no npm dependency) when no project signals point elsewhere. Auto-detection picks `mypy` when `[tool.mypy]` / `mypy.ini` / Django / SQLAlchemy / `django-stubs` is present, `basedpyright` for FastAPI / pydantic / SQLModel projects or codebases over 20k Python LOC. The previous default was `npx pyright`, which forced an npm dependency on pure-Python repos.
@@ -75,10 +88,6 @@ The four new flags default to `auto` — existing projects do not need to set th
 ### Fixed
 
 - **`npm version` now ships the tag in the same step** — `postversion` script switched from bare `git push` to `git push --follow-tags`. Previously every release required a manual `git push origin vX.Y.Z` follow-up, or the tag stayed local-only.
-
-### Removed
-
-- **`package-lock.json`** — pnpm is the canonical package manager (`pnpm-lock.yaml` is the source of truth). The stale `package-lock.json` (last seen at version 2.12.0) was deleted to prevent drift between two lockfile formats.
 
 ## [2.9.0] - 2026-04-18
 

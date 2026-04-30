@@ -30,18 +30,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build CLI
-        run: npm run build
+        run: pnpm build
       - name: Generate site stats from source
         run: node scripts/generate_site_stats.mjs
       - name: Build Astro docs into site/docs/
-        run: npm run docs:build
+        run: pnpm docs:build
       - name: Regenerate installer checksum
         run: |
           cd site

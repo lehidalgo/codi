@@ -17,34 +17,40 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
       - name: Get version
         id: version
-        run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
 
       - name: Check if version is published
         id: publish_check
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if npm view codi-cli@${{ steps.version.outputs.version }} version > /dev/null 2>&1; then
+          if npm view "codi-cli@${VERSION}" version > /dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
@@ -64,4 +70,6 @@ jobs:
 
       - name: Skip (already released)
         if: steps.publish_check.outputs.published == 'true'
-        run: echo "v${{ steps.version.outputs.version }} already on npm — skipping release"
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: echo "v${VERSION} already on npm — skipping release"
