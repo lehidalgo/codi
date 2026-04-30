@@ -13,6 +13,7 @@ import { updateHandler } from "./update.js";
 import { verifyHandler } from "./verify.js";
 import { complianceHandler } from "./compliance.js";
 import { revertHandler } from "./revert.js";
+import { backupListHandler, backupDeleteHandler, backupPruneHandler } from "./backup.js";
 import { contributeHandler } from "./contribute.js";
 import { runSkillExportWizard } from "./skill-export-wizard.js";
 import { skillExportHandler } from "./skill.js";
@@ -395,19 +396,24 @@ export async function handleRevert(projectRoot: string): Promise<void> {
     message: "Revert mode",
     options: [
       {
-        label: "List available backups",
-        value: "list",
-        hint: "Show all backup timestamps",
+        label: "Pick a backup to restore",
+        value: "pick",
+        hint: "Interactive list of every sealed backup, newest first",
       },
       {
-        label: "Restore most recent backup",
+        label: "Restore the most recent backup",
         value: "last",
         hint: "Quick restore to last state",
       },
       {
-        label: "Restore specific backup",
-        value: "specific",
-        hint: "Choose a backup by timestamp",
+        label: "Dry run",
+        value: "dry-run",
+        hint: "Show what would happen without writing",
+      },
+      {
+        label: "List available backups",
+        value: "list",
+        hint: "Print all backup timestamps and exit",
       },
     ],
   });
@@ -427,7 +433,7 @@ export async function handleRevert(projectRoot: string): Promise<void> {
           {
             value: true,
             label: "Yes",
-            hint: "overwrite current generated files",
+            hint: "a pre-revert snapshot is taken first",
           },
         ],
       });
@@ -436,12 +442,63 @@ export async function handleRevert(projectRoot: string): Promise<void> {
       renderResult(result);
       break;
     }
-    case "specific": {
-      const timestamp = await p.text({
-        message: 'Backup timestamp (from "List available backups")',
+    case "pick": {
+      const result = await revertHandler(projectRoot, {});
+      renderResult(result);
+      break;
+    }
+    case "dry-run": {
+      const result = await revertHandler(projectRoot, { dryRun: true });
+      renderResult(result);
+      break;
+    }
+  }
+}
+
+export async function handleBackup(projectRoot: string): Promise<void> {
+  const mode = await p.select({
+    message: "Backup management",
+    options: [
+      {
+        label: "List sealed backups",
+        value: "list",
+        hint: "Print every backup with file count, newest first",
+      },
+      {
+        label: "Prune (interactive)",
+        value: "prune",
+        hint: "Multi-select backups to delete, double-confirm",
+      },
+      {
+        label: "Delete by timestamp",
+        value: "delete",
+        hint: "Type one or more timestamps to remove",
+      },
+    ],
+  });
+  if (isCancelled(mode)) return;
+
+  switch (mode) {
+    case "list": {
+      const result = await backupListHandler(projectRoot);
+      renderResult(result);
+      break;
+    }
+    case "prune": {
+      const result = await backupPruneHandler(projectRoot);
+      renderResult(result);
+      break;
+    }
+    case "delete": {
+      const ts = await p.text({
+        message: "Backup timestamps to delete (space-separated, e.g. 2026-04-30T22-02-29-800Z)",
       });
-      if (isCancelled(timestamp) || !timestamp) return;
-      const result = await revertHandler(projectRoot, { backup: timestamp });
+      if (isCancelled(ts) || !ts) return;
+      const timestamps = String(ts)
+        .split(/\s+/)
+        .filter((s) => s.length > 0);
+      if (timestamps.length === 0) return;
+      const result = await backupDeleteHandler(projectRoot, timestamps);
       renderResult(result);
       break;
     }

@@ -3,8 +3,8 @@ import { NORMAL_MENU, ADVANCED_MENU, buildFirstEntry } from "#src/cli/hub.js";
 
 describe("Command Center hub", () => {
   describe("NORMAL_MENU", () => {
-    it("has exactly 4 entries (init/customize is built separately)", () => {
-      expect(NORMAL_MENU).toHaveLength(4);
+    it("has exactly 5 entries (init/customize is built separately)", () => {
+      expect(NORMAL_MENU).toHaveLength(5);
     });
 
     it("every entry has required fields", () => {
@@ -21,10 +21,11 @@ describe("Command Center hub", () => {
       expect(new Set(values).size).toBe(values.length);
     });
 
-    it("contains generate, update, export, and clean", () => {
+    it("contains generate, update, revert, export, and clean", () => {
       const values = NORMAL_MENU.map((e) => e.value);
       expect(values).toContain("generate");
       expect(values).toContain("update");
+      expect(values).toContain("revert");
       expect(values).toContain("export");
       expect(values).toContain("clean");
     });
@@ -82,13 +83,18 @@ describe("Command Center hub", () => {
       }
     });
 
-    it("contains add, preset, doctor, status, and revert", () => {
+    it("contains add, preset, doctor, status, and backup", () => {
       const values = ADVANCED_MENU.map((e) => e.value);
       expect(values).toContain("add");
       expect(values).toContain("preset");
       expect(values).toContain("doctor");
       expect(values).toContain("status");
-      expect(values).toContain("revert");
+      expect(values).toContain("backup");
+    });
+
+    it("does not contain revert (promoted to NORMAL_MENU)", () => {
+      const values = ADVANCED_MENU.map((e) => e.value);
+      expect(values).not.toContain("revert");
     });
   });
 
