@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { extractProjectContext, injectProjectContext } from "#src/utils/project-context-preserv.js";
-import { PROJECT_CONTEXT_START, PROJECT_CONTEXT_END } from "#src/constants.js";
+import {
+  PROJECT_CONTEXT_START,
+  PROJECT_CONTEXT_END,
+  PROJECT_CONTEXT_ANCHOR,
+} from "#src/constants.js";
 
 const SAMPLE_BLOCK = `${PROJECT_CONTEXT_START}
 ## Project Context
@@ -100,5 +104,35 @@ describe("round-trip: extract then inject", () => {
     const secondPass = injectProjectContext(generated, block!);
     const occurrences = (secondPass.match(new RegExp(PROJECT_CONTEXT_START, "g")) ?? []).length;
     expect(occurrences).toBe(1);
+  });
+});
+
+describe("injectProjectContext — additional branches", () => {
+  it("replaces PROJECT_CONTEXT_ANCHOR when present (anchor branch)", () => {
+    // Hits the anchor-replacement path: line 30 in project-context-preserv.ts.
+    const generated = `# Title\n\n${PROJECT_CONTEXT_ANCHOR}\n\n## Body\n\nContent.`;
+    const result = injectProjectContext(generated, SAMPLE_BLOCK);
+    expect(result).toContain(SAMPLE_BLOCK);
+    expect(result).not.toContain(PROJECT_CONTEXT_ANCHOR);
+    // Block should have replaced the anchor literally — body content remains.
+    expect(result).toContain("## Body");
+    expect(result).toContain("Content.");
+  });
+
+  it("inserts before the first \\n## when content has prelude (mid-doc H2 branch)", () => {
+    // Hits lines 43-45: content starts with non-## prelude, then has `\n##` later.
+    // The block must land just before the first newline-H2, preserving the prelude.
+    const generated = "# Top-level title\n\nIntro paragraph.\n\n## First H2\n\nBody.";
+    const result = injectProjectContext(generated, SAMPLE_BLOCK);
+    expect(result).toContain("# Top-level title");
+    expect(result).toContain("Intro paragraph.");
+    expect(result).toContain(SAMPLE_BLOCK);
+    expect(result).toContain("## First H2");
+    // Block must appear AFTER the prelude and BEFORE the first H2 in the output.
+    const introIdx = result.indexOf("Intro paragraph.");
+    const blockIdx = result.indexOf(SAMPLE_BLOCK);
+    const h2Idx = result.indexOf("## First H2");
+    expect(introIdx).toBeLessThan(blockIdx);
+    expect(blockIdx).toBeLessThan(h2Idx);
   });
 });

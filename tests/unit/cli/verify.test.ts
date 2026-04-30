@@ -118,4 +118,38 @@ describe("verify command handler", () => {
     expect(result.success).toBe(false);
     expect(result.exitCode).toBe(EXIT_CODES.VERIFY_MISMATCH);
   });
+
+  it("returns CONFIG_INVALID when manifest YAML is malformed", async () => {
+    // Create a malformed manifest so resolveConfig fails with a non-not-found
+    // error code. verify maps anything other than E_CONFIG_NOT_FOUND to
+    // CONFIG_INVALID — exercises the second branch on line 57.
+    const configDir = path.join(tmpDir, ".codi");
+    await fs.mkdir(configDir, { recursive: true });
+    await fs.writeFile(path.join(configDir, "codi.yaml"), ":\n  not: valid: yaml:", "utf-8");
+    await fs.writeFile(path.join(configDir, "flags.yaml"), "{}", "utf-8");
+
+    const result = await verifyHandler(tmpDir, {});
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(EXIT_CODES.CONFIG_INVALID);
+  });
+
+  it("reports mismatch when --check response is missing required rules", async () => {
+    await initHandler(tmpDir, { agents: ["claude-code"], json: true });
+    await addRuleHandler(tmpDir, "code-quality", {
+      template: prefixedName("code-style"),
+    });
+
+    const showResult = await verifyHandler(tmpDir, {});
+    expect(showResult.success).toBe(true);
+    const showData = showResult.data as { token: string };
+
+    // Send the correct token but claim no rules are loaded — mismatch.
+    const response = `Verification token: ${showData.token}\nRules loaded: \nFlags active: `;
+    const result = await verifyHandler(tmpDir, { check: response });
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(EXIT_CODES.VERIFY_MISMATCH);
+    const checkData = result.data as { tokenMatch: boolean; rulesMissing: string[] };
+    expect(checkData.tokenMatch).toBe(true);
+    expect(checkData.rulesMissing.length).toBeGreaterThan(0);
+  });
 });

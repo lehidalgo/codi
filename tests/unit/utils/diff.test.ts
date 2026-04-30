@@ -3,6 +3,7 @@ import {
   buildUnifiedDiff,
   renderColoredDiff,
   countChanges,
+  extractConflictHunks,
 } from "#src/utils/diff.js";
 
 describe("buildUnifiedDiff", () => {
@@ -76,11 +77,7 @@ describe("buildUnifiedDiff", () => {
 
 describe("renderColoredDiff", () => {
   it("returns a string with content for different inputs", () => {
-    const result = renderColoredDiff(
-      "line 1\nline 2",
-      "line 1\nline 3",
-      "test.md",
-    );
+    const result = renderColoredDiff("line 1\nline 2", "line 1\nline 3", "test.md");
     expect(typeof result).toBe("string");
     expect(result.length).toBeGreaterThan(0);
   });
@@ -137,5 +134,46 @@ describe("countChanges", () => {
   it("counts all lines as additions from empty", () => {
     const result = countChanges("", "line 1\nline 2");
     expect(result.additions).toBeGreaterThan(0);
+  });
+});
+
+describe("extractConflictHunks", () => {
+  it("returns a single unchanged hunk for identical inputs", () => {
+    const hunks = extractConflictHunks("line 1\nline 2\n", "line 1\nline 2\n");
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]?.type).toBe("unchanged");
+    expect(hunks[0]?.value).toBe("line 1\nline 2\n");
+  });
+
+  it("emits an `added` hunk for pure insertions (added-only path)", () => {
+    const hunks = extractConflictHunks("line 1\n", "line 1\nline 2\n");
+    // Mix of unchanged + added — order depends on diffLines, both should be present.
+    expect(hunks.some((h) => h.type === "added")).toBe(true);
+    const addedHunk = hunks.find((h) => h.type === "added");
+    expect(addedHunk?.value).toContain("line 2");
+  });
+
+  it("emits a `conflict` hunk with both sides for changed lines (removed+added pair)", () => {
+    const hunks = extractConflictHunks("line 1\nold\nline 3\n", "line 1\nnew\nline 3\n");
+    const conflict = hunks.find((h) => h.type === "conflict");
+    expect(conflict).toBeDefined();
+    expect(conflict?.currentValue).toContain("old");
+    expect(conflict?.incomingValue).toContain("new");
+  });
+
+  it("emits a `conflict` hunk with empty incoming when a line is removed without replacement", () => {
+    const hunks = extractConflictHunks("line 1\nline 2\nline 3\n", "line 1\nline 3\n");
+    const conflict = hunks.find((h) => h.type === "conflict");
+    expect(conflict).toBeDefined();
+    expect(conflict?.currentValue).toContain("line 2");
+    expect(conflict?.incomingValue).toBe("");
+  });
+
+  it("preserves order across an unchanged → conflict → unchanged sequence", () => {
+    const hunks = extractConflictHunks("alpha\nbeta\ngamma\n", "alpha\nBETA\ngamma\n");
+    expect(hunks.length).toBeGreaterThanOrEqual(2);
+    // First and last hunks should both be unchanged segments
+    expect(hunks[0]?.type).toBe("unchanged");
+    expect(hunks.at(-1)?.type).toBe("unchanged");
   });
 });
