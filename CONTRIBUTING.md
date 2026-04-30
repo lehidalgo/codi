@@ -7,12 +7,25 @@ Thank you for your interest in contributing to Codi. This guide covers developme
 ```bash
 git clone https://github.com/lehidalgo/codi.git
 cd codi
-npm install
-npm run build
-npm test
+pnpm install
+pnpm build
+pnpm test
 ```
 
-**Requirements**: Node.js >= 24 (see `.nvmrc`). If your system Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) installs nvm + Node 24 for you.
+**Requirements**:
+
+- **Node.js**: minimum `>=20.19.0` (matches the published `engines.node`). The `.nvmrc` pins to Node 24 for development convenience and CI parity, but Node 20.19+ is fully supported. If your system Node is older than 20.19, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 (latest LTS) for you.
+- **pnpm**: this repo uses pnpm exclusively (`pnpm-lock.yaml` is the canonical lockfile). The `prepare` hook runs `husky` and writes `.husky/pre-push` from `scripts/setup-husky-hooks.mjs` on every install — that's the local coverage gate. Don't `npm install`; the lockfile won't survive.
+
+### Quality gates active in this repo
+
+| Stage                            | Runs                                                                                              | Blocks?                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| pre-commit (`.husky/pre-commit`) | codi-managed structural checks (~5 hooks) + ESLint/Prettier/Ruff/Bandit/ShellCheck where relevant | yes — `--no-verify` is **forbidden** |
+| pre-push (`.husky/pre-push`)     | `pnpm lint && pnpm test:coverage` (≈25-30s)                                                       | yes                                  |
+| CI `test` job                    | same as pre-push, plus build + Codecov upload                                                     | yes (branch protection)              |
+
+See [`docs/20260430_155234_[TECH]_quality-gates-policy.md`](docs/20260430_155234_%5BTECH%5D_quality-gates-policy.md) for the full enforcement model and threshold rationale.
 
 ### Running the Local Build
 
@@ -28,12 +41,12 @@ When you install codi globally (`npm i -g codi-cli`), npm creates a symlink:
 
 This points to the **published npm package**, not your local source code. So even after you `npm run build` locally, `codi` and `npx codi` still execute the published version.
 
-| Command | Executes | Source |
-|---------|----------|--------|
-| `codi` | Global symlink | Published npm package |
-| `npx codi` | Same as above | Published npm package |
-| `node dist/cli.js` | Local `dist/cli.js` | Your local build |
-| `npm start` | Local `dist/cli.js` | Your local build |
+| Command            | Executes            | Source                |
+| ------------------ | ------------------- | --------------------- |
+| `codi`             | Global symlink      | Published npm package |
+| `npx codi`         | Same as above       | Published npm package |
+| `node dist/cli.js` | Local `dist/cli.js` | Your local build      |
+| `npm start`        | Local `dist/cli.js` | Your local build      |
 
 #### Option 1: Use `npm start` (safe, no side effects)
 
@@ -53,6 +66,7 @@ npm link               # symlinks global "codi" → your local dist/cli.js
 ```
 
 After linking:
+
 ```
 ~/.nvm/.../lib/node_modules/codi-cli → /path/to/your/local/codi
 ```
@@ -72,15 +86,15 @@ The `VERSION` constant is injected at build time from `package.json` via tsup's 
 
 ### Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm start` | Run the local CLI build |
-| `npm run build` | Build with tsup |
-| `npm test` | Run tests (Vitest) |
-| `npm run test:watch` | Watch mode |
-| `npm run test:coverage` | Coverage report |
-| `npm run lint` | Type check (`tsc --noEmit`) |
-| `npm run dev` | Build in watch mode |
+| Script                  | Description                 |
+| ----------------------- | --------------------------- |
+| `npm start`             | Run the local CLI build     |
+| `npm run build`         | Build with tsup             |
+| `npm test`              | Run tests (Vitest)          |
+| `npm run test:watch`    | Watch mode                  |
+| `npm run test:coverage` | Coverage report             |
+| `npm run lint`          | Type check (`tsc --noEmit`) |
+| `npm run dev`           | Build in watch mode         |
 
 ## Project Structure
 
@@ -267,23 +281,25 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
 ## Test Coverage
 
 <!-- GENERATED:START:test_coverage -->
-| Metric | Coverage | Threshold | Status |
-|:-------|--------:|--------:|:------:|
-| Statements | 74.2% | 70% | Pass |
-| Branches | 66.4% | 63% | Pass |
-| Functions | 77.6% | 73% | Pass |
-| Lines | 75.8% | 70% | Pass |
+
+| Metric     | Coverage | Threshold | Status |
+| :--------- | -------: | --------: | :----: |
+| Statements |    74.2% |       70% |  Pass  |
+| Branches   |    66.4% |       63% |  Pass  |
+| Functions  |    77.6% |       73% |  Pass  |
+| Lines      |    75.8% |       70% |  Pass  |
 
 **Module thresholds:**
 
-| Module | Stmts | Branch | Funcs | Thresholds (S/B/F) |
-|:-------|------:|-------:|------:|:-------------------|
-| adapters | 94.9% | 92.4% | 100.0% | 93% / 90% / 100% |
-| core/config | 78.2% | 66.3% | 96.1% | 76% / 64% / 94% |
-| core/flags | 92.5% | 87.6% | 100.0% | 90% / 85% / 100% |
-| core/verify | 97.9% | 96.8% | 95.0% | 95% / 94% / 93% |
-| schemas | 100.0% | 100.0% | 100.0% | 100% / 100% / 100% |
-| utils | 97.6% | 94.4% | 100.0% | 95% / 92% / 100% |
+| Module      |  Stmts | Branch |  Funcs | Thresholds (S/B/F) |
+| :---------- | -----: | -----: | -----: | :----------------- |
+| adapters    |  94.9% |  92.4% | 100.0% | 93% / 90% / 100%   |
+| core/config |  78.2% |  66.3% |  96.1% | 76% / 64% / 94%    |
+| core/flags  |  92.5% |  87.6% | 100.0% | 90% / 85% / 100%   |
+| core/verify |  97.9% |  96.8% |  95.0% | 95% / 94% / 93%    |
+| schemas     | 100.0% | 100.0% | 100.0% | 100% / 100% / 100% |
+| utils       |  97.6% |  94.4% | 100.0% | 95% / 92% / 100%   |
+
 <!-- GENERATED:END:test_coverage -->
 
 ## Documentation
