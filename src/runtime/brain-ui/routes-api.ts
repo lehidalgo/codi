@@ -21,7 +21,10 @@ import {
   listProposals,
   getProposal,
   decideProposal,
+  generatePackage,
+  runConsolidation,
   type ProposalStatus,
+  type RunContext,
 } from "../consolidate/index.js";
 
 const DEFAULT_LIMIT = 100;
@@ -236,6 +239,61 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       );
     }
     return c.json({ data: result.proposal });
+  });
+
+  // ─── Stage 5 — package + consolidation runner (Sprint 5.b) ───────────────
+
+  app.get("/api/v1/consolidation/package", (c: Context) => {
+    const manifest = generatePackage(brain.raw);
+    return c.json({ data: manifest });
+  });
+
+  app.post("/api/v1/consolidation/run", async (c: Context) => {
+    const body = (await c.req.json().catch(() => ({}))) as Partial<RunContext>;
+    const ctx: RunContext = {
+      installedSkills: body.installedSkills ?? [],
+      installedRules: body.installedRules ?? [],
+      existingRuleKeywords: body.existingRuleKeywords ?? [],
+      knownContradictions: body.knownContradictions,
+      sinceTs: body.sinceTs,
+      minEvidence: body.minEvidence,
+    };
+    const result = runConsolidation(brain.raw, ctx);
+    return c.json({ data: result });
+  });
+
+  // Mode A — agent-driven: server returns prompt+data; agent runs LLM
+  // externally and POSTs back the structured response.
+  app.post("/api/v1/consolidation/run-with-agent", async (c: Context) => {
+    const body = (await c.req.json().catch(() => ({}))) as Partial<RunContext>;
+    const ctx: RunContext = {
+      installedSkills: body.installedSkills ?? [],
+      installedRules: body.installedRules ?? [],
+      existingRuleKeywords: body.existingRuleKeywords ?? [],
+      sinceTs: body.sinceTs,
+      minEvidence: body.minEvidence,
+    };
+    const result = runConsolidation(brain.raw, ctx);
+    return c.json({
+      data: result,
+      mode: "agent",
+      next: "GET /api/v1/proposals?status=pending — review and POST accept/reject decisions",
+    });
+  });
+
+  // Mode B — server-side LLM: enabled iff LLM key configured. Stub for now;
+  // returns 501 so callers fall through to mode A.
+  app.post("/api/v1/consolidation/run-with-llm", (c: Context) => {
+    return c.json(
+      {
+        error: {
+          code: "not_implemented",
+          message:
+            "server-side LLM mode is opt-in; configure CODI_LLM_PROVIDER + CODI_LLM_API_KEY and re-run",
+        },
+      },
+      501,
+    );
   });
 }
 

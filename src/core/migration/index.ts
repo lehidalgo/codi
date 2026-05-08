@@ -13,3 +13,11 @@ export {
   type MigrationStepKind,
   type PlanOptions,
 } from "./v2-to-v3.js";
+
+// Sprint 7.b — executor
+export {
+  executeMigration,
+  type ExecuteOptions,
+  type ExecuteResult,
+  type StepRecord,
+} from "./executor.js";

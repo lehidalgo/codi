@@ -5,6 +5,7 @@
 export { buildApp, type AppHandle, type BuildAppOptions } from "./server.js";
 export { registerApiRoutes } from "./routes-api.js";
 export { registerPages } from "./pages.js";
+export { registerSseRoute } from "./sse.js";
 export {
   DEFAULT_BRAIN_UI_PORT,
   defaultPidfilePath,

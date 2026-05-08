@@ -13,3 +13,20 @@ export {
   type Tier,
   type TargetCapabilities,
 } from "./matrix.js";
+
+export {
+  buildPluginManifest,
+  manifestPathForTarget,
+  serializeManifest,
+  type PluginManifest,
+  type PluginArtifact,
+  type BuildManifestInput,
+} from "./plugin-manifest.js";
+
+export {
+  publishPlugin,
+  type PublishInput,
+  type PublishResult,
+  type PublishedTarget,
+  type PublishTrack,
+} from "./publish.js";

@@ -189,6 +189,7 @@ export {
   staticDir as teamCharterStaticDir,
 } from "./team-charter/index.js";
 export { template as caveman, staticDir as cavemanStaticDir } from "./caveman/index.js";
+export { template as brainUi, staticDir as brainUiStaticDir } from "./brain-ui/index.js";
 export {
   template as architectureReview,
   staticDir as architectureReviewStaticDir,

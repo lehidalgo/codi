@@ -14,6 +14,7 @@ import type { Context, Hono as HonoApp } from "hono";
 import { openBrain, applyMigrations, type BrainHandle } from "../brain/index.js";
 import { registerApiRoutes } from "./routes-api.js";
 import { registerPages } from "./pages.js";
+import { registerSseRoute } from "./sse.js";
 
 export interface BuildAppOptions {
   /** Path to the brain DB. Default: `~/.codi/brain.db`. */
@@ -53,6 +54,7 @@ export function buildApp(opts: BuildAppOptions = {}): AppHandle {
 
   registerApiRoutes(app, brain);
   registerPages(app, brain);
+  registerSseRoute(app, brain);
 
   return {
     app,

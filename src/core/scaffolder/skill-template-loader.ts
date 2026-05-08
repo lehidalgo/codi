@@ -94,6 +94,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("subagent-orchestration")]: skillTemplates.subagentOrchestration,
   [prefixedName("verify-evidence")]: skillTemplates.verifyEvidence,
   [prefixedName("zoom-out")]: skillTemplates.zoomOut,
+  [prefixedName("brain-ui")]: skillTemplates.brainUi,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -182,6 +183,7 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("subagent-orchestration")]: skillTemplates.subagentOrchestrationStaticDir,
   [prefixedName("verify-evidence")]: skillTemplates.verifyEvidenceStaticDir,
   [prefixedName("zoom-out")]: skillTemplates.zoomOutStaticDir,
+  [prefixedName("brain-ui")]: skillTemplates.brainUiStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

@@ -1,0 +1,10 @@
+{
+  "skill_name": "brain-ui",
+  "version": "0.1.0",
+  "model_invocable": true,
+  "boundaries": {
+    "produces": "spawn-or-attach a local Hono server that exposes a read-only browser UI on the brain SQLite",
+    "does_not_produce": "edits to artifacts (those go through the codi CLI)",
+    "does_not_handle": "lite/standard/full modes (Postgres-backed UI is served by codi-app, not this skill)"
+  }
+}

@@ -17,6 +17,9 @@ import { registerCiCommand } from "./cli/ci.js";
 import { registerWatchCommand } from "./cli/watch.js";
 import { registerRevertCommand } from "./cli/revert.js";
 import { registerBackupCommand } from "./cli/backup.js";
+import { registerMigrateCommand } from "./cli/migrate.js";
+import { registerPluginCommand } from "./cli/plugin.js";
+import { registerBrainCommand } from "./cli/brain.js";
 
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
@@ -59,6 +62,9 @@ registerCiCommand(program);
 registerWatchCommand(program);
 registerRevertCommand(program);
 registerBackupCommand(program);
+registerMigrateCommand(program);
+registerPluginCommand(program);
+registerBrainCommand(program);
 
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);
