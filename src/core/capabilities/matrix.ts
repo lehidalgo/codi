@@ -11,7 +11,30 @@
  * Tier 2 (Cursor / Windsurf / Cline / Copilot / Gemini) — config-only:
  *   skills + rules + MCP servers. No hooks, no slash commands, no agents.
  *
- * This module is the single source of truth — adapters import from here.
+ * Governance contract (Item 5 of v3 closure plan, Q3 = grandfather)
+ * =================================================================
+ *
+ * The matrix is OPT-IN.
+ *
+ * NEW emission code (plugin-manifest emit, future adapters, future
+ * filtering layers) MUST consult `supports()` or `targetsSupporting()`
+ * before writing output for a given (target, feature) pair.
+ *
+ * EXISTING per-target adapters under `src/adapters/{cursor,windsurf,
+ * cline,copilot,gemini}/` are GRANDFATHERED — they emit the same
+ * artifacts they emitted in v2.x. Wiring them to the matrix is
+ * deliberately deferred to v3.1+ to avoid silently dropping artifact
+ * directories users already rely on (e.g. .cursor/agents/).
+ *
+ * The contract is enforced by a regression test at
+ * `tests/unit/core/capabilities-governance.test.ts` that fails if any
+ * file under `src/adapters/{cursor,windsurf,cline,copilot,gemini}/`
+ * starts importing from `#src/core/capabilities`. If you intentionally
+ * want to migrate one of those adapters to matrix-driven emission,
+ * REMOVE that adapter from the regression set + update v3.1 release
+ * notes so users see the change.
+ *
+ * This module is the single source of truth — new modules import from here.
  */
 
 export type Tier = "1A" | "1B" | "2";
