@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 11
 ---
 
 # {{name}} — TDD
@@ -286,6 +286,14 @@ Cannot check all boxes? TDD was skipped. Start over.
 | Test setup is enormous (arrange phase > 20 lines) | Extract setup helpers; if still complex, simplify the design |
 
 When adding mocks or test utilities, read \\\`\${CLAUDE_SKILL_DIR}[[/references/testing-anti-patterns.md]]\\\` to avoid common pitfalls such as testing mock behavior instead of real behavior, adding test-only methods to production classes, and mocking without understanding dependencies.
+
+## Additional References
+
+- \\\`references/cycle-examples.md\\\` — full RED-GREEN-REFACTOR walkthroughs.
+- \\\`references/bug-fix-tdd.md\\\` — TDD applied to bug-fix scenarios (failing test reproduces the bug first).
+- \\\`references/checklist.md\\\` — pre-completion checklist before claiming TDD done.
+- \\\`references/rationalizations.md\\\` — counter table for common excuses to skip the Iron Law.
+- \\\`references/test-quality.md\\\` — quality patterns: minimal, clear, real code over mocks.
 
 ## Integration
 
