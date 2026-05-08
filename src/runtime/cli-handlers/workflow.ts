@@ -9,8 +9,7 @@
 import { existsSync, rmSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { EventLog } from "../event-log.js";
-import { archiveDir } from "../paths.js";
+import { selectEventLog, isLegacyEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import { buildWorkflowId, disambiguate } from "../workflow-id.js";
@@ -63,7 +62,7 @@ export function runWorkflow(opts: RunOptions): RunResult {
     throw new Error(`--from-story must match pattern US-NNN (got '${opts.fromStoryId}')`);
   }
 
-  const log = EventLog.fromCwd(cwd);
+  const log = selectEventLog(cwd);
 
   // Migrate stale terminal-status pointer. If the prior active workflow is
   // in `completed` or `abandoned` status, clearing the pointer + staging is
@@ -76,8 +75,10 @@ export function runWorkflow(opts: RunOptions): RunResult {
       const priorState = reduce(priorEvents);
       if (priorState.status === "completed" || priorState.status === "abandoned") {
         log.clearActiveWorkflowId();
-        // Drop staging — only the prior workflow's non-committable events are there.
-        if (existsSync(log.paths.stagingDir)) {
+        // Staging cleanup is a legacy filesystem concept — brain backend
+        // has no staging directory (every event lives in workflow_events
+        // with a commitable flag). Skip for brain.
+        if (isLegacyEventLog(log) && existsSync(log.paths.stagingDir)) {
           for (const file of readdirSync(log.paths.stagingDir)) {
             rmSync(join(log.paths.stagingDir, file));
           }
@@ -87,7 +88,7 @@ export function runWorkflow(opts: RunOptions): RunResult {
   }
 
   const baseId = buildWorkflowId(opts.workflowType, opts.task);
-  const workflowId = disambiguate(baseId, (id) => existsSync(archiveDir(log.paths, id)));
+  const workflowId = disambiguate(baseId, (id) => log.hasWorkflow(id));
 
   const initPayload: Record<string, unknown> = {
     workflow_id: workflowId,
@@ -132,7 +133,7 @@ export interface StatusResult {
 }
 
 export function getStatus(opts: StatusOptions = {}): StatusResult {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = opts.workflowId ?? log.getActiveWorkflowId();
   if (!workflowId) return { active: false, state: null };
 

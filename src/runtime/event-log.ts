@@ -191,6 +191,11 @@ export class EventLog {
     return events.map((e) => e.event);
   }
 
+  /** Backend-agnostic check: does an archive directory exist for this id? */
+  hasWorkflow(workflowId: string): boolean {
+    return existsSync(archiveDir(this.paths, workflowId));
+  }
+
   // ─── Sequence and naming ────────────────────────────────────────────
 
   private nextSequence(workflowId: string): number {

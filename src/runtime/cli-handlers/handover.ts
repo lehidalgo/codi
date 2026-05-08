@@ -4,7 +4,8 @@
  * active phase.
  */
 
-import { EventLog, NoActiveWorkflowError } from "../event-log.js";
+import { NoActiveWorkflowError } from "../event-log.js";
+import { selectEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author } from "../types.js";
@@ -29,7 +30,7 @@ export function handover(opts: HandoverOptions): HandoverResult {
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("handover requires --reason '<text>'");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -70,7 +71,7 @@ export function forceHandover(opts: ForceHandoverOptions): HandoverResult {
   if (!opts.toDevId || !opts.maintainerId || !opts.reason) {
     throw new Error("force-handover requires --to <dev-id> --maintainer <id> --reason '<text>'");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 

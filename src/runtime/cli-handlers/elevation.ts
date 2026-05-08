@@ -4,7 +4,8 @@
  * parent back to phase plan per the constitutional rule).
  */
 
-import { EventLog, NoActiveWorkflowError } from "../event-log.js";
+import { NoActiveWorkflowError } from "../event-log.js";
+import { selectEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent, Phase, WorkflowType } from "../types.js";
@@ -26,7 +27,7 @@ export function proposeElevation(opts: ProposeElevationOptions): ProposeElevatio
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("propose-elevation requires --reason '<text>'");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -61,7 +62,7 @@ export interface ApproveElevationResult {
 }
 
 export function approveElevation(opts: ApproveElevationOptions): ApproveElevationResult {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const parentId = log.getActiveWorkflowId();
   if (!parentId) throw new NoActiveWorkflowError();
 
@@ -125,7 +126,7 @@ export function rejectElevation(opts: RejectElevationOptions): { workflowId: str
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("Reject elevation requires --reason '<text>'");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -161,7 +162,7 @@ export function resolveChild(opts: ResolveChildOptions): {
   parentWorkflowId: string;
   resumedInPhase: Phase;
 } {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const parentId = log.getActiveWorkflowId();
   if (!parentId) throw new NoActiveWorkflowError();
 

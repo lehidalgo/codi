@@ -4,7 +4,8 @@
  * that the classifier marks as incidental).
  */
 
-import { EventLog, NoActiveWorkflowError } from "../event-log.js";
+import { NoActiveWorkflowError } from "../event-log.js";
+import { selectEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent } from "../types.js";
@@ -31,7 +32,7 @@ export function proposeScopeExpansion(
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("propose-expansion requires --reason '<text>'");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -68,7 +69,7 @@ export interface ApproveScopeExpansionResult {
 export function approveScopeExpansion(
   opts: ApproveScopeExpansionOptions,
 ): ApproveScopeExpansionResult {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -113,7 +114,7 @@ export function rejectScopeExpansion(
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("Reject requires --reason '<text>'.");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -175,7 +176,7 @@ export function recordIncidentalChange(opts: {
   author: Author;
   cwd?: string;
 }): { workflowId: string } {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 

@@ -217,7 +217,10 @@ export class BrainEventLog {
 
   // ─── Append events ──────────────────────────────────────────────────
 
-  append(workflowId: string, event: ManifestEvent): { sequence: number; commitable: boolean } {
+  append(
+    workflowId: string,
+    event: ManifestEvent,
+  ): { path: string; sequence: number; commitable: boolean } {
     const exists = this.handle.raw
       .prepare(`SELECT 1 FROM workflow_runs WHERE workflow_id = ?`)
       .get(workflowId);
@@ -229,7 +232,11 @@ export class BrainEventLog {
         `INSERT INTO workflow_events(workflow_id, event_type, ts, payload) VALUES (?, ?, ?, ?)`,
       )
       .run(workflowId, event.event_type, Date.now(), JSON.stringify(event));
-    return { sequence: Number(result.lastInsertRowid), commitable: event.commitable };
+    const sequence = Number(result.lastInsertRowid);
+    // Synthetic path keeps the surface compatible with the legacy file-based
+    // EventLog — callers that log it get a useful URI either way.
+    const path = `brain://workflow_events/${workflowId}/${sequence}`;
+    return { path, sequence, commitable: event.commitable };
   }
 
   // ─── Read events ────────────────────────────────────────────────────
@@ -250,5 +257,13 @@ export class BrainEventLog {
    */
   loadArchivedEvents(workflowId: string): ManifestEvent[] {
     return this.loadEvents(workflowId).filter((e) => e.commitable);
+  }
+
+  /** Backend-agnostic check: is there a workflow_runs row for this id? */
+  hasWorkflow(workflowId: string): boolean {
+    const row = this.handle.raw
+      .prepare(`SELECT 1 as ok FROM workflow_runs WHERE workflow_id = ?`)
+      .get(workflowId) as { ok?: number } | undefined;
+    return row?.ok === 1;
   }
 }

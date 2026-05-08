@@ -10,6 +10,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { EventLog, NoActiveWorkflowError } from "../event-log.js";
+import { selectEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, Phase } from "../types.js";
@@ -29,7 +30,7 @@ export function abandonWorkflow(opts: AbandonOptions): AbandonResult {
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("Abandon requires --reason '<text>'.");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -68,6 +69,10 @@ export interface RecoverResult {
  * fresh clone, or machine switch.
  */
 export function recoverWorkflow(opts: RecoverOptions = {}): RecoverResult {
+  // Recovery walks the legacy filesystem archives directory directly. The
+  // brain backend has its own SELECT-based recovery (Sprint 7+) — for now
+  // this site is pinned to the legacy EventLog regardless of
+  // CODI_USE_BRAIN_BACKEND so the audit fixture works either way.
   const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
 
   const currentActive = log.getActiveWorkflowId();

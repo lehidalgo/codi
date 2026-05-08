@@ -35,6 +35,8 @@ export function computeWorkflowStats(opts: { cwd?: string }): {
   retries: RetryStats;
   byWorkflowType: Record<string, number>;
 } {
+  // Stats walks the legacy archives directory; brain backend stats use
+  // SQL aggregations elsewhere. Keep this site pinned to legacy.
   const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
   const archivesDir = log.paths.archivesDir;
   const result = {

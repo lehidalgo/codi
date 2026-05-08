@@ -13,7 +13,8 @@
  *      stays the same.
  */
 
-import { EventLog, NoActiveWorkflowError } from "../event-log.js";
+import { NoActiveWorkflowError } from "../event-log.js";
+import { selectEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, Phase, ReducedState } from "../types.js";
@@ -32,7 +33,7 @@ export interface ProposeTransitionResult {
 }
 
 export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransitionResult {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -75,7 +76,7 @@ export interface ApproveTransitionResult {
 }
 
 export function approveTransition(opts: ApproveTransitionOptions): ApproveTransitionResult {
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
@@ -206,7 +207,7 @@ export function rejectTransition(opts: RejectTransitionOptions): RejectTransitio
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("Reject requires --reason '<text>'.");
   }
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
+  const log = selectEventLog(opts.cwd ?? process.cwd());
   const workflowId = log.getActiveWorkflowId();
   if (!workflowId) throw new NoActiveWorkflowError();
 
