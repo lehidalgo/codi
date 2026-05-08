@@ -414,6 +414,27 @@ export function buildPromptStateBlock(ctx: HookContext): string {
   return lines.join("\n");
 }
 
+/**
+ * Capture protocol reminder injected into every UserPromptSubmit turn (Iron
+ * Law 9). Short by design — the full rule lives in
+ * `src/templates/rules/capture-everything.ts`. Runtime parser at
+ * `src/runtime/capture/markers.ts` deduplicates by raw_marker so re-emission
+ * across turns is safe.
+ */
+export function buildCaptureReminderBlock(): string {
+  const lines = [
+    "<capture-protocol>",
+    "Iron Law 9: when the user states a rule / prohibition / preference / feedback /",
+    "insight / observation / decision / question / prompt / correction, emit a marker",
+    "at the END of your response in the form:",
+    '  |TYPE: "verbatim content"|',
+    "Multiple markers per turn are allowed. False positives are NOT tolerated;",
+    "false negatives are recoverable via offline consolidation.",
+    "</capture-protocol>",
+  ];
+  return lines.join("\n");
+}
+
 function countPendingScopeProposals(ctx: HookContext): number {
   if (!ctx.state) return 0;
   const log = EventLog.fromCwd(ctx.cwd);

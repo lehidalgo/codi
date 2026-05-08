@@ -1,0 +1,121 @@
+/**
+ * Brain DB schema bootstrap + sanity inserts (Sprint 2 proper).
+ *
+ * Each test creates an isolated tmp SQLite to keep them parallel-safe.
+ */
+import { describe, it, expect } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { openBrain, applyMigrations, CURRENT_SCHEMA_VERSION } from "#src/runtime/brain/index.js";
+
+function tmpDb(): { path: string; cleanup: () => void } {
+  const dir = mkdtempSync(join(tmpdir(), "codi-brain-"));
+  return {
+    path: join(dir, "brain.db"),
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  };
+}
+
+describe("brain / schema bootstrap", () => {
+  it("creates the 11 canonical tables on first run", () => {
+    const t = tmpDb();
+    try {
+      const handle = openBrain({ dbPath: t.path });
+      try {
+        applyMigrations(handle.raw);
+        const tables = handle.raw
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+          )
+          .all() as { name: string }[];
+        const names = tables.map((r) => r.name);
+        expect(names).toContain("projects");
+        expect(names).toContain("sessions");
+        expect(names).toContain("prompts");
+        expect(names).toContain("turns");
+        expect(names).toContain("captures");
+        expect(names).toContain("tool_calls");
+        expect(names).toContain("corrections");
+        expect(names).toContain("artifacts_used");
+        expect(names).toContain("_codi_schema_version");
+        expect(names).toContain("workflow_runs");
+        expect(names).toContain("workflow_events");
+      } finally {
+        handle.close();
+      }
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("creates FTS5 mirrors and triggers", () => {
+    const t = tmpDb();
+    try {
+      const handle = openBrain({ dbPath: t.path });
+      try {
+        applyMigrations(handle.raw);
+        const ftsRows = handle.raw
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_fts' ORDER BY name",
+          )
+          .all() as { name: string }[];
+        expect(ftsRows.map((r) => r.name)).toEqual(["captures_fts", "prompts_fts"]);
+
+        const triggers = handle.raw
+          .prepare("SELECT name FROM sqlite_master WHERE type='trigger' ORDER BY name")
+          .all() as { name: string }[];
+        expect(triggers.length).toBe(6);
+      } finally {
+        handle.close();
+      }
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("is idempotent — second apply does nothing new", () => {
+    const t = tmpDb();
+    try {
+      const handle = openBrain({ dbPath: t.path });
+      try {
+        const first = applyMigrations(handle.raw);
+        const second = applyMigrations(handle.raw);
+        expect(first.applied).toEqual([CURRENT_SCHEMA_VERSION]);
+        expect(second.applied).toEqual([]);
+        const versions = handle.raw
+          .prepare("SELECT version FROM _codi_schema_version ORDER BY version")
+          .all() as { version: number }[];
+        expect(versions.map((r) => r.version)).toEqual([CURRENT_SCHEMA_VERSION]);
+      } finally {
+        handle.close();
+      }
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("FTS5 mirror picks up captures via trigger", () => {
+    const t = tmpDb();
+    try {
+      const handle = openBrain({ dbPath: t.path });
+      try {
+        applyMigrations(handle.raw);
+        handle.raw
+          .prepare(
+            "INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          )
+          .run("s1", 1, 1, Date.now(), "RULE", "always test the database layer", '|RULE: "x"|');
+
+        const hits = handle.raw
+          .prepare("SELECT rowid FROM captures_fts WHERE captures_fts MATCH 'database'")
+          .all() as { rowid: number }[];
+        expect(hits.length).toBe(1);
+      } finally {
+        handle.close();
+      }
+    } finally {
+      t.cleanup();
+    }
+  });
+});

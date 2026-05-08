@@ -1,0 +1,197 @@
+/**
+ * Codi v3 brain — SQLite schema (11 canonical tables).
+ *
+ * Source of truth: master plan §4.2. SQLite is canonical in zero mode;
+ * Postgres in lite/standard/full preserves the same shape (Z6.D).
+ *
+ * FTS5 virtual tables and the vec0 vector index live in a separate raw-SQL
+ * migration (drizzle-orm does not generate FTS5/vec0 syntax natively).
+ */
+
+import { sql } from "drizzle-orm";
+import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core";
+
+// ─── 9 capture / observability tables ───────────────────────────────────────
+
+export const projects = sqliteTable("projects", {
+  projectId: text("project_id").primaryKey(),
+  repoPath: text("repo_path").notNull(),
+  gitRemote: text("git_remote"),
+  name: text("name").notNull(),
+  firstSeen: integer("first_seen").notNull(),
+  lastSeen: integer("last_seen").notNull(),
+});
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    sessionId: text("session_id").primaryKey(),
+    projectId: text("project_id").notNull(),
+    agentType: text("agent_type").notNull(),
+    agentModel: text("agent_model"),
+    startedAt: integer("started_at").notNull(),
+    endedAt: integer("ended_at"),
+    branch: text("branch"),
+    commitSha: text("commit_sha"),
+    workingDir: text("working_dir").notNull(),
+    transcriptPath: text("transcript_path"),
+    workflowId: text("workflow_id"),
+    totalTurns: integer("total_turns").default(0),
+    totalCaptureCount: integer("total_capture_count").default(0),
+  },
+  (t) => ({
+    idxProjectStarted: index("idx_sessions_project_started").on(t.projectId, t.startedAt),
+  }),
+);
+
+export const prompts = sqliteTable(
+  "prompts",
+  {
+    promptId: integer("prompt_id").primaryKey({ autoIncrement: true }),
+    sessionId: text("session_id").notNull(),
+    turnNo: integer("turn_no").notNull(),
+    ts: integer("ts").notNull(),
+    text: text("text").notNull(),
+    charCount: integer("char_count").notNull(),
+  },
+  (t) => ({
+    idxSessionTurn: index("idx_prompts_session_turn").on(t.sessionId, t.turnNo),
+  }),
+);
+
+export const turns = sqliteTable("turns", {
+  turnId: integer("turn_id").primaryKey({ autoIncrement: true }),
+  sessionId: text("session_id").notNull(),
+  turnNo: integer("turn_no").notNull(),
+  ts: integer("ts").notNull(),
+  agentText: text("agent_text"), // populated only when trace_level=full
+  durationMs: integer("duration_ms"),
+  promptId: integer("prompt_id").notNull(),
+});
+
+export const captures = sqliteTable(
+  "captures",
+  {
+    captureId: integer("capture_id").primaryKey({ autoIncrement: true }),
+    sessionId: text("session_id").notNull(),
+    promptId: integer("prompt_id").notNull(),
+    turnId: integer("turn_id").notNull(),
+    ts: integer("ts").notNull(),
+    type: text("type").notNull(), // 10 capture types per Iron Law 9
+    content: text("content").notNull(),
+    rawMarker: text("raw_marker").notNull(),
+    filePaths: text("file_paths"), // JSON array
+    workflowId: text("workflow_id"),
+    phase: text("phase"),
+  },
+  (t) => ({
+    idxTypeSession: index("idx_captures_type_session").on(t.type, t.sessionId),
+    idxSessionTs: index("idx_captures_session_ts").on(t.sessionId, t.ts),
+  }),
+);
+
+export const toolCalls = sqliteTable(
+  "tool_calls",
+  {
+    callId: integer("call_id").primaryKey({ autoIncrement: true }),
+    sessionId: text("session_id").notNull(),
+    turnId: integer("turn_id").notNull(),
+    ts: integer("ts").notNull(),
+    toolName: text("tool_name").notNull(),
+    inputJson: text("input_json").notNull(),
+    outputSummary: text("output_summary"),
+    durationMs: integer("duration_ms"),
+    status: text("status").notNull(),
+    error: text("error"),
+  },
+  (t) => ({
+    idxSessionTurn: index("idx_tool_calls_session_turn").on(t.sessionId, t.turnId),
+  }),
+);
+
+export const corrections = sqliteTable("corrections", {
+  correctionId: integer("correction_id").primaryKey({ autoIncrement: true }),
+  sessionId: text("session_id").notNull(),
+  ts: integer("ts").notNull(),
+  filePath: text("file_path").notNull(),
+  diffSummary: text("diff_summary").notNull(),
+  sourceTurnId: integer("source_turn_id"),
+  detectedVia: text("detected_via").notNull(),
+});
+
+export const artifactsUsed = sqliteTable(
+  "artifacts_used",
+  {
+    usageId: integer("usage_id").primaryKey({ autoIncrement: true }),
+    sessionId: text("session_id").notNull(),
+    turnId: integer("turn_id"),
+    ts: integer("ts").notNull(),
+    artifactType: text("artifact_type").notNull(),
+    artifactName: text("artifact_name").notNull(),
+    event: text("event").notNull(),
+    outcome: text("outcome"),
+    durationMs: integer("duration_ms"),
+  },
+  (t) => ({
+    idxNameOutcome: index("idx_artifacts_used_name_outcome").on(t.artifactName, t.outcome),
+  }),
+);
+
+export const codiSchemaVersion = sqliteTable(
+  "_codi_schema_version",
+  {
+    version: integer("version").notNull(),
+    appliedAt: integer("applied_at").notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.version] }),
+  }),
+);
+
+// ─── 2 workflow runtime tables ──────────────────────────────────────────────
+
+export const workflowRuns = sqliteTable(
+  "workflow_runs",
+  {
+    workflowId: text("workflow_id").primaryKey(),
+    projectId: text("project_id").notNull(),
+    type: text("type").notNull(), // project | feature | bug-fix | refactor | migration
+    currentPhase: text("current_phase").notNull(),
+    status: text("status").notNull(),
+    startedAt: integer("started_at").notNull(),
+    endedAt: integer("ended_at"),
+    metadata: text("metadata"), // JSON: scope_files, gates_passed, flags
+  },
+  (t) => ({
+    idxProjectStatus: index("idx_workflow_runs_project_status").on(t.projectId, t.status),
+  }),
+);
+
+export const workflowEvents = sqliteTable(
+  "workflow_events",
+  {
+    eventId: integer("event_id").primaryKey({ autoIncrement: true }),
+    workflowId: text("workflow_id").notNull(),
+    eventType: text("event_type").notNull(),
+    ts: integer("ts").notNull(),
+    payload: text("payload"),
+  },
+  (t) => ({
+    idxWfTs: index("idx_workflow_events_wf_ts").on(t.workflowId, t.ts),
+  }),
+);
+
+// Raw SQL for FTS5 + vec0 virtual tables — drizzle does not generate these.
+// Applied by migrate.ts after the structural migration runs.
+export const FTS5_AND_VEC_SQL = sql`
+CREATE VIRTUAL TABLE IF NOT EXISTS captures_fts USING fts5(
+  content,
+  content='captures',
+  content_rowid='capture_id'
+);
+CREATE VIRTUAL TABLE IF NOT EXISTS prompts_fts USING fts5(
+  text,
+  content='prompts',
+  content_rowid='prompt_id'
+);
+`;

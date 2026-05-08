@@ -9,13 +9,21 @@
  * phase, scope, pending proposals, and the rules in force.
  */
 
-import { buildContext, buildPromptStateBlock } from "../lib/hook-logic.js";
+import {
+  buildContext,
+  buildPromptStateBlock,
+  buildCaptureReminderBlock,
+} from "../../src/runtime/hook-logic.js";
 
 function main(): void {
   const ctx = buildContext(process.cwd());
-  const block = buildPromptStateBlock(ctx);
-  if (block.length > 0) {
-    process.stdout.write(block + "\n");
+  const stateBlock = buildPromptStateBlock(ctx);
+  const captureBlock = buildCaptureReminderBlock();
+  // Capture reminder fires every turn (Iron Law 9 reinforcement).
+  // State block fires only when an active workflow exists.
+  const out = [captureBlock, stateBlock].filter((s) => s.length > 0).join("\n\n");
+  if (out.length > 0) {
+    process.stdout.write(out + "\n");
   }
   process.exit(0);
 }
