@@ -85,10 +85,10 @@ export const staticDir = resolveStaticDir("<name>", import.meta.url);
 
 Skills run in two environments. Scripts that depend on Node.js break in one of them:
 
-| Environment | Python | Bash / sh | TypeScript (`npx tsx`) |
-|-------------|--------|-----------|------------------------|
-| Claude Code (CLI / IDE) | Yes | Yes | Yes |
-| Claude.ai (web / app) | Yes | Yes | **No** — Node.js unavailable |
+| Environment             | Python | Bash / sh | TypeScript (`npx tsx`)       |
+| ----------------------- | ------ | --------- | ---------------------------- |
+| Claude Code (CLI / IDE) | Yes    | Yes       | Yes                          |
+| Claude.ai (web / app)   | Yes    | Yes       | **No** — Node.js unavailable |
 
 ### Rule
 
@@ -127,9 +127,9 @@ Rules live in `src/templates/rules/<name>.ts` and use three frontmatter fields t
 name: typescript
 version: 1
 priority: high
-alwaysApply: true          # If true, rule loads for every request
-language: typescript       # Optional — load only when the language matches
-scope: [src/api/**]        # Optional — load only when the file path matches
+alwaysApply: true # If true, rule loads for every request
+language: typescript # Optional — load only when the language matches
+scope: [src/api/**] # Optional — load only when the file path matches
 ---
 ```
 
@@ -146,11 +146,11 @@ The scaffolder evaluates these fields in order:
 
 Each adapter translates these fields into its native config:
 
-| Adapter | `language: typescript` becomes |
-|---------|--------------------------------|
-| Claude Code | `paths:` glob on skill frontmatter (`**/*.{ts,tsx}`) |
-| Cursor | Rule file in `.cursor/rules/language/typescript.md` |
-| Codex | Inlined into `AGENTS.md` with language-tagged section |
+| Adapter     | `language: typescript` becomes                        |
+| ----------- | ----------------------------------------------------- |
+| Claude Code | `paths:` glob on skill frontmatter (`**/*.{ts,tsx}`)  |
+| Cursor      | Rule file in `.cursor/rules/language/typescript.md`   |
+| Codex       | Inlined into `AGENTS.md` with language-tagged section |
 
 ---
 
@@ -162,21 +162,23 @@ Several project docs in `docs/project/` contain sections that are generated from
 ### Built-in Skill Templates
 
 <!-- GENERATED:START:skill_templates -->
-| Category | Skills |
-|----------|--------|
-| **Brand Identity** | codi-brand-creator, codi-codi-brand |
-| **Code Quality** | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-pr-review, codi-project-quality-guard, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing |
-| **Codi Platform** | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator |
-| **Content Creation** | codi-content-factory |
-| **Content Refinement** | codi-humanizer |
-| **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory |
-| **Developer Tools** | codi-box-validator, codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-graph-sync, codi-html-live-inspect, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation |
-| **Developer Workflow** | codi-audit-fix, codi-brainstorming, codi-branch-finish, codi-debugging, codi-evidence-gathering, codi-guided-execution, codi-plan-execution, codi-plan-writer, codi-step-documenter, codi-tdd, codi-verification, codi-worktrees |
-| **File Format Tools** | codi-docx, codi-pdf, codi-pptx, codi-xlsx |
-| **Planning** | codi-roadmap |
-| **Productivity** | codi-audio-transcriber, codi-notebooklm |
-| **Testing** | codi-test-suite |
-| **Workflow** | codi-session-log |
+
+| Category                | Skills                                                                                                                                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Brand Identity**      | codi-brand-creator, codi-codi-brand                                                                                                                                                                                                                                |
+| **Code Quality**        | codi-code-review, codi-dev-e2e-testing, codi-guided-qa-testing, codi-pr-review, codi-project-quality-guard, codi-receiving-code-review, codi-refactoring, codi-security-scan, codi-session-recovery, codi-webapp-testing                                           |
+| **Codi Platform**       | codi-agent-creator, codi-artifact-contributor, codi-compare-preset, codi-dev-docs-manager, codi-dev-operations, codi-preset-creator, codi-refine-rules, codi-rule-creator, codi-rule-feedback, codi-skill-creator                                                  |
+| **Content Creation**    | codi-content-factory                                                                                                                                                                                                                                               |
+| **Content Refinement**  | codi-humanizer                                                                                                                                                                                                                                                     |
+| **Creative and Design** | codi-algorithmic-art, codi-canvas-design, codi-claude-artifacts-builder, codi-frontend-design, codi-slack-gif-creator, codi-theme-factory                                                                                                                          |
+| **Developer Tools**     | codi-box-validator, codi-claude-api, codi-codebase-explore, codi-codebase-onboarding, codi-commit, codi-graph-sync, codi-html-live-inspect, codi-internal-comms, codi-mcp-ops, codi-mobile-development, codi-project-documentation                                 |
+| **Developer Workflow**  | codi-audit-fix, codi-brainstorming, codi-branch-finish, codi-debugging, codi-dispatching-parallel-agents, codi-evidence-gathering, codi-guided-execution, codi-plan-execution, codi-plan-writer, codi-step-documenter, codi-tdd, codi-verification, codi-worktrees |
+| **File Format Tools**   | codi-docx, codi-pdf, codi-pptx, codi-xlsx                                                                                                                                                                                                                          |
+| **Planning**            | codi-roadmap                                                                                                                                                                                                                                                       |
+| **Productivity**        | codi-audio-transcriber, codi-notebooklm                                                                                                                                                                                                                            |
+| **Testing**             | codi-test-suite                                                                                                                                                                                                                                                    |
+| **Workflow**            | codi-session-log                                                                                                                                                                                                                                                   |
+
 <!-- GENERATED:END:skill_templates -->
 ```
 
@@ -187,13 +189,13 @@ Several project docs in `docs/project/` contain sections that are generated from
 
 ### Section inventory
 
-| Doc | Generated sections |
-|-----|--------------------|
-| `docs/project/artifacts.md` | `rule_fields`, `skill_fields`, `agent_fields`, `rule_templates`, `skill_templates`, `agent_templates` |
-| `docs/project/configuration.md` | `flag_catalog`, `mcp_server_templates` |
-| `docs/project/architecture.md` | `adapter_list` |
-| `docs/project/presets.md` | `preset_list` |
-| `README.md` | `artifact_counts` |
+| Doc                             | Generated sections                                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `docs/project/artifacts.md`     | `rule_fields`, `skill_fields`, `agent_fields`, `rule_templates`, `skill_templates`, `agent_templates` |
+| `docs/project/configuration.md` | `flag_catalog`, `mcp_server_templates`                                                                |
+| `docs/project/architecture.md`  | `adapter_list`                                                                                        |
+| `docs/project/presets.md`       | `preset_list`                                                                                         |
+| `README.md`                     | `artifact_counts`                                                                                     |
 
 ### Writing a new generated section
 
@@ -274,12 +276,12 @@ pnpm test        # Full Vitest suite (unit + integration + e2e + release)
 
 Key test categories:
 
-| Path | Purpose |
-|------|---------|
-| `tests/unit/` | Pure function tests. Runs against source via Vitest + TSX. |
-| `tests/integration/` | Tests that exercise multiple modules. Also source-based. |
-| `tests/e2e/` | Shells out to `dist/cli.js` in a temp project dir — requires a fresh build. |
-| `tests/release/` | Gate checks including artifact-version-baseline drift. |
+| Path                 | Purpose                                                                     |
+| -------------------- | --------------------------------------------------------------------------- |
+| `tests/unit/`        | Pure function tests. Runs against source via Vitest + TSX.                  |
+| `tests/integration/` | Tests that exercise multiple modules. Also source-based.                    |
+| `tests/e2e/`         | Shells out to `dist/cli.js` in a temp project dir — requires a fresh build. |
+| `tests/release/`     | Gate checks including artifact-version-baseline drift.                      |
 
 If you edit a template, the `artifact-version-baseline.test.ts` will fail unless you bump the template's `version:` field. This is the release-readiness gate described in [How Codi Works](../../reference/architecture/).
 
