@@ -33,7 +33,7 @@ function tmpBrain() {
 }
 
 describe("runConsolidation", () => {
-  it("aggregates proposals from every detector and persists them", () => {
+  it("aggregates proposals from every detector and persists them", async () => {
     const t = tmpBrain();
     try {
       const now = Date.now();
@@ -46,7 +46,7 @@ describe("runConsolidation", () => {
       corr.run("s2", now - 800, "x.ts", "diff");
       corr.run("s3", now - 600, "x.ts", "diff");
 
-      const result = runConsolidation(t.handle.raw, {
+      const result = await runConsolidation(t.handle.raw, {
         installedSkills: ["skill-A", "skill-B"],
         installedRules: ["rule-A"],
         existingRuleKeywords: ["test"],
@@ -64,7 +64,7 @@ describe("runConsolidation", () => {
 });
 
 describe("generatePackage", () => {
-  it("collects accepted proposals into a manifest with counts", () => {
+  it("collects accepted proposals into a manifest with counts", async () => {
     const t = tmpBrain();
     try {
       const now = Date.now();
@@ -87,7 +87,7 @@ describe("generatePackage", () => {
         )
         .run("s3", now, "y.ts", "d");
 
-      const result = runConsolidation(t.handle.raw, {
+      const result = await runConsolidation(t.handle.raw, {
         installedSkills: [],
         installedRules: [],
         existingRuleKeywords: [],

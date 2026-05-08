@@ -13,6 +13,9 @@ importers:
       "@clack/prompts":
         specifier: ^1.1.0
         version: 1.2.0
+      "@google/generative-ai":
+        specifier: ^0.24.1
+        version: 0.24.1
       "@hono/node-server":
         specifier: ^2.0.2
         version: 2.0.2(hono@4.12.18)
@@ -52,6 +55,9 @@ importers:
       hono:
         specifier: ^4.12.18
         version: 4.12.18
+      openai:
+        specifier: ^6.37.0
+        version: 6.37.0(zod@4.3.6)
       picocolors:
         specifier: ^1.1.0
         version: 1.1.1
@@ -1397,6 +1403,13 @@ packages:
       {
         integrity: sha512-bEMORlG0cqdjVyCEuU0cDQbORWX+kYCeo0kV1lbxF5bt4r7SID2l9bqsxJEM0zndaxpOUT7riCyIVEuqq/Ynxg==,
       }
+
+  "@google/generative-ai@0.24.1":
+    resolution:
+      {
+        integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==,
+      }
+    engines: { node: ">=18.0.0" }
 
   "@hono/node-server@2.0.2":
     resolution:
@@ -5276,6 +5289,21 @@ packages:
         integrity: sha512-csuQ9x3Yr0cEIs/Zgx/OEt9iBw9vqIunAPQkx19R/fiMq2oGVTgcMqO/V3Ybqefr1TBvosI6jU539ksaBULJyA==,
       }
 
+  openai@6.37.0:
+    resolution:
+      {
+        integrity: sha512-0H5dEGFmmLv6KSd0W1w2nyL8WsLkX6yoLeQpU+dZAOuGcany5qkYQMmj35ZrKgb6yiyYqpUzFOpR8mZQkgqeEQ==,
+      }
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   optionator@0.9.4:
     resolution:
       {
@@ -7597,6 +7625,8 @@ snapshots:
       "@shikijs/themes": 3.23.0
       "@shikijs/types": 3.23.0
       "@shikijs/vscode-textmate": 10.0.2
+
+  "@google/generative-ai@0.24.1": {}
 
   "@hono/node-server@2.0.2(hono@4.12.18)":
     dependencies:
@@ -10068,6 +10098,10 @@ snapshots:
       oniguruma-parser: 0.12.2
       regex: 6.1.0
       regex-recursion: 6.0.2
+
+  openai@6.37.0(zod@4.3.6):
+    optionalDependencies:
+      zod: 4.3.6
 
   optionator@0.9.4:
     dependencies:

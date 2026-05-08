@@ -26,6 +26,7 @@ import {
   type ProposalStatus,
   type RunContext,
 } from "../consolidate/index.js";
+import { getProvider, LlmConfigError } from "../llm/index.js";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 1000;
@@ -258,7 +259,7 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       sinceTs: body.sinceTs,
       minEvidence: body.minEvidence,
     };
-    const result = runConsolidation(brain.raw, ctx);
+    const result = await runConsolidation(brain.raw, ctx);
     return c.json({ data: result });
   });
 
@@ -273,7 +274,7 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       sinceTs: body.sinceTs,
       minEvidence: body.minEvidence,
     };
-    const result = runConsolidation(brain.raw, ctx);
+    const result = await runConsolidation(brain.raw, ctx);
     return c.json({
       data: result,
       mode: "agent",
@@ -281,19 +282,47 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
     });
   });
 
-  // Mode B — server-side LLM: enabled iff LLM key configured. Stub for now;
-  // returns 501 so callers fall through to mode A.
-  app.post("/api/v1/consolidation/run-with-llm", (c: Context) => {
-    return c.json(
-      {
-        error: {
-          code: "not_implemented",
-          message:
-            "server-side LLM mode is opt-in; configure CODI_LLM_PROVIDER + CODI_LLM_API_KEY and re-run",
-        },
-      },
-      501,
-    );
+  // Mode B — server-side LLM (Item 6): requires CODI_LLM_PROVIDER + the
+  // matching API key env var. The selector throws LlmConfigError when no
+  // key is configured; surfaced as 400 so the caller can fall back to
+  // /run-with-agent without crashing.
+  app.post("/api/v1/consolidation/run-with-llm", async (c: Context) => {
+    let provider;
+    try {
+      provider = getProvider();
+    } catch (e) {
+      if (e instanceof LlmConfigError) {
+        return c.json(
+          {
+            error: {
+              code: "llm_not_configured",
+              message: e.message,
+              hint: "set CODI_LLM_PROVIDER + the matching API key, or POST /run-with-agent instead",
+            },
+          },
+          400,
+        );
+      }
+      throw e;
+    }
+    const body = (await c.req.json().catch(() => ({}))) as Partial<RunContext>;
+    const ctx: RunContext = {
+      installedSkills: body.installedSkills ?? [],
+      installedRules: body.installedRules ?? [],
+      existingRuleKeywords: body.existingRuleKeywords ?? [],
+      knownContradictions: body.knownContradictions,
+      sinceTs: body.sinceTs,
+      minEvidence: body.minEvidence,
+      llmProvider: provider,
+      dryRun: body.dryRun,
+    };
+    const result = await runConsolidation(brain.raw, ctx);
+    return c.json({
+      data: result,
+      mode: "llm",
+      provider: provider.id,
+      model: provider.defaultModel,
+    });
   });
 }
 
