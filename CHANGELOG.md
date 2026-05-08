@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added — Codi v3 ed.0 (in progress on `feature/codi-v3-harness`)
+
+- **DevLoop merge** — copied DevLoop libs/hooks/schemas/scripts into `src/runtime/`, integrated 32 DevLoop test files into the main vitest suite, and migrated all 22 DevLoop skills into Codi v2 standard layout (`template.ts` + `index.ts`). Catalog: 67 → 84 skills.
+- **SQLite canonical brain** (`src/runtime/brain/`) — 11-table schema (`projects`, `sessions`, `prompts`, `turns`, `captures`, `tool_calls`, `corrections`, `artifacts_used`, `_codi_schema_version`, `workflow_runs`, `workflow_events`) with FTS5 mirrors over `captures` and `prompts`. Drizzle ORM for typed access; idempotent bootstrap migration with WAL + foreign-keys + busy-timeout.
+- **Capture markers protocol** (Iron Law 9) — `src/runtime/capture/` parses `|TYPE: "..."|` markers across the 10 canonical capture types (RULE, PROHIBITION, PREFERENCE, FEEDBACK, INSIGHT, OBSERVATION, DECISION, QUESTION, PROMPT, CORRECTION) and persists deduplicated rows to the brain. New `codi-capture-everything` rule enforces emission; `UserPromptSubmit` hook injects a per-turn reminder.
+- **ExternalSyncer interface** (ADR-005) — `src/runtime/sync/external-syncer.ts` contract + `SyncerRegistry`. Sheets and Xlsx sync targets are now opt-in adapters behind the same surface; SQLite stays the source of truth.
+- **Hono-based brain-ui server** (`src/runtime/brain-ui/`) — read-only HTTP API (9 endpoints: projects, sessions, captures, FTS5 search, workflows + events, proposals list/accept/reject) plus HTMX pages (sessions, session detail, live polling, workflows, findings stub). Spawn-or-attach lifecycle via `~/.codi/brain-ui.pid` so multiple agent sessions share one server. Default port 4477.
+- **Consolidation pipeline scaffold** (`src/runtime/consolidate/`) — `proposals` table, typed `Proposal` / `Proposal{Type,Status}` / `ProposalEvidence` records, and three pattern detectors: P1 (repeated correction → PROMOTE_TO_RULE), P2 (unused skill → DEPRECATE_ARTIFACT), P5 (consistent new pattern → CREATE_NEW_ARTIFACT). Remaining patterns P3/P4/P6/P7/P8 follow the same `PatternDetector` contract.
+- **Capabilities Matrix** (`src/core/capabilities/`) — per-target feature flags: Tier 1A (Claude Code) supports the full surface, Tier 1B (Codex CLI) everything except UI integration, Tier 2 (Cursor / Windsurf / Cline / Copilot / Gemini) skills + rules + MCP only. Generators consult `supports(target, feature)` before emitting output.
+- **`codi migrate v2-to-v3` planner** (`src/core/migration/v2-to-v3.ts`) — pure-function `detectV2Layout` + `planMigration` + `formatPlan`. Dry-run by default; the executor is gated on explicit `ok` and writes a timestamped backup of `.codi/` before any rewrite.
+- **10 ADRs** documenting the v3 ed.0 decisions: rebrand-in-place, DevLoop merge, tiered capabilities, workflows as artifacts, SQLite canonical, catalog of 77 artifacts, four architectural features, DDD internal layout, plugin distribution dual track, install modes (zero / lite / standard / full).
+
 ### Fixed
 
 - **Unselecting an agent during `codi init --customize` now fully removes its directories** — three independent bugs combined to leave `.cursor/`, `.windsurf/`, `.cline/` (and similar) on disk after the deselected agent's files were "pruned":

@@ -17,9 +17,16 @@
 
 import type { Hono, Context } from "hono";
 import type { BrainHandle } from "../brain/index.js";
+import {
+  listProposals,
+  getProposal,
+  decideProposal,
+  type ProposalStatus,
+} from "../consolidate/index.js";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 1000;
+const VALID_PROPOSAL_STATUSES: readonly ProposalStatus[] = ["pending", "accepted", "rejected"];
 
 export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   app.get("/api/v1/projects", (c: Context) => {
@@ -156,6 +163,79 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       )
       .all(workflowId, boundedLimit(c)) as unknown[];
     return c.json({ data: rows });
+  });
+
+  // ─── Sprint 5 — proposals ────────────────────────────────────────────────
+
+  app.get("/api/v1/proposals", (c: Context) => {
+    const status = c.req.query("status");
+    const filter =
+      status && (VALID_PROPOSAL_STATUSES as readonly string[]).includes(status)
+        ? (status as ProposalStatus)
+        : undefined;
+    const data = listProposals(brain.raw, {
+      status: filter,
+      limit: boundedLimit(c),
+    });
+    return c.json({ data });
+  });
+
+  app.get("/api/v1/proposals/:id", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id", message: "id must be a number" } }, 400);
+    }
+    const p = getProposal(brain.raw, id);
+    if (!p) {
+      return c.json({ error: { code: "not_found", message: "proposal not found" } }, 404);
+    }
+    return c.json({ data: p });
+  });
+
+  app.post("/api/v1/proposals/:id/accept", async (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id", message: "id must be a number" } }, 400);
+    }
+    const body = (await c.req.json().catch(() => ({}))) as { reason?: string };
+    const result = decideProposal(brain.raw, {
+      proposalId: id,
+      status: "accepted",
+      reason: body.reason,
+    });
+    if (!result.ok && result.error === "not_found") {
+      return c.json({ error: { code: "not_found", message: "proposal not found" } }, 404);
+    }
+    if (!result.ok && result.error === "already_decided") {
+      return c.json(
+        { error: { code: "already_decided", message: "proposal already decided" } },
+        409,
+      );
+    }
+    return c.json({ data: result.proposal });
+  });
+
+  app.post("/api/v1/proposals/:id/reject", async (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id", message: "id must be a number" } }, 400);
+    }
+    const body = (await c.req.json().catch(() => ({}))) as { reason?: string };
+    const result = decideProposal(brain.raw, {
+      proposalId: id,
+      status: "rejected",
+      reason: body.reason,
+    });
+    if (!result.ok && result.error === "not_found") {
+      return c.json({ error: { code: "not_found", message: "proposal not found" } }, 404);
+    }
+    if (!result.ok && result.error === "already_decided") {
+      return c.json(
+        { error: { code: "already_decided", message: "proposal already decided" } },
+        409,
+      );
+    }
+    return c.json({ data: result.proposal });
   });
 }
 
