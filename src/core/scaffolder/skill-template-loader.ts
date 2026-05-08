@@ -75,6 +75,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("html-live-inspect")]: skillTemplates.htmlLiveInspect,
   [prefixedName("dispatching-parallel-agents")]: skillTemplates.dispatchingParallelAgents,
   [prefixedName("receiving-code-review")]: skillTemplates.receivingCodeReview,
+  [prefixedName("team-charter")]: skillTemplates.teamCharter,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -144,6 +145,7 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("worktrees")]: skillTemplates.worktreesStaticDir,
   [prefixedName("dispatching-parallel-agents")]: skillTemplates.dispatchingParallelAgentsStaticDir,
   [prefixedName("receiving-code-review")]: skillTemplates.receivingCodeReviewStaticDir,
+  [prefixedName("team-charter")]: skillTemplates.teamCharterStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

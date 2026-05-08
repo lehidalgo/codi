@@ -184,3 +184,7 @@ export {
   template as receivingCodeReview,
   staticDir as receivingCodeReviewStaticDir,
 } from "./receiving-code-review/index.js";
+export {
+  template as teamCharter,
+  staticDir as teamCharterStaticDir,
+} from "./team-charter/index.js";
