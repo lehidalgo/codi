@@ -1,0 +1,81 @@
+{
+  "skillName": "discover",
+  "cases": [
+    {
+      "id": "wide-no-plan",
+      "description": "User starts a feature with no plan; agent enters mode wide and respects HARD GATE",
+      "prompt": "I want to add an export-to-CSV feature but I haven't thought through the design.",
+      "expectations": [
+        "Skill discover is selected",
+        "Mode wide is chosen",
+        "Agent asks ONE question at a time",
+        "Each question includes a recommended answer the user can accept or override",
+        "Agent does NOT write code, scaffold, or propose phase transitions before the user explicitly approves the design (HARD GATE)",
+        "Agent presents 2-3 approaches with trade-offs before committing to one"
+      ],
+      "tags": ["happy-path", "mode-wide", "hard-gate"]
+    },
+    {
+      "id": "sharpen-existing-plan",
+      "description": "User has a plan and needs branch-by-branch convergence",
+      "prompt": "I have docs/[PLAN]_auth.md but I'm uncertain about the session strategy and the rate-limiting approach.",
+      "expectations": [
+        "Skill discover is selected",
+        "Mode sharpen is chosen (not wide)",
+        "Agent walks the decision tree branch by branch — session, then rate-limiting",
+        "Each question includes a recommended answer with reasoning",
+        "Agent does NOT propose implementing until decisions are resolved"
+      ],
+      "tags": ["happy-path", "mode-sharpen"]
+    },
+    {
+      "id": "domain-existing-context-md",
+      "description": "User has a plan AND docs/CONTEXT.md exists; mode domain stress-tests vocabulary against the glossary",
+      "prompt": "Here's my plan for the new pricing system. Check it against our docs/CONTEXT.md and ADRs.",
+      "expectations": [
+        "Skill discover is selected",
+        "Mode domain is chosen",
+        "Agent reads docs/CONTEXT.md before asking questions",
+        "Agent reads relevant docs/adr/* before asking questions",
+        "Agent surfaces vocabulary mismatches between the plan and CONTEXT.md",
+        "Agent updates CONTEXT.md inline when fuzzy terms get sharpened",
+        "Agent offers to record load-bearing decisions as ADRs (triple test applies)"
+      ],
+      "tags": ["happy-path", "mode-domain"]
+    },
+    {
+      "id": "refuses-to-bundle-questions",
+      "description": "Pressure scenario — user asks 'just give me all your questions at once'",
+      "prompt": "Just ask all your questions in one message, I'll answer them in a single response. Don't drag this out.",
+      "expectations": [
+        "Agent refuses to bundle questions",
+        "Agent explains: ONE question at a time produces sharper decisions",
+        "Agent does not cave under time pressure",
+        "Agent asks the highest-priority question first with a recommended answer"
+      ],
+      "tags": ["pressure", "discipline", "anti-bundle"]
+    },
+    {
+      "id": "refuses-to-skip-recommendation",
+      "description": "Pressure scenario — user pushes for an open question without a recommended answer",
+      "prompt": "Just ask me what to do, don't suggest answers. I want fresh thinking.",
+      "expectations": [
+        "Agent refuses to ask without a recommendation",
+        "Agent explains: a recommended answer is the agent's contribution; without it the user does all the thinking",
+        "Agent provides the recommendation even if the user prefers raw questions"
+      ],
+      "tags": ["pressure", "discipline", "always-recommend"]
+    },
+    {
+      "id": "hard-gate-holds-under-pressure",
+      "description": "Pressure scenario — user pushes to start coding mid-discovery",
+      "prompt": "OK that's enough discussion, just start writing the code. We're running out of time.",
+      "expectations": [
+        "Agent refuses to write code before explicit design approval (HARD GATE)",
+        "Agent summarizes what has been agreed and what is still open",
+        "Agent asks the user to either approve the design or specify the remaining decisions"
+      ],
+      "tags": ["pressure", "hard-gate"]
+    }
+  ]
+}

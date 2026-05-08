@@ -19,7 +19,17 @@ export default defineConfig({
   test: {
     globals: true,
     include: ["tests/**/*.test.ts", "src/templates/skills/**/tests/**/*.test.{ts,js}"],
-    exclude: ["projs/**", "node_modules/**"],
+    exclude: [
+      "projs/**",
+      "node_modules/**",
+      // Sprint 1 — DevLoop sources imported directly into src/runtime/, refactor (imports + integration) in Sprint 2
+      "tests/runtime/**",
+      "src/runtime/**",
+      "scripts/runtime/**",
+      "src/templates/skills-devloop-staging/**",
+      "src/templates/hooks/runtime/**",
+      "src/schemas/runtime/**",
+    ],
     environmentMatchGlobs: [["src/templates/skills/**/tests/**/*.test.{ts,js}", "jsdom"]],
     testTimeout: 10_000,
     server: {

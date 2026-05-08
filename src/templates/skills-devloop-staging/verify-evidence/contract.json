@@ -1,0 +1,23 @@
+{
+  "skill_name": "verify-evidence",
+  "skill_type": "single",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "events_emitted": ["validation_run"],
+  "human_approval_required_for": [
+    "claiming work is complete without running verification commands",
+    "accepting mocked test evidence for integration-level success criteria"
+  ],
+  "five_step_gate": [
+    "identify — list what specifically must be verified",
+    "run — execute verification commands against real code",
+    "read — read actual command output, do not assume",
+    "verify — confirm output matches success criterion",
+    "claim — only now say 'verify phase complete'"
+  ],
+  "boundaries": {
+    "produces": "evidence-before-assertions discipline at workflow phase verify",
+    "does_not_produce": "the tests themselves (workflow execute phase produces them)",
+    "does_not_handle": "code-quality review (use code-review)"
+  }
+}

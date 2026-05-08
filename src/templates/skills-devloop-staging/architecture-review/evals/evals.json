@@ -1,0 +1,79 @@
+{
+  "skillName": "architecture-review",
+  "cases": [
+    {
+      "id": "survey-codebase-no-target",
+      "description": "User wants periodic codebase health pass with no specific target",
+      "prompt": "Find refactoring opportunities in this codebase.",
+      "expectations": [
+        "Skill architecture-review is selected",
+        "Step 1: agent reads docs/CONTEXT.md and relevant docs/adr/* before exploring",
+        "Step 1: agent dispatches Task subagent (subagent_type=Explore) for the codebase walk",
+        "Step 2: agent presents a NUMBERED list of deepening candidates",
+        "Each candidate uses CONTEXT.md vocabulary for domain terms (not 'service', 'component', 'API', 'boundary')",
+        "Each candidate uses architecture vocabulary (module, interface, depth, seam, adapter)",
+        "Agent does NOT propose interfaces yet — asks 'which to explore?'"
+      ],
+      "tags": ["happy-path", "step-1-2"]
+    },
+    {
+      "id": "grilling-loop-on-chosen-candidate",
+      "description": "User picks candidate 3; agent runs Step 3 grilling loop",
+      "prompt": "Let's explore candidate 3 — the Order intake module.",
+      "expectations": [
+        "Step 3 grilling loop begins",
+        "Agent classifies dependencies (in-process / local-substitutable / remote-but-owned / true-external)",
+        "Agent picks a test strategy based on the classification",
+        "If a new term enters the conversation, agent updates docs/CONTEXT.md inline",
+        "If the user rejects the candidate with a load-bearing reason, agent offers to record an ADR (triple test applies)",
+        "Agent does NOT execute the refactor — that is refactor-workflow's job"
+      ],
+      "tags": ["happy-path", "step-3"]
+    },
+    {
+      "id": "deletion-test-applied",
+      "description": "Agent must apply deletion test to candidate shallow modules",
+      "prompt": "I think the OrderValidator module is too thin.",
+      "expectations": [
+        "Agent applies the deletion test: imagine deleting OrderValidator",
+        "If complexity vanishes, agent confirms it is a pass-through (deepening candidate)",
+        "If complexity reappears across N callers, agent reports the module was earning its keep"
+      ],
+      "tags": ["happy-path", "deletion-test"]
+    },
+    {
+      "id": "refuses-component-vocabulary",
+      "description": "Pressure scenario — user uses 'component', 'service', 'boundary'",
+      "prompt": "Find refactoring opportunities in our service layer.",
+      "expectations": [
+        "Agent does NOT use 'component', 'service', 'API', or 'boundary' in the response",
+        "Agent uses 'module', 'interface', 'seam', 'adapter' instead",
+        "If the user uses these terms, agent gently re-anchors to the architecture vocabulary"
+      ],
+      "tags": ["pressure", "vocabulary-discipline"]
+    },
+    {
+      "id": "one-vs-two-adapter-rule",
+      "description": "Agent must not introduce a port for a single adapter",
+      "prompt": "Should I add a port for the email sender? It's only sent from one place right now.",
+      "expectations": [
+        "Agent applies the one-vs-two-adapter rule: one adapter = hypothetical seam = indirection",
+        "Agent recommends NOT adding the port until at least two adapters are justified (production + test)",
+        "Agent names the alternatives — write tests against the existing implementation directly, or wait until a second adapter is needed"
+      ],
+      "tags": ["happy-path", "adapter-rule"]
+    },
+    {
+      "id": "hands-off-to-refactor-workflow",
+      "description": "After approval, hand off to refactor-workflow correctly",
+      "prompt": "Approved. Let's deepen the Order intake module.",
+      "expectations": [
+        "Agent does NOT start the refactor itself",
+        "Agent invokes devloop:refactor-workflow",
+        "Agent feeds the chosen candidate as the intent input to refactor-workflow",
+        "Refactor's plan phase will use the deepening candidate, dependency category, and test strategy"
+      ],
+      "tags": ["happy-path", "composition"]
+    }
+  ]
+}

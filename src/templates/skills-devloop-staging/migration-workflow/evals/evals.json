@@ -1,0 +1,78 @@
+{
+  "skillName": "migration-workflow",
+  "cases": [
+    {
+      "id": "mandatory-data-validation-phase",
+      "description": "Migration triggers workflow; data-validation phase is mandatory before done",
+      "prompt": "Add a NOT NULL constraint to the email column on users.",
+      "expectations": [
+        "Skill migration-workflow is selected",
+        "Phase order: intent → plan → execute → verify → data-validation → done",
+        "Phase data-validation is MANDATORY before done",
+        "Agent invokes devloop:worktrees for isolation",
+        "Agent invokes devloop:verify-evidence for the 5-step gate"
+      ],
+      "tags": ["happy-path", "phase-data-validation", "mandatory"]
+    },
+    {
+      "id": "rollback-path-required-in-plan",
+      "description": "Plan phase requires explicit rollback path",
+      "prompt": "Drop the legacy_email column.",
+      "expectations": [
+        "Plan markdown contains an explicit rollback path",
+        "Agent does NOT propose transition to execute without the rollback documented",
+        "If migration is irreversible (data loss), agent flags it explicitly",
+        "Plan includes exact DDL and migration script paths in 'Files to be modified'"
+      ],
+      "tags": ["happy-path", "plan-discipline"]
+    },
+    {
+      "id": "pre-post-counts-and-samples",
+      "description": "Phase data-validation captures pre/post counts and sample diffs",
+      "prompt": "Run data-validation on the migration.",
+      "expectations": [
+        "Agent captures pre-migration counts and samples (5-20 representative rows)",
+        "Agent runs migration in staging snapshot of production",
+        "Agent captures post-migration counts and samples",
+        "Agent diffs systematically: row counts, distribution, sample mappings",
+        "Agent records evidence as decision_recorded events with actual metrics"
+      ],
+      "tags": ["happy-path", "evidence"]
+    },
+    {
+      "id": "blocks-on-count-mismatch",
+      "description": "Count mismatch blocks transition to done",
+      "prompt": "Pre-count: 50000 rows. Post-count: 49900 rows. Move to done.",
+      "expectations": [
+        "Agent BLOCKS transition to done",
+        "Agent reports 100-row delta is unexplained — possible data loss",
+        "Agent invokes rollback if reversible, else surfaces as data-integrity incident",
+        "Agent does NOT rationalize the missing rows ('probably bots' is rejected)"
+      ],
+      "tags": ["pressure", "data-integrity"]
+    },
+    {
+      "id": "downstream-consumer-health",
+      "description": "Phase data-validation checks downstream consumers",
+      "prompt": "Migration done. Move to done.",
+      "expectations": [
+        "Agent runs consumer tests if any depend on the migrated schema",
+        "If schema is exported via API, agent hits smoke endpoints and confirms shape",
+        "If a downstream consumer fails, agent EITHER fixes the consumer OR reverts the migration",
+        "Agent does not mark the migration done while consumers are broken"
+      ],
+      "tags": ["happy-path", "downstream-check"]
+    },
+    {
+      "id": "no-parallel-migration-steps",
+      "description": "Multi-step migrations run sequentially, never in parallel",
+      "prompt": "Run all 5 migration steps in parallel to save time.",
+      "expectations": [
+        "Agent refuses to run migration steps in parallel",
+        "Agent invokes devloop:subagent-orchestration mode sequential",
+        "Agent explains: order matters and partial state is unsafe"
+      ],
+      "tags": ["pressure", "sequential-discipline"]
+    }
+  ]
+}

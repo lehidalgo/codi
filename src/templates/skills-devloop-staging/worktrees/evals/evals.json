@@ -1,0 +1,70 @@
+{
+  "skillName": "worktrees",
+  "cases": [
+    {
+      "id": "create-worktree-existing-dir",
+      "description": ".worktrees/ already exists; use it after verifying ignore status",
+      "prompt": "Create a worktree for the auth feature workflow.",
+      "expectations": [
+        "Skill worktrees is selected",
+        "Agent checks for .worktrees/ first (preferred), then worktrees/",
+        "Agent runs git check-ignore to confirm the directory is gitignored",
+        "Agent detects GitHub user (gh api user --jq .login, falling back to git config or email parsing)",
+        "Branch name follows devloop convention <github-user>/<type>/<workflow-id>-<slug>",
+        "Agent creates the worktree at .worktrees/<github-user>/<type>/<workflow-id>-<slug>",
+        "Agent runs the auto-detected setup command (pnpm install / uv sync / cargo build / go mod download)",
+        "Agent runs the baseline test suite",
+        "Agent reports worktree path, branch, setup command, baseline test result"
+      ],
+      "tags": ["happy-path"]
+    },
+    {
+      "id": "fix-gitignore-when-not-ignored",
+      "description": "Project-local worktree dir not gitignored; agent must fix before proceeding",
+      "prompt": "Create a worktree (the .worktrees/ dir is not gitignored yet).",
+      "expectations": [
+        "Agent detects .worktrees/ is not gitignored",
+        "Agent adds the appropriate line to .gitignore",
+        "Agent commits with message 'chore: ignore worktrees directory'",
+        "Agent THEN proceeds with worktree creation",
+        "Agent does NOT create the worktree before fixing the ignore status"
+      ],
+      "tags": ["pressure", "safety-verification"]
+    },
+    {
+      "id": "stops-on-baseline-test-failure",
+      "description": "Baseline tests fail in the new worktree; agent stops and asks",
+      "prompt": "Create the worktree. (Tests fail at baseline due to a flaky test in main.)",
+      "expectations": [
+        "Agent runs baseline tests",
+        "Agent does NOT silently proceed past failing baseline",
+        "Agent reports the failures with specifics",
+        "Agent asks the user whether to investigate or proceed"
+      ],
+      "tags": ["pressure", "safety-baseline"]
+    },
+    {
+      "id": "no-mixed-package-managers",
+      "description": "Project has both pnpm-lock.yaml and package-lock.json; agent prefers pnpm and warns",
+      "prompt": "Create a worktree for this JS project.",
+      "expectations": [
+        "Agent detects both pnpm-lock.yaml and package-lock.json",
+        "Agent uses pnpm install (devloop convention)",
+        "Agent warns the user about the mixed lock-file state",
+        "Agent does NOT delete either lock file unilaterally"
+      ],
+      "tags": ["pressure", "package-manager-discipline"]
+    },
+    {
+      "id": "no-pip-install-direct",
+      "description": "Python project; agent uses uv, never pip directly",
+      "prompt": "Create a worktree for this Python project (has pyproject.toml).",
+      "expectations": [
+        "Agent uses uv sync (or uv pip install -r requirements.txt for legacy projects)",
+        "Agent does NOT run pip install directly",
+        "Agent does NOT activate a venv manually before running uv"
+      ],
+      "tags": ["pressure", "python-discipline"]
+    }
+  ]
+}

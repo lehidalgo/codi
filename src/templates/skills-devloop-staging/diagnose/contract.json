@@ -1,0 +1,22 @@
+{
+  "skill_name": "diagnose",
+  "skill_type": "single",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "events_emitted": [],
+  "human_approval_required_for": [
+    "applying a fix before the hypothesis is proven",
+    "skipping investigation phase to jump to a guess"
+  ],
+  "phases": [
+    "investigation — read the actual code, do not skim",
+    "pattern-recognition — look for similar bugs, prior fixes",
+    "hypothesis — falsifiable, one variable at a time, 3-strikes rule",
+    "fix-and-verification — only after hypothesis proven"
+  ],
+  "boundaries": {
+    "produces": "systematic 4-phase debugging discipline for bugs and regressions",
+    "does_not_produce": "the bug fix itself (the workflow's execute phase does the implementation)",
+    "does_not_handle": "performance regressions that are not bugs (use a performance-focused workflow)"
+  }
+}

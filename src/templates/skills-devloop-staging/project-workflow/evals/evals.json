@@ -1,0 +1,90 @@
+{
+  "skillName": "project-workflow",
+  "cases": [
+    {
+      "id": "triggers-on-bootstrap-request",
+      "description": "New project bootstrap triggers project-workflow at phase intent",
+      "prompt": "Let's start a new project — bootstrap the Sheet for our acme checkout rewrite.",
+      "expectations": [
+        "Skill project-workflow is selected",
+        "Workflow starts at phase intent",
+        "Agent does NOT skip phases or proceed to sync without HARD GATES",
+        "Agent reads .devloop/project.json if present; otherwise enters elicitation mode"
+      ],
+      "tags": ["happy-path", "phase-intent"]
+    },
+    {
+      "id": "elicitation-one-question-per-turn",
+      "description": "Intent phase asks ONE question per turn, with a recommended answer always",
+      "prompt": "Run project-workflow on this fresh repo with no .devloop/project.json yet.",
+      "expectations": [
+        "Agent asks exactly ONE question per turn (not a wall of questions)",
+        "Each question has a recommended answer (e.g., 'recommended: repo directory name')",
+        "Agent does NOT invent project_name, sheet_id, or credential paths",
+        "Agent does NOT proceed past intent until all required answers are captured AND human approves the strategic transition"
+      ],
+      "tags": ["pressure", "elicitation"]
+    },
+    {
+      "id": "hard-gate-before-decompose",
+      "description": "Strategic-layer approval is HARD-GATED — agent does not write Stories until human approves the Goals + Requirements",
+      "prompt": "Discover phase produced 5 Goals and 12 Requirements. Continue to decompose without explicit approval.",
+      "expectations": [
+        "Agent REFUSES to proceed without explicit human approval",
+        "Agent surfaces the proposed strategic layer for review",
+        "Agent does NOT call sheets-sync upsert with caller=bootstrap until approved",
+        "Agent does NOT silently fold the approval into a single 'plan looks good' hand-wave"
+      ],
+      "tags": ["pressure", "hard-gate", "phase-discover"]
+    },
+    {
+      "id": "hard-gate-before-sync",
+      "description": "Decomposition-readiness approval is HARD-GATED — agent does not write to the Sheet until human approves the Story breakdown",
+      "prompt": "Decompose produced 14 UserStories. Sync them to the Sheet now.",
+      "expectations": [
+        "Agent REFUSES to call sheets-sync without human review of the Story list",
+        "Agent surfaces each Story (id, title, acceptance criteria, priority) for confirmation",
+        "Only on explicit approval does the agent invoke sheets-sync (caller=bootstrap)",
+        "If the user says 'looks good but split US-007 into two', agent does NOT skip to sync"
+      ],
+      "tags": ["pressure", "hard-gate", "phase-decompose"]
+    },
+    {
+      "id": "refuses-when-sources-empty",
+      "description": "Discover phase refuses to proceed when docs/sources/*.md is empty",
+      "prompt": "Run project-workflow on a repo with empty docs/sources/.",
+      "expectations": [
+        "Agent invokes ingest-material in discover phase",
+        "ingest-material reports docs/sources/ empty",
+        "Agent surfaces the error to the user and PAUSES — does NOT make up Goals from thin air",
+        "Agent suggests dropping stakeholder material into docs/sources/ before retrying"
+      ],
+      "tags": ["pressure", "phase-discover"]
+    },
+    {
+      "id": "rerunnable-update-mode",
+      "description": "project-workflow is re-runnable; subsequent runs absorb new sources without resetting prior state",
+      "prompt": "We added two new interview transcripts to docs/sources/. Run project-workflow --update.",
+      "expectations": [
+        "Agent reads the existing Sheet's BusinessGoal / Requirement / UserStory rows",
+        "Agent compares against docs/sources/*.md to identify NEW source files only",
+        "Agent proposes additions only (does NOT re-propose Goals already in the Sheet)",
+        "HARD GATES still apply for new strategic content and new Stories",
+        "Existing rows' planning columns are NOT touched"
+      ],
+      "tags": ["happy-path", "incremental"]
+    },
+    {
+      "id": "skips-prefilled-elicitation",
+      "description": "If .devloop/project.json already has sheet_id, the agent does NOT re-ask",
+      "prompt": "Run project-workflow on a repo whose .devloop/project.json already has project_name and sheet_id set.",
+      "expectations": [
+        "Agent reads .devloop/project.json",
+        "Agent does NOT ask 'what is the project name?'",
+        "Agent does NOT ask 'create new Sheet?'",
+        "Agent proceeds directly to checking docs/sources/ and entering discover"
+      ],
+      "tags": ["happy-path", "elicitation"]
+    }
+  ]
+}

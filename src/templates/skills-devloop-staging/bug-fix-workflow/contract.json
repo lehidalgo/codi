@@ -1,0 +1,81 @@
+{
+  "skill_name": "bug-fix-workflow",
+  "skill_type": "workflow",
+  "workflow_type": "bug-fix",
+  "version": "0.2.0",
+  "manifest_required": true,
+  "phases": [
+    { "id": "intent", "next": ["reproduce"], "gate": "intent-complete" },
+    {
+      "id": "reproduce",
+      "next": ["plan"],
+      "gate": "reproduce-complete",
+      "reference": "(inline in SKILL.md)"
+    },
+    { "id": "plan", "next": ["execute"], "gate": "plan-complete" },
+    { "id": "execute", "next": ["verify"], "gate": "execute-complete" },
+    { "id": "verify", "next": ["done"], "gate": "verify-complete" },
+    { "id": "done", "terminal": true }
+  ],
+  "gates": {
+    "intent-complete": {
+      "checks": [{ "id": "task_described", "type": "deterministic", "max_retries": 0 }]
+    },
+    "reproduce-complete": {
+      "checks": [
+        {
+          "id": "feedback_loop_exists",
+          "type": "agent",
+          "skill": "gate-feedback-loop",
+          "max_retries": 1,
+          "implementation_milestone": "post-M4"
+        }
+      ]
+    },
+    "plan-complete": {
+      "checks": [
+        { "id": "plan_artifact_exists", "type": "deterministic", "max_retries": 1 },
+        { "id": "scope_files_listed", "type": "deterministic", "max_retries": 1 }
+      ]
+    },
+    "execute-complete": {
+      "checks": [{ "id": "all_planned_files_modified", "type": "deterministic", "max_retries": 1 }]
+    },
+    "verify-complete": {
+      "checks": [{ "id": "validation_passes", "type": "deterministic", "max_retries": 2 }]
+    }
+  },
+  "events_emitted": [
+    "init",
+    "phase_started",
+    "phase_completed",
+    "phase_transition_proposed",
+    "phase_transition_approved",
+    "phase_transition_rejected",
+    "scope_change_classified",
+    "scope_expansion_proposed",
+    "scope_expansion_approved",
+    "scope_expansion_rejected",
+    "incidental_change_recorded",
+    "gate_check_started",
+    "gate_check_passed",
+    "gate_check_failed",
+    "validation_run",
+    "subagent_dispatched",
+    "subagent_completed",
+    "subagent_failed",
+    "decision_recorded",
+    "artifact_linked",
+    "design_doc_authored",
+    "workflow_completed",
+    "workflow_abandoned"
+  ],
+  "max_retries_per_gate_default": 2,
+  "human_approval_required_for": [
+    "phase_transition",
+    "scope_expansion",
+    "elevation",
+    "workflow_completed",
+    "workflow_abandoned"
+  ]
+}

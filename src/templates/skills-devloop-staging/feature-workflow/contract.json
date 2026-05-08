@@ -1,0 +1,191 @@
+{
+  "$schema": "../../schemas/skill-contract.schema.json",
+  "skill_name": "feature-workflow",
+  "skill_type": "workflow",
+  "workflow_type": "feature",
+  "version": "0.2.0",
+  "manifest_required": true,
+  "phases": [
+    {
+      "id": "intent",
+      "next": ["plan"],
+      "gate": "intent-complete",
+      "reference": "references/phase-intent.md"
+    },
+    {
+      "id": "plan",
+      "next": ["decompose"],
+      "gate": "plan-complete",
+      "reference": "references/phase-plan.md"
+    },
+    {
+      "id": "decompose",
+      "next": ["execute"],
+      "gate": "decompose-complete",
+      "reference": "references/phase-decompose.md"
+    },
+    {
+      "id": "execute",
+      "next": ["verify"],
+      "gate": "execute-complete",
+      "reference": "references/phase-execute.md"
+    },
+    {
+      "id": "verify",
+      "next": ["done"],
+      "gate": "verify-complete",
+      "reference": "references/phase-verify.md"
+    },
+    {
+      "id": "done",
+      "terminal": true
+    }
+  ],
+  "gates": {
+    "intent-complete": {
+      "checks": [
+        {
+          "id": "task_described",
+          "type": "deterministic",
+          "rule": "manifest.task is non-empty",
+          "max_retries": 0
+        },
+        {
+          "id": "success_criteria_present",
+          "type": "deterministic",
+          "rule": "intent summary contains success criteria block",
+          "max_retries": 1,
+          "implementation_milestone": "M3"
+        }
+      ]
+    },
+    "plan-complete": {
+      "checks": [
+        {
+          "id": "plan_artifact_exists",
+          "type": "deterministic",
+          "rule": "docs/YYYYMMDD_HHMMSS_[PLAN]_*.md exists and content_hash recorded in manifest",
+          "max_retries": 1,
+          "implementation_milestone": "M3"
+        },
+        {
+          "id": "scope_files_listed",
+          "type": "deterministic",
+          "rule": "manifest.scope.files_in_plan has length >= 1",
+          "max_retries": 1,
+          "implementation_milestone": "M3"
+        },
+        {
+          "id": "plan_addresses_intent",
+          "type": "agent",
+          "skill": "gate-plan-coverage",
+          "rule": "AI checks plan covers every user story in intent",
+          "max_retries": 2,
+          "implementation_milestone": "M3"
+        },
+        {
+          "id": "deep_module_opportunities_considered",
+          "type": "agent",
+          "skill": "gate-deep-modules",
+          "rule": "AI checks plan considers deep module opportunities",
+          "max_retries": 1,
+          "implementation_milestone": "M3"
+        }
+      ]
+    },
+    "decompose-complete": {
+      "checks": [
+        {
+          "id": "vertical_slices_listed",
+          "type": "deterministic",
+          "rule": "manifest declares at least one tracer-bullet slice",
+          "max_retries": 1,
+          "implementation_milestone": "M3"
+        }
+      ]
+    },
+    "execute-complete": {
+      "checks": [
+        {
+          "id": "all_planned_files_modified",
+          "type": "deterministic",
+          "rule": "every file in manifest.scope.files_in_plan has at least one recorded edit",
+          "max_retries": 1,
+          "implementation_milestone": "M3"
+        },
+        {
+          "id": "no_unresolved_scope_proposals",
+          "type": "deterministic",
+          "rule": "no scope_expansion_proposed event lacks a matching approved or rejected event",
+          "max_retries": 0,
+          "implementation_milestone": "M3"
+        }
+      ]
+    },
+    "verify-complete": {
+      "checks": [
+        {
+          "id": "validation_passes",
+          "type": "deterministic",
+          "rule": "most recent validation_run event has exit_code 0",
+          "max_retries": 2,
+          "implementation_milestone": "M3"
+        },
+        {
+          "id": "tests_added_for_new_behavior",
+          "type": "agent",
+          "skill": "gate-test-coverage",
+          "rule": "AI checks tests added cover the changes",
+          "max_retries": 1,
+          "implementation_milestone": "M4"
+        }
+      ]
+    }
+  },
+  "events_emitted": [
+    "init",
+    "phase_started",
+    "phase_completed",
+    "phase_transition_proposed",
+    "phase_transition_approved",
+    "phase_transition_rejected",
+    "scope_change_classified",
+    "scope_expansion_proposed",
+    "scope_expansion_approved",
+    "scope_expansion_rejected",
+    "incidental_change_recorded",
+    "gate_check_started",
+    "gate_check_passed",
+    "gate_check_failed",
+    "validation_run",
+    "subagent_dispatched",
+    "subagent_completed",
+    "subagent_failed",
+    "child_workflow_initiated",
+    "child_workflow_resolved",
+    "workflow_paused_for_child",
+    "workflow_resumed_after_child",
+    "elevation_proposed",
+    "elevation_approved",
+    "elevation_rejected",
+    "context_term_added",
+    "context_term_updated",
+    "adr_proposed",
+    "adr_approved",
+    "artifact_linked",
+    "design_doc_authored",
+    "decision_recorded",
+    "workflow_handover",
+    "workflow_completed",
+    "workflow_abandoned"
+  ],
+  "max_retries_per_gate_default": 2,
+  "human_approval_required_for": [
+    "phase_transition",
+    "scope_expansion",
+    "elevation",
+    "adr_approval",
+    "workflow_completed",
+    "workflow_abandoned"
+  ]
+}

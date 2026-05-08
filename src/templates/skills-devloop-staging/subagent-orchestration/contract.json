@@ -1,0 +1,37 @@
+{
+  "skill_name": "subagent-orchestration",
+  "skill_type": "mode",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "modes": [
+    {
+      "id": "parallel",
+      "purpose": "fan out N subagents on N independent problems with no shared state",
+      "reference": "references/mode-parallel.md",
+      "default_when": "≥2 independent failures or investigations and parallelism saves wall-clock time"
+    },
+    {
+      "id": "sequential",
+      "purpose": "execute a plan task-by-task with fresh implementer per task and 2-stage review (spec compliance → code quality)",
+      "reference": "references/mode-sequential.md",
+      "default_when": "executing a plan with ≥3 discrete tasks; tasks may share state; quality gates after each task"
+    }
+  ],
+  "events_emitted": [
+    "subagent_dispatched",
+    "subagent_completed",
+    "subagent_failed",
+    "decision_recorded"
+  ],
+  "human_approval_required_for": [
+    "starting work on main/master without explicit consent (mode sequential)",
+    "task escalation when plan itself is wrong (mode sequential, BLOCKED status)",
+    "merging conflicting agent outputs (mode parallel)"
+  ],
+  "fork_policy": {
+    "all_modes": "fork-by-design — every dispatched subagent runs in context: fork to keep main session clean and the subagent focused on its specific scope"
+  },
+  "compositions": {
+    "stage_2_review_in_mode_sequential": "may chain to devloop:code-review mode request when auto_review is enabled — same JSON verdict schema, consistent with phase verify code-review"
+  }
+}

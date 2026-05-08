@@ -1,0 +1,67 @@
+{
+  "skill_name": "quality-gates",
+  "skill_type": "mode",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "modes": [
+    {
+      "id": "audit",
+      "purpose": "read-only scan; report missing or weak quality gates",
+      "reference": "references/mode-audit.md",
+      "default_when": "first-run setup, periodic audits, after CI failure that should have been caught locally"
+    },
+    {
+      "id": "setup",
+      "purpose": "install missing hooks adaptively; idempotent; CI changes HARD-GATED",
+      "reference": "references/mode-setup.md",
+      "default_when": "after audit identifies gaps and user approves the contract"
+    },
+    {
+      "id": "verify",
+      "purpose": "run all configured hooks end-to-end against current HEAD",
+      "reference": "references/mode-verify.md",
+      "default_when": "after setup as smoke test; before opening a PR; reproducing CI failures locally"
+    }
+  ],
+  "events_emitted": [],
+  "human_approval_required_for": [
+    "modifying .github/workflows/* (HARD GATE — show diff, ask for approval)",
+    "overwriting an existing user-flagged custom hook (devloop:quality-gates user-override)",
+    "saving an email-derived GitHub username (must confirm)",
+    "running setup on main/master branch"
+  ],
+  "scripts": {
+    "audit": "scripts/audit.sh",
+    "setup": "scripts/setup.sh",
+    "verify": "scripts/verify.sh",
+    "github_user_detect": "scripts/github-user.sh",
+    "branch_name_validator": "scripts/verify-branch-name.sh"
+  },
+  "branch_naming_convention": {
+    "format": "<github-user>/<type>/<slug>",
+    "types": ["feature", "bugfix", "refactor", "migration", "chore", "hotfix"],
+    "github_user_detection_priority": [
+      "gh api user --jq .login",
+      "git config devloop.githubUser",
+      "parse git config user.email",
+      "ask user once and save"
+    ]
+  },
+  "hook_contract": {
+    "categories": ["format", "lint", "type-check", "security", "test"],
+    "pre_commit_budget_seconds": 5,
+    "pre_push_budget_seconds": 30,
+    "universal_hooks": [
+      "gitleaks (secret scan)",
+      "file-size check (>1MB warn, >10MB block)",
+      "conflict-marker check",
+      "branch-name validator",
+      "no-commit-to-branch (main/master)"
+    ]
+  },
+  "boundaries": {
+    "produces": "git-lifecycle hooks (.husky/* or equivalent), commit-msg validator, branch-name validator, optional CI workflow extension",
+    "does_not_produce": "agent-runtime hooks (those live in plugin's hooks/ directory; this skill manages git hooks only)",
+    "does_not_handle": "host-machine tool installation (prints install hints, does not auto-install)"
+  }
+}

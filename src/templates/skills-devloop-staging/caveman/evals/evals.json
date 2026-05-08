@@ -1,0 +1,52 @@
+{
+  "skillName": "caveman",
+  "cases": [
+    {
+      "id": "trigger-on-explicit-request",
+      "description": "User explicitly requests caveman mode; agent compresses output ~75%",
+      "prompt": "Use caveman mode. Now explain what TDD is.",
+      "expectations": [
+        "Skill caveman is selected",
+        "Agent drops articles (a, the, an) and pleasantries",
+        "Agent uses imperative verbs and noun-verb-object structure",
+        "Output is roughly 25% the length it would be in normal mode",
+        "Technical accuracy preserved despite compression"
+      ],
+      "tags": ["happy-path", "compression"]
+    },
+    {
+      "id": "preserves-technical-accuracy",
+      "description": "Compression must not drop technical correctness",
+      "prompt": "[Caveman mode] Explain Promise.all behavior with 3 rejected promises.",
+      "expectations": [
+        "All technical facts preserved (Promise.all rejects on first rejection, returns first reject reason)",
+        "Compression drops verbosity, not content",
+        "Code examples are not abbreviated incorrectly",
+        "If accuracy and brevity conflict, accuracy wins"
+      ],
+      "tags": ["happy-path", "accuracy"]
+    },
+    {
+      "id": "exits-on-end-caveman",
+      "description": "Agent exits caveman mode when user signals end",
+      "prompt": "[Caveman mode active] OK end caveman.",
+      "expectations": [
+        "Agent exits caveman mode immediately",
+        "Subsequent responses are normal verbosity",
+        "Agent does NOT continue compressing after the user ends the mode"
+      ],
+      "tags": ["happy-path", "exit"]
+    },
+    {
+      "id": "user-invoked-only",
+      "description": "Skill does NOT auto-fire on long responses",
+      "prompt": "Tell me everything you know about distributed systems.",
+      "expectations": [
+        "Skill caveman does NOT auto-fire (disable-model-invocation: true)",
+        "Agent responds in normal verbosity unless user explicitly invokes caveman",
+        "If user has not requested compression, agent does not compress"
+      ],
+      "tags": ["happy-path", "user-only"]
+    }
+  ]
+}

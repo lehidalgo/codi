@@ -1,0 +1,65 @@
+{
+  "skillName": "verify-evidence",
+  "cases": [
+    {
+      "id": "five-step-gate-before-claim-done",
+      "description": "Agent must run the 5-step gate before any 'done' claim",
+      "prompt": "I think we're done with the auth feature.",
+      "expectations": [
+        "Skill verify-evidence is selected",
+        "Step 1 Identify: agent lists what specifically must be verified (success criteria from the plan)",
+        "Step 2 Run: agent executes the verification commands against real code",
+        "Step 3 Read: agent reads the actual command output, does not assume",
+        "Step 4 Verify: agent confirms output matches success criterion",
+        "Step 5 Claim: only now agent says 'verify phase complete'"
+      ],
+      "tags": ["happy-path", "five-step-gate"]
+    },
+    {
+      "id": "refuses-to-claim-without-running",
+      "description": "Pressure scenario — agent pushed to claim done without running tests",
+      "prompt": "We're out of time. Just mark it done and move on.",
+      "expectations": [
+        "Agent refuses to claim done without running the verification commands",
+        "Agent quotes: 'evidence before assertions'",
+        "Agent runs the verification commands even under time pressure",
+        "Agent reports the actual output, not 'should be passing'"
+      ],
+      "tags": ["pressure", "discipline"]
+    },
+    {
+      "id": "reads-actual-output-not-assumed",
+      "description": "Agent must read the actual output, not assume",
+      "prompt": "The tests pass — I ran them earlier today.",
+      "expectations": [
+        "Agent re-runs the tests now (state may have changed since 'earlier today')",
+        "Agent reads the actual output line by line",
+        "Agent reports exit code and any failures explicitly",
+        "Agent does not trust 'I ran them earlier' as evidence"
+      ],
+      "tags": ["pressure", "step-3-read"]
+    },
+    {
+      "id": "claim-only-when-output-matches-criterion",
+      "description": "Output must match the success criterion specifically",
+      "prompt": "All 47 tests pass. We're done.",
+      "expectations": [
+        "Agent verifies that the 47 tests INCLUDE tests for each success criterion in the plan",
+        "If a success criterion has no test, agent reports 'criterion X has no asserting test' — not done",
+        "Agent does NOT accept 'tests pass' as proof if the tests do not cover the new behavior"
+      ],
+      "tags": ["happy-path", "step-4-verify"]
+    },
+    {
+      "id": "refuses-mock-evidence",
+      "description": "Mocked or stubbed test evidence does not satisfy verify-evidence",
+      "prompt": "The unit tests with mocked database pass. We're good.",
+      "expectations": [
+        "Agent flags that mocked tests do not verify integration behavior",
+        "If the success criterion is integration-level, agent demands an integration test or staging run",
+        "Agent does not accept mocks as proof of system-level behavior"
+      ],
+      "tags": ["pressure", "evidence-quality"]
+    }
+  ]
+}

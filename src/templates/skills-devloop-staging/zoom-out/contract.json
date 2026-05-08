@@ -1,0 +1,30 @@
+{
+  "skill_name": "zoom-out",
+  "skill_type": "single",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "model_invocable": false,
+  "events_emitted": [],
+  "human_approval_required_for": [],
+  "devloop_conventions": [
+    "explicitly references docs/CONTEXT.md for domain vocabulary",
+    "explicitly references docs/adr/ for structural decisions",
+    "uses Task tool subagent_type=Explore for the codebase walk (not exhaustive reading)",
+    "defined output shape (modules, adjacent modules, open questions, relevant ADRs)",
+    "named follow-up paths into architecture-review / feature-workflow / bug-fix-workflow / discover",
+    "offers to add new map terms to CONTEXT.md (same discipline as discover mode domain)"
+  ],
+  "compositions": {
+    "follow_ups": [
+      "deepen shallow cluster → devloop:architecture-review",
+      "start a feature in mapped area → devloop:feature-workflow",
+      "fix a bug surfaced by the map → devloop:bug-fix-workflow",
+      "write map terms into knowledge base → propose CONTEXT.md additions"
+    ]
+  },
+  "boundaries": {
+    "produces": "a high-level map of modules, interfaces, callers, and adjacent modules using CONTEXT.md vocabulary",
+    "does_not_produce": "refactor proposals (architecture-review), feature plans (discover + plan-writing), bug diagnoses (diagnose)",
+    "auto_invocable": false
+  }
+}

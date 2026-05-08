@@ -1,0 +1,128 @@
+{
+  "$schema": "../../schemas/skill-contract.schema.json",
+  "skill_name": "project-workflow",
+  "skill_type": "workflow",
+  "workflow_type": "project",
+  "version": "0.1.9",
+  "manifest_required": true,
+  "phases": [
+    {
+      "id": "intent",
+      "next": ["discover"],
+      "gate": "intent-complete",
+      "reference": "references/phase-intent.md"
+    },
+    {
+      "id": "discover",
+      "next": ["decompose"],
+      "gate": "discover-complete",
+      "reference": "references/phase-discover.md"
+    },
+    {
+      "id": "decompose",
+      "next": ["sync"],
+      "gate": "decompose-complete",
+      "reference": "references/phase-decompose.md"
+    },
+    {
+      "id": "sync",
+      "next": ["done"],
+      "gate": "sync-complete",
+      "reference": "references/phase-sync.md"
+    },
+    {
+      "id": "done",
+      "terminal": true
+    }
+  ],
+  "gates": {
+    "intent-complete": {
+      "checks": [
+        {
+          "id": "project_name_known",
+          "type": "deterministic",
+          "rule": "manifest.task is non-empty AND .devloop/project.json has project_name",
+          "max_retries": 0
+        },
+        {
+          "id": "sheet_attached_or_created",
+          "type": "deterministic",
+          "rule": ".devloop/project.json has sheet_id (created via API or attached by user)",
+          "max_retries": 0
+        }
+      ]
+    },
+    "discover-complete": {
+      "checks": [
+        {
+          "id": "sources_present",
+          "type": "deterministic",
+          "rule": "docs/sources/*.md has at least one file (ingest-material verified)",
+          "max_retries": 0
+        },
+        {
+          "id": "strategic_layer_approved",
+          "type": "deterministic",
+          "rule": "phase_transition_approved event exists for discover -> decompose with explicit human author",
+          "max_retries": 0
+        }
+      ]
+    },
+    "decompose-complete": {
+      "checks": [
+        {
+          "id": "stories_listed",
+          "type": "deterministic",
+          "rule": "manifest declares at least one UserStory candidate with id + acceptance_criteria",
+          "max_retries": 0
+        },
+        {
+          "id": "decomposition_approved",
+          "type": "deterministic",
+          "rule": "phase_transition_approved event exists for decompose -> sync with explicit human author",
+          "max_retries": 0
+        }
+      ]
+    },
+    "sync-complete": {
+      "checks": [
+        {
+          "id": "sheets_writes_succeeded",
+          "type": "deterministic",
+          "rule": "every proposed Goal / Requirement / UserStory has a matching sheet_row_upserted event with no zone_violation or schema_invalid",
+          "max_retries": 1
+        }
+      ]
+    }
+  },
+  "events_emitted": [
+    "init",
+    "phase_started",
+    "phase_completed",
+    "phase_transition_proposed",
+    "phase_transition_approved",
+    "phase_transition_rejected",
+    "material_ingested",
+    "sheet_row_upserted",
+    "sheet_row_appended",
+    "sheet_sync_failed",
+    "sheet_sync_queued",
+    "artifact_linked",
+    "decision_recorded",
+    "workflow_completed",
+    "workflow_abandoned"
+  ],
+  "max_retries_per_gate_default": 1,
+  "human_approval_required_for": [
+    "phase_transition",
+    "sheet_creation",
+    "writing_planning_columns_to_sheet",
+    "workflow_completed",
+    "workflow_abandoned"
+  ],
+  "boundaries": {
+    "produces": "BusinessGoal / Requirement / UserStory rows in the project Sheet, plus .devloop/project.json",
+    "does_not_produce": "the design doc for any individual feature (that lives in feature-workflow.plan), the conversion of raw stakeholder material to markdown (that's ingest-material's v0.x scope)",
+    "does_not_handle": "running other workflows — those are siblings (feature-workflow / bug-fix-workflow / refactor-workflow / migration-workflow)"
+  }
+}

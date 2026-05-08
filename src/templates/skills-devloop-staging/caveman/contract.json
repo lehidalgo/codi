@@ -1,0 +1,14 @@
+{
+  "skill_name": "caveman",
+  "skill_type": "single",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "model_invocable": false,
+  "events_emitted": [],
+  "human_approval_required_for": [],
+  "boundaries": {
+    "produces": "ultra-compressed communication mode (~75% token reduction) while preserving technical accuracy",
+    "does_not_produce": "summarization (caveman compresses, does not summarize — all content remains)",
+    "does_not_handle": "code-review feedback (use code-review mode receive), planning (use plan-writing)"
+  }
+}

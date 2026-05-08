@@ -1,0 +1,67 @@
+{
+  "skillName": "init-knowledge-base",
+  "cases": [
+    {
+      "id": "first-run-bootstrap",
+      "description": "Empty repo (no CONTEXT.md) triggers init-knowledge-base on first devloop run",
+      "prompt": "devloop run feature \"add login\"  # error: KnowledgeBaseMissingError",
+      "expectations": [
+        "Agent invokes devloop:init-knowledge-base in response to KnowledgeBaseMissingError",
+        "Agent does NOT ask the user to invoke it manually — agent invokes via Skill tool",
+        "Bootstrap analysis runs as a forked subagent (fork policy in contract.json)",
+        "Agent re-runs the original 'devloop run feature' command after init-knowledge-base completes"
+      ],
+      "tags": ["happy-path", "auto-chain"]
+    },
+    {
+      "id": "produces-context-md-and-adr-dir",
+      "description": "Bootstrap produces docs/CONTEXT.md and docs/adr/ skeleton",
+      "prompt": "Run init-knowledge-base on this repo.",
+      "expectations": [
+        "Agent scans the codebase for domain terms",
+        "Agent proposes canonical domain terms with definitions",
+        "Agent shows the proposal to the user before writing (HARD GATE)",
+        "On approval, agent writes docs/CONTEXT.md",
+        "Agent creates docs/adr/ directory ready for ADRs",
+        "Agent emits context_term_added events for each approved term"
+      ],
+      "tags": ["happy-path", "hard-gate"]
+    },
+    {
+      "id": "fork-policy-keeps-main-clean",
+      "description": "Bootstrap analysis runs in forked context",
+      "prompt": "Bootstrap the knowledge base.",
+      "expectations": [
+        "Subagent runs in forked context per contract.json fork_policy",
+        "Main session context is NOT polluted with bootstrap analysis",
+        "Subagent returns the proposed CONTEXT.md content as a structured result",
+        "Main session writes the file after user approval"
+      ],
+      "tags": ["happy-path", "fork-policy"]
+    },
+    {
+      "id": "respects-existing-context-md",
+      "description": "Idempotent — does not overwrite existing CONTEXT.md",
+      "prompt": "Run init-knowledge-base. (CONTEXT.md already exists with custom terms.)",
+      "expectations": [
+        "Agent detects existing CONTEXT.md before scanning",
+        "Agent reports 'knowledge base already initialized'",
+        "Agent does NOT overwrite the existing file",
+        "Agent suggests using devloop:discover mode domain or devloop:architecture-review for ongoing CONTEXT.md updates"
+      ],
+      "tags": ["happy-path", "idempotent"]
+    },
+    {
+      "id": "refuses-to-write-without-approval",
+      "description": "HARD GATE — never writes CONTEXT.md without explicit user approval",
+      "prompt": "Just write the CONTEXT.md, don't ask me.",
+      "expectations": [
+        "Agent refuses to write without showing the proposal first",
+        "Agent surfaces the proposed glossary for review",
+        "Agent waits for explicit user approval (HARD GATE)",
+        "Agent does NOT cave under 'just do it' pressure"
+      ],
+      "tags": ["pressure", "hard-gate"]
+    }
+  ]
+}

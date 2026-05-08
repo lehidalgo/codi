@@ -1,0 +1,34 @@
+{
+  "skill_name": "code-review",
+  "skill_type": "mode",
+  "version": "0.1.0",
+  "manifest_required": false,
+  "modes": [
+    {
+      "id": "request",
+      "purpose": "dispatch a reviewer subagent with crisp context, parse structured feedback, act per severity",
+      "reference": "references/mode-request.md",
+      "default_when": "phase verify of any workflow opt-in; after major features; before merge"
+    },
+    {
+      "id": "receive",
+      "purpose": "process review feedback without sycophancy, verify before implementing, push back when wrong",
+      "reference": "references/mode-receive.md",
+      "default_when": "user pastes review feedback from teammate, GitHub PR comment, or external reviewer"
+    }
+  ],
+  "events_emitted": [
+    "subagent_dispatched",
+    "subagent_completed",
+    "subagent_failed",
+    "decision_recorded"
+  ],
+  "human_approval_required_for": [
+    "pushback_against_architectural_feedback (mode receive)",
+    "skipping_review_on_critical_change (mode request, only with explicit user override)"
+  ],
+  "fork_policy": {
+    "mode_request": "fork-by-design — the reviewer subagent always runs in context: fork to keep main session clean and the reviewer focused on the diff",
+    "mode_receive": "no fork — the response happens in the main session because the user is interactive"
+  }
+}

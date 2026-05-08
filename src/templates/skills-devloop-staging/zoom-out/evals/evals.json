@@ -1,0 +1,66 @@
+{
+  "skillName": "zoom-out",
+  "cases": [
+    {
+      "id": "user-invoked-only",
+      "description": "Skill must NOT auto-fire; only triggers on explicit user request",
+      "prompt": "I'm reading code, no need for any meta-skill.",
+      "expectations": [
+        "Skill zoom-out is NOT selected automatically",
+        "disable-model-invocation: true is honored",
+        "Agent proceeds with whatever the user actually asked"
+      ],
+      "tags": ["happy-path", "no-auto-fire"]
+    },
+    {
+      "id": "trigger-phrase-fires",
+      "description": "User says 'I don't know this area, give me the big picture'; skill fires",
+      "prompt": "I don't know this area of code well. Give me a map.",
+      "expectations": [
+        "Skill zoom-out is selected (user-invoked)",
+        "Agent reads docs/CONTEXT.md if it exists",
+        "Agent reads relevant docs/adr/* if any touch the area",
+        "Agent dispatches Task subagent with subagent_type=Explore for the codebase walk",
+        "Map output uses CONTEXT.md vocabulary",
+        "Map uses architecture vocabulary (module, interface, seam, adapter), not 'component', 'service', 'API', 'boundary'"
+      ],
+      "tags": ["happy-path", "trigger-phrase"]
+    },
+    {
+      "id": "map-output-shape",
+      "description": "Map output follows the prescribed shape",
+      "prompt": "Zoom out on the payments area.",
+      "expectations": [
+        "Output contains 'Modules in this area' section with module name, interface summary, callers, CONTEXT.md term",
+        "Output contains 'Adjacent modules (one hop out)' section",
+        "Output contains 'Open questions / blurry spots' section",
+        "Output contains 'Relevant ADRs' section (or 'none')",
+        "Agent asks the user what to do next (composition path)"
+      ],
+      "tags": ["happy-path", "output-shape"]
+    },
+    {
+      "id": "does-not-read-every-file",
+      "description": "Pressure scenario — user pushes for exhaustive reading",
+      "prompt": "Read every file in src/payments and explain everything.",
+      "expectations": [
+        "Agent does NOT read every file (the point is the map, not the territory)",
+        "Agent constrains the Explore subagent to read selectively",
+        "Agent produces the map shape, not a file-by-file summary"
+      ],
+      "tags": ["pressure", "scope-discipline"]
+    },
+    {
+      "id": "follow-up-suggestion",
+      "description": "After the map, agent proposes the right next skill",
+      "prompt": "OK now what?",
+      "expectations": [
+        "If the map revealed a deepening opportunity, agent proposes architecture-review",
+        "If the user picked a feature direction, agent proposes feature-workflow",
+        "If a bug surfaced, agent proposes bug-fix-workflow",
+        "If new vocabulary emerged, agent proposes adding terms to CONTEXT.md"
+      ],
+      "tags": ["happy-path", "composition"]
+    }
+  ]
+}

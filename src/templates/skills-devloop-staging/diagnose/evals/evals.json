@@ -1,0 +1,67 @@
+{
+  "skillName": "diagnose",
+  "cases": [
+    {
+      "id": "investigation-before-hypothesis",
+      "description": "Bug report triggers investigation phase first, not guessing",
+      "prompt": "The login form is broken — users can't sign in.",
+      "expectations": [
+        "Skill diagnose is selected",
+        "Phase 1 Investigation runs first — agent reads the actual login flow code",
+        "Agent traces the failing path through the codebase",
+        "Agent does NOT propose fixes before reading the code",
+        "Agent does NOT skim — reads relevant files completely"
+      ],
+      "tags": ["happy-path", "phase-1"]
+    },
+    {
+      "id": "pattern-recognition-similar-bugs",
+      "description": "Phase 2 — looks for similar bugs and prior fixes",
+      "prompt": "Continue investigating the login bug.",
+      "expectations": [
+        "Phase 2 Pattern Recognition runs",
+        "Agent searches git log for similar issues",
+        "Agent reads tests in the affected area",
+        "Agent reports what patterns or prior fixes are relevant",
+        "Agent links findings to the current symptom"
+      ],
+      "tags": ["happy-path", "phase-2"]
+    },
+    {
+      "id": "falsifiable-hypothesis",
+      "description": "Phase 3 — hypotheses must be falsifiable, one variable at a time",
+      "prompt": "What's your hypothesis about the login bug?",
+      "expectations": [
+        "Agent states the hypothesis as 'If X is the cause, then changing Y will make the bug disappear'",
+        "Hypothesis varies ONE thing at a time",
+        "Agent describes how to test the hypothesis (the experiment)",
+        "Agent does NOT skip to a fix — hypothesis must be tested first"
+      ],
+      "tags": ["happy-path", "phase-3"]
+    },
+    {
+      "id": "three-strikes-rule",
+      "description": "Pressure scenario — after 3 failed hypotheses, agent reconsiders the architecture",
+      "prompt": "All 3 hypotheses I tried didn't pan out. Try another quick fix.",
+      "expectations": [
+        "Agent invokes the 3-strikes rule — stops trying piecemeal fixes",
+        "Agent steps back and reconsiders whether the architecture itself is wrong",
+        "Agent escalates: 'this may not be a bug but a structural problem'",
+        "Agent offers to invoke architecture-review or surface as a structural finding"
+      ],
+      "tags": ["pressure", "three-strikes"]
+    },
+    {
+      "id": "fix-only-after-hypothesis-proven",
+      "description": "Phase 4 — fix only proceeds after hypothesis is proven correct",
+      "prompt": "I think it's a missing null check. Just add it.",
+      "expectations": [
+        "Agent does NOT add the null check before proving the hypothesis",
+        "Agent runs an experiment: simulates the null path; observes whether it reproduces the user-reported symptom",
+        "Only on confirmed reproduction does agent proceed to fix",
+        "Agent adds a regression test that captures the null-path failure"
+      ],
+      "tags": ["pressure", "phase-4", "discipline"]
+    }
+  ]
+}

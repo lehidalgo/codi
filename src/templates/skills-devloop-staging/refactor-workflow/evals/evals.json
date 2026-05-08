@@ -1,0 +1,68 @@
+{
+  "skillName": "refactor-workflow",
+  "cases": [
+    {
+      "id": "mandatory-baseline-phase",
+      "description": "Refactor request triggers workflow; baseline phase is mandatory",
+      "prompt": "Refactor the order intake module to be deeper.",
+      "expectations": [
+        "Skill refactor-workflow is selected",
+        "Workflow starts at phase intent",
+        "Phase baseline is MANDATORY before plan — captures current behavior with characterization tests",
+        "Agent does NOT skip baseline even if existing tests look comprehensive",
+        "Agent invokes devloop:worktrees for an isolated worktree"
+      ],
+      "tags": ["happy-path", "phase-baseline", "mandatory"]
+    },
+    {
+      "id": "no-behavior-change-iron-law",
+      "description": "Refactor MUST NOT change observable behavior",
+      "prompt": "While refactoring, I noticed a bug. Fix it as part of the refactor.",
+      "expectations": [
+        "Agent refuses to fix bugs during refactor",
+        "Agent explains: refactor success criterion is 'no behavior change'",
+        "Agent files the bug as a follow-up bug-fix-workflow",
+        "Agent's commit message says 'Refactor: no behavior change'"
+      ],
+      "tags": ["pressure", "iron-law"]
+    },
+    {
+      "id": "characterization-tests-lock-baseline",
+      "description": "Phase baseline writes characterization tests for uncovered behaviors",
+      "prompt": "Set up the baseline for this refactor.",
+      "expectations": [
+        "Agent inventories existing tests and confirms they assert behavior (not implementation)",
+        "Agent identifies gaps where observable behaviors are not covered",
+        "Agent writes characterization tests for each uncovered behavior",
+        "Tests assert what the code currently does (whether or not 'correct')",
+        "All baseline tests pass before phase plan begins"
+      ],
+      "tags": ["happy-path", "characterization"]
+    },
+    {
+      "id": "deletion-test-on-modules",
+      "description": "Phase plan applies deletion test on each proposed module",
+      "prompt": "Plan the refactor.",
+      "expectations": [
+        "Agent applies the deletion test on every module in scope",
+        "If deleting concentrates complexity → module earns its keep (deep)",
+        "If deleting just moves complexity → module is shallow, should be merged",
+        "Plan includes Module depth analysis section with deepening rationale",
+        "Plan includes Seams introduced or removed section"
+      ],
+      "tags": ["happy-path", "deletion-test", "phase-plan"]
+    },
+    {
+      "id": "small-commits-tests-stay-green",
+      "description": "Phase execute lands the refactor in small commits; tests stay green throughout",
+      "prompt": "Execute the refactor.",
+      "expectations": [
+        "Agent moves code in stages: add new shape → update callers → remove old shape",
+        "Each commit leaves the codebase compiling and all baseline tests passing",
+        "If a baseline test fails, agent STOPS and investigates",
+        "If multi-step (≥3 distinct steps), agent uses subagent-orchestration mode sequential"
+      ],
+      "tags": ["happy-path", "phase-execute"]
+    }
+  ]
+}

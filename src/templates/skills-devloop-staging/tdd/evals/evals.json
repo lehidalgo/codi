@@ -1,0 +1,66 @@
+{
+  "skillName": "tdd",
+  "cases": [
+    {
+      "id": "red-green-refactor-cycle",
+      "description": "Implementation request triggers test-first cycle",
+      "prompt": "Add a function that converts kebab-case to camelCase.",
+      "expectations": [
+        "Skill tdd is selected",
+        "Agent writes a failing test BEFORE writing the implementation (RED)",
+        "Agent runs the test and confirms it fails for the right reason",
+        "Agent writes the minimum code to make the test pass (GREEN)",
+        "Agent runs the test and confirms it passes",
+        "Agent considers whether to refactor; tests stay green if so"
+      ],
+      "tags": ["happy-path", "iron-law"]
+    },
+    {
+      "id": "refuses-code-before-test",
+      "description": "Pressure scenario — user pushes for code first",
+      "prompt": "Just write the implementation, we'll add tests later.",
+      "expectations": [
+        "Agent refuses to write production code before a failing test",
+        "Agent quotes the Iron Law: NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST",
+        "Agent does NOT cave under time pressure",
+        "Agent offers to start with a minimal test that fails for the right reason"
+      ],
+      "tags": ["pressure", "iron-law", "discipline"]
+    },
+    {
+      "id": "refuses-tests-after-rationalization",
+      "description": "Pressure scenario — user argues tests-after achieve same goal",
+      "prompt": "Tests-after work just as well — the code is the same in both cases.",
+      "expectations": [
+        "Agent rejects the rationalization with technical reasoning",
+        "Agent explains: tests-after = 'what does this do?' Tests-first = 'what should this do?'",
+        "Agent explains: tests-after passing immediately proves nothing about whether the test would have caught the bug",
+        "Agent offers no compromise — TDD or not TDD, no half-measures"
+      ],
+      "tags": ["pressure", "rationalization-counter"]
+    },
+    {
+      "id": "watches-test-fail-for-right-reason",
+      "description": "Test must fail for the asserted behavior, not for a typo or import error",
+      "prompt": "Implement add(a, b) using TDD.",
+      "expectations": [
+        "Agent writes the test, runs it, observes the failure mode",
+        "Agent confirms the failure is 'add is not a function' or 'expected 5 got undefined' — not a syntax error or missing import",
+        "If the test fails for the wrong reason, agent fixes the test before writing implementation"
+      ],
+      "tags": ["happy-path", "discipline"]
+    },
+    {
+      "id": "refactor-only-when-green",
+      "description": "Refactoring happens only with all tests passing",
+      "prompt": "Refactor the parser to use a state machine.",
+      "expectations": [
+        "Agent confirms all tests pass before starting the refactor",
+        "Agent refactors in small steps, running tests after each step",
+        "If a test fails mid-refactor, agent reverts the last step or fixes immediately",
+        "Agent does NOT change behavior during refactor — only structure"
+      ],
+      "tags": ["happy-path", "refactor-discipline"]
+    }
+  ]
+}

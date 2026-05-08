@@ -1,0 +1,53 @@
+{
+  "skillName": "gate-deep-modules",
+  "cases": [
+    {
+      "id": "dispatched-by-gate-runner",
+      "description": "Gate runner dispatches this skill at plan→decompose transition",
+      "prompt": "[Internal] Gate runner invokes gate-deep-modules with plan_artifact_path.",
+      "expectations": [
+        "Skill runs as a forked subagent (disable-model-invocation: true)",
+        "Skill reads the plan markdown at the provided path",
+        "Skill identifies modules in the plan's 'Modules and contracts' section",
+        "Skill applies the deletion test to each module",
+        "Skill returns structured JSON conforming to schemas/gate-result.schema.json — never prose"
+      ],
+      "tags": ["happy-path", "internal-gate"]
+    },
+    {
+      "id": "shallow-module-detection",
+      "description": "Identifies shallow modules with one-line reason and suggested deepening",
+      "prompt": "[Internal] Plan proposes UserValidator with 4 methods, each <5 lines.",
+      "expectations": [
+        "Skill flags UserValidator as shallow (interface complexity ~ implementation complexity)",
+        "Skill applies the deletion test: would deleting UserValidator concentrate or spread complexity?",
+        "If shallow, JSON output includes the module + one-line reason + suggested deepening",
+        "Output uses architecture vocabulary (module/interface/seam/adapter), NOT 'component', 'service'"
+      ],
+      "tags": ["happy-path", "shallow-detection"]
+    },
+    {
+      "id": "deep-module-passes",
+      "description": "Modules with high leverage pass without recommendation",
+      "prompt": "[Internal] Plan proposes OrderIntake with 1 method that hides 200 lines of business logic.",
+      "expectations": [
+        "Skill recognizes OrderIntake as deep (small interface, large implementation)",
+        "Skill does NOT suggest deepening — already deep",
+        "JSON output marks OrderIntake as 'pass' with empty issues array"
+      ],
+      "tags": ["happy-path", "deep-pass"]
+    },
+    {
+      "id": "strict-json-output",
+      "description": "Output is strictly JSON, never prose",
+      "prompt": "[Internal] Run gate-deep-modules.",
+      "expectations": [
+        "Output is valid JSON parsable by the gate runner",
+        "Output conforms to schemas/gate-result.schema.json",
+        "Output contains check_id, verdict ('pass' | 'fail'), summary, evidence, suggested_action, tokens_consumed",
+        "Output does NOT contain markdown, prose explanation, or chat preamble"
+      ],
+      "tags": ["happy-path", "schema-compliance"]
+    }
+  ]
+}

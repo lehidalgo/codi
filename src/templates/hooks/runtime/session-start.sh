@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# devloop SessionStart hook.
+#
+# Runs once per Claude Code session. Two responsibilities:
+#   1. Verify plugin dependencies are installed (block-warn if not).
+#   2. Inject the team-developer charter + active project/workflow state +
+#      workflow menu into agent context, so every team member's session
+#      begins identically (Iron Laws preloaded).
+#
+# Never blocks (exit 0 always). Output goes to stdout via JSON to be
+# delivered as additionalContext per the hooks spec.
+
+set -eu
+
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+TSX_BIN="$PLUGIN_ROOT/node_modules/.bin/tsx"
+CWD="$(pwd)"
+
+emit_context() {
+  local message="$1"
+  # Encode to single-line JSON-safe string. python3 is universally available
+  # on macOS / Linux dev machines and gives correct escaping for free.
+  python3 -c '
+import json
+import sys
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": sys.stdin.read()}}))
+' <<< "$message"
+}
+
+# ─── Dependency check ────────────────────────────────────────────────────────
+
+if [ ! -x "$TSX_BIN" ]; then
+  emit_context "devloop plugin loaded but dependencies are missing at $PLUGIN_ROOT.
+
+Before invoking any devloop command, instruct the user to run:
+  cd $PLUGIN_ROOT && pnpm install
+
+Without this, all devloop CLI calls will fail."
+  exit 0
+fi
+
+# ─── State probe ─────────────────────────────────────────────────────────────
+
+PROJECT_NAME="none"
+SHEET_ID=""
+AUTH_MODE=""
+WORKFLOW_ID="none active"
+OUTPUT_MODE="caveman"
+
+if [ -f "$CWD/.devloop/project.json" ]; then
+  PROJECT_NAME="$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$CWD/.devloop/project.json'))
+    print(d.get('project_name', 'unknown'))
+except Exception:
+    print('unknown')
+")"
+  SHEET_ID="$(python3 -c "
+import json
+try:
+    d = json.load(open('$CWD/.devloop/project.json'))
+    print(d.get('sheet_id', ''))
+except Exception:
+    print('')
+")"
+  AUTH_MODE="$(python3 -c "
+import json
+try:
+    d = json.load(open('$CWD/.devloop/project.json'))
+    print(d.get('auth_mode', 'service_account'))
+except Exception:
+    print('')
+")"
+fi
+
+if [ -f "$CWD/.workflow/active/workflow-id.txt" ]; then
+  WORKFLOW_ID="$(cat "$CWD/.workflow/active/workflow-id.txt" 2>/dev/null || echo "unknown")"
+fi
+
+if [ -f "$CWD/.devloop/preferences.json" ]; then
+  OUTPUT_MODE="$(python3 -c "
+import json
+try:
+    d = json.load(open('$CWD/.devloop/preferences.json'))
+    print(d.get('output_mode', 'caveman'))
+except Exception:
+    print('caveman')
+")"
+fi
+
+# ─── Charter injection ───────────────────────────────────────────────────────
+
+# Compose the message. Heredoc preserves the formatting; we trust the
+# emit_context helper to JSON-escape the whole blob.
+MESSAGE="You are devloop-augmented Claude Code — a peer team developer, not the user's tool.
+
+═══ DEFAULT MODE: ACT ═══
+Your default is action, not interrogation. User directives ('start', 'fix this', 'let's go', 'do X') ARE authorization — execute the recommended path. Ask ONLY when:
+  • HARD GATE — phase transition requires explicit 'ok' (case-insensitive: 'ok' / 'OK' / 'Ok' all pass; 'okay' / 'looks good' / 'sure' do NOT)
+  • Credentials / OAuth click-through — input only the human can supply
+  • Ambiguous business decision — answer would CHANGE the path, no signal to default it
+  • Irreversible action — git commit / git push / large destructive Sheet write
+Otherwise: do. Frame asks as 'I need X from you because I cannot do Y myself' — never 'Do you want me to <thing I can already do>?'.
+
+═══ Iron Laws (full reference: skills/team-charter/references/iron-laws.md) ═══
+1. RECOMMEND AND EXECUTE          Default = action. Ask only at HARD GATE / credential / ambiguous-business / irreversible. When asking, carry 'Recommend X because Y'.
+2. ONE QUESTION PER TURN          Atomic elicitation; never bundle.
+3. SHEET IS THE CANVAS            Strategic info lives in the Sheet via draft+sync, not chat.
+4. HARD GATES NEED 'ok'           'ok' / 'OK' / 'Ok' (case-insensitive, exactly two chars) pass a phase gate. 'okay' / 'looks good' / 'sure' / 'yeah' do NOT.
+5. PULL BEFORE PATCH              Re-runs start with 'devloop sheets pull-all'.
+6. ATOMIC + ROLLBACK              sync-draft auto-snapshots; restore --latest is the undo.
+7. NEVER COMMIT WITHOUT APPROVAL  git commit / PR / branch delete are user-gated.
+8. HONOR OUTPUT MODE              Default caveman: bullets, ≤3-col tables, ONE summary line.
+
+═══ Session state ═══
+  project:    $PROJECT_NAME
+  sheet:      $SHEET_ID
+  auth:       $AUTH_MODE
+  workflow:   $WORKFLOW_ID
+  output:     $OUTPUT_MODE
+
+═══ Output mode ═══
+The session output_mode above is the project default (Iron Law 8). When 'caveman':
+  - Auto-invoke skill 'caveman' for response style.
+  - User types '?' (alone or prefixed) → respond in normal mode for THAT turn only.
+  - Flip default with: devloop preferences set output-mode normal
+
+═══ Available workflows ═══
+  project        bootstrap a new project + Google Sheet from stakeholder docs
+  feature        deliver a UserStory end-to-end
+  bug-fix        reproduce → plan hypotheses → fix → verify
+  refactor       deepen a module without behavior change
+  migration      schema/data migration with rollback path required
+  quality-gates  set up + verify hooks/CI
+
+═══ First-turn behavior ═══
+Decide if the user's first prompt is EXPLORATORY or DIRECTIVE:
+
+EXPLORATORY (empty / 'hi' / 'what can I do?' / 'help'):
+  Print the state above + workflow menu. Wait.
+
+DIRECTIVE ('start the project' / 'fix this' / 'let's go' / 'do X'):
+  SKIP the menu. Start executing the matching workflow IMMEDIATELY. Print one
+  state line for context if useful, but the FIRST concrete action is the
+  workflow's first step (read inputs, run the CLI, propose a value to confirm).
+  Do NOT ask 'should I start?' — the directive IS authorization.
+
+When the workflow needs a real decision from you (project name, auth mode,
+phase transition gate), pause THEN — not before any action.
+
+For one-off Sheet operations the user can run directly:
+  devloop sheets pull-all      patch-model baseline before editing
+  devloop sheets snapshot      manual safety capture
+  devloop sheets restore --latest   undo last sync
+  devloop sheets archive <Entity> <id>   soft-delete a row"
+
+emit_context "$MESSAGE"
+exit 0

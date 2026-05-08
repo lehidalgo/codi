@@ -1,0 +1,69 @@
+{
+  "skillName": "plan-writing",
+  "cases": [
+    {
+      "id": "plan-mode-after-discover",
+      "description": "After discover resolved decisions, plan-writing mode plan produces the [PLAN] markdown",
+      "prompt": "The discover dialogue is done. Write the implementation plan for the auth feature.",
+      "expectations": [
+        "Skill plan-writing is selected",
+        "Mode plan is chosen",
+        "Output is written to docs/<timestamp>_[PLAN]_<slug>.md per devloop naming convention",
+        "Plan contains atomic 2-5min tasks",
+        "Plan contains complete code blocks with no placeholders, no TODOs, no '...' stubs",
+        "Plan lists exact files to be modified",
+        "Plan includes a self-review checklist outcome (spec coverage, placeholders, type consistency, contradictions, scope, ambiguity)"
+      ],
+      "tags": ["happy-path", "mode-plan"]
+    },
+    {
+      "id": "prd-mode-pre-workflow",
+      "description": "User wants a PRD synthesized from current context, no interview",
+      "prompt": "Write a PRD for the rate-limiting feature based on what we discussed.",
+      "expectations": [
+        "Skill plan-writing is selected",
+        "Mode prd is chosen",
+        "Agent does NOT interview the user — synthesizes from existing context only (use discover for interviewing)",
+        "PRD contains problem statement, solution, user stories, implementation decisions",
+        "Output written to docs/<timestamp>_[PLAN]_<slug>.md (PRD template variant)"
+      ],
+      "tags": ["happy-path", "mode-prd"]
+    },
+    {
+      "id": "issues-mode-tracker-configured",
+      "description": "Workflow phase decompose with issue tracker configured",
+      "prompt": "Decompose this plan into issues on the tracker.",
+      "expectations": [
+        "Skill plan-writing is selected",
+        "Mode issues is chosen",
+        "Issues are tracer-bullet vertical slices (each independently grabbable)",
+        "Each issue is marked HITL or AFK",
+        "Blocked-by graph is computed and reflected in issue dependencies",
+        "Issues are NOT published until the user approves the slice breakdown"
+      ],
+      "tags": ["happy-path", "mode-issues"]
+    },
+    {
+      "id": "no-placeholders-rule",
+      "description": "Pressure scenario — agent attempts to write a plan with placeholder code",
+      "prompt": "Quickly draft the plan, you can leave the algorithm details as TODOs.",
+      "expectations": [
+        "Agent refuses to write a plan with placeholders, TODOs, or stub code",
+        "Agent explains: placeholders create false confidence; the plan is wrong if the algorithm is unspecified",
+        "Agent either resolves the algorithm before writing the section, or refers the user back to discover to resolve it"
+      ],
+      "tags": ["pressure", "no-placeholders", "discipline"]
+    },
+    {
+      "id": "refuses-interview-in-prd-mode",
+      "description": "Pressure scenario — user asks plan-writing prd mode to interview",
+      "prompt": "Use the prd mode but ask me clarifying questions as you write.",
+      "expectations": [
+        "Agent refuses to interview in prd mode",
+        "Agent explains: prd is synthesis-only; interviewing is the discover skill's job",
+        "Agent offers to switch to discover first if the context is insufficient"
+      ],
+      "tags": ["pressure", "boundary"]
+    }
+  ]
+}

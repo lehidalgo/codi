@@ -1,0 +1,81 @@
+{
+  "skillName": "bug-fix-workflow",
+  "cases": [
+    {
+      "id": "mandatory-reproduce-phase",
+      "description": "Bug report triggers the workflow; reproduce phase is mandatory before plan",
+      "prompt": "Users report the cart total is wrong when they add coupons.",
+      "expectations": [
+        "Skill bug-fix-workflow is selected",
+        "Workflow starts at phase intent",
+        "Phase reproduce is MANDATORY before plan",
+        "Agent invokes devloop:diagnose for systematic debugging in reproduce phase",
+        "Agent builds a feedback loop that turns red on the bug",
+        "Agent does NOT propose a fix before the loop reproduces the user-reported symptom"
+      ],
+      "tags": ["happy-path", "phase-reproduce", "mandatory"]
+    },
+    {
+      "id": "feedback-loop-iteration",
+      "description": "Loop quality matters — fast deterministic > slow flaky",
+      "prompt": "I have a 30-second flaky repro that fails 50% of the time.",
+      "expectations": [
+        "Agent works on improving loop quality before debugging",
+        "Agent makes the loop faster (cache setup, narrow scope, skip unrelated init)",
+        "Agent makes the loop sharper (assert on exact symptom)",
+        "Agent makes the loop deterministic (pin time, seed RNG, freeze network)",
+        "For non-deterministic bugs, agent loops the trigger 100x and parallelizes"
+      ],
+      "tags": ["happy-path", "loop-quality"]
+    },
+    {
+      "id": "ranked-hypotheses-not-anchored",
+      "description": "Phase plan generates 3-5 ranked hypotheses before testing any",
+      "prompt": "What's the cause? Just tell me your best guess.",
+      "expectations": [
+        "Agent generates 3-5 ranked hypotheses, not just one",
+        "Each hypothesis is falsifiable: 'If X is the cause, then Y will make the bug disappear'",
+        "Agent shows the ranked list to the human",
+        "Agent does NOT anchor on the first plausible idea"
+      ],
+      "tags": ["pressure", "anti-anchoring"]
+    },
+    {
+      "id": "regression-test-before-fix",
+      "description": "Phase execute writes the regression test BEFORE the fix",
+      "prompt": "Apply the fix.",
+      "expectations": [
+        "Agent writes the regression test FIRST — but only if there is a correct seam",
+        "Agent watches the test fail with the bug present",
+        "Agent applies the fix",
+        "Agent watches the test pass",
+        "Agent re-runs the original phase reproduce loop against the un-minimized scenario"
+      ],
+      "tags": ["happy-path", "phase-execute"]
+    },
+    {
+      "id": "no-seam-flags-architecture",
+      "description": "If no correct seam exists for the regression test, that itself is the finding",
+      "prompt": "I can't find a clean way to test this fix in isolation.",
+      "expectations": [
+        "Agent recognizes 'no seam' as a finding, not a blocker",
+        "Agent applies the narrowest fix that closes the regression",
+        "Agent files a follow-up to invoke devloop:architecture-review",
+        "Agent does NOT block the bug fix on architectural rework"
+      ],
+      "tags": ["pressure", "architecture-handoff"]
+    },
+    {
+      "id": "debug-instrumentation-cleanup",
+      "description": "Tagged debug logs must be removed before phase verify",
+      "prompt": "I added [DEBUG-a4f2] log statements to find this bug.",
+      "expectations": [
+        "Agent uses unique prefix like [DEBUG-a4f2] for any debug instrumentation",
+        "Before phase verify, agent greps the prefix and removes ALL matches",
+        "Agent confirms zero hits after cleanup",
+        "Untagged logs are flagged as anti-pattern"
+      ],
+      "tags": ["happy-path", "instrumentation-cleanup"]
+    }
+  ]
+}

@@ -16,6 +16,11 @@ export default tseslint.config(
       "src/templates/skills/*/scripts/*.cjs",
       "src/templates/skills/*/scripts/*.js",
       "**/*.xsd",
+      // Sprint 1 — DevLoop sources imported per ADR-v3ed0-002, refactor (lint compliance + imports + types) en Sprint 2
+      "src/runtime/**",
+      "tests/runtime/**",
+      "scripts/runtime/**",
+      "src/templates/skills-devloop-staging/**",
     ],
   },
   ...tseslint.configs.recommended,
