@@ -16,7 +16,16 @@ import { join, sep } from "node:path";
 
 const SRC = "src/templates/skills";
 const DEST = "dist/templates/skills";
-const SUBDIRS = ["assets", "references", "scripts", "agents", "brand", "generators", "templates", "evals"];
+const SUBDIRS = [
+  "assets",
+  "references",
+  "scripts",
+  "agents",
+  "brand",
+  "generators",
+  "templates",
+  "evals",
+];
 
 let copied = 0;
 
@@ -52,3 +61,12 @@ for (const skill of readdirSync(SRC)) {
 }
 
 console.log(`Copied ${copied} skill asset directories/files to ${DEST}`);
+
+// Copy consolidation prompt templates (Item 4 of v3 closure plan).
+const CONSOLIDATION_SRC = "src/templates/consolidation";
+const CONSOLIDATION_DEST = "dist/templates/consolidation";
+if (existsSync(CONSOLIDATION_SRC)) {
+  cpSync(CONSOLIDATION_SRC, CONSOLIDATION_DEST, { recursive: true });
+  const tmplCount = readdirSync(CONSOLIDATION_SRC).filter((f) => f.endsWith(".md.tmpl")).length;
+  console.log(`Copied ${tmplCount} consolidation prompt templates to ${CONSOLIDATION_DEST}`);
+}

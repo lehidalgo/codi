@@ -27,6 +27,8 @@ export { runConsolidation, type RunContext, type RunResult } from "./runner.js";
 
 export { generatePackage, packageToJson, type PackageManifest } from "./package.js";
 
+export { renderPrompt, clearTemplateCache, type PromptContext } from "./prompts.js";
+
 export {
   p1RepeatedCorrection,
   p2UnusedSkill,
