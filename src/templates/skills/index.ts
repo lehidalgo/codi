@@ -188,3 +188,60 @@ export {
   template as teamCharter,
   staticDir as teamCharterStaticDir,
 } from "./team-charter/index.js";
+export { template as caveman, staticDir as cavemanStaticDir } from "./caveman/index.js";
+export {
+  template as architectureReview,
+  staticDir as architectureReviewStaticDir,
+} from "./architecture-review/index.js";
+export {
+  template as bugFixWorkflow,
+  staticDir as bugFixWorkflowStaticDir,
+} from "./bug-fix-workflow/index.js";
+export { template as diagnose, staticDir as diagnoseStaticDir } from "./diagnose/index.js";
+export { template as discover, staticDir as discoverStaticDir } from "./discover/index.js";
+export {
+  template as featureWorkflow,
+  staticDir as featureWorkflowStaticDir,
+} from "./feature-workflow/index.js";
+export {
+  template as gateDeepModules,
+  staticDir as gateDeepModulesStaticDir,
+} from "./gate-deep-modules/index.js";
+export {
+  template as gatePlanCoverage,
+  staticDir as gatePlanCoverageStaticDir,
+} from "./gate-plan-coverage/index.js";
+export {
+  template as initKnowledgeBase,
+  staticDir as initKnowledgeBaseStaticDir,
+} from "./init-knowledge-base/index.js";
+export {
+  template as migrationWorkflow,
+  staticDir as migrationWorkflowStaticDir,
+} from "./migration-workflow/index.js";
+export {
+  template as planWriting,
+  staticDir as planWritingStaticDir,
+} from "./plan-writing/index.js";
+export {
+  template as projectWorkflow,
+  staticDir as projectWorkflowStaticDir,
+} from "./project-workflow/index.js";
+export {
+  template as qualityGates,
+  staticDir as qualityGatesStaticDir,
+} from "./quality-gates/index.js";
+export {
+  template as refactorWorkflow,
+  staticDir as refactorWorkflowStaticDir,
+} from "./refactor-workflow/index.js";
+export { template as sheetsSync, staticDir as sheetsSyncStaticDir } from "./sheets-sync/index.js";
+export {
+  template as subagentOrchestration,
+  staticDir as subagentOrchestrationStaticDir,
+} from "./subagent-orchestration/index.js";
+export {
+  template as verifyEvidence,
+  staticDir as verifyEvidenceStaticDir,
+} from "./verify-evidence/index.js";
+export { template as zoomOut, staticDir as zoomOutStaticDir } from "./zoom-out/index.js";
