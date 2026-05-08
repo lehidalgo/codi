@@ -8,13 +8,17 @@ import {
   loadGateDefinition,
   runDeterministicCheck,
   type DeterministicCheckContext,
-} from "../lib/gate-runner.js";
-import { runWorkflow, proposeScopeExpansion, approveScopeExpansion } from "../lib/cli-handlers.js";
-import { reduce } from "../lib/reducer.js";
-import { EventLog } from "../lib/event-log.js";
-import { archiveDir } from "../lib/paths.js";
-import type { GateCheck } from "../lib/gate-types.js";
-import type { Author } from "../lib/types.js";
+} from "#src/runtime/gate-runner.js";
+import {
+  runWorkflow,
+  proposeScopeExpansion,
+  approveScopeExpansion,
+} from "#src/runtime/cli-handlers.js";
+import { reduce } from "#src/runtime/reducer.js";
+import { EventLog } from "#src/runtime/event-log.js";
+import { archiveDir } from "#src/runtime/paths.js";
+import type { GateCheck } from "#src/runtime/gate-types.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 

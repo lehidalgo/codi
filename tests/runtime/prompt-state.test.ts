@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { buildContext, buildPromptStateBlock } from "../lib/hook-logic.js";
+import { buildContext, buildPromptStateBlock } from "#src/runtime/hook-logic.js";
 import {
   runWorkflow,
   proposeScopeExpansion,
   proposeTransition,
   approveScopeExpansion,
-} from "../lib/cli-handlers.js";
-import type { Author } from "../lib/types.js";
+} from "#src/runtime/cli-handlers.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };

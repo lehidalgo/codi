@@ -11,10 +11,10 @@ import {
   abandonWorkflow,
   recoverWorkflow,
   KnowledgeBaseMissingError,
-} from "../lib/cli-handlers.js";
-import { EventLog } from "../lib/event-log.js";
-import { createEvent } from "../lib/event-factory.js";
-import type { Author } from "../lib/types.js";
+} from "#src/runtime/cli-handlers.js";
+import { EventLog } from "#src/runtime/event-log.js";
+import { createEvent } from "#src/runtime/event-factory.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 

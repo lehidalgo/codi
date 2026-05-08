@@ -14,7 +14,7 @@ import {
   atomicSyncDraft,
   type ProjectConfig,
   type DraftEnvelope,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 let cwd: string;
 let xlsxPath: string;

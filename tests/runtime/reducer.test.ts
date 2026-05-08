@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { createEvent } from "../lib/event-factory.js";
-import { reduce, ReducerError } from "../lib/reducer.js";
-import type { Author } from "../lib/types.js";
+import { createEvent } from "#src/runtime/event-factory.js";
+import { reduce, ReducerError } from "#src/runtime/reducer.js";
+import type { Author } from "#src/runtime/types.js";
 
 const author: Author = { type: "human", id: "tester" };
 const sysAuthor: Author = { type: "system", id: "devloop" };

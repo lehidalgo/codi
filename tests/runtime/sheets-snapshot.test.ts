@@ -22,7 +22,7 @@ import {
   snapshotFilename,
   type ProjectConfig,
   type SheetsClient,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 // ─── Fake SheetsClient ───────────────────────────────────────────────────────
 

@@ -25,7 +25,7 @@ let resultValidator: ValidateFunction | null = null;
 function getResultValidator(): ValidateFunction {
   if (resultValidator !== null) return resultValidator;
   const here = dirname(fileURLToPath(import.meta.url));
-  const path = resolve(here, "..", "schemas", "gate-result.schema.json");
+  const path = resolve(here, "..", "schemas", "runtime", "gate-result.schema.json");
   const schema = JSON.parse(readFileSync(path, "utf-8"));
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats.default(ajv);

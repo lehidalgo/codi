@@ -7,9 +7,9 @@ import {
   readProjectConfig,
   writeProjectConfig,
   tryReadProjectConfig,
-} from "../lib/sheets/config.js";
-import { SheetsError } from "../lib/sheets/types.js";
-import type { ProjectConfig } from "../lib/sheets/types.js";
+} from "#src/runtime/sync/config.js";
+import { SheetsError } from "#src/runtime/sync/types.js";
+import type { ProjectConfig } from "#src/runtime/sync/types.js";
 
 function freshTmp(): string {
   return mkdtempSync(join(tmpdir(), "devloop-config-test-"));

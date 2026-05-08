@@ -7,8 +7,8 @@ import {
   WorkflowAlreadyActiveError,
   LockHeldError,
   NoActiveWorkflowError,
-} from "../lib/event-log.js";
-import { createEvent } from "../lib/event-factory.js";
+} from "#src/runtime/event-log.js";
+import { createEvent } from "#src/runtime/event-factory.js";
 
 describe("EventLog", () => {
   let tmpDir: string;

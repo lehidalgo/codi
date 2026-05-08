@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildWorkflowId, dateStamp, disambiguate, slugify } from "../lib/workflow-id.js";
+import { buildWorkflowId, dateStamp, disambiguate, slugify } from "#src/runtime/workflow-id.js";
 
 describe("workflow-id", () => {
   describe("slugify", () => {

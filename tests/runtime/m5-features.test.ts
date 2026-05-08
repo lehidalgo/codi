@@ -1,15 +1,23 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { runWorkflow, abandonWorkflow, recordIncidentalChange } from "../lib/cli-handlers.js";
-import { EventLog } from "../lib/event-log.js";
-import { reduce } from "../lib/reducer.js";
-import { buildPrSummary, extractHashFromBlock } from "../lib/pr-summary.js";
-import { compactAllArchives } from "../lib/compactor.js";
-import { replay } from "../lib/replay.js";
-import { devloopPaths } from "../lib/paths.js";
-import type { Author } from "../lib/types.js";
+import { runWorkflow, abandonWorkflow, recordIncidentalChange } from "#src/runtime/cli-handlers.js";
+import { EventLog } from "#src/runtime/event-log.js";
+import { reduce } from "#src/runtime/reducer.js";
+import { buildPrSummary, extractHashFromBlock } from "#src/runtime/pr-summary.js";
+import { compactAllArchives } from "#src/runtime/compactor.js";
+import { replay } from "#src/runtime/replay.js";
+import { devloopPaths } from "#src/runtime/paths.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 
@@ -196,11 +204,10 @@ describe("compactor", () => {
 
     // Find the only archive directory
     const archivesDir = paths.archivesDir;
-    const fs = require("node:fs") as typeof import("node:fs");
-    const entries = fs.readdirSync(archivesDir);
+    const entries = readdirSync(archivesDir);
     const summaryFile = join(archivesDir, entries[0]!, "summary.json");
     expect(existsSync(summaryFile)).toBe(true);
-    const summary = JSON.parse(fs.readFileSync(summaryFile, "utf-8"));
+    const summary = JSON.parse(readFileSync(summaryFile, "utf-8"));
     const types = (summary.preserved_events as Array<{ event_type: string }>).map(
       (e) => e.event_type,
     );

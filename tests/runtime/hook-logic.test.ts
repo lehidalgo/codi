@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { evaluateToolCall, buildContext, type ToolCall } from "../lib/hook-logic.js";
-import { runWorkflow, proposeTransition, approveTransition } from "../lib/cli-handlers.js";
-import { EventLog } from "../lib/event-log.js";
-import { createEvent } from "../lib/event-factory.js";
-import type { Author } from "../lib/types.js";
+import { evaluateToolCall, buildContext, type ToolCall } from "#src/runtime/hook-logic.js";
+import { runWorkflow, proposeTransition, approveTransition } from "#src/runtime/cli-handlers.js";
+import { EventLog } from "#src/runtime/event-log.js";
+import { createEvent } from "#src/runtime/event-factory.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 

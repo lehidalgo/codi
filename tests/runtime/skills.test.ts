@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, existsSync, statSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 
 const repoRoot = resolve(process.cwd());
@@ -103,8 +103,7 @@ describe("plugin manifest", () => {
 
     function walkSkillDirs(dir: string): string[] {
       const found: string[] = [];
-      const fs = require("node:fs") as typeof import("node:fs");
-      for (const entry of fs.readdirSync(dir)) {
+      for (const entry of readdirSync(dir)) {
         const fullPath = join(dir, entry);
         if (!statSync(fullPath).isDirectory()) continue;
         const skillMd = join(fullPath, "SKILL.md");

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -9,7 +9,7 @@ import {
   preferencesPath,
   DEFAULT_PREFERENCES,
   PREFERENCES_RELATIVE_PATH,
-} from "../lib/preferences.js";
+} from "#src/runtime/preferences.js";
 
 let cwd: string;
 
@@ -66,9 +66,10 @@ describe("preferences / writePreferences", () => {
     mkdirSync(join(cwd, ".devloop"), { recursive: true });
     writeFileSync(preferencesPath(cwd), JSON.stringify({ output_mode: "normal", future_key: 42 }));
     writePreferences(cwd, { output_mode: "caveman" });
-    const onDisk = JSON.parse(
-      require("node:fs").readFileSync(preferencesPath(cwd), "utf8"),
-    ) as Record<string, unknown>;
+    const onDisk = JSON.parse(readFileSync(preferencesPath(cwd), "utf8")) as Record<
+      string,
+      unknown
+    >;
     expect(onDisk["output_mode"]).toBe("caveman");
     // Existing future_key gets dropped because readPreferences is strict — that's
     // OK for now; tighten this assertion if/when we expand the schema.

@@ -22,13 +22,23 @@ export default defineConfig({
     exclude: [
       "projs/**",
       "node_modules/**",
-      // Sprint 1 — DevLoop sources imported directly into src/runtime/, refactor (imports + integration) in Sprint 2
-      "tests/runtime/**",
+      // Sprint 2.2 — sheets sync still uses googleapis/google-auth-library that aren't installed.
+      // Refactor to ExternalSyncer interface (ADR-005) before re-enabling.
       "src/runtime/**",
       "scripts/runtime/**",
-      "src/templates/skills-devloop-staging/**",
       "src/templates/hooks/runtime/**",
       "src/schemas/runtime/**",
+      // sheets-* tests depend on googleapis runtime (not installed) — re-enable after Sprint 2.2.
+      "tests/runtime/sheets-*.test.ts",
+      // skills.test.ts validates DevLoop's plugin layout (.claude-plugin/plugin.json with
+      // skills array, hooks/hooks.json at root, SKILL.md + contract.json per skill, bin/devloop
+      // wrapper). Codi v3 uses TS template.ts + index.ts modules — these assertions don't
+      // apply. Sprint 3 will add Codi-specific plugin manifest validation tests.
+      "tests/runtime/skills.test.ts",
+      // team-charter.test.ts spawns hooks/session-start.sh which is the DevLoop hook layout.
+      // Codi v3 hooks live under src/templates/hooks/runtime/. Sprint 3 will add a
+      // Codi-specific SessionStart injection test once the hook publishing path is stable.
+      "tests/runtime/team-charter.test.ts",
     ],
     environmentMatchGlobs: [["src/templates/skills/**/tests/**/*.test.{ts,js}", "jsdom"]],
     testTimeout: 10_000,

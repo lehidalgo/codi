@@ -22,7 +22,7 @@ import {
   type BatchWriteRequest,
   type ProjectConfig,
   type CellValue,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 class FakeClient implements SheetsClient {
   public readonly batchCalls: BatchWriteRequest[] = [];

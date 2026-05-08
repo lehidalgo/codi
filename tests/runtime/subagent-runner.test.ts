@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { runSubagent, SubagentSchemaError, SubagentTimeoutError } from "../lib/subagent-runner.js";
-import type { GateResult } from "../lib/gate-types.js";
+import {
+  runSubagent,
+  SubagentSchemaError,
+  SubagentTimeoutError,
+} from "#src/runtime/subagent-runner.js";
+import type { GateResult } from "#src/runtime/gate-types.js";
 
 describe("runSubagent", () => {
   it("accepts a valid GateResult from the dispatcher", async () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { computeDiff, formatDiffSummary, type DraftEnvelope } from "../lib/sheets/index.js";
+import { computeDiff, formatDiffSummary, type DraftEnvelope } from "#src/runtime/sync/index.js";
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 

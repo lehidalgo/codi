@@ -5,7 +5,7 @@ import {
   formatIntegrityReport,
   type DraftEnvelope,
   type IntegrityIssueCode,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 

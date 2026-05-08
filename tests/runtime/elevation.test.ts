@@ -9,8 +9,8 @@ import {
   rejectElevation,
   resolveChild,
   getStatus,
-} from "../lib/cli-handlers.js";
-import type { Author } from "../lib/types.js";
+} from "#src/runtime/cli-handlers.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };

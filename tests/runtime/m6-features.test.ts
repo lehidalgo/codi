@@ -9,8 +9,8 @@ import {
   abandonWorkflow,
   getStatus,
   computeWorkflowStats,
-} from "../lib/cli-handlers.js";
-import type { Author } from "../lib/types.js";
+} from "#src/runtime/cli-handlers.js";
+import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 const maintainer: Author = { type: "human", id: "maintainer" };

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPreflightReport } from "../lib/sheets/index.js";
+import { buildPreflightReport } from "#src/runtime/sync/index.js";
 
 // preflightExistingSheet itself wraps googleapis (not unit-testable here without
 // network mocking). buildPreflightReport is the pure logic core — these tests

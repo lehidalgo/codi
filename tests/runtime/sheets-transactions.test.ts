@@ -15,7 +15,7 @@ import {
   type CellValue,
   type DraftEnvelope,
   type Snapshot,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 // ─── In-memory Sheets client ─────────────────────────────────────────────────
 

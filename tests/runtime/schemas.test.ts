@@ -12,7 +12,7 @@ interface SampleEvent {
   [k: string]: unknown;
 }
 
-const schemasDir = resolve(process.cwd(), "schemas");
+const schemasDir = resolve(process.cwd(), "src", "schemas", "runtime");
 const schema = JSON.parse(readFileSync(resolve(schemasDir, "manifest-event.schema.json"), "utf-8"));
 const samples: SampleEvent[] = JSON.parse(
   readFileSync(resolve(schemasDir, "sample-events.json"), "utf-8"),

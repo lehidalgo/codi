@@ -16,8 +16,8 @@ import {
   readProjectConfig,
   writeProjectConfig,
   tryReadProjectConfig,
-} from "../lib/sheets/index.js";
-import type { ProjectConfig } from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
+import type { ProjectConfig } from "#src/runtime/sync/index.js";
 
 const fixedConfig: ProjectConfig = {
   project_name: "test-project",

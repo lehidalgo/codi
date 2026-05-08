@@ -18,7 +18,7 @@ import {
   SheetsError,
   type AuthClient,
   type AuthMode,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 // Sample SA key content (private_key is a PEM placeholder; google-auth-library
 // will accept it for object construction; we never actually call Google APIs).
@@ -230,7 +230,7 @@ describe("auth — types are exported", () => {
 
 describe("auth / OAUTH_USER_LOGIN_SCOPES", () => {
   it("exports the canonical 5-scope set for ADC login", async () => {
-    const { OAUTH_USER_LOGIN_SCOPES } = await import("../lib/sheets/index.js");
+    const { OAUTH_USER_LOGIN_SCOPES } = await import("#src/runtime/sync/index.js");
     expect(OAUTH_USER_LOGIN_SCOPES).toEqual([
       "openid",
       "https://www.googleapis.com/auth/userinfo.email",
@@ -243,7 +243,7 @@ describe("auth / OAUTH_USER_LOGIN_SCOPES", () => {
   it("oauth-user-setup.sh CANONICAL_SCOPES matches OAUTH_USER_LOGIN_SCOPES (drift detector)", async () => {
     const { readFileSync } = await import("node:fs");
     const path = await import("node:path");
-    const { OAUTH_USER_LOGIN_SCOPES } = await import("../lib/sheets/index.js");
+    const { OAUTH_USER_LOGIN_SCOPES } = await import("#src/runtime/sync/index.js");
 
     const scriptPath = path.join(
       __dirname,
@@ -280,7 +280,7 @@ describe("auth / OAUTH_USER_LOGIN_SCOPES", () => {
 
 describe("auth / isInsufficientScopesError", () => {
   it("matches the canonical googleapis error message", async () => {
-    const { isInsufficientScopesError } = await import("../lib/sheets/index.js");
+    const { isInsufficientScopesError } = await import("#src/runtime/sync/index.js");
     expect(
       isInsufficientScopesError(new Error("Request had insufficient authentication scopes.")),
     ).toBe(true);
@@ -289,7 +289,7 @@ describe("auth / isInsufficientScopesError", () => {
   });
 
   it("does not match unrelated errors", async () => {
-    const { isInsufficientScopesError } = await import("../lib/sheets/index.js");
+    const { isInsufficientScopesError } = await import("#src/runtime/sync/index.js");
     expect(isInsufficientScopesError(new Error("not found"))).toBe(false);
     expect(isInsufficientScopesError(new Error("network unreachable"))).toBe(false);
     expect(isInsufficientScopesError("plain string")).toBe(false);

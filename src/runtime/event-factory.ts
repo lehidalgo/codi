@@ -30,7 +30,7 @@ let validator: ValidateFunction | null = null;
  */
 function findSchemaPath(): string {
   const here = dirname(fileURLToPath(import.meta.url));
-  return resolve(here, "..", "schemas", "manifest-event.schema.json");
+  return resolve(here, "..", "schemas", "runtime", "manifest-event.schema.json");
 }
 
 function getValidator(): ValidateFunction {

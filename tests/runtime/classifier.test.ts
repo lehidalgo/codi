@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { classifyChange } from "../lib/classifier.js";
+import { classifyChange } from "#src/runtime/classifier.js";
 import {
   computeDiffStats,
   diffOnlyAddsImports,
@@ -10,7 +10,7 @@ import {
   isPackageManifest,
   isSchemaFile,
   isTestFile,
-} from "../lib/classifier-rules.js";
+} from "#src/runtime/classifier-rules.js";
 
 describe("classifier rules — file kind detection", () => {
   it("detects test files in multiple conventions", () => {

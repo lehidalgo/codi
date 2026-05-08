@@ -6,7 +6,7 @@ import {
   SheetsError,
   type ProjectConfig,
   type SheetsClient,
-} from "../lib/sheets/index.js";
+} from "#src/runtime/sync/index.js";
 
 // Fake client that returns a malformed UserStory row (missing required `status`).
 function makeFakeClient(): SheetsClient {
