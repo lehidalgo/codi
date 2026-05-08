@@ -24,11 +24,8 @@ import {
   type CallerScope,
   type CellValue,
   type SheetRow,
-  type ProjectConfig,
   SheetsError,
-  GoogleSheetsClient,
   makeSheetsClient,
-  loadAuth,
   loadAuthClient,
   type AuthMode,
   type AuthClient,
@@ -36,20 +33,11 @@ import {
   elicitationPromptForOAuthSetup,
   readProjectConfig,
   tryReadProjectConfig,
-  writeProjectConfig,
   elicitationPromptForMissingConfig,
   elicitationPromptForMissingCredentials,
   upsertRow,
   readRow,
-  readAllRows,
   readAllRowsLenient,
-  readTab,
-  createProjectSheet,
-  bootstrapExistingSheet,
-  validateDraft,
-  formatIntegrityReport,
-  type DraftEnvelope,
-  type IntegrityReport,
 } from "./index.js";
 import { enqueue, buildQueueId, type QueuedSync } from "./queue.js";
 import { reconcile } from "./reconcile.js";
@@ -466,18 +454,6 @@ export function readConfigOrElicit(cwd: string) {
   } catch (e) {
     if (e instanceof SheetsError && e.code === "config_missing") {
       console.error(elicitationPromptForMissingConfig(cwd));
-      process.exit(2);
-    }
-    throw e;
-  }
-}
-
-function loadAuthOrElicit(credPath: string | undefined) {
-  try {
-    return loadAuth(credPath);
-  } catch (e) {
-    if (e instanceof SheetsError && e.code === "credentials_missing") {
-      console.error(elicitationPromptForMissingCredentials());
       process.exit(2);
     }
     throw e;

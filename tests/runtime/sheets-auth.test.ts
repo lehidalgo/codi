@@ -248,6 +248,9 @@ describe("auth / OAUTH_USER_LOGIN_SCOPES", () => {
     const scriptPath = path.join(
       __dirname,
       "..",
+      "..",
+      "src",
+      "templates",
       "skills",
       "sheets-sync",
       "scripts",
@@ -266,6 +269,9 @@ describe("auth / OAUTH_USER_LOGIN_SCOPES", () => {
     const scriptPath = path.join(
       __dirname,
       "..",
+      "..",
+      "src",
+      "templates",
       "skills",
       "sheets-sync",
       "scripts",
@@ -304,6 +310,9 @@ describe("auth / scripts cross-references", () => {
     const scriptPath = path.join(
       __dirname,
       "..",
+      "..",
+      "src",
+      "templates",
       "skills",
       "sheets-sync",
       "scripts",
@@ -319,6 +328,9 @@ describe("auth / scripts cross-references", () => {
     const scriptPath = path.join(
       __dirname,
       "..",
+      "..",
+      "src",
+      "templates",
       "skills",
       "sheets-sync",
       "scripts",

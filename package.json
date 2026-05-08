@@ -83,6 +83,8 @@
     "docx": "^9.6.1",
     "drizzle-orm": "^0.45.2",
     "fast-glob": "^3.3.3",
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0",
     "gray-matter": "^4.0.3",
     "hono": "^4.12.18",
     "picocolors": "^1.1.0",

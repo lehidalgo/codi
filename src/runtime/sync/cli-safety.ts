@@ -11,7 +11,6 @@ import {
   ENTITY_NAMES,
   type EntityName,
   SheetsError,
-  GoogleSheetsClient,
   makeSheetsClient,
   archiveRow,
   listSnapshots,

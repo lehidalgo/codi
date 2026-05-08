@@ -14,11 +14,8 @@ import {
   type SheetRow,
   type ProjectConfig,
   SheetsError,
-  GoogleSheetsClient,
   makeSheetsClient,
   readTab,
-  upsertRow,
-  archiveRow,
   validateDraft,
   formatIntegrityReport,
   type DraftEnvelope,
@@ -29,7 +26,6 @@ import {
   computeDiff,
   formatDiffSummary,
   atomicSyncDraft,
-  restoreFromSnapshotPath,
 } from "./index.js";
 
 import {

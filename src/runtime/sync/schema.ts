@@ -9,14 +9,24 @@
  * For full-row reads, use validateFullRow which enforces required fields.
  */
 
-import Ajv, { type ValidateFunction } from "ajv";
+import AjvModule from "ajv";
+import type { ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
 
 import type { EntityName, SheetRow } from "./types.js";
 import { SheetsError } from "./types.js";
 
-const ajv = new Ajv({ allErrors: true, strict: false, removeAdditional: false });
-addFormats(ajv);
+// ESM-CJS interop: ajv@8 ships CJS where the constructor lives under
+// .default after NodeNext shims it. Cast through unknown keeps `new` callable
+// without leaking `any` to consumers (each compile() call still returns a
+// typed ValidateFunction).
+const AjvCtor = (AjvModule as unknown as { default?: typeof AjvModule }).default ?? AjvModule;
+const ajv = new (AjvCtor as unknown as new (opts: unknown) => {
+  compile<T = unknown>(schema: unknown): ValidateFunction<T>;
+  addKeyword(...args: unknown[]): unknown;
+  addFormat(...args: unknown[]): unknown;
+})({ allErrors: true, strict: false, removeAdditional: false });
+addFormats.default(ajv as unknown as Parameters<typeof addFormats.default>[0]);
 
 const ID_PATTERNS: Record<EntityName, RegExp> = {
   BusinessGoal: /^BG-\d{3,}$/,

@@ -14,10 +14,10 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import Ajv2020 from "ajv/dist/2020.js";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import type { ValidateFunction } from "ajv";
-import type { GateCheck, GateResult } from "./gate-types.js";
+import type { GateResult } from "./gate-types.js";
 import { SUBAGENT_TIMEOUT_MS } from "./gate-types.js";
 
 let resultValidator: ValidateFunction | null = null;
@@ -29,8 +29,9 @@ function getResultValidator(): ValidateFunction {
   const schema = JSON.parse(readFileSync(path, "utf-8"));
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats.default(ajv);
-  resultValidator = ajv.compile(schema);
-  return resultValidator;
+  const compiled: ValidateFunction = ajv.compile(schema);
+  resultValidator = compiled;
+  return compiled;
 }
 
 export class SubagentTimeoutError extends Error {

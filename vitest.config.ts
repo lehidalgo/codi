@@ -22,14 +22,10 @@ export default defineConfig({
     exclude: [
       "projs/**",
       "node_modules/**",
-      // Sprint 2.2 — sheets sync still uses googleapis/google-auth-library that aren't installed.
-      // Refactor to ExternalSyncer interface (ADR-005) before re-enabling.
       "src/runtime/**",
       "scripts/runtime/**",
       "src/templates/hooks/runtime/**",
       "src/schemas/runtime/**",
-      // sheets-* tests depend on googleapis runtime (not installed) — re-enable after Sprint 2.2.
-      "tests/runtime/sheets-*.test.ts",
       // skills.test.ts validates DevLoop's plugin layout (.claude-plugin/plugin.json with
       // skills array, hooks/hooks.json at root, SKILL.md + contract.json per skill, bin/devloop
       // wrapper). Codi v3 uses TS template.ts + index.ts modules — these assertions don't

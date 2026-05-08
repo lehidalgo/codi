@@ -10,7 +10,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import Ajv2020 from "ajv/dist/2020.js";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import type { ValidateFunction } from "ajv";
 import {
@@ -38,8 +38,9 @@ function getValidator(): ValidateFunction {
   const schema = JSON.parse(readFileSync(findSchemaPath(), "utf-8"));
   const ajv = new Ajv2020({ allErrors: true, strict: false, discriminator: true });
   addFormats.default(ajv);
-  validator = ajv.compile(schema);
-  return validator;
+  const compiled: ValidateFunction = ajv.compile(schema);
+  validator = compiled;
+  return compiled;
 }
 
 export class InvalidEventError extends Error {
