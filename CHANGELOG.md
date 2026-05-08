@@ -6,7 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Added — Codi v3 ed.0 (in progress on `feature/codi-v3-harness`)
+## [3.0.0] - 2026-05-08
+
+Major release — Codi v3 ed.0 zero-mode. Introduces the canonical SQLite brain, the capture protocol (Iron Law 9), the brain-ui Hono server, the consolidation pipeline with LLM enrichment (Gemini + OpenAI), the Capabilities Matrix, the `codi migrate v2-to-v3` planner + executor, the `codi plugin publish` dual-track distribution, and the v3 Diataxis docs. v2 users upgrade via `codi migrate v2-to-v3 --apply`; the migration backs up `.codi/` before any rewrite.
+
+### BREAKING
+
+- **SQLite brain at `~/.codi/brain.db` is now the canonical persistence**. v2 was a stateless generator; v3 captures everything the user says into 12 structured tables. v2 users MUST run `codi migrate v2-to-v3` before upgrading the dependency. The migration creates `.codi.v2.backup-<ts>/` before any rewrite, so rolling back is a `mv` away.
+- **DevLoop event-log layout (`.devloop/active/`) is deprecated.** Workflows can opt into the new brain backend via `CODI_USE_BRAIN_BACKEND=1`; legacy file-based event log stays the default in v3.0.0 to keep ~30 DevLoop tests green during the migration window. v3.1+ will flip the default.
+- **`engines.node` continues to require `>= 20.19`.** No change versus v2.14, listed here for explicitness.
+- **Tier 2 adapters (Cursor, Windsurf, Cline, Copilot, Gemini) emit the SAME artifacts they emitted in v2.x.** The new Capabilities Matrix is OPT-IN; legacy adapters are GRANDFATHERED. v3.1+ may migrate them with their own release notes.
+- **`/api/v1/consolidation/run-with-llm`** now returns a real proposal-enrichment response when `CODI_LLM_PROVIDER` + the matching API key are configured. Previously a 501 stub.
+
+### Migration
+
+See `docs/src/content/docs/guides/upgrade-from-v2.md`.
+
+```bash
+codi migrate v2-to-v3            # dry-run
+codi migrate v2-to-v3 --apply    # 5-step plan: backup, brain bootstrap, yaml, regen, summary
+codi generate --force            # refresh per-agent output
+```
+
+### Added — Codi v3 ed.0
 
 - **DevLoop merge** — copied DevLoop libs/hooks/schemas/scripts into `src/runtime/`, integrated 32 DevLoop test files into the main vitest suite, and migrated all 22 DevLoop skills into Codi v2 standard layout (`template.ts` + `index.ts`). Catalog: 67 → 84 skills.
 - **SQLite canonical brain** (`src/runtime/brain/`) — 11-table schema (`projects`, `sessions`, `prompts`, `turns`, `captures`, `tool_calls`, `corrections`, `artifacts_used`, `_codi_schema_version`, `workflow_runs`, `workflow_events`) with FTS5 mirrors over `captures` and `prompts`. Drizzle ORM for typed access; idempotent bootstrap migration with WAL + foreign-keys + busy-timeout.
