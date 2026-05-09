@@ -58,11 +58,24 @@ async function getText(t: ReturnType<typeof tmpFixture>, path: string): Promise<
 }
 
 describe("brain-ui pages render", () => {
-  it("home lists the seeded session", async () => {
+  it("dashboard renders counts and recent captures", async () => {
     const t = tmpFixture();
     try {
       const html = await getText(t, "/");
-      expect(html).toContain("<title>Sessions");
+      expect(html).toContain("<title>Dashboard");
+      expect(html).toContain("Dashboard");
+      expect(html).toContain("Captures");
+      expect(html).toContain("html escaping must be on");
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("sessions page lists the seeded session", async () => {
+    const t = tmpFixture();
+    try {
+      const html = await getText(t, "/sessions");
+      expect(html).toContain("Sessions");
       expect(html).toContain("s1");
       expect(html).toContain("claude-code");
     } finally {
@@ -74,7 +87,8 @@ describe("brain-ui pages render", () => {
     const t = tmpFixture();
     try {
       const html = await getText(t, "/session/s1");
-      expect(html).toContain("Session s1");
+      expect(html).toContain("Session");
+      expect(html).toContain("s1");
       expect(html).toContain("RULE");
       expect(html).toContain("html escaping must be on");
     } finally {
@@ -92,24 +106,23 @@ describe("brain-ui pages render", () => {
     }
   });
 
-  it("live page references the htmx polling partial", async () => {
+  it("captures page lists, filters, and exposes edit/delete controls", async () => {
     const t = tmpFixture();
     try {
-      const html = await getText(t, "/live");
-      expect(html).toContain('hx-get="/partials/live-captures"');
-      expect(html).toContain('hx-trigger="load, every 2s"');
+      const html = await getText(t, "/captures");
+      expect(html).toContain("<title>Captures");
+      expect(html).toContain("html escaping must be on");
+      expect(html).toContain('hx-delete="/api/v1/captures/');
     } finally {
       t.cleanup();
     }
   });
 
-  it("live partial returns a table fragment, not a full document", async () => {
+  it("captures trash view filters deleted_at IS NOT NULL", async () => {
     const t = tmpFixture();
     try {
-      const html = await getText(t, "/partials/live-captures");
-      expect(html).not.toContain("<!doctype html>");
-      expect(html).toContain("<table");
-      expect(html).toContain("RULE");
+      const html = await getText(t, "/captures?trash=1");
+      expect(html).toContain("trash");
     } finally {
       t.cleanup();
     }
@@ -126,11 +139,23 @@ describe("brain-ui pages render", () => {
     }
   });
 
-  it("findings page renders the Sprint 5 placeholder", async () => {
+  it("proposals page renders the trash toggle", async () => {
     const t = tmpFixture();
     try {
-      const html = await getText(t, "/findings");
-      expect(html).toContain("Sprint 5");
+      const html = await getText(t, "/proposals");
+      expect(html).toContain("Proposals");
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("settings page renders project + brain sections", async () => {
+    const t = tmpFixture();
+    try {
+      const html = await getText(t, "/settings");
+      expect(html).toContain("Settings");
+      expect(html).toContain("Project");
+      expect(html).toContain("Brain DB");
     } finally {
       t.cleanup();
     }

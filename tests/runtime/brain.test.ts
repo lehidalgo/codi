@@ -50,17 +50,17 @@ describe("brain / schema bootstrap", () => {
     }
   });
 
-  it("schema_version reflects v2 (workflow_definitions added)", () => {
+  it("schema_version reflects CURRENT_SCHEMA_VERSION after fresh bootstrap", () => {
     const t = tmpDb();
     try {
       const handle = openBrain({ dbPath: t.path });
       try {
         const r = applyMigrations(handle.raw);
-        expect(r.applied).toContain(2);
+        expect(r.applied).toContain(CURRENT_SCHEMA_VERSION);
         const v = handle.raw
           .prepare("SELECT MAX(version) as v FROM _codi_schema_version")
           .get() as { v: number };
-        expect(v.v).toBe(2);
+        expect(v.v).toBe(CURRENT_SCHEMA_VERSION);
       } finally {
         handle.close();
       }

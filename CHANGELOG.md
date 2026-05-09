@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Brain UI — observability + CRUD
+
+#### Added
+
+- **Sidebar nav with 8 sections**: Dashboard, Sessions, Captures, Tool calls, Workflows, Proposals, Artifacts, Settings.
+- **Dashboard** — count cards, captures-by-type bar, top tools, recent activity feed.
+- **Captures page** — type / session / FTS5 search filters, Alpine.js inline edit modal, soft-delete + trash view + restore.
+- **Sessions detail** — chronological timeline merging prompts, turns, tool calls, and captures into one feed.
+- **Tool calls page** — per-tool aggregate with error rate + avg duration, filterable list with full output_summary preview.
+- **Workflows detail** — Mermaid phase graph with current_phase highlighted + event log.
+- **Proposals page** — accept / reject / soft-delete, filter by pattern + status, evidence + patch accordions.
+- **Artifacts usage page** — aggregate of `artifacts_used` by name with success rate + recent invocations.
+- **Settings page** — project metadata, brain DB stats, local backups list, external archives list with size summary.
+- **Soft-delete on `captures` and `proposals`** — `deleted_at INTEGER` column with idempotent v3 schema migration.
+- **Write API**: `PATCH /api/v1/captures/:id`, `DELETE /api/v1/captures/:id`, `POST /api/v1/captures/:id/restore`, `POST /api/v1/captures/bulk-delete`, `DELETE /api/v1/proposals/:id`, `POST /api/v1/proposals/:id/restore`.
+- **Read API additions**: `GET /api/v1/dashboard/metrics` and `GET /api/v1/captures.csv` (full export, RFC 4180 quoting).
+
+#### Changed
+
+- **Brain schema bumped to v3**. Versioned-migration runner replaces the previous bootstrap-only logic — fresh DBs hit `CURRENT_SCHEMA_VERSION` in one step; existing DBs apply only the missing ALTERs.
+- **Brain-ui server runs read-write**. Localhost-only bind (127.0.0.1) is the auth boundary for CRUD endpoints.
+- **`pages.ts` is now a thin registry** that delegates to one module per page in `src/runtime/brain-ui/pages/`.
+- **Captures session API** filters `deleted_at IS NULL` by default; pass `?trash=1` to include soft-deleted rows.
+
+#### Removed
+
+- The Sprint 5 placeholder `/findings` route. Proposals UI now lives at `/proposals`.
+- The legacy `/live` polling page and `/partials/live-captures` HTMX partial. Live updates fold into Dashboard "Recent captures".
+
 ### Brain durability + capture grammar refinements
 
 #### Added

@@ -73,8 +73,10 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
     const sessionId = c.req.param("id");
     const type = c.req.query("type");
     const since = c.req.query("since");
+    const includeTrashed = c.req.query("trash") === "1";
     const params: unknown[] = [sessionId];
     let where = "session_id = ?";
+    if (!includeTrashed) where += " AND deleted_at IS NULL";
     if (type) {
       where += " AND type = ?";
       params.push(type);
@@ -86,7 +88,7 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
     params.push(boundedLimit(c));
     const rows = brain.raw
       .prepare(
-        `SELECT capture_id, ts, type, content, raw_marker, file_paths, workflow_id, phase
+        `SELECT capture_id, ts, type, content, raw_marker, file_paths, workflow_id, phase, deleted_at
          FROM captures
          WHERE ${where}
          ORDER BY ts DESC
@@ -286,6 +288,203 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   // matching API key env var. The selector throws LlmConfigError when no
   // key is configured; surfaced as 400 so the caller can fall back to
   // /run-with-agent without crashing.
+  // ─── Captures CRUD (Sprint 1 — UI editor) ─────────────────────────────────
+
+  app.patch("/api/v1/captures/:id", async (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id" } }, 400);
+    }
+    const body = (await c.req.json().catch(() => ({}))) as {
+      type?: string;
+      content?: string;
+    };
+    const updates: string[] = [];
+    const params: unknown[] = [];
+    if (typeof body.type === "string" && body.type.length > 0) {
+      updates.push("type = ?");
+      params.push(body.type);
+    }
+    if (typeof body.content === "string") {
+      updates.push("content = ?");
+      params.push(body.content);
+    }
+    if (updates.length === 0) {
+      return c.json({ error: { code: "no_fields" } }, 400);
+    }
+    params.push(id);
+    const result = brain.raw
+      .prepare(`UPDATE captures SET ${updates.join(", ")} WHERE capture_id = ?`)
+      .run(...params);
+    if (result.changes === 0) {
+      return c.json({ error: { code: "not_found" } }, 404);
+    }
+    return c.json({ data: { updated: id } });
+  });
+
+  app.delete("/api/v1/captures/:id", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id" } }, 400);
+    }
+    const result = brain.raw
+      .prepare(`UPDATE captures SET deleted_at = ? WHERE capture_id = ? AND deleted_at IS NULL`)
+      .run(Date.now(), id);
+    if (result.changes === 0) {
+      return c.json({ error: { code: "not_found_or_already_deleted" } }, 404);
+    }
+    // HTMX swap: empty body removes the element.
+    return c.body("", 200, { "content-type": "text/html" });
+  });
+
+  app.post("/api/v1/captures/:id/restore", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id" } }, 400);
+    }
+    const result = brain.raw
+      .prepare(
+        `UPDATE captures SET deleted_at = NULL WHERE capture_id = ? AND deleted_at IS NOT NULL`,
+      )
+      .run(id);
+    if (result.changes === 0) {
+      return c.json({ error: { code: "not_found_or_not_deleted" } }, 404);
+    }
+    return c.body("", 200, { "content-type": "text/html" });
+  });
+
+  app.post("/api/v1/captures/bulk-delete", async (c: Context) => {
+    const body = (await c.req.json().catch(() => ({}))) as { ids?: number[] };
+    if (!Array.isArray(body.ids) || body.ids.length === 0) {
+      return c.json({ error: { code: "no_ids" } }, 400);
+    }
+    const placeholders = body.ids.map(() => "?").join(",");
+    const result = brain.raw
+      .prepare(
+        `UPDATE captures SET deleted_at = ? WHERE capture_id IN (${placeholders}) AND deleted_at IS NULL`,
+      )
+      .run(Date.now(), ...body.ids);
+    return c.json({ data: { deleted: result.changes } });
+  });
+
+  // ─── Proposals soft-delete (Sprint 1) ─────────────────────────────────────
+
+  app.delete("/api/v1/proposals/:id", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id" } }, 400);
+    }
+    const result = brain.raw
+      .prepare(`UPDATE proposals SET deleted_at = ? WHERE proposal_id = ? AND deleted_at IS NULL`)
+      .run(Date.now(), id);
+    if (result.changes === 0) {
+      return c.json({ error: { code: "not_found_or_already_deleted" } }, 404);
+    }
+    return c.body("", 200, { "content-type": "text/html" });
+  });
+
+  app.post("/api/v1/proposals/:id/restore", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id" } }, 400);
+    }
+    const result = brain.raw
+      .prepare(
+        `UPDATE proposals SET deleted_at = NULL WHERE proposal_id = ? AND deleted_at IS NOT NULL`,
+      )
+      .run(id);
+    if (result.changes === 0) {
+      return c.json({ error: { code: "not_found_or_not_deleted" } }, 404);
+    }
+    return c.body("", 200, { "content-type": "text/html" });
+  });
+
+  // ─── Dashboard metrics + CSV export ───────────────────────────────────────
+
+  app.get("/api/v1/dashboard/metrics", (c: Context) => {
+    const count = (sql: string): number => (brain.raw.prepare(sql).get() as { n: number }).n;
+    const types = brain.raw
+      .prepare(`SELECT type, COUNT(*) as n FROM captures WHERE deleted_at IS NULL GROUP BY type`)
+      .all() as Array<{ type: string; n: number }>;
+    const tools = brain.raw
+      .prepare(
+        `SELECT tool_name, COUNT(*) as n FROM tool_calls GROUP BY tool_name ORDER BY n DESC LIMIT 10`,
+      )
+      .all() as Array<{ tool_name: string; n: number }>;
+    return c.json({
+      data: {
+        sessions: count("SELECT COUNT(*) as n FROM sessions"),
+        captures: count("SELECT COUNT(*) as n FROM captures WHERE deleted_at IS NULL"),
+        captures_trashed: count("SELECT COUNT(*) as n FROM captures WHERE deleted_at IS NOT NULL"),
+        tool_calls: count("SELECT COUNT(*) as n FROM tool_calls"),
+        workflow_runs: count("SELECT COUNT(*) as n FROM workflow_runs"),
+        proposals: count("SELECT COUNT(*) as n FROM proposals WHERE deleted_at IS NULL"),
+        prompts: count("SELECT COUNT(*) as n FROM prompts"),
+        turns: count("SELECT COUNT(*) as n FROM turns"),
+        captures_by_type: types,
+        top_tools: tools,
+      },
+    });
+  });
+
+  app.get("/api/v1/captures.csv", (c: Context) => {
+    const includeTrashed = c.req.query("trash") === "1";
+    const where = includeTrashed ? "deleted_at IS NOT NULL" : "deleted_at IS NULL";
+    const rows = brain.raw
+      .prepare(
+        `SELECT capture_id, session_id, ts, type, content, file_paths, workflow_id, phase, deleted_at
+         FROM captures WHERE ${where} ORDER BY ts DESC LIMIT 10000`,
+      )
+      .all() as Array<{
+      capture_id: number;
+      session_id: string;
+      ts: number;
+      type: string;
+      content: string;
+      file_paths: string | null;
+      workflow_id: string | null;
+      phase: string | null;
+      deleted_at: number | null;
+    }>;
+    const header =
+      "capture_id,session_id,ts,type,content,file_paths,workflow_id,phase,deleted_at\n";
+    const escape = (v: unknown): string => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+    const body =
+      header +
+      rows
+        .map((r) =>
+          [
+            r.capture_id,
+            r.session_id,
+            r.ts,
+            r.type,
+            r.content,
+            r.file_paths ?? "",
+            r.workflow_id ?? "",
+            r.phase ?? "",
+            r.deleted_at ?? "",
+          ]
+            .map(escape)
+            .join(","),
+        )
+        .join("\n");
+    return new Response(body, {
+      headers: {
+        "content-type": "text/csv; charset=utf-8",
+        "content-disposition": `attachment; filename="captures-${Date.now()}.csv"`,
+      },
+    });
+  });
+
+  // ─── Server-side LLM consolidation (existing) ─────────────────────────────
+
   app.post("/api/v1/consolidation/run-with-llm", async (c: Context) => {
     let provider;
     try {

@@ -83,10 +83,12 @@ export const captures = sqliteTable(
     filePaths: text("file_paths"), // JSON array
     workflowId: text("workflow_id"),
     phase: text("phase"),
+    deletedAt: integer("deleted_at"), // soft delete; null = visible
   },
   (t) => ({
     idxTypeSession: index("idx_captures_type_session").on(t.type, t.sessionId),
     idxSessionTs: index("idx_captures_session_ts").on(t.sessionId, t.ts),
+    idxDeletedAt: index("idx_captures_deleted_at").on(t.deletedAt),
   }),
 );
 

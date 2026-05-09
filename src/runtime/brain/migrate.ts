@@ -195,11 +195,59 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
+
+/**
+ * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
+ * databases that already exist at an older version. Each migration is a
+ * tuple `[version, statements]`. The runner picks every migration whose
+ * version is greater than the last applied row.
+ *
+ * v3 introduces soft-delete on captures and proposals so the brain UI can
+ * remove rows without losing history. Reads filter `deleted_at IS NULL`
+ * by default; the trash view drops the filter.
+ */
+const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> = [
+  [
+    3,
+    [
+      `ALTER TABLE captures ADD COLUMN deleted_at INTEGER`,
+      `ALTER TABLE proposals ADD COLUMN deleted_at INTEGER`,
+      `CREATE INDEX IF NOT EXISTS idx_captures_deleted_at ON captures(deleted_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_proposals_deleted_at ON proposals(deleted_at)`,
+    ],
+  ],
+];
+
+function columnExists(raw: Database.Database, table: string, column: string): boolean {
+  const rows = raw.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  return rows.some((r) => r.name === column);
+}
+
+function safeRun(raw: Database.Database, stmt: string): void {
+  // ALTER TABLE ADD COLUMN is the only stmt SQLite cannot make idempotent
+  // by itself. Inspect the schema first; CREATE INDEX IF NOT EXISTS handles
+  // its own idempotency.
+  const addColMatch = stmt.match(/^ALTER TABLE (\w+) ADD COLUMN (\w+)/i);
+  if (addColMatch && columnExists(raw, addColMatch[1]!, addColMatch[2]!)) return;
+  raw.prepare(stmt).run();
+}
 
 /**
  * Apply migrations to bring the brain DB up to CURRENT_SCHEMA_VERSION.
- * Idempotent: running twice is a no-op once the version row is present.
+ *
+ * Strategy:
+ *   - BOOTSTRAP_STATEMENTS create the canonical v2 schema with `IF NOT
+ *     EXISTS` so they are safe on every call.
+ *   - On a fresh DB, after bootstrap, jump straight to CURRENT_SCHEMA_VERSION
+ *     (running every VERSIONED_MIGRATIONS over the freshly bootstrapped
+ *     tables) so the version row reflects the live schema after a single
+ *     `applyMigrations` call.
+ *   - On an existing DB at v < CURRENT_SCHEMA_VERSION, run only the missing
+ *     versioned migrations.
+ *
+ * Idempotent: a second invocation reads the recorded version and short-
+ * circuits.
  */
 export function applyMigrations(raw: Database.Database): { applied: number[] } {
   const applied: number[] = [];
@@ -212,11 +260,21 @@ export function applyMigrations(raw: Database.Database): { applied: number[] } {
   const versionRow = raw.prepare("SELECT MAX(version) as v FROM _codi_schema_version").get() as {
     v: number | null;
   };
-  if ((versionRow.v ?? 0) < CURRENT_SCHEMA_VERSION) {
+  const lastVersion = versionRow.v ?? 0;
+  if (lastVersion >= CURRENT_SCHEMA_VERSION) return { applied };
+
+  const versionTxn = raw.transaction(() => {
+    for (const [version, statements] of VERSIONED_MIGRATIONS) {
+      if (version <= lastVersion) continue;
+      for (const stmt of statements) {
+        safeRun(raw, stmt);
+      }
+    }
     raw
       .prepare("INSERT INTO _codi_schema_version(version, applied_at) VALUES (?, ?)")
       .run(CURRENT_SCHEMA_VERSION, Date.now());
-    applied.push(CURRENT_SCHEMA_VERSION);
-  }
+  });
+  versionTxn();
+  applied.push(CURRENT_SCHEMA_VERSION);
   return { applied };
 }
