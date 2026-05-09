@@ -227,16 +227,75 @@ export class BrainEventLog {
     if (!exists) {
       throw new Error(`No workflow_runs row for ${workflowId}. Run initWorkflow first.`);
     }
-    const result = this.handle.raw
-      .prepare(
-        `INSERT INTO workflow_events(workflow_id, event_type, ts, payload) VALUES (?, ?, ?, ?)`,
-      )
-      .run(workflowId, event.event_type, Date.now(), JSON.stringify(event));
-    const sequence = Number(result.lastInsertRowid);
-    // Synthetic path keeps the surface compatible with the legacy file-based
-    // EventLog — callers that log it get a useful URI either way.
+
+    // F3 — keep workflow_runs.current_phase + status in sync with the event
+    // stream. Closes the audit gap where these columns stayed at 'init'/
+    // 'active' forever, leaving downstream readers (iron-laws-enforcer
+    // readGateState, brain-ui /workflows) on stale data.
+    const phaseUpdate = this.derivePhaseUpdate(event);
+
+    const txn = this.handle.raw.transaction(() => {
+      const result = this.handle.raw
+        .prepare(
+          `INSERT INTO workflow_events(workflow_id, event_type, ts, payload) VALUES (?, ?, ?, ?)`,
+        )
+        .run(workflowId, event.event_type, Date.now(), JSON.stringify(event));
+      const sequence = Number(result.lastInsertRowid);
+      if (phaseUpdate) {
+        this.handle.raw
+          .prepare(
+            `UPDATE workflow_runs
+               SET current_phase = COALESCE(?, current_phase),
+                   status        = COALESCE(?, status),
+                   ended_at      = COALESCE(?, ended_at)
+             WHERE workflow_id = ?`,
+          )
+          .run(
+            phaseUpdate.currentPhase ?? null,
+            phaseUpdate.status ?? null,
+            phaseUpdate.endedAt ?? null,
+            workflowId,
+          );
+      }
+      return sequence;
+    });
+    const sequence = txn();
     const path = `brain://workflow_events/${workflowId}/${sequence}`;
     return { path, sequence, commitable: event.commitable };
+  }
+
+  /**
+   * Decide what (if anything) to update on workflow_runs based on the event
+   * being appended. Returns null when the event type does not affect the
+   * persisted lifecycle columns.
+   */
+  private derivePhaseUpdate(event: ManifestEvent): {
+    currentPhase?: string;
+    status?: string;
+    endedAt?: number;
+  } | null {
+    switch (event.event_type) {
+      case "phase_started": {
+        const p = event.payload as { phase?: string } | undefined;
+        return p?.phase ? { currentPhase: p.phase, status: "active" } : null;
+      }
+      case "phase_completed": {
+        // Completion of a phase keeps current_phase pointing at it until the
+        // next phase_started arrives — readers see 'execute' until the next
+        // 'phase_started: verify'. Don't move it here.
+        return null;
+      }
+      case "workflow_completed":
+        return { status: "completed", endedAt: Date.now() };
+      case "workflow_abandoned":
+        return { status: "abandoned", endedAt: Date.now() };
+      case "workflow_paused_for_child":
+        return { status: "paused" };
+      case "workflow_resumed_after_child":
+        return { status: "active" };
+      default:
+        return null;
+    }
   }
 
   // ─── Read events ────────────────────────────────────────────────────

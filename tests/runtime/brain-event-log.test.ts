@@ -147,6 +147,106 @@ describe("initWorkflow + append + loadEvents", () => {
   });
 });
 
+describe("F3 — current_phase + status updates with each event", () => {
+  it("phase_started updates workflow_runs.current_phase + status='active'", () => {
+    log.initWorkflow("wf-f3-1", { ...initEvent(), workflow_id: "wf-f3-1" });
+    log.append("wf-f3-1", {
+      event_id: "ev-2",
+      event_type: "phase_started",
+      schema_version: 1,
+      ts: new Date().toISOString(),
+      actor: { type: "human", id: "tester" },
+      workflow_id: "wf-f3-1",
+      commitable: true,
+      payload: { phase: "plan" },
+    } as ManifestEvent);
+
+    // Re-open to verify persistence (different handle, same file).
+    const log2 = BrainEventLog.open({ dbPath: join(dir, "brain.db") });
+    try {
+      const row = log2["handle"].raw
+        .prepare(`SELECT current_phase, status FROM workflow_runs WHERE workflow_id = ?`)
+        .get("wf-f3-1") as { current_phase: string; status: string };
+      expect(row.current_phase).toBe("plan");
+      expect(row.status).toBe("active");
+    } finally {
+      log2.dispose();
+    }
+  });
+
+  it("workflow_completed updates status='completed' + ended_at", () => {
+    log.initWorkflow("wf-f3-2", { ...initEvent(), workflow_id: "wf-f3-2" });
+    log.append("wf-f3-2", {
+      event_id: "ev-2",
+      event_type: "workflow_completed",
+      schema_version: 1,
+      ts: new Date().toISOString(),
+      actor: { type: "human", id: "tester" },
+      workflow_id: "wf-f3-2",
+      commitable: true,
+      payload: {},
+    } as ManifestEvent);
+
+    const log2 = BrainEventLog.open({ dbPath: join(dir, "brain.db") });
+    try {
+      const row = log2["handle"].raw
+        .prepare(`SELECT status, ended_at FROM workflow_runs WHERE workflow_id = ?`)
+        .get("wf-f3-2") as { status: string; ended_at: number | null };
+      expect(row.status).toBe("completed");
+      expect(row.ended_at).not.toBeNull();
+    } finally {
+      log2.dispose();
+    }
+  });
+
+  it("workflow_abandoned updates status='abandoned' + ended_at", () => {
+    log.initWorkflow("wf-f3-3", { ...initEvent(), workflow_id: "wf-f3-3" });
+    log.append("wf-f3-3", {
+      event_id: "ev-2",
+      event_type: "workflow_abandoned",
+      schema_version: 1,
+      ts: new Date().toISOString(),
+      actor: { type: "human", id: "tester" },
+      workflow_id: "wf-f3-3",
+      commitable: true,
+      payload: { reason: "test" },
+    } as ManifestEvent);
+    const row = log["handle"].raw
+      .prepare(`SELECT status, ended_at FROM workflow_runs WHERE workflow_id = ?`)
+      .get("wf-f3-3") as { status: string; ended_at: number | null };
+    expect(row.status).toBe("abandoned");
+    expect(row.ended_at).not.toBeNull();
+  });
+
+  it("phase_completed alone does NOT advance current_phase (waits for next phase_started)", () => {
+    log.initWorkflow("wf-f3-4", { ...initEvent(), workflow_id: "wf-f3-4" });
+    log.append("wf-f3-4", {
+      event_id: "ev-2",
+      event_type: "phase_started",
+      schema_version: 1,
+      ts: new Date().toISOString(),
+      actor: { type: "human", id: "tester" },
+      workflow_id: "wf-f3-4",
+      commitable: true,
+      payload: { phase: "plan" },
+    } as ManifestEvent);
+    log.append("wf-f3-4", {
+      event_id: "ev-3",
+      event_type: "phase_completed",
+      schema_version: 1,
+      ts: new Date().toISOString(),
+      actor: { type: "human", id: "tester" },
+      workflow_id: "wf-f3-4",
+      commitable: true,
+      payload: { phase: "plan" },
+    } as ManifestEvent);
+    const row = log["handle"].raw
+      .prepare(`SELECT current_phase FROM workflow_runs WHERE workflow_id = ?`)
+      .get("wf-f3-4") as { current_phase: string };
+    expect(row.current_phase).toBe("plan"); // not 'init', not 'execute' yet
+  });
+});
+
 describe("integration with brain-ui /workflows", () => {
   it("writes appear in workflow_runs immediately", () => {
     log.initWorkflow("wf-7", { ...initEvent(), workflow_id: "wf-7" });
