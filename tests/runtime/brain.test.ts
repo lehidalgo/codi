@@ -138,4 +138,50 @@ describe("brain / schema bootstrap", () => {
       t.cleanup();
     }
   });
+
+  // DEFECT-007 regression: better-sqlite3 has SQLITE_DBCONFIG_DEFENSIVE on
+  // by default, which previously blocked the prompts_fts contentless-table
+  // sync triggers ("unsafe use of virtual table prompts_fts"). openBrain
+  // now flips unsafeMode for read-write handles so DELETE/UPDATE on
+  // prompts succeeds and the FTS mirror stays consistent.
+  it("DELETE on prompts fires the FTS sync trigger without 'unsafe use of virtual table'", () => {
+    const t = tmpDb();
+    try {
+      const handle = openBrain({ dbPath: t.path });
+      try {
+        applyMigrations(handle.raw);
+        handle.raw
+          .prepare(
+            "INSERT INTO prompts(session_id, turn_no, ts, text, char_count) VALUES (?, ?, ?, ?, ?)",
+          )
+          .run("s-fts", 1, Date.now(), "find me later", 13);
+
+        const beforeFts = handle.raw
+          .prepare("SELECT rowid FROM prompts_fts WHERE prompts_fts MATCH 'later'")
+          .all() as { rowid: number }[];
+        expect(beforeFts.length).toBe(1);
+
+        // The DELETE used to throw `SqliteError: unsafe use of virtual
+        // table "prompts_fts"`. With unsafeMode it must succeed and the
+        // FTS row must be removed by the trigger.
+        expect(() =>
+          handle.raw.prepare("DELETE FROM prompts WHERE session_id = ?").run("s-fts"),
+        ).not.toThrow();
+
+        const afterPrompts = handle.raw.prepare("SELECT COUNT(*) AS c FROM prompts").get() as {
+          c: number;
+        };
+        expect(afterPrompts.c).toBe(0);
+
+        const afterFts = handle.raw
+          .prepare("SELECT rowid FROM prompts_fts WHERE prompts_fts MATCH 'later'")
+          .all() as { rowid: number }[];
+        expect(afterFts.length).toBe(0);
+      } finally {
+        handle.close();
+      }
+    } finally {
+      t.cleanup();
+    }
+  });
 });

@@ -94,6 +94,14 @@ export function openBrain(opts: OpenBrainOptions = {}): BrainHandle {
   raw.pragma("journal_mode = WAL");
   raw.pragma("foreign_keys = ON");
   raw.pragma("synchronous = NORMAL");
+  // DEFECT-007 fix: better-sqlite3 enables SQLITE_DBCONFIG_DEFENSIVE by
+  // default, which blocks the FTS5 sync triggers
+  // (`INSERT INTO prompts_fts(prompts_fts, ...) VALUES('delete', ...)`)
+  // with "unsafe use of virtual table". The triggers are the documented
+  // FTS5 contentless-table sync pattern, so unsafeMode is the right
+  // call — every caller goes through prepared statements, no untrusted
+  // SQL ever reaches this handle.
+  if (!(opts.readonly ?? false)) raw.unsafeMode(true);
   const db = drizzle(raw, { schema });
   return {
     db,
