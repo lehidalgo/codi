@@ -6,7 +6,7 @@ description: Continuous artifact improvement — observe patterns, emit |OBSERVA
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 5
+version: 6
 ---
 
 # Continuous Artifact Improvement
@@ -85,6 +85,47 @@ into structured proposals. You do not touch the file system.
 - A rule references a deprecated API, outdated pattern, or superseded best practice
 - A skill should have triggered but did not (or triggered when it should not have)
 - Two skills have overlapping triggers for the same use case — the wrong one activates due to priority rules
+
+## When NOT to Emit a Capture (avoid false positives)
+
+False positives are NOT tolerated — every emitted capture must carry actionable
+signal. Apply this filter BEFORE writing any \`|TYPE: "..."|\` marker:
+
+**Reject as noise:**
+- **Conversational acknowledgements**: "ok", "yeah", "thanks", "got it",
+  "sounds good", "perfect", "cool", "great" — even if the user said them
+  emphatically. They confirm receipt, not content.
+- **Approval / rejection of a proposed action**: "go ahead", "do it", "no don't",
+  "skip that", "yes please". These drive control flow, not knowledge.
+- **Restating the prompt**: quoting the user's literal command back as a PROMPT
+  capture has no value beyond the prompts table itself.
+- **Single-occurrence anecdotes** that lack a pattern. Iron Law 9 captures only
+  travel through P5/P9 detectors when they recur — one-offs add storage cost
+  without payoff.
+- **Generic facts** the agent could derive from the codebase any time
+  ("this project uses TypeScript", "tests are in tests/"). Captures are for
+  things you would otherwise lose.
+- **Ephemeral session state** ("user is currently working on auth flow") —
+  workflow_runs already tracks that.
+
+**Emit only when:**
+- The user states a domain rule, prohibition, preference, decision, or
+  correction with **concrete content** the agent should remember next session.
+- The agent has a non-obvious insight the user won't otherwise see again.
+- An observation has **at least one specific actor named** — an artifact,
+  file path, technology, or recurring pattern (≥ 2 occurrences observed).
+
+**Worked example — what NOT to capture:**
+
+> User: "yeah looks good"
+> Agent: ❌ Do NOT emit \`|FEEDBACK: "yeah looks good"|\` — the verbatim
+>   carries no semantic content beyond approval. Process the approval, move
+>   on without capture.
+
+> User: "no quiero que hagas sobre ingeniería"
+> Agent: ✅ Emit \`|PREFERENCE: "no overengineering — keep changes minimal,
+>   scoped to what was asked, no speculative abstractions"|\` — concrete,
+>   reusable, names the actionable principle.
 
 ## Skill Trigger Overlap — Iterate Before Resuming
 

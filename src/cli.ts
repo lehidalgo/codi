@@ -21,6 +21,7 @@ import { registerMigrateCommand } from "./cli/migrate.js";
 import { registerPluginCommand } from "./cli/plugin.js";
 import { registerBrainCommand } from "./cli/brain.js";
 import { registerWorkflowCommand } from "./cli/workflow.js";
+import { registerAgentHookCommand } from "./cli/agent-hooks.js";
 
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
@@ -67,6 +68,7 @@ registerMigrateCommand(program);
 registerPluginCommand(program);
 registerBrainCommand(program);
 registerWorkflowCommand(program);
+registerAgentHookCommand(program);
 
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);

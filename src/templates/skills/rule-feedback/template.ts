@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 10
+version: 11
 ---
 
 # {{name}} — Rule Feedback
@@ -102,6 +102,24 @@ not touch the file system.
 - **Require 2+ evidence points** — no single-occurrence anecdotes
 - **User corrections are always high severity** — always emit them, no evidence threshold
 - **Do not announce observations** — emit the marker inline, do not draw attention to it
+
+## What NOT to Capture (false-positive filter)
+
+Reject these as noise — they pollute the captures table without payoff:
+
+- **Conversational acknowledgements** ("ok", "yeah", "thanks", "got it",
+  "sounds good", "perfect") — they confirm receipt, not content.
+- **Approval / rejection of a proposed action** ("go ahead", "do it", "no
+  don't", "skip that") — control flow, not knowledge.
+- **Verbatim quoting of the prompt back** as a PROMPT capture — the prompts
+  table already has it; doubling adds no signal.
+- **Generic facts** the agent could derive any time from the codebase
+  (\\\`this project uses TypeScript\\\`).
+- **Ephemeral session state** (\\\`user is currently working on auth\\\`) —
+  workflow_runs tracks that.
+
+Emit only when the marker carries **concrete, reusable content** with at
+least one specific actor named (artifact, file, technology, pattern).
 
 ## Related Skills
 
