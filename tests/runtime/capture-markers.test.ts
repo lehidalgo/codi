@@ -51,7 +51,7 @@ describe("parseMarkers", () => {
     expect(parseMarkers('|RULE: "no closing pipe"')).toEqual([]);
   });
 
-  it("handles all 10 canonical types", () => {
+  it("handles every canonical type in CAPTURE_TYPES", () => {
     for (const t of CAPTURE_TYPES) {
       const out = parseMarkers(`|${t}: "x"|`);
       expect(out, `type ${t} did not parse`).toHaveLength(1);

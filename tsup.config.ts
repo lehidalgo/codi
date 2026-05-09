@@ -7,6 +7,7 @@ export default defineConfig({
   entry: {
     cli: "src/cli.ts",
     index: "src/index.ts",
+    "brain-ui-server": "src/runtime/brain-ui/cli-server.ts",
   },
   format: ["esm"],
   dts: true,

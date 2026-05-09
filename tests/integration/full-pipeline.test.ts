@@ -333,7 +333,7 @@ describe("Hook Lifecycle", () => {
 
 describe("Operations Ledger Tracking", () => {
   it("tracks operations across init → generate → clean", async () => {
-    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "operations.json");
+    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "state", "operations.json");
 
     // Init creates the ledger
     await initHandler(tmpDir, { json: true, agents: ["claude-code"] });

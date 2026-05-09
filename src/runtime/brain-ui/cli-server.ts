@@ -1,6 +1,5 @@
-#!/usr/bin/env tsx
 /**
- * codi brain-ui server entrypoint (Sprint 4).
+ * codi brain-ui server entrypoint.
  *
  * Run via the `codi brain ui` CLI command. Args:
  *   --port <n>          Port to bind. Default: 4477.
@@ -12,13 +11,8 @@
  */
 
 import { serve } from "@hono/node-server";
-import { buildApp } from "#src/runtime/brain-ui/index.js";
-import {
-  DEFAULT_BRAIN_UI_PORT,
-  defaultPidfilePath,
-  writePidfile,
-  clearPidfile,
-} from "#src/runtime/brain-ui/index.js";
+import { buildApp } from "./server.js";
+import { DEFAULT_BRAIN_UI_PORT, writePidfile, clearPidfile } from "./lifecycle.js";
 
 interface ParsedArgs {
   port: number;

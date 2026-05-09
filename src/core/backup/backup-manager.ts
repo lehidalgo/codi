@@ -1,8 +1,16 @@
 import fs from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { homedir } from "node:os";
 import path from "node:path";
 import { isPathSafe } from "#src/utils/path-guard.js";
 import { fileExists, safeRm } from "#src/utils/fs.js";
-import { STATE_FILENAME, BACKUPS_DIR, MAX_BACKUPS } from "#src/constants.js";
+import {
+  STATE_FILENAME,
+  BACKUPS_DIR,
+  MAX_BACKUPS,
+  EXTERNAL_ARCHIVE_DIR,
+  PROJECT_DIR,
+} from "#src/constants.js";
 import { VERSION } from "#src/index.js";
 import { readManifest, writeManifest } from "#src/core/backup/backup-manifest.js";
 import {
@@ -36,7 +44,9 @@ export async function openBackup(
   const includePreExisting = opts.includePreExisting ?? false;
   const retention = opts.retention ?? "auto";
 
-  const backupsRoot = path.join(configDir, BACKUPS_DIR);
+  const backupsRoot = opts.external
+    ? externalArchiveRoot(projectRoot)
+    : path.join(configDir, BACKUPS_DIR);
   await fs.mkdir(backupsRoot, { recursive: true });
 
   await pruneIncompleteBackups(backupsRoot);
@@ -222,6 +232,21 @@ async function copyOne(projectRoot: string, backupDir: string, relPath: string):
   const dest = path.join(backupDir, relPath);
   await fs.mkdir(path.dirname(dest), { recursive: true });
   await fs.copyFile(src, dest);
+}
+
+/**
+ * Resolve the out-of-tree archive root for `projectRoot`. The directory layout
+ * groups backups by a stable hash of the absolute project path so re-installs
+ * in the same directory share archive history, and so two projects with the
+ * same basename do not collide.
+ *
+ * Layout: `~/.codi/archive/<sha256[0..16]>-<basename>/<timestamp>/`
+ */
+export function externalArchiveRoot(projectRoot: string): string {
+  const abs = path.resolve(projectRoot);
+  const hash = createHash("sha256").update(abs).digest("hex").slice(0, 16);
+  const slug = path.basename(abs).replace(/[^A-Za-z0-9._-]/g, "_") || "project";
+  return path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, `${hash}-${slug}`);
 }
 
 async function applyRetention(

@@ -26,7 +26,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { reduce } from "../reducer.js";
 import { BrainEventLog } from "../brain-event-log.js";
 import type { BrainHandle } from "../brain/index.js";
-import { parseMarkers } from "./markers.js";
+import { parseMarkersWithReport, type ParsedMarker } from "./markers.js";
 import { persistMarkers } from "./persist.js";
 import {
   closeTurn,
@@ -95,8 +95,32 @@ export function processStopHook(handle: BrainHandle, input: StopHookInput): Stop
     input.agentTextOverride ??
     (input.transcriptPath ? readLastAssistantMessage(input.transcriptPath) : "");
 
-  // 4. Parse + persist markers.
-  const markers = parseMarkers(agentText);
+  // 4. Parse + persist markers. Markers with a non-canonical TYPE keep
+  //    their full information by being demoted to OBSERVATION at
+  //    persist-time; the raw_marker column preserves the agent's original
+  //    intent so the brain UI / consolidator can recover the offending
+  //    type. We also emit a stderr warning so the typo is visible during
+  //    the session.
+  const parsed = parseMarkersWithReport(agentText);
+  const promoted: ParsedMarker[] = parsed.invalid.map((bad) => {
+    const annotated = `[unknown_type=${bad.type}] ${bad.content}`;
+    return {
+      type: "OBSERVATION",
+      content: annotated,
+      rawMarker: bad.rawMarker,
+      offset: bad.offset,
+    };
+  });
+  if (parsed.invalid.length > 0) {
+    for (const bad of parsed.invalid) {
+      console.error(
+        `[capture] non-canonical TYPE=${bad.type} promoted to OBSERVATION: ${bad.rawMarker}`,
+      );
+    }
+  }
+  const markers: ParsedMarker[] = [...parsed.valid, ...promoted].sort(
+    (a, b) => a.offset - b.offset,
+  );
   const phase = readActivePhase();
   const persisted = persistMarkers(
     raw,

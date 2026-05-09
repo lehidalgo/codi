@@ -17,18 +17,24 @@
 
 import Database from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { BRAIN_DB_FILENAME, STATE_DIR } from "#src/constants.js";
 import * as schema from "./schema.js";
 
 export type BrainDb = BetterSQLite3Database<typeof schema>;
 
 /**
  * Walk up from `start` looking for a directory that contains a `.codi/`
- * subdir. Returns the path to `<dir>/.codi/brain.db` (regardless of
- * whether the file exists yet — the caller may want to create it).
- * Returns null if no `.codi/` is found between start and filesystem root.
+ * subdir. Returns the path to `<dir>/.codi/state/brain.db` if a `.codi/` is
+ * found (regardless of whether the file exists yet — the caller may want to
+ * create it). Returns null if no `.codi/` is found between start and the
+ * filesystem root.
+ *
+ * Backwards-compat: if a legacy `<dir>/.codi/brain.db` exists at the old
+ * top-level location and no `state/brain.db` is present yet, the legacy
+ * path is migrated transparently.
  */
 export function findProjectBrainPath(start: string): string | null {
   let current = resolve(start);
@@ -38,7 +44,10 @@ export function findProjectBrainPath(start: string): string | null {
     if (existsSync(codiDir)) {
       try {
         if (statSync(codiDir).isDirectory()) {
-          return join(codiDir, "brain.db");
+          const stateBrain = join(codiDir, STATE_DIR, BRAIN_DB_FILENAME);
+          const legacyBrain = join(codiDir, BRAIN_DB_FILENAME);
+          migrateLegacyBrainDb(legacyBrain, stateBrain);
+          return stateBrain;
         }
       } catch {
         // permission / race — keep walking
@@ -54,7 +63,7 @@ export function findProjectBrainPath(start: string): string | null {
 /**
  * Path to the brain database. Honors `CODI_BRAIN_DB` first (tests + scripts
  * that need isolation), then walks up from cwd looking for a project-local
- * `.codi/brain.db`, and finally falls back to `~/.codi/brain.db`.
+ * `.codi/state/brain.db`, and finally falls back to `~/.codi/state/brain.db`.
  *
  * Optional `cwd` override is exposed primarily for tests.
  */
@@ -63,7 +72,43 @@ export function defaultBrainPath(cwd: string = process.cwd()): string {
   if (override && override.length > 0) return resolve(override);
   const projectBrain = findProjectBrainPath(cwd);
   if (projectBrain) return projectBrain;
-  return resolve(homedir(), ".codi", "brain.db");
+  const homeCodi = resolve(homedir(), ".codi");
+  const stateBrain = join(homeCodi, STATE_DIR, BRAIN_DB_FILENAME);
+  const legacyBrain = join(homeCodi, BRAIN_DB_FILENAME);
+  migrateLegacyBrainDb(legacyBrain, stateBrain);
+  return stateBrain;
+}
+
+/**
+ * Move a legacy `<dir>/brain.db` into `<dir>/state/brain.db` once. Idempotent
+ * and silent: if the destination already exists, the legacy file is left
+ * alone (a previous migration ran). If neither exists, this is a no-op.
+ */
+function migrateLegacyBrainDb(legacyPath: string, statePath: string): void {
+  if (!existsSync(legacyPath)) return;
+  if (existsSync(statePath)) return;
+  try {
+    mkdirSync(dirname(statePath), { recursive: true });
+    renameSync(legacyPath, statePath);
+    // Best-effort: move sidecar files that better-sqlite3 leaves behind in
+    // WAL mode so a half-migrated DB does not surface as corruption. They
+    // may not exist yet — ignore failures.
+    for (const suffix of ["-wal", "-shm"]) {
+      const legacySide = `${legacyPath}${suffix}`;
+      const stateSide = `${statePath}${suffix}`;
+      if (existsSync(legacySide) && !existsSync(stateSide)) {
+        try {
+          renameSync(legacySide, stateSide);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  } catch {
+    // Migration failed (permissions, EXDEV across volumes). Caller will
+    // open the new path and create a fresh DB; the legacy file stays put
+    // so the user can recover it manually.
+  }
 }
 
 export interface OpenBrainOptions {

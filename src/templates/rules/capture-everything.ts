@@ -8,19 +8,28 @@ description: |
   prompt, or correction. The agent persists; the user never has to. False
   negatives are tolerated; false positives are not. Markers go at the end of
   the response in the form pipe TYPE colon space quoted-content pipe.
-priority: critical
+priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 4
 ---
 
 # Capture Everything (Iron Law 9)
 
 ## Core Rule
 
-The agent MUST emit \\\`|TYPE: "verbatim content"|\\\` markers at the **end** of any response that detected one of the 10 canonical capture types. The dev never persists manually; the agent is responsible for proactive capture.
+The agent MUST emit \\\`|TYPE: "verbatim content"|\\\` markers at the **end** of any response that detected one of the canonical capture types. The dev never persists manually; the agent is responsible for proactive capture.
 
-## The 10 capture types
+## Canonical capture types (closed set)
+
+This list is exhaustive. The parser auto-promotes any marker with a
+non-canonical TYPE to \\\`OBSERVATION\\\`, prefixing the content with
+\\\`[unknown_type=<RAW>]\\\` and preserving the literal marker in the
+\\\`raw_marker\\\` column. A stderr warning is also emitted so the typo
+is visible during the session. Prefer the canonical type whenever it
+fits — auto-promotion is a safety net, not the default path. Synonyms
+to avoid: \\\`BUG\\\`, \\\`ERROR\\\`, \\\`NOTE\\\`, \\\`TODO\\\`,
+\\\`HIGHLIGHT\\\`.
 
 | Type | When to emit |
 |------|--------------|
@@ -34,6 +43,7 @@ The agent MUST emit \\\`|TYPE: "verbatim content"|\\\` markers at the **end** of
 | \\\`QUESTION\\\` | The user asks something that should be answered later, not now. |
 | \\\`PROMPT\\\` | The user provides reusable wording the agent should remember. |
 | \\\`CORRECTION\\\` | The user fixes a mistake the agent made — always high-severity. |
+| \\\`DEFECT\\\` | The agent finds a real bug in code (file:line + symptom + fix hint). |
 
 ## Format
 

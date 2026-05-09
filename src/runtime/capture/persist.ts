@@ -8,6 +8,7 @@
 
 import type Database from "better-sqlite3";
 import type { ParsedMarker } from "./markers.js";
+import { extractFilePaths } from "./extract.js";
 
 export interface CaptureInsertContext {
   readonly sessionId: string;
@@ -15,7 +16,12 @@ export interface CaptureInsertContext {
   readonly turnId: number;
   readonly workflowId?: string;
   readonly phase?: string;
-  /** Optional file paths the marker mentions (JSON-serialized into the row). */
+  /**
+   * Optional explicit file paths to attach to every marker in this batch.
+   * When set, this overrides the auto-extracted paths from each marker's
+   * content. Pass `undefined` (the default) to let `persistMarkers` mine
+   * paths out of each marker individually.
+   */
   readonly filePaths?: readonly string[];
 }
 
@@ -46,7 +52,7 @@ export function persistMarkers(
   );
 
   const now = Date.now();
-  const filePathsJson =
+  const ctxPathsJson =
     ctx.filePaths && ctx.filePaths.length > 0 ? JSON.stringify(ctx.filePaths) : null;
 
   for (const m of markers) {
@@ -55,6 +61,14 @@ export function persistMarkers(
       skipped++;
       ids.push(dup.capture_id);
       continue;
+    }
+    // Per-marker auto-extraction: each marker gets the paths it actually
+    // names. The caller can override with ctx.filePaths when they have
+    // explicit ground truth (e.g. tool-driven capture).
+    let filePathsJson = ctxPathsJson;
+    if (filePathsJson === null) {
+      const extracted = extractFilePaths(m.content);
+      filePathsJson = extracted.length > 0 ? JSON.stringify(extracted) : null;
     }
     const result = insert.run(
       ctx.sessionId,

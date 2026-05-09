@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 import path from "node:path";
-import { OPERATIONS_LEDGER_FILENAME } from "#src/constants.js";
+import { OPERATIONS_LEDGER_FILENAME, STATE_DIR } from "#src/constants.js";
 import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
@@ -94,7 +95,18 @@ export class OperationsLedgerManager {
   private readonly ledgerPath: string;
 
   constructor(configDir: string) {
-    this.ledgerPath = path.join(configDir, OPERATIONS_LEDGER_FILENAME);
+    const stateDir = path.join(configDir, STATE_DIR);
+    const ledgerPath = path.join(stateDir, OPERATIONS_LEDGER_FILENAME);
+    const legacyPath = path.join(configDir, OPERATIONS_LEDGER_FILENAME);
+    if (existsSync(legacyPath) && !existsSync(ledgerPath)) {
+      try {
+        mkdirSync(stateDir, { recursive: true });
+        renameSync(legacyPath, ledgerPath);
+      } catch {
+        /* Migration best-effort; fall back to fresh ledger if rename fails. */
+      }
+    }
+    this.ledgerPath = ledgerPath;
   }
 
   async read(): Promise<Result<OperationsLedgerData>> {

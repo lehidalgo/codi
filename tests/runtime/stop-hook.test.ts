@@ -121,14 +121,14 @@ describe("processStopHook", () => {
     expect(result.turnId).toBeGreaterThan(0);
   });
 
-  it("ignores markers with invalid types (parser is conservative)", () => {
+  it("promotes markers with non-canonical types to OBSERVATION", () => {
     const result = processStopHook(handle, {
       sessionId: "s",
       cwd: tmp,
       agentTextOverride: '|FAKETYPE: "x"|\n|RULE: "real"|',
     });
-    expect(result.markerCount).toBe(1);
-    expect(result.capturesInserted).toBe(1);
+    expect(result.markerCount).toBe(2);
+    expect(result.capturesInserted).toBe(2);
   });
 });
 

@@ -5,7 +5,7 @@
  *
  *     |TYPE: "verbatim content"|
  *
- * - TYPE   one of the 10 canonical capture types (see CAPTURE_TYPES below)
+ * - TYPE   one of the canonical capture types (see CAPTURE_TYPES below)
  * - content   short, single-line, double-quoted; embedded quotes are escaped \"
  *
  * Multiple markers per turn are allowed and processed in order. Anything that
@@ -27,6 +27,7 @@ export const CAPTURE_TYPES = [
   "QUESTION",
   "PROMPT",
   "CORRECTION",
+  "DEFECT",
 ] as const;
 
 export type CaptureType = (typeof CAPTURE_TYPES)[number];
@@ -37,6 +38,20 @@ export interface ParsedMarker {
   readonly rawMarker: string;
   /** Byte offset within the source text where the marker started. */
   readonly offset: number;
+}
+
+/** Marker that matched the shape but used a non-canonical TYPE. */
+export interface InvalidMarker {
+  readonly type: string;
+  readonly content: string;
+  readonly rawMarker: string;
+  readonly offset: number;
+  readonly reason: "unknown_type";
+}
+
+export interface ParseResult {
+  readonly valid: ParsedMarker[];
+  readonly invalid: InvalidMarker[];
 }
 
 const TYPE_ALTERNATION = CAPTURE_TYPES.join("|");
@@ -51,11 +66,58 @@ const TYPE_ALTERNATION = CAPTURE_TYPES.join("|");
 //   - closing pipe
 const MARKER_RE = new RegExp(String.raw`\|(${TYPE_ALTERNATION}):\s+"((?:\\"|[^"])*)"\|`, "g");
 
+// Loose pattern that detects marker-shaped tokens regardless of TYPE. Used
+// to surface non-canonical types as warnings instead of silently dropping
+// them (long-standing footgun: agents emit |DEFECT: ...| or |BUG: ...| and
+// nothing happens).
+const LOOSE_MARKER_RE = /\|([A-Z][A-Z_]*):\s+"((?:\\"|[^"])*)"\|/g;
+
 /**
  * Parse all valid markers from `text`. Order is preserved. Invalid candidates
- * are silently dropped.
+ * are silently dropped — use {@link parseMarkersWithReport} when you need to
+ * surface non-canonical types as warnings.
  */
 export function parseMarkers(text: string): ParsedMarker[] {
+  return parseMarkersWithReport(text).valid;
+}
+
+/**
+ * Parse markers and return both valid markers and shape-matching but
+ * non-canonical entries. Callers can log the latter as warnings to detect
+ * agent-side typos (e.g. `|BUG: ...|` instead of `|DEFECT: ...|`).
+ */
+export function parseMarkersWithReport(text: string): ParseResult {
+  const valid: ParsedMarker[] = [];
+  const invalid: InvalidMarker[] = [];
+  for (const match of text.matchAll(LOOSE_MARKER_RE)) {
+    const type = match[1] ?? "";
+    const rawContent = match[2] ?? "";
+    const content = unescape(rawContent);
+    const offset = match.index ?? 0;
+    const rawMarker = match[0];
+    if (isValidCaptureType(type)) {
+      valid.push({ type, content, rawMarker, offset });
+    } else {
+      invalid.push({ type, content, rawMarker, offset, reason: "unknown_type" });
+    }
+  }
+  return { valid, invalid };
+}
+
+function unescape(raw: string): string {
+  return raw.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+}
+
+export function isValidCaptureType(t: string): t is CaptureType {
+  return (CAPTURE_TYPES as readonly string[]).includes(t);
+}
+
+/**
+ * Strict-pattern variant kept for callers that only want valid markers without
+ * paying the cost of also reporting invalid ones. Behaviour is identical to
+ * the original `parseMarkers` exported in v1 of this module.
+ */
+export function parseMarkersStrict(text: string): ParsedMarker[] {
   const found: ParsedMarker[] = [];
   for (const match of text.matchAll(MARKER_RE)) {
     const type = match[1] as CaptureType;
@@ -69,12 +131,4 @@ export function parseMarkers(text: string): ParsedMarker[] {
     });
   }
   return found;
-}
-
-function unescape(raw: string): string {
-  return raw.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-}
-
-export function isValidCaptureType(t: string): t is CaptureType {
-  return (CAPTURE_TYPES as readonly string[]).includes(t);
 }

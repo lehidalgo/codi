@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Logger } from "../core/output/logger.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -24,6 +25,34 @@ interface BrainUiData {
   readonly port: number;
   readonly url: string;
   readonly pid?: number;
+}
+
+/**
+ * Resolve the brain-ui server entrypoint and its runner.
+ *
+ * Production (the cli.js was built with tsup): a bundled sibling
+ * `brain-ui-server.js` is colocated next to the compiled cli.js. Plain Node
+ * can run it without any experimental flag.
+ *
+ * Development (running `tsx src/cli.ts` directly): there is no dist sibling,
+ * so we fall back to the source `.ts` script driven by the locally installed
+ * tsx binary. This avoids depending on Node 24's `--experimental-strip-types`
+ * which does not resolve `.js` import specifiers to `.ts` source files.
+ */
+function resolveBrainUiRunner(): { runner: string; script: string } {
+  const distSibling = fileURLToPath(new URL("./brain-ui-server.js", import.meta.url));
+  if (existsSync(distSibling)) {
+    return { runner: process.execPath, script: distSibling };
+  }
+  const repoRoot = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+  const srcScript = resolve(repoRoot, "src", "runtime", "brain-ui", "cli-server.ts");
+  const tsxBin = resolve(repoRoot, "node_modules", ".bin", "tsx");
+  if (!existsSync(tsxBin)) {
+    throw new Error(
+      `Brain UI runner unavailable: dist sibling not found at ${distSibling} and tsx not installed at ${tsxBin}. Run \`pnpm build\` or \`pnpm install\`.`,
+    );
+  }
+  return { runner: tsxBin, script: srcScript };
 }
 
 interface BrainUiFlags {
@@ -53,12 +82,11 @@ export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult
     });
   }
 
-  // Sprint 4.c — spawn detached so the parent CLI exits cleanly.
-  const args: string[] = [
-    resolve(process.cwd(), "scripts", "runtime", "brain-ui-server.ts"),
-    "--port",
-    String(port),
-  ];
+  // Resolve runner + script path. Production: bundled sibling in dist (plain
+  // .js, runs on plain node). Dev: source .ts via local tsx. This keeps the
+  // spawn flag-free and decouples it from process.cwd().
+  const resolved = resolveBrainUiRunner();
+  const args: string[] = [resolved.script, "--port", String(port)];
   if (flags.brainPath) {
     args.push("--brain-path", flags.brainPath);
   }
@@ -66,7 +94,7 @@ export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult
     args.push("--foreground");
   }
 
-  const child = spawn(process.execPath, ["--experimental-strip-types", ...args], {
+  const child = spawn(resolved.runner, args, {
     detached: !flags.foreground,
     stdio: flags.foreground ? "inherit" : "ignore",
   });

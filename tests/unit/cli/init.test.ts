@@ -166,7 +166,7 @@ describe("init command handler", () => {
   it("creates operations ledger", async () => {
     await initHandler(tmpDir, { json: true });
 
-    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "operations.json");
+    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "state", "operations.json");
     const ledger = JSON.parse(await fs.readFile(ledgerPath, "utf-8"));
     expect(ledger.version).toBe("1");
     expect(ledger.initialized).toBeDefined();

@@ -155,6 +155,22 @@ export const ARTIFACT_MANIFEST_FILENAME = "artifact-manifest.json";
 export const REGISTRY_INDEX_FILENAME = "index.json";
 /** Name of the directory that stores configuration backups. */
 export const BACKUPS_DIR = "backups";
+/**
+ * Name of the directory that holds PRECIOUS persistent state — never touched
+ * by `codi init`, `codi generate`, or any orphan-pruning logic. Anything that
+ * lives under `<configDir>/<STATE_DIR>/` survives every regeneration and is
+ * the single home for runtime state (brain DB, ledgers, scaffolder state).
+ */
+export const STATE_DIR = "state";
+/** Filename of the canonical brain SQLite database. */
+export const BRAIN_DB_FILENAME = "brain.db";
+/**
+ * Name of the directory under `~/.codi/` that stores OUT-OF-TREE archives —
+ * snapshots taken before destructive operations (e.g. `clean --all`) that
+ * would otherwise wipe `.codi/backups/` along with everything else. Lives in
+ * the user's home so it survives any deletion under the project root.
+ */
+export const EXTERNAL_ARCHIVE_DIR = "archive";
 
 /**
  * Directories under .codi/ that are NEVER walked by the backup snapshotter.

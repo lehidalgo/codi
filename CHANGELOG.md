@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Brain durability + capture grammar refinements
+
+#### Added
+
+- **`.codi/state/` subdir** for precious persistent data (`brain.db`, `operations.json`, `state.json`). Anything under `state/` is never touched by `codi init`, `codi generate`, or orphan pruning.
+- **External archive on `clean --all`** — snapshots the full `.codi/` to `~/.codi/archive/<sha-basename>/<timestamp>/` before the wipe so brain history survives uninstalls.
+- **`DEFECT` capture type** added to the canonical set (now 11 types) — aligns with the existing `DEFECT-XXX` nomenclature used internally.
+- **Auto-promotion of non-canonical markers** — markers with shape `|TYPE: "..."|` whose TYPE is unknown are now persisted as `OBSERVATION` with the original type preserved in `content` (`[unknown_type=<RAW>]`) and `raw_marker`. Stderr warning emitted for visibility.
+- **Per-marker `file_paths` auto-extraction** in `persist.ts` — mines path-like tokens from each marker's content (filtering semver, IPs).
+
+#### Changed
+
+- **`brain.db` / `operations.json` / `state.json` paths** moved from `.codi/<file>` to `.codi/state/<file>`. Auto-migration on first read: legacy files are renamed transparently the first time the resolver runs.
+- **`capture-everything` rule v4** — documents the auto-promote behaviour, lists `DEFECT` and the canonical synonyms to avoid (`BUG`, `ERROR`, `NOTE`, `TODO`).
+- **Brain UI server entrypoint** moved from `scripts/runtime/brain-ui-server.ts` to `src/runtime/brain-ui/cli-server.ts` and bundled into `dist/brain-ui-server.js` so the spawn runs plain Node — no `--experimental-strip-types`.
+
+#### Fixed
+
+- **`codi brain ui` spawn died silently on Node 24** — the detached child invoked `process.execPath --experimental-strip-types` against a `.ts` script importing `.js` specifiers, which Node 24 cannot resolve. The CLI now spawns the bundled `.js` from `dist/` and falls back to the local `tsx` binary when running from source.
+
 ### v3 zero closure (F1–F11)
 
 The eleven-step closure that takes Codi v3 from "v2-shaped legacy underneath" to a brain-canonical, devloop-dissolved zero-mode core. Single backend (SQLite), single CLI namespace (`codi workflow ...`), single capture grammar (Iron Law 9). All tests green: 3395 pass + 2 skipped across 281 files.
