@@ -84,7 +84,7 @@ describe("brain-ui / healthz", () => {
       expect(res.status).toBe(200);
       const body = (await res.json()) as Record<string, unknown>;
       expect(body["ok"]).toBe(true);
-      expect(body["schema_version"]).toBe(1);
+      expect(body["schema_version"]).toBe(2);
       expect(typeof body["brain_path"]).toBe("string");
     } finally {
       t.cleanup();

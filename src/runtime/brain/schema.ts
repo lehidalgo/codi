@@ -181,6 +181,26 @@ export const workflowEvents = sqliteTable(
   }),
 );
 
+// Workflow definitions (added in schema v2). Phases / gates / transitions /
+// flags per workflow type, seeded from src/templates/workflows/*.yaml.
+// `definition` is the JSON blob source of truth (F1 shape).
+export const workflowDefinitions = sqliteTable(
+  "workflow_definitions",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    version: integer("version").notNull(),
+    managedBy: text("managed_by").notNull(), // 'codi' | 'user'
+    definition: text("definition").notNull(),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => ({
+    idxManagedBy: index("idx_workflow_definitions_managed_by").on(t.managedBy),
+  }),
+);
+
 // Raw SQL for FTS5 + vec0 virtual tables — drizzle does not generate these.
 // Applied by migrate.ts after the structural migration runs.
 export const FTS5_AND_VEC_SQL = sql`

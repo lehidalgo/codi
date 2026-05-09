@@ -41,6 +41,26 @@ describe("brain / schema bootstrap", () => {
         expect(names).toContain("_codi_schema_version");
         expect(names).toContain("workflow_runs");
         expect(names).toContain("workflow_events");
+        expect(names).toContain("workflow_definitions");
+      } finally {
+        handle.close();
+      }
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("schema_version reflects v2 (workflow_definitions added)", () => {
+    const t = tmpDb();
+    try {
+      const handle = openBrain({ dbPath: t.path });
+      try {
+        const r = applyMigrations(handle.raw);
+        expect(r.applied).toContain(2);
+        const v = handle.raw
+          .prepare("SELECT MAX(version) as v FROM _codi_schema_version")
+          .get() as { v: number };
+        expect(v.v).toBe(2);
       } finally {
         handle.close();
       }

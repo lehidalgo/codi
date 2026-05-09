@@ -178,9 +178,24 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
     INSERT INTO prompts_fts(prompts_fts, rowid, text) VALUES('delete', old.prompt_id, old.text);
     INSERT INTO prompts_fts(rowid, text) VALUES (new.prompt_id, new.text);
   END`,
+  // Workflow definitions — phases, gates, transitions, flags per workflow type.
+  // Seeded at codi init from src/templates/workflows/*.yaml; user-extensible
+  // via `codi workflow create`. The `definition` blob is the canonical
+  // structure; runtime reads it for phase enforcement and gate selection.
+  `CREATE TABLE IF NOT EXISTS workflow_definitions (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    description TEXT NOT NULL,
+    version     INTEGER NOT NULL,
+    managed_by  TEXT NOT NULL,
+    definition  TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 /**
  * Apply migrations to bring the brain DB up to CURRENT_SCHEMA_VERSION.
