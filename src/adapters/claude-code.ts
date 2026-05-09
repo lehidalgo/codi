@@ -332,8 +332,25 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
     settings.permissions = { deny };
   }
 
-  // Heartbeat hooks — always present so the feedback loop works out of the box.
-  // Users who need personal hooks must use .claude/settings.local.json (auto-merged by Claude Code).
+  // Two layers of hooks coexist:
+  //
+  // 1. Legacy heartbeat (InstructionsLoaded skill-tracker + Stop skill-observer)
+  //    — narrow purpose: skill-load tracking + the legacy
+  //    `[CODI-OBSERVATION:...]` filesystem feedback channel. Kept intact so
+  //    in-flight users do not regress.
+  //
+  // 2. F6/F7 brain pipeline (UserPromptSubmit + PreToolUse + PostToolUse +
+  //    Stop) — the canonical observability + capture + Iron Law channel.
+  //    Each event invokes `codi hook <name>` which the codi binary
+  //    dispatches to the matching processX orchestrator. The PROJECT_CLI
+  //    binary is on the user's PATH because consumers `npm install -g codi`
+  //    (or run via npx); no plugin pattern needed.
+  //
+  // Multiple hook entries per event are allowed by Claude Code; the
+  // legacy and F6/F7 Stop hooks coexist on the same event.
+  //
+  // Users who need personal hooks must use .claude/settings.local.json
+  // (auto-merged by Claude Code).
   //
   // Commands resolve the script via $CLAUDE_PROJECT_DIR (officially guaranteed for every
   // hook event, per https://code.claude.com/docs/en/hooks) so they survive session CWD drift
@@ -344,6 +361,13 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
   const launcherRef = `${projectRootRef}/${hooksDir}/${LAUNCHER_FILENAME}`;
   const trackerRef = `${projectRootRef}/${hooksDir}/${SKILL_TRACKER_FILENAME}`;
   const observerRef = `${projectRootRef}/${hooksDir}/${SKILL_OBSERVER_FILENAME}`;
+
+  // F6/F7 hook command builder — `cd` into project root so the brain
+  // resolver (DEFECT-008) walks up from the project's `.codi/` and we
+  // do not accidentally hit the home brain. Stdin is forwarded
+  // unchanged so the codi subcommand sees the Claude Code payload.
+  const codiHook = (name: string): string => `cd ${projectRootRef} && codi hook ${name}`;
+
   settings.hooks = {
     InstructionsLoaded: [
       {
@@ -358,6 +382,42 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
         ],
       },
     ],
+    UserPromptSubmit: [
+      {
+        matcher: "",
+        hooks: [
+          {
+            type: "command",
+            command: codiHook("user-prompt-submit"),
+            timeout: 10,
+          },
+        ],
+      },
+    ],
+    PreToolUse: [
+      {
+        matcher: "Edit|Write|NotebookEdit|Bash",
+        hooks: [
+          {
+            type: "command",
+            command: codiHook("pre-tool-use"),
+            timeout: 30,
+          },
+        ],
+      },
+    ],
+    PostToolUse: [
+      {
+        matcher: "Edit|Write|NotebookEdit|Bash|Read",
+        hooks: [
+          {
+            type: "command",
+            command: codiHook("post-tool-use"),
+            timeout: 15,
+          },
+        ],
+      },
+    ],
     Stop: [
       {
         matcher: "",
@@ -365,6 +425,11 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
           {
             type: "command",
             command: launcherCommand(launcherRef, observerRef),
+            timeout: 15,
+          },
+          {
+            type: "command",
+            command: codiHook("stop"),
             timeout: 15,
           },
         ],

@@ -296,11 +296,42 @@ export const codexAdapter: AgentAdapter = {
     const codexProjectRootRef = '"$(git rev-parse --show-toplevel 2>/dev/null || echo .)"';
     const launcherRef = `${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${LAUNCHER_FILENAME}`;
     const observerRef = `${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+    // F6/F7 hook command builder for Codex — same pattern as the Claude
+    // Code adapter, but resolves project root via git toplevel because
+    // Codex injects no project-dir env. `cd` so the brain resolver
+    // (DEFECT-008) walks up from the project's `.codi/` correctly.
+    const codiHook = (name: string): string => `cd ${codexProjectRootRef} && codi hook ${name}`;
     const codexHooks = {
+      UserPromptSubmit: [
+        {
+          type: "command",
+          command: codiHook("user-prompt-submit"),
+          timeout: 10,
+        },
+      ],
+      PreToolUse: [
+        {
+          type: "command",
+          command: codiHook("pre-tool-use"),
+          timeout: 30,
+        },
+      ],
+      PostToolUse: [
+        {
+          type: "command",
+          command: codiHook("post-tool-use"),
+          timeout: 15,
+        },
+      ],
       Stop: [
         {
           type: "command",
           command: launcherCommand(launcherRef, observerRef),
+          timeout: 15,
+        },
+        {
+          type: "command",
+          command: codiHook("stop"),
           timeout: 15,
         },
       ],
