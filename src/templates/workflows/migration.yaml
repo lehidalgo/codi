@@ -1,0 +1,18 @@
+id: migration
+name: Migration
+description: Schema or data migration with rollback path required
+version: 1
+phases:
+  intent: { gates: [task_described], next: [plan, abandoned] }
+  plan: { gates: [scope_files_listed, plan_artifact_exists], next: [execute, abandoned] }
+  execute: { gates: [], next: [data-validation, execute, abandoned] }
+  data-validation: { gates: [], next: [verify, execute, abandoned] }
+  verify:
+    {
+      gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified],
+      next: [done, execute, abandoned],
+    }
+  done: { gates: [], next: [] }
+  abandoned: { gates: [], next: [] }
+flags:
+  rollback_required: true

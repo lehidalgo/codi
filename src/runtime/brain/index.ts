@@ -11,3 +11,9 @@ export {
 } from "./db.js";
 export { applyMigrations, CURRENT_SCHEMA_VERSION } from "./migrate.js";
 export * as schema from "./schema.js";
+export {
+  seedWorkflowDefinitions,
+  readBuiltinDefinitions,
+  type WorkflowDefinitionShape,
+  type SeedResult,
+} from "./seed-workflows.js";

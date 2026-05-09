@@ -1,0 +1,18 @@
+id: refactor
+name: Refactor
+description: Deepen a module without behavior change, baseline-preserved
+version: 1
+phases:
+  intent: { gates: [task_described], next: [baseline, abandoned] }
+  baseline: { gates: [], next: [plan, abandoned] }
+  plan: { gates: [scope_files_listed, plan_artifact_exists], next: [execute, baseline, abandoned] }
+  execute: { gates: [], next: [verify, execute, abandoned] }
+  verify:
+    {
+      gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified],
+      next: [done, execute, abandoned],
+    }
+  done: { gates: [], next: [] }
+  abandoned: { gates: [], next: [] }
+flags:
+  no_behavior_change: true

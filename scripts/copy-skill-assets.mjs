@@ -70,3 +70,12 @@ if (existsSync(CONSOLIDATION_SRC)) {
   const tmplCount = readdirSync(CONSOLIDATION_SRC).filter((f) => f.endsWith(".md.tmpl")).length;
   console.log(`Copied ${tmplCount} consolidation prompt templates to ${CONSOLIDATION_DEST}`);
 }
+
+// Copy workflow definition YAMLs (F2 of v3 zero closure).
+const WORKFLOWS_SRC = "src/templates/workflows";
+const WORKFLOWS_DEST = "dist/templates/workflows";
+if (existsSync(WORKFLOWS_SRC)) {
+  cpSync(WORKFLOWS_SRC, WORKFLOWS_DEST, { recursive: true });
+  const yamlCount = readdirSync(WORKFLOWS_SRC).filter((f) => f.endsWith(".yaml")).length;
+  console.log(`Copied ${yamlCount} workflow definitions to ${WORKFLOWS_DEST}`);
+}
