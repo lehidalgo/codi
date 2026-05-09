@@ -17,7 +17,10 @@
  */
 
 import type { BrainHandle } from "../brain/index.js";
+import { reduce } from "../reducer.js";
+import { BrainEventLog } from "../brain-event-log.js";
 import { ensureSession, latestTurnId, openTurn, recordPrompt, recordToolCall } from "./session.js";
+import { ingestAgentMemory } from "./agent-memory.js";
 
 export interface ToolCallInput {
   readonly sessionId: string;
@@ -35,6 +38,8 @@ export interface ToolCallResult {
   readonly callId: number;
   readonly turnId: number;
   readonly status: "ok" | "error" | "blocked";
+  readonly memoryCaptured: boolean;
+  readonly memoryCaptureId?: number;
 }
 
 export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): ToolCallResult {
@@ -77,7 +82,51 @@ export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): T
       : {}),
   } as const;
   const callId = recordToolCall(raw, callArgs);
-  return { callId, turnId, status };
+
+  // Auto-ingest Claude Code's per-project memory writes losslessly into
+  // captures so consolidation and dashboards see what the agent persists
+  // outside the IronLaw 9 marker channel. No-ops for non-memory tools.
+  const promptIdRow = raw.prepare(`SELECT prompt_id FROM turns WHERE turn_id = ?`).get(turnId) as
+    | { prompt_id?: number }
+    | undefined;
+  const wfContext = readActiveWorkflowContext();
+  const memory = ingestAgentMemory(raw, {
+    sessionId: input.sessionId,
+    turnId,
+    promptId: promptIdRow?.prompt_id ?? 0,
+    toolName: input.toolName,
+    toolInput: input.toolInput,
+    ...(wfContext.workflowId !== undefined ? { workflowId: wfContext.workflowId } : {}),
+    ...(wfContext.phase !== undefined ? { phase: wfContext.phase } : {}),
+  });
+
+  return {
+    callId,
+    turnId,
+    status,
+    memoryCaptured: memory.ingested,
+    ...(memory.captureId !== undefined ? { memoryCaptureId: memory.captureId } : {}),
+  };
+}
+
+function readActiveWorkflowContext(): {
+  readonly workflowId?: string;
+  readonly phase?: string;
+} {
+  try {
+    const log = BrainEventLog.open();
+    try {
+      const id = log.getActiveWorkflowId();
+      if (!id) return {};
+      const events = log.loadEvents(id);
+      if (events.length === 0) return { workflowId: id };
+      return { workflowId: id, phase: reduce(events).current_phase };
+    } finally {
+      log.dispose();
+    }
+  } catch {
+    return {};
+  }
 }
 
 function inferStatus(response: unknown): "ok" | "error" | "blocked" {
@@ -89,6 +138,9 @@ function inferStatus(response: unknown): "ok" | "error" | "blocked" {
     const s = r["status"] as string;
     if (s === "blocked" || s === "error" || s === "ok") return s;
   }
+  // Claude Code shape: { interrupted, isError, stderr }
+  if (r["isError"] === true) return "error";
+  if (r["interrupted"] === true) return "error";
   if (r["error"] !== undefined && r["error"] !== null) return "error";
   if (r["success"] === false) return "error";
   return "ok";
@@ -111,6 +163,10 @@ function extractError(response: unknown): string {
   const e = r["error"];
   if (typeof e === "string") return truncate(e, 500);
   if (typeof r["reason"] === "string") return truncate(r["reason"] as string, 500);
+  // Claude Code shape uses stderr for the failure detail.
+  if (typeof r["stderr"] === "string" && (r["stderr"] as string).length > 0) {
+    return truncate(r["stderr"] as string, 500);
+  }
   return "unknown";
 }
 

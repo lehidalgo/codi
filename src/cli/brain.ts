@@ -1,6 +1,8 @@
 import type { Command } from "commander";
 import { spawn } from "node:child_process";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { resolve, join } from "node:path";
 import { Logger } from "../core/output/logger.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -8,6 +10,8 @@ import { initFromOptions, handleOutput } from "./shared.js";
 import { resolveAttachOrSpawn, DEFAULT_BRAIN_UI_PORT } from "../runtime/brain-ui/index.js";
 import { openBrain, applyMigrations, defaultBrainPath } from "../runtime/brain/index.js";
 import { generatePackage, packageToJson } from "../runtime/consolidate/index.js";
+import { ingestMemoryFile } from "../runtime/capture/agent-memory.js";
+import { ensureSession, openTurn, recordPrompt } from "../runtime/capture/session.js";
 import type { GlobalOptions } from "./shared.js";
 import type { CommandResult } from "../core/output/types.js";
 
@@ -107,6 +111,160 @@ export async function brainExportHandler(
   }
 }
 
+// ─── Retroactive memory ingestion ─────────────────────────────────────────
+
+interface IngestMemoryFlags {
+  readonly agent?: string;
+  readonly dryRun?: boolean;
+  readonly brainPath?: string;
+}
+
+interface IngestMemoryData {
+  readonly scanned: number;
+  readonly inserted: number;
+  readonly duplicates: number;
+  readonly perAgent: Record<string, { scanned: number; inserted: number; duplicates: number }>;
+  readonly dryRun: boolean;
+}
+
+interface AgentMemorySource {
+  readonly agentType: string;
+  /** Returns absolute paths to .md / .json memory files. */
+  readonly listFiles: () => string[];
+}
+
+/**
+ * Walk the per-agent memory layouts and yield absolute file paths.
+ * Provider-aware so we can extend to Codex without touching the CLI.
+ */
+function discoverAgentMemorySources(filterAgent?: string): AgentMemorySource[] {
+  const sources: AgentMemorySource[] = [];
+
+  // Claude Code: ~/.claude/projects/<slug>/memory/*.md  (skip MEMORY.md indices)
+  const claudeRoot = join(homedir(), ".claude", "projects");
+  sources.push({
+    agentType: "claude-code",
+    listFiles: () => {
+      if (!existsSync(claudeRoot)) return [];
+      const out: string[] = [];
+      for (const slug of readdirSync(claudeRoot)) {
+        const memoryDir = join(claudeRoot, slug, "memory");
+        if (!existsSync(memoryDir)) continue;
+        for (const f of readdirSync(memoryDir)) {
+          if (!f.endsWith(".md")) continue;
+          if (f === "MEMORY.md") continue;
+          out.push(join(memoryDir, f));
+        }
+      }
+      return out;
+    },
+  });
+
+  // Codex: ~/.codex/memories/*.{md,json}
+  const codexRoot = join(homedir(), ".codex", "memories");
+  sources.push({
+    agentType: "codex",
+    listFiles: () => {
+      if (!existsSync(codexRoot)) return [];
+      return readdirSync(codexRoot)
+        .filter((f) => f.endsWith(".md") || f.endsWith(".json"))
+        .map((f) => join(codexRoot, f));
+    },
+  });
+
+  return filterAgent ? sources.filter((s) => s.agentType === filterAgent) : sources;
+}
+
+export async function brainIngestMemoryHandler(
+  flags: IngestMemoryFlags,
+): Promise<CommandResult<IngestMemoryData>> {
+  const log = Logger.getInstance();
+  const handle = openBrain({ ...(flags.brainPath ? { dbPath: flags.brainPath } : {}) });
+  try {
+    applyMigrations(handle.raw);
+
+    // Synthesise a session + prompt + turn so the captures have anchors.
+    // The retroactive scan is treated as one bulk import "session".
+    const sessionId = `ingest-memory-${Date.now()}`;
+    if (!flags.dryRun) {
+      ensureSession(handle.raw, {
+        sessionId,
+        projectId: "_retroactive_",
+        agentType: "codi-cli",
+        workingDir: process.cwd(),
+      });
+    }
+    const promptInfo = flags.dryRun
+      ? { promptId: 0, turnNo: 0 }
+      : recordPrompt(handle.raw, {
+          sessionId,
+          text: `(retroactive memory ingest at ${new Date().toISOString()})`,
+        });
+    const turnId = flags.dryRun
+      ? 0
+      : openTurn(handle.raw, {
+          sessionId,
+          promptId: promptInfo.promptId,
+          turnNo: promptInfo.turnNo,
+        });
+
+    let totalScanned = 0;
+    let totalInserted = 0;
+    let totalDup = 0;
+    const perAgent: Record<string, { scanned: number; inserted: number; duplicates: number }> = {};
+
+    for (const src of discoverAgentMemorySources(flags.agent)) {
+      const stats = { scanned: 0, inserted: 0, duplicates: 0 };
+      for (const filePath of src.listFiles()) {
+        if (!statSync(filePath).isFile()) continue;
+        stats.scanned += 1;
+        if (flags.dryRun) continue;
+        const content = readFileSync(filePath, "utf-8");
+        const result = ingestMemoryFile(handle.raw, {
+          sessionId,
+          turnId,
+          promptId: promptInfo.promptId,
+          agentType: src.agentType,
+          filePath,
+          content,
+        });
+        if (result.ingested) stats.inserted += 1;
+        else if (result.skippedReason === "duplicate") stats.duplicates += 1;
+      }
+      perAgent[src.agentType] = stats;
+      totalScanned += stats.scanned;
+      totalInserted += stats.inserted;
+      totalDup += stats.duplicates;
+      log.info(
+        `${src.agentType}: scanned ${stats.scanned}, inserted ${stats.inserted}, duplicates ${stats.duplicates}` +
+          (flags.dryRun ? " (dry-run)" : ""),
+      );
+    }
+
+    log.info(
+      `Total: scanned ${totalScanned}, inserted ${totalInserted}, duplicates ${totalDup}` +
+        (flags.dryRun ? " (dry-run)" : ""),
+    );
+
+    return createCommandResult({
+      success: true,
+      command: "brain ingest-memory",
+      data: {
+        scanned: totalScanned,
+        inserted: totalInserted,
+        duplicates: totalDup,
+        perAgent,
+        dryRun: flags.dryRun ?? false,
+      },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  } finally {
+    handle.close();
+  }
+}
+
+// ─── Command registration ─────────────────────────────────────────────────
+
 export function registerBrainCommand(program: Command): void {
   const brain = program.command("brain").description("Brain DB inspection + export");
 
@@ -131,6 +289,24 @@ export function registerBrainCommand(program: Command): void {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);
       const result = await brainExportHandler(opts);
+      handleOutput(result, globalOpts);
+    });
+
+  brain
+    .command("ingest-memory")
+    .description(
+      "Retroactively scan agent memory directories (~/.claude, ~/.codex, ...) and import any unseen entries into captures",
+    )
+    .option(
+      "--agent <agent>",
+      "limit to a specific agent_type (claude-code | codex). Default: all known agents",
+    )
+    .option("--brain-path <path>", "override brain DB path")
+    .option("--dry-run", "scan + report counts but do not insert into captures")
+    .action(async (opts: IngestMemoryFlags) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result = await brainIngestMemoryHandler(opts);
       handleOutput(result, globalOpts);
     });
 }
