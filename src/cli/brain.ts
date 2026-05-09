@@ -10,7 +10,11 @@ import { initFromOptions, handleOutput } from "./shared.js";
 import { resolveAttachOrSpawn, DEFAULT_BRAIN_UI_PORT } from "../runtime/brain-ui/index.js";
 import { openBrain, applyMigrations, defaultBrainPath } from "../runtime/brain/index.js";
 import { generatePackage, packageToJson } from "../runtime/consolidate/index.js";
-import { ingestMemoryFile } from "../runtime/capture/agent-memory.js";
+import {
+  ingestMemoryFile,
+  SUPPORTED_AGENT_TYPES,
+  isSupportedAgentType,
+} from "../runtime/capture/agent-memory.js";
 import { ensureSession, openTurn, recordPrompt } from "../runtime/capture/session.js";
 import type { GlobalOptions } from "./shared.js";
 import type { CommandResult } from "../core/output/types.js";
@@ -128,14 +132,17 @@ interface IngestMemoryData {
 }
 
 interface AgentMemorySource {
-  readonly agentType: string;
+  readonly agentType: (typeof SUPPORTED_AGENT_TYPES)[number];
   /** Returns absolute paths to .md / .json memory files. */
   readonly listFiles: () => string[];
 }
 
 /**
- * Walk the per-agent memory layouts and yield absolute file paths.
- * Provider-aware so we can extend to Codex without touching the CLI.
+ * Walk the per-agent memory layouts for the closed set of supported
+ * agents (claude-code, codex). Other agents in the codi matrix
+ * (gemini / cursor / windsurf / copilot) do not expose a structured
+ * per-project memory layout we can ingest losslessly — they degrade
+ * gracefully here by simply not contributing a source.
  */
 function discoverAgentMemorySources(filterAgent?: string): AgentMemorySource[] {
   const sources: AgentMemorySource[] = [];
@@ -179,6 +186,31 @@ export async function brainIngestMemoryHandler(
   flags: IngestMemoryFlags,
 ): Promise<CommandResult<IngestMemoryData>> {
   const log = Logger.getInstance();
+
+  if (flags.agent !== undefined && !isSupportedAgentType(flags.agent)) {
+    return createCommandResult({
+      success: false,
+      command: "brain ingest-memory",
+      data: {
+        scanned: 0,
+        inserted: 0,
+        duplicates: 0,
+        perAgent: {},
+        dryRun: flags.dryRun ?? false,
+      },
+      errors: [
+        {
+          code: "UNSUPPORTED_AGENT",
+          message: `Agent '${flags.agent}' does not expose a structured memory layout. Supported: ${SUPPORTED_AGENT_TYPES.join(", ")}.`,
+          hint: "Pass --agent claude-code or --agent codex, or omit --agent to scan both.",
+          severity: "error",
+          context: { requested: flags.agent, supported: [...SUPPORTED_AGENT_TYPES] },
+        },
+      ],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
   const handle = openBrain({ ...(flags.brainPath ? { dbPath: flags.brainPath } : {}) });
   try {
     applyMigrations(handle.raw);
@@ -295,11 +327,11 @@ export function registerBrainCommand(program: Command): void {
   brain
     .command("ingest-memory")
     .description(
-      "Retroactively scan agent memory directories (~/.claude, ~/.codex, ...) and import any unseen entries into captures",
+      `Retroactively scan agent memory directories and import any unseen entries into captures. Supported agents: ${SUPPORTED_AGENT_TYPES.join(", ")}. Other agents (gemini / cursor / windsurf / copilot) degrade gracefully — they do not expose a structured memory layout.`,
     )
     .option(
       "--agent <agent>",
-      "limit to a specific agent_type (claude-code | codex). Default: all known agents",
+      `limit to one of: ${SUPPORTED_AGENT_TYPES.join(" | ")}. Default: scan all supported agents`,
     )
     .option("--brain-path <path>", "override brain DB path")
     .option("--dry-run", "scan + report counts but do not insert into captures")

@@ -96,6 +96,7 @@ export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): T
     promptId: promptIdRow?.prompt_id ?? 0,
     toolName: input.toolName,
     toolInput: input.toolInput,
+    ...(input.agentType !== undefined ? { agentType: input.agentType } : {}),
     ...(wfContext.workflowId !== undefined ? { workflowId: wfContext.workflowId } : {}),
     ...(wfContext.phase !== undefined ? { phase: wfContext.phase } : {}),
   });

@@ -281,6 +281,69 @@ Do not over-engineer.
   });
 });
 
+describe("Graceful degradation for unsupported agents", () => {
+  it("SUPPORTED_AGENT_TYPES is locked to claude-code + codex", async () => {
+    const { SUPPORTED_AGENT_TYPES } = await import("#src/runtime/capture/agent-memory.js");
+    expect([...SUPPORTED_AGENT_TYPES].sort()).toEqual(["claude-code", "codex"]);
+  });
+
+  it.each(["gemini", "cursor", "windsurf", "copilot", "copilot-cli", "unknown"])(
+    "ingestAgentMemory no-ops cleanly for unsupported agent_type=%s",
+    (agentType) => {
+      const { sessionId, promptId, turnId } = seedTurn();
+      const result = ingestAgentMemory(handle.raw, {
+        sessionId,
+        promptId,
+        turnId,
+        agentType,
+        toolName: "Write",
+        toolInput: {
+          // Even if the path matches Claude's layout exactly, an unsupported
+          // agent_type must NOT trigger ingestion — graceful degradation.
+          file_path: "/Users/x/.claude/projects/p/memory/foo.md",
+          content: "---\ntype: feedback\n---\nbody",
+        },
+      });
+      expect(result.ingested).toBe(false);
+      expect(result.skippedReason).toContain("unsupported agent_type");
+      const count = handle.raw.prepare(`SELECT COUNT(*) AS c FROM captures`).get() as { c: number };
+      expect(count.c).toBe(0);
+    },
+  );
+
+  it("isSupportedAgentType helper accepts only the closed set", async () => {
+    const { isSupportedAgentType } = await import("#src/runtime/capture/agent-memory.js");
+    expect(isSupportedAgentType("claude-code")).toBe(true);
+    expect(isSupportedAgentType("codex")).toBe(true);
+    expect(isSupportedAgentType("gemini")).toBe(false);
+    expect(isSupportedAgentType("cursor")).toBe(false);
+    expect(isSupportedAgentType(undefined)).toBe(false);
+    expect(isSupportedAgentType("")).toBe(false);
+  });
+
+  it("resolveMemoryProvider returns null for unsupported agentType even when path matches", async () => {
+    const { resolveMemoryProvider } = await import("#src/runtime/capture/agent-memory.js");
+    expect(
+      resolveMemoryProvider("Write", "/Users/x/.claude/projects/p/memory/foo.md", "gemini"),
+    ).toBe(null);
+    expect(resolveMemoryProvider("Write", "/Users/x/.codex/memories/foo.md", "cursor")).toBe(null);
+  });
+
+  it("ingestMemoryFile (used by retroactive scan) refuses unsupported agentType", async () => {
+    const { ingestMemoryFile } = await import("#src/runtime/capture/agent-memory.js");
+    const result = ingestMemoryFile(handle.raw, {
+      sessionId: "s",
+      turnId: 1,
+      promptId: 1,
+      agentType: "gemini",
+      filePath: "/Users/x/.gemini/GEMINI.md",
+      content: "anything",
+    });
+    expect(result.ingested).toBe(false);
+    expect(result.skippedReason).toContain("unsupported agent_type");
+  });
+});
+
 describe("Codex provider", () => {
   it("matches Codex memory writes under ~/.codex/memories/", async () => {
     const { codexProvider, resolveMemoryProvider } =

@@ -155,17 +155,41 @@ export const codexProvider: MemoryProvider = {
 };
 
 // ─── Provider registry ─────────────────────────────────────────────────────
+//
+// Closed allowlist. Memory ingestion is a Claude Code / Codex feature only
+// — no other agent in the supported matrix exposes a structured per-project
+// memory layout we can ingest losslessly. For sessions tagged with any
+// other agent_type (gemini, cursor, windsurf, copilot, copilot-cli, ...),
+// the ingestion silently no-ops and the standard tool_calls observability
+// still records the write.
+
+export const SUPPORTED_AGENT_TYPES = ["claude-code", "codex"] as const;
+export type SupportedAgentType = (typeof SUPPORTED_AGENT_TYPES)[number];
+
+export function isSupportedAgentType(
+  agentType: string | undefined,
+): agentType is SupportedAgentType {
+  return (
+    typeof agentType === "string" &&
+    (SUPPORTED_AGENT_TYPES as readonly string[]).includes(agentType)
+  );
+}
 
 const PROVIDERS: readonly MemoryProvider[] = [claudeCodeProvider, codexProvider];
 
 /**
  * Resolve the right provider for a (agentType, toolName, filePath) tuple.
- * Returns the first provider that claims the write, or null.
+ * Returns the first provider that claims the write, or null when:
  *
- * The agentType filter is a hint — if no agent_type is recorded yet
- * (rare, e.g. very first turn), all providers are tried so a Claude or
- * Codex write isn't dropped just because the session row hasn't been
- * tagged.
+ *   - agentType is provided AND is NOT one of SUPPORTED_AGENT_TYPES
+ *     (graceful degradation for gemini/cursor/windsurf/copilot/etc.)
+ *   - agentType is provided AND supported, but the path doesn't match
+ *     that provider's layout
+ *   - agentType is missing AND no provider's path matcher claims it
+ *
+ * The "missing agentType" path-fallback only runs through SUPPORTED
+ * providers — never through a future unsupported provider that might be
+ * added experimentally.
  */
 export function resolveMemoryProvider(
   toolName: string,
@@ -173,9 +197,12 @@ export function resolveMemoryProvider(
   agentType?: string,
 ): MemoryProvider | null {
   if (typeof agentType === "string") {
+    if (!isSupportedAgentType(agentType)) return null;
     const exact = PROVIDERS.find((p) => p.agentType === agentType);
     if (exact && exact.isMemoryWrite(toolName, filePath)) return exact;
+    return null;
   }
+  // Missing agentType — fall back to path-only match across the supported set.
   for (const p of PROVIDERS) {
     if (p.isMemoryWrite(toolName, filePath)) return p;
   }
@@ -221,6 +248,15 @@ export function ingestAgentMemory(
   raw: Database.Database,
   input: IngestMemoryInput,
 ): IngestMemoryResult {
+  // Graceful degradation: unsupported agents (gemini/cursor/windsurf/
+  // copilot/...) never get their tool calls scrutinised for memory shape.
+  if (input.agentType !== undefined && !isSupportedAgentType(input.agentType)) {
+    return {
+      ingested: false,
+      skippedReason: `unsupported agent_type '${input.agentType}' (memory ingestion is Claude Code / Codex only)`,
+    };
+  }
+
   const toolInput = (input.toolInput ?? {}) as Record<string, unknown>;
   const filePath = toolInput["file_path"];
 
@@ -300,6 +336,12 @@ export function ingestMemoryFile(
     readonly phase?: string;
   },
 ): IngestMemoryResult {
+  if (!isSupportedAgentType(args.agentType)) {
+    return {
+      ingested: false,
+      skippedReason: `unsupported agent_type '${args.agentType}' (memory ingestion is Claude Code / Codex only)`,
+    };
+  }
   const provider = PROVIDERS.find((p) => p.agentType === args.agentType);
   const parsed = (provider?.parseMemory ?? parseFrontmatterMarkdown)(args.content);
   const captureType = mapMemoryTypeToCaptureType(parsed.type);
