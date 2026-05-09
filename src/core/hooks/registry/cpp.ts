@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const CPP_HOOKS: HookSpec[] = [
+export const CPP_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "clang-format",
-    language: "cpp",
+    description: "C/C++ formatter (clang-format)",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "cpp",
     files: "**/*.{cpp,hpp,cc,h}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "clang-format -i",
       passFiles: true,
@@ -22,12 +27,17 @@ export const CPP_HOOKS: HookSpec[] = [
     installHint: { command: "brew install clang-format" },
   },
   {
+    bucket: "git",
     name: "clang-tidy",
-    language: "cpp",
+    description: "C/C++ linter (clang-tidy)",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "cpp",
     files: "**/*.{cpp,cc}",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "clang-tidy",
       passFiles: true,

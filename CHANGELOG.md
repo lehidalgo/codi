@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Brain UI — markdown rendering + no truncation
+
+#### Added
+
+- **Markdown rendering** for prompts, turn agent_text, and capture content via the `marked` library (GFM + breaks). Tables, fenced code blocks, headings, and inline emphasis now render natively in the timeline and captures list.
+- **Tool output decoder** — JSON envelopes (e.g. `{"stdout":"…","stderr":"…"}`) are unwrapped and the well-known string fields (`stdout`, `stderr`, `error`, `output`, `result`) render in dark code blocks with real newlines instead of `\n` escapes.
+- **Tailwind typography plugin** loaded from CDN with a small `prose` skin (dark code, inline code chips, scrollable tables).
+
+#### Changed
+
+- **No truncation** anywhere in the UI: session timeline events, captures list, and tool-calls list show the full content; long blocks scroll horizontally inside `pre` rather than getting clipped.
+
 ### Brain UI — observability + CRUD
 
 #### Added

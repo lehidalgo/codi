@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const JAVA_HOOKS: HookSpec[] = [
+export const JAVA_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "google-java-format",
-    language: "java",
+    description: "Java formatter (Google style)",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "java",
     files: "**/*.java",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "google-java-format --replace",
       passFiles: true,
@@ -25,12 +30,17 @@ export const JAVA_HOOKS: HookSpec[] = [
     },
   },
   {
+    bucket: "git",
     name: "checkstyle",
-    language: "java",
+    description: "Java style and lint checker",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "java",
     files: "**/*.java",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "checkstyle -c /google_checks.xml",
       passFiles: true,

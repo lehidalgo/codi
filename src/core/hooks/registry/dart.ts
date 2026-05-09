@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const DART_HOOKS: HookSpec[] = [
+export const DART_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "dart-format",
-    language: "dart",
+    description: "Dart formatter",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "dart",
     files: "**/*.dart",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "dart format",
       passFiles: true,
@@ -22,12 +27,17 @@ export const DART_HOOKS: HookSpec[] = [
     installHint: { command: "Install Dart SDK from https://dart.dev" },
   },
   {
+    bucket: "git",
     name: "dart-analyze",
-    language: "dart",
+    description: "Dart static analyser",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "dart",
     files: "**/*.dart",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "dart analyze",
       passFiles: true,

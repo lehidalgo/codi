@@ -88,6 +88,7 @@
     "googleapis": "^171.4.0",
     "gray-matter": "^4.0.3",
     "hono": "^4.12.18",
+    "marked": "^18.0.3",
     "openai": "^6.37.0",
     "picocolors": "^1.1.0",
     "smol-toml": "^1.6.1",

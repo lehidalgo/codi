@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const KOTLIN_HOOKS: HookSpec[] = [
+export const KOTLIN_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "ktfmt",
-    language: "kotlin",
+    description: "Kotlin formatter",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "kotlin",
     files: "**/*.kt",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "ktfmt --kotlinlang-style",
       passFiles: true,
@@ -22,12 +27,17 @@ export const KOTLIN_HOOKS: HookSpec[] = [
     installHint: { command: "brew install ktfmt" },
   },
   {
+    bucket: "git",
     name: "detekt",
-    language: "kotlin",
+    description: "Kotlin static analyser",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "kotlin",
     files: "**/*.kt",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "detekt --input",
       passFiles: true,

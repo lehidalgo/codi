@@ -5,6 +5,10 @@
  * shell wraps it.
  */
 
+import { marked } from "marked";
+
+marked.setOptions({ gfm: true, breaks: true });
+
 const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/", label: "Dashboard" },
   { href: "/sessions", label: "Sessions" },
@@ -41,9 +45,14 @@ export function shell(opts: ShellOptions, body: string): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title} — codi brain</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
   <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <style>
+    .prose pre { background:#0f172a; color:#e2e8f0; padding:0.75rem; border-radius:0.375rem; overflow-x:auto; font-size:0.8125rem; line-height:1.5; }
+    .prose code:not(pre code) { background:#f1f5f9; color:#0f172a; padding:0.125rem 0.375rem; border-radius:0.25rem; font-size:0.875em; }
+    .prose table { display:block; overflow-x:auto; max-width:100%; }
+  </style>
   ${extraHead}
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
@@ -92,6 +101,50 @@ export function fmtRelative(ts: number, now = Date.now()): string {
   const months = Math.round(days / 30);
   if (months < 12) return `${months}mo ago`;
   return new Date(ts).toISOString().slice(0, 10);
+}
+
+/**
+ * Render a markdown source string into safe HTML wrapped in a `prose`
+ * container. The renderer is GFM + breaks; HTML inside the source is
+ * escaped by marked's default tokenizer so untrusted prompts cannot inject
+ * scripts.
+ */
+export function renderMarkdown(src: string): string {
+  if (!src) return "";
+  const html = marked.parse(src, { async: false }) as string;
+  return `<div class="prose prose-slate prose-sm max-w-none break-words">${html}</div>`;
+}
+
+/**
+ * Pretty-print a JSON-shaped string. If the input is JSON, return it
+ * indented; otherwise return the original. The brain stores tool
+ * `output_summary` as a stringified JSON envelope (e.g. `{"stdout":"…",
+ * "stderr":""}`); plain text passes through untouched.
+ */
+export function prettyJson(src: string): { isJson: boolean; text: string } {
+  if (!src) return { isJson: false, text: "" };
+  try {
+    const parsed = JSON.parse(src) as unknown;
+    return { isJson: true, text: JSON.stringify(parsed, null, 2) };
+  } catch {
+    return { isJson: false, text: src };
+  }
+}
+
+/**
+ * Decode escape sequences inside a JSON-encoded text field so the
+ * timeline / detail views show the original characters (`\n` becomes a
+ * real newline) instead of the escaped form. The input is assumed to be
+ * a single string; the function does NOT walk JSON objects.
+ */
+export function unescapeJsonString(src: string): string {
+  if (!src) return "";
+  return src
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, "\\");
 }
 
 export function fmtDuration(ms: number | null | undefined): string {

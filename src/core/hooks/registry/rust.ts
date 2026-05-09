@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const RUST_HOOKS: HookSpec[] = [
+export const RUST_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "cargo-fmt",
-    language: "rust",
+    description: "Standard Rust formatter",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "format",
+    language: "rust",
     files: "**/*.rs",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "cargo fmt",
       passFiles: false,
@@ -23,12 +28,17 @@ export const RUST_HOOKS: HookSpec[] = [
     installHint: { command: "rustup component add rustfmt" },
   },
   {
+    bucket: "git",
     name: "cargo-clippy",
-    language: "rust",
+    description: "Rust linter (clippy)",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "rust",
     files: "**/*.rs",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "cargo clippy",
       passFiles: false,

@@ -6,7 +6,16 @@
 
 import type { Hono, Context } from "hono";
 import type { BrainHandle } from "#src/runtime/brain/index.js";
-import { shell, escapeHtml, fmtRelative, fmtTs, fmtDuration } from "./shell.js";
+import {
+  shell,
+  escapeHtml,
+  fmtRelative,
+  fmtTs,
+  fmtDuration,
+  renderMarkdown,
+  prettyJson,
+  unescapeJsonString,
+} from "./shell.js";
 
 interface SessionRow {
   readonly session_id: string;
@@ -105,6 +114,34 @@ function loadTimeline(brain: BrainHandle, sessionId: string): TimelineEvent[] {
   return events;
 }
 
+function renderEventBody(ev: TimelineEvent): string {
+  // Markdown-render prompt + turn agent_text — they routinely contain
+  // headings, tables, and fenced code blocks. Tool calls embed a JSON
+  // envelope (e.g. {stdout, stderr, interrupted}); pretty-print it. Captures
+  // are short single-line strings; preserve whitespace.
+  if (ev.kind === "prompt" || ev.kind === "turn") {
+    return renderMarkdown(ev.text);
+  }
+  if (ev.kind === "tool_call") {
+    const jsonStart = ev.text.indexOf("{");
+    const prefix = jsonStart > 0 ? ev.text.slice(0, jsonStart).trim() : "";
+    const payload = jsonStart >= 0 ? ev.text.slice(jsonStart) : ev.text;
+    const pretty = prettyJson(payload);
+    if (pretty.isJson) {
+      // Decode \n / \t inside known string fields so the user sees real
+      // multi-line output instead of escape sequences.
+      const decoded = pretty.text.replace(/"((?:\\"|[^"])*)"/g, (_m, inner: string) => {
+        const decodedInner = unescapeJsonString(inner);
+        if (decodedInner === inner) return `"${inner}"`;
+        return JSON.stringify(decodedInner);
+      });
+      return `${prefix ? `<p class="font-mono text-xs text-slate-600 mb-1">${escapeHtml(prefix)}</p>` : ""}<pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(decoded)}</pre>`;
+    }
+    return `<pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-words">${escapeHtml(ev.text)}</pre>`;
+  }
+  return `<p class="text-slate-700 break-words whitespace-pre-wrap">${escapeHtml(ev.text)}</p>`;
+}
+
 function renderTimelineEvent(ev: TimelineEvent): string {
   const dot = {
     prompt: "bg-sky-500",
@@ -126,13 +163,13 @@ function renderTimelineEvent(ev: TimelineEvent): string {
     <li class="flex gap-3 text-sm">
       <span class="mt-1.5 inline-block w-2 h-2 rounded-full shrink-0 ${dot}"></span>
       <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-0.5">
+        <div class="flex items-center gap-2 mb-1">
           <span class="text-xs font-mono text-slate-500">${escapeHtml(label)}</span>
           ${statusBadge}
           ${ev.meta ? `<span class="text-xs text-slate-400">${escapeHtml(ev.meta)}</span>` : ""}
           <span class="text-xs text-slate-400 ml-auto" title="${fmtTs(ev.ts)}">${fmtRelative(ev.ts)}</span>
         </div>
-        <p class="text-slate-700 break-words whitespace-pre-wrap">${escapeHtml(ev.text.slice(0, 400))}${ev.text.length > 400 ? "…" : ""}</p>
+        ${renderEventBody(ev)}
       </div>
     </li>`;
 }

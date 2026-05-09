@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const GO_HOOKS: HookSpec[] = [
+export const GO_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "golangci-lint",
-    language: "go",
+    description: "Aggregator linter for Go",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "go",
     files: "**/*.go",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "golangci-lint run",
       passFiles: false,
@@ -26,12 +31,17 @@ export const GO_HOOKS: HookSpec[] = [
     },
   },
   {
+    bucket: "git",
     name: "gofmt",
-    language: "go",
+    description: "Standard Go formatter",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "format",
+    language: "go",
     files: "**/*.go",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "gofmt -w",
       passFiles: true,
@@ -46,12 +56,17 @@ export const GO_HOOKS: HookSpec[] = [
     installHint: { command: "Install Go from https://go.dev (gofmt is included)" },
   },
   {
+    bucket: "git",
     name: "gosec",
-    language: "go",
+    description: "Go security analyser",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "security",
+    language: "go",
     files: "**/*.go",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "gosec",
       passFiles: false,

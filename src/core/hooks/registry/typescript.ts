@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const TYPESCRIPT_HOOKS: HookSpec[] = [
+export const TYPESCRIPT_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "eslint",
-    language: "typescript",
+    description: "JS/TS linter via eslint",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "lint",
+    language: "typescript",
     files: "**/*.{ts,tsx,js,jsx}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "npx eslint --fix",
       passFiles: true,
@@ -22,12 +27,17 @@ export const TYPESCRIPT_HOOKS: HookSpec[] = [
     installHint: { command: "npm install -D eslint" },
   },
   {
+    bucket: "git",
     name: "prettier",
-    language: "typescript",
+    description: "Code formatter for JS/TS/MD/YAML",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "typescript",
     files: "**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,mdx,yaml,yml,css,scss,html}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "npx prettier --write",
       passFiles: true,
@@ -43,12 +53,17 @@ export const TYPESCRIPT_HOOKS: HookSpec[] = [
     installHint: { command: "npm install -D prettier" },
   },
   {
+    bucket: "git",
     name: "tsc",
-    language: "typescript",
+    description: "TypeScript type checker (no emit)",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "type-check",
+    language: "typescript",
     files: "**/*.{ts,tsx}",
     stages: ["pre-push"],
-    required: true,
     shell: {
       command: "npx tsc --noEmit",
       passFiles: false,
@@ -68,12 +83,17 @@ export const TYPESCRIPT_HOOKS: HookSpec[] = [
     // Mutually exclusive with the eslint+prettier pair: when js_format_lint
     // is set to 'biome' the filter logic in hook-config-generator drops
     // eslint and prettier from the spec list and keeps this hook instead.
+    bucket: "git",
     name: "biome",
-    language: "typescript",
+    description: "Rust-based lint+format (mutually exclusive with eslint+prettier)",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: false,
     category: "lint",
+    language: "typescript",
     files: "**/*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "npx @biomejs/biome check --write --no-errors-on-unmatched",
       passFiles: true,

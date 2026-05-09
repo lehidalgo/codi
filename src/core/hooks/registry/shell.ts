@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const SHELL_HOOKS: HookSpec[] = [
+export const SHELL_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "shellcheck",
-    language: "shell",
+    description: "Shell script linter",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "shell",
     files: "**/*.sh",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "shellcheck -S warning",
       passFiles: true,

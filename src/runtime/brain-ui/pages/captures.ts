@@ -7,7 +7,7 @@
 import type { Hono, Context } from "hono";
 import type { BrainHandle } from "#src/runtime/brain/index.js";
 import { CAPTURE_TYPES } from "#src/runtime/capture/markers.js";
-import { shell, escapeHtml, fmtRelative, fmtTs } from "./shell.js";
+import { shell, escapeHtml, fmtRelative, fmtTs, renderMarkdown } from "./shell.js";
 
 interface CaptureRow {
   readonly capture_id: number;
@@ -118,7 +118,7 @@ function renderRow(cap: CaptureRow): string {
             ${phaseTag}
             ${deletedBadge}
           </div>
-          <p class="break-words">${escapeHtml(cap.content)}</p>
+          ${renderMarkdown(cap.content)}
           ${filesHtml}
           <p class="mt-2 text-xs font-mono text-slate-400">session ${escapeHtml(cap.session_id)} · #${cap.capture_id}</p>
         </div>

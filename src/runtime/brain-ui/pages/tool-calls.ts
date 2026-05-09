@@ -5,7 +5,15 @@
 
 import type { Hono, Context } from "hono";
 import type { BrainHandle } from "#src/runtime/brain/index.js";
-import { shell, escapeHtml, fmtRelative, fmtTs, fmtDuration } from "./shell.js";
+import {
+  shell,
+  escapeHtml,
+  fmtRelative,
+  fmtTs,
+  fmtDuration,
+  prettyJson,
+  unescapeJsonString,
+} from "./shell.js";
 
 interface ToolCallRow {
   readonly call_id: number;
@@ -108,7 +116,7 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
             : `<span class="text-xs px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">${escapeHtml(r.status)}</span>`;
         return `
         <li class="rounded border border-slate-200 bg-white p-3 text-sm">
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
               <span class="font-mono text-xs">${escapeHtml(r.tool_name)}</span>
               ${statusBadge}
@@ -116,9 +124,9 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
             </div>
             <span class="text-xs text-slate-400" title="${fmtTs(r.ts)}">${fmtRelative(r.ts)}</span>
           </div>
-          ${r.output_summary ? `<p class="text-slate-700 break-words">${escapeHtml(r.output_summary.slice(0, 220))}${r.output_summary.length > 220 ? "…" : ""}</p>` : ""}
-          ${r.error ? `<pre class="mt-2 text-xs text-rose-800 bg-rose-50 p-2 rounded overflow-x-auto">${escapeHtml(r.error)}</pre>` : ""}
-          <p class="mt-1 text-xs font-mono text-slate-400">session ${escapeHtml(r.session_id)} · turn ${r.turn_id} · #${r.call_id}</p>
+          ${r.output_summary ? renderOutput(r.output_summary) : ""}
+          ${r.error ? `<pre class="mt-2 text-xs text-rose-800 bg-rose-50 p-2 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(r.error)}</pre>` : ""}
+          <p class="mt-2 text-xs font-mono text-slate-400">session ${escapeHtml(r.session_id)} · turn ${r.turn_id} · #${r.call_id}</p>
         </li>`;
       })
       .join("");
@@ -142,4 +150,34 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
       <ul class="space-y-2">${rowHtml || '<li class="text-sm text-slate-500">No tool calls.</li>'}</ul>`;
     return c.html(shell({ title: "Tool calls", active: "/tool-calls" }, body));
   });
+}
+
+/**
+ * Render the full tool output_summary. When the value is JSON (the common
+ * case for Bash/Write/Edit hooks that wrap stdout/stderr), pretty-print
+ * and collapse the well-known string fields (`stdout`, `stderr`, `error`,
+ * `output`) into separate code blocks so escape sequences become real
+ * newlines. Plain text falls back to a `pre` block.
+ */
+function renderOutput(raw: string): string {
+  const pretty = prettyJson(raw);
+  if (!pretty.isJson) {
+    return `<pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(raw)}</pre>`;
+  }
+  const obj = JSON.parse(raw) as Record<string, unknown>;
+  const parts: string[] = [];
+  for (const key of ["stdout", "stderr", "error", "output", "result"] as const) {
+    const v = obj[key];
+    if (typeof v === "string" && v.length > 0) {
+      parts.push(
+        `<div class="mt-1"><p class="text-xs uppercase tracking-wide text-slate-500 mb-1">${key}</p><pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(unescapeJsonString(v))}</pre></div>`,
+      );
+      delete obj[key];
+    }
+  }
+  const remaining =
+    Object.keys(obj).length > 0
+      ? `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer">other fields</summary><pre class="mt-1 text-xs bg-slate-100 p-2 rounded overflow-x-auto">${escapeHtml(JSON.stringify(obj, null, 2))}</pre></details>`
+      : "";
+  return parts.join("") + remaining;
 }

@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const CSHARP_HOOKS: HookSpec[] = [
+export const CSHARP_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "dotnet-format",
-    language: "csharp",
+    description: "C# formatter via dotnet format",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "csharp",
     files: "**/*.cs",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "dotnet format --include",
       passFiles: true,
@@ -22,12 +27,17 @@ export const CSHARP_HOOKS: HookSpec[] = [
     installHint: { command: "Install .NET SDK from https://dot.net" },
   },
   {
+    bucket: "git",
     name: "dotnet-build",
-    language: "csharp",
+    description: "C# build / type check",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "type-check",
+    language: "csharp",
     files: "**/*.cs",
     stages: ["pre-push"],
-    required: true,
     shell: {
       command: "dotnet build --no-incremental -nologo",
       passFiles: false,

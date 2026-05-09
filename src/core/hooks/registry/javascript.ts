@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const JAVASCRIPT_HOOKS: HookSpec[] = [
+export const JAVASCRIPT_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "eslint",
-    language: "javascript",
+    description: "JS linter via eslint",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "lint",
+    language: "javascript",
     files: "**/*.{js,jsx,mjs,cjs}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "npx eslint --fix",
       passFiles: true,
@@ -22,12 +27,17 @@ export const JAVASCRIPT_HOOKS: HookSpec[] = [
     installHint: { command: "npm install -D eslint" },
   },
   {
+    bucket: "git",
     name: "prettier",
-    language: "javascript",
+    description: "Code formatter for JS / JSON / MD / YAML",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "javascript",
     files: "**/*.{js,jsx,mjs,cjs,json,md,mdx,yaml,yml,css,scss,html}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "npx prettier --write",
       passFiles: true,
@@ -45,12 +55,17 @@ export const JAVASCRIPT_HOOKS: HookSpec[] = [
   {
     // Biome — see registry/typescript.ts for rationale. Duplicated here so
     // pure-JS projects (no tsconfig.json) can opt into Biome too.
+    bucket: "git",
     name: "biome",
-    language: "javascript",
+    description: "Rust-based lint+format (mutually exclusive with eslint+prettier)",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: false,
     category: "lint",
+    language: "javascript",
     files: "**/*.{js,jsx,mjs,cjs,json,jsonc,css}",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "npx @biomejs/biome check --write --no-errors-on-unmatched",
       passFiles: true,

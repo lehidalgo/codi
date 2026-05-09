@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const SWIFT_HOOKS: HookSpec[] = [
+export const SWIFT_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "swiftformat",
-    language: "swift",
+    description: "Swift formatter",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "swift",
     files: "**/*.swift",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "swiftformat",
       passFiles: true,
@@ -22,12 +27,17 @@ export const SWIFT_HOOKS: HookSpec[] = [
     installHint: { command: "brew install swiftformat" },
   },
   {
+    bucket: "git",
     name: "swiftlint",
-    language: "swift",
+    description: "Swift linter",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "swift",
     files: "**/*.swift",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "swiftlint lint --strict",
       passFiles: true,

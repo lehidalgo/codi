@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const PHP_HOOKS: HookSpec[] = [
+export const PHP_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "php-cs-fixer",
-    language: "php",
+    description: "PHP code style fixer",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "format",
+    language: "php",
     files: "**/*.php",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: "php-cs-fixer fix",
       passFiles: true,
@@ -22,12 +27,17 @@ export const PHP_HOOKS: HookSpec[] = [
     installHint: { command: "composer global require friendsofphp/php-cs-fixer" },
   },
   {
+    bucket: "git",
     name: "phpstan",
-    language: "php",
+    description: "PHP static analyser",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "type-check",
+    language: "php",
     files: "**/*.php",
     stages: ["pre-push"],
-    required: true,
     shell: {
       command: "phpstan analyse",
       passFiles: false,
@@ -43,12 +53,17 @@ export const PHP_HOOKS: HookSpec[] = [
     installHint: { command: "composer global require phpstan/phpstan" },
   },
   {
+    bucket: "git",
     name: "phpcs-security",
-    language: "php",
+    description: "PHP security audit ruleset",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "security",
+    language: "php",
     files: "**/*.php",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "phpcs --standard=Security",
       passFiles: true,

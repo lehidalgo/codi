@@ -1,13 +1,18 @@
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const RUBY_HOOKS: HookSpec[] = [
+export const RUBY_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "rubocop",
-    language: "ruby",
+    description: "Ruby linter and auto-formatter",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "lint",
+    language: "ruby",
     files: "**/*.rb",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "rubocop -a",
       passFiles: true,
@@ -22,12 +27,17 @@ export const RUBY_HOOKS: HookSpec[] = [
     installHint: { command: "gem install rubocop" },
   },
   {
+    bucket: "git",
     name: "brakeman",
-    language: "ruby",
+    description: "Ruby/Rails security scanner",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "security",
+    language: "ruby",
     files: "**/*.rb",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "brakeman --no-pager -q",
       passFiles: false,

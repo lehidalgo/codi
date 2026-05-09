@@ -1,14 +1,19 @@
 import { PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
-import type { HookSpec } from "../hook-spec.js";
+import type { GitHookArtifact } from "../hook-artifact.js";
 
-export const GLOBAL_HOOKS: HookSpec[] = [
+export const GLOBAL_HOOKS: GitHookArtifact[] = [
   {
+    bucket: "git",
     name: "gitleaks",
-    language: "global",
+    description: "Secret-leak scanner for staged content",
+    version: "1",
+    managed_by: "codi",
+    required: true,
+    default: true,
     category: "security",
+    language: "global",
     files: "**/*",
     stages: ["pre-commit"],
-    required: true,
     shell: {
       command: "gitleaks protect --staged --no-banner",
       passFiles: false,
@@ -27,12 +32,17 @@ export const GLOBAL_HOOKS: HookSpec[] = [
     },
   },
   {
+    bucket: "git",
     name: "commitlint",
-    language: "global",
+    description: "Conventional commit-message linter",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "meta",
+    language: "global",
     files: "",
     stages: ["commit-msg"],
-    required: false,
     shell: {
       command: "npx --no -- commitlint --edit",
       passFiles: false,
@@ -51,12 +61,17 @@ export const GLOBAL_HOOKS: HookSpec[] = [
     },
   },
   {
+    bucket: "git",
     name: `${PROJECT_NAME}-doctor`,
-    language: "global",
+    description: "codi self-check, runs codi doctor --ci",
+    version: "1",
+    managed_by: "codi",
+    required: false,
+    default: true,
     category: "meta",
+    language: "global",
     files: "",
     stages: ["pre-commit"],
-    required: false,
     shell: {
       command: `npx ${PROJECT_CLI} doctor --ci`,
       passFiles: false,
