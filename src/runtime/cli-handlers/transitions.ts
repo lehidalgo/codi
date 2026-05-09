@@ -18,6 +18,8 @@ import { selectEventLog } from "../event-log-factory.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, Phase, ReducedState } from "../types.js";
+import { openBrain } from "../brain/index.js";
+import { assertLegalTransition, UnknownWorkflowTypeError } from "../workflow-graph.js";
 
 export interface ProposeTransitionOptions {
   toPhase: Phase;
@@ -46,6 +48,27 @@ export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransi
   }
   if (state.status !== "active") {
     throw new Error(`Workflow is not active (status: ${state.status}).`);
+  }
+
+  // F4 — phase graph enforcement. Read workflow_definitions[type].phases[from].next
+  // from brain.db and reject illegal transitions. Missing definitions or a
+  // brain.db without the v2 schema yet degrade gracefully (no enforcement)
+  // so callers without a seeded brain — fresh installs pre-`codi init`,
+  // tests with tmp brains — still work; F11 tightens this once all install
+  // paths guarantee seeding.
+  const brain = openBrain();
+  try {
+    assertLegalTransition(brain.raw, state.workflow_type, fromPhase, opts.toPhase);
+  } catch (e) {
+    if (e instanceof UnknownWorkflowTypeError) {
+      // Definition not seeded — skip enforcement.
+    } else if (e instanceof Error && /no such table: workflow_definitions/.test(e.message)) {
+      // Brain DB present but pre-v2 (table missing) — skip enforcement.
+    } else {
+      throw e;
+    }
+  } finally {
+    brain.close();
   }
 
   const proposed = createEvent({
