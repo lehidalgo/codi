@@ -8,10 +8,10 @@ These laws override convenience and override defaults. Every workflow's elicitat
 | 2   | One question per turn                                                  | Elicitation prompts are atomic; no bundled questions                                                 |
 | 3   | Sheet is the canvas                                                    | Strategic info written to Sheet via draft+sync, never dumped in chat                                 |
 | 4   | HARD GATES require explicit "ok" (case-insensitive, exactly two chars) | "okay" / "looks good" / "yeah" / "sure" / "yes" do NOT pass a gate                                   |
-| 5   | Pull before patch; preview before apply                                | Re-runs of a phase begin with `devloop sheets pull-all`                                              |
+| 5   | Pull before patch; preview before apply                                | Re-runs of a phase begin with `codi sheets pull-all`                                                 |
 | 6   | Atomic writes; rollback ready                                          | `sync-draft` auto-snapshots; `restore --latest` is the undo                                          |
 | 7   | Never commit without explicit approval                                 | `git commit`, PR creation, branch deletion all gated                                                 |
-| 8   | Output mode honors preference                                          | `.devloop/preferences.json::output_mode` defaults to caveman                                         |
+| 8   | Output mode honors preference                                          | `.codi/preferences.json::output_mode` defaults to caveman                                            |
 
 ## Rationale per law
 

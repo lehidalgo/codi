@@ -42,7 +42,7 @@ export function autoCommitEvent(
     };
   }
 
-  const message = `devloop: ${event.event_type} [${event.event_id.slice(0, 8)}]`;
+  const message = `codi: ${event.event_type} [${event.event_id.slice(0, 8)}]`;
   const commit = git(["commit", "-m", message, "--no-verify", "--", archivePath], cwd);
   if (!commit.ok) {
     return {

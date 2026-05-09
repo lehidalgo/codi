@@ -48,7 +48,7 @@ export function recommendedBootstrapMode(type: GoogleAccountType): string {
       "Personal Google account.",
       "Service accounts cannot create Sheets here (zero Drive quota).",
       "Recommended: you create a blank Google Sheet, share it with the SA email as Editor,",
-      'then run `devloop sheets create-project --name "X" --sheet-id "<id>"`',
+      'then run `codi sheets create-project --name "X" --sheet-id "<id>"`',
       "to add the 6 canonical tabs + headers.",
     ].join(" ");
   }
@@ -56,7 +56,7 @@ export function recommendedBootstrapMode(type: GoogleAccountType): string {
     "Workspace account.",
     "Recommended: use a Shared Drive (org-owned, no individual quota issues).",
     "Add the SA email as Content Manager on a Shared Drive, then run",
-    '`devloop sheets create-project --name "X" --folder-id "<sharedDriveOrFolderId>"`',
+    '`codi sheets create-project --name "X" --folder-id "<sharedDriveOrFolderId>"`',
     "(supportsAllDrives is enabled — works for both Shared Drives and regular folders).",
   ].join(" ");
 }

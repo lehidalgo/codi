@@ -172,8 +172,8 @@ describe("sheets/queue", () => {
   });
 
   it("malformed lines are skipped", () => {
-    const path = join(cwd, ".devloop/sheets-queue.jsonl");
-    mkdirSync(join(cwd, ".devloop"));
+    const path = join(cwd, ".codi/sheets-queue.jsonl");
+    mkdirSync(join(cwd, ".codi"));
     writeFileSync(
       path,
       JSON.stringify(makeRecord("q1", "US-001")) +

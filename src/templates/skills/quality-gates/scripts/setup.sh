@@ -30,8 +30,8 @@ gh_user=$(bash "$script_dir/github-user.sh")
 echo "GitHub user: $gh_user"
 
 # 3. Record adoption timestamp (only on first setup)
-if ! git config --get devloop.branchConvention.adoptedAt > /dev/null 2>&1; then
-  git config devloop.branchConvention.adoptedAt "$(date +%s)"
+if ! git config --get codi.branchConvention.adoptedAt > /dev/null 2>&1; then
+  git config codi.branchConvention.adoptedAt "$(date +%s)"
   echo "Recorded branch-convention adoption timestamp"
 fi
 
@@ -53,7 +53,7 @@ if [ "$runner" = "husky" ]; then
 
   # Generate managed block
   managed_block=$(cat <<'MANAGED'
-# >>> devloop:quality-gates managed (do not edit between markers)
+# >>> codi:quality-gates managed (do not edit between markers)
 script_dir="$(git rev-parse --show-toplevel)/skills/quality-gates/scripts"
 
 # Universal hooks
@@ -74,15 +74,15 @@ if [ -n "$STAGED" ]; then
     echo "[quality-gates] WARN: gitleaks not installed (brew install gitleaks)" >&2
   fi
 fi
-# <<< devloop:quality-gates managed
+# <<< codi:quality-gates managed
 MANAGED
 )
 
-  if echo "$existing_pre" | grep -q "devloop:quality-gates managed"; then
+  if echo "$existing_pre" | grep -q "codi:quality-gates managed"; then
     # Replace managed block in place
     awk -v block="$managed_block" '
-      /^# >>> devloop:quality-gates managed/ { print block; skipping=1; next }
-      /^# <<< devloop:quality-gates managed/ { skipping=0; next }
+      /^# >>> codi:quality-gates managed/ { print block; skipping=1; next }
+      /^# <<< codi:quality-gates managed/ { skipping=0; next }
       !skipping
     ' "$pre_commit_file" > "$pre_commit_file.tmp"
     mv "$pre_commit_file.tmp" "$pre_commit_file"
@@ -107,8 +107,8 @@ fi
 if [ "$runner" = "husky" ]; then
   cat > .husky/commit-msg <<'COMMITMSG'
 #!/bin/sh
-# devloop commit-msg validator
-# >>> devloop:quality-gates managed
+# codi commit-msg validator
+# >>> codi:quality-gates managed
 msg_file="$1"
 [ -z "$msg_file" ] && exit 0
 
@@ -136,7 +136,7 @@ if [ "${#msg}" -gt 72 ]; then
 fi
 
 exit 0
-# <<< devloop:quality-gates managed
+# <<< codi:quality-gates managed
 COMMITMSG
   chmod +x .husky/commit-msg
   echo "✓ commit-msg hook installed"

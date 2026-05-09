@@ -2,10 +2,14 @@
  * Scope-discipline handlers — propose / approve / reject scope expansion +
  * recordIncidentalChange (auto-recorded by the post-tool-use hook for edits
  * that the classifier marks as incidental).
+ *
+ * Brain-backed: persistence goes through BrainEventLog directly.
  */
 
-import { NoActiveWorkflowError } from "../event-log.js";
-import { selectEventLog } from "../event-log-factory.js";
+import {
+  BrainEventLog,
+  BrainNoActiveWorkflowError as NoActiveWorkflowError,
+} from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent } from "../types.js";
@@ -32,23 +36,27 @@ export function proposeScopeExpansion(
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("propose-expansion requires --reason '<text>'");
   }
-  const log = selectEventLog(opts.cwd ?? process.cwd());
-  const workflowId = log.getActiveWorkflowId();
-  if (!workflowId) throw new NoActiveWorkflowError();
+  const log = BrainEventLog.open();
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) throw new NoActiveWorkflowError();
 
-  const state = reduce(log.loadEvents(workflowId));
-  if (state.scope.files_in_plan.includes(opts.filePath)) {
-    throw new Error(`File '${opts.filePath}' is already in scope.`);
+    const state = reduce(log.loadEvents(workflowId));
+    if (state.scope.files_in_plan.includes(opts.filePath)) {
+      throw new Error(`File '${opts.filePath}' is already in scope.`);
+    }
+
+    const proposed = createEvent({
+      eventType: "scope_expansion_proposed",
+      payload: { file_path: opts.filePath, reason: opts.reason },
+      author: opts.author,
+      parentEventId: state.last_event_id,
+    });
+    log.append(workflowId, proposed);
+    return { workflowId, filePath: opts.filePath, proposedEventId: proposed.event_id };
+  } finally {
+    log.dispose();
   }
-
-  const proposed = createEvent({
-    eventType: "scope_expansion_proposed",
-    payload: { file_path: opts.filePath, reason: opts.reason },
-    author: opts.author,
-    parentEventId: state.last_event_id,
-  });
-  log.append(workflowId, proposed);
-  return { workflowId, filePath: opts.filePath, proposedEventId: proposed.event_id };
 }
 
 export interface ApproveScopeExpansionOptions {
@@ -69,31 +77,35 @@ export interface ApproveScopeExpansionResult {
 export function approveScopeExpansion(
   opts: ApproveScopeExpansionOptions,
 ): ApproveScopeExpansionResult {
-  const log = selectEventLog(opts.cwd ?? process.cwd());
-  const workflowId = log.getActiveWorkflowId();
-  if (!workflowId) throw new NoActiveWorkflowError();
+  const log = BrainEventLog.open();
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) throw new NoActiveWorkflowError();
 
-  const events = log.loadEvents(workflowId);
-  const proposal = findLatestUnresolvedScopeProposal(events, opts.filePath);
-  if (!proposal) {
-    throw new Error(
-      opts.filePath
-        ? `No pending scope expansion proposal for ${opts.filePath}.`
-        : "No pending scope expansion proposal.",
+    const events = log.loadEvents(workflowId);
+    const proposal = findLatestUnresolvedScopeProposal(events, opts.filePath);
+    if (!proposal) {
+      throw new Error(
+        opts.filePath
+          ? `No pending scope expansion proposal for ${opts.filePath}.`
+          : "No pending scope expansion proposal.",
+      );
+    }
+    const payload = proposal.payload as { file_path: string };
+
+    log.append(
+      workflowId,
+      createEvent({
+        eventType: "scope_expansion_approved",
+        payload: { file_path: payload.file_path, added_to_scope: [payload.file_path] },
+        author: opts.author,
+        parentEventId: proposal.event_id,
+      }),
     );
+    return { workflowId, filePath: payload.file_path };
+  } finally {
+    log.dispose();
   }
-  const payload = proposal.payload as { file_path: string };
-
-  log.append(
-    workflowId,
-    createEvent({
-      eventType: "scope_expansion_approved",
-      payload: { file_path: payload.file_path, added_to_scope: [payload.file_path] },
-      author: opts.author,
-      parentEventId: proposal.event_id,
-    }),
-  );
-  return { workflowId, filePath: payload.file_path };
 }
 
 export interface RejectScopeExpansionOptions {
@@ -114,31 +126,35 @@ export function rejectScopeExpansion(
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("Reject requires --reason '<text>'.");
   }
-  const log = selectEventLog(opts.cwd ?? process.cwd());
-  const workflowId = log.getActiveWorkflowId();
-  if (!workflowId) throw new NoActiveWorkflowError();
+  const log = BrainEventLog.open();
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) throw new NoActiveWorkflowError();
 
-  const events = log.loadEvents(workflowId);
-  const proposal = findLatestUnresolvedScopeProposal(events, opts.filePath);
-  if (!proposal) {
-    throw new Error(
-      opts.filePath
-        ? `No pending scope expansion proposal for ${opts.filePath}.`
-        : "No pending scope expansion proposal.",
+    const events = log.loadEvents(workflowId);
+    const proposal = findLatestUnresolvedScopeProposal(events, opts.filePath);
+    if (!proposal) {
+      throw new Error(
+        opts.filePath
+          ? `No pending scope expansion proposal for ${opts.filePath}.`
+          : "No pending scope expansion proposal.",
+      );
+    }
+    const payload = proposal.payload as { file_path: string };
+
+    log.append(
+      workflowId,
+      createEvent({
+        eventType: "scope_expansion_rejected",
+        payload: { file_path: payload.file_path, reason: opts.reason },
+        author: opts.author,
+        parentEventId: proposal.event_id,
+      }),
     );
+    return { workflowId, filePath: payload.file_path };
+  } finally {
+    log.dispose();
   }
-  const payload = proposal.payload as { file_path: string };
-
-  log.append(
-    workflowId,
-    createEvent({
-      eventType: "scope_expansion_rejected",
-      payload: { file_path: payload.file_path, reason: opts.reason },
-      author: opts.author,
-      parentEventId: proposal.event_id,
-    }),
-  );
-  return { workflowId, filePath: payload.file_path };
 }
 
 function findLatestUnresolvedScopeProposal(
@@ -176,22 +192,26 @@ export function recordIncidentalChange(opts: {
   author: Author;
   cwd?: string;
 }): { workflowId: string } {
-  const log = selectEventLog(opts.cwd ?? process.cwd());
-  const workflowId = log.getActiveWorkflowId();
-  if (!workflowId) throw new NoActiveWorkflowError();
+  const log = BrainEventLog.open();
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) throw new NoActiveWorkflowError();
 
-  log.append(
-    workflowId,
-    createEvent({
-      eventType: "incidental_change_recorded",
-      payload: {
-        file_path: opts.filePath,
-        lines_changed: opts.linesChanged,
-        classifier_reason: opts.classifierReason,
-      },
-      author: opts.author,
-      parentEventId: null,
-    }),
-  );
-  return { workflowId };
+    log.append(
+      workflowId,
+      createEvent({
+        eventType: "incidental_change_recorded",
+        payload: {
+          file_path: opts.filePath,
+          lines_changed: opts.linesChanged,
+          classifier_reason: opts.classifierReason,
+        },
+        author: opts.author,
+        parentEventId: null,
+      }),
+    );
+    return { workflowId };
+  } finally {
+    log.dispose();
+  }
 }

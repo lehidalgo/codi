@@ -52,7 +52,7 @@ const config: ProjectConfig = {
 let cwd: string;
 
 beforeEach(() => {
-  cwd = mkdtempSync(join(tmpdir(), "devloop-snapshot-"));
+  cwd = mkdtempSync(join(tmpdir(), "codi-snapshot-"));
 });
 
 afterEach(() => {
@@ -62,7 +62,7 @@ afterEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("snapshot / captureSnapshot", () => {
-  it("writes a JSON file at .devloop/snapshots/<ts>[_label].json with all 5 tabs", async () => {
+  it("writes a JSON file at .codi/snapshots/<ts>[_label].json with all 5 tabs", async () => {
     const client = makeFakeClient({
       BusinessGoal: [
         ["id", "title", "status"],

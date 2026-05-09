@@ -63,8 +63,8 @@ else
 fi
 
 # === GH user config ===
-if ! git config --get devloop.githubUser > /dev/null 2>&1; then
-  MEDIUM+=("git config devloop.githubUser is unset; branch-naming convention has not been bootstrapped")
+if ! git config --get codi.githubUser > /dev/null 2>&1; then
+  MEDIUM+=("git config codi.githubUser is unset; branch-naming convention has not been bootstrapped")
 fi
 
 # === CI workflow ===
@@ -114,7 +114,7 @@ if [ ${#HIGH[@]} -eq 0 ] && [ ${#MEDIUM[@]} -eq 0 ] && [ ${#LOW[@]} -eq 0 ]; the
 fi
 
 if [ ${#HIGH[@]} -gt 0 ] || [ ${#MEDIUM[@]} -gt 0 ]; then
-  echo "Run: /devloop:quality-gates  (mode setup) to fix HIGH and MEDIUM. LOW is optional."
+  echo "Run: /codi:quality-gates  (mode setup) to fix HIGH and MEDIUM. LOW is optional."
 fi
 
 # Exit 1 if any HIGH violations (for CI use)

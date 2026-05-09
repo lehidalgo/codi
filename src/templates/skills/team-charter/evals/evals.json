@@ -66,7 +66,7 @@
       "description": "'OK' (uppercase) DOES pass — the match is case-insensitive on the literal two characters.",
       "prompt": "OK",
       "expectations": [
-        "Agent executes the phase transition (calls 'devloop transition --approve').",
+        "Agent executes the phase transition (calls 'codi transition --approve').",
         "Agent confirms the transition succeeded.",
         "No re-prompt — the literal two-character match is satisfied regardless of case."
       ]

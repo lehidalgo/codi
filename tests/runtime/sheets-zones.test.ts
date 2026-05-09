@@ -132,8 +132,8 @@ describe("sheets/config", () => {
   it("readProjectConfig parses a valid file", () => {
     cwd = mkdtempSync(join(tmpdir(), "sheets-config-"));
     try {
-      mkdirSync(join(cwd, ".devloop"));
-      writeFileSync(join(cwd, ".devloop/project.json"), JSON.stringify(fixedConfig, null, 2));
+      mkdirSync(join(cwd, ".codi"));
+      writeFileSync(join(cwd, ".codi/project.json"), JSON.stringify(fixedConfig, null, 2));
       const cfg = readProjectConfig(cwd);
       expect(cfg.sheet_id).toBe("TEST_SHEET_ID");
       expect(cfg.sheet_template_version).toBe(1);
@@ -155,8 +155,8 @@ describe("sheets/config", () => {
   it("readProjectConfig throws on malformed JSON", () => {
     cwd = mkdtempSync(join(tmpdir(), "sheets-config-"));
     try {
-      mkdirSync(join(cwd, ".devloop"));
-      writeFileSync(join(cwd, ".devloop/project.json"), "{not json");
+      mkdirSync(join(cwd, ".codi"));
+      writeFileSync(join(cwd, ".codi/project.json"), "{not json");
       expect(() => readProjectConfig(cwd)).toThrowError(SheetsError);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
@@ -166,8 +166,8 @@ describe("sheets/config", () => {
   it("readProjectConfig throws on missing required field", () => {
     cwd = mkdtempSync(join(tmpdir(), "sheets-config-"));
     try {
-      mkdirSync(join(cwd, ".devloop"));
-      writeFileSync(join(cwd, ".devloop/project.json"), JSON.stringify({ project_name: "x" }));
+      mkdirSync(join(cwd, ".codi"));
+      writeFileSync(join(cwd, ".codi/project.json"), JSON.stringify({ project_name: "x" }));
       expect(() => readProjectConfig(cwd)).toThrowError(SheetsError);
     } finally {
       rmSync(cwd, { recursive: true, force: true });

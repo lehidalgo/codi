@@ -21,7 +21,7 @@ let srcConfig: ProjectConfig;
 let dstConfig: ProjectConfig;
 
 beforeEach(async () => {
-  cwd = mkdtempSync(join(tmpdir(), "devloop-bridge-"));
+  cwd = mkdtempSync(join(tmpdir(), "codi-bridge-"));
   srcPath = join(cwd, "src.xlsx");
   dstPath = join(cwd, "dst.xlsx");
   await createLocalXlsxProject({ filePath: srcPath });

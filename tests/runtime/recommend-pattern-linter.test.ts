@@ -25,7 +25,7 @@ function runLinter(args: string[] = []): { stdout: string; exitCode: number } {
 }
 
 describe("recommend-pattern linter", () => {
-  // Sprint 2.1: linter default scans skills/*/references/ (DevLoop layout).
+  // Sprint 2.1: linter default scans skills/*/references/ (Codi layout).
   // Codi v3 stores skills under src/templates/skills/*/references/. Update the
   // linter default in Sprint 3 once the skill catalog stabilizes.
   it.skip("passes on the current repo (every elicitation file has Recommend X because Y)", () => {
@@ -67,7 +67,7 @@ describe("recommend-pattern linter", () => {
     const file = join(tmp, "phase-default.md");
     writeFileSync(
       file,
-      `# Phase Z\n\n## What credentials path?\n\nDefault: \`~/.config/devloop/credentials.json\` (because that's where gcloud-setup writes).\n`,
+      `# Phase Z\n\n## What credentials path?\n\nDefault: \`~/.config/codi/credentials.json\` (because that's where gcloud-setup writes).\n`,
     );
     try {
       const { exitCode } = runLinter([file]);

@@ -7,13 +7,13 @@ How phases advance under the agent / human approval model.
 1. Complete the work of the current phase per `references/phase-<current>.md`.
 2. Propose the transition:
    ```bash
-   devloop transition --to <next-phase> --author <agent-or-user>
+   codi transition --to <next-phase> --author <agent-or-user>
    ```
 3. Present a short summary of what was done to the human.
 4. Wait for the human to run one of:
    ```bash
-   devloop transition --approve --author <user>
-   devloop transition --reject --reason "<text>" --author <user>
+   codi transition --approve --author <user>
+   codi transition --reject --reason "<text>" --author <user>
    ```
 5. On approve, advance to the next phase per the corresponding reference.
    On reject, address the reason and re-propose when ready.
@@ -27,7 +27,7 @@ Modify only files declared in `scope.files_in_plan`. Any change to a file outsid
 - **Incidental** (one-line import fix, pure type assertion) — auto-classified and recorded as `incidental_change_recorded`.
 - **Scope expansion** (new logic, new file, interface change) — propose explicitly:
   ```bash
-  devloop scope propose-expansion --reason "<why>"
+  codi scope propose-expansion --reason "<why>"
   ```
   Wait for human approval. If approved, `manifest.scope.files_in_plan` updates and the agent can proceed.
 

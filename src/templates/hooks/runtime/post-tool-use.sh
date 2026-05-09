@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop post-tool-use hook
+# codi post-tool-use hook
 #
 # Invoked after a tool call completes. Always exits 0 — this hook never
 # blocks; it records incidental file changes (outside scope.files_in_plan

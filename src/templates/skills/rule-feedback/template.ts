@@ -5,12 +5,13 @@ name: {{name}}
 description: |
   Rule observation skill. Activates automatically when the agent notices a
   gap, outdated guidance, missing example, or user correction related to a
-  loaded rule. Emits an inline \\\`[CODI-OBSERVATION: rule | category |
-  text]\\\` marker — the Stop hook collects and structures it to
-  \\\`.codi/feedback/rules/\\\`. Categories: \\\`missing-step\\\`,
-  \\\`outdated-rule\\\`, \\\`missing-example\\\`, \\\`user-correction\\\`,
-  \\\`trigger-miss\\\`, \\\`trigger-false\\\`, \\\`wrong-output\\\`.
-  Background observer — the agent does not write files. Do NOT emit for
+  loaded rule. Emits an end-of-response \\\`|OBSERVATION: "verbatim text"|\\\`
+  capture marker — the Stop hook persists it into brain.db where the P9
+  pattern detector turns repeat references into artifact-improvement
+  proposals. Mention the rule name and the gap kind (\`missing-step\`,
+  \`outdated-rule\`, \`missing-example\`, \`user-correction\`, \`trigger-miss\`,
+  \`trigger-false\`, \`wrong-output\`) inside the verbatim text. Background
+  observer — the agent does not write files. Do NOT emit for
   single-occurrence anecdotes (require 2+ evidence points), do NOT directly
   edit rule files (use ${PROJECT_NAME}-refine-rules), and do NOT emit during
   time-critical operations (bug incidents, blocking hot fixes).
@@ -19,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 9
+version: 10
 ---
 
 # {{name}} — Rule Feedback
@@ -72,21 +73,28 @@ The user corrects behaviour that contradicts or extends a rule.
 
 ## How to Emit
 
-Add this marker anywhere in your normal response text:
+End your response with a canonical Iron Law 9 capture marker:
 
 \\\`\\\`\\\`
-[CODI-OBSERVATION: <rule-name> | <category> | <observation text, max 200 chars>]
+|OBSERVATION: "verbatim text — name the rule and the gap kind"|
 \\\`\\\`\\\`
 
-**Categories:** \\\`missing-step\\\`, \\\`outdated-rule\\\`, \\\`missing-example\\\`, \\\`user-correction\\\`, \\\`trigger-miss\\\`, \\\`trigger-false\\\`, \\\`wrong-output\\\`
+The rule name and gap category live INSIDE the verbatim text. Use the gap
+vocabulary so the brain's consolidation can match observations to artifact
+candidates: \\\`missing-step\\\`, \\\`outdated-rule\\\`, \\\`missing-example\\\`,
+\\\`user-correction\\\`, \\\`trigger-miss\\\`, \\\`trigger-false\\\`,
+\\\`wrong-output\\\`.
 
 **Example:**
 
 \\\`\\\`\\\`
-[CODI-OBSERVATION: codi-testing | outdated-rule | rule says use Jest but project migrated to Vitest — all test files use vitest imports]
+|OBSERVATION: "codi-testing outdated-rule — rule says use Jest but project migrated to Vitest, all test files use vitest imports"|
 \\\`\\\`\\\`
 
-The Stop hook scans your response, extracts the marker, and writes a structured JSON file to \\\`.codi/feedback/\\\`. You do not touch the file system.
+The Stop hook parses every \\\`|TYPE: "..."|\\\` marker on the line, persists
+captures into brain.db (\\\`captures\\\` table), and the P9 detector
+aggregates repeat references into artifact-improvement proposals. You do
+not touch the file system.
 
 ## Guardrails
 

@@ -7,8 +7,8 @@
  */
 
 /**
- * 8 patterns from master plan §10. Sprint 5 ships P1, P2, P5.
- * Remaining (P3, P4, P6, P7, P8) are implemented in later sprints.
+ * 9 patterns from master plan §10. Sprint 5 ships P1, P2, P5.
+ * P3/P4/P6/P7/P8 land in later sprints; P9 ships in F10 (v3 zero closure).
  */
 export const PATTERN_CODES = [
   "P1", // repeated correction → propose RULE
@@ -19,6 +19,7 @@ export const PATTERN_CODES = [
   "P6", // skill timing exceeds threshold → propose OPTIMIZE
   "P7", // capture cluster sin home rule → propose CREATE_NEW
   "P8", // rule referenced never triggered → propose DEPRECATE
+  "P9", // OBSERVATION captures naming an artifact → propose IMPROVE
 ] as const;
 
 export type PatternCode = (typeof PATTERN_CODES)[number];

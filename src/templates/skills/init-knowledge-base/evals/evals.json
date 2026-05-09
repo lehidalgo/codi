@@ -3,13 +3,13 @@
   "cases": [
     {
       "id": "first-run-bootstrap",
-      "description": "Empty repo (no CONTEXT.md) triggers init-knowledge-base on first devloop run",
-      "prompt": "devloop run feature \"add login\"  # error: KnowledgeBaseMissingError",
+      "description": "Empty repo (no CONTEXT.md) triggers init-knowledge-base on first codi run",
+      "prompt": "codi run feature \"add login\"  # error: KnowledgeBaseMissingError",
       "expectations": [
-        "Agent invokes devloop:init-knowledge-base in response to KnowledgeBaseMissingError",
+        "Agent invokes codi:init-knowledge-base in response to KnowledgeBaseMissingError",
         "Agent does NOT ask the user to invoke it manually — agent invokes via Skill tool",
         "Bootstrap analysis runs as a forked subagent (fork policy in contract.json)",
-        "Agent re-runs the original 'devloop run feature' command after init-knowledge-base completes"
+        "Agent re-runs the original 'codi run feature' command after init-knowledge-base completes"
       ],
       "tags": ["happy-path", "auto-chain"]
     },
@@ -47,7 +47,7 @@
         "Agent detects existing CONTEXT.md before scanning",
         "Agent reports 'knowledge base already initialized'",
         "Agent does NOT overwrite the existing file",
-        "Agent suggests using devloop:discover mode domain or devloop:architecture-review for ongoing CONTEXT.md updates"
+        "Agent suggests using codi:discover mode domain or codi:architecture-review for ongoing CONTEXT.md updates"
       ],
       "tags": ["happy-path", "idempotent"]
     },

@@ -86,7 +86,7 @@ const config: ProjectConfig = {
 let cwd: string;
 
 beforeEach(() => {
-  cwd = mkdtempSync(join(tmpdir(), "devloop-tx-"));
+  cwd = mkdtempSync(join(tmpdir(), "codi-tx-"));
 });
 afterEach(() => {
   rmSync(cwd, { recursive: true, force: true });

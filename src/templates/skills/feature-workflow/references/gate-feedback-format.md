@@ -22,7 +22,7 @@ When a gate fails, the agent receives structured JSON. This document describes t
   ],
   "retry_count": 1,
   "retries_remaining": 1,
-  "next_step": "Address failed checks. Re-run gate with: devloop gate run plan-complete"
+  "next_step": "Address failed checks. Re-run gate with: codi gate run plan-complete"
 }
 ```
 
@@ -32,10 +32,10 @@ When a gate fails, the agent receives structured JSON. This document describes t
 2. For each entry, identify the underlying cause:
    - Genuine gap in the work? Fix the work.
    - Misclassification by the gate? Address with the human; do not auto-override.
-   - Scope expansion that needs proposing? Use `devloop scope propose-expansion`.
+   - Scope expansion that needs proposing? Use `codi scope propose-expansion`.
 3. After addressing, re-run the gate:
    ```bash
-   devloop gate run <gate-name>
+   codi gate run <gate-name>
    ```
 4. Do not propose a transition until the gate passes.
 
@@ -47,9 +47,9 @@ The gate has exhausted its automatic retries. The system escalates to the human 
 
 The human has three options:
 
-- **Fix it together.** Discuss with the human, address the issue, then run `devloop gate run` once more (overrides the retry exhaustion as a manual run, recorded explicitly).
+- **Fix it together.** Discuss with the human, address the issue, then run `codi gate run` once more (overrides the retry exhaustion as a manual run, recorded explicitly).
 - **Override.** Human decides the gate is wrong for this case. Append a `decision_recorded` event with the rationale, then advance manually.
-- **Abandon.** The work is not viable. `devloop abandon --reason "..."`.
+- **Abandon.** The work is not viable. `codi abandon --reason "..."`.
 
 Never auto-override a gate. Never silently retry past the budget.
 
@@ -62,5 +62,5 @@ The `suggested_action` is the gate's guess at what would resolve the failure. It
 Once `gate_check_passed` events fire for every check in the gate, the system records `phase_completed` for the current phase. Then propose the transition:
 
 ```bash
-devloop transition --to <next-phase>
+codi transition --to <next-phase>
 ```

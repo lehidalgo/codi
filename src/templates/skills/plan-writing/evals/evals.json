@@ -8,7 +8,7 @@
       "expectations": [
         "Skill plan-writing is selected",
         "Mode plan is chosen",
-        "Output is written to docs/<timestamp>_[PLAN]_<slug>.md per devloop naming convention",
+        "Output is written to docs/<timestamp>_[PLAN]_<slug>.md per codi naming convention",
         "Plan contains atomic 2-5min tasks",
         "Plan contains complete code blocks with no placeholders, no TODOs, no '...' stubs",
         "Plan lists exact files to be modified",

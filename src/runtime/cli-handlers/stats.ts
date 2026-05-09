@@ -1,13 +1,11 @@
 /**
- * Stats handler — aggregates archived workflows for the `devloop stats`
- * subcommand. Reads every archive directory, runs the reducer, and rolls
- * up duration / token / gate-failure metrics plus a per-type counter.
+ * Stats handler — aggregates workflow runs for `codi workflow stats`.
+ *
+ * Brain-backed: reads workflow_runs + workflow_events directly. The legacy
+ * file-walk implementation was removed in F5 of v3 zero closure.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
-
-import { EventLog } from "../event-log.js";
+import { BrainEventLog } from "../brain-event-log.js";
 import { reduce } from "../reducer.js";
 import type { ManifestEvent } from "../types.js";
 
@@ -29,16 +27,12 @@ export interface RetryStats {
   failureRate: number;
 }
 
-export function computeWorkflowStats(opts: { cwd?: string }): {
+export function computeWorkflowStats(_opts: { cwd?: string } = {}): {
   durations: DurationStats;
   tokens: TokenStats;
   retries: RetryStats;
   byWorkflowType: Record<string, number>;
 } {
-  // Stats walks the legacy archives directory; brain backend stats use
-  // SQL aggregations elsewhere. Keep this site pinned to legacy.
-  const log = EventLog.fromCwd(opts.cwd ?? process.cwd());
-  const archivesDir = log.paths.archivesDir;
   const result = {
     durations: { totalDurationMs: 0, averageDurationMs: 0, workflowCount: 0 },
     tokens: { totalTokens: 0, averageTokensPerWorkflow: 0, workflowCount: 0 },
@@ -46,43 +40,38 @@ export function computeWorkflowStats(opts: { cwd?: string }): {
     byWorkflowType: {} as Record<string, number>,
   };
 
-  if (!existsSync(archivesDir)) return result;
-  const archives = readdirSync(archivesDir);
-  for (const id of archives) {
-    const dir = join(archivesDir, id);
-    if (!statSync(dir).isDirectory()) continue;
+  const log = BrainEventLog.open();
+  try {
+    const rows = log.privateRaw
+      .prepare(
+        `SELECT workflow_id FROM workflow_runs WHERE type != 'session' ORDER BY started_at DESC`,
+      )
+      .all() as { workflow_id: string }[];
 
-    const files = readdirSync(dir).filter((n) => /^\d{3}_[a-z_]+\.json$/.test(n));
-    if (files.length === 0) continue;
+    for (const r of rows) {
+      const events = log.loadEvents(r.workflow_id);
+      if (events.length === 0) continue;
+      const state = reduce(events);
 
-    const events: ManifestEvent[] = [];
-    for (const f of files) {
-      try {
-        const data = readFileSync(join(dir, f), "utf-8");
-        events.push(JSON.parse(data) as ManifestEvent);
-      } catch {
-        // skip corrupted entries
+      result.durations.workflowCount += 1;
+      result.durations.totalDurationMs +=
+        new Date(state.last_event_timestamp).getTime() - new Date(state.started_at).getTime();
+
+      result.tokens.workflowCount += 1;
+      result.tokens.totalTokens += state.subagent_stats.total_tokens_consumed;
+
+      for (const e of events) {
+        if ((e as ManifestEvent).event_type === "gate_check_started")
+          result.retries.totalGateChecks += 1;
+        if ((e as ManifestEvent).event_type === "gate_check_failed")
+          result.retries.totalGateFailures += 1;
       }
+
+      result.byWorkflowType[state.workflow_type] =
+        (result.byWorkflowType[state.workflow_type] ?? 0) + 1;
     }
-    if (events.length === 0) continue;
-
-    events.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-    const state = reduce(events);
-
-    result.durations.workflowCount += 1;
-    result.durations.totalDurationMs +=
-      new Date(state.last_event_timestamp).getTime() - new Date(state.started_at).getTime();
-
-    result.tokens.workflowCount += 1;
-    result.tokens.totalTokens += state.subagent_stats.total_tokens_consumed;
-
-    for (const e of events) {
-      if (e.event_type === "gate_check_started") result.retries.totalGateChecks += 1;
-      if (e.event_type === "gate_check_failed") result.retries.totalGateFailures += 1;
-    }
-
-    result.byWorkflowType[state.workflow_type] =
-      (result.byWorkflowType[state.workflow_type] ?? 0) + 1;
+  } finally {
+    log.dispose();
   }
 
   if (result.durations.workflowCount > 0) {

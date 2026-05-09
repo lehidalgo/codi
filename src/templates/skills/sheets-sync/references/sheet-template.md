@@ -56,7 +56,7 @@ Planning zone (human-owned):
 | `elaborated_from`     | text                     | regex `^REQ-\d{3,}$`, nullable    |
 | `status`              | dropdown (planning side) | `backlog` / `ready` / `blocked`   |
 
-Execution zone (devloop-owned, **protected range**):
+Execution zone (codi-owned, **protected range**):
 
 | Column            | Type                      | Validation                                                 |
 | ----------------- | ------------------------- | ---------------------------------------------------------- |
@@ -72,7 +72,7 @@ Execution zone (devloop-owned, **protected range**):
 | `completed_at`    | timestamp                 | ISO 8601                                                   |
 | `status`          | dropdown (execution side) | `in-progress` / `in-review` / `delivered` / `abandoned`    |
 
-`status` carries values from both zones — humans set planning statuses, devloop sets execution statuses. The transition is one-way; once devloop sets `status=in-progress`, humans should not edit it.
+`status` carries values from both zones — humans set planning statuses, codi sets execution statuses. The transition is one-way; once codi sets `status=in-progress`, humans should not edit it.
 
 ## `Release` tab
 
@@ -98,7 +98,7 @@ Pure formula tab. Canonical formulas:
 
 ## `Audit` tab
 
-Append-only mirror of `.devloop/manifest/events.jsonl`. Columns:
+Append-only mirror of `.codi/manifest/events.jsonl`. Columns:
 
 | Column         | Type                           |
 | -------------- | ------------------------------ |

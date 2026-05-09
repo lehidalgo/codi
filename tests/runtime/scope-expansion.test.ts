@@ -1,7 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import {
   runWorkflow,
   proposeScopeExpansion,
@@ -11,32 +8,32 @@ import {
   getStatus,
 } from "#src/runtime/cli-handlers.js";
 import type { Author } from "#src/runtime/types.js";
+import { createIsolatedBrain, type IsolatedBrain } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };
 
-function setup(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-scope-"));
-  mkdirSync(join(dir, "docs"), { recursive: true });
-  writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
+function setup(): { scope: IsolatedBrain; dir: string } {
+  const scope = createIsolatedBrain("codi-scope-");
   runWorkflow({
     workflowType: "feature",
     task: "Test scope",
     author: human,
-    cwd: dir,
+    cwd: scope.dir,
   });
-  return dir;
+  return { scope, dir: scope.dir };
 }
 
 describe("scope expansion handlers", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setup();
+    ({ scope, dir } = setup());
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("proposes a scope expansion", () => {
@@ -193,14 +190,15 @@ describe("scope expansion handlers", () => {
 });
 
 describe("incidental change recording", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setup();
+    ({ scope, dir } = setup());
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("appends an incidental_change_recorded event", () => {

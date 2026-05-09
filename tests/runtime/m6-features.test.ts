@@ -1,7 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import {
   runWorkflow,
   handover,
@@ -11,22 +8,18 @@ import {
   computeWorkflowStats,
 } from "#src/runtime/cli-handlers.js";
 import type { Author } from "#src/runtime/types.js";
+import { createIsolatedBrain, type IsolatedBrain } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 const maintainer: Author = { type: "human", id: "maintainer" };
 
-function setup(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-m6-"));
-  mkdirSync(join(dir, "docs"), { recursive: true });
-  writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
-  return dir;
-}
-
 describe("handover", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setup();
+    scope = createIsolatedBrain("codi-m6-");
+    dir = scope.dir;
     runWorkflow({
       workflowType: "feature",
       task: "Test handover",
@@ -36,7 +29,7 @@ describe("handover", () => {
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("transfers ownership", () => {
@@ -83,14 +76,16 @@ describe("handover", () => {
 });
 
 describe("stats", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setup();
+    scope = createIsolatedBrain("codi-m6-");
+    dir = scope.dir;
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("returns zeros when no archives", () => {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop SessionStart hook.
+# codi SessionStart hook.
 #
 # Runs once per Claude Code session. Two responsibilities:
 #   1. Verify plugin dependencies are installed (block-warn if not).
@@ -30,12 +30,12 @@ print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "addit
 # ─── Dependency check ────────────────────────────────────────────────────────
 
 if [ ! -x "$TSX_BIN" ]; then
-  emit_context "devloop plugin loaded but dependencies are missing at $PLUGIN_ROOT.
+  emit_context "codi plugin loaded but dependencies are missing at $PLUGIN_ROOT.
 
-Before invoking any devloop command, instruct the user to run:
+Before invoking any codi command, instruct the user to run:
   cd $PLUGIN_ROOT && pnpm install
 
-Without this, all devloop CLI calls will fail."
+Without this, all codi CLI calls will fail."
   exit 0
 fi
 
@@ -47,11 +47,11 @@ AUTH_MODE=""
 WORKFLOW_ID="none active"
 OUTPUT_MODE="caveman"
 
-if [ -f "$CWD/.devloop/project.json" ]; then
+if [ -f "$CWD/.codi/project.json" ]; then
   PROJECT_NAME="$(python3 -c "
 import json, sys
 try:
-    d = json.load(open('$CWD/.devloop/project.json'))
+    d = json.load(open('$CWD/.codi/project.json'))
     print(d.get('project_name', 'unknown'))
 except Exception:
     print('unknown')
@@ -59,7 +59,7 @@ except Exception:
   SHEET_ID="$(python3 -c "
 import json
 try:
-    d = json.load(open('$CWD/.devloop/project.json'))
+    d = json.load(open('$CWD/.codi/project.json'))
     print(d.get('sheet_id', ''))
 except Exception:
     print('')
@@ -67,7 +67,7 @@ except Exception:
   AUTH_MODE="$(python3 -c "
 import json
 try:
-    d = json.load(open('$CWD/.devloop/project.json'))
+    d = json.load(open('$CWD/.codi/project.json'))
     print(d.get('auth_mode', 'service_account'))
 except Exception:
     print('')
@@ -78,11 +78,11 @@ if [ -f "$CWD/.workflow/active/workflow-id.txt" ]; then
   WORKFLOW_ID="$(cat "$CWD/.workflow/active/workflow-id.txt" 2>/dev/null || echo "unknown")"
 fi
 
-if [ -f "$CWD/.devloop/preferences.json" ]; then
+if [ -f "$CWD/.codi/preferences.json" ]; then
   OUTPUT_MODE="$(python3 -c "
 import json
 try:
-    d = json.load(open('$CWD/.devloop/preferences.json'))
+    d = json.load(open('$CWD/.codi/preferences.json'))
     print(d.get('output_mode', 'caveman'))
 except Exception:
     print('caveman')
@@ -93,7 +93,7 @@ fi
 
 # Compose the message. Heredoc preserves the formatting; we trust the
 # emit_context helper to JSON-escape the whole blob.
-MESSAGE="You are devloop-augmented Claude Code — a peer team developer, not the user's tool.
+MESSAGE="You are codi-augmented Claude Code — a peer team developer, not the user's tool.
 
 ═══ DEFAULT MODE: ACT ═══
 Your default is action, not interrogation. User directives ('start', 'fix this', 'let's go', 'do X') ARE authorization — execute the recommended path. Ask ONLY when:
@@ -108,7 +108,7 @@ Otherwise: do. Frame asks as 'I need X from you because I cannot do Y myself' �
 2. ONE QUESTION PER TURN          Atomic elicitation; never bundle.
 3. SHEET IS THE CANVAS            Strategic info lives in the Sheet via draft+sync, not chat.
 4. HARD GATES NEED 'ok'           'ok' / 'OK' / 'Ok' (case-insensitive, exactly two chars) pass a phase gate. 'okay' / 'looks good' / 'sure' / 'yeah' do NOT.
-5. PULL BEFORE PATCH              Re-runs start with 'devloop sheets pull-all'.
+5. PULL BEFORE PATCH              Re-runs start with 'codi sheets pull-all'.
 6. ATOMIC + ROLLBACK              sync-draft auto-snapshots; restore --latest is the undo.
 7. NEVER COMMIT WITHOUT APPROVAL  git commit / PR / branch delete are user-gated.
 8. HONOR OUTPUT MODE              Default caveman: bullets, ≤3-col tables, ONE summary line.
@@ -124,7 +124,7 @@ Otherwise: do. Frame asks as 'I need X from you because I cannot do Y myself' �
 The session output_mode above is the project default (Iron Law 8). When 'caveman':
   - Auto-invoke skill 'caveman' for response style.
   - User types '?' (alone or prefixed) → respond in normal mode for THAT turn only.
-  - Flip default with: devloop preferences set output-mode normal
+  - Flip default with: codi preferences set output-mode normal
 
 ═══ Available workflows ═══
   project        bootstrap a new project + Google Sheet from stakeholder docs
@@ -150,10 +150,10 @@ When the workflow needs a real decision from you (project name, auth mode,
 phase transition gate), pause THEN — not before any action.
 
 For one-off Sheet operations the user can run directly:
-  devloop sheets pull-all      patch-model baseline before editing
-  devloop sheets snapshot      manual safety capture
-  devloop sheets restore --latest   undo last sync
-  devloop sheets archive <Entity> <id>   soft-delete a row"
+  codi sheets pull-all      patch-model baseline before editing
+  codi sheets snapshot      manual safety capture
+  codi sheets restore --latest   undo last sync
+  codi sheets archive <Entity> <id>   soft-delete a row"
 
 emit_context "$MESSAGE"
 exit 0

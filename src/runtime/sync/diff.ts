@@ -5,7 +5,7 @@
  * Used by:
  *   - sync-draft --preview         show inserts / updates / no-ops / conflicts
  *                                  before writing
- *   - devloop sheets diff <draft>  ad-hoc diff inspection
+ *   - codi sheets diff <draft>  ad-hoc diff inspection
  *   - patch-model conflict surfacer  if a row's pulled value diverges from
  *                                    the Sheet's current value, mark
  *                                    "stale_pull" so the agent re-pulls

@@ -55,7 +55,7 @@ A plan markdown exists (`docs/[PLAN]_*.md`) or a design summary exists. If neith
 
 ## Termination
 
-- Inside workflow `plan` phase: record each resolution as a `decision_recorded` event in the manifest. Update the plan markdown inline only if a decision changes file scope or interfaces. Propose `devloop transition --to <next-phase>` when done.
+- Inside workflow `plan` phase: record each resolution as a `decision_recorded` event in the manifest. Update the plan markdown inline only if a decision changes file scope or interfaces. Propose `codi transition --to <next-phase>` when done.
 - Standalone: append the resolutions to the existing plan markdown; do not start a workflow without explicit user request.
 
 ## What you do NOT do in this mode

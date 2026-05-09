@@ -21,7 +21,7 @@ let xlsxPath: string;
 let config: ProjectConfig;
 
 beforeEach(async () => {
-  cwd = mkdtempSync(join(tmpdir(), "devloop-xlsx-"));
+  cwd = mkdtempSync(join(tmpdir(), "codi-xlsx-"));
   xlsxPath = join(cwd, "sheet.xlsx");
   await createLocalXlsxProject({ filePath: xlsxPath });
   config = {

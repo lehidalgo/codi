@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop / sheets-sync — OAuth user-acting setup helper.
+# codi / sheets-sync — OAuth user-acting setup helper.
 #
 # Runs `gcloud auth application-default login` with the canonical Sheets+Drive
 # scopes, then probes the resulting ADC token to confirm the scopes actually
@@ -47,7 +47,7 @@ esac
 
 # ─── Run the OAuth flow ──────────────────────────────────────────────────
 echo "→ Running gcloud auth application-default login (opens a browser)…"
-echo "  Sign in with the Google account you want devloop to act as."
+echo "  Sign in with the Google account you want codi to act as."
 echo "  Scopes requested: openid, userinfo.email, cloud-platform, spreadsheets, drive"
 echo ""
 
@@ -92,8 +92,8 @@ if [ -z "$ACCESS_TOKEN" ]; then
   exit 1
 fi
 
-PROBE_URL="https://sheets.googleapis.com/v4/spreadsheets/__devloop_probe_invalid_id__"
-PROBE_BODY="$(curl -sS -o /tmp/_devloop_probe.json -w '%{http_code}' \
+PROBE_URL="https://sheets.googleapis.com/v4/spreadsheets/__codi_probe_invalid_id__"
+PROBE_BODY="$(curl -sS -o /tmp/_codi_probe.json -w '%{http_code}' \
   -H "Authorization: Bearer $ACCESS_TOKEN" "$PROBE_URL" || echo "ERR")"
 
 case "$PROBE_BODY" in
@@ -101,7 +101,7 @@ case "$PROBE_BODY" in
     echo "✓ scope probe passed (HTTP $PROBE_BODY — expected; bogus Sheet ID)"
     ;;
   403)
-    if grep -qi "insufficient" /tmp/_devloop_probe.json 2>/dev/null; then
+    if grep -qi "insufficient" /tmp/_codi_probe.json 2>/dev/null; then
       cat <<EOF >&2
 
 ✗ ADC was granted but lacks Sheets/Drive scopes.
@@ -119,7 +119,7 @@ Manual recovery: see google-sheets-setup.md Path D'.
 EOF
       exit 1
     fi
-    echo "✗ unexpected 403 from Sheets API; check error log at /tmp/_devloop_probe.json" >&2
+    echo "✗ unexpected 403 from Sheets API; check error log at /tmp/_codi_probe.json" >&2
     exit 1
     ;;
   401)
@@ -140,12 +140,12 @@ Active gcloud account:  ${ACTIVE_ACCOUNT}
 ADC credentials path:   ${ADC_PATH}
 Granted scopes:         openid, userinfo.email, cloud-platform, spreadsheets, drive
 
-devloop will now act as YOU (your Drive quota, your file ownership) when
+codi will now act as YOU (your Drive quota, your file ownership) when
 auth_mode=oauth_user.
 
 Next:
-  devloop sheets auth-check                    # verify resolution
-  devloop sheets create-project \\
+  codi sheets auth-check                    # verify resolution
+  codi sheets create-project \\
     --name "<project>" \\
     --auth-mode oauth_user                     # folder-id optional
 

@@ -9,17 +9,17 @@ Refine candidate Stories from `discover` into PR-sized units with concrete accep
 
 ## The canvas rule for this phase
 
-Same as `discover`: **draft locally, sync once, review in Sheet**. Refined Stories go through a `.devloop/draft/decompose.json` file synced via `devloop sheets sync-draft`. NO per-row upsert calls — that's the token-burning anti-pattern.
+Same as `discover`: **draft locally, sync once, review in Sheet**. Refined Stories go through a `.codi/draft/decompose.json` file synced via `codi sheets sync-draft`. NO per-row upsert calls — that's the token-burning anti-pattern.
 
 ## Token-efficient draft+sync flow
 
 ```bash
 # 1. Read existing Sheet state (Goals + Reqs + draft Stories from discover).
-devloop sheets list UserStory --json > /tmp/_existing.json    # or use Read on tab range
+codi sheets list UserStory --json > /tmp/_existing.json    # or use Read on tab range
 
 # 2. Refine Stories internally.
 
-# 3. Write .devloop/draft/decompose.json with the refined Stories. Each row:
+# 3. Write .codi/draft/decompose.json with the refined Stories. Each row:
 #    {
 #      "id": "US-001",                          # reuse the discover-phase id if applicable
 #      "as_a": "...",
@@ -35,14 +35,14 @@ devloop sheets list UserStory --json > /tmp/_existing.json    # or use Read on t
 #    New rows added during refinement have no "id" → CLI mints US-NNN sequentially.
 
 # 4. Sync in one shot:
-devloop sheets sync-draft .devloop/draft/decompose.json
+codi sheets sync-draft .codi/draft/decompose.json
 ```
 
 `sync-draft` is idempotent on `id` — refined Stories with the same id just update; new ones get fresh IDs.
 
 ## What stays in chat
 
-- ONE summary line: _"Refined N stories → Sheet [URL]. M splits / K merges. Priority: P0=3, P1=5, P2=2. Draft at `.devloop/draft/decompose.json`. Approve / redirect / edit-and-resync."_
+- ONE summary line: _"Refined N stories → Sheet [URL]. M splits / K merges. Priority: P0=3, P1=5, P2=2. Draft at `.codi/draft/decompose.json`. Approve / redirect / edit-and-resync."_
 - Brief one-liners for non-obvious decisions (split US-1.1 → US-1.1a + US-1.1b; merged US-2.1 + US-2.2 because identical seam).
 - Clarifying questions (one per turn).
 - HARD GATE approval ack.
@@ -54,8 +54,8 @@ devloop sheets sync-draft .devloop/draft/decompose.json
    - Estimate engineering size; split if >1 PR (~500 LOC / ~3 days).
    - Set `priority`. One P0 max per Goal.
    - Wire `elaborated_from` and `parent_story` for splits.
-2. **Write `.devloop/draft/decompose.json`** in ONE Write tool call.
-3. **Run `devloop sheets sync-draft .devloop/draft/decompose.json`** — ONE Bash call.
+2. **Write `.codi/draft/decompose.json`** in ONE Write tool call.
+3. **Run `codi sheets sync-draft .codi/draft/decompose.json`** — ONE Bash call.
 4. **Add Requirements lazily** — if a gap surfaces during refinement and needs a new REQ, append it to the draft and re-sync (still one command).
 5. **Chain `plan-writing`** for any Story complex enough to warrant a stand-alone planning document. The plan-writing skill writes `docs/<ts>_[PLAN]_<slug>.md`. The Story carries `design_doc_path` later (populated by `feature-workflow.plan`).
 6. **Surface ONE summary line.** Don't dump the Story list in chat.

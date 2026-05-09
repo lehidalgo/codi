@@ -12,12 +12,12 @@ import { SheetsError } from "#src/runtime/sync/types.js";
 import type { ProjectConfig } from "#src/runtime/sync/types.js";
 
 function freshTmp(): string {
-  return mkdtempSync(join(tmpdir(), "devloop-config-test-"));
+  return mkdtempSync(join(tmpdir(), "codi-config-test-"));
 }
 
 function writeRaw(cwd: string, raw: object): void {
-  mkdirSync(join(cwd, ".devloop"), { recursive: true });
-  writeFileSync(join(cwd, ".devloop", "project.json"), JSON.stringify(raw, null, 2), "utf8");
+  mkdirSync(join(cwd, ".codi"), { recursive: true });
+  writeFileSync(join(cwd, ".codi", "project.json"), JSON.stringify(raw, null, 2), "utf8");
 }
 
 describe("readProjectConfig — auth_mode validation", () => {
@@ -67,11 +67,11 @@ describe("readProjectConfig — auth_mode validation", () => {
         created_at: "2026-05-03T00:00:00Z",
         created_by: "u@x",
         auth_mode: "local_xlsx",
-        local_path: "/tmp/x/.devloop/sheet.xlsx",
+        local_path: "/tmp/x/.codi/sheet.xlsx",
       });
       const cfg = readProjectConfig(cwd);
       expect(cfg.auth_mode).toBe("local_xlsx");
-      expect(cfg.local_path).toBe("/tmp/x/.devloop/sheet.xlsx");
+      expect(cfg.local_path).toBe("/tmp/x/.codi/sheet.xlsx");
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
@@ -137,7 +137,7 @@ describe("readProjectConfig — round-trip via writeProjectConfig", () => {
         project_name: "acme-local",
         sheet_id: "local:sheet.xlsx",
         sheet_template_version: 1,
-        local_path: join(cwd, ".devloop", "sheet.xlsx"),
+        local_path: join(cwd, ".codi", "sheet.xlsx"),
         created_at: "2026-05-03T00:00:00Z",
         created_by: "u@x",
         auth_mode: "local_xlsx",

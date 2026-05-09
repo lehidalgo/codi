@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop pre-tool-use hook
+# codi pre-tool-use hook
 #
 # Invoked by Claude Code before every tool call.
 # Stdin: JSON { tool_name, tool_input }

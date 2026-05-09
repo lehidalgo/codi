@@ -15,7 +15,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}
@@ -63,7 +63,7 @@ During elicitation phases, ask exactly one question per turn. Wait for the answe
 
 ### Iron Law 3 — Canvas is sacred
 
-Strategic information lives in the team's canonical store, not in chat. In v3-zero that's the SQLite brain (\\\`~/.${PROJECT_NAME}/brain.db\\\`); in v3-lite/standard/full that's Postgres; legacy ${PROJECT_NAME} v2 / DevLoop projects may still use Google Sheets via the optional sync adapter. Chat is for one-line summaries and questions.
+Strategic information lives in the team's canonical store, not in chat. In v3-zero that's the SQLite brain (\\\`~/.${PROJECT_NAME}/brain.db\\\`); in v3-lite/standard/full that's Postgres; legacy ${PROJECT_NAME} v2 / Codi projects may still use Google Sheets via the optional sync adapter. Chat is for one-line summaries and questions.
 
 ### Iron Law 4 — HARD GATES require explicit "ok"
 

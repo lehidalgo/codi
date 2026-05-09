@@ -22,6 +22,7 @@ import {
   p6SlowSkill,
   p7OrphanCluster,
   p8UnusedRule,
+  p9ArtifactObservation,
 } from "./patterns.js";
 import { renderPrompt } from "./prompts.js";
 import type { Proposal } from "./types.js";
@@ -31,6 +32,8 @@ import { maxCallsPerRun } from "../llm/index.js";
 export interface RunContext {
   readonly installedSkills: readonly string[];
   readonly installedRules: readonly string[];
+  /** Optional catalog of installed agents — feeds the P9 detector. */
+  readonly installedAgents?: readonly string[];
   readonly existingRuleKeywords: readonly string[];
   readonly knownContradictions?: readonly { a: string; b: string }[];
   readonly sinceTs?: number;
@@ -104,6 +107,17 @@ export async function runConsolidation(
     ...p8UnusedRule.detect(raw, {
       installedRules: ctx.installedRules,
       sinceTs: ctx.sinceTs,
+    }),
+  );
+  detected.push(
+    ...p9ArtifactObservation.detect(raw, {
+      sinceTs: ctx.sinceTs,
+      minEvidence: ctx.minEvidence,
+      installedArtifacts: [
+        ...ctx.installedRules.map((name) => ({ name, kind: "rule" as const })),
+        ...ctx.installedSkills.map((name) => ({ name, kind: "skill" as const })),
+        ...(ctx.installedAgents ?? []).map((name) => ({ name, kind: "agent" as const })),
+      ],
     }),
   );
 

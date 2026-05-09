@@ -1,5 +1,5 @@
 /**
- * `devloop sheets daemon` — drains .devloop/sheets-queue.jsonl by retrying
+ * `codi sheets daemon` — drains .codi/sheets-queue.jsonl by retrying
  * each pending upsert against the Sheet.
  *
  * v0.1 design:

@@ -27,10 +27,37 @@ let validator: ValidateFunction | null = null;
  * Find the schema relative to this file. This makes the factory portable —
  * it works whether the CLI is invoked from the plugin root, from a target
  * project, or from a temp directory during tests.
+ *
+ * Tries candidates in order so the same code path works for both layouts:
+ *   - source / dev: `src/runtime/event-factory.ts` → `../schemas/...`
+ *   - bundled dist: `dist/chunk-XXX.js`            → `./schemas/...`
+ *
+ * Throws when none exist so missing-schema bugs fail loud at first event.
  */
 function findSchemaPath(): string {
   const here = dirname(fileURLToPath(import.meta.url));
-  return resolve(here, "..", "schemas", "runtime", "manifest-event.schema.json");
+  const candidates = [
+    // dev/source layout — runtime sibling to schemas via parent dir
+    resolve(here, "..", "schemas", "runtime", "manifest-event.schema.json"),
+    // bundled dist layout — schemas/ lives next to the chunk
+    resolve(here, "schemas", "runtime", "manifest-event.schema.json"),
+    // monorepo / nested-bundle layout — two levels up
+    resolve(here, "..", "..", "schemas", "runtime", "manifest-event.schema.json"),
+  ];
+  for (const p of candidates) {
+    try {
+      readFileSync(p);
+      return p;
+    } catch {
+      // try next candidate
+    }
+  }
+  // None resolved — surface the canonical (dev) path in the error so the
+  // operator can tell whether the build asset-copy step failed.
+  throw new Error(
+    `manifest-event.schema.json not found near ${here}. ` +
+      `Tried: ${candidates.join(", ")}. Did the build step copy schemas to dist/?`,
+  );
 }
 
 function getValidator(): ValidateFunction {

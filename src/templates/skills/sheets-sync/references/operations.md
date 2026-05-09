@@ -6,8 +6,8 @@ Step-by-step for the three primitives. The skill body summarizes; this document 
 
 Idempotent upsert. Returns the upserted row (with assigned ID if new).
 
-1. **Read config.** Load `.devloop/project.json`. If `sheet_id` is missing, ELICIT — surface the prompt to the user, never invent. Recommended path: run `project-workflow` first.
-2. **Load credentials.** Read `~/.config/devloop/credentials.json` (or path from config). If missing, ELICIT.
+1. **Read config.** Load `.codi/project.json`. If `sheet_id` is missing, ELICIT — surface the prompt to the user, never invent. Recommended path: run `project-workflow` first.
+2. **Load credentials.** Read `~/.config/codi/credentials.json` (or path from config). If missing, ELICIT.
 3. **Validate row.** Run AJV-style validation against the entity schema. Reject with `schema_invalid` on failure.
 4. **Zone check.** Compare written columns against the caller's allowed zone (`project-workflow.sync` → all; everyone else → execution only). Reject with `zone_violation` on failure.
 5. **Diff against current.** Read the current row (if it exists). If every written column matches existing values, return the existing row unchanged — no API call, no event.
@@ -32,7 +32,7 @@ Read a row, validate, return parsed.
 Rebuilds the Sheet's execution columns from the manifest event log. Manual command, idempotent.
 
 1. Read config + credentials.
-2. Stream `.devloop/manifest/events.jsonl` from the start.
+2. Stream `.codi/manifest/events.jsonl` from the start.
 3. For each Story-mutating event, replay into an in-memory state map keyed by `story_id`.
 4. For each story id in the map, **upsert execution columns only** to the Sheet — bypass diff (force-write to overwrite any divergence).
 5. Do NOT touch planning columns. Hand-edits to `as_a`, `acceptance_criteria`, etc. are preserved.

@@ -9,7 +9,7 @@ The safety net. Skip ONLY when comprehensive existing tests already exercise the
 
 ## Setup
 
-Strongly recommended: invoke `devloop:worktrees` at the start of this phase. The worktree captures the unrefactored baseline tests on a clean isolated branch and gives `subagent-orchestration` mode `sequential` (used at phase execute) a stable place to land per-step commits.
+Strongly recommended: invoke `codi:worktrees` at the start of this phase. The worktree captures the unrefactored baseline tests on a clean isolated branch and gives `subagent-orchestration` mode `sequential` (used at phase execute) a stable place to land per-step commits.
 
 ## Capture current behavior
 

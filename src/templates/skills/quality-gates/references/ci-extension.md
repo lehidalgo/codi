@@ -69,7 +69,7 @@ When the user invokes `quality-gates setup`:
 3. Display the diff to the user with a short summary ("Adds quality-gates job; takes ~30s; mirrors local pre-commit + pre-push").
 4. Ask for explicit approval (recommended answer: yes for fresh repos, "show me the diff once more" for active CI).
 5. Only on approval, write the changes.
-6. Record the approval in `git config devloop.qualityGates.ciApproved <commit-sha>` so `setup` can detect the prior approval and skip re-asking on idempotent re-runs (unless the diff has changed).
+6. Record the approval in `git config codi.qualityGates.ciApproved <commit-sha>` so `setup` can detect the prior approval and skip re-asking on idempotent re-runs (unless the diff has changed).
 
 ## Anti-patterns
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://devloop.dev/schemas/manifest-event/v1.0.0",
+  "$id": "https://codi.dev/schemas/manifest-event/v1.0.0",
   "title": "Manifest Event",
-  "description": "Canonical event in the devloop manifest event log. Closed vocabulary — extending requires an ADR.",
+  "description": "Canonical event in the codi manifest event log. Closed vocabulary — extending requires an ADR.",
   "type": "object",
   "$defs": {
     "eventId": {

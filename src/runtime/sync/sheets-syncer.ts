@@ -3,7 +3,7 @@
  *
  * Sprint 2 proper ships the contract + a thin scaffold. The full push/pull
  * implementation reuses src/runtime/sync/{bootstrap,operations,...}.ts which
- * were imported from DevLoop. Wiring those internals into the
+ * were imported from Codi. Wiring those internals into the
  * push/pull/diff methods is Sprint 3 work — this module exists so the
  * runtime can already route by `kind` and tests can stub the adapter.
  */

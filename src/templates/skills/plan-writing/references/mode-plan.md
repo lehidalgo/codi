@@ -4,7 +4,7 @@ Write the detailed implementation plan for a workflow. This is the artifact phas
 
 ## Pre-conditions
 
-- A `discover` dialogue has reached explicit user approval of the design (mode `wide`) or the resolved decision tree (modes `sharpen` or `domain`). If decisions are not yet resolved, stop and tell the user to run `devloop:discover` first.
+- A `discover` dialogue has reached explicit user approval of the design (mode `wide`) or the resolved decision tree (modes `sharpen` or `domain`). If decisions are not yet resolved, stop and tell the user to run `codi:discover` first.
 - `docs/CONTEXT.md` exists (run `init-knowledge-base` if not).
 - The active workflow is in phase `plan`.
 
@@ -109,7 +109,7 @@ git commit -m "feat: add funcUnderTest"
 For each file the plan declares, propose scope expansion to the workflow:
 
 ```bash
-devloop scope propose-expansion --file <path> --reason "<why>"
+codi scope propose-expansion --file <path> --reason "<why>"
 ```
 
 After the user approves each, `manifest.scope.files_in_plan` will contain every file in the plan. The pre-tool-use hook will then permit edits to those files during phase execute, and block edits to others.
@@ -120,11 +120,11 @@ After the user approves each, `manifest.scope.files_in_plan` will contain every 
 2. Emit `artifact_linked` event with type `plan` and the file path.
 3. Surface the path to the user with a 1-2 line summary:
    > "Plan written at `docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md`. Files in scope: <count>. Tasks: <count>. Review and approve."
-4. Do NOT propose phase transition. The user reviews the plan, then explicitly invokes `devloop transition --to decompose` (or `--to execute` if the workflow type skips decompose).
+4. Do NOT propose phase transition. The user reviews the plan, then explicitly invokes `codi transition --to decompose` (or `--to execute` if the workflow type skips decompose).
 
 ## What you do NOT do in this mode
 
-- Interview the user. The plan is a synthesis; if information is missing, run `devloop:discover` first.
+- Interview the user. The plan is a synthesis; if information is missing, run `codi:discover` first.
 - Echo the plan content into the chat. Write the file; surface the path.
 - Use placeholders. Every code block is real code that compiles.
 - Cross between tasks. If task 3 defines `clearLayers()`, task 7 must also use `clearLayers()` exactly. The type-consistency check in self-review catches these.

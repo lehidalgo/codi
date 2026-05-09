@@ -4,7 +4,7 @@ Goal: confirm the feature does what the plan said it would, with green validatio
 
 ## How to run this phase (chained skills)
 
-You **MUST** invoke `devloop:verify-evidence` before proposing transition to `done`. It enforces a 5-step gate:
+You **MUST** invoke `codi:verify-evidence` before proposing transition to `done`. It enforces a 5-step gate:
 
 1. **Identify** — list what specifically must be verified (success criteria from the plan).
 2. **Run** — execute the verification command(s) against real code, not against mocks or imagination.
@@ -16,7 +16,7 @@ Evidence before assertions. Without verify-evidence, claiming `done` is just opt
 
 ### Optional: code review on the diff
 
-When `.devloop/config.yaml` has `auto_review: true`, **invoke `devloop:code-review` mode `request`** after verify-evidence and before proposing `done`. It dispatches a forked reviewer subagent on `git diff base..HEAD`, returns a structured verdict, and blocks the transition to `done` if Critical or Important issues are found. This is opt-in — verify-evidence is mandatory; code-review request is recommended for major features and required before merge to main.
+When `.codi/config.yaml` has `auto_review: true`, **invoke `codi:code-review` mode `request`** after verify-evidence and before proposing `done`. It dispatches a forked reviewer subagent on `git diff base..HEAD`, returns a structured verdict, and blocks the transition to `done` if Critical or Important issues are found. This is opt-in — verify-evidence is mandatory; code-review request is recommended for major features and required before merge to main.
 
 `code-review` complements verify-evidence — verify-evidence checks the work against the plan; code-review checks the work against another reviewer's eyes. Run both for high-stakes features.
 
@@ -52,7 +52,7 @@ You are ready when:
 Then propose:
 
 ```bash
-devloop transition --to done
+codi transition --to done
 ```
 
 On approve, the system writes `workflow_completed`. The branch is ready for PR.

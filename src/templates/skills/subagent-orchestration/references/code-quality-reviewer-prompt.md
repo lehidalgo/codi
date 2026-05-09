@@ -6,7 +6,7 @@ Stage 2 of mode `sequential` review loop. Checks: is the implementation well-bui
 
 **Option A — inline review using this prompt.** Cheap, single skill in play.
 
-**Option B — defer to `devloop:code-review` mode `request`.** Same JSON schema, integrates with phase verify's code-review and produces consistent verdicts across the workflow. Recommended when `auto_review: true` is set in `.devloop/config.yaml`.
+**Option B — defer to `codi:code-review` mode `request`.** Same JSON schema, integrates with phase verify's code-review and produces consistent verdicts across the workflow. Recommended when `auto_review: true` is set in `.codi/config.yaml`.
 
 Use one or the other. Do not run both for the same task.
 

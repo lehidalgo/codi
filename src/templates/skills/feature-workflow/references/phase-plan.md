@@ -6,12 +6,12 @@ Goal: design the feature concretely. End the phase with a written plan that any 
 
 The phase order is strict — each step depends on the previous:
 
-1. **`devloop:plan-writing`** (mode `plan`) writes `docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md` with atomic 2-5min tasks, complete code blocks, and no placeholders. This is the artifact phase plan produces. Do NOT improvise the plan structure — the skill prescribes it (see `references/plan-template.md` inside the skill).
-2. **`devloop:discover`** (mode `sharpen` if `docs/CONTEXT.md` is sparse; mode `domain` if it has ≥5 terms or `docs/adr/` has approved ADRs in the area). The skill walks the decision tree of the just-written plan branch by branch, surfaces ambiguities and contradictions against the codebase, and updates `CONTEXT.md` inline if it is in mode `domain`.
-3. **Run the gate**: `devloop gate run plan-complete`. Address any failed checks per the structured feedback format.
+1. **`codi:plan-writing`** (mode `plan`) writes `docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md` with atomic 2-5min tasks, complete code blocks, and no placeholders. This is the artifact phase plan produces. Do NOT improvise the plan structure — the skill prescribes it (see `references/plan-template.md` inside the skill).
+2. **`codi:discover`** (mode `sharpen` if `docs/CONTEXT.md` is sparse; mode `domain` if it has ≥5 terms or `docs/adr/` has approved ADRs in the area). The skill walks the decision tree of the just-written plan branch by branch, surfaces ambiguities and contradictions against the codebase, and updates `CONTEXT.md` inline if it is in mode `domain`.
+3. **Run the gate**: `codi gate run plan-complete`. Address any failed checks per the structured feedback format.
 4. Propose transition to `decompose` only after all three: plan markdown exists, discover dialogue ends with explicit user approval, gate passes.
 
-For each file the plan declares in "Files to be modified", emit a `scope_expansion_proposed` event via `devloop scope propose-expansion` so `manifest.scope.files_in_plan` is populated before phase execute begins.
+For each file the plan declares in "Files to be modified", emit a `scope_expansion_proposed` event via `codi scope propose-expansion` so `manifest.scope.files_in_plan` is populated before phase execute begins.
 
 ## What you produce
 
@@ -25,7 +25,7 @@ For each file the plan declares in "Files to be modified", emit a `scope_expansi
 After emitting `design_doc_authored`, sync the path to the Sheet so the Story row carries the design doc reference:
 
 ```bash
-devloop sheets upsert UserStory '{"id":"US-NNN","design_doc_path":"docs/<ts>_[PLAN]_<slug>.md"}'
+codi sheets upsert UserStory '{"id":"US-NNN","design_doc_path":"docs/<ts>_[PLAN]_<slug>.md"}'
 ```
 
 If the workflow had no `--from-story` (free-running mode), the Story id is the one auto-created at end of intent.
@@ -108,7 +108,7 @@ Apply the triple test. All three must hold:
 If yes to all three, propose an ADR via:
 
 ```bash
-devloop adr propose --title "<title>" --rationale "..."
+codi adr propose --title "<title>" --rationale "..."
 ```
 
 (In M1, this is a manifest CLI append. M3 wraps it.)
@@ -120,7 +120,7 @@ Wait for human approval. On approve, write `docs/adr/NNNN-<slug>.md` and append 
 For each file you decide will change:
 
 ```bash
-devloop scope propose-expansion --reason "<why> — phase plan"
+codi scope propose-expansion --reason "<why> — phase plan"
 ```
 
 Wait for human approval. The file gets added to `manifest.scope.files_in_plan`. Repeat per file.
@@ -141,7 +141,7 @@ You are ready when:
 Then propose:
 
 ```bash
-devloop transition --to decompose
+codi transition --to decompose
 ```
 
 ## Common mistakes

@@ -4,7 +4,7 @@ import { reduce, ReducerError } from "#src/runtime/reducer.js";
 import type { Author } from "#src/runtime/types.js";
 
 const author: Author = { type: "human", id: "tester" };
-const sysAuthor: Author = { type: "system", id: "devloop" };
+const sysAuthor: Author = { type: "system", id: "codi" };
 
 function init(workflowId: string, task: string) {
   return createEvent({
@@ -147,7 +147,7 @@ describe("reduce", () => {
         payload: {
           child_workflow_id: "refactor-1",
           child_workflow_type: "refactor",
-          child_branch: "devloop/feat-1/refactor-1",
+          child_branch: "codi/feat-1/refactor-1",
           reason: "decoupling",
         },
         author: sysAuthor,

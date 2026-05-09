@@ -4,8 +4,8 @@ Extended plan template specific to refactors.
 
 ## Phase chain
 
-1. **`devloop:plan-writing`** (mode `plan`) writes the refactor plan markdown.
-2. **`devloop:discover`** (mode `domain` when the refactor touches existing ADRs in `docs/adr/` or terms in `docs/CONTEXT.md`; otherwise mode `sharpen`). Cross-references the plan against documented decisions and surfaces contradictions.
+1. **`codi:plan-writing`** (mode `plan`) writes the refactor plan markdown.
+2. **`codi:discover`** (mode `domain` when the refactor touches existing ADRs in `docs/adr/` or terms in `docs/CONTEXT.md`; otherwise mode `sharpen`). Cross-references the plan against documented decisions and surfaces contradictions.
 3. Propose transition to `execute` after both complete.
 
 ## Refactor plan template additions

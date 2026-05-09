@@ -4,11 +4,11 @@ Apply the migration in committed steps. NEVER in parallel.
 
 ## Setup
 
-**Required:** invoke `devloop:worktrees` at the start of this phase for any migration with staging side-effects. The worktree keeps the migration script commits separate from main and gives a clean rollback boundary if the migration must be backed out.
+**Required:** invoke `codi:worktrees` at the start of this phase for any migration with staging side-effects. The worktree keeps the migration script commits separate from main and gives a clean rollback boundary if the migration must be backed out.
 
 ## Sequential orchestration
 
-For multi-step migration scripts (≥3 distinct DDL or backfill steps), invoke `devloop:subagent-orchestration` mode `sequential`. Each step gets a fresh implementer with the rollback path as context, and the two-stage review loop catches common footguns before the next step builds on top.
+For multi-step migration scripts (≥3 distinct DDL or backfill steps), invoke `codi:subagent-orchestration` mode `sequential`. Each step gets a fresh implementer with the rollback path as context, and the two-stage review loop catches common footguns before the next step builds on top.
 
 Single-step migrations: implement directly in the orchestrator session.
 

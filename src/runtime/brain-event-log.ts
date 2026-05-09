@@ -1,18 +1,13 @@
 /**
- * Brain-DB-backed event log (Item 1+2 of v3 closure plan).
+ * Brain-DB-backed event log — sole event-log surface in v3 zero.
  *
- * Implements the same surface as the legacy `EventLog` (file-based JSON
- * archives in `.devloop/active/`), but persists to `~/.codi/brain.db` via
- * the `workflow_runs` + `workflow_events` tables.
+ * Persists workflow runs + events to `~/.codi/brain.db` via the
+ * `workflow_runs` + `workflow_events` tables. The previous filesystem
+ * archive layout was retired in F5 of the v3 zero closure.
  *
- * Both classes coexist behind dependency-injection in `cli-handlers.ts`:
- *   - default = legacy EventLog (legacy tests untouched)
- *   - CODI_USE_BRAIN_BACKEND=1 (or explicit DI) = BrainEventLog
- *
- * Lock semantics: legacy uses a `.lock` file with `wx` flag. We replicate
- * the same single-process exclusion via a row in `workflow_runs.metadata`
- * keyed `lock_held_pid`. A lock is "held" when the row exists for a PID
- * that is alive; clearing it on `releaseLock` removes the key.
+ * Lock semantics: single-process exclusion via a row in
+ * `workflow_runs.metadata` keyed `lock_held_pid`. A lock is "held" when
+ * the row exists for a PID that is alive; `releaseLock` clears the key.
  */
 
 import type Database from "better-sqlite3";
@@ -91,6 +86,16 @@ export class BrainEventLog {
     private readonly handle: BrainHandle,
     private readonly ownsHandle: boolean,
   ) {}
+
+  /**
+   * Direct access to the underlying SQLite handle for handlers that need
+   * to run their own SELECTs / aggregations (recoverWorkflow, stats).
+   * Read-only convention by name — callers should never INSERT here; they
+   * should go through the typed methods on this class.
+   */
+  get privateRaw(): BrainHandle["raw"] {
+    return this.handle.raw;
+  }
 
   /**
    * Open or create a fresh BrainEventLog backed by ~/.codi/brain.db (or
@@ -285,6 +290,14 @@ export class BrainEventLog {
         // 'phase_started: verify'. Don't move it here.
         return null;
       }
+      // Iron Law 4 (F7) — phase transitions enter pending_approval until the
+      // user resolves them with an explicit 'ok' / 'reject'. The hard-gate
+      // banner injected by the UserPromptSubmit hook reads this status.
+      case "phase_transition_proposed":
+        return { status: "pending_approval" };
+      case "phase_transition_approved":
+      case "phase_transition_rejected":
+        return { status: "active" };
       case "workflow_completed":
         return { status: "completed", endedAt: Date.now() };
       case "workflow_abandoned":

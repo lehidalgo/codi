@@ -11,7 +11,7 @@ The Story's execution columns (`branch`, `commit_shas`, `pr_url`, `started_at`) 
 
 ## Process
 
-Invoke `devloop:discover` (mode `wide`) to confirm:
+Invoke `codi:discover` (mode `wide`) to confirm:
 
 - The migration goal in plain language.
 - The source and target schema (current shape → new shape).

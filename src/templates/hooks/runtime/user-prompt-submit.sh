@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop user-prompt-submit hook
+# codi user-prompt-submit hook
 #
 # Invoked each time the user submits a prompt. Stdout is concatenated to
 # the prompt before it reaches Claude. We use it to keep the agent aware

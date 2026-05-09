@@ -79,7 +79,7 @@ export class GoogleSheetsClient implements SheetsClient {
       // does not support append. We bundle them into a single try/catch so a single failure
       // surfaces as one error, but commits are not strictly atomic across the two API calls.
       // Audit-row safety: we always perform the entity update FIRST, then the audit append.
-      // If append fails, callers must reconcile via devloop sheets reconcile.
+      // If append fails, callers must reconcile via codi sheets reconcile.
       if (request.updates.length > 0) {
         await this.sheets.spreadsheets.values.batchUpdate({
           spreadsheetId,

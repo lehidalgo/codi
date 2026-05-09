@@ -4,14 +4,14 @@ Goal: understand what to build before writing a single line of code.
 
 ## When `--from-story US-NNN` was passed
 
-The workflow was invoked with `devloop run feature --from-story US-NNN`. The init event payload carries `from_story_id`. Treat the Story as the seed, not the cage:
+The workflow was invoked with `codi run feature --from-story US-NNN`. The init event payload carries `from_story_id`. Treat the Story as the seed, not the cage:
 
-1. **Read the Story from the Sheet** — `devloop sheets read UserStory US-NNN`. This is the agent-facing scope contract. The Story carries `as_a / i_want / so_that / acceptance_criteria / priority / elaborated_from`.
-2. **Read the linked Requirement** — `devloop sheets read Requirement <REQ-NNN>` if `elaborated_from` is set. Captures functional behavior or NFR thresholds the Story implies.
+1. **Read the Story from the Sheet** — `codi sheets read UserStory US-NNN`. This is the agent-facing scope contract. The Story carries `as_a / i_want / so_that / acceptance_criteria / priority / elaborated_from`.
+2. **Read the linked Requirement** — `codi sheets read Requirement <REQ-NNN>` if `elaborated_from` is set. Captures functional behavior or NFR thresholds the Story implies.
 3. **Read source markdown** — `docs/sources/*.md` for the broader context the original spec was extracted from.
 4. **Skip parts of `discover`** that the Story already answers. The Story has acceptance criteria — those ARE the success criteria. Do NOT re-elicit them.
 5. **Still grill the user on gaps** — if acceptance criteria are vague, if NFRs conflict, if the Requirement implies more scope than the Story names, surface those gaps via `discover` (one question per turn).
-6. **Update the Story row in the Sheet** when you commit to start. `devloop sheets upsert UserStory '{"id":"US-NNN","status":"in-progress","workflow_type":"feature","branch":"<branch>","started_at":"<iso>","assigned_to":"<git email>"}'` — execution columns only, caller defaults to `execution-only`.
+6. **Update the Story row in the Sheet** when you commit to start. `codi sheets upsert UserStory '{"id":"US-NNN","status":"in-progress","workflow_type":"feature","branch":"<branch>","started_at":"<iso>","assigned_to":"<git email>"}'` — execution columns only, caller defaults to `execution-only`.
 
 If the workflow was invoked WITHOUT `--from-story`, see "How to run this phase (chained skills)" below — the standard interview-driven flow applies, AND at the end of intent you should auto-create a Story row (see "Free-running Story creation" below).
 
@@ -20,7 +20,7 @@ If the workflow was invoked WITHOUT `--from-story`, see "How to run this phase (
 For ad-hoc work that wasn't pre-planned via `project-workflow`, create a Story row at end of intent so the work doesn't go invisible:
 
 ```bash
-devloop sheets upsert UserStory '{
+codi sheets upsert UserStory '{
   "i_want": "<one-line task>",
   "as_a": "developer",
   "so_that": "<benefit, derived from intent>",
@@ -37,7 +37,7 @@ The Story has no `elaborated_from` and no `parent_story` — Dashboard's "Untrac
 
 ## How to run this phase (chained skills)
 
-You **MUST** invoke `devloop:discover` (mode `wide`) before producing the intent summary. The skill enforces:
+You **MUST** invoke `codi:discover` (mode `wide`) before producing the intent summary. The skill enforces:
 
 - ONE question per turn (never bundle multiple questions)
 - ALWAYS provide a recommended answer (no open-ended "what do you want?")
@@ -88,7 +88,7 @@ By the end of this phase, the manifest has:
    For each open question, get an explicit answer from the human. Do not proceed with assumed answers. Capture each resolved decision via:
 
    ```bash
-   devloop scope propose-expansion --reason "..."   # if scope grows during exploration
+   codi scope propose-expansion --reason "..."   # if scope grows during exploration
    ```
 
    or by appending a `decision_recorded` event with a clear rationale.
@@ -103,10 +103,10 @@ By the end of this phase, the manifest has:
    List what the user might reasonably expect that is **not** part of this feature. Surfacing this prevents scope creep later.
 
 6. **Write the intent summary as a `decision_recorded` event**
-   Use `devloop` to append:
+   Use `codi` to append:
 
    ```bash
-   devloop scope propose-expansion ...
+   codi scope propose-expansion ...
    ```
 
    or directly via the manifest CLI (M1 only; M3 will wrap this).
@@ -123,7 +123,7 @@ You are ready when:
 Then propose:
 
 ```bash
-devloop transition --to plan
+codi transition --to plan
 ```
 
 Wait for human approve or reject.

@@ -1,5 +1,5 @@
 /**
- * `devloop sheets <subcommand>` dispatcher.
+ * `codi sheets <subcommand>` dispatcher.
  *
  * Subcommands shipped in P1:
  *   upsert <Entity> <jsonRow>  — write or update a row (idempotent)
@@ -138,7 +138,7 @@ async function runUpsert(positional: ReadonlyArray<string>, flags: CliFlags): Pr
   const entity = parseEntity(positional[2]);
   const jsonArg = positional[3];
   if (!jsonArg) {
-    fail(`devloop sheets upsert <Entity> <json> — missing json payload`);
+    fail(`codi sheets upsert <Entity> <json> — missing json payload`);
   }
   const row = parseJsonObject(jsonArg, "row payload");
   const caller: CallerScope = flags["bootstrap"] === true ? "bootstrap" : "execution-only";
@@ -193,7 +193,7 @@ async function runUpsert(positional: ReadonlyArray<string>, flags: CliFlags): Pr
 async function runRead(positional: ReadonlyArray<string>, flags: CliFlags): Promise<void> {
   const entity = parseEntity(positional[2]);
   const id = positional[3];
-  if (!id) fail(`devloop sheets read <Entity> <id> — missing id`);
+  if (!id) fail(`codi sheets read <Entity> <id> — missing id`);
 
   const cwd = process.cwd();
   const config = readConfigOrElicit(cwd);
@@ -276,8 +276,8 @@ async function runAuthCheck(flags: CliFlags): Promise<void> {
   // Probe both backends without throwing.
   const fs = await import("node:fs");
   const saPath =
-    process.env["DEVLOOP_GOOGLE_CREDENTIALS"] ??
-    `${process.env["HOME"] ?? ""}/.config/devloop/credentials.json`;
+    process.env["CODI_GOOGLE_CREDENTIALS"] ??
+    `${process.env["HOME"] ?? ""}/.config/codi/credentials.json`;
   const adcPath = adcCredentialsPath();
   const saPresent = fs.existsSync(saPath);
   const adcPresent = fs.existsSync(adcPath);
@@ -320,7 +320,7 @@ async function runAuthCheck(flags: CliFlags): Promise<void> {
     return;
   }
 
-  console.log(`devloop sheets auth-check`);
+  console.log(`codi sheets auth-check`);
   console.log(
     `  project.json::auth_mode:    ${cfgMode ?? "(unset → defaults to service_account)"}`,
   );
@@ -526,12 +526,12 @@ export function fail(msg: string): never {
 }
 
 function printHelp(): void {
-  console.log(`devloop sheets — Google Sheet persistence for the project layer
+  console.log(`codi sheets — Google Sheet persistence for the project layer
 
 Subcommands:
   create-project --name "X" (--folder-id "Y" | --sheet-id "Y")
                               create a new project Sheet (6 tabs, headers) +
-                              write .devloop/project.json with the sheet_id
+                              write .codi/project.json with the sheet_id
   sync-draft <draft.json>     batch-upsert rows from a local JSON draft.
                               Auto-runs 'validate' first; aborts on integrity
                               errors before any Sheet API call. Use this in
@@ -547,7 +547,7 @@ Subcommands:
                               against current Sheet truth (patch model).
   diff <draft.json>           insert/update/no-op/archive preview vs current
                               Sheet. --columns to list every changed cell.
-  snapshot                    capture all tabs to .devloop/snapshots/.
+  snapshot                    capture all tabs to .codi/snapshots/.
                               --label <name>, --list, --prune <keep>.
   restore --from <snap>       replay a snapshot back onto the Sheet. Use
                               after a bad sync. --latest picks newest. --only

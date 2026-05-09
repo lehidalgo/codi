@@ -10,7 +10,7 @@
         "Workflow starts at phase intent",
         "Phase baseline is MANDATORY before plan — captures current behavior with characterization tests",
         "Agent does NOT skip baseline even if existing tests look comprehensive",
-        "Agent invokes devloop:worktrees for an isolated worktree"
+        "Agent invokes codi:worktrees for an isolated worktree"
       ],
       "tags": ["happy-path", "phase-baseline", "mandatory"]
     },

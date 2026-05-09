@@ -15,7 +15,13 @@ import * as schema from "./schema.js";
 
 export type BrainDb = BetterSQLite3Database<typeof schema>;
 
+/**
+ * Path to the brain database. Honors `CODI_BRAIN_DB` (used by tests + scripts
+ * that need an isolated DB) before falling back to `~/.codi/brain.db`.
+ */
 export function defaultBrainPath(): string {
+  const override = process.env["CODI_BRAIN_DB"];
+  if (override && override.length > 0) return resolve(override);
   return resolve(homedir(), ".codi", "brain.db");
 }
 

@@ -69,7 +69,7 @@
       "prompt": "Approved. Let's deepen the Order intake module.",
       "expectations": [
         "Agent does NOT start the refactor itself",
-        "Agent invokes devloop:refactor-workflow",
+        "Agent invokes codi:refactor-workflow",
         "Agent feeds the chosen candidate as the intent input to refactor-workflow",
         "Refactor's plan phase will use the deepening candidate, dependency category, and test strategy"
       ],

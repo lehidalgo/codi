@@ -6,7 +6,7 @@ Synthesize the current conversation context plus codebase understanding into a P
 
 - The conversation up to this point has surfaced the user's intent (e.g., a `discover` session has happened, or the user has described the feature in detail).
 - `docs/CONTEXT.md` exists with the project's domain vocabulary.
-- An issue tracker is configured (`.devloop/config.yaml` declares one) IF the PRD will be published to the tracker; otherwise the PRD lives only as a markdown file.
+- An issue tracker is configured (`.codi/config.yaml` declares one) IF the PRD will be published to the tracker; otherwise the PRD lives only as a markdown file.
 
 ## Order of operations
 
@@ -84,7 +84,7 @@ Any further context or notes.
 ## Destination
 
 - File: `docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md` (yes, `[PLAN]` category — the project naming convention does not have a `[PRD]` category; PRDs are a kind of plan).
-- Optionally publish to issue tracker (gh / linear / etc.) if `.devloop/config.yaml` declares one and the user explicitly approves publication. Apply the `needs-triage` label so it enters the team's normal triage flow.
+- Optionally publish to issue tracker (gh / linear / etc.) if `.codi/config.yaml` declares one and the user explicitly approves publication. Apply the `needs-triage` label so it enters the team's normal triage flow.
 
 ## What you do NOT do in this mode
 
@@ -97,5 +97,5 @@ Any further context or notes.
 
 After the PRD is written and (optionally) published:
 
-- If standalone, this is the terminal state. The user starts a workflow when ready (`devloop run feature "<task>"`).
+- If standalone, this is the terminal state. The user starts a workflow when ready (`codi run feature "<task>"`).
 - If during a workflow phase, this mode is unusual — phase plan typically uses mode `plan`, not `prd`. If the workflow truly needs both a PRD and a plan, write the PRD first, then re-invoke `plan-writing` in mode `plan`.

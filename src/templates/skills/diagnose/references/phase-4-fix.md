@@ -8,7 +8,7 @@ Fix the root cause, not the symptom.
 - Automated test if possible.
 - One-off test script if no framework.
 - MUST exist BEFORE fixing.
-- Use `devloop:tdd` for the test-first cycle.
+- Use `codi:tdd` for the test-first cycle.
 
 ## 2. Implement single fix
 
@@ -46,7 +46,7 @@ STOP and question fundamentals:
 - Are we "sticking with it through sheer inertia"?
 - Should we refactor architecture vs. continue fixing symptoms?
 
-Action: hand off to `devloop:architecture-review`. Do NOT attempt fix #4.
+Action: hand off to `codi:architecture-review`. Do NOT attempt fix #4.
 
 This is not a failed hypothesis — this is a wrong architecture. The discussion belongs at the architecture level, not the bug level.
 

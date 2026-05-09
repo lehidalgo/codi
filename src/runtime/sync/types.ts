@@ -41,7 +41,7 @@ export interface SheetRow {
   readonly [column: string]: CellValue | undefined;
 }
 
-/** Project-level config persisted at .devloop/project.json. */
+/** Project-level config persisted at .codi/project.json. */
 export interface ProjectConfig {
   project_name: string;
   /**
@@ -54,7 +54,7 @@ export interface ProjectConfig {
   drive_folder_id?: string;
   /**
    * Local file path for the .xlsx backend (only set when auth_mode=local_xlsx).
-   * Default convention: .devloop/sheet.xlsx.
+   * Default convention: .codi/sheet.xlsx.
    */
   local_path?: string;
   created_at: string;

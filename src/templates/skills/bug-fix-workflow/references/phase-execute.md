@@ -1,6 +1,6 @@
 # Phase: execute
 
-Apply the fix. Optional: invoke `devloop:worktrees` when the fix touches ≥3 files or the diagnose phase produced significant exploration commits that should not land on main. Skip for 1-commit fixes.
+Apply the fix. Optional: invoke `codi:worktrees` when the fix touches ≥3 files or the diagnose phase produced significant exploration commits that should not land on main. Skip for 1-commit fixes.
 
 ## Procedure
 
@@ -14,7 +14,7 @@ Apply the fix. Optional: invoke `devloop:worktrees` when the fix touches ≥3 fi
 
 If no correct seam exists, that itself is the finding. The architecture is preventing the bug from being locked down. Action:
 
-1. Hand off to `devloop:architecture-review` to surface the deepening candidate.
+1. Hand off to `codi:architecture-review` to surface the deepening candidate.
 2. File the architecture-review handoff as a follow-up.
 3. Apply the narrowest fix that closes the regression.
 

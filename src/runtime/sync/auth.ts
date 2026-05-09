@@ -4,7 +4,7 @@
  * Two modes, both first-class:
  *
  *   - service_account: reads a service-account JSON key from
- *     ~/.config/devloop/credentials.json (or DEVLOOP_GOOGLE_CREDENTIALS env).
+ *     ~/.config/codi/credentials.json (or CODI_GOOGLE_CREDENTIALS env).
  *     Returns a JWT auth client. The agent acts as the SA. Files are owned
  *     by the SA (or the Shared Drive on Workspace) — SAs have ZERO Drive
  *     quota of their own, so Drive operations require either a Shared Drive
@@ -16,7 +16,7 @@
  *     OAuth2 client — agent acts as the user, files use the user's Drive
  *     quota, files are owned by the user.
  *
- * Both coexist. Choose at project bootstrap (.devloop/project.json::auth_mode)
+ * Both coexist. Choose at project bootstrap (.codi/project.json::auth_mode)
  * or via --auth-mode CLI flag. Neither is a default; the elicitation flow
  * asks the user which to use.
  */
@@ -30,7 +30,7 @@ import { JWT, GoogleAuth, OAuth2Client } from "google-auth-library";
 
 import { SheetsError } from "./types.js";
 
-export const DEFAULT_CREDENTIALS_PATH = ".config/devloop/credentials.json";
+export const DEFAULT_CREDENTIALS_PATH = ".config/codi/credentials.json";
 
 export const SHEETS_SCOPES: ReadonlyArray<string> = [
   "https://www.googleapis.com/auth/spreadsheets",
@@ -79,7 +79,7 @@ export interface ScopeProbeResult {
   details?: string;
 }
 
-const PROBE_URL = "https://sheets.googleapis.com/v4/spreadsheets/__devloop_probe_invalid_id__";
+const PROBE_URL = "https://sheets.googleapis.com/v4/spreadsheets/__codi_probe_invalid_id__";
 
 export async function probeOAuthUserScopes(): Promise<ScopeProbeResult> {
   let token: string;
@@ -141,10 +141,10 @@ export interface ServiceAccountKey {
   project_id?: string;
 }
 
-/** Resolve the credentials path: explicit > env > default ~/.config/devloop/credentials.json. */
+/** Resolve the credentials path: explicit > env > default ~/.config/codi/credentials.json. */
 export function resolveCredentialsPath(explicit?: string): string {
   if (explicit && explicit.length > 0) return explicit;
-  const fromEnv = process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
+  const fromEnv = process.env["CODI_GOOGLE_CREDENTIALS"];
   if (fromEnv && fromEnv.length > 0) return fromEnv;
   return join(homedir(), DEFAULT_CREDENTIALS_PATH);
 }
@@ -276,7 +276,7 @@ export async function loadAuthClient(
 }
 
 function loadLocalXlsxAuth(explicitPath?: string): AuthClient {
-  const filePath = explicitPath && explicitPath.length > 0 ? explicitPath : ".devloop/sheet.xlsx";
+  const filePath = explicitPath && explicitPath.length > 0 ? explicitPath : ".codi/sheet.xlsx";
   const basename = filePath.split("/").pop() ?? filePath;
   return { kind: "local_xlsx", identity: `local:${basename}`, filePath };
 }
@@ -389,7 +389,7 @@ export function elicitationPromptForMissingCredentials(): string {
   const path = resolveCredentialsPath();
   return [
     `Google service-account credentials not found at ${path}.`,
-    `Place the service-account JSON key at the path above, or set DEVLOOP_GOOGLE_CREDENTIALS to its location.`,
+    `Place the service-account JSON key at the path above, or set CODI_GOOGLE_CREDENTIALS to its location.`,
     ``,
     `First-time setup? See sheets-sync/references/google-sheets-setup.md (7 steps, ~10–15 min).`,
     `Or ask Claude Code: "Walk me through the Google Sheets setup."`,

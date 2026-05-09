@@ -1,5 +1,5 @@
 /**
- * Project-level config persistence at .devloop/project.json.
+ * Project-level config persistence at .codi/project.json.
  *
  * Created by project-workflow.intent. Read by every other workflow + sheets-sync
  * to discover the Sheet ID. Missing/malformed config raises a structured error
@@ -12,7 +12,7 @@ import { dirname, join, resolve } from "node:path";
 import type { ProjectConfig } from "./types.js";
 import { SheetsError } from "./types.js";
 
-export const PROJECT_CONFIG_RELATIVE_PATH = ".devloop/project.json";
+export const PROJECT_CONFIG_RELATIVE_PATH = ".codi/project.json";
 
 export function projectConfigPath(cwd: string): string {
   return resolve(cwd, PROJECT_CONFIG_RELATIVE_PATH);

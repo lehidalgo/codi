@@ -4,14 +4,14 @@ Most important phase. Skip ONLY when the loop already exists (e.g., a failing CI
 
 ## Story handling on entry
 
-- **`--from-story US-NNN`** — read the parent Story (`devloop sheets read UserStory US-NNN`); the bug is a follow-on to a delivered or in-flight feature. At end of intent (before reproduce starts), upsert a NEW Story carrying `parent_story=US-NNN`, `workflow_type=bug-fix`, `status=in-progress`, and an `i_want` derived from the bug report. The original Story stays untouched.
+- **`--from-story US-NNN`** — read the parent Story (`codi sheets read UserStory US-NNN`); the bug is a follow-on to a delivered or in-flight feature. At end of intent (before reproduce starts), upsert a NEW Story carrying `parent_story=US-NNN`, `workflow_type=bug-fix`, `status=in-progress`, and an `i_want` derived from the bug report. The original Story stays untouched.
 - **No `--from-story`** — auto-create a standalone Story with `as_a="user"` (or "developer" for internal bugs), `i_want=<bug summary>`, `so_that="<expected behavior>"`, `acceptance_criteria=<symptom + green-state>`, `workflow_type=bug-fix`, `status=in-progress`. Dashboard's "Untraced work" surfaces these so they don't go invisible.
 
 The Story's execution columns (`branch`, `commit_shas`, `pr_url`, `started_at`) are written progressively as the workflow advances.
 
-## Use `devloop:diagnose` for the systematic flow
+## Use `codi:diagnose` for the systematic flow
 
-Invoke `devloop:diagnose` (4-phase systematic debugging):
+Invoke `codi:diagnose` (4-phase systematic debugging):
 
 1. **Investigation** — read the actual code, do not skim. Trace the failing path.
 2. **Pattern recognition** — look for similar bugs, prior fixes, related tests.
@@ -22,7 +22,7 @@ If `diagnose` is not enough on its own (complex repro), use the techniques below
 
 ## Build a feedback loop
 
-If the bug report covers ≥2 unrelated failures (different test files, different subsystems), invoke `devloop:subagent-orchestration` mode `parallel` to fan out one investigation agent per failure domain. Reconcile after fan-in.
+If the bug report covers ≥2 unrelated failures (different test files, different subsystems), invoke `codi:subagent-orchestration` mode `parallel` to fan out one investigation agent per failure domain. Reconcile after fan-in.
 
 Otherwise build the feedback loop directly. Try in roughly this order until you have a fast deterministic signal:
 

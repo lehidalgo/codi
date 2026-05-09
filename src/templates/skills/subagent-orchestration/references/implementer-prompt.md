@@ -1,6 +1,6 @@
 # Implementer subagent prompt template
 
-Used in mode `sequential` to dispatch a fresh implementer per task. Includes devloop-specific tweaks (status schema, scope discipline, no-placeholders rule).
+Used in mode `sequential` to dispatch a fresh implementer per task. Includes codi-specific tweaks (status schema, scope discipline, no-placeholders rule).
 
 ## Template
 

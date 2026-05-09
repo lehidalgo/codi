@@ -1,17 +1,25 @@
 /**
- * Archive compactor — reduces older archives to a deterministic summary,
- * preserving critical events (decisions, ADRs, scope expansions, lifecycle).
+ * Brain-backed workflow compactor (F11).
  *
- * Compaction is deterministic: same archive produces same summary.json on
- * every run. Compaction never alters individual event JSON files. The
- * summary is written alongside the existing files; full archives can
- * still be reconstructed from git history of the directory.
+ * Replaces the legacy filesystem-archive compactor with one that operates
+ * directly on the brain's `workflow_runs` + `workflow_events` tables.
+ *
+ * Compaction is deterministic and idempotent:
+ *   1. Pick terminal (`completed` / `abandoned`) workflows whose last event
+ *      ts is older than `thresholdDays` (default 180).
+ *   2. For each, build a `CompactedSummary`: reducer state + the always-
+ *      preserved events (lifecycle / decisions / scope approvals / handovers).
+ *   3. Stash the summary as JSON in `workflow_runs.metadata.compacted` and
+ *      delete the now-redundant `workflow_events` rows.
+ *
+ * Re-running the compactor is safe — already-compacted runs (those with
+ * `metadata.compacted` set) are skipped.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import type { ManifestEvent } from "./types.js";
+import type Database from "better-sqlite3";
+import type { BrainHandle } from "./brain/index.js";
 import { reduce } from "./reducer.js";
+import type { ManifestEvent } from "./types.js";
 
 const ALWAYS_PRESERVED = new Set<string>([
   "init",
@@ -27,8 +35,10 @@ const ALWAYS_PRESERVED = new Set<string>([
   "workflow_abandoned",
 ]);
 
+export const COMPACTOR_VERSION = "2.0.0";
+
 export interface CompactionResult {
-  archiveId: string;
+  workflowId: string;
   summarized: boolean;
   preservedCount: number;
   reducedFromCount: number;
@@ -36,83 +46,121 @@ export interface CompactionResult {
 }
 
 export interface CompactorOptions {
-  archivesDir: string;
   thresholdDays?: number;
+  /** Override the wall clock — used by tests. */
   now?: Date;
+  /** When true, summarize but do not delete the underlying event rows. */
+  dryRun?: boolean;
 }
 
-export function compactAllArchives(opts: CompactorOptions): CompactionResult[] {
+/**
+ * Compact every terminal workflow whose last event is older than the
+ * threshold. The brain handle is read+write; the caller owns its lifecycle.
+ */
+export function compactWorkflows(
+  handle: BrainHandle,
+  opts: CompactorOptions = {},
+): CompactionResult[] {
+  const raw = handle.raw;
   const threshold = opts.thresholdDays ?? 180;
   const now = opts.now ?? new Date();
   const cutoffMs = now.getTime() - threshold * 24 * 60 * 60 * 1000;
+  const dryRun = opts.dryRun ?? false;
 
-  if (!existsSync(opts.archivesDir)) return [];
+  // Gather candidate runs: terminal status, last event older than cutoff,
+  // not already compacted (metadata.compacted not set).
+  const candidates = raw
+    .prepare(
+      `SELECT wr.workflow_id   AS workflow_id,
+              wr.metadata      AS metadata,
+              MAX(we.ts)       AS last_ts,
+              COUNT(we.event_id) AS event_count
+         FROM workflow_runs wr
+         LEFT JOIN workflow_events we ON we.workflow_id = wr.workflow_id
+        WHERE wr.status IN ('completed', 'abandoned')
+          AND wr.type != 'session'
+        GROUP BY wr.workflow_id
+        ORDER BY wr.workflow_id ASC`,
+    )
+    .all() as {
+    workflow_id: string;
+    metadata: string | null;
+    last_ts: number | null;
+    event_count: number;
+  }[];
 
   const results: CompactionResult[] = [];
-  for (const entry of readdirSync(opts.archivesDir)) {
-    const dir = join(opts.archivesDir, entry);
-    if (!statSync(dir).isDirectory()) continue;
 
-    const summaryPath = join(dir, "summary.json");
-    if (existsSync(summaryPath)) {
+  for (const c of candidates) {
+    const meta = parseMetadata(c.metadata);
+    if (meta && typeof meta.compacted === "object" && meta.compacted !== null) {
       results.push({
-        archiveId: entry,
+        workflowId: c.workflow_id,
         summarized: false,
         preservedCount: 0,
-        reducedFromCount: 0,
+        reducedFromCount: c.event_count,
         reason: "Already compacted.",
       });
       continue;
     }
-
-    const events = loadArchive(dir);
-    if (events.length === 0) {
+    if (c.event_count === 0) {
       results.push({
-        archiveId: entry,
+        workflowId: c.workflow_id,
         summarized: false,
         preservedCount: 0,
         reducedFromCount: 0,
-        reason: "Empty archive.",
+        reason: "Empty workflow (no events).",
       });
       continue;
     }
-    const lastTs = new Date(events[events.length - 1]?.timestamp ?? 0).getTime();
-    if (lastTs > cutoffMs) {
+    if (c.last_ts === null || c.last_ts > cutoffMs) {
       results.push({
-        archiveId: entry,
+        workflowId: c.workflow_id,
         summarized: false,
         preservedCount: 0,
-        reducedFromCount: events.length,
-        reason: `Archive last event newer than threshold (${threshold}d).`,
+        reducedFromCount: c.event_count,
+        reason: `Last event newer than threshold (${threshold}d).`,
       });
       continue;
     }
 
+    const events = loadEvents(raw, c.workflow_id);
     const summary = buildSummary(events);
-    writeFileSync(summaryPath, JSON.stringify(summary, null, 2), "utf-8");
+    if (!dryRun) {
+      const newMeta = mergeMetadata(meta, summary);
+      const txn = raw.transaction(() => {
+        raw
+          .prepare(`UPDATE workflow_runs SET metadata = ? WHERE workflow_id = ?`)
+          .run(JSON.stringify(newMeta), c.workflow_id);
+        raw.prepare(`DELETE FROM workflow_events WHERE workflow_id = ?`).run(c.workflow_id);
+      });
+      txn();
+    }
+
     results.push({
-      archiveId: entry,
+      workflowId: c.workflow_id,
       summarized: true,
       preservedCount: summary.preserved_events.length,
       reducedFromCount: events.length,
-      reason: `Compacted: ${summary.preserved_events.length}/${events.length} events preserved verbatim, rest summarized.`,
+      reason: `Compacted: ${summary.preserved_events.length}/${events.length} events preserved verbatim.`,
     });
   }
+
   return results;
 }
 
 interface CompactedSummary {
-  workflow_id: string;
-  workflow_type: string;
-  task: string;
-  status: string;
-  started_at: string;
-  last_event_timestamp: string;
-  total_events: number;
-  preserved_events: ManifestEvent[];
-  reduced_state: ReturnType<typeof reduce>;
-  compacted_at: string;
-  compactor_version: string;
+  readonly workflow_id: string;
+  readonly workflow_type: string;
+  readonly task: string;
+  readonly status: string;
+  readonly started_at: string;
+  readonly last_event_timestamp: string;
+  readonly total_events: number;
+  readonly preserved_events: ManifestEvent[];
+  readonly reduced_state: ReturnType<typeof reduce>;
+  readonly compacted_at: string;
+  readonly compactor_version: string;
 }
 
 function buildSummary(events: ManifestEvent[]): CompactedSummary {
@@ -129,18 +177,54 @@ function buildSummary(events: ManifestEvent[]): CompactedSummary {
     preserved_events: preserved,
     reduced_state: state,
     compacted_at: new Date().toISOString(),
-    compactor_version: "1.0.0",
+    compactor_version: COMPACTOR_VERSION,
   };
 }
 
-function loadArchive(dir: string): ManifestEvent[] {
-  const events: { sequence: number; event: ManifestEvent }[] = [];
-  for (const name of readdirSync(dir)) {
-    const m = name.match(/^(\d{3})_[a-z_]+\.json$/);
-    if (!m || !m[1]) continue;
-    const data = readFileSync(join(dir, name), "utf-8");
-    events.push({ sequence: parseInt(m[1], 10), event: JSON.parse(data) as ManifestEvent });
+function loadEvents(raw: Database.Database, workflowId: string): ManifestEvent[] {
+  const rows = raw
+    .prepare(
+      `SELECT payload FROM workflow_events
+        WHERE workflow_id = ?
+        ORDER BY event_id ASC`,
+    )
+    .all(workflowId) as { payload: string }[];
+  return rows.map((r) => JSON.parse(r.payload) as ManifestEvent);
+}
+
+function parseMetadata(raw: string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return typeof parsed === "object" && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
   }
-  events.sort((a, b) => a.sequence - b.sequence);
-  return events.map((e) => e.event);
+}
+
+function mergeMetadata(
+  prev: Record<string, unknown> | null,
+  summary: CompactedSummary,
+): Record<string, unknown> {
+  return { ...(prev ?? {}), compacted: summary };
+}
+
+/**
+ * Read back a previously compacted summary. Returns null when the workflow
+ * has not been compacted (or doesn't exist). Useful for `codi workflow`
+ * inspection commands and the brain-ui timeline.
+ */
+export function readCompactedSummary(
+  raw: Database.Database,
+  workflowId: string,
+): CompactedSummary | null {
+  const row = raw
+    .prepare(`SELECT metadata FROM workflow_runs WHERE workflow_id = ?`)
+    .get(workflowId) as { metadata: string | null } | undefined;
+  const meta = parseMetadata(row?.metadata ?? null);
+  const compacted = meta?.["compacted"];
+  if (!compacted || typeof compacted !== "object") return null;
+  return compacted as CompactedSummary;
 }

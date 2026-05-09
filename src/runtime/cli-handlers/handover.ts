@@ -2,10 +2,14 @@
  * Multi-developer handover handlers — voluntary handover and maintainer-
  * authority force-handover. Both record an event; neither changes the
  * active phase.
+ *
+ * Brain-backed: persistence goes through BrainEventLog directly.
  */
 
-import { NoActiveWorkflowError } from "../event-log.js";
-import { selectEventLog } from "../event-log-factory.js";
+import {
+  BrainEventLog,
+  BrainNoActiveWorkflowError as NoActiveWorkflowError,
+} from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author } from "../types.js";
@@ -30,33 +34,37 @@ export function handover(opts: HandoverOptions): HandoverResult {
   if (!opts.reason || opts.reason.trim().length === 0) {
     throw new Error("handover requires --reason '<text>'");
   }
-  const log = selectEventLog(opts.cwd ?? process.cwd());
-  const workflowId = log.getActiveWorkflowId();
-  if (!workflowId) throw new NoActiveWorkflowError();
+  const log = BrainEventLog.open();
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) throw new NoActiveWorkflowError();
 
-  const state = reduce(log.loadEvents(workflowId));
-  if (state.status === "completed" || state.status === "abandoned") {
-    throw new Error(`Cannot hand over a ${state.status} workflow.`);
+    const state = reduce(log.loadEvents(workflowId));
+    if (state.status === "completed" || state.status === "abandoned") {
+      throw new Error(`Cannot hand over a ${state.status} workflow.`);
+    }
+
+    log.append(
+      workflowId,
+      createEvent({
+        eventType: "workflow_handover",
+        payload: {
+          from_dev_id: state.current_owner,
+          to_dev_id: opts.toDevId,
+          reason: opts.reason,
+        },
+        author: opts.author,
+        parentEventId: state.last_event_id,
+      }),
+    );
+    return {
+      workflowId,
+      fromDevId: state.current_owner,
+      toDevId: opts.toDevId,
+    };
+  } finally {
+    log.dispose();
   }
-
-  log.append(
-    workflowId,
-    createEvent({
-      eventType: "workflow_handover",
-      payload: {
-        from_dev_id: state.current_owner,
-        to_dev_id: opts.toDevId,
-        reason: opts.reason,
-      },
-      author: opts.author,
-      parentEventId: state.last_event_id,
-    }),
-  );
-  return {
-    workflowId,
-    fromDevId: state.current_owner,
-    toDevId: opts.toDevId,
-  };
 }
 
 export interface ForceHandoverOptions {
@@ -71,28 +79,32 @@ export function forceHandover(opts: ForceHandoverOptions): HandoverResult {
   if (!opts.toDevId || !opts.maintainerId || !opts.reason) {
     throw new Error("force-handover requires --to <dev-id> --maintainer <id> --reason '<text>'");
   }
-  const log = selectEventLog(opts.cwd ?? process.cwd());
-  const workflowId = log.getActiveWorkflowId();
-  if (!workflowId) throw new NoActiveWorkflowError();
+  const log = BrainEventLog.open();
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) throw new NoActiveWorkflowError();
 
-  const state = reduce(log.loadEvents(workflowId));
-  log.append(
-    workflowId,
-    createEvent({
-      eventType: "workflow_force_handover",
-      payload: {
-        from_dev_id: state.current_owner,
-        to_dev_id: opts.toDevId,
-        maintainer_id: opts.maintainerId,
-        reason: opts.reason,
-      },
-      author: opts.author,
-      parentEventId: state.last_event_id,
-    }),
-  );
-  return {
-    workflowId,
-    fromDevId: state.current_owner,
-    toDevId: opts.toDevId,
-  };
+    const state = reduce(log.loadEvents(workflowId));
+    log.append(
+      workflowId,
+      createEvent({
+        eventType: "workflow_force_handover",
+        payload: {
+          from_dev_id: state.current_owner,
+          to_dev_id: opts.toDevId,
+          maintainer_id: opts.maintainerId,
+          reason: opts.reason,
+        },
+        author: opts.author,
+        parentEventId: state.last_event_id,
+      }),
+    );
+    return {
+      workflowId,
+      fromDevId: state.current_owner,
+      toDevId: opts.toDevId,
+    };
+  } finally {
+    log.dispose();
+  }
 }

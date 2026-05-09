@@ -5,7 +5,7 @@ After the workflow that owns the worktree ships (PR merged, branch deleted, or w
 ## When to clean up
 
 - Workflow reached `done` and the branch was merged
-- Workflow was abandoned with `devloop abandon --reason "<text>"`
+- Workflow was abandoned with `codi abandon --reason "<text>"`
 - The branch was force-pushed and the local one is now divergent (rare)
 
 ## Process

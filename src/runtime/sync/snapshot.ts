@@ -1,7 +1,7 @@
 /**
  * Local snapshot capture / read / list / prune for the project Sheet.
  *
- * Snapshots are simple JSON files written to `.devloop/snapshots/`.
+ * Snapshots are simple JSON files written to `.codi/snapshots/`.
  * They serve three purposes:
  *
  *   1. Pre-flight backup before any sync-draft / archive / migration —
@@ -22,7 +22,7 @@ import { ENTITY_NAMES, readTab } from "./index.js";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export const SNAPSHOT_VERSION = 1 as const;
-export const SNAPSHOT_DIR_RELATIVE = ".devloop/snapshots" as const;
+export const SNAPSHOT_DIR_RELATIVE = ".codi/snapshots" as const;
 export const DEFAULT_SNAPSHOT_RETENTION = 20 as const;
 
 export interface SnapshotTab {
@@ -147,7 +147,7 @@ export function readSnapshot(absPath: string): Snapshot {
 // ─── List + prune ────────────────────────────────────────────────────────────
 
 /**
- * List all snapshots in `.devloop/snapshots/` newest-first.
+ * List all snapshots in `.codi/snapshots/` newest-first.
  */
 export async function listSnapshots(cwd: string): Promise<ReadonlyArray<SnapshotEntry>> {
   const fs = await import("node:fs");

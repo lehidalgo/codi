@@ -15,27 +15,40 @@ import {
   approveScopeExpansion,
 } from "#src/runtime/cli-handlers.js";
 import { reduce } from "#src/runtime/reducer.js";
-import { EventLog } from "#src/runtime/event-log.js";
-import { archiveDir } from "#src/runtime/paths.js";
+import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import type { GateCheck } from "#src/runtime/gate-types.js";
 import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 
 function buildCtx(cwd: string): DeterministicCheckContext {
-  const log = EventLog.fromCwd(cwd);
-  const id = log.getActiveWorkflowId();
-  if (!id) throw new Error("no workflow");
-  const events = log.loadEvents(id);
-  return {
-    cwd,
-    state: reduce(events),
-    archiveDir: archiveDir(log.paths, id),
-  };
+  const log = BrainEventLog.open();
+  try {
+    const id = log.getActiveWorkflowId();
+    if (!id) throw new Error("no workflow");
+    const events = log.loadEvents(id);
+    return {
+      cwd,
+      state: reduce(events),
+    };
+  } finally {
+    log.dispose();
+  }
+}
+
+let prevBrainDb: string | undefined;
+function isolateBrain(dir: string): void {
+  prevBrainDb = process.env["CODI_BRAIN_DB"];
+  process.env["CODI_BRAIN_DB"] = join(dir, "brain.db");
+}
+function restoreBrain(): void {
+  if (prevBrainDb === undefined) delete process.env["CODI_BRAIN_DB"];
+  else process.env["CODI_BRAIN_DB"] = prevBrainDb;
 }
 
 function setup(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-gate-"));
+  const dir = mkdtempSync(join(tmpdir(), "codi-gate-"));
+  isolateBrain(dir);
   mkdirSync(join(dir, "docs"), { recursive: true });
   writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
   runWorkflow({
@@ -81,6 +94,7 @@ describe("runDeterministicCheck — registered checkers", () => {
   });
 
   afterEach(() => {
+    restoreBrain();
     rmSync(dir, { recursive: true, force: true });
   });
 

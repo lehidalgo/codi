@@ -28,6 +28,13 @@ export interface GateState {
 /**
  * Read the active workflow's gate state from the brain. Returns null when
  * no workflow is active (no gate is firing).
+ *
+ * The `type != 'session'` predicate excludes the `__codi_session__`
+ * singleton row (which BrainEventLog uses to track the active-workflow
+ * pointer). Without it, when the singleton's `started_at` ties with a
+ * real workflow's (sub-millisecond clock collision under concurrent
+ * load), `ORDER BY started_at DESC` can return the singleton — surfacing
+ * `status='active'` regardless of any pending phase transition.
  */
 export function readGateState(raw: Database.Database): GateState | null {
   const row = raw
@@ -35,6 +42,7 @@ export function readGateState(raw: Database.Database): GateState | null {
       `SELECT workflow_id, current_phase, status, metadata
        FROM workflow_runs
        WHERE status IN ('active', 'pending_approval', 'in_progress')
+         AND type != 'session'
        ORDER BY started_at DESC
        LIMIT 1`,
     )
@@ -113,7 +121,18 @@ export function buildPullReminder(): string {
 
 const GIT_MUTATING_RE =
   /\bgit\s+(commit|push|tag|merge|reset\s+--hard|branch\s+-D|push\s+--force)\b/;
-const COMMIT_APPROVAL_TOKENS = ["commit", "push", "merge", "tag", "release"];
+
+const COMMIT_APPROVAL_TOKENS = ["commit", "push", "merge", "tag", "release"] as const;
+
+/**
+ * Tokens that, when they precede an approval token within the same clause,
+ * negate the apparent approval. Example: "don't commit yet" contains
+ * "commit" but is NOT an approval — the leading "don't" inverts intent.
+ */
+const NEGATION_TOKENS_RE =
+  /\b(?:don'?t|do not|doesn'?t|does not|did not|didn'?t|never|no|not|stop|cancel|undo|abort|skip|hold off|wait|defer)\b/i;
+
+const CLAUSE_SPLIT_RE = /[.,;!?\n]+|\s+(?:but|and then|then|and)\s+/i;
 
 export interface CommitCheckInput {
   readonly bashCommand: string;
@@ -126,21 +145,49 @@ export interface CommitDecision {
   readonly reason: string;
 }
 
+/**
+ * Walk each clause of each recent prompt looking for an approval token
+ * that is NOT preceded by a negation token in the same clause. Word-
+ * boundary matching prevents false positives on words like "commitment"
+ * or "deployment" that contain an approval substring.
+ *
+ * Examples:
+ *   "please commit"                → approved (no negation)
+ *   "don't commit yet"             → not approved (don't precedes commit)
+ *   "fix bug, dont commit yet"     → not approved (clause "dont commit yet" is negated)
+ *   "fix bug, then commit"         → approved (clause "then commit" stands alone)
+ *   "no push to main"              → not approved
+ *   "commitment to quality"        → not approved (word boundary rejects partial)
+ */
+function hasUnnegatedApprovalToken(prompt: string): boolean {
+  const clauses = prompt.split(CLAUSE_SPLIT_RE);
+  for (const rawClause of clauses) {
+    const clause = rawClause.toLowerCase();
+    for (const token of COMMIT_APPROVAL_TOKENS) {
+      const idx = clause.search(new RegExp(`\\b${token}\\b`, "i"));
+      if (idx < 0) continue;
+      const before = clause.slice(0, idx);
+      if (NEGATION_TOKENS_RE.test(before)) continue; // negated, try next token
+      return true;
+    }
+  }
+  return false;
+}
+
 export function decideGitCommand(input: CommitCheckInput): CommitDecision {
   if (!GIT_MUTATING_RE.test(input.bashCommand)) {
     return { allowed: true, reason: "non-mutating git command" };
   }
-  const haystack = input.recentPrompts.join("\n").toLowerCase();
-  const approved = COMMIT_APPROVAL_TOKENS.some((tok) => haystack.includes(tok));
+  const approved = input.recentPrompts.some((p) => hasUnnegatedApprovalToken(p));
   if (approved) {
-    return { allowed: true, reason: "found approval token in recent prompts" };
+    return { allowed: true, reason: "found unnegated approval token in recent prompts" };
   }
   return {
     allowed: false,
     reason:
       "Iron Law 7: git mutation requires explicit approval (none of " +
       COMMIT_APPROVAL_TOKENS.join(", ") +
-      " found in recent prompts)",
+      " found unnegated in recent prompts)",
   };
 }
 
@@ -175,4 +222,45 @@ export interface IronLawsContext {
 export function buildIronLawsBlock(ctx: IronLawsContext): string {
   const parts = [buildOutputModeBlock(ctx.outputMode), buildHardGateBlock(ctx.gateState)];
   return parts.filter((p) => p.length > 0).join("\n\n");
+}
+
+// ─── Helpers consumed by the live hooks (F7 wiring) ─────────────────────────
+
+/**
+ * Pull the most recent N user prompts (newest first) for a given session.
+ * Used by Iron Law 7 to look for approval tokens before a git mutation.
+ *
+ * Falls back to the global most-recent prompts when sessionId is null —
+ * the PreToolUse payload may not always carry session_id (older Claude
+ * Code releases) and an empty list would silently disable the law.
+ */
+export function readRecentPrompts(
+  raw: Database.Database,
+  opts: { sessionId?: string; limit?: number } = {},
+): string[] {
+  const limit = Math.max(1, opts.limit ?? 5);
+  if (opts.sessionId !== undefined && opts.sessionId.length > 0) {
+    const rows = raw
+      .prepare(`SELECT text FROM prompts WHERE session_id = ? ORDER BY prompt_id DESC LIMIT ?`)
+      .all(opts.sessionId, limit) as { text: string }[];
+    if (rows.length > 0) return rows.map((r) => r.text);
+  }
+  const rows = raw
+    .prepare(`SELECT text FROM prompts ORDER BY prompt_id DESC LIMIT ?`)
+    .all(limit) as { text: string }[];
+  return rows.map((r) => r.text);
+}
+
+/**
+ * Resolve the most recent UserPromptSubmit timestamp for a session — used
+ * by Iron Law 5 as the proxy for "last brain read". Returns 0 when no
+ * prompt has been recorded (effectively forces a pull recommendation on
+ * the very first edit, which is the safe default).
+ */
+export function readLastPromptTs(raw: Database.Database, sessionId: string): number {
+  if (sessionId.length === 0) return 0;
+  const row = raw
+    .prepare(`SELECT MAX(ts) as latest FROM prompts WHERE session_id = ?`)
+    .get(sessionId) as { latest: number | null } | undefined;
+  return row?.latest ?? 0;
 }

@@ -22,7 +22,7 @@ Push the approved BusinessGoals, Requirements, and UserStories to the project Sh
 - Every approved Goal / Requirement / Story has a corresponding `sheet_row_upserted` event in the manifest.
 - No `zone_violation` errors emitted.
 - No `schema_invalid` errors emitted.
-- If any `sheet_sync_queued` events remain (Sheet was unreachable mid-write), the daemon is running OR `devloop sheets reconcile` has been executed.
+- If any `sheet_sync_queued` events remain (Sheet was unreachable mid-write), the daemon is running OR `codi sheets reconcile` has been executed.
 
 ## Anti-patterns
 

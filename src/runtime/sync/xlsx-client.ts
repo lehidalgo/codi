@@ -96,7 +96,7 @@ interface ParsedRange {
 }
 
 /**
- * Parse A1 ranges in the limited shape devloop produces:
+ * Parse A1 ranges in the limited shape codi produces:
  *   "Tab"          → whole tab
  *   "Tab!A1"       → anchor cell (used by append)
  *   "Tab!A1:Z"     → whole-column open range → whole tab

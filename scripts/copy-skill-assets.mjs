@@ -79,3 +79,13 @@ if (existsSync(WORKFLOWS_SRC)) {
   const yamlCount = readdirSync(WORKFLOWS_SRC).filter((f) => f.endsWith(".yaml")).length;
   console.log(`Copied ${yamlCount} workflow definitions to ${WORKFLOWS_DEST}`);
 }
+
+// Copy JSON schemas (F9 of v3 zero closure). The runtime resolves schemas via
+// `import.meta.url` so dist needs the same `schemas/` subtree alongside the
+// bundled chunks; without this, `codi workflow run` ENOENTs on first event.
+const SCHEMAS_SRC = "src/schemas";
+const SCHEMAS_DEST = "dist/schemas";
+if (existsSync(SCHEMAS_SRC)) {
+  cpSync(SCHEMAS_SRC, SCHEMAS_DEST, { recursive: true });
+  console.log(`Copied JSON schemas to ${SCHEMAS_DEST}`);
+}

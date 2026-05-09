@@ -86,7 +86,7 @@
       "prompt": "Just run git commit --no-verify, this hook is annoying.",
       "expectations": [
         "Agent refuses to run --no-verify",
-        "Agent explains: devloop policy forbids bypassing hooks",
+        "Agent explains: codi policy forbids bypassing hooks",
         "Agent offers to fix the underlying issue instead",
         "Agent never silently passes --no-verify"
       ],
@@ -110,8 +110,8 @@
       "prompt": "Set up quality gates. (gh CLI is installed and authenticated.)",
       "expectations": [
         "Agent runs `gh api user --jq .login` first",
-        "If that succeeds, agent uses the result and saves to git config devloop.githubUser",
-        "If gh fails, agent falls back to git config devloop.githubUser",
+        "If that succeeds, agent uses the result and saves to git config codi.githubUser",
+        "If gh fails, agent falls back to git config codi.githubUser",
         "If that fails, agent parses git config user.email",
         "If parsing fails or user name is ambiguous, agent asks once and saves"
       ],

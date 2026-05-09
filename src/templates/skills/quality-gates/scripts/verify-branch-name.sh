@@ -16,12 +16,12 @@ esac
 
 # Get GH user
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-gh_user=$(git config --get devloop.githubUser 2>/dev/null || true)
+gh_user=$(git config --get codi.githubUser 2>/dev/null || true)
 if [ -z "$gh_user" ]; then
   gh_user=$(bash "$script_dir/github-user.sh" 2>/dev/null || true)
 fi
 if [ -z "$gh_user" ]; then
-  echo "[branch-naming] ERROR: cannot detect GitHub user. Set: git config devloop.githubUser <username>" >&2
+  echo "[branch-naming] ERROR: cannot detect GitHub user. Set: git config codi.githubUser <username>" >&2
   exit 1
 fi
 
@@ -32,7 +32,7 @@ if echo "$current_branch" | grep -qE "$pattern"; then
 fi
 
 # Grandfathering check
-adopted_at=$(git config --get devloop.branchConvention.adoptedAt 2>/dev/null || echo "0")
+adopted_at=$(git config --get codi.branchConvention.adoptedAt 2>/dev/null || echo "0")
 if [ "$adopted_at" -gt 0 ]; then
   branch_first_commit=$(git log --format=%ct "$current_branch" -- 2>/dev/null | tail -n 1 || echo "0")
   if [ -n "$branch_first_commit" ] && [ "$branch_first_commit" -lt "$adopted_at" ]; then

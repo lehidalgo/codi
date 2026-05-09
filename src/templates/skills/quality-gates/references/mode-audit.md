@@ -10,7 +10,7 @@ Read-only scan. Detects what hooks are missing, weak, or out of date.
 4. **Cross-check against the 5-category Hook Contract.** For each (language × category), record present / missing / weak.
 5. **Check universal hooks** — gitleaks, file-size, conflict-markers, branch-name validator, commit-msg validator.
 6. **Check CI integration** — does `.github/workflows/*.yml` mirror the local hooks?
-7. **Check `git config devloop.githubUser`** — if missing, GH user detection has not run yet.
+7. **Check `git config codi.githubUser`** — if missing, GH user detection has not run yet.
 8. **Group findings by severity** and print.
 
 ## Severity grouping
@@ -50,7 +50,7 @@ MEDIUM (2):
 LOW (1):
   - No file-size check (>10 MB files could land)
 
-Run: /devloop:quality-gates  (mode setup) to fix HIGH and MEDIUM. LOW is optional.
+Run: /codi:quality-gates  (mode setup) to fix HIGH and MEDIUM. LOW is optional.
 ```
 
 ## When the audit reveals nothing

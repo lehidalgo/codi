@@ -5,22 +5,22 @@ Read the source material, extract the strategic layer (BusinessGoals, Requiremen
 ## Inputs
 
 - `docs/sources/*.md` — agent-ready stakeholder material.
-- `.devloop/project.json` — for project context.
+- `.codi/project.json` — for project context.
 - (`--update` mode only) existing Sheet rows — to avoid re-proposing what already exists.
 
 ## The canvas rule for this phase
 
-Once `.devloop/project.json` is bound, **the Sheet is the review surface**. The agent extracts spec content from the sources, writes a single LOCAL JSON DRAFT, then syncs to the Sheet in ONE command. The user reviews in the Sheet (its native format is the better review surface) and approves with one word — OR edits the local JSON draft and asks for a re-sync.
+Once `.codi/project.json` is bound, **the Sheet is the review surface**. The agent extracts spec content from the sources, writes a single LOCAL JSON DRAFT, then syncs to the Sheet in ONE command. The user reviews in the Sheet (its native format is the better review surface) and approves with one word — OR edits the local JSON draft and asks for a re-sync.
 
 ## Token-efficient draft+sync flow
 
-ANTI-PATTERN: issuing 13+ separate `devloop sheets upsert` calls in a loop. Each call is ~500 tokens of CLI args + output → ~6,500 tokens for one batch. Don't.
+ANTI-PATTERN: issuing 13+ separate `codi sheets upsert` calls in a loop. Each call is ~500 tokens of CLI args + output → ~6,500 tokens for one batch. Don't.
 
 CANONICAL pattern: write a single local JSON draft, sync in ONE command.
 
 ```bash
 # 1. Agent writes the draft (one Write tool call, cheap)
-.devloop/draft/discover.json:
+.codi/draft/discover.json:
 {
   "BusinessGoal": [
     {"title": "...", "outcome": "...", "metric": "...", "priority": "P0", "source_link": "docs/sources/...", "status": "proposed"},
@@ -37,7 +37,7 @@ CANONICAL pattern: write a single local JSON draft, sync in ONE command.
 }
 
 # 2. Agent syncs in ONE shot (one Bash call):
-devloop sheets sync-draft .devloop/draft/discover.json
+codi sheets sync-draft .codi/draft/discover.json
 ```
 
 The `sync-draft` CLI:
@@ -48,11 +48,11 @@ The `sync-draft` CLI:
 - Reports per-row outcomes (written / no-op / failed).
 - Leaves the draft intact — re-runs are idempotent.
 
-If the user edits the draft (any text editor / `vim` / etc.) and asks to resync, the agent just re-runs `devloop sheets sync-draft .devloop/draft/discover.json`.
+If the user edits the draft (any text editor / `vim` / etc.) and asks to resync, the agent just re-runs `codi sheets sync-draft .codi/draft/discover.json`.
 
 ## What stays in chat
 
-- ONE short summary line after sync: _"Wrote 3 BusinessGoals (BG-001..003), 10 Requirements (REQ-001..010), 12 draft UserStories (US-001..012) → Sheet [URL]. Draft at `.devloop/draft/discover.json`. Review in Sheet, approve / redirect / edit-and-resync."_
+- ONE short summary line after sync: _"Wrote 3 BusinessGoals (BG-001..003), 10 Requirements (REQ-001..010), 12 draft UserStories (US-001..012) → Sheet [URL]. Draft at `.codi/draft/discover.json`. Review in Sheet, approve / redirect / edit-and-resync."_
 - Any clarifying questions (one per turn).
 - The HARD GATE approval ack.
 
@@ -62,8 +62,8 @@ If the user edits the draft (any text editor / `vim` / etc.) and asks to resync,
 2. **Read the sources.** Each markdown file in full.
 3. **`--update` mode — load existing Sheet state.** Read existing rows. Diff against new sources. The draft only includes deltas.
 4. **Extract Goals + Requirements + draft Stories internally** from the source material. Use the YAML frontmatter (`raw_link`, `stakeholder`) for `source_link` values where applicable.
-5. **Write `.devloop/draft/discover.json`** in one Write tool call. Use the schema above.
-6. **Run `devloop sheets sync-draft .devloop/draft/discover.json`** — one Bash call. Capture per-row outcome.
+5. **Write `.codi/draft/discover.json`** in one Write tool call. Use the schema above.
+6. **Run `codi sheets sync-draft .codi/draft/discover.json`** — one Bash call. Capture per-row outcome.
 7. **Surface ONE summary line** with row counts, ID ranges, Sheet URL, and the draft path. Ask for `ok` / redirect / edit-and-resync.
 
 If `sync-draft` reports failures, surface the failed row indices + error messages, ask the user to fix the draft (or describe the fix to make in chat) and re-run. Do NOT issue per-row upsert retries.
@@ -73,7 +73,7 @@ If `sync-draft` reports failures, surface the failed row indices + error message
 - ≥1 BusinessGoal proposed (most projects have 3–8).
 - Each BusinessGoal has ≥1 Requirement proposed.
 - Each Requirement has ≥1 candidate Story (Stories may be refined in `decompose`).
-- **HARD GATE — stakeholder approval.** Human explicitly approves the strategic layer (Goals + Requirements). Phrasings like "looks fine, continue" / "okay" / "yeah" do NOT count — the human must type the literal two-character `ok` (case-insensitive — `ok`, `OK`, or `Ok`) or use `devloop transition --approve`.
+- **HARD GATE — stakeholder approval.** Human explicitly approves the strategic layer (Goals + Requirements). Phrasings like "looks fine, continue" / "okay" / "yeah" do NOT count — the human must type the literal two-character `ok` (case-insensitive — `ok`, `OK`, or `Ok`) or use `codi transition --approve`.
 
 ## `--update` mode specifics
 

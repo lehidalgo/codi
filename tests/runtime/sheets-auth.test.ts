@@ -38,15 +38,15 @@ describe("auth — service-account key parsing", () => {
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), "sa-key-"));
     saPath = join(tmp, "credentials.json");
-    envBackup = process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
+    envBackup = process.env["CODI_GOOGLE_CREDENTIALS"];
   });
 
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true });
     if (envBackup === undefined) {
-      delete process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
+      delete process.env["CODI_GOOGLE_CREDENTIALS"];
     } else {
-      process.env["DEVLOOP_GOOGLE_CREDENTIALS"] = envBackup;
+      process.env["CODI_GOOGLE_CREDENTIALS"] = envBackup;
     }
   });
 
@@ -58,9 +58,9 @@ describe("auth — service-account key parsing", () => {
     expect(key.private_key.startsWith("-----BEGIN PRIVATE KEY-----")).toBe(true);
   });
 
-  it("loadServiceAccountKey honors DEVLOOP_GOOGLE_CREDENTIALS env", () => {
+  it("loadServiceAccountKey honors CODI_GOOGLE_CREDENTIALS env", () => {
     writeFileSync(saPath, FAKE_SA_KEY);
-    process.env["DEVLOOP_GOOGLE_CREDENTIALS"] = saPath;
+    process.env["CODI_GOOGLE_CREDENTIALS"] = saPath;
     const key = loadServiceAccountKey();
     expect(key.client_email).toBe("test-sa@test-project.iam.gserviceaccount.com");
   });
@@ -123,16 +123,16 @@ describe("auth — loadAuthClient resolution", () => {
 
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), "auth-resolve-"));
-    envBackup = process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
-    delete process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
+    envBackup = process.env["CODI_GOOGLE_CREDENTIALS"];
+    delete process.env["CODI_GOOGLE_CREDENTIALS"];
   });
 
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true });
     if (envBackup === undefined) {
-      delete process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
+      delete process.env["CODI_GOOGLE_CREDENTIALS"];
     } else {
-      process.env["DEVLOOP_GOOGLE_CREDENTIALS"] = envBackup;
+      process.env["CODI_GOOGLE_CREDENTIALS"] = envBackup;
     }
   });
 
@@ -188,7 +188,7 @@ describe("auth — loadAuthClient resolution", () => {
   });
 
   it("auto-detect throws clearly when neither auth is present", async () => {
-    process.env["DEVLOOP_GOOGLE_CREDENTIALS"] = join(tmp, "missing-sa.json");
+    process.env["CODI_GOOGLE_CREDENTIALS"] = join(tmp, "missing-sa.json");
     process.env["GOOGLE_APPLICATION_CREDENTIALS"] = join(tmp, "missing-adc.json");
     try {
       await loadAuthClient();
@@ -202,7 +202,7 @@ describe("auth — loadAuthClient resolution", () => {
         msg.includes("--auth-mode service_account") || msg.includes("--auth-mode oauth_user"),
       ).toBe(true);
     } finally {
-      delete process.env["DEVLOOP_GOOGLE_CREDENTIALS"];
+      delete process.env["CODI_GOOGLE_CREDENTIALS"];
       delete process.env["GOOGLE_APPLICATION_CREDENTIALS"];
     }
   });

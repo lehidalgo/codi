@@ -4,8 +4,8 @@ Migration plans MUST include a rollback path and a validation strategy.
 
 ## Phase chain
 
-1. **`devloop:plan-writing`** (mode `plan`) writes the migration plan. Migration plans extend the standard template with the sections below.
-2. **`devloop:discover`** (mode `domain` when the migration touches schema-related ADRs or domain terms; otherwise mode `sharpen`). Cross-references the plan against existing decisions about the data model and surfaces contradictions before any DDL runs.
+1. **`codi:plan-writing`** (mode `plan`) writes the migration plan. Migration plans extend the standard template with the sections below.
+2. **`codi:discover`** (mode `domain` when the migration touches schema-related ADRs or domain terms; otherwise mode `sharpen`). Cross-references the plan against existing decisions about the data model and surfaces contradictions before any DDL runs.
 3. Propose transition to `execute` only after the plan exists, the dialogue ends with approval, and the rollback path is explicit.
 
 ## Migration plan template additions

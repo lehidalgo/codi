@@ -9,7 +9,7 @@
         "Skill bug-fix-workflow is selected",
         "Workflow starts at phase intent",
         "Phase reproduce is MANDATORY before plan",
-        "Agent invokes devloop:diagnose for systematic debugging in reproduce phase",
+        "Agent invokes codi:diagnose for systematic debugging in reproduce phase",
         "Agent builds a feedback loop that turns red on the bug",
         "Agent does NOT propose a fix before the loop reproduces the user-reported symptom"
       ],
@@ -60,7 +60,7 @@
       "expectations": [
         "Agent recognizes 'no seam' as a finding, not a blocker",
         "Agent applies the narrowest fix that closes the regression",
-        "Agent files a follow-up to invoke devloop:architecture-review",
+        "Agent files a follow-up to invoke codi:architecture-review",
         "Agent does NOT block the bug fix on architectural rework"
       ],
       "tags": ["pressure", "architecture-handoff"]

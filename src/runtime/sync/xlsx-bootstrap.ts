@@ -125,7 +125,7 @@ export async function createLocalXlsxProject(
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "devloop";
+  wb.creator = "codi";
   wb.created = new Date();
 
   for (const tab of ALL_TABS) {

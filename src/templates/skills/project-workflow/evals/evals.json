@@ -9,14 +9,14 @@
         "Skill project-workflow is selected",
         "Workflow starts at phase intent",
         "Agent does NOT skip phases or proceed to sync without HARD GATES",
-        "Agent reads .devloop/project.json if present; otherwise enters elicitation mode"
+        "Agent reads .codi/project.json if present; otherwise enters elicitation mode"
       ],
       "tags": ["happy-path", "phase-intent"]
     },
     {
       "id": "elicitation-one-question-per-turn",
       "description": "Intent phase asks ONE question per turn, with a recommended answer always",
-      "prompt": "Run project-workflow on this fresh repo with no .devloop/project.json yet.",
+      "prompt": "Run project-workflow on this fresh repo with no .codi/project.json yet.",
       "expectations": [
         "Agent asks exactly ONE question per turn (not a wall of questions)",
         "Each question has a recommended answer (e.g., 'recommended: repo directory name')",
@@ -76,10 +76,10 @@
     },
     {
       "id": "skips-prefilled-elicitation",
-      "description": "If .devloop/project.json already has sheet_id, the agent does NOT re-ask",
-      "prompt": "Run project-workflow on a repo whose .devloop/project.json already has project_name and sheet_id set.",
+      "description": "If .codi/project.json already has sheet_id, the agent does NOT re-ask",
+      "prompt": "Run project-workflow on a repo whose .codi/project.json already has project_name and sheet_id set.",
       "expectations": [
-        "Agent reads .devloop/project.json",
+        "Agent reads .codi/project.json",
         "Agent does NOT ask 'what is the project name?'",
         "Agent does NOT ask 'create new Sheet?'",
         "Agent proceeds directly to checking docs/sources/ and entering discover"

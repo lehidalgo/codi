@@ -79,7 +79,7 @@ export function buildPrSummary(events: ManifestEvent[]): PrSummary {
     `Full event log: \`.workflow/archives/${state.workflow_id}/\``,
     `Total events: ${state.events_count}`,
     "",
-    `<!-- devloop-summary-hash: sha256:${hash} -->`,
+    `<!-- codi-summary-hash: sha256:${hash} -->`,
   ];
 
   return { block: lines.join("\n"), hash };
@@ -96,6 +96,6 @@ function formatDuration(ms: number): string {
 }
 
 export function extractHashFromBlock(block: string): string | null {
-  const match = block.match(/<!-- devloop-summary-hash: sha256:([0-9a-f]{64}) -->/);
+  const match = block.match(/<!-- codi-summary-hash: sha256:([0-9a-f]{64}) -->/);
   return match ? (match[1] ?? null) : null;
 }

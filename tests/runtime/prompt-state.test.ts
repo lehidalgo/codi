@@ -1,7 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { buildContext, buildPromptStateBlock } from "#src/runtime/hook-logic.js";
 import {
   runWorkflow,
@@ -10,26 +7,22 @@ import {
   approveScopeExpansion,
 } from "#src/runtime/cli-handlers.js";
 import type { Author } from "#src/runtime/types.js";
+import { createIsolatedBrain, type IsolatedBrain } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };
 
-function setup(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-prompt-"));
-  mkdirSync(join(dir, "docs"), { recursive: true });
-  writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
-  return dir;
-}
-
 describe("buildPromptStateBlock", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setup();
+    scope = createIsolatedBrain("codi-prompt-");
+    dir = scope.dir;
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("returns empty string when no active workflow", () => {

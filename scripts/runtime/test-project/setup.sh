@@ -10,11 +10,11 @@
 # Usage:
 #   scripts/test-project/setup.sh [--dir PATH]
 #
-# Default --dir is /tmp/devloop-test-project. Refuses paths outside /tmp.
+# Default --dir is /tmp/codi-test-project. Refuses paths outside /tmp.
 
 set -euo pipefail
 
-DIR="/tmp/devloop-test-project"
+DIR="/tmp/codi-test-project"
 
 while [ $# -gt 0 ]; do
   case "$1" in

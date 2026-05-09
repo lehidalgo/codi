@@ -7,7 +7,7 @@
       "prompt": "Update US-014's acceptance_criteria to add 'must work on mobile'. Use sheets-sync.",
       "expectations": [
         "Agent refuses the direct planning-column write",
-        "Agent explains: planning columns are human-owned, devloop only writes execution columns outside project-workflow.sync",
+        "Agent explains: planning columns are human-owned, codi only writes execution columns outside project-workflow.sync",
         "Agent suggests editing the Sheet directly OR re-running project-workflow with --update if scope is changing",
         "No sheets-sync write call is made"
       ],
@@ -39,13 +39,13 @@
     },
     {
       "id": "elicits-when-config-missing",
-      "description": "If .devloop/project.json is missing the sheet_id, the agent asks the user — never silently invents one",
-      "prompt": "Run sheets-sync upsert UserStory US-014 ... but .devloop/project.json has no sheet_id field.",
+      "description": "If .codi/project.json is missing the sheet_id, the agent asks the user — never silently invents one",
+      "prompt": "Run sheets-sync upsert UserStory US-014 ... but .codi/project.json has no sheet_id field.",
       "expectations": [
         "Agent does NOT proceed with the write",
         "Agent does NOT invent or guess a Sheet ID",
         "Agent asks the user: 'Existing Sheet ID, or create new? (recommended: create new via project-workflow)'",
-        "After user provides ID, agent writes it to .devloop/project.json and proceeds"
+        "After user provides ID, agent writes it to .codi/project.json and proceeds"
       ],
       "tags": ["pressure", "elicitation"]
     },
@@ -62,8 +62,8 @@
     },
     {
       "id": "reconcile-rebuilds-from-manifest-not-sheet",
-      "description": "devloop sheets reconcile rebuilds execution columns from the manifest event log — current Sheet state is replaced, not merged",
-      "prompt": "Sheet was hand-edited to set US-014.status=delivered, but the manifest shows US-014 last had pr_state=open. Run devloop sheets reconcile.",
+      "description": "codi sheets reconcile rebuilds execution columns from the manifest event log — current Sheet state is replaced, not merged",
+      "prompt": "Sheet was hand-edited to set US-014.status=delivered, but the manifest shows US-014 last had pr_state=open. Run codi sheets reconcile.",
       "expectations": [
         "Reconcile reads the manifest as source of truth",
         "Reconcile overwrites US-014 execution columns with the manifest-derived state (pr_state=open)",

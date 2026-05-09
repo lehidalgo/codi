@@ -26,15 +26,6 @@ export default defineConfig({
       "scripts/runtime/**",
       "src/templates/hooks/runtime/**",
       "src/schemas/runtime/**",
-      // skills.test.ts validates DevLoop's plugin layout (.claude-plugin/plugin.json with
-      // skills array, hooks/hooks.json at root, SKILL.md + contract.json per skill, bin/devloop
-      // wrapper). Codi v3 uses TS template.ts + index.ts modules — these assertions don't
-      // apply. Sprint 3 will add Codi-specific plugin manifest validation tests.
-      "tests/runtime/skills.test.ts",
-      // team-charter.test.ts spawns hooks/session-start.sh which is the DevLoop hook layout.
-      // Codi v3 hooks live under src/templates/hooks/runtime/. Sprint 3 will add a
-      // Codi-specific SessionStart injection test once the hook publishing path is stable.
-      "tests/runtime/team-charter.test.ts",
     ],
     environmentMatchGlobs: [["src/templates/skills/**/tests/**/*.test.{ts,js}", "jsdom"]],
     testTimeout: 10_000,

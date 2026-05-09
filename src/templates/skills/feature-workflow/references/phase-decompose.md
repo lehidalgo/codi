@@ -45,7 +45,7 @@ You are ready when:
 Then propose:
 
 ```bash
-devloop transition --to execute
+codi transition --to execute
 ```
 
 ## Common mistakes

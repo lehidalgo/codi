@@ -11,8 +11,8 @@ Install missing hooks adaptively. Idempotent — re-runnable without overwriting
 ## Process
 
 1. **Detect runner** per `runner-detection.md`.
-2. **Detect GitHub user** via `scripts/github-user.sh`. Save to `git config devloop.githubUser` if not already set.
-3. **Record adoption timestamp** — `git config devloop.branchConvention.adoptedAt $(date +%s)`. Branches predating this are grandfathered.
+2. **Detect GitHub user** via `scripts/github-user.sh`. Save to `git config codi.githubUser` if not already set.
+3. **Record adoption timestamp** — `git config codi.branchConvention.adoptedAt $(date +%s)`. Branches predating this are grandfathered.
 4. **Pre-commit hook**:
    - If existing `.husky/pre-commit` (or `.pre-commit-config.yaml`): READ it, MERGE the standard checks, surface the diff.
    - If absent: write the runner-appropriate config covering the 5-category contract for the detected stack(s).
@@ -20,7 +20,7 @@ Install missing hooks adaptively. Idempotent — re-runnable without overwriting
 5. **Commit-msg hook**:
    - Write `.husky/commit-msg` per `commit-msg-validator.md`.
 6. **Pre-push hook**:
-   - Preserve existing devloop pre-push (archive-protection).
+   - Preserve existing codi pre-push (archive-protection).
    - Append: full lint + type-check + tests (per detected stack).
 7. **CI workflow extension**:
    - If `.github/workflows/*.yml` exists, compute proposed diff per `ci-extension.md`.
@@ -34,13 +34,13 @@ Install missing hooks adaptively. Idempotent — re-runnable without overwriting
 
 Running `setup` twice produces the same files. Mechanism:
 
-- Each generated section has a `# devloop:quality-gates managed` marker.
+- Each generated section has a `# codi:quality-gates managed` marker.
 - On re-run, the skill replaces ONLY the marked section, leaving custom rules outside the marker untouched.
 - Markers look like:
   ```sh
-  # >>> devloop:quality-gates managed (do not edit between markers)
+  # >>> codi:quality-gates managed (do not edit between markers)
   ...managed content...
-  # <<< devloop:quality-gates managed
+  # <<< codi:quality-gates managed
   ```
 
 ## Tools the user must have installed
@@ -63,7 +63,7 @@ The skill does NOT install tools automatically — it prints the command and ask
 If a custom rule conflicts with the standard contract:
 
 - Ask the user which to keep.
-- If the user keeps the custom rule, mark it `# devloop:quality-gates user-override` so future audits know it is intentional.
+- If the user keeps the custom rule, mark it `# codi:quality-gates user-override` so future audits know it is intentional.
 - Never silently overwrite a user-flagged override.
 
 ## Anti-patterns
@@ -71,5 +71,5 @@ If a custom rule conflicts with the standard contract:
 - Auto-installing tools (changes host state).
 - Overwriting existing hooks without merging.
 - Skipping the HARD GATE on CI workflow edits.
-- Setting `devloop.githubUser` from email without confirming with the user.
+- Setting `codi.githubUser` from email without confirming with the user.
 - Forgetting to preserve the existing `pre-push.sh` archive-protection logic.

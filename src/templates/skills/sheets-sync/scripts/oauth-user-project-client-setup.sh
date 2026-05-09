@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop / sheets-sync — guided automation for project-owned OAuth client.
+# codi / sheets-sync — guided automation for project-owned OAuth client.
 #
 # When `oauth-user-setup.sh` fails because Google blocks the unverified-app
 # screen (typical on personal Gmail), the canonical recovery is:
@@ -21,7 +21,7 @@
 # Flags:
 #   --project <id>       use existing Cloud project (skip auto-pick / create)
 #   --client-json <path> watch this path for the downloaded OAuth client JSON
-#                        (default: ~/.config/devloop/oauth-client.json)
+#                        (default: ~/.config/codi/oauth-client.json)
 
 set -euo pipefail
 
@@ -29,7 +29,7 @@ set -euo pipefail
 CANONICAL_SCOPES="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/drive"
 
 PROJECT_ID=""
-CLIENT_JSON_PATH="$HOME/.config/devloop/oauth-client.json"
+CLIENT_JSON_PATH="$HOME/.config/codi/oauth-client.json"
 WATCH_TIMEOUT_SEC=300   # 5 minutes for the Console clicks
 
 while [ $# -gt 0 ]; do
@@ -56,13 +56,13 @@ echo "Active account: $ACTIVE_ACCOUNT"
 
 # ─── 1. Project ──────────────────────────────────────────────────────────
 if [ -z "$PROJECT_ID" ]; then
-  # Look for an existing devloop-sheets-* project
-  EXISTING="$(gcloud projects list --format='value(projectId)' --filter='projectId~^devloop-sheets-' 2>/dev/null | head -1)"
+  # Look for an existing codi-sheets-* project
+  EXISTING="$(gcloud projects list --format='value(projectId)' --filter='projectId~^codi-sheets-' 2>/dev/null | head -1)"
   if [ -n "$EXISTING" ]; then
     echo "→ found existing project: $EXISTING"
     PROJECT_ID="$EXISTING"
   else
-    PROJECT_ID="devloop-sheets-$(date +%Y%m%d-%H%M%S)"
+    PROJECT_ID="codi-sheets-$(date +%Y%m%d-%H%M%S)"
     echo "→ creating fresh project: $PROJECT_ID"
     gcloud projects create "$PROJECT_ID" --set-as-default --quiet
   fi
@@ -85,7 +85,7 @@ Opening: $CONSENT_URL
 
 In that page:
   1. User Type: External  →  Create
-  2. App name:        devloop
+  2. App name:        codi
      User support email: $ACTIVE_ACCOUNT
      Developer email:    $ACTIVE_ACCOUNT
      →  Save and continue
@@ -117,7 +117,7 @@ Opening: $CRED_URL
 In that page:
   1. Create credentials → OAuth client ID
   2. Application type: Desktop app
-     Name:             devloop-cli
+     Name:             codi-cli
      →  Create
   3. In the modal, click  Download JSON
   4. Save the file to:  $CLIENT_JSON_PATH
@@ -179,15 +179,15 @@ if [ -z "$ACCESS_TOKEN" ]; then
   echo "✗ could not retrieve access token after login" >&2
   exit 1
 fi
-PROBE_URL="https://sheets.googleapis.com/v4/spreadsheets/__devloop_probe_invalid_id__"
-PROBE_BODY="$(curl -sS -o /tmp/_devloop_probe.json -w '%{http_code}' \
+PROBE_URL="https://sheets.googleapis.com/v4/spreadsheets/__codi_probe_invalid_id__"
+PROBE_BODY="$(curl -sS -o /tmp/_codi_probe.json -w '%{http_code}' \
   -H "Authorization: Bearer $ACCESS_TOKEN" "$PROBE_URL" || echo ERR)"
 
 case "$PROBE_BODY" in
   404|400) echo "✓ scope probe passed (HTTP $PROBE_BODY — expected)" ;;
   *)
     echo "✗ scope probe FAILED (HTTP $PROBE_BODY)" >&2
-    cat /tmp/_devloop_probe.json 2>/dev/null >&2 || true
+    cat /tmp/_codi_probe.json 2>/dev/null >&2 || true
     exit 1
     ;;
 esac
@@ -209,6 +209,6 @@ Granted scopes:     openid, userinfo.email, cloud-platform, spreadsheets, drive
 
 You can now bootstrap a project Sheet:
 
-  devloop sheets create-project --name "<project>" --auth-mode oauth_user
+  codi sheets create-project --name "<project>" --auth-mode oauth_user
 
 EOF

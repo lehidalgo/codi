@@ -2,9 +2,9 @@
 
 The safety net. Schema migrations look clean in tests but fail on production data shape. This phase exists to catch what static tests cannot.
 
-## Use `devloop:verify-evidence`
+## Use `codi:verify-evidence`
 
-Invoke `devloop:verify-evidence` (5-step gate). Migration claims of "data integrity preserved" must be backed by actual measured counts and sample diffs, never by assertion. Without evidence, do NOT transition to `done`.
+Invoke `codi:verify-evidence` (5-step gate). Migration claims of "data integrity preserved" must be backed by actual measured counts and sample diffs, never by assertion. Without evidence, do NOT transition to `done`.
 
 ## Procedure
 
@@ -38,7 +38,7 @@ Invoke `devloop:verify-evidence` (5-step gate). Migration claims of "data integr
 
 ## Optional: code review on the migration diff
 
-Migrations are the highest-leverage place for `code-review`. When `.devloop/config.yaml` declares `auto_review: true`, invoke `devloop:code-review` mode `request` after verify-evidence and before proposing `done`. The reviewer subagent gets the migration script(s), the rollback path, and the pre/post metrics. It checks for common migration footguns (missing indexes added pre-backfill, NOT NULL on populated tables, schema/code drift). Critical or Important issues block the transition to `done`.
+Migrations are the highest-leverage place for `code-review`. When `.codi/config.yaml` declares `auto_review: true`, invoke `codi:code-review` mode `request` after verify-evidence and before proposing `done`. The reviewer subagent gets the migration script(s), the rollback path, and the pre/post metrics. It checks for common migration footguns (missing indexes added pre-backfill, NOT NULL on populated tables, schema/code drift). Critical or Important issues block the transition to `done`.
 
 ## When data-validation fails
 

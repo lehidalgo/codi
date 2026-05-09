@@ -94,7 +94,7 @@ Copied from intent and reaffirmed. Each criterion is testable.
 
 ## Open questions
 
-None should remain at gate time. If any survive, run `devloop:discover` (mode sharpen) before transitioning.
+None should remain at gate time. If any survive, run `codi:discover` (mode sharpen) before transitioning.
 
 ## Self-review
 

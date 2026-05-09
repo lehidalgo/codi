@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devloop / sheets-sync — automated Google Cloud + service-account setup.
+# codi / sheets-sync — automated Google Cloud + service-account setup.
 #
 # Replaces Steps 1–4 of skills/sheets-sync/references/google-sheets-setup.md
 # (Cloud project → enable Sheets+Drive APIs → service account → JSON key)
@@ -15,9 +15,9 @@
 #   - Permission to create Cloud projects (Workspace admins sometimes restrict)
 #
 # OUTPUT:
-#   - Cloud project: devloop-sheets-<UTC-timestamp>
-#   - Service account: devloop-sheets@<project-id>.iam.gserviceaccount.com
-#   - JSON key:        $HOME/.config/devloop/credentials.json (mode 0600)
+#   - Cloud project: codi-sheets-<UTC-timestamp>
+#   - Service account: codi-sheets@<project-id>.iam.gserviceaccount.com
+#   - JSON key:        $HOME/.config/codi/credentials.json (mode 0600)
 #   - Stdout summary:  service-account email + project ID for downstream use
 #
 # IDEMPOTENCY:
@@ -36,9 +36,9 @@ set -euo pipefail
 
 # ─── Defaults ─────────────────────────────────────────────────────────────
 PROJECT_ID=""
-KEY_PATH="${HOME}/.config/devloop/credentials.json"
-SA_NAME="devloop-sheets"
-SA_DISPLAY_NAME="devloop-sheets (Sheets + Drive automation)"
+KEY_PATH="${HOME}/.config/codi/credentials.json"
+SA_NAME="codi-sheets"
+SA_DISPLAY_NAME="codi-sheets (Sheets + Drive automation)"
 
 # ─── Args ─────────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -87,22 +87,22 @@ echo "✓ gcloud authenticated as: ${ACTIVE_ACCOUNT}"
 
 # ─── Project ──────────────────────────────────────────────────────────────
 if [[ -z "${PROJECT_ID}" ]]; then
-  # Before creating a new project, list existing devloop-sheets projects so
+  # Before creating a new project, list existing codi-sheets projects so
   # the user (or the agent) is aware. Avoids project sprawl across retries.
   EXISTING_PROJECTS="$(gcloud projects list \
-    --filter="projectId:devloop-sheets-*" \
+    --filter="projectId:codi-sheets-*" \
     --format="value(projectId)" 2>/dev/null || true)"
 
   if [[ -n "${EXISTING_PROJECTS}" ]]; then
-    echo "ℹ Existing devloop-sheets projects detected (you can pass --project-id <id> to reuse one):"
+    echo "ℹ Existing codi-sheets projects detected (you can pass --project-id <id> to reuse one):"
     echo "${EXISTING_PROJECTS}" | sed 's/^/    /'
     echo "→ Creating a new project anyway (no --project-id given)…"
   fi
 
   TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
-  PROJECT_ID="devloop-sheets-${TIMESTAMP}"
+  PROJECT_ID="codi-sheets-${TIMESTAMP}"
   echo "→ Creating project: ${PROJECT_ID}"
-  gcloud projects create "${PROJECT_ID}" --name="devloop-sheets" --quiet >/dev/null
+  gcloud projects create "${PROJECT_ID}" --name="codi-sheets" --quiet >/dev/null
   echo "✓ Project created: ${PROJECT_ID}"
 else
   echo "→ Reusing existing project: ${PROJECT_ID}"
@@ -171,7 +171,7 @@ esac
 # ─── Summary ──────────────────────────────────────────────────────────────
 cat <<EOF
 
-──────────────────────── devloop sheets — setup complete ────────────────────────
+──────────────────────── codi sheets — setup complete ────────────────────────
 
 Project ID:           ${PROJECT_ID}
 Service account:      ${SA_EMAIL}
@@ -198,10 +198,10 @@ The supported pattern:
   3. Copy the Sheet ID from the URL (the segment between /d/ and /edit) and
      run:
 
-       devloop sheets create-project --name "<project>" --sheet-id "<id>"
+       codi sheets create-project --name "<project>" --sheet-id "<id>"
 
      This adds the 6 canonical tabs (BusinessGoal, Requirement, UserStory,
-     Release, Dashboard, Audit) and writes .devloop/project.json.
+     Release, Dashboard, Audit) and writes .codi/project.json.
 
 EOF
 else
@@ -216,10 +216,10 @@ Recommended: use a Shared Drive (org-owned, no individual quota issues).
   3. Copy the Shared Drive ID (the segment after /folders/ in the URL).
   4. Run:
 
-       devloop sheets create-project --name "<project>" --folder-id "<id>"
+       codi sheets create-project --name "<project>" --folder-id "<id>"
 
      The agent creates the Sheet inside the Shared Drive (Drive API with
-     supportsAllDrives), adds the 6 canonical tabs, writes .devloop/project.json.
+     supportsAllDrives), adds the 6 canonical tabs, writes .codi/project.json.
 
 Alternative (if your org doesn't use Shared Drives):
   Use a regular folder you own + share with the SA as Editor + same command.
@@ -231,6 +231,6 @@ fi
 
 cat <<EOF
 Next step: continue the project-workflow elicitation. Once you provide the
-folder/Sheet ID, the agent runs \`devloop sheets create-project\` to bootstrap
+folder/Sheet ID, the agent runs \`codi sheets create-project\` to bootstrap
 the Sheet structure and resume the workflow.
 EOF

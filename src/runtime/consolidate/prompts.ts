@@ -43,6 +43,7 @@ const PATTERN_TO_FILE: Record<PatternCode, string> = {
   P6: "p6-slow-skill.md.tmpl",
   P7: "p7-orphan-cluster.md.tmpl",
   P8: "p8-unused-rule.md.tmpl",
+  P9: "p9-artifact-observation.md.tmpl",
 };
 
 const cache = new Map<PatternCode, string>();

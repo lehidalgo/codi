@@ -1,7 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { buildContext, evaluatePostToolCall, type PostToolCall } from "#src/runtime/hook-logic.js";
 import {
   runWorkflow,
@@ -11,42 +8,43 @@ import {
   approveScopeExpansion,
 } from "#src/runtime/cli-handlers.js";
 import type { Author } from "#src/runtime/types.js";
+import { createIsolatedBrain, type IsolatedBrain } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };
 
-function setupExecute(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-post-"));
-  mkdirSync(join(dir, "docs"), { recursive: true });
-  writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
+function setupExecute(): { scope: IsolatedBrain; dir: string } {
+  const scope = createIsolatedBrain("codi-post-");
   runWorkflow({
     workflowType: "feature",
     task: "Test",
     author: human,
-    cwd: dir,
+    cwd: scope.dir,
   });
   for (const phase of ["plan", "decompose", "execute"] as const) {
-    proposeTransition({ toPhase: phase, author: human, cwd: dir });
-    approveTransition({ author: human, cwd: dir });
+    proposeTransition({ toPhase: phase, author: human, cwd: scope.dir });
+    approveTransition({ author: human, cwd: scope.dir });
   }
-  return dir;
+  return { scope, dir: scope.dir };
 }
 
 describe("evaluatePostToolCall", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setupExecute();
+    ({ scope, dir } = setupExecute());
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("does not record when no active workflow", () => {
-    const noWf = mkdtempSync(join(tmpdir(), "devloop-no-wf-"));
+    // Empty brain → no active workflow.
+    const empty = createIsolatedBrain("codi-no-wf-");
     try {
-      const ctx = buildContext(noWf);
+      const ctx = buildContext(empty.dir);
       const call: PostToolCall = {
         tool_name: "Edit",
         tool_input: { file_path: "src/x.ts" },
@@ -54,7 +52,7 @@ describe("evaluatePostToolCall", () => {
       const result = evaluatePostToolCall(call, ctx, "x");
       expect(result.recorded).toBe(false);
     } finally {
-      rmSync(noWf, { recursive: true, force: true });
+      empty.dispose();
     }
   });
 

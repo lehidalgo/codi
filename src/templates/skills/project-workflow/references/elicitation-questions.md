@@ -1,10 +1,10 @@
 # Elicitation questions — intent phase
 
-Canonical question set for `project-workflow.intent`. ONE question per turn. Every question carries a **recommended answer**. Skip any whose answer is already present in `.devloop/project.json`.
+Canonical question set for `project-workflow.intent`. ONE question per turn. Every question carries a **recommended answer**. Skip any whose answer is already present in `.codi/project.json`.
 
 ## Cross-cutting trigger — Google Sheets setup needed
 
-**Trigger phrases (any of these from the user, at any question):** "I need to set this up", "I don't have credentials yet", "I haven't done the Google config", "I have to configure that", "I have not configured Drive", "I don't have a service account yet". Also fires automatically if the agent detects `~/.config/devloop/credentials.json` is missing AND `~/.config/gcloud/application_default_credentials.json` is missing.
+**Trigger phrases (any of these from the user, at any question):** "I need to set this up", "I don't have credentials yet", "I haven't done the Google config", "I have to configure that", "I have not configured Drive", "I don't have a service account yet". Also fires automatically if the agent detects `~/.config/codi/credentials.json` is missing AND `~/.config/gcloud/application_default_credentials.json` is missing.
 
 ### Step 0 — Auth mode question (TOP-LEVEL, asked first)
 
@@ -29,12 +29,12 @@ Three methods, all fully supported. Pick one for THIS project:
                      once on each machine).
 
   local_xlsx       — no Google access at all. State persists to a local
-                     `.xlsx` file under `.devloop/sheet.xlsx`. All workflow
+                     `.xlsx` file under `.codi/sheet.xlsx`. All workflow
                      features (atomic sync, snapshot, OCC `_rev`,
                      soft-delete, restore) work transparently against the
                      local file. Best for offline work, corp firewalls,
                      OAuth blocked, fast trial. Switch to a Google backend
-                     later via `devloop sheets push-to-google`.
+                     later via `codi sheets push-to-google`.
 
 Recommended for your environment:
   - active gcloud is <email>@gmail.com / @googlemail.com  → oauth_user RECOMMENDED
@@ -47,13 +47,13 @@ usually cleanest, not a constraint.)
 Pick: service_account, oauth_user, or local_xlsx
 ```
 
-After the user picks, record the answer (`auth_mode` in `.devloop/project.json` will carry it). Then surface only the setup paths relevant to that mode — described below.
+After the user picks, record the answer (`auth_mode` in `.codi/project.json` will carry it). Then surface only the setup paths relevant to that mode — described below.
 
 **Agent response — fixed, no improvising:**
 
 1. **STOP** the current elicitation question. Do not push past it.
 
-2. **Invoke the `Read` tool on the canonical guide:** `devloop:sheets-sync references/google-sheets-setup.md`. Actually call Read — don't summarize from memory.
+2. **Invoke the `Read` tool on the canonical guide:** `codi:sheets-sync references/google-sheets-setup.md`. Actually call Read — don't summarize from memory.
 
 3. **DO NOT write a new guide.** The canonical guide already ships with the plugin. Authoring a duplicate (`docs/<ts>_[GUIDE]_*.md`) is an anti-pattern. If you feel the existing guide is insufficient, propose an edit to it via the `skill-creator` skill — never side-step it with a fresh markdown file.
 
@@ -77,14 +77,14 @@ After the user picks, record the answer (`auth_mode` in `.devloop/project.json` 
 
 5c. **No detection, no scripts, no credentials needed.** Skip directly to Sheet (here, workbook) creation:
 
-> **E — local `.xlsx` (no Google access).** I'll write a fresh workbook at `.devloop/sheet.xlsx` with the six canonical tabs (BG / REQ / US / REL / Dashboard / Audit) plus safety columns. No `gcloud`, no SA JSON key, no folder share. The file lives in your repo; commit it like any other artifact.
+> **E — local `.xlsx` (no Google access).** I'll write a fresh workbook at `.codi/sheet.xlsx` with the six canonical tabs (BG / REQ / US / REL / Dashboard / Audit) plus safety columns. No `gcloud`, no SA JSON key, no folder share. The file lives in your repo; commit it like any other artifact.
 >
-> To switch to a Google backend later, `devloop sheets push-to-google --to-auth-mode oauth_user` will atomically migrate the data (snapshot-first, planning columns transferred 1:1).
+> To switch to a Google backend later, `codi sheets push-to-google --to-auth-mode oauth_user` will atomically migrate the data (snapshot-first, planning columns transferred 1:1).
 
 The agent runs:
 
 ```bash
-devloop sheets create-project --name "<Q1-answer>" --auth-mode local_xlsx
+codi sheets create-project --name "<Q1-answer>" --auth-mode local_xlsx
 ```
 
 That's it — no further elicitation in this branch. Continue with the next intent question (project name, etc., if not already covered).
@@ -102,44 +102,44 @@ That's it — no further elicitation in this branch. Continue with the next inte
 >
 >   Or run the helper script: `scripts/oauth-user-setup.sh`. Reply `ready` when authenticated. The agent verifies and resumes.
 >
-> No project, no SA, no JSON key, no folder share required. The `devloop sheets create-project --auth-mode oauth_user` step lands the Sheet in YOUR Drive root by default; pass `--folder-id` to put it in a specific folder of yours.
+> No project, no SA, no JSON key, no folder share required. The `codi sheets create-project --auth-mode oauth_user` step lands the Sheet in YOUR Drive root by default; pass `--folder-id` to put it in a specific folder of yours.
 
 6. **Wait** for the user to pick (the auth-mode question first, then the path within that mode).
 
 7. **Honor the choice:**
 
-   **A — self-service.** Print `cat ~/.claude/plugins/cache/devloop-marketplace/devloop/<version>/skills/sheets-sync/references/google-sheets-setup.md` (or just the relative path). Pause until user replies `ready`.
+   **A — self-service.** Print `cat ~/.claude/plugins/cache/codi-marketplace/codi/<version>/skills/sheets-sync/references/google-sheets-setup.md` (or just the relative path). Pause until user replies `ready`.
 
    **B — guided manual.** Present Step 1's literal content from the Read. Wait for the user to confirm completion of Step 1 before advancing to Step 2. After Step 7 verify, resume the elicitation.
 
    **C — gcloud walkthrough.** Drive an interactive sub-elicitation with the same one-question-per-turn / propose-and-confirm discipline. Walk these decisions in order, ALWAYS proposing a default the user can confirm or redirect:
    1. **Active gcloud account?** Run `gcloud auth list --filter=status:ACTIVE --format='value(account)'`. If empty, ask user to run `gcloud auth login [<account>]` (use `!` prefix in CC), reply `ready`. If non-empty, propose using that account; user can switch by saying `use <other@email>` (agent runs `gcloud auth login <other@email>` then `gcloud config set account <other@email>`).
 
-   2. **DISCOVER existing devloop infrastructure first** — avoid project sprawl. Run:
+   2. **DISCOVER existing codi infrastructure first** — avoid project sprawl. Run:
 
       ```bash
-      gcloud projects list --filter="projectId:devloop-sheets-*" \
+      gcloud projects list --filter="projectId:codi-sheets-*" \
         --format="value(projectId,createTime)" 2>/dev/null | head -5
       ```
 
-      Then for each found project, list its devloop-sheets SAs:
+      Then for each found project, list its codi-sheets SAs:
 
       ```bash
       gcloud iam service-accounts list --project=<id> \
-        --filter="email:devloop-sheets@*" --format="value(email)" 2>/dev/null
+        --filter="email:codi-sheets@*" --format="value(email)" 2>/dev/null
       ```
 
       **Branch on results:**
       - **0 projects found** → no existing infra; proceed to step 3 with default "create new".
-      - **1 project found** → propose REUSING it: _"Found existing project `devloop-sheets-<ts>` (created `<date>`) with SA `devloop-sheets@...`. Reuse it (regenerates the JSON key, doesn't create new infra) or create new?"_ Default: **reuse**.
+      - **1 project found** → propose REUSING it: _"Found existing project `codi-sheets-<ts>` (created `<date>`) with SA `codi-sheets@...`. Reuse it (regenerates the JSON key, doesn't create new infra) or create new?"_ Default: **reuse**.
       - **2+ projects found** → list them with creation dates, ask user to pick (reuse #N) or create new. Default: most recent.
 
       If user picks **reuse**: skip steps 3–4 (project + SA already exist). Run the script with `--project-id <chosen-id>` — it's idempotent, keeps the existing SA, just regenerates the JSON key (existing key is backed up to `<path>.bak.<ts>` first).
 
       If user picks **create new**: continue to steps 3–5.
 
-   3. **Project ID for the new project?** (only if creating new) Default: `devloop-sheets-<UTC-timestamp>`. User can override with team naming convention.
-   4. **Service-account name?** Default: `devloop-sheets`. Most users keep the default; rare custom case if their team has a naming standard.
+   3. **Project ID for the new project?** (only if creating new) Default: `codi-sheets-<UTC-timestamp>`. User can override with team naming convention.
+   4. **Service-account name?** Default: `codi-sheets`. Most users keep the default; rare custom case if their team has a naming standard.
    5. **Drive folder for the Sheet?** Default: `root` (service-account-owned, shared back to user). User can paste a Drive folder ID instead.
 
    After all answers (or earlier if user said _"just defaults"_), invoke the script. It handles project create-or-reuse, SA create-or-reuse, and key regen idempotently:
@@ -153,11 +153,11 @@ That's it — no further elicitation in this branch. Continue with the next inte
    ```
 
    "Just defaults" smart-fast-path:
-   - If exactly 1 `devloop-sheets-*` project exists → silently reuse it (`--project-id <that-one>`).
+   - If exactly 1 `codi-sheets-*` project exists → silently reuse it (`--project-id <that-one>`).
    - If 0 found → create new (no flags).
    - If 2+ found → ask user explicitly (don't auto-pick).
 
-   On success: verify `~/.config/devloop/credentials.json` exists, then proceed to **Step 8** below. On failure: surface stderr; offer fallback to **B**, or retry with different choices.
+   On success: verify `~/.config/codi/credentials.json` exists, then proceed to **Step 8** below. On failure: surface stderr; offer fallback to **B**, or retry with different choices.
 
 8. **Detect account type and branch.** Once credentials are in place, the agent must determine whether the user is on a Personal or Workspace Google account, because **service accounts cannot create files in their own Drive root** (zero storage quota). The Sheet has to live under a host with quota:
    - **Personal account** (`@gmail.com`, `@googlemail.com`): user creates the Sheet themselves, shares with SA, agent populates tabs.
@@ -176,11 +176,11 @@ That's it — no further elicitation in this branch. Continue with the next inte
    2. Walk them through:
       - Open https://sheets.new (or Drive → New → Google Sheets → blank).
       - Name it whatever they want.
-      - Share with the SA email (`~/.config/devloop/credentials.json::client_email`) as **Editor**.
+      - Share with the SA email (`~/.config/codi/credentials.json::client_email`) as **Editor**.
       - Copy the Sheet ID from the URL (segment between `/d/` and `/edit`).
    3. Run:
       ```bash
-      devloop sheets create-project --name "<Q1-answer>" --sheet-id "<sheet-id-from-user>" --auth-mode service_account
+      codi sheets create-project --name "<Q1-answer>" --sheet-id "<sheet-id-from-user>" --auth-mode service_account
       ```
 
    **service_account + Workspace:**
@@ -188,7 +188,7 @@ That's it — no further elicitation in this branch. Continue with the next inte
    2. Tell the user to add the SA email as **Content manager** on the Shared Drive (or **Editor** on the folder).
    3. Run:
       ```bash
-      devloop sheets create-project --name "<Q1-answer>" --folder-id "<drive-or-folder-id>" --auth-mode service_account
+      codi sheets create-project --name "<Q1-answer>" --folder-id "<drive-or-folder-id>" --auth-mode service_account
       ```
 
    **oauth_user (any account type):**
@@ -196,22 +196,22 @@ That's it — no further elicitation in this branch. Continue with the next inte
    2. Ask whether the user wants the Sheet in a specific folder, or fine in their Drive root. Default: root.
    3. Run:
       ```bash
-      devloop sheets create-project --name "<Q1-answer>" --auth-mode oauth_user [--folder-id "<id>"]
+      codi sheets create-project --name "<Q1-answer>" --auth-mode oauth_user [--folder-id "<id>"]
       ```
       The agent acts as the user. Sheet ownership = user. No share-with-SA dance needed (the user already has access — they own it).
 
    **local_xlsx (no Google access):**
    1. No credentials, no folders, no Sheet ID. Just run:
       ```bash
-      devloop sheets create-project --name "<Q1-answer>" --auth-mode local_xlsx
+      codi sheets create-project --name "<Q1-answer>" --auth-mode local_xlsx
       ```
-   2. The workbook is written to `.devloop/sheet.xlsx` with all six canonical tabs + safety columns. `project.json` records `auth_mode: local_xlsx` and `local_path`.
-   3. To migrate to a Google backend later: `devloop sheets push-to-google --to-auth-mode oauth_user` (atomic, snapshot-first; planning columns transfer 1:1).
+   2. The workbook is written to `.codi/sheet.xlsx` with all six canonical tabs + safety columns. `project.json` records `auth_mode: local_xlsx` and `local_path`.
+   3. To migrate to a Google backend later: `codi sheets push-to-google --to-auth-mode oauth_user` (atomic, snapshot-first; planning columns transfer 1:1).
 
    Either path:
    - Creates / populates the 6 canonical tabs (BusinessGoal, Requirement, UserStory, Release, Dashboard, Audit).
-   - Writes `.devloop/project.json` with `project_name`, `sheet_id`, etc.
-   - Commit `.devloop/project.json` (propose; user approves).
+   - Writes `.codi/project.json` with `project_name`, `sheet_id`, etc.
+   - Commit `.codi/project.json` (propose; user approves).
 
    On error: surface the exact `SheetsError` message. The most common failures are:
    - `403 caller does not have permission` → SA isn't shared on the folder/Sheet. Ask user to fix the share.
@@ -223,7 +223,7 @@ That's it — no further elicitation in this branch. Continue with the next inte
 ## Q1 — Project name?
 
 **Recommended:** `<repo directory name>` because it's already meaningful to the team and avoids a second name to remember.
-Used as the human-readable name in the Sheet title and `.devloop/project.json::project_name`.
+Used as the human-readable name in the Sheet title and `.codi/project.json::project_name`.
 
 Acceptance: any non-empty string. If user responds "use the default", use the recommendation.
 
@@ -253,7 +253,7 @@ If `root`, the Sheet is created under the service account's root and shared with
 
 ## Q4 — Service-account credentials path?
 
-**Recommended:** `~/.config/devloop/credentials.json` because that's the convention the gcloud-setup script writes to and the auth resolver checks first.
+**Recommended:** `~/.config/codi/credentials.json` because that's the convention the gcloud-setup script writes to and the auth resolver checks first.
 
 **If the file is absent**, fire the cross-cutting Google-setup trigger at the top of this document — offer the user Option A (self-service) or Option B (guided walkthrough) and honor their choice. Do NOT just print the file path; actually invoke the choice.
 
@@ -271,15 +271,15 @@ The agent PAUSES. It does NOT proceed by inventing Goals from thin air.
 
 ## Q6 (only if `--update` mode) — Confirm the Sheet ID
 
-**Recommended:** the `sheet_id` already in `.devloop/project.json`.
+**Recommended:** the `sheet_id` already in `.codi/project.json`.
 
 If the user wants to attach a different Sheet, that's effectively a new project — the agent suggests running `project-workflow` without `--update` instead.
 
 ## Skip rules
 
-- If `.devloop/project.json` has `project_name`, skip Q1.
+- If `.codi/project.json` has `project_name`, skip Q1.
 - If it has `sheet_id`, skip Q2 and Q3.
-- If `~/.config/devloop/credentials.json` exists and loads, skip Q4.
+- If `~/.config/codi/credentials.json` exists and loads, skip Q4.
 - If `docs/sources/*.md` is non-empty, skip Q5 (still verify; just don't ask).
 - Q6 only fires in `--update` mode.
 

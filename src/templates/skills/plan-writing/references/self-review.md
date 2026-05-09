@@ -72,6 +72,6 @@ Fix every issue you found. Do NOT re-run the review; the goal is to fix and move
 
 If any of the gaps cannot be fixed by you alone (e.g., a requirement was never resolved by `discover` and you cannot recommend a default), stop and tell the user:
 
-> "Self-review surfaced N gaps that need a decision. Run `devloop:discover` (mode sharpen) on these specific items before this artifact can be marked ready."
+> "Self-review surfaced N gaps that need a decision. Run `codi:discover` (mode sharpen) on these specific items before this artifact can be marked ready."
 
 Do NOT proceed past unresolved gaps.

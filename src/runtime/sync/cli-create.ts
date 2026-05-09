@@ -1,5 +1,5 @@
 /**
- * `devloop sheets create-project` handler.
+ * `codi sheets create-project` handler.
  *
  * Branches across the three persistence backends:
  *   - service_account / oauth_user → google bootstrapping (createProjectSheet
@@ -29,7 +29,7 @@ export async function runCreateProject(
   const name = typeof flags["name"] === "string" ? flags["name"] : undefined;
   if (!name) {
     fail(
-      `devloop sheets create-project --name "<project_name>" \\\n` +
+      `codi sheets create-project --name "<project_name>" \\\n` +
         `  (--auth-mode service_account [--folder-id "<id>" | --sheet-id "<id>"]\n` +
         `   | --auth-mode oauth_user    [--folder-id "<id>" | --sheet-id "<id>"]\n` +
         `   | --auth-mode local_xlsx    [--local-path "<path>"])\n` +
@@ -38,14 +38,14 @@ export async function runCreateProject(
         `  --auth-mode   service_account | oauth_user | local_xlsx (default service_account)\n` +
         `  --folder-id   create new Sheet inside this folder (Google modes only)\n` +
         `  --sheet-id    attach to an existing Sheet (Google modes only)\n` +
-        `  --local-path  .xlsx path (local_xlsx only; default .devloop/sheet.xlsx)\n` +
+        `  --local-path  .xlsx path (local_xlsx only; default .codi/sheet.xlsx)\n` +
         `  --force       bypass preflight refusal on Sheet with existing data\n` +
         `\n` +
         `service_account on a personal Gmail: SAs have ZERO Drive quota — pass\n` +
         `--sheet-id pointing to a Sheet you already created and shared with the SA.\n` +
         `\n` +
         `local_xlsx mode requires no Google access; persists to a local file you\n` +
-        `can later push to Google Sheets via 'devloop sheets push-to-google'.`,
+        `can later push to Google Sheets via 'codi sheets push-to-google'.`,
     );
   }
 
@@ -79,7 +79,7 @@ export async function runCreateProject(
   }
   if (authMode === "local_xlsx" && (folderId || sheetId)) {
     fail(
-      `local_xlsx does not use --folder-id / --sheet-id. Use --local-path "<path>" or omit (defaults to .devloop/sheet.xlsx).`,
+      `local_xlsx does not use --folder-id / --sheet-id. Use --local-path "<path>" or omit (defaults to .codi/sheet.xlsx).`,
     );
   }
 
@@ -90,7 +90,7 @@ export async function runCreateProject(
   const existing = tryReadProjectConfig(cwd);
   if (existing && typeof existing.sheet_id === "string" && existing.sheet_id.length > 0) {
     fail(
-      `${cwd}/.devloop/project.json already has sheet_id ${existing.sheet_id}.\n` +
+      `${cwd}/.codi/project.json already has sheet_id ${existing.sheet_id}.\n` +
         `Refusing to overwrite. Delete the file first if you want to recreate.`,
     );
   }
@@ -100,7 +100,7 @@ export async function runCreateProject(
   // ── local_xlsx branch ────────────────────────────────────────────────────
   if (authMode === "local_xlsx") {
     const path = await import("node:path");
-    const resolvedLocalPath = path.resolve(cwd, localPath ?? ".devloop/sheet.xlsx");
+    const resolvedLocalPath = path.resolve(cwd, localPath ?? ".codi/sheet.xlsx");
     const xlsxResult = await createLocalXlsxProject({ filePath: resolvedLocalPath, force });
 
     const config: ProjectConfig = {
@@ -120,20 +120,16 @@ export async function runCreateProject(
           mode: "local_xlsx",
           local_path: xlsxResult.file_path,
           tabs_created: xlsxResult.tabs_created,
-          project_json_path: `${cwd}/.devloop/project.json`,
+          project_json_path: `${cwd}/.codi/project.json`,
           config,
         }),
       );
     } else {
       console.log(`✓ local .xlsx workbook created: ${xlsxResult.file_path}`);
       console.log(`  tabs:      ${xlsxResult.tabs_created.join(", ")}`);
-      console.log(
-        `✓ Wrote ${cwd}/.devloop/project.json (project_name=${name}, auth_mode=local_xlsx)`,
-      );
-      console.log(`Next: commit .devloop/project.json and run project-workflow.`);
-      console.log(
-        `Later, push to a Google Sheet with: devloop sheets push-to-google --sheet-id <id>`,
-      );
+      console.log(`✓ Wrote ${cwd}/.codi/project.json (project_name=${name}, auth_mode=local_xlsx)`);
+      console.log(`Next: commit .codi/project.json and run project-workflow.`);
+      console.log(`Later, push to a Google Sheet with: codi sheets push-to-google --sheet-id <id>`);
     }
     return;
   }
@@ -177,7 +173,7 @@ export async function runCreateProject(
         sheet_id: result.sheet_id,
         url: result.url,
         tabs_created: result.tabs_created,
-        project_json_path: `${cwd}/.devloop/project.json`,
+        project_json_path: `${cwd}/.codi/project.json`,
         config,
       }),
     );
@@ -185,7 +181,7 @@ export async function runCreateProject(
     console.log(`✓ Sheet ${mode}: ${result.url}`);
     console.log(`  sheet_id:  ${result.sheet_id}`);
     console.log(`  tabs:      ${result.tabs_created.join(", ")}`);
-    console.log(`✓ Wrote ${cwd}/.devloop/project.json (project_name=${name})`);
-    console.log(`Next: commit .devloop/project.json and continue project-workflow.intent.`);
+    console.log(`✓ Wrote ${cwd}/.codi/project.json (project_name=${name})`);
+    console.log(`Next: commit .codi/project.json and continue project-workflow.intent.`);
   }
 }

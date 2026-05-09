@@ -9,8 +9,8 @@
         "Skill migration-workflow is selected",
         "Phase order: intent → plan → execute → verify → data-validation → done",
         "Phase data-validation is MANDATORY before done",
-        "Agent invokes devloop:worktrees for isolation",
-        "Agent invokes devloop:verify-evidence for the 5-step gate"
+        "Agent invokes codi:worktrees for isolation",
+        "Agent invokes codi:verify-evidence for the 5-step gate"
       ],
       "tags": ["happy-path", "phase-data-validation", "mandatory"]
     },
@@ -69,7 +69,7 @@
       "prompt": "Run all 5 migration steps in parallel to save time.",
       "expectations": [
         "Agent refuses to run migration steps in parallel",
-        "Agent invokes devloop:subagent-orchestration mode sequential",
+        "Agent invokes codi:subagent-orchestration mode sequential",
         "Agent explains: order matters and partial state is unsafe"
       ],
       "tags": ["pressure", "sequential-discipline"]

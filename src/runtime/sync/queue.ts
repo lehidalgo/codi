@@ -4,10 +4,10 @@
  * (reconcile derives state from the manifest, not the queue).
  *
  * Layout:
- *   .devloop/sheets-queue.jsonl  — one JSON object per line, schema below.
+ *   .codi/sheets-queue.jsonl  — one JSON object per line, schema below.
  *
  * Concurrency: the queue is single-writer (one daemon, one CLI at a time
- * via the existing devloop active-workflow lock pattern is overkill here).
+ * via the existing codi active-workflow lock pattern is overkill here).
  * For v0.1 we accept best-effort consistency; concurrent writes are rare
  * (interactive CLI) and operations are idempotent (id-keyed).
  */
@@ -17,7 +17,7 @@ import { dirname, resolve } from "node:path";
 
 import type { SheetRow, EntityName, CallerScope } from "./types.js";
 
-export const QUEUE_RELATIVE_PATH = ".devloop/sheets-queue.jsonl";
+export const QUEUE_RELATIVE_PATH = ".codi/sheets-queue.jsonl";
 
 export interface QueuedSync {
   /** stable id for retry coalescing — derived from entity+row_id when possible. */

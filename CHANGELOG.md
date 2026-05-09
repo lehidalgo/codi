@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### v3 zero closure (F1–F11)
+
+The eleven-step closure that takes Codi v3 from "v2-shaped legacy underneath" to a brain-canonical, devloop-dissolved zero-mode core. Single backend (SQLite), single CLI namespace (`codi workflow ...`), single capture grammar (Iron Law 9). All tests green: 3395 pass + 2 skipped across 281 files.
+
+#### Added
+
+- **Workflow definitions in brain (F1+F2)** — new `workflow_definitions` table seeded from `src/templates/workflows/{feature,bug-fix,refactor,migration,project}.yaml`. Phase graphs / gates / flags now live in SQLite, not in code.
+- **Phase graph enforcement (F4)** — `proposeTransition` rejects illegal phase moves against `workflow_definitions[type].phases[from].next`. Graceful degrade for tmp brains without seeded definitions.
+- **Capture pipeline (F6)** — `prompts` / `turns` / `captures` / `tool_calls` / `artifacts_used` populated end-to-end:
+  - `processPromptSubmit` opens a turn on every UserPromptSubmit
+  - `processPostToolUse` records every tool call (`ok` / `error` / `blocked`)
+  - `processStopHook` parses `|TYPE: "verbatim"|` markers, persists captures, closes the turn
+  - New `scripts/runtime/hook-stop.ts` + `src/templates/hooks/runtime/stop.sh` wired into `hooks.json`
+- **Iron Laws live wiring (F7)**:
+  - L4 — `phase_transition_proposed` flips `workflow_runs.status` to `pending_approval`; UserPromptSubmit emits the hard-gate banner; only literal `ok` / `OK` / `Ok` passes
+  - L5 — PreToolUse warns (advisory) on mutating edits when last brain read is older than 60s
+  - L7 — PreToolUse blocks (exit 2) `git commit/push/merge/tag/reset --hard/push --force` when no approval token is found in recent prompts
+  - L8 — UserPromptSubmit reads `.codi/preferences.json` and emits the caveman directive
+- **`codi workflow` CLI namespace (F9)** — 10 subcommands: `run`, `status`, `abandon`, `recover`, `transition`, `scope {propose,approve,reject}`, `elevate`, `handover`, `stats`. Every action accepts `--as-agent` to attribute to the agent rather than the human user.
+- **P9 detector (F10)** — turns `|OBSERVATION: "..."|` captures naming an installed artifact into `OPTIMIZE_EXISTING_ARTIFACT` proposals (case-insensitive match against rules + skills + agents catalog, ≥minEvidence threshold, sorted by evidence count).
+- **Brain-backed compactor (F11)** — `compactWorkflows` collapses old terminal `workflow_events` into a `workflow_runs.metadata.compacted` summary blob (preserves init / decisions / scope-approvals / handovers / lifecycle events verbatim) and deletes the redundant rows. Idempotent; supports dry-run.
+- **`CODI_BRAIN_DB` env var** — `defaultBrainPath` honors it before falling back to `~/.codi/brain.db`. Test harness uses this for per-test brain isolation.
+
+#### Changed
+
+- **Real gate checks (F8)** — three checks that previously fake-passed are now wired to evidence:
+  - `no_unresolved_scope_proposals` — walks events per-file, fails listing each unresolved proposal
+  - `validation_passes` — finds the most recent `validation_run` event and requires `exit_code === 0`
+  - `all_planned_files_modified` — shells out to `git status --porcelain` for each scope file; untracked files count as modified
+- **System author renamed `devloop` → `codi`** in every event written by transitions / elevation / scope handlers and in auto-commit messages.
+- **Hook-emitted strings reference `codi workflow ...`** instead of `devloop ...` (state block, scope-violation messages, transition reminders, abandon hint).
+- **Child-workflow branch prefix** flipped from `devloop/<parent>/<child>` to `codi/<parent>/<child>`.
+- **PR summary marker** flipped from `<!-- devloop-summary-hash:` to `<!-- codi-summary-hash:`.
+- **Project preferences relocated** from `.devloop/preferences.json` to `.codi/preferences.json`. `DevloopPreferences` type renamed `CodiPreferences`.
+- **Hook classifier** allows `.codi/*.json|jsonl` artifacts in any phase (was `.devloop/`).
+- **`codi workflow` reaches the brain DB in production builds** — `findSchemaPath` searches multiple candidate paths so the same source code resolves correctly in dev (`src/schemas/...`) and dist (`dist/schemas/...`); the post-build asset copier now ships `src/schemas/` to `dist/schemas/`.
+- **Iron Law 9 capture grammar (F10)** — agent-facing rule (`improvement.ts`) and skill (`rule-feedback`) now instruct the unified `|OBSERVATION: "..."|` marker. The legacy `[CODI-OBSERVATION: artifact | category | text]` grammar is no longer documented in agent-facing artifacts; the gap-category vocabulary lives inside the verbatim text where P9 detects it.
+
+#### Removed (F5 + F11)
+
+- `src/runtime/event-log.ts`, `event-log-factory.ts`, `paths.ts` and their tests — the legacy filesystem-archive event log (`.workflow/active/` + `.workflow/archives/`). Every handler now goes through `BrainEventLog`.
+- `scripts/runtime/{devloop,classify,gate,manifest,pre-squash}.ts` — broken legacy CLI scripts (imported `../lib/*` paths that never existed); zero callers.
+- `tests/runtime/e2e/` — stale shell harness pinned at `/Users/laht/projects/devloop`.
+- Legacy filesystem compactor (`compactAllArchives`) — replaced by brain-backed `compactWorkflows`.
+
+#### Internal
+
+- 33 new tests across `capture-session`, `stop-hook`, `prompt-hook`, `iron-laws-wiring`, `gate-fixes`, `p9-detector`, `unit/cli/workflow`, plus the brain-backed compactor block in `m5-features`.
+- Net diff across F1–F11: ~+3000 / −2400 lines, including ~600 lines of dead code purged.
+
 ## [3.0.0] - 2026-05-08
 
 Major release — Codi v3 ed.0 zero-mode. Introduces the canonical SQLite brain, the capture protocol (Iron Law 9), the brain-ui Hono server, the consolidation pipeline with LLM enrichment (Gemini + OpenAI), the Capabilities Matrix, the `codi migrate v2-to-v3` planner + executor, the `codi plugin publish` dual-track distribution, and the v3 Diataxis docs. v2 users upgrade via `codi migrate v2-to-v3 --apply`; the migration backs up `.codi/` before any rewrite.

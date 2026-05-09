@@ -12,7 +12,7 @@ import {
   recoverWorkflow,
   KnowledgeBaseMissingError,
 } from "#src/runtime/cli-handlers.js";
-import { EventLog } from "#src/runtime/event-log.js";
+import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { createEvent } from "#src/runtime/event-factory.js";
 import type { Author } from "#src/runtime/types.js";
 
@@ -23,21 +23,40 @@ function bootstrapKnowledgeBase(dir: string): void {
   writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Project Context\n", "utf-8");
 }
 
-describe("devloop CLI handlers", () => {
+/**
+ * Run a callback with an isolated brain.db scoped to the given dir. The
+ * cli-handlers internally call BrainEventLog.open() with no path, picking up
+ * CODI_BRAIN_DB so each test gets its own DB.
+ */
+function withBrain<T>(dir: string, cb: (log: BrainEventLog) => T): T {
+  const log = BrainEventLog.open({ dbPath: join(dir, "brain.db") });
+  try {
+    return cb(log);
+  } finally {
+    log.dispose();
+  }
+}
+
+describe("codi CLI handlers", () => {
   let tmpDir: string;
+  let prevBrainDb: string | undefined;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "devloop-cli-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "codi-cli-test-"));
     bootstrapKnowledgeBase(tmpDir);
+    prevBrainDb = process.env["CODI_BRAIN_DB"];
+    process.env["CODI_BRAIN_DB"] = join(tmpDir, "brain.db");
   });
 
   afterEach(() => {
+    if (prevBrainDb === undefined) delete process.env["CODI_BRAIN_DB"];
+    else process.env["CODI_BRAIN_DB"] = prevBrainDb;
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
   describe("knowledge base requirement", () => {
     it("blocks runWorkflow when docs/CONTEXT.md is missing", () => {
-      const noKbDir = mkdtempSync(join(tmpdir(), "devloop-no-kb-"));
+      const noKbDir = mkdtempSync(join(tmpdir(), "codi-no-kb-"));
       try {
         expect(() =>
           runWorkflow({
@@ -53,7 +72,7 @@ describe("devloop CLI handlers", () => {
     });
 
     it("error message instructs invoking init-knowledge-base", () => {
-      const noKbDir = mkdtempSync(join(tmpdir(), "devloop-no-kb-"));
+      const noKbDir = mkdtempSync(join(tmpdir(), "codi-no-kb-"));
       try {
         try {
           runWorkflow({
@@ -232,8 +251,9 @@ describe("devloop CLI handlers", () => {
       });
       expect(result.abandonedInPhase).toBe("intent");
 
-      const log = EventLog.fromCwd(tmpDir);
-      expect(log.getActiveWorkflowId()).toBeNull();
+      withBrain(tmpDir, (log) => {
+        expect(log.getActiveWorkflowId()).toBeNull();
+      });
     });
 
     it("rejects empty reason", () => {
@@ -259,18 +279,19 @@ describe("devloop CLI handlers", () => {
         author: human,
         cwd: tmpDir,
       });
-      const log = EventLog.fromCwd(tmpDir);
-      const wId = log.getActiveWorkflowId();
-      if (!wId) throw new Error("expected active workflow");
-      log.append(
-        wId,
-        createEvent({
-          eventType: "workflow_completed",
-          payload: { duration_ms: 1000 },
-          author: human,
-          parentEventId: null,
-        }),
-      );
+      withBrain(tmpDir, (log) => {
+        const wId = log.getActiveWorkflowId();
+        if (!wId) throw new Error("expected active workflow");
+        log.append(
+          wId,
+          createEvent({
+            eventType: "workflow_completed",
+            payload: { duration_ms: 1000 },
+            author: human,
+            parentEventId: null,
+          }),
+        );
+      });
       expect(() => abandonWorkflow({ reason: "x", author: human, cwd: tmpDir })).toThrow();
     });
   });
@@ -295,15 +316,19 @@ describe("devloop CLI handlers", () => {
         author: human,
         cwd: tmpDir,
       });
-      const log = EventLog.fromCwd(tmpDir);
-      const wId = log.getActiveWorkflowId();
-      log.clearActiveWorkflowId();
-      expect(log.getActiveWorkflowId()).toBeNull();
+      const wId = withBrain(tmpDir, (log) => {
+        const id = log.getActiveWorkflowId();
+        log.clearActiveWorkflowId();
+        expect(log.getActiveWorkflowId()).toBeNull();
+        return id;
+      });
 
       const result = recoverWorkflow({ cwd: tmpDir });
       expect(result.recovered).toBe(true);
       expect(result.workflowId).toBe(wId);
-      expect(log.getActiveWorkflowId()).toBe(wId);
+      withBrain(tmpDir, (log) => {
+        expect(log.getActiveWorkflowId()).toBe(wId);
+      });
     });
 
     it("does not recover terminal workflows", () => {
@@ -329,13 +354,18 @@ describe("devloop CLI handlers", () => {
 
 describe("phase done auto-completion", () => {
   let tmpDir: string;
+  let savedBrain: string | undefined;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "devloop-done-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "codi-done-test-"));
     bootstrapKnowledgeBase(tmpDir);
+    savedBrain = process.env["CODI_BRAIN_DB"];
+    process.env["CODI_BRAIN_DB"] = join(tmpDir, "brain.db");
   });
 
   afterEach(() => {
+    if (savedBrain === undefined) delete process.env["CODI_BRAIN_DB"];
+    else process.env["CODI_BRAIN_DB"] = savedBrain;
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -386,13 +416,18 @@ describe("phase done auto-completion", () => {
 
 describe("runWorkflow — terminal-status pointer migration (BUG-OPEN-3)", () => {
   let tmpDir: string;
+  let savedBrain: string | undefined;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "devloop-migrate-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "codi-migrate-test-"));
     bootstrapKnowledgeBase(tmpDir);
+    savedBrain = process.env["CODI_BRAIN_DB"];
+    process.env["CODI_BRAIN_DB"] = join(tmpDir, "brain.db");
   });
 
   afterEach(() => {
+    if (savedBrain === undefined) delete process.env["CODI_BRAIN_DB"];
+    else process.env["CODI_BRAIN_DB"] = savedBrain;
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -438,8 +473,9 @@ describe("runWorkflow — terminal-status pointer migration (BUG-OPEN-3)", () =>
     });
     abandonWorkflow({ reason: "test abandon", author: human, cwd: tmpDir });
 
-    const log = EventLog.fromCwd(tmpDir);
-    log.setActiveWorkflowId(abandoned.workflowId); // stale pointer
+    withBrain(tmpDir, (log) => {
+      log.setActiveWorkflowId(abandoned.workflowId); // stale pointer
+    });
 
     const next = runWorkflow({
       workflowType: "refactor",

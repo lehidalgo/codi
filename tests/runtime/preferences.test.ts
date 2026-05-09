@@ -14,7 +14,7 @@ import {
 let cwd: string;
 
 beforeEach(() => {
-  cwd = mkdtempSync(join(tmpdir(), "devloop-prefs-"));
+  cwd = mkdtempSync(join(tmpdir(), "codi-prefs-"));
 });
 
 afterEach(() => {
@@ -29,32 +29,32 @@ describe("preferences / readPreferences", () => {
   });
 
   it("reads the configured output_mode when set to normal", () => {
-    mkdirSync(join(cwd, ".devloop"), { recursive: true });
+    mkdirSync(join(cwd, ".codi"), { recursive: true });
     writeFileSync(
-      join(cwd, ".devloop", "preferences.json"),
+      join(cwd, ".codi", "preferences.json"),
       JSON.stringify({ output_mode: "normal" }),
     );
     expect(readPreferences(cwd).output_mode).toBe("normal");
   });
 
   it("falls back to default when output_mode is invalid", () => {
-    mkdirSync(join(cwd, ".devloop"), { recursive: true });
+    mkdirSync(join(cwd, ".codi"), { recursive: true });
     writeFileSync(
-      join(cwd, ".devloop", "preferences.json"),
+      join(cwd, ".codi", "preferences.json"),
       JSON.stringify({ output_mode: "shouting" }),
     );
     expect(readPreferences(cwd).output_mode).toBe("caveman");
   });
 
   it("returns defaults on malformed JSON without throwing", () => {
-    mkdirSync(join(cwd, ".devloop"), { recursive: true });
-    writeFileSync(join(cwd, ".devloop", "preferences.json"), "{ not valid json");
+    mkdirSync(join(cwd, ".codi"), { recursive: true });
+    writeFileSync(join(cwd, ".codi", "preferences.json"), "{ not valid json");
     expect(readPreferences(cwd).output_mode).toBe("caveman");
   });
 });
 
 describe("preferences / writePreferences", () => {
-  it("creates .devloop/preferences.json on first write", () => {
+  it("creates .codi/preferences.json on first write", () => {
     writePreferences(cwd, { output_mode: "normal" });
     expect(existsSync(preferencesPath(cwd))).toBe(true);
     expect(readPreferences(cwd).output_mode).toBe("normal");
@@ -63,7 +63,7 @@ describe("preferences / writePreferences", () => {
   it("merges with existing keys instead of clobbering", () => {
     writePreferences(cwd, { output_mode: "normal" });
     // Simulate a future schema with another key:
-    mkdirSync(join(cwd, ".devloop"), { recursive: true });
+    mkdirSync(join(cwd, ".codi"), { recursive: true });
     writeFileSync(preferencesPath(cwd), JSON.stringify({ output_mode: "normal", future_key: 42 }));
     writePreferences(cwd, { output_mode: "caveman" });
     const onDisk = JSON.parse(readFileSync(preferencesPath(cwd), "utf8")) as Record<
@@ -77,7 +77,7 @@ describe("preferences / writePreferences", () => {
 });
 
 describe("preferences / paths", () => {
-  it("preferencesPath returns .devloop/preferences.json relative to cwd", () => {
+  it("preferencesPath returns .codi/preferences.json relative to cwd", () => {
     expect(preferencesPath(cwd)).toBe(join(cwd, PREFERENCES_RELATIVE_PATH));
   });
 });

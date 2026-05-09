@@ -236,7 +236,7 @@ export function classifyChange(input: ClassifyInput): ClassifyResult {
 
 /**
  * Convenience helper: classify and check if the result requires the user
- * to invoke `devloop scope propose-expansion`.
+ * to invoke `codi workflow scope propose-expansion`.
  */
 export function requiresScopeExpansion(result: ClassifyResult): boolean {
   return result.category === "scope-expansion";

@@ -2,11 +2,11 @@ import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#s
 
 export const template = `---
 name: {{name}}
-description: Continuous artifact improvement — observe patterns, emit CODI-OBSERVATION markers, propose rule/skill improvements with evidence and user approval
+description: Continuous artifact improvement — observe patterns, emit |OBSERVATION:| capture markers, propose rule/skill improvements with evidence and user approval
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 4
+version: 5
 ---
 
 # Continuous Artifact Improvement
@@ -14,17 +14,17 @@ version: 4
 ## Core Principle
 As you work with this codebase, you are both a consumer and an improver of the rules,
 skills, and agents installed by ${PROJECT_NAME_DISPLAY}. When you observe patterns that the current
-configuration does not address, flag them with a marker. The system collects and structures
-these automatically.
+configuration does not address, flag them with a capture marker. The Stop hook persists
+those captures into brain.db where they become evidence for artifact improvement proposals.
 
 ## Your Role
 
 You are the steward of this project's AI configuration. Every interaction is an opportunity
 to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has these mechanisms:
 
-1. **Observation markers** — emit \`[CODI-OBSERVATION: ...]\` inline in your response when you notice a gap (the Stop hook collects it automatically — you do not write files)
+1. **Observation captures** — end your response with one or more \`|OBSERVATION: "verbatim text"|\` markers (Iron Law 9). The Stop hook persists them into brain.db automatically — you do not write files.
 2. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
-3. **Rule refinement** — use \`/${PROJECT_NAME}-refine-rules\` to review collected feedback and propose improvements with human approval
+3. **Rule refinement** — use \`/${PROJECT_NAME}-refine-rules\` to review collected captures and propose improvements with human approval
 4. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
 
 ## Source-layer improvements (${PROJECT_NAME_DISPLAY} repo only)
@@ -55,20 +55,25 @@ What makes configuration quality matter:
 
 ## How to Flag an Observation
 
-When you notice a gap, incorrect trigger, outdated guidance, or missing pattern in a ${PROJECT_NAME_DISPLAY} artifact, emit this marker anywhere in your response:
+When you notice a gap, incorrect trigger, outdated guidance, or missing pattern in a ${PROJECT_NAME_DISPLAY} artifact, end your response with the canonical Iron Law 9 capture marker:
 
 \`\`\`
-[CODI-OBSERVATION: <artifact-name> | <category> | <observation text, max 200 chars>]
+|OBSERVATION: "verbatim observation, naming the artifact and the gap"|
 \`\`\`
 
-**Categories:** \`trigger-miss\`, \`trigger-false\`, \`missing-step\`, \`outdated-rule\`, \`missing-example\`, \`user-correction\`, \`wrong-output\`
+The artifact name belongs INSIDE the verbatim text — the brain's P9 detector matches
+captures against the installed artifact catalog automatically. Mention the kind of gap
+in plain prose ("trigger-miss", "outdated-rule", "missing-example", "wrong-output", etc.)
+so the proposal has a clear category.
 
 **Example:**
 \`\`\`
-[CODI-OBSERVATION: ${PROJECT_NAME}-commit | trigger-miss | skill did not activate when user typed /${PROJECT_NAME}-commit directly]
+|OBSERVATION: "${PROJECT_NAME}-commit trigger-miss — skill did not activate when user typed /${PROJECT_NAME}-commit directly"|
 \`\`\`
 
-The Stop hook scans your response, extracts valid markers, and writes structured JSON to \`${PROJECT_DIR}/feedback/\`. You do not touch the file system.
+The Stop hook parses every \`|TYPE: "..."|\` marker on the line, persists captures into
+brain.db (\`captures\` table), and the consolidation pipeline turns repeat observations
+into structured proposals. You do not touch the file system.
 
 ## When to Emit Observations
 

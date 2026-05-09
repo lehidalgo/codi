@@ -4,15 +4,15 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
 
 ## Inputs
 
-- Optional: existing `.devloop/project.json` (if so, skip questions whose answers are present).
-- Optional: `~/.config/devloop/credentials.json` (Google service-account JSON key).
+- Optional: existing `.codi/project.json` (if so, skip questions whose answers are present).
+- Optional: `~/.config/codi/credentials.json` (Google service-account JSON key).
 - Optional: `docs/sources/*.md` (checked at end of phase, not start).
 
 ## Steps
 
 0. **READ `references/elicitation-questions.md` BEFORE asking anything.** It is the literal contract for this phase. Don't paraphrase. Don't combine questions. Don't preview the upcoming list to the user.
 
-1. **Read `.devloop/project.json`** if present. Pre-populate any answers already there.
+1. **Read `.codi/project.json`** if present. Pre-populate any answers already there.
 
 2. **Propose-and-confirm, ONE question per turn.** The agent infers a sensible default from the source material and repo state (project name from repo dir or source filenames; Sheet attachment defaulting to "create new"; etc.) and presents it as a proposal: _"I'll go with X — confirm or redirect."_ NOT as a menu.
    - **One question per turn.** Even when the next 3 are obvious, ask the first only. Stop. Wait. Then the next. NEVER bundle multiple questions into one response ("a few things from intent: 1...2...3...").
@@ -25,15 +25,15 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
    - **`local_xlsx`** (no Google access at all): no credentials, no folders, no Sheet ID. Run:
 
      ```bash
-     devloop sheets create-project --name "<project_name>" --auth-mode local_xlsx
+     codi sheets create-project --name "<project_name>" --auth-mode local_xlsx
      ```
 
-     Workbook lands at `.devloop/sheet.xlsx` with all six canonical tabs + safety columns. To migrate to Google later: `devloop sheets push-to-google --to-auth-mode oauth_user` (atomic, snapshot-first).
+     Workbook lands at `.codi/sheet.xlsx` with all six canonical tabs + safety columns. To migrate to Google later: `codi sheets push-to-google --to-auth-mode oauth_user` (atomic, snapshot-first).
 
    - **`oauth_user`** (any account type): the agent acts as the user via ADC. Sheet ownership = user, user's quota. Run:
 
      ```bash
-     devloop sheets create-project --name "<project_name>" --auth-mode oauth_user [--folder-id "<id>"]
+     codi sheets create-project --name "<project_name>" --auth-mode oauth_user [--folder-id "<id>"]
      ```
 
      `--folder-id` is optional — defaults to user's Drive root. No SA share dance.
@@ -41,13 +41,13 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
    - **`service_account` + Personal Google account** (`@gmail.com`): user creates a blank Sheet in their own Drive, shares with SA email as Editor → agent runs:
 
      ```bash
-     devloop sheets create-project --name "<project_name>" --auth-mode service_account --sheet-id "<id>"
+     codi sheets create-project --name "<project_name>" --auth-mode service_account --sheet-id "<id>"
      ```
 
    - **`service_account` + Workspace** with Shared Drive: user provides a Shared Drive ID where SA has Content Manager role → agent runs:
 
      ```bash
-     devloop sheets create-project --name "<project_name>" --auth-mode service_account --folder-id "<shared-drive-id>"
+     codi sheets create-project --name "<project_name>" --auth-mode service_account --folder-id "<shared-drive-id>"
      ```
 
    - **User pasted an existing Sheet ID** at Q2 (any Google auth_mode) → use `--sheet-id` form. Bootstraps tabs/headers idempotently into the existing Sheet.
@@ -58,11 +58,11 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
 
    a. **STOP** the current question.
 
-   b. `Read` the canonical guide via the tool: `devloop:sheets-sync references/google-sheets-setup.md`. Read it actually — invoke the Read tool. Don't summarize from memory.
+   b. `Read` the canonical guide via the tool: `codi:sheets-sync references/google-sheets-setup.md`. Read it actually — invoke the Read tool. Don't summarize from memory.
 
    c. **Detect gcloud first:** `Bash` `command -v gcloud >/dev/null 2>&1 && echo HAS_GCLOUD || echo NO_GCLOUD`.
 
-   c2. **Discover existing devloop infrastructure** (only if HAS_GCLOUD): `Bash` `gcloud projects list --filter="projectId:devloop-sheets-*" --format="value(projectId)" | head -5`. If results exist, surface them in the C-path offer ("found existing project X — would reuse instead of creating new"). Avoids project sprawl.
+   c2. **Discover existing codi infrastructure** (only if HAS_GCLOUD): `Bash` `gcloud projects list --filter="projectId:codi-sheets-*" --format="value(projectId)" | head -5`. If results exist, surface them in the C-path offer ("found existing project X — would reuse instead of creating new"). Avoids project sprawl.
 
    d. **Offer the user the paths.** A and B always; C only if `HAS_GCLOUD`:
 
@@ -85,11 +85,11 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
 
 5. **Sanity check `docs/sources/`** — at least one `*.md` file must exist for `discover` to have anything to read. If empty, surface the message and PAUSE — do NOT proceed and do NOT auto-fabricate sources.
 
-6. **Commit `.devloop/project.json`** to the repo (the agent stages and proposes the commit; the human approves).
+6. **Commit `.codi/project.json`** to the repo (the agent stages and proposes the commit; the human approves).
 
 ## Exit criteria (gate: intent-complete)
 
-- `.devloop/project.json` exists with `project_name` and `sheet_id`.
+- `.codi/project.json` exists with `project_name` and `sheet_id`.
 - Credentials successfully loaded.
 - `docs/sources/` has ≥1 `.md` file.
 - Human explicitly approves the `intent → discover` transition.
@@ -106,7 +106,7 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
 - `init` — workflow started.
 - `phase_started phase=intent`.
 - `decision_recorded` — for each elicitation answer (so they're auditable).
-- `artifact_linked` — for `.devloop/project.json` and the Sheet URL.
+- `artifact_linked` — for `.codi/project.json` and the Sheet URL.
 - `phase_completed phase=intent`.
 - `phase_transition_proposed intent → discover`.
 - `phase_transition_approved` (human-authored).

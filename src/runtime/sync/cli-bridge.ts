@@ -35,7 +35,7 @@ export async function runPushToGoogle(
   const cwd = process.cwd();
   const config = tryReadProjectConfig(cwd);
   if (!config) {
-    fail(`No .devloop/project.json. Bootstrap a project first.`);
+    fail(`No .codi/project.json. Bootstrap a project first.`);
   }
   if (config.auth_mode !== "local_xlsx") {
     fail(
@@ -173,7 +173,7 @@ export async function runPullFromGoogle(
   const cwd = process.cwd();
   const config = tryReadProjectConfig(cwd);
   if (!config) {
-    fail(`No .devloop/project.json. Bootstrap a project first.`);
+    fail(`No .codi/project.json. Bootstrap a project first.`);
   }
   if (config.auth_mode === "local_xlsx") {
     fail(`pull-from-google requires Google mode. Project is currently local_xlsx.`);
@@ -184,7 +184,7 @@ export async function runPullFromGoogle(
   const force = flags["force"] === true;
 
   const path = await import("node:path");
-  const localPath = path.resolve(cwd, toFlag ?? ".devloop/sheet.xlsx");
+  const localPath = path.resolve(cwd, toFlag ?? ".codi/sheet.xlsx");
 
   if (existsSync(localPath) && !force) {
     fail(

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
-# devloop pre-push hook
+# codi pre-push hook
 #
 # Validates that force-push preserves all archive commits. If a force-push
 # would drop commits that touch .workflow/archives/, the hook blocks.
@@ -24,7 +24,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   archive_commits=$(git log --format=%H "$remote_sha" --not "$local_sha" -- .workflow/archives/ 2>/dev/null || true)
 
   if [ -n "$archive_commits" ]; then
-    echo "[devloop pre-push] BLOCKED: force-push would drop archive commits:" >&2
+    echo "[codi pre-push] BLOCKED: force-push would drop archive commits:" >&2
     echo "$archive_commits" | while read -r sha; do
       [ -z "$sha" ] && continue
       msg=$(git log --format=%s -n 1 "$sha" 2>/dev/null || echo "?")
@@ -33,7 +33,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     echo "" >&2
     echo "Resolve by either:" >&2
     echo "  - rebasing without dropping archive commits, or" >&2
-    echo "  - abandoning the workflow (\`devloop abandon --reason ...\`) before force-push" >&2
+    echo "  - abandoning the workflow (\`codi abandon --reason ...\`) before force-push" >&2
     exit 1
   fi
 done

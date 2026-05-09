@@ -20,6 +20,7 @@ import { registerBackupCommand } from "./cli/backup.js";
 import { registerMigrateCommand } from "./cli/migrate.js";
 import { registerPluginCommand } from "./cli/plugin.js";
 import { registerBrainCommand } from "./cli/brain.js";
+import { registerWorkflowCommand } from "./cli/workflow.js";
 
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
@@ -65,6 +66,7 @@ registerBackupCommand(program);
 registerMigrateCommand(program);
 registerPluginCommand(program);
 registerBrainCommand(program);
+registerWorkflowCommand(program);
 
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);

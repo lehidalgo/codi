@@ -394,6 +394,92 @@ export const p8UnusedRule = {
   },
 };
 
+// ─── P9 — OBSERVATION captures naming an artifact → propose IMPROVE ─────────
+//
+// F10 — replaces the legacy `[CODI-OBSERVATION: ...]` filesystem feedback
+// pipeline. Agents now emit `|OBSERVATION: "..."|` capture markers (Iron Law 9);
+// the Stop hook persists them into `captures` with type='OBSERVATION'. P9
+// scans those captures, matches each one against the installed catalog
+// (rules + skills + agents), and emits OPTIMIZE_EXISTING_ARTIFACT proposals
+// for any artifact that accumulates ≥minEvidence references in the window.
+//
+// Matching is case-insensitive substring on the capture content. Punctuation
+// inside the artifact name (e.g. `codi-commit`) is treated literally — the
+// detector is intentionally narrow because false positives turn into noisy
+// proposals the reviewer has to dismiss.
+
+export interface P9Options extends DetectOptions {
+  /** Catalog of installed artifact names — only these can earn proposals. */
+  readonly installedArtifacts: ReadonlyArray<{
+    readonly name: string;
+    readonly kind: "rule" | "skill" | "agent";
+  }>;
+}
+
+export const p9ArtifactObservation = {
+  code: "P9",
+  detect(raw: Database.Database, opts: P9Options): Proposal[] {
+    const since = defaultSince(opts);
+    const min = defaultMinEvidence(opts);
+    if (opts.installedArtifacts.length === 0) return [];
+
+    const rows = raw
+      .prepare(
+        `SELECT capture_id, content
+           FROM captures
+          WHERE type = 'OBSERVATION'
+            AND ts >= ?
+          ORDER BY capture_id ASC`,
+      )
+      .all(since) as { capture_id: number; content: string }[];
+
+    if (rows.length === 0) return [];
+
+    type Hit = {
+      readonly artifact: { readonly name: string; readonly kind: "rule" | "skill" | "agent" };
+      readonly captureIds: number[];
+      readonly snippets: string[];
+    };
+    const hits = new Map<string, Hit>();
+
+    for (const r of rows) {
+      const lc = r.content.toLowerCase();
+      for (const a of opts.installedArtifacts) {
+        if (!lc.includes(a.name.toLowerCase())) continue;
+        const key = `${a.kind}:${a.name}`;
+        const existing = hits.get(key);
+        if (existing) {
+          existing.captureIds.push(r.capture_id);
+          existing.snippets.push(r.content);
+        } else {
+          hits.set(key, { artifact: a, captureIds: [r.capture_id], snippets: [r.content] });
+        }
+      }
+    }
+
+    const proposals: Proposal[] = [];
+    for (const hit of hits.values()) {
+      if (hit.captureIds.length < min) continue;
+      const evidence: ProposalEvidence[] = hit.captureIds.map((id, i) => ({
+        id,
+        source: "captures" as const,
+        snippet: hit.snippets[i],
+      }));
+      proposals.push({
+        patternCode: "P9",
+        proposalType: "OPTIMIZE_EXISTING_ARTIFACT",
+        artifactKind: hit.artifact.kind,
+        artifactName: hit.artifact.name,
+        title: `${hit.captureIds.length} observation(s) reference ${hit.artifact.kind} "${hit.artifact.name}"`,
+        rationale: `Agents emitted ${hit.captureIds.length} OBSERVATION captures naming "${hit.artifact.name}" since ${new Date(since).toISOString()}. The pattern is consistent enough to evidence a real gap — review the captures and tighten the trigger, fix the outdated guidance, or add the missing example.`,
+        patch: { artifact_kind: hit.artifact.kind, artifact_name: hit.artifact.name },
+        evidence,
+      });
+    }
+    return proposals.sort((a, b) => b.evidence.length - a.evidence.length);
+  },
+};
+
 export const p5NewPattern: PatternDetector = {
   code: "P5",
   detect(raw, opts): Proposal[] {

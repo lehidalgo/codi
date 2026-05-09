@@ -49,15 +49,15 @@ Examples:
 
 ## Universal hooks (run regardless of stack)
 
-| Hook                                                     | When       | Action on fail                                  |
-| -------------------------------------------------------- | ---------- | ----------------------------------------------- |
-| gitleaks (secret scan)                                   | pre-commit | block                                           |
-| file-size check (>1 MB warn, >10 MB block)               | pre-commit | warn or block                                   |
-| conflict-marker check                                    | pre-commit | block                                           |
-| branch-name validator (`<github-user>/<type>/<slug>`)    | pre-commit | block (post-convention) or warn (grandfathered) |
-| commit-msg conventional-commit + 72-char                 | commit-msg | block                                           |
-| no-commit-to-branch (main/master)                        | pre-commit | block                                           |
-| archive-protection (devloop-specific, preserve existing) | pre-push   | block                                           |
+| Hook                                                  | When       | Action on fail                                  |
+| ----------------------------------------------------- | ---------- | ----------------------------------------------- |
+| gitleaks (secret scan)                                | pre-commit | block                                           |
+| file-size check (>1 MB warn, >10 MB block)            | pre-commit | warn or block                                   |
+| conflict-marker check                                 | pre-commit | block                                           |
+| branch-name validator (`<github-user>/<type>/<slug>`) | pre-commit | block (post-convention) or warn (grandfathered) |
+| commit-msg conventional-commit + 72-char              | commit-msg | block                                           |
+| no-commit-to-branch (main/master)                     | pre-commit | block                                           |
+| archive-protection (codi-specific, preserve existing) | pre-push   | block                                           |
 
 Universal hooks run BEFORE language-specific hooks. Fail fast on universal violations.
 
@@ -74,10 +74,10 @@ Top-to-bottom = fast-to-slow:
 
 If any fails, the commit is blocked. Auto-fixers re-stage the modified files.
 
-## Devloop-specific hooks (extends the universal set)
+## Codi-specific hooks (extends the universal set)
 
 - `[PLAN]` doc naming validator — runs on `docs/*.md` to enforce `YYYYMMDD_HHMMSS_[CATEGORY]_*.md` format.
 - Skill yaml validator — runs on `skills/*/SKILL.md` to enforce frontmatter limits.
 - Skill resource check — verifies `[[/path]]` references in SKILL.md resolve to real files.
 
-These are devloop's equivalent of codi's `codi-skill-yaml-validate` / `codi-skill-resource-check`. Implementation in `scripts/setup.sh` writes the validator commands into the pre-commit config.
+These are codi's equivalent of codi's `codi-skill-yaml-validate` / `codi-skill-resource-check`. Implementation in `scripts/setup.sh` writes the validator commands into the pre-commit config.

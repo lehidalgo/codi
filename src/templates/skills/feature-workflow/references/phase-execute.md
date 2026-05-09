@@ -4,20 +4,20 @@ Goal: implement the slices in order, observing scope rules and recording every c
 
 ## How to run this phase (chained skills)
 
-If the work is ≥1 hour or ≥3 commits, invoke `devloop:worktrees` first to create an isolated worktree on the workflow's branch. This keeps the main working tree clean and gives `subagent-orchestration` a stable place to land per-task commits.
+If the work is ≥1 hour or ≥3 commits, invoke `codi:worktrees` first to create an isolated worktree on the workflow's branch. This keeps the main working tree clean and gives `subagent-orchestration` a stable place to land per-task commits.
 
-For each slice you implement, follow `devloop:tdd` (Iron Law: no production code without a failing test first). The TDD cycle is Red → Green → Refactor:
+For each slice you implement, follow `codi:tdd` (Iron Law: no production code without a failing test first). The TDD cycle is Red → Green → Refactor:
 
 1. Write a test that exercises the slice's acceptance criterion.
 2. Run it; confirm it fails for the right reason.
 3. Write the minimum code to make it pass.
 4. Refactor without changing behavior; tests stay green.
 
-If the slices are independent (no shared state, no sequential dependencies), invoke `devloop:subagent-orchestration` mode `parallel` to fan out to subagents instead of running them serially.
+If the slices are independent (no shared state, no sequential dependencies), invoke `codi:subagent-orchestration` mode `parallel` to fan out to subagents instead of running them serially.
 
-If the plan has ≥3 discrete tasks that share state or build on each other (most multi-slice features), invoke `devloop:subagent-orchestration` mode `sequential` instead — fresh implementer per task with two-stage review (spec compliance → code quality) before each task is marked complete. Stage-2 review may chain to `devloop:code-review` mode `request` when `auto_review: true` is set.
+If the plan has ≥3 discrete tasks that share state or build on each other (most multi-slice features), invoke `codi:subagent-orchestration` mode `sequential` instead — fresh implementer per task with two-stage review (spec compliance → code quality) before each task is marked complete. Stage-2 review may chain to `codi:code-review` mode `request` when `auto_review: true` is set.
 
-When a test fails unexpectedly during execute, invoke `devloop:diagnose` (4-phase systematic debugging) — do not start guessing fixes.
+When a test fails unexpectedly during execute, invoke `codi:diagnose` (4-phase systematic debugging) — do not start guessing fixes.
 
 ## What you produce
 
@@ -49,7 +49,7 @@ The hook layer (M2) blocks edits outside `scope.files_in_plan`. Until M2 ships, 
 - **Out-of-scope, real logic change**: stop. Run:
 
   ```bash
-  devloop scope propose-expansion --reason "<why>"
+  codi scope propose-expansion --reason "<why>"
   ```
 
   Wait for human approval. Only proceed when approved.
@@ -71,7 +71,7 @@ The agent presents this to the human:
 
 On approve:
 
-1. The system creates a child workflow on a separate branch (`devloop/<parent-id>/<child-id>`).
+1. The system creates a child workflow on a separate branch (`codi/<parent-id>/<child-id>`).
 2. The current workflow pauses with `workflow_paused_for_child`.
 3. The agent works the child workflow to completion.
 4. Once the child is merged, the parent resumes — but **forced back to phase `plan`** so the plan can be revalidated against the new codebase state.
@@ -101,7 +101,7 @@ You are ready when:
 Then propose:
 
 ```bash
-devloop transition --to verify
+codi transition --to verify
 ```
 
 ## Common mistakes

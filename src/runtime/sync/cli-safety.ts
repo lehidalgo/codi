@@ -1,5 +1,5 @@
 /**
- * Safety / recovery subcommands of `devloop sheets`:
+ * Safety / recovery subcommands of `codi sheets`:
  *   - restore   replay a snapshot back onto the Sheet
  *   - archive   soft-delete a row (sets status=abandoned + archived_at/by)
  *
@@ -36,16 +36,16 @@ export async function runRestore(
 
   if (!fromArg && !latest) {
     fail(
-      `devloop sheets restore --from <snapshot.json> [--only "BG,REQ"] [--json]\n` +
-        `       devloop sheets restore --latest [--only ...]\n` +
+      `codi sheets restore --from <snapshot.json> [--only "BG,REQ"] [--json]\n` +
+        `       codi sheets restore --latest [--only ...]\n` +
         `\n` +
         `Replay a snapshot back onto the project Sheet. Every row in the named\n` +
         `entity tabs is REPLACED with the snapshot contents. Audit tab gets a\n` +
         `tab_restored_from_snapshot row for traceability.\n` +
         `\n` +
         `Flags:\n` +
-        `  --from <path>    snapshot file (.devloop/snapshots/...)\n` +
-        `  --latest         pick the newest snapshot in .devloop/snapshots/\n` +
+        `  --from <path>    snapshot file (.codi/snapshots/...)\n` +
+        `  --latest         pick the newest snapshot in .codi/snapshots/\n` +
         `  --only "BG,REQ"  restrict to specific entity tabs (comma-separated)\n` +
         `  --json           machine-readable output`,
     );
@@ -58,7 +58,7 @@ export async function runRestore(
   if (latest) {
     const entries = await listSnapshots(cwd);
     if (entries.length === 0) {
-      fail(`no snapshots found in .devloop/snapshots/ — capture one first`);
+      fail(`no snapshots found in .codi/snapshots/ — capture one first`);
     }
     snapshotPath = entries[0]!.path;
   } else {
@@ -123,11 +123,11 @@ export async function runArchive(
   const idArg = positional[3];
   if (!entityArg || !idArg) {
     fail(
-      `devloop sheets archive <Entity> <id> [--reason "<text>"] [--json]\n` +
+      `codi sheets archive <Entity> <id> [--reason "<text>"] [--json]\n` +
         `\n` +
         `Soft-delete a row. Sets status=abandoned, archived_at, archived_by.\n` +
         `Row STAYS in the Sheet (no hard delete). Restore via:\n` +
-        `  devloop sheets restore --latest\n` +
+        `  codi sheets restore --latest\n` +
         `\n` +
         `Entities: ${ENTITY_NAMES.join(", ")}`,
     );

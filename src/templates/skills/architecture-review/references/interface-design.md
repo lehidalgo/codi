@@ -16,7 +16,7 @@ Before spawning sub-agents, write a user-facing explanation of the problem space
 
 Show this to the user, then immediately proceed to Step 2. The user reads and thinks while the sub-agents work in parallel.
 
-### 2. Spawn sub-agents (via `devloop:subagent-orchestration` mode `parallel`)
+### 2. Spawn sub-agents (via `codi:subagent-orchestration` mode `parallel`)
 
 Spawn 3+ sub-agents in parallel. Each must produce a **radically different** interface for the deepened module.
 

@@ -10,7 +10,7 @@ Apply the refactor in small commits.
 
 ## Multi-step refactors
 
-If the refactor plan has ≥3 discrete steps (e.g., extract module A, update callers, deprecate old shape), invoke `devloop:subagent-orchestration` mode `sequential`:
+If the refactor plan has ≥3 discrete steps (e.g., extract module A, update callers, deprecate old shape), invoke `codi:subagent-orchestration` mode `sequential`:
 
 - Each step gets a fresh implementer with the deepening rationale as context.
 - Two-stage review loop (spec compliance → code quality) catches accidental behavior changes.

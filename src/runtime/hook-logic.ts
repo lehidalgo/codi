@@ -7,11 +7,13 @@
  * file edits) and pattern rules (for shell commands), then maps the
  * verdict to an allow / block decision with a structured feedback
  * message for the agent.
+ *
+ * Brain-backed: workflow state is read via BrainEventLog directly.
  */
 
 import { classifyChange, type ClassifyResult } from "./classifier.js";
 import { reduce } from "./reducer.js";
-import { EventLog } from "./event-log.js";
+import { BrainEventLog } from "./brain-event-log.js";
 import type { ManifestEvent, Phase, ReducedState } from "./types.js";
 import { readFileSafe } from "./fs-utils.js";
 
@@ -55,7 +57,7 @@ const BASH_RULES: BashRule[] = [
   {
     pattern: /^\s*rm\s+-rf?\s+\//,
     blocked_in_phases: "all",
-    reason: "rm -rf at root is destructive and never authorized by devloop.",
+    reason: "rm -rf at root is destructive and never authorized by codi.",
     suggested_action: "If you need to delete files, name them explicitly.",
   },
   {
@@ -63,7 +65,7 @@ const BASH_RULES: BashRule[] = [
     blocked_in_phases: "all",
     reason: "git reset --hard discards uncommitted work and breaks the audit trail.",
     suggested_action:
-      "Use `devloop abandon --reason '<text>'` to end the workflow cleanly, or fix the issue without resetting.",
+      "Use `codi workflow abandon --reason '<text>'` to end the workflow cleanly, or fix the issue without resetting.",
   },
   {
     pattern: /^\s*git\s+push\s+--force\b/,
@@ -117,13 +119,13 @@ function classifyWorkflowArtifact(filePath: string, phase: Phase): string | null
   // Normalize to forward-slash for cross-platform matching
   const normalized = filePath.replace(/\\/g, "/");
 
-  // devloop state files — project config, queues, drafts, etc. Allowed any phase.
+  // codi state files — project config, queues, drafts, etc. Allowed any phase.
   // These are workflow-managed artifacts (not source code), produced by
-  // project-workflow.intent (.devloop/project.json), sheets-sync
-  // (.devloop/sheets-queue.jsonl), and discover/decompose drafts
-  // (.devloop/draft/*.json). Match any json/jsonl inside .devloop/ at any depth.
-  if (/(^|\/)\.devloop\/(.+\/)?[^/]+\.(json|jsonl)$/i.test(normalized)) {
-    return "devloop-state";
+  // project-workflow.intent (.codi/project.json), sheets-sync
+  // (.codi/sheets-queue.jsonl), and discover/decompose drafts
+  // (.codi/draft/*.json). Match any json/jsonl inside .codi/ at any depth.
+  if (/(^|\/)\.codi\/(.+\/)?[^/]+\.(json|jsonl)$/i.test(normalized)) {
+    return "codi-state";
   }
 
   // .gitignore — workflow-config artifact, allowed any phase. Agents need to
@@ -196,7 +198,7 @@ function evaluateFileEdit(call: ToolCall, ctx: HookContext): HookDecision {
     return {
       allow: false,
       reason: `File edits to source files are not appropriate in phase ${state.current_phase}. The phase is for understanding and planning, not coding. (Workflow artifacts like docs/[PLAN]_*.md, docs/CONTEXT.md, docs/adr/*.md ARE allowed.)`,
-      suggested_action: `If you need to write a plan markdown, use docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md naming. To edit source code, transition to execute first via \`devloop transition --to execute\`.`,
+      suggested_action: `If you need to write a plan markdown, use docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md naming. To edit source code, transition to execute first via \`codi workflow transition --to execute\`.`,
     };
   }
 
@@ -235,7 +237,7 @@ function evaluateFileEdit(call: ToolCall, ctx: HookContext): HookDecision {
   return {
     allow: false,
     reason: `Scope violation: file '${filePath}' is not in the plan. ${result.reason}`,
-    suggested_action: `Run \`devloop scope propose-expansion --file '${filePath}' --reason "<why>"\` and wait for human approval.${elevationHint}`,
+    suggested_action: `Run \`codi workflow scope propose-expansion --file '${filePath}' --reason "<why>"\` and wait for human approval.${elevationHint}`,
   };
 }
 
@@ -267,12 +269,16 @@ function evaluateBashCommand(call: ToolCall, ctx: HookContext): HookDecision {
 // ─── Convenience: build context from filesystem ──────────────────────
 
 export function buildContext(cwd: string): HookContext {
-  const log = EventLog.fromCwd(cwd);
-  const id = log.getActiveWorkflowId();
-  if (!id) return { cwd, state: null };
-  const events = log.loadEvents(id);
-  if (events.length === 0) return { cwd, state: null };
-  return { cwd, state: reduce(events) };
+  const log = BrainEventLog.open();
+  try {
+    const id = log.getActiveWorkflowId();
+    if (!id) return { cwd, state: null };
+    const events = log.loadEvents(id);
+    if (events.length === 0) return { cwd, state: null };
+    return { cwd, state: reduce(events) };
+  } finally {
+    log.dispose();
+  }
 }
 
 // ─── Post-tool-use: record incidental changes ───────────────────────
@@ -405,9 +411,9 @@ export function buildPromptStateBlock(ctx: HookContext): string {
 
   lines.push("");
   lines.push("Phase rules apply. Phase transitions require explicit human approval");
-  lines.push("via `devloop transition --approve` (do not assume approval from context).");
+  lines.push("via `codi workflow transition --approve` (do not assume approval from context).");
   lines.push("Edits to files outside `Files in plan` will be blocked by the pre-tool-use");
-  lines.push('hook. Use `devloop scope propose-expansion --file <path> --reason "<text>"`');
+  lines.push('hook. Use `codi workflow scope propose-expansion --file <path> --reason "<text>"`');
   lines.push("if you need to modify a file not yet in scope.");
   lines.push("</workflow-state>");
 
@@ -437,52 +443,60 @@ export function buildCaptureReminderBlock(): string {
 
 function countPendingScopeProposals(ctx: HookContext): number {
   if (!ctx.state) return 0;
-  const log = EventLog.fromCwd(ctx.cwd);
-  const id = log.getActiveWorkflowId();
-  if (!id) return 0;
-  const events = log.loadEvents(id);
+  const log = BrainEventLog.open();
+  try {
+    const id = log.getActiveWorkflowId();
+    if (!id) return 0;
+    const events = log.loadEvents(id);
 
-  const resolved = new Set<string>();
-  let pending = 0;
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    const e = events[i];
-    if (!e) continue;
-    if (
-      e.event_type === "scope_expansion_approved" ||
-      e.event_type === "scope_expansion_rejected"
-    ) {
-      const p = e.payload as { file_path: string };
-      resolved.add(p.file_path);
-      continue;
+    const resolved = new Set<string>();
+    let pending = 0;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      const e = events[i];
+      if (!e) continue;
+      if (
+        e.event_type === "scope_expansion_approved" ||
+        e.event_type === "scope_expansion_rejected"
+      ) {
+        const p = e.payload as { file_path: string };
+        resolved.add(p.file_path);
+        continue;
+      }
+      if (e.event_type === "scope_expansion_proposed") {
+        const p = e.payload as { file_path: string };
+        if (!resolved.has(p.file_path)) pending += 1;
+      }
     }
-    if (e.event_type === "scope_expansion_proposed") {
-      const p = e.payload as { file_path: string };
-      if (!resolved.has(p.file_path)) pending += 1;
-    }
+    return pending;
+  } finally {
+    log.dispose();
   }
-  return pending;
 }
 
 function describePendingTransition(ctx: HookContext): string | null {
   if (!ctx.state) return null;
-  const log = EventLog.fromCwd(ctx.cwd);
-  const id = log.getActiveWorkflowId();
-  if (!id) return null;
-  const events = log.loadEvents(id);
+  const log = BrainEventLog.open();
+  try {
+    const id = log.getActiveWorkflowId();
+    if (!id) return null;
+    const events = log.loadEvents(id);
 
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    const e = events[i];
-    if (!e) continue;
-    if (
-      e.event_type === "phase_transition_approved" ||
-      e.event_type === "phase_transition_rejected"
-    ) {
-      return null;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      const e = events[i];
+      if (!e) continue;
+      if (
+        e.event_type === "phase_transition_approved" ||
+        e.event_type === "phase_transition_rejected"
+      ) {
+        return null;
+      }
+      if (e.event_type === "phase_transition_proposed") {
+        const p = e.payload as { from_phase: string; to_phase: string };
+        return `${p.from_phase} → ${p.to_phase} (awaiting human approve/reject)`;
+      }
     }
-    if (e.event_type === "phase_transition_proposed") {
-      const p = e.payload as { from_phase: string; to_phase: string };
-      return `${p.from_phase} → ${p.to_phase} (awaiting human approve/reject)`;
-    }
+    return null;
+  } finally {
+    log.dispose();
   }
-  return null;
 }

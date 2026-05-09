@@ -5,7 +5,7 @@
  *   - .claude-plugin/plugin.json   for Claude Code (Tier 1A)
  *   - .codex-plugin/plugin.json    for Codex CLI    (Tier 1B)
  *
- * The manifest is a Codi-shaped JSON document, NOT DevLoop's. It lists the
+ * The manifest is a Codi-shaped JSON document. It lists the
  * artifacts the host expects to find under the plugin root and records the
  * codi version that produced it so loaders can detect drift.
  */

@@ -1,5 +1,5 @@
 /**
- * `devloop sheets reconcile` — rebuild the Sheet's execution columns from
+ * `codi sheets reconcile` — rebuild the Sheet's execution columns from
  * the manifest event log.
  *
  * Procedure:

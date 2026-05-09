@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# github-user.sh — detect the GitHub user once, save to git config devloop.githubUser.
+# github-user.sh — detect the GitHub user once, save to git config codi.githubUser.
 # Priority: gh CLI -> saved git config -> parsed email -> ask user.
 
 set -eu
@@ -13,7 +13,7 @@ fi
 
 # 2. previously saved
 if [ -z "$gh_user" ]; then
-  gh_user=$(git config --get devloop.githubUser 2>/dev/null || true)
+  gh_user=$(git config --get codi.githubUser 2>/dev/null || true)
 fi
 
 # 3. parse from email (e.g. laht@github.com -> laht)
@@ -38,11 +38,11 @@ fi
 # 4. ask once
 if [ -z "$gh_user" ]; then
   if [ -t 0 ] && [ -t 1 ]; then
-    printf "GitHub username (will be saved to git config devloop.githubUser): " >&2
+    printf "GitHub username (will be saved to git config codi.githubUser): " >&2
     read -r gh_user
   else
     echo "[github-user] ERROR: cannot detect GitHub user non-interactively" >&2
-    echo "  Set manually: git config devloop.githubUser <username>" >&2
+    echo "  Set manually: git config codi.githubUser <username>" >&2
     exit 1
   fi
 fi
@@ -52,5 +52,5 @@ if [ -z "$gh_user" ]; then
   exit 1
 fi
 
-git config devloop.githubUser "$gh_user"
+git config codi.githubUser "$gh_user"
 echo "$gh_user"

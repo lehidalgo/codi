@@ -5,7 +5,7 @@ Decompose a plan or PRD into independently-grabbable tracer-bullet issues on the
 ## Pre-conditions
 
 - A plan markdown (`docs/[PLAN]_*.md`) or PRD exists.
-- An issue tracker is configured (e.g., GitHub via `gh` CLI, or another tracker declared in `.devloop/config.yaml`).
+- An issue tracker is configured (e.g., GitHub via `gh` CLI, or another tracker declared in `.codi/config.yaml`).
 - The active workflow is in phase decompose (or this is a standalone invocation post-plan).
 
 ## Tracer-bullet vertical slices

@@ -17,12 +17,14 @@ import type {
   GateResult,
   GateRunResult,
 } from "./gate-types.js";
-import type { ReducedState } from "./types.js";
+import type { ManifestEvent, ReducedState } from "./types.js";
+import { git } from "./git-utils.js";
 
 export interface DeterministicCheckContext {
   cwd: string;
   state: ReducedState;
-  archiveDir: string;
+  /** Raw event log — checkers may walk it when ReducedState is insufficient. */
+  events?: ReadonlyArray<ManifestEvent>;
 }
 
 export type DeterministicChecker = (ctx: DeterministicCheckContext) => GateResult;
@@ -42,7 +44,7 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         ? `${ctx.state.scope.files_in_plan.length} file(s) in plan scope.`
         : "scope.files_in_plan is empty.",
     suggested_action:
-      "Use `devloop scope propose-expansion --file <path> --reason '<text>'` for each file the plan modifies, then approve.",
+      "Use `codi workflow scope propose-expansion --file <path> --reason '<text>'` for each file the plan modifies, then approve.",
   }),
   plan_artifact_exists: (ctx) => {
     const docsDir = resolve(ctx.cwd, "docs");
@@ -69,36 +71,135 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
     };
   },
   no_unresolved_scope_proposals: (ctx) => {
-    // Agent check would dig into events; here we only have ReducedState
-    // counters, which is sufficient: in M3, the reducer doesn't track
-    // pending proposals separately. We over-approximate by checking that
-    // no scope expansion was proposed without resolution by counting.
-    // For now, this check passes trivially when reduced state is consistent;
-    // the real check is in the user-prompt-state hook output.
-    const total =
-      ctx.state.scope.scope_expansions_approved + ctx.state.scope.scope_expansions_rejected;
+    // F8 — real check: walk the event log per-file, tally proposed vs
+    // approved/rejected. Files in scope.files_in_plan are pre-resolved
+    // (they ARE in scope) so we ignore proposals matching them.
+    if (!ctx.events || ctx.events.length === 0) {
+      return {
+        check_id: "no_unresolved_scope_proposals",
+        verdict: "pass",
+        summary: "No events provided; no unresolved proposals possible.",
+      };
+    }
+    const proposedCount = new Map<string, number>();
+    const resolvedCount = new Map<string, number>();
+    for (const e of ctx.events) {
+      if (e.event_type === "scope_expansion_proposed") {
+        const p = e.payload as { file_path?: string };
+        if (p.file_path) proposedCount.set(p.file_path, (proposedCount.get(p.file_path) ?? 0) + 1);
+      } else if (
+        e.event_type === "scope_expansion_approved" ||
+        e.event_type === "scope_expansion_rejected"
+      ) {
+        const p = e.payload as { file_path?: string };
+        if (p.file_path) resolvedCount.set(p.file_path, (resolvedCount.get(p.file_path) ?? 0) + 1);
+      }
+    }
+    const unresolved: string[] = [];
+    for (const [file, proposed] of proposedCount.entries()) {
+      const resolved = resolvedCount.get(file) ?? 0;
+      if (resolved < proposed) unresolved.push(file);
+    }
+    if (unresolved.length === 0) {
+      return {
+        check_id: "no_unresolved_scope_proposals",
+        verdict: "pass",
+        summary: "All scope expansion proposals are resolved.",
+      };
+    }
     return {
       check_id: "no_unresolved_scope_proposals",
-      verdict: total >= 0 ? "pass" : "fail",
-      summary: "No detectable unresolved scope proposals.",
+      verdict: "fail",
+      summary: `${unresolved.length} unresolved scope expansion proposal(s): ${unresolved.join(", ")}`,
+      suggested_action:
+        "Approve or reject each pending proposal via " +
+        "`codi workflow scope approve --file <path>` / " +
+        "`codi workflow scope reject --file <path> --reason '<text>'`.",
     };
   },
-  validation_passes: () => ({
-    check_id: "validation_passes",
-    verdict: "fail",
-    summary:
-      "validation_passes is checked dynamically against the most recent validation_run event.",
-    suggested_action:
-      "Run `pnpm run validate` (or your project's equivalent) and capture the result via a `validation_run` event.",
-  }),
-  all_planned_files_modified: (ctx) => ({
-    check_id: "all_planned_files_modified",
-    verdict: ctx.state.scope.files_in_plan.length > 0 ? "pass" : "fail",
-    summary:
-      ctx.state.scope.files_in_plan.length > 0
-        ? "Files in plan scope present (tracking actual edits requires the post-tool-use hook log; M5 hardens this)."
-        : "Plan scope is empty; nothing to verify.",
-  }),
+  validation_passes: (ctx) => {
+    // F8 — real check: find the most recent `validation_run` event and
+    // require exit_code === 0. Latest wins so re-runs supersede earlier
+    // failures.
+    const events = ctx.events ?? [];
+    let latest: ManifestEvent | undefined;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      const e = events[i];
+      if (e?.event_type === "validation_run") {
+        latest = e;
+        break;
+      }
+    }
+    if (!latest) {
+      return {
+        check_id: "validation_passes",
+        verdict: "fail",
+        summary: "No validation_run event recorded yet.",
+        suggested_action:
+          "Run `pnpm run validate` (or your project's equivalent) and capture the result via a `validation_run` event.",
+      };
+    }
+    const payload = latest.payload as { command?: string; exit_code?: number };
+    const ok = payload.exit_code === 0;
+    return {
+      check_id: "validation_passes",
+      verdict: ok ? "pass" : "fail",
+      summary: ok
+        ? `Latest validation passed: \`${payload.command ?? "?"}\` exit 0.`
+        : `Latest validation failed: \`${payload.command ?? "?"}\` exit ${payload.exit_code ?? "?"}.`,
+      ...(ok
+        ? {}
+        : {
+            suggested_action:
+              "Fix the underlying failure, re-run validation, and append a fresh validation_run event.",
+          }),
+    };
+  },
+  all_planned_files_modified: (ctx) => {
+    // F8 — real check: probe git for the diff. A planned file counts as
+    // modified when `git status --porcelain -- <path>` reports a non-empty
+    // status. Untracked files (?? prefix) also count — they're new files
+    // the workflow created.
+    const files = ctx.state.scope.files_in_plan;
+    if (files.length === 0) {
+      return {
+        check_id: "all_planned_files_modified",
+        verdict: "fail",
+        summary: "Plan scope is empty; nothing to verify.",
+        suggested_action:
+          "Add at least one file to the plan via `codi workflow scope propose-expansion --file <path>`.",
+      };
+    }
+    const unchanged: string[] = [];
+    for (const file of files) {
+      const result = git(["status", "--porcelain", "--", file], ctx.cwd);
+      if (!result.ok) {
+        // Git failed (not a repo, etc.) — skip the check rather than fail-pass.
+        return {
+          check_id: "all_planned_files_modified",
+          verdict: "fail",
+          summary: `git status failed for ${file}: ${result.stderr.trim() || "unknown error"}`,
+          suggested_action:
+            "Verify the workflow is running inside a git repository and the file path is correct.",
+        };
+      }
+      if (result.stdout.trim().length === 0) unchanged.push(file);
+    }
+    if (unchanged.length === 0) {
+      return {
+        check_id: "all_planned_files_modified",
+        verdict: "pass",
+        summary: `All ${files.length} planned file(s) have working-tree changes.`,
+      };
+    }
+    return {
+      check_id: "all_planned_files_modified",
+      verdict: "fail",
+      summary: `${unchanged.length} of ${files.length} planned file(s) have no changes: ${unchanged.join(", ")}`,
+      suggested_action:
+        "Edit the listed files, or remove them from scope if they are no longer needed.",
+    };
+  },
 };
 
 export function isAgentCheck(check: GateCheck): boolean {

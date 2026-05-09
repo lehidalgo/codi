@@ -1,28 +1,28 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import {
-  mkdtempSync,
-  mkdirSync,
-  writeFileSync,
-  rmSync,
-  existsSync,
-  readdirSync,
-  readFileSync,
-} from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { runWorkflow, abandonWorkflow, recordIncidentalChange } from "#src/runtime/cli-handlers.js";
-import { EventLog } from "#src/runtime/event-log.js";
-import { reduce } from "#src/runtime/reducer.js";
+import { runWorkflow, recordIncidentalChange, abandonWorkflow } from "#src/runtime/cli-handlers.js";
+import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { buildPrSummary, extractHashFromBlock } from "#src/runtime/pr-summary.js";
-import { compactAllArchives } from "#src/runtime/compactor.js";
 import { replay } from "#src/runtime/replay.js";
-import { devloopPaths } from "#src/runtime/paths.js";
 import type { Author } from "#src/runtime/types.js";
 
 const human: Author = { type: "human", id: "tester" };
 
+let prevBrainDb: string | undefined;
+function isolateBrain(dir: string): void {
+  prevBrainDb = process.env["CODI_BRAIN_DB"];
+  process.env["CODI_BRAIN_DB"] = join(dir, "brain.db");
+}
+function restoreBrain(): void {
+  if (prevBrainDb === undefined) delete process.env["CODI_BRAIN_DB"];
+  else process.env["CODI_BRAIN_DB"] = prevBrainDb;
+}
+
 function setup(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-m5-"));
+  const dir = mkdtempSync(join(tmpdir(), "codi-m5-"));
+  isolateBrain(dir);
   mkdirSync(join(dir, "docs"), { recursive: true });
   writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
   return dir;
@@ -36,6 +36,7 @@ describe("PR summary generation", () => {
   });
 
   afterEach(() => {
+    restoreBrain();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -52,16 +53,20 @@ describe("PR summary generation", () => {
       author: human,
       cwd: dir,
     });
-    const log = EventLog.fromCwd(dir);
-    const wId = log.getActiveWorkflowId();
-    if (!wId) throw new Error("expected workflow");
-    const events = log.loadArchivedEvents(wId);
-    const result = buildPrSummary(events);
-    expect(result.block).toContain("## Workflow Summary");
-    expect(result.block).toContain("**Type:** feature");
-    expect(result.block).toContain("**Workflow ID:** " + wId);
-    expect(result.hash).toMatch(/^[0-9a-f]{64}$/);
-    expect(result.block).toContain(`<!-- devloop-summary-hash: sha256:${result.hash} -->`);
+    const log = BrainEventLog.open();
+    try {
+      const wId = log.getActiveWorkflowId();
+      if (!wId) throw new Error("expected workflow");
+      const events = log.loadArchivedEvents(wId);
+      const result = buildPrSummary(events);
+      expect(result.block).toContain("## Workflow Summary");
+      expect(result.block).toContain("**Type:** feature");
+      expect(result.block).toContain("**Workflow ID:** " + wId);
+      expect(result.hash).toMatch(/^[0-9a-f]{64}$/);
+      expect(result.block).toContain(`<!-- codi-summary-hash: sha256:${result.hash} -->`);
+    } finally {
+      log.dispose();
+    }
   });
 
   it("hash is deterministic — same events produce same hash", () => {
@@ -71,13 +76,17 @@ describe("PR summary generation", () => {
       author: human,
       cwd: dir,
     });
-    const log = EventLog.fromCwd(dir);
-    const wId = log.getActiveWorkflowId();
-    if (!wId) throw new Error("expected workflow");
-    const events = log.loadArchivedEvents(wId);
-    const r1 = buildPrSummary(events);
-    const r2 = buildPrSummary(events);
-    expect(r1.hash).toBe(r2.hash);
+    const log = BrainEventLog.open();
+    try {
+      const wId = log.getActiveWorkflowId();
+      if (!wId) throw new Error("expected workflow");
+      const events = log.loadArchivedEvents(wId);
+      const r1 = buildPrSummary(events);
+      const r2 = buildPrSummary(events);
+      expect(r1.hash).toBe(r2.hash);
+    } finally {
+      log.dispose();
+    }
   });
 
   it("hash ignores non-commitable events (incidentals)", () => {
@@ -87,27 +96,31 @@ describe("PR summary generation", () => {
       author: human,
       cwd: dir,
     });
-    const log = EventLog.fromCwd(dir);
-    const wId = log.getActiveWorkflowId();
-    if (!wId) throw new Error("expected workflow");
-    const eventsBefore = log.loadEvents(wId);
-    const r1 = buildPrSummary(eventsBefore);
+    const log = BrainEventLog.open();
+    try {
+      const wId = log.getActiveWorkflowId();
+      if (!wId) throw new Error("expected workflow");
+      const eventsBefore = log.loadEvents(wId);
+      const r1 = buildPrSummary(eventsBefore);
 
-    recordIncidentalChange({
-      filePath: "src/x.ts",
-      linesChanged: 1,
-      classifierReason: "imports",
-      author: { type: "system", id: "h" },
-      cwd: dir,
-    });
-    const eventsAfter = log.loadEvents(wId);
-    const r2 = buildPrSummary(eventsAfter);
-    // Incidentals are non-commitable; hash should not change.
-    expect(r1.hash).toBe(r2.hash);
+      recordIncidentalChange({
+        filePath: "src/x.ts",
+        linesChanged: 1,
+        classifierReason: "imports",
+        author: { type: "system", id: "h" },
+        cwd: dir,
+      });
+      const eventsAfter = log.loadEvents(wId);
+      const r2 = buildPrSummary(eventsAfter);
+      // Incidentals are non-commitable; hash should not change.
+      expect(r1.hash).toBe(r2.hash);
+    } finally {
+      log.dispose();
+    }
   });
 
   it("extractHashFromBlock returns the hash", () => {
-    const block = `## Workflow Summary\nfoo\n<!-- devloop-summary-hash: sha256:${"a".repeat(64)} -->`;
+    const block = `## Workflow Summary\nfoo\n<!-- codi-summary-hash: sha256:${"a".repeat(64)} -->`;
     expect(extractHashFromBlock(block)).toBe("a".repeat(64));
   });
 
@@ -116,103 +129,124 @@ describe("PR summary generation", () => {
   });
 });
 
-describe("compactor", () => {
-  let dir: string;
+describe("compactor (F11 — brain-backed)", () => {
+  let cdir: string;
+  let savedBrain: string | undefined;
 
   beforeEach(() => {
-    dir = setup();
+    cdir = setup();
+    savedBrain = process.env["CODI_BRAIN_DB"];
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    if (savedBrain === undefined) delete process.env["CODI_BRAIN_DB"];
+    else process.env["CODI_BRAIN_DB"] = savedBrain;
+    rmSync(cdir, { recursive: true, force: true });
   });
 
-  it("does not compact recent archives", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Recent",
-      author: human,
-      cwd: dir,
-    });
-    abandonWorkflow({ reason: "test", author: human, cwd: dir });
+  it("does not compact recent terminal workflows", async () => {
+    const { compactWorkflows } = await import("#src/runtime/compactor.js");
+    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    runWorkflow({ workflowType: "feature", task: "Recent", author: human, cwd: cdir });
+    abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
-    const paths = devloopPaths(dir);
-    const results = compactAllArchives({ archivesDir: paths.archivesDir, thresholdDays: 30 });
-    expect(results.length).toBe(1);
-    expect(results[0]?.summarized).toBe(false);
+    const handle = openBrain();
+    try {
+      applyMigrations(handle.raw);
+      const results = compactWorkflows(handle, { thresholdDays: 30 });
+      const recent = results.find((r) => r.workflowId.startsWith("feat-recent-"));
+      expect(recent?.summarized).toBe(false);
+      expect(recent?.reason).toContain("threshold");
+    } finally {
+      handle.close();
+    }
   });
 
-  it("compacts archives older than threshold", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Old",
-      author: human,
-      cwd: dir,
-    });
-    abandonWorkflow({ reason: "test", author: human, cwd: dir });
-    const paths = devloopPaths(dir);
+  it("compacts terminal workflows older than the threshold", async () => {
+    const { compactWorkflows, readCompactedSummary } = await import("#src/runtime/compactor.js");
+    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    runWorkflow({ workflowType: "feature", task: "Old", author: human, cwd: cdir });
+    abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
-    // Compact with threshold 0 → everything is past
-    const results = compactAllArchives({
-      archivesDir: paths.archivesDir,
-      thresholdDays: 0,
-      now: new Date(Date.now() + 86400000),
-    });
-    expect(results.length).toBe(1);
-    expect(results[0]?.summarized).toBe(true);
-    expect(results[0]?.preservedCount).toBeGreaterThan(0);
+    const handle = openBrain();
+    try {
+      applyMigrations(handle.raw);
+      const results = compactWorkflows(handle, {
+        thresholdDays: 0,
+        now: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+      const compacted = results.find((r) => r.summarized);
+      expect(compacted).toBeDefined();
+      expect(compacted?.preservedCount).toBeGreaterThan(0);
+
+      const summary = readCompactedSummary(handle.raw, compacted!.workflowId);
+      expect(summary).not.toBeNull();
+      const types = (summary?.preserved_events ?? []).map((e) => e.event_type);
+      expect(types).toContain("init");
+      expect(types).toContain("workflow_abandoned");
+
+      // Underlying events should be deleted.
+      const remaining = handle.raw
+        .prepare(`SELECT COUNT(*) as c FROM workflow_events WHERE workflow_id = ?`)
+        .get(compacted!.workflowId) as { c: number };
+      expect(remaining.c).toBe(0);
+    } finally {
+      handle.close();
+    }
   });
 
-  it("compaction is idempotent (already compacted archives are skipped)", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Old",
-      author: human,
-      cwd: dir,
-    });
-    abandonWorkflow({ reason: "test", author: human, cwd: dir });
-    const paths = devloopPaths(dir);
+  it("is idempotent — already-compacted workflows are skipped", async () => {
+    const { compactWorkflows } = await import("#src/runtime/compactor.js");
+    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    runWorkflow({ workflowType: "feature", task: "Old", author: human, cwd: cdir });
+    abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
-    compactAllArchives({
-      archivesDir: paths.archivesDir,
-      thresholdDays: 0,
-      now: new Date(Date.now() + 86400000),
-    });
-    const second = compactAllArchives({
-      archivesDir: paths.archivesDir,
-      thresholdDays: 0,
-      now: new Date(Date.now() + 86400000),
-    });
-    expect(second[0]?.summarized).toBe(false);
-    expect(second[0]?.reason).toContain("Already compacted");
+    const handle = openBrain();
+    try {
+      applyMigrations(handle.raw);
+      const future = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      compactWorkflows(handle, { thresholdDays: 0, now: future });
+      const second = compactWorkflows(handle, { thresholdDays: 0, now: future });
+      const skipped = second.find((r) => r.reason === "Already compacted.");
+      expect(skipped).toBeDefined();
+    } finally {
+      handle.close();
+    }
   });
 
-  it("preserves critical events in summary", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Critical",
-      author: human,
-      cwd: dir,
-    });
-    abandonWorkflow({ reason: "test", author: human, cwd: dir });
-    const paths = devloopPaths(dir);
-    compactAllArchives({
-      archivesDir: paths.archivesDir,
-      thresholdDays: 0,
-      now: new Date(Date.now() + 86400000),
-    });
+  it("dryRun summarizes but does not delete events", async () => {
+    const { compactWorkflows } = await import("#src/runtime/compactor.js");
+    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    runWorkflow({ workflowType: "feature", task: "DryOld", author: human, cwd: cdir });
+    abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
-    // Find the only archive directory
-    const archivesDir = paths.archivesDir;
-    const entries = readdirSync(archivesDir);
-    const summaryFile = join(archivesDir, entries[0]!, "summary.json");
-    expect(existsSync(summaryFile)).toBe(true);
-    const summary = JSON.parse(readFileSync(summaryFile, "utf-8"));
-    const types = (summary.preserved_events as Array<{ event_type: string }>).map(
-      (e) => e.event_type,
-    );
-    expect(types).toContain("init");
-    expect(types).toContain("workflow_abandoned");
+    const handle = openBrain();
+    try {
+      applyMigrations(handle.raw);
+      const id = handle.raw
+        .prepare(
+          `SELECT workflow_id FROM workflow_runs WHERE workflow_id LIKE 'feat-dryold-%' LIMIT 1`,
+        )
+        .get() as { workflow_id: string };
+
+      const before = handle.raw
+        .prepare(`SELECT COUNT(*) as c FROM workflow_events WHERE workflow_id = ?`)
+        .get(id.workflow_id) as { c: number };
+
+      const results = compactWorkflows(handle, {
+        thresholdDays: 0,
+        now: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        dryRun: true,
+      });
+      expect(results.find((r) => r.summarized)).toBeDefined();
+
+      const after = handle.raw
+        .prepare(`SELECT COUNT(*) as c FROM workflow_events WHERE workflow_id = ?`)
+        .get(id.workflow_id) as { c: number };
+      expect(after.c).toBe(before.c);
+    } finally {
+      handle.close();
+    }
   });
 });
 
@@ -224,6 +258,7 @@ describe("replay", () => {
   });
 
   afterEach(() => {
+    restoreBrain();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -234,13 +269,17 @@ describe("replay", () => {
       author: human,
       cwd: dir,
     });
-    const log = EventLog.fromCwd(dir);
-    const wId = log.getActiveWorkflowId();
-    if (!wId) throw new Error("expected workflow");
-    const events = log.loadArchivedEvents(wId);
-    const result = replay(events);
-    expect(result.events.length).toBe(events.length);
-    expect(result.stoppedAt).toBeNull();
+    const log = BrainEventLog.open();
+    try {
+      const wId = log.getActiveWorkflowId();
+      if (!wId) throw new Error("expected workflow");
+      const events = log.loadArchivedEvents(wId);
+      const result = replay(events);
+      expect(result.events.length).toBe(events.length);
+      expect(result.stoppedAt).toBeNull();
+    } finally {
+      log.dispose();
+    }
   });
 
   it("replays up to a specific event id", () => {
@@ -250,15 +289,19 @@ describe("replay", () => {
       author: human,
       cwd: dir,
     });
-    const log = EventLog.fromCwd(dir);
-    const wId = log.getActiveWorkflowId();
-    if (!wId) throw new Error("expected workflow");
-    const events = log.loadEvents(wId);
-    const firstEventId = events[0]?.event_id;
-    if (!firstEventId) throw new Error("expected init event");
-    const result = replay(events, { untilEventId: firstEventId });
-    expect(result.events.length).toBe(1);
-    expect(result.stoppedAt).toBe(firstEventId);
+    const log = BrainEventLog.open();
+    try {
+      const wId = log.getActiveWorkflowId();
+      if (!wId) throw new Error("expected workflow");
+      const events = log.loadEvents(wId);
+      const firstEventId = events[0]?.event_id;
+      if (!firstEventId) throw new Error("expected init event");
+      const result = replay(events, { untilEventId: firstEventId });
+      expect(result.events.length).toBe(1);
+      expect(result.stoppedAt).toBe(firstEventId);
+    } finally {
+      log.dispose();
+    }
   });
 
   it("throws when until points to non-existent event", () => {
@@ -268,13 +311,17 @@ describe("replay", () => {
       author: human,
       cwd: dir,
     });
-    const log = EventLog.fromCwd(dir);
-    const wId = log.getActiveWorkflowId();
-    if (!wId) throw new Error("expected workflow");
-    const events = log.loadEvents(wId);
-    expect(() => replay(events, { untilEventId: "00000000-0000-4000-8000-000000000000" })).toThrow(
-      "not found",
-    );
+    const log = BrainEventLog.open();
+    try {
+      const wId = log.getActiveWorkflowId();
+      if (!wId) throw new Error("expected workflow");
+      const events = log.loadEvents(wId);
+      expect(() =>
+        replay(events, { untilEventId: "00000000-0000-4000-8000-000000000000" }),
+      ).toThrow("not found");
+    } finally {
+      log.dispose();
+    }
   });
 
   it("throws on empty event list", () => {

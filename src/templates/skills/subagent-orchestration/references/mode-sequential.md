@@ -4,10 +4,10 @@ Execute a plan task-by-task. Per task: fresh implementer subagent → spec-compl
 
 ## Preconditions
 
-- A plan exists (from `devloop:plan-writing` mode `plan`) with discrete tasks listed
+- A plan exists (from `codi:plan-writing` mode `plan`) with discrete tasks listed
 - Tasks are mostly independent — they may build on each other but do not require simultaneous editing
 - The user approved the plan (no work begins on an unapproved plan)
-- Strongly recommended: invoke `devloop:worktrees` first to land per-task commits on an isolated branch. Without it, every task's commits land on the orchestrator's current branch, and a single bad task pollutes the whole sequence with no clean rollback boundary.
+- Strongly recommended: invoke `codi:worktrees` first to land per-task commits on an isolated branch. Without it, every task's commits land on the orchestrator's current branch, and a single bad task pollutes the whole sequence with no clean rollback boundary.
 
 ## Setup (once)
 

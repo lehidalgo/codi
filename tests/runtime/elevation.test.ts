@@ -1,7 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import {
   runWorkflow,
   proposeElevation,
@@ -11,32 +8,28 @@ import {
   getStatus,
 } from "#src/runtime/cli-handlers.js";
 import type { Author } from "#src/runtime/types.js";
+import { createIsolatedBrain, type IsolatedBrain } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };
 
-function setup(): string {
-  const dir = mkdtempSync(join(tmpdir(), "devloop-elevation-"));
-  mkdirSync(join(dir, "docs"), { recursive: true });
-  writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
-  runWorkflow({
-    workflowType: "feature",
-    task: "Test",
-    author: human,
-    cwd: dir,
-  });
-  return dir;
-}
-
 describe("elevation handlers", () => {
+  let scope: IsolatedBrain;
   let dir: string;
 
   beforeEach(() => {
-    dir = setup();
+    scope = createIsolatedBrain("codi-elevation-");
+    dir = scope.dir;
+    runWorkflow({
+      workflowType: "feature",
+      task: "Test",
+      author: human,
+      cwd: dir,
+    });
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    scope.dispose();
   });
 
   it("proposes an elevation", () => {
@@ -72,7 +65,7 @@ describe("elevation handlers", () => {
     });
     const result = approveElevation({ author: human, cwd: dir });
     expect(result.childWorkflowId).toContain("child-refactor");
-    expect(result.childBranch).toMatch(/^devloop\//);
+    expect(result.childBranch).toMatch(/^codi\//);
 
     const status = getStatus({ cwd: dir });
     expect(status.state?.status).toBe("paused");

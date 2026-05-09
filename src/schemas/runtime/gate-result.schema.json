@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://devloop.dev/schemas/gate-result/v1.0.0",
+  "$id": "https://codi.dev/schemas/gate-result/v1.0.0",
   "title": "Gate Result",
   "description": "Structured verdict produced by a gate check. Returned by both deterministic and agent (subagent) checks.",
   "type": "object",

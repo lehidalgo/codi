@@ -1,6 +1,6 @@
 # Phase: verify
 
-Invoke `devloop:verify-evidence` (5-step gate: Identify → Run → Read → Verify → Claim). Without it you are claiming "fixed" without proof.
+Invoke `codi:verify-evidence` (5-step gate: Identify → Run → Read → Verify → Claim). Without it you are claiming "fixed" without proof.
 
 ## Exit criteria
 
@@ -12,7 +12,7 @@ Invoke `devloop:verify-evidence` (5-step gate: Identify → Run → Read → Ver
 
 ## Optional: code review on the fix
 
-When `.devloop/config.yaml` declares `auto_review: true`, invoke `devloop:code-review` mode `request` after verify-evidence. The reviewer subagent gets the diff, the bug repro description, and the regression-test path; it returns a structured verdict. Critical or Important issues block the transition to `done`. Especially valuable for fixes that touch shared code paths or change error handling.
+When `.codi/config.yaml` declares `auto_review: true`, invoke `codi:code-review` mode `request` after verify-evidence. The reviewer subagent gets the diff, the bug repro description, and the regression-test path; it returns a structured verdict. Critical or Important issues block the transition to `done`. Especially valuable for fixes that touch shared code paths or change error handling.
 
 ## Phase done
 
