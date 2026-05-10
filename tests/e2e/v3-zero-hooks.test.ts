@@ -212,10 +212,10 @@ describe("S10 — hook scripts run under tsx with realistic stdin", { retry: SUI
     expect(result.stderr).toContain("Iron Law 7");
   });
 
-  it("DEFECT-002 (FIXED) — clause split keeps 'fix bug, then commit' approved", () => {
+  it("DEFECT-002 (FIXED) — clause split keeps 'fix bug, then ok' approved", () => {
     runHook("hook-user-prompt-submit.ts", {
       session_id: "sess-clause",
-      prompt: "fix the auth bug, then commit",
+      prompt: "fix the auth bug, then ok",
       cwd: dir,
     });
     const result = runHook("hook-pre-tool-use.ts", {
@@ -242,10 +242,10 @@ describe("S10 — hook scripts run under tsx with realistic stdin", { retry: SUI
     expect(result.code).toBe(2);
   });
 
-  it("hook-pre-tool-use allows git when an approval token is in recent prompts", () => {
+  it("hook-pre-tool-use allows git when 'ok' is in recent prompts", () => {
     runHook("hook-user-prompt-submit.ts", {
       session_id: "sess-allow",
-      prompt: "please commit and push the fix",
+      prompt: "ok",
       cwd: dir,
     });
     const result = runHook("hook-pre-tool-use.ts", {

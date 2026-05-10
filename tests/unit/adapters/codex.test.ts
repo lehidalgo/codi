@@ -450,13 +450,22 @@ describe("codex adapter", () => {
 
       const hooksFile = files.find((f) => f.path === ".codex/hooks.json");
       expect(hooksFile).toBeDefined();
-      const parsed = JSON.parse(hooksFile!.content);
-      expect(parsed.Stop).toBeDefined();
-      expect(Array.isArray(parsed.Stop)).toBe(true);
-      const hook = parsed.Stop[0];
-      expect(hook.type).toBe("command");
-      expect(hook.command).toContain("codi-skill-observer.cjs");
-      expect(hook.timeout).toBeGreaterThan(0);
+      const parsed = JSON.parse(hooksFile!.content) as {
+        hooks?: {
+          Stop?: Array<{ hooks?: Array<{ type?: string; command?: string; timeout?: number }> }>;
+        };
+      };
+      expect(parsed.hooks?.Stop).toBeDefined();
+      expect(Array.isArray(parsed.hooks?.Stop)).toBe(true);
+      const stopGroup = parsed.hooks?.Stop?.[0];
+      expect(stopGroup).toBeDefined();
+      expect(Array.isArray(stopGroup?.hooks)).toBe(true);
+      const observerHook = stopGroup!.hooks!.find((h) =>
+        (h.command ?? "").includes("codi-skill-observer.cjs"),
+      );
+      expect(observerHook).toBeDefined();
+      expect(observerHook!.type).toBe("command");
+      expect(observerHook!.timeout ?? 0).toBeGreaterThan(0);
     });
 
     it(".codex/hooks.json has non-empty content and a hash", async () => {

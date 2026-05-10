@@ -133,7 +133,7 @@ describe("evaluateToolCall — file edits", () => {
     expect(decision.allow).toBe(true);
   });
 
-  it("blocks edits to test files (always scope-expansion)", () => {
+  it("advises on edits to test files (always scope-expansion)", () => {
     const ctx = buildContext(tmpDir);
     const decision = evaluateToolCall(
       {
@@ -142,14 +142,16 @@ describe("evaluateToolCall — file edits", () => {
       },
       ctx,
     );
-    expect(decision.allow).toBe(false);
-    if (!decision.allow) {
-      expect(decision.reason).toContain("not in the plan");
-      expect(decision.suggested_action).toContain("propose-expansion");
+    expect(decision.allow).toBe(true);
+    if (decision.allow) {
+      expect(decision.advisories).toBeDefined();
+      const joined = (decision.advisories ?? []).join(" | ");
+      expect(joined).toContain("not in the plan");
+      expect(joined).toContain("scope propose");
     }
   });
 
-  it("suggests elevation for migration files", () => {
+  it("advises elevation for migration files", () => {
     const ctx = buildContext(tmpDir);
     const decision = evaluateToolCall(
       {
@@ -161,14 +163,16 @@ describe("evaluateToolCall — file edits", () => {
       },
       ctx,
     );
-    expect(decision.allow).toBe(false);
-    if (!decision.allow) {
-      expect(decision.suggested_action).toContain("elevation");
-      expect(decision.suggested_action).toContain("migration");
+    expect(decision.allow).toBe(true);
+    if (decision.allow) {
+      expect(decision.advisories).toBeDefined();
+      const joined = (decision.advisories ?? []).join(" | ");
+      expect(joined).toContain("elevation");
+      expect(joined).toContain("migration");
     }
   });
 
-  it("blocks edits in pre-execute phases (intent, plan, decompose)", () => {
+  it("advises on edits in pre-execute phases (intent, plan, decompose)", () => {
     // Fresh workflow stays in intent
     const fresh = mkdtempSync(join(tmpdir(), "codi-fresh-"));
     try {
@@ -183,10 +187,12 @@ describe("evaluateToolCall — file edits", () => {
           },
           ctx,
         );
-        expect(decision.allow).toBe(false);
-        if (!decision.allow) {
-          expect(decision.reason).toContain("phase intent");
-          expect(decision.suggested_action).toContain("transition --to execute");
+        expect(decision.allow).toBe(true);
+        if (decision.allow) {
+          expect(decision.advisories).toBeDefined();
+          const joined = (decision.advisories ?? []).join(" | ");
+          expect(joined).toContain("phase intent");
+          expect(joined).toContain("transition --to execute");
         }
       });
     } finally {
@@ -328,25 +334,32 @@ describe("evaluateToolCall — Bash commands", () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("blocks git push in execute phase", () => {
+  it("advises on git push in execute phase", () => {
     const ctx = buildContext(tmpDir);
     const decision = evaluateToolCall(
       { tool_name: "Bash", tool_input: { command: "git push origin main" } },
       ctx,
     );
-    expect(decision.allow).toBe(false);
-    if (!decision.allow) {
-      expect(decision.reason).toContain("git push");
+    expect(decision.allow).toBe(true);
+    if (decision.allow) {
+      expect(decision.advisories).toBeDefined();
+      const joined = (decision.advisories ?? []).join(" | ");
+      expect(joined).toContain("git push");
     }
   });
 
-  it("blocks gh pr create before phase done", () => {
+  it("advises on gh pr create before phase done", () => {
     const ctx = buildContext(tmpDir);
     const decision = evaluateToolCall(
       { tool_name: "Bash", tool_input: { command: "gh pr create --title x" } },
       ctx,
     );
-    expect(decision.allow).toBe(false);
+    expect(decision.allow).toBe(true);
+    if (decision.allow) {
+      expect(decision.advisories).toBeDefined();
+      const joined = (decision.advisories ?? []).join(" | ");
+      expect(joined).toContain("PR creation");
+    }
   });
 
   it("blocks rm -rf / always", () => {

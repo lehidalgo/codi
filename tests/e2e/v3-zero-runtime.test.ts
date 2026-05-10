@@ -301,7 +301,7 @@ describe("S5 — Iron Law 4 hard gate + L7 commit approval", { retry: SUITE_RETR
     });
   });
 
-  it("L7: git mutation allowed when 'commit' / 'push' in recent prompts", () => {
+  it("L7: git mutation allowed when 'ok' is in recent prompts", () => {
     withHandle((h) => {
       ensureSession(h.raw, {
         sessionId: "s",
@@ -309,7 +309,7 @@ describe("S5 — Iron Law 4 hard gate + L7 commit approval", { retry: SUITE_RETR
         agentType: "claude-code",
         workingDir: dir,
       });
-      recordPrompt(h.raw, { sessionId: "s", text: "ya, please commit and push" });
+      recordPrompt(h.raw, { sessionId: "s", text: "ok" });
       const recent = readRecentPrompts(h.raw, { sessionId: "s", limit: 5 });
       expect(
         decideGitCommand({ bashCommand: "git commit -m 'x'", recentPrompts: recent }).allowed,

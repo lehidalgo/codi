@@ -107,10 +107,10 @@ describe("Iron Law 7 — Never commit without approval", () => {
     expect(d.reason).toContain("Iron Law 7");
   });
 
-  it("allows `git commit` when 'commit' appears in a recent prompt", () => {
+  it("allows `git commit` when 'ok' appears in a recent prompt", () => {
     const d = decideGitCommand({
       bashCommand: "git commit -m 'feat: x'",
-      recentPrompts: ["please commit the changes"],
+      recentPrompts: ["ok"],
     });
     expect(d.allowed).toBe(true);
   });
@@ -131,12 +131,14 @@ describe("Iron Law 7 — Never commit without approval", () => {
     expect(d.allowed).toBe(true);
   });
 
-  it("matches approval tokens case-insensitively", () => {
-    const d = decideGitCommand({
-      bashCommand: "git commit -m 'x'",
-      recentPrompts: ["Commit, please"],
-    });
-    expect(d.allowed).toBe(true);
+  it("matches the 'ok' approval token case-insensitively", () => {
+    for (const token of ["ok", "OK", "Ok"]) {
+      const d = decideGitCommand({
+        bashCommand: "git commit -m 'x'",
+        recentPrompts: [token],
+      });
+      expect(d.allowed).toBe(true);
+    }
   });
 });
 

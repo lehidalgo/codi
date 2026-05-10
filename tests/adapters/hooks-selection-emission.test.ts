@@ -44,6 +44,18 @@ function findFile(files: GeneratedFile[], suffix: string): GeneratedFile | undef
   return files.find((f) => f.path.endsWith(suffix));
 }
 
+function stopCommands(hooksJson: {
+  hooks?: { Stop?: Array<{ hooks?: Array<{ command?: string }> }> };
+}): string[] {
+  const out: string[] = [];
+  for (const entry of hooksJson.hooks?.Stop ?? []) {
+    for (const h of entry.hooks ?? []) {
+      if (typeof h.command === "string") out.push(h.command);
+    }
+  }
+  return out;
+}
+
 describe("adapter emission honours selectedHooks.runtime", () => {
   let projectRoot: string;
 
@@ -89,9 +101,9 @@ describe("adapter emission honours selectedHooks.runtime", () => {
       expect(observer).toBeDefined();
       expect(hooks).toBeDefined();
       const hooksJson = JSON.parse(hooks!.content) as {
-        Stop?: Array<{ command: string }>;
+        hooks?: { Stop?: Array<{ hooks?: Array<{ command?: string }> }> };
       };
-      const stopCmds = (hooksJson.Stop ?? []).map((h) => h.command);
+      const stopCmds = stopCommands(hooksJson);
       expect(stopCmds.some((c) => c.includes("codi-skill-observer.cjs"))).toBe(true);
     });
 
@@ -104,9 +116,9 @@ describe("adapter emission honours selectedHooks.runtime", () => {
       expect(observer).toBeUndefined();
       expect(hooks).toBeDefined();
       const hooksJson = JSON.parse(hooks!.content) as {
-        Stop?: Array<{ command: string }>;
+        hooks?: { Stop?: Array<{ hooks?: Array<{ command?: string }> }> };
       };
-      const stopCmds = (hooksJson.Stop ?? []).map((h) => h.command);
+      const stopCmds = stopCommands(hooksJson);
       expect(stopCmds.some((c) => c.includes("codi-skill-observer.cjs"))).toBe(false);
       expect(stopCmds.some((c) => c.includes("codi hook stop"))).toBe(true);
     });
