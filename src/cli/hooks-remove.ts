@@ -52,7 +52,7 @@ export function registerHooksRemoveCommand(program: Command): void {
         process.stderr.write("Bucket must be 'git' or 'runtime'.\n");
         process.exit(2);
       }
-      const statePath = join(process.cwd(), ".codi", ".state", "state.json");
+      const statePath = join(process.cwd(), ".codi", "state", "state.json");
       const r = removeHookFromState(bucket, name, statePath);
       if (!r.removed) {
         process.stderr.write(`No change: ${r.reason}\n`);

@@ -69,7 +69,7 @@ async function exists(path: string): Promise<boolean> {
 function readEnabledRuntimeHookNames(projectRoot: string | undefined): string[] | null {
   if (!projectRoot) return null;
   try {
-    const stateFile = join(projectRoot, ".codi", ".state", "state.json");
+    const stateFile = join(projectRoot, ".codi", "state", "state.json");
     if (!existsSync(stateFile)) return null;
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
       selectedHooks?: { runtime?: string[] };

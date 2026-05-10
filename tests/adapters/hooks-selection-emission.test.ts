@@ -23,9 +23,9 @@ function fakeConfig(): NormalizedConfig {
 }
 
 function writeState(projectRoot: string, runtimeSelection: string[]): void {
-  mkdirSync(join(projectRoot, ".codi", ".state"), { recursive: true });
+  mkdirSync(join(projectRoot, ".codi", "state"), { recursive: true });
   writeFileSync(
-    join(projectRoot, ".codi", ".state", "state.json"),
+    join(projectRoot, ".codi", "state", "state.json"),
     JSON.stringify(
       {
         version: "1",

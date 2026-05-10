@@ -2,7 +2,7 @@
  * `codi hooks list` — print all known hooks across both buckets.
  *
  * Listing reads only from the static registry. The `--enabled` flag filters
- * to the project's currently-selected set (read from `.codi/.state/state.json`).
+ * to the project's currently-selected set (read from `.codi/state/state.json`).
  */
 
 import type { Command } from "commander";
@@ -18,7 +18,7 @@ export interface ListOptions {
 }
 
 function readSelectedHookNames(cwd: string): { git: string[]; runtime: string[] } | null {
-  const stateFile = join(cwd, ".codi", ".state", "state.json");
+  const stateFile = join(cwd, ".codi", "state", "state.json");
   if (!existsSync(stateFile)) return null;
   try {
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {

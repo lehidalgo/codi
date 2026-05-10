@@ -421,6 +421,23 @@ export class StateManager {
     return this.write(state);
   }
 
+  /**
+   * Persists the user's hook selection from the init / update wizard.
+   * Both fields are optional — pass undefined to leave them unchanged.
+   */
+  async updateSelectedHooks(selection: Partial<SelectedHooks>): Promise<Result<void>> {
+    const stateResult = await this.read();
+    if (!stateResult.ok) return stateResult;
+
+    const state = stateResult.data;
+    const current = state.selectedHooks ?? { git: [], runtime: [] };
+    state.selectedHooks = {
+      git: selection.git ?? current.git,
+      runtime: selection.runtime ?? current.runtime,
+    };
+    return this.write(state);
+  }
+
   /** Compares the current on-disk preset artifact files against their stored hashes. */
   async detectPresetArtifactDrift(): Promise<Result<DriftFile[]>> {
     const stateResult = await this.read();

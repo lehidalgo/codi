@@ -265,6 +265,17 @@ export async function initHandler(
       );
     }
 
+    // Persist the wizard's hook selection so adapters and the runtime
+    // honour the user's git/runtime hook choices on the next generate.
+    if (wizardResult.gitHooks || wizardResult.runtimeHooks) {
+      const { StateManager } = await import("../core/config/state.js");
+      const stateManager = new StateManager(configDir, projectRoot);
+      const selection: { git?: string[]; runtime?: string[] } = {};
+      if (wizardResult.gitHooks) selection.git = wizardResult.gitHooks;
+      if (wizardResult.runtimeHooks) selection.runtime = wizardResult.runtimeHooks;
+      await stateManager.updateSelectedHooks(selection);
+    }
+
     // Handle import sources (ZIP/GitHub)
     // presetInstallUnifiedHandler calls regenerateConfigs internally,
     // so we track success to skip the duplicate generate() call later.

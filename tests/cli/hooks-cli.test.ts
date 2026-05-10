@@ -31,7 +31,7 @@ describe("addHookToState / removeHookFromState", () => {
   let statePath: string;
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "codi-hooks-cli-"));
-    statePath = join(dir, ".codi", ".state", "state.json");
+    statePath = join(dir, ".codi", "state", "state.json");
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

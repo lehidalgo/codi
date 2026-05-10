@@ -33,6 +33,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Capture edit modal** fetches content from the API on click instead of embedding JSON in the `x-on:click` attribute, eliminating the HTML-attribute escape bug that broke the row layout for captures containing `"`.
 - **Tool-output JSON unescape** — known string fields (`stdout`, `stderr`, etc.) now render with real newlines instead of `\n` escapes; the previous in-place decoder re-escaped via `JSON.stringify` and was effectively a no-op.
 
+### Hooks — post-reinit fixes
+
+#### Fixed
+
+- State path mismatch: hook readers and adapters used `.codi/.state/state.json` (with leading dot) but `STATE_DIR` is `state`. Reads silently returned null after a fresh `codi init`, so adapter heartbeat gating and runtime hook selection always defaulted on. Path corrected across `agent-hooks`, `hooks-list/add/remove`, and the `claude-code` and `codex` adapters.
+- `codi init` did not persist the wizard's git/runtime hook selection — `WizardResult.gitHooks` and `runtimeHooks` were captured but never written to `state.json`. Added `StateManager.updateSelectedHooks` and a call from `init.ts` after the wizard returns.
+- Test fixtures for adapter emission and CLI hook commands now write to the canonical `.codi/state/` path.
+
 ### Hooks as first-class artifacts
 
 #### Added

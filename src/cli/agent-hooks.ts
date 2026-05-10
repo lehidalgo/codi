@@ -136,7 +136,7 @@ function runUserPromptSubmit(): void {
 
 function readEnabledRuntimeHookNames(cwd: string): string[] | null {
   try {
-    const stateFile = join(cwd, ".codi", ".state", "state.json");
+    const stateFile = join(cwd, ".codi", "state", "state.json");
     if (!existsSync(stateFile)) return null;
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
       selectedHooks?: { runtime?: string[] };
