@@ -31,6 +31,7 @@ import { persistMarkers } from "./persist.js";
 import { aggregateSessionUsage } from "../tokens/index.js";
 import {
   closeTurn,
+  ensureProject,
   ensureSession,
   latestTurnId,
   openTurn,
@@ -63,10 +64,12 @@ export interface StopHookResult {
 export function processStopHook(handle: BrainHandle, input: StopHookInput): StopHookResult {
   const { raw } = handle;
 
-  // 1. Ensure session row.
+  // 1. Ensure project + session rows.
+  const projectId = deriveProjectId(input.cwd);
+  ensureProject(raw, { projectId, cwd: input.cwd });
   ensureSession(raw, {
     sessionId: input.sessionId,
-    projectId: deriveProjectId(input.cwd),
+    projectId,
     agentType: input.agentType ?? "claude-code",
     agentModel: input.agentModel,
     workingDir: input.cwd,
@@ -223,11 +226,14 @@ export function readLastAssistantMessage(path: string): string {
 }
 
 /**
- * Extract assistant-authored text from a single transcript record. The
- * shape varies — handle the common cases:
- *   - { role: "assistant", content: "..." }
- *   - { role: "assistant", content: [{ type: "text", text: "..." }, ...] }
- *   - { type: "assistant", message: { content: [{ text: "..." }] } }
+ * Extract assistant-authored text from a single transcript record. Shapes:
+ *   - Anthropic: { role: "assistant", content: "..." }
+ *   - Anthropic: { role: "assistant", content: [{ type: "text", text: "..." }, ...] }
+ *   - Anthropic: { type: "assistant", message: { content: [{ text: "..." }] } }
+ *   - Codex:     { type: "response_item", payload: { role: "assistant",
+ *                  content: [{ type: "output_text", text: "..." }] } }
+ *   - Codex:     { type: "event_msg", payload: { type: "agent_message",
+ *                  message: "..." } }
  */
 function extractAssistantText(record: unknown): string | null {
   if (record === null || typeof record !== "object") return null;
@@ -242,6 +248,22 @@ function extractAssistantText(record: unknown): string | null {
   if (r["type"] === "assistant" && typeof r["message"] === "object" && r["message"] !== null) {
     const msg = r["message"] as Record<string, unknown>;
     return flattenTextField(msg["content"]);
+  }
+
+  // Case 3: Codex response_item — payload.role === "assistant"
+  if (r["type"] === "response_item" && typeof r["payload"] === "object" && r["payload"] !== null) {
+    const p = r["payload"] as Record<string, unknown>;
+    if (p["role"] === "assistant") {
+      return flattenTextField(p["content"]);
+    }
+  }
+
+  // Case 4: Codex event_msg agent_message — payload.message is the text
+  if (r["type"] === "event_msg" && typeof r["payload"] === "object" && r["payload"] !== null) {
+    const p = r["payload"] as Record<string, unknown>;
+    if (p["type"] === "agent_message" && typeof p["message"] === "string") {
+      return p["message"];
+    }
   }
 
   return null;

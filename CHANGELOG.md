@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Codex parity — tokens, hooks, agent_text capture
+
+#### Added
+
+- Token + cost telemetry parity for Codex CLI sessions. `transcript-codex.ts` reads `event_msg/token_count` events (`info.total_token_usage`) and folds reasoning output tokens into the output bucket.
+- OpenAI / Codex pricing rows: `gpt-5-5`, `gpt-5-4`, `gpt-5-4-mini`, `gpt-5-3-codex`, `gpt-5-codex`. Family fallback in `resolvePricing` for unknown `gpt-*` ids.
+- Codex hooks adapter writes the correct schema (root `hooks` object + `matcher` + nested `hooks` array) and gates it behind `[features] codex_hooks = true`.
+- `--agent <id>` flag on `codi hook` so each hook fires under the right adapter; auto-detect chain (flag → env → fallback).
+- Project identity columns on `projects` (`git_user_name`, `git_user_email`, `host_user`, `host_machine`); migration v7.
+- `tokens_max_prefix` (largest single-message prefix) and `tokens_messages_count` (assistant API calls) on `sessions`; migrations v5 / v6.
+- Per-session metrics card (Verbosity / Efficiency / Behavior / Productivity) and dashboard aggregate metrics across sessions.
+
+#### Changed
+
+- Iron Law 4 + 7 share a single approval token: literal `ok` / `OK` / `Ok` (3 casings). Long-token list (`commit`, `push`, `merge`, `tag`, `release`) removed — brittle on typos and unicode.
+- Anthropic price table refreshed for Opus 4.7 / 4.6 / Sonnet 4.6 (1M context at standard pricing, no `-1m` tier).
+- `agent_model` on `sessions` is overwritten with the resolved id (no `COALESCE`) so stale Anthropic ids don't survive on Codex sessions.
+- Generated `.codex/config.toml` sets `suppress_unstable_features_warning = true` and `check_for_update_on_startup = false` to silence startup nags.
+
+#### Fixed
+
+- Stop-hook `extractAssistantText` only matched Anthropic transcript shape; Codex sessions persisted empty `agent_text`. Added `response_item / payload.role=assistant` and `event_msg / agent_message` cases.
+- TOML order bug in Codex adapter: root keys after a `[section]` header were parsed as section keys. `developer_instructions` now emits before any section.
+- `largest prefix` in tokens card was a cumulative sum across calls; now tracks the maximum single-message prefix.
+
 ### Workflow gates wired as advisory + cwd filter + handbook
 
 #### Added

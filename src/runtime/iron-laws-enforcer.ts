@@ -122,7 +122,13 @@ export function buildPullReminder(): string {
 const GIT_MUTATING_RE =
   /\bgit\s+(commit|push|tag|merge|reset\s+--hard|branch\s+-D|push\s+--force)\b/;
 
-const COMMIT_APPROVAL_TOKENS = ["commit", "push", "merge", "tag", "release"] as const;
+// Single canonical approval token across every gate (Iron Law 4 + 7 +
+// any future). Case-insensitive, exactly two chars. Long tokens were
+// brittle in the wild — typos like "ecommit" or words like "commitment"
+// either failed to match or false-positively matched. "ok" is the only
+// shape that survives unicode tokenisation, multi-language prompts, and
+// quick-fire CLI typing.
+const COMMIT_APPROVAL_TOKENS = ["ok"] as const;
 
 /**
  * Tokens that, when they precede an approval token within the same clause,
@@ -162,12 +168,17 @@ export interface CommitDecision {
 function hasUnnegatedApprovalToken(prompt: string): boolean {
   const clauses = prompt.split(CLAUSE_SPLIT_RE);
   for (const rawClause of clauses) {
-    const clause = rawClause.toLowerCase();
-    for (const token of COMMIT_APPROVAL_TOKENS) {
-      const idx = clause.search(new RegExp(`\\b${token}\\b`, "i"));
-      if (idx < 0) continue;
-      const before = clause.slice(0, idx);
-      if (NEGATION_TOKENS_RE.test(before)) continue; // negated, try next token
+    // Strict 3-casings list (ok / OK / Ok) — matches Iron Law 4's
+    // `isPhaseApproval` so every gate behaves identically. "oK" or
+    // "OkAY" do NOT count: codi accepts only the canonical 2-char
+    // token in one of three deliberate casings.
+    const words = rawClause.match(/\b\w+\b/g) ?? [];
+    for (let i = 0; i < words.length; i += 1) {
+      const w = words[i]!;
+      if (w !== "ok" && w !== "OK" && w !== "Ok") continue;
+      // Reject when a negation precedes the token in the same clause.
+      const before = rawClause.slice(0, rawClause.indexOf(w));
+      if (NEGATION_TOKENS_RE.test(before)) continue;
       return true;
     }
   }
@@ -185,9 +196,7 @@ export function decideGitCommand(input: CommitCheckInput): CommitDecision {
   return {
     allowed: false,
     reason:
-      "Iron Law 7: git mutation requires explicit approval (none of " +
-      COMMIT_APPROVAL_TOKENS.join(", ") +
-      " found unnegated in recent prompts)",
+      "Iron Law 7: git mutation requires explicit approval — type 'ok' (case-insensitive) in your next prompt to authorize",
   };
 }
 

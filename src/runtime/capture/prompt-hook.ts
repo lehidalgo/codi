@@ -17,7 +17,7 @@
  */
 
 import type { BrainHandle } from "../brain/index.js";
-import { ensureSession, openTurn, recordPrompt } from "./session.js";
+import { ensureProject, ensureSession, openTurn, recordPrompt } from "./session.js";
 
 export interface PromptSubmitInput {
   readonly sessionId: string;
@@ -41,9 +41,11 @@ export function processPromptSubmit(
 ): PromptSubmitResult {
   const { raw } = handle;
 
+  const projectId = deriveProjectId(input.cwd);
+  ensureProject(raw, { projectId, cwd: input.cwd });
   ensureSession(raw, {
     sessionId: input.sessionId,
-    projectId: deriveProjectId(input.cwd),
+    projectId,
     agentType: input.agentType ?? "claude-code",
     agentModel: input.agentModel,
     workingDir: input.cwd,

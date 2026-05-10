@@ -19,7 +19,14 @@
 import type { BrainHandle } from "../brain/index.js";
 import { reduce } from "../reducer.js";
 import { BrainEventLog } from "../brain-event-log.js";
-import { ensureSession, latestTurnId, openTurn, recordPrompt, recordToolCall } from "./session.js";
+import {
+  ensureProject,
+  ensureSession,
+  latestTurnId,
+  openTurn,
+  recordPrompt,
+  recordToolCall,
+} from "./session.js";
 import { ingestAgentMemory } from "./agent-memory.js";
 
 export interface ToolCallInput {
@@ -45,9 +52,11 @@ export interface ToolCallResult {
 export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): ToolCallResult {
   const { raw } = handle;
 
+  const projectId = deriveProjectId(input.cwd);
+  ensureProject(raw, { projectId, cwd: input.cwd });
   ensureSession(raw, {
     sessionId: input.sessionId,
-    projectId: deriveProjectId(input.cwd),
+    projectId,
     agentType: input.agentType ?? "claude-code",
     agentModel: input.agentModel,
     workingDir: input.cwd,

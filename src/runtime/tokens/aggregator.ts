@@ -13,6 +13,7 @@
 
 import type Database from "better-sqlite3";
 import { loadTranscriptUsage } from "./transcript.js";
+import { loadCodexTranscriptUsage, isCodexTranscriptPath } from "./transcript-codex.js";
 import { estimateSessionUsage } from "./estimator.js";
 import { resolvePricing, computeCostUsd, type ModelPricing } from "./pricing.js";
 
@@ -59,18 +60,26 @@ export function aggregateSessionUsage(
 
   // 1. Transcript-driven path.
   if (session.transcript_path) {
-    const usage = loadTranscriptUsage(session.transcript_path);
+    // Codex transcripts have a different shape; route by path.
+    const usage = isCodexTranscriptPath(session.transcript_path)
+      ? loadCodexTranscriptUsage(session.transcript_path)
+      : loadTranscriptUsage(session.transcript_path);
     if (usage) {
-      // Auto-promote to 1M-context tier when any single message's prefix
-      // exceeded the 200K default — the model id alone never tells us
-      // which tier is in use, but the observed token count does.
+      // Opus 4.7 / 4.6 / Sonnet 4.6 already include 1M context at
+      // standard pricing — no tier promotion needed. resolvePricing
+      // strips the legacy `-1m` suffix to a single canonical row.
       const baseId = usage.model ?? session.agent_model;
-      let resolved = resolvePricing(baseId);
-      if (usage.maxPrefix > resolved.pricing.contextWindow && !resolved.id.endsWith("-1m")) {
-        const promoted = resolvePricing(`${resolved.id}-1m`);
-        if (promoted.resolvedExactly) resolved = promoted;
-      }
-      const costUsd = computeCostUsd(usage, resolved.pricing);
+      const resolved = resolvePricing(baseId);
+      const costUsd = computeCostUsd(
+        {
+          input: usage.input,
+          output: usage.output,
+          cacheCreate5m: usage.cacheCreate5m,
+          cacheCreate1h: usage.cacheCreate1h || usage.cacheCreate,
+          cacheRead: usage.cacheRead,
+        },
+        resolved.pricing,
+      );
       writeSessionTotals(raw, sessionId, {
         input: usage.input,
         output: usage.output,
@@ -174,7 +183,7 @@ function writeSessionTotals(
              cost_usd              = ?,
              context_window        = ?,
              tokens_estimated      = ?,
-             agent_model           = COALESCE(agent_model, ?)
+             agent_model           = ?
          WHERE session_id = ?`,
     )
     .run(

@@ -14,6 +14,10 @@ export interface MessageUsage {
   readonly input: number;
   readonly output: number;
   readonly cacheCreate: number;
+  /** 5-minute TTL portion of cache_create (extracted from `cache_creation.ephemeral_5m_input_tokens`). */
+  readonly cacheCreate5m: number;
+  /** 1-hour TTL portion of cache_create (extracted from `cache_creation.ephemeral_1h_input_tokens`). */
+  readonly cacheCreate1h: number;
   readonly cacheRead: number;
 }
 
@@ -23,6 +27,8 @@ export interface TranscriptUsage {
   readonly input: number;
   readonly output: number;
   readonly cacheCreate: number;
+  readonly cacheCreate5m: number;
+  readonly cacheCreate1h: number;
   readonly cacheRead: number;
   /**
    * The cache_creation_input_tokens of the FIRST assistant message. This
@@ -61,11 +67,14 @@ function parseMessageUsage(line: string): MessageUsage | null {
   const msg = (env["message"] as Record<string, unknown>) ?? env;
   const usage = msg["usage"] as Record<string, unknown> | undefined;
   if (!usage) return null;
+  const creation = usage["cache_creation"] as Record<string, unknown> | undefined;
   return {
     model: (msg["model"] as string) ?? null,
     input: asInt(usage["input_tokens"]),
     output: asInt(usage["output_tokens"]),
     cacheCreate: asInt(usage["cache_creation_input_tokens"]),
+    cacheCreate5m: asInt(creation?.["ephemeral_5m_input_tokens"]),
+    cacheCreate1h: asInt(creation?.["ephemeral_1h_input_tokens"]),
     cacheRead: asInt(usage["cache_read_input_tokens"]),
   };
 }
@@ -85,6 +94,8 @@ export function loadTranscriptUsage(path: string): TranscriptUsage | null {
   let input = 0;
   let output = 0;
   let cacheCreate = 0;
+  let cacheCreate5m = 0;
+  let cacheCreate1h = 0;
   let cacheRead = 0;
   let preloadedCacheCreate = 0;
   let maxPrefix = 0;
@@ -96,6 +107,8 @@ export function loadTranscriptUsage(path: string): TranscriptUsage | null {
     input += u.input;
     output += u.output;
     cacheCreate += u.cacheCreate;
+    cacheCreate5m += u.cacheCreate5m;
+    cacheCreate1h += u.cacheCreate1h;
     cacheRead += u.cacheRead;
     const prefix = u.input + u.cacheCreate + u.cacheRead;
     if (prefix > maxPrefix) maxPrefix = prefix;
@@ -108,6 +121,8 @@ export function loadTranscriptUsage(path: string): TranscriptUsage | null {
     input,
     output,
     cacheCreate,
+    cacheCreate5m,
+    cacheCreate1h,
     cacheRead,
     preloadedCacheCreate,
     maxPrefix,

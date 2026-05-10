@@ -19,6 +19,83 @@
  */
 
 import type Database from "better-sqlite3";
+import { execFileSync } from "node:child_process";
+import { hostname, userInfo } from "node:os";
+import { basename } from "node:path";
+
+export interface EnsureProjectInput {
+  readonly projectId: string;
+  readonly cwd: string;
+}
+
+interface GitIdentity {
+  readonly name: string | null;
+  readonly email: string | null;
+  readonly remote: string | null;
+}
+
+function execGit(cwd: string, args: readonly string[]): string | null {
+  // execFileSync uses argv array — no shell, no command injection vector.
+  try {
+    const out = execFileSync("git", args, {
+      cwd,
+      stdio: ["ignore", "pipe", "ignore"],
+      encoding: "utf8",
+      timeout: 1000,
+    });
+    const v = out.trim();
+    return v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function readGitIdentity(cwd: string): GitIdentity {
+  return {
+    name: execGit(cwd, ["config", "--get", "user.name"]),
+    email: execGit(cwd, ["config", "--get", "user.email"]),
+    remote: execGit(cwd, ["remote", "get-url", "origin"]),
+  };
+}
+
+/**
+ * UPSERT the `projects` row for this cwd. First call mints the row with
+ * git identity + host user; subsequent calls touch `last_seen` so we can
+ * tell which project the dev actively works on. Failures are silent —
+ * git not installed or not a repo simply leaves the columns null.
+ */
+export function ensureProject(raw: Database.Database, input: EnsureProjectInput): void {
+  const now = Date.now();
+  const exists = raw
+    .prepare(`SELECT project_id FROM projects WHERE project_id = ?`)
+    .get(input.projectId);
+  if (exists) {
+    raw.prepare(`UPDATE projects SET last_seen = ? WHERE project_id = ?`).run(now, input.projectId);
+    return;
+  }
+  const git = readGitIdentity(input.cwd);
+  const host = userInfo().username;
+  const machine = hostname();
+  const name = basename(input.cwd) || input.projectId;
+  raw
+    .prepare(
+      `INSERT INTO projects(project_id, repo_path, git_remote, name, first_seen, last_seen,
+                             git_user_name, git_user_email, host_user, host_machine)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      input.projectId,
+      input.cwd,
+      git.remote,
+      name,
+      now,
+      now,
+      git.name,
+      git.email,
+      host,
+      machine,
+    );
+}
 
 export interface EnsureSessionInput {
   readonly sessionId: string;

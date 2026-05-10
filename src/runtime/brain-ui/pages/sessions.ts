@@ -120,6 +120,160 @@ function renderTokensCard(s: SessionRow): string {
     </section>`;
 }
 
+interface MetricsRow {
+  readonly avg_prompt_chars: number | null;
+  readonly p50_prompt_chars: number | null;
+  readonly p90_prompt_chars: number | null;
+  readonly avg_turn_duration_ms: number | null;
+  readonly tool_calls_total: number;
+  readonly tool_calls_ok: number;
+  readonly tool_calls_err: number;
+  readonly avg_tool_duration_ms: number | null;
+  readonly captures_total: number;
+}
+
+function loadMetrics(brain: BrainHandle, sessionId: string): MetricsRow {
+  const prompts = brain.raw
+    .prepare(
+      `SELECT AVG(char_count) as avg_chars, COUNT(*) as n
+       FROM prompts WHERE session_id = ?`,
+    )
+    .get(sessionId) as { avg_chars: number | null; n: number };
+
+  const promptChars = brain.raw
+    .prepare(`SELECT char_count FROM prompts WHERE session_id = ? ORDER BY char_count`)
+    .all(sessionId) as Array<{ char_count: number }>;
+  const p50 =
+    promptChars.length > 0 ? promptChars[Math.floor(promptChars.length * 0.5)]!.char_count : null;
+  const p90 =
+    promptChars.length > 0 ? promptChars[Math.floor(promptChars.length * 0.9)]!.char_count : null;
+
+  const turnDur = brain.raw
+    .prepare(
+      `SELECT AVG(duration_ms) as avg FROM turns WHERE session_id = ? AND duration_ms IS NOT NULL`,
+    )
+    .get(sessionId) as { avg: number | null };
+
+  const toolStats = brain.raw
+    .prepare(
+      `SELECT COUNT(*) as total,
+              SUM(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) as ok,
+              SUM(CASE WHEN status != 'ok' THEN 1 ELSE 0 END) as err,
+              AVG(duration_ms) as avg_dur
+       FROM tool_calls WHERE session_id = ?`,
+    )
+    .get(sessionId) as {
+    total: number;
+    ok: number | null;
+    err: number | null;
+    avg_dur: number | null;
+  };
+
+  const capStats = brain.raw
+    .prepare(`SELECT COUNT(*) as n FROM captures WHERE session_id = ? AND deleted_at IS NULL`)
+    .get(sessionId) as { n: number };
+
+  return {
+    avg_prompt_chars: prompts.avg_chars,
+    p50_prompt_chars: p50,
+    p90_prompt_chars: p90,
+    avg_turn_duration_ms: turnDur.avg,
+    tool_calls_total: toolStats.total,
+    tool_calls_ok: toolStats.ok ?? 0,
+    tool_calls_err: toolStats.err ?? 0,
+    avg_tool_duration_ms: toolStats.avg_dur,
+    captures_total: capStats.n,
+  };
+}
+
+/**
+ * Render the per-session productivity / verbosity metrics card. Numbers
+ * derive from existing tables (no new schema): prompts.char_count,
+ * tool_calls aggregates, captures count, turn durations. Token-level
+ * verbosity (avg input / avg output per call) reuses the cumulative
+ * `tokens_*` + `tokens_messages_count` columns the aggregator already
+ * populates.
+ */
+function renderMetricsCard(s: SessionRow, m: MetricsRow): string {
+  const msgs = s.tokens_messages_count ?? 0;
+  const turns = s.total_turns ?? 0;
+  const cost = s.cost_usd ?? 0;
+  const totalTokensCount = totalTokens(s);
+
+  const avgInputPerCall = msgs > 0 ? Math.round((s.tokens_input ?? 0) / msgs) : 0;
+  const avgOutputPerCall = msgs > 0 ? Math.round((s.tokens_output ?? 0) / msgs) : 0;
+  const avgCacheReadPerCall = msgs > 0 ? Math.round((s.tokens_cache_read ?? 0) / msgs) : 0;
+  const avgCostPerCall = msgs > 0 ? cost / msgs : 0;
+  const avgCostPerTurn = turns > 0 ? cost / turns : 0;
+
+  // Cache hit rate: cache_read / (cache_read + cache_create + input).
+  // Higher = more reuse, lower spend on fresh prefix tokens.
+  const denom = (s.tokens_cache_read ?? 0) + (s.tokens_cache_create ?? 0) + (s.tokens_input ?? 0);
+  const cacheHitRate = denom > 0 ? (s.tokens_cache_read ?? 0) / denom : 0;
+
+  const toolErrRate = m.tool_calls_total > 0 ? m.tool_calls_err / m.tool_calls_total : 0;
+  const toolCallsPerTurn = turns > 0 ? m.tool_calls_total / turns : 0;
+  const capturesPerTurn = turns > 0 ? m.captures_total / turns : 0;
+  const capturesPerCost = cost > 0 ? m.captures_total / cost : 0;
+
+  const fmtPct = (v: number): string => `${(v * 100).toFixed(1)}%`;
+  const fmtChars = (v: number | null): string =>
+    v === null ? "—" : v < 1000 ? String(Math.round(v)) : `${(v / 1000).toFixed(1)}k`;
+
+  const stat = (label: string, value: string, hint?: string): string => `
+    <div class="rounded border border-slate-200 bg-slate-50 p-2.5">
+      <p class="text-xs uppercase text-slate-500">${escapeHtml(label)}</p>
+      <p class="tabular-nums text-base mt-0.5">${value}</p>
+      ${hint ? `<p class="text-xs text-slate-400 mt-0.5">${hint}</p>` : ""}
+    </div>`;
+
+  return `
+    <section x-data="{ open: false }" class="rounded-lg border border-slate-200 bg-white p-4 mb-5">
+      <header class="flex items-center justify-between cursor-pointer" x-on:click="open = !open">
+        <h2 class="text-sm font-semibold">Metrics</h2>
+        <span class="text-xs text-slate-500" x-text="open ? '▾ collapse' : '▸ expand'">▸ expand</span>
+      </header>
+      <div x-show="open" x-cloak class="mt-3 space-y-3">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500 mb-2">Verbosity</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${stat("Avg human prompt", fmtChars(m.avg_prompt_chars), "chars typed")}
+            ${stat("p50 / p90 prompt", `${fmtChars(m.p50_prompt_chars)} / ${fmtChars(m.p90_prompt_chars)}`, "char distribution")}
+            ${stat("Avg input / call", fmtChars(avgInputPerCall), "non-cached input tokens")}
+            ${stat("Avg output / call", fmtChars(avgOutputPerCall), "agent reply tokens")}
+          </div>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500 mb-2">Efficiency</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${stat("Avg cache read / call", fmtChars(avgCacheReadPerCall), "context bloat indicator")}
+            ${stat("Cache hit rate", fmtPct(cacheHitRate), "reuse vs fresh")}
+            ${stat("Cost / call", `$${avgCostPerCall.toFixed(4)}`, `${msgs.toLocaleString()} calls`)}
+            ${stat("Cost / turn", turns > 0 ? `$${avgCostPerTurn.toFixed(2)}` : "—", `${turns.toLocaleString()} turns`)}
+          </div>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500 mb-2">Behavior</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${stat("Tool calls / turn", turns > 0 ? toolCallsPerTurn.toFixed(1) : "—", `${m.tool_calls_total.toLocaleString()} total`)}
+            ${stat("Tool error rate", fmtPct(toolErrRate), `${m.tool_calls_err} fail / ${m.tool_calls_total}`)}
+            ${stat("Avg tool duration", m.avg_tool_duration_ms !== null ? fmtDuration(Math.round(m.avg_tool_duration_ms)) : "—", "p50 latency")}
+            ${stat("Avg turn duration", m.avg_turn_duration_ms !== null ? fmtDuration(Math.round(m.avg_turn_duration_ms)) : "—", "wall clock")}
+          </div>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500 mb-2">Productivity</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${stat("Captures / turn", turns > 0 ? capturesPerTurn.toFixed(2) : "—", "knowledge density")}
+            ${stat("Captures / $", cost > 0 ? capturesPerCost.toFixed(2) : "—", "rules harvested per dollar")}
+            ${stat("Tokens / $", cost > 0 ? `${(totalTokensCount / cost / 1000).toFixed(1)}k` : "—", "tokens billed per dollar")}
+            ${stat("Tool calls / $", cost > 0 ? (m.tool_calls_total / cost).toFixed(1) : "—", "tool ops per dollar")}
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
 // Match the strict canonical capture marker so we can strip it from
 // agent_text without false positives. Keep in sync with markers.ts.
 const STRIP_MARKER_RE =
@@ -618,6 +772,7 @@ export function registerSessions(app: Hono, brain: BrainHandle): void {
         </div>
       </div>
       ${renderTokensCard(session)}
+      ${renderMetricsCard(session, loadMetrics(brain, id))}
       <h2 class="text-lg font-semibold mb-3">Timeline (${timeline.length} turns)</h2>
       <div>${timeline.map(renderTurnGroup).join("")}</div>`;
     return c.html(shell({ title: `Session ${id}`, active: "/sessions" }, body));

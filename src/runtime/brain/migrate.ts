@@ -195,7 +195,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -257,6 +257,19 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       // sees every Anthropic call). UI exposes the gap so the dev can
       // reconcile billing vs codi telemetry.
       `ALTER TABLE sessions ADD COLUMN tokens_messages_count INTEGER`,
+    ],
+  ],
+  [
+    7,
+    [
+      // Identify the developer who owns the brain DB. Read at session
+      // start from `git config user.name/email` and `os.userInfo()`.
+      // Multiple devs sharing one machine still get distinct rows
+      // because the project_id derives from cwd, not from user.
+      `ALTER TABLE projects ADD COLUMN git_user_name TEXT`,
+      `ALTER TABLE projects ADD COLUMN git_user_email TEXT`,
+      `ALTER TABLE projects ADD COLUMN host_user TEXT`,
+      `ALTER TABLE projects ADD COLUMN host_machine TEXT`,
     ],
   ],
 ];

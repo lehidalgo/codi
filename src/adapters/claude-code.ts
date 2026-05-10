@@ -398,7 +398,8 @@ function buildSettingsJson(
   // resolver (DEFECT-008) walks up from the project's `.codi/` and we
   // do not accidentally hit the home brain. Stdin is forwarded
   // unchanged so the codi subcommand sees the Claude Code payload.
-  const codiHook = (name: string): string => `cd ${projectRootRef} && codi hook ${name}`;
+  const codiHook = (name: string): string =>
+    `cd ${projectRootRef} && codi hook ${name} --agent claude-code`;
 
   const trackerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-tracker");
   const observerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-observer");
