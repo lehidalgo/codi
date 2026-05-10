@@ -23,6 +23,7 @@ import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, Phase, ReducedState } from "../types.js";
 import { assertLegalTransition, UnknownWorkflowTypeError } from "../workflow-graph.js";
+import { runPhaseGates, formatGateAdvisory } from "../gate-runner-bridge.js";
 
 const SYSTEM_AUTHOR: Author = { type: "system", id: "codi" };
 
@@ -136,14 +137,32 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
     }
 
     const state = reduce(events);
+    const fromPhase = proposalPayload.from_phase;
+
+    // Advisory gate run — fires the deterministic checkers configured for
+    // this workflow's `fromPhase`, persists gate_check_* events, and
+    // surfaces failures to stderr. Never blocks: the transition still
+    // completes regardless of the gate verdict.
+    const gateResult = runPhaseGates(fromPhase, {
+      cwd: process.cwd(),
+      workflowType: state.workflow_type,
+      workflowId,
+      state,
+      events,
+      log,
+    });
+    if (!gateResult.passed) {
+      process.stderr.write(`[codi gate-advisory]\n${formatGateAdvisory(gateResult)}\n`);
+    }
+
     log.append(
       workflowId,
       createEvent({
         eventType: "phase_completed",
         payload: {
-          phase: proposalPayload.from_phase,
-          duration_ms: computePhaseDuration(state, proposalPayload.from_phase),
-          gate_passed: true,
+          phase: fromPhase,
+          duration_ms: computePhaseDuration(state, fromPhase),
+          gate_passed: gateResult.passed,
         },
         author: SYSTEM_AUTHOR,
         parentEventId: lastProposed.event_id,

@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Workflow gates wired as advisory + cwd filter + handbook
+
+#### Added
+
+- `gate-runner-bridge.ts` connects the existing `gate-runner` deterministic checkers to `approveTransition`. Phase transitions now run the configured gates as advisory (no hard block).
+- `buildGateAdvisoryBlock` surfaces gate failures in the next `UserPromptSubmit` until the next approval supersedes them.
+- `[GUIDE]_workflow-handbook.md` covering decision tree, lifecycle, CLI cheatsheet, gate semantics, brain visibility, Iron Laws summary, common pitfalls, and supervision contract.
+- `gate_check_started` / `gate_check_passed` / `gate_check_failed` events now persisted on every phase transition (previously declared as event types but never emitted).
+- `BrainEventLog.getActiveWorkflowIdForCwd(cwd)` filters the active workflow by current project root.
+
+#### Changed
+
+- `approveTransition` no longer hardcodes `gate_passed: true`. The flag in the emitted `phase_completed` event reflects the real verdict from the gate run.
+- `codi workflow status` is filtered by current `cwd`. Workflows from other projects on the same machine no longer surface in this project's status output.
+- `workflow_init` payload now includes `cwd`. Manifest event schema updated to allow the optional field.
+
+#### Fixed
+
+- Gate-runner code path was unreachable in production; the 6 deterministic checkers now run on every phase transition as advisory.
+- `tests/runtime/brain-ui-pages.test.ts` captures-page test updated to match the current Alpine.js modal-confirm pattern (was asserting the deprecated `hx-delete` HTMX attribute).
+
 ### Brain UI — tokens telemetry + restore + Human/Agent layout
 
 #### Added

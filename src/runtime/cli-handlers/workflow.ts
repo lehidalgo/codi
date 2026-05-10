@@ -89,6 +89,7 @@ export function runWorkflow(opts: RunOptions): RunResult {
       workflow_type: opts.workflowType,
       task: opts.task,
       plugin_version: "0.1.0",
+      cwd: opts.cwd ?? process.cwd(),
     };
     if (opts.fromStoryId !== undefined) {
       initPayload["from_story_id"] = opts.fromStoryId;
@@ -132,7 +133,10 @@ export interface StatusResult {
 export function getStatus(opts: StatusOptions = {}): StatusResult {
   const log = BrainEventLog.open();
   try {
-    const workflowId = opts.workflowId ?? log.getActiveWorkflowId();
+    // Status is the user-facing surface — apply the cwd filter so a
+    // workflow started in another project does not appear here.
+    const cwd = opts.cwd ?? process.cwd();
+    const workflowId = opts.workflowId ?? log.getActiveWorkflowIdForCwd(cwd);
     if (!workflowId) return { active: false, state: null };
 
     const events = log.loadEvents(workflowId);

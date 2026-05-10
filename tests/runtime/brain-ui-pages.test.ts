@@ -112,7 +112,14 @@ describe("brain-ui pages render", () => {
       const html = await getText(t, "/captures");
       expect(html).toContain("<title>Captures");
       expect(html).toContain("html escaping must be on");
-      expect(html).toContain('hx-delete="/api/v1/captures/');
+      // Delete is now an Alpine.js modal-confirm pattern, dispatched via
+      // `$dispatch('delete-capture', { id, preview })`. The actual API
+      // call lives in the modal handler (`fetch('/api/v1/captures/' + id,
+      // { method: 'DELETE' })`). Assert the dispatch wiring + the API
+      // path are present in the rendered HTML.
+      expect(html).toContain("delete-capture");
+      expect(html).toContain("data-capture-id");
+      expect(html).toContain("/api/v1/captures/");
     } finally {
       t.cleanup();
     }

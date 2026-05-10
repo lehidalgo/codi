@@ -120,7 +120,7 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [{{VENDORED_DIRS_PATTERNS}}, /^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/vendor\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/, /\\.css$/, /\\.svg$/, /\\.md$/, /\\.mdx$/, /\\.txt$/, /\\.rst$/];
+const EXCLUDED = [{{VENDORED_DIRS_PATTERNS}}, /^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/vendor\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.schema\\.json$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/, /\\.css$/, /\\.svg$/, /\\.md$/, /\\.mdx$/, /\\.txt$/, /\\.rst$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {

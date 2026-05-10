@@ -11,8 +11,32 @@
  */
 
 import type Database from "better-sqlite3";
+import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
+import { resolve } from "node:path";
 import { openBrain, applyMigrations, type BrainHandle } from "./brain/index.js";
 import type { ManifestEvent } from "./types.js";
+
+function resolveProjectRoot(cwd: string): string {
+  let absolute: string;
+  try {
+    const out = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    absolute = out.trim();
+  } catch {
+    absolute = resolve(cwd);
+  }
+  // Resolve symlinks (e.g. macOS /tmp → /private/tmp) so two paths
+  // pointing at the same directory compare equal.
+  try {
+    return realpathSync(absolute);
+  } catch {
+    return absolute;
+  }
+}
 
 export class BrainWorkflowAlreadyActiveError extends Error {
   constructor(public readonly activeId: string) {
@@ -126,6 +150,32 @@ export class BrainEventLog {
     const meta = readMetadata(this.handle.raw);
     const id = typeof meta.active_id === "string" ? meta.active_id : null;
     return id && id.length > 0 ? id : null;
+  }
+
+  /**
+   * Returns the active workflow id only when its `init` payload `cwd`
+   * matches the supplied cwd (resolved through git toplevel). Workflows
+   * that predate the cwd field (no payload.cwd) fall through and return
+   * the id for back-compat. Used by `codi workflow status` so a workflow
+   * started in a different project does not appear in this project's
+   * status output.
+   */
+  getActiveWorkflowIdForCwd(cwd: string): string | null {
+    const id = this.getActiveWorkflowId();
+    if (!id) return null;
+    try {
+      const events = this.loadEvents(id);
+      const initEvent = events.find((e) => e.event_type === "init");
+      const initCwd = (initEvent?.payload as { cwd?: string } | undefined)?.cwd;
+      if (typeof initCwd !== "string" || initCwd.length === 0) {
+        return id;
+      }
+      const currentRoot = resolveProjectRoot(cwd);
+      const initRoot = resolveProjectRoot(initCwd);
+      return currentRoot === initRoot ? id : null;
+    } catch {
+      return id;
+    }
   }
 
   setActiveWorkflowId(workflowId: string): void {

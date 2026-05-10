@@ -27,11 +27,13 @@ import {
   buildContext,
   buildPromptStateBlock,
   buildCaptureReminderBlock,
+  buildGateAdvisoryBlock,
   evaluateToolCall,
   evaluatePostToolCall,
   type PostToolCall,
   type ToolCall,
 } from "../runtime/hook-logic.js";
+import { BrainEventLog } from "../runtime/brain-event-log.js";
 import {
   buildIronLawsBlock,
   buildPullReminder,
@@ -96,6 +98,7 @@ function runUserPromptSubmit(): void {
           sessionId: payload.session_id,
           prompt: payload.prompt,
           cwd: payload.cwd ?? cwd,
+          agentType: getActiveAgent(),
           ...(payload.transcript_path !== undefined
             ? { transcriptPath: payload.transcript_path }
             : {}),
@@ -112,6 +115,7 @@ function runUserPromptSubmit(): void {
   const stateBlock = buildPromptStateBlock(ctx);
   const captureBlock = buildCaptureReminderBlock();
   let ironLawsBlock = "";
+  let gateAdvisoryBlock = "";
   try {
     const handle = openBrain();
     try {
@@ -120,14 +124,17 @@ function runUserPromptSubmit(): void {
         outputMode: readPreferences(cwd).output_mode,
         gateState: readGateState(handle.raw),
       });
+      gateAdvisoryBlock = buildGateAdvisoryBlock(BrainEventLog.wrap(handle));
     } finally {
       handle.close();
     }
   } catch {
-    // Iron-laws block is advisory.
+    // Iron-laws + gate-advisory blocks are advisory.
   }
 
-  const out = [captureBlock, stateBlock, ironLawsBlock].filter((s) => s.length > 0).join("\n\n");
+  const out = [captureBlock, stateBlock, ironLawsBlock, gateAdvisoryBlock]
+    .filter((s) => s.length > 0)
+    .join("\n\n");
   if (out.length > 0) process.stdout.write(out + "\n");
   process.exit(0);
 }
@@ -180,7 +187,7 @@ async function runPreToolUse(): Promise<void> {
           if (!verdict.allowed) {
             console.error(`[codi pre-tool-use] BLOCKED (Iron Law 7): ${verdict.reason}`);
             console.error(
-              "[codi pre-tool-use] Ask the user before running this; an explicit prompt mentioning commit/push/merge/tag/release counts as approval.",
+              "[codi pre-tool-use] Ask the user to type 'ok' (case-insensitive) in their next prompt to authorize this git mutation.",
             );
             process.exit(2);
           }
@@ -292,6 +299,7 @@ function runPostToolUse(): void {
           toolName: payload.tool_name,
           toolInput: payload.tool_input,
           toolResponse: payload.tool_response,
+          agentType: getActiveAgent(),
           ...(payload.transcript_path !== undefined
             ? { transcriptPath: payload.transcript_path }
             : {}),
@@ -349,6 +357,7 @@ function runStop(): void {
       processStopHook(handle, {
         sessionId: payload.session_id,
         cwd: payload.cwd ?? process.cwd(),
+        agentType: getActiveAgent(),
         ...(payload.transcript_path !== undefined
           ? { transcriptPath: payload.transcript_path }
           : {}),
@@ -374,19 +383,62 @@ const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
   stop: runStop,
 };
 
+const VALID_AGENTS = new Set(["claude-code", "codex", "cursor", "windsurf", "cline", "copilot"]);
+const AGENT_ENV_KEY = "CODI_HOOK_AGENT";
+
+/**
+ * Resolve the calling agent for the current hook invocation. Priority:
+ *   1. `--agent <id>` flag (set by adapter-emitted hook commands)
+ *   2. `CODI_HOOK_AGENT` env var (escape hatch for custom integrations)
+ *   3. Detect from process tree env (CLAUDE_CODE_*, CODEX_*, etc.)
+ *   4. Fallback "claude-code" (historical default)
+ *
+ * The resolved id is exposed via `getActiveAgent()` so the capture
+ * orchestrators tag every row consistently.
+ */
+let activeAgent: string = "claude-code";
+
+export function getActiveAgent(): string {
+  return activeAgent;
+}
+
+function detectAgentFromEnv(): string | null {
+  if (process.env["CLAUDE_PLUGIN_ROOT"] || process.env["CLAUDE_PROJECT_DIR"]) {
+    return "claude-code";
+  }
+  if (process.env["CODEX_HOME"] || process.env["CODEX_SESSION_ID"]) {
+    return "codex";
+  }
+  return null;
+}
+
+function parseAgentFlag(args: readonly string[]): string | null {
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === "--agent" && i + 1 < args.length) return args[i + 1] ?? null;
+    if (args[i]?.startsWith("--agent=")) return args[i]!.slice("--agent=".length);
+  }
+  return null;
+}
+
 export function registerAgentHookCommand(program: Command): void {
   const hook = program
     .command("hook <name>")
     .description(
-      `Run a built-in F6/F7 agent hook against stdin payload. Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json by 'codi init'.`,
+      `Run a built-in F6/F7 agent hook against stdin payload. Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json + .codex/hooks.json by 'codi init'.`,
     )
-    .action(async (name: string) => {
+    .option("--agent <id>", "Originating agent id (claude-code | codex | cursor | ...)")
+    .action(async (name: string, opts: { agent?: string }) => {
       if (!(HOOK_NAMES as readonly string[]).includes(name)) {
         process.stderr.write(
           `[codi hook] Unknown hook name '${name}'. Valid: ${HOOK_NAMES.join(", ")}\n`,
         );
         process.exit(1);
       }
+      const flagAgent = opts.agent ?? parseAgentFlag(process.argv);
+      const envAgent = process.env[AGENT_ENV_KEY];
+      const detected = detectAgentFromEnv();
+      const resolved = flagAgent || envAgent || detected || "claude-code";
+      activeAgent = VALID_AGENTS.has(resolved) ? resolved : "claude-code";
       await DISPATCHERS[name as AgentHookName]();
     });
   void hook;

@@ -500,3 +500,73 @@ function describePendingTransition(ctx: HookContext): string | null {
     log.dispose();
   }
 }
+
+/**
+ * Iron Law-style advisory block surfacing gate failures from the most
+ * recent phase_transition_approved on the active workflow. Empty string
+ * when there is no active workflow, no approval has happened yet, or no
+ * gates failed at the most recent approval.
+ *
+ * Mirrors the shape of buildIronLawsBlock — block markers, multi-line
+ * body, suggested actions. The block stays visible until the next
+ * phase_transition_approved supersedes it.
+ *
+ * Mechanics: gate_check_failed events are written immediately before
+ * phase_transition_approved during approveTransition. We find the most
+ * recent approved event and collect the contiguous gate_check_failed
+ * events that precede it (the "burst" of gate output for that approval).
+ */
+export function buildGateAdvisoryBlock(log: BrainEventLog): string {
+  try {
+    const workflowId = log.getActiveWorkflowId();
+    if (!workflowId) return "";
+    const events = log.loadEvents(workflowId);
+
+    let latestApprovedIdx = -1;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      if (events[i]?.event_type === "phase_transition_approved") {
+        latestApprovedIdx = i;
+        break;
+      }
+    }
+    if (latestApprovedIdx < 0) return "";
+
+    // Walk backwards from the approved event, collecting contiguous gate
+    // events for that approval. Stop at the first event that is not part
+    // of the gate burst (phase_started, scope_*, etc.).
+    const failures: typeof events = [];
+    for (let i = latestApprovedIdx - 1; i >= 0; i -= 1) {
+      const t = events[i]?.event_type;
+      if (t === "gate_check_failed") {
+        failures.unshift(events[i]!);
+        continue;
+      }
+      if (t === "gate_check_started" || t === "gate_check_passed" || t === "phase_completed") {
+        continue;
+      }
+      break;
+    }
+    if (failures.length === 0) return "";
+
+    const lines: string[] = [
+      "<gate-advisory>",
+      "Phase gates flagged the following at the most recent approve. Advisory — transition was approved by the developer; act on these before the next transition.",
+    ];
+    for (const ev of failures) {
+      const p = ev.payload as {
+        check_id?: string;
+        reason?: string;
+        suggested_action?: string;
+      };
+      const id = p.check_id ?? "(unknown)";
+      lines.push(`[${id}] ${p.reason ?? ""}`);
+      if (p.suggested_action && p.suggested_action.length > 0) {
+        lines.push(`  → ${p.suggested_action}`);
+      }
+    }
+    lines.push("</gate-advisory>");
+    return lines.join("\n");
+  } catch {
+    return "";
+  }
+}

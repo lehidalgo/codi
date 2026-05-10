@@ -111,6 +111,10 @@
               "type": "string",
               "pattern": "^US-\\d{3,}$",
               "description": "Optional UserStory id this workflow run is delivering. Set by --from-story flag."
+            },
+            "cwd": {
+              "type": "string",
+              "description": "Project root at workflow init time. Filters workflow visibility per project."
             }
           },
           "required": ["workflow_id", "workflow_type", "task", "plugin_version"],
