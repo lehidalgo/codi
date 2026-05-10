@@ -25,7 +25,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 13
+version: 14
 ---
 
 # {{name}} — Artifact Contributor
@@ -174,4 +174,30 @@ failures, and the source-layer \\\`${PROJECT_CLI} generate\\\` caveat.
 - **${PROJECT_NAME}-preset-creator** — Create and package a preset before contributing it
 - **${PROJECT_NAME}-dev-operations** — Clean + reinstall + regenerate for source-layer edits
 - **${PROJECT_NAME}-commit** — Commit the PR branch when contributing manually
+
+---
+
+## Mode: REPORT-DRIVEN (consume team consolidation report — meta-pipeline upstream)
+
+**Trigger:** user invokes the skill with a path to a \\\`[REPORT]_team-consolidation*.md\\\` file and asks to open upstream PRs for approved meta-pipeline findings.
+
+### REPORT-DRIVEN Steps
+
+1. **Locate the report.** Use the path the user provided, or scan \\\`docs/*[REPORT]_team-consolidation*.md\\\` and pick the most recent.
+2. **Read the report.** Parse free-form markdown. Find the \\\`Meta-pipeline findings\\\` section.
+3. **Filter for upstream candidates.** For each finding under that section, look at the \\\`Consensus:\\\` block and identify items with \\\`[x] APPROVED\\\`. Within those, look at the \\\`Target meta-skill:\\\` line — items marked \\\`artifact-contributor (upstream candidate)\\\` are in scope. Items that say \\\`local override\\\` are out of scope (the lead applies those locally via \\\`refine-rules\\\` or manual edit).
+4. **Group by target artifact.** A single finding usually targets one ${PROJECT_NAME} upstream artifact (e.g., \\\`${PROJECT_NAME}-commit\\\` skill, \\\`${PROJECT_NAME}-output-discipline\\\` rule). Collect all approved findings per target.
+5. **For each target artifact, prepare an upstream PR:**
+   - Branch name: \\\`team-consolidation/<artifact-name>-<date>\\\`
+   - Commit message: derived from the proposed action in the finding
+   - Diff: the proposed change as shown in the finding (or paraphrased if not shown literally)
+   - PR body: includes the verbatim evidence excerpts and a link/reference to the report file
+6. **Use the existing PR-opening logic** (manual or GitHub MCP — see \\\`\${CLAUDE_SKILL_DIR}[[/references/manual-pr.md]]\\\` and \\\`\${CLAUDE_SKILL_DIR}[[/references/github-mcp.md]]\\\`). The intake step is the only new piece; PR creation itself is unchanged.
+7. **After PR creation.** Update the report's Decisions log section with the PR URL for traceability.
+
+### Skip When (REPORT-DRIVEN)
+
+- The report's \\\`Meta-pipeline findings\\\` section is empty or has zero APPROVED upstream-candidate items.
+- The lead is not authenticated to open PRs against \\\`${PROJECT_REPO}\\\`.
+- A given finding's proposed action is ambiguous and would require discovery work — skip it, log a note.
 `;

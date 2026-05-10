@@ -146,16 +146,6 @@ describe("brain-ui pages render", () => {
     }
   });
 
-  it("proposals page renders the trash toggle", async () => {
-    const t = tmpFixture();
-    try {
-      const html = await getText(t, "/proposals");
-      expect(html).toContain("Proposals");
-    } finally {
-      t.cleanup();
-    }
-  });
-
   it("settings page renders project + brain sections", async () => {
     const t = tmpFixture();
     try {

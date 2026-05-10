@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Team Consolidation workflow + legacy consolidate retire
+
+#### Added
+
+- New workflow `team-consolidation` — agent-driven cross-dev brain analysis producing a consensus-candidate markdown report. Use `codi run team-consolidation` to start. The workflow reads N brain.db files from a shared directory, lets the code agent analyze them in sequential or parallel mode, and writes a free-form markdown report at `docs/YYYYMMDD_HHMMSS_[REPORT]_team-consolidation.md` for async team consensus review.
+- New companion skill `codi-team-consolidation-workflow` with 4 phase docs (intent, collect, analyze, consolidate) + a brain DB schema reference.
+- `refine-rules` skill — new `REPORT-DRIVEN` mode (v8) that consumes team consolidation reports and applies APPROVED domain findings to `.codi/rules/`.
+- `artifact-contributor` skill — new `REPORT-DRIVEN` mode (v14) that opens upstream PRs from APPROVED meta-pipeline findings.
+
+#### Removed
+
+- Legacy auto-detection consolidation pipeline at `src/runtime/consolidate/` — replaced by the agent-driven `team-consolidation` workflow.
+- Pattern detectors P1 through P9 and the LLM enrichment loop in `runConsolidation`.
+- `proposals` table from the brain DB schema (dropped in v10 migration).
+- `/proposals` page and navigation entry in the brain UI.
+- `/api/v1/consolidation/*` and `/api/v1/proposals/*` endpoints from the brain UI server.
+- `src/runtime/llm/` LLM provider abstraction (orphan after consolidate removal — only consumer was the runner).
+- `src/templates/consolidation/` prompt templates (P1-P9 LLM prompts).
+
+#### Deprecated
+
+- `codi brain export` command — now prints a deprecation message and exits cleanly. Will be removed in the next minor release.
+
+#### Migration notes
+
+- Brain DBs migrate automatically on first open: schema version bumps from 9 to 10; the `proposals` table is dropped via `applyMigrations`. Idempotent on DBs without the table (fresh DBs never create it).
+- Teams that scripted `codi brain export` should switch to `codi run team-consolidation` and consume the generated `[REPORT]_team-consolidation.md`.
+
 ### Workflow-first skills optimization
 
 #### Added

@@ -242,6 +242,10 @@ export {
   staticDir as subagentOrchestrationStaticDir,
 } from "./subagent-orchestration/index.js";
 export {
+  template as teamConsolidationWorkflow,
+  staticDir as teamConsolidationWorkflowStaticDir,
+} from "./team-consolidation-workflow/index.js";
+export {
   template as verifyEvidence,
   staticDir as verifyEvidenceStaticDir,
 } from "./verify-evidence/index.js";

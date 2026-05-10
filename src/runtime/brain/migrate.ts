@@ -117,29 +117,6 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
     ts          INTEGER NOT NULL,
     payload     TEXT
   )`,
-  // Sprint 5: consolidation pipeline output. Proposals are reviewer-facing
-  // diffs against existing artifacts (or new artifact suggestions). Status
-  // transitions: pending -> accepted | rejected. evidence_json is a JSON
-  // array of capture_ids / artifact_usage_ids that justified the proposal.
-  `CREATE TABLE IF NOT EXISTS proposals (
-    proposal_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    pattern_code    TEXT NOT NULL,
-    proposal_type   TEXT NOT NULL,
-    artifact_kind   TEXT,
-    artifact_name   TEXT,
-    title           TEXT NOT NULL,
-    rationale       TEXT NOT NULL,
-    patch_json      TEXT,
-    evidence_json   TEXT NOT NULL,
-    status          TEXT NOT NULL DEFAULT 'pending',
-    created_at      INTEGER NOT NULL,
-    decided_at      INTEGER,
-    decision_reason TEXT
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_proposals_status_created
-   ON proposals(status, created_at DESC)`,
-  `CREATE INDEX IF NOT EXISTS idx_proposals_pattern
-   ON proposals(pattern_code)`,
   `CREATE INDEX IF NOT EXISTS idx_sessions_project_started   ON sessions(project_id, started_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_captures_type_session      ON captures(type, session_id)`,
   `CREATE INDEX IF NOT EXISTS idx_captures_session_ts        ON captures(session_id, ts)`,
@@ -198,7 +175,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 9;
+export const CURRENT_SCHEMA_VERSION = 10;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -219,9 +196,9 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
     3,
     [
       `ALTER TABLE captures ADD COLUMN deleted_at INTEGER`,
-      `ALTER TABLE proposals ADD COLUMN deleted_at INTEGER`,
       `CREATE INDEX IF NOT EXISTS idx_captures_deleted_at ON captures(deleted_at)`,
-      `CREATE INDEX IF NOT EXISTS idx_proposals_deleted_at ON proposals(deleted_at)`,
+      // proposals.deleted_at + idx_proposals_deleted_at intentionally omitted —
+      // the proposals table is dropped entirely in v10.
     ],
   ],
   [
@@ -292,6 +269,20 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       // sorts that scale with table size.
       `CREATE INDEX IF NOT EXISTS idx_workflow_runs_status_started ON workflow_runs(status, started_at DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_prompts_session_pid_desc ON prompts(session_id, prompt_id DESC)`,
+    ],
+  ],
+  [
+    10,
+    [
+      // Drop the legacy consolidation pipeline storage. The auto-detection
+      // P1-P9 runner + proposals table + /proposals UI page were retired
+      // in favor of the agent-driven team-consolidation workflow that
+      // produces a markdown report consumed by existing meta-skills.
+      // Idempotent via DROP IF EXISTS.
+      `DROP INDEX IF EXISTS idx_proposals_status_created`,
+      `DROP INDEX IF EXISTS idx_proposals_pattern`,
+      `DROP INDEX IF EXISTS idx_proposals_deleted_at`,
+      `DROP TABLE IF EXISTS proposals`,
     ],
   ],
 ];

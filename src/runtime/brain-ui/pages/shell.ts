@@ -15,7 +15,6 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/captures", label: "Captures" },
   { href: "/tool-calls", label: "Tool calls" },
   { href: "/workflows", label: "Workflows" },
-  { href: "/proposals", label: "Proposals" },
   { href: "/artifacts", label: "Artifacts" },
   { href: "/settings", label: "Settings" },
 ];

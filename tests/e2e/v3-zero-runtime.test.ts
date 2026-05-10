@@ -44,7 +44,6 @@ import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { reduce } from "#src/runtime/reducer.js";
 import { createEvent } from "#src/runtime/event-factory.js";
 import { runDeterministicCheck } from "#src/runtime/gate-runner.js";
-import { runConsolidation } from "#src/runtime/consolidate/index.js";
 import {
   decideGitCommand,
   isPhaseApproval,
@@ -123,14 +122,14 @@ describe("S1 — schema migration round-trip", { retry: SUITE_RETRY }, () => {
 // ─── S2 — Seeder idempotency ────────────────────────────────────────────────
 
 describe("S2 — workflow seeder idempotency", { retry: SUITE_RETRY }, () => {
-  it("seeds 5 built-in YAMLs and preserves user-managed rows on re-seed", () => {
+  it("seeds 7 built-in YAMLs and preserves user-managed rows on re-seed", () => {
     withHandle((h) => {
       const built = readBuiltinDefinitions();
       seedWorkflowDefinitions(h.raw, built);
       const rows = h.raw
         .prepare(`SELECT id, managed_by FROM workflow_definitions ORDER BY id`)
         .all() as { id: string; managed_by: string }[];
-      expect(rows).toHaveLength(5);
+      expect(rows).toHaveLength(7);
       expect(rows.every((r) => r.managed_by === "codi")).toBe(true);
 
       // Promote one row to user-managed.
@@ -442,67 +441,6 @@ describe("S6 — gate checks against real evidence", { retry: SUITE_RETRY }, () 
   });
 });
 
-// ─── S8 — P9 detector end-to-end (F10) ──────────────────────────────────────
-
-describe("S8 — P9 detector through runConsolidation", { retry: SUITE_RETRY }, () => {
-  it("OBSERVATION captures naming installed artifacts → P9 proposals", async () => {
-    withHandle((h) => {
-      ensureSession(h.raw, {
-        sessionId: "s",
-        projectId: "p",
-        agentType: "claude-code",
-        workingDir: dir,
-      });
-      const p = recordPrompt(h.raw, { sessionId: "s", text: "audit" });
-      const turnId = openTurn(h.raw, {
-        sessionId: "s",
-        promptId: p.promptId,
-        turnNo: p.turnNo,
-      });
-      const insert = h.raw.prepare(
-        `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker)
-         VALUES (?, ?, ?, ?, 'OBSERVATION', ?, ?)`,
-      );
-      const now = Date.now();
-      // 3 captures naming codi-commit (above threshold)
-      for (let i = 0; i < 3; i += 1) {
-        insert.run(
-          "s",
-          p.promptId,
-          turnId,
-          now,
-          `codi-commit trigger-miss ${i}`,
-          `|OBSERVATION: "codi-commit trigger-miss ${i}"|`,
-        );
-      }
-      // 2 captures naming codi-testing (below threshold)
-      for (let i = 0; i < 2; i += 1) {
-        insert.run(
-          "s",
-          p.promptId,
-          turnId,
-          now,
-          `codi-testing outdated ${i}`,
-          `|OBSERVATION: "codi-testing outdated ${i}"|`,
-        );
-      }
-    });
-
-    const result = await withHandle(async (h) => {
-      return await runConsolidation(h.raw, {
-        installedSkills: ["codi-commit"],
-        installedRules: ["codi-testing"],
-        existingRuleKeywords: [],
-        minEvidence: 3,
-      });
-    });
-
-    const p9 = result.proposals.filter((p) => p.pattern === "P9");
-    expect(p9).toHaveLength(1);
-    expect(p9[0]?.title).toContain("codi-commit");
-  });
-});
-
 // ─── S9 — Brain-backed compactor (F11) ──────────────────────────────────────
 
 describe("S9 — compactWorkflows end-to-end", { retry: SUITE_RETRY }, () => {
@@ -625,7 +563,7 @@ describe("CROSS — full user flow via runtime handlers", { retry: SUITE_RETRY }
 // ─── S12 — Dist asset packaging ─────────────────────────────────────────────
 
 describe("S12 — dist/ asset packaging", { retry: SUITE_RETRY }, () => {
-  it("dist/ ships the schemas, workflow YAMLs, and consolidation prompt templates", () => {
+  it("dist/ ships the schemas and workflow YAMLs", () => {
     const root = process.cwd();
     expect(existsSync(join(root, "dist", "cli.js"))).toBe(true);
     expect(existsSync(join(root, "dist", "schemas", "runtime", "manifest-event.schema.json"))).toBe(
@@ -633,9 +571,7 @@ describe("S12 — dist/ asset packaging", { retry: SUITE_RETRY }, () => {
     );
     expect(existsSync(join(root, "dist", "templates", "workflows", "feature.yaml"))).toBe(true);
     expect(
-      existsSync(
-        join(root, "dist", "templates", "consolidation", "p9-artifact-observation.md.tmpl"),
-      ),
+      existsSync(join(root, "dist", "templates", "workflows", "team-consolidation.yaml")),
     ).toBe(true);
   });
 });

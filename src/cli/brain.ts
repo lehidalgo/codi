@@ -14,8 +14,7 @@ import {
   DEFAULT_BRAIN_UI_PORT,
   probeHealthz,
 } from "../runtime/brain-ui/index.js";
-import { openBrain, applyMigrations, defaultBrainPath } from "../runtime/brain/index.js";
-import { generatePackage, packageToJson } from "../runtime/consolidate/index.js";
+import { openBrain, applyMigrations } from "../runtime/brain/index.js";
 import {
   ingestMemoryFile,
   SUPPORTED_AGENT_TYPES,
@@ -193,27 +192,18 @@ interface BrainExportFlags {
 }
 
 export async function brainExportHandler(
-  flags: BrainExportFlags,
+  _flags: BrainExportFlags,
 ): Promise<CommandResult<BrainExportData>> {
   const log = Logger.getInstance();
-  const out = flags.out ?? "codi-consolidation-package.json";
-  const handle = openBrain({ dbPath: defaultBrainPath() });
-  try {
-    applyMigrations(handle.raw);
-    const manifest = generatePackage(handle.raw);
-    const text = packageToJson(manifest);
-    const fs = await import("node:fs");
-    fs.writeFileSync(out, text);
-    log.info(`Wrote ${manifest.counts.total} accepted proposals → ${out}`);
-    return createCommandResult({
-      success: true,
-      command: "brain export",
-      data: { path: out, proposalsExported: manifest.counts.total },
-      exitCode: EXIT_CODES.SUCCESS,
-    });
-  } finally {
-    handle.close();
-  }
+  log.warn(
+    "`codi brain export` is deprecated. The legacy consolidation pipeline has been removed. Use the team-consolidation workflow instead: `codi run team-consolidation`.",
+  );
+  return createCommandResult({
+    success: true,
+    command: "brain export",
+    data: { path: "", proposalsExported: 0 },
+    exitCode: EXIT_CODES.SUCCESS,
+  });
 }
 
 // ─── Retroactive memory ingestion ─────────────────────────────────────────

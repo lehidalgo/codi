@@ -1,0 +1,30 @@
+id: team-consolidation
+name: Team Consolidation
+description: Cross-dev brain analysis producing a consensus-candidate report for iterative artifact improvement
+version: 1
+phases:
+  intent:
+    gates: [scope_described, mode_chosen, brains_path_known]
+    next: [collect, abandoned]
+    chains: []
+  collect:
+    gates: [brains_listed, dev_layout_validated]
+    next: [analyze, abandoned]
+    chains: []
+  analyze:
+    gates: [per_dev_findings_done]
+    next: [consolidate, abandoned]
+    chains: []
+  consolidate:
+    gates: [report_written]
+    next: [done, abandoned]
+    chains: []
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  agent_driven: true
+  produces_document: true

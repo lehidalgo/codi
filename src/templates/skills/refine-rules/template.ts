@@ -27,12 +27,12 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # {{name}} — Review and Refine Rules
 
-Two modes on one pipeline:
+Three modes on one pipeline:
 
 | Mode | Trigger | Output | Modifies rules? |
 |------|---------|--------|-----------------|
@@ -175,4 +175,30 @@ Check the current rule content against the suggestion. If already addressed, mar
 - **${PROJECT_NAME}-rule-creator** — Create entirely new rules (when observations suggest gaps)
 - **${PROJECT_NAME}-skill-creator** — Refine or create new skills
 - **${PROJECT_NAME}-dev-operations** — General artifact management
+
+---
+
+## Mode: REPORT-DRIVEN (consume team consolidation report)
+
+**Trigger:** user invokes the skill with a path to a \\\`[REPORT]_team-consolidation*.md\\\` file, or the user asks to "apply the approved rules from the team consolidation report" / "process the team consolidation findings".
+
+### REPORT-DRIVEN Steps
+
+1. **Locate the report.** If the user provided a path, use it. Otherwise, list \\\`docs/*[REPORT]_team-consolidation*.md\\\` and ask which to process (default: most recent).
+2. **Read the report.** Parse free-form markdown using your own intelligence — there is no formal schema. Find sections labeled \\\`Domain findings\\\`. For each finding (header \\\`### D-N\\\` or similar), look at the \\\`Consensus:\\\` section and identify items where \\\`[x] APPROVED\\\` is marked.
+3. **Filter for refine-rules scope.** Within APPROVED items, look at the \\\`Target meta-skill:\\\` line. Only process items whose target is \\\`refine-rules\\\` (or unspecified — default to refine-rules for domain rule items).
+4. **Build internal feedback structure.** For each filtered item, construct an in-memory feedback shape equivalent to a \\\`${PROJECT_DIR}/feedback/*.json\\\` entry: \\\`{ artifactName, category, observation, severity, evidence, proposedChange }\\\`. Use the report's evidence excerpts and proposed action.
+5. **Run the existing REFINE pipeline** on the synthesized feedback structure. Use the same one-at-a-time approval flow: present each item, accept/skip/edit, edit \\\`${PROJECT_DIR}/rules/<name>.md\\\`, then move to the next.
+6. **Optional clarity check.** If a finding lacks enough context to act on, query the brain DBs at the path in the report header (\\\`Brains directory:\\\` field) using \\\`sqlite3 -readonly\\\`. The schema reference in \\\`team-consolidation-workflow/references/schema-reference.md\\\` documents every table.
+7. **After applying.** Run \\\`${PROJECT_CLI} generate\\\` to propagate changes to per-agent dirs.
+
+### Output Format
+
+Same as REFINE mode. The report path is logged at the top of each session so the team can trace which report drove which changes.
+
+### Skip When (REPORT-DRIVEN)
+
+- No \\\`[REPORT]_team-consolidation*.md\\\` files exist in \\\`docs/\\\` and the user did not provide a path → fall back to existing REFINE mode using \\\`${PROJECT_DIR}/feedback/\\\`.
+- The report has zero APPROVED items in the \\\`refine-rules\\\` scope → tell the user there is nothing to apply, suggest re-reviewing the report for consensus.
+- The report itself was never reviewed (no \\\`[x]\\\` marks anywhere) → tell the user consensus is the prerequisite; do not apply unilaterally.
 `;

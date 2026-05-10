@@ -281,12 +281,4 @@ describe("S12 — dist/ asset bundling", { timeout: SUITE_TIMEOUT }, () => {
       expect(existsSync(join(REPO, "dist", "templates", "workflows", f))).toBe(true);
     }
   });
-
-  it("ships consolidation prompt templates including the new P9 one", () => {
-    expect(
-      existsSync(
-        join(REPO, "dist", "templates", "consolidation", "p9-artifact-observation.md.tmpl"),
-      ),
-    ).toBe(true);
-  });
 });

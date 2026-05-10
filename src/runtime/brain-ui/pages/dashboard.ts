@@ -52,11 +52,6 @@ function counts(brain: BrainHandle): CountRow[] {
       value: c("SELECT COUNT(*) as n FROM workflow_runs"),
       href: "/workflows",
     },
-    {
-      label: "Proposals",
-      value: c("SELECT COUNT(*) as n FROM proposals WHERE deleted_at IS NULL"),
-      href: "/proposals",
-    },
     { label: "Prompts", value: c("SELECT COUNT(*) as n FROM prompts"), muted: true },
     { label: "Turns", value: c("SELECT COUNT(*) as n FROM turns"), muted: true },
     {

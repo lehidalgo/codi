@@ -107,6 +107,7 @@ export const WORKFLOW_TYPES = [
   "migration",
   "project",
   "quick",
+  "team-consolidation",
 ] as const;
 
 export type WorkflowType = (typeof WORKFLOW_TYPES)[number];

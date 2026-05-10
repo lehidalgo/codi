@@ -19,6 +19,7 @@ const TYPE_PREFIX: Record<WorkflowType, string> = {
   migration: "mig",
   project: "proj",
   quick: "quick",
+  "team-consolidation": "team",
 };
 
 const MAX_SLUG_LENGTH = 30;

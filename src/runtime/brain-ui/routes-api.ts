@@ -19,22 +19,11 @@ import type { Hono, Context } from "hono";
 import path from "node:path";
 import { homedir } from "node:os";
 import type { BrainHandle } from "../brain/index.js";
-import {
-  listProposals,
-  getProposal,
-  decideProposal,
-  generatePackage,
-  runConsolidation,
-  type ProposalStatus,
-  type RunContext,
-} from "../consolidate/index.js";
-import { getProvider, LlmConfigError } from "../llm/index.js";
 import { restoreBackup, restoreFromBackupDir } from "#src/core/backup/backup-manager.js";
 import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR } from "#src/constants.js";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 1000;
-const VALID_PROPOSAL_STATUSES: readonly ProposalStatus[] = ["pending", "accepted", "rejected"];
 
 export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   app.get("/api/v1/projects", (c: Context) => {
@@ -175,123 +164,6 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
     return c.json({ data: rows });
   });
 
-  // ─── Sprint 5 — proposals ────────────────────────────────────────────────
-
-  app.get("/api/v1/proposals", (c: Context) => {
-    const status = c.req.query("status");
-    const filter =
-      status && (VALID_PROPOSAL_STATUSES as readonly string[]).includes(status)
-        ? (status as ProposalStatus)
-        : undefined;
-    const data = listProposals(brain.raw, {
-      status: filter,
-      limit: boundedLimit(c),
-    });
-    return c.json({ data });
-  });
-
-  app.get("/api/v1/proposals/:id", (c: Context) => {
-    const id = Number(c.req.param("id"));
-    if (!Number.isFinite(id)) {
-      return c.json({ error: { code: "bad_id", message: "id must be a number" } }, 400);
-    }
-    const p = getProposal(brain.raw, id);
-    if (!p) {
-      return c.json({ error: { code: "not_found", message: "proposal not found" } }, 404);
-    }
-    return c.json({ data: p });
-  });
-
-  app.post("/api/v1/proposals/:id/accept", async (c: Context) => {
-    const id = Number(c.req.param("id"));
-    if (!Number.isFinite(id)) {
-      return c.json({ error: { code: "bad_id", message: "id must be a number" } }, 400);
-    }
-    const body = (await c.req.json().catch(() => ({}))) as { reason?: string };
-    const result = decideProposal(brain.raw, {
-      proposalId: id,
-      status: "accepted",
-      reason: body.reason,
-    });
-    if (!result.ok && result.error === "not_found") {
-      return c.json({ error: { code: "not_found", message: "proposal not found" } }, 404);
-    }
-    if (!result.ok && result.error === "already_decided") {
-      return c.json(
-        { error: { code: "already_decided", message: "proposal already decided" } },
-        409,
-      );
-    }
-    return c.json({ data: result.proposal });
-  });
-
-  app.post("/api/v1/proposals/:id/reject", async (c: Context) => {
-    const id = Number(c.req.param("id"));
-    if (!Number.isFinite(id)) {
-      return c.json({ error: { code: "bad_id", message: "id must be a number" } }, 400);
-    }
-    const body = (await c.req.json().catch(() => ({}))) as { reason?: string };
-    const result = decideProposal(brain.raw, {
-      proposalId: id,
-      status: "rejected",
-      reason: body.reason,
-    });
-    if (!result.ok && result.error === "not_found") {
-      return c.json({ error: { code: "not_found", message: "proposal not found" } }, 404);
-    }
-    if (!result.ok && result.error === "already_decided") {
-      return c.json(
-        { error: { code: "already_decided", message: "proposal already decided" } },
-        409,
-      );
-    }
-    return c.json({ data: result.proposal });
-  });
-
-  // ─── Stage 5 — package + consolidation runner (Sprint 5.b) ───────────────
-
-  app.get("/api/v1/consolidation/package", (c: Context) => {
-    const manifest = generatePackage(brain.raw);
-    return c.json({ data: manifest });
-  });
-
-  app.post("/api/v1/consolidation/run", async (c: Context) => {
-    const body = (await c.req.json().catch(() => ({}))) as Partial<RunContext>;
-    const ctx: RunContext = {
-      installedSkills: body.installedSkills ?? [],
-      installedRules: body.installedRules ?? [],
-      existingRuleKeywords: body.existingRuleKeywords ?? [],
-      knownContradictions: body.knownContradictions,
-      sinceTs: body.sinceTs,
-      minEvidence: body.minEvidence,
-    };
-    const result = await runConsolidation(brain.raw, ctx);
-    return c.json({ data: result });
-  });
-
-  // Mode A — agent-driven: server returns prompt+data; agent runs LLM
-  // externally and POSTs back the structured response.
-  app.post("/api/v1/consolidation/run-with-agent", async (c: Context) => {
-    const body = (await c.req.json().catch(() => ({}))) as Partial<RunContext>;
-    const ctx: RunContext = {
-      installedSkills: body.installedSkills ?? [],
-      installedRules: body.installedRules ?? [],
-      existingRuleKeywords: body.existingRuleKeywords ?? [],
-      sinceTs: body.sinceTs,
-      minEvidence: body.minEvidence,
-    };
-    const result = await runConsolidation(brain.raw, ctx);
-    return c.json({
-      data: result,
-      mode: "agent",
-      next: "GET /api/v1/proposals?status=pending — review and POST accept/reject decisions",
-    });
-  });
-
-  // Mode B — server-side LLM (Item 6): requires CODI_LLM_PROVIDER + the
-  // matching API key env var. The selector throws LlmConfigError when no
-  // key is configured; surfaced as 400 so the caller can fall back to
-  // /run-with-agent without crashing.
   // ─── Captures CRUD (Sprint 1 — UI editor) ─────────────────────────────────
 
   app.get("/api/v1/captures/:id", (c: Context) => {
@@ -387,38 +259,6 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       )
       .run(Date.now(), ...body.ids);
     return c.json({ data: { deleted: result.changes } });
-  });
-
-  // ─── Proposals soft-delete (Sprint 1) ─────────────────────────────────────
-
-  app.delete("/api/v1/proposals/:id", (c: Context) => {
-    const id = Number(c.req.param("id"));
-    if (!Number.isFinite(id)) {
-      return c.json({ error: { code: "bad_id" } }, 400);
-    }
-    const result = brain.raw
-      .prepare(`UPDATE proposals SET deleted_at = ? WHERE proposal_id = ? AND deleted_at IS NULL`)
-      .run(Date.now(), id);
-    if (result.changes === 0) {
-      return c.json({ error: { code: "not_found_or_already_deleted" } }, 404);
-    }
-    return c.body("", 200, { "content-type": "text/html" });
-  });
-
-  app.post("/api/v1/proposals/:id/restore", (c: Context) => {
-    const id = Number(c.req.param("id"));
-    if (!Number.isFinite(id)) {
-      return c.json({ error: { code: "bad_id" } }, 400);
-    }
-    const result = brain.raw
-      .prepare(
-        `UPDATE proposals SET deleted_at = NULL WHERE proposal_id = ? AND deleted_at IS NOT NULL`,
-      )
-      .run(id);
-    if (result.changes === 0) {
-      return c.json({ error: { code: "not_found_or_not_deleted" } }, 404);
-    }
-    return c.body("", 200, { "content-type": "text/html" });
   });
 
   // ─── Dashboard metrics + CSV export ───────────────────────────────────────
@@ -534,47 +374,6 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
     } catch (cause) {
       return c.json({ error: { code: "restore_failed", message: String(cause) } }, 400);
     }
-  });
-
-  // ─── Server-side LLM consolidation (existing) ─────────────────────────────
-
-  app.post("/api/v1/consolidation/run-with-llm", async (c: Context) => {
-    let provider;
-    try {
-      provider = await getProvider();
-    } catch (e) {
-      if (e instanceof LlmConfigError) {
-        return c.json(
-          {
-            error: {
-              code: "llm_not_configured",
-              message: e.message,
-              hint: "set CODI_LLM_PROVIDER + the matching API key, or POST /run-with-agent instead",
-            },
-          },
-          400,
-        );
-      }
-      throw e;
-    }
-    const body = (await c.req.json().catch(() => ({}))) as Partial<RunContext>;
-    const ctx: RunContext = {
-      installedSkills: body.installedSkills ?? [],
-      installedRules: body.installedRules ?? [],
-      existingRuleKeywords: body.existingRuleKeywords ?? [],
-      knownContradictions: body.knownContradictions,
-      sinceTs: body.sinceTs,
-      minEvidence: body.minEvidence,
-      llmProvider: provider,
-      dryRun: body.dryRun,
-    };
-    const result = await runConsolidation(brain.raw, ctx);
-    return c.json({
-      data: result,
-      mode: "llm",
-      provider: provider.id,
-      model: provider.defaultModel,
-    });
   });
 }
 
