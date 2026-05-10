@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Brain UI — tokens telemetry + restore + Human/Agent layout
+
+#### Added
+
+- **Token + cost telemetry per session** sourced from the Claude Code transcript JSONL (input / output / cache_create / cache_read / pre-loaded / largest single-message prefix) with cost computed from a local price table.
+- **`gpt-tokenizer` fallback** for sessions without a transcript; rows are flagged `estimated`.
+- **Auto-promote to 1M context tier** when the largest observed prefix exceeds 200K tokens, even if the model id does not carry the `-1m` suffix.
+- **`/tool-call/:id` and `/capture/:id`** detail pages with anchor links from the session timeline.
+- **Backup detail pages** (`/backup/local/:ts` and `/backup/archive/:hash/:ts`) — show manifest, file list, total size, and a Restore action.
+- **Restore endpoints**: `POST /api/v1/backups/local/:ts/restore` and `POST /api/v1/backups/archive/:hash/:ts/restore` overlay files from the snapshot manifest onto the project root.
+- **Reconciliation banner** on session detail showing the gap between codi-captured turns and assistant API calls in the transcript.
+- **Per-tool description as inline title** (extracted from `input.description`) on the session timeline, the tool-calls list, and the tool-call detail header.
+
+#### Changed
+
+- **Session timeline restructured** into Human + Agent blocks per turn, with tool calls and captures rendered as compact sub-blocks inside the agent card. Tool blocks default collapsed; click expands input + output + error.
+- **Capture row buttons** replaced with icon buttons; delete now opens an Alpine modal with a two-step confirmation.
+- **Settings backup rows are clickable** with inline Restore icon. Restore is gated behind a two-step modal.
+- **Sidebar fixed** (only the right panel scrolls) and Alpine `[x-cloak]` CSS added to suppress the modal flash on refresh.
+- **Context-window fill bar** now reads `tokens_max_prefix` (largest single-message prefix) instead of summing `cache_read` cumulatively across turns.
+
+#### Fixed
+
+- **Tool-call header double dash** — `fmtDuration(null)` no longer emits a placeholder `—` that competed with the title separator.
+- **Capture edit modal** fetches content from the API on click instead of embedding JSON in the `x-on:click` attribute, eliminating the HTML-attribute escape bug that broke the row layout for captures containing `"`.
+- **Tool-output JSON unescape** — known string fields (`stdout`, `stderr`, etc.) now render with real newlines instead of `\n` escapes; the previous in-place decoder re-escaped via `JSON.stringify` and was effectively a no-op.
+
 ### Hooks as first-class artifacts
 
 #### Added

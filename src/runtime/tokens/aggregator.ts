@@ -40,6 +40,8 @@ export interface AggregatedUsage {
   readonly cacheCreate: number;
   readonly cacheRead: number;
   readonly preloaded: number;
+  readonly maxPrefix: number;
+  readonly messages: number;
   readonly costUsd: number;
   readonly contextWindow: number;
   readonly estimated: boolean;
@@ -59,18 +61,28 @@ export function aggregateSessionUsage(
   if (session.transcript_path) {
     const usage = loadTranscriptUsage(session.transcript_path);
     if (usage) {
-      const { id, pricing } = resolvePricing(usage.model ?? session.agent_model);
-      const costUsd = computeCostUsd(usage, pricing);
+      // Auto-promote to 1M-context tier when any single message's prefix
+      // exceeded the 200K default — the model id alone never tells us
+      // which tier is in use, but the observed token count does.
+      const baseId = usage.model ?? session.agent_model;
+      let resolved = resolvePricing(baseId);
+      if (usage.maxPrefix > resolved.pricing.contextWindow && !resolved.id.endsWith("-1m")) {
+        const promoted = resolvePricing(`${resolved.id}-1m`);
+        if (promoted.resolvedExactly) resolved = promoted;
+      }
+      const costUsd = computeCostUsd(usage, resolved.pricing);
       writeSessionTotals(raw, sessionId, {
         input: usage.input,
         output: usage.output,
         cacheCreate: usage.cacheCreate,
         cacheRead: usage.cacheRead,
         preloaded: usage.preloadedCacheCreate,
+        maxPrefix: usage.maxPrefix,
+        messages: usage.messages,
         costUsd,
-        contextWindow: pricing.contextWindow,
+        contextWindow: resolved.pricing.contextWindow,
         estimated: false,
-        modelId: id,
+        modelId: resolved.id,
       });
       return {
         input: usage.input,
@@ -78,10 +90,12 @@ export function aggregateSessionUsage(
         cacheCreate: usage.cacheCreate,
         cacheRead: usage.cacheRead,
         preloaded: usage.preloadedCacheCreate,
+        maxPrefix: usage.maxPrefix,
+        messages: usage.messages,
         costUsd,
-        contextWindow: pricing.contextWindow,
+        contextWindow: resolved.pricing.contextWindow,
         estimated: false,
-        modelId: id,
+        modelId: resolved.id,
       };
     }
   }
@@ -106,6 +120,8 @@ export function aggregateSessionUsage(
     cacheCreate: 0,
     cacheRead: 0,
     preloaded: 0,
+    maxPrefix: est.input,
+    messages: turns.length,
     costUsd,
     contextWindow: pricing.contextWindow,
     estimated: true,
@@ -117,6 +133,8 @@ export function aggregateSessionUsage(
     cacheCreate: 0,
     cacheRead: 0,
     preloaded: 0,
+    maxPrefix: est.input,
+    messages: turns.length,
     costUsd,
     contextWindow: pricing.contextWindow,
     estimated: true,
@@ -130,6 +148,8 @@ interface WritePayload {
   readonly cacheCreate: number;
   readonly cacheRead: number;
   readonly preloaded: number;
+  readonly maxPrefix: number;
+  readonly messages: number;
   readonly costUsd: number;
   readonly contextWindow: number;
   readonly estimated: boolean;
@@ -144,15 +164,17 @@ function writeSessionTotals(
   raw
     .prepare(
       `UPDATE sessions
-         SET tokens_input        = ?,
-             tokens_output       = ?,
-             tokens_cache_create = ?,
-             tokens_cache_read   = ?,
-             tokens_preloaded    = ?,
-             cost_usd            = ?,
-             context_window      = ?,
-             tokens_estimated    = ?,
-             agent_model         = COALESCE(agent_model, ?)
+         SET tokens_input          = ?,
+             tokens_output         = ?,
+             tokens_cache_create   = ?,
+             tokens_cache_read     = ?,
+             tokens_preloaded      = ?,
+             tokens_max_prefix     = ?,
+             tokens_messages_count = ?,
+             cost_usd              = ?,
+             context_window        = ?,
+             tokens_estimated      = ?,
+             agent_model           = COALESCE(agent_model, ?)
          WHERE session_id = ?`,
     )
     .run(
@@ -161,6 +183,8 @@ function writeSessionTotals(
       payload.cacheCreate,
       payload.cacheRead,
       payload.preloaded,
+      payload.maxPrefix,
+      payload.messages,
       payload.costUsd,
       payload.contextWindow,
       payload.estimated ? 1 : 0,

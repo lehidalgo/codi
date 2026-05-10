@@ -195,7 +195,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -236,6 +236,27 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `ALTER TABLE turns ADD COLUMN tokens_output INTEGER`,
       `ALTER TABLE turns ADD COLUMN tokens_cache_create INTEGER`,
       `ALTER TABLE turns ADD COLUMN tokens_cache_read INTEGER`,
+    ],
+  ],
+  [
+    5,
+    [
+      // Track the largest single-message prefix observed in the
+      // transcript. The fill bar reads this column instead of summing
+      // `cache_read` across every turn (which produces meaningless
+      // multi-million totals over long sessions).
+      `ALTER TABLE sessions ADD COLUMN tokens_max_prefix INTEGER`,
+    ],
+  ],
+  [
+    6,
+    [
+      // Count of assistant API calls observed in the transcript. May be
+      // higher than `total_turns` when the codi Stop hook missed rounds
+      // (only the agent's own captures bump total_turns; the transcript
+      // sees every Anthropic call). UI exposes the gap so the dev can
+      // reconcile billing vs codi telemetry.
+      `ALTER TABLE sessions ADD COLUMN tokens_messages_count INTEGER`,
     ],
   ],
 ];

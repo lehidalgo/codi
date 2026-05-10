@@ -30,6 +30,14 @@ export interface TranscriptUsage {
    * definitions that were pre-loaded at session start.
    */
   readonly preloadedCacheCreate: number;
+  /**
+   * The largest per-message prefix observed across the transcript:
+   * `input + cache_create + cache_read` for a single assistant message.
+   * This is the right number to drive the "context window fill" bar —
+   * the cumulative sum across turns has no semantic meaning (each call
+   * sees a fresh prefix; reads are reused across calls).
+   */
+  readonly maxPrefix: number;
 }
 
 function asInt(v: unknown): number {
@@ -79,6 +87,7 @@ export function loadTranscriptUsage(path: string): TranscriptUsage | null {
   let cacheCreate = 0;
   let cacheRead = 0;
   let preloadedCacheCreate = 0;
+  let maxPrefix = 0;
   for (const line of lines) {
     const u = parseMessageUsage(line);
     if (!u) continue;
@@ -88,8 +97,19 @@ export function loadTranscriptUsage(path: string): TranscriptUsage | null {
     output += u.output;
     cacheCreate += u.cacheCreate;
     cacheRead += u.cacheRead;
+    const prefix = u.input + u.cacheCreate + u.cacheRead;
+    if (prefix > maxPrefix) maxPrefix = prefix;
     if (messages === 1) preloadedCacheCreate = u.cacheCreate;
   }
   if (messages === 0) return null;
-  return { model, messages, input, output, cacheCreate, cacheRead, preloadedCacheCreate };
+  return {
+    model,
+    messages,
+    input,
+    output,
+    cacheCreate,
+    cacheRead,
+    preloadedCacheCreate,
+    maxPrefix,
+  };
 }

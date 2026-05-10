@@ -33,6 +33,8 @@ interface SessionRow {
   readonly tokens_cache_create: number | null;
   readonly tokens_cache_read: number | null;
   readonly tokens_preloaded: number | null;
+  readonly tokens_max_prefix: number | null;
+  readonly tokens_messages_count: number | null;
   readonly cost_usd: number | null;
   readonly context_window: number | null;
   readonly tokens_estimated: number | null;
@@ -75,14 +77,12 @@ function renderTokensCard(s: SessionRow): string {
   }
   const estimated = (s.tokens_estimated ?? 0) === 1;
   const ctxWindow = s.context_window ?? 200_000;
-  // Context fill: input + cache_create + cache_read (one full prefix).
-  // Output is not part of the context budget.
-  const ctxFill = (s.tokens_input ?? 0) + (s.tokens_cache_create ?? 0) + (s.tokens_cache_read ?? 0);
-  // The fill bar shows the LAST-call prefix: the highest single cache_read.
-  // Without per-turn breakdown we fall back to preloaded + a fraction of
-  // total reads — a conservative estimate of "biggest prefix in flight".
-  const lastPrefix = Math.max(s.tokens_preloaded ?? 0, Math.min(ctxFill, ctxWindow));
-  const pct = Math.min(100, Math.round((lastPrefix / ctxWindow) * 1000) / 10);
+  // Fill bar: largest single-message prefix observed in the transcript.
+  // This is `input + cache_create + cache_read` for one assistant call —
+  // never the cumulative sum across turns (which is meaningless: each
+  // call sees a fresh prefix; reads are reused across calls).
+  const lastPrefix = s.tokens_max_prefix ?? s.tokens_preloaded ?? 0;
+  const pct = ctxWindow > 0 ? Math.min(100, Math.round((lastPrefix / ctxWindow) * 1000) / 10) : 0;
   const barColor = pct > 90 ? "bg-rose-500" : pct > 70 ? "bg-amber-500" : "bg-emerald-500";
 
   return `
@@ -106,6 +106,17 @@ function renderTokensCard(s: SessionRow): string {
         <div class="h-full ${barColor}" style="width:${pct}%"></div>
       </div>
       ${(s.tokens_preloaded ?? 0) > 0 ? `<p class="text-xs text-slate-500 mt-2">Pre-loaded at session start: <span class="tabular-nums">${s.tokens_preloaded!.toLocaleString()}</span> tokens (system prompt + skills + tools).</p>` : ""}
+      ${(() => {
+        const msgs = s.tokens_messages_count ?? 0;
+        const turns = s.total_turns ?? 0;
+        if (msgs === 0) return "";
+        const missed = Math.max(0, msgs - turns);
+        const gap =
+          missed > 0
+            ? ` <span class="ml-1 text-amber-700">(codi captured ${turns} of those as turn rows — Stop hook missed ${missed.toLocaleString()} round${missed === 1 ? "" : "s"})</span>`
+            : "";
+        return `<p class="text-xs text-slate-500 mt-1">Across <span class="tabular-nums">${msgs.toLocaleString()}</span> assistant API call${msgs === 1 ? "" : "s"} in the transcript.${gap}</p>`;
+      })()}
     </section>`;
 }
 
@@ -356,84 +367,27 @@ function isLikelyOldTruncated(s: string | null): boolean {
 }
 
 /**
- * Build a one-line description for a tool call from its input JSON. Each
- * tool exposes a different shape; we cover the common ones (Bash, Read,
- * Write, Edit, Glob, Grep, Task, WebFetch, TodoWrite) and fall back to
- * the raw command-like field most tools ship.
+ * Extract the optional `description` field from the tool input. Many
+ * Claude Code tools (Bash, Task, etc.) include a short human-friendly
+ * description alongside the actual command/prompt; we surface that as
+ * the inline title. Returns null when no description is present so the
+ * compact header omits the title slot entirely (no fallback to the
+ * command itself — too noisy).
  */
-export function describeToolInput(toolName: string, inputJson: string): string {
-  let parsed: Record<string, unknown>;
+function extractToolTitle(_toolName: string, inputJson: string): string | null {
+  if (!inputJson) return null;
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(inputJson) as Record<string, unknown>;
+    parsed = JSON.parse(inputJson);
   } catch {
-    return inputJson.slice(0, 200);
+    return null;
   }
-  const get = (k: string): string | null => {
-    const v = parsed[k];
-    return typeof v === "string" ? v : null;
-  };
-  switch (toolName) {
-    case "Bash":
-      return get("command") ?? "";
-    case "Read":
-    case "Write":
-    case "NotebookEdit":
-      return get("file_path") ?? "";
-    case "Edit":
-      return get("file_path") ?? "";
-    case "MultiEdit": {
-      const fp = get("file_path");
-      const edits = Array.isArray(parsed["edits"]) ? (parsed["edits"] as unknown[]).length : 0;
-      return fp ? `${fp} (${edits} edits)` : `${edits} edits`;
-    }
-    case "Glob":
-      return [get("pattern"), get("path")].filter(Boolean).join(" in ");
-    case "Grep": {
-      const pattern = get("pattern");
-      const path = get("path") ?? get("glob");
-      return path ? `${pattern} in ${path}` : (pattern ?? "");
-    }
-    case "Task": {
-      const desc = get("description");
-      const subagent = get("subagent_type");
-      return subagent ? `[${subagent}] ${desc ?? ""}` : (desc ?? "");
-    }
-    case "WebFetch":
-    case "WebSearch":
-      return get("url") ?? get("query") ?? "";
-    case "TodoWrite": {
-      const todos = parsed["todos"];
-      if (Array.isArray(todos)) {
-        const inProgress = todos.find(
-          (t) =>
-            typeof t === "object" &&
-            t !== null &&
-            (t as Record<string, unknown>)["status"] === "in_progress",
-        ) as Record<string, unknown> | undefined;
-        const label = inProgress ? (inProgress["content"] as string) : `${todos.length} items`;
-        return label;
-      }
-      return "todos updated";
-    }
-    case "ExitPlanMode":
-      return "exit plan mode";
-    default: {
-      // Generic best-effort: pick the first short string field we find.
-      for (const key of [
-        "command",
-        "url",
-        "query",
-        "path",
-        "file_path",
-        "pattern",
-        "description",
-      ]) {
-        const v = get(key);
-        if (v) return v;
-      }
-      return "";
-    }
+  if (typeof parsed !== "object" || parsed === null) return null;
+  const description = (parsed as Record<string, unknown>)["description"];
+  if (typeof description === "string" && description.trim().length > 0) {
+    return description.trim();
   }
+  return null;
 }
 
 function renderToolBlock(tc: ToolRow): string {
@@ -444,29 +398,37 @@ function renderToolBlock(tc: ToolRow): string {
   const truncatedBadge = isLikelyOldTruncated(tc.output_summary)
     ? ` <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title="Captured before the storage cap was raised — output was cut at 200 chars; not recoverable.">truncated@storage</span>`
     : "";
+  const title = extractToolTitle(tc.tool_name, tc.input_json);
+  const titleHtml = title
+    ? `<code class="text-xs font-mono text-slate-700 truncate" title="${escapeHtml(title)}">${escapeHtml(title.length > 200 ? title.slice(0, 200) + "…" : title)}</code>`
+    : "";
+  const durationHtml =
+    tc.duration_ms !== null && tc.duration_ms !== undefined
+      ? `<span class="text-xs text-slate-500">${fmtDuration(tc.duration_ms)}</span>`
+      : "";
   const errorBlock = tc.error
     ? `<div class="mt-2"><p class="text-xs uppercase tracking-wide text-rose-700 mb-1">error</p><pre class="text-xs text-rose-900 bg-rose-50 p-2 rounded overflow-x-auto whitespace-pre-wrap break-words">${escapeHtml(tc.error)}</pre></div>`
     : "";
-  const description = describeToolInput(tc.tool_name, tc.input_json);
-  const descriptionHtml = description
-    ? `<p class="text-xs text-slate-700 font-mono mb-2 break-all" title="${escapeHtml(description)}">${escapeHtml(description.slice(0, 240))}${description.length > 240 ? "…" : ""}</p>`
-    : "";
   return `
-    <article id="tool-${tc.call_id}" class="rounded-lg border border-slate-200 bg-white p-3 scroll-mt-6">
-      <header class="flex items-center gap-2 flex-wrap mb-2">
-        <a href="/tool-call/${tc.call_id}" class="font-mono text-xs text-emerald-700 hover:underline">${escapeHtml(tc.tool_name)}</a>
+    <article id="tool-${tc.call_id}" x-data="{ expanded: false }" class="rounded-lg border border-slate-200 bg-white p-3 scroll-mt-6">
+      <header class="flex items-center gap-2 flex-wrap text-sm cursor-pointer" x-on:click="expanded = !expanded">
+        <a href="/tool-call/${tc.call_id}" class="font-mono text-xs text-emerald-700 hover:underline" x-on:click.stop>${escapeHtml(tc.tool_name)}</a>
         ${statusBadge}
-        <span class="text-xs text-slate-500">${fmtDuration(tc.duration_ms)}</span>
+        ${durationHtml}
         ${truncatedBadge}
+        ${title ? `<span class="text-slate-400">—</span>` : ""}
+        ${titleHtml}
         <span class="text-xs text-slate-400 ml-auto" title="${fmtTs(tc.ts)}">${fmtRelative(tc.ts)}</span>
+        <span class="text-xs text-slate-400" x-text="expanded ? '▾' : '▸'">▸</span>
       </header>
-      ${descriptionHtml}
-      <details class="mb-2">
-        <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900">input</summary>
-        <div class="mt-2">${renderToolPayload("", tc.input_json)}</div>
-      </details>
-      ${tc.output_summary ? `<div>${renderToolPayload("", tc.output_summary)}</div>` : '<p class="text-xs text-slate-400">no output</p>'}
-      ${errorBlock}
+      <div x-show="expanded" x-cloak class="mt-3">
+        <details class="mb-2" open>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900">input</summary>
+          <div class="mt-2">${renderToolPayload("", tc.input_json)}</div>
+        </details>
+        ${tc.output_summary ? `<div>${renderToolPayload("", tc.output_summary)}</div>` : '<p class="text-xs text-slate-400">no output</p>'}
+        ${errorBlock}
+      </div>
     </article>`;
 }
 

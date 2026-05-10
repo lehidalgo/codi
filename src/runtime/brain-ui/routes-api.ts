@@ -16,6 +16,8 @@
  */
 
 import type { Hono, Context } from "hono";
+import path from "node:path";
+import { homedir } from "node:os";
 import type { BrainHandle } from "../brain/index.js";
 import {
   listProposals,
@@ -27,6 +29,8 @@ import {
   type RunContext,
 } from "../consolidate/index.js";
 import { getProvider, LlmConfigError } from "../llm/index.js";
+import { restoreBackup, restoreFromBackupDir } from "#src/core/backup/backup-manager.js";
+import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR } from "#src/constants.js";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 1000;
@@ -499,6 +503,33 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
         "content-disposition": `attachment; filename="captures-${Date.now()}.csv"`,
       },
     });
+  });
+
+  // ─── Backup restore ────────────────────────────────────────────────────────
+
+  app.post("/api/v1/backups/local/:ts/restore", async (c: Context) => {
+    const ts = c.req.param("ts");
+    const projectRoot = path.dirname(path.dirname(path.dirname(brain.path))); // .codi/state/brain.db → projectRoot
+    const configDir = path.dirname(path.dirname(brain.path)); // .codi/state → .codi
+    try {
+      const restored = await restoreBackup(projectRoot, configDir, ts);
+      return c.json({ data: { restored, count: restored.length } });
+    } catch (cause) {
+      return c.json({ error: { code: "restore_failed", message: String(cause) } }, 400);
+    }
+  });
+
+  app.post("/api/v1/backups/archive/:hash/:ts/restore", async (c: Context) => {
+    const hash = c.req.param("hash");
+    const ts = c.req.param("ts");
+    const projectRoot = path.dirname(path.dirname(path.dirname(brain.path)));
+    const archiveDir = path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, hash, ts);
+    try {
+      const restored = await restoreFromBackupDir(projectRoot, archiveDir);
+      return c.json({ data: { restored, count: restored.length } });
+    } catch (cause) {
+      return c.json({ error: { code: "restore_failed", message: String(cause) } }, 400);
+    }
   });
 
   // ─── Server-side LLM consolidation (existing) ─────────────────────────────

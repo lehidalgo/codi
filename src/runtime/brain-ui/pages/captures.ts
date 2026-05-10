@@ -93,22 +93,37 @@ function renderRow(cap: CaptureRow): string {
   const deletedBadge = cap.deleted_at
     ? `<span class="text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded ml-2">deleted ${fmtRelative(cap.deleted_at)}</span>`
     : "";
+  const iconBtn = (label: string, color: string, body: string, attrs: string): string => `
+    <button type="button"
+      class="inline-flex items-center justify-center w-7 h-7 rounded ${color} hover:bg-slate-100 transition-colors"
+      title="${label}"
+      aria-label="${label}"
+      ${attrs}>
+      ${body}
+    </button>`;
+  const editIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
+  const deleteIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>`;
+  const restoreIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>`;
+
   const actions = cap.deleted_at
-    ? `<button class="text-xs text-emerald-700 hover:underline"
-         hx-post="/api/v1/captures/${cap.capture_id}/restore"
-         hx-target="closest li"
-         hx-swap="outerHTML">Restore</button>`
-    : `<button class="text-xs text-slate-600 hover:underline"
-         data-capture-id="${cap.capture_id}"
-         x-on:click="$dispatch('edit-capture', { id: $event.target.dataset.captureId })">
-         Edit
-       </button>
-       <button class="text-xs text-rose-700 hover:underline ml-3"
-         data-capture-id="${cap.capture_id}"
-         data-capture-type="${escapeHtml(cap.type)}"
-         x-on:click="$dispatch('confirm-delete-capture', { id: $event.target.dataset.captureId, type: $event.target.dataset.captureType })">
-         Delete
-       </button>`;
+    ? iconBtn(
+        "Restore",
+        "text-emerald-700",
+        restoreIcon,
+        `hx-post="/api/v1/captures/${cap.capture_id}/restore" hx-target="closest li" hx-swap="outerHTML"`,
+      )
+    : `${iconBtn(
+        "Edit",
+        "text-slate-500 hover:text-slate-900",
+        editIcon,
+        `data-capture-id="${cap.capture_id}" x-on:click="$dispatch('edit-capture', { id: $event.currentTarget.dataset.captureId })"`,
+      )}
+       ${iconBtn(
+         "Delete",
+         "text-rose-600 hover:text-rose-700",
+         deleteIcon,
+         `data-capture-id="${cap.capture_id}" data-capture-preview="${escapeHtml(cap.content.slice(0, 80))}" x-on:click="$dispatch('delete-capture', { id: $event.currentTarget.dataset.captureId, preview: $event.currentTarget.dataset.capturePreview })"`,
+       )}`;
 
   return `
     <li id="capture-${cap.capture_id}" class="rounded border border-slate-200 bg-white p-3 text-sm">
@@ -128,7 +143,7 @@ function renderRow(cap: CaptureRow): string {
             <a class="hover:underline hover:text-slate-700" href="/session/${escapeHtml(cap.session_id)}#capture-${cap.capture_id}">${escapeHtml(cap.session_id.slice(0, 12))}…</a>
           </p>
         </div>
-        <div class="shrink-0 flex flex-col gap-2 items-end">${actions}</div>
+        <div class="shrink-0 flex gap-1 items-start">${actions}</div>
       </div>
     </li>`;
 }
@@ -236,32 +251,6 @@ export function registerCaptures(app: Hono, brain: BrainHandle): void {
       ? `<a href="/captures" class="text-xs text-slate-600 hover:underline">← back to live</a>`
       : `<a href="/captures?trash=1" class="text-xs text-slate-500 hover:underline">view trash</a>`;
 
-    const confirmDeleteModal = filters.trash
-      ? ""
-      : `
-      <div x-data="{ open: false, id: null, type: '', deleting: false }"
-           x-on:confirm-delete-capture.window="open = true; id = $event.detail.id; type = $event.detail.type"
-           x-show="open"
-           x-cloak
-           x-transition.opacity.duration.150ms
-           class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 m-4" x-on:click.stop>
-          <h3 class="text-lg font-semibold mb-2">Soft-delete capture?</h3>
-          <p class="text-sm text-slate-600 mb-1">Capture <span class="font-mono" x-text="'#' + id"></span> (<span class="font-mono" x-text="type"></span>) will be moved to trash.</p>
-          <p class="text-xs text-slate-500 mb-4">You can restore it from <a href="/captures?trash=1" class="underline">view trash</a>.</p>
-          <div class="flex gap-2 justify-end">
-            <button type="button" class="px-3 py-1.5 text-sm rounded border border-slate-300" x-on:click="open = false" :disabled="deleting">Cancel</button>
-            <button type="button" class="px-3 py-1.5 text-sm rounded bg-rose-600 text-white"
-              :disabled="deleting" x-text="deleting ? 'Deleting…' : 'Delete'"
-              x-on:click="
-                deleting = true;
-                fetch('/api/v1/captures/' + id, { method: 'DELETE' })
-                  .then(() => { open = false; window.location.reload(); })
-                  .finally(() => { deleting = false; });
-              ">Delete</button>
-          </div>
-        </div>
-      </div>`;
     const editModal = filters.trash
       ? ""
       : `
@@ -328,6 +317,78 @@ export function registerCaptures(app: Hono, brain: BrainHandle): void {
         }
       </script>`;
 
+    const deleteModal = filters.trash
+      ? ""
+      : `
+      <div x-data="captureDeleter()"
+           x-on:delete-capture.window="open($event.detail.id, $event.detail.preview)"
+           x-show="visible"
+           x-cloak
+           class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 m-4" x-on:click.stop>
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-base font-semibold text-slate-900" x-text="step === 1 ? 'Soft-delete this capture?' : 'Confirm deletion'"></h3>
+              <p class="text-sm text-slate-600 mt-1" x-show="step === 1">The row will be hidden but kept in the trash. You can restore it later.</p>
+              <p class="text-sm text-slate-600 mt-1" x-show="step === 2">Last chance — this is the second confirmation.</p>
+              <p class="mt-2 text-xs font-mono text-slate-500 truncate" x-text="'#' + id + ' · ' + (preview || '(empty)')"></p>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" class="px-3 py-1.5 text-sm rounded border border-slate-300 hover:bg-slate-50" x-on:click="cancel()">Cancel</button>
+            <button type="button"
+              class="px-3 py-1.5 text-sm rounded text-white"
+              :class="step === 1 ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-700 hover:bg-rose-800 ring-2 ring-rose-300'"
+              :disabled="working"
+              x-on:click="advance()"
+              x-text="working ? 'Deleting…' : (step === 1 ? 'Continue' : 'Delete forever')"></button>
+          </div>
+        </div>
+      </div>
+      <script>
+        function captureDeleter() {
+          return {
+            visible: false,
+            step: 1,
+            working: false,
+            id: null,
+            preview: '',
+            open(id, preview) {
+              this.id = id;
+              this.preview = preview || '';
+              this.step = 1;
+              this.working = false;
+              this.visible = true;
+            },
+            cancel() {
+              this.visible = false;
+              this.step = 1;
+            },
+            async advance() {
+              if (this.step === 1) {
+                this.step = 2;
+                return;
+              }
+              this.working = true;
+              try {
+                await fetch('/api/v1/captures/' + this.id, { method: 'DELETE' });
+                this.visible = false;
+                window.location.reload();
+              } finally {
+                this.working = false;
+              }
+            },
+          };
+        }
+      </script>`;
+
     const body = `
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-2xl font-semibold">Captures ${filters.trash ? '<span class="text-base text-amber-700">(trash)</span>' : ""}</h1>
@@ -343,15 +404,17 @@ export function registerCaptures(app: Hono, brain: BrainHandle): void {
         <a href="/captures${filters.trash ? "?trash=1" : ""}" class="rounded border border-slate-300 px-3 py-1.5 text-sm bg-white">Reset</a>
       </form>
       <p class="text-xs text-slate-500 mb-3">Showing ${rows.length} of up to ${filters.limit} rows.</p>
-      <ul class="space-y-2" id="captures-list">
-        ${
-          rows.length === 0
-            ? '<li class="text-slate-500 text-sm">No captures match.</li>'
-            : rows.map(renderRow).join("")
-        }
-      </ul>
-      ${editModal}
-      ${confirmDeleteModal}
+      <div x-data="{}">
+        <ul class="space-y-2" id="captures-list">
+          ${
+            rows.length === 0
+              ? '<li class="text-slate-500 text-sm">No captures match.</li>'
+              : rows.map(renderRow).join("")
+          }
+        </ul>
+        ${editModal}
+        ${deleteModal}
+      </div>
     `;
     return c.html(shell({ title: "Captures", active: "/captures" }, body));
   });

@@ -150,9 +150,23 @@ export async function restoreBackup(
   timestamp: string,
 ): Promise<string[]> {
   const backupDir = path.join(configDir, BACKUPS_DIR, timestamp);
+  return restoreFromBackupDir(projectRoot, backupDir);
+}
+
+/**
+ * Restore from any backup directory (local or external archive). The
+ * directory must contain a v2 manifest; files listed in the manifest are
+ * copied back to their original `projectRoot`-relative paths. Files
+ * present at the destination but not in the backup are LEFT UNTOUCHED —
+ * this is a non-destructive overlay restore.
+ */
+export async function restoreFromBackupDir(
+  projectRoot: string,
+  backupDir: string,
+): Promise<string[]> {
   const m = await readManifest(backupDir);
   if (!m.ok) {
-    throw new Error(`Backup not found or unreadable: ${timestamp}`);
+    throw new Error(`Backup not found or unreadable at ${backupDir}`);
   }
   const restored: string[] = [];
   for (const entry of m.data.files) {
