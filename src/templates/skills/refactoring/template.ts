@@ -11,7 +11,10 @@ description: |
   "simplify this module", "DRY up", "delete unused imports", or when the
   user runs dead-code detection tools (knip, vulture, deadcode, udeps).
   Classifies each finding as SAFE / CAUTION / DANGER and re-runs tests
-  after every deletion. Do NOT activate for new features (use
+  after every deletion. Skip when the change is structural (extract a
+  module, deepen an abstraction, decouple modules, change interface
+  shape) — use ${PROJECT_NAME}-refactor-workflow (phase machine with
+  baseline + plan + verify). Do NOT activate for new features (use
   ${PROJECT_NAME}-plan-writer), bug fixes (use ${PROJECT_NAME}-debugging),
   behavior-changing rewrites (use ${PROJECT_NAME}-plan-writer with tests),
   or performance tuning.
@@ -20,7 +23,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # {{name}} — Refactoring

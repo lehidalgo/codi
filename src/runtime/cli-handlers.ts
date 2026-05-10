@@ -15,12 +15,21 @@
  *   - stats.ts      : computeWorkflowStats
  */
 
-export { KnowledgeBaseMissingError, runWorkflow, getStatus } from "./cli-handlers/workflow.js";
+export {
+  KnowledgeBaseMissingError,
+  runWorkflow,
+  runQuick,
+  getStatus,
+  getSlimStatus,
+} from "./cli-handlers/workflow.js";
 export type {
   RunOptions,
   RunResult,
+  QuickRunOptions,
+  QuickRunResult,
   StatusOptions,
   StatusResult,
+  SlimStatus,
 } from "./cli-handlers/workflow.js";
 
 export {

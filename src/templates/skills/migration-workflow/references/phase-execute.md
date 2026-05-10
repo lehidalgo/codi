@@ -1,5 +1,14 @@
 # Phase: execute
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:worktrees` (Required for migrations with staging side-effects — clean rollback boundary).
+- Optionally, invoke `codi:subagent-orchestration` when ≥3 distinct DDL or backfill steps — sequential mode.
+
+<!-- END auto-generated chain -->
+
 Apply the migration in committed steps. NEVER in parallel.
 
 ## Setup

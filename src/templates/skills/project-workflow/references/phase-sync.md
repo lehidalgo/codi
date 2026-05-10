@@ -1,5 +1,13 @@
 # Phase: sync
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:sheets-sync` (caller=bootstrap — push Goals/Stories to Sheet).
+
+<!-- END auto-generated chain -->
+
 Push the approved BusinessGoals, Requirements, and UserStories to the project Sheet. This is the only phase authorized to write planning columns.
 
 ## Inputs

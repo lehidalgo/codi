@@ -100,9 +100,25 @@ export const PHASES = [
 
 export type Phase = (typeof PHASES)[number];
 
-export const WORKFLOW_TYPES = ["feature", "bug-fix", "refactor", "migration", "project"] as const;
+export const WORKFLOW_TYPES = [
+  "feature",
+  "bug-fix",
+  "refactor",
+  "migration",
+  "project",
+  "quick",
+] as const;
 
 export type WorkflowType = (typeof WORKFLOW_TYPES)[number];
+
+/**
+ * Q7 — closed category list for `codi quick` runs. The dev MUST classify
+ * every quick run as one of these. Anything that doesn't fit needs a full
+ * workflow (`codi workflow run`).
+ */
+export const QUICK_CATEGORIES = ["typo", "comment", "dep-bump", "format", "doc-tweak"] as const;
+
+export type QuickCategory = (typeof QUICK_CATEGORIES)[number];
 
 export type AuthorType = "agent" | "human" | "system";
 

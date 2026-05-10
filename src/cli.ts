@@ -20,7 +20,7 @@ import { registerBackupCommand } from "./cli/backup.js";
 import { registerMigrateCommand } from "./cli/migrate.js";
 import { registerPluginCommand } from "./cli/plugin.js";
 import { registerBrainCommand } from "./cli/brain.js";
-import { registerWorkflowCommand } from "./cli/workflow.js";
+import { registerQuickAlias, registerWorkflowCommand } from "./cli/workflow.js";
 import { registerAgentHookCommand } from "./cli/agent-hooks.js";
 
 import { registerPresetCommand } from "./cli/preset.js";
@@ -68,6 +68,7 @@ registerMigrateCommand(program);
 registerPluginCommand(program);
 registerBrainCommand(program);
 registerWorkflowCommand(program);
+registerQuickAlias(program);
 registerAgentHookCommand(program);
 
 registerPresetCommand(program);

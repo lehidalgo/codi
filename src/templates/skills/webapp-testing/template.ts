@@ -3,6 +3,9 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
+  DECISION TREE — Driving a BROWSER (Playwright/Chrome) for the test? → this
+  skill. TDD inner loop → ${PROJECT_NAME}-tdd. Suite run/coverage →
+  ${PROJECT_NAME}-test-suite. Human-paired QA → ${PROJECT_NAME}-guided-qa-testing.
   Test, debug, or automate a local web application with Playwright. Use
   when the user wants to verify frontend functionality, capture
   screenshots, read browser console logs, check network requests, or
@@ -20,7 +23,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 11
 ---
 
 # {{name}} — Web Application Testing

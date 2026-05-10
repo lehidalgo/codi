@@ -1,5 +1,14 @@
 # Phase: discover
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:discover` (wide mode — Goals + draft Stories from sources).
+- Alternatively, invoke `codi:brainstorming` if elicitation tone preferred over structured discover.
+
+<!-- END auto-generated chain -->
+
 Read the source material, extract the strategic layer (BusinessGoals, Requirements), draft candidate Stories. HARD GATE at exit — stakeholder sign-off before decomposition.
 
 ## Inputs

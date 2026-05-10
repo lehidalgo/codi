@@ -1,5 +1,15 @@
 # Phase: plan
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:plan-writing` (include Hypothesis section).
+- Alternatively, invoke `codi:discover` if hypotheses compete — mode sharpen.
+- Optionally, invoke `codi:architecture-review` when 3-strikes rule — hypotheses keep failing.
+
+<!-- END auto-generated chain -->
+
 Generate **3–5 ranked hypotheses** before testing any. Single-hypothesis generation anchors on the first plausible idea.
 
 ## Falsifiable hypothesis format

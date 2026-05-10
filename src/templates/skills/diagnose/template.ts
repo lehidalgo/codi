@@ -3,17 +3,19 @@ import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Use when encountering any bug, test failure, or unexpected behavior, before
-  proposing fixes. Triggers on "diagnose this", "debug this", "what's wrong
-  with", "why is X failing", error messages, test failures, regressions. Body
-  documents the 4-phase systematic flow, the Iron Law, and the 3-strikes
-  architectural rule.
+  Use as the FIRST diagnostic pass when encountering any bug, test failure, or
+  unexpected behavior, before proposing fixes. Triggers on "diagnose this",
+  "debug this", "what's wrong with", "why is X failing", error messages, test
+  failures, regressions. Tier-1 of the diagnose ladder — if 3-strikes rule
+  fires (3 hypotheses fail to converge), escalate to ${PROJECT_NAME}-debugging
+  (Phase-5 MCP-deep). Body documents the 4-phase systematic flow, the Iron
+  Law, and the 3-strikes architectural rule.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}

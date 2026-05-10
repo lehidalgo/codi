@@ -34,10 +34,10 @@ function tmpYamls(yamls: Record<string, string>): { dir: string; cleanup: () => 
 }
 
 describe("readBuiltinDefinitions", () => {
-  it("loads all 5 builtin workflow YAMLs", () => {
+  it("loads all 6 builtin workflow YAMLs", () => {
     const defs = readBuiltinDefinitions();
     const ids = defs.map((d) => d.id).sort();
-    expect(ids).toEqual(["bug-fix", "feature", "migration", "project", "refactor"]);
+    expect(ids).toEqual(["bug-fix", "feature", "migration", "project", "quick", "refactor"]);
   });
 
   it("each definition has required fields", () => {
@@ -46,7 +46,7 @@ describe("readBuiltinDefinitions", () => {
       expect(d.id).toBeTruthy();
       expect(d.name).toBeTruthy();
       expect(d.description).toBeTruthy();
-      expect(d.version).toBe(1);
+      expect(d.version).toBeGreaterThanOrEqual(1);
       expect(typeof d.phases).toBe("object");
       expect(Object.keys(d.phases).length).toBeGreaterThan(0);
     }
@@ -62,12 +62,200 @@ describe("readBuiltinDefinitions", () => {
   });
 });
 
+describe("validateShape — chains: per phase", () => {
+  const baseHeader = `id: t1
+name: T1
+description: test
+version: 1
+phases:
+`;
+
+  it("accepts a phase with no chains field (backward compat)", () => {
+    const t = tmpYamls({
+      "ok.yaml": `${baseHeader}  intent: { gates: [], next: [done] }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).not.toThrow();
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("accepts required role without hint", () => {
+    const t = tmpYamls({
+      "ok.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: discover, role: required }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).not.toThrow();
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("accepts alt-entry and optional with hint", () => {
+    const t = tmpYamls({
+      "ok.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: discover, role: required }
+      - { skill: brainstorming, role: alt-entry, hint: "no workflow context" }
+      - { skill: step-documenter, role: optional, hint: "domain terms emerge" }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).not.toThrow();
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("rejects unknown role", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: discover, role: mandatory }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/'role' must be one of/);
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("rejects alt-entry without hint", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: brainstorming, role: alt-entry }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(
+        /role 'alt-entry' requires a 'hint' string/,
+      );
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("rejects optional without hint", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: step-documenter, role: optional }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(
+        /role 'optional' requires a 'hint' string/,
+      );
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("rejects empty skill name", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: "", role: required }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/'skill' must be a non-empty string/);
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("rejects chains that is not an array", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains: "not-an-array"
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/chains must be an array/);
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("rejects non-string hint when present", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  intent:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: discover, role: required, hint: 123 }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/'hint' must be a string when present/);
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("error includes phase name and chain index for diagnosability", () => {
+    const t = tmpYamls({
+      "bad.yaml": `${baseHeader}  plan:
+    gates: []
+    next: [done]
+    chains:
+      - { skill: discover, role: required }
+      - { skill: x, role: alt-entry }
+  done: { gates: [], next: [] }
+`,
+    });
+    try {
+      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/phase 'plan' chains\[1\]/);
+    } finally {
+      t.cleanup();
+    }
+  });
+});
+
 describe("seedWorkflowDefinitions", () => {
-  it("inserts 5 codi-managed rows on a fresh brain", () => {
+  it("inserts 6 codi-managed rows on a fresh brain", () => {
     const t = tmpBrain();
     try {
       const r = seedWorkflowDefinitions(t.handle.raw);
-      expect(r.inserted.sort()).toEqual(["bug-fix", "feature", "migration", "project", "refactor"]);
+      expect(r.inserted.sort()).toEqual([
+        "bug-fix",
+        "feature",
+        "migration",
+        "project",
+        "quick",
+        "refactor",
+      ]);
       expect(r.updated).toEqual([]);
       expect(r.skipped).toEqual([]);
       const count = (
@@ -75,7 +263,7 @@ describe("seedWorkflowDefinitions", () => {
           c: number;
         }
       ).c;
-      expect(count).toBe(5);
+      expect(count).toBe(6);
     } finally {
       t.cleanup();
     }
@@ -87,7 +275,14 @@ describe("seedWorkflowDefinitions", () => {
       seedWorkflowDefinitions(t.handle.raw);
       const r2 = seedWorkflowDefinitions(t.handle.raw);
       expect(r2.inserted).toEqual([]);
-      expect(r2.updated.sort()).toEqual(["bug-fix", "feature", "migration", "project", "refactor"]);
+      expect(r2.updated.sort()).toEqual([
+        "bug-fix",
+        "feature",
+        "migration",
+        "project",
+        "quick",
+        "refactor",
+      ]);
       expect(r2.skipped).toEqual([]);
     } finally {
       t.cleanup();
@@ -109,7 +304,7 @@ describe("seedWorkflowDefinitions", () => {
 
       const r = seedWorkflowDefinitions(t.handle.raw);
       expect(r.skipped).toContain("feature");
-      expect(r.inserted.sort()).toEqual(["bug-fix", "migration", "project", "refactor"]);
+      expect(r.inserted.sort()).toEqual(["bug-fix", "migration", "project", "quick", "refactor"]);
 
       const stillUser = t.handle.raw
         .prepare(`SELECT name, version FROM workflow_definitions WHERE id = 'feature'`)

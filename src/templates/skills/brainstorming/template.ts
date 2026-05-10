@@ -19,13 +19,16 @@ description: |
   test coverage), one-liner fixes with zero design ambiguity, content creation
   tasks (articles, decks, documents, carousels — use ${PROJECT_NAME}-content-factory
   which has its own adaptive intake), or content with fully specified
-  requirements.
+  requirements. Skip when a ${PROJECT_NAME} workflow is already active —
+  inside a workflow, ${PROJECT_NAME}-discover is canonical (modes wide /
+  sharpen / domain). Use this skill for greenfield exploration BEFORE any
+  workflow exists.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 17
+version: 18
 ---
 
 # {{name}} — Brainstorming

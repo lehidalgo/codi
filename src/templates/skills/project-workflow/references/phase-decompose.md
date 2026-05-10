@@ -1,5 +1,14 @@
 # Phase: decompose
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:plan-writing` (PRD mode — Stories with acceptance criteria).
+- Optionally, invoke `codi:roadmap` when multi-feature long-horizon planning.
+
+<!-- END auto-generated chain -->
+
 Refine candidate Stories from `discover` into PR-sized units with concrete acceptance criteria. Add Requirements where needed. HARD GATE at exit — engineering-readiness sign-off before Sheet writes.
 
 ## Inputs

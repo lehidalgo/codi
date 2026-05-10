@@ -21,8 +21,9 @@ category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-disable-model-invocation: false
-version: 2
+disable-model-invocation: true
+internal: true
+version: 3
 ---
 
 # {{name}} — Dispatching Parallel Agents

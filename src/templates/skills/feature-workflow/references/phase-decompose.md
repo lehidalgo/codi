@@ -1,5 +1,13 @@
 # Phase: decompose
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- Optionally, invoke `codi:subagent-orchestration` when ≥3 slices — fan out parallel or sequential.
+
+<!-- END auto-generated chain -->
+
 Goal: split the plan into vertical tracer-bullet slices that can be implemented one at a time, each independently demoable.
 
 Read `references/tracer-bullets.md` first. It defines the technique.

@@ -1,5 +1,14 @@
 # Phase: verify
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled — required before merge to main.
+
+<!-- END auto-generated chain -->
+
 Goal: confirm the feature does what the plan said it would, with green validation and tests covering the new behavior.
 
 ## How to run this phase (chained skills)

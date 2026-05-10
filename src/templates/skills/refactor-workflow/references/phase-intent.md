@@ -1,5 +1,14 @@
 # Phase: intent
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:discover` (wide or domain mode depending on knowledge base depth).
+- Alternatively, invoke `codi:architecture-review` if user has not identified a structural target.
+
+<!-- END auto-generated chain -->
+
 Identify the structural friction and the deepening goal. HARD GATE — no implementation until the user approves the refactor scope and target.
 
 ## Process

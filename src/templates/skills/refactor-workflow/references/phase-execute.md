@@ -1,5 +1,14 @@
 # Phase: execute
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- Optionally, invoke `codi:subagent-orchestration` when ≥3 discrete steps — sequential mode with two-stage review.
+- Optionally, invoke `codi:refactoring` when dead-code or DRY subtasks during execute.
+
+<!-- END auto-generated chain -->
+
 Apply the refactor in small commits.
 
 ## Discipline

@@ -1,5 +1,14 @@
 # Phase: data-validation
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:verify-evidence` (pre/post metrics, row counts, schema diff).
+- Optionally, invoke `codi:code-review` when auto_review flag enabled — migrations are highest-leverage place for review.
+
+<!-- END auto-generated chain -->
+
 The safety net. Schema migrations look clean in tests but fail on production data shape. This phase exists to catch what static tests cannot.
 
 ## Use `codi:verify-evidence`

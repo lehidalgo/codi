@@ -18,8 +18,9 @@ category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
-disable-model-invocation: false
-version: 8
+disable-model-invocation: true
+internal: true
+version: 9
 ---
 
 # {{name}} — Evidence Gathering

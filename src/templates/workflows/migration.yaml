@@ -1,18 +1,68 @@
 id: migration
 name: Migration
 description: Schema or data migration with rollback path required
-version: 1
+version: 2
 phases:
-  intent: { gates: [task_described], next: [plan, abandoned] }
-  plan: { gates: [scope_files_listed, plan_artifact_exists], next: [execute, abandoned] }
-  execute: { gates: [], next: [data-validation, execute, abandoned] }
-  data-validation: { gates: [], next: [verify, execute, abandoned] }
+  intent:
+    gates: [task_described]
+    next: [plan, abandoned]
+    chains:
+      - { skill: discover, role: required, hint: "domain mode if ADRs exist in the area" }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists]
+    next: [execute, abandoned]
+    chains:
+      - {
+          skill: plan-writing,
+          role: required,
+          hint: "include rollback path and validation strategy",
+        }
+      - { skill: discover, role: alt-entry, hint: "domain mode for ADR cross-check" }
+      - {
+          skill: security-scan,
+          role: optional,
+          hint: "schema changes — pre-migration security review",
+        }
+  execute:
+    gates: []
+    next: [data-validation, execute, abandoned]
+    chains:
+      - {
+          skill: worktrees,
+          role: required,
+          hint: "Required for migrations with staging side-effects — clean rollback boundary",
+        }
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥3 distinct DDL or backfill steps — sequential mode",
+        }
+  data-validation:
+    gates: []
+    next: [verify, execute, abandoned]
+    chains:
+      - {
+          skill: verify-evidence,
+          role: required,
+          hint: "pre/post metrics, row counts, schema diff",
+        }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — migrations are highest-leverage place for review",
+        }
   verify:
-    {
-      gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified],
-      next: [done, execute, abandoned],
-    }
-  done: { gates: [], next: [] }
-  abandoned: { gates: [], next: [] }
+    gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - { skill: security-scan, role: optional, hint: "post-migration schema audit" }
+      - { skill: code-review, role: optional, hint: "auto_review flag enabled" }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
 flags:
   rollback_required: true

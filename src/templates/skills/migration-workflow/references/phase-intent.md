@@ -1,5 +1,13 @@
 # Phase: intent
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:discover` (domain mode if ADRs exist in the area).
+
+<!-- END auto-generated chain -->
+
 Migrations are high-risk. Confirm goal and downstream impact before any work.
 
 ## Story handling at workflow entry

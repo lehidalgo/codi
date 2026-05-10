@@ -1,5 +1,14 @@
 # Phase: reproduce
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:diagnose`.
+- Optionally, invoke `codi:subagent-orchestration` when ≥2 unrelated failure domains — fan out parallel.
+
+<!-- END auto-generated chain -->
+
 Most important phase. Skip ONLY when the loop already exists (e.g., a failing CI run on the user's branch).
 
 ## Story handling on entry

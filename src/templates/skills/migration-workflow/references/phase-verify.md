@@ -1,5 +1,15 @@
 # Phase: verify
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:security-scan` when post-migration schema audit.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled.
+
+<!-- END auto-generated chain -->
+
 Static validation only. Live data integrity is the next phase (`data-validation`).
 
 ## Exit criteria

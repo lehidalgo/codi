@@ -3,20 +3,18 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Root-cause debugging with tiered escalation. Phases 1-4 = first-line
-  workflow (Root Cause → Pattern → Hypothesis → Implementation). Phase 5
-  = MCP-powered deep diagnosis when standard phases fail (code-graph,
-  docs search, sequential thinking, reasoning-confirmation-execution
-  loop). Use when investigating a bug, test failure, crash, exception,
-  unexpected behavior, build failure, integration issue, flaky test,
-  test pollution, or production incident. Also activate for phrases like
-  "why is X broken", "can't figure out why", "debug this", "error
-  investigation", "stack trace", "root cause", "stuck on this error",
-  "multiple attempts failed", "deep diagnosis", "MCP investigation",
-  "sequential thinking", and on /${PROJECT_NAME}-check. Enforces root
-  cause before any fix — no fixes may be proposed until Phase 1
-  investigation is complete. Do NOT activate for writing new code or
-  features (use ${PROJECT_NAME}-plan-writer), planning architecture (use
+  Tier-2 escalation of ${PROJECT_NAME}-diagnose when first-line stalls.
+  Use ONLY after ${PROJECT_NAME}-diagnose has completed its 4-phase
+  systematic flow without convergence (3-strikes rule fired). Phase 5
+  = MCP-powered deep diagnosis (code-graph, docs search, sequential
+  thinking, reasoning-confirmation-execution loop). Activate for phrases
+  like "stuck on this error", "multiple attempts failed", "deep
+  diagnosis", "MCP investigation", "sequential thinking", and on
+  /${PROJECT_NAME}-check. Enforces root cause before any fix — no fixes
+  may be proposed until Phase 1 investigation is complete. Skip when
+  this is the FIRST diagnostic pass — use ${PROJECT_NAME}-diagnose
+  instead. Do NOT activate for writing new code or features (use
+  ${PROJECT_NAME}-plan-writer), planning architecture (use
   ${PROJECT_NAME}-brainstorming), or running tests without a failure to
   investigate (use ${PROJECT_NAME}-test-suite).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
@@ -24,7 +22,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 15
+version: 16
 ---
 
 # {{name}} — Debugging

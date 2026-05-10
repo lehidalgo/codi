@@ -18,6 +18,7 @@ const TYPE_PREFIX: Record<WorkflowType, string> = {
   refactor: "refactor",
   migration: "mig",
   project: "proj",
+  quick: "quick",
 };
 
 const MAX_SLUG_LENGTH = 30;

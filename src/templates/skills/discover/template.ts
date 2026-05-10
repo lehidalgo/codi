@@ -10,13 +10,15 @@ description: |
   "explore options", "what should be built", "help think through this".
   Replaces ad-hoc Q&A at workflow phase boundaries (intent for new work, plan
   for convergence and domain cross-check) and runs standalone via
-  \`/${PROJECT_NAME}:{{name}}\`. Body documents the three modes and the hard gate.
+  \`/${PROJECT_NAME}:{{name}}\`. Skip when no workflow has been started yet
+  AND user wants free-form exploratory dialogue — use ${PROJECT_NAME}-brainstorming
+  for greenfield exploration before any workflow commit. Body documents the three modes and the hard gate.
 category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}

@@ -3,6 +3,9 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
+  DECISION TREE — Is a HUMAN watching/clicking step-by-step in a QA session?
+  → this skill. TDD inner loop → ${PROJECT_NAME}-tdd. Automated suite/coverage
+  → ${PROJECT_NAME}-test-suite. Browser automation only → ${PROJECT_NAME}-webapp-testing.
   Step-by-step QA testing methodology. Use when the user wants to test,
   validate, or QA a project systematically. Also activate for phrases like
   "QA this project", "validate the release", "test the whole app",
@@ -18,7 +21,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 9
 ---
 
 # {{name}} — Guided QA Testing

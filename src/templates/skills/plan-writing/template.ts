@@ -8,14 +8,16 @@ description: |
   tracer-bullet issues. Triggers on "write the plan", "draft a PRD", "break
   this into issues", "decompose to tickets", "create the plan markdown",
   "document the implementation". Outputs are deterministic from inputs; the
-  skill does not interview the user (use \`discover\` for that). Body
-  documents the three modes and the no-placeholders rule.
+  skill does not interview the user (use \`discover\` for that). Skip when
+  the input is a standalone brainstorming session needing post-hoc TDD
+  breakdown — use ${PROJECT_NAME}-plan-writer instead. Body documents the
+  three modes and the no-placeholders rule.
 category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}

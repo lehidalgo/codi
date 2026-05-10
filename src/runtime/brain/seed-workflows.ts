@@ -18,9 +18,20 @@ import { parse as parseYaml } from "yaml";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
+export type ChainRole = "required" | "alt-entry" | "optional";
+
+export const CHAIN_ROLES: readonly ChainRole[] = ["required", "alt-entry", "optional"] as const;
+
+export interface ChainEntry {
+  readonly skill: string;
+  readonly role: ChainRole;
+  readonly hint?: string;
+}
+
 interface PhaseSpec {
   readonly gates: readonly string[];
   readonly next: readonly string[];
+  readonly chains?: readonly ChainEntry[];
 }
 
 export interface WorkflowDefinitionShape {
@@ -30,6 +41,13 @@ export interface WorkflowDefinitionShape {
   readonly version: number;
   readonly phases: Record<string, PhaseSpec>;
   readonly flags?: Record<string, unknown>;
+  /**
+   * Q12: when explicitly false, the phase-ref generator skips this workflow.
+   * Default behaviour (undefined or true) is to regenerate. Users override by
+   * setting `auto_generate_phase_refs: false` in their workflow yaml when
+   * they need the on-disk phase-*.md files to remain manually authored.
+   */
+  readonly auto_generate_phase_refs?: boolean;
 }
 
 export interface SeedResult {
@@ -81,6 +99,58 @@ function validateShape(d: unknown, source: string): asserts d is WorkflowDefinit
   }
   if (typeof x["phases"] !== "object" || x["phases"] === null) {
     throw new Error(`workflow definition ${source}: 'phases' must be an object`);
+  }
+  if (
+    x["auto_generate_phase_refs"] !== undefined &&
+    typeof x["auto_generate_phase_refs"] !== "boolean"
+  ) {
+    throw new Error(
+      `workflow definition ${source}: 'auto_generate_phase_refs' must be boolean when present`,
+    );
+  }
+  validatePhaseChains(x["phases"] as Record<string, unknown>, source);
+}
+
+function validatePhaseChains(phases: Record<string, unknown>, source: string): void {
+  for (const [phaseName, phaseSpec] of Object.entries(phases)) {
+    if (typeof phaseSpec !== "object" || phaseSpec === null) continue;
+    const chains = (phaseSpec as Record<string, unknown>)["chains"];
+    if (chains === undefined) continue;
+    if (!Array.isArray(chains)) {
+      throw new Error(
+        `workflow definition ${source}: phase '${phaseName}' chains must be an array`,
+      );
+    }
+    chains.forEach((entry, idx) => validateChainEntry(entry, source, phaseName, idx));
+  }
+}
+
+function validateChainEntry(
+  entry: unknown,
+  source: string,
+  phaseName: string,
+  idx: number,
+): asserts entry is ChainEntry {
+  const where = `workflow definition ${source}: phase '${phaseName}' chains[${idx}]`;
+  if (typeof entry !== "object" || entry === null) {
+    throw new Error(`${where}: must be an object`);
+  }
+  const e = entry as Record<string, unknown>;
+  if (typeof e["skill"] !== "string" || (e["skill"] as string).length === 0) {
+    throw new Error(`${where}: 'skill' must be a non-empty string`);
+  }
+  if (typeof e["role"] !== "string" || !CHAIN_ROLES.includes(e["role"] as ChainRole)) {
+    throw new Error(
+      `${where}: 'role' must be one of ${CHAIN_ROLES.join(", ")}, got ${String(e["role"])}`,
+    );
+  }
+  if (e["hint"] !== undefined && typeof e["hint"] !== "string") {
+    throw new Error(`${where}: 'hint' must be a string when present`);
+  }
+  // Q11 invariant: alt-entry and optional MUST carry a hint
+  const role = e["role"] as ChainRole;
+  if ((role === "alt-entry" || role === "optional") && typeof e["hint"] !== "string") {
+    throw new Error(`${where}: role '${role}' requires a 'hint' string`);
   }
 }
 

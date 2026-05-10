@@ -1,5 +1,14 @@
 # Phase: intent
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:sheets-sync` (Google Sheet creds elicited; --no-sheet skips this).
+- Optionally, invoke `codi:team-charter` when team setup at project bootstrap.
+
+<!-- END auto-generated chain -->
+
 Confirm scope, name the project, attach or create the Sheet, capture credentials. Nothing in the Sheet yet — this phase only resolves config.
 
 ## Inputs

@@ -38,6 +38,7 @@ import {
   computeWorkflowStats,
   forceHandover,
   getStatus,
+  getSlimStatus,
   handover,
   proposeElevation,
   proposeScopeExpansion,
@@ -46,8 +47,10 @@ import {
   rejectElevation,
   rejectScopeExpansion,
   rejectTransition,
+  runQuick,
   runWorkflow,
 } from "../runtime/cli-handlers.js";
+import { QUICK_CATEGORIES, type QuickCategory } from "../runtime/types.js";
 import type { Author, Phase, WorkflowType } from "../runtime/types.js";
 import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput, type GlobalOptions } from "./shared.js";
@@ -182,6 +185,36 @@ function isPhase(s: string): s is Phase {
   return (VALID_PHASES as readonly string[]).includes(s);
 }
 
+export function registerQuickAlias(program: Command): void {
+  program
+    .command("quick <task>")
+    .description(
+      `Trivial-edit fast path (alias of \`workflow quick\`). Categories: ${QUICK_CATEGORIES.join(", ")}.`,
+    )
+    .requiredOption("--category <cat>", `kind of edit (${QUICK_CATEGORIES.join("|")})`)
+    .option("--as-agent", "attribute the action to the agent")
+    .action((task: string, opts: { category: string; asAgent?: boolean }) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result: CommandResult<unknown> = !(QUICK_CATEGORIES as readonly string[]).includes(
+        opts.category,
+      )
+        ? fail(
+            "quick",
+            `unknown category '${opts.category}'. Valid: ${QUICK_CATEGORIES.join(", ")}`,
+          )
+        : tryRun("quick", () =>
+            runQuick({
+              task,
+              category: opts.category as QuickCategory,
+              author: resolveAuthor(opts.asAgent),
+            }),
+          );
+      handleOutput(result, globalOpts);
+      process.exit(result.exitCode);
+    });
+}
+
 export function registerWorkflowCommand(program: Command): void {
   const workflow = program
     .command("workflow")
@@ -213,14 +246,49 @@ export function registerWorkflowCommand(program: Command): void {
       process.exit(result.exitCode);
     });
 
+  // ── quick ─────────────────────────────────────────────────────────────────
+  workflow
+    .command("quick <task>")
+    .description(
+      `Trivial-edit fast path. Creates an audit row + auto-completes. Category MUST be one of: ${QUICK_CATEGORIES.join(", ")}.`,
+    )
+    .requiredOption("--category <cat>", `kind of edit (${QUICK_CATEGORIES.join("|")})`)
+    .option("--as-agent", "attribute the action to the agent")
+    .action((task: string, opts: { category: string; asAgent?: boolean }) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result: CommandResult<unknown> = !(QUICK_CATEGORIES as readonly string[]).includes(
+        opts.category,
+      )
+        ? fail(
+            "workflow quick",
+            `unknown category '${opts.category}'. Valid: ${QUICK_CATEGORIES.join(", ")}`,
+          )
+        : tryRun("workflow quick", () =>
+            runQuick({
+              task,
+              category: opts.category as QuickCategory,
+              author: resolveAuthor(opts.asAgent),
+            }),
+          );
+      handleOutput(result, globalOpts);
+      process.exit(result.exitCode);
+    });
+
   // ── status ────────────────────────────────────────────────────────────────
   workflow
     .command("status")
     .description("Show the active workflow's reduced state (or 'no active workflow')")
-    .action(() => {
+    .option(
+      "--slim",
+      "Return only id/type/phase/status/task — for agent session-start polling (Q14)",
+    )
+    .action((opts: { slim?: boolean }) => {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);
-      const result = tryRun("workflow status", () => getStatus({}));
+      const result = opts.slim
+        ? tryRun("workflow status", () => getSlimStatus({}))
+        : tryRun("workflow status", () => getStatus({}));
       handleOutput(result, globalOpts);
       process.exit(result.exitCode);
     });

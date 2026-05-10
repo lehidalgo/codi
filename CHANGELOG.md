@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Workflow-first skills optimization
+
+#### Added
+
+- `chains:` field per phase in workflow yamls — declares which skills run in each phase with role (required / alt-entry / optional) and optional hint.
+- `codi quick "<task>" --category <cat>` (and top-level `codi quick` alias) — trivial-edit fast path. Closed category list: typo, comment, dep-bump, format, doc-tweak.
+- `codi workflow status --slim` — minimal JSON shape for agent session-start polling.
+- `pnpm regen:phase-refs` — rebuilds auto-generated chain sections between BEGIN/END markers in every `phase-*.md`. Build-error on drift; `--force` repairs.
+- `pnpm validate:codi` — CI validator with 5 checks (internal-flag consistency, chain skill existence, yaml schema, version-bump-on-content-change, phase-ref drift).
+- `auto_generate_phase_refs:` opt-out flag per workflow yaml.
+- New `quick` workflow type with its yaml definition.
+
+#### Changed
+
+- Skill descriptions (14 skills) carry mutual Skip-when clauses for paired skills and a DECISION TREE preamble for the testing cluster.
+- `evidence-gathering` and `dispatching-parallel-agents` flipped to `internal: true` — invokable only via slash, not auto-trigger.
+- `codi-workflow.md` rule v3 — adds Manifest Discipline section requiring every edit to run under a workflow (full or quick).
+
 ### Consolidator cold-start guard + artifact tracking + proposals UI
 
 #### Added

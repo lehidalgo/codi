@@ -1,12 +1,47 @@
 id: project
 name: Project
 description: Bootstrap a new project + canvas from stakeholder docs
-version: 1
+version: 2
 phases:
-  intent: { gates: [task_described], next: [discover, abandoned] }
-  discover: { gates: [], next: [decompose, abandoned] }
-  decompose: { gates: [], next: [sync, discover, abandoned] }
-  sync: { gates: [], next: [done, decompose, abandoned] }
-  done: { gates: [], next: [] }
-  abandoned: { gates: [], next: [] }
+  intent:
+    gates: [task_described]
+    next: [discover, abandoned]
+    chains:
+      - {
+          skill: sheets-sync,
+          role: required,
+          hint: "Google Sheet creds elicited; --no-sheet skips this",
+        }
+      - { skill: team-charter, role: optional, hint: "team setup at project bootstrap" }
+  discover:
+    gates: []
+    next: [decompose, abandoned]
+    chains:
+      - { skill: discover, role: required, hint: "wide mode — Goals + draft Stories from sources" }
+      - {
+          skill: brainstorming,
+          role: alt-entry,
+          hint: "elicitation tone preferred over structured discover",
+        }
+  decompose:
+    gates: []
+    next: [sync, discover, abandoned]
+    chains:
+      - { skill: plan-writing, role: required, hint: "PRD mode — Stories with acceptance criteria" }
+      - { skill: roadmap, role: optional, hint: "multi-feature long-horizon planning" }
+  sync:
+    gates: []
+    next: [done, decompose, abandoned]
+    chains:
+      - {
+          skill: sheets-sync,
+          role: required,
+          hint: "caller=bootstrap — push Goals/Stories to Sheet",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
 flags: {}

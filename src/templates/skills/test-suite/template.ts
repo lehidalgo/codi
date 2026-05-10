@@ -8,6 +8,10 @@ import {
 export const template = `---
 name: {{name}}
 description: |
+  DECISION TREE — Run/measure/generate tests for the CURRENT suite without a
+  specific feature focus? → this skill. TDD inner loop with failing-test-first
+  → ${PROJECT_NAME}-tdd. Browser-driven → ${PROJECT_NAME}-webapp-testing.
+  Human-paired QA → ${PROJECT_NAME}-guided-qa-testing.
   Unified testing skill with three modes. RUN: detect the framework and
   execute the test suite, report pass/fail with quick triage. COVERAGE:
   run with coverage instrumentation, identify files and lines below the
@@ -29,7 +33,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}} — Testing

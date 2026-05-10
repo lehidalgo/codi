@@ -1,18 +1,67 @@
 id: feature
 name: Feature
 description: Build new functionality, intent → plan → decompose → execute → verify → done
-version: 1
+version: 2
 phases:
-  intent: { gates: [task_described], next: [plan, abandoned] }
-  plan: { gates: [scope_files_listed, plan_artifact_exists], next: [decompose, abandoned] }
-  decompose: { gates: [], next: [execute, plan, abandoned] }
-  execute: { gates: [], next: [verify, execute, abandoned] }
+  intent:
+    gates: [task_described]
+    next: [plan, abandoned]
+    chains:
+      - { skill: discover, role: required }
+      - { skill: step-documenter, role: optional, hint: "domain terms emerge inline" }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists]
+    next: [decompose, abandoned]
+    chains:
+      - { skill: plan-writing, role: required }
+      - { skill: discover, role: alt-entry, hint: "plan needs sharpening — mode sharpen" }
+      - {
+          skill: gate-plan-coverage,
+          role: optional,
+          hint: "before proposing transition to decompose",
+        }
+      - {
+          skill: gate-deep-modules,
+          role: optional,
+          hint: "structural concerns surface in plan review",
+        }
+  decompose:
+    gates: []
+    next: [execute, plan, abandoned]
+    chains:
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥3 slices — fan out parallel or sequential",
+        }
+  execute:
+    gates: []
+    next: [verify, execute, abandoned]
+    chains:
+      - { skill: tdd, role: required }
+      - { skill: worktrees, role: optional, hint: "≥1 hour or ≥3 commits — keep main clean" }
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "independent slices parallel; ≥3 dependent slices sequential",
+        }
+      - { skill: diagnose, role: optional, hint: "test fails unexpectedly during execute" }
+      - { skill: code-review, role: optional, hint: "auto_review flag enabled in config" }
   verify:
-    {
-      gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified],
-      next: [done, execute, abandoned],
-    }
-  done: { gates: [], next: [] }
-  abandoned: { gates: [], next: [] }
+    gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — required before merge to main",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
 flags:
   tdd_strict: true

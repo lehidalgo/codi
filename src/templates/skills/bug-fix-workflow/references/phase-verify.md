@@ -1,5 +1,14 @@
 # Phase: verify
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled — high value for fixes touching shared code paths.
+
+<!-- END auto-generated chain -->
+
 Invoke `codi:verify-evidence` (5-step gate: Identify → Run → Read → Verify → Claim). Without it you are claiming "fixed" without proof.
 
 ## Exit criteria

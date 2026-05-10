@@ -3,6 +3,9 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
+  DECISION TREE — Implementing NEW behavior with failing-test-first cycle?
+  → this skill. Running existing suite → ${PROJECT_NAME}-test-suite. Browser
+  tests → ${PROJECT_NAME}-webapp-testing. Human-paired QA → ${PROJECT_NAME}-guided-qa-testing.
   Test-Driven Development discipline. Use when implementing any feature,
   bug fix, refactor, or behavior change. Enforces RED-GREEN-REFACTOR with
   iron-law verification (no production code without a failing test first).
@@ -20,7 +23,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 12
 ---
 
 # {{name}} — TDD

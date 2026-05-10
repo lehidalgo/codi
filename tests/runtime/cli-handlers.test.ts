@@ -160,6 +160,135 @@ describe("codi CLI handlers", () => {
     });
   });
 
+  describe("runQuick (Q7 — trivial-edit audit trail)", () => {
+    it("rejects an unknown category with a clear error", async () => {
+      const { runQuick } = await import("#src/runtime/cli-handlers.js");
+      expect(() =>
+        runQuick({
+          task: "fix typo",
+          category: "INVALID" as never,
+          author: human,
+          cwd: tmpDir,
+        }),
+      ).toThrow(/unknown quick category/);
+    });
+
+    it("creates a workflow_run with type='quick' and category in init payload", async () => {
+      const { runQuick } = await import("#src/runtime/cli-handlers.js");
+      const r = runQuick({
+        task: "fix typo in README",
+        category: "typo",
+        author: human,
+        cwd: tmpDir,
+      });
+      expect(r.workflowId).toMatch(/^quick-/);
+      withBrain(tmpDir, (log) => {
+        const events = log.loadEvents(r.workflowId);
+        const init = events.find((e) => e.event_type === "init");
+        expect(init).toBeTruthy();
+        expect((init?.payload as { quick_category?: string }).quick_category).toBe("typo");
+        expect((init?.payload as { workflow_type?: string }).workflow_type).toBe("quick");
+      });
+    });
+
+    it("auto-completes by emitting workflow_completed", async () => {
+      const { runQuick } = await import("#src/runtime/cli-handlers.js");
+      const r = runQuick({
+        task: "bump dep",
+        category: "dep-bump",
+        author: human,
+        cwd: tmpDir,
+      });
+      withBrain(tmpDir, (log) => {
+        const events = log.loadEvents(r.workflowId);
+        const completed = events.find((e) => e.event_type === "workflow_completed");
+        expect(completed).toBeTruthy();
+        expect(completed?.event_id).toBe(r.completedEventId);
+      });
+    });
+
+    it("clears the active-workflow pointer so the next quick run is unblocked", async () => {
+      const { runQuick, getSlimStatus } = await import("#src/runtime/cli-handlers.js");
+      runQuick({
+        task: "first",
+        category: "format",
+        author: human,
+        cwd: tmpDir,
+      });
+      const slim = getSlimStatus({ cwd: tmpDir });
+      expect(slim.active).toBe(false);
+      const r2 = runQuick({
+        task: "second",
+        category: "comment",
+        author: human,
+        cwd: tmpDir,
+      });
+      expect(r2.workflowId).toMatch(/^quick-/);
+    });
+
+    it("accepts every category in QUICK_CATEGORIES", async () => {
+      const { runQuick } = await import("#src/runtime/cli-handlers.js");
+      const { QUICK_CATEGORIES } = await import("#src/runtime/types.js");
+      for (const cat of QUICK_CATEGORIES) {
+        const r = runQuick({
+          task: `task for ${cat}`,
+          category: cat,
+          author: human,
+          cwd: tmpDir,
+        });
+        expect(r.workflowId).toMatch(/^quick-/);
+      }
+    });
+  });
+
+  describe("getSlimStatus (Q14 — agent session-start polling)", () => {
+    it("returns all-null shape when no workflow exists", async () => {
+      const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
+      const slim = getSlimStatus({ cwd: tmpDir });
+      expect(slim).toEqual({
+        active: false,
+        workflow_id: null,
+        workflow_type: null,
+        current_phase: null,
+        status: null,
+        task: null,
+      });
+    });
+
+    it("returns slim shape with id/type/phase/task when active", async () => {
+      const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "Fix login",
+        author: human,
+        cwd: tmpDir,
+      });
+      const slim = getSlimStatus({ cwd: tmpDir });
+      expect(slim.active).toBe(true);
+      expect(slim.workflow_type).toBe("bug-fix");
+      expect(slim.current_phase).toBe("intent");
+      expect(slim.task).toBe("Fix login");
+      expect(slim.workflow_id).toMatch(/^[a-z0-9-]+$/);
+      expect(slim.status).toBeTruthy();
+    });
+
+    it("slim payload is strictly smaller than full reduced state", async () => {
+      const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
+      runWorkflow({
+        workflowType: "feature",
+        task: "Add dark mode",
+        author: human,
+        cwd: tmpDir,
+      });
+      const full = getStatus({ cwd: tmpDir });
+      const slim = getSlimStatus({ cwd: tmpDir });
+      const fullKeyCount = Object.keys(full.state ?? {}).length;
+      const slimKeyCount = Object.keys(slim).length;
+      expect(slimKeyCount).toBeLessThan(fullKeyCount);
+      expect(slimKeyCount).toBe(6); // active + 5 nullable fields
+    });
+  });
+
   describe("transition lifecycle", () => {
     beforeEach(() => {
       runWorkflow({

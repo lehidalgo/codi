@@ -3,24 +3,26 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
-  Implementation plan generator. Use after ${PROJECT_NAME}-brainstorming
-  produces an approved design spec and the user wants the spec broken into
-  atomic 2-5 minute TDD tasks with exact file paths, complete code, and
-  runnable verification commands. Also activate for phrases like "break
-  this into tasks", "write the plan", "plan from spec", "TDD task
-  breakdown", "atomic tasks", "implementation task list", "turn this spec
-  into an execution plan". Produces an executable plan document at
-  \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature>-impl.md\\\`. Do NOT activate
-  without an approved spec (use ${PROJECT_NAME}-brainstorming first), for
-  executing an existing plan (use ${PROJECT_NAME}-plan-execution), or
-  for single-file edits that don't
+  Implementation plan generator (TDD-mode of plan-writing for solo runs).
+  Use after ${PROJECT_NAME}-brainstorming produces an approved design spec
+  and the user wants the spec broken into atomic 2-5 minute TDD tasks with
+  exact file paths, complete code, and runnable verification commands.
+  Activate for phrases like "break this into tasks", "TDD task breakdown",
+  "atomic tasks", "implementation task list", "turn this spec into an
+  execution plan". Produces an executable plan document at
+  \\\`docs/YYYYMMDD_HHMMSS_[PLAN]_<feature>-impl.md\\\`. Skip when an active
+  ${PROJECT_NAME} workflow is in the plan phase — use
+  ${PROJECT_NAME}-plan-writing (the canonical, deterministic plan generator
+  with three modes). Do NOT activate without an approved spec (use
+  ${PROJECT_NAME}-brainstorming first), for executing an existing plan (use
+  ${PROJECT_NAME}-plan-execution), or for single-file edits that don't
   warrant a plan.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 12
 ---
 
 # {{name}} — Plan Writer

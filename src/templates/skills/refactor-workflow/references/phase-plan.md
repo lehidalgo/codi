@@ -1,5 +1,16 @@
 # Phase: plan
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:plan-writing`.
+- Alternatively, invoke `codi:discover` if plan needs sharpening — mode sharpen.
+- Optionally, invoke `codi:gate-deep-modules` when validate the new shape matches the deepening rationale.
+- Optionally, invoke `codi:gate-plan-coverage` when before transition to execute.
+
+<!-- END auto-generated chain -->
+
 Extended plan template specific to refactors.
 
 ## Phase chain

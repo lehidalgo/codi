@@ -1,19 +1,56 @@
 id: bug-fix
 name: Bug fix
 description: Reproduce, plan hypotheses, fix, verify
-version: 1
+version: 2
 phases:
-  intent: { gates: [task_described], next: [reproduce, abandoned] }
-  reproduce: { gates: [], next: [plan, abandoned] }
-  plan: { gates: [scope_files_listed, plan_artifact_exists], next: [execute, reproduce, abandoned] }
-  execute: { gates: [], next: [verify, execute, abandoned] }
+  intent:
+    gates: [task_described]
+    next: [reproduce, abandoned]
+    chains:
+      - { skill: discover, role: optional, hint: "ambiguous failure mode — wide mode to clarify" }
+  reproduce:
+    gates: []
+    next: [plan, abandoned]
+    chains:
+      - { skill: diagnose, role: required }
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥2 unrelated failure domains — fan out parallel",
+        }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists]
+    next: [execute, reproduce, abandoned]
+    chains:
+      - { skill: plan-writing, role: required, hint: "include Hypothesis section" }
+      - { skill: discover, role: alt-entry, hint: "hypotheses compete — mode sharpen" }
+      - {
+          skill: architecture-review,
+          role: optional,
+          hint: "3-strikes rule — hypotheses keep failing",
+        }
+  execute:
+    gates: []
+    next: [verify, execute, abandoned]
+    chains:
+      - { skill: tdd, role: required, hint: "regression-test FIRST" }
+      - { skill: worktrees, role: optional, hint: "≥3 files or significant exploration commits" }
   verify:
-    {
-      gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified],
-      next: [done, execute, abandoned],
-    }
-  done: { gates: [], next: [] }
-  abandoned: { gates: [], next: [] }
+    gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — high value for fixes touching shared code paths",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
 flags:
   tdd_strict: true
   reproducer_first: true

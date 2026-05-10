@@ -9,15 +9,17 @@ description: |
   workflow through intent, baseline, plan, execute, verify, done — with a
   mandatory baseline phase that captures current behavior before any change.
   Triggers on "refactor", "restructure", "decouple", "deepen", "improve
-  architecture", "extract", "cleanup". Not for new features (use
-  feature-workflow), bug fixes (use bug-fix-workflow), or schema migrations
-  (use migration-workflow).
+  architecture", "extract", "cleanup". Skip when the change is pure
+  dead-code removal, DRY-up, or unused-import cleanup with no structural
+  shape change — use ${PROJECT_NAME}-refactoring (lighter, no phase
+  machine). Not for new features (use feature-workflow), bug fixes (use
+  bug-fix-workflow), or schema migrations (use migration-workflow).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}

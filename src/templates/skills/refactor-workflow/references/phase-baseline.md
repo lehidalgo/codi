@@ -1,5 +1,13 @@
 # Phase: baseline
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- Optionally, invoke `codi:worktrees` when Strongly recommended — captures unrefactored baseline tests on a clean isolated branch.
+
+<!-- END auto-generated chain -->
+
 The safety net. Skip ONLY when comprehensive existing tests already exercise the area being refactored.
 
 ## Story handling at workflow entry (before baseline runs)

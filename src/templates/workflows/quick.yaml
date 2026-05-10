@@ -1,0 +1,18 @@
+id: quick
+name: Quick
+description: Trivial edit (typo / comment / dep-bump / format / doc-tweak) — keeps an audit trail for ad-hoc changes
+version: 1
+phases:
+  intent:
+    gates: [task_described]
+    next: [done, abandoned]
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  trivial: true
+  no_phase_chain: true
+auto_generate_phase_refs: false

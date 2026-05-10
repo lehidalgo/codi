@@ -1,5 +1,14 @@
 # Phase: verify
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled — refactors are high-leverage candidates for review.
+
+<!-- END auto-generated chain -->
+
 Invoke `codi:verify-evidence` (5-step gate). Refactor success criterion is "no behavior change", which only evidence (running the baseline tests) can prove.
 
 ## Exit criteria

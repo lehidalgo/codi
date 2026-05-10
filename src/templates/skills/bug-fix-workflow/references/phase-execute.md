@@ -1,5 +1,14 @@
 # Phase: execute
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:tdd` (regression-test FIRST).
+- Optionally, invoke `codi:worktrees` when ≥3 files or significant exploration commits.
+
+<!-- END auto-generated chain -->
+
 Apply the fix. Optional: invoke `codi:worktrees` when the fix touches ≥3 files or the diagnose phase produced significant exploration commits that should not land on main. Skip for 1-commit fixes.
 
 ## Procedure

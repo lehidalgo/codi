@@ -1,5 +1,17 @@
 # Phase: execute
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:tdd`.
+- Optionally, invoke `codi:worktrees` when ≥1 hour or ≥3 commits — keep main clean.
+- Optionally, invoke `codi:subagent-orchestration` when independent slices parallel; ≥3 dependent slices sequential.
+- Optionally, invoke `codi:diagnose` when test fails unexpectedly during execute.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled in config.
+
+<!-- END auto-generated chain -->
+
 Goal: implement the slices in order, observing scope rules and recording every change.
 
 ## How to run this phase (chained skills)

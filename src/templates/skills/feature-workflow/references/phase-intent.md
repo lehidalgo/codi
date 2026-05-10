@@ -1,5 +1,14 @@
 # Phase: intent
 
+<!-- BEGIN auto-generated chain — DO NOT EDIT -->
+
+## Chain skills
+
+- You **MUST** invoke `codi:discover`.
+- Optionally, invoke `codi:step-documenter` when domain terms emerge inline.
+
+<!-- END auto-generated chain -->
+
 Goal: understand what to build before writing a single line of code.
 
 ## When `--from-story US-NNN` was passed

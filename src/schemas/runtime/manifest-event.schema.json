@@ -47,7 +47,7 @@
     },
     "workflowType": {
       "type": "string",
-      "enum": ["feature", "bug-fix", "refactor", "migration", "project"]
+      "enum": ["feature", "bug-fix", "refactor", "migration", "project", "quick"]
     },
     "scopeCategory": {
       "type": "string",
@@ -115,6 +115,11 @@
             "cwd": {
               "type": "string",
               "description": "Project root at workflow init time. Filters workflow visibility per project."
+            },
+            "quick_category": {
+              "type": "string",
+              "enum": ["typo", "comment", "dep-bump", "format", "doc-tweak"],
+              "description": "Q7 — required when workflow_type is 'quick'. Closed list of trivial-edit categories."
             }
           },
           "required": ["workflow_id", "workflow_type", "task", "plugin_version"],
