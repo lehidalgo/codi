@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { spawn } from "node:child_process";
+import { PROJECT_CLI } from "../constants.js";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve, join } from "node:path";
@@ -8,7 +9,11 @@ import { Logger } from "../core/output/logger.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { initFromOptions, handleOutput } from "./shared.js";
-import { resolveAttachOrSpawn, DEFAULT_BRAIN_UI_PORT } from "../runtime/brain-ui/index.js";
+import {
+  resolveAttachOrSpawn,
+  DEFAULT_BRAIN_UI_PORT,
+  probeHealthz,
+} from "../runtime/brain-ui/index.js";
 import { openBrain, applyMigrations, defaultBrainPath } from "../runtime/brain/index.js";
 import { generatePackage, packageToJson } from "../runtime/consolidate/index.js";
 import {
@@ -58,12 +63,16 @@ function resolveBrainUiRunner(): { runner: string; script: string } {
 interface BrainUiFlags {
   readonly port?: string;
   readonly brainPath?: string;
-  readonly foreground?: boolean;
+  readonly background?: boolean;
 }
 
 export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult<BrainUiData>> {
   const log = Logger.getInstance();
   const port = flags.port ? Number(flags.port) : DEFAULT_BRAIN_UI_PORT;
+  // Foreground is the default — user runs `codi brain ui` and the terminal
+  // stays attached until they Ctrl+C. Pass `--background` for the legacy
+  // detached-daemon behavior.
+  const isForeground = flags.background !== true;
   const decision = await resolveAttachOrSpawn();
 
   if (decision.action === "attach") {
@@ -90,18 +99,82 @@ export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult
   if (flags.brainPath) {
     args.push("--brain-path", flags.brainPath);
   }
-  if (flags.foreground) {
+  if (isForeground) {
     args.push("--foreground");
   }
 
-  const child = spawn(resolved.runner, args, {
-    detached: !flags.foreground,
-    stdio: flags.foreground ? "inherit" : "ignore",
-  });
-  if (!flags.foreground) child.unref();
-
   const url = `http://127.0.0.1:${port}`;
-  log.info(`Spawning brain UI at ${url}${flags.foreground ? " (foreground)" : ""}`);
+  log.info(`Spawning brain UI at ${url}${isForeground ? " (foreground)" : ""}`);
+
+  const child = spawn(resolved.runner, args, {
+    detached: !isForeground,
+    stdio: isForeground ? "inherit" : ["ignore", "ignore", "pipe"],
+  });
+
+  // Capture stderr for background spawns so we can surface the real error
+  // if the daemon dies before healthz reports green. Bounded buffer prevents
+  // a runaway child from filling memory.
+  let stderrBuf = "";
+  if (!isForeground && child.stderr) {
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderrBuf += chunk.toString("utf-8");
+      if (stderrBuf.length > 8 * 1024) stderrBuf = stderrBuf.slice(-8 * 1024);
+    });
+  }
+
+  if (isForeground) {
+    // Foreground attaches stdio: caller blocks on the child. Returning a
+    // CommandResult here is informational; the parent process will exit
+    // when the child does.
+    return createCommandResult({
+      success: true,
+      command: "brain ui",
+      data: { action: "spawn", port, url, pid: child.pid ?? -1 },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  }
+
+  // Background spawn: verify the daemon actually came up before reporting
+  // success. Without this, a child that crashes inside main() (e.g.
+  // missing native binding, port conflict, permission error) leaves the
+  // CLI claiming "spawn OK" while nothing listens.
+  const SPAWN_DEADLINE_MS = 5000;
+  const POLL_INTERVAL_MS = 200;
+  const deadline = Date.now() + SPAWN_DEADLINE_MS;
+  let healthy = false;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) break;
+    const probe = await probeHealthz(port, 500);
+    if (probe?.ok) {
+      healthy = true;
+      break;
+    }
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+  }
+
+  if (!healthy) {
+    if (child.exitCode === null) child.kill("SIGKILL");
+    const stderrTail = stderrBuf.trim();
+    return createCommandResult({
+      success: false,
+      command: "brain ui",
+      data: { action: "spawn", port, url, pid: child.pid ?? -1 },
+      errors: [
+        {
+          code: "E_BRAIN_UI_SPAWN_FAILED",
+          message: `Brain UI failed to start within ${SPAWN_DEADLINE_MS / 1000}s.${
+            stderrTail.length > 0 ? `\n\nChild stderr:\n${stderrTail}` : ""
+          }`,
+          hint: `Run \`${PROJECT_CLI} doctor\` to diagnose. Most common cause: missing better-sqlite3 native binding (run \`pnpm rebuild better-sqlite3\` or equivalent).`,
+          severity: "error",
+          context: { port },
+        },
+      ],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  child.unref();
   return createCommandResult({
     success: true,
     command: "brain ui",
@@ -333,7 +406,7 @@ export function registerBrainCommand(program: Command): void {
     .description("Launch or attach to the brain-ui server (default port 4477)")
     .option("--port <port>", "port to bind", String(DEFAULT_BRAIN_UI_PORT))
     .option("--brain-path <path>", "override brain DB path")
-    .option("--foreground", "stay attached to terminal")
+    .option("--background", "run as detached daemon (default: stay attached to terminal)")
     .action(async (opts: BrainUiFlags) => {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);

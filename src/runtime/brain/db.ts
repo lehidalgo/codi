@@ -126,6 +126,30 @@ export interface BrainHandle {
 }
 
 /**
+ * Thrown when better-sqlite3's native binding cannot be loaded — typically
+ * because the consumer's package manager skipped the postinstall build step
+ * (pnpm v10+ does this by default unless the package is in the
+ * onlyBuiltDependencies allowlist). Carries an actionable fix command for
+ * each major package manager so the user does not have to interpret the
+ * raw node-gyp / bindings stack trace.
+ */
+export class BrainBindingsError extends Error {
+  constructor(cause: Error) {
+    super(
+      "better-sqlite3 native binding is missing.\n\n" +
+        "This usually means your package manager skipped the build step.\n" +
+        "Fix it with one of:\n" +
+        "  pnpm:  pnpm approve-builds && pnpm rebuild better-sqlite3\n" +
+        "  npm:   npm rebuild better-sqlite3\n" +
+        "  yarn:  yarn rebuild better-sqlite3\n\n" +
+        "Run it in the directory where codi is installed.",
+    );
+    this.name = "BrainBindingsError";
+    this.cause = cause;
+  }
+}
+
+/**
  * Open (or create) the brain database. Caller must close the handle.
  *
  * Schema is NOT applied here — call `applyMigrations` separately. Keeping
@@ -135,7 +159,15 @@ export interface BrainHandle {
 export function openBrain(opts: OpenBrainOptions = {}): BrainHandle {
   const path = opts.dbPath ?? defaultBrainPath();
   mkdirSync(dirname(path), { recursive: true });
-  const raw = new Database(path, { readonly: opts.readonly ?? false });
+  let raw: Database.Database;
+  try {
+    raw = new Database(path, { readonly: opts.readonly ?? false });
+  } catch (e) {
+    if (e instanceof Error && /Could not locate the bindings file/i.test(e.message)) {
+      throw new BrainBindingsError(e);
+    }
+    throw e;
+  }
   raw.pragma("journal_mode = WAL");
   raw.pragma("foreign_keys = ON");
   raw.pragma("synchronous = NORMAL");

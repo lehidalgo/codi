@@ -5,6 +5,7 @@
 export {
   openBrain,
   defaultBrainPath,
+  BrainBindingsError,
   type BrainDb,
   type BrainHandle,
   type OpenBrainOptions,

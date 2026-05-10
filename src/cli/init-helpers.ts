@@ -547,3 +547,29 @@ export async function applyConfigurationWithBackup(
     throw cause;
   }
 }
+
+/**
+ * Final post-init smoke test: verify better-sqlite3 native binding loads.
+ * If it does not, every brain operation (capture, hooks, brain-ui) will
+ * fail at runtime with a node-gyp stack trace. Init succeeded structurally
+ * but the install is not "completely functional" without working bindings,
+ * so warn loudly with the actionable fix command.
+ *
+ * Non-throwing: probe failures never propagate; logged as advisory only.
+ */
+export async function postInitBindingsProbe(log: Logger): Promise<void> {
+  try {
+    const { checkNativeBindings } = await import("./doctor.js");
+    const bindings = await checkNativeBindings();
+    if (bindings.passed) return;
+    log.warn("");
+    log.warn("⚠ Init completed but native bindings probe failed:");
+    for (const line of bindings.message.split("\n")) {
+      log.warn(`   ${line}`);
+    }
+    log.warn("");
+    log.warn(`Run \`${PROJECT_CLI} doctor\` to re-check after fixing.`);
+  } catch (cause) {
+    log.debug("Native bindings probe skipped (non-critical)", cause);
+  }
+}

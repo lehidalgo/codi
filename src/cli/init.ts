@@ -40,6 +40,7 @@ import {
   applyToolingPicks,
   applyConfigurationWithBackup,
   runArtifactSelectionFallback,
+  postInitBindingsProbe,
 } from "./init-helpers.js";
 import { createError } from "../core/output/errors.js";
 import { RETENTION_CANCELLED_ERROR } from "../constants.js";
@@ -747,6 +748,7 @@ export async function initHandler(
   } catch {
     log.warn("Operations ledger write failed; this is non-critical.");
   }
+  await postInitBindingsProbe(log);
 
   return createCommandResult({
     success: true,
