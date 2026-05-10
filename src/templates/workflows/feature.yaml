@@ -1,17 +1,26 @@
 id: feature
 name: Feature
-description: Build new functionality, intent → plan → decompose → execute → verify → done
-version: 2
+description: Adaptive feature workflow — phases compress per dev answers (complexity, design existence, scope, exec mode, tdd-strict, grill toggle)
+version: 3
 phases:
   intent:
     gates: [task_described]
-    next: [plan, abandoned]
+    next: [plan, execute, abandoned]
     chains:
-      - { skill: discover, role: required }
+      - {
+          skill: discover,
+          role: required,
+          hint: "wide mode — skip when designExists=true AND grill=false",
+        }
       - { skill: step-documenter, role: optional, hint: "domain terms emerge inline" }
+      - {
+          skill: plan-execution,
+          role: alt-entry,
+          hint: "designExists=true AND scope=single — fast-path direct to execute",
+        }
   plan:
     gates: [scope_files_listed, plan_artifact_exists]
-    next: [decompose, abandoned]
+    next: [decompose, execute, abandoned]
     chains:
       - { skill: plan-writing, role: required }
       - { skill: discover, role: alt-entry, hint: "plan needs sharpening — mode sharpen" }
@@ -38,7 +47,12 @@ phases:
     gates: []
     next: [verify, execute, abandoned]
     chains:
-      - { skill: tdd, role: required }
+      - {
+          skill: plan-execution,
+          role: required,
+          hint: "mode INLINE for scope=single, SUBAGENT for scope=multi",
+        }
+      - { skill: tdd, role: required, hint: "regression test on new behaviour" }
       - { skill: worktrees, role: optional, hint: "≥1 hour or ≥3 commits — keep main clean" }
       - {
           skill: subagent-orchestration,
@@ -65,3 +79,7 @@ phases:
     next: []
 flags:
   tdd_strict: true
+  adaptive: true
+  profiles: [prototype, standard, deep]
+  skip_phases_when:
+    decompose: { complexity: trivial }

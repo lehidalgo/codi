@@ -1,11 +1,9 @@
 /**
- * Workflow lifecycle handlers — runWorkflow + getStatus.
+ * Workflow lifecycle handlers — runWorkflow + runQuick + getStatus.
  *
- * runWorkflow boots a brand-new workflow (writes init + first phase_started).
- * It refuses to run if docs/CONTEXT.md is missing — that's the agent's cue
- * to invoke codi:init-knowledge-base before retrying.
- *
- * Brain-backed: persistence goes through BrainEventLog directly.
+ * Adaptive intake (per-workflow profiles, skip rules, CLI flag parsing) lives
+ * in `src/runtime/workflows/<id>/`. This module is a thin orchestration layer
+ * that consults the adapter registry for the active workflow type.
  */
 
 import { existsSync } from "node:fs";
@@ -22,6 +20,12 @@ import {
   type ReducedState,
   type WorkflowType,
 } from "../types.js";
+import { adaptationPayloadKey, getAdapter } from "../workflows/registry.js";
+import type { BugFixAdaptation } from "../workflows/bug-fix/index.js";
+import type { FeatureAdaptation } from "../workflows/feature/index.js";
+import type { RefactorAdaptation } from "../workflows/refactor/index.js";
+import type { MigrationAdaptation } from "../workflows/migration/index.js";
+import type { ProjectAdaptation } from "../workflows/project/index.js";
 
 export class KnowledgeBaseMissingError extends Error {
   constructor(public readonly contextPath: string) {
@@ -34,7 +38,7 @@ export class KnowledgeBaseMissingError extends Error {
         "3. After init-knowledge-base completes, re-run the original codi command with the same arguments.\n" +
         "\n" +
         "The init-knowledge-base skill scans the codebase, proposes domain terms, " +
-        "asks the user to confirm those terms (one decision point), then writes docs/CONTEXT.md.",
+        "and writes docs/CONTEXT.md.",
     );
     this.name = "KnowledgeBaseMissingError";
   }
@@ -49,13 +53,71 @@ export interface RunOptions {
   task: string;
   author: Author;
   cwd?: string;
-  /** Optional UserStory id this workflow run is delivering (--from-story US-NNN). */
   fromStoryId?: string;
+  /** Per-workflow adaptive intake — only the matching field is read by runWorkflow. */
+  bugFixAdaptation?: BugFixAdaptation;
+  featureAdaptation?: FeatureAdaptation;
+  refactorAdaptation?: RefactorAdaptation;
+  migrationAdaptation?: MigrationAdaptation;
+  projectAdaptation?: ProjectAdaptation;
+  /** Cross-workflow conversion — preserves the prior run's metadata + decisions. */
+  carryoverFrom?: string;
 }
 
 export interface RunResult {
   workflowId: string;
   initEventId: string;
+}
+
+const ADAPTATION_FIELD: Record<WorkflowType, keyof RunOptions | undefined> = {
+  "bug-fix": "bugFixAdaptation",
+  feature: "featureAdaptation",
+  refactor: "refactorAdaptation",
+  migration: "migrationAdaptation",
+  project: "projectAdaptation",
+  quick: undefined,
+  "team-consolidation": undefined,
+};
+
+/**
+ * Look up the adapter for the workflow type and serialize its adaptation
+ * into the init payload under the conventional key (e.g. `bug_fix_adaptation`).
+ * No-op when the adapter is missing or the dev didn't supply an adaptation.
+ */
+function applyAdaptation(initPayload: Record<string, unknown>, opts: RunOptions): void {
+  const adapter = getAdapter(opts.workflowType);
+  if (!adapter) return;
+  const fieldName = ADAPTATION_FIELD[opts.workflowType];
+  if (!fieldName) return;
+  const adaptation = opts[fieldName];
+  if (adaptation === undefined) return;
+  initPayload[adaptationPayloadKey(opts.workflowType)] = adapter.serialize(adaptation);
+}
+
+interface CarryoverContext {
+  readonly task: string | null;
+  readonly type: string | null;
+  readonly current_phase: string | null;
+  readonly status: string | null;
+  readonly scope_files: readonly string[];
+  readonly decisions_count: number;
+  readonly knowledge_terms: readonly string[];
+}
+
+function collectCarryoverContext(log: BrainEventLog, priorId: string): CarryoverContext | null {
+  if (!log.hasWorkflow(priorId)) return null;
+  const events = log.loadEvents(priorId);
+  if (events.length === 0) return null;
+  const reduced = reduce(events);
+  return {
+    task: reduced.task ?? null,
+    type: reduced.workflow_type ?? null,
+    current_phase: reduced.current_phase ?? null,
+    status: reduced.status ?? null,
+    scope_files: reduced.scope.files_in_plan,
+    decisions_count: events.filter((e) => e.event_type === "decision_recorded").length,
+    knowledge_terms: reduced.knowledge.context_terms_added,
+  };
 }
 
 export function runWorkflow(opts: RunOptions): RunResult {
@@ -72,10 +134,9 @@ export function runWorkflow(opts: RunOptions): RunResult {
 
   const log = BrainEventLog.open();
   try {
-    // Migrate stale terminal-status pointer. If the prior active workflow is
-    // in `completed` or `abandoned` status, clearing the pointer is safe:
-    // the workflow_runs row stays addressable by id. Any active or paused
-    // prior workflow still blocks (handled in initWorkflow).
+    // Migrate stale terminal-status pointer so completed/abandoned prior runs
+    // do not block a fresh start. Active or paused prior workflows still block
+    // in `initWorkflow` itself.
     const priorActiveId = log.getActiveWorkflowId();
     if (priorActiveId !== null) {
       const priorEvents = log.loadEvents(priorActiveId);
@@ -99,6 +160,14 @@ export function runWorkflow(opts: RunOptions): RunResult {
     };
     if (opts.fromStoryId !== undefined) {
       initPayload["from_story_id"] = opts.fromStoryId;
+    }
+    applyAdaptation(initPayload, opts);
+    if (opts.carryoverFrom !== undefined) {
+      initPayload["carryover_from"] = opts.carryoverFrom;
+      const carriedContext = collectCarryoverContext(log, opts.carryoverFrom);
+      if (carriedContext !== null) {
+        initPayload["carryover_context"] = carriedContext;
+      }
     }
 
     const initEvent = createEvent({
@@ -144,9 +213,6 @@ export interface QuickRunResult {
  * the category in the init payload, and immediately closes the run with a
  * `workflow_completed` event. No phase machine, no chain skills, no transition
  * gates — but a manifest row exists so the audit trail is complete.
- *
- * The dev classifies the edit (typo / comment / dep-bump / format / doc-tweak).
- * Anything that doesn't fit one of those needs a real workflow.
  */
 export function runQuick(opts: QuickRunOptions): QuickRunResult {
   const cwd = opts.cwd ?? process.cwd();
@@ -233,11 +299,6 @@ export interface StatusResult {
   state: ReducedState | null;
 }
 
-/**
- * Slim shape for agent session-start polling (Q14). Holds only the fields
- * the agent needs to decide whether to chain skills or operate ad-hoc:
- * which workflow is live, which phase, what task.
- */
 export interface SlimStatus {
   readonly active: boolean;
   readonly workflow_id: string | null;
@@ -250,8 +311,6 @@ export interface SlimStatus {
 export function getStatus(opts: StatusOptions = {}): StatusResult {
   const log = BrainEventLog.open();
   try {
-    // Status is the user-facing surface — apply the cwd filter so a
-    // workflow started in another project does not appear here.
     const cwd = opts.cwd ?? process.cwd();
     const workflowId = opts.workflowId ?? log.getActiveWorkflowIdForCwd(cwd);
     if (!workflowId) return { active: false, state: null };
@@ -264,13 +323,6 @@ export function getStatus(opts: StatusOptions = {}): StatusResult {
   }
 }
 
-/**
- * Q14 — slim status, for agent session-start polling.
- *
- * Cheap to compute, cheap to serialize, cheap to read. The full ReducedState
- * is ~16 fields; the agent only needs to know "am I in a workflow and which
- * phase". When inactive, every field except `active` is null.
- */
 export function getSlimStatus(opts: StatusOptions = {}): SlimStatus {
   const result = getStatus(opts);
   if (!result.active || result.state === null) {

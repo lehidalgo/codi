@@ -151,6 +151,81 @@ describe("runDeterministicCheck — registered checkers", () => {
   });
 });
 
+describe("Q7 — bug-fix gate enforcers", () => {
+  let dir: string;
+
+  function setupBugFix(adaptation?: Record<string, unknown>): {
+    ctx: DeterministicCheckContext;
+    workflowId: string;
+  } {
+    dir = mkdtempSync(join(tmpdir(), "codi-gate-bf-"));
+    isolateBrain(dir);
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(join(dir, "docs", "CONTEXT.md"), "# Context\n", "utf-8");
+    runWorkflow({
+      workflowType: "bug-fix",
+      task: "Test bug-fix gate",
+      author: human,
+      cwd: dir,
+      ...(adaptation !== undefined
+        ? { bugFixAdaptation: adaptation as Record<string, never> }
+        : {}),
+    });
+    const log = BrainEventLog.open();
+    try {
+      const id = log.getActiveWorkflowId();
+      if (!id) throw new Error("no workflow");
+      const events = log.loadEvents(id);
+      return {
+        ctx: { cwd: dir, state: reduce(events), events },
+        workflowId: id,
+      };
+    } finally {
+      log.dispose();
+    }
+  }
+
+  afterEach(() => {
+    restoreBrain();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("reproducer_event_exists passes when reproducer_exists=true in init", () => {
+    const { ctx } = setupBugFix({ profile: "quick", reproducerExists: true });
+    const check: GateCheck = { id: "reproducer_event_exists", type: "deterministic" };
+    const outcome = runDeterministicCheck(check, ctx);
+    expect(outcome.result.verdict).toBe("pass");
+    expect(outcome.result.summary).toContain("Reproducer declared");
+  });
+
+  it("reproducer_event_exists fails when nothing declared and no marker event", () => {
+    const { ctx } = setupBugFix({ profile: "standard", reproducerExists: false });
+    const check: GateCheck = { id: "reproducer_event_exists", type: "deterministic" };
+    const outcome = runDeterministicCheck(check, ctx);
+    expect(outcome.result.verdict).toBe("fail");
+    expect(outcome.result.suggested_action).toContain("reproducer_built");
+  });
+
+  it("tdd_first_test_exists passes when both reproducer + root_cause declared", () => {
+    const { ctx } = setupBugFix({
+      profile: "incident",
+      reproducerExists: true,
+      rootCauseKnown: true,
+    });
+    const check: GateCheck = { id: "tdd_first_test_exists", type: "deterministic" };
+    const outcome = runDeterministicCheck(check, ctx);
+    expect(outcome.result.verdict).toBe("pass");
+  });
+
+  it("tdd_first_test_exists fails when no test marker recorded", () => {
+    const { ctx } = setupBugFix({ profile: "standard", reproducerExists: false });
+    const check: GateCheck = { id: "tdd_first_test_exists", type: "deterministic" };
+    const outcome = runDeterministicCheck(check, ctx);
+    expect(outcome.result.verdict).toBe("fail");
+    expect(outcome.result.suggested_action).toContain("regression_test_added");
+  });
+});
+
 describe("aggregateOutcomes", () => {
   it("flags overall pass when all outcomes pass", () => {
     const outcomes = [

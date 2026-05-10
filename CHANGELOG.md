@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Workflow adaptive intake + modular adapters
+
+#### Added
+
+- Per-workflow adaptive intake — every workflow type accepts a profile and 5-7 questions that compress the phase pipeline. Profiles: `quick`/`standard`/`deep`/`incident` for bug-fix, `prototype`/`standard`/`deep` for feature, `deadcode`/`standard`/`deep` for refactor, `schema`/`data`/`deep` for migration, `no-sheet`/`standard`/`absorb` for project.
+- `src/runtime/workflows/<id>/` module structure — each workflow ships a `WorkflowAdapter` exposing types, profile defaults, resolver, skip-rules, CLI flag parsing, and (optionally) an interactive intake.
+- Adapter registry at `src/runtime/workflows/registry.ts` — adding a new workflow type is a directory + one-line registration.
+- CLI flags on `codi workflow run`: `--profile`, `--severity`, `--reproducer-exists`, `--root-cause-known`, `--scope`, `--execute-mode`, `--grill`, `--interactive`, `--carryover-from`, plus workflow-specific `--complexity`/`--design-exists`/`--tdd-strict`/`--kind`/`--risk-level`/`--rollback-tested`/`--mode`/`--no-sheet`.
+- Bug-fix interactive intake via `@clack/prompts` — `--interactive` walks the dev through 7 questions, then runs the resolved workflow.
+- Cross-workflow conversion — `--carryover-from <prior-id>` materializes a compact context summary (task, scope files, decisions count, knowledge terms) into the new run's init payload.
+- Two new bug-fix gate enforcers — `reproducer_event_exists` and `tdd_first_test_exists` — read the adaptive intake or look for marker `decision_recorded` events.
+
+#### Changed
+
+- Workflow definitions extended (`bug-fix`, `feature`, `refactor`, `migration`, `project` — all bumped to v3) with `flags.adaptive`, `flags.profiles`, and `flags.skip_phases_when` declarations.
+- `cli-handlers/workflow.ts` slimmed down by dispatching adaptation through the adapter registry; per-workflow types and resolvers no longer live in the lifecycle module.
+- Init event schema accepts `bug_fix_adaptation`, `feature_adaptation`, `refactor_adaptation`, `migration_adaptation`, `project_adaptation`, and `carryover_context` payload fields.
+
 ### Team Consolidation workflow + legacy consolidate retire
 
 #### Added

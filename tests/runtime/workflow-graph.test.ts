@@ -56,7 +56,13 @@ describe("nextPhases", () => {
   it("returns the legal next phases for feature.intent", () => {
     const t = tmpSeededBrain();
     try {
-      expect(nextPhases(t.handle.raw, "feature", "intent").sort()).toEqual(["abandoned", "plan"]);
+      // feature.intent now allows direct fast-path to execute when the
+      // adaptive intake declares designExists=true AND scope=single.
+      expect(nextPhases(t.handle.raw, "feature", "intent").sort()).toEqual([
+        "abandoned",
+        "execute",
+        "plan",
+      ]);
     } finally {
       t.cleanup();
     }

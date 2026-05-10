@@ -34,10 +34,18 @@ function tmpYamls(yamls: Record<string, string>): { dir: string; cleanup: () => 
 }
 
 describe("readBuiltinDefinitions", () => {
-  it("loads all 6 builtin workflow YAMLs", () => {
+  it("loads all 7 builtin workflow YAMLs", () => {
     const defs = readBuiltinDefinitions();
     const ids = defs.map((d) => d.id).sort();
-    expect(ids).toEqual(["bug-fix", "feature", "migration", "project", "quick", "refactor"]);
+    expect(ids).toEqual([
+      "bug-fix",
+      "feature",
+      "migration",
+      "project",
+      "quick",
+      "refactor",
+      "team-consolidation",
+    ]);
   });
 
   it("each definition has required fields", () => {
@@ -244,7 +252,7 @@ phases:
 });
 
 describe("seedWorkflowDefinitions", () => {
-  it("inserts 6 codi-managed rows on a fresh brain", () => {
+  it("inserts 7 codi-managed rows on a fresh brain", () => {
     const t = tmpBrain();
     try {
       const r = seedWorkflowDefinitions(t.handle.raw);
@@ -255,6 +263,7 @@ describe("seedWorkflowDefinitions", () => {
         "project",
         "quick",
         "refactor",
+        "team-consolidation",
       ]);
       expect(r.updated).toEqual([]);
       expect(r.skipped).toEqual([]);
@@ -263,7 +272,7 @@ describe("seedWorkflowDefinitions", () => {
           c: number;
         }
       ).c;
-      expect(count).toBe(6);
+      expect(count).toBe(7);
     } finally {
       t.cleanup();
     }
@@ -282,6 +291,7 @@ describe("seedWorkflowDefinitions", () => {
         "project",
         "quick",
         "refactor",
+        "team-consolidation",
       ]);
       expect(r2.skipped).toEqual([]);
     } finally {
@@ -304,7 +314,14 @@ describe("seedWorkflowDefinitions", () => {
 
       const r = seedWorkflowDefinitions(t.handle.raw);
       expect(r.skipped).toContain("feature");
-      expect(r.inserted.sort()).toEqual(["bug-fix", "migration", "project", "quick", "refactor"]);
+      expect(r.inserted.sort()).toEqual([
+        "bug-fix",
+        "migration",
+        "project",
+        "quick",
+        "refactor",
+        "team-consolidation",
+      ]);
 
       const stillUser = t.handle.raw
         .prepare(`SELECT name, version FROM workflow_definitions WHERE id = 'feature'`)

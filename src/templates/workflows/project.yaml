@@ -1,7 +1,7 @@
 id: project
 name: Project
-description: Bootstrap a new project + canvas from stakeholder docs
-version: 2
+description: Adaptive project bootstrap workflow — phases compress per mode (greenfield/incremental/absorb) and noSheet
+version: 3
 phases:
   intent:
     gates: [task_described]
@@ -25,7 +25,7 @@ phases:
         }
   decompose:
     gates: []
-    next: [sync, discover, abandoned]
+    next: [sync, done, discover, abandoned]
     chains:
       - { skill: plan-writing, role: required, hint: "PRD mode — Stories with acceptance criteria" }
       - { skill: roadmap, role: optional, hint: "multi-feature long-horizon planning" }
@@ -44,4 +44,8 @@ phases:
   abandoned:
     gates: []
     next: []
-flags: {}
+flags:
+  adaptive: true
+  profiles: [no-sheet, standard, absorb]
+  skip_phases_when:
+    sync: { no_sheet: true }

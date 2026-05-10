@@ -4,8 +4,9 @@
 
 ## Chain skills
 
-- You **MUST** invoke `codi:discover`.
+- You **MUST** invoke `codi:discover` (wide mode — skip when designExists=true AND grill=false).
 - Optionally, invoke `codi:step-documenter` when domain terms emerge inline.
+- Alternatively, invoke `codi:plan-execution` if designExists=true AND scope=single — fast-path direct to execute.
 
 <!-- END auto-generated chain -->
 

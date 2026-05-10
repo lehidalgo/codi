@@ -16,25 +16,53 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}
 
-Run a feature from idea to ready-to-merge using ${PROJECT_NAME}'s phase-locked process. The human decides; the agent executes and registers; the manifest captures every step.
+Adaptive feature workflow. Six phases (intent → plan → decompose → execute → verify → done) but **phases compress** based on the dev's answers. The discipline is preserved; the ceremony is not.
 
 ## When to use
 
 User said "build a feature for X", "add Y", "implement Z". Before any code, start the workflow:
 
 \\\`\\\`\\\`bash
-${PROJECT_NAME} run feature "<one-line task description>"
-${PROJECT_NAME} run feature --from-story US-NNN "<one-line>"   # Story already in the Sheet
+${PROJECT_NAME} workflow run feature "<task>"
+${PROJECT_NAME} workflow run feature "<task>" --profile <name>
+${PROJECT_NAME} workflow run feature --from-story US-NNN "<task>"
 \\\`\\\`\\\`
 
 This writes the \\\`init\\\` event and enters phase \\\`intent\\\`. With \\\`--from-story\\\`, the Story is the seed for \\\`intent\\\`; without it, intent auto-creates a Story row at end of phase. Detail in \\\`references/phase-intent.md\\\`.
 
 If \\\`${PROJECT_NAME} run\\\` fails with \\\`KnowledgeBaseMissingError\\\`: the agent invokes \\\`${PROJECT_NAME}:init-knowledge-base\\\` directly via the Skill tool — do NOT ask the user to invoke it. Re-run after the subagent completes.
+
+## Profiles (fast path)
+
+| Profile      | Use when                                        | Phases                          | Required skills                                        |
+| ------------ | ----------------------------------------------- | ------------------------------- | ------------------------------------------------------ |
+| \\\`prototype\\\`  | Trivial / single-file / design already approved | intent → execute → verify       | tdd, plan-execution INLINE, verify-evidence            |
+| \\\`standard\\\`   | Typical multi-file feature (default)            | full 6 phases                   | full chain                                             |
+| \\\`deep\\\`       | Large / multi-system / structural concern       | full 6 + parallel + grill       | full chain + subagent-orchestration + grilled discover |
+
+\\\`\\\`\\\`bash
+${PROJECT_NAME} workflow run feature "..." --profile prototype
+${PROJECT_NAME} workflow run feature "..." --profile deep
+\\\`\\\`\\\`
+
+## Adaptive intake (when no profile)
+
+The agent asks **one question per turn** and stores answers in the init payload's \\\`feature_adaptation\\\` field.
+
+| # | Question                                          | Recommended | Effect                                          |
+| - | ------------------------------------------------- | ----------- | ----------------------------------------------- |
+| 1 | Complexity? (trivial / standard / large)          | standard    | trivial → skip decompose                        |
+| 2 | Is an approved design spec already present?       | no          | yes → discover at intent becomes optional       |
+| 3 | Scope: single file or multi-file?                 | multi       | single → skip decompose, INLINE exec mode       |
+| 4 | Execute mode: INLINE or SUBAGENT?                 | per Q3      | activates plan-execution mode                   |
+| 5 | TDD strict? (regression test required for new behaviour) | true | false → tdd advisory only                       |
+| 6 | Grill at intent? (failure when story is vague)    | no          | yes → discover required (no skip)               |
+| 7 | Cross-workflow? (bug-fix or refactor in disguise) | feature     | non-feature → \\\`--carryover-from\\\` conversion path |
 
 ## When to skip
 

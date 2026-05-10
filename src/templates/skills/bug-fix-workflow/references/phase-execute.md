@@ -4,8 +4,11 @@
 
 ## Chain skills
 
-- You **MUST** invoke `codi:tdd` (regression-test FIRST).
+- You **MUST** invoke `codi:plan-execution` (mode INLINE if Q4=single, SUBAGENT if Q4=multi).
+- You **MUST** invoke `codi:tdd` (regression-test FIRST inside each task).
 - Optionally, invoke `codi:worktrees` when ≥3 files or significant exploration commits.
+- Optionally, invoke `codi:diagnose` when test fails unexpectedly during execute.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled — per-task review in SUBAGENT mode.
 
 <!-- END auto-generated chain -->
 

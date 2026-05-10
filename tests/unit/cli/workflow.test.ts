@@ -49,6 +49,7 @@ describe("registerWorkflowCommand — subcommand surface", () => {
         "abandon",
         "elevate",
         "handover",
+        "quick",
         "recover",
         "run",
         "scope",

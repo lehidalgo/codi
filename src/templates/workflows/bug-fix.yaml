@@ -1,15 +1,25 @@
 id: bug-fix
 name: Bug fix
-description: Reproduce, plan hypotheses, fix, verify
-version: 2
+description: Adaptive bug-fix workflow — phases compress per dev answers (severity, reproducer state, root cause, scope, exec mode, grill toggle)
+version: 3
 phases:
   intent:
     gates: [task_described]
-    next: [reproduce, abandoned]
+    next: [reproduce, plan, execute, abandoned]
     chains:
-      - { skill: discover, role: optional, hint: "ambiguous failure mode — wide mode to clarify" }
+      - {
+          skill: discover,
+          role: optional,
+          hint: "ambiguous failure mode OR Q7=yes — wide/sharpen/domain mode",
+        }
+      - { skill: step-documenter, role: optional, hint: "domain terms emerge inline" }
+      - {
+          skill: architecture-review,
+          role: alt-entry,
+          hint: "3-strikes — fix is structural, restructure rather than patch",
+        }
   reproduce:
-    gates: []
+    gates: [reproducer_event_exists]
     next: [plan, abandoned]
     chains:
       - { skill: diagnose, role: required }
@@ -23,18 +33,24 @@ phases:
     next: [execute, reproduce, abandoned]
     chains:
       - { skill: plan-writing, role: required, hint: "include Hypothesis section" }
-      - { skill: discover, role: alt-entry, hint: "hypotheses compete — mode sharpen" }
-      - {
-          skill: architecture-review,
-          role: optional,
-          hint: "3-strikes rule — hypotheses keep failing",
-        }
+      - { skill: discover, role: optional, hint: "hypotheses compete — mode sharpen" }
   execute:
-    gates: []
+    gates: [tdd_first_test_exists]
     next: [verify, execute, abandoned]
     chains:
-      - { skill: tdd, role: required, hint: "regression-test FIRST" }
+      - {
+          skill: plan-execution,
+          role: required,
+          hint: "mode INLINE if Q4=single, SUBAGENT if Q4=multi",
+        }
+      - { skill: tdd, role: required, hint: "regression-test FIRST inside each task" }
       - { skill: worktrees, role: optional, hint: "≥3 files or significant exploration commits" }
+      - { skill: diagnose, role: optional, hint: "test fails unexpectedly during execute" }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — per-task review in SUBAGENT mode",
+        }
   verify:
     gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
     next: [done, execute, abandoned]
@@ -43,7 +59,7 @@ phases:
       - {
           skill: code-review,
           role: optional,
-          hint: "auto_review flag enabled — high value for fixes touching shared code paths",
+          hint: "auto_review flag enabled — required before merge to main",
         }
   done:
     gates: []
@@ -54,3 +70,8 @@ phases:
 flags:
   tdd_strict: true
   reproducer_first: true
+  adaptive: true
+  profiles: [quick, standard, deep, incident]
+  skip_phases_when:
+    reproduce: { reproducer_exists: true }
+    plan: { root_cause_known: true }

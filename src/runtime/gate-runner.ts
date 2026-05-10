@@ -200,6 +200,88 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         "Edit the listed files, or remove them from scope if they are no longer needed.",
     };
   },
+  /**
+   * Q7 — bug-fix.reproduce gate. Passes when:
+   *  - the dev declared `reproducer_exists: true` in the adaptive intake, OR
+   *  - the event log carries a `decision_recorded` event whose payload signals
+   *    a reproducer was built (kind === "reproducer_built" or content matches
+   *    /reproducer/i).
+   * Otherwise fails with a clear pointer to record the marker.
+   */
+  reproducer_event_exists: (ctx) => {
+    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
+    const initPayload = (initEvent?.payload ?? {}) as {
+      bug_fix_adaptation?: { reproducer_exists?: boolean };
+    };
+    if (initPayload.bug_fix_adaptation?.reproducer_exists === true) {
+      return {
+        check_id: "reproducer_event_exists",
+        verdict: "pass",
+        summary: "Reproducer declared in adaptive intake (reproducer_exists=true).",
+      };
+    }
+    const reproducerEvent = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      const p = e.payload as { kind?: string; content?: string };
+      if (p.kind === "reproducer_built") return true;
+      return typeof p.content === "string" && /reproducer/i.test(p.content);
+    });
+    if (reproducerEvent !== undefined) {
+      return {
+        check_id: "reproducer_event_exists",
+        verdict: "pass",
+        summary: "Reproducer marker recorded in the event log.",
+      };
+    }
+    return {
+      check_id: "reproducer_event_exists",
+      verdict: "fail",
+      summary: "No reproducer marker found — bug-fix needs a feedback loop before planning.",
+      suggested_action:
+        'Build a deterministic failing reproducer, then record it via `codi workflow scope propose-expansion` (with the test file) plus a `decision_recorded` event whose payload includes `kind: "reproducer_built"`. Or set `--reproducer-exists` at run time when a reproducer already exists.',
+    };
+  },
+  /**
+   * Q7 — bug-fix.execute gate. Enforces TDD discipline: a regression test must
+   * exist before the production fix lands. Passes when:
+   *  - the adaptive intake says `root_cause_known: true` AND `reproducer_exists: true`
+   *    (incident path — post-mortem replaces the test artifact), OR
+   *  - the event log carries a `decision_recorded` with kind === "regression_test_added".
+   * Fails otherwise.
+   */
+  tdd_first_test_exists: (ctx) => {
+    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
+    const initPayload = (initEvent?.payload ?? {}) as {
+      bug_fix_adaptation?: { reproducer_exists?: boolean; root_cause_known?: boolean };
+    };
+    const a = initPayload.bug_fix_adaptation;
+    if (a?.reproducer_exists === true && a?.root_cause_known === true) {
+      return {
+        check_id: "tdd_first_test_exists",
+        verdict: "pass",
+        summary: "Adaptive intake skipped TDD discipline (reproducer + root cause both declared).",
+      };
+    }
+    const testEvent = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      const p = e.payload as { kind?: string; content?: string };
+      return p.kind === "regression_test_added";
+    });
+    if (testEvent !== undefined) {
+      return {
+        check_id: "tdd_first_test_exists",
+        verdict: "pass",
+        summary: "Regression test recorded before execute — TDD discipline satisfied.",
+      };
+    }
+    return {
+      check_id: "tdd_first_test_exists",
+      verdict: "fail",
+      summary: "No regression test marker — TDD requires the failing test before the fix.",
+      suggested_action:
+        'Add the regression test FIRST (RED), record a `decision_recorded` event with `kind: "regression_test_added"` and the test path, then write the production fix to turn it GREEN.',
+    };
+  },
 };
 
 export function isAgentCheck(check: GateCheck): boolean {

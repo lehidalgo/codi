@@ -4,7 +4,8 @@
 
 ## Chain skills
 
-- You **MUST** invoke `codi:tdd`.
+- You **MUST** invoke `codi:plan-execution` (mode INLINE for scope=single, SUBAGENT for scope=multi).
+- You **MUST** invoke `codi:tdd` (regression test on new behaviour).
 - Optionally, invoke `codi:worktrees` when ≥1 hour or ≥3 commits — keep main clean.
 - Optionally, invoke `codi:subagent-orchestration` when independent slices parallel; ≥3 dependent slices sequential.
 - Optionally, invoke `codi:diagnose` when test fails unexpectedly during execute.

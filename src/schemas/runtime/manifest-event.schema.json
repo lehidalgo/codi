@@ -120,6 +120,83 @@
               "type": "string",
               "enum": ["typo", "comment", "dep-bump", "format", "doc-tweak"],
               "description": "Q7 — required when workflow_type is 'quick'. Closed list of trivial-edit categories."
+            },
+            "bug_fix_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for bug-fix workflow. Drives phase compression at runtime.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["quick", "standard", "deep", "incident"] },
+                "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+                "reproducer_exists": { "type": "boolean" },
+                "root_cause_known": { "type": "boolean" },
+                "scope": { "type": "string", "enum": ["single", "multi"] },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "feature_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for feature workflow. Drives phase compression at runtime.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["prototype", "standard", "deep"] },
+                "complexity": { "type": "string", "enum": ["trivial", "standard", "large"] },
+                "design_exists": { "type": "boolean" },
+                "scope": { "type": "string", "enum": ["single", "multi"] },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "tdd_strict": { "type": "boolean" },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "refactor_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for refactor workflow.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["deadcode", "standard", "deep"] },
+                "kind": { "type": "string", "enum": ["deadcode", "extract", "deepen", "decouple"] },
+                "scope": { "type": "string", "enum": ["single", "multi"] },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "migration_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for migration workflow.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["schema", "data", "deep"] },
+                "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+                "rollback_tested": { "type": "boolean" },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "project_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for project workflow.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["no-sheet", "standard", "absorb"] },
+                "mode": { "type": "string", "enum": ["greenfield", "incremental", "absorb"] },
+                "no_sheet": { "type": "boolean" },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "carryover_from": {
+              "type": "string",
+              "description": "Cross-workflow conversion — id of a previously-abandoned workflow whose context carries over."
+            },
+            "carryover_context": {
+              "type": "object",
+              "description": "Compact summary of the prior workflow's context (task, scope_files, decisions_count, knowledge_terms). Materialized at init time when carryover_from is set.",
+              "additionalProperties": true
             }
           },
           "required": ["workflow_id", "workflow_type", "task", "plugin_version"],

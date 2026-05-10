@@ -50,10 +50,21 @@ import {
   runQuick,
   runWorkflow,
 } from "../runtime/cli-handlers.js";
+import { buildBugFixAdaptation } from "../runtime/workflows/bug-fix/cli-flags.js";
+import { buildFeatureAdaptation } from "../runtime/workflows/feature/cli-flags.js";
+import { buildRefactorAdaptation } from "../runtime/workflows/refactor/cli-flags.js";
+import { buildMigrationAdaptation } from "../runtime/workflows/migration/cli-flags.js";
+import { buildProjectAdaptation } from "../runtime/workflows/project/cli-flags.js";
+import type { BugFixAdaptation } from "../runtime/workflows/bug-fix/index.js";
+import type { FeatureAdaptation } from "../runtime/workflows/feature/index.js";
+import type { RefactorAdaptation } from "../runtime/workflows/refactor/index.js";
+import type { MigrationAdaptation } from "../runtime/workflows/migration/index.js";
+import type { ProjectAdaptation } from "../runtime/workflows/project/index.js";
 import { QUICK_CATEGORIES, type QuickCategory } from "../runtime/types.js";
 import type { Author, Phase, WorkflowType } from "../runtime/types.js";
 import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput, type GlobalOptions } from "./shared.js";
+import { runBugFixInteractiveIntake } from "../runtime/workflows/bug-fix/interactive.js";
 
 // ─── Author resolution ──────────────────────────────────────────────────────
 
@@ -118,6 +129,32 @@ interface AsAgentFlag {
 
 interface RunFlags extends AsAgentFlag {
   fromStory?: string;
+  /**
+   * Adaptive intake — flags are shared across workflow types where the
+   * semantic overlaps (profile, scope, executeMode, grill, interactive).
+   * Workflow-specific flags carry workflow-prefixed names where needed.
+   */
+  profile?: string;
+  severity?: string;
+  reproducerExists?: boolean;
+  rootCauseKnown?: boolean;
+  scope?: string;
+  executeMode?: string;
+  grill?: boolean;
+  interactive?: boolean;
+  carryoverFrom?: string;
+  // feature-specific
+  complexity?: string;
+  designExists?: boolean;
+  tddStrict?: boolean;
+  // refactor-specific
+  kind?: string;
+  // migration-specific
+  riskLevel?: string;
+  rollbackTested?: boolean;
+  // project-specific
+  mode?: string;
+  noSheet?: boolean;
 }
 
 interface AbandonFlags extends AsAgentFlag {
@@ -226,22 +263,114 @@ export function registerWorkflowCommand(program: Command): void {
     .description("Start a new workflow run (type ∈ feature|bug-fix|refactor|migration|project)")
     .option("--from-story <id>", "UserStory ID this run delivers (e.g. US-007)")
     .option("--as-agent", "attribute the action to the agent rather than the human user")
-    .action((type: string, task: string, opts: RunFlags) => {
+    .option(
+      "--profile <name>",
+      "bug-fix adaptive profile (quick|standard|deep|incident) — sets all answers at once",
+    )
+    .option("--severity <level>", "bug-fix severity (P0|P1|P2|P3)")
+    .option("--reproducer-exists", "bug-fix: a reproducer already exists — skip reproduce phase")
+    .option(
+      "--root-cause-known",
+      "bug-fix: root cause already identified — skip hypothesis ranking",
+    )
+    .option("--scope <kind>", "bug-fix scope (single|multi)")
+    .option("--execute-mode <mode>", "bug-fix execute mode (inline|subagent)")
+    .option("--grill", "bug-fix: invoke discover at intent for failure-mode grilling")
+    .option("--interactive", "bug-fix: prompt the dev for adaptation answers one at a time")
+    .option("--carryover-from <id>", "Cross-workflow conversion — carry context from a prior run")
+    .option("--complexity <level>", "feature complexity (trivial|standard|large)")
+    .option(
+      "--design-exists",
+      "feature: an approved design spec already exists — fast-path discover at intent",
+    )
+    .option("--tdd-strict", "feature: enforce TDD strict (regression test required)")
+    .option("--kind <type>", "refactor kind (deadcode|extract|deepen|decouple)")
+    .option("--risk-level <level>", "migration risk-level (low|medium|high)")
+    .option("--rollback-tested", "migration: rollback path verified")
+    .option("--mode <mode>", "project mode (greenfield|incremental|absorb)")
+    .option("--no-sheet", "project: bootstrap locally without Google Sheet — sync deferred")
+    .action(async (type: string, task: string, opts: RunFlags) => {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);
-      const result: CommandResult<unknown> = !isWorkflowType(type)
-        ? fail(
-            "workflow run",
-            `unknown workflow type '${type}'. Valid: ${VALID_WORKFLOW_TYPES.join(", ")}`,
-          )
-        : tryRun("workflow run", () =>
-            runWorkflow({
-              workflowType: type,
-              task,
-              author: resolveAuthor(opts.asAgent),
-              ...(opts.fromStory !== undefined ? { fromStoryId: opts.fromStory } : {}),
-            }),
-          );
+      if (!isWorkflowType(type)) {
+        const result = fail(
+          "workflow run",
+          `unknown workflow type '${type}'. Valid: ${VALID_WORKFLOW_TYPES.join(", ")}`,
+        );
+        handleOutput(result, globalOpts);
+        process.exit(result.exitCode);
+      }
+      let bugFixAdaptation: BugFixAdaptation | undefined;
+      let featureAdaptation: FeatureAdaptation | undefined;
+      if (type === "bug-fix") {
+        if (opts.interactive === true && !globalOpts.json) {
+          const intake = await runBugFixInteractiveIntake();
+          if (intake.cancelled || intake.adaptation === null) {
+            const result = fail("workflow run", "interactive intake cancelled");
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          bugFixAdaptation = intake.adaptation;
+        } else {
+          const built = buildBugFixAdaptation(opts);
+          if (built instanceof Error) {
+            const result = fail("workflow run", built.message);
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          bugFixAdaptation = built;
+        }
+      } else if (type === "feature") {
+        const built = buildFeatureAdaptation(opts);
+        if (built instanceof Error) {
+          const result = fail("workflow run", built.message);
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
+        }
+        featureAdaptation = built;
+      }
+      let refactorAdaptation: RefactorAdaptation | undefined;
+      let migrationAdaptation: MigrationAdaptation | undefined;
+      let projectAdaptation: ProjectAdaptation | undefined;
+      if (type === "refactor") {
+        const built = buildRefactorAdaptation(opts);
+        if (built instanceof Error) {
+          const result = fail("workflow run", built.message);
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
+        }
+        refactorAdaptation = built;
+      } else if (type === "migration") {
+        const built = buildMigrationAdaptation(opts);
+        if (built instanceof Error) {
+          const result = fail("workflow run", built.message);
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
+        }
+        migrationAdaptation = built;
+      } else if (type === "project") {
+        const built = buildProjectAdaptation(opts);
+        if (built instanceof Error) {
+          const result = fail("workflow run", built.message);
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
+        }
+        projectAdaptation = built;
+      }
+      const result = tryRun("workflow run", () =>
+        runWorkflow({
+          workflowType: type,
+          task,
+          author: resolveAuthor(opts.asAgent),
+          ...(opts.fromStory !== undefined ? { fromStoryId: opts.fromStory } : {}),
+          ...(bugFixAdaptation !== undefined ? { bugFixAdaptation } : {}),
+          ...(featureAdaptation !== undefined ? { featureAdaptation } : {}),
+          ...(refactorAdaptation !== undefined ? { refactorAdaptation } : {}),
+          ...(migrationAdaptation !== undefined ? { migrationAdaptation } : {}),
+          ...(projectAdaptation !== undefined ? { projectAdaptation } : {}),
+          ...(opts.carryoverFrom !== undefined ? { carryoverFrom: opts.carryoverFrom } : {}),
+        }),
+      );
       handleOutput(result, globalOpts);
       process.exit(result.exitCode);
     });

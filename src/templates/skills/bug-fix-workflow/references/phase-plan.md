@@ -5,8 +5,7 @@
 ## Chain skills
 
 - You **MUST** invoke `codi:plan-writing` (include Hypothesis section).
-- Alternatively, invoke `codi:discover` if hypotheses compete — mode sharpen.
-- Optionally, invoke `codi:architecture-review` when 3-strikes rule — hypotheses keep failing.
+- Optionally, invoke `codi:discover` when hypotheses compete — mode sharpen.
 
 <!-- END auto-generated chain -->
 

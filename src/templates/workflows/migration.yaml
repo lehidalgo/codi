@@ -1,7 +1,7 @@
 id: migration
 name: Migration
-description: Schema or data migration with rollback path required
-version: 2
+description: Adaptive migration workflow — phases compress per risk-level + rollback-tested
+version: 3
 phases:
   intent:
     gates: [task_described]
@@ -25,7 +25,7 @@ phases:
         }
   execute:
     gates: []
-    next: [data-validation, execute, abandoned]
+    next: [data-validation, verify, execute, abandoned]
     chains:
       - {
           skill: worktrees,
@@ -66,3 +66,7 @@ phases:
     next: []
 flags:
   rollback_required: true
+  adaptive: true
+  profiles: [schema, data, deep]
+  skip_phases_when:
+    data-validation: { risk_level: low, rollback_tested: true }

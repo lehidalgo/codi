@@ -5,7 +5,7 @@
 ## Chain skills
 
 - You **MUST** invoke `codi:verify-evidence`.
-- Optionally, invoke `codi:code-review` when auto_review flag enabled — high value for fixes touching shared code paths.
+- Optionally, invoke `codi:code-review` when auto_review flag enabled — required before merge to main.
 
 <!-- END auto-generated chain -->
 
