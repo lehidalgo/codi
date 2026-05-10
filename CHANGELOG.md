@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Consolidator cold-start guard + artifact tracking + proposals UI
+
+#### Added
+
+- `tool-hook.ts` records `Skill` and `Agent` invocations into `artifacts_used` so the consolidator's P2 / P3 / P8 detectors finally have real signal. Other tool names remain no-ops.
+- Proposals page replaces plain text links with elegant icon buttons (Accept / Reject / Delete / Restore) and 2-step Alpine modals matching the captures-page pattern. Reject and Accept modals accept an optional reason that goes into `decision_reason`.
+
+#### Changed
+
+- P2 (`p2UnusedSkill`) and P8 (`p8UnusedRule`) gain a cold-start guard: if `artifacts_used` has zero rows of the matching kind in the analysis window, the detector returns no proposals. Absence of evidence is no longer treated as evidence of absence — the entire catalog used to get flagged for deprecation on every fresh install.
+
 ### Workflow advisory gates + brain-ui detail + capture rule v5
 
 #### Added

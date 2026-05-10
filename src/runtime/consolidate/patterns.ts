@@ -107,6 +107,21 @@ export const p2UnusedSkill = {
   detect(raw: Database.Database, opts: P2Options): Proposal[] {
     const since = defaultSince(opts);
     if (opts.installedSkills.length === 0) return [];
+
+    // Cold-start guard: absence of evidence is not evidence of absence.
+    // If NO skill has been invoked in the window, the consolidator has
+    // no signal to differentiate "unused" from "tracking not yet wired".
+    // Suppress the pattern entirely until at least one skill fires —
+    // otherwise the entire catalog gets flagged for deprecation on the
+    // first run after install, which is the worst possible UX.
+    const totalSkillUse = raw
+      .prepare(
+        `SELECT COUNT(*) AS n FROM artifacts_used
+         WHERE artifact_type = 'skill' AND event = 'invoked' AND ts >= ?`,
+      )
+      .get(since) as { n: number };
+    if (totalSkillUse.n === 0) return [];
+
     const placeholders = opts.installedSkills.map(() => "?").join(",");
     const used = raw
       .prepare(
@@ -126,7 +141,7 @@ export const p2UnusedSkill = {
       artifactKind: "skill" as const,
       artifactName: name,
       title: `Skill "${name}" has not fired in the analysis window`,
-      rationale: `No 'invoked' usage record for this skill since ${new Date(since).toISOString()}. Either the trigger is stale, the skill is redundant with another, or the user simply doesn't reach for it. Consider deprecating or rewriting the description.`,
+      rationale: `No 'invoked' usage record for this skill since ${new Date(since).toISOString()} (${totalSkillUse.n} other skill invocations recorded in the window). Either the trigger is stale, the skill is redundant with another, or the user simply doesn't reach for it. Consider deprecating or rewriting the description.`,
       patch: null,
       evidence: [],
     }));
@@ -369,6 +384,22 @@ export const p8UnusedRule = {
   detect(raw: Database.Database, opts: P8Options): Proposal[] {
     const since = defaultSince(opts);
     if (opts.installedRules.length === 0) return [];
+
+    // Cold-start guard: rules apply continuously (loaded into every
+    // prompt context) and don't emit a per-event firing signal today.
+    // P8 fires only once we observe at least one rule-typed usage row
+    // in the window — i.e. once the runtime starts surfacing real rule
+    // activations. Until then, suppress to avoid flagging the whole
+    // catalog. The logic mirrors P2; both refuse to deprecate without
+    // positive evidence of usage of *some* artifact in the same kind.
+    const totalRuleUse = raw
+      .prepare(
+        `SELECT COUNT(*) AS n FROM artifacts_used
+         WHERE artifact_type = 'rule' AND ts >= ?`,
+      )
+      .get(since) as { n: number };
+    if (totalRuleUse.n === 0) return [];
+
     const placeholders = opts.installedRules.map(() => "?").join(",");
     const used = raw
       .prepare(
@@ -387,7 +418,7 @@ export const p8UnusedRule = {
       artifactKind: "rule" as const,
       artifactName: name,
       title: `Rule "${name}" never referenced in window`,
-      rationale: `No usage event with type=rule found since ${new Date(since).toISOString()}. Either the rule is silently disabled, redundant, or the trigger never matches. Consider deprecating.`,
+      rationale: `No usage event with type=rule found since ${new Date(since).toISOString()} (${totalRuleUse.n} other rule events recorded in the window). Either the rule is silently disabled, redundant, or the trigger never matches. Consider deprecating.`,
       patch: null,
       evidence: [],
     }));

@@ -24,10 +24,12 @@ import {
   ensureSession,
   latestTurnId,
   openTurn,
+  recordArtifactUsage,
   recordPrompt,
   recordToolCall,
 } from "./session.js";
 import { ingestAgentMemory } from "./agent-memory.js";
+import type Database from "better-sqlite3";
 
 export interface ToolCallInput {
   readonly sessionId: string;
@@ -92,6 +94,19 @@ export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): T
   } as const;
   const callId = recordToolCall(raw, callArgs);
 
+  // Track artifact invocations so the consolidator's P2/P3/P8 detectors
+  // have real signal. Skill / Agent tool calls are the only deterministic
+  // artifact-firing events we observe; rules apply continuously and have
+  // no per-event signal to record. No-op for any other tool name.
+  trackArtifactInvocation(raw, {
+    sessionId: input.sessionId,
+    turnId,
+    toolName: input.toolName,
+    toolInput: input.toolInput,
+    status,
+    ...(input.durationMs !== undefined ? { durationMs: input.durationMs } : {}),
+  });
+
   // Auto-ingest Claude Code's per-project memory writes losslessly into
   // captures so consolidation and dashboards see what the agent persists
   // outside the IronLaw 9 marker channel. No-ops for non-memory tools.
@@ -117,6 +132,48 @@ export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): T
     memoryCaptured: memory.ingested,
     ...(memory.captureId !== undefined ? { memoryCaptureId: memory.captureId } : {}),
   };
+}
+
+/**
+ * Record a `Skill` or `Agent` tool invocation as a row in `artifacts_used`.
+ * Other tool names are no-ops (Bash / Edit / Write / Read carry no
+ * artifact identity). This is the only place the runtime feeds usage
+ * evidence into the consolidator; without it, P2 / P3 / P8 detectors
+ * have nothing to score and report 100% of the catalog as "unused".
+ */
+function trackArtifactInvocation(
+  raw: Database.Database,
+  args: {
+    readonly sessionId: string;
+    readonly turnId: number;
+    readonly toolName: string;
+    readonly toolInput: unknown;
+    readonly status: "ok" | "error" | "blocked";
+    readonly durationMs?: number;
+  },
+): void {
+  if (typeof args.toolInput !== "object" || args.toolInput === null) return;
+  const ti = args.toolInput as Record<string, unknown>;
+  let artifactType: "skill" | "agent" | null = null;
+  let artifactName: string | null = null;
+  if (args.toolName === "Skill" && typeof ti["skill"] === "string") {
+    artifactType = "skill";
+    artifactName = ti["skill"] as string;
+  } else if (args.toolName === "Agent" && typeof ti["subagent_type"] === "string") {
+    artifactType = "agent";
+    artifactName = ti["subagent_type"] as string;
+  }
+  if (!artifactType || !artifactName) return;
+  const outcome = args.status === "ok" ? "success" : args.status;
+  recordArtifactUsage(raw, {
+    sessionId: args.sessionId,
+    turnId: args.turnId,
+    artifactType,
+    artifactName,
+    event: "invoked",
+    outcome,
+    ...(args.durationMs !== undefined ? { durationMs: args.durationMs } : {}),
+  });
 }
 
 function readActiveWorkflowContext(): {
