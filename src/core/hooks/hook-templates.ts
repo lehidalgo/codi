@@ -580,8 +580,11 @@ const ALLOWED_CATEGORIES = new Set([
   'HANDOFF', 'REVIEW', 'CHANGELOG',
 ]);
 
-const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site', 'generated']);
-const SKIP_FILES = new Set(['.DS_Store']);
+const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site', 'generated', 'adr', 'sessions']);
+// Codi-canonical files. CONTEXT.md is required by \`codi workflow run\` (the
+// project glossary). adr/README.md is the ADR index. They follow project
+// convention, not the timestamped naming scheme.
+const SKIP_FILES = new Set(['.DS_Store', 'CONTEXT.md', 'README.md']);
 const VALID_PATTERN = /^(\\d{8})_(?:\\d{4,6}_)?\\[?([A-Z]+)\\]?_.+$/;
 
 const staged = (() => {

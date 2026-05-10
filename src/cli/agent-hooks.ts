@@ -162,13 +162,21 @@ async function runPreToolUse(): Promise<void> {
   const cwd = payload.cwd ?? process.cwd();
   const call: ToolCall = { tool_name: payload.tool_name, tool_input: payload.tool_input };
 
-  // Phase / scope gate
+  // Phase / scope gate. Workflow file/scope checks are ADVISORY: print to
+  // stderr (visible to dev) but never exit non-zero. Hard gates remain
+  // for Iron Law 7 (git mutations) and explicit `allow: false` decisions
+  // (e.g. classifier-blocked dangerous bash, future security policies).
   const ctx = buildContext(cwd);
   const decision = evaluateToolCall(call, ctx);
   if (!decision.allow) {
     console.error(`[codi pre-tool-use] BLOCKED: ${decision.reason}`);
     console.error(`[codi pre-tool-use] Suggested action: ${decision.suggested_action}`);
     process.exit(2);
+  }
+  if (decision.advisories && decision.advisories.length > 0) {
+    for (const line of decision.advisories) {
+      console.error(`[codi pre-tool-use] advisory: ${line}`);
+    }
   }
 
   // Iron Law 7 — git mutation requires unnegated approval

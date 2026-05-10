@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Workflow advisory gates + brain-ui detail + capture rule v5
+
+#### Added
+
+- Brain-ui workflow detail page: type-aware event cards (one per `workflow_event`), quality metrics ribbon (duration / phases / transitions / gate health / scope changes / subagents / linked captures / rejections), Gantt-style phase timeline, and linked captures section grouped by type.
+- `docs/CONTEXT.md` minimal project glossary and `docs/adr/README.md` placeholder so `codi workflow run` no longer fails on first use.
+
+#### Changed
+
+- Workflow file/scope gates are now ADVISORY, not blocking. Edits outside `files_in_plan` and edits to source files in `intent / plan / decompose` phases pass through with a stderr advisory instead of `exit 2`. Friction removed; the post-tool-use flow records `incidental_change_recorded` for retrospective review in the brain UI.
+- `BashRule` schema gained an `enforcement: "block" | "advisory"` field. `git push` and `gh pr create` are advisory in their pre-phase windows (Iron Law 7 still gates the actual push with the `ok` token); `rm -rf /`, `git reset --hard`, and `git push --force` remain hard-blocked as universal data-loss rules.
+- Capture rule template `capture-everything` bumped v4 → v5 with three new sections: a Long-term value test (3 questions before every marker), a Hard reject patterns table (8 shapes that NEVER emit), and Worked examples covering FEEDBACK-as-prompt-restatement, agent's own QUESTIONs, and approval-token PREFERENCEs.
+
 ### Codex parity — tokens, hooks, agent_text capture
 
 #### Added

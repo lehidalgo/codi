@@ -36,33 +36,40 @@ export interface ToolCall {
 interface BashRule {
   pattern: RegExp;
   blocked_in_phases: Phase[] | "all";
+  /** Universal data-loss rules block hard. Workflow-phase rules are advisory only. */
+  enforcement: "block" | "advisory";
   reason: string;
   suggested_action: string;
 }
 
 const BASH_RULES: BashRule[] = [
   {
-    pattern: /^\s*git\s+push\b/,
+    pattern: /^\s*git\s+push\b(?!\s+--force\b)/,
     blocked_in_phases: ["intent", "plan", "decompose", "execute"],
-    reason: "git push is not allowed before phase verify. Push happens after validation passes.",
+    enforcement: "advisory",
+    reason: "git push is conventionally done in phase verify, after validation passes.",
     suggested_action:
-      "Complete the current phase, transition to verify, then push when validation is green.",
+      "Iron Law 7 already gates git push with the 'ok' approval token. The phase advisory is informational only.",
   },
   {
     pattern: /^\s*gh\s+pr\s+create\b/,
     blocked_in_phases: ["intent", "plan", "decompose", "execute", "verify"],
-    reason: "PR creation is only allowed in phase done. Verify gates must pass first.",
-    suggested_action: "Reach phase done by passing the verify gate, then create the PR.",
+    enforcement: "advisory",
+    reason: "PR creation conventionally happens in phase done, after verify gates pass.",
+    suggested_action:
+      "If verify gates already passed, transition to done first; otherwise this is a heads-up, not a block.",
   },
   {
     pattern: /^\s*rm\s+-rf?\s+\//,
     blocked_in_phases: "all",
+    enforcement: "block",
     reason: "rm -rf at root is destructive and never authorized by codi.",
     suggested_action: "If you need to delete files, name them explicitly.",
   },
   {
     pattern: /^\s*git\s+reset\s+--hard\b/,
     blocked_in_phases: "all",
+    enforcement: "block",
     reason: "git reset --hard discards uncommitted work and breaks the audit trail.",
     suggested_action:
       "Use `codi workflow abandon --reason '<text>'` to end the workflow cleanly, or fix the issue without resetting.",
@@ -70,6 +77,7 @@ const BASH_RULES: BashRule[] = [
   {
     pattern: /^\s*git\s+push\s+--force\b/,
     blocked_in_phases: "all",
+    enforcement: "block",
     reason:
       "Force-push is gated by archive-preservation checks (M5). Even then it must be done explicitly.",
     suggested_action:
@@ -192,13 +200,21 @@ function evaluateFileEdit(call: ToolCall, ctx: HookContext): HookDecision {
     return { allow: true };
   }
 
-  // Pre-execute phases: edits to source files outside scope are not allowed.
+  // Pre-execute phases: edits to source files outside scope are an
+  // anti-pattern (the phase is for understanding / planning) but the
+  // workflow gate is ADVISORY, not blocking — friction kills flow. The
+  // post-tool-use flow records an `incidental_change_recorded` event so
+  // the workflow detail page can surface the divergence after the fact.
   const sourcePhases: Phase[] = ["intent", "plan", "decompose"];
   if (sourcePhases.includes(state.current_phase)) {
     return {
-      allow: false,
-      reason: `File edits to source files are not appropriate in phase ${state.current_phase}. The phase is for understanding and planning, not coding. (Workflow artifacts like docs/[PLAN]_*.md, docs/CONTEXT.md, docs/adr/*.md ARE allowed.)`,
-      suggested_action: `If you need to write a plan markdown, use docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md naming. To edit source code, transition to execute first via \`codi workflow transition --to execute\`.`,
+      allow: true,
+      reason: `Advisory: source-file edit in phase ${state.current_phase}.`,
+      advisories: [
+        `File '${filePath}' edited during phase ${state.current_phase}.`,
+        `Phases intent/plan/decompose are intended for understanding & planning.`,
+        `Recorded as incidental change. To track this work officially, transition to execute via \`codi workflow transition --to execute\`.`,
+      ],
     };
   }
 
@@ -229,15 +245,23 @@ function evaluateFileEdit(call: ToolCall, ctx: HookContext): HookDecision {
     };
   }
 
-  // scope-expansion → block
+  // Out-of-scope edit during execute / verify / data-validation. Advisory:
+  // the change is allowed, the post-tool-use flow records it as
+  // `incidental_change_recorded`, and the workflow UI surfaces it for
+  // retrospective review. Hard blocks killed flow; advisory keeps the
+  // signal without the friction.
   const elevationHint = result.suggested_elevation
-    ? `\nThe classifier suggests elevation to a child workflow of type '${result.suggested_elevation.workflow_type}' (trigger: ${result.suggested_elevation.trigger}). If you agree, propose elevation instead of expansion.`
+    ? ` Classifier suggests elevation to '${result.suggested_elevation.workflow_type}' (trigger: ${result.suggested_elevation.trigger}).`
     : "";
 
   return {
-    allow: false,
-    reason: `Scope violation: file '${filePath}' is not in the plan. ${result.reason}`,
-    suggested_action: `Run \`codi workflow scope propose-expansion --file '${filePath}' --reason "<why>"\` and wait for human approval.${elevationHint}`,
+    allow: true,
+    reason: `Advisory: out-of-scope edit. ${result.reason}`,
+    advisories: [
+      `File '${filePath}' is not in the plan scope.`,
+      `Classifier verdict: ${result.reason}.${elevationHint}`,
+      `Recorded as incidental change. If this is the start of a real expansion, run \`codi workflow scope propose --file '${filePath}' --reason "<why>"\` and approve.`,
+    ],
   };
 }
 
@@ -250,20 +274,24 @@ function evaluateBashCommand(call: ToolCall, ctx: HookContext): HookDecision {
   const state = ctx.state;
   if (!state) return { allow: true };
 
+  const advisories: string[] = [];
   for (const rule of BASH_RULES) {
     if (!rule.pattern.test(command)) continue;
-    const blocked =
+    const inPhase =
       rule.blocked_in_phases === "all" || rule.blocked_in_phases.includes(state.current_phase);
-    if (blocked) {
+    if (!inPhase) continue;
+    if (rule.enforcement === "block") {
       return {
         allow: false,
         reason: rule.reason,
         suggested_action: rule.suggested_action,
       };
     }
+    advisories.push(`${rule.reason} ${rule.suggested_action}`);
   }
-
-  return { allow: true };
+  return advisories.length > 0
+    ? { allow: true, reason: "phase advisory", advisories }
+    : { allow: true };
 }
 
 // ─── Convenience: build context from filesystem ──────────────────────
