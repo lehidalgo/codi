@@ -42,7 +42,7 @@ interface ConflictFile {
   removals: number;
 }
 
-type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
+import type { ArtifactType } from "../artifact-types.js";
 
 export function reconstructRuleContent(rule: NormalizedRule): string {
   const fm = [

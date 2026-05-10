@@ -40,6 +40,24 @@ export function buildApp(opts: BuildAppOptions = {}): AppHandle {
 
   const app = new Hono();
 
+  // Origin guard for state-changing /api/v1/* requests. brain-ui binds to
+  // loopback (see cli-server.ts), so the only realistic CSRF vector is a
+  // browser tab on another origin firing fetch() at 127.0.0.1. Browsers
+  // always send the Origin header on cross-origin requests, so accepting
+  // only loopback Origins (or absent Origin, for curl/CLI tooling) closes
+  // the gap without needing a token system.
+  const LOOPBACK_ORIGIN_RE = /^https?:\/\/(127\.0\.0\.1|\[::1\]|localhost)(:\d+)?$/;
+  app.use("/api/v1/*", async (c, next) => {
+    const m = c.req.method;
+    if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
+    const origin = c.req.header("origin");
+    if (origin === undefined) return next();
+    if (!LOOPBACK_ORIGIN_RE.test(origin)) {
+      return c.json({ error: { code: "E_CSRF_ORIGIN", message: "Origin not allowed" } }, 403);
+    }
+    return next();
+  });
+
   app.get("/healthz", (c: Context) => {
     const versionRow = brain.raw
       .prepare("SELECT MAX(version) as v FROM _codi_schema_version")

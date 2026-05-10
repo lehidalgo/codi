@@ -22,6 +22,7 @@ import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import type { LedgerEntryType } from "../core/artifact-types.js";
 import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 
 interface GenerateCommandOptions extends GlobalOptions {
@@ -265,13 +266,11 @@ function inferHookFileType(
   return "pre-commit";
 }
 
-function inferGeneratedFileType(
-  filePath: string,
-): "instruction" | "rule" | "skill" | "agent" | "mcp" | "settings" {
+function inferGeneratedFileType(filePath: string): LedgerEntryType {
   if (filePath.includes("/rules/")) return "rule";
   if (filePath.includes("/skills/")) return "skill";
   if (filePath.includes("/agents/")) return "agent";
-  if (filePath.includes("mcp.json") || filePath.includes("mcp.toml")) return "mcp";
+  if (filePath.includes("mcp.json") || filePath.includes("mcp.toml")) return "mcp-server";
   if (filePath.includes("settings.json")) return "settings";
   return "instruction";
 }

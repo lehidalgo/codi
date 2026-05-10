@@ -296,8 +296,9 @@ function evaluateBashCommand(call: ToolCall, ctx: HookContext): HookDecision {
 
 // ─── Convenience: build context from filesystem ──────────────────────
 
-export function buildContext(cwd: string): HookContext {
-  const log = BrainEventLog.open();
+export function buildContext(cwd: string, sharedLog?: BrainEventLog): HookContext {
+  const log = sharedLog ?? BrainEventLog.open();
+  const ownsLog = sharedLog === undefined;
   try {
     const id = log.getActiveWorkflowId();
     if (!id) return { cwd, state: null };
@@ -305,7 +306,7 @@ export function buildContext(cwd: string): HookContext {
     if (events.length === 0) return { cwd, state: null };
     return { cwd, state: reduce(events) };
   } finally {
-    log.dispose();
+    if (ownsLog) log.dispose();
   }
 }
 
@@ -403,14 +404,14 @@ export function evaluatePostToolCall(
  * it reaches the agent. Returns empty string when there is no active
  * workflow — the hook stays silent in that case.
  */
-export function buildPromptStateBlock(ctx: HookContext): string {
+export function buildPromptStateBlock(ctx: HookContext, sharedLog?: BrainEventLog): string {
   if (!ctx.state) return "";
   const s = ctx.state;
   const filesInScope =
     s.scope.files_in_plan.length === 0 ? "(none yet)" : s.scope.files_in_plan.join(", ");
 
-  const pendingScopeProposals = countPendingScopeProposals(ctx);
-  const pendingTransition = describePendingTransition(ctx);
+  const pendingScopeProposals = countPendingScopeProposals(ctx, sharedLog);
+  const pendingTransition = describePendingTransition(ctx, sharedLog);
 
   const lines: string[] = [
     "<workflow-state>",
@@ -469,9 +470,10 @@ export function buildCaptureReminderBlock(): string {
   return lines.join("\n");
 }
 
-function countPendingScopeProposals(ctx: HookContext): number {
+function countPendingScopeProposals(ctx: HookContext, sharedLog?: BrainEventLog): number {
   if (!ctx.state) return 0;
-  const log = BrainEventLog.open();
+  const log = sharedLog ?? BrainEventLog.open();
+  const ownsLog = sharedLog === undefined;
   try {
     const id = log.getActiveWorkflowId();
     if (!id) return 0;
@@ -497,13 +499,14 @@ function countPendingScopeProposals(ctx: HookContext): number {
     }
     return pending;
   } finally {
-    log.dispose();
+    if (ownsLog) log.dispose();
   }
 }
 
-function describePendingTransition(ctx: HookContext): string | null {
+function describePendingTransition(ctx: HookContext, sharedLog?: BrainEventLog): string | null {
   if (!ctx.state) return null;
-  const log = BrainEventLog.open();
+  const log = sharedLog ?? BrainEventLog.open();
+  const ownsLog = sharedLog === undefined;
   try {
     const id = log.getActiveWorkflowId();
     if (!id) return null;
@@ -525,7 +528,7 @@ function describePendingTransition(ctx: HookContext): string | null {
     }
     return null;
   } finally {
-    log.dispose();
+    if (ownsLog) log.dispose();
   }
 }
 

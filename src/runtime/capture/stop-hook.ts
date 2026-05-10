@@ -22,7 +22,7 @@
  * the duplicates by raw_marker.
  */
 
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { closeSync, existsSync, fstatSync, openSync, readSync, statSync } from "node:fs";
 import { reduce } from "../reducer.js";
 import { BrainEventLog } from "../brain-event-log.js";
 import type { BrainHandle } from "../brain/index.js";
@@ -182,6 +182,9 @@ function lookupPromptId(raw: import("better-sqlite3").Database, turnId: number):
   return row?.prompt_id ?? 0;
 }
 
+/** Buffer size for the backwards transcript walk (64 KB). */
+const TRANSCRIPT_READ_CHUNK = 64 * 1024;
+
 /**
  * Read the most recent assistant message from a Claude Code transcript
  * JSONL file. The file format is one JSON object per line. Each line
@@ -190,39 +193,62 @@ function lookupPromptId(raw: import("better-sqlite3").Database, turnId: number):
  * any string field named `text` or `content` under role 'assistant' /
  * type 'assistant'.
  *
- * Returns "" when the transcript is missing, empty, or unreadable —
- * Stop hook never fails because of a malformed transcript.
+ * Reads from EOF backwards in 64 KB chunks so a 20 MB transcript does
+ * not pay full-file I/O on every Stop hook fire. Stops at the first
+ * valid assistant record. Returns "" when the transcript is missing,
+ * empty, or unreadable — Stop hook never fails because of a malformed
+ * transcript.
  */
 export function readLastAssistantMessage(path: string): string {
   if (!existsSync(path)) return "";
+  let fd: number;
   try {
     if (!statSync(path).isFile()) return "";
+    fd = openSync(path, "r");
   } catch {
     return "";
   }
-  let raw: string;
   try {
-    raw = readFileSync(path, "utf-8");
+    const size = fstatSync(fd).size;
+    if (size === 0) return "";
+    const buf = Buffer.alloc(TRANSCRIPT_READ_CHUNK);
+    let tail = "";
+    let pos = size;
+    while (pos > 0) {
+      const start = Math.max(0, pos - TRANSCRIPT_READ_CHUNK);
+      const len = pos - start;
+      const got = readSync(fd, buf, 0, len, start);
+      tail = buf.toString("utf-8", 0, got) + tail;
+      pos = start;
+      // Drop the partial leading line — it may be incomplete until the
+      // next read fills it. We keep it across iterations until we hit BOF.
+      const newlineIdx = pos > 0 ? tail.indexOf("\n") : -1;
+      const parseable = newlineIdx >= 0 ? tail.slice(newlineIdx + 1) : tail;
+      const lines = parseable.split("\n");
+      for (let i = lines.length - 1; i >= 0; i -= 1) {
+        const line = lines[i];
+        if (!line || line.trim().length === 0) continue;
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        const text = extractAssistantText(parsed);
+        if (text !== null && text.length > 0) return text;
+      }
+      tail = newlineIdx >= 0 ? tail.slice(0, newlineIdx) : tail;
+    }
+    return "";
   } catch {
     return "";
-  }
-  if (raw.length === 0) return "";
-  const lines = raw.split("\n");
-  // Walk backwards — Claude Code transcripts stream chronologically, the
-  // last assistant block is the most recent response.
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const line = lines[i];
-    if (!line || line.trim().length === 0) continue;
-    let parsed: unknown;
+  } finally {
     try {
-      parsed = JSON.parse(line);
+      closeSync(fd);
     } catch {
-      continue;
+      /* fd already invalid — best-effort cleanup */
     }
-    const text = extractAssistantText(parsed);
-    if (text !== null && text.length > 0) return text;
   }
-  return "";
 }
 
 /**

@@ -148,6 +148,9 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_artifacts_used_name_outcome ON artifacts_used(artifact_name, outcome)`,
   `CREATE INDEX IF NOT EXISTS idx_workflow_runs_project_status ON workflow_runs(project_id, status)`,
   `CREATE INDEX IF NOT EXISTS idx_workflow_events_wf_ts      ON workflow_events(workflow_id, ts)`,
+  `CREATE INDEX IF NOT EXISTS idx_captures_turn_marker       ON captures(turn_id, raw_marker)`,
+  `CREATE INDEX IF NOT EXISTS idx_workflow_runs_status_started ON workflow_runs(status, started_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_prompts_session_pid_desc   ON prompts(session_id, prompt_id DESC)`,
   `CREATE VIRTUAL TABLE IF NOT EXISTS captures_fts USING fts5(
     content,
     content='captures',
@@ -195,7 +198,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -270,6 +273,25 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `ALTER TABLE projects ADD COLUMN git_user_email TEXT`,
       `ALTER TABLE projects ADD COLUMN host_user TEXT`,
       `ALTER TABLE projects ADD COLUMN host_machine TEXT`,
+    ],
+  ],
+  [
+    8,
+    [
+      // Cover dedup probe in persistMarkers — without this index the query
+      // does a full SCAN of captures, which becomes O(N) as the table grows.
+      `CREATE INDEX IF NOT EXISTS idx_captures_turn_marker ON captures(turn_id, raw_marker)`,
+    ],
+  ],
+  [
+    9,
+    [
+      // Cover readGateState (status + started_at DESC) and readRecentPrompts
+      // (session_id + prompt_id DESC) — both run on every UserPromptSubmit
+      // hook. Without these indexes both queries fall back to TEMP B-TREE
+      // sorts that scale with table size.
+      `CREATE INDEX IF NOT EXISTS idx_workflow_runs_status_started ON workflow_runs(status, started_at DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_prompts_session_pid_desc ON prompts(session_id, prompt_id DESC)`,
     ],
   ],
 ];

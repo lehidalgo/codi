@@ -509,6 +509,7 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
 
   app.post("/api/v1/backups/local/:ts/restore", async (c: Context) => {
     const ts = c.req.param("ts");
+    if (!ts) return c.json({ error: { code: "bad_request", message: "ts required" } }, 400);
     const projectRoot = path.dirname(path.dirname(path.dirname(brain.path))); // .codi/state/brain.db → projectRoot
     const configDir = path.dirname(path.dirname(brain.path)); // .codi/state → .codi
     try {
@@ -522,6 +523,9 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   app.post("/api/v1/backups/archive/:hash/:ts/restore", async (c: Context) => {
     const hash = c.req.param("hash");
     const ts = c.req.param("ts");
+    if (!hash || !ts) {
+      return c.json({ error: { code: "bad_request", message: "hash and ts required" } }, 400);
+    }
     const projectRoot = path.dirname(path.dirname(path.dirname(brain.path)));
     const archiveDir = path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, hash, ts);
     try {
@@ -537,7 +541,7 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   app.post("/api/v1/consolidation/run-with-llm", async (c: Context) => {
     let provider;
     try {
-      provider = getProvider();
+      provider = await getProvider();
     } catch (e) {
       if (e instanceof LlmConfigError) {
         return c.json(

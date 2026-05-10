@@ -16,8 +16,9 @@ import {
   getMcpServerTemplateVersion,
 } from "../scaffolder/mcp-template-loader.js";
 import { parseVersionFromFrontmatter } from "./artifact-version.js";
+import type { ArtifactType } from "../artifact-types.js";
 
-export type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
+export type { ArtifactType };
 
 export interface TemplateFingerprint {
   name: string;

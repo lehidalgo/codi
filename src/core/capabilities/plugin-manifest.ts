@@ -11,10 +11,11 @@
  */
 
 import { CAPABILITIES_MATRIX, type TargetId } from "./matrix.js";
+import type { CapabilityType } from "../artifact-types.js";
 
 export interface PluginArtifact {
   readonly name: string;
-  readonly type: "rule" | "skill" | "agent" | "hook" | "slash-command" | "mcp-server";
+  readonly type: CapabilityType;
   /** Path relative to the plugin root. */
   readonly path: string;
 }

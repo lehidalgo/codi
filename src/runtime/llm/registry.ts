@@ -5,10 +5,13 @@
  * the consolidation call volume v3 expects). Validates the corresponding
  * API key exists at instantiation time so callers fail fast with a clear
  * config error rather than at the first generate() call.
+ *
+ * Provider modules are loaded lazily via dynamic `import()` so the heavy
+ * `openai` (~32 MB) and `@google/generative-ai` (~1.2 MB) SDKs stay out of
+ * the CLI's eager module graph. Cold `codi --help` keeps its sub-300 ms
+ * latency; only the brain-ui consolidation endpoint pays the SDK cost.
  */
 
-import { GeminiProvider } from "./gemini.js";
-import { OpenAIProvider } from "./openai.js";
 import { LlmConfigError, type LlmProvider, type ProviderId } from "./provider.js";
 
 export interface SelectorOptions {
@@ -20,7 +23,7 @@ export interface SelectorOptions {
 
 const VALID_IDS: readonly ProviderId[] = ["gemini", "openai"];
 
-export function getProvider(opts: SelectorOptions = {}): LlmProvider {
+export async function getProvider(opts: SelectorOptions = {}): Promise<LlmProvider> {
   if (opts.forceProvider) return opts.forceProvider;
   const id =
     opts.provider ?? (process.env["CODI_LLM_PROVIDER"] as ProviderId | undefined) ?? "gemini";
@@ -29,7 +32,11 @@ export function getProvider(opts: SelectorOptions = {}): LlmProvider {
       `CODI_LLM_PROVIDER must be one of ${VALID_IDS.join(", ")}, got: ${id}`,
     );
   }
-  if (id === "gemini") return new GeminiProvider();
+  if (id === "gemini") {
+    const { GeminiProvider } = await import("./gemini.js");
+    return new GeminiProvider();
+  }
+  const { OpenAIProvider } = await import("./openai.js");
   return new OpenAIProvider();
 }
 

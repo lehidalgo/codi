@@ -8,7 +8,8 @@ import { createError } from "../output/errors.js";
 import { hashContent } from "#src/utils/hash.js";
 import { ARTIFACT_MANIFEST_FILENAME } from "#src/constants.js";
 import { getTemplateFingerprint } from "./template-hash-registry.js";
-import type { ArtifactType } from "./template-hash-registry.js";
+import type { ArtifactType } from "../artifact-types.js";
+import { ARTIFACT_TYPES } from "../artifact-types.js";
 import type { ExistingSelections } from "#src/cli/init-wizard.js";
 import type { InstalledArtifactVersion } from "./artifact-version.js";
 
@@ -16,7 +17,7 @@ import type { InstalledArtifactVersion } from "./artifact-version.js";
 
 const ArtifactEntrySchema = z.object({
   name: z.string(),
-  type: z.enum(["rule", "skill", "agent", "mcp-server"]),
+  type: z.enum(ARTIFACT_TYPES),
   contentHash: z.string(),
   installedArtifactVersion: z.union([z.number().int().positive(), z.literal("unknown")]),
   installedAt: z.string(),

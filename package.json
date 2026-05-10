@@ -93,7 +93,7 @@
     "openai": "^6.37.0",
     "picocolors": "^1.1.0",
     "smol-toml": "^1.6.1",
-    "yaml": "^2.8.2",
+    "yaml": "^2.8.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -123,5 +123,10 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2",
     "vitest": "^4.1.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": ">=3.1.2"
+    }
   }
 }

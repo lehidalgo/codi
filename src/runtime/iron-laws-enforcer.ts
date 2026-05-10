@@ -122,13 +122,10 @@ export function buildPullReminder(): string {
 const GIT_MUTATING_RE =
   /\bgit\s+(commit|push|tag|merge|reset\s+--hard|branch\s+-D|push\s+--force)\b/;
 
-// Single canonical approval token across every gate (Iron Law 4 + 7 +
-// any future). Case-insensitive, exactly two chars. Long tokens were
-// brittle in the wild — typos like "ecommit" or words like "commitment"
-// either failed to match or false-positively matched. "ok" is the only
-// shape that survives unicode tokenisation, multi-language prompts, and
-// quick-fire CLI typing.
-const COMMIT_APPROVAL_TOKENS = ["ok"] as const;
+// Single canonical approval token "ok" is encoded directly in the regex
+// at line ~ APPROVAL_TOKEN_RE above. Long tokens were brittle in the
+// wild — typos like "ecommit" or words like "commitment" either failed
+// to match or false-positively matched.
 
 /**
  * Tokens that, when they precede an approval token within the same clause,

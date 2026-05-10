@@ -22,6 +22,7 @@ import type Database from "better-sqlite3";
 import { execFileSync } from "node:child_process";
 import { hostname, userInfo } from "node:os";
 import { basename } from "node:path";
+import type { CapturedArtifactType } from "#src/core/artifact-types.js";
 
 export interface EnsureProjectInput {
   readonly projectId: string;
@@ -304,7 +305,7 @@ export function recordToolCall(raw: Database.Database, input: RecordToolCallInpu
 export interface RecordArtifactUsageInput {
   readonly sessionId: string;
   readonly turnId?: number;
-  readonly artifactType: "rule" | "skill" | "agent" | "command";
+  readonly artifactType: CapturedArtifactType;
   readonly artifactName: string;
   /** invoked | completed | failed | skipped */
   readonly event: string;

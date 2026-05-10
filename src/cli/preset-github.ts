@@ -94,7 +94,28 @@ export async function installFromGithub(
     let sourceDir: string;
 
     if (descriptor.path) {
-      const targetDir = path.join(tmpDir, descriptor.path);
+      // Reject path-traversal: descriptor.path is attacker-influenced (parsed
+      // from the install URL). path.relative + startsWith ".." catches "..",
+      // "../..", etc. without depending on a tree walk.
+      const targetDir = path.resolve(tmpDir, descriptor.path);
+      const rel = path.relative(tmpDir, targetDir);
+      if (rel.startsWith("..") || path.isAbsolute(rel)) {
+        return createCommandResult({
+          success: false,
+          command: "preset install",
+          data: { action: "install", name },
+          errors: [
+            {
+              code: "E_PRESET_PATH_ESCAPE",
+              message: `Preset path "${descriptor.path}" escapes the repository root.`,
+              hint: "Preset paths must be relative and stay within the cloned repo.",
+              severity: "error",
+              context: {},
+            },
+          ],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
       try {
         await fs.access(path.join(targetDir, PRESET_MANIFEST_FILENAME));
       } catch {

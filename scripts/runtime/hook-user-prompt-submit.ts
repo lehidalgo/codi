@@ -21,6 +21,7 @@ import {
   buildCaptureReminderBlock,
 } from "#src/runtime/hook-logic.js";
 import { openBrain, applyMigrations } from "#src/runtime/brain/index.js";
+import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { processPromptSubmit } from "#src/runtime/capture/prompt-hook.js";
 import { buildIronLawsBlock, readGateState } from "#src/runtime/iron-laws-enforcer.js";
 import { readPreferences } from "#src/runtime/preferences.js";
@@ -42,54 +43,56 @@ function readStdin(): string {
 
 function main(): void {
   const cwd = process.cwd();
+  const captureBlock = buildCaptureReminderBlock();
+  let stateBlock = "";
+  let ironLawsBlock = "";
 
-  // (1) Try to capture the prompt. Failure here NEVER suppresses (2).
-  const raw = readStdin();
-  if (raw.trim().length > 0) {
-    try {
-      const payload = JSON.parse(raw) as HookPayload;
-      if (
-        typeof payload.session_id === "string" &&
-        payload.session_id.length > 0 &&
-        typeof payload.prompt === "string"
-      ) {
-        const handle = openBrain();
-        try {
-          applyMigrations(handle.raw);
+  // Single brain handle for the whole hook invocation. Previously this
+  // function opened brain.db up to 5 times per fire (capture, buildContext,
+  // countPendingScopeProposals, describePendingTransition, iron-laws).
+  // Wrap into a non-owning BrainEventLog so the helpers can reuse it.
+  let handle: ReturnType<typeof openBrain> | null = null;
+  try {
+    handle = openBrain();
+    applyMigrations(handle.raw);
+    const log = BrainEventLog.wrap(handle);
+
+    // (1) Try to capture the prompt. Failure here NEVER suppresses (2).
+    const raw = readStdin();
+    if (raw.trim().length > 0) {
+      try {
+        const payload = JSON.parse(raw) as HookPayload;
+        if (
+          typeof payload.session_id === "string" &&
+          payload.session_id.length > 0 &&
+          typeof payload.prompt === "string"
+        ) {
           processPromptSubmit(handle, {
             sessionId: payload.session_id,
             prompt: payload.prompt,
             cwd: payload.cwd ?? cwd,
             transcriptPath: payload.transcript_path,
           });
-        } finally {
-          handle.close();
         }
+      } catch {
+        // Hook is non-blocking — observability failures must not affect the
+        // state-block emission below.
       }
-    } catch {
-      // Hook is non-blocking — observability failures must not affect the
-      // state-block emission below.
     }
-  }
 
-  // (2) Emit the state + capture-reminder + iron-laws blocks.
-  const ctx = buildContext(cwd);
-  const stateBlock = buildPromptStateBlock(ctx);
-  const captureBlock = buildCaptureReminderBlock();
-  let ironLawsBlock = "";
-  try {
-    const handle = openBrain();
-    try {
-      applyMigrations(handle.raw);
-      ironLawsBlock = buildIronLawsBlock({
-        outputMode: readPreferences(cwd).output_mode,
-        gateState: readGateState(handle.raw),
-      });
-    } finally {
-      handle.close();
-    }
+    // (2) Emit the state + iron-laws blocks (capture block is static and
+    // already built above).
+    const ctx = buildContext(cwd, log);
+    stateBlock = buildPromptStateBlock(ctx, log);
+    ironLawsBlock = buildIronLawsBlock({
+      outputMode: readPreferences(cwd).output_mode,
+      gateState: readGateState(handle.raw),
+    });
   } catch {
-    // Iron-laws block is advisory — never suppress (1) or (2)'s state output.
+    // Brain unavailable — emit only the static capture block so the agent
+    // still gets Iron Law 9 reminder.
+  } finally {
+    if (handle !== null) handle.close();
   }
 
   const out = [captureBlock, stateBlock, ironLawsBlock].filter((s) => s.length > 0).join("\n\n");

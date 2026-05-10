@@ -45,7 +45,8 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
   const handle = buildApp({ brainPath: args.brainPath });
-  const server = serve({ fetch: handle.app.fetch, port: args.port });
+  const hostname = process.env["CODI_BRAIN_UI_BIND"] ?? "127.0.0.1";
+  const server = serve({ fetch: handle.app.fetch, port: args.port, hostname });
 
   if (!args.foreground) {
     writePidfile({ pid: process.pid, port: args.port, startedAt: Date.now() });
@@ -64,7 +65,7 @@ function main(): void {
   process.on("SIGINT", () => shutdown("SIGINT"));
 
   console.error(
-    `[brain-ui] listening on http://127.0.0.1:${args.port} (brain=${handle.brain.path})`,
+    `[brain-ui] listening on http://${hostname}:${args.port} (brain=${handle.brain.path})`,
   );
 }
 

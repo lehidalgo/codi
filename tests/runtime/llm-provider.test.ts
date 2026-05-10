@@ -80,23 +80,23 @@ describe("OpenAIProvider", () => {
 });
 
 describe("getProvider (registry)", () => {
-  it("forceProvider injection bypasses env validation", () => {
+  it("forceProvider injection bypasses env validation", async () => {
     const fake: LlmProvider = {
       id: "gemini",
       defaultModel: "fake",
       generate: async () => ({ text: "x", tokensIn: 0, tokensOut: 0, model: "fake" }),
     };
-    expect(getProvider({ forceProvider: fake })).toBe(fake);
+    expect(await getProvider({ forceProvider: fake })).toBe(fake);
   });
 
-  it("rejects unknown CODI_LLM_PROVIDER values", () => {
+  it("rejects unknown CODI_LLM_PROVIDER values", async () => {
     process.env["CODI_LLM_PROVIDER"] = "bogus";
-    expect(() => getProvider()).toThrow(LlmConfigError);
+    await expect(getProvider()).rejects.toThrow(LlmConfigError);
   });
 
-  it("defaults to gemini when CODI_LLM_PROVIDER is unset (and key is set)", () => {
+  it("defaults to gemini when CODI_LLM_PROVIDER is unset (and key is set)", async () => {
     process.env["CODI_GEMINI_API_KEY"] = "k";
-    const provider = getProvider();
+    const provider = await getProvider();
     expect(provider.id).toBe("gemini");
   });
 });

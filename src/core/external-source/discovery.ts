@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 
-export type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
+export type { ArtifactType } from "../artifact-types.js";
+import type { ArtifactType } from "../artifact-types.js";
 
 export interface DiscoveredArtifact {
   type: ArtifactType;

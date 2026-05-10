@@ -16,7 +16,7 @@ import { Logger } from "../core/output/logger.js";
 import { handleOutput, regenerateConfigs } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { runAddWizard } from "./add-wizard.js";
-import type { ArtifactType, AddWizardResult } from "./add-wizard.js";
+import type { WizardChoice, AddWizardResult } from "./add-wizard.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
 
 export interface AddRuleOptions extends GlobalOptions {
@@ -338,7 +338,7 @@ export const brandAsArtifactHandler: ArtifactHandler = async (projectRoot, name)
 };
 
 export async function handleWizardFlow(
-  type: ArtifactType,
+  type: WizardChoice,
   handler: ArtifactHandler,
   options: GlobalOptions,
 ): Promise<void> {

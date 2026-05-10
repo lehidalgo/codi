@@ -208,10 +208,6 @@ export const SUPPORTED_PLATFORMS = [
 /** YAML-ready inline list for template interpolation. */
 export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
 
-// --- Artifact types ---
-/** All recognised artifact type directory names. */
-export const ARTIFACT_TYPES = ["rules", "skills", "agents"] as const;
-
 // --- Brand category ---
 /** Category label assigned to brand skills. */
 export const BRAND_CATEGORY = "brand" as const;

@@ -4,6 +4,7 @@ import path from "node:path";
 import { OPERATIONS_LEDGER_FILENAME, STATE_DIR } from "#src/constants.js";
 import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
+import type { LedgerEntryType } from "../artifact-types.js";
 import { createError } from "../output/errors.js";
 
 // ── Interfaces ──────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ export interface LedgerActivePreset {
 export interface LedgerGeneratedFile {
   path: string;
   agent: string;
-  type: "instruction" | "rule" | "skill" | "agent" | "mcp" | "settings";
+  type: LedgerEntryType;
   createdAt: string;
   updatedAt: string;
 }

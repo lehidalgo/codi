@@ -48,30 +48,34 @@ WORKFLOW_ID="none active"
 OUTPUT_MODE="caveman"
 
 if [ -f "$CWD/.codi/project.json" ]; then
-  PROJECT_NAME="$(python3 -c "
+  # Project metadata read via stdin heredoc + argv[1] so $CWD never enters
+  # the Python source. Quoted delimiter (<<'PY') prevents shell expansion
+  # inside the body — required to avoid arbitrary-code execution if the
+  # project path contains a single quote.
+  PROJECT_NAME="$(python3 - "$CWD/.codi/project.json" <<'PY'
 import json, sys
 try:
-    d = json.load(open('$CWD/.codi/project.json'))
-    print(d.get('project_name', 'unknown'))
+    print(json.load(open(sys.argv[1])).get('project_name', 'unknown'))
 except Exception:
     print('unknown')
-")"
-  SHEET_ID="$(python3 -c "
-import json
+PY
+)"
+  SHEET_ID="$(python3 - "$CWD/.codi/project.json" <<'PY'
+import json, sys
 try:
-    d = json.load(open('$CWD/.codi/project.json'))
-    print(d.get('sheet_id', ''))
+    print(json.load(open(sys.argv[1])).get('sheet_id', ''))
 except Exception:
     print('')
-")"
-  AUTH_MODE="$(python3 -c "
-import json
+PY
+)"
+  AUTH_MODE="$(python3 - "$CWD/.codi/project.json" <<'PY'
+import json, sys
 try:
-    d = json.load(open('$CWD/.codi/project.json'))
-    print(d.get('auth_mode', 'service_account'))
+    print(json.load(open(sys.argv[1])).get('auth_mode', 'service_account'))
 except Exception:
     print('')
-")"
+PY
+)"
 fi
 
 if [ -f "$CWD/.workflow/active/workflow-id.txt" ]; then
@@ -79,14 +83,14 @@ if [ -f "$CWD/.workflow/active/workflow-id.txt" ]; then
 fi
 
 if [ -f "$CWD/.codi/preferences.json" ]; then
-  OUTPUT_MODE="$(python3 -c "
-import json
+  OUTPUT_MODE="$(python3 - "$CWD/.codi/preferences.json" <<'PY'
+import json, sys
 try:
-    d = json.load(open('$CWD/.codi/preferences.json'))
-    print(d.get('output_mode', 'caveman'))
+    print(json.load(open(sys.argv[1])).get('output_mode', 'caveman'))
 except Exception:
     print('caveman')
-")"
+PY
+)"
 fi
 
 # ─── Charter injection ───────────────────────────────────────────────────────

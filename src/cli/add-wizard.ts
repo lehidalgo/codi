@@ -4,7 +4,13 @@ import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loa
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { NAME_PATTERN_STRICT, MAX_NAME_LENGTH, PROJECT_CLI } from "../constants.js";
 
-export type ArtifactType = "rule" | "skill" | "agent" | "brand";
+/**
+ * Wizard-only choice union. Diverges from the canonical `WizardChoice`
+ * because the wizard offers a "brand" shortcut that scaffolds a skill
+ * with `category: brand` (brand is not its own filesystem artifact).
+ * Keep this distinct so the canonical taxonomy stays clean.
+ */
+export type WizardChoice = "rule" | "skill" | "agent" | "brand";
 
 export interface AddWizardResult {
   names: string[];
@@ -12,7 +18,7 @@ export interface AddWizardResult {
 }
 
 /** When user runs the add command with no subcommand. */
-export async function selectArtifactType(): Promise<ArtifactType | null> {
+export async function selectArtifactType(): Promise<WizardChoice | null> {
   p.intro(`${PROJECT_CLI} — Add Artifact`);
 
   const type = await p.select({
@@ -50,8 +56,8 @@ export async function selectArtifactType(): Promise<ArtifactType | null> {
 }
 
 /** When user runs the add command with a type but no name. */
-export async function runAddWizard(type: ArtifactType): Promise<AddWizardResult | null> {
-  const templateMap: Record<ArtifactType, readonly string[]> = {
+export async function runAddWizard(type: WizardChoice): Promise<AddWizardResult | null> {
+  const templateMap: Record<WizardChoice, readonly string[]> = {
     rule: AVAILABLE_TEMPLATES,
     skill: AVAILABLE_SKILL_TEMPLATES,
     agent: AVAILABLE_AGENT_TEMPLATES,

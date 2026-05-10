@@ -59,7 +59,6 @@ export function loadCodexTranscriptUsage(path: string): TranscriptUsage | null {
   const lines = raw.split("\n");
 
   let model: string | null = null;
-  let modelContextWindow = 0;
   let lastTotal: CodexTokenUsage | null = null;
   let firstTokenCount: CodexTokenUsage | null = null;
   let messages = 0;
@@ -93,9 +92,6 @@ export function loadCodexTranscriptUsage(path: string): TranscriptUsage | null {
       const info = payload["info"] as CodexTokenCountInfo | undefined;
       if (!info) continue;
       messages += 1;
-      if (typeof info.model_context_window === "number") {
-        modelContextWindow = info.model_context_window;
-      }
       if (info.total_token_usage) lastTotal = info.total_token_usage;
       if (!firstTokenCount && info.last_token_usage) {
         firstTokenCount = info.last_token_usage;
