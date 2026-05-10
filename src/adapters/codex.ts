@@ -1,4 +1,5 @@
 import { access } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
   AgentAdapter,
@@ -47,6 +48,25 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function readEnabledRuntimeHookNames(projectRoot: string | undefined): string[] | null {
+  if (!projectRoot) return null;
+  try {
+    const stateFile = join(projectRoot, ".codi", ".state", "state.json");
+    if (!existsSync(stateFile)) return null;
+    const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
+      selectedHooks?: { runtime?: string[] };
+    };
+    return parsed.selectedHooks?.runtime ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function isHeartbeatEnabled(selected: string[] | null, name: string): boolean {
+  if (selected === null) return true;
+  return selected.includes(name);
 }
 
 function toTomlBasicString(value: string): string {
@@ -269,14 +289,21 @@ export const codexAdapter: AgentAdapter = {
 
     // Generate heartbeat hook script and .codex/hooks.json
     // Codex has no InstructionsLoaded — only the Stop observer is needed.
-    const observerScript = buildSkillObserverScript();
-    const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
-    files.push({
-      path: observerPath,
-      content: observerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(observerScript),
-    });
+    // Skip emission entirely when state.selectedHooks.runtime explicitly
+    // excludes skill-observer.
+    const enabledRuntime = readEnabledRuntimeHookNames(_options.projectRoot);
+    const observerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-observer");
+
+    if (observerEnabled) {
+      const observerScript = buildSkillObserverScript();
+      const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+      files.push({
+        path: observerPath,
+        content: observerScript,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(observerScript),
+      });
+    }
 
     // Ship the node-resolver launcher next to the observer (see Claude Code
     // adapter for rationale).
@@ -324,11 +351,15 @@ export const codexAdapter: AgentAdapter = {
         },
       ],
       Stop: [
-        {
-          type: "command",
-          command: launcherCommand(launcherRef, observerRef),
-          timeout: 15,
-        },
+        ...(observerEnabled
+          ? [
+              {
+                type: "command",
+                command: launcherCommand(launcherRef, observerRef),
+                timeout: 15,
+              },
+            ]
+          : []),
         {
           type: "command",
           command: codiHook("stop"),

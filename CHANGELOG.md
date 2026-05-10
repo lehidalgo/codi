@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Hooks as first-class artifacts
+
+#### Added
+
+- **`HookArtifact` discriminated union** under `src/core/hooks/hook-artifact.ts` covering both buckets (`git`, `runtime`).
+- **Unified registry helpers** — `getAllHooks`, `getGitHooks`, `getRuntimeHooks`, `getDefaultGitHookNames`, `getDefaultRuntimeHookNames`.
+- **`security-reminder` runtime hook** — clean-room PreToolUse hook with nine patterns (gha-injection, child-process-exec, new-function, eval-call, dangerously-set-html, document-write, inner-html-assign, pickle-deserialize, os-system). Per-pattern extension allowlists, comment-line heuristic, per-session dedupe at `~/.codi/security/`.
+- **Five wrapper artifacts** for existing runtime hooks: `iron-laws-enforcer`, `workflow-classifier`, `capture-markers`, `skill-tracker`, `skill-observer`. They surface in the registry without changing their underlying behaviour.
+- **CLI surface** — `codi hooks list [--git|--runtime|--enabled]`, `codi hooks add <bucket> <name>`, `codi hooks remove <bucket> <name>`, `codi update --hooks` next-step printer.
+- **Init wizard** — two new `wizardMultiselect` steps for git and runtime hook selection, persisted to `state.selectedHooks`.
+- **Optional `phaseFilter` and `dispatchSkill`** on every hook for workflow-phase gating and skill delegation. Both default to undefined (no behavioural change for existing hooks).
+- **Adapter heartbeat gating** — claude-code and codex adapters skip emission of `skill-tracker` / `skill-observer` scripts and settings entries when not in `state.selectedHooks.runtime`.
+- **Pre-commit config filter** — `hook-config-generator` honours `state.selectedHooks.git` to filter the emitted `.pre-commit-config.yaml`. Codi-internal meta hooks (`version-bump`, `secret-scan`, etc.) remain regardless.
+
+#### Changed
+
+- 16 per-language pre-commit registries (`typescript`, `javascript`, `python`, `go`, `rust`, `java`, `kotlin`, `swift`, `csharp`, `cpp`, `php`, `ruby`, `dart`, `shell`, `global`) migrated to emit `GitHookArtifact[]`. Same shape as before plus `bucket`, `description`, `version`, `managed_by`, `default`. No behavioural change.
+- `HookSpec.HookCategory` widened to include `"enforcement"` and `"observation"`.
+- `StateData` gains optional `selectedHooks` field. Reader fills defaults at the boundary — no migrator required.
+- `runPreToolUse` in `cli/agent-hooks.ts` is now async and dispatches the runtime hook runner for `Edit / Write / MultiEdit / NotebookEdit` calls.
+
+### Brain UI — detail pages + anchored navigation + larger output cap
+
+#### Added
+
+- **`/tool-call/:id` detail page** — full input + output + error blocks, link back to `/session/:id#tool-:id`.
+- **`/capture/:id` detail page** — content (markdown), files, raw_marker, link back to `/session/:id#capture-:id`.
+- **Anchored navigation** in the session timeline. Each tool-call event gets `id="tool-<id>"` and each capture event gets `id="capture-<id>"`. The kind label and the `#id` footer in list views link directly to the timeline anchor and to the detail page.
+- **Strip canonical capture markers** from `agent_text` when rendering the timeline so the marker text does not duplicate alongside its parsed `capture` row.
+
+#### Changed
+
+- **Tool output storage cap raised**: `output_summary` 200 → 16,384 chars; `error` 500 → 8,192 chars. The brain UI was correctly rendering everything it received; the truncation was happening at the hook write path, so prior calls show the old limit.
+
+### Brain UI — robust tool output + expand/collapse + edit fix
+
+#### Added
+
+- **Per-block expand / collapse** on every tool-call output (sessions timeline + tool-calls page) via Alpine.js. Default expanded; click to collapse the body.
+- **Formatted / raw toggle** for JSON outputs. `formatted` mode keeps the per-field stdout / stderr / error / output / result blocks; `raw` mode shows the full pretty-printed JSON.
+- **`GET /api/v1/captures/:id`** returns a single capture row (used by the new editor modal to fetch fresh content).
+
+#### Changed
+
+- **Capture editor modal** now fetches content from the API on click instead of embedding JSON in the `x-on:click` attribute. Eliminates the HTML-attribute escape bug that broke the row layout when captures contained `"`.
+- **Tool output rendering** is unified through `renderToolPayload(prefix, payload)` shared by sessions timeline and tool-calls page. The previous in-place `\n` decoder was a no-op (re-escaped via `JSON.stringify`); the new path extracts known string fields cleanly.
+
+#### Fixed
+
+- Tool outputs that started with prefixes other than `Bash:` now expand correctly (the prefix detection no longer collapses raw text).
+- Capture rows whose content contained `"` no longer leak `})">` into the visible label and no longer collapse the markdown column to one character per line.
+
 ### Brain UI — markdown rendering + no truncation
 
 #### Added

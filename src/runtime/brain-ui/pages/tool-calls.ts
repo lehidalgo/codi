@@ -5,15 +5,8 @@
 
 import type { Hono, Context } from "hono";
 import type { BrainHandle } from "#src/runtime/brain/index.js";
-import {
-  shell,
-  escapeHtml,
-  fmtRelative,
-  fmtTs,
-  fmtDuration,
-  prettyJson,
-  unescapeJsonString,
-} from "./shell.js";
+import { shell, escapeHtml, fmtRelative, fmtTs, fmtDuration } from "./shell.js";
+import { renderToolPayload, describeToolInput } from "./sessions.js";
 
 interface ToolCallRow {
   readonly call_id: number;
@@ -21,6 +14,7 @@ interface ToolCallRow {
   readonly turn_id: number;
   readonly ts: number;
   readonly tool_name: string;
+  readonly input_json: string;
   readonly output_summary: string | null;
   readonly duration_ms: number | null;
   readonly status: string;
@@ -52,7 +46,7 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
     }
     const rows = brain.raw
       .prepare(
-        `SELECT call_id, session_id, turn_id, ts, tool_name, output_summary,
+        `SELECT call_id, session_id, turn_id, ts, tool_name, input_json, output_summary,
                 duration_ms, status, error
          FROM tool_calls
          ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
@@ -114,6 +108,10 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
           r.status === "ok"
             ? `<span class="text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">ok</span>`
             : `<span class="text-xs px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">${escapeHtml(r.status)}</span>`;
+        const description = describeToolInput(r.tool_name, r.input_json);
+        const descriptionHtml = description
+          ? `<p class="text-xs text-slate-700 font-mono mb-2 break-all" title="${escapeHtml(description)}">${escapeHtml(description.slice(0, 240))}${description.length > 240 ? "…" : ""}</p>`
+          : "";
         return `
         <li class="rounded border border-slate-200 bg-white p-3 text-sm">
           <div class="flex items-center justify-between mb-2">
@@ -124,9 +122,15 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
             </div>
             <span class="text-xs text-slate-400" title="${fmtTs(r.ts)}">${fmtRelative(r.ts)}</span>
           </div>
-          ${r.output_summary ? renderOutput(r.output_summary) : ""}
+          ${descriptionHtml}
+          ${r.output_summary ? renderToolPayload("", r.output_summary) : ""}
           ${r.error ? `<pre class="mt-2 text-xs text-rose-800 bg-rose-50 p-2 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(r.error)}</pre>` : ""}
-          <p class="mt-2 text-xs font-mono text-slate-400">session ${escapeHtml(r.session_id)} · turn ${r.turn_id} · #${r.call_id}</p>
+          <p class="mt-2 text-xs font-mono text-slate-400">
+            <a class="hover:underline hover:text-slate-700" href="/tool-call/${r.call_id}">#${r.call_id}</a>
+            · session
+            <a class="hover:underline hover:text-slate-700" href="/session/${escapeHtml(r.session_id)}#tool-${r.call_id}">${escapeHtml(r.session_id.slice(0, 12))}…</a>
+            · turn ${r.turn_id}
+          </p>
         </li>`;
       })
       .join("");
@@ -150,34 +154,67 @@ export function registerToolCalls(app: Hono, brain: BrainHandle): void {
       <ul class="space-y-2">${rowHtml || '<li class="text-sm text-slate-500">No tool calls.</li>'}</ul>`;
     return c.html(shell({ title: "Tool calls", active: "/tool-calls" }, body));
   });
-}
 
-/**
- * Render the full tool output_summary. When the value is JSON (the common
- * case for Bash/Write/Edit hooks that wrap stdout/stderr), pretty-print
- * and collapse the well-known string fields (`stdout`, `stderr`, `error`,
- * `output`) into separate code blocks so escape sequences become real
- * newlines. Plain text falls back to a `pre` block.
- */
-function renderOutput(raw: string): string {
-  const pretty = prettyJson(raw);
-  if (!pretty.isJson) {
-    return `<pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(raw)}</pre>`;
-  }
-  const obj = JSON.parse(raw) as Record<string, unknown>;
-  const parts: string[] = [];
-  for (const key of ["stdout", "stderr", "error", "output", "result"] as const) {
-    const v = obj[key];
-    if (typeof v === "string" && v.length > 0) {
-      parts.push(
-        `<div class="mt-1"><p class="text-xs uppercase tracking-wide text-slate-500 mb-1">${key}</p><pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-all">${escapeHtml(unescapeJsonString(v))}</pre></div>`,
+  app.get("/tool-call/:id", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.html(
+        shell({ title: "Bad request", active: "/tool-calls" }, "<p>Invalid id.</p>"),
+        400,
       );
-      delete obj[key];
     }
-  }
-  const remaining =
-    Object.keys(obj).length > 0
-      ? `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer">other fields</summary><pre class="mt-1 text-xs bg-slate-100 p-2 rounded overflow-x-auto">${escapeHtml(JSON.stringify(obj, null, 2))}</pre></details>`
-      : "";
-  return parts.join("") + remaining;
+    const row = brain.raw
+      .prepare(
+        `SELECT call_id, session_id, turn_id, ts, tool_name, input_json,
+                output_summary, duration_ms, status, error
+         FROM tool_calls WHERE call_id = ?`,
+      )
+      .get(id) as (ToolCallRow & { input_json: string }) | undefined;
+    if (!row) {
+      return c.html(
+        shell({ title: "Not found", active: "/tool-calls" }, "<p>Tool call not found.</p>"),
+        404,
+      );
+    }
+    const body = `
+      <div class="flex items-center justify-between mb-3">
+        <a class="text-xs text-slate-500 hover:underline" href="/tool-calls">← all tool calls</a>
+        <a class="text-xs text-slate-600 hover:underline" href="/session/${escapeHtml(row.session_id)}#tool-${row.call_id}">→ session timeline</a>
+      </div>
+      <h1 class="text-2xl font-semibold mb-1">${escapeHtml(row.tool_name)}</h1>
+      ${(() => {
+        const desc = describeToolInput(row.tool_name, row.input_json);
+        return desc
+          ? `<p class="text-sm font-mono text-slate-700 mb-3 break-all">${escapeHtml(desc)}</p>`
+          : "";
+      })()}
+      <p class="text-sm text-slate-500 mb-4">
+        ${escapeHtml(row.status)} · ${fmtDuration(row.duration_ms)} · <span title="${fmtTs(row.ts)}">${fmtRelative(row.ts)}</span>
+        · session <a class="font-mono text-xs hover:underline" href="/session/${escapeHtml(row.session_id)}">${escapeHtml(row.session_id.slice(0, 12))}…</a>
+        · turn ${row.turn_id} · #${row.call_id}
+      </p>
+      <section class="rounded-lg border border-slate-200 bg-white p-5 mb-5">
+        <h2 class="text-sm font-semibold mb-3">Input</h2>
+        ${renderToolPayload("", row.input_json)}
+      </section>
+      ${
+        row.output_summary
+          ? `<section class="rounded-lg border border-slate-200 bg-white p-5 mb-5">
+             <h2 class="text-sm font-semibold mb-3">Output</h2>
+             ${renderToolPayload("", row.output_summary)}
+           </section>`
+          : ""
+      }
+      ${
+        row.error
+          ? `<section class="rounded-lg border border-rose-200 bg-rose-50 p-5">
+             <h2 class="text-sm font-semibold mb-3 text-rose-800">Error</h2>
+             <pre class="text-xs text-rose-900 bg-white p-3 rounded overflow-x-auto whitespace-pre-wrap break-words">${escapeHtml(row.error)}</pre>
+           </section>`
+          : ""
+      }`;
+    return c.html(
+      shell({ title: `Tool ${row.tool_name} #${row.call_id}`, active: "/tool-calls" }, body),
+    );
+  });
 }

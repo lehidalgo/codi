@@ -2,6 +2,12 @@ import * as p from "@clack/prompts";
 import { PROJECT_CLI } from "../constants.js";
 import { getSupportedLanguages } from "../core/hooks/hook-registry.js";
 import {
+  getGitHooks,
+  getRuntimeHooks,
+  getDefaultGitHookNames,
+  getDefaultRuntimeHookNames,
+} from "../core/hooks/registry/index.js";
+import {
   handleZipPath,
   handleGithubPath,
   handleLocalPath,
@@ -29,6 +35,8 @@ export interface WizardResult {
   flagPreset?: string;
   flags?: Record<string, import("../types/flags.js").FlagDefinition>;
   versionPin: boolean;
+  gitHooks?: string[];
+  runtimeHooks?: string[];
 }
 
 function isBack<T>(value: T | symbol): value is symbol {
@@ -260,6 +268,50 @@ export async function runInitWizard(
         }
         if (result) {
           result.languages = savedLanguages!;
+        }
+        if (result) {
+          // Hook selection — runs after the artifact / preset path so the
+          // user picks hooks last. Defaults are derived from the language
+          // selection above. The CLI commands `codi hooks add/remove`
+          // can amend later.
+          p.log.step("Git hooks");
+          const allGit = getGitHooks();
+          const gitDefaults = getDefaultGitHookNames(savedLanguages ?? []);
+          const gitChoice = await wizardMultiselect({
+            message: "Select git hooks for pre-commit / pre-push / commit-msg",
+            options: allGit.map((h) => ({
+              label: `${h.name} — ${h.description}`,
+              value: h.name,
+              ...(h.required ? { hint: "required" } : {}),
+            })),
+            initialValues: gitDefaults,
+            required: true,
+          });
+          if (isBack(gitChoice)) {
+            // No backwards navigation past this point — accept defaults.
+            (result as WizardResult).gitHooks = gitDefaults;
+          } else {
+            (result as WizardResult).gitHooks = gitChoice as string[];
+          }
+
+          p.log.step("Runtime hooks");
+          const allRuntime = getRuntimeHooks();
+          const runtimeDefaults = getDefaultRuntimeHookNames();
+          const rtChoice = await wizardMultiselect({
+            message: "Select runtime hooks (UserPromptSubmit / PreToolUse / Stop / ...)",
+            options: allRuntime.map((h) => ({
+              label: `${h.name} — ${h.description}`,
+              value: h.name,
+              ...(h.required ? { hint: "required" } : {}),
+            })),
+            initialValues: runtimeDefaults,
+            required: true,
+          });
+          if (isBack(rtChoice)) {
+            (result as WizardResult).runtimeHooks = runtimeDefaults;
+          } else {
+            (result as WizardResult).runtimeHooks = rtChoice as string[];
+          }
         }
         return result;
       }

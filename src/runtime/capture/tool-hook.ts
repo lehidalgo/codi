@@ -147,12 +147,20 @@ function inferStatus(response: unknown): "ok" | "error" | "blocked" {
   return "ok";
 }
 
+// Storage caps. Generous enough to preserve typical Bash / Read / Write
+// outputs verbatim (kilobyte-scale) while still defending the brain DB
+// against runaway gigabyte-scale dumps. UI rendering applies its own
+// view-time wrapping inside <pre> blocks so storage is the only relevant
+// limit.
+const MAX_OUTPUT_SUMMARY_CHARS = 16_384;
+const MAX_ERROR_CHARS = 8_192;
+
 function summarizeResponse(response: unknown): string | undefined {
   if (response === null || response === undefined) return undefined;
-  if (typeof response === "string") return truncate(response, 200);
+  if (typeof response === "string") return truncate(response, MAX_OUTPUT_SUMMARY_CHARS);
   if (typeof response !== "object") return undefined;
   try {
-    return truncate(JSON.stringify(response), 200);
+    return truncate(JSON.stringify(response), MAX_OUTPUT_SUMMARY_CHARS);
   } catch {
     return undefined;
   }
@@ -162,11 +170,11 @@ function extractError(response: unknown): string {
   if (response === null || typeof response !== "object") return "unknown";
   const r = response as Record<string, unknown>;
   const e = r["error"];
-  if (typeof e === "string") return truncate(e, 500);
-  if (typeof r["reason"] === "string") return truncate(r["reason"] as string, 500);
+  if (typeof e === "string") return truncate(e, MAX_ERROR_CHARS);
+  if (typeof r["reason"] === "string") return truncate(r["reason"] as string, MAX_ERROR_CHARS);
   // Claude Code shape uses stderr for the failure detail.
   if (typeof r["stderr"] === "string" && (r["stderr"] as string).length > 0) {
-    return truncate(r["stderr"] as string, 500);
+    return truncate(r["stderr"] as string, MAX_ERROR_CHARS);
   }
   return "unknown";
 }

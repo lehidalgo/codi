@@ -49,6 +49,16 @@ export interface ArtifactFileState {
  * Tracks all generated files and their hashes to enable drift detection,
  * incremental generation, and preset artifact cleanup.
  */
+/**
+ * User-selected hooks (per bucket). Optional in state.json: when absent,
+ * `fillSelectedHooksDefaults` derives the value at read time from the
+ * project's languages and the registry's `default`/`required` flags.
+ */
+export interface SelectedHooks {
+  git: string[];
+  runtime: string[];
+}
+
 export interface StateData {
   /** Schema version for forward-compatibility checks. */
   version: "1";
@@ -60,6 +70,23 @@ export interface StateData {
   hooks: GeneratedFileState[];
   /** File records for artifacts installed from presets. */
   presetArtifacts?: ArtifactFileState[];
+  /**
+   * Per-project hook selection. Additive field — projects without it keep
+   * working; the reader fills defaults via {@link fillSelectedHooksDefaults}.
+   */
+  selectedHooks?: SelectedHooks;
+}
+
+import { getDefaultGitHookNames, getDefaultRuntimeHookNames } from "../hooks/registry/index.js";
+
+export function fillSelectedHooksDefaults(
+  existing: Partial<SelectedHooks> | undefined,
+  languages: string[],
+): SelectedHooks {
+  return {
+    git: existing?.git ?? getDefaultGitHookNames(languages),
+    runtime: existing?.runtime ?? getDefaultRuntimeHookNames(),
+  };
 }
 
 /**

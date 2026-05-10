@@ -49,22 +49,25 @@ export function shell(opts: ShellOptions, body: string): string {
   <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
   <style>
+    [x-cloak] { display: none !important; }
     .prose pre { background:#0f172a; color:#e2e8f0; padding:0.75rem; border-radius:0.375rem; overflow-x:auto; font-size:0.8125rem; line-height:1.5; }
     .prose code:not(pre code) { background:#f1f5f9; color:#0f172a; padding:0.125rem 0.375rem; border-radius:0.25rem; font-size:0.875em; }
     .prose table { display:block; overflow-x:auto; max-width:100%; }
   </style>
   ${extraHead}
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-  <div class="flex min-h-screen">
-    <aside class="w-56 shrink-0 border-r border-slate-200 bg-white">
+<body class="bg-slate-50 text-slate-900 h-screen overflow-hidden">
+  <div class="flex h-full">
+    <aside class="w-56 shrink-0 border-r border-slate-200 bg-white h-full overflow-y-auto sticky top-0">
       <div class="px-4 py-5 border-b border-slate-200">
         <a href="/" class="text-base font-semibold tracking-tight">codi brain</a>
       </div>
       <nav class="p-3 space-y-1">${navHtml}</nav>
     </aside>
-    <main class="flex-1 p-6 max-w-6xl mx-auto">
-      ${body}
+    <main class="flex-1 h-full overflow-y-auto">
+      <div class="p-6 max-w-6xl mx-auto">
+        ${body}
+      </div>
     </main>
   </div>
 </body>

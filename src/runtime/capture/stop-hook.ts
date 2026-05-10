@@ -28,6 +28,7 @@ import { BrainEventLog } from "../brain-event-log.js";
 import type { BrainHandle } from "../brain/index.js";
 import { parseMarkersWithReport, type ParsedMarker } from "./markers.js";
 import { persistMarkers } from "./persist.js";
+import { aggregateSessionUsage } from "../tokens/index.js";
 import {
   closeTurn,
   ensureSession,
@@ -148,6 +149,15 @@ export function processStopHook(handle: BrainHandle, input: StopHookInput): Stop
 
   // 6. Refresh cached capture count.
   refreshCaptureCount(raw, input.sessionId);
+
+  // 7. Aggregate token usage + cost from the transcript (or tokenizer
+  //    fallback) into `sessions`. Best-effort: a malformed transcript or
+  //    missing column never blocks the capture path.
+  try {
+    aggregateSessionUsage(raw, input.sessionId);
+  } catch (cause) {
+    console.error(`[capture] token aggregation failed for session ${input.sessionId}:`, cause);
+  }
 
   return {
     turnId,

@@ -1,4 +1,5 @@
 import { access } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
   AgentAdapter,
@@ -63,6 +64,26 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function readEnabledRuntimeHookNames(projectRoot: string | undefined): string[] | null {
+  if (!projectRoot) return null;
+  try {
+    const stateFile = join(projectRoot, ".codi", ".state", "state.json");
+    if (!existsSync(stateFile)) return null;
+    const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
+      selectedHooks?: { runtime?: string[] };
+    };
+    return parsed.selectedHooks?.runtime ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function isHeartbeatEnabled(selected: string[] | null, name: string): boolean {
+  // No state.json (greenfield) → emit by default to preserve current behaviour.
+  if (selected === null) return true;
+  return selected.includes(name);
 }
 
 /**
@@ -250,24 +271,32 @@ export const claudeCodeAdapter: AgentAdapter = {
       }
     }
 
-    // Generate heartbeat hook scripts to .codi/hooks/
-    const trackerScript = buildSkillTrackerScript();
-    const trackerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`;
-    files.push({
-      path: trackerPath,
-      content: trackerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(trackerScript),
-    });
+    // Generate heartbeat hook scripts to .codi/hooks/, gated by selection.
+    const enabledRuntime = readEnabledRuntimeHookNames(_options.projectRoot);
+    const emitTracker = isHeartbeatEnabled(enabledRuntime, "skill-tracker");
+    const emitObserver = isHeartbeatEnabled(enabledRuntime, "skill-observer");
 
-    const observerScript = buildSkillObserverScript();
-    const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
-    files.push({
-      path: observerPath,
-      content: observerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(observerScript),
-    });
+    if (emitTracker) {
+      const trackerScript = buildSkillTrackerScript();
+      const trackerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`;
+      files.push({
+        path: trackerPath,
+        content: trackerScript,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(trackerScript),
+      });
+    }
+
+    if (emitObserver) {
+      const observerScript = buildSkillObserverScript();
+      const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+      files.push({
+        path: observerPath,
+        content: observerScript,
+        sources: [MANIFEST_FILENAME],
+        hash: hashContent(observerScript),
+      });
+    }
 
     // Ship the node-resolver launcher next to the hook scripts. The hook command
     // in settings.json invokes `/bin/sh <launcher> <script>` so non-interactive
@@ -281,7 +310,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     });
 
     // Generate .claude/settings.json (permissions + heartbeat hooks)
-    const settingsJson = buildSettingsJson(config);
+    const settingsJson = buildSettingsJson(config, enabledRuntime);
     const settingsContent = JSON.stringify(settingsJson, null, 2);
     files.push({
       path: ".claude/settings.json",
@@ -311,7 +340,10 @@ interface ClaudeSettings {
   hooks?: Record<string, ClaudeHookEntry[]>;
 }
 
-function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
+function buildSettingsJson(
+  config: NormalizedConfig,
+  enabledRuntime: string[] | null,
+): ClaudeSettings {
   const settings: ClaudeSettings = {};
 
   // Map flags to permissions.deny (native enforcement — hard blocks tool calls)
@@ -368,20 +400,27 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
   // unchanged so the codi subcommand sees the Claude Code payload.
   const codiHook = (name: string): string => `cd ${projectRootRef} && codi hook ${name}`;
 
+  const trackerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-tracker");
+  const observerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-observer");
+
   settings.hooks = {
-    InstructionsLoaded: [
-      {
-        matcher: "",
-        hooks: [
-          {
-            type: "command",
-            command: launcherCommand(launcherRef, trackerRef),
-            timeout: 5,
-            async: true,
-          },
-        ],
-      },
-    ],
+    ...(trackerEnabled
+      ? {
+          InstructionsLoaded: [
+            {
+              matcher: "",
+              hooks: [
+                {
+                  type: "command" as const,
+                  command: launcherCommand(launcherRef, trackerRef),
+                  timeout: 5,
+                  async: true as const,
+                },
+              ],
+            },
+          ],
+        }
+      : {}),
     UserPromptSubmit: [
       {
         matcher: "",
@@ -422,13 +461,17 @@ function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
       {
         matcher: "",
         hooks: [
+          ...(observerEnabled
+            ? [
+                {
+                  type: "command" as const,
+                  command: launcherCommand(launcherRef, observerRef),
+                  timeout: 15,
+                },
+              ]
+            : []),
           {
-            type: "command",
-            command: launcherCommand(launcherRef, observerRef),
-            timeout: 15,
-          },
-          {
-            type: "command",
+            type: "command" as const,
             command: codiHook("stop"),
             timeout: 15,
           },

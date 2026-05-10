@@ -18,7 +18,7 @@ import type { ManifestEvent, Phase, ReducedState } from "./types.js";
 import { readFileSafe } from "./fs-utils.js";
 
 export type HookDecision =
-  | { allow: true; reason?: string; auto_event?: ManifestEvent }
+  | { allow: true; reason?: string; auto_event?: ManifestEvent; advisories?: string[] }
   | { allow: false; reason: string; suggested_action: string };
 
 export interface HookContext {

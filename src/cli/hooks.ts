@@ -11,6 +11,9 @@ import { initFromOptions } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import type { DependencyDiagnostic } from "../core/hooks/hook-dependency-checker.js";
 import { PROJECT_CLI } from "../constants.js";
+import { registerHooksListCommand } from "./hooks-list.js";
+import { registerHooksAddCommand } from "./hooks-add.js";
+import { registerHooksRemoveCommand } from "./hooks-remove.js";
 
 interface HooksDoctorOptions extends GlobalOptions {
   fix?: boolean;
@@ -124,4 +127,8 @@ export function registerHooksCommand(program: Command): void {
       initFromOptions(globalOptions);
       await hooksReinstallHandler(process.cwd());
     });
+
+  registerHooksListCommand(hooksCmd);
+  registerHooksAddCommand(hooksCmd);
+  registerHooksRemoveCommand(hooksCmd);
 }

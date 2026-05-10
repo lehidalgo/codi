@@ -290,6 +290,24 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   // /run-with-agent without crashing.
   // ─── Captures CRUD (Sprint 1 — UI editor) ─────────────────────────────────
 
+  app.get("/api/v1/captures/:id", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: { code: "bad_id" } }, 400);
+    }
+    const row = brain.raw
+      .prepare(
+        `SELECT capture_id, session_id, prompt_id, turn_id, ts, type, content,
+                raw_marker, file_paths, workflow_id, phase, deleted_at
+         FROM captures WHERE capture_id = ?`,
+      )
+      .get(id) as unknown;
+    if (!row) {
+      return c.json({ error: { code: "not_found" } }, 404);
+    }
+    return c.json({ data: row });
+  });
+
   app.patch("/api/v1/captures/:id", async (c: Context) => {
     const id = Number(c.req.param("id"));
     if (!Number.isFinite(id)) {

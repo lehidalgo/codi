@@ -105,10 +105,22 @@ function isSecurityScanEnabled(flags: ResolvedFlags): boolean {
   return flag.value !== false;
 }
 
+export interface GenerateHooksOptions {
+  /**
+   * Optional allowlist of git hook names that the user has explicitly
+   * selected via `codi hooks add/remove` or the init wizard. When set,
+   * the emitted config is filtered to this allowlist (codi-internal
+   * meta hooks like version-bump and secret-scan are exempt — they are
+   * tied to flags, not to the user's hook selection).
+   */
+  selectedGitHookNames?: string[];
+}
+
 export function generateHooksConfig(
   flags: ResolvedFlags,
   languages: string[],
   manifest?: ProjectManifest,
+  options?: GenerateHooksOptions,
 ): HooksConfig {
   const allHooks: HookEntry[] = [];
 
@@ -348,8 +360,30 @@ export function generateHooksConfig(
   const docCheck = isDocCheckEnabled(flags);
   const docProtectedBranches = getDocProtectedBranches(flags);
 
+  // Apply the user's selectedGitHookNames filter, if present. Codi-internal
+  // meta hooks (version-bump, secret-scan, file-size-check, etc.) are tied
+  // to flags and stay regardless of selection — they are not user-pickable.
+  const META_HOOK_PREFIXES = [
+    "version-bump",
+    "version-verify",
+    "secret-scan",
+    "file-size-check",
+    "doc-naming-check",
+    "test-before-commit",
+    "template-wiring-check",
+    "brand-skill-validate",
+    "conflict-markers",
+    `${PROJECT_NAME}-doctor`,
+  ];
+  const isMetaHook = (name: string): boolean =>
+    META_HOOK_PREFIXES.some((prefix) => name === prefix || name.startsWith(`${prefix}-`));
+  const filteredHooks =
+    options?.selectedGitHookNames !== undefined
+      ? allHooks.filter((h) => isMetaHook(h.name) || options.selectedGitHookNames!.includes(h.name))
+      : allHooks;
+
   return {
-    hooks: allHooks,
+    hooks: filteredHooks,
     secretScan,
     fileSizeCheck: true,
     versionCheck: hasVersionRequirement,

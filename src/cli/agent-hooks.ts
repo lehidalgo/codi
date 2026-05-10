@@ -17,7 +17,8 @@
  */
 
 import type { Command } from "commander";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { openBrain, applyMigrations } from "../runtime/brain/index.js";
 import { processPromptSubmit } from "../runtime/capture/prompt-hook.js";
 import { processPostToolUse } from "../runtime/capture/tool-hook.js";
@@ -43,6 +44,9 @@ import {
 import { recordIncidentalChange } from "../runtime/cli-handlers.js";
 import { readFileSafe } from "../runtime/fs-utils.js";
 import { readPreferences } from "../runtime/preferences.js";
+import { getRuntimeHooks } from "../core/hooks/registry/index.js";
+import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
+import type { HookContext as RuntimeHookCtx } from "../core/hooks/hook-artifact.js";
 
 interface HookPayload {
   session_id?: string;
@@ -130,7 +134,20 @@ function runUserPromptSubmit(): void {
 
 // ─── pre-tool-use ──────────────────────────────────────────────────────────
 
-function runPreToolUse(): void {
+function readEnabledRuntimeHookNames(cwd: string): string[] | null {
+  try {
+    const stateFile = join(cwd, ".codi", ".state", "state.json");
+    if (!existsSync(stateFile)) return null;
+    const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
+      selectedHooks?: { runtime?: string[] };
+    };
+    return parsed.selectedHooks?.runtime ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function runPreToolUse(): Promise<void> {
   const payload = parsePayload();
   if (!payload || typeof payload.tool_name !== "string" || !payload.tool_input) {
     process.exit(0);
@@ -201,6 +218,53 @@ function runPreToolUse(): void {
       }
     } catch {
       /* advisory only */
+    }
+  }
+
+  // Runtime-hook runner — security-reminder + future advisory hooks.
+  // Lazy-load registry/runner to keep cold-start time off other hooks.
+  if (
+    call.tool_name === "Edit" ||
+    call.tool_name === "Write" ||
+    call.tool_name === "MultiEdit" ||
+    call.tool_name === "NotebookEdit"
+  ) {
+    try {
+      const enabled = readEnabledRuntimeHookNames(cwd);
+      const allRuntime = getRuntimeHooks();
+      const candidates = allRuntime.filter(
+        (h) => h.required || (enabled === null ? h.default : enabled.includes(h.name)),
+      );
+      // Only run hooks subscribed to PreToolUse, and only the security-reminder
+      // for now; the wrapper hooks are metadata-only adapters whose enforcement
+      // already happens above. Filter to event subscription too.
+      const runHere = candidates.filter(
+        (h) => h.events.includes("PreToolUse") && h.name === "security-reminder",
+      );
+      if (runHere.length > 0) {
+        const filePath =
+          (call.tool_input["file_path"] as string | undefined) ??
+          (call.tool_input["path"] as string | undefined);
+        const newString = call.tool_input["new_string"] as string | undefined;
+        const content = (call.tool_input["content"] as string | undefined) ?? newString ?? "";
+        const runtimeCtx: RuntimeHookCtx = {
+          bucket: "runtime",
+          event: "PreToolUse",
+          toolName: call.tool_name,
+          ...(filePath !== undefined ? { filePath } : {}),
+          content,
+          sessionId: payload.session_id ?? "default",
+          cwd,
+        };
+        const verdicts = await runRuntimeHooks(runHere, runtimeCtx);
+        const exit = aggregateExitDecision(verdicts);
+        if (exit.exitCode === 2) {
+          for (const line of exit.stderrLines) console.error(`[codi pre-tool-use] ${line}`);
+          process.exit(2);
+        }
+      }
+    } catch {
+      // Fail-open: never block due to runner internals.
     }
   }
 
@@ -303,7 +367,7 @@ function runStop(): void {
 const HOOK_NAMES = ["user-prompt-submit", "pre-tool-use", "post-tool-use", "stop"] as const;
 export type AgentHookName = (typeof HOOK_NAMES)[number];
 
-const DISPATCHERS: Record<AgentHookName, () => void> = {
+const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
   "user-prompt-submit": runUserPromptSubmit,
   "pre-tool-use": runPreToolUse,
   "post-tool-use": runPostToolUse,
@@ -316,14 +380,14 @@ export function registerAgentHookCommand(program: Command): void {
     .description(
       `Run a built-in F6/F7 agent hook against stdin payload. Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json by 'codi init'.`,
     )
-    .action((name: string) => {
+    .action(async (name: string) => {
       if (!(HOOK_NAMES as readonly string[]).includes(name)) {
         process.stderr.write(
           `[codi hook] Unknown hook name '${name}'. Valid: ${HOOK_NAMES.join(", ")}\n`,
         );
         process.exit(1);
       }
-      DISPATCHERS[name as AgentHookName]();
+      await DISPATCHERS[name as AgentHookName]();
     });
   void hook;
 }

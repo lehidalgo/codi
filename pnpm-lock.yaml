@@ -49,6 +49,9 @@ importers:
       googleapis:
         specifier: ^171.4.0
         version: 171.4.0
+      gpt-tokenizer:
+        specifier: ^3.4.0
+        version: 3.4.0
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -4021,6 +4024,12 @@ packages:
         integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==,
       }
     engines: { node: ">= 0.4" }
+
+  gpt-tokenizer@3.4.0:
+    resolution:
+      {
+        integrity: sha512-wxFLnhIXTDjYebd9A9pGl3e31ZpSypbpIJSOswbgop5jLte/AsZVDvjlbEuVFlsqZixVKqbcoNmRlFDf6pz/UQ==,
+      }
 
   graceful-fs@4.2.11:
     resolution:
@@ -9241,6 +9250,8 @@ snapshots:
       - supports-color
 
   gopd@1.2.0: {}
+
+  gpt-tokenizer@3.4.0: {}
 
   graceful-fs@4.2.11: {}
 

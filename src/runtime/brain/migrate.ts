@@ -195,7 +195,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -206,6 +206,10 @@ export const CURRENT_SCHEMA_VERSION = 3;
  * v3 introduces soft-delete on captures and proposals so the brain UI can
  * remove rows without losing history. Reads filter `deleted_at IS NULL`
  * by default; the trash view drops the filter.
+ *
+ * v4 adds per-session and per-turn token usage + cost columns so the UI
+ * can render context-window utilization and cumulative spend without
+ * re-parsing the transcript on every page load.
  */
 const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> = [
   [
@@ -215,6 +219,23 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `ALTER TABLE proposals ADD COLUMN deleted_at INTEGER`,
       `CREATE INDEX IF NOT EXISTS idx_captures_deleted_at ON captures(deleted_at)`,
       `CREATE INDEX IF NOT EXISTS idx_proposals_deleted_at ON proposals(deleted_at)`,
+    ],
+  ],
+  [
+    4,
+    [
+      `ALTER TABLE sessions ADD COLUMN tokens_input INTEGER`,
+      `ALTER TABLE sessions ADD COLUMN tokens_output INTEGER`,
+      `ALTER TABLE sessions ADD COLUMN tokens_cache_create INTEGER`,
+      `ALTER TABLE sessions ADD COLUMN tokens_cache_read INTEGER`,
+      `ALTER TABLE sessions ADD COLUMN tokens_preloaded INTEGER`,
+      `ALTER TABLE sessions ADD COLUMN cost_usd REAL`,
+      `ALTER TABLE sessions ADD COLUMN context_window INTEGER`,
+      `ALTER TABLE sessions ADD COLUMN tokens_estimated INTEGER`,
+      `ALTER TABLE turns ADD COLUMN tokens_input INTEGER`,
+      `ALTER TABLE turns ADD COLUMN tokens_output INTEGER`,
+      `ALTER TABLE turns ADD COLUMN tokens_cache_create INTEGER`,
+      `ALTER TABLE turns ADD COLUMN tokens_cache_read INTEGER`,
     ],
   ],
 ];

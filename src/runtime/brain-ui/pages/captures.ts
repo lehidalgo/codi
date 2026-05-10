@@ -99,14 +99,16 @@ function renderRow(cap: CaptureRow): string {
          hx-target="closest li"
          hx-swap="outerHTML">Restore</button>`
     : `<button class="text-xs text-slate-600 hover:underline"
-         x-on:click="$dispatch('edit-capture', { id: ${cap.capture_id}, type: '${escapeHtml(cap.type)}', content: ${JSON.stringify(cap.content).replace(/'/g, "\\'")} })">
+         data-capture-id="${cap.capture_id}"
+         x-on:click="$dispatch('edit-capture', { id: $event.target.dataset.captureId })">
          Edit
        </button>
        <button class="text-xs text-rose-700 hover:underline ml-3"
-         hx-delete="/api/v1/captures/${cap.capture_id}"
-         hx-target="closest li"
-         hx-swap="outerHTML"
-         hx-confirm="Soft-delete this capture?">Delete</button>`;
+         data-capture-id="${cap.capture_id}"
+         data-capture-type="${escapeHtml(cap.type)}"
+         x-on:click="$dispatch('confirm-delete-capture', { id: $event.target.dataset.captureId, type: $event.target.dataset.captureType })">
+         Delete
+       </button>`;
 
   return `
     <li id="capture-${cap.capture_id}" class="rounded border border-slate-200 bg-white p-3 text-sm">
@@ -120,7 +122,11 @@ function renderRow(cap: CaptureRow): string {
           </div>
           ${renderMarkdown(cap.content)}
           ${filesHtml}
-          <p class="mt-2 text-xs font-mono text-slate-400">session ${escapeHtml(cap.session_id)} · #${cap.capture_id}</p>
+          <p class="mt-2 text-xs font-mono text-slate-400">
+            <a class="hover:underline hover:text-slate-700" href="/capture/${cap.capture_id}">#${cap.capture_id}</a>
+            · session
+            <a class="hover:underline hover:text-slate-700" href="/session/${escapeHtml(cap.session_id)}#capture-${cap.capture_id}">${escapeHtml(cap.session_id.slice(0, 12))}…</a>
+          </p>
         </div>
         <div class="shrink-0 flex flex-col gap-2 items-end">${actions}</div>
       </div>
@@ -137,7 +143,70 @@ function safeJsonArray(s: string): string[] {
   return [];
 }
 
+interface FullCaptureRow extends CaptureRow {
+  readonly raw_marker: string;
+  readonly prompt_id: number;
+  readonly turn_id: number;
+}
+
 export function registerCaptures(app: Hono, brain: BrainHandle): void {
+  app.get("/capture/:id", (c: Context) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.html(
+        shell({ title: "Bad request", active: "/captures" }, "<p>Invalid id.</p>"),
+        400,
+      );
+    }
+    const cap = brain.raw
+      .prepare(
+        `SELECT capture_id, session_id, prompt_id, turn_id, ts, type, content,
+                raw_marker, file_paths, workflow_id, phase, deleted_at
+         FROM captures WHERE capture_id = ?`,
+      )
+      .get(id) as FullCaptureRow | undefined;
+    if (!cap) {
+      return c.html(
+        shell({ title: "Not found", active: "/captures" }, "<p>Capture not found.</p>"),
+        404,
+      );
+    }
+    const filePaths = cap.file_paths ? safeJsonArray(cap.file_paths) : [];
+    const filesHtml = filePaths.length
+      ? `<div class="flex flex-wrap gap-1 mt-2">${filePaths
+          .map(
+            (p) =>
+              `<span class="text-xs font-mono px-2 py-0.5 bg-slate-100 rounded text-slate-700">${escapeHtml(p)}</span>`,
+          )
+          .join("")}</div>`
+      : "";
+    const body = `
+      <div class="flex items-center justify-between mb-3">
+        <a class="text-xs text-slate-500 hover:underline" href="/captures">← all captures</a>
+        <a class="text-xs text-slate-600 hover:underline" href="/session/${escapeHtml(cap.session_id)}#capture-${cap.capture_id}">→ session timeline</a>
+      </div>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="inline-block rounded bg-slate-200 px-2 py-0.5 text-xs font-mono">${escapeHtml(cap.type)}</span>
+        <span class="text-xs text-slate-500" title="${fmtTs(cap.ts)}">${fmtRelative(cap.ts)}</span>
+        ${cap.workflow_id ? `<span class="text-xs font-mono text-slate-500">${escapeHtml(cap.workflow_id)}${cap.phase ? `/${escapeHtml(cap.phase)}` : ""}</span>` : ""}
+        ${cap.deleted_at ? `<span class="text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded">deleted ${fmtRelative(cap.deleted_at)}</span>` : ""}
+      </div>
+      <section class="rounded-lg border border-slate-200 bg-white p-5 mb-5">
+        <h2 class="text-sm font-semibold mb-3">Content</h2>
+        ${renderMarkdown(cap.content)}
+        ${filesHtml}
+      </section>
+      <section class="rounded-lg border border-slate-200 bg-white p-5 mb-5">
+        <h2 class="text-sm font-semibold mb-3">Raw marker</h2>
+        <pre class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto whitespace-pre-wrap break-words">${escapeHtml(cap.raw_marker)}</pre>
+      </section>
+      <p class="text-xs text-slate-500">
+        session <a class="font-mono hover:underline" href="/session/${escapeHtml(cap.session_id)}">${escapeHtml(cap.session_id.slice(0, 12))}…</a>
+        · prompt #${cap.prompt_id} · turn #${cap.turn_id} · capture #${cap.capture_id}
+      </p>`;
+    return c.html(shell({ title: `Capture #${cap.capture_id}`, active: "/captures" }, body));
+  });
+
   app.get("/captures", (c: Context) => {
     const filters = parseFilters(c);
     const rows = listCaptures(brain, filters);
@@ -167,36 +236,97 @@ export function registerCaptures(app: Hono, brain: BrainHandle): void {
       ? `<a href="/captures" class="text-xs text-slate-600 hover:underline">← back to live</a>`
       : `<a href="/captures?trash=1" class="text-xs text-slate-500 hover:underline">view trash</a>`;
 
+    const confirmDeleteModal = filters.trash
+      ? ""
+      : `
+      <div x-data="{ open: false, id: null, type: '', deleting: false }"
+           x-on:confirm-delete-capture.window="open = true; id = $event.detail.id; type = $event.detail.type"
+           x-show="open"
+           x-cloak
+           x-transition.opacity.duration.150ms
+           class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 m-4" x-on:click.stop>
+          <h3 class="text-lg font-semibold mb-2">Soft-delete capture?</h3>
+          <p class="text-sm text-slate-600 mb-1">Capture <span class="font-mono" x-text="'#' + id"></span> (<span class="font-mono" x-text="type"></span>) will be moved to trash.</p>
+          <p class="text-xs text-slate-500 mb-4">You can restore it from <a href="/captures?trash=1" class="underline">view trash</a>.</p>
+          <div class="flex gap-2 justify-end">
+            <button type="button" class="px-3 py-1.5 text-sm rounded border border-slate-300" x-on:click="open = false" :disabled="deleting">Cancel</button>
+            <button type="button" class="px-3 py-1.5 text-sm rounded bg-rose-600 text-white"
+              :disabled="deleting" x-text="deleting ? 'Deleting…' : 'Delete'"
+              x-on:click="
+                deleting = true;
+                fetch('/api/v1/captures/' + id, { method: 'DELETE' })
+                  .then(() => { open = false; window.location.reload(); })
+                  .finally(() => { deleting = false; });
+              ">Delete</button>
+          </div>
+        </div>
+      </div>`;
     const editModal = filters.trash
       ? ""
       : `
-      <div x-data="{ open: false, id: null, type: '', content: '' }"
-           x-on:edit-capture.window="open = true; id = $event.detail.id; type = $event.detail.type; content = $event.detail.content;"
+      <div x-data="captureEditor()"
+           x-on:edit-capture.window="load($event.detail.id)"
            x-show="open"
            x-cloak
            class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 m-4" x-on:click.stop>
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 m-4 max-h-[90vh] overflow-auto" x-on:click.stop>
           <h3 class="text-lg font-semibold mb-4">Edit capture <span class="text-sm font-mono text-slate-500" x-text="'#' + id"></span></h3>
-          <form x-on:submit.prevent="
-              fetch('/api/v1/captures/' + id, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type, content })
-              }).then(() => { open = false; window.location.reload(); });
-            ">
+          <template x-if="loading"><p class="text-slate-500 text-sm">Loading…</p></template>
+          <form x-show="!loading" x-on:submit.prevent="save()">
             <label class="block text-sm font-medium mb-1">Type</label>
             <select x-model="type" class="w-full mb-3 rounded border border-slate-300 px-3 py-2 text-sm">
               ${CAPTURE_TYPES.map((t) => `<option value="${t}">${t}</option>`).join("")}
             </select>
             <label class="block text-sm font-medium mb-1">Content</label>
-            <textarea x-model="content" rows="5" class="w-full mb-3 rounded border border-slate-300 px-3 py-2 text-sm font-mono"></textarea>
+            <textarea x-model="content" rows="10" class="w-full mb-3 rounded border border-slate-300 px-3 py-2 text-sm font-mono"></textarea>
             <div class="flex gap-2 justify-end">
               <button type="button" class="px-3 py-1.5 text-sm rounded border border-slate-300" x-on:click="open = false">Cancel</button>
-              <button type="submit" class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white">Save</button>
+              <button type="submit" class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white" :disabled="saving" x-text="saving ? 'Saving…' : 'Save'">Save</button>
             </div>
           </form>
         </div>
-      </div>`;
+      </div>
+      <script>
+        function captureEditor() {
+          return {
+            open: false,
+            loading: false,
+            saving: false,
+            id: null,
+            type: '',
+            content: '',
+            async load(id) {
+              this.id = id;
+              this.open = true;
+              this.loading = true;
+              try {
+                const r = await fetch('/api/v1/captures/' + id);
+                const j = await r.json();
+                const data = j.data || j;
+                this.type = data.type || '';
+                this.content = data.content || '';
+              } finally {
+                this.loading = false;
+              }
+            },
+            async save() {
+              this.saving = true;
+              try {
+                await fetch('/api/v1/captures/' + this.id, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ type: this.type, content: this.content }),
+                });
+                this.open = false;
+                window.location.reload();
+              } finally {
+                this.saving = false;
+              }
+            },
+          };
+        }
+      </script>`;
 
     const body = `
       <div class="flex items-center justify-between mb-4">
@@ -221,6 +351,7 @@ export function registerCaptures(app: Hono, brain: BrainHandle): void {
         }
       </ul>
       ${editModal}
+      ${confirmDeleteModal}
     `;
     return c.html(shell({ title: "Captures", active: "/captures" }, body));
   });

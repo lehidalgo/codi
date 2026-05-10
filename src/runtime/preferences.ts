@@ -16,15 +16,27 @@ import { dirname, join } from "node:path";
 
 export type OutputMode = "caveman" | "normal";
 
+export interface HookPreferenceOverride {
+  enabled?: boolean;
+  extraSkipExtensions?: string[];
+  extraSkipPaths?: string[];
+}
+
 export interface CodiPreferences {
   /** Output verbosity. Defaults to caveman. */
   output_mode?: OutputMode;
+  /**
+   * Per-hook preference overrides keyed by hook name (e.g. "security-reminder").
+   * Empty/missing means use registry defaults and project state selection.
+   */
+  hooks?: Record<string, HookPreferenceOverride>;
 }
 
 export const PREFERENCES_RELATIVE_PATH = ".codi/preferences.json";
 
 export const DEFAULT_PREFERENCES: Required<CodiPreferences> = {
   output_mode: "caveman",
+  hooks: {},
 };
 
 export function preferencesPath(cwd: string): string {
@@ -44,9 +56,10 @@ export function readPreferences(cwd: string): Required<CodiPreferences> {
       output_mode: isOutputMode(raw.output_mode)
         ? raw.output_mode
         : DEFAULT_PREFERENCES.output_mode,
+      hooks: raw.hooks ?? {},
     };
   } catch {
-    return { ...DEFAULT_PREFERENCES };
+    return { ...DEFAULT_PREFERENCES, hooks: {} };
   }
 }
 

@@ -13,13 +13,15 @@
  */
 
 import type {
-  HookCategory as LegacyCategory,
+  HookCategory,
   HookLanguage,
   HookStage,
   InstallHint,
   PreCommitEmission,
   ShellEmission,
 } from "./hook-spec.js";
+
+export type { HookCategory } from "./hook-spec.js";
 
 export type HookBucket = "git" | "runtime";
 
@@ -30,8 +32,6 @@ export type RuntimeEvent =
   | "Stop"
   | "SessionStart"
   | "InstructionsLoaded";
-
-export type HookCategory = LegacyCategory | "enforcement" | "observation";
 
 export type Severity = "info" | "warn" | "block";
 

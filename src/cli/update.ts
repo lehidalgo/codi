@@ -71,6 +71,7 @@ interface UpdateOptions extends GlobalOptions {
   skills?: boolean;
   agents?: boolean;
   mcpServers?: boolean;
+  hooks?: boolean;
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
   force?: boolean;
@@ -770,6 +771,7 @@ export function registerUpdateCommand(program: Command): void {
     .option("--skills", "Refresh template-managed skills to latest versions")
     .option("--agents", "Refresh template-managed agents to latest versions")
     .option("--mcp-servers", "Refresh template-managed MCP servers to latest versions")
+    .option("--hooks", "Show next-steps for managing hooks (list/add/remove or re-run init)")
     .option("--dry-run", "Show what would change without writing")
     .option("--force", "Accept all incoming changes without prompting (overwrites local)")
     .option(
@@ -784,6 +786,11 @@ export function registerUpdateCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       const options: UpdateOptions = { ...globalOptions, ...cmdOptions };
       initFromOptions(options);
+      if (options.hooks) {
+        const { printHooksHelp } = await import("./update-hooks-help.js");
+        printHooksHelp(process.stdout);
+        process.exit(0);
+      }
       const result = await updateHandler(process.cwd(), options);
       handleOutput(result, options);
       process.exit(result.exitCode);

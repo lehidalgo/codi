@@ -9,15 +9,36 @@ import { shell, escapeHtml, fmtRelative } from "./shell.js";
 
 interface CountRow {
   readonly label: string;
-  readonly value: number;
+  readonly value: number | string;
   readonly href?: string;
   readonly muted?: boolean;
+}
+
+function fmtTokens(n: number): string {
+  if (n < 1000) return n.toString();
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`;
+  if (n < 1_000_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  return `${(n / 1_000_000_000).toFixed(2)}B`;
+}
+
+function fmtUsd(n: number): string {
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  if (n < 100) return `$${n.toFixed(2)}`;
+  return `$${n.toFixed(0)}`;
 }
 
 function counts(brain: BrainHandle): CountRow[] {
   const c = (sql: string): number => {
     return (brain.raw.prepare(sql).get() as { n: number }).n;
   };
+  const totals = brain.raw
+    .prepare(
+      `SELECT
+         COALESCE(SUM(tokens_input + tokens_output + tokens_cache_create + tokens_cache_read), 0) AS total_tokens,
+         COALESCE(SUM(cost_usd), 0) AS total_cost
+       FROM sessions`,
+    )
+    .get() as { total_tokens: number; total_cost: number };
   return [
     { label: "Sessions", value: c("SELECT COUNT(*) as n FROM sessions"), href: "/sessions" },
     {
@@ -44,6 +65,8 @@ function counts(brain: BrainHandle): CountRow[] {
       href: "/captures?trash=1",
       muted: true,
     },
+    { label: "Tokens", value: fmtTokens(totals.total_tokens), href: "/sessions" },
+    { label: "Cost", value: fmtUsd(totals.total_cost), href: "/sessions" },
   ];
 }
 
@@ -94,7 +117,7 @@ export function registerDashboard(app: Hono, brain: BrainHandle): void {
         (card) => `
         <a class="block rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-400 transition-colors${card.muted ? " opacity-70" : ""}" href="${card.href ?? "#"}">
           <p class="text-xs uppercase tracking-wide text-slate-500">${escapeHtml(card.label)}</p>
-          <p class="text-2xl font-semibold mt-1 tabular-nums">${card.value.toLocaleString()}</p>
+          <p class="text-2xl font-semibold mt-1 tabular-nums">${typeof card.value === "number" ? card.value.toLocaleString() : escapeHtml(card.value)}</p>
         </a>`,
       )
       .join("");
