@@ -65,6 +65,26 @@ export default defineConfig({
         "src/cli/add.ts", // top-level command — logic in add-handlers.ts + add-wizard.ts
         "src/cli/hub.ts", // top-level interactive hub — logic in hub-handlers.ts
         "src/cli/skill.ts", // top-level command — logic in skill-evolve-handler.ts
+        "src/cli/prefs.ts", // top-level command — logic in src/runtime/preferences.ts
+        "src/cli/workflow.ts", // top-level command — logic in src/runtime/cli-handlers/*
+        "src/cli/init.ts", // top-level interactive init wizard — Commander + @clack
+        "src/cli/brain.ts", // top-level CLI — spawns brain-ui via child_process
+        "src/cli/agent-hooks.ts", // hook orchestrator wrapping stdin + brain handle
+        "src/runtime/cli-handlers.ts", // barrel re-export (no runtime code)
+        // ─── Google Sheets sync CLI — needs sheet fixtures we don't have ─
+        "src/runtime/sync/cli.ts", // sheets dispatcher
+        "src/runtime/sync/cli-bridge.ts", // sheets row bridge
+        "src/runtime/sync/cli-create.ts", // sheets row creator
+        "src/runtime/sync/cli-draft.ts", // sheets row drafter
+        "src/runtime/sync/cli-safety.ts", // sheets bootstrap guard
+        // ─── Brain UI HTTP page renderers — need supertest harness ──────
+        // Tracked as test-debt; remove when supertest harness lands.
+        "src/runtime/brain-ui/pages/sessions.ts", // /sessions route HTML
+        "src/runtime/brain-ui/pages/workflows.ts", // /workflows route HTML
+        "src/runtime/brain-ui/pages/tool-calls.ts", // /tool-calls route HTML
+        "src/runtime/brain-ui/pages/settings.ts", // /settings route HTML
+        // ─── Heavy @clack/prompts orchestration (per-workflow intake) ───
+        "src/runtime/workflows/bug-fix/interactive.ts", // 7-question @clack flow
         // ─── Heavy @clack/prompts orchestration ─────────────────────────
         // These files are >70% prompt-driven control flow (multiselect,
         // confirm, text loops with cancel/edit/skip branches). Unit-testing
