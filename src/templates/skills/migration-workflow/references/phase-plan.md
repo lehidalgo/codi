@@ -7,6 +7,7 @@
 - You **MUST** invoke `codi:plan-writing` (include rollback path and validation strategy).
 - Alternatively, invoke `codi:discover` if domain mode for ADR cross-check.
 - Optionally, invoke `codi:security-scan` when schema changes — pre-migration security review.
+- Optionally, invoke `codi:quality-gates` when CI hook validation before applying schema change.
 
 <!-- END auto-generated chain -->
 

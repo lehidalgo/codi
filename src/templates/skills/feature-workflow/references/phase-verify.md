@@ -5,6 +5,8 @@
 ## Chain skills
 
 - You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:test-suite` when regression-test suite run after feature lands.
+- Optionally, invoke `codi:pr-review` when before opening PR — end-to-end review with gh CLI.
 - Optionally, invoke `codi:code-review` when auto_review flag enabled — required before merge to main.
 
 <!-- END auto-generated chain -->

@@ -5,6 +5,7 @@
 ## Chain skills
 
 - You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:test-suite` when regression-test suite — proves behavior_unchanged.
 - Optionally, invoke `codi:code-review` when auto_review flag enabled — refactors are high-leverage candidates for review.
 
 <!-- END auto-generated chain -->

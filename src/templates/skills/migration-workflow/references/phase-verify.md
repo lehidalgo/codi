@@ -5,6 +5,8 @@
 ## Chain skills
 
 - You **MUST** invoke `codi:verify-evidence`.
+- Optionally, invoke `codi:test-suite` when regression-test suite — post-migration sanity.
+- Optionally, invoke `codi:pr-review` when before opening PR — end-to-end review with gh CLI.
 - Optionally, invoke `codi:security-scan` when post-migration schema audit.
 - Optionally, invoke `codi:code-review` when auto_review flag enabled.
 

@@ -9,6 +9,8 @@
 - Optionally, invoke `codi:worktrees` when ≥1 hour or ≥3 commits — keep main clean.
 - Optionally, invoke `codi:subagent-orchestration` when independent slices parallel; ≥3 dependent slices sequential.
 - Optionally, invoke `codi:diagnose` when test fails unexpectedly during execute.
+- Optionally, invoke `codi:debugging` when diagnose stalls during execute — MCP-deep tier-2.
+- Optionally, invoke `codi:webapp-testing` when browser-driven validation when changes touch web routes.
 - Optionally, invoke `codi:code-review` when auto_review flag enabled in config.
 
 <!-- END auto-generated chain -->

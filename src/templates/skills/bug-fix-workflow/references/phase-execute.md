@@ -8,6 +8,7 @@
 - You **MUST** invoke `codi:tdd` (regression-test FIRST inside each task).
 - Optionally, invoke `codi:worktrees` when ≥3 files or significant exploration commits.
 - Optionally, invoke `codi:diagnose` when test fails unexpectedly during execute.
+- Optionally, invoke `codi:debugging` when diagnose stalls during execute — MCP-deep tier-2.
 - Optionally, invoke `codi:code-review` when auto_review flag enabled — per-task review in SUBAGENT mode.
 
 <!-- END auto-generated chain -->

@@ -6,6 +6,8 @@
 
 - You **MUST** invoke `codi:worktrees` (Required for migrations with staging side-effects — clean rollback boundary).
 - Optionally, invoke `codi:subagent-orchestration` when ≥3 distinct DDL or backfill steps — sequential mode.
+- Optionally, invoke `codi:debugging` when data validation fails + diagnose stalls — MCP-deep tier-2.
+- Optionally, invoke `codi:webapp-testing` when downstream consumers exposed via web routes — browser validation.
 
 <!-- END auto-generated chain -->
 

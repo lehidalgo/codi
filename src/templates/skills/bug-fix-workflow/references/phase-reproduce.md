@@ -5,6 +5,7 @@
 ## Chain skills
 
 - You **MUST** invoke `codi:diagnose`.
+- Alternatively, invoke `codi:debugging` if diagnose 3-strikes fired — escalate to MCP-deep tier-2.
 - Optionally, invoke `codi:subagent-orchestration` when ≥2 unrelated failure domains — fan out parallel.
 
 <!-- END auto-generated chain -->
