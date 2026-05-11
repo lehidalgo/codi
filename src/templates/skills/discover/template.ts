@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 2
+version: 3
 ---
 
 # {{name}}
@@ -89,4 +89,23 @@ After approval:
 - Runs the dialogue. Does NOT write the plan artifact (use \\\`plan-writing\\\`).
 - Does NOT execute the plan (use the workflow's execute phase).
 - Does NOT replace \\\`architecture-review\\\` for surfacing structural friction.
+
+## Red Flags — STOP and re-enter discover
+
+These are the rationalizations that mean you skipped the dialogue. STOP and restart discover.
+
+| If you find yourself thinking…                                | The truth is…                                                                |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| "The user already told me what they want."                    | They told you the symptom. Discover surfaces the failure mode + scope.       |
+| "Two questions in one turn save time."                        | Bundling makes the user pick the easy one. ONE Q/turn is the contract.       |
+| "I'll skip the recommendation — let the user decide."         | You ARE the agent. No recommendation = abdication. Always recommend.         |
+| "The codebase is too big to read first."                      | Read the area you'll touch. Asking what code answers wastes their time.      |
+| "Three approaches feels excessive."                           | One approach hides bias. Two is a false dichotomy. Three is the floor.       |
+| "Approval from 'sounds good' counts."                         | Hard gate requires explicit 'ok' (case-insensitive). Anything else = no.     |
+| "I'll write the plan markdown while we discover."             | NO. plan-writing is downstream. discover ends with decision_recorded events. |
+| "This is a one-line tweak, no need to interview."             | Every workflow goes through intent. If trivial, use \`codi quick\` instead.   |
+| "The placeholders in the spec are obvious — I'll fill them."  | Spec self-review explicitly forbids placeholders surviving review.           |
+| "Decompose into sub-projects later, let me get going."        | Multi-subsystem requests MUST decompose at intent. Late decompose = rework.  |
+
+**All of these mean: stop, reset to mode \`wide\`, ONE question, recommended answer, codebase read first.**
 `;

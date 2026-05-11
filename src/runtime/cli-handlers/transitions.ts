@@ -313,3 +313,183 @@ function computePhaseDuration(state: ReducedState, phase: Phase): number {
   const now = Date.now();
   return Math.max(0, now - startedAt);
 }
+
+// ─── O1 — codi workflow advance (single-command transition) ──────────────────
+
+import { getAdapter } from "../workflows/registry.js";
+import { computeNextPhase } from "../workflows/phase-walker.js";
+import type { WorkflowAdapter } from "../workflows/types.js";
+
+export interface AdvanceOptions {
+  /** Override target phase. Default: derived from adapter + adaptation. */
+  toPhase?: Phase;
+  /**
+   * Skip the human approval step and auto-approve. Safe when the caller is
+   * the agent (Iron Law 4 still records the proposal + approval as separate
+   * events).
+   */
+  autoApprove?: boolean;
+  author: Author;
+  cwd?: string;
+}
+
+export interface AdvanceResult {
+  workflowId: string;
+  fromPhase: Phase;
+  toPhase: Phase;
+  proposedEventId: string;
+  approvedEventId: string | null;
+  derivedFromAdaptation: boolean;
+  skippedPhases: readonly string[];
+}
+
+/**
+ * Single-command transition. Reads the active workflow's adaptation from
+ * the init payload, computes the next non-skipped phase via the adapter,
+ * proposes the transition, and (when `autoApprove` is true) immediately
+ * approves it.
+ *
+ * Errors:
+ *  - no active workflow → NoActiveWorkflowError (re-thrown)
+ *  - terminal phase     → Error("workflow already at terminal phase")
+ *  - explicit toPhase ∧ adaptation skip says otherwise → still honoured
+ *    (the dev's override wins; the adapter is advisory only here)
+ */
+export function advanceWorkflow(opts: AdvanceOptions): AdvanceResult {
+  const log = BrainEventLog.open();
+  let derivedFromAdaptation = false;
+  let skippedPhases: readonly string[] = [];
+  let target: Phase | undefined = opts.toPhase;
+  let workflowId: string;
+  let fromPhase: Phase;
+
+  try {
+    workflowId = log.getActiveWorkflowId() ?? "";
+    if (!workflowId) throw new NoActiveWorkflowError();
+
+    const events = log.loadEvents(workflowId);
+    const state = reduce(events);
+    fromPhase = state.current_phase;
+
+    if (target === undefined) {
+      const adapter = getAdapter(state.workflow_type);
+      const initEvent = events.find((e) => e.event_type === "init");
+      const adaptationFromInit = readAdaptationFromInit(initEvent, state.workflow_type);
+      if (adapter !== undefined && adaptationFromInit !== null) {
+        skippedPhases = adapter.computeSkipPhases(adaptationFromInit);
+        const next = computeNextPhase(adapter.phaseOrder, skippedPhases, fromPhase);
+        if (next !== null) {
+          target = next as Phase;
+          derivedFromAdaptation = true;
+        }
+      }
+      // Fall back to the next entry in the adapter's phase order even when
+      // no adaptation was supplied, so `advance` works for plain runs.
+      if (target === undefined && adapter !== undefined) {
+        const next = computeNextPhase(adapter.phaseOrder, [], fromPhase);
+        if (next !== null) target = next as Phase;
+      }
+    }
+
+    if (target === undefined) {
+      throw new Error(
+        `Cannot derive next phase from '${fromPhase}'. Pass --to <phase> explicitly or use 'workflow transition'.`,
+      );
+    }
+  } finally {
+    log.dispose();
+  }
+
+  const proposed = proposeTransition({
+    toPhase: target,
+    author: opts.author,
+    ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
+  });
+
+  let approvedEventId: string | null = null;
+  if (opts.autoApprove === true) {
+    const approved = approveTransition({
+      author: opts.author,
+      ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
+    });
+    // approveTransition does not return the event id directly; surface the
+    // proposal id paired with a synthetic marker so callers can detect that
+    // approval ran. The brain log carries the real approved event regardless.
+    approvedEventId = `${approved.workflowId}:${approved.toPhase}`;
+  }
+
+  return {
+    workflowId: proposed.workflowId,
+    fromPhase: proposed.fromPhase,
+    toPhase: proposed.toPhase,
+    proposedEventId: proposed.proposedEventId,
+    approvedEventId,
+    derivedFromAdaptation,
+    skippedPhases,
+  };
+}
+
+const ADAPTATION_KEY: Partial<Record<string, string>> = {
+  "bug-fix": "bug_fix_adaptation",
+  feature: "feature_adaptation",
+  refactor: "refactor_adaptation",
+  migration: "migration_adaptation",
+  project: "project_adaptation",
+};
+
+function readAdaptationFromInit(
+  initEvent: ReturnType<typeof reduce> extends infer _ ? unknown : never,
+  workflowType: string,
+): unknown {
+  if (initEvent === undefined || initEvent === null) return null;
+  const payload = (initEvent as { payload?: Record<string, unknown> }).payload;
+  if (!payload) return null;
+  const key = ADAPTATION_KEY[workflowType];
+  if (!key) return null;
+  const raw = payload[key];
+  if (raw === undefined) return null;
+  return adapterCanonical(workflowType, raw);
+}
+
+/**
+ * Convert the snake_case JSON payload back to the camelCase shape the
+ * adapter resolves operate on. The transformation is the inverse of each
+ * adapter's `serialize`. Unknown workflow types return the raw payload.
+ */
+function adapterCanonical(workflowType: string, raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null) return raw;
+  const r = raw as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  // Map snake → camel for every known field; pass through everything else.
+  const mapping: Record<string, string> = {
+    profile: "profile",
+    severity: "severity",
+    reproducer_exists: "reproducerExists",
+    root_cause_known: "rootCauseKnown",
+    scope: "scope",
+    execute_mode: "executeMode",
+    grill: "grill",
+    interactive: "interactive",
+    complexity: "complexity",
+    design_exists: "designExists",
+    tdd_strict: "tddStrict",
+    kind: "kind",
+    risk_level: "riskLevel",
+    rollback_tested: "rollbackTested",
+    mode: "mode",
+    no_sheet: "noSheet",
+  };
+  for (const [snake, value] of Object.entries(r)) {
+    const camel = mapping[snake] ?? snake;
+    out[camel] = value;
+  }
+  // The adapter resolver type-checks via casting; `_w` is a runtime-only
+  // hint that lets a future debugger see which workflow this came from.
+  void workflowType;
+  return out;
+}
+
+// Re-affirm WorkflowAdapter import as referenced (silences unused-import
+// when bundler tree-shakes via barrel).
+type _WorkflowAdapterRef = WorkflowAdapter<unknown>;
+void (null as unknown as _WorkflowAdapterRef);

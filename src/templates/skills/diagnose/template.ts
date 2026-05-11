@@ -15,7 +15,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 2
+version: 3
 ---
 
 # {{name}}
@@ -100,4 +100,23 @@ Full rationalization counters and red-flags list in \\\`references/rationalizati
 - \\\`find-polluter.sh\\\` — shell script for bisecting test pollution between tests.
 - \\\`defense-in-depth.md\\\` — layered safeguards pattern.
 - \\\`root-cause-tracing.md\\\` — root-cause-tracing checklist.
+
+## Red Flags — STOP and restart Phase 1
+
+These rationalizations mean you anchored on a guess. Restart from Investigation.
+
+| If you find yourself thinking…                                  | The truth is…                                                              |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| "The first hypothesis sounds right, let me try the fix."        | One hypothesis is anchoring. Generate 3-5 ranked + falsifiable hypotheses. |
+| "I'll skip the reproducer because the bug is obvious."          | "Obvious" bugs are misdiagnosed at sight. Build the loop first.            |
+| "The stack trace tells me everything."                          | Stack traces show symptom, not cause. Read the code path it points at.    |
+| "The first failed assertion is the root cause."                 | First failure is the SYMPTOM. Trace upstream until the cause is irreducible. |
+| "I'll add a try/catch and return early."                        | Symptom suppression. The bug still exists, you just hid it.                |
+| "It's flaky, I'll retry the test."                              | Flakiness is a defect class. Diagnose the source, do not paper over it.    |
+| "The user said it broke recently, blame the latest commit."     | Recency bias. Bisect or read the relevant code; do not guess by recency.   |
+| "Two unrelated bugs — let me fix both in one pass."             | Fan-out via subagent-orchestration. Mixing diagnoses contaminates both.    |
+| "After 3 failed hypotheses I'll just patch the symptom."        | 3-strikes rule = escalate to architecture-review or debugging Phase 5.    |
+| "The fix is structural, but I'll do it inline this time."       | Structural changes belong in refactor-workflow. Cross-workflow convert.    |
+
+**All of these mean: stop, return to Phase 1 (Investigation), read the code, and re-rank the hypotheses.**
 `;

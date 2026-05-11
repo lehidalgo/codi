@@ -17,7 +17,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 2
+version: 3
 ---
 
 # {{name}}
@@ -79,4 +79,23 @@ Mode \\\`plan\\\` produces a long artifact — write the file, do NOT echo the e
 
 - Writes artifacts. Does NOT run dialogue (use \\\`discover\\\`), does NOT execute the plan (use the workflow's execute phase), does NOT auto-transition phases.
 - Mode \\\`plan\\\` and mode \\\`prd\\\` are mutually exclusive for a single artifact — pick one.
+
+## Red Flags — STOP and rewrite
+
+These rationalizations mean the plan is not done. Delete the offending content and rewrite.
+
+| If you find yourself thinking…                                | The truth is…                                                                |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| "I'll leave a TODO for the file path."                        | TODOs in plans become bugs in code. Resolve before claiming done.            |
+| "The implementer can figure out the details."                 | Spec ambiguity at plan time = rework at execute time. Resolve here.          |
+| "This task can span multiple files, that's fine."             | Atomic = 1 file ideal, 2-3 max. Split larger tasks into the plan.            |
+| "The verify command is obvious from the test names."          | Every task lists the EXACT command + expected exit code. No 'obvious'.       |
+| "I'll renumber tasks later if scope grows."                   | Renumbering breaks blocked-by graph. Insert with letters: 5a, 5b.            |
+| "This plan is for a refactor, behaviour change is fine."      | Refactor mode FORBIDS behaviour change. If yours has it, switch to feature.  |
+| "Renaming the function between tasks is OK if I update both." | Type-consistency review catches this and rejects. Pick the name once.        |
+| "The PRD and the plan can share the same file."               | Mode \`prd\` and mode \`plan\` are different artifacts with different audiences. |
+| "Self-review is fine, the user will catch issues."            | Self-review IS the contract. No 'just send it'.                              |
+| "Tracer-bullet slices are too small, I'll group them."        | Smaller slices = faster integration feedback. Resist grouping.               |
+
+**All of these mean: re-read \`references/self-review.md\` and rewrite the failing section.**
 `;

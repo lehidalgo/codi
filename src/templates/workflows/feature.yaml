@@ -44,7 +44,7 @@ phases:
           hint: "≥3 slices — fan out parallel or sequential",
         }
   execute:
-    gates: []
+    gates: [tdd_first_test_exists]
     next: [verify, execute, abandoned]
     chains:
       - {

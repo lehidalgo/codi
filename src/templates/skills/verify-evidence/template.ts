@@ -12,7 +12,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
 ---
 
 # {{name}}
@@ -90,4 +90,23 @@ Full rationalization table in \\\`references/rationalizations.md\\\`.
 - Verifies work-vs-claims. Does NOT do code-quality review (use \\\`code-review\\\`).
 - Does NOT replace test-first discipline (use \\\`tdd\\\` for that).
 - Applies at workflow phase verify and at any completion claim.
+
+## Red Flags — STOP, do NOT claim completion
+
+These rationalizations mean the claim is not yet supported by evidence. Run the verification first.
+
+| If you find yourself thinking…                              | The truth is…                                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| "The tests should pass given these changes."                | "Should" = no evidence. Run the test command. Read the output.         |
+| "I changed only the docs, no need to test."                 | Docs reference code. Run the link / build check.                       |
+| "I already saw it pass in the previous turn."               | Previous-turn output is stale. Verify in THIS session.                 |
+| "Exit code 0 was implicit from the absence of errors."      | Implicit = unverified. Capture the explicit exit code.                 |
+| "The user just asked, I should respond fast."               | A wrong "done" costs more than a slow "done". Verify, then respond.    |
+| "validation_run event is bureaucratic, I'll skip it."       | The gate runner reads validation_run. Skipping = gate fails.           |
+| "All planned files were touched — verify-evidence is moot." | Touched ≠ correct. The 5-step gate exists for a reason.                |
+| "I tested manually so the test suite is redundant."         | Manual = unrepeatable. The suite captures the test for next time.      |
+| "Weasel words like 'looks good' are fine because…"          | They aren't. List the command, output, and asserted facts.             |
+| "The reviewer will catch any regression."                   | Reviewer reviews the diff, not your test output. Capture the evidence. |
+
+**All of these mean: stop, run the command, read the output, capture the validation_run event, THEN claim.**
 `;

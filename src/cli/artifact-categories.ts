@@ -36,6 +36,7 @@ export const RULE_CATEGORIES: Record<string, string[]> = {
     "codi-documentation",
     "codi-spanish-orthography",
     "codi-output-discipline",
+    "codi-contribution-discipline",
   ],
   [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev", "codi-capture-everything"],
 };

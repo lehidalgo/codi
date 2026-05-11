@@ -9,7 +9,7 @@ phases:
     chains:
       - { skill: discover, role: required, hint: "domain mode if ADRs exist in the area" }
   plan:
-    gates: [scope_files_listed, plan_artifact_exists]
+    gates: [scope_files_listed, plan_artifact_exists, rollback_documented]
     next: [execute, abandoned]
     chains:
       - {
@@ -38,7 +38,7 @@ phases:
           hint: "≥3 distinct DDL or backfill steps — sequential mode",
         }
   data-validation:
-    gates: []
+    gates: [migration_metrics_captured]
     next: [verify, execute, abandoned]
     chains:
       - {

@@ -235,11 +235,11 @@ describe("validateArtifacts — Check #7 phase-ref drift", () => {
 });
 
 describe("validateArtifacts — report shape", () => {
-  it("returns checksRun listing the four implemented checks", () => {
+  it("returns checksRun listing the implemented checks", () => {
     const t = tmpRoot();
     try {
       const r = validateArtifacts({ skillsRoot: t.root, workflows: [] });
-      expect(r.checksRun).toEqual([2, 4, 5, 7]);
+      expect(r.checksRun).toEqual([2, 4, 5, 7, 10]);
     } finally {
       t.cleanup();
     }

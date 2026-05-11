@@ -8,7 +8,7 @@
  * are computed locally; agent-typed checks need the agent's Task tool.
  */
 
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type {
   CheckOutcome,
@@ -280,6 +280,187 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
       summary: "No regression test marker — TDD requires the failing test before the fix.",
       suggested_action:
         'Add the regression test FIRST (RED), record a `decision_recorded` event with `kind: "regression_test_added"` and the test path, then write the production fix to turn it GREEN.',
+    };
+  },
+  /**
+   * O2 — refactor.baseline gate. Verifies the dev captured an unrefactored
+   * test snapshot before mutating code. Passes when the event log carries a
+   * `decision_recorded` event with `kind: "baseline_captured"` and a non-empty
+   * `summary` field referencing the test command + result.
+   */
+  baseline_captured: (ctx) => {
+    const found = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      const p = e.payload as { kind?: string };
+      return p.kind === "baseline_captured";
+    });
+    if (found !== undefined) {
+      return {
+        check_id: "baseline_captured",
+        verdict: "pass",
+        summary: "Baseline test snapshot recorded.",
+      };
+    }
+    return {
+      check_id: "baseline_captured",
+      verdict: "fail",
+      summary: "No baseline_captured marker — refactor needs unrefactored test pass first.",
+      suggested_action:
+        'Run the project\'s test command, confirm green, and append a decision_recorded event with `kind: "baseline_captured"` and the command/output as the summary.',
+    };
+  },
+  /**
+   * O2 — refactor.verify gate. Verifies the post-refactor diff did not break
+   * observable behaviour. Passes when a `decision_recorded` event with
+   * `kind: "behavior_unchanged"` exists, OR when the adaptive intake declared
+   * `kind: "deadcode"` (dead-code removal has no behaviour by definition).
+   */
+  behavior_unchanged: (ctx) => {
+    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
+    const adaptation = (initEvent?.payload ?? {}) as {
+      refactor_adaptation?: { kind?: string };
+    };
+    if (adaptation.refactor_adaptation?.kind === "deadcode") {
+      return {
+        check_id: "behavior_unchanged",
+        verdict: "pass",
+        summary: "Refactor kind=deadcode — no behaviour to preserve.",
+      };
+    }
+    const found = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      const p = e.payload as { kind?: string };
+      return p.kind === "behavior_unchanged";
+    });
+    if (found !== undefined) {
+      return {
+        check_id: "behavior_unchanged",
+        verdict: "pass",
+        summary: "Behaviour preservation marker recorded.",
+      };
+    }
+    return {
+      check_id: "behavior_unchanged",
+      verdict: "fail",
+      summary: "No behavior_unchanged marker — re-run baseline tests post-refactor.",
+      suggested_action:
+        'Re-run the test command captured at baseline. If green, append a decision_recorded event with `kind: "behavior_unchanged"` and the command/output as proof.',
+    };
+  },
+  /**
+   * O2 — migration.plan gate. Migrations always require a documented
+   * rollback path. Passes when the plan markdown contains a `## Rollback`
+   * (or `### Rollback`) section.
+   */
+  rollback_documented: (ctx) => {
+    const docsDir = resolve(ctx.cwd, "docs");
+    if (!existsSync(docsDir)) {
+      return {
+        check_id: "rollback_documented",
+        verdict: "fail",
+        summary: "docs/ directory does not exist.",
+        suggested_action: "Create the plan markdown with a `## Rollback` section.",
+      };
+    }
+    const files = readdirSync(docsDir);
+    const planFile = files.find((f) => /^\d{8}_\d{6}_\[PLAN\]_.*\.md$/.test(f));
+    if (!planFile) {
+      return {
+        check_id: "rollback_documented",
+        verdict: "fail",
+        summary: "No plan markdown found.",
+        suggested_action:
+          "Create docs/YYYYMMDD_HHMMSS_[PLAN]_<slug>.md with a `## Rollback` section.",
+      };
+    }
+    let content = "";
+    try {
+      content = readFileSync(resolve(docsDir, planFile), "utf8");
+    } catch {
+      return {
+        check_id: "rollback_documented",
+        verdict: "fail",
+        summary: `Could not read docs/${planFile}.`,
+      };
+    }
+    const hasRollbackSection = /^#{2,3}\s+Rollback\b/im.test(content);
+    return {
+      check_id: "rollback_documented",
+      verdict: hasRollbackSection ? "pass" : "fail",
+      summary: hasRollbackSection
+        ? `Rollback section present in docs/${planFile}.`
+        : `No "## Rollback" section in docs/${planFile}.`,
+      ...(hasRollbackSection
+        ? {}
+        : {
+            suggested_action:
+              "Add a `## Rollback` section to the plan describing the exact steps to revert.",
+          }),
+    };
+  },
+  /**
+   * O2 — migration.data-validation gate. Verifies pre/post metrics were
+   * captured. Passes when a `decision_recorded` event with
+   * `kind: "migration_metrics_captured"` exists and the payload carries
+   * `pre` and `post` row-count fields.
+   */
+  migration_metrics_captured: (ctx) => {
+    const found = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      const p = e.payload as { kind?: string; pre?: unknown; post?: unknown };
+      return p.kind === "migration_metrics_captured" && p.pre !== undefined && p.post !== undefined;
+    });
+    if (found !== undefined) {
+      return {
+        check_id: "migration_metrics_captured",
+        verdict: "pass",
+        summary: "Migration pre/post metrics recorded.",
+      };
+    }
+    return {
+      check_id: "migration_metrics_captured",
+      verdict: "fail",
+      summary: "No migration metrics marker — capture row counts pre/post.",
+      suggested_action:
+        'Run row-count queries before and after the migration and append a decision_recorded event with `kind: "migration_metrics_captured"` and `pre`, `post` payload fields.',
+    };
+  },
+  /**
+   * O2 — project.intent gate. When `noSheet` is false, verifies that Google
+   * Sheet credentials are wired up before bootstrap proceeds. The check
+   * looks at the adaptive intake; an unset `noSheet` defaults to "false"
+   * (sheets path) and demands credentials.
+   */
+  sheet_creds_present: (ctx) => {
+    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
+    const adaptation = (initEvent?.payload ?? {}) as {
+      project_adaptation?: { no_sheet?: boolean };
+    };
+    if (adaptation.project_adaptation?.no_sheet === true) {
+      return {
+        check_id: "sheet_creds_present",
+        verdict: "pass",
+        summary: "no_sheet=true — local-only bootstrap, credentials not required.",
+      };
+    }
+    const found = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      const p = e.payload as { kind?: string };
+      return p.kind === "sheet_creds_verified";
+    });
+    if (found !== undefined) {
+      return {
+        check_id: "sheet_creds_present",
+        verdict: "pass",
+        summary: "Sheet credentials verification marker recorded.",
+      };
+    }
+    return {
+      check_id: "sheet_creds_present",
+      verdict: "fail",
+      summary: "No sheet_creds_verified marker — confirm Google Sheet access first.",
+      suggested_action:
+        'Run `codi sheets diagnose` (or equivalent) and append a decision_recorded event with `kind: "sheet_creds_verified"` once the auth round-trip succeeds. Or pass `--no-sheet` to bootstrap locally.',
     };
   },
 };

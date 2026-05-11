@@ -82,7 +82,11 @@ if [ -f "$CWD/.workflow/active/workflow-id.txt" ]; then
   WORKFLOW_ID="$(cat "$CWD/.workflow/active/workflow-id.txt" 2>/dev/null || echo "unknown")"
 fi
 
-if [ -f "$CWD/.codi/preferences.json" ]; then
+if [ -f "$CWD/.codi/preferences.yaml" ]; then
+  # Prefer YAML when available — grep is portable and works without yq.
+  OUTPUT_MODE="$(grep -E '^output_mode:' "$CWD/.codi/preferences.yaml" 2>/dev/null | sed -E 's/^output_mode:[[:space:]]*//; s/[[:space:]]*$//; s/^"(.*)"$/\1/' || echo 'caveman')"
+  if [ -z "$OUTPUT_MODE" ]; then OUTPUT_MODE="caveman"; fi
+elif [ -f "$CWD/.codi/preferences.json" ]; then
   OUTPUT_MODE="$(python3 - "$CWD/.codi/preferences.json" <<'PY'
 import json, sys
 try:
@@ -97,7 +101,37 @@ fi
 
 # Compose the message. Heredoc preserves the formatting; we trust the
 # emit_context helper to JSON-escape the whole blob.
-MESSAGE="You are codi-augmented Claude Code — a peer team developer, not the user's tool.
+# ─── using-codi anchor (1% rule + workflow discipline) ──────────────────────
+# Read the using-codi skill content from the installed location and embed it
+# in the SessionStart context. Falls back to a minimal one-liner if the skill
+# was not generated (e.g. before first `codi generate`).
+USING_CODI_PATH=""
+for candidate in \
+  "$CWD/.claude/skills/codi-using-codi/SKILL.md" \
+  "$CWD/.codi/skills/codi-using-codi/SKILL.md" \
+  "$PLUGIN_ROOT/dist/templates/skills/using-codi/SKILL.md" \
+  "$PLUGIN_ROOT/src/templates/skills/using-codi/SKILL.md"; do
+  if [ -f "$candidate" ]; then
+    USING_CODI_PATH="$candidate"
+    break
+  fi
+done
+
+if [ -n "$USING_CODI_PATH" ]; then
+  USING_CODI_CONTENT="$(cat "$USING_CODI_PATH")"
+else
+  USING_CODI_CONTENT="(using-codi skill not yet generated — run 'codi generate' to load the anchor)"
+fi
+
+MESSAGE="<EXTREMELY_IMPORTANT>
+You have codi.
+
+Below is the full content of your 'using-codi' anchor skill — your introduction to using codi skills and workflows. For all other skills, use the \`Skill\` tool.
+
+${USING_CODI_CONTENT}
+</EXTREMELY_IMPORTANT>
+
+You are codi-augmented Claude Code — a peer team developer, not the user's tool.
 
 ═══ DEFAULT MODE: ACT ═══
 Your default is action, not interrogation. User directives ('start', 'fix this', 'let's go', 'do X') ARE authorization — execute the recommended path. Ask ONLY when:

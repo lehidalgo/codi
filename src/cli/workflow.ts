@@ -49,6 +49,9 @@ import {
   rejectTransition,
   runQuick,
   runWorkflow,
+  advanceWorkflow,
+  convertWorkflow,
+  getPhaseRef,
 } from "../runtime/cli-handlers.js";
 import { buildBugFixAdaptation } from "../runtime/workflows/bug-fix/cli-flags.js";
 import { buildFeatureAdaptation } from "../runtime/workflows/feature/cli-flags.js";
@@ -446,6 +449,133 @@ export function registerWorkflowCommand(program: Command): void {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);
       const result = tryRun("workflow recover", () => recoverWorkflow({}));
+      handleOutput(result, globalOpts);
+      process.exit(result.exitCode);
+    });
+
+  // ── phase-ref ─────────────────────────────────────────────────────────────
+  workflow
+    .command("phase-ref")
+    .description(
+      "Print the active workflow's current phase-ref markdown with an active-adaptation header (profile, skipped phases, next phase).",
+    )
+    .option("--phase <name>", "override phase (default: current_phase)")
+    .action((opts: { phase?: string }) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result = tryRun("workflow phase-ref", () =>
+        getPhaseRef(opts.phase !== undefined ? { phase: opts.phase } : {}),
+      );
+      handleOutput(result, globalOpts);
+      process.exit(result.exitCode);
+    });
+
+  // ── convert ───────────────────────────────────────────────────────────────
+  workflow
+    .command("convert <type> <task>")
+    .description(
+      "Cross-workflow conversion: abandon the active run, start a new <type> run, carry context forward via carryover_context.",
+    )
+    .option("--reason <text>", "abandon reason (default: 'converted to <type>')")
+    .option("--profile <name>", "profile for the new workflow")
+    .option("--as-agent", "attribute the action to the agent")
+    .action(
+      (
+        type: string,
+        task: string,
+        opts: { reason?: string; profile?: string; asAgent?: boolean },
+      ) => {
+        const globalOpts = program.opts() as GlobalOptions;
+        initFromOptions(globalOpts);
+        if (!isWorkflowType(type)) {
+          const result = fail(
+            "workflow convert",
+            `unknown workflow type '${type}'. Valid: ${VALID_WORKFLOW_TYPES.join(", ")}`,
+          );
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
+        }
+        const author = resolveAuthor(opts.asAgent);
+        // Build per-target adaptation when --profile is supplied. Re-uses
+        // the same adapter helpers as `workflow run`.
+        const flags: RunFlags = { profile: opts.profile, asAgent: opts.asAgent };
+        const forward: Record<string, unknown> = {};
+        if (type === "bug-fix") {
+          const built = buildBugFixAdaptation(flags);
+          if (built instanceof Error) {
+            const result = fail("workflow convert", built.message);
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          if (built !== undefined) forward["bugFixAdaptation"] = built;
+        } else if (type === "feature") {
+          const built = buildFeatureAdaptation(flags);
+          if (built instanceof Error) {
+            const result = fail("workflow convert", built.message);
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          if (built !== undefined) forward["featureAdaptation"] = built;
+        } else if (type === "refactor") {
+          const built = buildRefactorAdaptation(flags);
+          if (built instanceof Error) {
+            const result = fail("workflow convert", built.message);
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          if (built !== undefined) forward["refactorAdaptation"] = built;
+        } else if (type === "migration") {
+          const built = buildMigrationAdaptation(flags);
+          if (built instanceof Error) {
+            const result = fail("workflow convert", built.message);
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          if (built !== undefined) forward["migrationAdaptation"] = built;
+        } else if (type === "project") {
+          const built = buildProjectAdaptation(flags);
+          if (built instanceof Error) {
+            const result = fail("workflow convert", built.message);
+            handleOutput(result, globalOpts);
+            process.exit(result.exitCode);
+          }
+          if (built !== undefined) forward["projectAdaptation"] = built;
+        }
+        const result = tryRun("workflow convert", () =>
+          convertWorkflow({
+            toType: type as WorkflowType,
+            task,
+            author,
+            forward: forward as Record<string, never>,
+            ...(opts.reason !== undefined ? { reason: opts.reason } : {}),
+          }),
+        );
+        handleOutput(result, globalOpts);
+        process.exit(result.exitCode);
+      },
+    );
+
+  // ── advance ───────────────────────────────────────────────────────────────
+  workflow
+    .command("advance")
+    .description(
+      "Single-command transition: derive next non-skipped phase from the active workflow's adaptation, propose, and (with --as-agent or --auto-approve) approve in one step.",
+    )
+    .option("--to <phase>", "explicit target phase (overrides adapter-derived next)")
+    .option("--auto-approve", "approve immediately after proposing (also implied by --as-agent)")
+    .option("--as-agent", "attribute the action to the agent (auto-approves)")
+    .action((opts: { to?: string; autoApprove?: boolean; asAgent?: boolean }) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const author = resolveAuthor(opts.asAgent);
+      const autoApprove = opts.autoApprove === true || opts.asAgent === true;
+      const result = tryRun("workflow advance", () =>
+        advanceWorkflow({
+          ...(opts.to !== undefined && isPhase(opts.to) ? { toPhase: opts.to } : {}),
+          autoApprove,
+          author,
+        }),
+      );
       handleOutput(result, globalOpts);
       process.exit(result.exitCode);
     });

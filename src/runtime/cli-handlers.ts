@@ -21,6 +21,7 @@ export {
   runQuick,
   getStatus,
   getSlimStatus,
+  getPhaseRef,
 } from "./cli-handlers/workflow.js";
 export type {
   RunOptions,
@@ -30,12 +31,17 @@ export type {
   StatusOptions,
   StatusResult,
   SlimStatus,
+  SlimAdaptationSummary,
+  SlimProgress,
+  PhaseRefOptions,
+  PhaseRefResult,
 } from "./cli-handlers/workflow.js";
 
 export {
   proposeTransition,
   approveTransition,
   rejectTransition,
+  advanceWorkflow,
 } from "./cli-handlers/transitions.js";
 export type {
   ProposeTransitionOptions,
@@ -44,14 +50,18 @@ export type {
   ApproveTransitionResult,
   RejectTransitionOptions,
   RejectTransitionResult,
+  AdvanceOptions,
+  AdvanceResult,
 } from "./cli-handlers/transitions.js";
 
-export { abandonWorkflow, recoverWorkflow } from "./cli-handlers/lifecycle.js";
+export { abandonWorkflow, recoverWorkflow, convertWorkflow } from "./cli-handlers/lifecycle.js";
 export type {
   AbandonOptions,
   AbandonResult,
   RecoverOptions,
   RecoverResult,
+  ConvertOptions,
+  ConvertResult,
 } from "./cli-handlers/lifecycle.js";
 
 export {

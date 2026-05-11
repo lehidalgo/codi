@@ -26,6 +26,7 @@
     "regen:phase-refs": "tsx scripts/regenerate-phase-refs.mjs",
     "regen:phase-refs:force": "tsx scripts/regenerate-phase-refs.mjs --force",
     "validate:codi": "tsx scripts/validate-codi-artifacts.mjs",
+    "test:agent-harness": "CODI_AGENT_TESTS=1 vitest run tests/agent-harness",
     "test": "vitest run",
     "test:python": "uv run pytest src/templates/skills/",
     "test:all": "sh -c 'vitest run; VCODE=$?; uv run pytest src/templates/skills/; PCODE=$?; [ \"$VCODE\" -eq 0 ] && [ \"$PCODE\" -eq 0 ]'",

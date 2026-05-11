@@ -125,3 +125,73 @@ export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
     log.dispose();
   }
 }
+
+// ─── O5 — codi workflow convert (cross-workflow conversion) ──────────────────
+
+import type { WorkflowType } from "../types.js";
+import { runWorkflow, type RunOptions } from "./workflow.js";
+
+export interface ConvertOptions {
+  /** Target workflow type to start. */
+  toType: WorkflowType;
+  /** Reason recorded with the abandon event for the source workflow. */
+  reason?: string;
+  /**
+   * Forwarding options — adapter-specific intake fields. The caller is
+   * responsible for passing the right `<x>Adaptation` field (the runWorkflow
+   * handler picks the matching one for the target type).
+   */
+  forward: Omit<RunOptions, "workflowType" | "carryoverFrom" | "task" | "author" | "cwd">;
+  /** Task line for the new workflow run. */
+  task: string;
+  author: Author;
+  cwd?: string;
+}
+
+export interface ConvertResult {
+  abandonedWorkflowId: string;
+  newWorkflowId: string;
+  carryoverFrom: string;
+}
+
+/**
+ * One-command cross-workflow conversion. Abandons the active workflow with
+ * the given reason, then starts a new workflow of `toType` whose init
+ * payload preserves a compact carryover_context summary of the source run
+ * (task, scope_files, decisions_count, knowledge_terms).
+ *
+ * Errors:
+ *  - no active workflow → BrainNoActiveWorkflowError (re-thrown from abandon)
+ *  - knowledge base missing for target → KnowledgeBaseMissingError (from runWorkflow)
+ */
+export function convertWorkflow(opts: ConvertOptions): ConvertResult {
+  const log = BrainEventLog.open();
+  let priorId: string;
+  try {
+    priorId = log.getActiveWorkflowId() ?? "";
+    if (!priorId) throw new BrainNoActiveWorkflowError();
+  } finally {
+    log.dispose();
+  }
+
+  abandonWorkflow({
+    reason: opts.reason ?? `converted to ${opts.toType}`,
+    author: opts.author,
+    ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
+  });
+
+  const result = runWorkflow({
+    workflowType: opts.toType,
+    task: opts.task,
+    author: opts.author,
+    carryoverFrom: priorId,
+    ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
+    ...opts.forward,
+  });
+
+  return {
+    abandonedWorkflowId: priorId,
+    newWorkflowId: result.workflowId,
+    carryoverFrom: priorId,
+  };
+}

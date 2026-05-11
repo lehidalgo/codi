@@ -1,20 +1,24 @@
 /**
  * Per-project preferences for codi.
  *
- * Stored at `.codi/preferences.json`. Caveman is the default output mode
- * because workflow phases are short, high-frequency, and benefit from
- * compact output. The user can flip to `normal` per-project, or use the `?`
- * escape hatch to request verbose for a single turn.
+ * Source of truth: `.codi/preferences.yaml` (preferred).
+ * Backward compatible: legacy `.codi/preferences.json` is still read when
+ * the YAML file is missing. `codi prefs migrate` converts JSON → YAML.
  *
- * Schema is intentionally minimal. New keys are optional; missing keys take
- * the documented default. The file is gitignored alongside other .codi/
- * runtime state.
+ * Schema is closed-vocab + open extension. Missing keys take documented
+ * defaults — readers never throw on malformed input.
+ *
+ * 16E — Phase: consolidated prefs system. Workflow chains, hooks, and the
+ * gate runner read from this single source instead of probing scattered
+ * `.codi/preferences.json`, `.codi/project.json`, and ad-hoc env vars.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 export type OutputMode = "caveman" | "normal";
+export type IssueTracker = "linear" | "jira" | "github" | "none";
 
 export interface HookPreferenceOverride {
   enabled?: boolean;
@@ -22,9 +26,29 @@ export interface HookPreferenceOverride {
   extraSkipPaths?: string[];
 }
 
+export interface DefaultProfiles {
+  feature?: string;
+  "bug-fix"?: string;
+  refactor?: string;
+  migration?: string;
+  project?: string;
+}
+
 export interface CodiPreferences {
   /** Output verbosity. Defaults to caveman. */
   output_mode?: OutputMode;
+  /** Test command used by verify-evidence + tdd chains. */
+  test_command?: string;
+  /** Validate command captured into validation_run events. */
+  validate_command?: string;
+  /** Docs directory (used by plan-writing and init-knowledge-base). */
+  docs_dir?: string;
+  /** Auto-invoke code-review at verify phase when true. */
+  auto_review?: boolean;
+  /** Issue tracker integration target. */
+  issue_tracker?: IssueTracker;
+  /** Default `--profile` per workflow type. */
+  default_profiles?: DefaultProfiles;
   /**
    * Per-hook preference overrides keyed by hook name (e.g. "security-reminder").
    * Empty/missing means use registry defaults and project state selection.
@@ -32,15 +56,61 @@ export interface CodiPreferences {
   hooks?: Record<string, HookPreferenceOverride>;
 }
 
-export const PREFERENCES_RELATIVE_PATH = ".codi/preferences.json";
+export const PREFERENCES_YAML_RELATIVE_PATH = ".codi/preferences.yaml";
+export const PREFERENCES_JSON_RELATIVE_PATH = ".codi/preferences.json";
 
 export const DEFAULT_PREFERENCES: Required<CodiPreferences> = {
   output_mode: "caveman",
+  test_command: "",
+  validate_command: "",
+  docs_dir: "docs/",
+  auto_review: false,
+  issue_tracker: "github",
+  default_profiles: {},
   hooks: {},
 };
 
+export function preferencesYamlPath(cwd: string): string {
+  return join(cwd, PREFERENCES_YAML_RELATIVE_PATH);
+}
+
+export function preferencesJsonPath(cwd: string): string {
+  return join(cwd, PREFERENCES_JSON_RELATIVE_PATH);
+}
+
+/**
+ * Back-compat alias — older callers used `preferencesPath`. New code should
+ * call `preferencesYamlPath` or `preferencesJsonPath` explicitly.
+ */
 export function preferencesPath(cwd: string): string {
-  return join(cwd, PREFERENCES_RELATIVE_PATH);
+  return preferencesJsonPath(cwd);
+}
+
+interface ParsedPrefs {
+  readonly source: "yaml" | "json" | "default";
+  readonly raw: Partial<CodiPreferences>;
+}
+
+function loadRaw(cwd: string): ParsedPrefs {
+  const yamlPath = preferencesYamlPath(cwd);
+  if (existsSync(yamlPath)) {
+    try {
+      const raw = parseYaml(readFileSync(yamlPath, "utf8")) as Partial<CodiPreferences> | null;
+      return { source: "yaml", raw: raw ?? {} };
+    } catch {
+      return { source: "yaml", raw: {} };
+    }
+  }
+  const jsonPath = preferencesJsonPath(cwd);
+  if (existsSync(jsonPath)) {
+    try {
+      const raw = JSON.parse(readFileSync(jsonPath, "utf8")) as Partial<CodiPreferences>;
+      return { source: "json", raw };
+    } catch {
+      return { source: "json", raw: {} };
+    }
+  }
+  return { source: "default", raw: {} };
 }
 
 /**
@@ -48,30 +118,87 @@ export function preferencesPath(cwd: string): string {
  * a missing or malformed file returns the defaults.
  */
 export function readPreferences(cwd: string): Required<CodiPreferences> {
-  const path = preferencesPath(cwd);
-  if (!existsSync(path)) return { ...DEFAULT_PREFERENCES };
-  try {
-    const raw = JSON.parse(readFileSync(path, "utf8")) as Partial<CodiPreferences>;
-    return {
-      output_mode: isOutputMode(raw.output_mode)
-        ? raw.output_mode
-        : DEFAULT_PREFERENCES.output_mode,
-      hooks: raw.hooks ?? {},
-    };
-  } catch {
-    return { ...DEFAULT_PREFERENCES, hooks: {} };
-  }
+  const { raw } = loadRaw(cwd);
+  return mergeWithDefaults(raw);
 }
 
-export function writePreferences(cwd: string, prefs: CodiPreferences): void {
-  const path = preferencesPath(cwd);
-  mkdirSync(dirname(path), { recursive: true });
-  // Merge with existing on disk so partial writes don't blank other keys.
+export function readPreferencesWithSource(cwd: string): {
+  readonly prefs: Required<CodiPreferences>;
+  readonly source: ParsedPrefs["source"];
+} {
+  const parsed = loadRaw(cwd);
+  return { prefs: mergeWithDefaults(parsed.raw), source: parsed.source };
+}
+
+function mergeWithDefaults(raw: Partial<CodiPreferences>): Required<CodiPreferences> {
+  return {
+    output_mode: isOutputMode(raw.output_mode) ? raw.output_mode : DEFAULT_PREFERENCES.output_mode,
+    test_command:
+      typeof raw.test_command === "string" ? raw.test_command : DEFAULT_PREFERENCES.test_command,
+    validate_command:
+      typeof raw.validate_command === "string"
+        ? raw.validate_command
+        : DEFAULT_PREFERENCES.validate_command,
+    docs_dir: typeof raw.docs_dir === "string" ? raw.docs_dir : DEFAULT_PREFERENCES.docs_dir,
+    auto_review:
+      typeof raw.auto_review === "boolean" ? raw.auto_review : DEFAULT_PREFERENCES.auto_review,
+    issue_tracker: isIssueTracker(raw.issue_tracker)
+      ? raw.issue_tracker
+      : DEFAULT_PREFERENCES.issue_tracker,
+    default_profiles: isDefaultProfiles(raw.default_profiles)
+      ? raw.default_profiles
+      : DEFAULT_PREFERENCES.default_profiles,
+    hooks: raw.hooks ?? {},
+  };
+}
+
+/**
+ * Write preferences in YAML format. Merges with existing on-disk values so
+ * partial writes don't blank other keys.
+ */
+export function writePreferences(cwd: string, prefs: Partial<CodiPreferences>): void {
+  const yamlPath = preferencesYamlPath(cwd);
+  mkdirSync(dirname(yamlPath), { recursive: true });
   const existing = readPreferences(cwd);
   const merged: CodiPreferences = { ...existing, ...prefs };
-  writeFileSync(path, JSON.stringify(merged, null, 2) + "\n", "utf8");
+  writeFileSync(yamlPath, stringifyYaml(merged), "utf8");
+}
+
+/**
+ * Migrate legacy `.codi/preferences.json` to `.codi/preferences.yaml`.
+ * Returns the path written, or null if no migration was needed (either the
+ * YAML already exists or no JSON was found).
+ */
+export function migratePreferencesToYaml(cwd: string): string | null {
+  const yamlPath = preferencesYamlPath(cwd);
+  if (existsSync(yamlPath)) return null;
+  const jsonPath = preferencesJsonPath(cwd);
+  if (!existsSync(jsonPath)) return null;
+  let raw: Partial<CodiPreferences> = {};
+  try {
+    raw = JSON.parse(readFileSync(jsonPath, "utf8")) as Partial<CodiPreferences>;
+  } catch {
+    raw = {};
+  }
+  mkdirSync(dirname(yamlPath), { recursive: true });
+  writeFileSync(yamlPath, stringifyYaml(mergeWithDefaults(raw)), "utf8");
+  return yamlPath;
 }
 
 function isOutputMode(v: unknown): v is OutputMode {
   return v === "caveman" || v === "normal";
+}
+
+function isIssueTracker(v: unknown): v is IssueTracker {
+  return v === "linear" || v === "jira" || v === "github" || v === "none";
+}
+
+function isDefaultProfiles(v: unknown): v is DefaultProfiles {
+  if (typeof v !== "object" || v === null) return false;
+  const r = v as Record<string, unknown>;
+  for (const [key, value] of Object.entries(r)) {
+    if (!["feature", "bug-fix", "refactor", "migration", "project"].includes(key)) return false;
+    if (typeof value !== "string") return false;
+  }
+  return true;
 }

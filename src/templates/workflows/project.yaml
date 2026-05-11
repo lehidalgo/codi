@@ -4,7 +4,7 @@ description: Adaptive project bootstrap workflow — phases compress per mode (g
 version: 3
 phases:
   intent:
-    gates: [task_described]
+    gates: [task_described, sheet_creds_present]
     next: [discover, abandoned]
     chains:
       - {

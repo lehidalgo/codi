@@ -160,6 +160,142 @@ describe("codi CLI handlers", () => {
     });
   });
 
+  describe("advanceWorkflow (O1 — single-command transition)", () => {
+    it("derives next phase from adapter when no toPhase given", async () => {
+      const { advanceWorkflow } = await import("#src/runtime/cli-handlers.js");
+      runWorkflow({
+        workflowType: "feature",
+        task: "test advance",
+        author: human,
+        cwd: tmpDir,
+      });
+      const r = advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: true });
+      expect(r.fromPhase).toBe("intent");
+      expect(r.toPhase).toBe("plan");
+      expect(r.derivedFromAdaptation).toBe(false);
+      expect(r.approvedEventId).not.toBeNull();
+    });
+
+    it("respects adaptation skip rules when computing next phase", async () => {
+      const { advanceWorkflow } = await import("#src/runtime/cli-handlers.js");
+      const { resolveBugFixAdaptation } = await import("#src/runtime/workflows/index.js");
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "skip reproduce",
+        author: human,
+        cwd: tmpDir,
+        bugFixAdaptation: resolveBugFixAdaptation({ profile: "quick" }),
+      });
+      const r = advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: true });
+      expect(r.derivedFromAdaptation).toBe(true);
+      expect(r.skippedPhases).toContain("reproduce");
+      expect(r.toPhase).toBe("execute");
+    });
+
+    it("propose-only when autoApprove is false", async () => {
+      const { advanceWorkflow } = await import("#src/runtime/cli-handlers.js");
+      runWorkflow({
+        workflowType: "feature",
+        task: "propose only",
+        author: human,
+        cwd: tmpDir,
+      });
+      const r = advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: false });
+      expect(r.proposedEventId).toBeTruthy();
+      expect(r.approvedEventId).toBeNull();
+    });
+  });
+
+  describe("getSlimStatus enriquecido (O3)", () => {
+    it("returns adaptation + skipped_phases + next_phase + progress", async () => {
+      const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
+      const { resolveFeatureAdaptation } = await import("#src/runtime/workflows/index.js");
+      runWorkflow({
+        workflowType: "feature",
+        task: "enriched status",
+        author: human,
+        cwd: tmpDir,
+        featureAdaptation: resolveFeatureAdaptation({ profile: "prototype" }),
+      });
+      const slim = getSlimStatus({ cwd: tmpDir });
+      expect(slim.active).toBe(true);
+      expect(slim.adaptation?.profile).toBe("prototype");
+      expect(slim.skipped_phases).toContain("decompose");
+      expect(slim.next_phase).toBe("plan");
+      expect(slim.progress?.total).toBe(6);
+      expect(slim.progress?.current).toBe(1);
+    });
+
+    it("returns null adaptation for runs without intake metadata", async () => {
+      const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
+      runWorkflow({
+        workflowType: "feature",
+        task: "no adaptation",
+        author: human,
+        cwd: tmpDir,
+      });
+      const slim = getSlimStatus({ cwd: tmpDir });
+      expect(slim.adaptation).toBeNull();
+      expect(slim.skipped_phases).toEqual([]);
+      expect(slim.next_phase).toBe("plan");
+    });
+  });
+
+  describe("convertWorkflow (O5 — cross-workflow conversion)", () => {
+    it("abandons current + starts new with carryover", async () => {
+      const { convertWorkflow } = await import("#src/runtime/cli-handlers.js");
+      const prior = runWorkflow({
+        workflowType: "feature",
+        task: "looks like a feature",
+        author: human,
+        cwd: tmpDir,
+      });
+      const r = convertWorkflow({
+        toType: "bug-fix",
+        task: "actually a bug",
+        author: human,
+        cwd: tmpDir,
+        forward: {},
+      });
+      expect(r.abandonedWorkflowId).toBe(prior.workflowId);
+      expect(r.newWorkflowId).toMatch(/^fix-/);
+      expect(r.carryoverFrom).toBe(prior.workflowId);
+      withBrain(tmpDir, (log) => {
+        const events = log.loadEvents(r.newWorkflowId);
+        const init = events.find((e) => e.event_type === "init");
+        const payload = init?.payload as { carryover_context?: { type?: string } };
+        expect(payload.carryover_context?.type).toBe("feature");
+      });
+    });
+  });
+
+  describe("getPhaseRef (O4 — active-adaptation header)", () => {
+    it("returns phase-ref markdown with adaptation header for active workflow", async () => {
+      const { getPhaseRef } = await import("#src/runtime/cli-handlers.js");
+      const { resolveBugFixAdaptation } = await import("#src/runtime/workflows/index.js");
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "phase-ref test",
+        author: human,
+        cwd: tmpDir,
+        bugFixAdaptation: resolveBugFixAdaptation({ profile: "deep" }),
+      });
+      // Tests run from the codi repo root, so the fallback to
+      // src/templates/skills/<workflow>/references/ resolves cleanly.
+      const r = getPhaseRef({ cwd: process.cwd(), workflowCwd: tmpDir });
+      expect(r.workflowType).toBe("bug-fix");
+      expect(r.phase).toBe("intent");
+      expect(r.markdown).toContain("BEGIN active-adaptation");
+      expect(r.markdown).toContain("Profile:** `deep`");
+      expect(r.markdown).toContain("BEGIN auto-generated chain");
+    });
+
+    it("throws when no active workflow", async () => {
+      const { getPhaseRef } = await import("#src/runtime/cli-handlers.js");
+      expect(() => getPhaseRef({ cwd: tmpDir })).toThrow(/No active workflow/);
+    });
+  });
+
   describe("runQuick (Q7 — trivial-edit audit trail)", () => {
     it("rejects an unknown category with a clear error", async () => {
       const { runQuick } = await import("#src/runtime/cli-handlers.js");
@@ -252,6 +388,10 @@ describe("codi CLI handlers", () => {
         current_phase: null,
         status: null,
         task: null,
+        adaptation: null,
+        skipped_phases: [],
+        next_phase: null,
+        progress: null,
       });
     });
 
@@ -285,7 +425,9 @@ describe("codi CLI handlers", () => {
       const fullKeyCount = Object.keys(full.state ?? {}).length;
       const slimKeyCount = Object.keys(slim).length;
       expect(slimKeyCount).toBeLessThan(fullKeyCount);
-      expect(slimKeyCount).toBe(6); // active + 5 nullable fields
+      // O3 — slim shape includes adaptation summary, skipped_phases,
+      // next_phase, and progress on top of the original 6 fields.
+      expect(slimKeyCount).toBe(10);
     });
   });
 

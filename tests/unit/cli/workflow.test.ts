@@ -47,8 +47,11 @@ describe("registerWorkflowCommand — subcommand surface", () => {
     expect(names).toEqual(
       [
         "abandon",
+        "advance",
+        "convert",
         "elevate",
         "handover",
+        "phase-ref",
         "quick",
         "recover",
         "run",

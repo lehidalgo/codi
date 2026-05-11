@@ -6,7 +6,7 @@
  * that consults the adapter registry for the active workflow type.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { BrainEventLog } from "../brain-event-log.js";
@@ -299,6 +299,17 @@ export interface StatusResult {
   state: ReducedState | null;
 }
 
+export interface SlimAdaptationSummary {
+  readonly profile: string | null;
+  readonly key_answers: Record<string, unknown>;
+}
+
+export interface SlimProgress {
+  readonly current: number;
+  readonly total: number;
+  readonly percent: number;
+}
+
 export interface SlimStatus {
   readonly active: boolean;
   readonly workflow_id: string | null;
@@ -306,6 +317,10 @@ export interface SlimStatus {
   readonly current_phase: string | null;
   readonly status: string | null;
   readonly task: string | null;
+  readonly adaptation: SlimAdaptationSummary | null;
+  readonly skipped_phases: readonly string[];
+  readonly next_phase: string | null;
+  readonly progress: SlimProgress | null;
 }
 
 export function getStatus(opts: StatusOptions = {}): StatusResult {
@@ -323,6 +338,52 @@ export function getStatus(opts: StatusOptions = {}): StatusResult {
   }
 }
 
+const SLIM_ADAPTATION_KEY: Partial<Record<WorkflowType, string>> = {
+  "bug-fix": "bug_fix_adaptation",
+  feature: "feature_adaptation",
+  refactor: "refactor_adaptation",
+  migration: "migration_adaptation",
+  project: "project_adaptation",
+};
+
+const SLIM_KEY_ANSWERS: Partial<Record<WorkflowType, readonly string[]>> = {
+  "bug-fix": ["severity", "scope", "execute_mode"],
+  feature: ["complexity", "scope", "execute_mode"],
+  refactor: ["kind", "scope", "execute_mode"],
+  migration: ["risk_level", "rollback_tested"],
+  project: ["mode", "no_sheet"],
+};
+
+function loadInitPayload(workflowId: string): Record<string, unknown> | null {
+  const log = BrainEventLog.open();
+  try {
+    const events = log.loadEvents(workflowId);
+    const init = events.find((e) => e.event_type === "init");
+    if (!init) return null;
+    return (init.payload as Record<string, unknown>) ?? null;
+  } finally {
+    log.dispose();
+  }
+}
+
+function buildAdaptationSummary(
+  workflowType: WorkflowType,
+  initPayload: Record<string, unknown> | null,
+): SlimAdaptationSummary | null {
+  if (!initPayload) return null;
+  const key = SLIM_ADAPTATION_KEY[workflowType];
+  if (!key) return null;
+  const raw = initPayload[key];
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const profile = typeof r["profile"] === "string" ? (r["profile"] as string) : null;
+  const keyAnswers: Record<string, unknown> = {};
+  for (const field of SLIM_KEY_ANSWERS[workflowType] ?? []) {
+    if (r[field] !== undefined) keyAnswers[field] = r[field];
+  }
+  return { profile, key_answers: keyAnswers };
+}
+
 export function getSlimStatus(opts: StatusOptions = {}): SlimStatus {
   const result = getStatus(opts);
   if (!result.active || result.state === null) {
@@ -333,9 +394,46 @@ export function getSlimStatus(opts: StatusOptions = {}): SlimStatus {
       current_phase: null,
       status: null,
       task: null,
+      adaptation: null,
+      skipped_phases: [],
+      next_phase: null,
+      progress: null,
     };
   }
   const s = result.state;
+  const adapter = getAdapter(s.workflow_type);
+  const initPayload = loadInitPayload(s.workflow_id);
+  const adaptationSummary = buildAdaptationSummary(s.workflow_type, initPayload);
+
+  let skippedPhases: readonly string[] = [];
+  let nextPhase: string | null = null;
+  let progress: SlimProgress | null = null;
+  if (adapter !== undefined) {
+    const adaptationCanonical = readAdaptationCanonical(s.workflow_type, initPayload);
+    if (adaptationCanonical !== null) {
+      skippedPhases = adapter.computeSkipPhases(adaptationCanonical);
+    }
+    const idx = adapter.phaseOrder.indexOf(s.current_phase);
+    if (idx >= 0 && idx < adapter.phaseOrder.length - 1) {
+      const skipSet = new Set(skippedPhases);
+      for (let i = idx + 1; i < adapter.phaseOrder.length; i += 1) {
+        const candidate = adapter.phaseOrder[i];
+        if (candidate === undefined) continue;
+        if (!skipSet.has(candidate)) {
+          nextPhase = candidate;
+          break;
+        }
+      }
+    }
+    const total = adapter.phaseOrder.length;
+    const current = idx === -1 ? 0 : idx + 1;
+    progress = {
+      current,
+      total,
+      percent: total === 0 ? 0 : Math.round((current / total) * 100),
+    };
+  }
+
   return {
     active: true,
     workflow_id: s.workflow_id,
@@ -343,5 +441,160 @@ export function getSlimStatus(opts: StatusOptions = {}): SlimStatus {
     current_phase: s.current_phase,
     status: s.status,
     task: s.task,
+    adaptation: adaptationSummary,
+    skipped_phases: skippedPhases,
+    next_phase: nextPhase,
+    progress,
   };
+}
+
+// ─── O4 — phase-ref reader with active-adaptation block ──────────────────────
+
+const ADAPTATION_HEADER_BEGIN = "<!-- BEGIN active-adaptation -->";
+const ADAPTATION_HEADER_END = "<!-- END active-adaptation -->";
+
+const SKILL_DIR_BY_TYPE: Partial<Record<WorkflowType, string>> = {
+  feature: "feature-workflow",
+  "bug-fix": "bug-fix-workflow",
+  refactor: "refactor-workflow",
+  migration: "migration-workflow",
+  project: "project-workflow",
+};
+
+export interface PhaseRefOptions {
+  /** Defaults to the active workflow's current phase. */
+  phase?: string;
+  /**
+   * Search root for installed phase-refs. Defaults to `process.cwd()`.
+   * Paths probed (first match wins): `<cwd>/.codi/skills/codi-<workflow>-workflow/references/phase-X.md`,
+   * `<cwd>/.codi/skills/<workflow>-workflow/references/phase-X.md`,
+   * `<cwd>/src/templates/skills/<workflow>-workflow/references/phase-X.md`.
+   */
+  cwd?: string;
+  /**
+   * Cwd used to identify the active workflow. Defaults to `cwd`. Tests pass
+   * a different value when the workflow lives in a tmp dir but the
+   * phase-ref content lives in the codi repo.
+   */
+  workflowCwd?: string;
+}
+
+export interface PhaseRefResult {
+  readonly workflowId: string;
+  readonly workflowType: WorkflowType;
+  readonly phase: string;
+  readonly path: string;
+  readonly markdown: string;
+}
+
+/**
+ * Read the phase-ref markdown for the active workflow's current phase (or
+ * an override) and prepend a transient "active adaptation" block summarizing
+ * profile + skipped_phases + next_phase. The agent reads this instead of
+ * the raw file when it wants context about the active run.
+ *
+ * Throws when no workflow is active or the phase-ref does not exist.
+ */
+export function getPhaseRef(opts: PhaseRefOptions = {}): PhaseRefResult {
+  const statusCwd = opts.workflowCwd ?? opts.cwd ?? process.cwd();
+  const slim = getSlimStatus({ cwd: statusCwd });
+  if (!slim.active || slim.workflow_id === null || slim.workflow_type === null) {
+    throw new Error("No active workflow — start one with `codi workflow run` first.");
+  }
+  const phase = opts.phase ?? slim.current_phase ?? "intent";
+  const skillDir = SKILL_DIR_BY_TYPE[slim.workflow_type];
+  if (!skillDir) {
+    throw new Error(`No phase-ref directory mapping for workflow type '${slim.workflow_type}'.`);
+  }
+  const cwd = opts.cwd ?? process.cwd();
+  const candidates = [
+    resolve(cwd, ".codi", "skills", `codi-${skillDir}`, "references", `phase-${phase}.md`),
+    resolve(cwd, ".codi", "skills", skillDir, "references", `phase-${phase}.md`),
+    resolve(cwd, "src", "templates", "skills", skillDir, "references", `phase-${phase}.md`),
+  ];
+  const path = candidates.find((p) => existsSync(p));
+  if (!path) {
+    throw new Error(
+      `phase-ref for '${slim.workflow_type}.${phase}' not found. Searched:\n  ${candidates.join("\n  ")}`,
+    );
+  }
+  const raw = readFileSync(path, "utf8");
+  const header = renderActiveAdaptationBlock(slim);
+  return {
+    workflowId: slim.workflow_id,
+    workflowType: slim.workflow_type,
+    phase,
+    path,
+    markdown: `${header}\n\n${raw}`,
+  };
+}
+
+function renderActiveAdaptationBlock(slim: SlimStatus): string {
+  const lines: string[] = [ADAPTATION_HEADER_BEGIN, ""];
+  if (slim.adaptation !== null) {
+    const profile = slim.adaptation.profile ?? "(none)";
+    lines.push(`## Active adaptation`);
+    lines.push("");
+    lines.push(`- **Profile:** \`${profile}\``);
+    const answers = Object.entries(slim.adaptation.key_answers);
+    if (answers.length > 0) {
+      lines.push(
+        `- **Key answers:** ${answers.map(([k, v]) => `${k}=\`${String(v)}\``).join(", ")}`,
+      );
+    }
+  } else {
+    lines.push(`## Active adaptation`);
+    lines.push("");
+    lines.push(`- _No adaptive intake recorded for this run._`);
+  }
+  if (slim.skipped_phases.length > 0) {
+    lines.push(`- **Skipped phases:** ${slim.skipped_phases.join(", ")}`);
+  }
+  if (slim.next_phase !== null) {
+    lines.push(`- **Next phase:** \`${slim.next_phase}\``);
+  }
+  if (slim.progress !== null) {
+    lines.push(
+      `- **Progress:** ${slim.progress.current} of ${slim.progress.total} phases (${slim.progress.percent}%)`,
+    );
+  }
+  lines.push("");
+  lines.push(ADAPTATION_HEADER_END);
+  return lines.join("\n");
+}
+
+function readAdaptationCanonical(
+  workflowType: WorkflowType,
+  initPayload: Record<string, unknown> | null,
+): unknown {
+  if (!initPayload) return null;
+  const key = SLIM_ADAPTATION_KEY[workflowType];
+  if (!key) return null;
+  const raw = initPayload[key];
+  if (typeof raw !== "object" || raw === null) return null;
+  // Convert snake_case payload back to camelCase for the adapter resolvers.
+  const r = raw as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  const mapping: Record<string, string> = {
+    profile: "profile",
+    severity: "severity",
+    reproducer_exists: "reproducerExists",
+    root_cause_known: "rootCauseKnown",
+    scope: "scope",
+    execute_mode: "executeMode",
+    grill: "grill",
+    interactive: "interactive",
+    complexity: "complexity",
+    design_exists: "designExists",
+    tdd_strict: "tddStrict",
+    kind: "kind",
+    risk_level: "riskLevel",
+    rollback_tested: "rollbackTested",
+    mode: "mode",
+    no_sheet: "noSheet",
+  };
+  for (const [snake, value] of Object.entries(r)) {
+    out[mapping[snake] ?? snake] = value;
+  }
+  return out;
 }

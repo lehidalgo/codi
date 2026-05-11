@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 16E-H — prefs system, lifecycle hygiene, contribution lint, agent harness
+
+#### Added
+
+- `.codi/preferences.yaml` source of truth (16E) — `src/runtime/preferences.ts` reads YAML first, falls back to legacy `.codi/preferences.json`. New fields: `test_command`, `validate_command`, `docs_dir`, `auto_review`, `issue_tracker`, `default_profiles`, `hooks`. `codi prefs init/get/set/show/migrate` subcommands; `session-start.sh` reads the YAML and injects the `using-codi` anchor into agent context.
+- Skill lifecycle hygiene check #10 (16F) — `validate-artifacts.ts` now requires `deprecated` skills to declare both `replaced_by` and `remove_in`. Closed-set `VALID_LIFECYCLES` covers `stable | beta | experimental | deprecated`.
+- Contribution rejection criteria + lint (16G) — new "Contribution rejection criteria (HARD)" section in root `CLAUDE.md` (9 numbered criteria). `codi contribute lint --base main` runs all 9 checks against the local diff (generated-edits, skill-evals, description-size, workflow-chains, hook-edits, version-bump, no-verify, doc-naming, skill-index). New `codi-contribution-discipline` rule template ships these criteria into consumer projects.
+- Agent harness (16H) — opt-in `tests/agent-harness/` runner (`CODI_AGENT_TESTS=1` + `ANTHROPIC_API_KEY`) probes real-model behavior on the `using-codi` anchor and `tdd` skill. Skips by default to keep CI free.
+- New `using-codi` anchor skill — 1% rule, DOT diagram, Red Flags table; loaded by `session-start.sh` and pinned into the agent's system prompt.
+
+#### Changed
+
+- Red Flags tables added to `discover` (v2→v3), `plan-writing` (v2→v3), `verify-evidence` (v1→v2), `diagnose` (v2→v3) — explicit anti-pattern rationalization rows per the superpowers pattern.
+- Workflow yamls bumped to declare `chains:` per non-terminal phase (`feature`, `migration`, `project`, `refactor`).
+- `RULE_CATEGORIES` covers `codi-contribution-discipline` under `Workflow & Process`.
+
 ### v3 install blockers (Linux + non-primary Mac field reports)
 
 #### Fixed

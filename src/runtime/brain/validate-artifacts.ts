@@ -48,12 +48,24 @@ export interface ValidateOptions {
 // than at byte 0. Match the first occurrence rather than anchoring at start.
 const FRONTMATTER_RE = /---\n([\s\S]*?)\n---/;
 
+export type SkillLifecycle = "stable" | "beta" | "experimental" | "deprecated";
+
+export const VALID_LIFECYCLES: readonly SkillLifecycle[] = [
+  "stable",
+  "beta",
+  "experimental",
+  "deprecated",
+];
+
 interface SkillFrontmatter {
   readonly name?: string;
   readonly internal?: boolean;
   readonly disableModelInvocation?: boolean;
   readonly userInvocable?: boolean;
   readonly version?: number;
+  readonly lifecycle?: SkillLifecycle;
+  readonly replacedBy?: string;
+  readonly removeIn?: string;
 }
 
 function parseSimpleFrontmatter(text: string): SkillFrontmatter {
@@ -85,6 +97,19 @@ function parseSimpleFrontmatter(text: string): SkillFrontmatter {
         break;
       case "version":
         out.version = Number.parseInt(value, 10);
+        break;
+      case "lifecycle":
+        if ((VALID_LIFECYCLES as readonly string[]).includes(value)) {
+          out.lifecycle = value as SkillLifecycle;
+        }
+        break;
+      case "replaced_by":
+      case "replaced-by":
+        out.replacedBy = value;
+        break;
+      case "remove_in":
+      case "remove-in":
+        out.removeIn = value;
         break;
     }
   }
@@ -125,6 +150,33 @@ function checkInternalConsistency(skillsRoot: string): readonly ValidationIssue[
         check: 2,
         severity: "error",
         message: `skill '${slug}': internal: true requires disable-model-invocation: true`,
+        location: resolve(skillsRoot, slug, "template.ts"),
+      });
+    }
+  }
+  return issues;
+}
+
+/**
+ * Check #10 (16F) — skill lifecycle hygiene. Deprecated skills MUST declare
+ * `replaced_by:` and `remove_in:` so the deprecation has a clear off-ramp.
+ * Other lifecycle stages have no additional requirements; the validator
+ * simply rejects unknown values via the parser (which drops them silently).
+ */
+function checkLifecycleHygiene(skillsRoot: string): readonly ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  for (const slug of listSkillSlugs(skillsRoot)) {
+    const fm = extractSkillFrontmatter(resolve(skillsRoot, slug));
+    if (fm === null) continue;
+    if (fm.lifecycle !== "deprecated") continue;
+    const missing: string[] = [];
+    if (fm.replacedBy === undefined || fm.replacedBy.length === 0) missing.push("replaced_by");
+    if (fm.removeIn === undefined || fm.removeIn.length === 0) missing.push("remove_in");
+    if (missing.length > 0) {
+      issues.push({
+        check: 10,
+        severity: "error",
+        message: `skill '${slug}': lifecycle: deprecated requires ${missing.join(" + ")} in frontmatter`,
         location: resolve(skillsRoot, slug, "template.ts"),
       });
     }
@@ -273,7 +325,7 @@ function checkPhaseRefDrift(
 
 export function validateArtifacts(opts: ValidateOptions): ValidationReport {
   const allIssues: ValidationIssue[] = [];
-  const checksRun: number[] = [2, 4, 5, 7];
+  const checksRun: number[] = [2, 4, 5, 7, 10];
 
   allIssues.push(...checkInternalConsistency(opts.skillsRoot));
   allIssues.push(...checkChainSkillsExist(opts.workflows, opts.skillsRoot));
@@ -281,6 +333,7 @@ export function validateArtifacts(opts: ValidateOptions): ValidationReport {
   // readBuiltinDefinitions when it was loaded. Recording the check number
   // lets the caller report coverage.
   allIssues.push(...checkPhaseRefDrift(opts.workflows, opts.skillsRoot));
+  allIssues.push(...checkLifecycleHygiene(opts.skillsRoot));
 
   if (opts.repoRoot !== undefined) {
     allIssues.push(...checkVersionBumpOnContentChange(opts.skillsRoot, opts.repoRoot));

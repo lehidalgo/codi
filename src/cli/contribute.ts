@@ -679,7 +679,7 @@ export async function contributeHandler(
 }
 
 export function registerContributeCommand(program: Command): void {
-  program
+  const contribute = program
     .command("contribute")
     .description("Contribute artifacts as a preset via PR or ZIP")
     .option("--repo <repo>", "Target GitHub repository (owner/repo or full URL)")
@@ -688,6 +688,24 @@ export function registerContributeCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       initFromOptions(globalOptions);
       const result = await contributeHandler(process.cwd(), options.repo, options.branch);
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  contribute
+    .command("lint")
+    .description(
+      "Pre-PR contribution-discipline check — runs 9 rejection-criteria checks against the current diff",
+    )
+    .option("--base <branch>", "Base branch to diff against", "main")
+    .action(async (options: { base?: string }) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      const { runContributeLint } = await import("./contribute-lint.js");
+      const result = await runContributeLint({
+        cwd: process.cwd(),
+        baseBranch: options.base ?? "main",
+      });
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
