@@ -309,9 +309,16 @@ export const claudeCodeAdapter: AgentAdapter = {
       hash: hashContent(launcher.content),
     });
 
-    // Generate .claude/settings.json (permissions + heartbeat hooks)
+    // Generate .claude/settings.json (permissions + heartbeat hooks).
+    // Deep-merge into the user's existing settings.json (if any) so codi
+    // hooks land alongside whatever Pre/Post/Stop entries the user already
+    // had — without this, init silently failed to wire the runtime hooks
+    // for any user with a pre-existing settings.json (FastAPI templates,
+    // custom scripts, etc.) and the brain captures table stayed empty.
     const settingsJson = buildSettingsJson(config, enabledRuntime);
-    const settingsContent = JSON.stringify(settingsJson, null, 2);
+    const existingSettings = readExistingClaudeSettings(_options.projectRoot);
+    const mergedSettings = mergeSettings(settingsJson, existingSettings);
+    const settingsContent = JSON.stringify(mergedSettings, null, 2);
     files.push({
       path: ".claude/settings.json",
       content: settingsContent,
@@ -336,8 +343,119 @@ interface ClaudeHookEntry {
 }
 
 interface ClaudeSettings {
-  permissions?: { deny?: string[] };
+  permissions?: { deny?: string[]; [k: string]: unknown };
   hooks?: Record<string, ClaudeHookEntry[]>;
+  // Index signature lets us preserve unknown top-level keys (statusLine,
+  // model, env, etc.) added by the user to .claude/settings.json without
+  // dropping them on regeneration.
+  [k: string]: unknown;
+}
+
+/**
+ * Read the user's existing `.claude/settings.json` so we can merge into it
+ * instead of clobbering. Returns null on missing file or unparseable JSON
+ * (the latter mimics greenfield so we never crash a generate run on a
+ * malformed user file — the user-facing diff in conflict resolution will
+ * highlight the problem).
+ */
+function readExistingClaudeSettings(projectRoot: string | undefined): ClaudeSettings | null {
+  if (!projectRoot) return null;
+  const path = join(projectRoot, ".claude", "settings.json");
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as ClaudeSettings;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Substrings that uniquely identify a codi-managed hook command. Anything
+ * else inside an existing hook entry is treated as user-authored and
+ * preserved verbatim across regenerations. Keep this list narrow — if a
+ * user happens to invoke `codi hook` directly from a custom wrapper, that
+ * is intentional; their wrapper survives because codi's own command line
+ * has the `codi hook <name> --agent claude-code` shape, not just
+ * `codi hook`.
+ */
+function isCodiManagedCommand(cmd: string): boolean {
+  return (
+    cmd.includes("codi hook ") ||
+    cmd.includes(`${HOOKS_SUBDIR}/${LAUNCHER_FILENAME}`) ||
+    cmd.includes(`${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`) ||
+    cmd.includes(`${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`)
+  );
+}
+
+/**
+ * Deep-merge codi-generated settings into the user's existing settings.json.
+ *
+ * Why this exists: `codi init` and `codi generate` previously emitted a
+ * fresh greenfield settings.json which forced the generic line-based
+ * conflict resolver to handle the JSON. The resolver inserts `<<<<<<<`
+ * markers, breaking JSON parsing — so codi's runtime hooks (Stop /
+ * UserPromptSubmit / PreToolUse) never reached disk for any user with a
+ * pre-existing settings.json (a common case for users coming from a
+ * FastAPI / template starter). The brain `captures` table stayed empty
+ * forever.
+ *
+ * Merge semantics:
+ *   - permissions.deny: set-union (codi's denies + user's denies, dedup)
+ *   - hooks: per event key, group existing entries by `matcher`. For each
+ *     matcher we preserve user-authored commands and refresh codi-managed
+ *     commands from the new generated payload. Event keys present only in
+ *     the user's file (e.g. PreCompact) survive untouched.
+ *   - other top-level keys: passthrough from existing (statusLine, model,
+ *     env, …).
+ *
+ * Greenfield (existing === null) returns the generated payload unchanged
+ * so first-time installs behave exactly as before.
+ */
+function mergeSettings(generated: ClaudeSettings, existing: ClaudeSettings | null): ClaudeSettings {
+  if (!existing) return generated;
+
+  const merged: ClaudeSettings = { ...existing };
+
+  const denyUnion = new Set<string>([
+    ...(existing.permissions?.deny ?? []),
+    ...(generated.permissions?.deny ?? []),
+  ]);
+  if (denyUnion.size > 0) {
+    merged.permissions = {
+      ...(existing.permissions ?? {}),
+      deny: [...denyUnion],
+    };
+  }
+
+  const mergedHooks: Record<string, ClaudeHookEntry[]> = { ...(existing.hooks ?? {}) };
+  for (const [event, generatedEntries] of Object.entries(generated.hooks ?? {})) {
+    const existingEntries = existing.hooks?.[event] ?? [];
+    const byMatcher = new Map<string, ClaudeHookEntry>();
+
+    for (const entry of existingEntries) {
+      const userHooks = entry.hooks.filter((h) => !isCodiManagedCommand(h.command));
+      if (userHooks.length > 0) {
+        byMatcher.set(entry.matcher, { matcher: entry.matcher, hooks: userHooks });
+      }
+    }
+
+    for (const entry of generatedEntries) {
+      const slot = byMatcher.get(entry.matcher);
+      if (slot) {
+        slot.hooks.push(...entry.hooks);
+      } else {
+        byMatcher.set(entry.matcher, { matcher: entry.matcher, hooks: [...entry.hooks] });
+      }
+    }
+
+    mergedHooks[event] = [...byMatcher.values()];
+  }
+
+  if (Object.keys(mergedHooks).length > 0) {
+    merged.hooks = mergedHooks;
+  }
+
+  return merged;
 }
 
 function buildSettingsJson(

@@ -122,9 +122,45 @@ export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult
   }
 
   if (isForeground) {
-    // Foreground attaches stdio: caller blocks on the child. Returning a
-    // CommandResult here is informational; the parent process will exit
-    // when the child does.
+    // Foreground attaches stdio: caller blocks on the child. The child's own
+    // startup logs go straight to the user's tty. We still need to confirm
+    // the port actually got bound before reporting success — otherwise a
+    // crash during startup (missing better-sqlite3 native binding, port in
+    // use, permission error) leaves the launcher claiming OK while nothing
+    // listens at http://127.0.0.1:<port>.
+    const FG_READY_DEADLINE_MS = 3000;
+    const FG_POLL_INTERVAL_MS = 50;
+    const fgDeadline = Date.now() + FG_READY_DEADLINE_MS;
+    let fgHealthy = false;
+    while (Date.now() < fgDeadline) {
+      if (child.exitCode !== null) break;
+      const probe = await probeHealthz(port, 200);
+      if (probe?.ok) {
+        fgHealthy = true;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, FG_POLL_INTERVAL_MS));
+    }
+
+    if (!fgHealthy) {
+      if (child.exitCode === null) child.kill("SIGKILL");
+      return createCommandResult({
+        success: false,
+        command: "brain ui",
+        data: { action: "spawn", port, url, pid: child.pid ?? -1 },
+        errors: [
+          {
+            code: "E_BRAIN_UI_FOREGROUND_SPAWN_FAILED",
+            message: `Brain UI failed to start within ${FG_READY_DEADLINE_MS / 1000}s. See child output above for the underlying error.`,
+            hint: `Run \`${PROJECT_CLI} doctor\` to diagnose. Most common cause: missing better-sqlite3 native binding (run \`pnpm rebuild better-sqlite3\` or equivalent).`,
+            severity: "error",
+            context: { port },
+          },
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+
     return createCommandResult({
       success: true,
       command: "brain ui",

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### v3 install blockers (Linux + non-primary Mac field reports)
+
+#### Fixed
+
+- `.claude/settings.json` deep-merge — `codi init` and `codi generate` now merge codi runtime hooks (`Stop`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`) into a pre-existing user `settings.json` instead of letting the line-based JSON conflict resolver clobber them. Brain capture pipeline now wires up reliably for users coming from FastAPI / template starters that already ship a `settings.json`.
+- `codi brain ui --foreground` now polls `/healthz` before reporting success — a child crash during startup (missing `better-sqlite3` native binding, port conflict) no longer silently reports `[OK]` while nothing listens at the bound port.
+- Binary skill assets (fonts, PDFs, archives) are now hashed via `hashBuffer(bytes)` instead of `hashContent("")` — `codi status` stops reporting `.claude/skills/**/*.{ttf,pdf,tar.gz}` as drifted on every run for fresh installs.
+- Drift detection (`detectDrift`, `detectPresetArtifactDrift`, `detectHookDrift`) treats `EMPTY_INPUT_SHA256` as a sentinel meaning "synced" — migration safety net for state.json files written by older codi versions.
+
+#### Changed
+
+- `package.json` — added `playwright` to `pnpm.onlyBuiltDependencies` so pnpm 11 runs its postinstall (browser engine download) automatically alongside `better-sqlite3` and `esbuild`.
+
 ### Workflow adaptive intake + modular adapters
 
 #### Added

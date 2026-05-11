@@ -384,6 +384,16 @@ export class StateManager {
     const driftFiles: DriftFile[] = [];
 
     for (const stored of storedFiles) {
+      // Migration: state.json written by older codi versions stored
+      // EMPTY_INPUT_SHA256 as a placeholder for binary skill assets (fonts,
+      // PDFs, archives). New installs compute the real hashBuffer, but
+      // existing installs would otherwise report every binary asset as
+      // drifted forever. Treat the sentinel as "always synced" — the next
+      // codi generate refreshes the state with the real hash.
+      if (stored.generatedHash === EMPTY_INPUT_SHA256) {
+        driftFiles.push({ path: stored.path, status: "synced" });
+        continue;
+      }
       try {
         const fullPath = path.resolve(this.projectRoot, stored.path);
         const bytes = await fs.readFile(fullPath);
@@ -447,6 +457,11 @@ export class StateManager {
     const driftFiles: DriftFile[] = [];
 
     for (const entry of stored) {
+      // See detectDrift() above for rationale on the EMPTY_INPUT_SHA256 guard.
+      if (entry.hash === EMPTY_INPUT_SHA256) {
+        driftFiles.push({ path: entry.path, status: "synced" });
+        continue;
+      }
       try {
         const fullPath = path.resolve(this.projectRoot, entry.path);
         const bytes = await fs.readFile(fullPath);
@@ -478,6 +493,11 @@ export class StateManager {
     const driftFiles: DriftFile[] = [];
 
     for (const stored of storedHooks) {
+      // See detectDrift() above for rationale on the EMPTY_INPUT_SHA256 guard.
+      if (stored.generatedHash === EMPTY_INPUT_SHA256) {
+        driftFiles.push({ path: stored.path, status: "synced" });
+        continue;
+      }
       try {
         const fullPath = path.resolve(this.projectRoot, stored.path);
         const bytes = await fs.readFile(fullPath);

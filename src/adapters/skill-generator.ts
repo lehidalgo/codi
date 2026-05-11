@@ -3,7 +3,7 @@ import { join, relative, extname } from "node:path";
 import { stringify as stringifyYaml, parse as yamlParse } from "yaml";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
-import { hashContent } from "../utils/hash.js";
+import { hashBuffer, hashContent } from "../utils/hash.js";
 import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { Logger } from "../core/output/logger.js";
 import { fmStr } from "../utils/yaml-serialize.js";
@@ -296,7 +296,7 @@ export async function generateSkillFiles(
           path: `${skillBasePath}/${sf.relativePath}`,
           content: sf.content,
           sources: [MANIFEST_FILENAME],
-          hash: hashContent(sf.content),
+          hash: sf.binaryHash ?? hashContent(sf.content),
           ...(sf.binarySrc ? { binarySrc: sf.binarySrc } : {}),
         });
       }
@@ -310,6 +310,11 @@ interface SupportingFile {
   content: string;
   /** Absolute source path for binary files (copied as-is, not read as text). */
   binarySrc?: string;
+  /** SHA-256 hash of the raw bytes for binary files. Set whenever binarySrc is set
+   *  so drift detection can compare against the on-disk file via hashBuffer().
+   *  Without this, binary assets would be stored with hashContent("") and reported
+   *  as drifted on every `codi status` run. */
+  binaryHash?: string;
 }
 
 /** Scan a skill directory for supporting files to propagate. */
@@ -354,9 +359,23 @@ async function scanDir(
     if (SKIP_FILES.has(entry.name)) continue;
     if (topDir === "evals") continue;
 
-    // Binary files: record source path for copy (not text-readable)
+    // Binary files: record source path for copy (not text-readable) + compute
+    // a real SHA-256 of the bytes so drift detection has a stable expected
+    // hash to compare against. Without binaryHash the GeneratedFile.hash
+    // collapses to hashContent("") = EMPTY_INPUT_SHA256 and `codi status`
+    // reports every binary asset as drifted on every run.
     if (BINARY_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
-      results.push({ relativePath, content: "", binarySrc: fullPath });
+      try {
+        const bytes = await readFile(fullPath);
+        results.push({
+          relativePath,
+          content: "",
+          binarySrc: fullPath,
+          binaryHash: hashBuffer(bytes),
+        });
+      } catch {
+        // Unreadable — skip silently like the text branch below.
+      }
       continue;
     }
 
