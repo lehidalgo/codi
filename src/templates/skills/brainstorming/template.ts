@@ -28,7 +28,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 18
+version: 19
 ---
 
 # {{name}} — Brainstorming
@@ -129,7 +129,7 @@ After design is approved, identify the pipeline and tell the user which one was 
 
 | Task Type | Detection Signals | Next Skill |
 |-----------|-------------------|------------|
-| **Implementation** | New feature, bug fix, refactor, API change, database change | \\\`${PROJECT_NAME}-plan-writer\\\` |
+| **Implementation** | New feature, bug fix, refactor, API change, database change | \\\`${PROJECT_NAME}-plan-writing\\\` |
 | **Content** | Blog post, report, deck, documentation, README | Appropriate content skill (\\\`${PROJECT_NAME}-content-factory\\\` / \\\`${PROJECT_NAME}-project-documentation\\\`) |
 | **Quality** | Security audit, code review, test coverage | Skip brainstorming entirely - go directly to quality skill |
 
@@ -162,7 +162,7 @@ Wait for explicit approval. If changes are requested: make them, re-run the self
 ## Invoking the Next Skill
 
 For implementation tasks:
-> "Invoking ${PROJECT_NAME}-plan-writer to create the implementation plan."
+> "Invoking ${PROJECT_NAME}-plan-writing to create the implementation plan."
 
 For content tasks:
 > "Invoking [skill name] to generate the content."

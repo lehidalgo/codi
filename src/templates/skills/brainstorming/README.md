@@ -4,21 +4,21 @@ Design exploration and specification workflow. Explores context, asks clarifying
 
 ## Prerequisites
 
-| Dependency | Install | Purpose |
-|------------|---------|---------|
+| Dependency  | Install  | Purpose                       |
+| ----------- | -------- | ----------------------------- |
 | Node.js 18+ | required | preview server (`server.cjs`) |
 
 No npm install needed — `server.cjs` is a self-contained bundle.
 
 ## Scripts
 
-| File | Purpose |
-|------|---------|
-| `scripts/server.cjs` | Local HTTP server for previewing HTML design documents |
-| `scripts/start-server.sh` | Start the preview server; outputs JSON with URL and paths |
-| `scripts/stop-server.sh` | Stop the preview server gracefully |
-| `scripts/frame-template.html` | HTML shell for rendered design spec previews |
-| `scripts/helper.js` | Live-reload client injected into preview pages |
+| File                          | Purpose                                                   |
+| ----------------------------- | --------------------------------------------------------- |
+| `scripts/server.cjs`          | Local HTTP server for previewing HTML design documents    |
+| `scripts/start-server.sh`     | Start the preview server; outputs JSON with URL and paths |
+| `scripts/stop-server.sh`      | Stop the preview server gracefully                        |
+| `scripts/frame-template.html` | HTML shell for rendered design spec previews              |
+| `scripts/helper.js`           | Live-reload client injected into preview pages            |
 
 ## Preview Server
 
@@ -46,4 +46,4 @@ The brainstorming skill enforces a hard gate: no implementation skill is invoked
 3. Propose 2-3 approaches with trade-offs
 4. Present design sections and get approval
 5. Write the spec to `docs/` using the codi naming convention
-6. Invoke the appropriate next skill (plan-writer, tdd, etc.)
+6. Invoke the appropriate next skill (plan-writing, tdd, etc.)

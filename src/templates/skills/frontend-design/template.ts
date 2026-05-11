@@ -15,16 +15,15 @@ description: |
   for marketing one-pagers, landing pages, or PDF documents whose primary
   output is exported HTML/PDF — use ${PROJECT_NAME}-content-factory (this
   skill is for app UIs only: Next.js, Vite), for slide decks or
-  presentations (use ${PROJECT_NAME}-content-factory or
-  ${PROJECT_NAME}-pptx), for static posters / album covers (use
-  ${PROJECT_NAME}-canvas-design), or for multi-component claude.ai
-  artifacts (use ${PROJECT_NAME}-claude-artifacts-builder).
+  presentations (use ${PROJECT_NAME}-content-factory), or for
+  multi-component claude.ai artifacts (use
+  ${PROJECT_NAME}-claude-artifacts-builder).
 category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 10
 ---
 
 # {{name}} — Frontend Design
@@ -39,11 +38,8 @@ version: 9
 
 ## Skip When
 
-- User wants a slide deck or presentation — use ${PROJECT_NAME}-content-factory or ${PROJECT_NAME}-pptx
-- User wants a static poster or album cover — use ${PROJECT_NAME}-canvas-design
 - User wants a multi-component claude.ai HTML artifact — use ${PROJECT_NAME}-claude-artifacts-builder
 - User wants a PDF report or branded document — use ${PROJECT_NAME}-content-factory
-- User wants a generative art sketch — use ${PROJECT_NAME}-algorithmic-art
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 

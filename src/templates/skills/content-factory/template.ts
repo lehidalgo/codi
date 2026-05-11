@@ -8,7 +8,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 124
+version: 125
 ---
 
 # {{name}} — Content Factory
@@ -56,10 +56,6 @@ version: 124
 
 ## Skip When
 
-- User wants a single static poster, album cover, or museum-quality art piece — use ${PROJECT_NAME}-canvas-design
-- User wants a generative / interactive p5.js sketch — use ${PROJECT_NAME}-algorithmic-art
-- User wants to edit a \\\`.pptx\\\` directly (binary format) — use ${PROJECT_NAME}-pptx
-- User wants a Word document with tracked changes — use ${PROJECT_NAME}-docx
 - User wants a multi-component React artifact — use ${PROJECT_NAME}-claude-artifacts-builder
 
 ## Overview

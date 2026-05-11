@@ -1,7 +1,7 @@
 id: migration
 name: Migration
 description: Adaptive migration workflow — phases compress per risk-level + rollback-tested
-version: 3
+version: 4
 phases:
   intent:
     gates: [task_described]
@@ -23,6 +23,11 @@ phases:
           role: optional,
           hint: "schema changes — pre-migration security review",
         }
+      - {
+          skill: quality-gates,
+          role: optional,
+          hint: "CI hook validation before applying schema change",
+        }
   execute:
     gates: []
     next: [data-validation, verify, execute, abandoned]
@@ -36,6 +41,16 @@ phases:
           skill: subagent-orchestration,
           role: optional,
           hint: "≥3 distinct DDL or backfill steps — sequential mode",
+        }
+      - {
+          skill: debugging,
+          role: optional,
+          hint: "data validation fails + diagnose stalls — MCP-deep tier-2",
+        }
+      - {
+          skill: webapp-testing,
+          role: optional,
+          hint: "downstream consumers exposed via web routes — browser validation",
         }
   data-validation:
     gates: [migration_metrics_captured]
@@ -56,6 +71,12 @@ phases:
     next: [done, execute, abandoned]
     chains:
       - { skill: verify-evidence, role: required }
+      - { skill: test-suite, role: optional, hint: "regression-test suite — post-migration sanity" }
+      - {
+          skill: pr-review,
+          role: optional,
+          hint: "before opening PR — end-to-end review with gh CLI",
+        }
       - { skill: security-scan, role: optional, hint: "post-migration schema audit" }
       - { skill: code-review, role: optional, hint: "auto_review flag enabled" }
   done:

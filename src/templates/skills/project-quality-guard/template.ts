@@ -12,7 +12,7 @@ description: |
   CI", "setup from scratch", "new project setup", "what's missing in my
   config". Covers 9 categories (git / security / pre-commit / Python /
   TypeScript / testing / CI/CD / Docker / env). Do NOT activate for
-  writing application code (use ${PROJECT_NAME}-plan-writer), debugging
+  writing application code (use ${PROJECT_NAME}-plan-writing), debugging
   runtime errors (use ${PROJECT_NAME}-debugging), or one-off formatter
   questions.
 category: ${SKILL_CATEGORY.CODE_QUALITY}
@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 13
+version: 14
 ---
 
 # {{name}} — Project Quality Guard
@@ -39,7 +39,7 @@ Audits and enforces complete project quality infrastructure across 9 categories.
 
 ## Skip When
 
-- Writing application code — use domain-specific skills (${PROJECT_NAME}-plan-writer, ${PROJECT_NAME}-plan-execution)
+- Writing application code — use domain-specific skills (${PROJECT_NAME}-plan-writing, ${PROJECT_NAME}-plan-execution)
 - Debugging runtime errors — use ${PROJECT_NAME}-debugging
 - Single-file formatting questions — just run the formatter
 - Security vulnerability scan of existing code — use ${PROJECT_NAME}-security-scan

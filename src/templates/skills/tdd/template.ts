@@ -23,7 +23,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 12
+version: 13
 ---
 
 # {{name}} — TDD
@@ -48,7 +48,7 @@ Thinking "skip TDD just this once"? Stop. That is rationalization.
 - User wants to backfill tests for existing code only — use ${PROJECT_NAME}-test-suite
 - User is debugging an existing failing test — use ${PROJECT_NAME}-debugging
 - User wants dead-code cleanup without behavior change — use ${PROJECT_NAME}-refactoring
-- User is planning the feature, not implementing it yet — use ${PROJECT_NAME}-plan-writer
+- User is planning the feature, not implementing it yet — use ${PROJECT_NAME}-plan-writing
 
 ## The Iron Law
 
@@ -302,5 +302,5 @@ When adding mocks or test utilities, read \\\`\${CLAUDE_SKILL_DIR}[[/references/
 
 Use **${PROJECT_NAME}-debugging** when bugs surface during TDD — write a failing test reproducing the bug first, then follow the TDD cycle. The test proves the fix and prevents regression.
 
-Use **${PROJECT_NAME}-verification** before claiming any task complete — the verification checklist above must pass in full.
+Use **${PROJECT_NAME}-verify-evidence** before claiming any task complete — the verification checklist above must pass in full.
 `;

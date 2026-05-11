@@ -40,7 +40,7 @@
       "prompt": "create a 10-slide pitch deck for investors",
       "expectations": [
         "Does NOT activate frontend-design skill",
-        "Routes to codi-content-factory or codi-pptx instead"
+        "Routes to codi-content-factory instead"
       ]
     },
     {
@@ -49,7 +49,6 @@
       "prompt": "design a concert poster for a jazz trio",
       "expectations": [
         "Does NOT activate frontend-design skill",
-        "Routes to codi-canvas-design (static art)",
         "Does NOT produce a web component"
       ]
     }

@@ -1,7 +1,7 @@
 id: feature
 name: Feature
 description: Adaptive feature workflow — phases compress per dev answers (complexity, design existence, scope, exec mode, tdd-strict, grill toggle)
-version: 3
+version: 4
 phases:
   intent:
     gates: [task_described]
@@ -60,12 +60,28 @@ phases:
           hint: "independent slices parallel; ≥3 dependent slices sequential",
         }
       - { skill: diagnose, role: optional, hint: "test fails unexpectedly during execute" }
+      - {
+          skill: debugging,
+          role: optional,
+          hint: "diagnose stalls during execute — MCP-deep tier-2",
+        }
+      - {
+          skill: webapp-testing,
+          role: optional,
+          hint: "browser-driven validation when changes touch web routes",
+        }
       - { skill: code-review, role: optional, hint: "auto_review flag enabled in config" }
   verify:
     gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
     next: [done, execute, abandoned]
     chains:
       - { skill: verify-evidence, role: required }
+      - { skill: test-suite, role: optional, hint: "regression-test suite run after feature lands" }
+      - {
+          skill: pr-review,
+          role: optional,
+          hint: "before opening PR — end-to-end review with gh CLI",
+        }
       - {
           skill: code-review,
           role: optional,

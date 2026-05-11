@@ -7,17 +7,20 @@ description: |
   a detailed implementation plan, a stakeholder PRD, or a decomposition into
   tracer-bullet issues. Triggers on "write the plan", "draft a PRD", "break
   this into issues", "decompose to tickets", "create the plan markdown",
-  "document the implementation". Outputs are deterministic from inputs; the
-  skill does not interview the user (use \`discover\` for that). Skip when
-  the input is a standalone brainstorming session needing post-hoc TDD
-  breakdown — use ${PROJECT_NAME}-plan-writer instead. Body documents the
-  three modes and the no-placeholders rule.
+  "document the implementation", "break this into tasks", "TDD task
+  breakdown", "atomic tasks", "implementation task list", "turn this spec
+  into an execution plan". Outputs are deterministic from inputs; the
+  skill does not interview the user (use \`discover\` for that). Three
+  modes: \`plan\` (atomic 2-5 minute TDD tasks with exact file paths +
+  runnable code + verify commands; default), \`prd\` (high-level
+  stakeholder PRD), \`issues\` (tracer-bullet decomposition for the team
+  tracker). Body documents all three modes and the no-placeholders rule.
 category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}}

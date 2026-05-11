@@ -26,7 +26,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 12
+version: 13
 ---
 
 # {{name}} — Code Review
@@ -42,7 +42,7 @@ version: 12
 ## Skip When
 
 - User wants the bug fixed, not reviewed — use ${PROJECT_NAME}-debugging
-- User wants new code written — use ${PROJECT_NAME}-plan-writer or ${PROJECT_NAME}-plan-execution
+- User wants new code written — use ${PROJECT_NAME}-plan-writing or ${PROJECT_NAME}-plan-execution
 - User needs a dedicated security audit — use ${PROJECT_NAME}-security-scan
 - User needs coverage measurement — use ${PROJECT_NAME}-test-suite
 - User wants refactoring suggestions without finding bugs — use ${PROJECT_NAME}-refactoring

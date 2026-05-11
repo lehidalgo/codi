@@ -69,42 +69,18 @@ export {
   staticDir as refineRulesStaticDir,
 } from "./refine-rules/index.js";
 export { template as claudeApi, staticDir as claudeApiStaticDir } from "./claude-api/index.js";
-export { template as pdf, staticDir as pdfStaticDir } from "./pdf/index.js";
-export { getTemplate as xlsx, staticDir as xlsxStaticDir } from "./xlsx/index.js";
-export { getTemplate as docx, staticDir as docxStaticDir } from "./docx/index.js";
 export {
   template as webappTesting,
   staticDir as webappTestingStaticDir,
 } from "./webapp-testing/index.js";
-export { getTemplate as pptx, staticDir as pptxStaticDir } from "./pptx/index.js";
 export {
   template as frontendDesign,
   staticDir as frontendDesignStaticDir,
 } from "./frontend-design/index.js";
 export {
-  template as themeFactory,
-  staticDir as themeFactoryStaticDir,
-} from "./theme-factory/index.js";
-export {
   template as claudeArtifactsBuilder,
   staticDir as claudeArtifactsBuilderStaticDir,
 } from "./claude-artifacts-builder/index.js";
-export {
-  template as algorithmicArt,
-  staticDir as algorithmicArtStaticDir,
-} from "./algorithmic-art/index.js";
-export {
-  template as canvasDesign,
-  staticDir as canvasDesignStaticDir,
-} from "./canvas-design/index.js";
-export {
-  template as internalComms,
-  staticDir as internalCommsStaticDir,
-} from "./internal-comms/index.js";
-export {
-  template as slackGifCreator,
-  staticDir as slackGifCreatorStaticDir,
-} from "./slack-gif-creator/index.js";
 export {
   template as devDocsManager,
   staticDir as devDocsManagerStaticDir,
@@ -134,17 +110,12 @@ export {
 } from "./codebase-explore/index.js";
 export { template as graphSync, staticDir as graphSyncStaticDir } from "./graph-sync/index.js";
 export { template as roadmap, staticDir as roadmapStaticDir } from "./roadmap/index.js";
-export {
-  template as verification,
-  staticDir as verificationStaticDir,
-} from "./verification/index.js";
 export { template as tdd, staticDir as tddStaticDir } from "./tdd/index.js";
 export { template as debugging, staticDir as debuggingStaticDir } from "./debugging/index.js";
 export {
   template as brainstorming,
   staticDir as brainstormingStaticDir,
 } from "./brainstorming/index.js";
-export { template as planWriter, staticDir as planWriterStaticDir } from "./plan-writer/index.js";
 export { template as worktrees, staticDir as worktreesStaticDir } from "./worktrees/index.js";
 export {
   template as branchFinish,
@@ -154,11 +125,6 @@ export {
   template as planExecution,
   staticDir as planExecutionStaticDir,
 } from "./plan-execution/index.js";
-export { template as notebooklm, staticDir as notebooklmStaticDir } from "./notebooklm/index.js";
-export {
-  template as evidenceGathering,
-  staticDir as evidenceGatheringStaticDir,
-} from "./evidence-gathering/index.js";
 export {
   template as stepDocumenter,
   staticDir as stepDocumenterStaticDir,
@@ -169,17 +135,9 @@ export {
   staticDir as guidedExecutionStaticDir,
 } from "./guided-execution/index.js";
 export {
-  template as boxValidator,
-  staticDir as boxValidatorStaticDir,
-} from "./box-validator/index.js";
-export {
   template as htmlLiveInspect,
   staticDir as htmlLiveInspectStaticDir,
 } from "./html-live-inspect/index.js";
-export {
-  template as dispatchingParallelAgents,
-  staticDir as dispatchingParallelAgentsStaticDir,
-} from "./dispatching-parallel-agents/index.js";
 export {
   template as receivingCodeReview,
   staticDir as receivingCodeReviewStaticDir,

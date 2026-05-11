@@ -14,7 +14,7 @@ description: |
   may be proposed until Phase 1 investigation is complete. Skip when
   this is the FIRST diagnostic pass — use ${PROJECT_NAME}-diagnose
   instead. Do NOT activate for writing new code or features (use
-  ${PROJECT_NAME}-plan-writer), planning architecture (use
+  ${PROJECT_NAME}-plan-writing), planning architecture (use
   ${PROJECT_NAME}-brainstorming), or running tests without a failure to
   investigate (use ${PROJECT_NAME}-test-suite).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
@@ -22,7 +22,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 16
+version: 17
 ---
 
 # {{name}} — Debugging
@@ -39,11 +39,11 @@ Use for ANY technical issue:
 
 ## Skip When
 
-- Writing new code or features (no existing bug to investigate) — use ${PROJECT_NAME}-plan-writer
+- Writing new code or features (no existing bug to investigate) — use ${PROJECT_NAME}-plan-writing
 - Planning architecture or exploring approaches — use ${PROJECT_NAME}-brainstorming
 - Running tests as a general health check (no failure yet) — use ${PROJECT_NAME}-test-suite
 - Reviewing code without a specific bug to fix — use ${PROJECT_NAME}-code-review
-- Investigation BEFORE proposing a change to working code (no failure yet, gathering evidence about actual vs intended behavior) — use ${PROJECT_NAME}-evidence-gathering. Phase 1 of this skill is root-cause investigation FOR a known failure; ${PROJECT_NAME}-evidence-gathering is investigation BEFORE the failure exists.
+- Investigation BEFORE proposing a change to working code (no failure yet, gathering evidence about actual vs intended behavior) — use ${PROJECT_NAME}-verify-evidence. Phase 1 of this skill is root-cause investigation FOR a known failure; ${PROJECT_NAME}-verify-evidence is investigation BEFORE the failure exists.
 
 Use this ESPECIALLY when:
 - Under time pressure (emergencies make guessing tempting)
@@ -151,7 +151,7 @@ Fix the root cause, not the symptom:
 
 1. **Create a Failing Test** - Simplest possible reproduction. Automated test if possible. Use ${PROJECT_NAME}-tdd for writing proper failing tests. You MUST have a failing test before fixing.
 2. **Implement a Single Fix** - Address the root cause identified in Phase 1. ONE change at a time. No "while I'm here" improvements. No bundled refactoring.
-3. **Verify the Fix** - Use ${PROJECT_NAME}-verification before claiming the fix is complete. Does the test pass? Are other tests still passing? Is the issue actually resolved?
+3. **Verify the Fix** - Use ${PROJECT_NAME}-verify-evidence before claiming the fix is complete. Does the test pass? Are other tests still passing? Is the issue actually resolved?
 4. **If the Fix Does Not Work**
    - STOP
    - Count: how many fixes have you tried?
@@ -284,7 +284,7 @@ These techniques are in the \\\`references/\\\` directory:
 ## Integration
 
 - Use **${PROJECT_NAME}-tdd** when Phase 4 requires writing a failing test
-- Use **${PROJECT_NAME}-verification** before claiming the fix is complete
+- Use **${PROJECT_NAME}-verify-evidence** before claiming the fix is complete
 - Use the **${PROJECT_NAME}-codebase-explore** skill to trace call graphs in Phase 1
-- When Phase 1 reveals **3+ INDEPENDENT failure domains** (unrelated test files, unrelated subsystems with no shared cause, no shared state, no sequential dependency), hand off to **${PROJECT_NAME}-dispatching-parallel-agents** for fan-out instead of running serial Phases 2-4 N times.
+- When Phase 1 reveals **3+ INDEPENDENT failure domains** (unrelated test files, unrelated subsystems with no shared cause, no shared state, no sequential dependency), hand off to **${PROJECT_NAME}-subagent-orchestration** for fan-out instead of running serial Phases 2-4 N times.
 `;

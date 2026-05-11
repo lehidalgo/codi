@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 11
 ---
 
 # {{name}} — Web Artifacts Builder
@@ -33,9 +33,7 @@ version: 10
 ## Skip When
 
 - Simple single-file HTML or JSX artifact — author directly or use ${PROJECT_NAME}-frontend-design
-- Static poster, illustration, or visual art — use ${PROJECT_NAME}-canvas-design
 - Production Next.js or web app development (not a bundled artifact) — use ${PROJECT_NAME}-frontend-design
-- Pure HTML fixed-aspect layout (Instagram post, slide deck) — use ${PROJECT_NAME}-box-validator with a content-factory flow
 
 To build powerful frontend claude.ai artifacts, follow these steps:
 1. Initialize the frontend repo using \\\`\${CLAUDE_SKILL_DIR}[[/scripts/init-artifact.sh]]\\\`

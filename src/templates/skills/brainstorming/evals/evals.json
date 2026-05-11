@@ -54,8 +54,8 @@
       ]
     },
     {
-      "id": "negative-plan-writer",
-      "description": "Writing an implementation plan should trigger plan-writer, not brainstorming",
+      "id": "negative-plan-writing",
+      "description": "Writing an implementation plan should trigger plan-writing, not brainstorming",
       "prompt": "write an implementation plan for the payment integration",
       "expectations": [
         "Does NOT invoke the brainstorming skill",

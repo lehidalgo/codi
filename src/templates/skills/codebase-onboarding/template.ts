@@ -24,7 +24,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 22
+version: 23
 ---
 
 # {{name}} — Codebase Onboarding
@@ -44,7 +44,7 @@ version: 22
 - User wants a specific bug fixed — use ${PROJECT_NAME}-debugging
 - User wants a single-file or PR review — use ${PROJECT_NAME}-code-review
 - User wants to trace callers or a dependency graph — use ${PROJECT_NAME}-codebase-explore
-- User wants new code written — use ${PROJECT_NAME}-plan-writer
+- User wants new code written — use ${PROJECT_NAME}-plan-writing
 - User wants to run tests or check coverage — use ${PROJECT_NAME}-test-suite
 
 ## Onboarding Process

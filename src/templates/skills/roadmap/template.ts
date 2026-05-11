@@ -11,14 +11,14 @@ description: |
   "epic breakdown", "phase-based plan", "multi-phase rollout", "product
   roadmap". Output is JSON (priority, status, dependencies). Do NOT
   activate for in-session task tracking (use TaskCreate), implementation
-  plans (use ${PROJECT_NAME}-plan-writer after ${PROJECT_NAME}-brainstorming),
+  plans (use ${PROJECT_NAME}-plan-writing after ${PROJECT_NAME}-brainstorming),
   or daily progress logs (use ${PROJECT_NAME}-session-log).
 category: ${SKILL_CATEGORY.PLANNING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 7
+version: 8
 ---
 
 # {{name}} — Roadmap
@@ -32,7 +32,7 @@ version: 7
 ## Skip When
 
 - Short-lived in-session task tracking — use TaskCreate instead of a persistent roadmap
-- Concrete implementation plan (file paths + TDD steps) — use ${PROJECT_NAME}-plan-writer
+- Concrete implementation plan (file paths + TDD steps) — use ${PROJECT_NAME}-plan-writing
 - Design exploration before the roadmap — use ${PROJECT_NAME}-brainstorming first
 - Daily session log or end-of-day summary — use ${PROJECT_NAME}-session-log
 

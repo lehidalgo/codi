@@ -15,15 +15,14 @@ description: |
   browser", "multi-server test", "end-to-end UI check". Runtime-compat
   helpers manage server lifecycle. Do NOT activate for collaborative
   local-HTML element inspection (use ${PROJECT_NAME}-html-live-inspect),
-  designing a new UI (use ${PROJECT_NAME}-frontend-design), generative
-  art sketches (use ${PROJECT_NAME}-algorithmic-art), or full
+  designing a new UI (use ${PROJECT_NAME}-frontend-design), or full
   multi-phase QA sweeps (use ${PROJECT_NAME}-guided-qa-testing).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 12
 ---
 
 # {{name}} — Web Application Testing
@@ -41,7 +40,6 @@ To test local web applications, write native Python Playwright scripts.
 
 - User wants collaborative local-HTML inspect (see what they click) — use ${PROJECT_NAME}-html-live-inspect
 - User wants to design a new UI from scratch — use ${PROJECT_NAME}-frontend-design
-- User wants generative / algorithmic art — use ${PROJECT_NAME}-algorithmic-art
 - User wants multi-phase QA sweep across the whole app — use ${PROJECT_NAME}-guided-qa-testing
 - User wants to audit the full Codi installation (contributor-only) — use ${PROJECT_NAME}-dev-e2e-testing
 

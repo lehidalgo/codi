@@ -65,11 +65,11 @@
     },
     {
       "id": "negative-self-verification-routes-to-verification",
-      "description": "Pre-reviewer completeness check routes to codi-verification",
+      "description": "Pre-reviewer completeness check routes to codi-verify-evidence",
       "prompt": "Before I push this, verify the changes work as intended.",
       "expectations": [
         "Does NOT activate codi-receiving-code-review (no reviewer feedback yet)",
-        "Routes to codi-verification (own pre-review check)"
+        "Routes to codi-verify-evidence (own pre-review check)"
       ]
     },
     {

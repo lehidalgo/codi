@@ -15,15 +15,15 @@ description: |
   module, deepen an abstraction, decouple modules, change interface
   shape) — use ${PROJECT_NAME}-refactor-workflow (phase machine with
   baseline + plan + verify). Do NOT activate for new features (use
-  ${PROJECT_NAME}-plan-writer), bug fixes (use ${PROJECT_NAME}-debugging),
-  behavior-changing rewrites (use ${PROJECT_NAME}-plan-writer with tests),
+  ${PROJECT_NAME}-plan-writing), bug fixes (use ${PROJECT_NAME}-debugging),
+  behavior-changing rewrites (use ${PROJECT_NAME}-plan-writing with tests),
   or performance tuning.
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 9
+version: 10
 ---
 
 # {{name}} — Refactoring
@@ -37,9 +37,9 @@ version: 9
 
 ## Skip When
 
-- User wants to add a new feature or change behavior — use ${PROJECT_NAME}-plan-writer
+- User wants to add a new feature or change behavior — use ${PROJECT_NAME}-plan-writing
 - User wants to fix a bug — use ${PROJECT_NAME}-debugging
-- User wants performance improvements that change implementation — use ${PROJECT_NAME}-plan-writer with a benchmark gate
+- User wants performance improvements that change implementation — use ${PROJECT_NAME}-plan-writing with a benchmark gate
 - User wants test generation without removing code — use ${PROJECT_NAME}-test-suite
 - Baseline tests are already failing — fix the baseline first, never refactor on red
 

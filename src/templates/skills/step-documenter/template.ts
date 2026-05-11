@@ -19,7 +19,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 12
 ---
 
 # {{name}} — Step Documenter
@@ -36,7 +36,7 @@ version: 11
 - User wants an ADR (architecture decision record) — use ${PROJECT_NAME}-project-documentation
 - User wants a branded PDF report — use ${PROJECT_NAME}-content-factory
 - User wants a daily work log — use ${PROJECT_NAME}-session-log
-- The step has not been validated yet — run ${PROJECT_NAME}-verification first
+- The step has not been validated yet — run ${PROJECT_NAME}-verify-evidence first
 
 ## The Iron Law
 
@@ -118,7 +118,7 @@ The final result of the step. What now exists or works that did not before.
 
 #### How We Validated Success
 
-The exact verification performed and its result. Reference ${PROJECT_NAME}-verification output when available.
+The exact verification performed and its result. Reference ${PROJECT_NAME}-verify-evidence output when available.
 
 ---
 
@@ -171,6 +171,6 @@ Before finishing, verify the document meets these criteria:
 ## Integration
 
 - Invoked by \`${PROJECT_NAME}-guided-execution\` at the end of each completed step.
-- Receives validation output from \`${PROJECT_NAME}-verification\` for the "How We Validated" section.
+- Receives validation output from \`${PROJECT_NAME}-verify-evidence\` for the "How We Validated" section.
 - Produces the source material for the workflow summary doc at the end of \`${PROJECT_NAME}-guided-execution\`.
 `;

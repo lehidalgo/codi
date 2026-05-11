@@ -39,7 +39,7 @@
       "prompt": "write the implementation plan for the auth refactor",
       "expectations": [
         "Does NOT activate roadmap skill",
-        "Routes to codi-plan-writer instead (after codi-brainstorming)",
+        "Routes to codi-plan-writing instead (after codi-brainstorming)",
         "Produces a markdown [PLAN] doc, not a JSON roadmap"
       ]
     },

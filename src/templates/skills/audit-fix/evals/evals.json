@@ -20,7 +20,7 @@
       "expectations": [
         "Activates audit-fix skill",
         "Creates one task per lint issue",
-        "Invokes codi-evidence-gathering in Phase 2a for each item",
+        "Invokes codi-verify-evidence in Phase 2a for each item",
         "Waits for explicit user approval per fix — does NOT auto-implement"
       ]
     },
@@ -51,7 +51,7 @@
       "prompt": "add a dark mode toggle to the settings page",
       "expectations": [
         "Does NOT activate audit-fix skill",
-        "Routes to codi-plan-writer or codi-plan-execution instead",
+        "Routes to codi-plan-writing or codi-plan-execution instead",
         "Does NOT enforce the one-item-at-a-time iron law"
       ]
     }

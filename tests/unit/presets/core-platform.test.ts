@@ -42,7 +42,7 @@ describe("CORE_PLATFORM_SKILLS", () => {
   });
 
   it("contains all 5 expected self-improvement skills", () => {
-    expect(CORE_PLATFORM_SKILLS).toContain("codi-verification");
+    expect(CORE_PLATFORM_SKILLS).toContain("codi-verify-evidence");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-session-recovery");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-rule-feedback");
     expect(CORE_PLATFORM_SKILLS).toContain("codi-refine-rules");
