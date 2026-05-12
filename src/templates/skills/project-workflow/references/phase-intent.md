@@ -4,8 +4,8 @@
 
 ## Chain skills
 
-- You **MUST** invoke `codi:sheets-sync` (Google Sheet creds elicited; --no-sheet skips this).
-- Optionally, invoke `codi:team-charter` when team setup at project bootstrap.
+- You **MUST** invoke `codi:dev-sheets-sync` (Google Sheet creds elicited; --no-sheet skips this).
+- Optionally, invoke `codi:dev-team-charter` when team setup at project bootstrap.
 
 <!-- END auto-generated chain -->
 
@@ -88,7 +88,7 @@ Confirm scope, name the project, attach or create the Sheet, capture credentials
    f. Honor the choice:
    - **A:** print the full path. Pause until the user replies `ready`.
    - **B:** present each step's literal content (don't paraphrase). Wait for confirmation between steps.
-   - **C:** verify `gcloud auth list` shows an active account; if not, ask the user to run `gcloud auth login` and reply `ready`. Then `Bash` the script: `bash <plugin-root>/skills/sheets-sync/scripts/gcloud-setup.sh`. On success, surface stdout summary; on failure, surface stderr and offer to fall back to **B**.
+   - **C:** verify `gcloud auth list` shows an active account; if not, ask the user to run `gcloud auth login` and reply `ready`. Then `Bash` the script: `bash <plugin-root>/skills/dev-sheets-sync/scripts/gcloud-setup.sh`. On success, surface stdout summary; on failure, surface stderr and offer to fall back to **B**.
 
    g. **NEVER write a new `[GUIDE]_*.md`** for Google setup. The canonical guide already ships in the `sheets-sync` skill. Authoring a duplicate is an anti-pattern recorded in `SKILL.md`.
 

@@ -58,7 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Added
 
 - New workflow `team-consolidation` — agent-driven cross-dev brain analysis producing a consensus-candidate markdown report. Use `codi run team-consolidation` to start. The workflow reads N brain.db files from a shared directory, lets the code agent analyze them in sequential or parallel mode, and writes a free-form markdown report at `docs/YYYYMMDD_HHMMSS_[REPORT]_team-consolidation.md` for async team consensus review.
-- New companion skill `codi-team-consolidation-workflow` with 4 phase docs (intent, collect, analyze, consolidate) + a brain DB schema reference.
+- New companion skill `codi-dev-team-consolidation-workflow` with 4 phase docs (intent, collect, analyze, consolidate) + a brain DB schema reference.
 - `refine-rules` skill — new `REPORT-DRIVEN` mode (v8) that consumes team consolidation reports and applies APPROVED domain findings to `.codi/rules/`.
 - `artifact-contributor` skill — new `REPORT-DRIVEN` mode (v14) that opens upstream PRs from APPROVED meta-pipeline findings.
 

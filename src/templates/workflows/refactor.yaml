@@ -33,11 +33,11 @@ phases:
       - { skill: plan-writing, role: required }
       - { skill: discover, role: alt-entry, hint: "plan needs sharpening — mode sharpen" }
       - {
-          skill: gate-deep-modules,
+          skill: dev-gate-deep-modules,
           role: optional,
           hint: "validate the new shape matches the deepening rationale",
         }
-      - { skill: gate-plan-coverage, role: optional, hint: "before transition to execute" }
+      - { skill: dev-gate-plan-coverage, role: optional, hint: "before transition to execute" }
   execute:
     gates: []
     next: [verify, execute, abandoned]

@@ -1,23 +1,23 @@
 /**
  * Bridge: connects approveTransition to the gate-runner.
  *
- * Loads the active workflow's gate list for `fromPhase`, runs each
- * deterministic checker, persists gate_check_* events, and returns a
- * GateRunResult. Always returns. Fail-open: any thrown error becomes a
- * gate failure with the message in summary; never throws to the caller.
+ * Loads the active workflow's gate list for `fromPhase` from the
+ * brain-backed `workflow_definitions` table (seeded by `applyMigrations`
+ * from `src/templates/workflows/*.yaml`), runs each deterministic checker,
+ * persists gate_check_* events, and returns a GateRunResult.
  *
- * Advisory by design — the caller (approveTransition) decides whether
- * to act on the result. Default behaviour is to approve regardless.
+ * Always returns. Fail-open: any thrown error (including missing workflow
+ * type or empty gate set) becomes an empty outcome list; the caller
+ * decides whether to act on the result. Default behaviour is to approve
+ * regardless.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { parse as parseYaml } from "yaml";
 import type { CheckOutcome, GateCheck, GateRunResult } from "./gate-types.js";
 import { aggregateOutcomes, runDeterministicCheck } from "./gate-runner.js";
 import type { BrainEventLog } from "./brain-event-log.js";
 import type { ManifestEvent, Phase, ReducedState } from "./types.js";
 import { createEvent } from "./event-factory.js";
+import { gatesForPhase as wfGatesForPhase } from "./workflow-graph.js";
 
 const SYSTEM_AUTHOR = { type: "system" as const, id: "codi" };
 
@@ -30,57 +30,19 @@ export interface BridgeContext {
   log: BrainEventLog;
 }
 
-interface WorkflowYaml {
-  id: string;
-  phases: Record<string, { gates?: string[]; next?: string[] }>;
-}
-
-function findWorkflowYaml(workflowType: string): string | null {
-  // Resolve relative to this compiled module so the lookup works whether
-  // the runtime is invoked from inside the codi project itself, from the
-  // bundled dist binary, or from a consumer scratch project (where
-  // process.cwd() is unrelated).
-  const filename = `${workflowType}.yaml`;
-  const moduleAnchored: string[] = [];
+function gatesForPhase(log: BrainEventLog, workflowType: string, phase: Phase): readonly string[] {
   try {
-    const here = new URL(".", import.meta.url).pathname;
-    moduleAnchored.push(
-      // Bundled dist: import.meta.url is dist/cli.js → dist/templates/...
-      join(here, "templates", "workflows", filename),
-      // tsx src: import.meta.url is src/runtime/... → src/templates/...
-      join(here, "..", "templates", "workflows", filename),
-      // Sibling-up fallback
-      join(here, "..", "..", "templates", "workflows", filename),
-    );
+    return wfGatesForPhase(log.privateRaw, workflowType, phase);
   } catch {
-    /* import.meta.url may be unavailable under some test runners */
-  }
-  const candidates = [
-    ...moduleAnchored,
-    join(process.cwd(), "src", "templates", "workflows", filename),
-    join(process.cwd(), "dist", "templates", "workflows", filename),
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) return p;
-  }
-  return null;
-}
-
-function gatesForPhase(workflowType: string, phase: Phase): string[] {
-  const path = findWorkflowYaml(workflowType);
-  if (!path) return [];
-  try {
-    const raw = readFileSync(path, "utf8");
-    const parsed = parseYaml(raw) as WorkflowYaml;
-    const phaseSpec = parsed.phases?.[phase];
-    return phaseSpec?.gates ?? [];
-  } catch {
+    // UnknownWorkflowTypeError or any other read error → fail-open with no
+    // gates, matching the previous YAML-reader behaviour. The transition
+    // proceeds; legality is enforced separately by assertLegalTransition.
     return [];
   }
 }
 
 export function runPhaseGates(fromPhase: Phase, ctx: BridgeContext): GateRunResult {
-  const gateNames = gatesForPhase(ctx.workflowType, fromPhase);
+  const gateNames = gatesForPhase(ctx.log, ctx.workflowType, fromPhase);
   const checks: GateCheck[] = gateNames.map((id) => ({ id, type: "deterministic" }));
   const outcomes: CheckOutcome[] = [];
 

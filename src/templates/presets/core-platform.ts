@@ -21,8 +21,8 @@ export const CORE_PLATFORM_RULES = [devArtifactName("improvement")] as const;
  */
 export const CORE_PLATFORM_SKILLS = [
   prefixedName("verify-evidence"),
-  prefixedName("session-recovery"),
-  prefixedName("rule-feedback"),
-  prefixedName("refine-rules"),
-  prefixedName("compare-preset"),
+  prefixedName("dev-session-recovery"),
+  prefixedName("dev-rule-feedback"),
+  prefixedName("dev-refine-rules"),
+  prefixedName("dev-compare-preset"),
 ] as const;

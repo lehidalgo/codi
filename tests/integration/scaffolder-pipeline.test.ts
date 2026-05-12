@@ -122,7 +122,7 @@ describe("Scaffolder Pipeline: create → verify → parse", () => {
     const result = await createSkill({
       name: "test-brand",
       configDir,
-      template: prefixedName("brand-creator"),
+      template: prefixedName("dev-brand-creator"),
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -194,12 +194,12 @@ describe("Scaffolder Pipeline: error paths", () => {
     await createSkill({
       name: "dup",
       configDir,
-      template: prefixedName("brand-creator"),
+      template: prefixedName("dev-brand-creator"),
     });
     const result = await createSkill({
       name: "dup",
       configDir,
-      template: prefixedName("brand-creator"),
+      template: prefixedName("dev-brand-creator"),
     });
     expect(result.ok).toBe(false);
   });

@@ -12,7 +12,7 @@ phases:
           role: required,
           hint: "wide mode — skip when designExists=true AND grill=false",
         }
-      - { skill: step-documenter, role: optional, hint: "domain terms emerge inline" }
+      - { skill: dev-step-documenter, role: optional, hint: "domain terms emerge inline" }
       - {
           skill: plan-execution,
           role: alt-entry,
@@ -25,12 +25,12 @@ phases:
       - { skill: plan-writing, role: required }
       - { skill: discover, role: alt-entry, hint: "plan needs sharpening — mode sharpen" }
       - {
-          skill: gate-plan-coverage,
+          skill: dev-gate-plan-coverage,
           role: optional,
           hint: "before proposing transition to decompose",
         }
       - {
-          skill: gate-deep-modules,
+          skill: dev-gate-deep-modules,
           role: optional,
           hint: "structural concerns surface in plan review",
         }

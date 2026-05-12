@@ -261,11 +261,6 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
     case "artifact_linked":
     case "design_doc_authored":
     case "decision_recorded":
-    case "sheet_row_upserted":
-    case "sheet_row_appended":
-    case "sheet_sync_queued":
-    case "sheet_sync_failed":
-    case "sheet_reconciled":
       break;
 
     default: {

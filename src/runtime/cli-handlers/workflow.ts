@@ -134,62 +134,72 @@ export function runWorkflow(opts: RunOptions): RunResult {
 
   const log = BrainEventLog.open();
   try {
-    // Migrate stale terminal-status pointer so completed/abandoned prior runs
-    // do not block a fresh start. Active or paused prior workflows still block
-    // in `initWorkflow` itself.
-    const priorActiveId = log.getActiveWorkflowId();
-    if (priorActiveId !== null) {
-      const priorEvents = log.loadEvents(priorActiveId);
-      if (priorEvents.length > 0) {
-        const priorState = reduce(priorEvents);
-        if (priorState.status === "completed" || priorState.status === "abandoned") {
-          log.clearActiveWorkflowId();
+    // BEGIN IMMEDIATE: serialize stale-active cleanup + init across
+    // concurrent `codi workflow run` processes. Without this, two procs
+    // can both observe priorActiveId as terminal, both clear it, and both
+    // init — producing two active workflows and breaking the singleton
+    // invariant. The IMMEDIATE lock makes the cleanup+init atomic per the
+    // SQLite write-lock acquired at txn start; the second proc sees
+    // SQLITE_BUSY or BrainWorkflowAlreadyActiveError.
+    const txn = log.privateRaw.transaction(() => {
+      // Migrate stale terminal-status pointer so completed/abandoned prior runs
+      // do not block a fresh start. Active or paused prior workflows still block
+      // in `initWorkflow` itself.
+      const priorActiveId = log.getActiveWorkflowId();
+      if (priorActiveId !== null) {
+        const priorEvents = log.loadEvents(priorActiveId);
+        if (priorEvents.length > 0) {
+          const priorState = reduce(priorEvents);
+          if (priorState.status === "completed" || priorState.status === "abandoned") {
+            log.clearActiveWorkflowId();
+          }
         }
       }
-    }
 
-    const baseId = buildWorkflowId(opts.workflowType, opts.task);
-    const workflowId = disambiguate(baseId, (id) => log.hasWorkflow(id));
+      const baseId = buildWorkflowId(opts.workflowType, opts.task);
+      const workflowId = disambiguate(baseId, (id) => log.hasWorkflow(id));
 
-    const initPayload: Record<string, unknown> = {
-      workflow_id: workflowId,
-      workflow_type: opts.workflowType,
-      task: opts.task,
-      plugin_version: "0.1.0",
-      cwd: opts.cwd ?? process.cwd(),
-    };
-    if (opts.fromStoryId !== undefined) {
-      initPayload["from_story_id"] = opts.fromStoryId;
-    }
-    applyAdaptation(initPayload, opts);
-    if (opts.carryoverFrom !== undefined) {
-      initPayload["carryover_from"] = opts.carryoverFrom;
-      const carriedContext = collectCarryoverContext(log, opts.carryoverFrom);
-      if (carriedContext !== null) {
-        initPayload["carryover_context"] = carriedContext;
+      const initPayload: Record<string, unknown> = {
+        workflow_id: workflowId,
+        workflow_type: opts.workflowType,
+        task: opts.task,
+        plugin_version: "0.1.0",
+        cwd: opts.cwd ?? process.cwd(),
+      };
+      if (opts.fromStoryId !== undefined) {
+        initPayload["from_story_id"] = opts.fromStoryId;
       }
-    }
+      applyAdaptation(initPayload, opts);
+      if (opts.carryoverFrom !== undefined) {
+        initPayload["carryover_from"] = opts.carryoverFrom;
+        const carriedContext = collectCarryoverContext(log, opts.carryoverFrom);
+        if (carriedContext !== null) {
+          initPayload["carryover_context"] = carriedContext;
+        }
+      }
 
-    const initEvent = createEvent({
-      eventType: "init",
-      payload: initPayload,
-      author: opts.author,
-      parentEventId: null,
+      const initEvent = createEvent({
+        eventType: "init",
+        payload: initPayload,
+        author: opts.author,
+        parentEventId: null,
+      });
+
+      log.initWorkflow(workflowId, initEvent);
+
+      log.append(
+        workflowId,
+        createEvent({
+          eventType: "phase_started",
+          payload: { phase: "intent" },
+          author: { type: "system", id: "codi" },
+          parentEventId: initEvent.event_id,
+        }),
+      );
+
+      return { workflowId, initEventId: initEvent.event_id };
     });
-
-    log.initWorkflow(workflowId, initEvent);
-
-    log.append(
-      workflowId,
-      createEvent({
-        eventType: "phase_started",
-        payload: { phase: "intent" },
-        author: { type: "system", id: "codi" },
-        parentEventId: initEvent.event_id,
-      }),
-    );
-
-    return { workflowId, initEventId: initEvent.event_id };
+    return txn.immediate();
   } finally {
     log.dispose();
   }
@@ -230,60 +240,64 @@ export function runQuick(opts: QuickRunOptions): QuickRunResult {
 
   const log = BrainEventLog.open();
   try {
-    const priorActiveId = log.getActiveWorkflowId();
-    if (priorActiveId !== null) {
-      const priorEvents = log.loadEvents(priorActiveId);
-      if (priorEvents.length > 0) {
-        const priorState = reduce(priorEvents);
-        if (priorState.status === "completed" || priorState.status === "abandoned") {
-          log.clearActiveWorkflowId();
+    // Same singleton-race protection as runWorkflow — see comment there.
+    const txn = log.privateRaw.transaction(() => {
+      const priorActiveId = log.getActiveWorkflowId();
+      if (priorActiveId !== null) {
+        const priorEvents = log.loadEvents(priorActiveId);
+        if (priorEvents.length > 0) {
+          const priorState = reduce(priorEvents);
+          if (priorState.status === "completed" || priorState.status === "abandoned") {
+            log.clearActiveWorkflowId();
+          }
         }
       }
-    }
 
-    const baseId = buildWorkflowId("quick", opts.task);
-    const workflowId = disambiguate(baseId, (id) => log.hasWorkflow(id));
+      const baseId = buildWorkflowId("quick", opts.task);
+      const workflowId = disambiguate(baseId, (id) => log.hasWorkflow(id));
 
-    const initEvent = createEvent({
-      eventType: "init",
-      payload: {
-        workflow_id: workflowId,
-        workflow_type: "quick",
-        task: opts.task,
-        plugin_version: "0.1.0",
-        cwd,
-        quick_category: opts.category,
-      },
-      author: opts.author,
-      parentEventId: null,
-    });
+      const initEvent = createEvent({
+        eventType: "init",
+        payload: {
+          workflow_id: workflowId,
+          workflow_type: "quick",
+          task: opts.task,
+          plugin_version: "0.1.0",
+          cwd,
+          quick_category: opts.category,
+        },
+        author: opts.author,
+        parentEventId: null,
+      });
 
-    log.initWorkflow(workflowId, initEvent);
+      log.initWorkflow(workflowId, initEvent);
 
-    log.append(
-      workflowId,
-      createEvent({
-        eventType: "phase_started",
-        payload: { phase: "intent" },
+      log.append(
+        workflowId,
+        createEvent({
+          eventType: "phase_started",
+          payload: { phase: "intent" },
+          author: { type: "system", id: "codi" },
+          parentEventId: initEvent.event_id,
+        }),
+      );
+
+      const completedEvent = createEvent({
+        eventType: "workflow_completed",
+        payload: { duration_ms: 0, summary: `quick run: ${opts.category}` },
         author: { type: "system", id: "codi" },
         parentEventId: initEvent.event_id,
-      }),
-    );
+      });
+      log.append(workflowId, completedEvent);
+      log.clearActiveWorkflowId();
 
-    const completedEvent = createEvent({
-      eventType: "workflow_completed",
-      payload: { duration_ms: 0, summary: `quick run: ${opts.category}` },
-      author: { type: "system", id: "codi" },
-      parentEventId: initEvent.event_id,
+      return {
+        workflowId,
+        initEventId: initEvent.event_id,
+        completedEventId: completedEvent.event_id,
+      };
     });
-    log.append(workflowId, completedEvent);
-    log.clearActiveWorkflowId();
-
-    return {
-      workflowId,
-      initEventId: initEvent.event_id,
-      completedEventId: completedEvent.event_id,
-    };
+    return txn.immediate();
   } finally {
     log.dispose();
   }

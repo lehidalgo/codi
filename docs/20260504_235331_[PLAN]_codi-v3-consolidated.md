@@ -894,9 +894,9 @@ Tanto Claude Code como Codex aplican un **skill budget de ~2% del context window
 
 | Tier loading                    | Cuántas | Cómo se cargan                                                                                                                                                                                                                                                                                                                                                                          | Ejemplos                                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A — always-loaded**           | ~10     | `allow_implicit_invocation: true` + carga eager en SessionStart                                                                                                                                                                                                                                                                                                                         | `codi-team-charter`, `codi-recall`, `codi-remember`, `codi-session-recovery`, `codi-caveman`, `codi-{commit,branch-finish}`, `codi-install`, `codi-health-check`, `codi-observability`                                                                                                                                                                                                         |
+| **A — always-loaded**           | ~10     | `allow_implicit_invocation: true` + carga eager en SessionStart                                                                                                                                                                                                                                                                                                                         | `codi-dev-team-charter`, `codi-recall`, `codi-remember`, `codi-dev-session-recovery`, `codi-caveman`, `codi-{commit,branch-finish}`, `codi-install`, `codi-health-check`, `codi-observability`                                                                                                                                                                                                 |
 | **B — implicit-by-description** | ~39     | `allow_implicit_invocation: true` pero carga lazy: SessionStart envía solo `name + description` (corto), el agente expand-ea al matchear                                                                                                                                                                                                                                                | workflows (7), gates triggers, content factory, code-review, refactoring, audit-fix, meta-creators (4), DDD/Hexagonal (6), brainstorming, clarify (NEW), spec-writer (NEW), prototype (NEW), debugging, tdd, plan-writer, plan-execution, codebase-explore, architecture-review, evidence-gathering, verify, dev-{operations,docs-manager,e2e-testing}, dispatching-parallel-agents, worktrees |
-| **C — explicit-only**           | ~7      | `allow_implicit_invocation: false`. El SessionStart hook envía SOLO `(name, description)` (~80 chars cada uno) — el agente las conoce para sugerirlas en lenguaje natural ("voy a usar `codi-rotate-secrets`"). El SKILL.md completo se carga solo tras invocación explícita por user (`/skill-name`) o tras agente proponer la skill y user dar 'ok'. Total budget tier C: ~600 chars. | `codi-rotate-secrets`, `codi-deploy`, `codi-connect`, `codi-rule-feedback`, `codi-refine-rules`, `codi-workflow-creator`, `codi-gate-creator`                                                                                                                                                                                                                                                  |
+| **C — explicit-only**           | ~7      | `allow_implicit_invocation: false`. El SessionStart hook envía SOLO `(name, description)` (~80 chars cada uno) — el agente las conoce para sugerirlas en lenguaje natural ("voy a usar `codi-rotate-secrets`"). El SKILL.md completo se carga solo tras invocación explícita por user (`/skill-name`) o tras agente proponer la skill y user dar 'ok'. Total budget tier C: ~600 chars. | `codi-rotate-secrets`, `codi-deploy`, `codi-connect`, `codi-dev-rule-feedback`, `codi-dev-refine-rules`, `codi-workflow-creator`, `codi-gate-creator`                                                                                                                                                                                                                                          |
 
 Counts exactos (10 + 39 + 7 = 56 skills) verificados contra §8.1. La asignación tier se documenta como campo `loading_tier: A|B|C` en frontmatter v3 (§7.2 — añadir a estándar).
 
@@ -912,7 +912,7 @@ Counts exactos (10 + 39 + 7 = 56 skills) verificados contra §8.1. La asignació
 
 #### Foundation (4)
 
-1. `codi-team-charter`
+1. `codi-dev-team-charter`
 2. `codi-caveman`
 3. `codi-recall`
 4. `codi-remember`
@@ -946,7 +946,7 @@ Counts exactos (10 + 39 + 7 = 56 skills) verificados contra §8.1. La asignació
 
 25. `codi-worktrees`
 26. `codi-dispatching-parallel-agents`
-27. `codi-session-recovery` (movido aquí; antes en session continuity)
+27. `codi-dev-session-recovery` (movido aquí; antes en session continuity)
 
 #### Deployment lifecycle (4)
 
@@ -975,21 +975,21 @@ Counts exactos (10 + 39 + 7 = 56 skills) verificados contra §8.1. La asignació
 
 #### Self-improvement (2)
 
-39. `codi-rule-feedback`
-40. `codi-refine-rules`
+39. `codi-dev-rule-feedback`
+40. `codi-dev-refine-rules`
 
 #### Meta-creators (4)
 
-41. `codi-skill-creator`
-42. `codi-rule-creator`
-43. `codi-agent-creator`
-44. `codi-preset-creator`
+41. `codi-dev-skill-creator`
+42. `codi-dev-rule-creator`
+43. `codi-dev-agent-creator`
+44. `codi-dev-preset-creator`
 
 #### Session continuity (1)
 
 45. `codi-session-log`
 
-(Note: `codi-session-recovery` ya listada en Workflow utility #27.)
+(Note: `codi-dev-session-recovery` ya listada en Workflow utility #27.)
 
 #### Content (1)
 
@@ -1838,7 +1838,7 @@ Effect rules:
 
 - `code_graph: false` → docker compose lanza 7 contenedores (no codegraph + indexer).
 - `embeddings: false` → fuerza Tier 1 mínimo (sin downgrade automático).
-- `self_improvement_loop: false` → skills `codi-rule-feedback`, `codi-refine-rules` no se sugieren (tier C ya las gatea, esto es overlay extra).
+- `self_improvement_loop: false` → skills `codi-dev-rule-feedback`, `codi-dev-refine-rules` no se sugieren (tier C ya las gatea, esto es overlay extra).
 - `hard_gate_enforcement: false` → workflow `phase_transition_proposed` se auto-aprueba sin esperar 'ok'. Solo para tests E2E + dev local. NO publicar en docs como recomendación.
 
 `codi config set features.code_graph false` actualiza `.codi/codi.yaml` + emite `feature_flag_changed` event. Hooks releen `.codi/codi.yaml` cache cada 30s.

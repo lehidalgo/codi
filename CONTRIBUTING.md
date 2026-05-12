@@ -187,7 +187,7 @@ src/
    - Add `export const staticDir = resolveStaticDir("{name}", import.meta.url);` to `index.ts`
    - Export `staticDir` from `src/templates/skills/index.ts` (e.g., `staticDir as mySkillStaticDir`)
    - Register in `STATIC_DIR_MAP` in `src/core/scaffolder/skill-template-loader.ts`
-5. If adding evals, create `evals/evals.json` with at least 5 cases (3 positive, 2 negative). See `src/templates/skills/skill-creator/references/schemas.md` for the schema.
+5. If adding evals, create `evals/evals.json` with at least 5 cases (3 positive, 2 negative). See `src/templates/skills/dev-skill-creator/references/schemas.md` for the schema.
 6. Add tests
 7. Run `pnpm test`
 

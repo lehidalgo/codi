@@ -12,7 +12,7 @@ phases:
           role: optional,
           hint: "ambiguous failure mode OR Q7=yes — wide/sharpen/domain mode",
         }
-      - { skill: step-documenter, role: optional, hint: "domain terms emerge inline" }
+      - { skill: dev-step-documenter, role: optional, hint: "domain terms emerge inline" }
       - {
           skill: architecture-review,
           role: alt-entry,

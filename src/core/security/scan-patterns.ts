@@ -1,7 +1,7 @@
 /**
  * Pattern definitions for the import security scanner.
  *
- * Ported from src/templates/skills/skill-creator/scripts/ts/security-patterns.ts
+ * Ported from src/templates/skills/dev-skill-creator/scripts/ts/security-patterns.ts
  * to keep template assets self-contained while enabling core import scanning.
  */
 

@@ -108,7 +108,7 @@ That's it — no further elicitation in this branch. Continue with the next inte
 
 7. **Honor the choice:**
 
-   **A — self-service.** Print `cat ~/.claude/plugins/cache/codi-marketplace/codi/<version>/skills/sheets-sync/references/google-sheets-setup.md` (or just the relative path). Pause until user replies `ready`.
+   **A — self-service.** Print `cat ~/.claude/plugins/cache/codi-marketplace/codi/<version>/skills/dev-sheets-sync/references/google-sheets-setup.md` (or just the relative path). Pause until user replies `ready`.
 
    **B — guided manual.** Present Step 1's literal content from the Read. Wait for the user to confirm completion of Step 1 before advancing to Step 2. After Step 7 verify, resume the elicitation.
 
@@ -146,10 +146,10 @@ That's it — no further elicitation in this branch. Continue with the next inte
 
    ```bash
    # Reuse existing project + SA (keeps both, regens key only):
-   bash <plugin-root>/skills/sheets-sync/scripts/gcloud-setup.sh --project-id <chosen-id>
+   bash <plugin-root>/skills/dev-sheets-sync/scripts/gcloud-setup.sh --project-id <chosen-id>
 
    # Create new project + SA + key:
-   bash <plugin-root>/skills/sheets-sync/scripts/gcloud-setup.sh
+   bash <plugin-root>/skills/dev-sheets-sync/scripts/gcloud-setup.sh
    ```
 
    "Just defaults" smart-fast-path:

@@ -1,18 +1,23 @@
 /**
  * v3 zero closure end-to-end hook-script suite.
  *
- * Spawns each `scripts/runtime/hook-*.ts` under `tsx` with a realistic
+ * Spawns the bundled `codi hook <name>` CLI handler with a realistic
  * Claude Code stdin payload. Validates exit codes, stderr feedback, and
  * brain side-effects. Heavier than the in-process orchestrator suite
- * because every test starts a tsx subprocess; isolated here so the
+ * because every test starts a node subprocess; isolated here so the
  * lighter runtime suite stays under the 800-line file budget.
+ *
+ * Updated by ISSUE-007: the legacy `scripts/runtime/hook-*.ts` entry
+ * points were deleted because production already invokes `codi hook
+ * <name>` (bundled into dist/cli.js). These tests now exercise the
+ * same path production uses.
  *
  * Plan reference: docs/20260509_172807_[TESTING]_codi-v3-zero-e2e-plan.md
  * (scenario S10).
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -53,12 +58,8 @@ function withHandle<T>(cb: (h: BrainHandle) => T): T {
   }
 }
 
-function tsxBin(): string {
-  return join(process.cwd(), "node_modules", ".bin", "tsx");
-}
-
-function repoScript(name: string): string {
-  return join(process.cwd(), "scripts", "runtime", name);
+function distCli(): string {
+  return join(process.cwd(), "dist", "cli.js");
 }
 
 interface HookResult {
@@ -67,9 +68,22 @@ interface HookResult {
   readonly stderr: string;
 }
 
+// Map the legacy `hook-<name>.ts` argument to the modern `codi hook <name>`
+// subcommand so existing assertions keep their declarative call style.
+function legacyToSubcommand(scriptName: string): string {
+  return scriptName.replace(/^hook-/, "").replace(/\.ts$/, "");
+}
+
 function runHook(scriptName: string, payload: unknown): HookResult {
+  const cli = distCli();
+  if (!existsSync(cli)) {
+    throw new Error(
+      `dist/cli.js missing — run \`pnpm build\` before this test suite (invoked path: ${cli}).`,
+    );
+  }
+  const sub = legacyToSubcommand(scriptName);
   try {
-    const stdout = execFileSync(tsxBin(), [repoScript(scriptName)], {
+    const stdout = execFileSync("node", [cli, "hook", sub, "--agent", "claude-code"], {
       input: JSON.stringify(payload),
       encoding: "utf-8",
       env: { ...process.env, CODI_BRAIN_DB: process.env["CODI_BRAIN_DB"] ?? "" },

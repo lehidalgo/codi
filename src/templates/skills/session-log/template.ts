@@ -12,7 +12,7 @@ description: |
   "wrap up the session", "end of day summary", "what did I do yesterday",
   "pick up where we left off", "/session-handoff", "/open_day", "/close_day".
   Do NOT activate for recovery from repeated in-session agent mistakes (use
-  ${PROJECT_NAME}-session-recovery), commit messages (use ${PROJECT_NAME}-commit),
+  ${PROJECT_NAME}-dev-session-recovery), commit messages (use ${PROJECT_NAME}-commit),
   architecture decision records (use ${PROJECT_NAME}-project-documentation),
   or PR descriptions.
 category: ${SKILL_CATEGORY.WORKFLOW}
@@ -20,7 +20,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 4
 ---
 
 # {{name}} — Session Log
@@ -37,7 +37,7 @@ A unified work journal. All output is markdown written to \\\`docs/sessions/\\\`
 
 ## Skip When
 
-- Recovering from repeated in-session mistakes — use ${PROJECT_NAME}-session-recovery
+- Recovering from repeated in-session mistakes — use ${PROJECT_NAME}-dev-session-recovery
 - Writing a commit message — use ${PROJECT_NAME}-commit
 - Architecture decision record — use ${PROJECT_NAME}-project-documentation
 - PR description or release notes — those belong in the PR body
@@ -170,7 +170,7 @@ Do NOT write a new file in this mode — this is a read-only recap.
 
 ## Related Skills
 
-- **${PROJECT_NAME}-session-recovery** — Agent self-diagnosis after repeated in-session mistakes
+- **${PROJECT_NAME}-dev-session-recovery** — Agent self-diagnosis after repeated in-session mistakes
 - **${PROJECT_NAME}-commit** — Conventional commit messages for git
 - **${PROJECT_NAME}-branch-finish** — Merge / PR / discard a completed branch
 `;

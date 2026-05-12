@@ -171,7 +171,7 @@ for (const [p, msgs] of Object.entries(byPath)) {
 }
 console.error('  Action required (coding agent):');
 console.error('    1. Fix each violation listed above.');
-console.error('       Reference: src/templates/skills/brand-creator/references/brand-standard.md');
+console.error('       Reference: src/templates/skills/dev-brand-creator/references/brand-standard.md');
 console.error('    2. Stage the fixed files and commit again.');
 process.exit(1);
 `;

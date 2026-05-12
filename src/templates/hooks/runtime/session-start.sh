@@ -107,8 +107,8 @@ fi
 # was not generated (e.g. before first `codi generate`).
 USING_CODI_PATH=""
 for candidate in \
-  "$CWD/.claude/skills/codi-using-codi/SKILL.md" \
-  "$CWD/.codi/skills/codi-using-codi/SKILL.md" \
+  "$CWD/.claude/skills/codi-dev-using-codi/SKILL.md" \
+  "$CWD/.codi/skills/codi-dev-using-codi/SKILL.md" \
   "$PLUGIN_ROOT/dist/templates/skills/using-codi/SKILL.md" \
   "$PLUGIN_ROOT/src/templates/skills/using-codi/SKILL.md"; do
   if [ -f "$candidate" ]; then

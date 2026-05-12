@@ -21,7 +21,7 @@ function seedV2(root: string): void {
         artifacts: {
           "codi-security": { type: "rule" },
           "codi-code-review": { type: "skill" },
-          "codi-skill-creator": { type: "skill" },
+          "codi-dev-skill-creator": { type: "skill" },
           "codi-code-reviewer": { type: "agent" },
         },
       },

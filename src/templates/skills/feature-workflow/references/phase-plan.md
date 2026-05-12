@@ -6,8 +6,8 @@
 
 - You **MUST** invoke `codi:plan-writing`.
 - Alternatively, invoke `codi:discover` if plan needs sharpening — mode sharpen.
-- Optionally, invoke `codi:gate-plan-coverage` when before proposing transition to decompose.
-- Optionally, invoke `codi:gate-deep-modules` when structural concerns surface in plan review.
+- Optionally, invoke `codi:dev-gate-plan-coverage` when before proposing transition to decompose.
+- Optionally, invoke `codi:dev-gate-deep-modules` when structural concerns surface in plan review.
 
 <!-- END auto-generated chain -->
 

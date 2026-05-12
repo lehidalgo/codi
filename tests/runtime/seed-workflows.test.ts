@@ -16,6 +16,11 @@ function tmpBrain() {
   const dir = mkdtempSync(join(tmpdir(), "codi-seed-wf-"));
   const handle = openBrain({ dbPath: join(dir, "brain.db") });
   applyMigrations(handle.raw);
+  // applyMigrations now auto-seeds `workflow_definitions` from the built-in
+  // YAMLs (so the brain is usable end-to-end). These tests exercise the
+  // seedWorkflowDefinitions function in isolation, so clear the table to
+  // get back to the pre-seed state every test expects.
+  handle.raw.prepare("DELETE FROM workflow_definitions").run();
   return {
     handle,
     cleanup: () => {

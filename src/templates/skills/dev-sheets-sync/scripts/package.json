@@ -1,0 +1,16 @@
+{
+  "name": "codi-sheets-sync-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Runtime for the codi-dev-sheets-sync skill — Google Sheets / .xlsx persistence of BusinessGoal / Requirement / UserStory / Release / Audit entities. Lives inside the skill so its deps (googleapis, google-auth-library, exceljs) are not shipped in the main codi tarball.",
+  "type": "module",
+  "main": "./lib/index.ts",
+  "dependencies": {
+    "googleapis": "^171.4.0",
+    "google-auth-library": "^10.6.2",
+    "exceljs": "^4.4.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.0.0"
+  }
+}

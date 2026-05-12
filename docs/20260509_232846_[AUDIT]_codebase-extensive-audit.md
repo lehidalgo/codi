@@ -102,14 +102,14 @@
 
 ### 3.1 File size violations (>=700 LOC project rule)
 
-| Lines | Path                                               |
-| ----: | -------------------------------------------------- |
-|   791 | `src/cli/update.ts`                                |
-|   786 | `src/cli/init.ts`                                  |
-|   775 | `src/templates/skills/skill-creator/template.ts`   |
-|   755 | `src/cli/init-wizard-paths.ts`                     |
-|   738 | `src/templates/skills/content-factory/template.ts` |
-|   713 | `src/core/hooks/hook-templates.ts`                 |
+| Lines | Path                                                 |
+| ----: | ---------------------------------------------------- |
+|   791 | `src/cli/update.ts`                                  |
+|   786 | `src/cli/init.ts`                                    |
+|   775 | `src/templates/skills/dev-skill-creator/template.ts` |
+|   755 | `src/cli/init-wizard-paths.ts`                       |
+|   738 | `src/templates/skills/content-factory/template.ts`   |
+|   713 | `src/core/hooks/hook-templates.ts`                   |
 
 Warning zone (500-700 lines, refactor before they cross): `cli/contribute.ts:694`, `cli/hub-handlers.ts:691`, `cli/preset-handlers.ts:678`, `core/hooks/hook-installer.ts:668`, `cli/preset.ts:638`, `core/hooks/hook-config-generator.ts:632`.
 

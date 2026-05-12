@@ -36,7 +36,7 @@ export function buildVerificationSection(data: VerificationData): string {
     `4. After using a skill, write feedback to \`${PROJECT_DIR}/feedback/\` (see ${prefixedName("skill-reporter")})`,
   );
   lines.push(
-    `5. Use \`/${prefixedName("compare-preset")}\` to compare local improvements vs upstream`,
+    `5. Use \`/${prefixedName("dev-compare-preset")}\` to compare local improvements vs upstream`,
   );
   lines.push(`6. Share improvements via \`${PROJECT_CLI} contribute\``);
 

@@ -1,6 +1,7 @@
 # Skills Consolidation Plan
+
 - **Date**: 2026-04-17 14:43
-- **Document**: 20260417_144337_[PLAN]_skills-consolidation.md
+- **Document**: 20260417*144337*[PLAN]\_skills-consolidation.md
 - **Category**: PLAN
 
 ## Goal
@@ -13,15 +14,15 @@ Edits happen **only at the source layer**: `src/templates/skills/`. Per the audi
 
 ## Merge Matrix
 
-| # | Target Skill | Merges | Action |
-|---|---|---|---|
-| 1 | `feedback-loop` | `rule-feedback` + `skill-feedback-reporter` + `refine-rules` | Create new skill dir; delete 3 old |
-| 2 | `session-state` | `session-handoff` + `daily-log` + `session-recovery` | Create new skill dir; delete 3 old |
-| 3 | `codebase-context` | `codebase-explore` + `codebase-onboarding` + `graph-sync` | Create new skill dir; delete 3 old |
-| 4 | `debugging` (tiered) | `debugging` + `diagnostics` | Expand existing `debugging`; delete `diagnostics` |
-| 5 | `testing` | `test-run` + `test-coverage` | Rename `test-run` → `testing`; absorb coverage; delete `test-coverage` |
-| 6 | `plan-execution` | `plan-executor` + `subagent-dev` | Create new skill; delete 2 old |
-| 7 | `content-factory` (expanded) | `content-factory` + `doc-engine` | Expand `content-factory`; delete `doc-engine`; reposition Tier 3 exporters |
+| #   | Target Skill                 | Merges                                                       | Action                                                                     |
+| --- | ---------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| 1   | `feedback-loop`              | `rule-feedback` + `skill-feedback-reporter` + `refine-rules` | Create new skill dir; delete 3 old                                         |
+| 2   | `session-state`              | `session-handoff` + `daily-log` + `session-recovery`         | Create new skill dir; delete 3 old                                         |
+| 3   | `codebase-context`           | `codebase-explore` + `codebase-onboarding` + `graph-sync`    | Create new skill dir; delete 3 old                                         |
+| 4   | `debugging` (tiered)         | `debugging` + `diagnostics`                                  | Expand existing `debugging`; delete `diagnostics`                          |
+| 5   | `testing`                    | `test-run` + `test-coverage`                                 | Rename `test-run` → `testing`; absorb coverage; delete `test-coverage`     |
+| 6   | `plan-execution`             | `plan-executor` + `subagent-dev`                             | Create new skill; delete 2 old                                             |
+| 7   | `content-factory` (expanded) | `content-factory` + `doc-engine`                             | Expand `content-factory`; delete `doc-engine`; reposition Tier 3 exporters |
 
 ## Out of Scope (Retracted from Tier 1)
 
@@ -96,13 +97,13 @@ Every hit is a required edit. Missing one leaves a dangling skill reference.
 
 ## Risks
 
-| Risk | Mitigation |
-|---|---|
-| Merged SKILL.md exceeds artifact char limit | Check `MAX_ARTIFACT_CHARS` per merge; split into phases with reference files if needed |
-| Trigger description becomes too broad → false activations | Keep explicit "Skip When" section listing original scope boundaries |
-| User muscle memory on deleted slash commands (e.g., `/codi-refine-rules`) | Accept breakage; this is a major version bump anyway |
-| Evals coverage gaps on merged skill | Concatenate existing evals; may need new cases for mode-switching |
-| Version baseline drift | Update `artifact-version-baseline.json` in same commit as merge |
+| Risk                                                                          | Mitigation                                                                             |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Merged SKILL.md exceeds artifact char limit                                   | Check `MAX_ARTIFACT_CHARS` per merge; split into phases with reference files if needed |
+| Trigger description becomes too broad → false activations                     | Keep explicit "Skip When" section listing original scope boundaries                    |
+| User muscle memory on deleted slash commands (e.g., `/codi-dev-refine-rules`) | Accept breakage; this is a major version bump anyway                                   |
+| Evals coverage gaps on merged skill                                           | Concatenate existing evals; may need new cases for mode-switching                      |
+| Version baseline drift                                                        | Update `artifact-version-baseline.json` in same commit as merge                        |
 
 ## Per-Merge Details
 

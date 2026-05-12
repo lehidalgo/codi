@@ -8,11 +8,11 @@ phases:
     next: [discover, abandoned]
     chains:
       - {
-          skill: sheets-sync,
+          skill: dev-sheets-sync,
           role: required,
           hint: "Google Sheet creds elicited; --no-sheet skips this",
         }
-      - { skill: team-charter, role: optional, hint: "team setup at project bootstrap" }
+      - { skill: dev-team-charter, role: optional, hint: "team setup at project bootstrap" }
   discover:
     gates: []
     next: [decompose, abandoned]
@@ -34,7 +34,7 @@ phases:
     next: [done, decompose, abandoned]
     chains:
       - {
-          skill: sheets-sync,
+          skill: dev-sheets-sync,
           role: required,
           hint: "caller=bootstrap — push Goals/Stories to Sheet",
         }

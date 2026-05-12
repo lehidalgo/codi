@@ -5,7 +5,7 @@
 ## Chain skills
 
 - Optionally, invoke `codi:discover` when ambiguous failure mode OR Q7=yes — wide/sharpen/domain mode.
-- Optionally, invoke `codi:step-documenter` when domain terms emerge inline.
+- Optionally, invoke `codi:dev-step-documenter` when domain terms emerge inline.
 - Alternatively, invoke `codi:architecture-review` if 3-strikes — fix is structural, restructure rather than patch.
 
 <!-- END auto-generated chain -->

@@ -8,18 +8,18 @@
 
 ## Goal
 
-Add Pipeline 4 — Operations to codi with 4 new skill templates: `codi-evidence-gathering`, `codi-step-documenter`, `codi-audit-fix`, `codi-guided-execution`. Define two entry points for operational workflows not covered by existing pipelines.
+Add Pipeline 4 — Operations to codi with 4 new skill templates: `codi-evidence-gathering`, `codi-dev-step-documenter`, `codi-audit-fix`, `codi-guided-execution`. Define two entry points for operational workflows not covered by existing pipelines.
 
 ---
 
 ## Skills Created
 
-| Skill | File | Role |
-|-------|------|------|
-| `codi-evidence-gathering` | `src/templates/skills/evidence-gathering/` | Shared investigation protocol |
-| `codi-step-documenter` | `src/templates/skills/step-documenter/` | Step completion doc generator |
-| `codi-audit-fix` | `src/templates/skills/audit-fix/` | One-item-at-a-time audit processor |
-| `codi-guided-execution` | `src/templates/skills/guided-execution/` | Collaborative execution orchestrator |
+| Skill                      | File                                        | Role                                 |
+| -------------------------- | ------------------------------------------- | ------------------------------------ |
+| `codi-evidence-gathering`  | `src/templates/skills/evidence-gathering/`  | Shared investigation protocol        |
+| `codi-dev-step-documenter` | `src/templates/skills/dev-step-documenter/` | Step completion doc generator        |
+| `codi-audit-fix`           | `src/templates/skills/audit-fix/`           | One-item-at-a-time audit processor   |
+| `codi-guided-execution`    | `src/templates/skills/guided-execution/`    | Collaborative execution orchestrator |
 
 ---
 
@@ -35,7 +35,7 @@ Add Pipeline 4 — Operations to codi with 4 new skill templates: `codi-evidence
 
 ```
 Entry A: codi-guided-execution
-  → [per step] codi-evidence-gathering → codi-verification → codi-step-documenter
+  → [per step] codi-evidence-gathering → codi-verification → codi-dev-step-documenter
   → Final summary: docs/executions/<workflow>/README.md
 
 Entry B: codi-audit-fix
@@ -47,6 +47,7 @@ Entry B: codi-audit-fix
 ## Registration Pattern Used
 
 All 4 skills follow the no-static-assets registration pattern:
+
 1. `src/templates/skills/<name>/template.ts` — template string with `{{name}}` placeholder
 2. `src/templates/skills/<name>/index.ts` — single re-export
 3. Barrel export in `src/templates/skills/index.ts`

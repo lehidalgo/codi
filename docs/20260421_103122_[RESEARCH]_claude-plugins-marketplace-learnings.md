@@ -1,7 +1,7 @@
 # Codi Learnings from the Claude Plugins Official Marketplace
 
 - **Date**: 2026-04-21 10:31
-- **Document**: 20260421_103122_[RESEARCH]_claude-plugins-marketplace-learnings.md
+- **Document**: 20260421*103122*[RESEARCH]\_claude-plugins-marketplace-learnings.md
 - **Category**: RESEARCH
 
 ## Scope
@@ -17,20 +17,20 @@ Nothing in this document is implemented yet. This is Phase 2
 
 ## Plugins sampled
 
-| Plugin | Role studied |
-|---|---|
-| security-guidance | PreToolUse regex reminder engine |
-| hookify | Declarative hooks from Markdown + YAML |
-| ralph-loop | Stop-hook self-referential loops |
-| claude-md-management | Two-mode doc self-improvement |
-| session-report | Transcript analyzer + HTML report |
-| plugin-dev | Meta-toolkit for plugin authorship |
-| skill-creator | Skill evals and performance benchmarks |
-| code-review | Parallel agents + confidence filter |
-| pr-review-toolkit | Specialized narrow review agents |
-| feature-dev | 7-phase guided workflow |
-| mcp-server-dev | MCP integration reference |
-| agent-sdk-dev | Agent authoring reference |
+| Plugin               | Role studied                           |
+| -------------------- | -------------------------------------- |
+| security-guidance    | PreToolUse regex reminder engine       |
+| hookify              | Declarative hooks from Markdown + YAML |
+| ralph-loop           | Stop-hook self-referential loops       |
+| claude-md-management | Two-mode doc self-improvement          |
+| session-report       | Transcript analyzer + HTML report      |
+| plugin-dev           | Meta-toolkit for plugin authorship     |
+| skill-creator        | Skill evals and performance benchmarks |
+| code-review          | Parallel agents + confidence filter    |
+| pr-review-toolkit    | Specialized narrow review agents       |
+| feature-dev          | 7-phase guided workflow                |
+| mcp-server-dev       | MCP integration reference              |
+| agent-sdk-dev        | Agent authoring reference              |
 
 External plugins (context7, linear, github, playwright, serena, firebase,
 terraform, etc.) were inventoried for integration patterns but not deeply
@@ -39,6 +39,7 @@ analyzed for this pass.
 ## Observed patterns (what the marketplace does well)
 
 ### 1. Rule-to-hook compilation (security-guidance)
+
 - `PreToolUse:Edit|Write|MultiEdit` Python script scans file paths and
   diff text against a rule catalog.
 - Each rule carries a path check, substring or regex trigger, and a
@@ -51,6 +52,7 @@ analyzed for this pass.
   same reminder from firing on every edit.
 
 ### 2. Declarative user-defined hooks (hookify)
+
 - Rules live as `.claude/hookify.*.local.md` files with YAML frontmatter.
 - One generic Python engine dispatches across PreToolUse, PostToolUse,
   Stop, and UserPromptSubmit.
@@ -64,6 +66,7 @@ analyzed for this pass.
   behaviors the user corrected.
 
 ### 3. Self-referential Stop-hook loops (ralph-loop)
+
 - A Stop hook blocks session exit based on a state file, re-feeds the
   same prompt, and breaks only when a completion-promise string appears.
 - Session isolation through `session_id` match against hook input so
@@ -72,6 +75,7 @@ analyzed for this pass.
   and editable by the user.
 
 ### 4. Two-mode document self-improvement (claude-md-management)
+
 - `claude-md-improver` skill: audits a CLAUDE.md against the current
   codebase, surfaces drift (references to removed files, outdated
   patterns, missing coverage).
@@ -80,6 +84,7 @@ analyzed for this pass.
 - The two modes serve different cadences: maintenance vs. capture.
 
 ### 5. Transcript analyzer (session-report)
+
 - Parses `~/.claude/projects/*.jsonl` for tokens, cache hit rate,
   subagents used, skills fired, and expensive prompts.
 - Bundles a self-contained HTML template; the agent only produces JSON
@@ -88,6 +93,7 @@ analyzed for this pass.
   report.
 
 ### 6. Meta-toolkit philosophy (plugin-dev)
+
 - Seven narrow skills: hook-development, mcp-integration,
   plugin-structure, plugin-settings, command-development,
   agent-development, skill-development.
@@ -97,6 +103,7 @@ analyzed for this pass.
   documentation without skipping validation.
 
 ### 7. Parallel narrow agents + confidence threshold (code-review)
+
 - 4 agents run in parallel, each from a different lens (2 CLAUDE.md
   compliance, 1 bug hunt, 1 git blame context).
 - Each issue scored 0 to 100. Threshold 80. Only high-confidence
@@ -105,6 +112,7 @@ analyzed for this pass.
   agents that compose on demand.
 
 ### 8. Skill performance evals (skill-creator)
+
 - Generates eval prompts and benchmarks skill activation with variance
   analysis. Anthropic ships the measurement harness alongside the
   authoring tool.
@@ -152,6 +160,7 @@ field.
 
 **A3. Built-in security guardrails pack (size: M).**
 Opt-in bundle shipped with Codi that covers:
+
 - Secrets in diffs (API keys, tokens, bearer strings).
 - Dangerous shell patterns (recursive force-delete on `/`, force-push
   to `main` or `master`, publish outside CI).
@@ -177,7 +186,7 @@ in the repo with no rule coverage (candidates for promotion). Emits a
 Generate N eval prompts per skill, run them headless in a harness,
 assert which skill activated. Track trigger precision and recall over
 time. Variance analysis flags skills with unstable activation. Results
-feed `.codi/feedback/` so `codi-refine-rules` runs from evidence
+feed `.codi/feedback/` so `codi-dev-refine-rules` runs from evidence
 instead of manual review.
 
 **B3. `codi-session-report` (size: M).**
@@ -190,13 +199,13 @@ findings flow to `.codi/feedback/` automatically.
 **B4. `/codi-loop` command (size: S).**
 Port ralph-loop's Stop-hook mechanic. Use cases: TDD red-green-refactor
 enforcement, audit-fix cycles, draining `.codi/feedback/` through
-`codi-refine-rules`. Completion-promise string prevents runaway. State
+`codi-dev-refine-rules`. Completion-promise string prevents runaway. State
 file under `.codi/loops/<name>.local.md`.
 
 **B5. Cross-session learning rollups (size: S).**
 Weekly digest: `.codi/feedback/` to rule-level delta. Which rules
 generate the most observations, which have zero activity, which
-trigger overlaps repeated. Input to `codi-refine-rules`.
+trigger overlaps repeated. Input to `codi-dev-refine-rules`.
 
 ### C. Multi-agent review toolkit
 
@@ -214,8 +223,8 @@ Auto-tune thresholds per rule category so noisy agents self-throttle.
 ### D. Meta-toolkit (Codi artifact authorship)
 
 **D1. `codi-artifact-dev` bundle (size: S).**
-Consolidate existing `codi-skill-creator`, `codi-agent-creator`,
-`codi-rule-creator`, add `codi-guardrail-creator` and `codi-validator`.
+Consolidate existing `codi-dev-skill-creator`, `codi-dev-agent-creator`,
+`codi-dev-rule-creator`, add `codi-guardrail-creator` and `codi-validator`.
 Single entry point: `/codi-create`.
 
 **D2. `codi-validator` agent (size: M).**
@@ -246,6 +255,7 @@ runs on PRs. Defence-in-depth: local agent warns, CI blocks.
 
 Current Codi rules are advisory text in the system prompt. Add
 enforcement tiers to guardrails:
+
 - `tier: advisory` - text only (today's behavior).
 - `tier: soft` - PreToolUse reminder, allow.
 - `tier: hard` - PreToolUse block.
@@ -261,12 +271,12 @@ Codi artifact collections.
 
 ## Suggested sequence
 
-| Phase | Deliverables | Rationale |
-|---|---|---|
-| 1 | A1, A2, A3 | Foundational. Turns every existing rule into enforcement. Highest ROI because the rule catalog is already rich. |
-| 2 | B2, B3, D2 | Compound-interest loop. Once running, the system refines itself from transcript evidence instead of manual review. |
-| 3 | C1, E1, E2 | Review and multi-agent. Makes PR review cheap and consistent. Extends enforcement to Codex and editor-agnostic flows. |
-| 4 | F, G | Enforcement tiers and marketplace. Done once B and C are paying dividends. |
+| Phase | Deliverables | Rationale                                                                                                             |
+| ----- | ------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1     | A1, A2, A3   | Foundational. Turns every existing rule into enforcement. Highest ROI because the rule catalog is already rich.       |
+| 2     | B2, B3, D2   | Compound-interest loop. Once running, the system refines itself from transcript evidence instead of manual review.    |
+| 3     | C1, E1, E2   | Review and multi-agent. Makes PR review cheap and consistent. Extends enforcement to Codex and editor-agnostic flows. |
+| 4     | F, G         | Enforcement tiers and marketplace. Done once B and C are paying dividends.                                            |
 
 ## Open questions before committing
 

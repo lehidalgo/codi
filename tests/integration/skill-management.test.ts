@@ -95,10 +95,10 @@ describe("skill management pipeline", () => {
   it("adds skill with template", async () => {
     await initHandler(tmpDir, { agents: ["claude-code"] });
     const result = await addSkillHandler(tmpDir, "branded", {
-      template: "codi-brand-creator",
+      template: "codi-dev-brand-creator",
     });
 
     expect(result.success).toBe(true);
-    expect(result.data.template).toBe("codi-brand-creator");
+    expect(result.data.template).toBe("codi-dev-brand-creator");
   });
 });

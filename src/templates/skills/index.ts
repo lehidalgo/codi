@@ -31,23 +31,23 @@ export { template as commit, staticDir as commitStaticDir } from "./commit/index
 export {
   template as presetCreator,
   staticDir as presetCreatorStaticDir,
-} from "./preset-creator/index.js";
+} from "./dev-preset-creator/index.js";
 export {
   template as artifactContributor,
   staticDir as artifactContributorStaticDir,
-} from "./artifact-contributor/index.js";
+} from "./dev-artifact-contributor/index.js";
 export {
   template as skillCreator,
   staticDir as skillCreatorStaticDir,
-} from "./skill-creator/index.js";
+} from "./dev-skill-creator/index.js";
 export {
   template as ruleCreator,
   staticDir as ruleCreatorStaticDir,
-} from "./rule-creator/index.js";
+} from "./dev-rule-creator/index.js";
 export {
   template as agentCreator,
   staticDir as agentCreatorStaticDir,
-} from "./agent-creator/index.js";
+} from "./dev-agent-creator/index.js";
 export {
   template as guidedQaTesting,
   staticDir as guidedQaTestingStaticDir,
@@ -55,19 +55,19 @@ export {
 export {
   template as comparePreset,
   staticDir as comparePresetStaticDir,
-} from "./compare-preset/index.js";
+} from "./dev-compare-preset/index.js";
 export {
   template as sessionRecovery,
   staticDir as sessionRecoveryStaticDir,
-} from "./session-recovery/index.js";
+} from "./dev-session-recovery/index.js";
 export {
   template as ruleFeedback,
   staticDir as ruleFeedbackStaticDir,
-} from "./rule-feedback/index.js";
+} from "./dev-rule-feedback/index.js";
 export {
   template as refineRules,
   staticDir as refineRulesStaticDir,
-} from "./refine-rules/index.js";
+} from "./dev-refine-rules/index.js";
 export { template as claudeApi, staticDir as claudeApiStaticDir } from "./claude-api/index.js";
 export {
   template as webappTesting,
@@ -88,7 +88,7 @@ export {
 export {
   template as brandCreator,
   staticDir as brandCreatorStaticDir,
-} from "./brand-creator/index.js";
+} from "./dev-brand-creator/index.js";
 export { template as codiBrand, staticDir as codiBrandStaticDir } from "./codi-brand/index.js";
 export {
   template as contentFactory,
@@ -108,7 +108,7 @@ export {
   template as codebaseExplore,
   staticDir as codebaseExploreStaticDir,
 } from "./codebase-explore/index.js";
-export { template as graphSync, staticDir as graphSyncStaticDir } from "./graph-sync/index.js";
+export { template as graphSync, staticDir as graphSyncStaticDir } from "./dev-graph-sync/index.js";
 export { template as roadmap, staticDir as roadmapStaticDir } from "./roadmap/index.js";
 export { template as tdd, staticDir as tddStaticDir } from "./tdd/index.js";
 export { template as debugging, staticDir as debuggingStaticDir } from "./debugging/index.js";
@@ -128,7 +128,7 @@ export {
 export {
   template as stepDocumenter,
   staticDir as stepDocumenterStaticDir,
-} from "./step-documenter/index.js";
+} from "./dev-step-documenter/index.js";
 export { template as auditFix, staticDir as auditFixStaticDir } from "./audit-fix/index.js";
 export {
   template as guidedExecution,
@@ -145,10 +145,10 @@ export {
 export {
   template as teamCharter,
   staticDir as teamCharterStaticDir,
-} from "./team-charter/index.js";
-export { template as usingCodi, staticDir as usingCodiStaticDir } from "./using-codi/index.js";
+} from "./dev-team-charter/index.js";
+export { template as usingCodi, staticDir as usingCodiStaticDir } from "./dev-using-codi/index.js";
 export { template as caveman, staticDir as cavemanStaticDir } from "./caveman/index.js";
-export { template as brainUi, staticDir as brainUiStaticDir } from "./brain-ui/index.js";
+export { template as brainUi, staticDir as brainUiStaticDir } from "./dev-brain-ui/index.js";
 export {
   template as architectureReview,
   staticDir as architectureReviewStaticDir,
@@ -166,15 +166,15 @@ export {
 export {
   template as gateDeepModules,
   staticDir as gateDeepModulesStaticDir,
-} from "./gate-deep-modules/index.js";
+} from "./dev-gate-deep-modules/index.js";
 export {
   template as gatePlanCoverage,
   staticDir as gatePlanCoverageStaticDir,
-} from "./gate-plan-coverage/index.js";
+} from "./dev-gate-plan-coverage/index.js";
 export {
   template as initKnowledgeBase,
   staticDir as initKnowledgeBaseStaticDir,
-} from "./init-knowledge-base/index.js";
+} from "./dev-init-knowledge-base/index.js";
 export {
   template as migrationWorkflow,
   staticDir as migrationWorkflowStaticDir,
@@ -195,7 +195,10 @@ export {
   template as refactorWorkflow,
   staticDir as refactorWorkflowStaticDir,
 } from "./refactor-workflow/index.js";
-export { template as sheetsSync, staticDir as sheetsSyncStaticDir } from "./sheets-sync/index.js";
+export {
+  template as sheetsSync,
+  staticDir as sheetsSyncStaticDir,
+} from "./dev-sheets-sync/index.js";
 export {
   template as subagentOrchestration,
   staticDir as subagentOrchestrationStaticDir,
@@ -203,7 +206,7 @@ export {
 export {
   template as teamConsolidationWorkflow,
   staticDir as teamConsolidationWorkflowStaticDir,
-} from "./team-consolidation-workflow/index.js";
+} from "./dev-team-consolidation-workflow/index.js";
 export {
   template as verifyEvidence,
   staticDir as verifyEvidenceStaticDir,

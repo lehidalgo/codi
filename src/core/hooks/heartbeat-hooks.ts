@@ -7,7 +7,7 @@
  * skill-observer — Stop hook (synchronous): scans the transcript for
  *                  [CODI-OBSERVATION: ...] markers and writes structured JSON to
  *                  .codi/feedback/. When 5+ observations accumulate, outputs an
- *                  additionalContext hint to prompt the user to run /codi-refine-rules.
+ *                  additionalContext hint to prompt the user to run /codi-dev-refine-rules.
  *
  * Both scripts are written to .codi/hooks/ during `codi generate`.
  * Claude Code wires them via .claude/settings.json; Codex via .codex/hooks.json.
@@ -233,7 +233,7 @@ async function main() {
     try { count = fs.readdirSync(feedbackDir).filter(f => f.endsWith('.json')).length; } catch {}
     if (count >= HINT_THRESHOLD) {
       console.log(JSON.stringify({
-        additionalContext: \`[${PROJECT_NAME_DISPLAY}] \${count} observations in ${PROJECT_DIR}/feedback/ — run /${PROJECT_NAME}-refine-rules to review\`,
+        additionalContext: \`[${PROJECT_NAME_DISPLAY}] \${count} observations in ${PROJECT_DIR}/feedback/ — run /${PROJECT_NAME}-dev-refine-rules to review\`,
       }));
       process.exit(0);
     }

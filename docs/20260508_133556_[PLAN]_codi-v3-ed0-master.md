@@ -1095,7 +1095,7 @@ Todos los `agent-fork` gates usan subagents existentes del catálogo (no nuevos)
 
 #### A) Foundation (4)
 
-1. `codi-team-charter` (DevLoop) — Iron Laws + bootstrap session
+1. `codi-dev-team-charter` (DevLoop) — Iron Laws + bootstrap session
 2. `codi-caveman` (Codi v2 + DevLoop) — output mode terse
 3. `codi-recall` (NEW) — recall whisper SQLite
 4. `codi-remember` (NEW) — manual capture marker
@@ -1134,7 +1134,7 @@ Todos los `agent-fork` gates usan subagents existentes del catálogo (no nuevos)
 
 23. `codi-worktrees` (Codi v2 + DevLoop) — git worktrees isolation
 24. `codi-dispatching-parallel-agents` (Codi v2 + DevLoop subagent-orchestration) — parallel subagents
-25. `codi-session-recovery` (Codi v2) — continuity entre sesiones
+25. `codi-dev-session-recovery` (Codi v2) — continuity entre sesiones
 26. `codi-session-log` (Codi v2) — session summaries
 
 #### G) Git lifecycle (3)
@@ -1154,26 +1154,26 @@ Todos los `agent-fork` gates usan subagents existentes del catálogo (no nuevos)
 
 #### J) v3 brain features (3)
 
-33. `codi-brain-ui` (NEW) — spawn UI live observation
+33. `codi-dev-brain-ui` (NEW) — spawn UI live observation
 34. `codi-brain-consolidate` (NEW) — UI consolidación team
 35. `codi-brain-export` / `codi-brain-import` (NEW, 1 skill) — CLI sync `.db`
 
 #### K) Self-improvement (3)
 
-36. `codi-rule-feedback` (Codi v2) — dev feedback to rules
-37. `codi-refine-rules` (Codi v2) — LLM-assisted rule refinement
-38. `codi-compare-preset` (Codi v2) — comparar local vs upstream
+36. `codi-dev-rule-feedback` (Codi v2) — dev feedback to rules
+37. `codi-dev-refine-rules` (Codi v2) — LLM-assisted rule refinement
+38. `codi-dev-compare-preset` (Codi v2) — comparar local vs upstream
 
 #### L) Metaskills artifact creators (8)
 
-39. `codi-skill-creator` (Codi v2 + DevLoop)
-40. `codi-rule-creator` (Codi v2)
-41. `codi-agent-creator` (Codi v2)
-42. `codi-preset-creator` (Codi v2)
+39. `codi-dev-skill-creator` (Codi v2 + DevLoop)
+40. `codi-dev-rule-creator` (Codi v2)
+41. `codi-dev-agent-creator` (Codi v2)
+42. `codi-dev-preset-creator` (Codi v2)
 43. `codi-workflow-creator` (NEW Z5)
 44. `codi-gate-creator` (NEW Z5)
 45. `codi-skill-audit` (DevLoop)
-46. `codi-artifact-contributor` (Codi v2)
+46. `codi-dev-artifact-contributor` (Codi v2)
 
 #### M) Codi self-development (3)
 

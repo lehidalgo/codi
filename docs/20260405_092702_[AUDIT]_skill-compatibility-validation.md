@@ -1,6 +1,7 @@
 # Skill Compatibility and Validation Audit
+
 **Date**: 2026-04-05 09:27
-**Document**: 20260405_092702_[AUDIT]_skill-compatibility-validation.md
+**Document**: 20260405*092702*[AUDIT]\_skill-compatibility-validation.md
 **Category**: AUDIT
 
 ---
@@ -24,54 +25,54 @@ The recommended fix is a two-layer validation model: a shared portable-skill cor
 
 ### 2.1 What "skills" are called per agent
 
-| Agent | Artifact Name | Discovery File | Skills Directory |
-|-------|--------------|---------------|-----------------|
-| Claude Code | skill (slash command) | CLAUDE.md | `.claude/skills/{name}/SKILL.md` |
-| Codex (OpenAI) | skill | AGENTS.md | `.agents/skills/{name}/SKILL.md` |
-| Cursor | skill (reference only) | `.cursorrules` | `.cursor/skills/{name}/SKILL.md` |
-| Windsurf | skill (reference only) | `.windsurfrules` | `.windsurf/skills/{name}/SKILL.md` |
-| Cline | skill (reference only) | `.clinerules` | `.cline/skills/{name}/SKILL.md` |
+| Agent          | Artifact Name          | Discovery File   | Skills Directory                   |
+| -------------- | ---------------------- | ---------------- | ---------------------------------- |
+| Claude Code    | skill (slash command)  | CLAUDE.md        | `.claude/skills/{name}/SKILL.md`   |
+| Codex (OpenAI) | skill                  | AGENTS.md        | `.agents/skills/{name}/SKILL.md`   |
+| Cursor         | skill (reference only) | `.cursorrules`   | `.cursor/skills/{name}/SKILL.md`   |
+| Windsurf       | skill (reference only) | `.windsurfrules` | `.windsurf/skills/{name}/SKILL.md` |
+| Cline          | skill (reference only) | `.clinerules`    | `.cline/skills/{name}/SKILL.md`    |
 
 ### 2.2 Field support matrix
 
-| Field | Claude Code | Codex | Cursor | Windsurf | Cline |
-|-------|:-----------:|:-----:|:------:|:--------:|:-----:|
-| `name` | Required | Required | Required | Required | Required |
-| `description` | Required | Required | Required | Required | Required |
-| `user-invocable` | Supported | - | Supported | - | - |
-| `disable-model-invocation` | Supported | - | - | - | - |
-| `argument-hint` | Supported | - | - | - | - |
-| `allowed-tools` | Supported | Supported | Supported | - | - |
-| `model` | Supported | - | - | - | - |
-| `effort` | Supported | - | - | - | - |
-| `context` | Supported | - | - | - | - |
-| `agent` | Supported | - | - | - | - |
-| `paths` | Supported | - | - | - | - |
-| `shell` | Supported | - | - | - | - |
-| `license` | Supported | Supported | - | - | - |
-| `metadata` | Supported* | Supported* | - | - | - |
-| `hooks` | Supported | - | - | - | - |
+| Field                      | Claude Code |    Codex    |  Cursor   | Windsurf |  Cline   |
+| -------------------------- | :---------: | :---------: | :-------: | :------: | :------: |
+| `name`                     |  Required   |  Required   | Required  | Required | Required |
+| `description`              |  Required   |  Required   | Required  | Required | Required |
+| `user-invocable`           |  Supported  |      -      | Supported |    -     |    -     |
+| `disable-model-invocation` |  Supported  |      -      |     -     |    -     |    -     |
+| `argument-hint`            |  Supported  |      -      |     -     |    -     |    -     |
+| `allowed-tools`            |  Supported  |  Supported  | Supported |    -     |    -     |
+| `model`                    |  Supported  |      -      |     -     |    -     |    -     |
+| `effort`                   |  Supported  |      -      |     -     |    -     |    -     |
+| `context`                  |  Supported  |      -      |     -     |    -     |    -     |
+| `agent`                    |  Supported  |      -      |     -     |    -     |    -     |
+| `paths`                    |  Supported  |      -      |     -     |    -     |    -     |
+| `shell`                    |  Supported  |      -      |     -     |    -     |    -     |
+| `license`                  |  Supported  |  Supported  |     -     |    -     |    -     |
+| `metadata`                 | Supported\* | Supported\* |     -     |    -     |    -     |
+| `hooks`                    |  Supported  |      -      |     -     |    -     |    -     |
 
-*`metadata` is declared in `PLATFORM_SKILL_FIELDS` for Claude Code and Codex but is never emitted — see Critical Defect #1.
+\*`metadata` is declared in `PLATFORM_SKILL_FIELDS` for Claude Code and Codex but is never emitted — see Critical Defect #1.
 
 ### 2.3 Invocation and discovery model
 
-| Aspect | Claude Code | Codex | Cursor | Windsurf | Cline |
-|--------|:-----------:|:-----:|:------:|:--------:|:-----:|
-| Direct slash command | Yes | No | No | No | No |
-| Agent auto-discovery from directory | Yes | Yes | No | No | No |
-| Content inlined in main rules file | No | No | Partial | Yes (default) | Yes (default) |
-| Script execution support | Yes | Yes | No | No | No |
-| Max context tokens | 200K | 200K | ~50K | 32K | 200K |
+| Aspect                              | Claude Code | Codex | Cursor  |   Windsurf    |     Cline     |
+| ----------------------------------- | :---------: | :---: | :-----: | :-----------: | :-----------: |
+| Direct slash command                |     Yes     |  No   |   No    |      No       |      No       |
+| Agent auto-discovery from directory |     Yes     |  Yes  |   No    |      No       |      No       |
+| Content inlined in main rules file  |     No      |  No   | Partial | Yes (default) | Yes (default) |
+| Script execution support            |     Yes     |  Yes  |   No    |      No       |      No       |
+| Max context tokens                  |    200K     | 200K  |  ~50K   |      32K      |     200K      |
 
 ### 2.4 Portability zones
 
-| Zone | Agents | Fields safe to use |
-|------|--------|-------------------|
-| Zone 1: Universal | All 5 | `name`, `description` + Markdown body |
-| Zone 2: Most agents | Claude Code, Codex, Cursor | `allowed-tools` |
-| Zone 3: Two agents | Claude Code, Codex | `license` |
-| Zone 4: Claude Code only | Claude Code | `user-invocable`, `model`, `effort`, `context`, `agent`, `paths`, `shell`, `hooks`, `disable-model-invocation`, `argument-hint` |
+| Zone                     | Agents                     | Fields safe to use                                                                                                              |
+| ------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Zone 1: Universal        | All 5                      | `name`, `description` + Markdown body                                                                                           |
+| Zone 2: Most agents      | Claude Code, Codex, Cursor | `allowed-tools`                                                                                                                 |
+| Zone 3: Two agents       | Claude Code, Codex         | `license`                                                                                                                       |
+| Zone 4: Claude Code only | Claude Code                | `user-invocable`, `model`, `effort`, `context`, `agent`, `paths`, `shell`, `hooks`, `disable-model-invocation`, `argument-hint` |
 
 ---
 
@@ -81,7 +82,7 @@ The recommended fix is a two-layer validation model: a shared portable-skill cor
 
 ```mermaid
 graph TD
-    A["Skill source\n.codi/skills/{name}/SKILL.md"] -->|codi-skill-creator| B["Scaffolded directory\nwith SKILL.md"]
+    A["Skill source\n.codi/skills/{name}/SKILL.md"] -->|codi-dev-skill-creator| B["Scaffolded directory\nwith SKILL.md"]
     B -->|git add| C["Pre-commit hooks"]
     C --> D1["YAML syntax check\n(codi-skill-yaml-validate)"]
     C --> D2["Path reference check\n([[/path]] markers)"]
@@ -99,24 +100,24 @@ graph TD
 
 ### 3.2 Checks implemented per layer
 
-| Layer | Check | File | Enforces |
-|-------|-------|------|----------|
-| Creation | Name pattern `^[a-z][a-z0-9-]*$` max 64 chars | `skill-scaffolder.ts:39` | Name format |
-| Creation | Directory conflict detection | `skill-scaffolder.ts:78` | No overwrites |
-| Pre-commit | YAML frontmatter syntax | `codi-skill-yaml-validate.mjs` | Valid YAML |
-| Pre-commit | `[[/path]]` file existence | `codi-skill-resource-check.mjs` | References valid |
-| Pre-commit | Secret patterns + entropy | `codi-secret-scan.mjs` | No leaked keys |
-| Pre-commit | File line count (800 max) | `codi-file-size-check.mjs` | Size limit |
-| Schema | Name pattern + max 64 | `skill.ts:10` | Name format |
-| Schema | Description max 1024 | `skill.ts:12` | Description length |
-| Schema | Category enum | `skill.ts:22` | Known categories |
-| Schema | Effort enum (low/medium/high/max) | `skill.ts` | Effort values |
-| Schema | Shell enum (bash/powershell) | `skill.ts` | Shell values |
-| Schema | context literal "fork" | `skill.ts` | Context values |
-| Validator | Duplicate skill names | `validator.ts` | Uniqueness |
-| Validator | Content size (6K chars / 500 lines) | `validator.ts:63` | Content budget |
-| Generator | Platform field filtering | `skill-generator.ts:22` | No unsupported fields in output |
-| Generator | YAML escaping via `fmStr()` | `skill-generator.ts:75` | Valid YAML output |
+| Layer      | Check                                         | File                            | Enforces                        |
+| ---------- | --------------------------------------------- | ------------------------------- | ------------------------------- |
+| Creation   | Name pattern `^[a-z][a-z0-9-]*$` max 64 chars | `skill-scaffolder.ts:39`        | Name format                     |
+| Creation   | Directory conflict detection                  | `skill-scaffolder.ts:78`        | No overwrites                   |
+| Pre-commit | YAML frontmatter syntax                       | `codi-skill-yaml-validate.mjs`  | Valid YAML                      |
+| Pre-commit | `[[/path]]` file existence                    | `codi-skill-resource-check.mjs` | References valid                |
+| Pre-commit | Secret patterns + entropy                     | `codi-secret-scan.mjs`          | No leaked keys                  |
+| Pre-commit | File line count (800 max)                     | `codi-file-size-check.mjs`      | Size limit                      |
+| Schema     | Name pattern + max 64                         | `skill.ts:10`                   | Name format                     |
+| Schema     | Description max 1024                          | `skill.ts:12`                   | Description length              |
+| Schema     | Category enum                                 | `skill.ts:22`                   | Known categories                |
+| Schema     | Effort enum (low/medium/high/max)             | `skill.ts`                      | Effort values                   |
+| Schema     | Shell enum (bash/powershell)                  | `skill.ts`                      | Shell values                    |
+| Schema     | context literal "fork"                        | `skill.ts`                      | Context values                  |
+| Validator  | Duplicate skill names                         | `validator.ts`                  | Uniqueness                      |
+| Validator  | Content size (6K chars / 500 lines)           | `validator.ts:63`               | Content budget                  |
+| Generator  | Platform field filtering                      | `skill-generator.ts:22`         | No unsupported fields in output |
+| Generator  | YAML escaping via `fmStr()`                   | `skill-generator.ts:75`         | Valid YAML output               |
 
 ---
 
@@ -189,7 +190,7 @@ graph TD
 - **Evidence**: `skill.ts:28` uses `agent: z.string().optional()`. No cross-reference to the parsed agent list exists in `validator.ts`.
 - **Root cause**: Cross-artifact validation is not implemented for skills referencing agents.
 - **Impact**: A skill with `agent: does-not-exist` passes all validation layers. At runtime (Claude Code), the agent delegation silently fails or falls back.
-- **Current exposure**: 1 skill (`codi-skill-creator`) uses `agent: Explore` — valid value. No live violations.
+- **Current exposure**: 1 skill (`codi-dev-skill-creator`) uses `agent: Explore` — valid value. No live violations.
 - **Severity**: MEDIUM — latent defect, not exploited today
 
 ---
@@ -224,9 +225,9 @@ graph TD
 
 ---
 
-**LOW-1: False positive in `codi-skill-resource-check` for `codi-skill-creator`**
+**LOW-1: False positive in `codi-skill-resource-check` for `codi-dev-skill-creator`**
 
-- **Evidence**: `codi-skill-creator/SKILL.md` contains example documentation showing the `${CLAUDE_SKILL_DIR}[[/path]]` pattern in a code block. The pre-commit hook regex matches this as an actual file reference and checks for file existence.
+- **Evidence**: `codi-dev-skill-creator/SKILL.md` contains example documentation showing the `${CLAUDE_SKILL_DIR}[[/path]]` pattern in a code block. The pre-commit hook regex matches this as an actual file reference and checks for file existence.
 - **Impact**: May block commits if the example path doesn't exist on the local system. Currently passing because the example path is a pattern illustration, not a real reference.
 - **Recommendation**: Exclude content inside fenced code blocks from the resource reference check.
 - **Severity**: LOW — false positive in documentation example
@@ -254,33 +255,33 @@ graph TD
 
 ### Schema gaps (parse-time)
 
-| Gap | Field | Expected Validation | Current Validation |
-|-----|-------|-------------------|-------------------|
-| S-1 | `compatibility` | Enum from SUPPORTED_PLATFORMS | Any string array |
-| S-2 | `agent` | Exists in parsed agent list | Any string |
-| S-3 | `hooks` | Structured hook schema | `z.unknown()` |
-| S-4 | `tools` / `allowedTools` | Against MCP registry or known tools | Any string array |
-| S-5 | `model` | Known Claude model identifier | Any string |
-| S-6 | `paths` | Valid glob patterns | `z.union([z.array(), z.string()])` |
+| Gap | Field                    | Expected Validation                 | Current Validation                 |
+| --- | ------------------------ | ----------------------------------- | ---------------------------------- |
+| S-1 | `compatibility`          | Enum from SUPPORTED_PLATFORMS       | Any string array                   |
+| S-2 | `agent`                  | Exists in parsed agent list         | Any string                         |
+| S-3 | `hooks`                  | Structured hook schema              | `z.unknown()`                      |
+| S-4 | `tools` / `allowedTools` | Against MCP registry or known tools | Any string array                   |
+| S-5 | `model`                  | Known Claude model identifier       | Any string                         |
+| S-6 | `paths`                  | Valid glob patterns                 | `z.union([z.array(), z.string()])` |
 
 ### Generator gaps (generation-time)
 
-| Gap | Location | Issue |
-|-----|----------|-------|
-| G-1 | `skill-generator.ts:37,41` | `metadata` declared in PLATFORM_SKILL_FIELDS, never emitted |
-| G-2 | `skill-generator.ts:90-97` | Bracket chars in paths break `[[/path]]` resolution |
-| G-3 | `skill-generator.ts:99-169` | No warning when fields are stripped per platform |
-| G-4 | `skill-generator.ts:70-72` | `flattenDescription()` leaves multiple spaces after multi-newline |
-| G-5 | `skill-generator.ts:75` | `fmStr()` duplicated; diverges from `preset-applier.ts:50` |
+| Gap | Location                    | Issue                                                             |
+| --- | --------------------------- | ----------------------------------------------------------------- |
+| G-1 | `skill-generator.ts:37,41`  | `metadata` declared in PLATFORM_SKILL_FIELDS, never emitted       |
+| G-2 | `skill-generator.ts:90-97`  | Bracket chars in paths break `[[/path]]` resolution               |
+| G-3 | `skill-generator.ts:99-169` | No warning when fields are stripped per platform                  |
+| G-4 | `skill-generator.ts:70-72`  | `flattenDescription()` leaves multiple spaces after multi-newline |
+| G-5 | `skill-generator.ts:75`     | `fmStr()` duplicated; diverges from `preset-applier.ts:50`        |
 
 ### Hook gaps (commit-time)
 
-| Gap | Location | Issue |
-|-----|----------|-------|
-| H-1 | `codi-skill-yaml-validate` | Validates YAML syntax but not SkillFrontmatterSchema fields |
-| H-2 | `codi-skill-resource-check` | Regex matches code-block examples (false positives) |
-| H-3 | (missing) | No check: skill `compatibility` values are valid platform names |
-| H-4 | (missing) | No pre-generation compatibility check before `codi generate` |
+| Gap | Location                    | Issue                                                           |
+| --- | --------------------------- | --------------------------------------------------------------- |
+| H-1 | `codi-skill-yaml-validate`  | Validates YAML syntax but not SkillFrontmatterSchema fields     |
+| H-2 | `codi-skill-resource-check` | Regex matches code-block examples (false positives)             |
+| H-3 | (missing)                   | No check: skill `compatibility` values are valid platform names |
+| H-4 | (missing)                   | No pre-generation compatibility check before `codi generate`    |
 
 ---
 
@@ -302,23 +303,26 @@ graph LR
 ```typescript
 // Replace: compatibility: z.array(z.string()).optional()
 // With:
-compatibility: z.array(z.enum(SUPPORTED_PLATFORMS as [string, ...string[]])).optional()
+compatibility: z.array(z.enum(SUPPORTED_PLATFORMS as [string, ...string[]])).optional();
 
 // Add: hooks structured schema
-const HookConfigSchema = z.object({
-  onActivate: z.string().optional(),
-  onComplete: z.string().optional(),
-  onError: z.string().optional(),
-}).catchall(z.string());
+const HookConfigSchema = z
+  .object({
+    onActivate: z.string().optional(),
+    onComplete: z.string().optional(),
+    onError: z.string().optional(),
+  })
+  .catchall(z.string());
 
 // Replace: hooks: z.unknown().optional()
 // With:
-hooks: HookConfigSchema.optional()
+hooks: HookConfigSchema.optional();
 ```
 
 **File: `src/core/config/validator.ts`**
 
 Add to `validateSkills()`:
+
 ```typescript
 // Validate agent field reference
 if (skill.agent && !knownAgentNames.includes(skill.agent)) {
@@ -348,13 +352,14 @@ function warnStrippedFields(skill: NormalizedSkill, platformId: PlatformId): voi
 
   if (lossy.length > 0) {
     Logger.getInstance().warn(
-      `Skill "${skill.name}" (${platformId}): stripping unsupported fields: ${lossy.join(", ")}`
+      `Skill "${skill.name}" (${platformId}): stripping unsupported fields: ${lossy.join(", ")}`,
     );
   }
 }
 ```
 
 Add metadata emission inside `buildSkillMd()`:
+
 ```typescript
 if (allowed.has("metadata") && skill.metadata && Object.keys(skill.metadata).length > 0) {
   const lines = Object.entries(skill.metadata)
@@ -365,6 +370,7 @@ if (allowed.has("metadata") && skill.metadata && Object.keys(skill.metadata).len
 ```
 
 Fix regex in `resolveSkillRefsForPlatform()`:
+
 ```typescript
 // Replace: /\[\[\s*(\/[^[\]]*?)\s*\]\]/g
 // With:    /\[\[\s*(\/[^\]]+?)\s*\]\]/g
@@ -379,21 +385,21 @@ Extract shared `fmStr()` to `src/utils/yaml-serialize.ts`.
 
 ### 7.1 Pre-commit additions
 
-| Hook | What to add | Priority |
-|------|-------------|----------|
-| `codi-skill-yaml-validate` | Run full SkillFrontmatterSchema Zod parse (not just YAML syntax) | HIGH |
-| `codi-skill-compat-check` (new) | Validate `compatibility` values against SUPPORTED_PLATFORMS | HIGH |
-| `codi-skill-resource-check` | Exclude fenced code block content from path reference scan | MEDIUM |
-| `codi-artifact-validate` | Add pre-generate compatibility check: flag fields declared but not supported by listed `compatibility` platforms | MEDIUM |
+| Hook                            | What to add                                                                                                      | Priority |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------- |
+| `codi-skill-yaml-validate`      | Run full SkillFrontmatterSchema Zod parse (not just YAML syntax)                                                 | HIGH     |
+| `codi-skill-compat-check` (new) | Validate `compatibility` values against SUPPORTED_PLATFORMS                                                      | HIGH     |
+| `codi-skill-resource-check`     | Exclude fenced code block content from path reference scan                                                       | MEDIUM   |
+| `codi-artifact-validate`        | Add pre-generate compatibility check: flag fields declared but not supported by listed `compatibility` platforms | MEDIUM   |
 
 ### 7.2 CI additions
 
-| Check | Description | Trigger |
-|-------|-------------|---------|
-| Round-trip consistency | Generate for all platforms, verify output matches expected fixture | On PR |
-| Platform field coverage | Verify PLATFORM_SKILL_FIELDS entries all have emission code | On PR |
-| Dead entry detection | Lint check: any field in PLATFORM_SKILL_FIELDS that has no `allowed.has(field)` check | On PR |
-| Snapshot diff | Compare generated `.claude/`, `.cursor/`, `.agents/` output against committed snapshots | On PR |
+| Check                   | Description                                                                             | Trigger |
+| ----------------------- | --------------------------------------------------------------------------------------- | ------- |
+| Round-trip consistency  | Generate for all platforms, verify output matches expected fixture                      | On PR   |
+| Platform field coverage | Verify PLATFORM_SKILL_FIELDS entries all have emission code                             | On PR   |
+| Dead entry detection    | Lint check: any field in PLATFORM_SKILL_FIELDS that has no `allowed.has(field)` check   | On PR   |
+| Snapshot diff           | Compare generated `.claude/`, `.cursor/`, `.agents/` output against committed snapshots | On PR   |
 
 ---
 
@@ -402,6 +408,7 @@ Extract shared `fmStr()` to `src/utils/yaml-serialize.ts`.
 ### 8.1 Golden fixtures (valid skills per agent)
 
 Create `tests/fixtures/skills/` with one known-valid SKILL.md per agent. Test that:
+
 - Generation succeeds for that agent
 - Generated output contains exactly the expected fields
 - No unexpected fields appear
@@ -409,6 +416,7 @@ Create `tests/fixtures/skills/` with one known-valid SKILL.md per agent. Test th
 ### 8.2 Negative fixtures (malformed skills)
 
 Create test cases that verify each validator REJECTS:
+
 - Invalid platform in `compatibility` array
 - `name` containing uppercase letters
 - `description` exceeding 1024 chars
@@ -418,6 +426,7 @@ Create test cases that verify each validator REJECTS:
 ### 8.3 Round-trip generation tests
 
 For a skill with all supported fields set:
+
 - Source → generate Claude Code → parse generated output → assert all Claude Code fields preserved
 - Source → generate Codex → assert `metadata` field present in output (after fix)
 - Source → generate Windsurf → assert only `name` and `description` in frontmatter
@@ -425,6 +434,7 @@ For a skill with all supported fields set:
 ### 8.4 Path resolution tests
 
 Cover:
+
 - Standard path: `[[/scripts/run.sh]]`
 - Path with brackets: `[[/scripts/[v1]/run.sh]]`
 - Path with extra whitespace: `[[ /scripts/run.sh ]]`
@@ -434,6 +444,7 @@ Cover:
 ### 8.5 Pre-commit enforcement tests
 
 Confirm that hooks block:
+
 - Skill with invalid YAML frontmatter
 - Skill referencing a non-existent file path
 - Skill with `compatibility: ['not-a-real-agent']`
@@ -443,23 +454,23 @@ Confirm that hooks block:
 
 ## 9. Implementation Backlog (Prioritized)
 
-| # | Item | File(s) | Effort | Impact |
-|---|------|---------|--------|--------|
-| 1 | Fix: emit `metadata` field in `buildSkillMd()` | `skill-generator.ts` | XS | CRITICAL |
-| 2 | Fix: update regex in `resolveSkillRefsForPlatform()` to allow `[` in paths | `skill-generator.ts:90` | XS | CRITICAL |
-| 3 | Extract shared `fmStr()` / `serializeYamlScalar()` to `src/utils/yaml-serialize.ts` | new file + 2 imports | S | HIGH |
-| 4 | Add `warnStrippedFields()` pre-generation logging | `skill-generator.ts` | S | HIGH |
-| 5 | Validate `compatibility` against SUPPORTED_PLATFORMS in schema | `skill.ts` | XS | HIGH |
-| 6 | Add `agent` field cross-reference check in `validateConfig()` | `validator.ts` | S | MEDIUM |
-| 7 | Define and enforce `HookConfigSchema` in `skill.ts` | `skill.ts` | M | MEDIUM |
-| 8 | Fix `flattenDescription()` to collapse multiple spaces | `skill-generator.ts:70` | XS | MEDIUM |
-| 9 | Fix `user-invocable` emission to skip when value is default `true` | `skill-generator.ts:116` | XS | MEDIUM |
-| 10 | Upgrade `codi-skill-yaml-validate` hook to run full Zod schema parse | hook template | M | HIGH |
-| 11 | Add new `codi-skill-compat-check` pre-commit hook | hook template + catalog | M | HIGH |
-| 12 | Fix `codi-skill-resource-check` to exclude fenced code blocks | hook template | S | LOW |
-| 13 | Add round-trip consistency integration test | `tests/integration/` | M | HIGH |
-| 14 | Add golden fixture tests per agent | `tests/fixtures/` | M | MEDIUM |
-| 15 | Add CI dead-entry lint check for PLATFORM_SKILL_FIELDS | CI config | S | MEDIUM |
+| #   | Item                                                                                | File(s)                  | Effort | Impact   |
+| --- | ----------------------------------------------------------------------------------- | ------------------------ | ------ | -------- |
+| 1   | Fix: emit `metadata` field in `buildSkillMd()`                                      | `skill-generator.ts`     | XS     | CRITICAL |
+| 2   | Fix: update regex in `resolveSkillRefsForPlatform()` to allow `[` in paths          | `skill-generator.ts:90`  | XS     | CRITICAL |
+| 3   | Extract shared `fmStr()` / `serializeYamlScalar()` to `src/utils/yaml-serialize.ts` | new file + 2 imports     | S      | HIGH     |
+| 4   | Add `warnStrippedFields()` pre-generation logging                                   | `skill-generator.ts`     | S      | HIGH     |
+| 5   | Validate `compatibility` against SUPPORTED_PLATFORMS in schema                      | `skill.ts`               | XS     | HIGH     |
+| 6   | Add `agent` field cross-reference check in `validateConfig()`                       | `validator.ts`           | S      | MEDIUM   |
+| 7   | Define and enforce `HookConfigSchema` in `skill.ts`                                 | `skill.ts`               | M      | MEDIUM   |
+| 8   | Fix `flattenDescription()` to collapse multiple spaces                              | `skill-generator.ts:70`  | XS     | MEDIUM   |
+| 9   | Fix `user-invocable` emission to skip when value is default `true`                  | `skill-generator.ts:116` | XS     | MEDIUM   |
+| 10  | Upgrade `codi-skill-yaml-validate` hook to run full Zod schema parse                | hook template            | M      | HIGH     |
+| 11  | Add new `codi-skill-compat-check` pre-commit hook                                   | hook template + catalog  | M      | HIGH     |
+| 12  | Fix `codi-skill-resource-check` to exclude fenced code blocks                       | hook template            | S      | LOW      |
+| 13  | Add round-trip consistency integration test                                         | `tests/integration/`     | M      | HIGH     |
+| 14  | Add golden fixture tests per agent                                                  | `tests/fixtures/`        | M      | MEDIUM   |
+| 15  | Add CI dead-entry lint check for PLATFORM_SKILL_FIELDS                              | CI config                | S      | MEDIUM   |
 
 **Effort key**: XS = < 1 hour, S = 1-3 hours, M = 3-8 hours
 
@@ -470,6 +481,7 @@ Confirm that hooks block:
 A skill artifact is compliant when it satisfies all of the following:
 
 **Schema compliance:**
+
 - `name` matches `^[a-z][a-z0-9-]*$`, max 64 characters
 - `description` is present, max 1024 characters, single line
 - `compatibility` (if present) lists only values from SUPPORTED_PLATFORMS
@@ -478,12 +490,14 @@ A skill artifact is compliant when it satisfies all of the following:
 - `paths` (if present) are valid glob patterns
 
 **Generation compliance:**
+
 - All fields declared in source that are supported by each listed `compatibility` agent appear in generated output
 - No unsupported fields appear in generated output for any agent
 - `[[/path]]` markers resolve correctly for all platforms
 - `${CLAUDE_SKILL_DIR}` is stripped in non-Claude-Code output
 
 **Pre-commit compliance:**
+
 - YAML frontmatter parses without error
 - All `[[/path]]` references point to existing files (excluding code block content)
 - No hardcoded secrets detected
@@ -491,6 +505,7 @@ A skill artifact is compliant when it satisfies all of the following:
 - `compatibility` values are valid platform names
 
 **CI compliance:**
+
 - Round-trip generation test passes for all declared `compatibility` agents
 - Generated output snapshot matches committed expected fixture
 
@@ -498,11 +513,11 @@ A skill artifact is compliant when it satisfies all of the following:
 
 ## 11. Success Criteria Status
 
-| Criterion | Status |
-|-----------|--------|
-| Each supported agent has an explicit, documented validation contract | Done (this document, Section 2) |
-| Every skill creation path is validated against target-agent rules | Partial — schema validates format, not agent compatibility |
-| Generated skills cannot bypass structural validation | Not yet — pre-generation field check not implemented |
-| Commit hooks block malformed or incompatible skills reliably | Partial — YAML syntax blocked, schema-level checks not run |
-| Known edge cases are covered by automated tests | Not yet — round-trip and fixture tests not implemented |
-| Cross-agent compatibility risks are visible before merge | Not yet — no CI compatibility report |
+| Criterion                                                            | Status                                                     |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Each supported agent has an explicit, documented validation contract | Done (this document, Section 2)                            |
+| Every skill creation path is validated against target-agent rules    | Partial — schema validates format, not agent compatibility |
+| Generated skills cannot bypass structural validation                 | Not yet — pre-generation field check not implemented       |
+| Commit hooks block malformed or incompatible skills reliably         | Partial — YAML syntax blocked, schema-level checks not run |
+| Known edge cases are covered by automated tests                      | Not yet — round-trip and fixture tests not implemented     |
+| Cross-agent compatibility risks are visible before merge             | Not yet — no CI compatibility report                       |

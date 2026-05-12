@@ -11,6 +11,11 @@ import type { BrainHandle } from "#src/runtime/brain/index.js";
 import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, BACKUPS_DIR } from "#src/constants.js";
 import { shell, escapeHtml, fmtRelative, fmtTs } from "./shell.js";
 
+// Backup ID validators — duplicated from routes-api.ts (intentional; 2 callsites do not warrant a shared module).
+// Must match backup-manager.ts formats: timestamp = ISO with `:` and `.` replaced by `-`; hash = 16-hex + slug.
+const TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/;
+const HASH_RE = /^[a-f0-9]{16}-[A-Za-z0-9._-]+$/;
+
 interface ProjectRow {
   readonly project_id: string;
   readonly repo_path: string;
@@ -265,6 +270,9 @@ export function registerSettings(app: Hono, brain: BrainHandle): void {
 
   app.get("/backup/local/:ts", (c: Context) => {
     const ts = decodeURIComponent(c.req.param("ts") ?? "");
+    if (!TS_RE.test(ts)) {
+      return c.html(renderInvalidBackupId(), 400);
+    }
     const dir = brain.path
       .replace(/\/state\/brain\.db$/, `/${BACKUPS_DIR}/${ts}`)
       .replace(/\/brain\.db$/, `/${BACKUPS_DIR}/${ts}`);
@@ -274,9 +282,21 @@ export function registerSettings(app: Hono, brain: BrainHandle): void {
   app.get("/backup/archive/:hash/:ts", (c: Context) => {
     const hash = decodeURIComponent(c.req.param("hash") ?? "");
     const ts = decodeURIComponent(c.req.param("ts") ?? "");
+    if (!HASH_RE.test(hash) || !TS_RE.test(ts)) {
+      return c.html(renderInvalidBackupId(), 400);
+    }
     const dir = join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, hash, ts);
     return c.html(renderBackupDetail("archive", { hash, ts }, dir));
   });
+}
+
+function renderInvalidBackupId(): string {
+  return shell(
+    { title: "Invalid backup ID", active: "/settings" },
+    `<a class="text-xs text-slate-500 hover:underline" href="/settings">← settings</a>
+     <h1 class="text-2xl font-semibold mt-2 mb-2">Invalid backup ID</h1>
+     <p class="text-sm text-slate-500">The requested backup identifier is not in the expected format.</p>`,
+  );
 }
 
 interface BackupKey {

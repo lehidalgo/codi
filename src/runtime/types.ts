@@ -55,12 +55,6 @@ export const EVENT_TYPES = [
   // Multi-dev
   "workflow_handover",
   "workflow_force_handover",
-  // Sheet sync (P5)
-  "sheet_row_upserted",
-  "sheet_row_appended",
-  "sheet_sync_queued",
-  "sheet_sync_failed",
-  "sheet_reconciled",
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];

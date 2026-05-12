@@ -74,7 +74,7 @@ Los 5 workflows son **first-class artifacts**: editables, medibles, versionables
 ### Positivas
 
 - **Coherente con DevLoop**: directiva "todos los workflows sin omitir" cumplida.
-- **Tooling reusable**: `codi validate`, `codi skill diff`, `codi-skill-creator`, `codi-skill-audit` funcionan sobre workflows sin código nuevo.
+- **Tooling reusable**: `codi validate`, `codi skill diff`, `codi-dev-skill-creator`, `codi-skill-audit` funcionan sobre workflows sin código nuevo.
 - **Schema único**: agente discovery skills por description match; workflows aparecen igual con su trigger.
 - **Editable**: dev edita SKILL.md como cualquier skill, o vía UI `/workflows/:name`.
 - **Sistema extensible**: agency puede crear workflow types custom via `codi-workflow-creator` sin tocar core.

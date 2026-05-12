@@ -22,7 +22,7 @@ Net delta: ~1500 LoC new; ~3300 LoC removed; codebase shrinks by ~1800 LoC.
 ### In scope
 
 - New workflow YAML at `src/templates/workflows/team-consolidation.yaml`
-- New companion skill `src/templates/skills/team-consolidation-workflow/` with template.ts, index.ts, 4 phase docs, schema reference doc
+- New companion skill `src/templates/skills/dev-team-consolidation-workflow/` with template.ts, index.ts, 4 phase docs, schema reference doc
 - Add `team-consolidation` to `WORKFLOW_TYPES` enum at `src/runtime/types.ts`
 - Extend `refine-rules` SKILL.md with `Mode: REPORT-DRIVEN` section
 - Extend `artifact-contributor` SKILL.md with `Mode: REPORT-DRIVEN` section
@@ -49,32 +49,32 @@ Net delta: ~1500 LoC new; ~3300 LoC removed; codebase shrinks by ~1800 LoC.
 
 ## Files to be modified
 
-| File                                                                               | Action | Why                                                          |
-| ---------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------ |
-| `src/templates/workflows/team-consolidation.yaml`                                  | Create | New workflow definition (5 phases, no chain skills)          |
-| `src/templates/skills/team-consolidation-workflow/template.ts`                     | Create | Companion skill template literal                             |
-| `src/templates/skills/team-consolidation-workflow/index.ts`                        | Create | Skill module barrel (template + staticDir)                   |
-| `src/templates/skills/team-consolidation-workflow/references/phase-intent.md`      | Create | Agent instructions for `intent` phase                        |
-| `src/templates/skills/team-consolidation-workflow/references/phase-collect.md`     | Create | Agent instructions for `collect` phase                       |
-| `src/templates/skills/team-consolidation-workflow/references/phase-analyze.md`     | Create | Agent instructions for `analyze` phase                       |
-| `src/templates/skills/team-consolidation-workflow/references/phase-consolidate.md` | Create | Agent instructions for `consolidate` phase                   |
-| `src/templates/skills/team-consolidation-workflow/references/schema-reference.md`  | Create | Brain DB schema reference for the agent to write SQL queries |
-| `src/runtime/types.ts`                                                             | Modify | Add `"team-consolidation"` to `WORKFLOW_TYPES`               |
-| `src/templates/skills/refine-rules/template.ts`                                    | Modify | Add `Mode: REPORT-DRIVEN` section, bump version              |
-| `src/templates/skills/artifact-contributor/template.ts`                            | Modify | Add `Mode: REPORT-DRIVEN` section, bump version              |
-| `src/runtime/brain/schema.ts`                                                      | Modify | Remove `proposals` table definition                          |
-| `src/runtime/brain/migrate.ts`                                                     | Modify | Add migration step that drops `proposals` table              |
-| `src/runtime/brain-ui/routes-api.ts`                                               | Modify | Remove `/api/v1/consolidation/*` endpoint blocks             |
-| `src/runtime/brain-ui/pages.ts`                                                    | Modify | Remove `/proposals` route registration                       |
-| `src/runtime/brain-ui/pages/proposals.ts`                                          | Delete | Page implementation removed                                  |
-| `src/cli/brain.ts`                                                                 | Modify | Replace `brainExportHandler` with deprecation stub           |
-| `src/runtime/consolidate/` (entire directory)                                      | Delete | Legacy auto-detection pipeline                               |
-| `src/runtime/llm/` (entire directory)                                              | Delete | Orphan after consolidate goes (only consumer)                |
-| `src/templates/consolidation/` (entire directory)                                  | Delete | LLM prompt templates for the runner                          |
-| `tests/runtime/consolidate*.test.ts` and per-pattern tests                         | Delete | Suite of removed pipeline                                    |
-| `tests/runtime/brain-ui-proposals.test.ts`                                         | Delete | UI page test for removed page                                |
-| `tests/runtime/workflow-team-consolidation.test.ts`                                | Create | Workflow loading + phase transition tests                    |
-| `CHANGELOG.md`                                                                     | Modify | Document the retire + add of team-consolidation              |
+| File                                                                                   | Action | Why                                                          |
+| -------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------ |
+| `src/templates/workflows/team-consolidation.yaml`                                      | Create | New workflow definition (5 phases, no chain skills)          |
+| `src/templates/skills/dev-team-consolidation-workflow/template.ts`                     | Create | Companion skill template literal                             |
+| `src/templates/skills/dev-team-consolidation-workflow/index.ts`                        | Create | Skill module barrel (template + staticDir)                   |
+| `src/templates/skills/dev-team-consolidation-workflow/references/phase-intent.md`      | Create | Agent instructions for `intent` phase                        |
+| `src/templates/skills/dev-team-consolidation-workflow/references/phase-collect.md`     | Create | Agent instructions for `collect` phase                       |
+| `src/templates/skills/dev-team-consolidation-workflow/references/phase-analyze.md`     | Create | Agent instructions for `analyze` phase                       |
+| `src/templates/skills/dev-team-consolidation-workflow/references/phase-consolidate.md` | Create | Agent instructions for `consolidate` phase                   |
+| `src/templates/skills/dev-team-consolidation-workflow/references/schema-reference.md`  | Create | Brain DB schema reference for the agent to write SQL queries |
+| `src/runtime/types.ts`                                                                 | Modify | Add `"team-consolidation"` to `WORKFLOW_TYPES`               |
+| `src/templates/skills/dev-refine-rules/template.ts`                                    | Modify | Add `Mode: REPORT-DRIVEN` section, bump version              |
+| `src/templates/skills/dev-artifact-contributor/template.ts`                            | Modify | Add `Mode: REPORT-DRIVEN` section, bump version              |
+| `src/runtime/brain/schema.ts`                                                          | Modify | Remove `proposals` table definition                          |
+| `src/runtime/brain/migrate.ts`                                                         | Modify | Add migration step that drops `proposals` table              |
+| `src/runtime/brain-ui/routes-api.ts`                                                   | Modify | Remove `/api/v1/consolidation/*` endpoint blocks             |
+| `src/runtime/brain-ui/pages.ts`                                                        | Modify | Remove `/proposals` route registration                       |
+| `src/runtime/brain-ui/pages/proposals.ts`                                              | Delete | Page implementation removed                                  |
+| `src/cli/brain.ts`                                                                     | Modify | Replace `brainExportHandler` with deprecation stub           |
+| `src/runtime/consolidate/` (entire directory)                                          | Delete | Legacy auto-detection pipeline                               |
+| `src/runtime/llm/` (entire directory)                                                  | Delete | Orphan after consolidate goes (only consumer)                |
+| `src/templates/consolidation/` (entire directory)                                      | Delete | LLM prompt templates for the runner                          |
+| `tests/runtime/consolidate*.test.ts` and per-pattern tests                             | Delete | Suite of removed pipeline                                    |
+| `tests/runtime/brain-ui-proposals.test.ts`                                             | Delete | UI page test for removed page                                |
+| `tests/runtime/workflow-team-consolidation.test.ts`                                    | Create | Workflow loading + phase transition tests                    |
+| `CHANGELOG.md`                                                                         | Modify | Document the retire + add of team-consolidation              |
 
 ## Modules and contracts
 
@@ -298,12 +298,12 @@ git commit -m "feat(workflow): add team-consolidation workflow YAML with 5 activ
 
 **Files:**
 
-- Create: `src/templates/skills/team-consolidation-workflow/template.ts`
-- Create: `src/templates/skills/team-consolidation-workflow/index.ts`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/template.ts`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/index.ts`
 
 - [ ] **Step 1: Create the index.ts barrel**
 
-Create `src/templates/skills/team-consolidation-workflow/index.ts` with content:
+Create `src/templates/skills/dev-team-consolidation-workflow/index.ts` with content:
 
 ```ts
 import { resolveStaticDir } from "../resolve-static-dir.js";
@@ -315,7 +315,7 @@ export const staticDir = resolveStaticDir("team-consolidation-workflow", import.
 
 - [ ] **Step 2: Create the template.ts**
 
-Create `src/templates/skills/team-consolidation-workflow/template.ts` with content:
+Create `src/templates/skills/dev-team-consolidation-workflow/template.ts` with content:
 
 ```ts
 import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
@@ -371,8 +371,8 @@ Start the workflow:
 
 **Workflow produces information, not mutations.** The output is a free-form markdown report at \\\`docs/YYYYMMDD_HHMMSS_[REPORT]_team-consolidation.md\\\`. The team reaches consensus async (PR review, Slack, live meeting) by marking each finding APPROVED / REJECTED / DEFERRED in the report. Then the lead invokes existing meta-skills passing the report path:
 
-- \\\`/\${PROJECT_NAME}-refine-rules <report-path>\\\` — for domain rule edits/creates
-- \\\`/\${PROJECT_NAME}-artifact-contributor <report-path>\\\` — for upstream PR candidates
+- \\\`/\${PROJECT_NAME}-dev-refine-rules <report-path>\\\` — for domain rule edits/creates
+- \\\`/\${PROJECT_NAME}-dev-artifact-contributor <report-path>\\\` — for upstream PR candidates
 - Manual invocation of \\\`rule-creator\\\` / \\\`skill-creator\\\` / \\\`agent-creator\\\` for edge cases
 
 ## Schema reference
@@ -405,7 +405,7 @@ Expected: clean exit
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/templates/skills/team-consolidation-workflow/index.ts src/templates/skills/team-consolidation-workflow/template.ts
+git add src/templates/skills/dev-team-consolidation-workflow/index.ts src/templates/skills/dev-team-consolidation-workflow/template.ts
 git commit -m "feat(skill): add team-consolidation-workflow companion skill scaffold"
 ```
 
@@ -415,7 +415,7 @@ git commit -m "feat(skill): add team-consolidation-workflow companion skill scaf
 
 **Files:**
 
-- Create: `src/templates/skills/team-consolidation-workflow/references/phase-intent.md`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/references/phase-intent.md`
 
 - [ ] **Step 1: Write the file**
 
@@ -458,7 +458,7 @@ Validate the path exists with `ls "<path>"` before transitioning.
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/templates/skills/team-consolidation-workflow/references/phase-intent.md
+git add src/templates/skills/dev-team-consolidation-workflow/references/phase-intent.md
 git commit -m "feat(skill): add team-consolidation phase-intent reference"
 ```
 
@@ -468,7 +468,7 @@ git commit -m "feat(skill): add team-consolidation phase-intent reference"
 
 **Files:**
 
-- Create: `src/templates/skills/team-consolidation-workflow/references/phase-collect.md`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/references/phase-collect.md`
 
 - [ ] **Step 1: Write the file**
 
@@ -530,7 +530,7 @@ Expected: a positive integer. If the query fails (file is not SQLite, table miss
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/templates/skills/team-consolidation-workflow/references/phase-collect.md
+git add src/templates/skills/dev-team-consolidation-workflow/references/phase-collect.md
 git commit -m "feat(skill): add team-consolidation phase-collect reference"
 ````
 
@@ -540,7 +540,7 @@ git commit -m "feat(skill): add team-consolidation phase-collect reference"
 
 **Files:**
 
-- Create: `src/templates/skills/team-consolidation-workflow/references/phase-analyze.md`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/references/phase-analyze.md`
 
 - [ ] **Step 1: Write the file**
 
@@ -632,7 +632,7 @@ Each block must follow this shape:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/templates/skills/team-consolidation-workflow/references/phase-analyze.md
+git add src/templates/skills/dev-team-consolidation-workflow/references/phase-analyze.md
 git commit -m "feat(skill): add team-consolidation phase-analyze reference"
 ````
 
@@ -642,7 +642,7 @@ git commit -m "feat(skill): add team-consolidation phase-analyze reference"
 
 **Files:**
 
-- Create: `src/templates/skills/team-consolidation-workflow/references/phase-consolidate.md`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/references/phase-consolidate.md`
 
 - [ ] **Step 1: Write the file**
 
@@ -676,8 +676,8 @@ Cross-reference per-dev findings, identify cross-team patterns, write the consen
 1. Team reviews this document async (PR / Slack / live meeting).
 2. Mark each finding APPROVED / REJECTED / DEFERRED with `[x]`.
 3. After consensus, invoke meta-skills with this report as input:
-   - Domain rule edits/creates → `/codi-refine-rules <this-path>`
-   - Upstream contributions → `/codi-artifact-contributor <this-path>`
+   - Domain rule edits/creates → `/codi-dev-refine-rules <this-path>`
+   - Upstream contributions → `/codi-dev-artifact-contributor <this-path>`
    - Edge cases → manually invoke `rule-creator` / `skill-creator` / `agent-creator`
 
 > Privacy notice: this report may include verbatim content from captures, prompts, and tool calls of the contributed brain.dbs. Pre-filter your brain.db before contributing if you want to omit something.
@@ -762,7 +762,7 @@ Consensus:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/templates/skills/team-consolidation-workflow/references/phase-consolidate.md
+git add src/templates/skills/dev-team-consolidation-workflow/references/phase-consolidate.md
 git commit -m "feat(skill): add team-consolidation phase-consolidate reference"
 ````
 
@@ -772,7 +772,7 @@ git commit -m "feat(skill): add team-consolidation phase-consolidate reference"
 
 **Files:**
 
-- Create: `src/templates/skills/team-consolidation-workflow/references/schema-reference.md`
+- Create: `src/templates/skills/dev-team-consolidation-workflow/references/schema-reference.md`
 
 - [ ] **Step 1: Write the file**
 
@@ -1006,7 +1006,7 @@ ORDER BY corrections DESC;
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/templates/skills/team-consolidation-workflow/references/schema-reference.md
+git add src/templates/skills/dev-team-consolidation-workflow/references/schema-reference.md
 git commit -m "feat(skill): add team-consolidation schema reference for analyze phase"
 ````
 
@@ -1026,21 +1026,21 @@ Expected: clean exit; new files compiled to `dist/`
 - [ ] **Step 2: Reinstall the new skill into .codi**
 
 ```bash
-codi add skill codi-team-consolidation-workflow --template team-consolidation-workflow
+codi add skill codi-dev-team-consolidation-workflow --template team-consolidation-workflow
 ```
 
-Expected: skill installed at `.codi/skills/codi-team-consolidation-workflow/`
+Expected: skill installed at `.codi/skills/codi-dev-team-consolidation-workflow/`
 
 - [ ] **Step 3: Generate per-agent output**
 
 Run: `codi generate --force`
-Expected: clean exit; `.claude/skills/codi-team-consolidation-workflow/SKILL.md` exists
+Expected: clean exit; `.claude/skills/codi-dev-team-consolidation-workflow/SKILL.md` exists
 
 - [ ] **Step 4: Smoke check the generated SKILL.md**
 
 ```bash
-test -f .claude/skills/codi-team-consolidation-workflow/SKILL.md
-grep -c "Phase:" .claude/skills/codi-team-consolidation-workflow/references/phase-*.md
+test -f .claude/skills/codi-dev-team-consolidation-workflow/SKILL.md
+grep -c "Phase:" .claude/skills/codi-dev-team-consolidation-workflow/references/phase-*.md
 ```
 
 Expected: 4 phase files exist; each has the "Phase:" header
@@ -1048,7 +1048,7 @@ Expected: 4 phase files exist; each has the "Phase:" header
 - [ ] **Step 5: Commit any generated artifacts (if codi config tracks them)**
 
 ```bash
-git add -A .codi/skills/codi-team-consolidation-workflow/ .claude/skills/codi-team-consolidation-workflow/
+git add -A .codi/skills/codi-dev-team-consolidation-workflow/ .claude/skills/codi-dev-team-consolidation-workflow/
 git commit -m "chore(generate): regenerate after adding team-consolidation-workflow skill"
 ```
 
@@ -1058,7 +1058,7 @@ git commit -m "chore(generate): regenerate after adding team-consolidation-workf
 
 **Files:**
 
-- Modify: `src/templates/skills/refine-rules/template.ts`
+- Modify: `src/templates/skills/dev-refine-rules/template.ts`
 
 - [ ] **Step 1: Bump version in frontmatter**
 
@@ -1105,18 +1105,18 @@ Expected: clean exit
 
 ```bash
 pnpm build
-rm -rf .codi/skills/codi-refine-rules
-node -e "const fs=require('fs'); const p='.codi/artifact-manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); if(m.artifacts) delete m.artifacts['codi-refine-rules']; fs.writeFileSync(p, JSON.stringify(m, null, 2)+'\n');"
-codi add skill codi-refine-rules --template refine-rules
+rm -rf .codi/skills/codi-dev-refine-rules
+node -e "const fs=require('fs'); const p='.codi/artifact-manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); if(m.artifacts) delete m.artifacts['codi-dev-refine-rules']; fs.writeFileSync(p, JSON.stringify(m, null, 2)+'\n');"
+codi add skill codi-dev-refine-rules --template refine-rules
 codi generate --force
 ```
 
-Expected: clean exit; `.claude/skills/codi-refine-rules/SKILL.md` contains the new "Mode: REPORT-DRIVEN" section
+Expected: clean exit; `.claude/skills/codi-dev-refine-rules/SKILL.md` contains the new "Mode: REPORT-DRIVEN" section
 
 - [ ] **Step 5: Smoke check**
 
 ```bash
-grep -c "REPORT-DRIVEN" .claude/skills/codi-refine-rules/SKILL.md
+grep -c "REPORT-DRIVEN" .claude/skills/codi-dev-refine-rules/SKILL.md
 ```
 
 Expected: at least 3 occurrences
@@ -1124,7 +1124,7 @@ Expected: at least 3 occurrences
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/templates/skills/refine-rules/template.ts .codi/skills/codi-refine-rules/ .claude/skills/codi-refine-rules/
+git add src/templates/skills/dev-refine-rules/template.ts .codi/skills/codi-dev-refine-rules/ .claude/skills/codi-dev-refine-rules/
 git commit -m "feat(skill): refine-rules — add REPORT-DRIVEN mode (v8)"
 ```
 
@@ -1134,7 +1134,7 @@ git commit -m "feat(skill): refine-rules — add REPORT-DRIVEN mode (v8)"
 
 **Files:**
 
-- Modify: `src/templates/skills/artifact-contributor/template.ts`
+- Modify: `src/templates/skills/dev-artifact-contributor/template.ts`
 
 - [ ] **Step 1: Bump version in frontmatter**
 
@@ -1181,9 +1181,9 @@ Expected: clean exit
 
 ```bash
 pnpm build
-rm -rf .codi/skills/codi-artifact-contributor
-node -e "const fs=require('fs'); const p='.codi/artifact-manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); if(m.artifacts) delete m.artifacts['codi-artifact-contributor']; fs.writeFileSync(p, JSON.stringify(m, null, 2)+'\n');"
-codi add skill codi-artifact-contributor --template artifact-contributor
+rm -rf .codi/skills/codi-dev-artifact-contributor
+node -e "const fs=require('fs'); const p='.codi/artifact-manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); if(m.artifacts) delete m.artifacts['codi-dev-artifact-contributor']; fs.writeFileSync(p, JSON.stringify(m, null, 2)+'\n');"
+codi add skill codi-dev-artifact-contributor --template artifact-contributor
 codi generate --force
 ```
 
@@ -1192,7 +1192,7 @@ Expected: clean exit
 - [ ] **Step 5: Smoke check**
 
 ```bash
-grep -c "REPORT-DRIVEN" .claude/skills/codi-artifact-contributor/SKILL.md
+grep -c "REPORT-DRIVEN" .claude/skills/codi-dev-artifact-contributor/SKILL.md
 ```
 
 Expected: at least 3 occurrences
@@ -1200,7 +1200,7 @@ Expected: at least 3 occurrences
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/templates/skills/artifact-contributor/template.ts .codi/skills/codi-artifact-contributor/ .claude/skills/codi-artifact-contributor/
+git add src/templates/skills/dev-artifact-contributor/template.ts .codi/skills/codi-dev-artifact-contributor/ .claude/skills/codi-dev-artifact-contributor/
 git commit -m "feat(skill): artifact-contributor — add REPORT-DRIVEN mode for upstream meta-pipeline findings"
 ```
 

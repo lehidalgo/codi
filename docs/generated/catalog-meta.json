@@ -32,9 +32,9 @@
   "artifacts": [
     {
       "type": "skill",
-      "name": "codi-agent-creator",
+      "name": "codi-dev-agent-creator",
       "description": "Agent creation workflow. Use when the user asks to create, build, scaffold, or define a new agent, subagent, specialist worker, or autonomous reviewer. Also activate for phrases like \"add an agent\", \"new agent for\", \"code reviewer agent\", \"security analyzer\", \"test generator\", \"worker role\", \"assistant role\", or when the user configures agent frontmatter, tools, model, confidence filtering, or severity matrices. Do NOT activate for editing an existing agent without the user asking to create — redirect to direct file edits instead.",
-      "slug": "catalog/skills/codi-agent-creator",
+      "slug": "catalog/skills/codi-dev-agent-creator",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -62,9 +62,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-artifact-contributor",
-      "description": "Contribute or share custom codi artifacts (rules, skills, agents, commands). Use when the user wants to open a PR to the codi repo, submit a PR to a team preset repository, share artifacts as a ZIP package, publish an agent or rule, push a preset to a custom repo, fork and PR, or set up GitHub CLI / GitHub MCP for contributions. Also activate for phrases like \"share my skill\", \"contribute to codi\", \"open a PR with my rule\", \"publish my agent\", \"export preset\", \"send this to the codi repo\". Do NOT activate for ordinary code commits, installing a preset (use codi-preset-creator or \\`codi preset install\\` directly), or releasing a package to npm.",
-      "slug": "catalog/skills/codi-artifact-contributor",
+      "name": "codi-dev-artifact-contributor",
+      "description": "Contribute or share custom codi artifacts (rules, skills, agents, commands). Use when the user wants to open a PR to the codi repo, submit a PR to a team preset repository, share artifacts as a ZIP package, publish an agent or rule, push a preset to a custom repo, fork and PR, or set up GitHub CLI / GitHub MCP for contributions. Also activate for phrases like \"share my skill\", \"contribute to codi\", \"open a PR with my rule\", \"publish my agent\", \"export preset\", \"send this to the codi repo\". Do NOT activate for ordinary code commits, installing a preset (use codi-dev-preset-creator or \\`codi preset install\\` directly), or releasing a package to npm.",
+      "slug": "catalog/skills/codi-dev-artifact-contributor",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -152,9 +152,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-brand-creator",
-      "description": "Brand identity scaffold for codi-brand-creator. Use when creating any branded deliverable — social cards, slides, documents, posters, email templates, or any visual output that must carry codi-brand-creator brand identity. Also activate when the user mentions \"brand guidelines\", \"brand standard\", \"corporate identity\", \"visual identity\", \"color palette\", \"brand colors\", \"brand fonts\", \"typography pair\", \"logo placement\", \"brand voice\", or applies this brand's design tokens to new content. Provides design tokens (colors, fonts), voice guidelines, and Content Factory templates. Do NOT override a user-specified palette when the user has not asked for this brand, and do not activate for generic design work unrelated to codi-brand-creator.",
-      "slug": "catalog/skills/codi-brand-creator",
+      "name": "codi-dev-brand-creator",
+      "description": "Brand identity scaffold for codi-dev-brand-creator. Use when creating any branded deliverable — social cards, slides, documents, posters, email templates, or any visual output that must carry codi-dev-brand-creator brand identity. Also activate when the user mentions \"brand guidelines\", \"brand standard\", \"corporate identity\", \"visual identity\", \"color palette\", \"brand colors\", \"brand fonts\", \"typography pair\", \"logo placement\", \"brand voice\", or applies this brand's design tokens to new content. Provides design tokens (colors, fonts), voice guidelines, and Content Factory templates. Do NOT override a user-specified palette when the user has not asked for this brand, and do not activate for generic design work unrelated to codi-dev-brand-creator.",
+      "slug": "catalog/skills/codi-dev-brand-creator",
       "category": "Brand Identity",
       "userInvocable": true,
       "compatibility": [
@@ -273,7 +273,7 @@
     {
       "type": "skill",
       "name": "codi-commit",
-      "description": "Git commit workflow with conventional commits, pre-commit checks, and staged-change review. Use when the user asks to commit code, stage changes, create a commit, write a commit message, use conventional commit format, split a commit, or troubleshoot a pre-commit hook failure. Also activate for phrases like \"commit these changes\", \"git commit\", \"stage these files\", \"write a conventional commit\", \"pre-commit failed\", \"hook failed\", \"commit message rejected\", \"commit-msg hook\". Activates on /commit. Do NOT activate for pushing to remote (use direct \\`git push\\`), creating pull requests (use codi-artifact-contributor or codi-branch-finish), merging branches (use codi-branch-finish), or resolving merge conflicts.",
+      "description": "Git commit workflow with conventional commits, pre-commit checks, and staged-change review. Use when the user asks to commit code, stage changes, create a commit, write a commit message, use conventional commit format, split a commit, or troubleshoot a pre-commit hook failure. Also activate for phrases like \"commit these changes\", \"git commit\", \"stage these files\", \"write a conventional commit\", \"pre-commit failed\", \"hook failed\", \"commit message rejected\", \"commit-msg hook\". Activates on /commit. Do NOT activate for pushing to remote (use direct \\`git push\\`), creating pull requests (use codi-dev-artifact-contributor or codi-branch-finish), merging branches (use codi-branch-finish), or resolving merge conflicts.",
       "slug": "catalog/skills/codi-commit",
       "category": "Developer Tools",
       "userInvocable": true,
@@ -287,9 +287,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-compare-preset",
-      "description": "Compare local Codi artifacts against upstream templates. Use when the user wants to check customizations, review pending upstream updates, or prepare to contribute improvements. Also activate for phrases like \"what have I customized\", \"diff against upstream\", \"see my changes vs Codi\", \"pending upstream updates\", \"show differences\", \"review my local config\", \"upgrade Codi artifacts\", or on /codi-compare-preset. Produces a report of local improvements (contribution candidates), upstream updates available, and conflicts. Do NOT activate for installing a preset (use \\`codi preset install\\`), creating a new preset (use codi-preset-creator), or opening the PR itself (use codi-artifact-contributor).",
-      "slug": "catalog/skills/codi-compare-preset",
+      "name": "codi-dev-compare-preset",
+      "description": "Compare local Codi artifacts against upstream templates. Use when the user wants to check customizations, review pending upstream updates, or prepare to contribute improvements. Also activate for phrases like \"what have I customized\", \"diff against upstream\", \"see my changes vs Codi\", \"pending upstream updates\", \"show differences\", \"review my local config\", \"upgrade Codi artifacts\", or on /codi-dev-compare-preset. Produces a report of local improvements (contribution candidates), upstream updates available, and conflicts. Do NOT activate for installing a preset (use \\`codi preset install\\`), creating a new preset (use codi-dev-preset-creator), or opening the PR itself (use codi-dev-artifact-contributor).",
+      "slug": "catalog/skills/codi-dev-compare-preset",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -363,7 +363,7 @@
     {
       "type": "skill",
       "name": "codi-dev-operations",
-      "description": "Unified Codi operations skill. Use when the user wants to add, update, or remove rules, skills, or agents; configure flags, presets, or MCP servers; run \\`codi generate\\`, \\`add\\`, \\`update\\`, \\`verify\\`, \\`doctor\\`, \\`validate\\`, or \\`preset\\` commands; resolve \\`generate\\` exit-2 conflicts; check drift; clean or revert backups; or follow the self-dev clean + reinstall flow for source-layer edits. Also activate for phrases like \"codi generate didn't propagate\", \"my source edit isn't showing up\", \"three-layer pipeline\", \"conflict resolution\". Do NOT activate for writing a new skill from scratch (use codi-skill-creator), creating a new rule (use codi-rule-creator), or scaffolding a new agent (use codi-agent-creator) — those have their own lifecycle workflows.",
+      "description": "Unified Codi operations skill. Use when the user wants to add, update, or remove rules, skills, or agents; configure flags, presets, or MCP servers; run \\`codi generate\\`, \\`add\\`, \\`update\\`, \\`verify\\`, \\`doctor\\`, \\`validate\\`, or \\`preset\\` commands; resolve \\`generate\\` exit-2 conflicts; check drift; clean or revert backups; or follow the self-dev clean + reinstall flow for source-layer edits. Also activate for phrases like \"codi generate didn't propagate\", \"my source edit isn't showing up\", \"three-layer pipeline\", \"conflict resolution\". Do NOT activate for writing a new skill from scratch (use codi-dev-skill-creator), creating a new rule (use codi-dev-rule-creator), or scaffolding a new agent (use codi-dev-agent-creator) — those have their own lifecycle workflows.",
       "slug": "catalog/skills/codi-dev-operations",
       "category": "Codi Platform",
       "userInvocable": true,
@@ -422,9 +422,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-graph-sync",
+      "name": "codi-dev-graph-sync",
       "description": "Synchronize the code knowledge graph. Use when the graph is stale, files have changed significantly, or queries return outdated results. Also activate for phrases like \"reindex repo\", \"refresh graph\", \"update code graph\", \"graph is out of date\", \"graph-code is stale\", or on /update_graph and /index_graph. Choose full re-index for major refactors / first-time indexing; choose incremental update for routine post-edit refreshes. Do NOT activate for querying the graph (use codi-codebase-explore) or for regular code edits that do not require fresh graph state.",
-      "slug": "catalog/skills/codi-graph-sync",
+      "slug": "catalog/skills/codi-dev-graph-sync",
       "category": "Developer Tools",
       "userInvocable": true,
       "compatibility": [
@@ -617,9 +617,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-preset-creator",
-      "description": "Guided creation of Codi presets. Use when the user wants to create, package, scaffold, fork, share, publish, or customize a Codi preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs. Also activate for phrases like \"bundle my rules and skills\", \"make a preset for my team\", \"org-wide preset\", \"fork the balanced preset\", \"share preset via ZIP\", \"publish preset to GitHub\". Do NOT activate for installing an existing preset (use \\`codi preset install\\` directly), diffing local vs upstream (use codi-compare-preset), or contributing artifacts back to Codi upstream (use codi-artifact-contributor).",
-      "slug": "catalog/skills/codi-preset-creator",
+      "name": "codi-dev-preset-creator",
+      "description": "Guided creation of Codi presets. Use when the user wants to create, package, scaffold, fork, share, publish, or customize a Codi preset — a reusable bundle of rules, skills, agents, commands, flags, and MCP configs. Also activate for phrases like \"bundle my rules and skills\", \"make a preset for my team\", \"org-wide preset\", \"fork the balanced preset\", \"share preset via ZIP\", \"publish preset to GitHub\". Do NOT activate for installing an existing preset (use \\`codi preset install\\` directly), diffing local vs upstream (use codi-dev-compare-preset), or contributing artifacts back to Codi upstream (use codi-dev-artifact-contributor).",
+      "slug": "catalog/skills/codi-dev-preset-creator",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -677,9 +677,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-refine-rules",
-      "description": "Review and refine rules from collected feedback. Two modes: REVIEW (read-only summary of \\`.codi/feedback/\\` grouped by artifact with top 3 actions) and REFINE (interactive one-at-a-time approval flow that edits rule files and runs \\`codi generate\\`). Use when the user asks to review collected observations, show accumulated feedback, audit \\`.codi/feedback/\\`, improve rules, refine rules, process rule feedback, apply rule updates, or fix outdated rules. Also activates on /codi-refine-rules or phrases like \"show feedback summary\", \"what's accumulated\", \"review observations\", \"process rule feedback\", \"update outdated rule\". Do NOT activate for creating a brand-new rule (use codi-rule-creator), emitting new observations during work (that happens automatically via codi-rule-feedback), or general quality audits without collected feedback (use codi-compare-preset).",
-      "slug": "catalog/skills/codi-refine-rules",
+      "name": "codi-dev-refine-rules",
+      "description": "Review and refine rules from collected feedback. Two modes: REVIEW (read-only summary of \\`.codi/feedback/\\` grouped by artifact with top 3 actions) and REFINE (interactive one-at-a-time approval flow that edits rule files and runs \\`codi generate\\`). Use when the user asks to review collected observations, show accumulated feedback, audit \\`.codi/feedback/\\`, improve rules, refine rules, process rule feedback, apply rule updates, or fix outdated rules. Also activates on /codi-dev-refine-rules or phrases like \"show feedback summary\", \"what's accumulated\", \"review observations\", \"process rule feedback\", \"update outdated rule\". Do NOT activate for creating a brand-new rule (use codi-dev-rule-creator), emitting new observations during work (that happens automatically via codi-dev-rule-feedback), or general quality audits without collected feedback (use codi-dev-compare-preset).",
+      "slug": "catalog/skills/codi-dev-refine-rules",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -707,9 +707,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-rule-creator",
-      "description": "Rule creation workflow. Use when the user asks to create, write, define, scaffold, or add a coding rule, standard, or convention. Also activate for phrases like \"add a rule\", \"new coding standard\", \"team coding standard\", \"enforce pattern\", \"project convention\", \"scaffold rule\", \"framework rule\", \"rule for TypeScript/Python/React\". Produces a validated rule with frontmatter + BAD/GOOD examples + measurable criteria. Do NOT activate for creating a skill (use codi-skill-creator), creating an agent (use codi-agent-creator), reviewing existing rule feedback (use codi-refine-rules), or enforcing what a linter/formatter already covers.",
-      "slug": "catalog/skills/codi-rule-creator",
+      "name": "codi-dev-rule-creator",
+      "description": "Rule creation workflow. Use when the user asks to create, write, define, scaffold, or add a coding rule, standard, or convention. Also activate for phrases like \"add a rule\", \"new coding standard\", \"team coding standard\", \"enforce pattern\", \"project convention\", \"scaffold rule\", \"framework rule\", \"rule for TypeScript/Python/React\". Produces a validated rule with frontmatter + BAD/GOOD examples + measurable criteria. Do NOT activate for creating a skill (use codi-dev-skill-creator), creating an agent (use codi-dev-agent-creator), reviewing existing rule feedback (use codi-dev-refine-rules), or enforcing what a linter/formatter already covers.",
+      "slug": "catalog/skills/codi-dev-rule-creator",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -722,9 +722,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-rule-feedback",
-      "description": "Rule observation skill. Activates automatically when the agent notices a gap, outdated guidance, missing example, or user correction related to a loaded rule. Emits an inline \\`[CODI-OBSERVATION: rule | category | text]\\` marker — the Stop hook collects and structures it to \\`.codi/feedback/rules/\\`. Categories: \\`missing-step\\`, \\`outdated-rule\\`, \\`missing-example\\`, \\`user-correction\\`, \\`trigger-miss\\`, \\`trigger-false\\`, \\`wrong-output\\`. Background observer — the agent does not write files. Do NOT emit for single-occurrence anecdotes (require 2+ evidence points), do NOT directly edit rule files (use codi-refine-rules), and do NOT emit during time-critical operations (bug incidents, blocking hot fixes).",
-      "slug": "catalog/skills/codi-rule-feedback",
+      "name": "codi-dev-rule-feedback",
+      "description": "Rule observation skill. Activates automatically when the agent notices a gap, outdated guidance, missing example, or user correction related to a loaded rule. Emits an inline \\`[CODI-OBSERVATION: rule | category | text]\\` marker — the Stop hook collects and structures it to \\`.codi/feedback/rules/\\`. Categories: \\`missing-step\\`, \\`outdated-rule\\`, \\`missing-example\\`, \\`user-correction\\`, \\`trigger-miss\\`, \\`trigger-false\\`, \\`wrong-output\\`. Background observer — the agent does not write files. Do NOT emit for single-occurrence anecdotes (require 2+ evidence points), do NOT directly edit rule files (use codi-dev-refine-rules), and do NOT emit during time-critical operations (bug incidents, blocking hot fixes).",
+      "slug": "catalog/skills/codi-dev-rule-feedback",
       "category": "Codi Platform",
       "userInvocable": false,
       "compatibility": [
@@ -753,7 +753,7 @@
     {
       "type": "skill",
       "name": "codi-session-log",
-      "description": "Session log and handoff — unified markdown work journal in \\`docs/sessions/\\`. Three modes. HANDOFF: user is switching to a new chat or context is near limit; writes a dense ready-to-paste handoff markdown file. LOG (close-day): end-of-day summary appended to today's log markdown. RESUME (open-day): start-of-day recap reading the latest session files. Activates on phrases like \"context is full\", \"switch conversation\", \"handoff to next session\", \"wrap up the session\", \"end of day summary\", \"what did I do yesterday\", \"pick up where we left off\", \"/session-handoff\", \"/open_day\", \"/close_day\". Do NOT activate for recovery from repeated in-session agent mistakes (use codi-session-recovery), commit messages (use codi-commit), architecture decision records (use codi-project-documentation), or PR descriptions.",
+      "description": "Session log and handoff — unified markdown work journal in \\`docs/sessions/\\`. Three modes. HANDOFF: user is switching to a new chat or context is near limit; writes a dense ready-to-paste handoff markdown file. LOG (close-day): end-of-day summary appended to today's log markdown. RESUME (open-day): start-of-day recap reading the latest session files. Activates on phrases like \"context is full\", \"switch conversation\", \"handoff to next session\", \"wrap up the session\", \"end of day summary\", \"what did I do yesterday\", \"pick up where we left off\", \"/session-handoff\", \"/open_day\", \"/close_day\". Do NOT activate for recovery from repeated in-session agent mistakes (use codi-dev-session-recovery), commit messages (use codi-commit), architecture decision records (use codi-project-documentation), or PR descriptions.",
       "slug": "catalog/skills/codi-session-log",
       "category": "Workflow",
       "userInvocable": true,
@@ -767,9 +767,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-session-recovery",
+      "name": "codi-dev-session-recovery",
       "description": "Agent self-diagnosis after repeated mistakes. Activate when you have corrected your own mistakes 2 or more times in the current conversation, when the user flags the same mistake more than once, or when you notice yourself reverting changes or trying a third approach. Also activate for phrases like \"after multiple mistakes\", \"self-diagnosis\", \"stop and reflect\", \"error pattern\", \"session degraded\", \"repeated corrections\", \"context contaminated\". Produces a REVIEW-category diagnostic report under \\`docs/\\` and recommends a context reset. Do NOT activate for a single first-time mistake (just fix and continue), user-reported codebase bugs (use codi-debugging), end-of-day logs (use codi-session-log /close_day), or session handoff to a new chat (use codi-session-log /session-handoff).",
-      "slug": "catalog/skills/codi-session-recovery",
+      "slug": "catalog/skills/codi-dev-session-recovery",
       "category": "Code Quality",
       "userInvocable": true,
       "compatibility": [
@@ -782,9 +782,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-skill-creator",
-      "description": "Skill creation, improvement, and migration workflow. Use when the user asks to create, build, scaffold, add, or improve a skill. Also activate for phrases like \"new skill from scratch\", \"add a skill\", \"optimize skill description\", \"tune skill triggers\", \"write SKILL.md\", \"skill evals\", \"skill testing\", \"benchmark skill\", \"package skill\", \"import external skill\", \"migrate skill from <url/path/zip>\", \"security-review a skill\", or on skill.test.json / SKILL.md file mentions. Do NOT activate for creating a rule (use codi-rule-creator), creating an agent (use codi-agent-creator), packaging multiple artifacts as a preset (use codi-preset-creator), or writing general project documentation (use codi-project-documentation).",
-      "slug": "catalog/skills/codi-skill-creator",
+      "name": "codi-dev-skill-creator",
+      "description": "Skill creation, improvement, and migration workflow. Use when the user asks to create, build, scaffold, add, or improve a skill. Also activate for phrases like \"new skill from scratch\", \"add a skill\", \"optimize skill description\", \"tune skill triggers\", \"write SKILL.md\", \"skill evals\", \"skill testing\", \"benchmark skill\", \"package skill\", \"import external skill\", \"migrate skill from <url/path/zip>\", \"security-review a skill\", or on skill.test.json / SKILL.md file mentions. Do NOT activate for creating a rule (use codi-dev-rule-creator), creating an agent (use codi-dev-agent-creator), packaging multiple artifacts as a preset (use codi-dev-preset-creator), or writing general project documentation (use codi-project-documentation).",
+      "slug": "catalog/skills/codi-dev-skill-creator",
       "category": "Codi Platform",
       "userInvocable": true,
       "compatibility": [
@@ -812,9 +812,9 @@
     },
     {
       "type": "skill",
-      "name": "codi-step-documenter",
+      "name": "codi-dev-step-documenter",
       "description": "Step completion document generator. Invoked after each validated step in a codi-guided-execution workflow to produce a structured, reusable guide under \\`docs/executions/<workflow-name>/\\`. Also usable standalone to document a completed task retroactively. Activate for phrases like \"document this step\", \"write up what we just did\", \"turn this into a reusable procedure\", \"document the completed task\", \"step doc\", \"runbook entry\", \"reproducible guide\". Do NOT activate for README / ADR / general project docs (use codi-project-documentation), branded reports (use codi-content-factory), or daily progress logs (use codi-session-log).",
-      "slug": "catalog/skills/codi-step-documenter",
+      "slug": "catalog/skills/codi-dev-step-documenter",
       "category": "Developer Workflow",
       "userInvocable": true,
       "compatibility": [
@@ -858,7 +858,7 @@
     {
       "type": "skill",
       "name": "codi-theme-factory",
-      "description": "Apply a visual theme (color palette + font pairing) to slides, documents, HTML artifacts, or other deliverables. Use when the user wants to apply a theme, change colors or fonts, rebrand a deck, re-theme an artifact, or pick from 10 pre-set themes (Ocean Depths, Sunset Boulevard, Forest Canopy, Modern Minimalist, Golden Hour, Arctic Frost, Desert Rose, Tech Innovation, Botanical Garden, Midnight Galaxy). Also activate for phrases like \"apply a theme\", \"change colors\", \"rebrand this deck\", \"font pair\", \"visual theme\", \"theme a slide deck\", \"custom theme from description\". Do NOT activate for a full brand identity system (use codi-brand-creator or codi-codi-brand), a new design from scratch (use codi-canvas-design or codi-frontend-design), or generative art (use codi-algorithmic-art).",
+      "description": "Apply a visual theme (color palette + font pairing) to slides, documents, HTML artifacts, or other deliverables. Use when the user wants to apply a theme, change colors or fonts, rebrand a deck, re-theme an artifact, or pick from 10 pre-set themes (Ocean Depths, Sunset Boulevard, Forest Canopy, Modern Minimalist, Golden Hour, Arctic Frost, Desert Rose, Tech Innovation, Botanical Garden, Midnight Galaxy). Also activate for phrases like \"apply a theme\", \"change colors\", \"rebrand this deck\", \"font pair\", \"visual theme\", \"theme a slide deck\", \"custom theme from description\". Do NOT activate for a full brand identity system (use codi-dev-brand-creator or codi-codi-brand), a new design from scratch (use codi-canvas-design or codi-frontend-design), or generative art (use codi-algorithmic-art).",
       "slug": "catalog/skills/codi-theme-factory",
       "category": "Creative and Design",
       "userInvocable": true,

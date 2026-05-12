@@ -225,15 +225,21 @@ export class BrainEventLog {
   // ─── Initialize a new workflow ───────────────────────────────────────
 
   initWorkflow(workflowId: string, initEvent: ManifestEvent): void {
-    const existingId = this.getActiveWorkflowId();
-    if (existingId !== null && existingId !== workflowId) {
-      throw new BrainWorkflowAlreadyActiveError(existingId);
-    }
     if (initEvent.event_type !== "init") {
       throw new Error(`First event must be 'init', got '${initEvent.event_type}'`);
     }
 
+    // BEGIN IMMEDIATE: takes the SQLite reserved write-lock before the first
+    // read inside the transaction. Two concurrent `codi workflow run`
+    // processes will see only one acquire the lock; the second hits
+    // SQLITE_BUSY and the transaction wrapper translates it to a thrown
+    // error. The active-workflow check moves inside the txn so the
+    // read+write is one atomic step.
     const txn = this.handle.raw.transaction(() => {
+      const existingId = this.getActiveWorkflowId();
+      if (existingId !== null && existingId !== workflowId) {
+        throw new BrainWorkflowAlreadyActiveError(existingId);
+      }
       // Create or update the workflow_runs row for this workflow.
       const existing = this.handle.raw
         .prepare(`SELECT workflow_id FROM workflow_runs WHERE workflow_id = ?`)
@@ -267,7 +273,7 @@ export class BrainEventLog {
         .run(workflowId, "init", Date.now(), JSON.stringify(initEvent));
       this.setActiveWorkflowId(workflowId);
     });
-    txn();
+    txn.immediate();
   }
 
   // ─── Append events ──────────────────────────────────────────────────

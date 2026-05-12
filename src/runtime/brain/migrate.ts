@@ -1,14 +1,22 @@
 /**
  * Idempotent schema bootstrap for the brain DB.
  *
- * For Sprint 2 proper we ship a single 0001 migration that creates the 11
+ * For Sprint 2 proper we ship a single 0001 migration that creates the 12
  * canonical tables, the FTS5 mirrors, and all indexes via raw SQL. Sprint 3+
  * will switch to drizzle-kit generated migrations once the schema stabilizes
  * and we need fine-grained alters; for now the all-in-one bootstrap is
  * simpler to reason about and sidesteps drizzle-kit's lack of FTS5 support.
+ *
+ * After schema migrations, `applyMigrations` invokes
+ * `seedWorkflowDefinitions` so the `workflow_definitions` table is always
+ * populated from `src/templates/workflows/*.yaml` on every brain open. This
+ * is what makes the DB-backed half of the workflow engine (workflow-graph)
+ * a viable single source of truth — without this seed step, the table was
+ * empty in production and every DB-backed gate lookup silently fell back.
  */
 
 import type Database from "better-sqlite3";
+import { seedWorkflowDefinitions } from "./seed-workflows.js";
 
 const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE TABLE IF NOT EXISTS projects (
@@ -329,20 +337,32 @@ export function applyMigrations(raw: Database.Database): { applied: number[] } {
     v: number | null;
   };
   const lastVersion = versionRow.v ?? 0;
-  if (lastVersion >= CURRENT_SCHEMA_VERSION) return { applied };
-
-  const versionTxn = raw.transaction(() => {
-    for (const [version, statements] of VERSIONED_MIGRATIONS) {
-      if (version <= lastVersion) continue;
-      for (const stmt of statements) {
-        safeRun(raw, stmt);
+  if (lastVersion < CURRENT_SCHEMA_VERSION) {
+    const versionTxn = raw.transaction(() => {
+      for (const [version, statements] of VERSIONED_MIGRATIONS) {
+        if (version <= lastVersion) continue;
+        for (const stmt of statements) {
+          safeRun(raw, stmt);
+        }
       }
-    }
-    raw
-      .prepare("INSERT INTO _codi_schema_version(version, applied_at) VALUES (?, ?)")
-      .run(CURRENT_SCHEMA_VERSION, Date.now());
-  });
-  versionTxn();
-  applied.push(CURRENT_SCHEMA_VERSION);
+      raw
+        .prepare("INSERT INTO _codi_schema_version(version, applied_at) VALUES (?, ?)")
+        .run(CURRENT_SCHEMA_VERSION, Date.now());
+    });
+    versionTxn();
+    applied.push(CURRENT_SCHEMA_VERSION);
+  }
+
+  // Seed workflow_definitions from src/templates/workflows/*.yaml on every
+  // open. Idempotent: managed_by='codi' rows are upserted, managed_by='user'
+  // rows are preserved. Defensive: if the built-in YAMLs cannot be located
+  // (e.g. test harness without `src/templates/` on disk), we swallow and
+  // continue — the table remains empty and the bridge falls back gracefully.
+  try {
+    seedWorkflowDefinitions(raw);
+  } catch {
+    /* best-effort seed — never block migration */
+  }
+
   return { applied };
 }

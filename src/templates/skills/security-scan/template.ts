@@ -18,7 +18,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 7
 ---
 
 # {{name}} — Security Scan
@@ -36,7 +36,7 @@ version: 6
 - User wants a general code review (quality + style + logic, not security-focused) — use ${PROJECT_NAME}-code-review
 - User is debugging a specific bug — use ${PROJECT_NAME}-debugging
 - User is setting up project quality infrastructure (CI/CD, hooks) — use ${PROJECT_NAME}-project-quality-guard
-- User wants to review the security of a skill they are importing — use ${PROJECT_NAME}-skill-creator's security-review step
+- User wants to review the security of a skill they are importing — use ${PROJECT_NAME}-dev-skill-creator's security-review step
 - User wants ${PROJECT_NAME}-installation-level validation — use ${PROJECT_NAME}-dev-e2e-testing
 
 ## Security Scan Process

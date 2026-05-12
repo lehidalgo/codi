@@ -425,44 +425,6 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         'Run row-count queries before and after the migration and append a decision_recorded event with `kind: "migration_metrics_captured"` and `pre`, `post` payload fields.',
     };
   },
-  /**
-   * O2 — project.intent gate. When `noSheet` is false, verifies that Google
-   * Sheet credentials are wired up before bootstrap proceeds. The check
-   * looks at the adaptive intake; an unset `noSheet` defaults to "false"
-   * (sheets path) and demands credentials.
-   */
-  sheet_creds_present: (ctx) => {
-    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
-    const adaptation = (initEvent?.payload ?? {}) as {
-      project_adaptation?: { no_sheet?: boolean };
-    };
-    if (adaptation.project_adaptation?.no_sheet === true) {
-      return {
-        check_id: "sheet_creds_present",
-        verdict: "pass",
-        summary: "no_sheet=true — local-only bootstrap, credentials not required.",
-      };
-    }
-    const found = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      const p = e.payload as { kind?: string };
-      return p.kind === "sheet_creds_verified";
-    });
-    if (found !== undefined) {
-      return {
-        check_id: "sheet_creds_present",
-        verdict: "pass",
-        summary: "Sheet credentials verification marker recorded.",
-      };
-    }
-    return {
-      check_id: "sheet_creds_present",
-      verdict: "fail",
-      summary: "No sheet_creds_verified marker — confirm Google Sheet access first.",
-      suggested_action:
-        'Run `codi sheets diagnose` (or equivalent) and append a decision_recorded event with `kind: "sheet_creds_verified"` once the auth round-trip succeeds. Or pass `--no-sheet` to bootstrap locally.',
-    };
-  },
 };
 
 export function isAgentCheck(check: GateCheck): boolean {

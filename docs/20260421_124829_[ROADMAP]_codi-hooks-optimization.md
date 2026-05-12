@@ -1,7 +1,7 @@
 # Codi Hooks Optimization Roadmap for Codex and Claude Code
 
 - **Date**: 2026-04-21 12:48
-- **Document**: 20260421_124829_[ROADMAP]_codi-hooks-optimization.md
+- **Document**: 20260421*124829*[ROADMAP]\_codi-hooks-optimization.md
 - **Category**: ROADMAP
 
 ## Purpose
@@ -197,7 +197,7 @@ comments, better artifact quality over time.
 
 - **`codi-skill-eval`** framework. Generate N eval prompts per skill,
   run headless, assert activation. Variance analysis. Evidence feeds
-  `.codi/feedback/` so `codi-refine-rules` runs on data.
+  `.codi/feedback/` so `codi-dev-refine-rules` runs on data.
 - **`codi-session-report`** transcript analyzer. Parses
   `~/.claude/projects/*.jsonl` and `~/.codex/sessions/**/*.jsonl`.
   Surfaces rule activation, user-correction clusters, agent cost,
@@ -213,15 +213,15 @@ being manual.
 
 ## Ordered roadmap table
 
-| Rank | Phase | Deliverable | Effort | Impact | Blocking |
-|---|---|---|---|---|---|
-| 1 | P0 | `features.codex_hooks=true` in codex adapter | 15 min | Unblocks Codex hooks | none |
-| 2 | P1 | Hook runtime normalization shim | 1 day | Removes per-agent branches | P0 |
-| 3 | P2 | Guardrails engine (common-subset events) | 3 days | Rules -> hooks compile | P1 |
-| 4 | P3 | Codex prefix_rule + features compiler | 1 day | Machine-enforced on Codex | P2 |
-| 5 | P4 | Pre-commit + CI compilers | 1 day | Defense-in-depth | P2 |
-| 6 | P5 | Quality upgrades (progressive disclosure, trigger overlap, PR review) | 3 days | Fewer false activations | none (parallel) |
-| 7 | P6 | Self-improvement loop (skill-eval, session-report) | 1 - 2 weeks | Data-driven rule refinement | P1, P2 |
+| Rank | Phase | Deliverable                                                           | Effort      | Impact                      | Blocking        |
+| ---- | ----- | --------------------------------------------------------------------- | ----------- | --------------------------- | --------------- |
+| 1    | P0    | `features.codex_hooks=true` in codex adapter                          | 15 min      | Unblocks Codex hooks        | none            |
+| 2    | P1    | Hook runtime normalization shim                                       | 1 day       | Removes per-agent branches  | P0              |
+| 3    | P2    | Guardrails engine (common-subset events)                              | 3 days      | Rules -> hooks compile      | P1              |
+| 4    | P3    | Codex prefix_rule + features compiler                                 | 1 day       | Machine-enforced on Codex   | P2              |
+| 5    | P4    | Pre-commit + CI compilers                                             | 1 day       | Defense-in-depth            | P2              |
+| 6    | P5    | Quality upgrades (progressive disclosure, trigger overlap, PR review) | 3 days      | Fewer false activations     | none (parallel) |
+| 7    | P6    | Self-improvement loop (skill-eval, session-report)                    | 1 - 2 weeks | Data-driven rule refinement | P1, P2          |
 
 ## Constraints locked in by the probe evidence
 

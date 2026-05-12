@@ -50,7 +50,7 @@
       "prompt": "help me write a new skill that wraps the OpenAI SDK",
       "expectations": [
         "Does NOT activate dev-operations skill",
-        "Routes to codi-skill-creator instead",
+        "Routes to codi-dev-skill-creator instead",
         "Does NOT run `codi add skill` first without the skill-creator workflow"
       ]
     }

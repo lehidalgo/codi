@@ -10,7 +10,7 @@
         "Builds a task list via TaskCreate before executing",
         "Presents the full plan with agent-vs-user responsibility split before starting",
         "Executes one step at a time through the 7-phase protocol",
-        "Documents each completed step via codi-step-documenter"
+        "Documents each completed step via codi-dev-step-documenter"
       ]
     },
     {

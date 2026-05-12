@@ -207,41 +207,7 @@ describe("gate-runner — migration_metrics_captured", () => {
   });
 });
 
-describe("gate-runner — sheet_creds_present", () => {
-  it("passes when no_sheet=true (local-only project)", () => {
-    const ctx: DeterministicCheckContext = {
-      cwd,
-      state: emptyState(),
-      events: [event("init", { project_adaptation: { no_sheet: true } })],
-    };
-    const check: GateCheck = { id: "sheet_creds_present", type: "deterministic" };
-    const outcome = runDeterministicCheck(check, ctx);
-    expect(outcome.result.verdict).toBe("pass");
-    expect(outcome.result.summary).toContain("no_sheet");
-  });
-
-  it("passes when sheet_creds_verified marker recorded", () => {
-    const ctx: DeterministicCheckContext = {
-      cwd,
-      state: emptyState(),
-      events: [
-        event("init", { project_adaptation: { no_sheet: false } }),
-        event("decision_recorded", { kind: "sheet_creds_verified" }),
-      ],
-    };
-    const check: GateCheck = { id: "sheet_creds_present", type: "deterministic" };
-    const outcome = runDeterministicCheck(check, ctx);
-    expect(outcome.result.verdict).toBe("pass");
-  });
-
-  it("fails when sheets path but no marker", () => {
-    const ctx: DeterministicCheckContext = {
-      cwd,
-      state: emptyState(),
-      events: [event("init", { project_adaptation: { no_sheet: false } })],
-    };
-    const check: GateCheck = { id: "sheet_creds_present", type: "deterministic" };
-    const outcome = runDeterministicCheck(check, ctx);
-    expect(outcome.result.verdict).toBe("fail");
-  });
-});
+// sheet_creds_present gate removed in ISSUE-005: the Google Sheets sync
+// layer moved into the codi-dev-sheets-sync skill. When that skill activates
+// its own credentials-check gate, it will live in the skill, not in core
+// gate-runner.

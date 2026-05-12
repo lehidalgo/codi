@@ -21,7 +21,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 12
+version: 13
 ---
 
 # {{name}} — Guided Execution
@@ -59,7 +59,7 @@ Work through these 9 steps in order. Mark each via TaskUpdate before starting an
 3. **Present the execution plan** — Show the full plan, ownership per step, and get user approval
 4. **Execute the current step** — Follow the Step Execution Protocol
 5. **Validate the step** — Use ${PROJECT_NAME}-verify-evidence and ${PROJECT_NAME}-verify-evidence
-6. **Document the step** — Invoke ${PROJECT_NAME}-step-documenter
+6. **Document the step** — Invoke ${PROJECT_NAME}-dev-step-documenter
 7. **Update the task list** — Mark completed, surface the next step
 8. **Repeat steps 4–7** — Until all steps in the current phase are done
 9. **Generate workflow summary** — Final doc linking all step docs, in docs/executions/<workflow-name>/README.md
@@ -108,7 +108,7 @@ If validation fails, enter Troubleshooting Mode (see below).
 
 ### Phase 7: Step Closure
 Summarize the result in one paragraph.
-Invoke ${PROJECT_NAME}-step-documenter to generate the step document.
+Invoke ${PROJECT_NAME}-dev-step-documenter to generate the step document.
 Show the user: "Step N complete. Document written to docs/executions/<workflow>/step-NN-<slug>.md"
 
 ## Troubleshooting Mode
@@ -157,7 +157,7 @@ At the end of each step:
 
 - Uses ${PROJECT_NAME}-verify-evidence for step validation in Phase 6.
 - Uses ${PROJECT_NAME}-verify-evidence before claiming any step complete.
-- Uses ${PROJECT_NAME}-step-documenter to document each completed step.
+- Uses ${PROJECT_NAME}-dev-step-documenter to document each completed step.
 - Uses ${PROJECT_NAME}-debugging in Troubleshooting Mode.
 - For complex goals requiring initial planning, invoke ${PROJECT_NAME}-brainstorming and ${PROJECT_NAME}-plan-writing first, then use this skill to execute the resulting plan collaboratively.
 `;

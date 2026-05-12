@@ -25,7 +25,7 @@ The single highest-leverage gap is **dispatching-parallel-agents**: a
 genuinely useful pattern with no Codi equivalent. The second-highest is
 **receiving-code-review** as a standalone skill — Codi covers the topic only
 inside `code-review/SKILL.md` and `pr-review/SKILL.md`, but the discipline
-question of how to *react* to feedback deserves its own surface.
+question of how to _react_ to feedback deserves its own surface.
 
 ## Action Items - Gaps to Close
 
@@ -55,7 +55,7 @@ Ranked by impact. Each item is concrete and actionable.
      `code-review/SKILL.md` (lines 144-167) and a similar one in
      `pr-review/SKILL.md`. Both are too short to enforce the discipline under
      pressure and they are buried inside skills that activate for
-     *producing* reviews, not consuming them.
+     _producing_ reviews, not consuming them.
    - Promote it to a standalone skill `codi-receiving-code-review` with its
      own trigger ("when reviewer feedback arrives", "when a teammate comments
      on my PR"), iron-law framing, rationalization table, and explicit
@@ -66,10 +66,10 @@ Ranked by impact. Each item is concrete and actionable.
 3. **`codi-brainstorming` is missing an iron-law statement**
    - Codi has a `## HARD GATE` section, which is good, but the wording
      ("DO NOT invoke any implementation skill...") is buried under the
-     section header. The superpowers version makes the gate the *core
-     principle* and frames the entire skill around it.
+     section header. The superpowers version makes the gate the _core
+     principle_ and frames the entire skill around it.
    - Add a `## The Iron Law` section near the top: `> NO IMPLEMENTATION
-     UNTIL DESIGN IS APPROVED.` This pattern matches `tdd`, `debugging`, and
+UNTIL DESIGN IS APPROVED.` This pattern matches `tdd`, `debugging`, and
      `verification` — those skills already use it and it works.
 
 4. **`codi-verification` is missing the "agent reports success" specific
@@ -83,7 +83,7 @@ Ranked by impact. Each item is concrete and actionable.
 
 5. **`codi-branch-finish` is missing a clear "iron-law" framing**
    - Codi has a `## Hard Gate: Tests Must Pass` section, which is correct
-     functionally, but the superpowers version frames the *entire* skill
+     functionally, but the superpowers version frames the _entire_ skill
      around four enumerated options ("Verify tests → Present options →
      Execute choice → Clean up") and never lets the agent answer
      open-ended. Codi already does this in practice (see lines 67-77) but
@@ -92,7 +92,7 @@ Ranked by impact. Each item is concrete and actionable.
      one of four options, never an open-ended question."
 
 6. **`codi-debugging` is solid; one minor gap**
-   - Codi's debugging skill is *better* than superpowers' overall (it adds
+   - Codi's debugging skill is _better_ than superpowers' overall (it adds
      Phase 5 for MCP-powered deep diagnosis, which superpowers does not
      have). One missing piece: the superpowers version has a "Real-World
      Impact" section quantifying the difference (15-30 min systematic vs
@@ -108,7 +108,7 @@ Ranked by impact. Each item is concrete and actionable.
    - Optional: promote to a top-level section above "What Never to Do" so
      it gets read.
 
-8. **`codi-skill-creator` is missing the explicit TDD-for-skills framing**
+8. **`codi-dev-skill-creator` is missing the explicit TDD-for-skills framing**
    - Codi's skill-creator is significantly more comprehensive (765 lines vs
      ~400 in superpowers), but it does NOT frame skill creation as TDD for
      documentation. The superpowers version maps every TDD concept to a
@@ -250,7 +250,7 @@ Ranked by impact. Each item is concrete and actionable.
   MCP-powered diagnosis (code-graph queries, sequential thinking,
   reasoning-confirmation-execution loop) for cases where Phases 1-4 fail.
 - Both have the same iron law: `NO FIXES WITHOUT ROOT CAUSE INVESTIGATION
-  FIRST`.
+FIRST`.
 - Both have rationalization tables, red flags lists, and "user signals
   you're doing it wrong" sections. Identical content.
 - Codi's references/ directory is richer (4 reference files vs 3 mentioned
@@ -297,15 +297,15 @@ Ranked by impact. Each item is concrete and actionable.
   model, but per the user's instructions this is noted in passing only.
 - Codi's equivalent meta-knowledge lives in `CLAUDE.md` (the project's
   self-development guide), not in a dedicated skill. This is the right
-  pattern for Codi - the meta-instructions are about *how to work on the
-  project*, not how to use a skill library.
+  pattern for Codi - the meta-instructions are about _how to work on the
+  project_, not how to use a skill library.
 
 ### 12. verification-before-completion → codi-verification
 
 **Verdict: Codi EQUIVALENT**
 
 - Both have the same iron law: `NO COMPLETION CLAIMS WITHOUT FRESH
-  VERIFICATION EVIDENCE`.
+VERIFICATION EVIDENCE`.
 - Both have the same 5-step gate (IDENTIFY → RUN → READ → VERIFY → CLAIM).
 - Both have weasel-word lists ("should", "probably", "seems"), evidence
   tables, and red flags lists.
@@ -333,7 +333,7 @@ Ranked by impact. Each item is concrete and actionable.
 - Codi additionally dispatches a `plan-document-reviewer-prompt.md`
   subagent for a final external check before presenting to the user.
 
-### 14. writing-skills → codi-skill-creator
+### 14. writing-skills → codi-dev-skill-creator
 
 **Verdict: Codi BETTER (but missing TDD-for-skills framing)**
 
@@ -355,22 +355,22 @@ Ranked by impact. Each item is concrete and actionable.
 
 ## Mapping Summary
 
-| Superpower | Codi Skill | Verdict |
-|---|---|---|
-| brainstorming | codi-brainstorming | Codi BETTER (gap: iron-law framing) |
-| dispatching-parallel-agents | (none) | Codi WORSE (missing skill) |
-| executing-plans | codi-plan-execution (INLINE) | Codi BETTER |
-| finishing-a-development-branch | codi-branch-finish | Codi EQUIVALENT |
-| receiving-code-review | (subsection of code-review/pr-review) | Codi WORSE (no standalone skill) |
-| requesting-code-review | codi-code-review + codi-pr-review | Codi BETTER |
-| subagent-driven-development | codi-plan-execution (SUBAGENT) | Codi EQUIVALENT |
-| systematic-debugging | codi-debugging | Codi BETTER (Phase 5 MCP) |
-| test-driven-development | codi-tdd | Codi EQUIVALENT |
-| using-git-worktrees | codi-worktrees | Codi BETTER (Path A/B) |
-| using-superpowers | (CLAUDE.md self-dev) | N/A meta |
-| verification-before-completion | codi-verification | Codi EQUIVALENT |
-| writing-plans | codi-plan-writer | Codi BETTER |
-| writing-skills | codi-skill-creator | Codi BETTER (gap: TDD-for-skills framing) |
+| Superpower                     | Codi Skill                            | Verdict                                   |
+| ------------------------------ | ------------------------------------- | ----------------------------------------- |
+| brainstorming                  | codi-brainstorming                    | Codi BETTER (gap: iron-law framing)       |
+| dispatching-parallel-agents    | (none)                                | Codi WORSE (missing skill)                |
+| executing-plans                | codi-plan-execution (INLINE)          | Codi BETTER                               |
+| finishing-a-development-branch | codi-branch-finish                    | Codi EQUIVALENT                           |
+| receiving-code-review          | (subsection of code-review/pr-review) | Codi WORSE (no standalone skill)          |
+| requesting-code-review         | codi-code-review + codi-pr-review     | Codi BETTER                               |
+| subagent-driven-development    | codi-plan-execution (SUBAGENT)        | Codi EQUIVALENT                           |
+| systematic-debugging           | codi-debugging                        | Codi BETTER (Phase 5 MCP)                 |
+| test-driven-development        | codi-tdd                              | Codi EQUIVALENT                           |
+| using-git-worktrees            | codi-worktrees                        | Codi BETTER (Path A/B)                    |
+| using-superpowers              | (CLAUDE.md self-dev)                  | N/A meta                                  |
+| verification-before-completion | codi-verification                     | Codi EQUIVALENT                           |
+| writing-plans                  | codi-plan-writer                      | Codi BETTER                               |
+| writing-skills                 | codi-dev-skill-creator                | Codi BETTER (gap: TDD-for-skills framing) |
 
 Tally: **6 BETTER, 4 EQUIVALENT, 2 WORSE (missing), 1 META, 1 not counted**
 

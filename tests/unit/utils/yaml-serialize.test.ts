@@ -27,7 +27,7 @@ describe("fmStr", () => {
     });
 
     it("leaves kebab-case names unquoted", () => {
-      expect(fmStr("codi-skill-creator")).toBe("codi-skill-creator");
+      expect(fmStr("codi-dev-skill-creator")).toBe("codi-dev-skill-creator");
     });
 
     it("leaves alphanumeric with spaces unquoted", () => {

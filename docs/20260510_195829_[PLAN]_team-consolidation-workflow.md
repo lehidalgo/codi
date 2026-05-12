@@ -141,7 +141,7 @@ Sets gate `report_written`.
 
 Workflow ends. Lead receives instructions in chat:
 
-> Report written at <path>. Share with team for async consensus review. After consensus, invoke `/codi-refine-rules <path>` for rule mutations or `/codi-artifact-contributor <path>` for upstream candidates.
+> Report written at <path>. Share with team for async consensus review. After consensus, invoke `/codi-dev-refine-rules <path>` for rule mutations or `/codi-dev-artifact-contributor <path>` for upstream candidates.
 
 ## Report shape (illustrative — NOT a formal contract)
 
@@ -159,8 +159,8 @@ Workflow ends. Lead receives instructions in chat:
 1. Team reviews this document async (PR comments / Slack / live meeting)
 2. Mark each finding APPROVED / REJECTED / DEFERRED with [x]
 3. After consensus, invoke meta-skills:
-   - Domain rule edits/creates → /codi-refine-rules <this-report-path>
-   - Upstream contributions → /codi-artifact-contributor <this-report-path>
+   - Domain rule edits/creates → /codi-dev-refine-rules <this-report-path>
+   - Upstream contributions → /codi-dev-artifact-contributor <this-report-path>
    - Edge cases (new skill / new agent) → invoke manually
 
 > Privacy notice: this report may include verbatim content from captures, prompts, and tool calls of the contributed brain.dbs. Pre-filter your brain.db before contributing if you want to omit something.
@@ -277,24 +277,24 @@ Capture pipeline:
 
 ## Implementation work breakdown
 
-| Component                                                         | Type   | Approx LoC       | File(s)                                                                           |
-| ----------------------------------------------------------------- | ------ | ---------------- | --------------------------------------------------------------------------------- |
-| Workflow YAML                                                     | new    | ~50              | `src/templates/workflows/team-consolidation.yaml`                                 |
-| Companion skill template                                          | new    | ~150             | `src/templates/skills/team-consolidation-workflow/template.ts` + `index.ts`       |
-| Phase docs (intent/collect/analyze/consolidate)                   | new    | ~150 each = ~600 | `src/templates/skills/team-consolidation-workflow/references/phase-*.md`          |
-| Brain schema reference for agent                                  | new    | ~200             | `src/templates/skills/team-consolidation-workflow/references/schema-reference.md` |
-| WORKFLOW_TYPES enum entry                                         | edit   | 1                | `src/runtime/types.ts`                                                            |
-| Workflow definition seed                                          | edit   | ~20              | `src/runtime/brain/seed-workflows.ts`                                             |
-| Refine-rules SKILL.md `Mode: REPORT-DRIVEN`                       | edit   | ~80              | `src/templates/skills/refine-rules/template.ts`                                   |
-| Artifact-contributor SKILL.md `Mode: REPORT-DRIVEN`               | edit   | ~50              | `src/templates/skills/artifact-contributor/template.ts`                           |
-| Tests workflow loading + phase transitions                        | new    | ~200             | `tests/runtime/workflow-team-consolidation.test.ts`                               |
-| Skill evals for team-consolidation-workflow                       | new    | ~150             | `src/templates/skills/team-consolidation-workflow/evals/`                         |
-| Drop `consolidate/` + `runtime/llm/` + `consolidation/` templates | delete | -3300            | (above)                                                                           |
-| Schema migration drop proposals                                   | new    | ~30              | `src/runtime/brain/migrate.ts` + new migration file                               |
-| Deprecation message in `brain export`                             | edit   | ~20              | `src/cli/brain.ts`                                                                |
-| Removal of `/proposals` UI page + 410 route                       | edit   | ~10              | `src/runtime/brain-ui/pages.ts` + routes                                          |
-| Removal of `/api/v1/consolidation/*` endpoints                    | edit   | ~30              | `src/runtime/brain-ui/routes-api.ts`                                              |
-| CHANGELOG entry                                                   | new    | ~30              | `CHANGELOG.md`                                                                    |
+| Component                                                         | Type   | Approx LoC       | File(s)                                                                               |
+| ----------------------------------------------------------------- | ------ | ---------------- | ------------------------------------------------------------------------------------- |
+| Workflow YAML                                                     | new    | ~50              | `src/templates/workflows/team-consolidation.yaml`                                     |
+| Companion skill template                                          | new    | ~150             | `src/templates/skills/dev-team-consolidation-workflow/template.ts` + `index.ts`       |
+| Phase docs (intent/collect/analyze/consolidate)                   | new    | ~150 each = ~600 | `src/templates/skills/dev-team-consolidation-workflow/references/phase-*.md`          |
+| Brain schema reference for agent                                  | new    | ~200             | `src/templates/skills/dev-team-consolidation-workflow/references/schema-reference.md` |
+| WORKFLOW_TYPES enum entry                                         | edit   | 1                | `src/runtime/types.ts`                                                                |
+| Workflow definition seed                                          | edit   | ~20              | `src/runtime/brain/seed-workflows.ts`                                                 |
+| Refine-rules SKILL.md `Mode: REPORT-DRIVEN`                       | edit   | ~80              | `src/templates/skills/dev-refine-rules/template.ts`                                   |
+| Artifact-contributor SKILL.md `Mode: REPORT-DRIVEN`               | edit   | ~50              | `src/templates/skills/dev-artifact-contributor/template.ts`                           |
+| Tests workflow loading + phase transitions                        | new    | ~200             | `tests/runtime/workflow-team-consolidation.test.ts`                                   |
+| Skill evals for team-consolidation-workflow                       | new    | ~150             | `src/templates/skills/dev-team-consolidation-workflow/evals/`                         |
+| Drop `consolidate/` + `runtime/llm/` + `consolidation/` templates | delete | -3300            | (above)                                                                               |
+| Schema migration drop proposals                                   | new    | ~30              | `src/runtime/brain/migrate.ts` + new migration file                                   |
+| Deprecation message in `brain export`                             | edit   | ~20              | `src/cli/brain.ts`                                                                    |
+| Removal of `/proposals` UI page + 410 route                       | edit   | ~10              | `src/runtime/brain-ui/pages.ts` + routes                                              |
+| Removal of `/api/v1/consolidation/*` endpoints                    | edit   | ~30              | `src/runtime/brain-ui/routes-api.ts`                                                  |
+| CHANGELOG entry                                                   | new    | ~30              | `CHANGELOG.md`                                                                        |
 
 Net change estimate:
 

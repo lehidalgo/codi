@@ -71,7 +71,7 @@ Levantar el servidor `codi-brain-server` (Hono + HTMX) que sirve como ventana en
    - Fallback a polling cuando el cliente no soporta SSE
 
 5. **Skill `brain-ui`**
-   - Nueva skill en `src/templates/skills/brain-ui/`
+   - Nueva skill en `src/templates/skills/dev-brain-ui/`
    - Comando `codi brain ui [--port 4477]`
    - Spawn-or-attach: si el pidfile apunta a un PID vivo y healthz responde, usa esa instancia
 

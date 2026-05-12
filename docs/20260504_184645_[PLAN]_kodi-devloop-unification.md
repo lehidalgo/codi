@@ -680,7 +680,7 @@ Solo activo si `codegraph.enabled = true`.
 
 #### Modo preferido: MCP server externo
 
-`src/templates/mcp-servers/community/graph-code.ts` ya existe en Kodi. Activar el flag instala el server y registra el binding. Las skills `codi-codebase-explore` y `codi-graph-sync` lo invocan.
+`src/templates/mcp-servers/community/graph-code.ts` ya existe en Kodi. Activar el flag instala el server y registra el binding. Las skills `codi-codebase-explore` y `codi-dev-graph-sync` lo invocan.
 
 #### Modo embebido (opt-in pesado)
 
@@ -1259,13 +1259,13 @@ Todo lazy-loaded: si el flag está off, las deps no se importan.
 - **Importar workflows como un nuevo tipo de artefacto** (no como skills sueltas).
 - **Mapeo skill devloop → Kodi**: ver §3.5 y la tabla de §2.2. Cada skill devloop se convierte en `src/templates/skills/codi-<name>/` con frontmatter actualizado.
 - **Iron Laws** se materializan en `src/templates/rules/codi-iron-laws.md` (en core platform rules).
-- **`docs/CONTEXT.md`** y `docs/adr/` se inicializan en el repo de Kodi al integrar devloop. El skill `codi-init-knowledge-base` (importado de devloop) lo bootstrappa para nuevos consumidores.
+- **`docs/CONTEXT.md`** y `docs/adr/` se inicializan en el repo de Kodi al integrar devloop. El skill `codi-dev-init-knowledge-base` (importado de devloop) lo bootstrappa para nuevos consumidores.
 
 ### 8.2 Mapeo skill devloop → Kodi
 
 | devloop skill            | Kodi v3 destino                                                                | Acción                    |
 | ------------------------ | ------------------------------------------------------------------------------ | ------------------------- |
-| `team-charter`           | rule `codi-iron-laws` + skill `codi-team-charter`                              | split                     |
+| `team-charter`           | rule `codi-iron-laws` + skill `codi-dev-team-charter`                          | split                     |
 | `project-workflow`       | workflow `project` + skill `codi-project-workflow`                             | importar                  |
 | `feature-workflow`       | workflow `feature` + skill `codi-feature-workflow`                             | importar                  |
 | `bug-fix-workflow`       | workflow `bug-fix` + merge con `codi-debugging`                                | merge                     |
@@ -1285,9 +1285,9 @@ Todo lazy-loaded: si el flag está off, las deps no se importan.
 | `gate-deep-modules`      | gate `deep-modules` (mode:gate skill)                                          | importar                  |
 | `subagent-orchestration` | merge con `codi-dispatching-parallel-agents` (adoptar sequential mode)         | merge                     |
 | `worktrees`              | merge con `codi-worktrees`                                                     | merge                     |
-| `sheets-sync`            | módulo opcional `core/sheets/` + skill `codi-sheets-sync`                      | módulo + skill            |
+| `sheets-sync`            | módulo opcional `core/sheets/` + skill `codi-dev-sheets-sync`                  | módulo + skill            |
 | `caveman`                | merge con `codi-caveman` (charter component)                                   | merge                     |
-| `skill-creator`          | merge con `codi-skill-creator` (RED-GREEN-REFACTOR)                            | merge                     |
+| `skill-creator`          | merge con `codi-dev-skill-creator` (RED-GREEN-REFACTOR)                        | merge                     |
 
 ### 8.3 Mapeo hook devloop → Kodi
 
@@ -1563,7 +1563,7 @@ Cada fase: objetivo, entregables, cambios en código, riesgos, dependencias, cri
 - `src/core/codegraph/adapter-mcp.ts` (default).
 - `src/core/codegraph/adapter-embedded.ts` (Tree-sitter directo, ~1.500 LOC nuevo, NO vendor codi-brain).
 - Skill `codi-codebase-explore` actualizada para detectar backend.
-- Skill `codi-graph-sync` para reindex.
+- Skill `codi-dev-graph-sync` para reindex.
 
 **Cambios en código**:
 
@@ -1852,37 +1852,37 @@ Las 11 fases del roadmap son ejecutables en ~10-12 sprints con un equipo de 2-3 
 
 ## Apéndice A — Tabla de archivos a portar (estimaciones)
 
-| Origen                                                                                    | Destino                                                                              | LOC aprox       |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------- |
-| `devloop/lib/event-log.ts`                                                                | `src/core/process/event-log.ts`                                                      | 223             |
-| `devloop/lib/reducer.ts`                                                                  | `src/core/process/reducer.ts`                                                        | 271             |
-| `devloop/lib/event-factory.ts`                                                            | `src/core/process/event-factory.ts`                                                  | 80              |
-| `devloop/lib/types.ts`                                                                    | `src/core/process/types.ts`                                                          | 175             |
-| `devloop/lib/classifier.ts` + `classifier-rules.ts`                                       | `src/core/process/classifier.ts` + `classifier-rules.ts`                             | 427             |
-| `devloop/lib/hook-logic.ts`                                                               | `src/core/process/hook-logic.ts` (split en 2-3)                                      | 480             |
-| `devloop/lib/gate-runner.ts` + `gate-types.ts`                                            | `src/core/process/gate-runner.ts` + `gate-types.ts`                                  | ~250            |
-| `devloop/lib/cli-handlers/*`                                                              | `src/cli/{run,transition,scope,handover,replay,abandon,recover,stats}.ts`            | ~600            |
-| `devloop/lib/compactor.ts`                                                                | `src/core/process/compactor.ts`                                                      | ~150            |
-| `devloop/lib/replay.ts`                                                                   | `src/core/process/replay.ts`                                                         | ~100            |
-| `devloop/lib/pr-summary.ts`                                                               | `src/core/process/pr-summary.ts`                                                     | ~200            |
-| `devloop/lib/auto-commit.ts`                                                              | (eliminar `--no-verify`; integrar con Kodi commit pipeline)                          | ~80             |
-| `devloop/lib/sheets/*` (24 archivos)                                                      | `src/core/sheets/`                                                                   | ~3.500          |
-| `devloop/hooks/*.sh` + `scripts/hook-*.ts`                                                | `src/core/hooks/runtime/`                                                            | ~600            |
-| `devloop/scripts/hooks/*.sh` + `*.py`                                                     | `src/core/hooks/git/blocks/{hygiene,secrets,anti-slop,lint,infra}.ts`                | ~500            |
-| `devloop/skills/team-charter/`                                                            | `src/templates/skills/codi-team-charter/` + `src/templates/rules/codi-iron-laws.md`  | ~400            |
-| `devloop/skills/{*-workflow}/`                                                            | `src/templates/skills/codi-{*}/` + `src/templates/workflows/{*}/contract.json`       | ~3.000          |
-| `devloop/skills/discover/`, `plan-writing/`, `tdd/`, `verify-evidence/`, `caveman/`, etc. | merge con skills Kodi existentes                                                     | ~1.500          |
-| `devloop/schemas/manifest-event.schema.json`                                              | `src/schemas/events/<event_type>.ts` (split + JSON Schema export)                    | ~1.200          |
-| `codi-brain/src/codi_brain/vault/lock.py`                                                 | `src/core/memory/vault/lock.ts` (port)                                               | ~80             |
-| `codi-brain/src/codi_brain/vault/reconciler.py`                                           | `src/core/memory/vault/reconciler.ts` (port)                                         | ~400            |
-| `codi-brain/src/codi_brain/vault/write_context.py`                                        | `src/core/memory/vault/write-context.ts` (port)                                      | ~200            |
-| `codi-brain/src/codi_brain/vault/git_ops.py`                                              | `src/core/memory/vault/git-ops.ts` (port)                                            | ~150            |
-| `codi-brain/src/codi_brain/vault/{frontmatter,hasher,slugify}.py`                         | `src/core/memory/vault/` (port)                                                      | ~200            |
-| `codi-brain/src/codi_brain/validation/runner.py`                                          | `src/core/memory/validation/runner.ts` (port)                                        | ~170            |
-| harness-mem schema (re-implementación Apache)                                             | `src/core/memory/{schema,observation-store,search-router,consolidation,embedder}.ts` | ~3.000          |
-| claude-code-harness `worker-report.v1` contract                                           | `src/core/process/self-review.ts` + `src/templates/skills/codi-self-review/`         | ~300            |
-| claude-code-harness `monitors.json` schema                                                | `src/templates/monitors/` + `src/core/runtime/monitors.ts`                           | ~400            |
-| **Total estimado**                                                                        |                                                                                      | **~17.000 LOC** |
+| Origen                                                                                    | Destino                                                                                 | LOC aprox       |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------- |
+| `devloop/lib/event-log.ts`                                                                | `src/core/process/event-log.ts`                                                         | 223             |
+| `devloop/lib/reducer.ts`                                                                  | `src/core/process/reducer.ts`                                                           | 271             |
+| `devloop/lib/event-factory.ts`                                                            | `src/core/process/event-factory.ts`                                                     | 80              |
+| `devloop/lib/types.ts`                                                                    | `src/core/process/types.ts`                                                             | 175             |
+| `devloop/lib/classifier.ts` + `classifier-rules.ts`                                       | `src/core/process/classifier.ts` + `classifier-rules.ts`                                | 427             |
+| `devloop/lib/hook-logic.ts`                                                               | `src/core/process/hook-logic.ts` (split en 2-3)                                         | 480             |
+| `devloop/lib/gate-runner.ts` + `gate-types.ts`                                            | `src/core/process/gate-runner.ts` + `gate-types.ts`                                     | ~250            |
+| `devloop/lib/cli-handlers/*`                                                              | `src/cli/{run,transition,scope,handover,replay,abandon,recover,stats}.ts`               | ~600            |
+| `devloop/lib/compactor.ts`                                                                | `src/core/process/compactor.ts`                                                         | ~150            |
+| `devloop/lib/replay.ts`                                                                   | `src/core/process/replay.ts`                                                            | ~100            |
+| `devloop/lib/pr-summary.ts`                                                               | `src/core/process/pr-summary.ts`                                                        | ~200            |
+| `devloop/lib/auto-commit.ts`                                                              | (eliminar `--no-verify`; integrar con Kodi commit pipeline)                             | ~80             |
+| `devloop/lib/sheets/*` (24 archivos)                                                      | `src/core/sheets/`                                                                      | ~3.500          |
+| `devloop/hooks/*.sh` + `scripts/hook-*.ts`                                                | `src/core/hooks/runtime/`                                                               | ~600            |
+| `devloop/scripts/hooks/*.sh` + `*.py`                                                     | `src/core/hooks/git/blocks/{hygiene,secrets,anti-slop,lint,infra}.ts`                   | ~500            |
+| `devloop/skills/dev-team-charter/`                                                        | `src/templates/skills/codi-dev-team-charter/` + `src/templates/rules/codi-iron-laws.md` | ~400            |
+| `devloop/skills/{*-workflow}/`                                                            | `src/templates/skills/codi-{*}/` + `src/templates/workflows/{*}/contract.json`          | ~3.000          |
+| `devloop/skills/discover/`, `plan-writing/`, `tdd/`, `verify-evidence/`, `caveman/`, etc. | merge con skills Kodi existentes                                                        | ~1.500          |
+| `devloop/schemas/manifest-event.schema.json`                                              | `src/schemas/events/<event_type>.ts` (split + JSON Schema export)                       | ~1.200          |
+| `codi-brain/src/codi_brain/vault/lock.py`                                                 | `src/core/memory/vault/lock.ts` (port)                                                  | ~80             |
+| `codi-brain/src/codi_brain/vault/reconciler.py`                                           | `src/core/memory/vault/reconciler.ts` (port)                                            | ~400            |
+| `codi-brain/src/codi_brain/vault/write_context.py`                                        | `src/core/memory/vault/write-context.ts` (port)                                         | ~200            |
+| `codi-brain/src/codi_brain/vault/git_ops.py`                                              | `src/core/memory/vault/git-ops.ts` (port)                                               | ~150            |
+| `codi-brain/src/codi_brain/vault/{frontmatter,hasher,slugify}.py`                         | `src/core/memory/vault/` (port)                                                         | ~200            |
+| `codi-brain/src/codi_brain/validation/runner.py`                                          | `src/core/memory/validation/runner.ts` (port)                                           | ~170            |
+| harness-mem schema (re-implementación Apache)                                             | `src/core/memory/{schema,observation-store,search-router,consolidation,embedder}.ts`    | ~3.000          |
+| claude-code-harness `worker-report.v1` contract                                           | `src/core/process/self-review.ts` + `src/templates/skills/codi-self-review/`            | ~300            |
+| claude-code-harness `monitors.json` schema                                                | `src/templates/monitors/` + `src/core/runtime/monitors.ts`                              | ~400            |
+| **Total estimado**                                                                        |                                                                                         | **~17.000 LOC** |
 
 ## Apéndice B — Referencias a citas
 

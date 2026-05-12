@@ -6,7 +6,7 @@ description: Continuous artifact improvement — observe patterns, emit |OBSERVA
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 6
+version: 7
 ---
 
 # Continuous Artifact Improvement
@@ -23,8 +23,8 @@ You are the steward of this project's AI configuration. Every interaction is an 
 to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has these mechanisms:
 
 1. **Observation captures** — end your response with one or more \`|OBSERVATION: "verbatim text"|\` markers (Iron Law 9). The Stop hook persists them into brain.db automatically — you do not write files.
-2. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
-3. **Rule refinement** — use \`/${PROJECT_NAME}-refine-rules\` to review collected captures and propose improvements with human approval
+2. **Local comparison** — use \`/${PROJECT_NAME}-dev-compare-preset\` to identify which local changes are novel vs. already upstream
+3. **Rule refinement** — use \`/${PROJECT_NAME}-dev-refine-rules\` to review collected captures and propose improvements with human approval
 4. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
 
 ## Source-layer improvements (${PROJECT_NAME_DISPLAY} repo only)

@@ -112,7 +112,7 @@ Every action accepts `--as-agent` to attribute the call to the agent rather than
 ## Outstanding (deferred from F1–F11)
 
 - `src/core/hooks/heartbeat-hooks.ts` still emits a `skill-observer.cjs` script that scans transcripts for the legacy `[CODI-OBSERVATION: ...]` grammar and writes `.codi/feedback/*.json`. F6's Stop hook supersedes it for capture handling; F11 leaves the script in place so the adapter-emitted `.claude/settings.json` references resolve. Removing it cleanly requires reworking `claude-code` and `codex` adapter tests — out of scope for v3 zero closure.
-- `src/templates/skills/refine-rules/template.ts` still reads `.codi/feedback/*.json`. Wiring it to the `captures` table (filter `type = 'OBSERVATION'`) is a contained follow-up.
+- `src/templates/skills/dev-refine-rules/template.ts` still reads `.codi/feedback/*.json`. Wiring it to the `captures` table (filter `type = 'OBSERVATION'`) is a contained follow-up.
 - `src/runtime/sync/*` (Google Sheets sync subsystem) still references `.devloop/` paths and `devloop sheets ...` CLI strings in user-facing copy. Independent feature surface; renaming is a self-contained migration.
 
 ## Verification

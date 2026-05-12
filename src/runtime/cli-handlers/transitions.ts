@@ -155,82 +155,92 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
       process.stderr.write(`[codi gate-advisory]\n${formatGateAdvisory(gateResult)}\n`);
     }
 
-    log.append(
-      workflowId,
-      createEvent({
-        eventType: "phase_completed",
-        payload: {
-          phase: fromPhase,
-          duration_ms: computePhaseDuration(state, fromPhase),
-          gate_passed: gateResult.passed,
-        },
-        author: SYSTEM_AUTHOR,
-        parentEventId: lastProposed.event_id,
-      }),
-    );
-
-    log.append(
-      workflowId,
-      createEvent({
-        eventType: "phase_transition_approved",
-        payload: proposalPayload,
-        author: opts.author,
-        parentEventId: lastProposed.event_id,
-      }),
-    );
-
-    log.append(
-      workflowId,
-      createEvent({
-        eventType: "phase_started",
-        payload: { phase: proposalPayload.to_phase },
-        author: SYSTEM_AUTHOR,
-        parentEventId: lastProposed.event_id,
-      }),
-    );
-
-    // Reaching phase `done` marks the workflow as complete. Emit the
-    // workflow_completed event automatically and a phase_completed for the
-    // terminal phase so reduce() reports status: "completed".
-    if (proposalPayload.to_phase === "done") {
-      const stateNow = reduce(log.loadEvents(workflowId));
-      const doneRecord = stateNow.phase_history.at(-1);
-      const doneStartedAtMs = doneRecord ? new Date(doneRecord.started_at).getTime() : Date.now();
-      const doneDurationMs = Math.max(0, Date.now() - doneStartedAtMs);
-
+    // Atomic: wrap the 3 (or 5, in terminal done branch) approval writes in
+    // a single SQLite transaction so a crash mid-flow cannot leave the
+    // workflow_runs.status / current_phase columns half-advanced. Each
+    // inner log.append already wraps its own raw.transaction; under an
+    // outer txn better-sqlite3 demotes those to SAVEPOINTs and only
+    // commits the whole tree at the outer scope. The gate run (lines
+    // above) deliberately stays OUTSIDE — gate events are advisory and
+    // best-effort by design (see runPhaseGates docstring).
+    log.privateRaw.transaction(() => {
       log.append(
         workflowId,
         createEvent({
           eventType: "phase_completed",
           payload: {
-            phase: "done",
-            duration_ms: doneDurationMs,
-            gate_passed: true,
+            phase: fromPhase,
+            duration_ms: computePhaseDuration(state, fromPhase),
+            gate_passed: gateResult.passed,
           },
           author: SYSTEM_AUTHOR,
           parentEventId: lastProposed.event_id,
         }),
       );
 
-      const totalDurationMs = Math.max(0, Date.now() - new Date(stateNow.started_at).getTime());
       log.append(
         workflowId,
         createEvent({
-          eventType: "workflow_completed",
-          payload: {
-            duration_ms: totalDurationMs,
-            summary: `Reached phase done after ${stateNow.phase_history.length} phases.`,
-          },
+          eventType: "phase_transition_approved",
+          payload: proposalPayload,
+          author: opts.author,
+          parentEventId: lastProposed.event_id,
+        }),
+      );
+
+      log.append(
+        workflowId,
+        createEvent({
+          eventType: "phase_started",
+          payload: { phase: proposalPayload.to_phase },
           author: SYSTEM_AUTHOR,
           parentEventId: lastProposed.event_id,
         }),
       );
-      // Note: do NOT clear the active ID here. The workflow is `completed` but
-      // remains queryable via `codi workflow status` and `codi pr generate-summary`.
-      // When the user starts a new workflow via `codi workflow run`,
-      // runWorkflow auto-migrates the stale terminal pointer before
-      // initializing the new run.
-    }
+
+      // Reaching phase `done` marks the workflow as complete. Emit the
+      // workflow_completed event automatically and a phase_completed for the
+      // terminal phase so reduce() reports status: "completed".
+      if (proposalPayload.to_phase === "done") {
+        const stateNow = reduce(log.loadEvents(workflowId));
+        const doneRecord = stateNow.phase_history.at(-1);
+        const doneStartedAtMs = doneRecord ? new Date(doneRecord.started_at).getTime() : Date.now();
+        const doneDurationMs = Math.max(0, Date.now() - doneStartedAtMs);
+
+        log.append(
+          workflowId,
+          createEvent({
+            eventType: "phase_completed",
+            payload: {
+              phase: "done",
+              duration_ms: doneDurationMs,
+              gate_passed: true,
+            },
+            author: SYSTEM_AUTHOR,
+            parentEventId: lastProposed.event_id,
+          }),
+        );
+
+        const totalDurationMs = Math.max(0, Date.now() - new Date(stateNow.started_at).getTime());
+        log.append(
+          workflowId,
+          createEvent({
+            eventType: "workflow_completed",
+            payload: {
+              duration_ms: totalDurationMs,
+              summary: `Reached phase done after ${stateNow.phase_history.length} phases.`,
+            },
+            author: SYSTEM_AUTHOR,
+            parentEventId: lastProposed.event_id,
+          }),
+        );
+        // Note: do NOT clear the active ID here. The workflow is `completed` but
+        // remains queryable via `codi workflow status` and `codi pr generate-summary`.
+        // When the user starts a new workflow via `codi workflow run`,
+        // runWorkflow auto-migrates the stale terminal pointer before
+        // initializing the new run.
+      }
+    })();
 
     return {
       workflowId,

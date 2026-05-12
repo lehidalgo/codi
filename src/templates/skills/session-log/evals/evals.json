@@ -77,7 +77,7 @@
       "prompt": "I'm stuck in a loop. help me recover and get back on track",
       "expectations": [
         "Does NOT activate session-log skill",
-        "Routes to codi-session-recovery instead"
+        "Routes to codi-dev-session-recovery instead"
       ]
     },
     {

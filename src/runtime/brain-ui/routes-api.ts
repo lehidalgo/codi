@@ -21,9 +21,17 @@ import { homedir } from "node:os";
 import type { BrainHandle } from "../brain/index.js";
 import { restoreBackup, restoreFromBackupDir } from "#src/core/backup/backup-manager.js";
 import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR } from "#src/constants.js";
+import { isPathSafe } from "#src/utils/path-guard.js";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 1000;
+
+// Backup ID validators — must match the formats produced by backup-manager.ts.
+// `TS_RE` matches `new Date().toISOString().replace(/[:.]/g, "-")` → e.g. 2026-05-11T22-03-20-123Z.
+// `HASH_RE` matches externalArchiveRoot() → `<16-hex>-<slug>` where slug is `[A-Za-z0-9._-]+`.
+// Defense-in-depth: combine with isPathSafe() after path.join to catch any regex gap.
+const TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/;
+const HASH_RE = /^[a-f0-9]{16}-[A-Za-z0-9._-]+$/;
 
 export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   app.get("/api/v1/projects", (c: Context) => {
@@ -349,7 +357,9 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
 
   app.post("/api/v1/backups/local/:ts/restore", async (c: Context) => {
     const ts = c.req.param("ts");
-    if (!ts) return c.json({ error: { code: "bad_request", message: "ts required" } }, 400);
+    if (!ts || !TS_RE.test(ts)) {
+      return c.json({ error: { code: "bad_request", message: "invalid ts" } }, 400);
+    }
     const projectRoot = path.dirname(path.dirname(path.dirname(brain.path))); // .codi/state/brain.db → projectRoot
     const configDir = path.dirname(path.dirname(brain.path)); // .codi/state → .codi
     try {
@@ -363,11 +373,15 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
   app.post("/api/v1/backups/archive/:hash/:ts/restore", async (c: Context) => {
     const hash = c.req.param("hash");
     const ts = c.req.param("ts");
-    if (!hash || !ts) {
-      return c.json({ error: { code: "bad_request", message: "hash and ts required" } }, 400);
+    if (!hash || !ts || !HASH_RE.test(hash) || !TS_RE.test(ts)) {
+      return c.json({ error: { code: "bad_request", message: "invalid hash or ts" } }, 400);
     }
     const projectRoot = path.dirname(path.dirname(path.dirname(brain.path)));
-    const archiveDir = path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, hash, ts);
+    const archiveRoot = path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR);
+    const archiveDir = path.join(archiveRoot, hash, ts);
+    if (!isPathSafe(archiveRoot, path.relative(archiveRoot, archiveDir))) {
+      return c.json({ error: { code: "bad_request", message: "path escape" } }, 400);
+    }
     try {
       const restored = await restoreFromBackupDir(projectRoot, archiveDir);
       return c.json({ data: { restored, count: restored.length } });

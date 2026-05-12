@@ -4,7 +4,7 @@
 
 ## Chain skills
 
-- You **MUST** invoke `codi:sheets-sync` (caller=bootstrap — push Goals/Stories to Sheet).
+- You **MUST** invoke `codi:dev-sheets-sync` (caller=bootstrap — push Goals/Stories to Sheet).
 
 <!-- END auto-generated chain -->
 

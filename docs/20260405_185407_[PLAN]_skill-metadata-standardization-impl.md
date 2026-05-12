@@ -12,12 +12,12 @@
 
 ## File Structure
 
-| File | Change |
-|------|--------|
-| `src/constants.ts` | Add `SKILL_CATEGORY` object export (~15 lines) |
-| `tests/unit/schemas.test.ts` | Add one test asserting `SKILL_CATEGORY` covers all `SKILL_CATEGORIES` values |
-| 56 skill templates with hardcoded category | Replace string literal with `${SKILL_CATEGORY.X}`, add import |
-| 11 skill templates using `${PROJECT_NAME_DISPLAY} Platform` | Replace with `${PLATFORM_CATEGORY}`, add/swap import |
+| File                                                        | Change                                                                       |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `src/constants.ts`                                          | Add `SKILL_CATEGORY` object export (~15 lines)                               |
+| `tests/unit/schemas.test.ts`                                | Add one test asserting `SKILL_CATEGORY` covers all `SKILL_CATEGORIES` values |
+| 56 skill templates with hardcoded category                  | Replace string literal with `${SKILL_CATEGORY.X}`, add import                |
+| 11 skill templates using `${PROJECT_NAME_DISPLAY} Platform` | Replace with `${PLATFORM_CATEGORY}`, add/swap import                         |
 
 **Templates using `${PROJECT_NAME_DISPLAY} Platform` (→ `${PLATFORM_CATEGORY}`):**
 `agent-creator`, `artifact-contributor`, `compare-preset`, `dev-docs-manager`, `dev-operations`, `preset-creator`, `refine-rules`, `rule-creator`, `rule-feedback`, `skill-creator`, `skill-feedback-reporter`
@@ -49,6 +49,7 @@
 **Steps**:
 
 1. Write failing test in `tests/unit/schemas.test.ts`. Locate the `describe("category field — SkillFrontmatterSchema"` block and append after it:
+
    ```typescript
    describe("SKILL_CATEGORY constant", () => {
      it("covers every value in SKILL_CATEGORIES", () => {
@@ -65,7 +66,9 @@
      });
    });
    ```
+
    Add `SKILL_CATEGORIES` and `SKILL_CATEGORY` to the import from `#src/constants.js`:
+
    ```typescript
    import {
      PROJECT_NAME,
@@ -79,6 +82,7 @@
 2. Verify test fails: `pnpm test tests/unit/schemas.test.ts` — expected: `SKILL_CATEGORY` is not exported, test fails.
 
 3. Add `SKILL_CATEGORY` to `src/constants.ts`. Insert after the `SKILL_CATEGORIES` block (after `export type SkillCategory = (typeof SKILL_CATEGORIES)[number];`). Note: `SkillCategory` is already defined in this file — no new import needed:
+
    ```typescript
    /**
     * Named constants for each skill category — use in template interpolation instead of
@@ -112,16 +116,16 @@
 ### Task 2: Update Platform category templates (11 templates)
 
 - [ ] **Files**:
-  - `src/templates/skills/agent-creator/template.ts`
-  - `src/templates/skills/artifact-contributor/template.ts`
-  - `src/templates/skills/compare-preset/template.ts`
+  - `src/templates/skills/dev-agent-creator/template.ts`
+  - `src/templates/skills/dev-artifact-contributor/template.ts`
+  - `src/templates/skills/dev-compare-preset/template.ts`
   - `src/templates/skills/dev-docs-manager/template.ts`
   - `src/templates/skills/dev-operations/template.ts`
-  - `src/templates/skills/preset-creator/template.ts`
-  - `src/templates/skills/refine-rules/template.ts`
-  - `src/templates/skills/rule-creator/template.ts`
-  - `src/templates/skills/rule-feedback/template.ts`
-  - `src/templates/skills/skill-creator/template.ts`
+  - `src/templates/skills/dev-preset-creator/template.ts`
+  - `src/templates/skills/dev-refine-rules/template.ts`
+  - `src/templates/skills/dev-rule-creator/template.ts`
+  - `src/templates/skills/dev-rule-feedback/template.ts`
+  - `src/templates/skills/dev-skill-creator/template.ts`
   - `src/templates/skills/skill-feedback-reporter/template.ts`
 - [ ] **Est**: 5 minutes
 
@@ -129,10 +133,11 @@
 
 1. In each of the 11 files:
    - Add `PLATFORM_CATEGORY` to the import from `#src/constants.js`
-   - Replace `` category: ${PROJECT_NAME_DISPLAY} Platform `` with `` category: ${PLATFORM_CATEGORY} ``
+   - Replace `category: ${PROJECT_NAME_DISPLAY} Platform` with `category: ${PLATFORM_CATEGORY}`
    - Remove `PROJECT_NAME_DISPLAY` from the import **only if it is no longer used elsewhere** in that file
 
    Example diff for `agent-creator/template.ts`:
+
    ```typescript
    // BEFORE import:
    import {
@@ -159,6 +164,7 @@
      SUPPORTED_PLATFORMS_YAML,
    } from "#src/constants.js";
    ```
+
    ```
    // BEFORE in template string:
    category: ${PROJECT_NAME_DISPLAY} Platform
@@ -169,7 +175,7 @@
 
 2. Verify: `pnpm build && pnpm test:unit` — expected: all passing, no TypeScript errors.
 
-3. Commit: `git add src/templates/skills/agent-creator/template.ts src/templates/skills/artifact-contributor/template.ts src/templates/skills/compare-preset/template.ts src/templates/skills/dev-docs-manager/template.ts src/templates/skills/dev-operations/template.ts src/templates/skills/preset-creator/template.ts src/templates/skills/refine-rules/template.ts src/templates/skills/rule-creator/template.ts src/templates/skills/rule-feedback/template.ts src/templates/skills/skill-creator/template.ts src/templates/skills/skill-feedback-reporter/template.ts && git commit -m "refactor(templates): replace inline platform category expression with PLATFORM_CATEGORY constant"`
+3. Commit: `git add src/templates/skills/dev-agent-creator/template.ts src/templates/skills/dev-artifact-contributor/template.ts src/templates/skills/dev-compare-preset/template.ts src/templates/skills/dev-docs-manager/template.ts src/templates/skills/dev-operations/template.ts src/templates/skills/dev-preset-creator/template.ts src/templates/skills/dev-refine-rules/template.ts src/templates/skills/dev-rule-creator/template.ts src/templates/skills/dev-rule-feedback/template.ts src/templates/skills/dev-skill-creator/template.ts src/templates/skills/skill-feedback-reporter/template.ts && git commit -m "refactor(templates): replace inline platform category expression with PLATFORM_CATEGORY constant"`
 
 **Verification**: `pnpm test:unit` — expected: all passing.
 
@@ -191,6 +197,7 @@
 1. For each file, add `SKILL_CATEGORY` to the import and replace the hardcoded category string:
 
    `bbva-brand/template.ts`:
+
    ```typescript
    import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
    // In template string:
@@ -198,30 +205,35 @@
    ```
 
    `brand-identity/template.ts`:
+
    ```typescript
    import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
    category: ${SKILL_CATEGORY.BRAND_IDENTITY}
    ```
 
    `codi-brand/template.ts`:
+
    ```typescript
    import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
    category: ${SKILL_CATEGORY.BRAND_IDENTITY}
    ```
 
    `rl3-brand/template.ts`:
+
    ```typescript
    import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
    category: ${SKILL_CATEGORY.BRAND_IDENTITY}
    ```
 
    `content-factory/template.ts`:
+
    ```typescript
    import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
    category: ${SKILL_CATEGORY.CONTENT_CREATION}
    ```
 
    `humanizer/template.ts`:
+
    ```typescript
    import { PROJECT_NAME, SKILL_CATEGORY, SUPPORTED_PLATFORMS_YAML } from "#src/constants.js";
    category: ${SKILL_CATEGORY.CONTENT_REFINEMENT}
@@ -244,7 +256,7 @@
   - `src/templates/skills/project-quality-guard/template.ts` — `Code Quality`
   - `src/templates/skills/refactoring/template.ts` — `Code Quality`
   - `src/templates/skills/security-scan/template.ts` — `Code Quality`
-  - `src/templates/skills/session-recovery/template.ts` — `Code Quality`
+  - `src/templates/skills/dev-session-recovery/template.ts` — `Code Quality`
   - `src/templates/skills/test-coverage/template.ts` — `Code Quality`
   - `src/templates/skills/webapp-testing/template.ts` — `Code Quality`
   - `src/templates/skills/test-run/template.ts` — `Testing`
@@ -255,12 +267,14 @@
 1. For each file, add `SKILL_CATEGORY` to the import and replace the hardcoded category string.
 
    Files using `Code Quality`:
+
    ```typescript
    // add SKILL_CATEGORY to existing import from "#src/constants.js"
    category: ${SKILL_CATEGORY.CODE_QUALITY}
    ```
 
    `test-run/template.ts` (uses `Testing`):
+
    ```typescript
    // add SKILL_CATEGORY to existing import from "#src/constants.js"
    category: ${SKILL_CATEGORY.TESTING}
@@ -268,7 +282,7 @@
 
 2. Verify: `pnpm test:unit` — expected: all passing.
 
-3. Commit: `git add src/templates/skills/code-review/template.ts src/templates/skills/dev-e2e-testing/template.ts src/templates/skills/guided-qa-testing/template.ts src/templates/skills/project-quality-guard/template.ts src/templates/skills/refactoring/template.ts src/templates/skills/security-scan/template.ts src/templates/skills/session-recovery/template.ts src/templates/skills/test-coverage/template.ts src/templates/skills/webapp-testing/template.ts src/templates/skills/test-run/template.ts && git commit -m "refactor(templates): use SKILL_CATEGORY constant in code quality and testing templates"`
+3. Commit: `git add src/templates/skills/code-review/template.ts src/templates/skills/dev-e2e-testing/template.ts src/templates/skills/guided-qa-testing/template.ts src/templates/skills/project-quality-guard/template.ts src/templates/skills/refactoring/template.ts src/templates/skills/security-scan/template.ts src/templates/skills/dev-session-recovery/template.ts src/templates/skills/test-coverage/template.ts src/templates/skills/webapp-testing/template.ts src/templates/skills/test-run/template.ts && git commit -m "refactor(templates): use SKILL_CATEGORY constant in code quality and testing templates"`
 
 **Verification**: `pnpm test:unit` — expected: all passing.
 
@@ -288,6 +302,7 @@
 **Steps**:
 
 1. For each file, add `SKILL_CATEGORY` to the import and replace:
+
    ```typescript
    // add SKILL_CATEGORY to existing import from "#src/constants.js"
    category: ${SKILL_CATEGORY.CREATIVE_AND_DESIGN}
@@ -309,7 +324,7 @@
   - `src/templates/skills/codebase-onboarding/template.ts`
   - `src/templates/skills/commit/template.ts`
   - `src/templates/skills/diagnostics/template.ts`
-  - `src/templates/skills/graph-sync/template.ts`
+  - `src/templates/skills/dev-graph-sync/template.ts`
   - `src/templates/skills/internal-comms/template.ts`
   - `src/templates/skills/mcp-ops/template.ts`
   - `src/templates/skills/mobile-development/template.ts`
@@ -319,6 +334,7 @@
 **Steps**:
 
 1. For each file, add `SKILL_CATEGORY` to the import and replace:
+
    ```typescript
    // add SKILL_CATEGORY to existing import from "#src/constants.js"
    category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
@@ -326,7 +342,7 @@
 
 2. Verify: `pnpm test:unit` — expected: all passing.
 
-3. Commit: `git add src/templates/skills/claude-api/template.ts src/templates/skills/codebase-explore/template.ts src/templates/skills/codebase-onboarding/template.ts src/templates/skills/commit/template.ts src/templates/skills/diagnostics/template.ts src/templates/skills/graph-sync/template.ts src/templates/skills/internal-comms/template.ts src/templates/skills/mcp-ops/template.ts src/templates/skills/mobile-development/template.ts src/templates/skills/project-documentation/template.ts && git commit -m "refactor(templates): use SKILL_CATEGORY constant in developer tools templates"`
+3. Commit: `git add src/templates/skills/claude-api/template.ts src/templates/skills/codebase-explore/template.ts src/templates/skills/codebase-onboarding/template.ts src/templates/skills/commit/template.ts src/templates/skills/diagnostics/template.ts src/templates/skills/dev-graph-sync/template.ts src/templates/skills/internal-comms/template.ts src/templates/skills/mcp-ops/template.ts src/templates/skills/mobile-development/template.ts src/templates/skills/project-documentation/template.ts && git commit -m "refactor(templates): use SKILL_CATEGORY constant in developer tools templates"`
 
 **Verification**: `pnpm test:unit` — expected: all passing.
 
@@ -343,7 +359,7 @@
   - `src/templates/skills/guided-execution/template.ts`
   - `src/templates/skills/plan-executor/template.ts`
   - `src/templates/skills/plan-writer/template.ts`
-  - `src/templates/skills/step-documenter/template.ts`
+  - `src/templates/skills/dev-step-documenter/template.ts`
   - `src/templates/skills/subagent-dev/template.ts`
   - `src/templates/skills/tdd/template.ts`
   - `src/templates/skills/verification/template.ts`
@@ -353,6 +369,7 @@
 **Steps**:
 
 1. For each file, add `SKILL_CATEGORY` to the import and replace:
+
    ```typescript
    // add SKILL_CATEGORY to existing import from "#src/constants.js"
    category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
@@ -360,7 +377,7 @@
 
 2. Verify: `pnpm test:unit` — expected: all passing.
 
-3. Commit: `git add src/templates/skills/audit-fix/template.ts src/templates/skills/brainstorming/template.ts src/templates/skills/branch-finish/template.ts src/templates/skills/debugging/template.ts src/templates/skills/evidence-gathering/template.ts src/templates/skills/guided-execution/template.ts src/templates/skills/plan-executor/template.ts src/templates/skills/plan-writer/template.ts src/templates/skills/step-documenter/template.ts src/templates/skills/subagent-dev/template.ts src/templates/skills/tdd/template.ts src/templates/skills/verification/template.ts src/templates/skills/worktrees/template.ts && git commit -m "refactor(templates): use SKILL_CATEGORY constant in developer workflow templates"`
+3. Commit: `git add src/templates/skills/audit-fix/template.ts src/templates/skills/brainstorming/template.ts src/templates/skills/branch-finish/template.ts src/templates/skills/debugging/template.ts src/templates/skills/evidence-gathering/template.ts src/templates/skills/guided-execution/template.ts src/templates/skills/plan-executor/template.ts src/templates/skills/plan-writer/template.ts src/templates/skills/dev-step-documenter/template.ts src/templates/skills/subagent-dev/template.ts src/templates/skills/tdd/template.ts src/templates/skills/verification/template.ts src/templates/skills/worktrees/template.ts && git commit -m "refactor(templates): use SKILL_CATEGORY constant in developer workflow templates"`
 
 **Verification**: `pnpm test:unit` — expected: all passing.
 
@@ -387,26 +404,31 @@
 1. For each file, add `SKILL_CATEGORY` to the import and replace the category string with the appropriate constant:
 
    Document Generation (`deck-engine`, `doc-engine`):
+
    ```typescript
    category: ${SKILL_CATEGORY.DOCUMENT_GENERATION}
    ```
 
    File Format Tools (`docx`, `pdf`, `pptx`, `xlsx`):
+
    ```typescript
    category: ${SKILL_CATEGORY.FILE_FORMAT_TOOLS}
    ```
 
    Planning (`roadmap`):
+
    ```typescript
    category: ${SKILL_CATEGORY.PLANNING}
    ```
 
    Productivity (`audio-transcriber`, `notebooklm`):
+
    ```typescript
    category: ${SKILL_CATEGORY.PRODUCTIVITY}
    ```
 
    Workflow (`daily-log`, `session-handoff`):
+
    ```typescript
    category: ${SKILL_CATEGORY.WORKFLOW}
    ```
@@ -429,9 +451,11 @@
 1. Run full test suite: `pnpm test:unit`
 
 2. Verify no hardcoded category strings remain in templates:
+
    ```bash
    grep -rn "^category: [A-Z][a-z]" src/templates/skills/ --include="*.ts"
    ```
+
    Expected: no output (zero matches — all remaining category lines use template interpolation `${...}`).
 
 3. Verify build passes: `pnpm build`
