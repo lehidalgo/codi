@@ -1,0 +1,6 @@
+name: no-ai-contrib
+description: Community contribution
+version: 1.0.0
+artifacts:
+  rules:
+    - no-ai-attribution
