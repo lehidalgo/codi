@@ -9,6 +9,7 @@ import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loa
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
 import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
 import { AVAILABLE_MCP_SERVER_TEMPLATES } from "../core/scaffolder/mcp-template-loader.js";
+import { createWorkflow } from "../core/scaffolder/workflow-scaffolder.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
@@ -157,6 +158,43 @@ export async function addMcpServerHandler(
     requestedTemplate: options.template,
     availableTemplates: AVAILABLE_MCP_SERVER_TEMPLATES,
     scaffold: (template, configDir) => createMcpServer({ name, configDir, template }),
+  });
+}
+
+interface AddWorkflowData {
+  name: string;
+  path: string;
+}
+
+/**
+ * ISSUE-087 — scaffold a custom workflow yaml in `.codi/workflows/<name>.yaml`.
+ *
+ * No template flag yet: the built-in workflows (project / feature / bug-fix /
+ * refactor / migration / team-consolidation) ship from src/templates/workflows
+ * and are not user-extensible through the scaffolder. The scaffold writes a
+ * minimal stub (intent → execute → done) that the user fills in by hand.
+ */
+export async function addWorkflowHandler(
+  projectRoot: string,
+  name: string,
+): Promise<CommandResult<AddWorkflowData>> {
+  const configDir = resolveProjectDir(projectRoot);
+  const result = await createWorkflow({ name, configDir });
+  if (!result.ok) {
+    return createCommandResult({
+      success: false,
+      command: "add workflow",
+      data: { name, path: "" },
+      errors: result.errors,
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+  await logAddToLedger(projectRoot, "workflow", name);
+  return createCommandResult({
+    success: true,
+    command: "add workflow",
+    data: { name, path: result.data },
+    exitCode: EXIT_CODES.SUCCESS,
   });
 }
 

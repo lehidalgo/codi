@@ -44,6 +44,19 @@ export const EvalsDataSchema = z.object({
     .datetime()
     .optional()
     .describe("ISO 8601 timestamp of the last time any case was updated."),
+  // ISSUE-100 — per-skill override for the evolve-readiness threshold.
+  // Most skills are well-served by the global `MIN_FEEDBACK_FOR_EVOLVE`
+  // default. Skills that should NEVER evolve until a larger corpus is
+  // collected (e.g. high-traffic skills with high cost per false-positive
+  // change) can raise this; rarely-fired skills can lower it to 1-2.
+  minFeedbackForEvolve: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      "Per-skill minimum feedback count needed to trigger evolve. Falls back to MIN_FEEDBACK_FOR_EVOLVE when omitted (ISSUE-100).",
+    ),
 });
 
 export type EvalCase = z.infer<typeof EvalCaseSchema>;

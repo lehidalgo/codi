@@ -36,10 +36,18 @@ export type BrainDb = BetterSQLite3Database<typeof schema>;
  * top-level location and no `state/brain.db` is present yet, the legacy
  * path is migrated transparently.
  */
+/**
+ * ISSUE-095 — upper bound on the parent-directory walk in
+ * `findProjectBrainPath`. 64 levels covers any realistic project tree
+ * while still terminating on pathological symlink loops. Exported so
+ * tests can assert the bound directly.
+ */
+export const BRAIN_PATH_WALK_MAX = 64;
+
 export function findProjectBrainPath(start: string): string | null {
   let current = resolve(start);
-  // Bound the walk: stop at the filesystem root.
-  for (let i = 0; i < 64; i += 1) {
+  // Bound the walk: stop at the filesystem root or at BRAIN_PATH_WALK_MAX.
+  for (let i = 0; i < BRAIN_PATH_WALK_MAX; i += 1) {
     const codiDir = join(current, PROJECT_DIR);
     if (existsSync(codiDir)) {
       try {

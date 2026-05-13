@@ -11,6 +11,7 @@ import {
   addAgentHandler,
   addBrandHandler,
   addMcpServerHandler,
+  addWorkflowHandler,
   handleWizardFlow,
   brandAsArtifactHandler,
 } from "./add-handlers.js";
@@ -164,6 +165,29 @@ export function registerAddCommand(program: Command): void {
 
       const result = await addBrandHandler(process.cwd(), name);
       if (result.success) await regenerateConfigs(process.cwd());
+      handleOutput(result, globalOptions);
+      process.exit(result.exitCode);
+    });
+
+  // ISSUE-087 — workflow scaffolder. No --template / --all variants yet: the
+  // built-in workflows (project / feature / bug-fix / refactor / migration /
+  // team-consolidation) ship from src/templates/workflows and are not
+  // user-extensible through this command. Hook scaffolder deferred (hooks
+  // are CapabilityType, framework-managed via hook-installer).
+  addCmd
+    .command("workflow [name]")
+    .description("Scaffold a custom workflow yaml in .codi/workflows/<name>.yaml")
+    .action(async (name: string | undefined) => {
+      const globalOptions = program.opts() as GlobalOptions;
+      initFromOptions(globalOptions);
+      if (!name) {
+        emitNameRequiredError({
+          artifactType: "workflow",
+          label: "Workflow",
+          options: globalOptions,
+        });
+      }
+      const result = await addWorkflowHandler(process.cwd(), name);
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });

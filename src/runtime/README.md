@@ -1,23 +1,37 @@
-# src/runtime/ — Codi v3 ed.0 runtime
+# src/runtime/ — Codi runtime layer
 
-Codi integration target (per ADR-v3ed0-002).
+Hosts the agent-facing runtime: brain (SQLite), capture hooks, workflow
+engine, and the brain-ui HTTP server.
 
-## Purpose
+## Layout
 
-Codi v3 ed.0 is "static config generator (Codi v2 way) + runtime SQLite-backed hooks (Codi way)". This module hosts the runtime layer:
-
-- **procedures/** (sprint 1) — event log + reducer (from `codi/lib/procedures/`)
-- **classifier/** (sprint 1) — incidental vs scope (from `codi/lib/classifier/`)
-- **gates/** (sprint 1) — gate runner + 14+1 gate definitions (from `codi/lib/gates/`)
-- **sync/** (sprint 2) — `ExternalSyncer` interface + SheetsSyncer + XlsxSyncer adapters (refactored from `codi/lib/sheets/` + `codi/lib/xlsx/`)
-- **\_deprecated/** (sprint 1) — Sheets/xlsx legacy backends preserved for reference
+- **brain/** — SQLite brain DB (better-sqlite3 + Drizzle schema mirror).
+  Schema in `schema.ts`, migrations in `migrate.ts`, opener in `db.ts`.
+- **brain-ui/** — Hono server that exposes a read-only window into the
+  brain. Routes in `routes-api.ts`, server-rendered pages in `pages/`,
+  SSE stream in `sse.ts`, lifecycle (pidfile + spawn-or-attach) in
+  `lifecycle.ts`.
+- **capture/** — Stop / PostToolUse / SessionStart hooks. Marker parser
+  in `markers.ts`, persistence in `persist.ts`, session bootstrap in
+  `session.ts`, agent memory ingest in `agent-memory.ts`.
+- **workflow/** — phase runner, gate registry, transitions, slim status.
+  Built-in workflow definitions seeded from
+  `src/templates/workflows/*.yaml` via `brain/seed-workflows.ts`.
+- **tokens/** — context-window pricing + token accounting.
+- **brain-event-log.ts** — wrapper around the brain DB that exposes the
+  workflow event log + active-workflow pointer to callers in `src/cli/`.
 
 ## Status
 
-**Skeleton stage** — empty until sprint 1 (Codi merge per ADR-v3ed0-002).
+Production runtime. ISSUE-099 dropped the legacy "Skeleton stage" note —
+sprints 1-7 closed long ago and the layout above is the live reality.
 
 ## Related
 
-- ADR-v3ed0-002: Codi copy + adapt
-- ADR-v3ed0-005: SQLite canonical + ExternalSyncer
-- ADR-v3ed0-008: DDD internal layout (this lives in src/runtime/, distinct from src/core/)
+- ADR-v3ed0-002: Codi merge + adapt
+- ADR-v3ed0-005: SQLite canonical + ExternalSyncer (sync runtime deleted
+  in ISSUE-005; ExternalSyncer interface survives inside the
+  `dev-sheets-sync` skill template)
+- ADR-v3ed0-008: DDD internal layout (this directory is distinct from
+  `src/core/`, which holds pure functions; `src/runtime/` carries the
+  side-effect-heavy plumbing)

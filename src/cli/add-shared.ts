@@ -35,7 +35,15 @@ import { handleOutput, regenerateConfigs } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 
 /** Closed set of artifact kinds `codi add` accepts. */
-export type AddArtifactType = "rule" | "skill" | "agent" | "mcp-server" | "brand";
+export type AddArtifactType =
+  | "rule"
+  | "skill"
+  | "agent"
+  | "mcp-server"
+  | "brand"
+  // ISSUE-087 — workflow scaffolder. Yaml-only artifact, written to
+  // .codi/workflows/, outside the four core artifact directories.
+  | "workflow";
 
 /** Shape every per-type handler conforms to (rule/skill/agent/mcp-server). */
 export type AddHandler<O extends GlobalOptions> = (
