@@ -3,8 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
+// ISSUE-044 — synthetic-input boundary mock.
+// This file tests the rule-scaffolder's *frontmatter guard* — the
+// behavior that injects a default frontmatter block when the loaded
+// template lacks one. Real shipped templates are well-formed, so the
+// only way to exercise the guard is to feed the scaffolder a
+// deliberately broken template. `loadTemplate` is the data-source
+// boundary; mocking it here plays the same role a malformed fixture
+// file would. The SUT (`createRule`) is exercised in full.
 vi.mock("#src/core/scaffolder/template-loader.js", () => ({
   loadTemplate: vi.fn(),
   getTemplateVersion: vi.fn(),

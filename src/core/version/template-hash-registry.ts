@@ -35,6 +35,20 @@ export interface TemplateHashRegistry {
 
 let _registry: TemplateHashRegistry | null = null;
 
+/**
+ * Test escape hatch — when `CODI_TEST_EMPTY_REGISTRY=1` is set in the
+ * environment, `buildTemplateHashRegistry()` returns an empty registry
+ * without hashing the 130+ template files on disk. This replaces the
+ * previous pattern of `vi.mock("#src/core/version/template-hash-registry.js",
+ * ...)` calls scattered across the test suite (ISSUE-044): tests that do
+ * not care about fingerprint values just opt in to the empty registry
+ * via the env var, no module-level mock required.
+ *
+ * Production code never sets this var; the runtime cost is one
+ * `process.env` lookup per `buildTemplateHashRegistry()` call.
+ */
+const TEST_EMPTY_ENV = "CODI_TEST_EMPTY_REGISTRY";
+
 export function getCLIVersion(): string {
   // Resolved at build time via tsup — falls back to "0.0.0" in tests
   try {
@@ -110,7 +124,15 @@ function buildRegistry(): TemplateHashRegistry {
 /** Returns the singleton template hash registry. Computed once per process. */
 export function buildTemplateHashRegistry(): TemplateHashRegistry {
   if (!_registry) {
-    _registry = buildRegistry();
+    if (process.env[TEST_EMPTY_ENV] === "1") {
+      _registry = {
+        cliVersion: getCLIVersion(),
+        generatedAt: new Date().toISOString(),
+        templates: {},
+      };
+    } else {
+      _registry = buildRegistry();
+    }
   }
   return _registry;
 }

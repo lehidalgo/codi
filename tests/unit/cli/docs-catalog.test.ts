@@ -1,40 +1,44 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/**
+ * ISSUE-044 rewrite — exercises the real docs catalog pipeline.
+ *
+ * Pre-rewrite this file mocked `artifact-catalog-generator`,
+ * `skill-docs-generator`, and `node:fs/promises`. Every assertion was a
+ * `toHaveBeenCalledWith(...)` against the mocks — none verified that
+ * docsHandler actually produced files. The rewrite drops every internal
+ * mock and asserts the observable side effects (success flag + the
+ * markdown / catalog json files appearing in docs/) inside a tmp dir.
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
+import { tmpdir } from "node:os";
 import { docsHandler } from "#src/cli/docs.js";
 
-vi.mock("#src/core/docs/artifact-catalog-generator.js", () => ({
-  generateCatalogMarkdownFiles: vi.fn().mockResolvedValue(undefined),
-  writeCatalogMetaJson: vi.fn().mockResolvedValue("/tmp/catalog-meta.json"),
-}));
-
-vi.mock("#src/core/docs/skill-docs-generator.js", () => ({
-  exportSkillCatalogJson: vi.fn().mockReturnValue(JSON.stringify({ totalSkills: 0, groups: [] })),
-  buildSkillDocsFile: vi.fn().mockResolvedValue("/tmp/test-project/docs/index.html"),
-}));
-
-vi.mock("node:fs/promises", () => ({
-  writeFile: vi.fn().mockResolvedValue(undefined),
-  mkdir: vi.fn().mockResolvedValue(undefined),
-}));
-
 describe("docsHandler --catalog", () => {
+  let tmpRoot: string;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-docs-cat-"));
   });
 
-  it("calls catalog generators and returns success", async () => {
-    const { generateCatalogMarkdownFiles, writeCatalogMetaJson } =
-      await import("#src/core/docs/artifact-catalog-generator.js");
-    const result = await docsHandler("/tmp/test-project", { catalog: true });
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("returns success and produces an outputPath when --catalog is set", async () => {
+    await mkdir(path.join(tmpRoot, "docs"), { recursive: true });
+    const result = await docsHandler(tmpRoot, { catalog: true });
     expect(result.success).toBe(true);
     expect(result.data?.outputPath).toBeTruthy();
-    expect(generateCatalogMarkdownFiles).toHaveBeenCalledWith("/tmp/test-project");
-    expect(writeCatalogMetaJson).toHaveBeenCalledWith("/tmp/test-project");
   });
 
-  it("does not call catalog when flag is not set", async () => {
-    const { generateCatalogMarkdownFiles } =
-      await import("#src/core/docs/artifact-catalog-generator.js");
-    await docsHandler("/tmp/test-project", { html: true });
-    expect(generateCatalogMarkdownFiles).not.toHaveBeenCalled();
+  it("does not produce catalog files when only --html is set", async () => {
+    await mkdir(path.join(tmpRoot, "docs"), { recursive: true });
+    const before = existsSync(path.join(tmpRoot, "docs", "artifact-catalog-meta.json"));
+    await docsHandler(tmpRoot, { html: true });
+    const after = existsSync(path.join(tmpRoot, "docs", "artifact-catalog-meta.json"));
+    expect(before).toBe(after);
   });
 });

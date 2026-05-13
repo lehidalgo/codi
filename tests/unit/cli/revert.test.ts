@@ -12,8 +12,15 @@ import {
   PROJECT_DIR,
 } from "#src/constants.js";
 
-vi.mock("../../../src/cli/shared.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../src/cli/shared.js")>();
+// ISSUE-044 — boundary mock for `regenerateConfigs` ONLY.
+// shared.js's `regenerateConfigs` writes per-agent files across every
+// installed adapter (.claude/, .cursor/, .codex/ …) — running it in the
+// vitest worker would contaminate the actual project's generated output
+// alongside the tmp dir under test. `importOriginal()` preserves every
+// other helper in shared.js; this is a side-effect-firewall mock, not a
+// SUT substitution.
+vi.mock("#src/cli/shared.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("#src/cli/shared.js")>();
   return {
     ...actual,
     regenerateConfigs: vi.fn().mockResolvedValue(true),

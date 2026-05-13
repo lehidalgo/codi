@@ -1,17 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-// Mock expensive template-hashing — skill-management tests cover the skill lifecycle
-// (add, export, feedback), not hash-registry correctness.
-vi.mock("#src/core/version/template-hash-registry.js", () => ({
-  buildTemplateHashRegistry: vi.fn(() => ({
-    cliVersion: "0.0.0",
-    generatedAt: new Date().toISOString(),
-    templates: {},
-  })),
-  getTemplateFingerprint: vi.fn(() => undefined),
-  getAllFingerprints: vi.fn(() => []),
-  _resetRegistryCache: vi.fn(),
-}));
+// Opt the singleton registry into its test-empty mode (ISSUE-044) — this
+// suite covers the skill lifecycle (add, export, feedback), not
+// hash-registry correctness, and hashing 130+ templates eagerly causes
+// flaky timeouts under parallel vitest workers.
+process.env["CODI_TEST_EMPTY_REGISTRY"] = "1";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { cleanupTmpDir } from "../helpers/fs.js";

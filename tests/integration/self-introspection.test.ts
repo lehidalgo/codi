@@ -1,15 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-vi.mock("#src/core/version/template-hash-registry.js", () => ({
-  buildTemplateHashRegistry: vi.fn(() => ({
-    cliVersion: "0.0.0",
-    generatedAt: new Date().toISOString(),
-    templates: {},
-  })),
-  getTemplateFingerprint: vi.fn(() => undefined),
-  getAllFingerprints: vi.fn(() => []),
-  _resetRegistryCache: vi.fn(),
-}));
+// Opt the singleton registry into its test-empty mode (ISSUE-044) — this
+// suite exercises real CLI flow; hashing 130+ templates eagerly causes
+// flaky timeouts under parallel vitest workers.
+process.env["CODI_TEST_EMPTY_REGISTRY"] = "1";
 
 // Integration tests do real I/O; under 150 parallel workers contention can
 // exceed the default 10s timeout.
