@@ -322,6 +322,32 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `DELETE FROM workflow_runs WHERE workflow_id = '__codi_session__'`,
     ],
   ],
+  [
+    12,
+    [
+      // ISSUE-049 — write-time artifact attribution for corrections.
+      //
+      // Pre-v12: the `corrections` table existed in schema but had no
+      // writer. The audit proposed a SQL VIEW that JOINed corrections to
+      // artifacts_used by (session_id, turn_id) — but turn-overlap is
+      // correlation, not causation, and a VIEW would calcify a flawed
+      // attribution heuristic.
+      //
+      // Post-v12: corrections gain a `linked_artifacts` TEXT column
+      // populated at write-time by `recordCorrectionFromMarker` in
+      // runtime/capture/persist.ts. When a CORRECTION marker is
+      // persisted by the Stop hook, we snapshot the artifacts active in
+      // that exact turn and store the list as a JSON array. This makes
+      // the attribution explicit at the moment the correction was
+      // captured, instead of inferring it later from temporal overlap.
+      //
+      // The index covers the (session_id, source_turn_id) lookup
+      // performed during snapshot resolution.
+      `ALTER TABLE corrections ADD COLUMN linked_artifacts TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_corrections_session_turn
+         ON corrections(session_id, source_turn_id)`,
+    ],
+  ],
 ];
 
 function columnExists(raw: Database.Database, table: string, column: string): boolean {

@@ -119,6 +119,11 @@ export const corrections = sqliteTable("corrections", {
   diffSummary: text("diff_summary").notNull(),
   sourceTurnId: integer("source_turn_id"),
   detectedVia: text("detected_via").notNull(),
+  // ISSUE-049 — JSON-encoded string[] of artifact_name snapshot at the
+  // exact turn this correction was captured. Populated by
+  // recordCorrectionFromMarker at write-time so attribution is causal,
+  // not temporal-overlap inferred via a VIEW.
+  linkedArtifacts: text("linked_artifacts"),
 });
 
 export const artifactsUsed = sqliteTable(
