@@ -183,7 +183,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 11;
+export const CURRENT_SCHEMA_VERSION = 13;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -346,6 +346,46 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `ALTER TABLE corrections ADD COLUMN linked_artifacts TEXT`,
       `CREATE INDEX IF NOT EXISTS idx_corrections_session_turn
          ON corrections(session_id, source_turn_id)`,
+    ],
+  ],
+  [
+    13,
+    [
+      // ISSUE-050 — persisted history of `evals.json` trigger evaluations.
+      //
+      // Background: every Codi skill ships `evals/evals.json`, run by
+      // `dev-skill-creator/scripts/ts/run-eval.ts` to verify the skill's
+      // description actually causes the agent to trigger. The runner has
+      // been writing to stdout only — no history, no trend analysis.
+      //
+      // This table is the persistence target for that runner (and any
+      // future eval harness, e.g. CI sweeps). Indexed for the two most
+      // likely queries: "show the last N runs of skill X" and
+      // "show recent runs across a whole project". A nullable `metadata`
+      // JSON column hosts forward-compatible extras so new eval harnesses
+      // do not force a v14 ALTER for every new dimension.
+      `CREATE TABLE IF NOT EXISTS eval_runs (
+         run_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+         ts              INTEGER NOT NULL,
+         project_id      TEXT NOT NULL,
+         session_id      TEXT,
+         skill_name      TEXT NOT NULL,
+         skill_version   TEXT,
+         case_id         TEXT NOT NULL,
+         passed          INTEGER NOT NULL,
+         trigger_rate    REAL,
+         runs            INTEGER NOT NULL DEFAULT 1,
+         triggers        INTEGER,
+         model           TEXT,
+         duration_ms     INTEGER,
+         error           TEXT,
+         trigger_source  TEXT NOT NULL,
+         metadata        TEXT
+       )`,
+      `CREATE INDEX IF NOT EXISTS idx_eval_runs_skill_ts
+         ON eval_runs(skill_name, ts DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_eval_runs_project_skill
+         ON eval_runs(project_id, skill_name)`,
     ],
   ],
 ];

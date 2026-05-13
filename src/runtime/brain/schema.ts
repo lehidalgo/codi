@@ -9,7 +9,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, primaryKey } from "drizzle-orm/sqlite-core";
 
 // ─── 9 capture / observability tables ───────────────────────────────────────
 
@@ -141,6 +141,37 @@ export const artifactsUsed = sqliteTable(
   },
   (t) => ({
     idxNameOutcome: index("idx_artifacts_used_name_outcome").on(t.artifactName, t.outcome),
+  }),
+);
+
+// ISSUE-050 — eval_runs persists every execution of an `evals.json`
+// case, keyed by (project_id, skill_name, ts). Populated by the brain
+// CLI subcommand `codi brain record-eval-run` so the eval harness
+// (currently `dev-skill-creator/scripts/ts/run-eval.ts`) stays
+// decoupled from the runtime layer.
+export const evalRuns = sqliteTable(
+  "eval_runs",
+  {
+    runId: integer("run_id").primaryKey({ autoIncrement: true }),
+    ts: integer("ts").notNull(),
+    projectId: text("project_id").notNull(),
+    sessionId: text("session_id"),
+    skillName: text("skill_name").notNull(),
+    skillVersion: text("skill_version"),
+    caseId: text("case_id").notNull(),
+    passed: integer("passed").notNull(),
+    triggerRate: real("trigger_rate"),
+    runs: integer("runs").notNull().default(1),
+    triggers: integer("triggers"),
+    model: text("model"),
+    durationMs: integer("duration_ms"),
+    error: text("error"),
+    triggerSource: text("trigger_source").notNull(),
+    metadata: text("metadata"),
+  },
+  (t) => ({
+    idxSkillTs: index("idx_eval_runs_skill_ts").on(t.skillName, t.ts),
+    idxProjectSkill: index("idx_eval_runs_project_skill").on(t.projectId, t.skillName),
   }),
 );
 

@@ -16,6 +16,7 @@ import {
 } from "#src/runtime/brain-ui/lifecycle.js";
 import { openBrain } from "#src/runtime/brain/db.js";
 import { applyMigrations } from "#src/runtime/brain/migrate.js";
+import { recordEvalRun, type EvalRunRecord } from "#src/runtime/brain/eval-runs.js";
 import {
   ingestMemoryFile,
   SUPPORTED_AGENT_TYPES,
@@ -423,6 +424,128 @@ export async function brainIngestMemoryHandler(
   }
 }
 
+// ─── Eval-run recorder (ISSUE-050) ────────────────────────────────────────
+
+interface RecordEvalRunFlags {
+  readonly json?: string;
+  readonly stdin?: boolean;
+  readonly brainPath?: string;
+}
+
+interface RecordEvalRunData {
+  readonly runId: number;
+  readonly skillName: string;
+  readonly caseId: string;
+}
+
+async function readStdinJson(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let buf = "";
+    process.stdin.on("data", (chunk) => {
+      buf += chunk.toString();
+    });
+    process.stdin.on("end", () => resolve(buf));
+    process.stdin.on("error", reject);
+  });
+}
+
+/**
+ * Persist one `evals.json` execution record. The eval harness
+ * (currently dev-skill-creator/scripts/ts/run-eval.ts) stays outside
+ * the runtime layer — it shells out to `codi brain record-eval-run`
+ * with the JSON payload. The CLI is the only place that knows about
+ * the brain DB; the harness keeps doing its own thing.
+ */
+export async function recordEvalRunHandler(
+  flags: RecordEvalRunFlags,
+): Promise<CommandResult<RecordEvalRunData>> {
+  let raw: string;
+  if (flags.stdin) {
+    raw = await readStdinJson();
+  } else if (typeof flags.json === "string" && flags.json.length > 0) {
+    raw = flags.json;
+  } else {
+    return createCommandResult({
+      success: false,
+      command: "brain record-eval-run",
+      data: { runId: 0, skillName: "", caseId: "" },
+      errors: [
+        {
+          code: "E_INPUT_REQUIRED",
+          message: "Pass --json '<payload>' or --stdin to provide the EvalRunRecord.",
+          hint: "",
+          severity: "error",
+          context: {},
+        },
+      ],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  let record: EvalRunRecord;
+  try {
+    record = JSON.parse(raw) as EvalRunRecord;
+  } catch (err) {
+    return createCommandResult({
+      success: false,
+      command: "brain record-eval-run",
+      data: { runId: 0, skillName: "", caseId: "" },
+      errors: [
+        {
+          code: "E_JSON_INVALID",
+          message: `Payload is not valid JSON: ${(err as Error).message}`,
+          hint: "",
+          severity: "error",
+          context: {},
+        },
+      ],
+      exitCode: EXIT_CODES.GENERAL_ERROR,
+    });
+  }
+
+  const required: Array<keyof EvalRunRecord> = [
+    "ts",
+    "projectId",
+    "skillName",
+    "caseId",
+    "passed",
+    "triggerSource",
+  ];
+  for (const key of required) {
+    if (record[key] === undefined) {
+      return createCommandResult({
+        success: false,
+        command: "brain record-eval-run",
+        data: { runId: 0, skillName: "", caseId: "" },
+        errors: [
+          {
+            code: "E_INPUT_REQUIRED",
+            message: `Missing required field: ${String(key)}`,
+            hint: "",
+            severity: "error",
+            context: { field: String(key) },
+          },
+        ],
+        exitCode: EXIT_CODES.GENERAL_ERROR,
+      });
+    }
+  }
+
+  const handle = openBrain(flags.brainPath ? { dbPath: flags.brainPath } : {});
+  try {
+    applyMigrations(handle.raw);
+    const runId = recordEvalRun(handle.raw, record);
+    return createCommandResult({
+      success: true,
+      command: "brain record-eval-run",
+      data: { runId, skillName: record.skillName, caseId: record.caseId },
+      exitCode: EXIT_CODES.SUCCESS,
+    });
+  } finally {
+    handle.close();
+  }
+}
+
 // ─── Command registration ─────────────────────────────────────────────────
 
 export function registerBrainCommand(program: Command): void {
@@ -449,6 +572,22 @@ export function registerBrainCommand(program: Command): void {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);
       const result = await brainExportHandler(opts);
+      handleOutput(result, globalOpts);
+    });
+
+  brain
+    .command("record-eval-run")
+    .description(
+      "Persist one evals.json case result into the brain (ISSUE-050). " +
+        "Reads the record from --json '<payload>' or from stdin when --stdin is set.",
+    )
+    .option("--json <payload>", "EvalRunRecord JSON string. Mutually exclusive with --stdin")
+    .option("--stdin", "read the EvalRunRecord JSON payload from stdin")
+    .option("--brain-path <path>", "override brain DB path")
+    .action(async (opts: { json?: string; stdin?: boolean; brainPath?: string }) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result = await recordEvalRunHandler(opts);
       handleOutput(result, globalOpts);
     });
 
