@@ -16,6 +16,12 @@ import { featureAdapter } from "./feature/index.js";
 import { refactorAdapter } from "./refactor/index.js";
 import { migrationAdapter } from "./migration/index.js";
 import { projectAdapter } from "./project/index.js";
+// ISSUE-096 — quick + team-consolidation adapters. Their adaptations are
+// empty placeholders today (no adaptive flags / profiles / skip rules),
+// but registering them lets every caller rely on getAdapter() returning
+// a value and walk phaseOrder uniformly.
+import { quickAdapter } from "./quick/index.js";
+import { teamConsolidationAdapter } from "./team-consolidation/index.js";
 
 const ADAPTERS: Partial<Record<WorkflowType, WorkflowAdapter<unknown>>> = {
   "bug-fix": bugFixAdapter as WorkflowAdapter<unknown>,
@@ -23,7 +29,8 @@ const ADAPTERS: Partial<Record<WorkflowType, WorkflowAdapter<unknown>>> = {
   refactor: refactorAdapter as WorkflowAdapter<unknown>,
   migration: migrationAdapter as WorkflowAdapter<unknown>,
   project: projectAdapter as WorkflowAdapter<unknown>,
-  // `quick` and `team-consolidation` run without an adaptive intake.
+  quick: quickAdapter as WorkflowAdapter<unknown>,
+  "team-consolidation": teamConsolidationAdapter as WorkflowAdapter<unknown>,
 };
 
 export function getAdapter(type: WorkflowType): WorkflowAdapter<unknown> | undefined {

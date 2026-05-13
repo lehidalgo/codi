@@ -140,3 +140,34 @@ export function targetsSupporting(
 ): readonly TargetId[] {
   return TARGET_IDS.filter((id) => CAPABILITIES_MATRIX[id][feature]);
 }
+
+/**
+ * ISSUE-097 — derive the per-artifact-type support predicate from
+ * `ARTIFACT_TYPES`. The matrix still carries flat boolean fields for
+ * back-compat (consumers like plugin-manifest.ts inspect them directly),
+ * but `supportsArtifact()` centralises the type → field mapping so a
+ * future ArtifactType addition surfaces a single compile-time hole here
+ * instead of a silent fan-out across adapters.
+ *
+ * Mirrors the relationship documented in `src/core/artifact-types.ts`:
+ *   rule       → cap.rules
+ *   skill      → cap.skills
+ *   agent      → cap.agents
+ *   mcp-server → cap.mcp
+ */
+const ARTIFACT_TO_CAPABILITY: Record<
+  (typeof import("../artifact-types.js").ARTIFACT_TYPES)[number],
+  keyof Omit<TargetCapabilities, "target" | "tier">
+> = {
+  rule: "rules",
+  skill: "skills",
+  agent: "agents",
+  "mcp-server": "mcp",
+};
+
+export function supportsArtifact(
+  target: TargetId,
+  artifactType: keyof typeof ARTIFACT_TO_CAPABILITY,
+): boolean {
+  return supports(target, ARTIFACT_TO_CAPABILITY[artifactType]);
+}
