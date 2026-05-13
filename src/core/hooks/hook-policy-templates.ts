@@ -3,6 +3,7 @@ import {
   PROJECT_CLI,
   PROJECT_NAME,
   PROJECT_NAME_DISPLAY,
+  SUPPORTED_PLATFORMS,
 } from "#src/constants.js";
 
 /**
@@ -145,8 +146,9 @@ const VALID_CATEGORIES = [
   'Document Generation', 'File Format Tools', 'Planning', 'Productivity',
   'Testing', 'Workflow', '${PROJECT_NAME_DISPLAY} Platform',
 ];
-// Mirrors SUPPORTED_PLATFORMS in src/constants.ts
-const VALID_PLATFORMS = ['claude-code', 'cursor', 'codex', 'windsurf', 'cline', 'copilot'];
+// Interpolated from SUPPORTED_PLATFORMS in src/constants.ts at build time so
+// the generated hook script always agrees with the canonical agent-id list.
+const VALID_PLATFORMS = ${JSON.stringify([...SUPPORTED_PLATFORMS])};
 const VALID_EFFORT = ['low', 'medium', 'high', 'max'];
 const VALID_SHELL = ['bash', 'powershell'];
 

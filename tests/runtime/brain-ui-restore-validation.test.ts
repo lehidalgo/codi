@@ -18,9 +18,9 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { buildApp } from "#src/runtime/brain-ui/index.js";
-import { applyMigrations, openBrain } from "#src/runtime/brain/index.js";
-
+import { buildApp } from "#src/runtime/brain-ui/server.js";
+import { openBrain } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 function tmpFixture() {
   const dir = mkdtempSync(join(tmpdir(), "codi-restore-"));
   const dbPath = join(dir, "brain.db");
@@ -46,6 +46,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/local/:ts/restore
     try {
       const res = await t.handle.app.request("/api/v1/backups/local/..%2F..%2Fetc/restore", {
         method: "POST",
+        headers: { origin: "http://127.0.0.1:4477" },
       });
       expect(res.status).toBe(400);
       const body = (await res.json()) as { error: { code: string } };
@@ -61,6 +62,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/local/:ts/restore
       // openBackup() format is 2026-05-11T22-03-20-123Z; bare ISO without ms-Z is rejected.
       const res = await t.handle.app.request("/api/v1/backups/local/2026-05-11T22:03:20Z/restore", {
         method: "POST",
+        headers: { origin: "http://127.0.0.1:4477" },
       });
       expect(res.status).toBe(400);
     } finally {
@@ -73,6 +75,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/local/:ts/restore
     try {
       const res = await t.handle.app.request(`/api/v1/backups/local/${VALID_TS}/restore`, {
         method: "POST",
+        headers: { origin: "http://127.0.0.1:4477" },
       });
       // Either 200 (impossible without setup), 400 restore_failed (no such backup dir),
       // both prove the regex passed. What we MUST NOT see is a bad_request from regex.
@@ -94,7 +97,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/archive/:hash/:ts
     try {
       const res = await t.handle.app.request(
         `/api/v1/backups/archive/..%2F..%2Fetc/${VALID_TS}/restore`,
-        { method: "POST" },
+        { method: "POST", headers: { origin: "http://127.0.0.1:4477" } },
       );
       expect(res.status).toBe(400);
       const body = (await res.json()) as { error: { code: string } };
@@ -109,7 +112,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/archive/:hash/:ts
     try {
       const res = await t.handle.app.request(
         `/api/v1/backups/archive/${VALID_HASH}/..%2F..%2Fetc/restore`,
-        { method: "POST" },
+        { method: "POST", headers: { origin: "http://127.0.0.1:4477" } },
       );
       expect(res.status).toBe(400);
       const body = (await res.json()) as { error: { code: string } };
@@ -124,7 +127,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/archive/:hash/:ts
     try {
       const res = await t.handle.app.request(
         `/api/v1/backups/archive/abcdef0123456789/${VALID_TS}/restore`,
-        { method: "POST" },
+        { method: "POST", headers: { origin: "http://127.0.0.1:4477" } },
       );
       expect(res.status).toBe(400);
     } finally {
@@ -137,7 +140,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/archive/:hash/:ts
     try {
       const res = await t.handle.app.request(
         `/api/v1/backups/archive/ABCDEF0123456789-x/${VALID_TS}/restore`,
-        { method: "POST" },
+        { method: "POST", headers: { origin: "http://127.0.0.1:4477" } },
       );
       expect(res.status).toBe(400);
     } finally {
@@ -150,7 +153,7 @@ describe("brain-ui restore validation — POST /api/v1/backups/archive/:hash/:ts
     try {
       const res = await t.handle.app.request(
         `/api/v1/backups/archive/${VALID_HASH}/${VALID_TS}/restore`,
-        { method: "POST" },
+        { method: "POST", headers: { origin: "http://127.0.0.1:4477" } },
       );
       if (res.status === 400) {
         const body = (await res.json()) as { error: { code: string } };

@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const SHELL_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const SHELL_HOOKS: GitHookArtifact[] = [
     name: "shellcheck",
     description: "Shell script linter",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",

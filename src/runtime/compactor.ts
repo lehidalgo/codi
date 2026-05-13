@@ -17,7 +17,7 @@
  */
 
 import type Database from "better-sqlite3";
-import type { BrainHandle } from "./brain/index.js";
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { reduce } from "./reducer.js";
 import type { ManifestEvent } from "./types.js";
 
@@ -78,7 +78,6 @@ export function compactWorkflows(
          FROM workflow_runs wr
          LEFT JOIN workflow_events we ON we.workflow_id = wr.workflow_id
         WHERE wr.status IN ('completed', 'abandoned')
-          AND wr.type != 'session'
         GROUP BY wr.workflow_id
         ORDER BY wr.workflow_id ASC`,
     )

@@ -13,6 +13,7 @@ import {
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent } from "../types.js";
+import { resolveActiveWorkflowId } from "./active-workflow.js";
 
 export interface ProposeScopeExpansionOptions {
   filePath: string;
@@ -38,7 +39,7 @@ export function proposeScopeExpansion(
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const state = reduce(log.loadEvents(workflowId));
@@ -79,7 +80,7 @@ export function approveScopeExpansion(
 ): ApproveScopeExpansionResult {
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -128,7 +129,7 @@ export function rejectScopeExpansion(
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -194,7 +195,7 @@ export function recordIncidentalChange(opts: {
 }): { workflowId: string } {
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     log.append(

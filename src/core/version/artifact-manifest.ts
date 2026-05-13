@@ -1,18 +1,22 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import matter from "gray-matter";
 import { z } from "zod";
 import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { hashContent } from "#src/utils/hash.js";
-import { ARTIFACT_MANIFEST_FILENAME } from "#src/constants.js";
+import {
+  ARTIFACT_MANIFEST_FILENAME,
+  MANAGED_BY_FRAMEWORK,
+  type ManagedBy,
+} from "#src/constants.js";
 import { getTemplateFingerprint } from "./template-hash-registry.js";
 import type { ArtifactType } from "../artifact-types.js";
-import { ARTIFACT_TYPES } from "../artifact-types.js";
-import type { ExistingSelections } from "#src/cli/init-wizard.js";
+import { ARTIFACT_TYPES, artifactRelativePath } from "../artifact-types.js";
+import type { ExistingSelections } from "#src/core/version/types.js";
 import type { InstalledArtifactVersion } from "./artifact-version.js";
 
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
 // --- Schema ---
 
 const ArtifactEntrySchema = z.object({
@@ -141,32 +145,20 @@ export async function bootstrapManifestFromState(
 ): Promise<ArtifactManifest> {
   const manifest: ArtifactManifest = { version: "1", artifacts: {} };
 
-  const typeMap: Array<{
-    names: string[];
-    type: ArtifactType;
-    dirName: string;
-    fileName?: string;
-  }> = [
-    { names: existingSelections.rules, type: "rule", dirName: "rules", fileName: undefined },
-    { names: existingSelections.skills, type: "skill", dirName: "skills", fileName: "SKILL.md" },
-    { names: existingSelections.agents, type: "agent", dirName: "agents", fileName: undefined },
-    {
-      names: existingSelections.mcpServers ?? [],
-      type: "mcp-server",
-      dirName: "mcp-servers",
-      fileName: undefined,
-    },
-  ];
+  const namesByType: Record<ArtifactType, string[]> = {
+    rule: existingSelections.rules,
+    skill: existingSelections.skills,
+    agent: existingSelections.agents,
+    "mcp-server": existingSelections.mcpServers ?? [],
+  };
 
-  for (const { names, type, dirName, fileName } of typeMap) {
-    for (const name of names) {
-      const filePath = fileName
-        ? path.join(configDir, dirName, name, fileName)
-        : path.join(configDir, dirName, `${name}.md`);
+  for (const type of ARTIFACT_TYPES) {
+    for (const name of namesByType[type]) {
+      const filePath = path.join(configDir, artifactRelativePath(type, name));
 
       try {
         const content = await fs.readFile(filePath, "utf8");
-        const { data } = matter(content);
+        const { data } = parseFrontmatter<Record<string, unknown>>(content);
         const managedBy =
           typeof data["managed_by"] === "string" && data["managed_by"] === "user" ? "user" : "codi";
 
@@ -210,47 +202,32 @@ export async function syncManifestOnUpdate(
     mcpServers: string[];
   },
 ): Promise<void> {
-  const reads: Array<{
-    names: string[];
-    type: ArtifactType;
-    fileFn: (name: string) => string;
-  }> = [
-    { names: updated.rules, type: "rule", fileFn: (n) => path.join(configDir, "rules", `${n}.md`) },
-    {
-      names: updated.skills,
-      type: "skill",
-      fileFn: (n) => path.join(configDir, "skills", n, "SKILL.md"),
-    },
-    {
-      names: updated.agents,
-      type: "agent",
-      fileFn: (n) => path.join(configDir, "agents", `${n}.md`),
-    },
-    {
-      names: updated.mcpServers,
-      type: "mcp-server",
-      fileFn: (n) => path.join(configDir, "mcp-servers", `${n}.yaml`),
-    },
-  ];
+  const namesByType: Record<ArtifactType, string[]> = {
+    rule: updated.rules,
+    skill: updated.skills,
+    agent: updated.agents,
+    "mcp-server": updated.mcpServers,
+  };
 
   const artifactData: Array<{
     name: string;
     type: ArtifactType;
     content: string;
-    managedBy: "codi" | "user";
+    managedBy: ManagedBy;
     artifactVersion: InstalledArtifactVersion;
   }> = [];
 
-  for (const { names, type, fileFn } of reads) {
-    for (const name of names) {
+  for (const type of ARTIFACT_TYPES) {
+    for (const name of namesByType[type]) {
       try {
-        const content = await fs.readFile(fileFn(name), "utf-8");
+        const filePath = path.join(configDir, artifactRelativePath(type, name));
+        const content = await fs.readFile(filePath, "utf-8");
         const fingerprint = getTemplateFingerprint(name);
         artifactData.push({
           name,
           type,
           content,
-          managedBy: "codi",
+          managedBy: MANAGED_BY_FRAMEWORK,
           artifactVersion: fingerprint?.artifactVersion ?? "unknown",
         });
       } catch {
@@ -272,7 +249,7 @@ export function buildArtifactEntries(
     name: string;
     type: ArtifactType;
     content: string;
-    managedBy: "codi" | "user";
+    managedBy: ManagedBy;
     artifactVersion: InstalledArtifactVersion;
   }>,
 ): ArtifactEntry[] {

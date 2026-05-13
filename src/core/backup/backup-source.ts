@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { BACKUPS_DIR } from "#src/constants.js";
+import { BACKUPS_DIR, PROJECT_DIR } from "#src/constants.js";
 import type { ExternalSource } from "#src/core/external-source/connectors.js";
+import { ARTIFACT_DIR_NAMES } from "#src/core/artifact-types.js";
 
 const NOOP_CLEANUP = async (): Promise<void> => {};
-const ARTIFACT_DIR_NAMES = ["rules", "skills", "agents", "mcp-servers"];
 
 async function hasAnyArtifactDir(rootPath: string): Promise<boolean> {
   for (const name of ARTIFACT_DIR_NAMES) {
@@ -27,7 +27,7 @@ async function hasAnyArtifactDir(rootPath: string): Promise<boolean> {
  */
 export async function connectBackup(configDir: string, timestamp: string): Promise<ExternalSource> {
   const backupDir = path.join(configDir, BACKUPS_DIR, timestamp);
-  const rootPath = path.join(backupDir, ".codi");
+  const rootPath = path.join(backupDir, PROJECT_DIR);
   const stat = await fs.stat(rootPath).catch(() => null);
   if (!stat || !stat.isDirectory()) {
     throw new Error(

@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const CPP_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const CPP_HOOKS: GitHookArtifact[] = [
     name: "clang-format",
     description: "C/C++ formatter (clang-format)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -31,7 +32,7 @@ export const CPP_HOOKS: GitHookArtifact[] = [
     name: "clang-tidy",
     description: "C/C++ linter (clang-tidy)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",

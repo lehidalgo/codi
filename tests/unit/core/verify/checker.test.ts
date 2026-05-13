@@ -12,9 +12,7 @@ const expected: VerificationData = {
   agentNames: [],
   commandNames: [],
   mcpServerNames: [],
-  activeFlags: [
-    "Keep source code files under 700 lines. Documentation files have no line limit.",
-  ],
+  activeFlags: ["Keep source code files under 800 lines. Documentation files have no line limit."],
   timestamp: "2026-03-23T20:00:00.000Z",
 };
 
@@ -23,19 +21,15 @@ describe("checkAgentResponse", () => {
     const response = `
 Verification token: ${TOKEN_VALUE}
 Rules loaded: code-quality, security, testing-standards
-Flags active: Keep source code files under 700 lines. Documentation files have no line limit.
+Flags active: Keep source code files under 800 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
     expect(result.receivedToken).toBe(TOKEN_VALUE);
-    expect(result.rulesFound).toEqual([
-      "code-quality",
-      "security",
-      "testing-standards",
-    ]);
+    expect(result.rulesFound).toEqual(["code-quality", "security", "testing-standards"]);
     expect(result.rulesMissing).toEqual([]);
     expect(result.flagsFound).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
     expect(result.flagsMissing).toEqual([]);
   });
@@ -59,7 +53,7 @@ Flags active: Keep source code files under 700 lines. Documentation files have n
     const response = `
 Verification token: ${TOKEN_VALUE}
 Rules loaded: code-quality
-Flags active: Keep source code files under 700 lines. Documentation files have no line limit.
+Flags active: Keep source code files under 800 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.rulesFound).toEqual(["code-quality"]);
@@ -82,16 +76,12 @@ Rules loaded:
 - security
 - testing-standards
 Flags active:
-- Keep source code files under 700 lines. Documentation files have no line limit.
+- Keep source code files under 800 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
-    expect(result.rulesFound).toEqual([
-      "code-quality",
-      "security",
-      "testing-standards",
-    ]);
+    expect(result.rulesFound).toEqual(["code-quality", "security", "testing-standards"]);
     expect(result.flagsFound).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
   });
 
@@ -99,17 +89,13 @@ Flags active:
     const response = `
 Verification token: \`${TOKEN_VALUE}\`
 Rules loaded: \`code-quality\`, \`security\`, \`testing-standards\`
-Flags active: "Keep source code files under 700 lines. Documentation files have no line limit."
+Flags active: "Keep source code files under 800 lines. Documentation files have no line limit."
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
-    expect(result.rulesFound).toEqual([
-      "code-quality",
-      "security",
-      "testing-standards",
-    ]);
+    expect(result.rulesFound).toEqual(["code-quality", "security", "testing-standards"]);
     expect(result.flagsFound).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
   });
 
@@ -121,7 +107,7 @@ Flags active: none
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.flagsMissing).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
   });
 
@@ -132,11 +118,7 @@ Rules (3): code-quality, security, testing-standards
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
-    expect(result.rulesFound).toEqual([
-      "code-quality",
-      "security",
-      "testing-standards",
-    ]);
+    expect(result.rulesFound).toEqual(["code-quality", "security", "testing-standards"]);
     expect(result.rulesMissing).toEqual([]);
   });
 
@@ -144,11 +126,11 @@ Rules (3): code-quality, security, testing-standards
     const response = `
 Verification token: ${TOKEN_VALUE}
 Rules (3): code-quality, security, testing-standards
-Flags (1): Keep source code files under 700 lines. Documentation files have no line limit.
+Flags (1): Keep source code files under 800 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.flagsFound).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
   });
 
@@ -160,28 +142,20 @@ ${PROJECT_NAME_DISPLAY} configuration verified successfully.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
-    expect(result.rulesFound).toEqual([
-      "code-quality",
-      "security",
-      "testing-standards",
-    ]);
+    expect(result.rulesFound).toEqual(["code-quality", "security", "testing-standards"]);
   });
 
   it("handles - Rules: prefix format", () => {
     const response = `
 - Verification token: ${TOKEN_VALUE}
 - Rules: code-quality, security, testing-standards
-- Flags: Keep source code files under 700 lines. Documentation files have no line limit.
+- Flags: Keep source code files under 800 lines. Documentation files have no line limit.
 `;
     const result = checkAgentResponse(response, expected);
     expect(result.tokenMatch).toBe(true);
-    expect(result.rulesFound).toEqual([
-      "code-quality",
-      "security",
-      "testing-standards",
-    ]);
+    expect(result.rulesFound).toEqual(["code-quality", "security", "testing-standards"]);
     expect(result.flagsFound).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
   });
 });

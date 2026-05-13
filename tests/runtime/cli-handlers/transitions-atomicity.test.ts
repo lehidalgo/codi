@@ -73,7 +73,7 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
   }
 
   it("writes the full event chain on success (phase_completed + approved + phase_started)", () => {
-    approveTransition({ author: HUMAN });
+    approveTransition({ author: HUMAN, cwd: tmpDir });
     const events = loadEvents();
     const types = events.map((e) => e.event_type);
     expect(types).toContain("phase_completed");
@@ -112,7 +112,9 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
       return original.call(this, workflowId, ev);
     });
 
-    expect(() => approveTransition({ author: HUMAN })).toThrow(/simulated mid-txn crash/);
+    expect(() => approveTransition({ author: HUMAN, cwd: tmpDir })).toThrow(
+      /simulated mid-txn crash/,
+    );
     spy.mockRestore();
 
     const eventsAfter = loadEvents();
@@ -147,9 +149,9 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
       return original.call(this, workflowId, ev);
     });
 
-    expect(() => approveTransition({ author: HUMAN })).toThrow(/transient crash/);
+    expect(() => approveTransition({ author: HUMAN, cwd: tmpDir })).toThrow(/transient crash/);
     // Retry — proposal still pending; second call must succeed cleanly.
-    approveTransition({ author: HUMAN });
+    approveTransition({ author: HUMAN, cwd: tmpDir });
 
     const events = loadEvents();
     const completed = events.filter(

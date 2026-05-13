@@ -20,6 +20,7 @@ import type {
   PreCommitEmission,
   ShellEmission,
 } from "./hook-spec.js";
+import type { ManagedBy } from "#src/constants.js";
 
 export type { HookCategory } from "./hook-spec.js";
 
@@ -59,7 +60,7 @@ export interface BaseHookArtifact {
   name: string;
   description: string;
   version: string;
-  managed_by: "codi" | "user";
+  managed_by: ManagedBy;
   required: boolean;
   default: boolean;
   category: HookCategory;

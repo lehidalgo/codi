@@ -1,6 +1,6 @@
 import path from "node:path";
 import { resolveProjectDir } from "../utils/paths.js";
-import { resolveArtifactName, prefixedName } from "../constants.js";
+import { prefixedName } from "../constants.js";
 import { createRule } from "../core/scaffolder/rule-scaffolder.js";
 import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
 import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
@@ -18,6 +18,7 @@ import type { GlobalOptions } from "./shared.js";
 import { runAddWizard } from "./add-wizard.js";
 import type { WizardChoice, AddWizardResult } from "./add-wizard.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import { runAddCommand } from "./add-shared.js";
 
 export interface AddRuleOptions extends GlobalOptions {
   template?: string;
@@ -35,51 +36,14 @@ export async function addRuleHandler(
   name: string,
   options: AddRuleOptions,
 ): Promise<CommandResult<AddRuleData>> {
-  const configDir = resolveProjectDir(projectRoot);
-
-  const resolvedTemplate = options.template
-    ? resolveArtifactName(options.template, AVAILABLE_TEMPLATES)
-    : undefined;
-
-  if (options.template && !resolvedTemplate) {
-    return createCommandResult({
-      success: false,
-      command: "add rule",
-      data: { name, path: "", template: options.template },
-      errors: [
-        {
-          code: "E_CONFIG_INVALID",
-          message: `Unknown template "${options.template}". Available: ${AVAILABLE_TEMPLATES.join(", ")}`,
-          hint: `Use one of: ${AVAILABLE_TEMPLATES.join(", ")}`,
-          severity: "error",
-          context: { template: options.template },
-        },
-      ],
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  const result = await createRule({
+  return runAddCommand({
+    artifactType: "rule",
+    label: "template",
+    projectRoot,
     name,
-    configDir,
-    template: resolvedTemplate,
-  });
-
-  if (!result.ok) {
-    return createCommandResult({
-      success: false,
-      command: "add rule",
-      data: { name, path: "", template: options.template ?? null },
-      errors: result.errors,
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  return createCommandResult({
-    success: true,
-    command: "add rule",
-    data: { name, path: result.data, template: options.template ?? null },
-    exitCode: EXIT_CODES.SUCCESS,
+    requestedTemplate: options.template,
+    availableTemplates: AVAILABLE_TEMPLATES,
+    scaffold: (template, configDir) => createRule({ name, configDir, template }),
   });
 }
 
@@ -99,52 +63,20 @@ export async function addSkillHandler(
   name: string,
   options: AddSkillOptions,
 ): Promise<CommandResult<AddSkillData>> {
-  const configDir = resolveProjectDir(projectRoot);
-
-  const resolvedTemplate = options.template
-    ? resolveArtifactName(options.template, AVAILABLE_SKILL_TEMPLATES)
-    : undefined;
-
-  if (options.template && !resolvedTemplate) {
-    return createCommandResult({
-      success: false,
-      command: "add skill",
-      data: { name, path: "", template: options.template },
-      errors: [
-        {
-          code: "E_CONFIG_INVALID",
-          message: `Unknown skill template "${options.template}". Available: ${AVAILABLE_SKILL_TEMPLATES.join(", ")}`,
-          hint: `Use one of: ${AVAILABLE_SKILL_TEMPLATES.join(", ")}`,
-          severity: "error",
-          context: { template: options.template },
-        },
-      ],
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  const result = await createSkill({
+  return runAddCommand({
+    artifactType: "skill",
+    label: "skill template",
+    projectRoot,
     name,
-    configDir,
-    template: resolvedTemplate,
-    copyrightHolder: path.basename(projectRoot),
-  });
-
-  if (!result.ok) {
-    return createCommandResult({
-      success: false,
-      command: "add skill",
-      data: { name, path: "", template: options.template ?? null },
-      errors: result.errors,
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  return createCommandResult({
-    success: true,
-    command: "add skill",
-    data: { name, path: result.data, template: options.template ?? null },
-    exitCode: EXIT_CODES.SUCCESS,
+    requestedTemplate: options.template,
+    availableTemplates: AVAILABLE_SKILL_TEMPLATES,
+    scaffold: (template, configDir) =>
+      createSkill({
+        name,
+        configDir,
+        template,
+        copyrightHolder: path.basename(projectRoot),
+      }),
   });
 }
 
@@ -164,51 +96,14 @@ export async function addAgentHandler(
   name: string,
   options: { template?: string },
 ): Promise<CommandResult<AddAgentData>> {
-  const configDir = resolveProjectDir(projectRoot);
-
-  const resolvedTemplate = options.template
-    ? resolveArtifactName(options.template, AVAILABLE_AGENT_TEMPLATES)
-    : undefined;
-
-  if (options.template && !resolvedTemplate) {
-    return createCommandResult({
-      success: false,
-      command: "add agent",
-      data: { name, path: "", template: options.template },
-      errors: [
-        {
-          code: "E_CONFIG_INVALID",
-          message: `Unknown agent template "${options.template}". Available: ${AVAILABLE_AGENT_TEMPLATES.join(", ")}`,
-          hint: `Use one of: ${AVAILABLE_AGENT_TEMPLATES.join(", ")}`,
-          severity: "error",
-          context: { template: options.template },
-        },
-      ],
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  const result = await createAgent({
+  return runAddCommand({
+    artifactType: "agent",
+    label: "agent template",
+    projectRoot,
     name,
-    configDir,
-    template: resolvedTemplate,
-  });
-
-  if (!result.ok) {
-    return createCommandResult({
-      success: false,
-      command: "add agent",
-      data: { name, path: "", template: options.template ?? null },
-      errors: result.errors,
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  return createCommandResult({
-    success: true,
-    command: "add agent",
-    data: { name, path: result.data, template: options.template ?? null },
-    exitCode: EXIT_CODES.SUCCESS,
+    requestedTemplate: options.template,
+    availableTemplates: AVAILABLE_AGENT_TEMPLATES,
+    scaffold: (template, configDir) => createAgent({ name, configDir, template }),
   });
 }
 
@@ -254,51 +149,14 @@ export async function addMcpServerHandler(
   name: string,
   options: { template?: string },
 ): Promise<CommandResult<{ name: string; path: string; template: string | null }>> {
-  const configDir = resolveProjectDir(projectRoot);
-
-  const resolvedTemplate = options.template
-    ? resolveArtifactName(options.template, AVAILABLE_MCP_SERVER_TEMPLATES)
-    : undefined;
-
-  if (options.template && !resolvedTemplate) {
-    return createCommandResult({
-      success: false,
-      command: "add mcp-server",
-      data: { name, path: "", template: options.template },
-      errors: [
-        {
-          code: "E_CONFIG_INVALID",
-          message: `Unknown MCP server template "${options.template}". Available: ${AVAILABLE_MCP_SERVER_TEMPLATES.join(", ")}`,
-          hint: `Use one of: ${AVAILABLE_MCP_SERVER_TEMPLATES.join(", ")}`,
-          severity: "error",
-          context: { template: options.template },
-        },
-      ],
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  const result = await createMcpServer({
+  return runAddCommand({
+    artifactType: "mcp-server",
+    label: "MCP server template",
+    projectRoot,
     name,
-    configDir,
-    template: resolvedTemplate,
-  });
-
-  if (!result.ok) {
-    return createCommandResult({
-      success: false,
-      command: "add mcp-server",
-      data: { name, path: "", template: options.template ?? null },
-      errors: result.errors,
-      exitCode: EXIT_CODES.GENERAL_ERROR,
-    });
-  }
-
-  return createCommandResult({
-    success: true,
-    command: "add mcp-server",
-    data: { name, path: result.data, template: options.template ?? null },
-    exitCode: EXIT_CODES.SUCCESS,
+    requestedTemplate: options.template,
+    availableTemplates: AVAILABLE_MCP_SERVER_TEMPLATES,
+    scaffold: (template, configDir) => createMcpServer({ name, configDir, template }),
   });
 }
 

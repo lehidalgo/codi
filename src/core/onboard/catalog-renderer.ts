@@ -12,7 +12,7 @@ import {
   AGENT_CATEGORIES,
   buildSkillCategoryMap,
   extractTemplateHint,
-} from "#src/cli/artifact-categories.js";
+} from "#src/core/onboard/artifact-categories.js";
 import { BUILTIN_PRESETS, getBuiltinPresetNames } from "#src/templates/presets/index.js";
 import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 

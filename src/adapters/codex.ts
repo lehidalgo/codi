@@ -13,6 +13,7 @@ import { hashContent } from "../utils/hash.js";
 import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
+import { Logger } from "../core/output/logger.js";
 import { partitionBrandSkills } from "./brand-filter.js";
 import { generateSkillFiles } from "./skill-generator.js";
 import {
@@ -40,7 +41,6 @@ import {
   LAUNCHER_FILENAME,
   SKILL_OBSERVER_FILENAME,
 } from "../core/hooks/heartbeat-hooks.js";
-
 async function exists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -53,7 +53,7 @@ async function exists(path: string): Promise<boolean> {
 function readEnabledRuntimeHookNames(projectRoot: string | undefined): string[] | null {
   if (!projectRoot) return null;
   try {
-    const stateFile = join(projectRoot, ".codi", "state", "state.json");
+    const stateFile = join(projectRoot, PROJECT_DIR, "state", "state.json");
     if (!existsSync(stateFile)) return null;
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
       selectedHooks?: { runtime?: string[] };
@@ -214,9 +214,9 @@ export const codexAdapter: AgentAdapter = {
         enabledServers.push(entry);
       }
     }
-    if (skippedHttpServers.length > 0 && typeof console !== "undefined") {
-      console.warn(
-        `[WRN] Codex adapter: skipping ${skippedHttpServers.length} HTTP/SSE MCP server(s) ` +
+    if (skippedHttpServers.length > 0) {
+      Logger.getInstance().warn(
+        `Codex adapter: skipping ${skippedHttpServers.length} HTTP/SSE MCP server(s) ` +
           `(${skippedHttpServers.join(", ")}) — Codex supports stdio transport only. ` +
           `These servers remain available for agents that support HTTP MCP (Claude Code, Cursor).`,
       );

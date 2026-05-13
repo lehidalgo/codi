@@ -21,7 +21,7 @@ const MANIFEST = '.codi/artifact-manifest.json';
 
 function staged() {
   try {
-    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
+    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8', timeout: 5_000 })
       .trim().split('\\n').filter(Boolean);
   } catch { return []; }
 }
@@ -94,7 +94,7 @@ for (const file of files) {
 
   let prev;
   try {
-    const headShow = execFileSync('git', ['show', 'HEAD:' + file], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const headShow = execFileSync('git', ['show', 'HEAD:' + file], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 5_000 });
     prev = { kind: 'found', content: headShow, version: parseVersion(headShow) || 1 };
   } catch (e) {
     const stderr = e.stderr ? e.stderr.toString() : '';
@@ -160,7 +160,7 @@ if (manifestDirty) {
   restage.push(MANIFEST);
 }
 
-execFileSync('git', ['add', ...restage], { stdio: 'inherit' });
+execFileSync('git', ['add', ...restage], { stdio: 'inherit', timeout: 10_000 });
 
 for (const b of bumped) {
   console.log('  [version-bump] ' + b.name + ': ' + (b.from === null ? 'new' : b.from) + ' \\u2192 ' + b.to);

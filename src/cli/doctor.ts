@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PROJECT_CLI, PROJECT_NAME } from "../constants.js";
-import { openBrain, BrainBindingsError } from "../runtime/brain/index.js";
+import { openBrain, BrainBindingsError } from "#src/runtime/brain/db.js";
 import { runAllChecks } from "../core/version/version-checker.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { validateContentSize } from "../core/config/validator.js";

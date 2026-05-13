@@ -17,8 +17,7 @@ import {
   clearPidfile,
   isPidAlive,
   resolveAttachOrSpawn,
-} from "#src/runtime/brain-ui/index.js";
-
+} from "#src/runtime/brain-ui/lifecycle.js";
 let pidPath: string;
 let cleanup: () => void;
 

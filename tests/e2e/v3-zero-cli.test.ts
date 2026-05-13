@@ -156,12 +156,10 @@ describe(
       });
       const wId = (initial.json?.data as Record<string, unknown>)?.workflowId as string;
 
-      // Manually clear the active-id pointer in the singleton metadata.
+      // Manually clear the active-id pointer in the runtime_state row.
       const db = new Database(brain);
       try {
-        db.prepare(
-          `UPDATE workflow_runs SET metadata = '{}' WHERE workflow_id = '__codi_session__'`,
-        ).run();
+        db.prepare(`UPDATE runtime_state SET value = '{}' WHERE key = 'session'`).run();
       } finally {
         db.close();
       }

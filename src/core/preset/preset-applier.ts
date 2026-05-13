@@ -43,6 +43,7 @@ interface ConflictFile {
 }
 
 import type { ArtifactType } from "../artifact-types.js";
+import { artifactRelativePath } from "../artifact-types.js";
 
 export function reconstructRuleContent(rule: NormalizedRule): string {
   const fm = [
@@ -101,16 +102,7 @@ export function reconstructAgentContent(agent: NormalizedAgent): string {
 }
 
 function getArtifactPath(configDir: string, type: ArtifactType, name: string): string {
-  switch (type) {
-    case "rule":
-      return path.join(configDir, "rules", `${name}.md`);
-    case "skill":
-      return path.join(configDir, "skills", name, "SKILL.md");
-    case "agent":
-      return path.join(configDir, "agents", `${name}.md`);
-    case "mcp-server":
-      return path.join(configDir, "mcp-servers", `${name}.yaml`);
-  }
+  return path.join(configDir, artifactRelativePath(type, name));
 }
 
 async function readFileOrNull(filePath: string): Promise<string | null> {
@@ -132,17 +124,11 @@ async function readOriginalArtifact(
   type: ArtifactType,
   name: string,
 ): Promise<string | null> {
+  // mcp-server presets are not directory-backed today — every other type
+  // resolves through the canonical layout map.
+  if (type === "mcp-server") return null;
   const presetDir = path.join(configDir, "presets", presetName);
-  switch (type) {
-    case "rule":
-      return readFileOrNull(path.join(presetDir, "rules", `${name}.md`));
-    case "skill":
-      return readFileOrNull(path.join(presetDir, "skills", name, "SKILL.md"));
-    case "agent":
-      return readFileOrNull(path.join(presetDir, "agents", `${name}.md`));
-    default:
-      return null;
-  }
+  return readFileOrNull(path.join(presetDir, artifactRelativePath(type, name)));
 }
 
 async function copyResourceTree(srcDir: string, destDir: string, force: boolean): Promise<number> {

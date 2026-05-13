@@ -789,7 +789,7 @@ export function registerInitCommand(program: Command): void {
       const result = await initHandler(process.cwd(), options);
       handleOutput(result, options);
       if (result.success && !options.json && !options.quiet) {
-        console.log(
+        Logger.getInstance().info(
           "\nNext step: run /codi-codebase-onboarding inside your coding agent\n" +
             "to add project-specific context to your configuration files.\n",
         );

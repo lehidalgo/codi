@@ -13,8 +13,9 @@ import {
   resolveAttachOrSpawn,
   DEFAULT_BRAIN_UI_PORT,
   probeHealthz,
-} from "../runtime/brain-ui/index.js";
-import { openBrain, applyMigrations } from "../runtime/brain/index.js";
+} from "#src/runtime/brain-ui/lifecycle.js";
+import { openBrain } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import {
   ingestMemoryFile,
   SUPPORTED_AGENT_TYPES,

@@ -9,10 +9,9 @@ import {
   buildPluginManifest,
   manifestPathForTarget,
   serializeManifest,
-  publishPlugin,
   type PluginArtifact,
-} from "#src/core/capabilities/index.js";
-
+} from "#src/core/capabilities/plugin-manifest.js";
+import { publishPlugin } from "#src/core/capabilities/publish.js";
 const sampleArtifacts: PluginArtifact[] = [
   { name: "codi-security", type: "rule", path: "rules/security.md" },
   { name: "codi-tdd", type: "skill", path: "skills/tdd/" },

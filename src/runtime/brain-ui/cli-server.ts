@@ -13,6 +13,7 @@
 import { serve } from "@hono/node-server";
 import { buildApp } from "./server.js";
 import { DEFAULT_BRAIN_UI_PORT, writePidfile, clearPidfile } from "./lifecycle.js";
+import { Logger } from "#src/core/output/logger.js";
 
 interface ParsedArgs {
   port: number;
@@ -53,7 +54,7 @@ function main(): void {
   }
 
   const shutdown = (signal: string) => {
-    console.error(`[brain-ui] received ${signal}, shutting down…`);
+    Logger.getInstance().info(`[brain-ui] received ${signal}, shutting down…`);
     server.close(() => {
       handle.close();
       if (!args.foreground) clearPidfile();
@@ -64,7 +65,7 @@ function main(): void {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
 
-  console.error(
+  Logger.getInstance().info(
     `[brain-ui] listening on http://${hostname}:${args.port} (brain=${handle.brain.path})`,
   );
 }

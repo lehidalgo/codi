@@ -5,13 +5,12 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { openBrain } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import {
-  openBrain,
-  applyMigrations,
   seedWorkflowDefinitions,
   readBuiltinDefinitions,
-} from "#src/runtime/brain/index.js";
-
+} from "#src/runtime/brain/seed-workflows.js";
 function tmpBrain() {
   const dir = mkdtempSync(join(tmpdir(), "codi-seed-wf-"));
   const handle = openBrain({ dbPath: join(dir, "brain.db") });

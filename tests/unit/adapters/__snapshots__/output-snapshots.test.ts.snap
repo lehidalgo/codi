@@ -9,7 +9,7 @@ exports[`generated output snapshots > claude-code output matches snapshot 1`] = 
 ## Permissions
 
 Shell commands are allowed.
-Keep source code files under 700 lines. Documentation files have no line limit.
+Keep source code files under 800 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
 ## Development Notes
@@ -45,7 +45,7 @@ exports[`generated output snapshots > cline output matches snapshot 1`] = `
 **Managed by:** [Codi](https://github.com/lehidalgo/codi)
 
 Shell commands are allowed.
-Keep source code files under 700 lines. Documentation files have no line limit.
+Keep source code files under 800 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
 ## RESTRICTIONS (ENFORCED)
@@ -101,7 +101,7 @@ exports[`generated output snapshots > codex output matches snapshot 1`] = `
 ## Permissions
 
 Shell commands are allowed.
-Keep source code files under 700 lines. Documentation files have no line limit.
+Keep source code files under 800 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
 ## Skill Routing
@@ -147,7 +147,7 @@ exports[`generated output snapshots > copilot output matches snapshot 1`] = `
 **Managed by:** [Codi](https://github.com/lehidalgo/codi)
 
 Shell commands are allowed.
-Keep source code files under 700 lines. Documentation files have no line limit.
+Keep source code files under 800 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
 ## RESTRICTIONS (ENFORCED)
@@ -201,7 +201,7 @@ exports[`generated output snapshots > cursor output matches snapshot 1`] = `
 **Managed by:** [Codi](https://github.com/lehidalgo/codi)
 
 Shell commands are allowed.
-Keep source code files under 700 lines. Documentation files have no line limit.
+Keep source code files under 800 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
 ## Development Notes
@@ -243,7 +243,7 @@ exports[`generated output snapshots > windsurf output matches snapshot 1`] = `
 **Managed by:** [Codi](https://github.com/lehidalgo/codi)
 
 Shell commands are allowed.
-Keep source code files under 700 lines. Documentation files have no line limit.
+Keep source code files under 800 lines. Documentation files have no line limit.
 Do NOT use force push (--force) on git operations.
 
 ## RESTRICTIONS (ENFORCED)

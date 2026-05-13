@@ -3,12 +3,8 @@ import { Logger } from "../core/output/logger.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { initFromOptions, handleOutput } from "./shared.js";
-import {
-  planMigration,
-  formatPlan,
-  executeMigration,
-  type ExecuteResult,
-} from "../core/migration/index.js";
+import { executeMigration, type ExecuteResult } from "#src/core/migration/executor.js";
+import { planMigration, formatPlan } from "#src/core/migration/v2-to-v3.js";
 import type { GlobalOptions } from "./shared.js";
 import type { CommandResult } from "../core/output/types.js";
 

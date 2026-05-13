@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const JAVASCRIPT_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const JAVASCRIPT_HOOKS: GitHookArtifact[] = [
     name: "eslint",
     description: "JS linter via eslint",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "lint",
@@ -31,7 +32,7 @@ export const JAVASCRIPT_HOOKS: GitHookArtifact[] = [
     name: "prettier",
     description: "Code formatter for JS / JSON / MD / YAML",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -59,7 +60,7 @@ export const JAVASCRIPT_HOOKS: GitHookArtifact[] = [
     name: "biome",
     description: "Rust-based lint+format (mutually exclusive with eslint+prettier)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: false,
     category: "lint",

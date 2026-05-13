@@ -9,10 +9,11 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { buildApp } from "#src/runtime/brain-ui/index.js";
-import { applyMigrations, openBrain } from "#src/runtime/brain/index.js";
-import { parseMarkers, persistMarkers } from "#src/runtime/capture/index.js";
-
+import { buildApp } from "#src/runtime/brain-ui/server.js";
+import { openBrain } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
+import { parseMarkers } from "#src/runtime/capture/markers.js";
+import { persistMarkers } from "#src/runtime/capture/persist.js";
 function tmpFixture() {
   const dir = mkdtempSync(join(tmpdir(), "codi-ui-pages-"));
   const dbPath = join(dir, "brain.db");

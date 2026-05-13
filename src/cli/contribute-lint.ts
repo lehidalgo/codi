@@ -41,6 +41,7 @@ function gitFileStatus(
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
+      timeout: 15_000,
     });
     const added: string[] = [];
     const modified: string[] = [];
@@ -196,6 +197,7 @@ function checkVersionBump(
         cwd,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
+        timeout: 10_000,
       });
     } catch {
       continue;
@@ -228,6 +230,7 @@ function checkNoVerify(cwd: string, baseBranch: string): LintFinding[] {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
+      timeout: 15_000,
     });
     for (const line of out.split("\n")) {
       if (line.length === 0) continue;

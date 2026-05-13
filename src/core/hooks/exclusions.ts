@@ -1,3 +1,4 @@
+import { PROJECT_DIR } from "#src/constants.js";
 /**
  * Single source of truth for directories codi excludes from per-language hooks
  * and from the file-size check template.
@@ -18,7 +19,7 @@ export const VENDORED_DIRS = [
   "build",
   "coverage",
   ".next",
-  ".codi",
+  PROJECT_DIR,
   ".agents",
   ".claude",
   ".codex",

@@ -40,7 +40,6 @@ import {
   SKILL_TRACKER_FILENAME,
   SKILL_OBSERVER_FILENAME,
 } from "../core/hooks/heartbeat-hooks.js";
-
 /**
  * Maps the `language` field on a rule to Claude Code `paths:` glob patterns.
  * Used to preserve the intent of `alwaysApply: false` for language-specific rules —
@@ -69,7 +68,7 @@ async function exists(path: string): Promise<boolean> {
 function readEnabledRuntimeHookNames(projectRoot: string | undefined): string[] | null {
   if (!projectRoot) return null;
   try {
-    const stateFile = join(projectRoot, ".codi", "state", "state.json");
+    const stateFile = join(projectRoot, PROJECT_DIR, "state", "state.json");
     if (!existsSync(stateFile)) return null;
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
       selectedHooks?: { runtime?: string[] };

@@ -3,16 +3,14 @@ import { Logger } from "../core/output/logger.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { initFromOptions, handleOutput } from "./shared.js";
-import {
-  publishPlugin,
-  TIER_1_TARGETS,
-  type PluginArtifact,
-  type PublishTrack,
-} from "../core/capabilities/index.js";
+import { TIER_1_TARGETS } from "#src/core/capabilities/matrix.js";
+import type { PluginArtifact } from "#src/core/capabilities/plugin-manifest.js";
+import { publishPlugin, type PublishTrack } from "#src/core/capabilities/publish.js";
 import type { GlobalOptions } from "./shared.js";
 import type { CommandResult } from "../core/output/types.js";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { PROJECT_DIR } from "#src/constants.js";
 
 interface PublishData {
   readonly track: PublishTrack;
@@ -33,7 +31,7 @@ function readCodiVersion(repoRoot: string): string {
  * inventory that also walks the per-agent output directories.
  */
 function loadArtifactsFromManifest(repoRoot: string): PluginArtifact[] {
-  const manifestPath = resolve(repoRoot, ".codi", "artifact-manifest.json");
+  const manifestPath = resolve(repoRoot, PROJECT_DIR, "artifact-manifest.json");
   if (!existsSync(manifestPath)) return [];
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
     artifacts?: Record<string, { type?: string }>;

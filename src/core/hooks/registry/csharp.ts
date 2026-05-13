@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const CSHARP_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const CSHARP_HOOKS: GitHookArtifact[] = [
     name: "dotnet-format",
     description: "C# formatter via dotnet format",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -31,7 +32,7 @@ export const CSHARP_HOOKS: GitHookArtifact[] = [
     name: "dotnet-build",
     description: "C# build / type check",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "type-check",

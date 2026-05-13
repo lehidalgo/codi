@@ -16,9 +16,10 @@
  * + `buildCaptureReminderBlock` continue to drive stdout.
  */
 
-import type { BrainHandle } from "../brain/index.js";
+import type { BrainHandle } from "../brain/db.js";
 import { ensureProject, ensureSession, openTurn, recordPrompt } from "./session.js";
 
+import { deriveProjectId } from "./project-id.js";
 export interface PromptSubmitInput {
   readonly sessionId: string;
   readonly prompt: string;
@@ -61,14 +62,4 @@ export function processPromptSubmit(
   });
 
   return { promptId: p.promptId, turnId, turnNo: p.turnNo };
-}
-
-function deriveProjectId(cwd: string): string {
-  const parts = cwd.replace(/\/+$/, "").split("/");
-  const basename = parts[parts.length - 1] ?? "project";
-  let h = 0;
-  for (let i = 0; i < cwd.length; i += 1) {
-    h = (h * 31 + cwd.charCodeAt(i)) | 0;
-  }
-  return `${basename}-${(h >>> 0).toString(16).slice(0, 8)}`;
 }

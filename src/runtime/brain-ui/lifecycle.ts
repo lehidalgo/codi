@@ -9,11 +9,12 @@
 import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export const DEFAULT_BRAIN_UI_PORT = 4477;
 
 export function defaultPidfilePath(): string {
-  return resolve(homedir(), ".codi", "brain-ui.pid");
+  return resolve(homedir(), PROJECT_DIR, "brain-ui.pid");
 }
 
 export interface PidfileRecord {

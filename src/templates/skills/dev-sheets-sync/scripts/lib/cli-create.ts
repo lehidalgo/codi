@@ -22,6 +22,8 @@ import {
 
 import { type CliFlags, fail, loadAuthClientOrElicit, readGitActor } from "./cli.js";
 
+import { PROJECT_DIR } from "./project-constants.js";
+
 export async function runCreateProject(
   _positional: ReadonlyArray<string>,
   flags: CliFlags,
@@ -100,7 +102,7 @@ export async function runCreateProject(
   // ── local_xlsx branch ────────────────────────────────────────────────────
   if (authMode === "local_xlsx") {
     const path = await import("node:path");
-    const resolvedLocalPath = path.resolve(cwd, localPath ?? ".codi/sheet.xlsx");
+    const resolvedLocalPath = path.resolve(cwd, localPath ?? `${PROJECT_DIR}/sheet.xlsx`);
     const xlsxResult = await createLocalXlsxProject({ filePath: resolvedLocalPath, force });
 
     const config: ProjectConfig = {

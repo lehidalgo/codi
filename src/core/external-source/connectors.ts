@@ -5,6 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { PROJECT_NAME } from "#src/constants.js";
 import { parsePresetIdentifier } from "#src/core/preset/preset-resolver.js";
+import { validateGitRef } from "#src/utils/git.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -129,8 +130,9 @@ export async function connectGithubRepo(spec: string): Promise<ExternalSource> {
   const cloneRoot = makeTempDir("github");
 
   const args = ["clone", "--depth", "1"];
-  if (ref) args.push("--branch", ref);
-  args.push(url, cloneRoot);
+  if (ref) args.push("--branch", validateGitRef(ref));
+  // `--` ends git's option parsing (defense-in-depth against future regressions).
+  args.push("--", url, cloneRoot);
 
   try {
     await execFileAsync("git", args);

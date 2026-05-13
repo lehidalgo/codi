@@ -7,6 +7,7 @@ function gitShow(ref: string, path: string): string | null {
     return execFileSync("git", ["show", `${ref}:${path}`], {
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"],
+      timeout: 5_000,
     });
   } catch {
     return null;
@@ -27,7 +28,7 @@ export function verifyRange(baseOid: string, headOid: string): VerifyOffender[] 
   const diffOut = execFileSync(
     "git",
     ["diff", "--name-only", "--diff-filter=ACMR", `${baseOid}..${headOid}`],
-    { encoding: "utf-8" },
+    { encoding: "utf-8", timeout: 15_000 },
   );
   const files = diffOut.trim().split("\n").filter(Boolean);
 

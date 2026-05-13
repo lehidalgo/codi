@@ -1,14 +1,16 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import matter from "gray-matter";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { FlagDefinition, ResolvedFlags } from "../types/flags.js";
+import type { ArtifactType } from "../core/artifact-types.js";
+import { ARTIFACT_LAYOUT, artifactRelativePath } from "../core/artifact-types.js";
 import type { ToolingPromptResult } from "./wizard-summary.js";
 import {
   DEFAULT_PRESET,
-  MANIFEST_FILENAME,
   FLAGS_FILENAME,
-  SKILL_OUTPUT_FILENAME,
+  MANAGED_BY_FRAMEWORK,
+  MANIFEST_FILENAME,
+  type ManagedBy,
 } from "../constants.js";
 import { getBuiltinPresetDefinition } from "../templates/presets/index.js";
 import { getPreset } from "../core/flags/flag-presets.js";
@@ -228,33 +230,34 @@ export async function removeDeselectedArtifacts(
 ): Promise<string[]> {
   const removed: string[] = [];
 
-  const checks: Array<{
-    type: keyof ArtifactSelections;
-    dirName: string;
-    isDir?: boolean;
-  }> = [
-    { type: "rules", dirName: "rules" },
-    { type: "agents", dirName: "agents" },
-    { type: "mcpServers", dirName: "mcp-servers" },
-    { type: "skills", dirName: "skills", isDir: true },
+  // Map selection-key (camelCase, ArtifactSelections shape) → ArtifactType
+  // (kebab-case taxonomy). The canonical layout (file vs directory, ext,
+  // index filename) flows from `ARTIFACT_LAYOUT`. Note: the previous inline
+  // implementation hardcoded `.md` for `mcpServers`, which was wrong —
+  // mcp-server files are `.yaml`. Using `artifactRelativePath` fixes the
+  // stale extension implicitly.
+  const checks: Array<{ selKey: keyof ArtifactSelections; type: ArtifactType }> = [
+    { selKey: "rules", type: "rule" },
+    { selKey: "agents", type: "agent" },
+    { selKey: "mcpServers", type: "mcp-server" },
+    { selKey: "skills", type: "skill" },
   ];
 
-  for (const { type, dirName, isDir } of checks) {
-    const newSet = new Set(next[type]);
-    for (const name of previous[type]) {
+  for (const { selKey, type } of checks) {
+    const layout = ARTIFACT_LAYOUT[type];
+    const newSet = new Set(next[selKey]);
+    for (const name of previous[selKey]) {
       if (newSet.has(name)) continue;
 
-      const filePath = isDir
-        ? path.join(configDir, dirName, name, SKILL_OUTPUT_FILENAME)
-        : path.join(configDir, dirName, `${name}.md`);
+      const filePath = path.join(configDir, artifactRelativePath(type, name));
 
       try {
         const content = await fs.readFile(filePath, "utf8");
-        const { data } = matter(content);
+        const { data } = parseFrontmatter<Record<string, unknown>>(content);
         if (data["managed_by"] === "user") continue;
 
-        if (isDir) {
-          await fs.rm(path.join(configDir, dirName, name), {
+        if (layout.kind === "directory") {
+          await fs.rm(path.join(configDir, layout.dirName, name), {
             recursive: true,
             force: true,
           });
@@ -318,7 +321,7 @@ export async function syncManifestOnInit(
 
   const reads: Array<{
     names: string[];
-    type: "rule" | "skill" | "agent" | "mcp-server";
+    type: ArtifactType;
     fileFn: (name: string) => string;
   }> = [
     { names: ruleTemplates, type: "rule", fileFn: (n) => path.join(configDir, "rules", `${n}.md`) },
@@ -341,9 +344,9 @@ export async function syncManifestOnInit(
 
   const artifactData: Array<{
     name: string;
-    type: "rule" | "skill" | "agent" | "mcp-server";
+    type: ArtifactType;
     content: string;
-    managedBy: "codi" | "user";
+    managedBy: ManagedBy;
     artifactVersion: number | "unknown";
   }> = [];
 
@@ -355,7 +358,7 @@ export async function syncManifestOnInit(
           name,
           type,
           content,
-          managedBy: "codi",
+          managedBy: MANAGED_BY_FRAMEWORK,
           artifactVersion: getTemplateFingerprint(name)?.artifactVersion ?? "unknown",
         });
       } catch {
@@ -496,7 +499,7 @@ export async function setupBackupForInit(
 import { applyConfiguration } from "../core/generator/apply.js";
 import type { NormalizedConfig } from "../types/config.js";
 import { PROJECT_CLI } from "../constants.js";
-
+import { parseFrontmatter } from "../utils/frontmatter.js";
 export interface ApplyWithBackupOutcome {
   generated: boolean;
   cancelled: boolean;

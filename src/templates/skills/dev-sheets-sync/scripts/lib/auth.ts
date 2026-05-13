@@ -30,6 +30,8 @@ import { JWT, GoogleAuth, OAuth2Client } from "google-auth-library";
 
 import { SheetsError } from "./types.js";
 
+import { PROJECT_DIR } from "./project-constants.js";
+
 export const DEFAULT_CREDENTIALS_PATH = ".config/codi/credentials.json";
 
 export const SHEETS_SCOPES: ReadonlyArray<string> = [
@@ -276,7 +278,8 @@ export async function loadAuthClient(
 }
 
 function loadLocalXlsxAuth(explicitPath?: string): AuthClient {
-  const filePath = explicitPath && explicitPath.length > 0 ? explicitPath : ".codi/sheet.xlsx";
+  const filePath =
+    explicitPath && explicitPath.length > 0 ? explicitPath : `${PROJECT_DIR}/sheet.xlsx`;
   const basename = filePath.split("/").pop() ?? filePath;
   return { kind: "local_xlsx", identity: `local:${basename}`, filePath };
 }

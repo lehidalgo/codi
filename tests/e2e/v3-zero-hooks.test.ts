@@ -21,8 +21,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { openBrain, applyMigrations, type BrainHandle } from "#src/runtime/brain/index.js";
-
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 // retry: 2 absorbs occasional cross-load FS/spawn hiccups under heavy
 // vitest parallelism without masking real defects.
 const SUITE_RETRY = 2;

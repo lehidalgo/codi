@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const PHP_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const PHP_HOOKS: GitHookArtifact[] = [
     name: "php-cs-fixer",
     description: "PHP code style fixer",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -31,7 +32,7 @@ export const PHP_HOOKS: GitHookArtifact[] = [
     name: "phpstan",
     description: "PHP static analyser",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "type-check",
@@ -57,7 +58,7 @@ export const PHP_HOOKS: GitHookArtifact[] = [
     name: "phpcs-security",
     description: "PHP security audit ruleset",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "security",

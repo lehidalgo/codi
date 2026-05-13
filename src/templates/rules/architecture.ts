@@ -6,7 +6,7 @@ description: Architecture guidelines, design patterns, and module boundaries
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
 ---
 
 # Architecture Guidelines
@@ -36,6 +36,8 @@ GOOD: users/, orders/, payments/ (all feature files colocated)
 - Depend on abstractions, not concrete implementations — enables swapping implementations without changing callers
 - No circular dependencies between modules — circular deps make code untestable and hard to reason about
 - Dependencies flow inward: UI → services → domain → utilities
+- The presentation layer (cli/, web/, ui/) imports FROM the domain (core/, runtime/) — the domain NEVER imports from the presentation layer. If a domain module needs a symbol that currently lives in presentation, the symbol is misplaced — move it down to the domain
+- For each new "upward" import you would write, prefer in order: (1) move the imported symbol down a layer if it is presentation-agnostic data/types/errors, (2) pass the presentation-side value as a function parameter from the composition root, (3) only as a last resort, define a port interface in the domain and implement it in the presentation layer
 - Use dependency injection for testability
 - Use path aliases (\`#src/*\`, \`@/*\`) for cross-module imports — makes dependency direction visible and survives file moves
 

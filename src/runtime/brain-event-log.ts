@@ -14,13 +14,15 @@ import type Database from "better-sqlite3";
 import { execFileSync } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
-import { openBrain, applyMigrations, type BrainHandle } from "./brain/index.js";
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import type { ManifestEvent } from "./types.js";
 
 function resolveProjectRoot(cwd: string): string {
   let absolute: string;
   try {
     const out = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      timeout: 5_000,
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
@@ -66,21 +68,27 @@ interface MetadataShape {
   [key: string]: unknown;
 }
 
-/** Minimal projection of a workflow_runs row used by the active-id state. */
-interface SingletonRow {
-  workflow_id: string;
-  metadata: string | null;
-}
+/**
+ * Active-id pointer + lock state live in the `runtime_state` KV table
+ * (schema v11). Pre-v11 this lived as a fake row inside `workflow_runs`
+ * with `workflow_id = '__codi_session__'`, forcing every aggregation to
+ * filter `type != 'session'`. The migration moved the JSON metadata into
+ * `runtime_state('session', <json>)` so workflow_runs stores only real
+ * workflow rows. See ISSUE-037.
+ */
+const RUNTIME_STATE_KEY = "session";
 
-const SINGLETON_KEY = "__codi_session__";
+interface RuntimeStateRow {
+  value: string;
+}
 
 function readMetadata(raw: Database.Database): MetadataShape {
   const row = raw
-    .prepare(`SELECT workflow_id, metadata FROM workflow_runs WHERE workflow_id = ?`)
-    .get(SINGLETON_KEY) as SingletonRow | undefined;
-  if (!row || !row.metadata) return {};
+    .prepare(`SELECT value FROM runtime_state WHERE key = ?`)
+    .get(RUNTIME_STATE_KEY) as RuntimeStateRow | undefined;
+  if (!row || !row.value) return {};
   try {
-    return JSON.parse(row.metadata) as MetadataShape;
+    return JSON.parse(row.value) as MetadataShape;
   } catch {
     return {};
   }
@@ -88,21 +96,12 @@ function readMetadata(raw: Database.Database): MetadataShape {
 
 function writeMetadata(raw: Database.Database, meta: MetadataShape): void {
   const json = JSON.stringify(meta);
-  const exists = raw
-    .prepare(`SELECT 1 FROM workflow_runs WHERE workflow_id = ?`)
-    .get(SINGLETON_KEY);
-  if (exists) {
-    raw
-      .prepare(`UPDATE workflow_runs SET metadata = ? WHERE workflow_id = ?`)
-      .run(json, SINGLETON_KEY);
-  } else {
-    raw
-      .prepare(
-        `INSERT INTO workflow_runs(workflow_id, project_id, type, current_phase, status, started_at, metadata)
-         VALUES (?, ?, 'session', 'session', 'active', ?, ?)`,
-      )
-      .run(SINGLETON_KEY, "_", Date.now(), json);
-  }
+  raw
+    .prepare(
+      `INSERT INTO runtime_state(key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    )
+    .run(RUNTIME_STATE_KEY, json);
 }
 
 export class BrainEventLog {

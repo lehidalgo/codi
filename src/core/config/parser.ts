@@ -23,7 +23,7 @@ import { McpConfigSchema } from "#src/schemas/mcp.js";
 import { createError, zodToProjectErrors } from "../output/errors.js";
 import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import type { McpConfig } from "#src/types/config.js";
-import { MANIFEST_FILENAME, FLAGS_FILENAME, MCP_FILENAME, BRAND_CATEGORY } from "#src/constants.js";
+import { BRAND_CATEGORY, FLAGS_FILENAME, MANIFEST_FILENAME, MCP_FILENAME } from "#src/constants.js";
 
 /**
  * The raw parsed contents of a `.codi/` project directory, before validation.

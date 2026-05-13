@@ -26,6 +26,7 @@
 import { createHash } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { CaptureType } from "./markers.js";
+import type { AgentId } from "#src/adapters/index.js";
 
 // ─── Provider contract ─────────────────────────────────────────────────────
 
@@ -163,7 +164,12 @@ export const codexProvider: MemoryProvider = {
 // the ingestion silently no-ops and the standard tool_calls observability
 // still records the write.
 
-export const SUPPORTED_AGENT_TYPES = ["claude-code", "codex"] as const;
+// Deliberate subset of `SUPPORTED_PLATFORMS` (constants.ts) — agent-memory
+// ingestion is only implemented for claude-code and codex transcripts; other
+// agents no-op. The `satisfies` constraint enforces that every entry is also
+// declared in the canonical id list, so renaming an agent there (or removing
+// support) will surface here at compile time instead of silently desyncing.
+export const SUPPORTED_AGENT_TYPES = ["claude-code", "codex"] as const satisfies readonly AgentId[];
 export type SupportedAgentType = (typeof SUPPORTED_AGENT_TYPES)[number];
 
 export function isSupportedAgentType(

@@ -19,7 +19,8 @@
 import type { Command } from "commander";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { openBrain, applyMigrations } from "../runtime/brain/index.js";
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { processPromptSubmit } from "../runtime/capture/prompt-hook.js";
 import { processPostToolUse } from "../runtime/capture/tool-hook.js";
 import { processStopHook } from "../runtime/capture/stop-hook.js";
@@ -34,6 +35,7 @@ import {
   type ToolCall,
 } from "../runtime/hook-logic.js";
 import { BrainEventLog } from "../runtime/brain-event-log.js";
+import { PROJECT_DIR, SUPPORTED_PLATFORMS } from "../constants.js";
 import {
   buildIronLawsBlock,
   buildPullReminder,
@@ -49,16 +51,13 @@ import { readPreferences } from "../runtime/preferences.js";
 import { getRuntimeHooks } from "../core/hooks/registry/index.js";
 import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
 import type { HookContext as RuntimeHookCtx } from "../core/hooks/hook-artifact.js";
-
-interface HookPayload {
-  session_id?: string;
-  prompt?: string;
-  cwd?: string;
-  transcript_path?: string;
-  tool_name?: string;
-  tool_input?: Record<string, unknown>;
-  tool_response?: unknown;
-}
+import {
+  PostToolUsePayloadSchema,
+  PreToolUsePayloadSchema,
+  StopPayloadSchema,
+  UserPromptSubmitPayloadSchema,
+  safeParseHookPayload,
+} from "#src/schemas/hook-events.js";
 
 function readStdin(): string {
   try {
@@ -68,11 +67,17 @@ function readStdin(): string {
   }
 }
 
-function parsePayload(): HookPayload | null {
+/**
+ * Read and JSON-parse the stdin payload. Returns `unknown` (NOT a typed
+ * shape) so every caller is forced through the hook-event Zod schemas
+ * in `#src/schemas/hook-events.js` — that's the only place hook
+ * payloads cross the trust boundary into typed code.
+ */
+function parsePayloadRaw(): unknown {
   const raw = readStdin();
   if (raw.trim().length === 0) return null;
   try {
-    return JSON.parse(raw) as HookPayload;
+    return JSON.parse(raw) as unknown;
   } catch {
     return null;
   }
@@ -82,7 +87,11 @@ function parsePayload(): HookPayload | null {
 
 function runUserPromptSubmit(): void {
   const cwd = process.cwd();
-  const payload = parsePayload();
+  const payload = safeParseHookPayload(
+    UserPromptSubmitPayloadSchema,
+    parsePayloadRaw(),
+    "user-prompt-submit",
+  );
 
   if (
     payload &&
@@ -143,7 +152,7 @@ function runUserPromptSubmit(): void {
 
 function readEnabledRuntimeHookNames(cwd: string): string[] | null {
   try {
-    const stateFile = join(cwd, ".codi", "state", "state.json");
+    const stateFile = join(cwd, PROJECT_DIR, "state", "state.json");
     if (!existsSync(stateFile)) return null;
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
       selectedHooks?: { runtime?: string[] };
@@ -155,7 +164,7 @@ function readEnabledRuntimeHookNames(cwd: string): string[] | null {
 }
 
 async function runPreToolUse(): Promise<void> {
-  const payload = parsePayload();
+  const payload = safeParseHookPayload(PreToolUsePayloadSchema, parsePayloadRaw(), "pre-tool-use");
   if (!payload || typeof payload.tool_name !== "string" || !payload.tool_input) {
     process.exit(0);
   }
@@ -289,32 +298,48 @@ async function runPreToolUse(): Promise<void> {
 // ─── post-tool-use ─────────────────────────────────────────────────────────
 
 function runPostToolUse(): void {
-  const payload = parsePayload();
+  const payload = safeParseHookPayload(
+    PostToolUsePayloadSchema,
+    parsePayloadRaw(),
+    "post-tool-use",
+  );
   if (!payload || typeof payload.tool_name !== "string" || !payload.tool_input) {
     process.exit(0);
   }
   const cwd = payload.cwd ?? process.cwd();
 
+  // ISSUE-027: hoist a single brain handle for both processPostToolUse
+  // (writes tool_calls + ingests agent-memory) and buildContext (reads
+  // workflow state via reduce). Without this, PostToolUse opened the DB
+  // twice per fire — once here and once inside buildContext when
+  // sharedLog was undefined — doubling WAL contention + migration cost.
+  // ISSUE-026's WeakSet cache does NOT defang this: each openBrain()
+  // returns a fresh Database instance with its own cache identity.
+  let sharedHandle: BrainHandle | null = null;
+  let sharedLog: BrainEventLog | null = null;
+  try {
+    sharedHandle = openBrain();
+    applyMigrations(sharedHandle.raw);
+    sharedLog = BrainEventLog.wrap(sharedHandle);
+  } catch {
+    // Brain unreachable — both observability + workflow-context paths
+    // degrade gracefully via the null checks below.
+  }
+
   // Observability: tool_calls + agent-memory ingestion
-  if (typeof payload.session_id === "string" && payload.session_id.length > 0) {
+  if (sharedHandle && typeof payload.session_id === "string" && payload.session_id.length > 0) {
     try {
-      const handle = openBrain();
-      try {
-        applyMigrations(handle.raw);
-        processPostToolUse(handle, {
-          sessionId: payload.session_id,
-          cwd,
-          toolName: payload.tool_name,
-          toolInput: payload.tool_input,
-          toolResponse: payload.tool_response,
-          agentType: getActiveAgent(),
-          ...(payload.transcript_path !== undefined
-            ? { transcriptPath: payload.transcript_path }
-            : {}),
-        });
-      } finally {
-        handle.close();
-      }
+      processPostToolUse(sharedHandle, {
+        sessionId: payload.session_id,
+        cwd,
+        toolName: payload.tool_name,
+        toolInput: payload.tool_input,
+        toolResponse: payload.tool_response,
+        agentType: getActiveAgent(),
+        ...(payload.transcript_path !== undefined
+          ? { transcriptPath: payload.transcript_path }
+          : {}),
+      });
     } catch {
       /* non-blocking */
     }
@@ -328,7 +353,7 @@ function runPostToolUse(): void {
       ? { tool_response: payload.tool_response as PostToolCall["tool_response"] }
       : {}),
   };
-  const ctx = buildContext(cwd);
+  const ctx = sharedLog ? buildContext(cwd, sharedLog) : buildContext(cwd);
   const filePath = (call.tool_input["file_path"] ?? call.tool_input["path"]) as string | undefined;
   if (typeof filePath === "string") {
     const postContent = readFileSafe(filePath, cwd);
@@ -348,13 +373,24 @@ function runPostToolUse(): void {
     }
   }
 
+  // Single dispose for the shared handle (covers both observability +
+  // buildContext paths). BrainEventLog.wrap() returns a non-owning view,
+  // so we close via the underlying handle.
+  if (sharedHandle) {
+    try {
+      sharedHandle.close();
+    } catch {
+      /* non-blocking */
+    }
+  }
+
   process.exit(0);
 }
 
 // ─── stop ──────────────────────────────────────────────────────────────────
 
 function runStop(): void {
-  const payload = parsePayload();
+  const payload = safeParseHookPayload(StopPayloadSchema, parsePayloadRaw(), "stop");
   if (!payload || typeof payload.session_id !== "string" || payload.session_id.length === 0) {
     process.exit(0);
   }
@@ -391,7 +427,7 @@ const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
   stop: runStop,
 };
 
-const VALID_AGENTS = new Set(["claude-code", "codex", "cursor", "windsurf", "cline", "copilot"]);
+const VALID_AGENTS: ReadonlySet<string> = new Set(SUPPORTED_PLATFORMS);
 const AGENT_ENV_KEY = "CODI_HOOK_AGENT";
 
 /**

@@ -183,7 +183,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -293,6 +293,35 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `DROP TABLE IF EXISTS proposals`,
     ],
   ],
+  [
+    11,
+    [
+      // ISSUE-037 — lift the `__codi_session__` singleton out of workflow_runs.
+      //
+      // Pre-v11: the active-workflow pointer + single-process lock lived in
+      //   workflow_runs as a fake row with workflow_id='__codi_session__',
+      //   type='session', metadata=JSON({ active_id, lock_held_pid,
+      //   lock_acquired_at }). Every aggregation over workflow_runs had to
+      //   add `AND type != 'session'` to skip the singleton — 4 production
+      //   sites + 2 test fixtures.
+      //
+      // Post-v11: a dedicated runtime_state(key, value) KV table owns the
+      //   metadata. The singleton row is migrated then deleted in this same
+      //   transaction so an aborted upgrade leaves no orphan.
+      //
+      // INSERT…SELECT is idempotent on fresh DBs (no singleton exists, so
+      // 0 rows inserted). DELETE on a non-existent row is a no-op.
+      `CREATE TABLE IF NOT EXISTS runtime_state (
+         key   TEXT PRIMARY KEY,
+         value TEXT NOT NULL
+       )`,
+      `INSERT OR REPLACE INTO runtime_state(key, value)
+         SELECT 'session', metadata
+         FROM workflow_runs
+         WHERE workflow_id = '__codi_session__' AND metadata IS NOT NULL`,
+      `DELETE FROM workflow_runs WHERE workflow_id = '__codi_session__'`,
+    ],
+  ],
 ];
 
 function columnExists(raw: Database.Database, table: string, column: string): boolean {
@@ -322,10 +351,32 @@ function safeRun(raw: Database.Database, stmt: string): void {
  *   - On an existing DB at v < CURRENT_SCHEMA_VERSION, run only the missing
  *     versioned migrations.
  *
- * Idempotent: a second invocation reads the recorded version and short-
- * circuits.
+/**
+ * Per-process memoisation of handles that have already had their schema
+ * applied. Keyed by the live `better-sqlite3.Database` instance (WeakSet
+ * permits GC when the handle closes). Skips both BOOTSTRAP_STATEMENTS and
+ * `seedWorkflowDefinitions` on subsequent calls in the same process.
+ *
+ * Why per-handle rather than per-path:
+ *   - Tests open many in-memory DBs at `:memory:`; a path-keyed cache
+ *     would skip migration on the second test in the same Vitest worker.
+ *   - Hooks spawn a fresh Node process per fire — there is no prior cache
+ *     to consult, so they pay the cost once per fire regardless. This
+ *     cache helps long-lived consumers (CLI loop, brain-ui server) that
+ *     open one handle and reuse it.
+ */
+const MIGRATED_HANDLES = new WeakSet<Database.Database>();
+
+/**
+ * Idempotent: a second invocation on the same `raw` handle short-circuits
+ * via the per-process WeakSet. A fresh handle re-runs the migration path
+ * (and the on-disk SQL is itself idempotent — every statement uses
+ * `CREATE … IF NOT EXISTS` and the versioned section gates on
+ * `_codi_schema_version`).
  */
 export function applyMigrations(raw: Database.Database): { applied: number[] } {
+  if (MIGRATED_HANDLES.has(raw)) return { applied: [] };
+
   const applied: number[] = [];
   const txn = raw.transaction(() => {
     for (const stmt of BOOTSTRAP_STATEMENTS) {
@@ -353,16 +404,34 @@ export function applyMigrations(raw: Database.Database): { applied: number[] } {
     applied.push(CURRENT_SCHEMA_VERSION);
   }
 
-  // Seed workflow_definitions from src/templates/workflows/*.yaml on every
-  // open. Idempotent: managed_by='codi' rows are upserted, managed_by='user'
-  // rows are preserved. Defensive: if the built-in YAMLs cannot be located
-  // (e.g. test harness without `src/templates/` on disk), we swallow and
-  // continue — the table remains empty and the bridge falls back gracefully.
+  // Seed workflow_definitions from src/templates/workflows/*.yaml ONLY when
+  // we actually applied a new schema version (first migration of this DB)
+  // OR when this is a fresh handle the cache has not seen yet. Both
+  // conditions are true on entry here. Re-seeding on every call previously
+  // hit the hot hook path with file I/O + YAML parse + N upserts on every
+  // PostToolUse / Stop fire. Idempotent: managed_by='codi' rows are
+  // upserted, managed_by='user' rows are preserved. Defensive: built-in
+  // YAML lookup may fail in a test harness without `src/templates/` on
+  // disk — swallow and continue.
   try {
     seedWorkflowDefinitions(raw);
   } catch {
     /* best-effort seed — never block migration */
   }
 
+  MIGRATED_HANDLES.add(raw);
   return { applied };
+}
+
+/**
+ * Test-only: clear the per-process migration cache. Vitest workers may
+ * reuse module state across files; tests that intentionally exercise the
+ * "second applyMigrations call is a no-op" assertion (or recover from a
+ * mid-test schema reset) call this to drop the WeakSet entry for a handle.
+ */
+export function _resetMigrationCacheForTests(): void {
+  // WeakSet has no .clear(); the cheapest reset is to swap the reference.
+  // Cast through unknown because `MIGRATED_HANDLES` is declared `const`
+  // intentionally — production code MUST NOT mutate it.
+  (MIGRATED_HANDLES as unknown as { _store?: never })._store = undefined;
 }

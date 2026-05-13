@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const GO_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const GO_HOOKS: GitHookArtifact[] = [
     name: "golangci-lint",
     description: "Aggregator linter for Go",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",
@@ -35,7 +36,7 @@ export const GO_HOOKS: GitHookArtifact[] = [
     name: "gofmt",
     description: "Standard Go formatter",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "format",
@@ -60,7 +61,7 @@ export const GO_HOOKS: GitHookArtifact[] = [
     name: "gosec",
     description: "Go security analyser",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "security",

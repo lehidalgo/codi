@@ -1,8 +1,14 @@
 import { z } from "zod";
-import { MAX_NAME_LENGTH, NAME_PATTERN } from "../constants.js";
+import { MAX_NAME_LENGTH, NAME_PATTERN, SUPPORTED_PLATFORMS } from "../constants.js";
 
-/** Agent ids that can be the source of skill feedback entries. */
-export const FEEDBACK_AGENTS = ["claude-code", "codex", "cursor", "windsurf", "cline", "copilot"] as const;
+/**
+ * Agent ids that can be the source of skill feedback entries.
+ *
+ * Derives from `SUPPORTED_PLATFORMS` (constants.ts) — the single source of
+ * truth for agent identity. Adding a new agent there propagates to feedback
+ * validation automatically; no parallel list to keep in sync.
+ */
+export const FEEDBACK_AGENTS = SUPPORTED_PLATFORMS;
 
 /** Possible outcomes of a skill execution: 'success', 'partial', or 'failure'. */
 export const FEEDBACK_OUTCOMES = ["success", "partial", "failure"] as const;

@@ -247,17 +247,20 @@ function buildPresetMarkdown(entry: PresetDocEntry, presetKey: string): string {
 // Catalog directory management
 // ---------------------------------------------------------------------------
 
-const ARTIFACT_TYPES = ["skills", "rules", "agents", "presets"] as const;
-type ArtifactType = (typeof ARTIFACT_TYPES)[number];
+// Distinct from the canonical `ARTIFACT_TYPES` in core/artifact-types.ts —
+// this set is plural, drops mcp-server, and adds "presets" (docs-catalog
+// only). Named `CATALOG_DIRS` to avoid grep collision with the canonical.
+const CATALOG_DIRS = ["skills", "rules", "agents", "presets"] as const;
+type CatalogDir = (typeof CATALOG_DIRS)[number];
 
-function catalogDir(projectRoot: string, type: ArtifactType): string {
+function catalogDir(projectRoot: string, type: CatalogDir): string {
   return join(projectRoot, "docs", "src", "content", "docs", "catalog", type);
 }
 
 async function resetCatalogDirs(projectRoot: string): Promise<void> {
   const baseDir = join(projectRoot, "docs", "src", "content", "docs", "catalog");
   await rm(baseDir, { recursive: true, force: true });
-  await Promise.all(ARTIFACT_TYPES.map((type) => mkdir(join(baseDir, type), { recursive: true })));
+  await Promise.all(CATALOG_DIRS.map((type) => mkdir(join(baseDir, type), { recursive: true })));
 }
 
 // ---------------------------------------------------------------------------

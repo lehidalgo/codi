@@ -49,3 +49,87 @@ export type LedgerEntryType = ArtifactType | "instruction" | "settings";
  * Used by `runtime/capture/session.ts`.
  */
 export type CapturedArtifactType = "rule" | "skill" | "agent" | "command";
+
+/**
+ * Per-kind on-disk layout descriptor.
+ *
+ * `kind: "file"` artifacts live at `<dir>/<name><ext>` (single Markdown or
+ * YAML file). `kind: "directory"` artifacts (skills) are bundle folders at
+ * `<dir>/<name>/`; the canonical index file lives at
+ * `<dir>/<name>/<indexFile>`. Consumers must not assume `.md` — mcp-servers
+ * use `.yaml` with top-level `managed_by:` rather than `---` frontmatter.
+ */
+export interface ArtifactLayoutDef {
+  readonly type: ArtifactType;
+  readonly dirName: (typeof ARTIFACT_DIR_NAMES)[number];
+  readonly kind: "file" | "directory";
+  readonly ext: ".md" | ".yaml";
+  readonly indexFile?: "SKILL.md";
+  /**
+   * Where the `managed_by` declaration lives. Markdown artifacts (rule /
+   * skill / agent) use YAML frontmatter; YAML artifacts (mcp-server) use a
+   * top-level key. Drives the right reader without a per-callsite branch.
+   */
+  readonly managedByLocation: "frontmatter" | "yaml-top-level";
+}
+
+/**
+ * Canonical on-disk layout for every `ArtifactType`. ALL code that needs to
+ * know "where does kind X live on disk and what shape is its file" must
+ * read from here — the parallel-map drift across `template-hash-registry`,
+ * `artifact-manifest` bootstrap, `preset-applier`, `discovery`, and
+ * `backup-collectors` was traceable to inline duplications of this record.
+ *
+ * `satisfies` enforces exhaustive coverage at compile time: adding a new
+ * `ArtifactType` member without extending this map fails the build.
+ */
+export const ARTIFACT_LAYOUT = {
+  rule: {
+    type: "rule",
+    dirName: "rules",
+    kind: "file",
+    ext: ".md",
+    managedByLocation: "frontmatter",
+  },
+  skill: {
+    type: "skill",
+    dirName: "skills",
+    kind: "directory",
+    ext: ".md",
+    indexFile: "SKILL.md",
+    managedByLocation: "frontmatter",
+  },
+  agent: {
+    type: "agent",
+    dirName: "agents",
+    kind: "file",
+    ext: ".md",
+    managedByLocation: "frontmatter",
+  },
+  "mcp-server": {
+    type: "mcp-server",
+    dirName: "mcp-servers",
+    kind: "file",
+    ext: ".yaml",
+    managedByLocation: "yaml-top-level",
+  },
+} as const satisfies Record<ArtifactType, ArtifactLayoutDef>;
+
+/**
+ * Resolve the on-disk path of an artifact relative to a root directory
+ * (either the project's `.codi/` or a preset's directory). Single source
+ * of truth for path layout — replaces the four near-duplicate switch
+ * statements that previously lived in `preset-applier`, `artifact-manifest`,
+ * `init-helpers`, and `template-hash-registry`.
+ *
+ * The `path` module is imported lazily so this file stays browser-safe
+ * for any future docs/site consumer that wants to read `ARTIFACT_LAYOUT`
+ * without pulling in `node:path`.
+ */
+export function artifactRelativePath(type: ArtifactType, name: string): string {
+  const layout = ARTIFACT_LAYOUT[type];
+  if (layout.kind === "directory") {
+    return `${layout.dirName}/${name}/${layout.indexFile}`;
+  }
+  return `${layout.dirName}/${name}${layout.ext}`;
+}

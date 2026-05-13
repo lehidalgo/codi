@@ -98,8 +98,19 @@ export const WATCH_DEBOUNCE_MS = 500;
 export const MAX_BACKUPS = 50;
 
 // --- Managed by ---
+/**
+ * Owners that may appear in the `managed_by:` frontmatter field on every Codi
+ * artifact. The framework owns built-in templates; the user owns local
+ * customisations. Code that needs these literals must import the constants
+ * below rather than typing `"codi"` / `"user"` inline — the guard
+ * `scripts/guard-project-literals.mjs` enforces this and the rule
+ * `codi-code-style.md` documents the policy.
+ */
+export const MANAGED_BY_FRAMEWORK = PROJECT_NAME;
+export const MANAGED_BY_USER = "user" as const;
+export type ManagedBy = typeof MANAGED_BY_FRAMEWORK | typeof MANAGED_BY_USER;
 /** Valid values for the `managed_by` field in artifact frontmatter. */
-export const MANAGED_BY_VALUES = [PROJECT_NAME, "user"] as const;
+export const MANAGED_BY_VALUES = [MANAGED_BY_FRAMEWORK, MANAGED_BY_USER] as const;
 
 // --- Presets ---
 // Base preset names are derived from flag-presets.ts PRESETS object (source of truth).
@@ -299,9 +310,14 @@ export const CLI_COMMANDS = [
 export const GIT_CLONE_DEPTH = "1";
 
 // --- Flag defaults ---
-/** Default maximum lines-of-code limit enforced on source files via rules. */
-export const DEFAULT_MAX_FILE_LINES = 700;
-/** Maximum lines-of-code limit checked by the pre-commit hook (slightly relaxed). */
+/**
+ * Default maximum lines-of-code limit enforced on source files via rules.
+ * Raised from 700 → 800 (ISSUE-013) to align with the pre-commit hook
+ * and avoid splitting CLI handlers / wizards that naturally sit between
+ * 700 and 800 LOC once `Result<T>` boilerplate is included.
+ */
+export const DEFAULT_MAX_FILE_LINES = 800;
+/** Maximum lines-of-code limit checked by the pre-commit hook. */
 export const PRE_COMMIT_MAX_FILE_LINES = 800;
 
 // --- Per-layer line limits (ACS recommendations) ---

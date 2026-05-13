@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import matter from "gray-matter";
 import { parse as parseYaml } from "yaml";
 import type { ArtifactType, TemplateHashRegistry } from "../core/version/template-hash-registry.js";
 import { buildTemplateHashRegistry } from "../core/version/template-hash-registry.js";
@@ -13,7 +12,9 @@ import { loadAgentTemplate } from "../core/scaffolder/agent-template-loader.js";
 import { loadMcpServerTemplate } from "../core/scaffolder/mcp-template-loader.js";
 import { extractTemplateHint } from "./artifact-categories.js";
 import type { ExistingSelections } from "./init-wizard.js";
+import { MANAGED_BY_FRAMEWORK, type ManagedBy } from "#src/constants.js";
 
+import { parseFrontmatter } from "../utils/frontmatter.js";
 export type InstalledArtifactStatus =
   | "builtin-original"
   | "builtin-modified"
@@ -26,7 +27,7 @@ export interface InstalledArtifactInventoryEntry {
   type: ArtifactType;
   status: InstalledArtifactStatus;
   installed: boolean;
-  managedBy: "codi" | "user";
+  managedBy: ManagedBy;
   installedArtifactVersion: InstalledArtifactVersion | null;
   hint: string;
 }
@@ -40,7 +41,7 @@ interface InstalledArtifactFile {
   name: string;
   type: ArtifactType;
   content: string;
-  managedBy: "codi" | "user";
+  managedBy: ManagedBy;
   hint: string;
 }
 
@@ -86,7 +87,7 @@ async function readMarkdownArtifacts(
         .map(async (entry) => {
           const filePath = path.join(dir, entry);
           const content = await fs.readFile(filePath, "utf8");
-          const parsed = matter(content);
+          const parsed = parseFrontmatter<Record<string, unknown>>(content);
           return {
             name: entry.replace(/\.md$/, ""),
             type,
@@ -112,7 +113,7 @@ async function readSkillArtifacts(configDir: string): Promise<InstalledArtifactF
         .map(async (entry) => {
           const filePath = path.join(skillsDir, entry.name, "SKILL.md");
           const content = await fs.readFile(filePath, "utf8");
-          const parsed = matter(content);
+          const parsed = parseFrontmatter<Record<string, unknown>>(content);
           return {
             name: entry.name,
             type: "skill" as const,
@@ -138,7 +139,7 @@ async function readMcpArtifacts(configDir: string): Promise<InstalledArtifactFil
         .map(async (entry) => {
           const filePath = path.join(mcpDir, entry);
           const content = await fs.readFile(filePath, "utf8");
-          let managedBy: "codi" | "user" = "codi";
+          let managedBy: ManagedBy = "codi";
           try {
             const parsed = parseYaml(content) as Record<string, unknown> | null;
             if (parsed?.managed_by === "user") {
@@ -225,7 +226,7 @@ export async function buildInstalledArtifactInventory(
         type: template.type,
         status: "builtin-new",
         installed: false,
-        managedBy: "codi",
+        managedBy: MANAGED_BY_FRAMEWORK,
         installedArtifactVersion: null,
         hint: builtinHint,
       });

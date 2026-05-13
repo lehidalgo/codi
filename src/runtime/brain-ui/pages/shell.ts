@@ -5,9 +5,53 @@
  * shell wraps it.
  */
 
-import { marked } from "marked";
+import { marked, Renderer } from "marked";
 
-marked.setOptions({ gfm: true, breaks: true });
+// XSS-safe markdown renderer (ISSUE-008). Marked v18 does NOT sanitize by
+// default — the `sanitize` option was removed in v1.0. Capture content is
+// attacker-controllable via Iron Law 9 markers, so we need three
+// overrides:
+//   1. link() — block `javascript:`, `data:`, `vbscript:` schemes (with a
+//      URL-decode pass to catch %6A%61%76… obfuscation).
+//   2. image() — same scheme allowlist; downgrade to alt text on reject.
+//   3. html() — escape raw HTML blocks instead of passing them through.
+const UNSAFE_PROTOCOL_RE = /^\s*(javascript|data|vbscript):/i;
+
+function isUnsafeHref(href: string | null | undefined): boolean {
+  if (!href) return true;
+  let decoded = href;
+  try {
+    decoded = decodeURIComponent(href);
+  } catch {
+    /* keep raw — malformed URI itself is suspicious */
+  }
+  return UNSAFE_PROTOCOL_RE.test(decoded) || UNSAFE_PROTOCOL_RE.test(href);
+}
+
+const safeRenderer = new Renderer();
+
+safeRenderer.link = function ({ href, title, tokens }) {
+  if (isUnsafeHref(href)) {
+    return this.parser.parseInline(tokens);
+  }
+  const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+  return `<a href="${escapeHtml(href ?? "")}"${titleAttr} rel="noopener noreferrer">${this.parser.parseInline(tokens)}</a>`;
+};
+
+safeRenderer.image = function ({ href, title, text }) {
+  if (isUnsafeHref(href)) {
+    return escapeHtml(text);
+  }
+  const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+  return `<img src="${escapeHtml(href ?? "")}" alt="${escapeHtml(text)}"${titleAttr}>`;
+};
+
+safeRenderer.html = function ({ text }) {
+  // Drop raw HTML — emit escaped source instead of verbatim passthrough.
+  return escapeHtml(text);
+};
+
+marked.setOptions({ gfm: true, breaks: true, renderer: safeRenderer });
 
 const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/", label: "Dashboard" },
@@ -107,9 +151,11 @@ export function fmtRelative(ts: number, now = Date.now()): string {
 
 /**
  * Render a markdown source string into safe HTML wrapped in a `prose`
- * container. The renderer is GFM + breaks; HTML inside the source is
- * escaped by marked's default tokenizer so untrusted prompts cannot inject
- * scripts.
+ * container. The renderer is GFM + breaks with custom overrides for
+ * link/image/html that block `javascript:`/`data:`/`vbscript:` schemes
+ * and escape raw HTML — see the `safeRenderer` block above for details.
+ * Required because capture content is attacker-controllable via Iron
+ * Law 9 markers (ISSUE-008).
  */
 export function renderMarkdown(src: string): string {
   if (!src) return "";

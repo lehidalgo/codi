@@ -18,6 +18,8 @@ import {
 import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
 import { printWelcomeBanner } from "./banner.js";
 import { wizardSelect, wizardMultiselect } from "./wizard-prompts.js";
+import type { ExistingSelections } from "../core/version/types.js";
+export type { ExistingSelections } from "../core/version/types.js";
 
 export interface WizardResult {
   languages: string[];
@@ -41,14 +43,6 @@ export interface WizardResult {
 
 function isBack<T>(value: T | symbol): value is symbol {
   return typeof value === "symbol";
-}
-
-export interface ExistingSelections {
-  preset: string;
-  rules: string[];
-  skills: string[];
-  agents: string[];
-  mcpServers: string[];
 }
 
 export interface ExistingInstallContext {

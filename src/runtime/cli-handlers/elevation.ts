@@ -13,6 +13,7 @@ import {
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent, Phase, WorkflowType } from "../types.js";
+import { resolveActiveWorkflowId } from "./active-workflow.js";
 
 const SYSTEM_AUTHOR: Author = { type: "system", id: "codi" };
 
@@ -35,7 +36,7 @@ export function proposeElevation(opts: ProposeElevationOptions): ProposeElevatio
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const state = reduce(log.loadEvents(workflowId));
@@ -74,7 +75,7 @@ export interface ApproveElevationResult {
 export function approveElevation(opts: ApproveElevationOptions): ApproveElevationResult {
   const log = BrainEventLog.open();
   try {
-    const parentId = log.getActiveWorkflowId();
+    const parentId = resolveActiveWorkflowId(log, opts);
     if (!parentId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(parentId);
@@ -142,7 +143,7 @@ export function rejectElevation(opts: RejectElevationOptions): { workflowId: str
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -182,7 +183,7 @@ export function resolveChild(opts: ResolveChildOptions): {
 } {
   const log = BrainEventLog.open();
   try {
-    const parentId = log.getActiveWorkflowId();
+    const parentId = resolveActiveWorkflowId(log, opts);
     if (!parentId) throw new NoActiveWorkflowError();
 
     const summaryPayload = opts.summary !== undefined ? { summary: opts.summary } : {};

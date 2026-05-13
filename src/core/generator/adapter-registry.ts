@@ -33,21 +33,22 @@ export function getAllAdapters(): AgentAdapter[] {
 }
 
 /**
- * Run detection across every registered adapter and return those whose
- * presence is confirmed in `projectRoot`.
+ * Run detection across every registered adapter in parallel and return
+ * those whose presence is confirmed in `projectRoot`.
+ *
+ * Each `adapter.detect` is an independent filesystem probe (`fs.access`
+ * on a marker file). Running them in parallel is a measurable win when
+ * Codi is invoked in a project with several agents installed —
+ * `Promise.all` preserves input order so the returned slice retains the
+ * adapter registration order.
  *
  * @param projectRoot - Absolute path to the project root to probe.
  * @returns Adapters whose {@link AgentAdapter.detect} method returned `true`.
  */
 export async function detectAdapters(projectRoot: string): Promise<AgentAdapter[]> {
-  const results: AgentAdapter[] = [];
-  for (const adapter of adapters.values()) {
-    const detected = await adapter.detect(projectRoot);
-    if (detected) {
-      results.push(adapter);
-    }
-  }
-  return results;
+  const all = [...adapters.values()];
+  const flags = await Promise.all(all.map((a) => a.detect(projectRoot)));
+  return all.filter((_, i) => flags[i]);
 }
 
 /**

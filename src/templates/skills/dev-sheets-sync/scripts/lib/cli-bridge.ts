@@ -26,6 +26,8 @@ import {
 
 import { type CliFlags, fail, loadAuthClientOrElicit, readGitActor } from "./cli.js";
 
+import { PROJECT_DIR } from "./project-constants.js";
+
 // ─── push-to-google ──────────────────────────────────────────────────────────
 
 export async function runPushToGoogle(
@@ -184,7 +186,7 @@ export async function runPullFromGoogle(
   const force = flags["force"] === true;
 
   const path = await import("node:path");
-  const localPath = path.resolve(cwd, toFlag ?? ".codi/sheet.xlsx");
+  const localPath = path.resolve(cwd, toFlag ?? `${PROJECT_DIR}/sheet.xlsx`);
 
   if (existsSync(localPath) && !force) {
     fail(

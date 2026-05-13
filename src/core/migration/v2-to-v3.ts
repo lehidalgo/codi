@@ -13,6 +13,7 @@
 
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export interface V2DetectionResult {
   readonly isV2: boolean;
@@ -28,7 +29,7 @@ export interface V2DetectionResult {
 }
 
 export function detectV2Layout(repoRoot: string): V2DetectionResult {
-  const codiDir = resolve(repoRoot, ".codi");
+  const codiDir = resolve(repoRoot, PROJECT_DIR);
   const warnings: string[] = [];
 
   if (!existsSync(codiDir) || !statSync(codiDir).isDirectory()) {

@@ -1,16 +1,11 @@
 import { describe, it, expect } from "vitest";
-import {
-  ProjectManifestSchema,
-  AgentFrontmatterSchema,
-  RuleFrontmatterSchema,
-  SkillFrontmatterSchema,
-  FlagModeSchema,
-  FlagConditionsSchema,
-  FlagDefinitionSchema,
-  McpConfigSchema,
-  HookDefinitionSchema,
-  HooksConfigSchema,
-} from "../../src/schemas/index.js";
+import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
+import { FlagModeSchema, FlagConditionsSchema, FlagDefinitionSchema } from "#src/schemas/flag.js";
+import { HookDefinitionSchema, HooksConfigSchema } from "#src/schemas/hooks.js";
+import { ProjectManifestSchema } from "#src/schemas/manifest.js";
+import { McpConfigSchema } from "#src/schemas/mcp.js";
+import { RuleFrontmatterSchema } from "#src/schemas/rule.js";
+import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
 import {
   PROJECT_NAME,
   ALL_SKILL_CATEGORIES,

@@ -16,10 +16,10 @@ import { Logger } from "../output/logger.js";
 import { PresetManifestSchema } from "#src/schemas/preset.js";
 import { parseFrontmatter } from "#src/utils/frontmatter.js";
 import {
+  BRAND_CATEGORY,
   MCP_FILENAME,
   PRESET_MANIFEST_FILENAME,
   PROJECT_NAME,
-  BRAND_CATEGORY,
 } from "#src/constants.js";
 import { detectCircularExtends } from "./preset-validator.js";
 import { isBuiltinPreset as checkBuiltin, materializeBuiltinPreset } from "./preset-builtin.js";

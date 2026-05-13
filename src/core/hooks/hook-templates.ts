@@ -589,7 +589,7 @@ const VALID_PATTERN = /^(\\d{8})_(?:\\d{4,6}_)?\\[?([A-Z]+)\\]?_.+$/;
 
 const staged = (() => {
   try {
-    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
+    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8', timeout: 5_000 })
       .trim().split('\\n').filter(Boolean);
   } catch { return []; }
 })();
@@ -650,7 +650,7 @@ import { execFileSync } from 'child_process';
 
 const staged = (() => {
   try {
-    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
+    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8', timeout: 5_000 })
       .trim().split('\\n').filter(Boolean);
   } catch { return []; }
 })();

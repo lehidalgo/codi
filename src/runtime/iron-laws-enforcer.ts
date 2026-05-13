@@ -29,12 +29,9 @@ export interface GateState {
  * Read the active workflow's gate state from the brain. Returns null when
  * no workflow is active (no gate is firing).
  *
- * The `type != 'session'` predicate excludes the `__codi_session__`
- * singleton row (which BrainEventLog uses to track the active-workflow
- * pointer). Without it, when the singleton's `started_at` ties with a
- * real workflow's (sub-millisecond clock collision under concurrent
- * load), `ORDER BY started_at DESC` can return the singleton — surfacing
- * `status='active'` regardless of any pending phase transition.
+ * As of schema v11 (ISSUE-037) the active-workflow pointer lives in the
+ * `runtime_state` KV table, so workflow_runs contains only real workflow
+ * rows — no singleton filter needed.
  */
 export function readGateState(raw: Database.Database): GateState | null {
   const row = raw
@@ -42,7 +39,6 @@ export function readGateState(raw: Database.Database): GateState | null {
       `SELECT workflow_id, current_phase, status, metadata
        FROM workflow_runs
        WHERE status IN ('active', 'pending_approval', 'in_progress')
-         AND type != 'session'
        ORDER BY started_at DESC
        LIMIT 1`,
     )

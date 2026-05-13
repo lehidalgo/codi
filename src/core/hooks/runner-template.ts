@@ -31,7 +31,7 @@ function globToRegex(glob) {
 
 function getStagedFiles() {
   try {
-    const out = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' });
+    const out = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8', timeout: 5_000 });
     return out.trim().split('\\n').filter(Boolean);
   } catch { return []; }
 }
@@ -111,7 +111,7 @@ for (const hook of hooks) {
     if (modifiesFiles) {
       const toRestage = isGlobal ? allStaged : matched;
       if (toRestage.length > 0) {
-        execFileSync('git', ['add', ...toRestage], { stdio: 'inherit' });
+        execFileSync('git', ['add', ...toRestage], { stdio: 'inherit', timeout: 10_000 });
       }
     }
   } catch {

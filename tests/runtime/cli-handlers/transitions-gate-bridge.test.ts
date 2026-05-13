@@ -37,9 +37,9 @@ describe("approveTransition runs phase gates as advisory", () => {
       cwd: scratch,
     });
     proposeTransition({ toPhase: "plan", author: AGENT_AUTHOR, cwd: scratch });
-    approveTransition({ author: AGENT_AUTHOR });
+    approveTransition({ author: AGENT_AUTHOR, cwd: scratch });
     proposeTransition({ toPhase: "decompose", author: AGENT_AUTHOR, cwd: scratch });
-    const result = approveTransition({ author: AGENT_AUTHOR });
+    const result = approveTransition({ author: AGENT_AUTHOR, cwd: scratch });
     expect(result.fromPhase).toBe("plan");
     expect(result.toPhase).toBe("decompose");
     const log = BrainEventLog.open();
@@ -62,7 +62,7 @@ describe("approveTransition runs phase gates as advisory", () => {
       cwd: scratch,
     });
     proposeTransition({ toPhase: "plan", author: AGENT_AUTHOR, cwd: scratch });
-    const result = approveTransition({ author: AGENT_AUTHOR });
+    const result = approveTransition({ author: AGENT_AUTHOR, cwd: scratch });
     const log = BrainEventLog.open();
     const events = log.loadEvents(result.workflowId);
     const passed = events.filter(

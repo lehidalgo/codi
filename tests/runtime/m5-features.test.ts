@@ -146,7 +146,8 @@ describe("compactor (F11 — brain-backed)", () => {
 
   it("does not compact recent terminal workflows", async () => {
     const { compactWorkflows } = await import("#src/runtime/compactor.js");
-    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    const { openBrain } = await import("#src/runtime/brain/db.js");
+    const { applyMigrations } = await import("#src/runtime/brain/migrate.js");
     runWorkflow({ workflowType: "feature", task: "Recent", author: human, cwd: cdir });
     abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
@@ -164,7 +165,8 @@ describe("compactor (F11 — brain-backed)", () => {
 
   it("compacts terminal workflows older than the threshold", async () => {
     const { compactWorkflows, readCompactedSummary } = await import("#src/runtime/compactor.js");
-    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    const { openBrain } = await import("#src/runtime/brain/db.js");
+    const { applyMigrations } = await import("#src/runtime/brain/migrate.js");
     runWorkflow({ workflowType: "feature", task: "Old", author: human, cwd: cdir });
     abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
@@ -197,7 +199,8 @@ describe("compactor (F11 — brain-backed)", () => {
 
   it("is idempotent — already-compacted workflows are skipped", async () => {
     const { compactWorkflows } = await import("#src/runtime/compactor.js");
-    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    const { openBrain } = await import("#src/runtime/brain/db.js");
+    const { applyMigrations } = await import("#src/runtime/brain/migrate.js");
     runWorkflow({ workflowType: "feature", task: "Old", author: human, cwd: cdir });
     abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 
@@ -216,7 +219,8 @@ describe("compactor (F11 — brain-backed)", () => {
 
   it("dryRun summarizes but does not delete events", async () => {
     const { compactWorkflows } = await import("#src/runtime/compactor.js");
-    const { openBrain, applyMigrations } = await import("#src/runtime/brain/index.js");
+    const { openBrain } = await import("#src/runtime/brain/db.js");
+    const { applyMigrations } = await import("#src/runtime/brain/migrate.js");
     runWorkflow({ workflowType: "feature", task: "DryOld", author: human, cwd: cdir });
     abandonWorkflow({ reason: "test", author: human, cwd: cdir });
 

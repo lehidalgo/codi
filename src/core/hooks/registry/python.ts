@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const PYTHON_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const PYTHON_HOOKS: GitHookArtifact[] = [
     name: "ruff-check",
     description: "Fast Python linter (ruff)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",
@@ -33,7 +34,7 @@ export const PYTHON_HOOKS: GitHookArtifact[] = [
     name: "ruff-format",
     description: "Fast Python formatter (ruff)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -59,7 +60,7 @@ export const PYTHON_HOOKS: GitHookArtifact[] = [
     name: "basedpyright",
     description: "Strict Python type checker (basedpyright)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "type-check",
@@ -86,7 +87,7 @@ export const PYTHON_HOOKS: GitHookArtifact[] = [
     name: "mypy",
     description: "Python type checker (mypy)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: false,
     category: "type-check",
@@ -113,7 +114,7 @@ export const PYTHON_HOOKS: GitHookArtifact[] = [
     name: "pyright",
     description: "Python type checker (pyright)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: false,
     category: "type-check",
@@ -139,7 +140,7 @@ export const PYTHON_HOOKS: GitHookArtifact[] = [
     name: "bandit",
     description: "Python security linter",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "security",

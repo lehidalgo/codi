@@ -6,6 +6,7 @@ import { ok, err } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { resolveProjectDir } from "#src/utils/paths.js";
 import type { MigrationResult } from "./agents-md.js";
+import { MANAGED_BY_USER } from "#src/constants.js";
 
 interface Section {
   heading: string;
@@ -60,7 +61,7 @@ function sectionToRule(section: Section): NormalizedRule {
     content: section.content,
     priority: "medium",
     alwaysApply: true,
-    managedBy: "user",
+    managedBy: MANAGED_BY_USER,
   };
 }
 

@@ -20,7 +20,8 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { runWorkflow } from "#src/runtime/cli-handlers.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
-import { applyMigrations, openBrain } from "#src/runtime/brain/index.js";
+import { openBrain } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { createEvent } from "#src/runtime/event-factory.js";
 import { reduce } from "#src/runtime/reducer.js";
 import type { Author } from "#src/runtime/types.js";
@@ -123,12 +124,10 @@ describe("ISSUE-004 — runWorkflow singleton race", () => {
 
     const handle = openBrain({ dbPath });
     try {
-      // Exclude the __codi_session__ singleton row (type='session') used for
-      // active-workflow tracking — same filter iron-laws-enforcer uses.
+      // v11+: workflow_runs holds only real workflow rows — the active-id
+      // pointer was lifted to the runtime_state KV table (ISSUE-037).
       const activeRows = handle.raw
-        .prepare(
-          `SELECT workflow_id FROM workflow_runs WHERE status = 'active' AND type != 'session'`,
-        )
+        .prepare(`SELECT workflow_id FROM workflow_runs WHERE status = 'active'`)
         .all() as { workflow_id: string }[];
       expect(activeRows).toHaveLength(1);
       expect(activeRows[0]!.workflow_id).toBe(result.workflowId);

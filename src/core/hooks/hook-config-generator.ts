@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import type { ResolvedFlags } from "#src/types/flags.js";
-import { PROJECT_NAME } from "#src/constants.js";
+import { PROJECT_DIR, PROJECT_NAME } from "#src/constants.js";
 import type { ProjectManifest } from "#src/types/config.js";
 import type { HookCategory, HookSpec, HookStage } from "./hook-spec.js";
 import type { HookEntry } from "./hook-registry.js";
@@ -277,7 +277,7 @@ export function generateHooksConfig(
       metaHook({
         name: "artifact-validate",
         entry: `node .git/hooks/${PROJECT_NAME}-artifact-validate.mjs`,
-        files: ".codi/**",
+        files: `${PROJECT_DIR}/**`,
       }),
     );
   }
@@ -428,7 +428,7 @@ function hasDocNamingCheck(): boolean {
 function hasVersionBump(): boolean {
   // Enable for source-template authors (codi repo) and consumers with .codi/.
   // Both layers are auto-bumped by the dual-mode hook; baseline file is gone.
-  return existsSync("src/templates") || existsSync(".codi");
+  return existsSync("src/templates") || existsSync(PROJECT_DIR);
 }
 
 function isDocCheckEnabled(flags: ResolvedFlags): boolean {

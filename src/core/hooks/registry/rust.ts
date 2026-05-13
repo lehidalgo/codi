@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const RUST_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const RUST_HOOKS: GitHookArtifact[] = [
     name: "cargo-fmt",
     description: "Standard Rust formatter",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "format",
@@ -32,7 +33,7 @@ export const RUST_HOOKS: GitHookArtifact[] = [
     name: "cargo-clippy",
     description: "Rust linter (clippy)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",

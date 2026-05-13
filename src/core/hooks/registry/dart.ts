@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const DART_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const DART_HOOKS: GitHookArtifact[] = [
     name: "dart-format",
     description: "Dart formatter",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -31,7 +32,7 @@ export const DART_HOOKS: GitHookArtifact[] = [
     name: "dart-analyze",
     description: "Dart static analyser",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",

@@ -21,14 +21,12 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations, CURRENT_SCHEMA_VERSION } from "#src/runtime/brain/migrate.js";
 import {
-  openBrain,
-  applyMigrations,
-  CURRENT_SCHEMA_VERSION,
   seedWorkflowDefinitions,
   readBuiltinDefinitions,
-  type BrainHandle,
-} from "#src/runtime/brain/index.js";
+} from "#src/runtime/brain/seed-workflows.js";
 import {
   abandonWorkflow,
   approveScopeExpansion,

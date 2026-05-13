@@ -1,6 +1,5 @@
 import Database from "better-sqlite3";
-import { aggregateSessionUsage } from "#src/runtime/tokens/index.js";
-
+import { aggregateSessionUsage } from "#src/runtime/tokens/aggregator.js";
 const raw = new Database("/Users/laht/projects/codi/.codi/state/brain.db");
 raw.unsafeMode(true);
 raw.pragma("journal_mode = WAL");

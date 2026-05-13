@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { checkStaleness } from "../core/docs/doc-stamp.js";
 import { createCommandResult } from "../core/output/formatter.js";
+import { Logger } from "../core/output/logger.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput } from "./shared.js";
@@ -54,8 +55,9 @@ export function registerDocsCheckCommand(program: Command): void {
 
       if (!globalOptions.json) {
         const d = result.data as DocsCheckData;
+        const log = Logger.getInstance();
         if (!d.stale) {
-          console.log(
+          log.info(
             `\n[codi] Documentation is up to date (stamp: ${(d.stamp_commit ?? "").slice(0, 7)})\n`,
           );
         } else {
@@ -64,7 +66,7 @@ export function registerDocsCheckCommand(program: Command): void {
             invalid_hash: "Stamp hash not in history (rebase?). Re-verify and run: codi docs-stamp",
             unverified_commits: `${d.commit_count} commits since last verification (stamp: ${(d.stamp_commit ?? "").slice(0, 7)}). Review docs/project/ and run: codi docs-stamp`,
           };
-          console.error(
+          log.error(
             `\n[codi] Documentation is stale.\n  ${messages[d.reason ?? ""] ?? d.reason}\n`,
           );
         }

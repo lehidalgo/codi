@@ -11,8 +11,7 @@
 
 import type { Hono, Context } from "hono";
 import { streamSSE } from "hono/streaming";
-import type { BrainHandle } from "../brain/index.js";
-
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 export interface SseEvent {
   readonly capture_id: number;
   readonly session_id: string;

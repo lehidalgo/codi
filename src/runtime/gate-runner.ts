@@ -10,24 +10,20 @@
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import type {
-  CheckOutcome,
-  GateCheck,
-  GateDefinition,
-  GateResult,
-  GateRunResult,
-} from "./gate-types.js";
-import type { ManifestEvent, ReducedState } from "./types.js";
+import type { CheckOutcome, GateCheck, GateDefinition, GateRunResult } from "./gate-types.js";
+import type { ManifestEvent } from "./types.js";
 import { git } from "./git-utils.js";
+import {
+  getGate,
+  registerGate,
+  type DeterministicCheckContext as RegistryCtx,
+  type DeterministicChecker,
+} from "./gate-registry.js";
 
-export interface DeterministicCheckContext {
-  cwd: string;
-  state: ReducedState;
-  /** Raw event log — checkers may walk it when ReducedState is insufficient. */
-  events?: ReadonlyArray<ManifestEvent>;
-}
-
-export type DeterministicChecker = (ctx: DeterministicCheckContext) => GateResult;
+// Re-export so existing consumers that import the context shape from
+// gate-runner keep working. The canonical home is now gate-registry.ts.
+export type { DeterministicChecker } from "./gate-registry.js";
+export type DeterministicCheckContext = RegistryCtx;
 
 const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
   task_described: (ctx) => ({
@@ -427,6 +423,176 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
   },
 };
 
+/**
+ * Team-consolidation gate checkers (scoped to workflowType === "team-consolidation"
+ * at registration). The workflow ships `agent_driven: true`, so the agent
+ * does the substantive work; these checkers verify the *audit trail*
+ * (manifest event markers + filesystem evidence) it must leave behind.
+ *
+ * Each gate maps to one observable contract:
+ *  - `scope_described`        — workflow `task` set (alias of task_described)
+ *  - `mode_chosen`            — init payload carries mode ∈ {local, team}
+ *  - `brains_path_known`      — init payload carries brains_path + path exists
+ *  - `brains_listed`          — decision_recorded kind="brains_enumerated"
+ *  - `dev_layout_validated`   — decision_recorded kind="dev_layout_validated", invalid=0
+ *  - `per_dev_findings_done`  — N decision_recorded kind="dev_findings" ≥ brains.length
+ *  - `report_written`         — docs/ has a YYYYMMDD_HHMMSS_[REPORT]_*.md file
+ */
+const TEAM_CONSOLIDATION_CHECKERS: Record<string, DeterministicChecker> = {
+  scope_described: (ctx) => ({
+    check_id: "scope_described",
+    verdict: ctx.state.task.length > 0 ? "pass" : "fail",
+    summary: ctx.state.task.length > 0 ? "Scope described." : "Scope is empty.",
+    suggested_action: "Set the workflow task at init.",
+  }),
+  mode_chosen: (ctx) => {
+    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
+    const payload = (initEvent?.payload ?? {}) as {
+      team_consolidation_adaptation?: { mode?: string };
+    };
+    const mode = payload.team_consolidation_adaptation?.mode;
+    const ok = mode === "local" || mode === "team";
+    return {
+      check_id: "mode_chosen",
+      verdict: ok ? "pass" : "fail",
+      summary: ok ? `Mode chosen: ${mode}.` : "Mode not chosen.",
+      suggested_action:
+        "Pass `--mode local` or `--mode team` at workflow init so team_consolidation_adaptation.mode is recorded.",
+    };
+  },
+  brains_path_known: (ctx) => {
+    const initEvent = (ctx.events ?? []).find((e) => e.event_type === "init");
+    const payload = (initEvent?.payload ?? {}) as {
+      team_consolidation_adaptation?: { brains_path?: string };
+    };
+    const brainsPath = payload.team_consolidation_adaptation?.brains_path;
+    const ok = typeof brainsPath === "string" && brainsPath.length > 0 && existsSync(brainsPath);
+    return {
+      check_id: "brains_path_known",
+      verdict: ok ? "pass" : "fail",
+      summary: ok
+        ? `Brains path: ${brainsPath}.`
+        : "Brains path missing from init payload or not present on disk.",
+      suggested_action:
+        "Pass `--brains-path <dir>` at init so the workflow records team_consolidation_adaptation.brains_path.",
+    };
+  },
+  brains_listed: (ctx) => {
+    const ev = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      return (e.payload as { kind?: string }).kind === "brains_enumerated";
+    });
+    const brains = (ev?.payload as { brains?: unknown[] } | undefined)?.brains;
+    const count = Array.isArray(brains) ? brains.length : 0;
+    return {
+      check_id: "brains_listed",
+      verdict: count > 0 ? "pass" : "fail",
+      summary:
+        count > 0 ? `${count} brain(s) enumerated.` : "No brains_enumerated marker recorded.",
+      suggested_action:
+        'Append a decision_recorded event with `kind: "brains_enumerated"` and a non-empty `brains` array (one entry per dev brain.db discovered).',
+    };
+  },
+  dev_layout_validated: (ctx) => {
+    const ev = (ctx.events ?? []).find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      return (e.payload as { kind?: string }).kind === "dev_layout_validated";
+    });
+    if (ev === undefined) {
+      return {
+        check_id: "dev_layout_validated",
+        verdict: "fail",
+        summary: "No dev_layout_validated marker recorded.",
+        suggested_action:
+          'After inspecting each dev brain.db schema, append a decision_recorded event with `kind: "dev_layout_validated"` and `invalid: 0` once all layouts pass.',
+      };
+    }
+    const payload = ev.payload as { invalid?: number; valid?: number };
+    const invalid = payload.invalid ?? -1;
+    const valid = payload.valid ?? 0;
+    const ok = invalid === 0;
+    return {
+      check_id: "dev_layout_validated",
+      verdict: ok ? "pass" : "fail",
+      summary: ok
+        ? `Dev layout validated (${valid} valid, 0 invalid).`
+        : `Dev layout marker present but ${invalid} invalid entr(y/ies) remain.`,
+      suggested_action: ok
+        ? undefined
+        : 'Repair the invalid dev brain.db files (missing tables, wrong schema) and re-emit `kind: "dev_layout_validated"` with `invalid: 0`.',
+    };
+  },
+  per_dev_findings_done: (ctx) => {
+    const events = ctx.events ?? [];
+    const enumerated = events.find((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      return (e.payload as { kind?: string }).kind === "brains_enumerated";
+    });
+    const brains = (enumerated?.payload as { brains?: unknown[] } | undefined)?.brains;
+    const expected = Array.isArray(brains) ? brains.length : 0;
+    const found = events.filter((e) => {
+      if (e.event_type !== "decision_recorded") return false;
+      return (e.payload as { kind?: string }).kind === "dev_findings";
+    }).length;
+    const ok = expected > 0 && found >= expected;
+    return {
+      check_id: "per_dev_findings_done",
+      verdict: ok ? "pass" : "fail",
+      summary: `Findings recorded: ${found}/${expected} dev(s).`,
+      suggested_action: ok
+        ? undefined
+        : 'For each dev in `brains_enumerated.brains`, append a decision_recorded event with `kind: "dev_findings"` referencing the dev_id.',
+    };
+  },
+  report_written: (ctx) => {
+    const docsDir = resolve(ctx.cwd, "docs");
+    if (!existsSync(docsDir)) {
+      return {
+        check_id: "report_written",
+        verdict: "fail",
+        summary: "docs/ directory does not exist.",
+        suggested_action:
+          "Write the consolidation report to docs/YYYYMMDD_HHMMSS_[REPORT]_consolidation.md.",
+      };
+    }
+    const reports = readdirSync(docsDir).filter((name) =>
+      /^\d{8}_\d{6}_\[REPORT\]_.*\.md$/.test(name),
+    );
+    return {
+      check_id: "report_written",
+      verdict: reports.length > 0 ? "pass" : "fail",
+      summary:
+        reports.length > 0
+          ? `${reports.length} [REPORT] file(s) present in docs/.`
+          : "No docs/YYYYMMDD_HHMMSS_[REPORT]_*.md file found.",
+      suggested_action:
+        reports.length > 0
+          ? undefined
+          : "Write the consolidation report to docs/ following the YYYYMMDD_HHMMSS_[REPORT]_<slug>.md naming.",
+    };
+  },
+};
+
+// Module-init: publish every deterministic checker declared above into
+// the gate-registry so consumers (gate-runner-bridge, future agent-
+// dispatcher) can resolve a flat YAML gate id without importing this
+// file. Re-registering on subsequent loads is a no-op overwrite (intended
+// behaviour for test harnesses that reset and re-import).
+for (const [id, checker] of Object.entries(DETERMINISTIC_CHECKERS)) {
+  registerGate({ id, type: "deterministic", checker });
+}
+// Team-consolidation gates are scoped to that workflow type so they cannot
+// silently apply to bug-fix / feature / refactor workflows whose YAML
+// happens to reference the same id (none do today; scoping is a guardrail).
+for (const [id, checker] of Object.entries(TEAM_CONSOLIDATION_CHECKERS)) {
+  registerGate({
+    id,
+    type: "deterministic",
+    checker,
+    requiredWorkflowTypes: ["team-consolidation"],
+  });
+}
+
 export function isAgentCheck(check: GateCheck): boolean {
   return check.type === "agent";
 }
@@ -435,8 +601,8 @@ export function runDeterministicCheck(
   check: GateCheck,
   ctx: DeterministicCheckContext,
 ): CheckOutcome {
-  const checker = DETERMINISTIC_CHECKERS[check.id];
-  if (!checker) {
+  const spec = getGate(check.id);
+  if (!spec || spec.type !== "deterministic") {
     return {
       check,
       retries_used: 0,
@@ -447,7 +613,7 @@ export function runDeterministicCheck(
       },
     };
   }
-  return { check, retries_used: 0, result: checker(ctx) };
+  return { check, retries_used: 0, result: spec.checker(ctx) };
 }
 
 export function aggregateOutcomes(gateName: string, outcomes: CheckOutcome[]): GateRunResult {

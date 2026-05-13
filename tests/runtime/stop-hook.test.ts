@@ -15,7 +15,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openBrain, applyMigrations, type BrainHandle } from "#src/runtime/brain/index.js";
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { ensureSession, openTurn, recordPrompt } from "#src/runtime/capture/session.js";
 import { processStopHook, readLastAssistantMessage } from "#src/runtime/capture/stop-hook.js";
 

@@ -24,6 +24,7 @@ import { reduce } from "../reducer.js";
 import type { Author, Phase, ReducedState } from "../types.js";
 import { assertLegalTransition, UnknownWorkflowTypeError } from "../workflow-graph.js";
 import { runPhaseGates, formatGateAdvisory } from "../gate-runner-bridge.js";
+import { resolveActiveWorkflowId } from "./active-workflow.js";
 
 const SYSTEM_AUTHOR: Author = { type: "system", id: "codi" };
 
@@ -43,7 +44,7 @@ export interface ProposeTransitionResult {
 export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransitionResult {
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -108,7 +109,7 @@ export interface ApproveTransitionResult {
 export function approveTransition(opts: ApproveTransitionOptions): ApproveTransitionResult {
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -270,7 +271,7 @@ export function rejectTransition(opts: RejectTransitionOptions): RejectTransitio
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -327,6 +328,7 @@ function computePhaseDuration(state: ReducedState, phase: Phase): number {
 // ─── O1 — codi workflow advance (single-command transition) ──────────────────
 
 import { getAdapter } from "../workflows/registry.js";
+import { snakeAdapterToCamel } from "../workflows/adapter-keys.js";
 import { computeNextPhase } from "../workflows/phase-walker.js";
 import type { WorkflowAdapter } from "../workflows/types.js";
 
@@ -374,7 +376,7 @@ export function advanceWorkflow(opts: AdvanceOptions): AdvanceResult {
   let fromPhase: Phase;
 
   try {
-    workflowId = log.getActiveWorkflowId() ?? "";
+    workflowId = resolveActiveWorkflowId(log, opts) ?? "";
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const events = log.loadEvents(workflowId);
@@ -468,35 +470,12 @@ function readAdaptationFromInit(
  */
 function adapterCanonical(workflowType: string, raw: unknown): unknown {
   if (typeof raw !== "object" || raw === null) return raw;
-  const r = raw as Record<string, unknown>;
-  const out: Record<string, unknown> = {};
-  // Map snake → camel for every known field; pass through everything else.
-  const mapping: Record<string, string> = {
-    profile: "profile",
-    severity: "severity",
-    reproducer_exists: "reproducerExists",
-    root_cause_known: "rootCauseKnown",
-    scope: "scope",
-    execute_mode: "executeMode",
-    grill: "grill",
-    interactive: "interactive",
-    complexity: "complexity",
-    design_exists: "designExists",
-    tdd_strict: "tddStrict",
-    kind: "kind",
-    risk_level: "riskLevel",
-    rollback_tested: "rollbackTested",
-    mode: "mode",
-    no_sheet: "noSheet",
-  };
-  for (const [snake, value] of Object.entries(r)) {
-    const camel = mapping[snake] ?? snake;
-    out[camel] = value;
-  }
-  // The adapter resolver type-checks via casting; `_w` is a runtime-only
-  // hint that lets a future debugger see which workflow this came from.
+  // The adapter resolver type-checks via casting; `workflowType` is a
+  // runtime-only hint that lets a future debugger see which workflow this
+  // came from. The actual mapping lives in `adapter-keys.ts` so both this
+  // handler and `workflow.ts` share one source of truth.
   void workflowType;
-  return out;
+  return snakeAdapterToCamel(raw as Record<string, unknown>);
 }
 
 // Re-affirm WorkflowAdapter import as referenced (silences unused-import

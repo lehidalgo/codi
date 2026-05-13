@@ -1,4 +1,4 @@
-import { PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
+import { MANAGED_BY_FRAMEWORK, PROJECT_CLI, PROJECT_NAME } from "#src/constants.js";
 import type { GitHookArtifact } from "../hook-artifact.js";
 
 export const GLOBAL_HOOKS: GitHookArtifact[] = [
@@ -7,7 +7,7 @@ export const GLOBAL_HOOKS: GitHookArtifact[] = [
     name: "gitleaks",
     description: "Secret-leak scanner for staged content",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "security",
@@ -36,7 +36,7 @@ export const GLOBAL_HOOKS: GitHookArtifact[] = [
     name: "commitlint",
     description: "Conventional commit-message linter",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "meta",
@@ -65,7 +65,7 @@ export const GLOBAL_HOOKS: GitHookArtifact[] = [
     name: `${PROJECT_NAME}-doctor`,
     description: "codi self-check, runs codi doctor --ci",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "meta",

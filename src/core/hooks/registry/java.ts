@@ -1,4 +1,5 @@
 import type { GitHookArtifact } from "../hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 export const JAVA_HOOKS: GitHookArtifact[] = [
   {
@@ -6,7 +7,7 @@ export const JAVA_HOOKS: GitHookArtifact[] = [
     name: "google-java-format",
     description: "Java formatter (Google style)",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: false,
     default: true,
     category: "format",
@@ -34,7 +35,7 @@ export const JAVA_HOOKS: GitHookArtifact[] = [
     name: "checkstyle",
     description: "Java style and lint checker",
     version: "1",
-    managed_by: "codi",
+    managed_by: MANAGED_BY_FRAMEWORK,
     required: true,
     default: true,
     category: "lint",

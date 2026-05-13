@@ -1,4 +1,5 @@
 import type { RuntimeHookArtifact, HookVerdict } from "#src/core/hooks/hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 const HOOK_NAME = "workflow-classifier";
 
@@ -7,7 +8,7 @@ export const WORKFLOW_CLASSIFIER_HOOK: RuntimeHookArtifact = {
   name: HOOK_NAME,
   description: "Phase-aware file edit classifier and Bash command rules.",
   version: "1",
-  managed_by: "codi",
+  managed_by: MANAGED_BY_FRAMEWORK,
   required: true,
   default: true,
   category: "enforcement",

@@ -84,10 +84,26 @@ export function printSection(label: string): void {
   log.info(`  \u25B8 ${label}`);
 }
 
+/**
+ * Renders a `CommandResult` to stdout AND propagates its exit code to the
+ * process so failures bubble to the shell.
+ *
+ * Closes ISSUE-041 / ISSUE-042: every handler already builds the correct
+ * `result.exitCode` (EXIT_CODES.SUCCESS / GENERAL_ERROR / …), but historically
+ * `handleOutput` dropped that value — CLI subcommands always exited 0 even
+ * when `success: false`, breaking `set -e` scripts and CI gating. The fix
+ * sets `process.exitCode` (assignment, not `process.exit()`) so Node still
+ * flushes stdout / stderr cleanly before terminating. Callers that need
+ * stricter behavior (`workflow.ts`, `doctor.ts`) still call
+ * `process.exit(result.exitCode)` afterwards — that override remains valid.
+ */
 export function handleOutput(result: CommandResult<unknown>, options: { json?: boolean }): void {
   if (options.json) {
     process.stdout.write(formatJson(result) + "\n");
   } else {
     process.stdout.write(formatHuman(result) + "\n");
+  }
+  if (typeof result.exitCode === "number" && result.exitCode !== 0) {
+    process.exitCode = result.exitCode;
   }
 }

@@ -3,8 +3,6 @@ import { AVAILABLE_TEMPLATES } from "../core/scaffolder/template-loader.js";
 import { AVAILABLE_AGENT_TEMPLATES } from "../core/scaffolder/agent-template-loader.js";
 import { AVAILABLE_SKILL_TEMPLATES } from "../core/scaffolder/skill-template-loader.js";
 import { AVAILABLE_MCP_SERVER_TEMPLATES } from "../core/scaffolder/mcp-template-loader.js";
-import { createCommandResult } from "../core/output/formatter.js";
-import { EXIT_CODES } from "../core/output/exit-codes.js";
 import { initFromOptions, handleOutput, regenerateConfigs } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import {
@@ -17,6 +15,8 @@ import {
   brandAsArtifactHandler,
 } from "./add-handlers.js";
 import type { AddRuleOptions, AddSkillOptions, AddAgentOptions } from "./add-handlers.js";
+import { emitNameRequiredError, runAddAll } from "./add-shared.js";
+import { PROJECT_CLI, PROJECT_DIR } from "../constants.js";
 
 export {
   addRuleHandler,
@@ -25,7 +25,6 @@ export {
   addBrandHandler,
   addMcpServerHandler,
 } from "./add-handlers.js";
-import { PROJECT_CLI, PROJECT_DIR } from "../constants.js";
 
 export function registerAddCommand(program: Command): void {
   const addCmd = program
@@ -43,26 +42,12 @@ export function registerAddCommand(program: Command): void {
       initFromOptions(options);
 
       if (options.all) {
-        const results: Array<{ name: string; success: boolean }> = [];
-        for (const tmpl of AVAILABLE_TEMPLATES) {
-          const result = await addRuleHandler(process.cwd(), tmpl, {
-            ...options,
-            template: tmpl,
-          });
-          results.push({ name: tmpl, success: result.success });
-        }
-        const added = results.filter((r) => r.success).map((r) => r.name);
-        const skipped = results.filter((r) => !r.success).map((r) => r.name);
-        await regenerateConfigs(process.cwd());
-        const summary = createCommandResult({
-          success: true,
-          command: "add rule --all",
-          data: { added, skipped, total: AVAILABLE_TEMPLATES.length },
-          exitCode: EXIT_CODES.SUCCESS,
+        await runAddAll({
+          artifactType: "rule",
+          templates: AVAILABLE_TEMPLATES,
+          handler: addRuleHandler,
+          options,
         });
-        handleOutput(summary, options);
-        process.exit(summary.exitCode);
-        return;
       }
 
       if (!name && !options.json) {
@@ -71,24 +56,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       if (!name) {
-        const err = createCommandResult({
-          success: false,
-          command: "add rule",
-          data: { name: "", path: "", template: null },
-          errors: [
-            {
-              code: "E_CONFIG_INVALID",
-              message: "Rule name required. Use --all to add all templates.",
-              hint: "",
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-        handleOutput(err, options);
-        process.exit(err.exitCode);
-        return;
+        emitNameRequiredError({ artifactType: "rule", label: "Rule", options });
       }
 
       const result = await addRuleHandler(process.cwd(), name, options);
@@ -111,26 +79,12 @@ export function registerAddCommand(program: Command): void {
       initFromOptions(options);
 
       if (options.all) {
-        const results: Array<{ name: string; success: boolean }> = [];
-        for (const tmpl of AVAILABLE_SKILL_TEMPLATES) {
-          const result = await addSkillHandler(process.cwd(), tmpl, {
-            ...options,
-            template: tmpl,
-          });
-          results.push({ name: tmpl, success: result.success });
-        }
-        const added = results.filter((r) => r.success).map((r) => r.name);
-        const skipped = results.filter((r) => !r.success).map((r) => r.name);
-        await regenerateConfigs(process.cwd());
-        const summary = createCommandResult({
-          success: true,
-          command: "add skill --all",
-          data: { added, skipped, total: AVAILABLE_SKILL_TEMPLATES.length },
-          exitCode: EXIT_CODES.SUCCESS,
+        await runAddAll({
+          artifactType: "skill",
+          templates: AVAILABLE_SKILL_TEMPLATES,
+          handler: addSkillHandler,
+          options,
         });
-        handleOutput(summary, options);
-        process.exit(summary.exitCode);
-        return;
       }
 
       if (!name && !options.json) {
@@ -139,24 +93,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       if (!name) {
-        const err = createCommandResult({
-          success: false,
-          command: "add skill",
-          data: { name: "", path: "", template: null },
-          errors: [
-            {
-              code: "E_CONFIG_INVALID",
-              message: "Skill name required. Use --all to add all templates.",
-              hint: "",
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-        handleOutput(err, options);
-        process.exit(err.exitCode);
-        return;
+        emitNameRequiredError({ artifactType: "skill", label: "Skill", options });
       }
 
       const result = await addSkillHandler(process.cwd(), name, options);
@@ -179,25 +116,14 @@ export function registerAddCommand(program: Command): void {
       initFromOptions(options);
 
       if (options.all) {
-        const results: Array<{ name: string; success: boolean }> = [];
-        for (const tmpl of AVAILABLE_AGENT_TEMPLATES) {
-          const result = await addAgentHandler(process.cwd(), tmpl, {
-            template: tmpl,
-          });
-          results.push({ name: tmpl, success: result.success });
-        }
-        const added = results.filter((r) => r.success).map((r) => r.name);
-        const skipped = results.filter((r) => !r.success).map((r) => r.name);
-        await regenerateConfigs(process.cwd());
-        const summary = createCommandResult({
-          success: true,
-          command: "add agent --all",
-          data: { added, skipped, total: AVAILABLE_AGENT_TEMPLATES.length },
-          exitCode: EXIT_CODES.SUCCESS,
+        // Normalized to spread options like rule/skill (was previously dropping
+        // global flags by passing only `{ template }` — see ISSUE-043 audit).
+        await runAddAll({
+          artifactType: "agent",
+          templates: AVAILABLE_AGENT_TEMPLATES,
+          handler: addAgentHandler,
+          options,
         });
-        handleOutput(summary, options);
-        process.exit(summary.exitCode);
-        return;
       }
 
       if (!name && !options.json) {
@@ -206,24 +132,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       if (!name) {
-        const errResult = createCommandResult({
-          success: false,
-          command: "add agent",
-          data: { name: "", path: "", template: null },
-          errors: [
-            {
-              code: "E_CONFIG_INVALID",
-              message: "Agent name required. Use --all to add all templates.",
-              hint: "",
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-        handleOutput(errResult, options);
-        process.exit(errResult.exitCode);
-        return;
+        emitNameRequiredError({ artifactType: "agent", label: "Agent", options });
       }
 
       const result = await addAgentHandler(process.cwd(), name, options);
@@ -245,30 +154,16 @@ export function registerAddCommand(program: Command): void {
       }
 
       if (!name) {
-        const errResult = createCommandResult({
-          success: false,
-          command: "add brand",
-          data: { name: "", path: "" },
-          errors: [
-            {
-              code: "E_CONFIG_INVALID",
-              message: "Brand name required.",
-              hint: `Usage: ${PROJECT_CLI} add brand <name>`,
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
+        emitNameRequiredError({
+          artifactType: "brand",
+          label: "Brand",
+          hint: `Usage: ${PROJECT_CLI} add brand <name>`,
+          options: globalOptions,
         });
-        handleOutput(errResult, globalOptions);
-        process.exit(errResult.exitCode);
-        return;
       }
 
       const result = await addBrandHandler(process.cwd(), name);
-      if (result.success) {
-        await regenerateConfigs(process.cwd());
-      }
+      if (result.success) await regenerateConfigs(process.cwd());
       handleOutput(result, globalOptions);
       process.exit(result.exitCode);
     });
@@ -290,56 +185,20 @@ export function registerAddCommand(program: Command): void {
       initFromOptions(options);
 
       if (options.all) {
-        const results: Array<{ name: string; success: boolean }> = [];
-        for (const tmpl of AVAILABLE_MCP_SERVER_TEMPLATES) {
-          const result = await addMcpServerHandler(process.cwd(), tmpl, {
-            template: tmpl,
-          });
-          results.push({ name: tmpl, success: result.success });
-        }
-        const added = results.filter((r) => r.success).map((r) => r.name);
-        const skipped = results.filter((r) => !r.success).map((r) => r.name);
-        await regenerateConfigs(process.cwd());
-        const summary = createCommandResult({
-          success: true,
-          command: "add mcp-server --all",
-          data: {
-            added,
-            skipped,
-            total: AVAILABLE_MCP_SERVER_TEMPLATES.length,
-          },
-          exitCode: EXIT_CODES.SUCCESS,
+        await runAddAll({
+          artifactType: "mcp-server",
+          templates: AVAILABLE_MCP_SERVER_TEMPLATES,
+          handler: addMcpServerHandler,
+          options,
         });
-        handleOutput(summary, options);
-        process.exit(summary.exitCode);
-        return;
       }
 
       if (!name) {
-        const errResult = createCommandResult({
-          success: false,
-          command: "add mcp-server",
-          data: { name: "", path: "", template: null },
-          errors: [
-            {
-              code: "E_CONFIG_INVALID",
-              message: "MCP server name required. Use --all to add all templates.",
-              hint: "",
-              severity: "error",
-              context: {},
-            },
-          ],
-          exitCode: EXIT_CODES.GENERAL_ERROR,
-        });
-        handleOutput(errResult, options);
-        process.exit(errResult.exitCode);
-        return;
+        emitNameRequiredError({ artifactType: "mcp-server", label: "MCP server", options });
       }
 
       const result = await addMcpServerHandler(process.cwd(), name, options);
-      if (result.success) {
-        await regenerateConfigs(process.cwd());
-      }
+      if (result.success) await regenerateConfigs(process.cwd());
       handleOutput(result, options);
       process.exit(result.exitCode);
     });

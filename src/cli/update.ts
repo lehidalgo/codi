@@ -2,7 +2,6 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import matter from "gray-matter";
 import os from "node:os";
 import { resolveProjectDir } from "../utils/paths.js";
 import { safeRm } from "../utils/fs.js";
@@ -52,7 +51,7 @@ import type { Result } from "../types/result.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
-import { execFileAsync } from "../utils/exec.js";
+import { EXEC_TIMEOUTS, execFileWithTimeout } from "../utils/exec.js";
 import { readLockFile } from "../core/preset/preset-registry.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
@@ -64,6 +63,7 @@ import {
   type ConflictEntry,
 } from "../utils/conflict-resolver.js";
 
+import { parseFrontmatter } from "../utils/frontmatter.js";
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
   from?: string;
@@ -132,7 +132,7 @@ async function refreshManagedArtifacts(
     if (!entry.endsWith(".md")) continue;
     const filePath = path.join(dir, entry);
     const raw = await fs.readFile(filePath, "utf8");
-    const parsed = matter(raw);
+    const parsed = parseFrontmatter<Record<string, unknown>>(raw);
     const name = (parsed.data["name"] as string) ?? entry.replace(".md", "");
     const templateName = findMatchingTemplate(name, opts.availableTemplates, opts.nameMappings);
 
@@ -281,7 +281,8 @@ async function pullFromSource(
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
-    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, cloneDir]);
+    const args = ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, cloneDir];
+    await execFileWithTimeout("git", args, { timeoutMs: EXEC_TIMEOUTS.GH_LONG });
   } catch (cause) {
     log.warn(`Failed to clone source repo: ${repo}`, cause);
     return { updated, filesWithMarkers };
@@ -310,7 +311,7 @@ async function pullFromSource(
       const localFile = path.join(localDir, entry);
 
       const sourceContent = await fs.readFile(sourceFile, "utf8");
-      const sourceParsed = matter(sourceContent);
+      const sourceParsed = parseFrontmatter<Record<string, unknown>>(sourceContent);
       if (sourceParsed.data["managed_by"] !== PROJECT_NAME) continue;
 
       const label = `${syncPath}/${entry}`;

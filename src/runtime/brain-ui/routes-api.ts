@@ -18,7 +18,7 @@
 import type { Hono, Context } from "hono";
 import path from "node:path";
 import { homedir } from "node:os";
-import type { BrainHandle } from "../brain/index.js";
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { restoreBackup, restoreFromBackupDir } from "#src/core/backup/backup-manager.js";
 import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR } from "#src/constants.js";
 import { isPathSafe } from "#src/utils/path-guard.js";

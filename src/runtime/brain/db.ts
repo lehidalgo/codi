@@ -20,7 +20,7 @@ import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { BRAIN_DB_FILENAME, STATE_DIR } from "#src/constants.js";
+import { BRAIN_DB_FILENAME, PROJECT_DIR, STATE_DIR } from "#src/constants.js";
 import * as schema from "./schema.js";
 
 export type BrainDb = BetterSQLite3Database<typeof schema>;
@@ -40,7 +40,7 @@ export function findProjectBrainPath(start: string): string | null {
   let current = resolve(start);
   // Bound the walk: stop at the filesystem root.
   for (let i = 0; i < 64; i += 1) {
-    const codiDir = join(current, ".codi");
+    const codiDir = join(current, PROJECT_DIR);
     if (existsSync(codiDir)) {
       try {
         if (statSync(codiDir).isDirectory()) {
@@ -72,7 +72,7 @@ export function defaultBrainPath(cwd: string = process.cwd()): string {
   if (override && override.length > 0) return resolve(override);
   const projectBrain = findProjectBrainPath(cwd);
   if (projectBrain) return projectBrain;
-  const homeCodi = resolve(homedir(), ".codi");
+  const homeCodi = resolve(homedir(), PROJECT_DIR);
   const stateBrain = join(homeCodi, STATE_DIR, BRAIN_DB_FILENAME);
   const legacyBrain = join(homeCodi, BRAIN_DB_FILENAME);
   migrateLegacyBrainDb(legacyBrain, stateBrain);
@@ -172,12 +172,23 @@ export function openBrain(opts: OpenBrainOptions = {}): BrainHandle {
   raw.pragma("foreign_keys = ON");
   raw.pragma("synchronous = NORMAL");
   // DEFECT-007 fix: better-sqlite3 enables SQLITE_DBCONFIG_DEFENSIVE by
-  // default, which blocks the FTS5 sync triggers
+  // default, which blocks the FTS5 contentless-sync command
   // (`INSERT INTO prompts_fts(prompts_fts, ...) VALUES('delete', ...)`)
-  // with "unsafe use of virtual table". The triggers are the documented
-  // FTS5 contentless-table sync pattern, so unsafeMode is the right
-  // call — every caller goes through prepared statements, no untrusted
-  // SQL ever reaches this handle.
+  // with "unsafe use of virtual table". That command is the body of
+  // AFTER UPDATE / AFTER DELETE triggers on `captures` and `prompts`
+  // (see migrate.ts FTS5 trigger block), so it fires on EVERY runtime
+  // write — not just migration. Scoping unsafeMode to migration only
+  // (audit ISSUE-012) would re-introduce the failure on every capture
+  // soft-delete / restore / bulk-delete / retention prune (verified
+  // against routes-api.ts UPDATE callsites). Permanent unsafeMode is the
+  // documented SQLite + better-sqlite3 + FTS5-contentless pattern.
+  //
+  // Safety: every SQL statement on this handle is a static
+  // `raw.prepare("...")` parameterised query — no `raw.exec(<dynamic>)`,
+  // no template-literal SQL composition. The defensive flag protects
+  // against SQL injection that this codebase already prevents at the
+  // application layer. Future contributors must preserve that invariant
+  // (no dynamic SQL) or add the lint rule from the security backlog.
   if (!(opts.readonly ?? false)) raw.unsafeMode(true);
   const db = drizzle(raw, { schema });
   return {

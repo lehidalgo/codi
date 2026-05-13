@@ -21,11 +21,13 @@ import {
   type WorkflowType,
 } from "../types.js";
 import { adaptationPayloadKey, getAdapter } from "../workflows/registry.js";
+import { snakeAdapterToCamel } from "../workflows/adapter-keys.js";
 import type { BugFixAdaptation } from "../workflows/bug-fix/index.js";
 import type { FeatureAdaptation } from "../workflows/feature/index.js";
 import type { RefactorAdaptation } from "../workflows/refactor/index.js";
 import type { MigrationAdaptation } from "../workflows/migration/index.js";
 import type { ProjectAdaptation } from "../workflows/project/index.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export class KnowledgeBaseMissingError extends Error {
   constructor(public readonly contextPath: string) {
@@ -522,8 +524,8 @@ export function getPhaseRef(opts: PhaseRefOptions = {}): PhaseRefResult {
   }
   const cwd = opts.cwd ?? process.cwd();
   const candidates = [
-    resolve(cwd, ".codi", "skills", `codi-${skillDir}`, "references", `phase-${phase}.md`),
-    resolve(cwd, ".codi", "skills", skillDir, "references", `phase-${phase}.md`),
+    resolve(cwd, PROJECT_DIR, "skills", `codi-${skillDir}`, "references", `phase-${phase}.md`),
+    resolve(cwd, PROJECT_DIR, "skills", skillDir, "references", `phase-${phase}.md`),
     resolve(cwd, "src", "templates", "skills", skillDir, "references", `phase-${phase}.md`),
   ];
   const path = candidates.find((p) => existsSync(p));
@@ -587,28 +589,7 @@ function readAdaptationCanonical(
   const raw = initPayload[key];
   if (typeof raw !== "object" || raw === null) return null;
   // Convert snake_case payload back to camelCase for the adapter resolvers.
-  const r = raw as Record<string, unknown>;
-  const out: Record<string, unknown> = {};
-  const mapping: Record<string, string> = {
-    profile: "profile",
-    severity: "severity",
-    reproducer_exists: "reproducerExists",
-    root_cause_known: "rootCauseKnown",
-    scope: "scope",
-    execute_mode: "executeMode",
-    grill: "grill",
-    interactive: "interactive",
-    complexity: "complexity",
-    design_exists: "designExists",
-    tdd_strict: "tddStrict",
-    kind: "kind",
-    risk_level: "riskLevel",
-    rollback_tested: "rollbackTested",
-    mode: "mode",
-    no_sheet: "noSheet",
-  };
-  for (const [snake, value] of Object.entries(r)) {
-    out[mapping[snake] ?? snake] = value;
-  }
-  return out;
+  // The mapping is owned by `runtime/workflows/adapter-keys.ts` so this
+  // handler and `cli-handlers/transitions.ts` share a single source.
+  return snakeAdapterToCamel(raw as Record<string, unknown>);
 }

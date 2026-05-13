@@ -12,7 +12,9 @@ import { dirname, join, resolve } from "node:path";
 import type { ProjectConfig } from "./types.js";
 import { SheetsError } from "./types.js";
 
-export const PROJECT_CONFIG_RELATIVE_PATH = ".codi/project.json";
+import { PROJECT_DIR } from "./project-constants.js";
+
+export const PROJECT_CONFIG_RELATIVE_PATH = `${PROJECT_DIR}/project.json`;
 
 export function projectConfigPath(cwd: string): string {
   return resolve(cwd, PROJECT_CONFIG_RELATIVE_PATH);

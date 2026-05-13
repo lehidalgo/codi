@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Database from "better-sqlite3";
-import { applyMigrations } from "#src/runtime/brain/index.js";
-
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 describe("brain migration: drop proposals table", () => {
   it("removes proposals table when present", () => {
     const db = new Database(":memory:");

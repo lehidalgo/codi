@@ -4,6 +4,7 @@ import os from "node:os";
 import { z } from "zod";
 import { parse as parseYaml } from "yaml";
 import { execFileAsync } from "#src/utils/exec.js";
+import { validateGitRef } from "#src/utils/git.js";
 import type { ProjectManifest } from "#src/types/config.js";
 import {
   PRESET_MANIFEST_FILENAME,
@@ -76,7 +77,10 @@ export async function cloneRegistry(config: RegistryConfig): Promise<string> {
     "--depth",
     GIT_CLONE_DEPTH,
     "--branch",
-    config.branch,
+    validateGitRef(config.branch),
+    // `--` ends git's option parsing — protects positional args from being
+    // reinterpreted as flags (defense-in-depth alongside validateGitRef).
+    "--",
     config.url,
     tmpDir,
   ]);

@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getAllHooks, getGitHooks, getRuntimeHooks } from "../core/hooks/registry/index.js";
 import type { HookArtifact } from "../core/hooks/hook-artifact.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export interface ListOptions {
   bucket?: "git" | "runtime";
@@ -18,7 +19,7 @@ export interface ListOptions {
 }
 
 function readSelectedHookNames(cwd: string): { git: string[]; runtime: string[] } | null {
-  const stateFile = join(cwd, ".codi", "state", "state.json");
+  const stateFile = join(cwd, PROJECT_DIR, "state", "state.json");
   if (!existsSync(stateFile)) return null;
   try {
     const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {

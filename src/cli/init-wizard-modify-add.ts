@@ -24,6 +24,7 @@ import { regenerateConfigs } from "./shared.js";
 import { openBackup } from "../core/backup/backup-manager.js";
 import type { BackupHandle } from "../core/backup/types.js";
 import { RETENTION_CANCELLED_ERROR } from "../constants.js";
+import { ARTIFACT_TYPES } from "../core/artifact-types.js";
 
 export type ExternalSourceKind = "local" | "zip" | "github";
 
@@ -70,7 +71,7 @@ async function promptSource(kind: ExternalSourceKind): Promise<ExternalSource | 
  * Order in which we present per-type multi-selects, matching the regular
  * init wizard's "Rules → Skills → Agents → MCP Servers" sequence.
  */
-const TYPE_ORDER: readonly ArtifactType[] = ["rule", "skill", "agent", "mcp-server"] as const;
+const TYPE_ORDER: readonly ArtifactType[] = ARTIFACT_TYPES;
 
 /**
  * Run one multi-select per artifact type (in the same order the init wizard

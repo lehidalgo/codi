@@ -1,4 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/**
+ * ISSUE-044 rewrite — exercises real hub-handlers internals.
+ *
+ * Pre-rewrite this file carried 21 `vi.mock("#src/...")` calls, mocking every
+ * CLI sibling so each test could assert `expect(handler).toHaveBeenCalledWith(...)`.
+ * That pattern tested the mocks, not the dispatcher. Per the project's
+ * codi-testing rule ("Do not mock the module under test"), the file now:
+ *
+ *   - Keeps only @clack/prompts as a legitimate TTY boundary mock.
+ *   - Drives every flow through real fs + real codi.yaml so the dispatcher
+ *     resolves config the same way it does in production.
+ *   - Asserts observable outcomes (multiselect option list, log warnings) —
+ *     never the count of internal handler invocations.
+ *
+ * Dispatch-only tests that solely verified `expect(routeX).toHaveBeenCalled()`
+ * were dropped; that surface is exercised by E2E via the real `codi` CLI.
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 vi.mock("@clack/prompts", () => ({
   intro: vi.fn(),
@@ -17,130 +39,16 @@ vi.mock("@clack/prompts", () => ({
   },
 }));
 
-vi.mock("node:fs/promises", () => ({
-  default: {
-    access: vi.fn().mockRejectedValue(new Error("ENOENT")),
-  },
-}));
-
-vi.mock("../../../src/core/output/formatter.js", () => ({
-  formatHuman: vi.fn().mockReturnValue("formatted output"),
-}));
-
-vi.mock("../../../src/cli/shared.js", () => ({
-  regenerateConfigs: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("../../../src/cli/init.js", () => ({
-  initHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/add-wizard.js", () => ({
-  selectArtifactType: vi.fn(),
-  runAddWizard: vi.fn(),
-}));
-
-vi.mock("../../../src/cli/add.js", () => ({
-  addRuleHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  addSkillHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  addAgentHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  addBrandHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/generate.js", () => ({
-  generateHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/doctor.js", () => ({
-  doctorHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/clean.js", () => ({
-  cleanHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/update.js", () => ({
-  updateHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/verify.js", () => ({
-  verifyHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/compliance.js", () => ({
-  complianceHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/revert.js", () => ({
-  revertHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/contribute.js", () => ({
-  contributeHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/skill-export-wizard.js", () => ({
-  runSkillExportWizard: vi.fn(),
-}));
-
-vi.mock("../../../src/cli/skill.js", () => ({
-  skillExportHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/preset-handlers.js", () => ({
-  presetListEnhancedHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  presetExportHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  presetRemoveHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  presetEditHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-  presetInstallUnifiedHandler: vi.fn().mockResolvedValue({ exitCode: 0 }),
-}));
-
-vi.mock("../../../src/cli/preset-wizard.js", () => ({
-  runPresetWizard: vi.fn().mockResolvedValue(null),
-}));
-
-vi.mock("../../../src/core/generator/adapter-registry.js", () => ({
-  getAllAdapters: vi
-    .fn()
-    .mockReturnValue([
-      { id: "claude-code" },
-      { id: "cursor" },
-      { id: "codex" },
-      { id: "windsurf" },
-      { id: "cline" },
-      { id: "copilot" },
-    ]),
-}));
-
-vi.mock("../../../src/core/config/resolver.js", () => ({
-  resolveConfig: vi.fn(),
-}));
-
-vi.mock("../../../src/cli/init-wizard-modify-add.js", () => ({
-  runAddFromExternal: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("../../../src/adapters/index.js", () => ({
-  registerAllAdapters: vi.fn(),
-}));
-
-import fs from "node:fs/promises";
 import * as p from "@clack/prompts";
-import {
-  isCancelled,
-  handleInit,
-  handleCustomize,
-  handleAdd,
-  handlePresetMenu,
-  handleGenerate,
-} from "#src/cli/hub-handlers.js";
-import { selectArtifactType, runAddWizard } from "#src/cli/add-wizard.js";
-import { resolveConfig } from "#src/core/config/resolver.js";
-import { generateHandler } from "#src/cli/generate.js";
-import { initHandler } from "#src/cli/init.js";
-import { runAddFromExternal } from "#src/cli/init-wizard-modify-add.js";
+import { isCancelled, handleGenerate } from "#src/cli/hub-handlers.js";
+import { registerAllAdapters } from "#src/adapters/index.js";
 
-describe("hub-handlers", () => {
+// Adapters are normally registered as a side-effect of CLI startup. In a
+// unit-style test that imports the dispatcher directly the registry is
+// empty until we wire them in here.
+registerAllAdapters();
+
+describe("hub-handlers — pure utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(p.isCancel).mockReturnValue(false);
@@ -158,204 +66,105 @@ describe("hub-handlers", () => {
       expect(isCancelled("value")).toBe(false);
     });
   });
+});
 
-  describe("handleInit", () => {
-    it("returns when cancelled on existing project", async () => {
-      vi.mocked(fs.access).mockResolvedValueOnce(undefined);
-      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
-      vi.mocked(p.isCancel).mockReturnValueOnce(true);
+describe("hub-handlers — handleGenerate manifest filter", () => {
+  let tmpRoot: string;
 
-      await handleInit("/tmp/test");
-      expect(process.stdout.write).not.toHaveBeenCalled();
-    });
-
-    it("runs init handler when no project exists", async () => {
-      await handleInit("/tmp/test");
-      expect(process.stdout.write).toHaveBeenCalled();
-    });
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    vi.mocked(p.isCancel).mockReturnValue(false);
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-hub-gen-"));
+    await fs.mkdir(path.join(tmpRoot, ".codi"), { recursive: true });
   });
 
-  describe("handleCustomize (dispatcher)", () => {
-    it("returns early when the dispatcher is cancelled", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
-      vi.mocked(p.isCancel).mockReturnValueOnce(true);
-
-      await handleCustomize("/tmp/test");
-
-      expect(initHandler).not.toHaveBeenCalled();
-      expect(runAddFromExternal).not.toHaveBeenCalled();
-    });
-
-    it("routes 'customize' to initHandler with customize:true", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce("customize" as never);
-
-      await handleCustomize("/tmp/test");
-
-      expect(initHandler).toHaveBeenCalledWith("/tmp/test", { customize: true });
-      expect(runAddFromExternal).not.toHaveBeenCalled();
-    });
-
-    it("routes 'replace' through initHandler with customize:true (wizard handles replace submenu)", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce("replace" as never);
-
-      await handleCustomize("/tmp/test");
-
-      expect(initHandler).toHaveBeenCalledWith("/tmp/test", { customize: true });
-      expect(runAddFromExternal).not.toHaveBeenCalled();
-    });
-
-    it("routes 'add-local' to runAddFromExternal('local')", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce("add-local" as never);
-
-      await handleCustomize("/tmp/test");
-
-      expect(runAddFromExternal).toHaveBeenCalledWith(expect.any(String), "local");
-      expect(initHandler).not.toHaveBeenCalled();
-    });
-
-    it("routes 'add-zip' to runAddFromExternal('zip')", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce("add-zip" as never);
-
-      await handleCustomize("/tmp/test");
-
-      expect(runAddFromExternal).toHaveBeenCalledWith(expect.any(String), "zip");
-    });
-
-    it("routes 'add-github' to runAddFromExternal('github')", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce("add-github" as never);
-
-      await handleCustomize("/tmp/test");
-
-      expect(runAddFromExternal).toHaveBeenCalledWith(expect.any(String), "github");
-    });
-
-    it("offers all five choices in the dispatcher menu", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
-      vi.mocked(p.isCancel).mockReturnValueOnce(true);
-
-      await handleCustomize("/tmp/test");
-
-      const menuCall = vi.mocked(p.select).mock.calls[0]?.[0];
-      const values = menuCall?.options.map((o) => o.value).sort();
-      expect(values).toEqual(["add-github", "add-local", "add-zip", "customize", "replace"]);
-    });
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
   });
 
-  describe("handleAdd", () => {
-    it("returns when artifact type selection is cancelled", async () => {
-      vi.mocked(selectArtifactType).mockResolvedValueOnce(null);
+  /**
+   * Write a minimal `.codi/codi.yaml` with the supplied `agents` list. The
+   * dispatcher calls `resolveConfig(projectRoot)` which loads from disk —
+   * this fixture is what production reads.
+   */
+  async function writeManifest(agents: string[] | undefined): Promise<void> {
+    const agentsLine =
+      agents === undefined
+        ? ""
+        : agents.length === 0
+          ? `agents: []\n`
+          : `agents:\n${agents.map((a) => `  - ${a}`).join("\n")}\n`;
+    const yaml = `name: hub-gen-test\nversion: "1"\n${agentsLine}`;
+    await fs.writeFile(path.join(tmpRoot, ".codi", "codi.yaml"), yaml);
+  }
 
-      await handleAdd("/tmp/test");
-      expect(runAddWizard).not.toHaveBeenCalled();
-    });
+  /**
+   * `handleGenerate` would invoke `generateHandler` after a successful select.
+   * We make `multiselect` return a cancel symbol AND scope `isCancel` to
+   * exactly one call so the assertion target (the options list passed in)
+   * is captured without doing any actual generation, but other prompts in
+   * the same test stay non-cancelled.
+   */
+  function cancelAfterMultiselect(): void {
+    const cancelToken = Symbol("cancel");
+    vi.mocked(p.multiselect).mockResolvedValueOnce(cancelToken as never);
+    vi.mocked(p.isCancel).mockImplementationOnce((v) => v === cancelToken);
+  }
 
-    it("returns when wizard is cancelled", async () => {
-      vi.mocked(selectArtifactType).mockResolvedValueOnce("rule");
-      vi.mocked(runAddWizard).mockResolvedValueOnce(null);
+  it("restricts the multiselect to agents declared in the manifest", async () => {
+    await writeManifest(["claude-code", "cursor"]);
+    cancelAfterMultiselect();
 
-      await handleAdd("/tmp/test");
-      expect(p.outro).not.toHaveBeenCalled();
-    });
+    await handleGenerate(tmpRoot);
+
+    const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+    expect(multiselectCall?.options).toHaveLength(2);
+    expect(multiselectCall?.options.map((o) => o.value).sort()).toEqual(["claude-code", "cursor"]);
+    expect(multiselectCall?.initialValues?.sort()).toEqual(["claude-code", "cursor"]);
   });
 
-  describe("handleGenerate (agent filter)", () => {
-    function mockManifestAgents(agents: string[] | undefined) {
-      vi.mocked(resolveConfig).mockResolvedValueOnce({
-        ok: true,
-        data: { manifest: { agents } },
-      } as never);
-    }
+  it("falls back to all registered adapters when manifest is unreadable", async () => {
+    // No .codi/codi.yaml on disk → resolveConfig fails → fallback path
+    rmSync(path.join(tmpRoot, ".codi"), { recursive: true, force: true });
+    cancelAfterMultiselect();
 
-    it("restricts the multiselect to agents declared in the manifest", async () => {
-      mockManifestAgents(["claude-code", "cursor"]);
-      vi.mocked(p.multiselect).mockResolvedValueOnce(["claude-code", "cursor"] as never);
-      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
+    await handleGenerate(tmpRoot);
 
-      await handleGenerate("/tmp/test");
-
-      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
-      expect(multiselectCall?.options).toHaveLength(2);
-      expect(multiselectCall?.options.map((o) => o.value)).toEqual(["claude-code", "cursor"]);
-      expect(multiselectCall?.initialValues).toEqual(["claude-code", "cursor"]);
-    });
-
-    it("falls back to all adapters and warns when manifest is unreadable", async () => {
-      vi.mocked(resolveConfig).mockResolvedValueOnce({
-        ok: false,
-        errors: [],
-      } as never);
-      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
-      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
-
-      await handleGenerate("/tmp/test");
-
-      expect(p.log.warn).toHaveBeenCalledWith(
-        expect.stringContaining("falling back to all registered adapters"),
-      );
-      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
-      expect(multiselectCall?.options).toHaveLength(6);
-    });
-
-    it("errors and returns without prompting when manifest declares zero usable agents", async () => {
-      mockManifestAgents([]);
-
-      await handleGenerate("/tmp/test");
-
-      expect(p.log.error).toHaveBeenCalledWith(
-        expect.stringContaining("No usable agents configured"),
-      );
-      expect(p.multiselect).not.toHaveBeenCalled();
-      expect(generateHandler).not.toHaveBeenCalled();
-    });
-
-    it("treats undefined manifest.agents as 'all detected' (use all adapters)", async () => {
-      mockManifestAgents(undefined);
-      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
-      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
-
-      await handleGenerate("/tmp/test");
-
-      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
-      expect(multiselectCall?.options).toHaveLength(6);
-    });
-
-    it("filters unknown adapters from manifest and warns", async () => {
-      mockManifestAgents(["claude-code", "made-up-adapter", "cursor"]);
-      vi.mocked(p.multiselect).mockResolvedValueOnce([] as never);
-      vi.mocked(p.select).mockResolvedValueOnce("normal" as never);
-
-      await handleGenerate("/tmp/test");
-
-      expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("made-up-adapter"));
-      const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
-      expect(multiselectCall?.options.map((o) => o.value)).toEqual(["claude-code", "cursor"]);
-    });
+    expect(p.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining("falling back to all registered adapters"),
+    );
+    const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+    expect((multiselectCall?.options.length ?? 0) >= 5).toBe(true);
   });
 
-  describe("handlePresetMenu", () => {
-    it("returns when Back is selected", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce("_back" as never);
+  it("errors and returns without prompting when manifest declares zero usable agents", async () => {
+    await writeManifest([]);
 
-      await handlePresetMenu("/tmp/test");
-    });
+    await handleGenerate(tmpRoot);
 
-    it("returns when cancelled", async () => {
-      vi.mocked(p.select).mockResolvedValueOnce(Symbol("cancel") as never);
-      vi.mocked(p.isCancel).mockReturnValueOnce(true);
-
-      await handlePresetMenu("/tmp/test");
-    });
-
-    it("loops back to menu after sub-action completes", async () => {
-      // First iteration: select "create", which runs and returns
-      vi.mocked(p.select)
-        .mockResolvedValueOnce("create" as never)
-        // Second iteration: select "_back" to exit
-        .mockResolvedValueOnce("_back" as never);
-
-      await handlePresetMenu("/tmp/test");
-      // p.select was called twice (once for create, once for back)
-      expect(p.select).toHaveBeenCalledTimes(2);
-    });
+    expect(p.log.error).toHaveBeenCalledWith(
+      expect.stringContaining("No usable agents configured"),
+    );
+    expect(p.multiselect).not.toHaveBeenCalled();
   });
+
+  it("treats undefined manifest.agents as 'all detected' (use all adapters)", async () => {
+    await writeManifest(undefined);
+    cancelAfterMultiselect();
+
+    await handleGenerate(tmpRoot);
+
+    const multiselectCall = vi.mocked(p.multiselect).mock.calls[0]?.[0];
+    expect((multiselectCall?.options.length ?? 0) >= 5).toBe(true);
+  });
+
+  // NOTE: the original "filters unknown adapters from manifest and warns" test
+  // was deleted during the ISSUE-044 rewrite. It mocked `resolveConfig` so it
+  // could feed `handleGenerate` a config with an unknown adapter id —
+  // synthetic state that production never sees, because `validateConfig`
+  // rejects unknown adapter ids upstream and `resolveConfig` returns
+  // `ok: false`. The dispatcher's "unknown adapter" branch is reachable in
+  // principle but not in practice with the current validator; it is exercised
+  // by the existing config-validator tests instead.
 });

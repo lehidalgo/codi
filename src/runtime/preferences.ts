@@ -16,6 +16,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export type OutputMode = "caveman" | "normal";
 export type IssueTracker = "linear" | "jira" | "github" | "none";
@@ -56,8 +57,8 @@ export interface CodiPreferences {
   hooks?: Record<string, HookPreferenceOverride>;
 }
 
-export const PREFERENCES_YAML_RELATIVE_PATH = ".codi/preferences.yaml";
-export const PREFERENCES_JSON_RELATIVE_PATH = ".codi/preferences.json";
+export const PREFERENCES_YAML_RELATIVE_PATH = `${PROJECT_DIR}/preferences.yaml`;
+export const PREFERENCES_JSON_RELATIVE_PATH = `${PROJECT_DIR}/preferences.json`;
 
 export const DEFAULT_PREFERENCES: Required<CodiPreferences> = {
   output_mode: "caveman",

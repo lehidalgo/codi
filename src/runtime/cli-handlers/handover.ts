@@ -13,6 +13,7 @@ import {
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author } from "../types.js";
+import { resolveActiveWorkflowId } from "./active-workflow.js";
 
 export interface HandoverOptions {
   toDevId: string;
@@ -36,7 +37,7 @@ export function handover(opts: HandoverOptions): HandoverResult {
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const state = reduce(log.loadEvents(workflowId));
@@ -81,7 +82,7 @@ export function forceHandover(opts: ForceHandoverOptions): HandoverResult {
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
     const state = reduce(log.loadEvents(workflowId));

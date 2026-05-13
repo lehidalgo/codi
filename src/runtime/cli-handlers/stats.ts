@@ -42,10 +42,10 @@ export function computeWorkflowStats(_opts: { cwd?: string } = {}): {
 
   const log = BrainEventLog.open();
   try {
+    // v11+ : workflow_runs no longer holds the active-id singleton, so the
+    // SELECT scans real workflow rows only.
     const rows = log.privateRaw
-      .prepare(
-        `SELECT workflow_id FROM workflow_runs WHERE type != 'session' ORDER BY started_at DESC`,
-      )
+      .prepare(`SELECT workflow_id FROM workflow_runs ORDER BY started_at DESC`)
       .all() as { workflow_id: string }[];
 
     for (const r of rows) {

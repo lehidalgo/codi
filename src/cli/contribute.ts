@@ -13,6 +13,7 @@ import { initFromOptions, handleOutput, printSection } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 import { parseSkillFile, parseAgentFile, parseRuleFile } from "../core/config/parser.js";
+import type { ArtifactType } from "../core/artifact-types.js";
 import { copyDir, readLockFile } from "../core/preset/preset-registry.js";
 import {
   SKILL_OUTPUT_FILENAME,
@@ -25,7 +26,7 @@ import {
   PROJECT_NAME,
   PROJECT_DIR,
 } from "../constants.js";
-import { execFileAsync } from "../utils/exec.js";
+import { EXEC_TIMEOUTS, execFileWithTimeout } from "../utils/exec.js";
 import {
   getGitRepoUrl,
   detectDefaultBranch,
@@ -135,7 +136,7 @@ async function resolveContributionTarget(
 
 export interface ArtifactEntry {
   name: string;
-  type: "rule" | "skill" | "agent";
+  type: Exclude<ArtifactType, "mcp-server">;
   managedBy: string;
   path: string;
 }
@@ -245,7 +246,7 @@ export async function buildPresetPackage(
 
 async function checkGhAuth(log: Logger): Promise<boolean> {
   try {
-    await execFileAsync("gh", ["auth", "status"]);
+    await execFileWithTimeout("gh", ["auth", "status"], { timeoutMs: EXEC_TIMEOUTS.GH_API });
     return true;
   } catch (cause) {
     log.warn("GitHub CLI not authenticated.", cause);
@@ -265,7 +266,11 @@ async function createContributionPR(
 
   try {
     // 1. Get the authenticated GitHub username
-    const { stdout: userLogin } = await execFileAsync("gh", ["api", "user", "--jq", ".login"]);
+    const { stdout: userLogin } = await execFileWithTimeout(
+      "gh",
+      ["api", "user", "--jq", ".login"],
+      { timeoutMs: EXEC_TIMEOUTS.GH_API },
+    );
     const ghUser = userLogin.trim();
     if (!ghUser) throw new Error("Could not determine GitHub username");
 
@@ -298,15 +303,11 @@ async function createContributionPR(
     log.info(`Cloning ${target.repo}...`);
     let effectiveBranch = target.branch;
     try {
-      await execFileAsync("git", [
-        "clone",
-        "--depth",
-        "1",
-        "--branch",
-        target.branch,
-        repoUrl,
-        cloneDir,
-      ]);
+      await execFileWithTimeout(
+        "git",
+        ["clone", "--depth", "1", "--branch", target.branch, repoUrl, cloneDir],
+        { timeoutMs: EXEC_TIMEOUTS.GH_LONG },
+      );
     } catch (cloneError) {
       const msg = cloneError instanceof Error ? cloneError.message : String(cloneError);
       if (
@@ -316,7 +317,9 @@ async function createContributionPR(
       ) {
         // Branch name was wrong — clone without --branch to use the remote's default
         log.warn(`Branch '${target.branch}' not found — cloning remote default branch instead.`);
-        await execFileAsync("git", ["clone", "--depth", "1", repoUrl, cloneDir]);
+        await execFileWithTimeout("git", ["clone", "--depth", "1", repoUrl, cloneDir], {
+          timeoutMs: EXEC_TIMEOUTS.GH_LONG,
+        });
         effectiveBranch = await detectClonedBranch(cloneDir);
         log.info(`Using default branch: ${effectiveBranch}`);
       } else {
@@ -327,7 +330,9 @@ async function createContributionPR(
 
     // 5. Fork the target repo (idempotent — no-op if fork exists or user owns it)
     try {
-      await execFileAsync("gh", ["repo", "fork", target.repo, "--clone=false"]);
+      await execFileWithTimeout("gh", ["repo", "fork", target.repo, "--clone=false"], {
+        timeoutMs: EXEC_TIMEOUTS.GH_LONG,
+      });
     } catch (forkError) {
       const msg = forkError instanceof Error ? forkError.message : String(forkError);
       if (msg.includes("not fork") || msg.includes("forbidden") || msg.includes("403")) {
@@ -337,26 +342,35 @@ async function createContributionPR(
 
     // 6. Add user's fork as a remote and create branch
     const userRepoUrl = await getGitRepoUrl(`${ghUser}/${repoName}`);
-    await execFileAsync("git", ["remote", "add", "user", userRepoUrl], {
+    await execFileWithTimeout("git", ["remote", "add", "user", userRepoUrl], {
       cwd: cloneDir,
+      timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
     });
 
     const branchName = `contrib/add-${artifacts[0]?.name ?? "artifacts"}-${Date.now()}`;
-    await execFileAsync("git", ["checkout", "-b", branchName], {
+    await execFileWithTimeout("git", ["checkout", "-b", branchName], {
       cwd: cloneDir,
+      timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
     });
 
     // 7. Build preset package, commit, and push
     await buildPresetPackage(artifacts, presetName, cloneDir);
-    await execFileAsync("git", ["add", "."], { cwd: cloneDir });
+    await execFileWithTimeout("git", ["add", "."], {
+      cwd: cloneDir,
+      timeoutMs: EXEC_TIMEOUTS.GIT_WRITE,
+    });
 
     const { summary, details } = formatArtifactSummary(artifacts);
     const commitMsg = `feat: contribute ${summary}\n\n${details}`;
-    await execFileAsync("git", ["commit", "-m", commitMsg], { cwd: cloneDir });
+    await execFileWithTimeout("git", ["commit", "-m", commitMsg], {
+      cwd: cloneDir,
+      timeoutMs: EXEC_TIMEOUTS.GIT_WRITE,
+    });
 
     try {
-      await execFileAsync("git", ["push", "user", branchName], {
+      await execFileWithTimeout("git", ["push", "user", branchName], {
         cwd: cloneDir,
+        timeoutMs: EXEC_TIMEOUTS.GH_LONG,
       });
     } catch (pushError) {
       const msg = pushError instanceof Error ? pushError.message : String(pushError);
@@ -365,7 +379,7 @@ async function createContributionPR(
     }
 
     // 8. Open PR from user's fork to target repo's effective base branch
-    const { stdout: prUrl } = await execFileAsync(
+    const { stdout: prUrl } = await execFileWithTimeout(
       "gh",
       [
         "pr",
@@ -381,7 +395,7 @@ async function createContributionPR(
         "--body",
         `## Contributed Artifacts\n\n${details}\n\n---\nGenerated by \`${PROJECT_CLI} contribute\`.`,
       ],
-      { cwd: cloneDir },
+      { cwd: cloneDir, timeoutMs: EXEC_TIMEOUTS.GH_API },
     );
 
     return prUrl.trim();
@@ -658,8 +672,9 @@ export async function contributeHandler(
 
   const zipPath = path.join(projectRoot, `${presetName}.zip`);
   try {
-    await execFileAsync("zip", ["-r", zipPath, presetName], {
+    await execFileWithTimeout("zip", ["-r", zipPath, presetName], {
       cwd: stagingDir,
+      timeoutMs: EXEC_TIMEOUTS.GH_LONG,
     });
     log.info(`Exported to ${zipPath}`);
     p.outro("Contribution exported.");

@@ -1,135 +1,28 @@
 import type { ArtifactUpgradeInfo } from "../core/version/upgrade-detector.js";
 import type { InstalledArtifactInventoryEntry } from "./installed-artifact-inventory.js";
-import { MCP_SERVER_GROUPS } from "../templates/mcp-servers/index.js";
-import { ALL_SKILL_CATEGORIES, PLATFORM_CATEGORY } from "../constants.js";
+import {
+  extractTemplateHint,
+  RULE_CATEGORIES,
+  AGENT_CATEGORIES,
+  MCP_SERVER_CATEGORIES,
+  PLATFORM_RULE_DEFAULTS,
+  getPlatformSkillDefaults,
+  buildSkillCategoryMap,
+} from "../core/onboard/artifact-categories.js";
 
-// Static category maps for rules and agents.
-// Each array lists the fully-prefixed artifact names that belong to that group.
-// Any name not present in the map will fall into an "Other" catch-all group.
-
-export const RULE_CATEGORIES: Record<string, string[]> = {
-  "Language-Specific": [
-    "codi-typescript",
-    "codi-react",
-    "codi-python",
-    "codi-golang",
-    "codi-java",
-    "codi-kotlin",
-    "codi-rust",
-    "codi-swift",
-    "codi-csharp",
-    "codi-nextjs",
-    "codi-django",
-    "codi-spring-boot",
-  ],
-  "Code Quality": ["codi-code-style", "codi-testing", "codi-error-handling", "codi-security"],
-  "Architecture & Design": [
-    "codi-architecture",
-    "codi-api-design",
-    "codi-performance",
-    "codi-simplicity-first",
-    "codi-production-mindset",
-  ],
-  "Workflow & Process": [
-    "codi-workflow",
-    "codi-git-workflow",
-    "codi-documentation",
-    "codi-spanish-orthography",
-    "codi-output-discipline",
-    "codi-contribution-discipline",
-  ],
-  [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev", "codi-capture-everything"],
+// Re-export the core data tables and helpers for backwards-compatibility with
+// existing CLI imports. cli/artifact-categories.ts is the CLI-side wrapper —
+// it keeps the @clack-flavoured group builders that produce GroupedOption
+// shapes, while the underlying data lives in core/.
+export {
+  RULE_CATEGORIES,
+  AGENT_CATEGORIES,
+  MCP_SERVER_CATEGORIES,
+  PLATFORM_RULE_DEFAULTS,
+  getPlatformSkillDefaults,
+  buildSkillCategoryMap,
+  extractTemplateHint,
 };
-
-// Artifacts that are always pre-selected regardless of preset or custom choice.
-// These are the Codi Platform artifacts — they govern how Codi itself operates in the project.
-export const PLATFORM_RULE_DEFAULTS: readonly string[] = RULE_CATEGORIES[PLATFORM_CATEGORY] ?? [];
-
-// Platform skill defaults are derived at runtime from frontmatter because skill
-// categories live in template content, not in a static map.
-// Call this once per wizard session using the same loadFn already in scope.
-export function getPlatformSkillDefaults(
-  templates: string[],
-  loadFn: (name: string) => { ok: boolean; data?: string },
-): string[] {
-  const categoryMap = buildSkillCategoryMap(templates, loadFn);
-  return categoryMap[PLATFORM_CATEGORY] ?? [];
-}
-
-export const AGENT_CATEGORIES: Record<string, string[]> = {
-  "Code Quality": [
-    "codi-code-reviewer",
-    "codi-test-generator",
-    "codi-security-analyzer",
-    "codi-refactorer",
-    "codi-performance-auditor",
-  ],
-  "Architecture & Design": [
-    "codi-api-designer",
-    "codi-codebase-explorer",
-    "codi-scalability-expert",
-  ],
-  "Data & ML": [
-    "codi-data-analytics-bi-expert",
-    "codi-data-engineering-expert",
-    "codi-data-intensive-architect",
-    "codi-data-science-specialist",
-    "codi-mlops-engineer",
-  ],
-  "Web & Frontend": [
-    "codi-nextjs-researcher",
-    "codi-payload-cms-auditor",
-    "codi-marketing-seo-specialist",
-  ],
-  "Business & Compliance": [
-    "codi-legal-compliance-eu",
-    "codi-ai-engineering-expert",
-    "codi-openai-agents-specialist",
-    "codi-python-expert",
-  ],
-  "Exploration & Docs": ["codi-docs-lookup"],
-};
-
-// MCP server categories derived from the grouped registry in the template index.
-export const MCP_SERVER_CATEGORIES: Record<string, string[]> = MCP_SERVER_GROUPS;
-
-// Dynamic skill category extraction.
-// Skills store their category in YAML frontmatter: `category: <group name>`.
-
-const SKILL_CATEGORY_PATTERN = /^category:\s*(.+)$/m;
-const PLATFORM_PLACEHOLDER = /\$\{[^}]+\}/g;
-
-function resolveSkillCategory(raw: string): string {
-  // Template strings may contain interpolation tokens like ${PROJECT_NAME_DISPLAY}.
-  // Treat any value containing a placeholder as the platform category.
-  if (PLATFORM_PLACEHOLDER.test(raw)) return PLATFORM_CATEGORY;
-  return raw.trim();
-}
-
-export function buildSkillCategoryMap(
-  templates: string[],
-  loadFn: (name: string) => { ok: boolean; data?: string },
-): Record<string, string[]> {
-  // Pre-seed known categories in canonical order so CLI wizard groups are stable.
-  const groups: Record<string, string[]> = Object.fromEntries(
-    ALL_SKILL_CATEGORIES.map((cat) => [cat, [] as string[]]),
-  );
-
-  for (const name of templates) {
-    const result = loadFn(name);
-    const content = result.ok ? (result.data ?? "") : "";
-    const match = SKILL_CATEGORY_PATTERN.exec(content);
-    const category = match ? resolveSkillCategory(match[1]!) : "Other";
-    (groups[category] ??= []).push(name);
-  }
-
-  // Remove empty known-category buckets (no skills assigned).
-  for (const cat of ALL_SKILL_CATEGORIES) {
-    if (groups[cat]?.length === 0) delete groups[cat];
-  }
-
-  return groups;
-}
 
 // Generic grouped-options builder.
 // Converts a flat list of template names into a Record<group, Option[]> for
@@ -171,7 +64,7 @@ export function buildGroupedOptions<V>(
 
 // ---------------------------------------------------------------------------
 // Wizard option utilities.
-// These live here to keep init-wizard-paths.ts under the 700-line limit.
+// These live here to keep init-wizard-paths.ts under the 800-line limit.
 // ---------------------------------------------------------------------------
 
 export function formatLabel(name: string): string {
@@ -179,14 +72,6 @@ export function formatLabel(name: string): string {
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-export function extractTemplateHint(content: string): string {
-  const multiLine = content.match(/^description:\s*\|\s*\n\s+(.+)/m);
-  if (multiLine?.[1]) return multiLine[1].trim();
-  const singleLine = content.match(/^description:\s*(.+)$/m);
-  if (singleLine?.[1]) return singleLine[1].trim();
-  return "";
 }
 
 export function formatStatusBadge(status: ArtifactUpgradeInfo["status"]): string {

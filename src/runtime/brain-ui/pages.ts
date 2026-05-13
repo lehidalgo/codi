@@ -5,7 +5,7 @@
  */
 
 import type { Hono } from "hono";
-import type { BrainHandle } from "../brain/index.js";
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { registerDashboard } from "./pages/dashboard.js";
 import { registerSessions } from "./pages/sessions.js";
 import { registerCaptures } from "./pages/captures.js";

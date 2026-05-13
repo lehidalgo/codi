@@ -16,7 +16,7 @@
  * remain in PreToolUse + the existing scope/classifier pipeline.
  */
 
-import type { BrainHandle } from "../brain/index.js";
+import type { BrainHandle } from "../brain/db.js";
 import { reduce } from "../reducer.js";
 import { BrainEventLog } from "../brain-event-log.js";
 import {
@@ -31,6 +31,7 @@ import {
 import { ingestAgentMemory } from "./agent-memory.js";
 import type Database from "better-sqlite3";
 
+import { deriveProjectId } from "./project-id.js";
 export interface ToolCallInput {
   readonly sessionId: string;
   readonly cwd: string;
@@ -113,7 +114,7 @@ export function processPostToolUse(handle: BrainHandle, input: ToolCallInput): T
   const promptIdRow = raw.prepare(`SELECT prompt_id FROM turns WHERE turn_id = ?`).get(turnId) as
     | { prompt_id?: number }
     | undefined;
-  const wfContext = readActiveWorkflowContext();
+  const wfContext = readActiveWorkflowContext(handle);
   const memory = ingestAgentMemory(raw, {
     sessionId: input.sessionId,
     turnId,
@@ -176,21 +177,24 @@ function trackArtifactInvocation(
   });
 }
 
-function readActiveWorkflowContext(): {
+/**
+ * Read the active workflow id + current phase via the caller's brain
+ * handle. Previously this opened its own `BrainEventLog.open()` (with a
+ * fresh `applyMigrations` ceremony) on every PostToolUse fire. Reusing
+ * the handle the caller already owns saves one openBrain + one
+ * applyMigrations per tool-call event.
+ */
+function readActiveWorkflowContext(handle: BrainHandle): {
   readonly workflowId?: string;
   readonly phase?: string;
 } {
   try {
-    const log = BrainEventLog.open();
-    try {
-      const id = log.getActiveWorkflowId();
-      if (!id) return {};
-      const events = log.loadEvents(id);
-      if (events.length === 0) return { workflowId: id };
-      return { workflowId: id, phase: reduce(events).current_phase };
-    } finally {
-      log.dispose();
-    }
+    const log = BrainEventLog.wrap(handle);
+    const id = log.getActiveWorkflowId();
+    if (!id) return {};
+    const events = log.loadEvents(id);
+    if (events.length === 0) return { workflowId: id };
+    return { workflowId: id, phase: reduce(events).current_phase };
   } catch {
     return {};
   }
@@ -247,14 +251,4 @@ function extractError(response: unknown): string {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
-}
-
-function deriveProjectId(cwd: string): string {
-  const parts = cwd.replace(/\/+$/, "").split("/");
-  const basename = parts[parts.length - 1] ?? "project";
-  let h = 0;
-  for (let i = 0; i < cwd.length; i += 1) {
-    h = (h * 31 + cwd.charCodeAt(i)) | 0;
-  }
-  return `${basename}-${(h >>> 0).toString(16).slice(0, 8)}`;
 }

@@ -11,7 +11,8 @@
 
 import { Hono } from "hono";
 import type { Context, Hono as HonoApp } from "hono";
-import { openBrain, applyMigrations, type BrainHandle } from "../brain/index.js";
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { registerApiRoutes } from "./routes-api.js";
 import { registerPages } from "./pages.js";
 import { registerSseRoute } from "./sse.js";
@@ -40,19 +41,27 @@ export function buildApp(opts: BuildAppOptions = {}): AppHandle {
 
   const app = new Hono();
 
-  // Origin guard for state-changing /api/v1/* requests. brain-ui binds to
-  // loopback (see cli-server.ts), so the only realistic CSRF vector is a
-  // browser tab on another origin firing fetch() at 127.0.0.1. Browsers
-  // always send the Origin header on cross-origin requests, so accepting
-  // only loopback Origins (or absent Origin, for curl/CLI tooling) closes
-  // the gap without needing a token system.
+  // Origin guard for state-changing /api/v1/* requests (ISSUE-009).
+  //
+  // brain-ui binds to loopback (see cli-server.ts), so the only realistic
+  // threat model for this tool is a browser tab on another origin firing
+  // fetch() at 127.0.0.1:4477. Browsers always send the Origin header on
+  // cross-origin requests, so requiring a loopback Origin on every mutating
+  // request closes that gap. Authenticated tokens (bearer / OAuth) would be
+  // over-engineering for a same-user local dev tool: any process that can
+  // reach the loopback port can also read brain.db directly with sqlite3.
+  //
+  // Earlier the middleware contained `if (origin === undefined) return next()`
+  // to keep curl/CLI tooling unblocked, but that bypass lets any local
+  // process — npm postinstall scripts, IDE background tasks, browser
+  // extensions via fetch tricks — issue mutating requests without going
+  // through a browser. Origin is now mandatory for non-GET requests.
   const LOOPBACK_ORIGIN_RE = /^https?:\/\/(127\.0\.0\.1|\[::1\]|localhost)(:\d+)?$/;
   app.use("/api/v1/*", async (c, next) => {
     const m = c.req.method;
     if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
     const origin = c.req.header("origin");
-    if (origin === undefined) return next();
-    if (!LOOPBACK_ORIGIN_RE.test(origin)) {
+    if (origin === undefined || !LOOPBACK_ORIGIN_RE.test(origin)) {
       return c.json({ error: { code: "E_CSRF_ORIGIN", message: "Origin not allowed" } }, 403);
     }
     return next();

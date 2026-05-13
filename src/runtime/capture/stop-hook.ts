@@ -25,10 +25,10 @@
 import { closeSync, existsSync, fstatSync, openSync, readSync, statSync } from "node:fs";
 import { reduce } from "../reducer.js";
 import { BrainEventLog } from "../brain-event-log.js";
-import type { BrainHandle } from "../brain/index.js";
+import type { BrainHandle } from "../brain/db.js";
 import { parseMarkersWithReport, type ParsedMarker } from "./markers.js";
 import { persistMarkers } from "./persist.js";
-import { aggregateSessionUsage } from "../tokens/index.js";
+import { aggregateSessionUsage } from "../tokens/aggregator.js";
 import {
   closeTurn,
   ensureProject,
@@ -39,6 +39,7 @@ import {
   refreshCaptureCount,
 } from "./session.js";
 
+import { deriveProjectId } from "./project-id.js";
 export interface StopHookInput {
   readonly sessionId: string;
   readonly cwd: string;
@@ -64,33 +65,31 @@ export interface StopHookResult {
 export function processStopHook(handle: BrainHandle, input: StopHookInput): StopHookResult {
   const { raw } = handle;
 
-  // 1. Ensure project + session rows.
-  const projectId = deriveProjectId(input.cwd);
-  ensureProject(raw, { projectId, cwd: input.cwd });
-  ensureSession(raw, {
-    sessionId: input.sessionId,
-    projectId,
-    agentType: input.agentType ?? "claude-code",
-    agentModel: input.agentModel,
-    workingDir: input.cwd,
-    transcriptPath: input.transcriptPath,
-    workflowId: readActiveWorkflowId() ?? undefined,
-  });
-
-  // 2. Resolve the in-flight turn. Synthesize one when the upstream
-  //    UserPromptSubmit hook hasn't run (e.g. plugin half-installed).
-  let turnId = latestTurnId(raw, input.sessionId);
-  if (turnId === null) {
-    const p = recordPrompt(raw, {
-      sessionId: input.sessionId,
-      text: "(synthetic — no UserPromptSubmit hook fired)",
-    });
-    turnId = openTurn(raw, {
-      sessionId: input.sessionId,
-      promptId: p.promptId,
-      turnNo: p.turnNo,
-    });
+  // Resolve the active workflow + phase ONCE per fire, reusing the caller's
+  // BrainHandle via `BrainEventLog.wrap` (non-owning). The previous Stop
+  // implementation opened FOUR separate brain handles per fire (each of
+  // them ran applyMigrations + readMetadata) — measurable cost on the
+  // hot path. The values are consistent within a fire because the only
+  // writer of `__codi_active__` is the workflow CLI, which runs in a
+  // different process.
+  const wrappedLog = BrainEventLog.wrap(handle);
+  let activeWorkflowId: string | null = null;
+  let activePhase: string | null = null;
+  try {
+    activeWorkflowId = wrappedLog.getActiveWorkflowId();
+    if (activeWorkflowId) {
+      const events = wrappedLog.loadEvents(activeWorkflowId);
+      if (events.length > 0) activePhase = reduce(events).current_phase;
+    }
+  } catch {
+    // Brain unreachable — degrade silently; captures persist without
+    // workflow tagging just as before.
   }
+
+  // ── Pure / I/O-bound preparation (runs OUTSIDE the SQL transaction)
+  // Reading the transcript JSONL and parsing markers must not hold the
+  // SQLite write lock — both can take measurable wall time on large
+  // transcripts.
 
   // 3. Read agent text. Override path for tests; otherwise read from
   //    transcript JSONL. If neither yields text, we still close the turn
@@ -99,12 +98,8 @@ export function processStopHook(handle: BrainHandle, input: StopHookInput): Stop
     input.agentTextOverride ??
     (input.transcriptPath ? readLastAssistantMessage(input.transcriptPath) : "");
 
-  // 4. Parse + persist markers. Markers with a non-canonical TYPE keep
-  //    their full information by being demoted to OBSERVATION at
-  //    persist-time; the raw_marker column preserves the agent's original
-  //    intent so the brain UI / consolidator can recover the offending
-  //    type. We also emit a stderr warning so the typo is visible during
-  //    the session.
+  // 4a. Parse markers. Promotion of non-canonical TYPE entries to
+  //    OBSERVATION is data-shaping, not a write — keep it outside.
   const parsed = parseMarkersWithReport(agentText);
   const promoted: ParsedMarker[] = parsed.invalid.map((bad) => {
     const annotated = `[unknown_type=${bad.type}] ${bad.content}`;
@@ -125,33 +120,89 @@ export function processStopHook(handle: BrainHandle, input: StopHookInput): Stop
   const markers: ParsedMarker[] = [...parsed.valid, ...promoted].sort(
     (a, b) => a.offset - b.offset,
   );
-  const phase = readActivePhase();
-  const persisted = persistMarkers(
-    raw,
-    {
+
+  // ── Single SQL transaction wrapping every Stop-hook write.
+  //
+  // Previously each write (ensureProject, ensureSession, persistMarkers,
+  // closeTurn, refreshCaptureCount, optional synthetic prompt/turn)
+  // ran in its own implicit transaction. Two real consequences:
+  //   - 7 fsyncs per fire instead of 1.
+  //   - Concurrent Stops on the same session (Claude double-fires on
+  //     interrupt/resume — documented in the file header) interleaved
+  //     the dedupe SELECT/INSERT in persistMarkers AND the read-recompute
+  //     of refreshCaptureCount, undercounting captures.
+  // The transaction wraps writes only; if any one throws, better-sqlite3
+  // auto-rolls back the whole stop, preserving the outer try/catch's
+  // "never block the agent" contract while preventing partial state.
+  // `aggregateSessionUsage` stays OUTSIDE because it reads the
+  // transcript file (file I/O while holding a write lock would serialize
+  // unrelated writers).
+  const projectId = deriveProjectId(input.cwd);
+  let turnId = 0;
+  let persisted: { inserted: number; skippedDuplicates: number } = {
+    inserted: 0,
+    skippedDuplicates: 0,
+  };
+  raw.transaction(() => {
+    // 1. Ensure project + session rows.
+    ensureProject(raw, { projectId, cwd: input.cwd });
+    ensureSession(raw, {
       sessionId: input.sessionId,
-      promptId: lookupPromptId(raw, turnId),
+      projectId,
+      agentType: input.agentType ?? "claude-code",
+      agentModel: input.agentModel,
+      workingDir: input.cwd,
+      transcriptPath: input.transcriptPath,
+      workflowId: activeWorkflowId ?? undefined,
+    });
+
+    // 2. Resolve the in-flight turn. Synthesize one when the upstream
+    //    UserPromptSubmit hook hasn't run (e.g. plugin half-installed).
+    const existingTurnId = latestTurnId(raw, input.sessionId);
+    if (existingTurnId === null) {
+      const p = recordPrompt(raw, {
+        sessionId: input.sessionId,
+        text: "(synthetic — no UserPromptSubmit hook fired)",
+      });
+      turnId = openTurn(raw, {
+        sessionId: input.sessionId,
+        promptId: p.promptId,
+        turnNo: p.turnNo,
+      });
+    } else {
+      turnId = existingTurnId;
+    }
+
+    // 4b. Persist markers (writes — must stay inside the transaction so
+    //    persistMarkers' dedupe SELECT + INSERT is race-free).
+    persisted = persistMarkers(
+      raw,
+      {
+        sessionId: input.sessionId,
+        promptId: lookupPromptId(raw, turnId),
+        turnId,
+        ...(activeWorkflowId !== null ? { workflowId: activeWorkflowId } : {}),
+        ...(activePhase !== null ? { phase: activePhase } : {}),
+      },
+      markers,
+    );
+
+    // 5. Close the turn — record agent_text + duration_ms (since open).
+    const turnRow = raw.prepare(`SELECT ts FROM turns WHERE turn_id = ?`).get(turnId) as
+      | { ts: number }
+      | undefined;
+    const durationMs = turnRow ? Math.max(0, Date.now() - turnRow.ts) : undefined;
+    const closeArgs: { turnId: number; agentText?: string; durationMs?: number } = {
       turnId,
-      ...(readActiveWorkflowId() !== null
-        ? { workflowId: readActiveWorkflowId() ?? undefined }
-        : {}),
-      ...(phase !== null ? { phase } : {}),
-    },
-    markers,
-  );
+    };
+    if (agentText.length > 0) closeArgs.agentText = agentText;
+    if (durationMs !== undefined) closeArgs.durationMs = durationMs;
+    closeTurn(raw, closeArgs);
 
-  // 5. Close the turn — record agent_text + duration_ms (since open).
-  const turnRow = raw.prepare(`SELECT ts FROM turns WHERE turn_id = ?`).get(turnId) as
-    | { ts: number }
-    | undefined;
-  const durationMs = turnRow ? Math.max(0, Date.now() - turnRow.ts) : undefined;
-  const closeArgs: { turnId: number; agentText?: string; durationMs?: number } = { turnId };
-  if (agentText.length > 0) closeArgs.agentText = agentText;
-  if (durationMs !== undefined) closeArgs.durationMs = durationMs;
-  closeTurn(raw, closeArgs);
-
-  // 6. Refresh cached capture count.
-  refreshCaptureCount(raw, input.sessionId);
+    // 6. Refresh cached capture count. Must be inside the same txn as
+    //    persistMarkers so the recount sees the rows just inserted.
+    refreshCaptureCount(raw, input.sessionId);
+  })();
 
   // 7. Aggregate token usage + cost from the transcript (or tokenizer
   //    fallback) into `sessions`. Best-effort: a malformed transcript or
@@ -309,55 +360,4 @@ function flattenTextField(content: unknown): string {
     return parts.join("\n");
   }
   return "";
-}
-
-/**
- * Project ID derivation: a stable hash of the working dir keeps multiple
- * checkouts of the same repo distinguishable while letting `~/.codi/brain.db`
- * aggregate sessions for a single repo. We use the basename + a short hash
- * of the absolute path for readability in dashboards.
- */
-function deriveProjectId(cwd: string): string {
-  const parts = cwd.replace(/\/+$/, "").split("/");
-  const basename = parts[parts.length - 1] ?? "project";
-  // Tiny non-cryptographic hash — collisions are tolerable for this surface.
-  let h = 0;
-  for (let i = 0; i < cwd.length; i += 1) {
-    h = (h * 31 + cwd.charCodeAt(i)) | 0;
-  }
-  return `${basename}-${(h >>> 0).toString(16).slice(0, 8)}`;
-}
-
-/**
- * Convenience shim: read the active workflow id (if any) from brain so the
- * captures inherit it. Errors swallowed — the Stop hook never blocks.
- */
-function readActiveWorkflowId(): string | null {
-  try {
-    const log = BrainEventLog.open();
-    try {
-      return log.getActiveWorkflowId();
-    } finally {
-      log.dispose();
-    }
-  } catch {
-    return null;
-  }
-}
-
-function readActivePhase(): string | null {
-  try {
-    const log = BrainEventLog.open();
-    try {
-      const id = log.getActiveWorkflowId();
-      if (!id) return null;
-      const events = log.loadEvents(id);
-      if (events.length === 0) return null;
-      return reduce(events).current_phase;
-    } finally {
-      log.dispose();
-    }
-  } catch {
-    return null;
-  }
 }

@@ -17,7 +17,9 @@ import { dirname, resolve } from "node:path";
 
 import type { SheetRow, EntityName, CallerScope } from "./types.js";
 
-export const QUEUE_RELATIVE_PATH = ".codi/sheets-queue.jsonl";
+import { PROJECT_DIR } from "./project-constants.js";
+
+export const QUEUE_RELATIVE_PATH = `${PROJECT_DIR}/sheets-queue.jsonl`;
 
 export interface QueuedSync {
   /** stable id for retry coalescing — derived from entity+row_id when possible. */

@@ -4,6 +4,7 @@ import { hashContent } from "#src/utils/hash.js";
 import { ArtifactManifestManager } from "#src/core/version/artifact-manifest.js";
 import type { DiscoveredArtifact } from "./discovery.js";
 import type { ExternalSource } from "./connectors.js";
+import { MANAGED_BY_USER } from "#src/constants.js";
 
 export type CollisionResolution =
   | { kind: "skip" }
@@ -111,7 +112,7 @@ export async function installSelected(
       contentHash: hashContent(content),
       installedArtifactVersion: "unknown",
       installedAt: new Date().toISOString(),
-      managedBy: "user",
+      managedBy: MANAGED_BY_USER,
       source: source.id,
     };
   }

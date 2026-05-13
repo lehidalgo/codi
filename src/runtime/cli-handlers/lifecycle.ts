@@ -13,6 +13,7 @@ import { BrainEventLog, BrainNoActiveWorkflowError } from "../brain-event-log.js
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
 import type { Author, Phase } from "../types.js";
+import { resolveActiveWorkflowId } from "./active-workflow.js";
 
 export interface AbandonOptions {
   reason: string;
@@ -31,7 +32,7 @@ export function abandonWorkflow(opts: AbandonOptions): AbandonResult {
   }
   const log = BrainEventLog.open();
   try {
-    const workflowId = log.getActiveWorkflowId();
+    const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new BrainNoActiveWorkflowError();
 
     const state = reduce(log.loadEvents(workflowId));
@@ -89,15 +90,14 @@ export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
       }
     }
 
-    // Scan workflow_runs for the most recent non-terminal row. Project
-    // singletons (the __codi_session__ row used for active-id tracking) are
-    // skipped via the `type != 'session'` predicate.
+    // Scan workflow_runs for the most recent non-terminal row. As of v11
+    // the active-id pointer lives in runtime_state, so workflow_runs holds
+    // only real workflow rows.
     const candidates = log.privateRaw
       .prepare(
         `SELECT workflow_id
          FROM workflow_runs
          WHERE status IN ('active', 'paused')
-           AND type != 'session'
          ORDER BY started_at DESC`,
       )
       .all() as { workflow_id: string }[];
@@ -168,7 +168,7 @@ export function convertWorkflow(opts: ConvertOptions): ConvertResult {
   const log = BrainEventLog.open();
   let priorId: string;
   try {
-    priorId = log.getActiveWorkflowId() ?? "";
+    priorId = resolveActiveWorkflowId(log, opts) ?? "";
     if (!priorId) throw new BrainNoActiveWorkflowError();
   } finally {
     log.dispose();

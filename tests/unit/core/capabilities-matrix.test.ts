@@ -10,8 +10,7 @@ import {
   supports,
   targetsSupporting,
   type TargetId,
-} from "#src/core/capabilities/index.js";
-
+} from "#src/core/capabilities/matrix.js";
 describe("Capabilities Matrix", () => {
   it("declares an entry for every TARGET_ID", () => {
     for (const id of TARGET_IDS) {

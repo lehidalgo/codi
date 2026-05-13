@@ -1,4 +1,5 @@
 import type { ArtifactType } from "#src/core/artifact-types.js";
+import type { ManagedBy } from "#src/constants.js";
 
 /** Path-derived layer the hook is operating on. */
 export type HookMode = "source" | "user-managed" | "codi-managed" | "skip";
@@ -39,5 +40,5 @@ export interface ManifestArtifactEntry {
   contentHash: string;
   installedArtifactVersion: number | "unknown";
   installedAt: string;
-  managedBy: "codi" | "user";
+  managedBy: ManagedBy;
 }

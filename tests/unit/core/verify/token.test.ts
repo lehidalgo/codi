@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PROJECT_NAME } from "#src/constants.js";
 import { buildVerificationData } from "#src/core/verify/token.js";
-import { createMockConfig } from "../../adapters/mock-config.js";
+import { createMockConfig } from "#tests/unit/adapters/mock-config.js";
 
 describe("buildVerificationData", () => {
   it(`returns token in ${PROJECT_NAME}-XXXXXXXXXXXX format`, () => {
@@ -59,7 +59,7 @@ describe("buildVerificationData", () => {
     expect(data.activeFlags).toContain("Do NOT execute shell commands.");
     expect(data.activeFlags).toContain("Do NOT delete files.");
     expect(data.activeFlags).toContain(
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     );
     expect(data.activeFlags).toContain("Write tests for all new code.");
   });
@@ -125,7 +125,7 @@ describe("buildVerificationData", () => {
     const config = createMockConfig({ flags: {} });
     const data = buildVerificationData(config);
     expect(data.activeFlags).toEqual([
-      "Keep source code files under 700 lines. Documentation files have no line limit.",
+      "Keep source code files under 800 lines. Documentation files have no line limit.",
     ]);
   });
 

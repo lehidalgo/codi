@@ -1,5 +1,7 @@
 import type { ArtifactInspection } from "./types.js";
 
+import type { ManagedBy } from "#src/constants.js";
+
 const SOURCE_SKILL = /^src\/templates\/skills\/([^/]+)\/template\.ts$/;
 const SOURCE_AGENT = /^src\/templates\/agents\/([^/]+)\/template\.ts$/;
 const SOURCE_RULE = /^src\/templates\/rules\/([^/]+)\.ts$/;
@@ -7,9 +9,9 @@ const CODI_RULE = /^\.codi\/rules\/([^/]+)\.md$/;
 const CODI_SKILL = /^\.codi\/skills\/([^/]+)\/SKILL\.md$/;
 const CODI_AGENT = /^\.codi\/agents\/([^/]+)\.md$/;
 
-function parseManagedBy(content: string): "codi" | "user" {
+function parseManagedBy(content: string): ManagedBy {
   const match = content.match(/^managed_by:\s*(codi|user)\s*$/m);
-  return match ? (match[1] as "codi" | "user") : "user";
+  return match ? (match[1] as ManagedBy) : "user";
 }
 
 export function detectMode(path: string, content: string): ArtifactInspection {

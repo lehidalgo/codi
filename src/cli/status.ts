@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Command } from "commander";
 import { StateManager } from "../core/config/state.js";
 import type { DriftReport, DriftFile, ArtifactFileState } from "../core/config/state.js";
+import type { ArtifactType } from "../core/artifact-types.js";
 import { resolveProjectDir } from "../utils/paths.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { createCommandResult } from "../core/output/formatter.js";
@@ -37,7 +38,7 @@ interface StatusOptions {
  */
 function parseArtifactPath(
   relPath: string,
-): { type: "rule" | "skill" | "agent"; name: string } | null {
+): { type: Exclude<ArtifactType, "mcp-server">; name: string } | null {
   const parts = relPath.replace(/\\/g, "/").split("/");
   // Expected: .codi/{type}/{name}.md or .codi/skills/{name}/SKILL.md
   const typeDir = parts[1];

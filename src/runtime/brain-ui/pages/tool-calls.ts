@@ -4,7 +4,7 @@
  */
 
 import type { Hono, Context } from "hono";
-import type { BrainHandle } from "#src/runtime/brain/index.js";
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { shell, escapeHtml, fmtRelative, fmtTs, fmtDuration } from "./shell.js";
 import { renderToolPayload } from "./sessions.js";
 

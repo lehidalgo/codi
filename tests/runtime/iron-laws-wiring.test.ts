@@ -18,7 +18,8 @@ import {
   approveTransition,
   rejectTransition,
 } from "#src/runtime/cli-handlers.js";
-import { openBrain, applyMigrations, type BrainHandle } from "#src/runtime/brain/index.js";
+import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import {
   readGateState,
   readRecentPrompts,

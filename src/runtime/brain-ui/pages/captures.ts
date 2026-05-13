@@ -5,7 +5,7 @@
  */
 
 import type { Hono, Context } from "hono";
-import type { BrainHandle } from "#src/runtime/brain/index.js";
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { CAPTURE_TYPES } from "#src/runtime/capture/markers.js";
 import { shell, escapeHtml, fmtRelative, fmtTs, renderMarkdown } from "./shell.js";
 

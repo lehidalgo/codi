@@ -21,8 +21,9 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { PROJECT_DIR } from "#src/constants.js";
 
-export const DEFAULT_STATE_DIR = join(homedir(), ".codi", "security");
+export const DEFAULT_STATE_DIR = join(homedir(), PROJECT_DIR, "security");
 
 export function stateFilePath(sessionId: string, dir = DEFAULT_STATE_DIR): string {
   return join(dir, `state-${sessionId}.json`);

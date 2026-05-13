@@ -246,6 +246,7 @@ function tryGitShowHead(repoRoot: string, relPath: string): string | null {
       cwd: repoRoot,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
+      timeout: 10_000,
     });
   } catch {
     return null; // file new in working tree, or git unavailable

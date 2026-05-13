@@ -68,9 +68,10 @@ export async function generate(
 ): Promise<Result<GenerationResult>> {
   const agentIds = options.agents ?? config.manifest.agents ?? [];
 
-  // Phase 1: generate content for all agents (no I/O)
-  const agentOutputs: AgentOutput[] = [];
-
+  // Pre-validate every adapter is registered BEFORE dispatching parallel
+  // work. Fail fast with the canonical error shape — partial-success of
+  // some adapters while another is missing would be a confusing state.
+  const adapters: Array<{ agentId: string; adapter: ReturnType<typeof getAdapter> }> = [];
   for (const agentId of agentIds) {
     const adapter = getAdapter(agentId);
     if (!adapter) {
@@ -84,16 +85,24 @@ export async function generate(
         },
       ]);
     }
+    adapters.push({ agentId, adapter });
+  }
 
-    const generated = await adapter.generate(config, {
-      ...options,
-      projectRoot,
-    });
+  // Phase 1: generate content for all agents in parallel. Each adapter's
+  // `.generate()` is independent — scaffolder template loaders are
+  // module-level immutable maps; the only filesystem I/O here is the
+  // instruction-file read which targets different paths per adapter.
+  // `Promise.all` preserves input order, so `agentOutputs` ordering stays
+  // deterministic for downstream consumers (verification, status, hash).
+  const verifyData = buildVerificationData(config);
+  const verifySection = buildVerificationSection(verifyData);
 
-    const verifyData = buildVerificationData(config);
-    const verifySection = buildVerificationSection(verifyData);
-    for (const file of generated) {
-      if (file.path === adapter.paths.instructionFile) {
+  const agentOutputs: AgentOutput[] = await Promise.all(
+    adapters.map(async ({ agentId, adapter }) => {
+      const generated = await adapter!.generate(config, { ...options, projectRoot });
+
+      for (const file of generated) {
+        if (file.path !== adapter!.paths.instructionFile) continue;
         file.content = file.content + "\n\n" + verifySection;
 
         // Ensure the onboarding playbook/skill always has a deterministic
@@ -118,10 +127,10 @@ export async function generate(
 
         file.hash = hashContent(file.content);
       }
-    }
 
-    agentOutputs.push({ agentId, generated });
-  }
+      return { agentId, generated };
+    }),
+  );
 
   // Phase 2: write files (with conflict detection unless dry-run)
   const skipped: string[] = [];
@@ -130,28 +139,44 @@ export async function generate(
     const directWrites: GeneratedFile[] = [];
     const potentialConflicts: ConflictEntry[] = [];
 
-    for (const { generated } of agentOutputs) {
-      for (const file of generated) {
-        // Binary files are always copied without conflict checking
-        if (file.binarySrc) {
-          directWrites.push(file);
-          continue;
-        }
+    // Classification pass: read every existing file in parallel, then
+    // sort into directWrites vs potentialConflicts. The previous nested
+    // `for await` serialised hundreds of disk reads per generate run.
+    // File count is bounded (typically 150-900 across all adapters), so
+    // unbounded `Promise.all` is safe on default macOS / Linux fd limits
+    // — no `p-limit` dependency required at this scale.
+    type Classified =
+      | { kind: "direct"; file: GeneratedFile }
+      | { kind: "conflict"; entry: ConflictEntry };
 
-        const fullPath = join(projectRoot, file.path);
-        let existing: string | null = null;
-        try {
-          existing = await readFile(fullPath, "utf-8");
-        } catch {
-          // File does not exist yet
-        }
+    const classified: Classified[] = await Promise.all(
+      agentOutputs.flatMap(({ generated }) =>
+        generated.map(async (file): Promise<Classified> => {
+          // Binary files are always copied without conflict checking.
+          if (file.binarySrc) return { kind: "direct", file };
 
-        if (existing === null || existing.trim() === file.content.trim()) {
-          directWrites.push(file);
-        } else {
-          potentialConflicts.push(makeConflictEntry(file.path, fullPath, existing, file.content));
-        }
-      }
+          const fullPath = join(projectRoot, file.path);
+          let existing: string | null = null;
+          try {
+            existing = await readFile(fullPath, "utf-8");
+          } catch {
+            // File does not exist yet — falls through to direct write.
+          }
+
+          if (existing === null || existing.trim() === file.content.trim()) {
+            return { kind: "direct", file };
+          }
+          return {
+            kind: "conflict",
+            entry: makeConflictEntry(file.path, fullPath, existing, file.content),
+          };
+        }),
+      ),
+    );
+
+    for (const c of classified) {
+      if (c.kind === "direct") directWrites.push(c.file);
+      else potentialConflicts.push(c.entry);
     }
 
     await Promise.all(

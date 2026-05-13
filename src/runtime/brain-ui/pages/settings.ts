@@ -7,7 +7,7 @@ import type { Hono, Context } from "hono";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { BrainHandle } from "#src/runtime/brain/index.js";
+import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, BACKUPS_DIR } from "#src/constants.js";
 import { shell, escapeHtml, fmtRelative, fmtTs } from "./shell.js";
 

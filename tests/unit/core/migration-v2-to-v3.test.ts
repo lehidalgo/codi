@@ -5,8 +5,7 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { detectV2Layout, planMigration, formatPlan } from "#src/core/migration/index.js";
-
+import { detectV2Layout, planMigration, formatPlan } from "#src/core/migration/v2-to-v3.js";
 function tmpRepo(): { root: string; cleanup: () => void } {
   const root = mkdtempSync(join(tmpdir(), "codi-mig-"));
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };

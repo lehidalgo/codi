@@ -9,6 +9,7 @@ import type { Command } from "commander";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { getHook } from "../core/hooks/registry/index.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 export interface AddHookResult {
   added: boolean;
@@ -63,7 +64,7 @@ export function registerHooksAddCommand(program: Command): void {
         process.stderr.write("Bucket must be 'git' or 'runtime'.\n");
         process.exit(2);
       }
-      const statePath = join(process.cwd(), ".codi", "state", "state.json");
+      const statePath = join(process.cwd(), PROJECT_DIR, "state", "state.json");
       const r = addHookToState(bucket, name, statePath);
       if (!r.added) {
         process.stderr.write(`No change: ${r.reason}\n`);

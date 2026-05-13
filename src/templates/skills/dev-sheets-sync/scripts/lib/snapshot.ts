@@ -19,10 +19,12 @@
 import type { EntityName, SheetRow, ProjectConfig, SheetsClient } from "./index.js";
 import { ENTITY_NAMES, readTab } from "./index.js";
 
+import { PROJECT_DIR } from "./project-constants.js";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export const SNAPSHOT_VERSION = 1 as const;
-export const SNAPSHOT_DIR_RELATIVE = ".codi/snapshots" as const;
+export const SNAPSHOT_DIR_RELATIVE = `${PROJECT_DIR}/snapshots` as const;
 export const DEFAULT_SNAPSHOT_RETENTION = 20 as const;
 
 export interface SnapshotTab {

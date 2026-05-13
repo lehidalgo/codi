@@ -103,7 +103,7 @@ describe("codex adapter", () => {
     const agentsMd = files.find((f) => f.path === "AGENTS.md");
     expect(agentsMd).toBeDefined();
     expect(agentsMd!.content).toContain("Do NOT execute shell commands.");
-    expect(agentsMd!.content).toContain("Keep source code files under 700 lines.");
+    expect(agentsMd!.content).toContain("Keep source code files under 800 lines.");
     expect(agentsMd!.content).toContain("Code Style");
     expect(agentsMd!.content).toContain("Testing");
     expect(agentsMd!.hash).toBeTruthy();
@@ -333,7 +333,8 @@ describe("codex adapter", () => {
   });
 
   it("skips HTTP MCP servers (codex is stdio-only) and warns", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { Logger } = await import("#src/core/output/logger.js");
+    const warnSpy = vi.spyOn(Logger.getInstance(), "warn").mockImplementation(() => {});
     const config = createMockConfig({
       mcp: {
         servers: {

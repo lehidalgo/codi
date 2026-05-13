@@ -1,4 +1,5 @@
 import type { RuntimeHookArtifact, HookVerdict } from "#src/core/hooks/hook-artifact.js";
+import { MANAGED_BY_FRAMEWORK } from "#src/constants.js";
 
 const HOOK_NAME = "skill-tracker";
 
@@ -7,7 +8,7 @@ export const SKILL_TRACKER_HOOK: RuntimeHookArtifact = {
   name: HOOK_NAME,
   description: "Records active codi skills per session for self-improvement feedback.",
   version: "1",
-  managed_by: "codi",
+  managed_by: MANAGED_BY_FRAMEWORK,
   required: false,
   default: true,
   category: "observation",

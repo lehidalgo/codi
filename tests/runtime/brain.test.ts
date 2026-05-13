@@ -7,8 +7,8 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { openBrain, applyMigrations, CURRENT_SCHEMA_VERSION } from "#src/runtime/brain/index.js";
-
+import { openBrain } from "#src/runtime/brain/db.js";
+import { applyMigrations, CURRENT_SCHEMA_VERSION } from "#src/runtime/brain/migrate.js";
 function tmpDb(): { path: string; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), "codi-brain-"));
   return {
