@@ -101,7 +101,7 @@ describe("read", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.version).toBe("1");
+    expect(result.data.version).toBe("2");
     expect(result.data.initialized).toBeNull();
     expect(result.data.activePreset).toBeNull();
     expect(result.data.files.generated).toEqual([]);
@@ -112,7 +112,7 @@ describe("read", () => {
 
   it("reads and parses valid operations.json", async () => {
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: makeInit(),
       activePreset: makePreset(),
       files: {
@@ -159,7 +159,7 @@ describe("read", () => {
 describe("write", () => {
   it("writes data and reads it back correctly", async () => {
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: makeInit(),
       activePreset: makePreset(),
       files: {
@@ -184,7 +184,7 @@ describe("write", () => {
     const nestedManager = new OperationsLedgerManager(nestedDir);
 
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: null,
       activePreset: null,
       files: { generated: [], hooks: [], config: [] },
@@ -200,7 +200,7 @@ describe("write", () => {
 
   it("uses atomic write via temp file and rename", async () => {
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: null,
       activePreset: null,
       files: { generated: [], hooks: [], config: [] },

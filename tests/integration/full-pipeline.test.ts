@@ -332,7 +332,7 @@ describe("Operations Ledger Tracking", () => {
     await initHandler(tmpDir, { json: true, agents: ["claude-code"] });
     expect(await fileExists(ledgerPath)).toBe(true);
     const afterInit = JSON.parse(await fs.readFile(ledgerPath, "utf-8"));
-    expect(afterInit.version).toBe("1");
+    expect(afterInit.version).toBe("2");
     expect(afterInit.initialized).toBeDefined();
     expect(afterInit.initialized.agents).toContain("claude-code");
 

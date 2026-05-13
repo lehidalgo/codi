@@ -183,7 +183,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 13;
+export const CURRENT_SCHEMA_VERSION = 14;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -386,6 +386,25 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
          ON eval_runs(skill_name, ts DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_eval_runs_project_skill
          ON eval_runs(project_id, skill_name)`,
+    ],
+  ],
+  [
+    14,
+    [
+      // ISSUE-052 — actor attribution on corrections.
+      //
+      // The audit asked for actor_id on corrections and the
+      // operations-ledger so team-brain aggregation (ADR-005) can join
+      // events to the human or agent that produced them. The ledger is
+      // a JSON file and gains its `actor` field without a SQL migration
+      // (handled by the ledger writer + a schema version bump from "1"
+      // to "2"). corrections is SQL, so it gets an ALTER + index here.
+      //
+      // Format: `actor_id` stores `"<type>:<id>"` e.g. "human:user@x.com"
+      // or "agent:claude-code". Existing rows are NULL (pre-ISSUE-049
+      // they were also empty); aggregators must COALESCE.
+      `ALTER TABLE corrections ADD COLUMN actor_id TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_corrections_actor ON corrections(actor_id)`,
     ],
   ],
 ];
