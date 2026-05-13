@@ -10,6 +10,7 @@ import {
   PreToolUsePayloadSchema,
   PostToolUsePayloadSchema,
   StopPayloadSchema,
+  safeParseHookPayload,
 } from "#src/schemas/hook-events.js";
 
 describe("UserPromptSubmitPayloadSchema", () => {
@@ -53,5 +54,18 @@ describe("StopPayloadSchema", () => {
   it("accepts session_id + cwd", () => {
     const r = StopPayloadSchema.safeParse({ session_id: "s1", cwd: "/tmp" });
     expect(r.success).toBe(true);
+  });
+});
+
+describe("safeParseHookPayload", () => {
+  it("returns the typed payload on success", () => {
+    const got = safeParseHookPayload(StopPayloadSchema, { session_id: "abc" }, "stop");
+    expect(got).not.toBeNull();
+    expect(got?.session_id).toBe("abc");
+  });
+
+  it("returns null on schema validation failure (writes to stderr)", () => {
+    const got = safeParseHookPayload(StopPayloadSchema, { session_id: 123 }, "stop");
+    expect(got).toBeNull();
   });
 });
