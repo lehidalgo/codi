@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
 import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
 describe("agent scaffolder", () => {
   let tmpDir: string;

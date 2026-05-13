@@ -86,7 +86,7 @@ for (const file of files) {
 
       findings.push({ file, line: i + 1, text: line.trim().substring(0, 80) });
     }
-  } catch {}
+  } catch { /* unreadable file — skip it, do not block the commit on tooling noise */ }
 }
 if (findings.length > 0) {
   for (const f of findings) {
@@ -131,7 +131,7 @@ for (const file of files) {
       console.error(\`\${file}: \${lines} lines (max: \${maxLines})\`);
       failed = true;
     }
-  } catch {}
+  } catch { /* unreadable file — skip it; LOC guard does not need to block on transient FS errors */ }
 }
 if (failed) {
   console.error(\`
@@ -367,7 +367,7 @@ if (fs.existsSync(tmplSkillsDir)) {
 
     const indexFile = path.join(skillTemplateDir, 'index.ts');
     let hasStatic = false;
-    try { hasStatic = fs.readFileSync(indexFile, 'utf-8').includes('staticDir'); } catch {}
+    try { hasStatic = fs.readFileSync(indexFile, 'utf-8').includes('staticDir'); } catch { /* skill has no index.ts — assume no static dir declared */ }
 
     // Check template.ts and all *.md files under the skill template directory
     const filesToCheck = [{ file: tmplFile, isTemplate: true }, ...collectMdFiles(skillTemplateDir).map(f => ({ file: f, isTemplate: false }))];

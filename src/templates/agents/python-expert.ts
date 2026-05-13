@@ -7,6 +7,7 @@ tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 version: 1
+maintainers: ["@lehidalgo"]
 ---
 
 You are a Senior Python Developer and Performance Architect with deep expertise in Python concurrency, optimization, and production-grade systems.

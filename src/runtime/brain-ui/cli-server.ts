@@ -12,7 +12,7 @@
 
 import { serve } from "@hono/node-server";
 import { buildApp } from "./server.js";
-import { DEFAULT_BRAIN_UI_PORT, writePidfile, clearPidfile } from "./lifecycle.js";
+import { resolveDefaultBrainUiPort, writePidfile, clearPidfile } from "./lifecycle.js";
 import { Logger } from "#src/core/output/logger.js";
 
 interface ParsedArgs {
@@ -22,8 +22,9 @@ interface ParsedArgs {
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
+  // ISSUE-084 — env override has lower precedence than explicit --port.
   const args: ParsedArgs = {
-    port: DEFAULT_BRAIN_UI_PORT,
+    port: resolveDefaultBrainUiPort(),
     brainPath: undefined,
     foreground: false,
   };

@@ -14,6 +14,7 @@
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
 
 import type { SheetRow, EntityName, CallerScope } from "./types.js";
 
@@ -101,5 +102,5 @@ export function buildQueueId(entity: EntityName, row: SheetRow): string {
 }
 
 function shortRandom(): string {
-  return Math.random().toString(36).slice(2, 8);
+  return randomUUID().replace(/-/g, "").slice(0, 6);
 }

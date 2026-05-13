@@ -20,6 +20,24 @@ import { execFileSync, execSync } from 'child_process';
 
 const hooks = {{HOOKS_JSON}};
 
+// ISSUE-064 — defense in depth. Hooks ship from a generated config, but a
+// tampered .git/hooks/pre-commit (or a malicious local override) could
+// smuggle shell metacharacters here. Reject obviously dangerous shapes:
+// chained commands, command substitution, and redirection. The legitimate
+// hook commands (e.g. \`prettier --write\`, \`pnpm test\`) all clear this
+// filter. Allowlist mode would require an exhaustive enumeration of every
+// flag combination a tool can take, so denylist + timeout is the realistic
+// balance.
+const SHELL_FORBIDDEN_TOKENS = [';', '&&', '||', '|&', '\`', '$(', '<(', '>(', '&>', '>>'];
+function looksLikeSafeShellCommand(cmd) {
+  if (typeof cmd !== 'string') return false;
+  if (cmd.length === 0 || cmd.length > 4096) return false;
+  for (const tok of SHELL_FORBIDDEN_TOKENS) {
+    if (cmd.includes(tok)) return false;
+  }
+  return true;
+}
+
 /** Convert a HookSpec.files glob (e.g. **\\/*.{ts,tsx}) to a JS RegExp, or null if no recognizable extension pattern. */
 function globToRegex(glob) {
   if (!glob) return null;
@@ -45,9 +63,9 @@ function shellQuote(p) {
 function hasTool(bin) {
   if (!bin) return true;
   try { execFileSync('command', ['-v', bin], { stdio: 'ignore', shell: true }); return true; }
-  catch {}
+  catch { /* probe: tool not on PATH, fall through to local-bin check */ }
   try { execFileSync('test', ['-f', './node_modules/.bin/' + bin], { stdio: 'ignore', shell: true }); return true; }
-  catch {}
+  catch { /* probe: not installed locally either, hasTool returns false */ }
   return false;
 }
 
@@ -62,7 +80,11 @@ for (const hook of hooks) {
 
   const shell = hook.shell || {};
   const cmd = shell.command;
-  if (typeof cmd !== 'string' || cmd.length === 0) continue;
+  if (!looksLikeSafeShellCommand(cmd)) {
+    console.error(\`  ✗ BLOCKING — hook '\${hook.name || '<unnamed>'}' has a disallowed shell command shape (contains shell metacharacters or exceeds 4096 chars). Aborting commit.\`);
+    exitCode = 1;
+    continue;
+  }
 
   const passFiles = shell.passFiles !== false; // default true
   const modifiesFiles = shell.modifiesFiles === true;
@@ -107,7 +129,9 @@ for (const hook of hooks) {
   }
 
   try {
-    execSync(finalCmd, { stdio: 'inherit' });
+    // ISSUE-064: cap per-hook duration so a runaway formatter / test never
+    // pins the commit. 120s covers reasonable lint/test pre-commit work.
+    execSync(finalCmd, { stdio: 'inherit', timeout: 120_000 });
     if (modifiesFiles) {
       const toRestage = isGlobal ? allStaged : matched;
       if (toRestage.length > 0) {

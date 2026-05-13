@@ -89,9 +89,15 @@ export function shell(opts: ShellOptions, body: string): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title} — codi brain</title>
+  <!-- Tailwind play CDN is a JIT compiler (no SRI possible). The
+       brain-ui only listens on loopback so the CDN call never crosses
+       trust boundaries in normal operation. ISSUE-061 vendored the two
+       JS deps it can; Tailwind remains the only remote fetch. -->
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-  <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <!-- ISSUE-061: htmx + alpine served from /static/ to remove the unpkg.com
+       supply-chain dependency and enable offline brain-ui use. -->
+  <script defer src="/static/htmx.min.js"></script>
+  <script defer src="/static/alpine.min.js"></script>
   <style>
     [x-cloak] { display: none !important; }
     .prose pre { background:#0f172a; color:#e2e8f0; padding:0.75rem; border-radius:0.375rem; overflow-x:auto; font-size:0.8125rem; line-height:1.5; }

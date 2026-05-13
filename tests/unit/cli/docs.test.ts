@@ -85,7 +85,7 @@ describe("registerDocsCommand", () => {
     expect(docsCmd!.description()).toBe("Generate and validate documentation");
     const optionNames = docsCmd!.options.map((o) => o.long);
     expect(optionNames).toEqual(
-      expect.arrayContaining(["--json", "--generate", "--validate", "--catalog"]),
+      expect.arrayContaining(["--catalog-json", "--generate", "--validate", "--catalog"]),
     );
   });
 });

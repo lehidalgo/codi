@@ -171,6 +171,10 @@ export function openBrain(opts: OpenBrainOptions = {}): BrainHandle {
   raw.pragma("journal_mode = WAL");
   raw.pragma("foreign_keys = ON");
   raw.pragma("synchronous = NORMAL");
+  // ISSUE-060: cap lock wait so the brain-ui server never hangs an HTTP
+  // request indefinitely when a writer is holding the WAL checkpoint.
+  // 5s matches the rest of the brain-ui request budget (see ISSUE-082 SSE).
+  raw.pragma("busy_timeout = 5000");
   // DEFECT-007 fix: better-sqlite3 enables SQLITE_DBCONFIG_DEFENSIVE by
   // default, which blocks the FTS5 contentless-sync command
   // (`INSERT INTO prompts_fts(prompts_fts, ...) VALUES('delete', ...)`)

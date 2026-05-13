@@ -6,18 +6,21 @@ import { createError } from "../output/errors.js";
 import type { HookSetup } from "./hook-detector.js";
 import type { HookEntry } from "./hook-registry.js";
 import type { ResolvedFlags } from "#src/types/flags.js";
-import { RUNNER_TEMPLATE } from "./runner-template.js";
 import {
-  SECRET_SCAN_TEMPLATE,
-  FILE_SIZE_CHECK_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
-  TEMPLATE_WIRING_CHECK_TEMPLATE,
   DOC_NAMING_CHECK_TEMPLATE,
-  ARTIFACT_VALIDATE_TEMPLATE,
   SKILL_RESOURCE_CHECK_TEMPLATE,
   SKILL_PATH_WRAP_CHECK_TEMPLATE,
-  STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import {
+  buildRunnerScript,
+  buildSecretScanScript,
+  buildFileSizeScript,
+  buildTemplateWiringScript,
+  buildArtifactValidateScript,
+  buildVersionBumpScript,
+  buildStagedJunkCheckScript,
+} from "./hook-installer-scripts.js";
 import { CONFLICT_MARKER_CHECK_TEMPLATE } from "./conflict-marker-template.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
 import { renderShellHooks } from "./renderers/shell-renderer.js";
@@ -27,9 +30,7 @@ import {
   IMPORT_DEPTH_CHECK_TEMPLATE,
   SKILL_YAML_VALIDATE_TEMPLATE,
 } from "./hook-policy-templates.js";
-import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
 import { VERSION_VERIFY_PRE_PUSH_TEMPLATE } from "./version-verify-pre-push-template.js";
-import { buildVendoredDirsTemplatePatterns } from "./exclusions.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import {
@@ -83,39 +84,6 @@ export interface InstallOptions {
  * pre-push and commit-msg specs do not leak into the pre-commit runner.
  * (The runner also filters at runtime as defense-in-depth.)
  */
-function buildRunnerScript(hooks: HookEntry[]): string {
-  const preCommitHooks = hooks.filter((h) => h.stages.includes("pre-commit"));
-  const hooksJson = JSON.stringify(preCommitHooks, null, 2);
-  return RUNNER_TEMPLATE.replace("{{HOOKS_JSON}}", hooksJson);
-}
-
-function buildSecretScanScript(): string {
-  return SECRET_SCAN_TEMPLATE;
-}
-
-function buildFileSizeScript(maxLines: number): string {
-  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines)).replace(
-    "{{VENDORED_DIRS_PATTERNS}}",
-    buildVendoredDirsTemplatePatterns(),
-  );
-}
-
-function buildTemplateWiringScript(): string {
-  return TEMPLATE_WIRING_CHECK_TEMPLATE;
-}
-
-function buildArtifactValidateScript(): string {
-  return ARTIFACT_VALIDATE_TEMPLATE;
-}
-
-function buildVersionBumpScript(): string {
-  return VERSION_BUMP_TEMPLATE;
-}
-
-function buildStagedJunkCheckScript(): string {
-  return STAGED_JUNK_CHECK_TEMPLATE;
-}
-
 async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
   const files: string[] = [];
   if (options.secretScan) {
@@ -204,7 +172,7 @@ async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): 
   }
   if (options.stagedJunkCheck) {
     const junkCheckPath = path.join(hookDir, `${PROJECT_NAME}-staged-junk-check.mjs`);
-    await fs.writeFile(junkCheckPath, STAGED_JUNK_CHECK_TEMPLATE, {
+    await fs.writeFile(junkCheckPath, buildStagedJunkCheckScript(), {
       encoding: "utf-8",
       mode: 0o755,
     });

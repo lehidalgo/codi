@@ -5,6 +5,14 @@ import type { ProjectManifest } from "#src/types/config.js";
 import type { HookCategory, HookSpec, HookStage } from "./hook-spec.js";
 import type { HookEntry } from "./hook-registry.js";
 import { getHooksForLanguage, getDoctorHook, getGlobalHooks } from "./hook-registry.js";
+import {
+  selectedPythonTypeChecker,
+  selectedJsFormatLint,
+  selectedCommitTypeCheck,
+  isPythonTypeCheckerSelected,
+  isJsToolchainSelected,
+  assertAutoResolved,
+} from "./hook-config-toolchain.js";
 
 /**
  * Construct a HookSpec for a Codi-internal `.mjs` check that lives in
@@ -469,74 +477,7 @@ function isTestBeforeCommitEnabled(flags: ResolvedFlags): boolean {
  * point with `"auto"` means a caller forgot the resolver — fail loud so the
  * test suite catches it instead of silently returning the wrong default.
  */
-function assertAutoResolved(flagName: string): never {
-  throw new Error(
-    `Flag '${flagName}' has unresolved 'auto' value — call resolveAutoFlags(projectRoot, flags) before generateHooksConfig (see src/core/hooks/auto-detection.ts).`,
-  );
-}
-
-/** Resolve the python_type_checker flag value. Throws on unresolved 'auto'. */
-function selectedPythonTypeChecker(
-  flags: ResolvedFlags,
-): "mypy" | "basedpyright" | "pyright" | "off" {
-  const f = flags["python_type_checker"];
-  if (!f || f.mode === "disabled") return "basedpyright";
-  if (f.value === "auto") assertAutoResolved("python_type_checker");
-  return f.value as "mypy" | "basedpyright" | "pyright" | "off";
-}
-
-/** Resolve the js_format_lint flag value. Throws on unresolved 'auto'. */
-function selectedJsFormatLint(flags: ResolvedFlags): "eslint-prettier" | "biome" | "off" {
-  const f = flags["js_format_lint"];
-  if (!f || f.mode === "disabled") return "eslint-prettier";
-  if (f.value === "auto") assertAutoResolved("js_format_lint");
-  return f.value as "eslint-prettier" | "biome" | "off";
-}
-
-/** Resolve the commit_type_check flag value. Throws on unresolved 'auto'. */
-function selectedCommitTypeCheck(flags: ResolvedFlags): "on" | "off" {
-  const f = flags["commit_type_check"];
-  if (!f || f.mode === "disabled") return "off";
-  if (f.value === "auto") assertAutoResolved("commit_type_check");
-  return f.value as "on" | "off";
-}
-
-/**
- * Filter Python type checker hooks by the user's python_type_checker flag.
- * Only the selected checker survives; the others are dropped from the spec
- * list. Non-Python hooks pass through unchanged.
- */
-function isPythonTypeCheckerSelected(
-  hookName: string,
-  selected: "mypy" | "basedpyright" | "pyright" | "off",
-): boolean {
-  const isPyChecker = hookName === "mypy" || hookName === "basedpyright" || hookName === "pyright";
-  if (!isPyChecker) return true;
-  if (selected === "off") return false;
-  return hookName === selected;
-}
-
-/**
- * Filter JS/TS lint+format hooks by the user's js_format_lint flag.
- * - 'eslint-prettier' keeps eslint + prettier, drops biome.
- * - 'biome' keeps biome, drops eslint + prettier.
- * - 'off' drops all three.
- * Hooks outside the JS/TS lint+format set (tsc, etc.) pass through unchanged.
- */
-function isJsToolchainSelected(
-  hook: HookSpec,
-  selected: "eslint-prettier" | "biome" | "off",
-): boolean {
-  const isEslintPrettier =
-    (hook.language === "typescript" || hook.language === "javascript") &&
-    (hook.name === "eslint" || hook.name === "prettier");
-  const isBiome =
-    (hook.language === "typescript" || hook.language === "javascript") && hook.name === "biome";
-  if (!isEslintPrettier && !isBiome) return true;
-  if (selected === "off") return false;
-  if (selected === "biome") return isBiome;
-  return isEslintPrettier; // 'eslint-prettier'
-}
+// Toolchain decision helpers extracted to ./hook-config-toolchain.ts (ISSUE-067).
 
 // Pre-commit test command for npm projects:
 // If the project defines a "test:pre-commit" script in package.json, run it

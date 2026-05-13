@@ -12,8 +12,15 @@ import { initFromOptions, handleOutput } from "./shared.js";
 import {
   resolveAttachOrSpawn,
   DEFAULT_BRAIN_UI_PORT,
+  resolveDefaultBrainUiPort,
   probeHealthz,
 } from "#src/runtime/brain-ui/lifecycle.js";
+import {
+  brainExportForTeamHandler,
+  brainTeamCheckHandler,
+  type BrainExportForTeamFlags,
+  type BrainTeamCheckFlags,
+} from "./brain-team.js";
 import { openBrain } from "#src/runtime/brain/db.js";
 import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { recordEvalRun, type EvalRunRecord } from "#src/runtime/brain/eval-runs.js";
@@ -69,7 +76,8 @@ interface BrainUiFlags {
 
 export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult<BrainUiData>> {
   const log = Logger.getInstance();
-  const port = flags.port ? Number(flags.port) : DEFAULT_BRAIN_UI_PORT;
+  // ISSUE-084 — env override (CODI_BRAIN_UI_PORT) wins when --port is absent.
+  const port = flags.port ? Number(flags.port) : resolveDefaultBrainUiPort();
   // Foreground is the default — user runs `codi brain ui` and the terminal
   // stays attached until they Ctrl+C. Pass `--background` for the legacy
   // detached-daemon behavior.
@@ -588,6 +596,32 @@ export function registerBrainCommand(program: Command): void {
       const globalOpts = program.opts() as GlobalOptions;
       initFromOptions(globalOpts);
       const result = await recordEvalRunHandler(opts);
+      handleOutput(result, globalOpts);
+    });
+
+  brain
+    .command("export-for-team")
+    .description(
+      "ISSUE-055 — copy this dev's brain.db into <to>/<actor_slug>/brain.db so a team lead can drop it next to the others for a team-consolidation run.",
+    )
+    .requiredOption("--to <path>", "destination directory")
+    .option("--brain-path <path>", "override brain DB path")
+    .action(async (opts: BrainExportForTeamFlags) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result = await brainExportForTeamHandler(opts);
+      handleOutput(result, globalOpts);
+    });
+
+  brain
+    .command("team-check <dir>")
+    .description(
+      "ISSUE-055 — validate every brain.db under <dir> before running `codi run team-consolidation`. Mirrors phase-collect.md so gates fire on a clean corpus.",
+    )
+    .action(async (dir: string) => {
+      const globalOpts = program.opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result = await brainTeamCheckHandler({ dir } satisfies BrainTeamCheckFlags);
       handleOutput(result, globalOpts);
     });
 

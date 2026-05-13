@@ -36,6 +36,7 @@ import {
   type DraftEnvelope,
   type Snapshot,
 } from "./index.js";
+import { randomUUID } from "node:crypto";
 import { tabRange, type AppendRowRequest, type UpdateRangeRequest } from "./client.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -301,7 +302,7 @@ export async function restoreFromSnapshot(
       tabA1: tabRange("Audit"),
       values: [
         [
-          `aud_${Math.random().toString(36).slice(2, 10)}`,
+          `aud_${randomUUID().replace(/-/g, "").slice(0, 8)}`,
           "tab_restored_from_snapshot",
           entity,
           snapshot.taken_by,

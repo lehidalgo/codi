@@ -110,20 +110,22 @@ describe("per-schema wrappers", () => {
   it("renderRuleFields matches RuleFrontmatterSchema field count", () => {
     const result = renderRuleFields();
     const dataRows = result.split("\n").slice(2); // skip header + separator
-    expect(dataRows.length).toBe(9);
+    // 9 baseline fields + 1 maintainers (ISSUE-056)
+    expect(dataRows.length).toBe(10);
   });
 
   it("renderSkillFields matches SkillFrontmatterSchema field count", () => {
     const result = renderSkillFields();
     const dataRows = result.split("\n").slice(2);
-    expect(dataRows.length).toBe(21);
+    // 21 baseline fields + 1 maintainers (ISSUE-056)
+    expect(dataRows.length).toBe(22);
   });
 
   it("renderAgentFields matches AgentFrontmatterSchema field count", () => {
     const result = renderAgentFields();
     const dataRows = result.split("\n").slice(2);
-    // 9 original fields + 7 CC-specific fields (permissionMode, mcpServers, skills, memory, background, isolation, color)
-    expect(dataRows.length).toBe(16);
+    // 9 original + 7 CC-specific + 1 maintainers (ISSUE-056)
+    expect(dataRows.length).toBe(17);
   });
 
   it("renderManifestFields includes nested fields with dot notation", () => {

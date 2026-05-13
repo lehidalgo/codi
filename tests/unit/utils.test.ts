@@ -1,14 +1,10 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
 import os from "node:os";
-import {
-  resolveProjectDir,
-  resolveUserDir,
-  normalizePath,
-} from "../../src/utils/paths.js";
-import { hashContent } from "../../src/utils/hash.js";
-import { parseFrontmatter } from "../../src/utils/frontmatter.js";
-import { PROJECT_DIR } from "../../src/constants.js";
+import { resolveProjectDir, resolveUserDir, normalizePath } from "#src/utils/paths.js";
+import { hashContent } from "#src/utils/hash.js";
+import { parseFrontmatter } from "#src/utils/frontmatter.js";
+import { PROJECT_DIR } from "#src/constants.js";
 
 describe("resolveProjectDir", () => {
   it(`returns ${PROJECT_DIR} inside project root`, () => {
@@ -54,9 +50,7 @@ name: my-rule
 description: A rule
 ---
 Rule content here`;
-    const result = parseFrontmatter<{ name: string; description: string }>(
-      input,
-    );
+    const result = parseFrontmatter<{ name: string; description: string }>(input);
     expect(result.data.name).toBe("my-rule");
     expect(result.data.description).toBe("A rule");
     expect(result.content).toBe("Rule content here");

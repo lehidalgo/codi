@@ -11,6 +11,9 @@
 
 import { Hono } from "hono";
 import type { Context, Hono as HonoApp } from "hono";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join, resolve } from "node:path";
 import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
 import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { registerApiRoutes } from "./routes-api.js";
@@ -34,12 +37,25 @@ export interface AppHandle {
  */
 export function buildApp(opts: BuildAppOptions = {}): AppHandle {
   const brain = openBrain({ dbPath: opts.brainPath, readonly: false });
-  // Migrate is idempotent — running it on attach is safe.
+  // Migrate is idempotent — running it on attach is safe. busy_timeout is
+  // set inside openBrain (ISSUE-060).
   applyMigrations(brain.raw);
-  // Bound the time we wait for SQLite locks rather than hanging forever.
-  brain.raw.pragma("busy_timeout = 5000");
 
   const app = new Hono();
+
+  // ISSUE-061: serve vendored htmx + alpine from `/static/` instead of
+  // pulling them from unpkg.com. Resolves htmx.min.js / alpine.min.js from
+  // dist/static/ (production) or node_modules (dev). The handler is
+  // strictly read-only and only resolves a closed allowlist of files.
+  const STATIC_FILES = resolveStaticFiles();
+  app.get("/static/:file", (c: Context) => {
+    const file = c.req.param("file");
+    const fsPath = file ? STATIC_FILES.get(file) : undefined;
+    if (!fsPath) return c.notFound();
+    return new Response(readFileSync(fsPath), {
+      headers: { "content-type": "application/javascript; charset=utf-8" },
+    });
+  });
 
   // Origin guard for state-changing /api/v1/* requests (ISSUE-009).
   //
@@ -88,4 +104,26 @@ export function buildApp(opts: BuildAppOptions = {}): AppHandle {
     brain,
     close: () => brain.close(),
   };
+}
+
+/**
+ * Build the allowlist of `/static/<file>` → absolute fs path. Production
+ * resolves files alongside the compiled brain-ui-server.js bundle in
+ * `dist/static/`. Dev (running `tsx src/runtime/brain-ui/cli-server.ts`)
+ * walks up to the repo root and resolves files from `node_modules`.
+ */
+function resolveStaticFiles(): Map<string, string> {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const distStatic = join(here, "static");
+  if (existsSync(join(distStatic, "htmx.min.js"))) {
+    return new Map([
+      ["htmx.min.js", join(distStatic, "htmx.min.js")],
+      ["alpine.min.js", join(distStatic, "alpine.min.js")],
+    ]);
+  }
+  const repoRoot = resolve(here, "..", "..", "..");
+  return new Map([
+    ["htmx.min.js", join(repoRoot, "node_modules/htmx.org/dist/htmx.min.js")],
+    ["alpine.min.js", join(repoRoot, "node_modules/alpinejs/dist/cdn.min.js")],
+  ]);
 }

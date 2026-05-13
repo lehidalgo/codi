@@ -6,6 +6,7 @@
 
 import type { Hono, Context } from "hono";
 import type { BrainHandle } from "#src/runtime/brain/db.js";
+import { quoteFtsPhrase } from "#src/runtime/brain/fts5.js";
 import { CAPTURE_TYPES } from "#src/runtime/capture/markers.js";
 import { shell, escapeHtml, fmtRelative, fmtTs, renderMarkdown } from "./shell.js";
 
@@ -51,11 +52,13 @@ function listCaptures(brain: BrainHandle, f: ListFilters): CaptureRow[] {
     params.push(f.session);
   }
   if (f.q) {
-    // Use FTS5 if a search is provided. Fallback to LIKE on no-match.
+    // ISSUE-060: quote-wrap user input so FTS5 treats it as a literal phrase.
+    // Without this, special tokens (AND/OR/NOT, parens, *, -) either trigger
+    // syntax errors or trigger unintended boolean semantics.
     where.push(
       "c.capture_id IN (SELECT rowid FROM captures_fts WHERE captures_fts MATCH ? ORDER BY rank)",
     );
-    params.push(f.q);
+    params.push(quoteFtsPhrase(f.q));
   }
   const sql = `
     SELECT c.capture_id, c.ts, c.type, c.content, c.session_id,

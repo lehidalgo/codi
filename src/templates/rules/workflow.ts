@@ -6,7 +6,8 @@ description: Human-in-the-loop workflow — baby steps, self-evaluation, MCP-fir
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 3
+version: 4
+maintainers: ["@lehidalgo"]
 ---
 
 # Workflow

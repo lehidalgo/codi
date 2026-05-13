@@ -6,7 +6,8 @@ description: Simplicity-first development — avoid over-engineering, prefer dir
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Simplicity First

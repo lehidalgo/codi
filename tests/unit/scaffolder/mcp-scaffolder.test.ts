@@ -5,7 +5,7 @@ import os from "node:os";
 import { parse as parseYaml } from "yaml";
 import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
 describe("mcp scaffolder", () => {
   let tmpDir: string;

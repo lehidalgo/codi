@@ -13,7 +13,7 @@
 
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { PROJECT_DIR } from "#src/constants.js";
+import { PROJECT_DIR, MANIFEST_FILENAME, ARTIFACT_MANIFEST_FILENAME } from "#src/constants.js";
 
 export interface V2DetectionResult {
   readonly isV2: boolean;
@@ -43,13 +43,15 @@ export function detectV2Layout(repoRoot: string): V2DetectionResult {
     };
   }
 
-  const manifestPath = resolve(codiDir, "artifact-manifest.json");
-  const yamlPath = resolve(codiDir, "codi.yaml");
+  // ISSUE-079: route file names through constants so the .codi/<manifest>
+  // pair has one source of truth across migration + scaffolders.
+  const manifestPath = resolve(codiDir, ARTIFACT_MANIFEST_FILENAME);
+  const yamlPath = resolve(codiDir, MANIFEST_FILENAME);
   const hasManifest = existsSync(manifestPath);
   const hasYaml = existsSync(yamlPath);
 
-  if (!hasManifest) warnings.push("missing .codi/artifact-manifest.json");
-  if (!hasYaml) warnings.push("missing .codi/codi.yaml");
+  if (!hasManifest) warnings.push(`missing ${PROJECT_DIR}/${ARTIFACT_MANIFEST_FILENAME}`);
+  if (!hasYaml) warnings.push(`missing ${PROJECT_DIR}/${MANIFEST_FILENAME}`);
 
   const counts = { rules: 0, skills: 0, agents: 0 };
   if (hasManifest) {
@@ -65,7 +67,7 @@ export function detectV2Layout(repoRoot: string): V2DetectionResult {
         else if (t === "agent") counts.agents++;
       }
     } catch {
-      warnings.push("artifact-manifest.json is not valid JSON");
+      warnings.push(`${ARTIFACT_MANIFEST_FILENAME} is not valid JSON`);
     }
   }
 

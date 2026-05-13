@@ -22,6 +22,7 @@ import type {
   CallerScope,
   CellValue,
 } from "./types.js";
+import { randomUUID } from "node:crypto";
 import { SheetsError, allowedZones, zoneOf } from "./types.js";
 import { validatePartialRow, validateFullRow, nextId, isValidId } from "./schema.js";
 import {
@@ -456,7 +457,7 @@ function headersToRow(
 }
 
 function cryptoRandom(): string {
-  return Math.random().toString(36).slice(2, 10);
+  return randomUUID().replace(/-/g, "").slice(0, 8);
 }
 
 /**

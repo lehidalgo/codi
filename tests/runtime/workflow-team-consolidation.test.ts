@@ -6,7 +6,7 @@ describe("team-consolidation workflow YAML", () => {
     const defs = readBuiltinDefinitions();
     const tc = defs.find((d) => d.id === "team-consolidation");
     expect(tc).toBeDefined();
-    expect(tc!.version).toBe(1);
+    expect(tc!.version).toBe(2);
     expect(Object.keys(tc!.phases).sort()).toEqual([
       "abandoned",
       "analyze",

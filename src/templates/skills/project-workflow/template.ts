@@ -19,7 +19,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}}

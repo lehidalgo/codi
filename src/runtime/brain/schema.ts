@@ -38,9 +38,12 @@ export const sessions = sqliteTable(
     workflowId: text("workflow_id"),
     totalTurns: integer("total_turns").default(0),
     totalCaptureCount: integer("total_capture_count").default(0),
+    // ISSUE-053 — cross-team aggregation key (ADR-005). NULL = solo / untagged.
+    teamId: text("team_id"),
   },
   (t) => ({
     idxProjectStarted: index("idx_sessions_project_started").on(t.projectId, t.startedAt),
+    idxTeamStarted: index("idx_sessions_team_started").on(t.teamId, t.startedAt),
   }),
 );
 
@@ -84,11 +87,14 @@ export const captures = sqliteTable(
     workflowId: text("workflow_id"),
     phase: text("phase"),
     deletedAt: integer("deleted_at"), // soft delete; null = visible
+    // ISSUE-053 — cross-team aggregation key (ADR-005). NULL = solo / untagged.
+    teamId: text("team_id"),
   },
   (t) => ({
     idxTypeSession: index("idx_captures_type_session").on(t.type, t.sessionId),
     idxSessionTs: index("idx_captures_session_ts").on(t.sessionId, t.ts),
     idxDeletedAt: index("idx_captures_deleted_at").on(t.deletedAt),
+    idxTeamTs: index("idx_captures_team_ts").on(t.teamId, t.ts),
   }),
 );
 
@@ -199,9 +205,12 @@ export const workflowRuns = sqliteTable(
     startedAt: integer("started_at").notNull(),
     endedAt: integer("ended_at"),
     metadata: text("metadata"), // JSON: scope_files, gates_passed, flags
+    // ISSUE-053 — cross-team aggregation key (ADR-005). NULL = solo / untagged.
+    teamId: text("team_id"),
   },
   (t) => ({
     idxProjectStatus: index("idx_workflow_runs_project_status").on(t.projectId, t.status),
+    idxTeamStatus: index("idx_workflow_runs_team_status").on(t.teamId, t.status),
   }),
 );
 

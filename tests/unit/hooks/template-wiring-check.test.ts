@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { PROJECT_NAME } from "#src/constants.js";
 import { TEMPLATE_WIRING_CHECK_TEMPLATE } from "#src/core/hooks/hook-templates.js";
 import { buildTemplateWiringScript } from "#src/core/hooks/hook-installer.js";

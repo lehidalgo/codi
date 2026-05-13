@@ -7,6 +7,7 @@ tools: [Read, Write, Edit, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 version: 1
+maintainers: ["@lehidalgo"]
 ---
 
 You are a refactoring agent. Safely remove dead code, consolidate duplicates, and simplify implementations while preserving all existing behavior.

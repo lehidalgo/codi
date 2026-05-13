@@ -11,7 +11,8 @@ description: |
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 5
+version: 6
+maintainers: ["@lehidalgo"]
 ---
 
 # Capture Everything (Iron Law 9)

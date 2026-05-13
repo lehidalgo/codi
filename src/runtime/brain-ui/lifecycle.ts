@@ -13,6 +13,27 @@ import { PROJECT_DIR } from "#src/constants.js";
 
 export const DEFAULT_BRAIN_UI_PORT = 4477;
 
+/**
+ * ISSUE-084 — resolve the effective default port for brain-ui.
+ *
+ * Precedence:
+ *   1. `CODI_BRAIN_UI_PORT` env var (CI overrides, parallel test workers,
+ *      conflicting local apps on 4477)
+ *   2. `DEFAULT_BRAIN_UI_PORT` constant
+ *
+ * Invalid env values (non-numeric, out of [1, 65535]) fall back to the
+ * constant rather than throwing — brain-ui boot must never block on a
+ * malformed env. The CLI `--port` flag still wins over both via explicit
+ * `port: number` overrides at the call site.
+ */
+export function resolveDefaultBrainUiPort(): number {
+  const raw = process.env["CODI_BRAIN_UI_PORT"];
+  if (!raw || raw.length === 0) return DEFAULT_BRAIN_UI_PORT;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > 65535) return DEFAULT_BRAIN_UI_PORT;
+  return n;
+}
+
 export function defaultPidfilePath(): string {
   return resolve(homedir(), PROJECT_DIR, "brain-ui.pid");
 }

@@ -4,12 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { PROJECT_NAME } from "#src/constants.js";
-import {
-  readEvals,
-  writeEvals,
-  updateEvalResult,
-  getEvalsSummary,
-} from "#src/core/skill/evals-manager.js";
+import { readEvals, writeEvals, getEvalsSummary } from "#src/core/skill/evals-manager.js";
 import type { EvalsData } from "#src/schemas/evals.js";
 
 let tmpDir: string;
@@ -108,30 +103,8 @@ describe("writeEvals", () => {
   });
 });
 
-describe("updateEvalResult", () => {
-  it("updates an existing eval case", async () => {
-    const skillDir = path.join(tmpDir, "update");
-    await writeEvals(skillDir, makeEvalsData({ skillName: "update" }));
-
-    const result = await updateEvalResult(skillDir, "c1", true);
-    expect(result.ok).toBe(true);
-
-    const readResult = await readEvals(skillDir);
-    if (readResult.ok) {
-      const c1 = readResult.data.cases.find((c) => c.id === "c1");
-      expect(c1?.passed).toBe(true);
-      expect(c1?.lastRunAt).toBeDefined();
-    }
-  });
-
-  it("returns error for non-existent eval case", async () => {
-    const skillDir = path.join(tmpDir, "missing");
-    await writeEvals(skillDir, makeEvalsData({ skillName: "missing" }));
-
-    const result = await updateEvalResult(skillDir, "nonexistent", false);
-    expect(result.ok).toBe(false);
-  });
-});
+// ISSUE-080 — describe("updateEvalResult") removed alongside the helper.
+// Pass/fail flips now flow through brain.db eval_runs (ISSUE-050).
 
 describe("getEvalsSummary", () => {
   it("returns correct counts", async () => {

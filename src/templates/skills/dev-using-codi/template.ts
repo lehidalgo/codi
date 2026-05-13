@@ -15,7 +15,8 @@ managed_by: ${PROJECT_NAME}
 user-invocable: false
 disable-model-invocation: true
 internal: true
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}}

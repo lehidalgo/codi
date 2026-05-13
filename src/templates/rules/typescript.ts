@@ -7,7 +7,8 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: typescript
-version: 2
+version: 3
+maintainers: ["@lehidalgo"]
 ---
 
 # TypeScript Conventions

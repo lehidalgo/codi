@@ -20,7 +20,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 user-invocable: false
 disable-model-invocation: false
 managed_by: ${PROJECT_NAME}
-version: 11
+version: 12
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Rule Feedback

@@ -230,3 +230,46 @@ describe("brain-ui / turns + tool-calls", () => {
     }
   });
 });
+
+describe("brain-ui / static vendored assets (ISSUE-061)", () => {
+  it("serves /static/htmx.min.js with the right content-type", async () => {
+    const t = tmpFixture();
+    try {
+      const res = await t.handle.app.request("/static/htmx.min.js");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toMatch(/application\/javascript/);
+      const body = await res.text();
+      // htmx ships with this string in its IIFE header — cheap sanity check.
+      expect(body.length).toBeGreaterThan(1000);
+      expect(body).toMatch(/htmx/i);
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("serves /static/alpine.min.js with the right content-type", async () => {
+    const t = tmpFixture();
+    try {
+      const res = await t.handle.app.request("/static/alpine.min.js");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toMatch(/application\/javascript/);
+      const body = await res.text();
+      expect(body.length).toBeGreaterThan(1000);
+    } finally {
+      t.cleanup();
+    }
+  });
+
+  it("404s any file outside the allowlist (no path traversal)", async () => {
+    const t = tmpFixture();
+    try {
+      const res = await t.handle.app.request("/static/../package.json");
+      // Hono auto-resolves the path before routing, so this hits the
+      // `:file` handler with a value that's not in the allowlist → 404.
+      // Either 404 or 400 is acceptable; what must NOT happen is 200.
+      expect(res.status).not.toBe(200);
+    } finally {
+      t.cleanup();
+    }
+  });
+});

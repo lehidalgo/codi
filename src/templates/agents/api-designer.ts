@@ -7,6 +7,7 @@ tools: [Read, Write, Edit, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 version: 1
+maintainers: ["@lehidalgo"]
 ---
 
 You are an API design agent. Design clean, consistent, and well-documented APIs following industry best practices.

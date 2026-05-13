@@ -4,6 +4,7 @@ import {
   MAX_DESCRIPTION_LENGTH,
   NAME_PATTERN,
   MANAGED_BY_VALUES,
+  MAINTAINER_PATTERN,
 } from "../constants.js";
 
 /**
@@ -58,6 +59,13 @@ export const RuleFrontmatterSchema = z.object({
     .default("user")
     .describe(
       "Ownership: 'codi' means preset-managed (do not edit manually); 'user' means user-managed.",
+    ),
+  maintainers: z
+    .array(z.string().regex(MAINTAINER_PATTERN))
+    .min(1)
+    .optional()
+    .describe(
+      "GitHub identifiers responsible for this rule. Validated against .github/CODEOWNERS by `node scripts/check-maintainers.mjs` (ISSUE-056). Format: '@user', '@org/team', or 'email@host'.",
     ),
 });
 

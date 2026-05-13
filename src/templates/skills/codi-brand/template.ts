@@ -15,7 +15,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 20
+version: 21
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Codi Brand Identity

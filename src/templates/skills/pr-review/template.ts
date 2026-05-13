@@ -23,7 +23,8 @@ managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
 argument-hint: [pr-number]
-version: 4
+version: 5
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Pull Request Review

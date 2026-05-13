@@ -25,7 +25,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 14
+version: 15
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Artifact Contributor

@@ -24,7 +24,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 23
+version: 24
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Codebase Onboarding

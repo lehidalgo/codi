@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { Command } from "commander";
 import {
   addGlobalOptions,
@@ -14,11 +14,7 @@ import { createCommandResult } from "#src/core/output/formatter.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 import { Logger } from "#src/core/output/logger.js";
 import { clearAdapters } from "#src/core/generator/adapter-registry.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("shared CLI utilities", () => {
   describe("addGlobalOptions", () => {
@@ -103,9 +99,7 @@ describe("shared CLI utilities", () => {
     let tmpDir: string;
 
     beforeEach(async () => {
-      tmpDir = await fs.mkdtemp(
-        path.join(os.tmpdir(), `${PROJECT_NAME}-shared-regen-`),
-      );
+      tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-shared-regen-`));
       clearAdapters();
       Logger.init({ level: "error", mode: "human", noColor: true });
     });

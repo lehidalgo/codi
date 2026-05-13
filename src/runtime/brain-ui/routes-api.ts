@@ -19,6 +19,7 @@ import type { Hono, Context } from "hono";
 import path from "node:path";
 import { homedir } from "node:os";
 import type { BrainHandle } from "#src/runtime/brain/db.js";
+import { quoteFtsPhrase } from "#src/runtime/brain/fts5.js";
 import { restoreBackup, restoreFromBackupDir } from "#src/core/backup/backup-manager.js";
 import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR } from "#src/constants.js";
 import { isPathSafe } from "#src/utils/path-guard.js";
@@ -142,7 +143,7 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
          ORDER BY rank
          LIMIT ?`,
       )
-      .all(q, boundedLimit(c)) as unknown[];
+      .all(quoteFtsPhrase(q), boundedLimit(c)) as unknown[];
     return c.json({ data: rows, query: q });
   });
 

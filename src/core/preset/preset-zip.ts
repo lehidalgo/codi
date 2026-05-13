@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { randomUUID } from "node:crypto";
 import { ok, err } from "#src/types/result.js";
 import { execFileAsync } from "#src/utils/exec.js";
 import type { Result } from "#src/types/result.js";
@@ -118,7 +119,7 @@ export async function extractPresetZip(zipPath: string): Promise<Result<ZipExtra
   // Extract to temp dir
   const tmpDir = path.join(
     os.tmpdir(),
-    `${PROJECT_NAME}-preset-zip-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `${PROJECT_NAME}-preset-zip-${Date.now()}-${randomUUID().slice(0, 8)}`,
   );
   await fs.mkdir(tmpDir, { recursive: true });
 

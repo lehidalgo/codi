@@ -2,16 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { stringify as stringifyYaml } from "yaml";
 import { generateHandler } from "#src/cli/generate.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("generate command handler", () => {
   let tmpDir: string;
@@ -36,16 +32,8 @@ describe("generate command handler", () => {
     await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
 
     const manifest = { name: "test", version: "1", agents: ["claude-code"] };
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      stringifyYaml(manifest),
-      "utf-8",
-    );
-    await fs.writeFile(
-      path.join(configDir, "flags.yaml"),
-      stringifyYaml({}),
-      "utf-8",
-    );
+    await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), stringifyYaml(manifest), "utf-8");
+    await fs.writeFile(path.join(configDir, "flags.yaml"), stringifyYaml({}), "utf-8");
 
     const result = await generateHandler(tmpDir, {});
     expect(result.success).toBe(true);
@@ -58,16 +46,8 @@ describe("generate command handler", () => {
     await fs.mkdir(path.join(configDir, "rules"), { recursive: true });
 
     const manifest = { name: "test", version: "1", agents: ["claude-code"] };
-    await fs.writeFile(
-      path.join(configDir, MANIFEST_FILENAME),
-      stringifyYaml(manifest),
-      "utf-8",
-    );
-    await fs.writeFile(
-      path.join(configDir, "flags.yaml"),
-      stringifyYaml({}),
-      "utf-8",
-    );
+    await fs.writeFile(path.join(configDir, MANIFEST_FILENAME), stringifyYaml(manifest), "utf-8");
+    await fs.writeFile(path.join(configDir, "flags.yaml"), stringifyYaml({}), "utf-8");
 
     const result = await generateHandler(tmpDir, { dryRun: true });
     expect(result.success).toBe(true);

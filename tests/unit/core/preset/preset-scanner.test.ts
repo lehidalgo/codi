@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { stringify as stringifyYaml } from "yaml";
-import { cleanupTmpDir } from "../../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { scanForPresets } from "#src/core/preset/preset-scanner.js";
 import { Logger } from "#src/core/output/logger.js";
 import { PROJECT_NAME, PRESET_MANIFEST_FILENAME } from "#src/constants.js";
@@ -12,9 +12,7 @@ describe("scanForPresets", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-scanner-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-scanner-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 

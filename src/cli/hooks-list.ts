@@ -11,6 +11,10 @@ import { join } from "node:path";
 import { getAllHooks, getGitHooks, getRuntimeHooks } from "../core/hooks/registry/index.js";
 import type { HookArtifact } from "../core/hooks/hook-artifact.js";
 import { PROJECT_DIR } from "#src/constants.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import { initFromOptions, handleOutput, type GlobalOptions } from "./shared.js";
+import type { CommandResult } from "../core/output/types.js";
 
 export interface ListOptions {
   bucket?: "git" | "runtime";
@@ -60,6 +64,23 @@ export function formatHooksList(opts: ListOptions): string {
   ].join("\n");
 }
 
+interface HooksListData {
+  readonly bucket: "git" | "runtime" | "all";
+  readonly enabledOnly: boolean;
+  readonly text: string;
+}
+
+export function hooksListHandler(opts: ListOptions): CommandResult<HooksListData> {
+  const text = formatHooksList(opts);
+  const bucket = opts.bucket ?? "all";
+  return createCommandResult({
+    success: true,
+    command: "hooks list",
+    data: { bucket, enabledOnly: opts.enabled === true, text },
+    exitCode: EXIT_CODES.SUCCESS,
+  });
+}
+
 export function registerHooksListCommand(program: Command): void {
   program
     .command("list")
@@ -68,11 +89,19 @@ export function registerHooksListCommand(program: Command): void {
     .option("--runtime", "Show only runtime-bucket hooks")
     .option("--enabled", "Show only currently enabled hooks")
     .action((opts: { git?: boolean; runtime?: boolean; enabled?: boolean }) => {
-      const out = formatHooksList({
+      // ISSUE-074: route through handleOutput so the global -j/--json flag
+      // gets a JSON envelope just like every other subcommand. Human mode
+      // still prints the same table via the `text` field.
+      const globalOpts = (program.parent ?? program).opts() as GlobalOptions;
+      initFromOptions(globalOpts);
+      const result = hooksListHandler({
         ...(opts.git ? { bucket: "git" as const } : {}),
         ...(opts.runtime ? { bucket: "runtime" as const } : {}),
         ...(opts.enabled ? { enabled: true } : {}),
       });
-      process.stdout.write(out + "\n");
+      handleOutput(result, globalOpts);
+      if (globalOpts.json !== true) {
+        process.stdout.write(result.data.text + "\n");
+      }
     });
 }

@@ -7,7 +7,8 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: swift
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Swift Conventions

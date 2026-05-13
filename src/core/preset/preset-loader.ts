@@ -92,7 +92,10 @@ export async function loadPresetFromDir(
   if (manifest.extends) {
     // Guard against circular extends before recursing
     const circularCheck = await detectCircularExtends(name, presetsDir);
-    if (!circularCheck.ok) return circularCheck as unknown as Result<LoadedPreset>;
+    // ISSUE-070: rebuild Result<LoadedPreset> from the narrower Result<void>
+    // error variant instead of double-casting. err() is the canonical
+    // constructor — preserves the ProjectError[] payload without lying to TS.
+    if (!circularCheck.ok) return err(circularCheck.errors);
 
     const parentResult = await loadPreset(manifest.extends, presetsDir);
     if (parentResult.ok) {
@@ -117,8 +120,11 @@ export async function loadPresetFromDir(
   try {
     const mcpRaw = await fs.readFile(path.join(presetDir, MCP_FILENAME), "utf8");
     const mcpParsed = parseYaml(mcpRaw) as Record<string, unknown>;
-    if (mcpParsed && mcpParsed["servers"]) {
-      mcp = mcpParsed as unknown as McpConfig;
+    if (mcpParsed && typeof mcpParsed["servers"] === "object" && mcpParsed["servers"] !== null) {
+      // ISSUE-070: narrow via typeof+null check, no double-cast. McpConfig
+      // is { servers: Record<string, ...> } so the guard above is the
+      // discriminator the previous `as unknown as` was hiding.
+      mcp = { servers: mcpParsed["servers"] as McpConfig["servers"] };
     }
   } catch {
     /* no mcp.yaml */

@@ -26,7 +26,7 @@ import {
   PROJECT_NAME_DISPLAY,
   PROJECT_DIR,
   MANIFEST_FILENAME,
-} from "../../src/constants.js";
+} from "#src/constants.js";
 
 const ALL_AGENTS = ["claude-code", "cursor", "codex", "windsurf", "cline", "copilot"];
 

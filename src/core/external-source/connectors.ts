@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { randomUUID } from "node:crypto";
 import { PROJECT_NAME } from "#src/constants.js";
 import { parsePresetIdentifier } from "#src/core/preset/preset-resolver.js";
 import { validateGitRef } from "#src/utils/git.js";
@@ -27,7 +28,7 @@ export interface ExternalSource {
 const NOOP_CLEANUP = async (): Promise<void> => {};
 
 function makeTempDir(suffix: string): string {
-  const rand = Math.random().toString(36).slice(2, 10);
+  const rand = randomUUID().slice(0, 8);
   return path.join(os.tmpdir(), `${PROJECT_NAME}-import-${suffix}-${Date.now()}-${rand}`);
 }
 

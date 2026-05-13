@@ -45,6 +45,9 @@ while IFS=' ' read -r _local_ref _local_sha remote_ref _remote_sha; do
       continue
     fi
 
+    # ISSUE-066: catch(e){} is intentional — missing/corrupt stamp file
+    # leaves stamp_hash empty, which the next \`if [ -z ]\` branch detects
+    # and converts into a clear "stamp invalid or unreadable" message.
     stamp_hash=\$(node -e "try{const s=JSON.parse(require('fs').readFileSync('$STAMP_FILE','utf8'));process.stdout.write(s.commit||'')}catch(e){}" 2>/dev/null)
 
     if [ -z "\$stamp_hash" ]; then

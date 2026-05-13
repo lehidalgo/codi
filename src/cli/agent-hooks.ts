@@ -456,13 +456,9 @@ function detectAgentFromEnv(): string | null {
   return null;
 }
 
-function parseAgentFlag(args: readonly string[]): string | null {
-  for (let i = 0; i < args.length; i += 1) {
-    if (args[i] === "--agent" && i + 1 < args.length) return args[i + 1] ?? null;
-    if (args[i]?.startsWith("--agent=")) return args[i]!.slice("--agent=".length);
-  }
-  return null;
-}
+// ISSUE-076: parseAgentFlag(process.argv) fallback removed — commander's
+// `.option("--agent <id>")` already parses both `--agent X` and `--agent=X`
+// shapes into opts.agent, so re-scanning process.argv was dead code.
 
 export function registerAgentHookCommand(program: Command): void {
   const hook = program
@@ -478,7 +474,7 @@ export function registerAgentHookCommand(program: Command): void {
         );
         process.exit(1);
       }
-      const flagAgent = opts.agent ?? parseAgentFlag(process.argv);
+      const flagAgent = opts.agent ?? null;
       const envAgent = process.env[AGENT_ENV_KEY];
       const detected = detectAgentFromEnv();
       const resolved = flagAgent || envAgent || detected || "claude-code";

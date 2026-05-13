@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { getTemplateVersion, loadTemplate } from "#src/core/scaffolder/template-loader.js";
 import { PROJECT_DIR } from "#src/constants.js";
 import { buildInstalledArtifactInventory } from "#src/cli/installed-artifact-inventory.js";

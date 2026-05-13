@@ -23,6 +23,7 @@ import { execFileSync } from "node:child_process";
 import { hostname, userInfo } from "node:os";
 import { basename } from "node:path";
 import type { CapturedArtifactType } from "#src/core/artifact-types.js";
+import { resolveTeamId } from "#src/core/audit/resolve-team.js";
 
 export interface EnsureProjectInput {
   readonly projectId: string;
@@ -141,12 +142,16 @@ export function ensureSession(raw: Database.Database, input: EnsureSessionInput)
       );
     return;
   }
+  // ISSUE-053: stamp team_id at write-time so cross-team brain
+  // aggregation (ADR-005, ISSUE-055) can demux this row. Resolved from
+  // .codi/codi.yaml `team_id`, CODI_TEAM_ID env, or null (untagged).
+  const teamId = resolveTeamId({ cwd: input.workingDir });
   raw
     .prepare(
       `INSERT INTO sessions(session_id, project_id, agent_type, agent_model, started_at,
                             working_dir, transcript_path, branch, commit_sha, workflow_id,
-                            total_turns, total_capture_count)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
+                            total_turns, total_capture_count, team_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)`,
     )
     .run(
       input.sessionId,
@@ -159,6 +164,7 @@ export function ensureSession(raw: Database.Database, input: EnsureSessionInput)
       input.branch ?? null,
       input.commitSha ?? null,
       input.workflowId ?? null,
+      teamId,
     );
 }
 

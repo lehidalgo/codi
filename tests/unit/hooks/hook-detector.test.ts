@@ -4,14 +4,12 @@ import path from "node:path";
 import os from "node:os";
 import { detectHookSetup } from "#src/core/hooks/hook-detector.js";
 import { PROJECT_NAME } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `${PROJECT_NAME}-hooks-detect-`),
-  );
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-hooks-detect-`));
 });
 
 afterEach(async () => {
@@ -34,16 +32,10 @@ describe("detectHookSetup", () => {
   });
 
   it("detects pre-commit when .pre-commit-config.yaml exists", async () => {
-    await fs.writeFile(
-      path.join(tmpDir, ".pre-commit-config.yaml"),
-      "repos: []\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".pre-commit-config.yaml"), "repos: []\n", "utf-8");
     const result = await detectHookSetup(tmpDir);
     expect(result.runner).toBe("pre-commit");
-    expect(result.configPath).toBe(
-      path.join(tmpDir, ".pre-commit-config.yaml"),
-    );
+    expect(result.configPath).toBe(path.join(tmpDir, ".pre-commit-config.yaml"));
   });
 
   it("detects lefthook when .lefthook.yml exists", async () => {
@@ -58,11 +50,7 @@ describe("detectHookSetup", () => {
   });
 
   it("detects lefthook with alternate lefthook.yml path", async () => {
-    await fs.writeFile(
-      path.join(tmpDir, "lefthook.yml"),
-      "pre-commit:\n  commands: {}\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, "lefthook.yml"), "pre-commit:\n  commands: {}\n", "utf-8");
     const result = await detectHookSetup(tmpDir);
     expect(result.runner).toBe("lefthook");
     expect(result.configPath).toBe(path.join(tmpDir, "lefthook.yml"));
@@ -70,11 +58,7 @@ describe("detectHookSetup", () => {
 
   it("prefers husky over pre-commit when both exist", async () => {
     await fs.mkdir(path.join(tmpDir, ".husky"), { recursive: true });
-    await fs.writeFile(
-      path.join(tmpDir, ".pre-commit-config.yaml"),
-      "repos: []\n",
-      "utf-8",
-    );
+    await fs.writeFile(path.join(tmpDir, ".pre-commit-config.yaml"), "repos: []\n", "utf-8");
     const result = await detectHookSetup(tmpDir);
     expect(result.runner).toBe("husky");
   });

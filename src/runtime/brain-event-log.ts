@@ -15,10 +15,21 @@ import { execFileSync } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { openBrain, type BrainHandle } from "#src/runtime/brain/db.js";
+import { resolveTeamId } from "#src/core/audit/resolve-team.js";
 import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import type { ManifestEvent } from "./types.js";
 
+// ISSUE-069 — per-process cache for `git rev-parse --show-toplevel`. Each
+// uncached call spawns a child process (~50-100ms); workflow hot paths can
+// invoke this 5-10× per Stop hook fire. Keyed by the raw cwd input so a
+// caller asking the same question gets the same answer without re-spawning.
+// The cache lives in module scope (single-process brain-event-log handle)
+// and is cleared between tests via _resetProjectRootCacheForTests.
+const projectRootCache = new Map<string, string>();
+
 function resolveProjectRoot(cwd: string): string {
+  const cached = projectRootCache.get(cwd);
+  if (cached !== undefined) return cached;
   let absolute: string;
   try {
     const out = execFileSync("git", ["rev-parse", "--show-toplevel"], {
@@ -33,11 +44,19 @@ function resolveProjectRoot(cwd: string): string {
   }
   // Resolve symlinks (e.g. macOS /tmp → /private/tmp) so two paths
   // pointing at the same directory compare equal.
+  let resolved: string;
   try {
-    return realpathSync(absolute);
+    resolved = realpathSync(absolute);
   } catch {
-    return absolute;
+    resolved = absolute;
   }
+  projectRootCache.set(cwd, resolved);
+  return resolved;
+}
+
+/** Test-only — clears the per-cwd cache so a beforeEach can re-probe. */
+export function _resetProjectRootCacheForTests(): void {
+  projectRootCache.clear();
 }
 
 export class BrainWorkflowAlreadyActiveError extends Error {
@@ -244,11 +263,18 @@ export class BrainEventLog {
         .prepare(`SELECT workflow_id FROM workflow_runs WHERE workflow_id = ?`)
         .get(workflowId);
       if (!existing) {
-        const payload = initEvent.payload as { workflow_type?: string; task?: string } | undefined;
+        const payload = initEvent.payload as
+          | { workflow_type?: string; task?: string; cwd?: string }
+          | undefined;
+        // ISSUE-053: stamp team_id at workflow init so team-brain
+        // aggregation can demux this row. The cwd in the init payload
+        // is the path the workflow was started against; resolveTeamId
+        // reads .codi/codi.yaml from there.
+        const teamId = resolveTeamId(payload?.cwd ? { cwd: payload.cwd } : {});
         this.handle.raw
           .prepare(
-            `INSERT INTO workflow_runs(workflow_id, project_id, type, current_phase, status, started_at, metadata)
-             VALUES (?, ?, ?, 'init', 'active', ?, ?)`,
+            `INSERT INTO workflow_runs(workflow_id, project_id, type, current_phase, status, started_at, metadata, team_id)
+             VALUES (?, ?, ?, 'init', 'active', ?, ?, ?)`,
           )
           .run(
             workflowId,
@@ -256,6 +282,7 @@ export class BrainEventLog {
             payload?.workflow_type ?? "feature",
             Date.now(),
             JSON.stringify({ task: payload?.task }),
+            teamId,
           );
       }
       // Reject double-init: if this workflow_id already has any event, fail.

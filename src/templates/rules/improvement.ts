@@ -6,7 +6,8 @@ description: Continuous artifact improvement — observe patterns, emit |OBSERVA
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 7
+version: 8
+maintainers: ["@lehidalgo"]
 ---
 
 # Continuous Artifact Improvement

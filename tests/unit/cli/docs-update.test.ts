@@ -2,23 +2,17 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { docsUpdateHandler } from "#src/cli/docs-update.js";
 import { Logger } from "#src/core/output/logger.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("docs-update command handler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-docs-update-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-docs-update-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 

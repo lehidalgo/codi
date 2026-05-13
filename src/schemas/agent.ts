@@ -4,6 +4,7 @@ import {
   MAX_DESCRIPTION_LENGTH,
   NAME_PATTERN_STRICT,
   MANAGED_BY_VALUES,
+  MAINTAINER_PATTERN,
 } from "../constants.js";
 
 /**
@@ -97,6 +98,13 @@ export const AgentFrontmatterSchema = z.object({
     .string()
     .optional()
     .describe("Color label displayed in the Claude Code UI for this agent (e.g. 'blue', 'red')."),
+  maintainers: z
+    .array(z.string().regex(MAINTAINER_PATTERN))
+    .min(1)
+    .optional()
+    .describe(
+      "GitHub identifiers responsible for this agent. Validated against .github/CODEOWNERS by `pnpm codi codeowners check` (ISSUE-056). Format: '@user', '@org/team', or 'email@host'.",
+    ),
 });
 
 export type AgentFrontmatterInput = z.input<typeof AgentFrontmatterSchema>;

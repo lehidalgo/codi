@@ -27,7 +27,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 35
+version: 36
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Skill Creator

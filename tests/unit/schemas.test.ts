@@ -16,7 +16,7 @@ import {
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
-} from "../../src/core/scaffolder/skill-template-loader.js";
+} from "#src/core/scaffolder/skill-template-loader.js";
 
 describe("ProjectManifestSchema", () => {
   it("accepts valid manifest", () => {

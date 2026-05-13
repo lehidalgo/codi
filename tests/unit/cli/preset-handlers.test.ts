@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { stringify as stringifyYaml } from "yaml";
 import {
   presetValidateHandler,
@@ -24,9 +24,7 @@ describe("presetValidateHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-val-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-val-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -197,9 +195,7 @@ describe("presetListEnhancedHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-list-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-list-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -300,9 +296,7 @@ describe("presetExportHandler", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-export-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-export-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -360,12 +354,7 @@ describe("presetExportHandler", () => {
     const outputPath = path.join(tmpDir, "export.zip");
 
     // Act
-    const result = await presetExportHandler(
-      tmpDir,
-      presetName,
-      "zip",
-      outputPath,
-    );
+    const result = await presetExportHandler(tmpDir, presetName, "zip", outputPath);
 
     // Assert
     expect(result.success).toBe(true);
@@ -377,9 +366,7 @@ describe("presetListEnhancedHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-list2-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-list2-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -489,9 +476,7 @@ describe("presetRemoveHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-rm2-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-rm2-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -521,9 +506,7 @@ describe("presetValidateHandler — additional coverage", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-val2-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-val2-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 
@@ -532,12 +515,7 @@ describe("presetValidateHandler — additional coverage", () => {
   });
 
   it("reports artifact counts for valid preset", async () => {
-    const presetDir = path.join(
-      tmpDir,
-      PROJECT_DIR,
-      "presets",
-      "with-artifacts",
-    );
+    const presetDir = path.join(tmpDir, PROJECT_DIR, "presets", "with-artifacts");
     await fs.mkdir(presetDir, { recursive: true });
 
     const manifest = {
@@ -576,9 +554,7 @@ describe("presetInstallUnifiedHandler — builtin rejection", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-ph-builtin-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-ph-builtin-`));
     Logger.init({ level: "error", mode: "human", noColor: true });
   });
 

@@ -1,0 +1,47 @@
+name: codeowners
+
+# ISSUE-056 — two-layer CODEOWNERS verification.
+#
+# Layer 1 (local): scripts/check-maintainers.mjs verifies every artifact
+# template declares `maintainers:` and that every declared maintainer
+# appears as an owner row in .github/CODEOWNERS (or repo-root CODEOWNERS).
+# All `run:` blocks here use only literal commands — no untrusted event
+# payload fields appear inside any `run:` line, per the codi GHA-injection
+# hardening rule.
+#
+# Layer 2 (live): mszostok/codeowners-validator queries the GitHub API to
+# confirm @user / @org/team identifiers exist and have write access. This
+# is the only check that requires a token.
+
+on:
+  pull_request:
+    paths:
+      - "src/templates/rules/**"
+      - "src/templates/skills/**"
+      - "src/templates/agents/**"
+      - ".github/CODEOWNERS"
+      - "CODEOWNERS"
+      - "scripts/check-maintainers.mjs"
+      - ".github/workflows/codeowners.yml"
+  push:
+    branches: [main]
+
+jobs:
+  local-validator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-maintainers.mjs
+
+  live-validator:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork == false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mszostok/codeowners-validator@v0.7.4
+        with:
+          checks: "files,syntax,duppatterns"
+          experimental_checks: "avoid-shadowing"

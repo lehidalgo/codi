@@ -6,7 +6,8 @@ description: Architecture guidelines, design patterns, and module boundaries
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 2
+version: 3
+maintainers: ["@lehidalgo"]
 ---
 
 # Architecture Guidelines

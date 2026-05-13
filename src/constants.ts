@@ -112,6 +112,28 @@ export type ManagedBy = typeof MANAGED_BY_FRAMEWORK | typeof MANAGED_BY_USER;
 /** Valid values for the `managed_by` field in artifact frontmatter. */
 export const MANAGED_BY_VALUES = [MANAGED_BY_FRAMEWORK, MANAGED_BY_USER] as const;
 
+// --- Maintainers (ISSUE-056) ---
+/**
+ * GitHub identifier shape allowed in artifact `maintainers:` frontmatter.
+ *
+ *   - `@user`        — a single GitHub username
+ *   - `@org/team`    — an organisation team slug (team slugs cannot contain `.`)
+ *   - `email@host`   — an email address verified on a GitHub account
+ *
+ * The CODEOWNERS spec rejects negated patterns (`!`) and character ranges;
+ * those concerns belong to the .github/CODEOWNERS file itself, not the
+ * per-artifact list.
+ */
+export const MAINTAINER_PATTERN =
+  /^(@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})(?:\/[a-zA-Z0-9_-]+)?|[^\s@]+@[^\s@.]+\.[^\s@]+)$/;
+
+/**
+ * Default maintainer applied during the ISSUE-056 backfill. New artifacts
+ * inherit the value via `addArtifactScaffolder` / `rule-creator` /
+ * `skill-creator` so consumers do not have to think about the field.
+ */
+export const DEFAULT_MAINTAINER = "@lehidalgo";
+
 // --- Presets ---
 // Base preset names are derived from flag-presets.ts PRESETS object (source of truth).
 // Extended preset names are derived from templates/presets/index.ts BUILTIN_PRESETS.

@@ -33,7 +33,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 18
+version: 19
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — E2E Testing

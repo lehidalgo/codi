@@ -27,6 +27,7 @@ import { createHash } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { CaptureType } from "./markers.js";
 import type { AgentId } from "#src/adapters/index.js";
+import { resolveTeamId } from "#src/core/audit/resolve-team.js";
 
 // ─── Provider contract ─────────────────────────────────────────────────────
 
@@ -300,8 +301,8 @@ export function ingestAgentMemory(
 
   const result = raw
     .prepare(
-      `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase, team_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.sessionId,
@@ -314,6 +315,7 @@ export function ingestAgentMemory(
       JSON.stringify([filePath]),
       input.workflowId ?? null,
       input.phase ?? null,
+      resolveTeamId(),
     );
 
   return {
@@ -368,8 +370,8 @@ export function ingestMemoryFile(
 
   const result = raw
     .prepare(
-      `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase, team_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       args.sessionId,
@@ -382,6 +384,7 @@ export function ingestMemoryFile(
       JSON.stringify([args.filePath]),
       args.workflowId ?? null,
       args.phase ?? null,
+      resolveTeamId(),
     );
   return {
     ingested: true,

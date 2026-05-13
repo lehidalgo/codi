@@ -83,8 +83,42 @@ if [ -f "$CWD/.workflow/active/workflow-id.txt" ]; then
 fi
 
 if [ -f "$CWD/.codi/preferences.yaml" ]; then
-  # Prefer YAML when available — grep is portable and works without yq.
-  OUTPUT_MODE="$(grep -E '^output_mode:' "$CWD/.codi/preferences.yaml" 2>/dev/null | sed -E 's/^output_mode:[[:space:]]*//; s/[[:space:]]*$//; s/^"(.*)"$/\1/' || echo 'caveman')"
+  # ISSUE-063: parse YAML via python heredoc instead of grep+sed. Uses
+  # PyYAML when available (full spec) and falls back to a strict regex
+  # otherwise. Argv carries the path so the project cwd never enters the
+  # Python source; quoted heredoc delimiter (<<'PY') blocks shell expansion.
+  OUTPUT_MODE="$(python3 - "$CWD/.codi/preferences.yaml" <<'PY'
+import re, sys
+DEFAULT = "caveman"
+path = sys.argv[1]
+try:
+    import yaml  # type: ignore
+    try:
+        doc = yaml.safe_load(open(path)) or {}
+        val = doc.get("output_mode", DEFAULT)
+        print(val if isinstance(val, str) and val else DEFAULT)
+        sys.exit(0)
+    except Exception:
+        pass
+except ImportError:
+    pass
+# Fallback: anchored regex on a single scalar line. Tolerates surrounding
+# quotes but rejects multi-line YAML — which is fine because output_mode
+# is always a single scalar.
+try:
+    with open(path) as f:
+        for line in f:
+            m = re.match(r"^\s*output_mode\s*:\s*(.+?)\s*$", line)
+            if m:
+                val = m.group(1).strip("\"'")
+                print(val if val else DEFAULT)
+                break
+        else:
+            print(DEFAULT)
+except Exception:
+    print(DEFAULT)
+PY
+)"
   if [ -z "$OUTPUT_MODE" ]; then OUTPUT_MODE="caveman"; fi
 elif [ -f "$CWD/.codi/preferences.json" ]; then
   OUTPUT_MODE="$(python3 - "$CWD/.codi/preferences.json" <<'PY'

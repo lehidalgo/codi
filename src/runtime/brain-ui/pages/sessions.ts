@@ -143,10 +143,15 @@ function loadMetrics(brain: BrainHandle, sessionId: string): MetricsRow {
   const promptChars = brain.raw
     .prepare(`SELECT char_count FROM prompts WHERE session_id = ? ORDER BY char_count`)
     .all(sessionId) as Array<{ char_count: number }>;
+  // ISSUE-081 — fixed off-by-one. The old `floor(N * 0.9)` returned index N
+  // for any N ≤ 10, which is out-of-bounds for arrays of length N (max valid
+  // index is N-1). The `floor((N-1) * p)` form is the standard nearest-rank
+  // percentile and clamps correctly on small samples.
+  const pctileIdx = (n: number, p: number): number => Math.floor((n - 1) * p);
   const p50 =
-    promptChars.length > 0 ? promptChars[Math.floor(promptChars.length * 0.5)]!.char_count : null;
+    promptChars.length > 0 ? promptChars[pctileIdx(promptChars.length, 0.5)]!.char_count : null;
   const p90 =
-    promptChars.length > 0 ? promptChars[Math.floor(promptChars.length * 0.9)]!.char_count : null;
+    promptChars.length > 0 ? promptChars[pctileIdx(promptChars.length, 0.9)]!.char_count : null;
 
   const turnDur = brain.raw
     .prepare(

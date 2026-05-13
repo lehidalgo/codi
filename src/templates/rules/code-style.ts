@@ -6,7 +6,8 @@ description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 7
+version: 8
+maintainers: ["@lehidalgo"]
 ---
 
 # Code Style

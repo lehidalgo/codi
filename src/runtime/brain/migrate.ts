@@ -183,7 +183,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 14;
+export const CURRENT_SCHEMA_VERSION = 15;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -407,6 +407,23 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `CREATE INDEX IF NOT EXISTS idx_corrections_actor ON corrections(actor_id)`,
     ],
   ],
+  [
+    15,
+    [
+      // ISSUE-053 — cross-team aggregation key on the three audit-trail
+      // tables. Source of the slug: `.codi/codi.yaml` team_id, CODI_TEAM_ID
+      // env, or null. Resolution happens at write-time via
+      // `src/core/audit/resolve-team.ts`. Indexes cover the two common
+      // team-scoped queries: "all sessions for team X by recency" and
+      // "captures for team X over time".
+      `ALTER TABLE sessions ADD COLUMN team_id TEXT`,
+      `ALTER TABLE captures ADD COLUMN team_id TEXT`,
+      `ALTER TABLE workflow_runs ADD COLUMN team_id TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_sessions_team_started ON sessions(team_id, started_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_captures_team_ts ON captures(team_id, ts)`,
+      `CREATE INDEX IF NOT EXISTS idx_workflow_runs_team_status ON workflow_runs(team_id, status)`,
+    ],
+  ],
 ];
 
 function columnExists(raw: Database.Database, table: string, column: string): boolean {
@@ -461,6 +478,14 @@ const MIGRATED_HANDLES = new WeakSet<Database.Database>();
  */
 export function applyMigrations(raw: Database.Database): { applied: number[] } {
   if (MIGRATED_HANDLES.has(raw)) return { applied: [] };
+
+  // ISSUE-083 — guarantee busy_timeout is in effect before any migration
+  // transaction. Callers that go through openBrain already set this
+  // (ISSUE-060), but tests and migration scripts sometimes open a raw
+  // better-sqlite3 Database directly. Without busy_timeout, a concurrent
+  // writer holding the WAL causes the migration BEGIN IMMEDIATE to fail
+  // with SQLITE_BUSY rather than wait. The pragma is idempotent.
+  raw.pragma("busy_timeout = 5000");
 
   const applied: number[] = [];
   const txn = raw.transaction(() => {

@@ -15,7 +15,10 @@ interface DocsData {
 }
 
 interface DocsCommandOptions extends GlobalOptions {
-  json?: boolean;
+  // ISSUE-073: renamed from `json` to `catalogJson` so it no longer collides
+  // with the global `-j, --json` flag (output-mode switch). The behaviour is
+  // unchanged — write the skill catalog as JSON to stdout.
+  catalogJson?: boolean;
   generate?: boolean;
   validate?: boolean;
   catalog?: boolean;
@@ -100,7 +103,7 @@ export async function docsHandler(
     });
   }
 
-  // --json: export JSON catalog to stdout
+  // --catalog-json: export JSON catalog to stdout
   const catalog = exportSkillCatalogJson();
   const parsed = JSON.parse(catalog) as { totalSkills: number };
   process.stdout.write(catalog);
@@ -116,7 +119,10 @@ export function registerDocsCommand(program: Command): void {
   program
     .command("docs")
     .description("Generate and validate documentation")
-    .option("--json", "Output JSON skill catalog to stdout")
+    .option(
+      "--catalog-json",
+      "Output JSON skill catalog to stdout (renamed from --json in ISSUE-073 to avoid collision with global -j/--json output flag)",
+    )
     .option("--generate", "Regenerate code-driven doc sections")
     .option("--validate", "Check if docs are in sync with code")
     .option("--catalog", "Generate artifact catalog markdown pages and meta JSON")
@@ -125,7 +131,7 @@ export function registerDocsCommand(program: Command): void {
       initFromOptions(globalOptions);
       const mergedOptions = { ...globalOptions, ...options };
       const result = await docsHandler(process.cwd(), mergedOptions);
-      if (!mergedOptions.json) {
+      if (!mergedOptions.catalogJson) {
         handleOutput(result, globalOptions);
       }
       process.exit(result.exitCode);

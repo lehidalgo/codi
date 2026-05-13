@@ -6,7 +6,8 @@ description: Contribution rejection criteria — opt-in rule for projects that w
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Contribution discipline
