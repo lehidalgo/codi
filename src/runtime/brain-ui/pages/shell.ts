@@ -60,6 +60,7 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/tool-calls", label: "Tool calls" },
   { href: "/workflows", label: "Workflows" },
   { href: "/artifacts", label: "Artifacts" },
+  { href: "/pain-points", label: "Pain points" },
   { href: "/settings", label: "Settings" },
 ];
 

@@ -12,6 +12,7 @@ import { registerCaptures } from "./pages/captures.js";
 import { registerToolCalls } from "./pages/tool-calls.js";
 import { registerWorkflows } from "./pages/workflows.js";
 import { registerArtifacts } from "./pages/artifacts.js";
+import { registerPainPoints } from "./pages/pain-points.js";
 import { registerSettings } from "./pages/settings.js";
 
 export function registerPages(app: Hono, brain: BrainHandle): void {
@@ -21,5 +22,6 @@ export function registerPages(app: Hono, brain: BrainHandle): void {
   registerToolCalls(app, brain);
   registerWorkflows(app, brain);
   registerArtifacts(app, brain);
+  registerPainPoints(app, brain);
   registerSettings(app, brain);
 }
