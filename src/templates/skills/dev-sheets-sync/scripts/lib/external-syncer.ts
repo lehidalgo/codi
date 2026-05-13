@@ -70,9 +70,12 @@ export interface DiffResult {
 }
 
 /**
- * Contract every external sync adapter must satisfy. Implementations:
- *   - SheetsSyncer  (src/runtime/sync/sheets-syncer.ts) — Google Sheets
- *   - XlsxSyncer    (src/runtime/sync/xlsx-syncer.ts)   — local .xlsx file
+ * Contract every external sync adapter must satisfy. Implementations
+ * live alongside this file under `dev-sheets-sync/scripts/lib/`:
+ *   - SheetsSyncer  (`./sheets-syncer.ts`) — Google Sheets
+ *   - XlsxSyncer    (`./xlsx-syncer.ts`)   — local .xlsx file
+ *
+ * (ISSUE-005 deleted the original `src/runtime/sync/` location.)
  */
 export interface ExternalSyncer {
   /** Stable kind identifier — used in logs and config-driven dispatch. */

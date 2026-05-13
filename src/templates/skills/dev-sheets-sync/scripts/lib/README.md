@@ -63,7 +63,7 @@ lands.
 | `config.ts`                           | Read/write `.codi/project.json`                                                        |
 | `bridge.ts`                           | Internal bridge primitives                                                             |
 | `external-syncer.ts`                  | `ExternalSyncer` interface + registry (ADR-005)                                        |
-| `sheets-syncer.ts` / `xlsx-syncer.ts` | `ExternalSyncer` implementations (scaffolds — Sprint 3 wiring pending)                 |
+| `sheets-syncer.ts` / `xlsx-syncer.ts` | `ExternalSyncer` implementations (scaffolds — push/pull not yet wired)                 |
 | `index.ts`                            | Barrel re-export                                                                       |
 
 ## Entities

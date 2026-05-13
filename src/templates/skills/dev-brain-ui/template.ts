@@ -16,7 +16,7 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 2
+version: 3
 maintainers: ["@lehidalgo"]
 ---
 
@@ -56,9 +56,9 @@ sessions on the same machine share one server, one SQLite reader.
 - \\\`/session/:id\\\`   — captures for a session, with HTML escaping
 - \\\`/live\\\`          — polling view (HTMX every 2s) of the most recent
                        50 markers across all sessions
-- \\\`/api/v1/live/stream\\\` — SSE stream of new captures (Sprint 4.b)
+- \\\`/api/v1/live/stream\\\` — SSE stream of new captures
 - \\\`/workflows\\\`     — workflow_runs table
-- \\\`/findings\\\`      — pending consolidation proposals (Sprint 5)
+- \\\`/findings\\\`      — pending consolidation proposals
 
 ## Boundaries
 
@@ -68,7 +68,7 @@ sessions on the same machine share one server, one SQLite reader.
   still runs in the terminal. The UI is for human inspection.
 - Closing the browser tab does not stop the server. Stop it explicitly
   with \\\`kill $(cat ~/.${PROJECT_NAME}/brain-ui.pid | jq -r .pid)\\\` or
-  \`${PROJECT_NAME} brain ui --stop\` (Sprint 4.c).
+  \`${PROJECT_NAME} brain ui --stop\`.
 
 ## When NOT to use
 

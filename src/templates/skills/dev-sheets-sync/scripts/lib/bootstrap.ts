@@ -441,10 +441,10 @@ export interface MoveOptions {
 }
 
 /**
- * Move a Drive file into a target folder. Currently unused at the call site
- * (Sprint 2.2 ExternalSyncer refactor will wire this into the bootstrap flow
- * for OAuth-mode users who want a specific Drive folder). Exported to keep
- * the implementation alive across the refactor without flagging unused-var.
+ * Move a Drive file into a target folder. Currently unused at the call
+ * site — the planned wire-up is the OAuth-mode bootstrap path for users
+ * who want a specific Drive folder. Exported to keep the implementation
+ * alive without flagging unused-var.
  */
 export async function moveToDriveFolder(opts: MoveOptions): Promise<void> {
   const drive = google.drive({ version: "v3", auth: opts.auth });

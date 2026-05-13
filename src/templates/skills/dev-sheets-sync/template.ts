@@ -13,14 +13,15 @@ description: |
   is a live mirror. Body documents the zone rules, the event-to-column
   mapping, and the elicitation rule for missing config.
 
-  NOTE: Sprint 2 will refactor this skill into the canonical ExternalSyncer
-  interface (ADR-005). Current behavior: Google Sheets adapter.
+  NOTE: implementation conforms to the canonical ExternalSyncer
+  interface (ADR-005). Current behavior: Google Sheets adapter; xlsx
+  push and full pull wiring are still pending.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: false
 disable-model-invocation: false
-version: 2
+version: 3
 maintainers: ["@lehidalgo"]
 ---
 

@@ -69,6 +69,7 @@ presets:
 | `version`                | `1`      | Yes      | —       | Manifest version (always `1`)         |
 | `description`            | string   | No       | —       | Project description                   |
 | `agents`                 | string[] | No       | —       | Agent IDs to generate for             |
+| `team_id`                | string   | No       | —       |                                       |
 | `layers`                 | object   | No       | —       | Toggle content types                  |
 | `layers.rules`           | boolean  | Yes      | `true`  | Include rules in generation           |
 | `layers.skills`          | boolean  | Yes      | `true`  | Include skills in generation          |

@@ -14,6 +14,7 @@
   <a href="https://www.npmjs.com/package/codi-cli"><img src="https://img.shields.io/npm/v/codi-cli" alt="npm version"></a>
   <a href="https://github.com/lehidalgo/codi/actions"><img src="https://img.shields.io/github/actions/workflow/status/lehidalgo/codi/ci.yml?label=CI" alt="CI"></a>
   <a href="https://lehidalgo.github.io/codi/docs/"><img src="https://img.shields.io/badge/docs-online-5865F2" alt="Documentation"></a>
+  <a href="https://github.com/marketplace/actions/codi"><img src="https://img.shields.io/badge/Marketplace-codi-2088FF?logo=github" alt="GitHub Marketplace"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/npm/l/codi-cli" alt="license"></a>
 </p>
 
@@ -89,6 +90,16 @@ Your `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.github/copilot-instructions.md`
 
 > **No global install?** Use `npx codi-cli <command>` or `npm install -D codi-cli`. Requires **Node.js >= 20.19.0**. If your Node is older, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 (latest LTS) for you.
 
+### Use in GitHub Actions
+
+```yaml
+- uses: lehidalgo/codi@v3
+  with:
+    command: "generate --check"
+```
+
+The action wraps the CLI as a composite step — see [`action.yml`](./action.yml) for `command`, `version`, and `working-directory` inputs.
+
 ### Supported platforms
 
 | Platform | Status                                                                               |
@@ -163,7 +174,7 @@ flowchart LR
 
 Browse the full catalog at **[lehidalgo.github.io/codi/docs/catalog/](https://lehidalgo.github.io/codi/docs/catalog/)** — filterable by type, category, and keyword, with per-artifact pages showing frontmatter and full content.
 
-Create your own with `codi add rule|skill|agent <name>`, or start from a template with `--template`.
+Create your own with `codi add rule|skill|agent|workflow <name>`, or start from a template with `--template`.
 
 ---
 
@@ -188,19 +199,21 @@ Create, share, and install presets from ZIP or GitHub with `codi preset`. See th
 
 ## CLI Quick Reference
 
-| Command                  | Description                                                        |
-| :----------------------- | :----------------------------------------------------------------- |
-| `codi`                   | Launch interactive Command Center                                  |
-| `codi init`              | Initialize `.codi/` configuration                                  |
-| `codi generate`          | Generate agent config files                                        |
-| `codi add <type> <name>` | Add a rule, skill, agent, or brand                                 |
-| `codi status`            | Show drift status                                                  |
-| `codi doctor`            | Check project health                                               |
-| `codi validate`          | Validate configuration                                             |
-| `codi preset <sub>`      | Manage presets (create, install, export)                           |
-| `codi watch`             | Auto-regenerate on file changes                                    |
-| `codi compliance`        | Full health + drift + verification check                           |
-| `codi onboard`           | AI-guided setup — agent explores codebase and recommends artifacts |
+| Command                                  | Description                                                             |
+| :--------------------------------------- | :---------------------------------------------------------------------- |
+| `codi`                                   | Launch interactive Command Center                                       |
+| `codi init`                              | Initialize `.codi/` configuration                                       |
+| `codi generate`                          | Generate agent config files                                             |
+| `codi add <type> <name>`                 | Add a rule, skill, agent, brand, or workflow                            |
+| `codi status`                            | Show drift status                                                       |
+| `codi doctor`                            | Check project health                                                    |
+| `codi validate`                          | Validate configuration                                                  |
+| `codi preset <sub>`                      | Manage presets (create, install, export)                                |
+| `codi watch`                             | Auto-regenerate on file changes                                         |
+| `codi compliance`                        | Full health + drift + verification check                                |
+| `codi onboard`                           | AI-guided setup — agent explores codebase and recommends artifacts      |
+| `codi team join <src>`                   | Merge another teammate's `.codi/` from a local dir or git repo          |
+| `codi brain export-for-team --to <path>` | Snapshot brain.db into `<path>/<actor>/brain.db` for team consolidation |
 
 **Global options:** `-j, --json` JSON output | `-v, --verbose` debug | `-q, --quiet` silent | `--no-color` plain
 

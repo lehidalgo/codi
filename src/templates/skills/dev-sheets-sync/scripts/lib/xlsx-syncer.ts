@@ -1,9 +1,10 @@
 /**
  * XlsxSyncer — local .xlsx snapshot adapter (ADR-005).
  *
- * Sprint 2 proper scaffold. Full implementation in Sprint 3 once the brain
- * tables stabilize: write each canonical table to a worksheet (.xlsx), keep
- * a manifest sheet for schema_version + generated_at.
+ * Scaffold only — push is not yet wired. Once the brain tables stabilize
+ * the planned shape is one worksheet per canonical table plus a manifest
+ * sheet recording `schema_version` + `generated_at`. Pull is intentionally
+ * not supported (xlsx is push-only).
  */
 
 import type Database from "better-sqlite3";
@@ -26,7 +27,7 @@ export class XlsxSyncer implements ExternalSyncer {
       rowsPushed: 0,
       tablesTouched: [],
       skipped: 0,
-      errors: ["XlsxSyncer.push: Sprint 3 wiring pending"],
+      errors: ["XlsxSyncer.push: not yet wired"],
     };
   }
 

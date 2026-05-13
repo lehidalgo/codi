@@ -1,11 +1,12 @@
 /**
  * SheetsSyncer — Google Sheets adapter that satisfies ExternalSyncer (ADR-005).
  *
- * Sprint 2 proper ships the contract + a thin scaffold. The full push/pull
- * implementation reuses src/runtime/sync/{bootstrap,operations,...}.ts which
- * were imported from Codi. Wiring those internals into the
- * push/pull/diff methods is Sprint 3 work — this module exists so the
- * runtime can already route by `kind` and tests can stub the adapter.
+ * Ships the contract + a thin scaffold. Push/pull/diff are not yet wired
+ * to the underlying skill internals (`./bootstrap.ts`, `./operations.ts`);
+ * this module exists so the runtime can route by `kind` and tests can
+ * stub the adapter. ISSUE-005 deleted the original `src/runtime/sync/`
+ * location — the implementations now live alongside this file under
+ * `dev-sheets-sync/scripts/lib/`.
  */
 
 import type Database from "better-sqlite3";
@@ -28,7 +29,7 @@ export class SheetsSyncer implements ExternalSyncer {
       rowsPushed: 0,
       tablesTouched: [],
       skipped: 0,
-      errors: ["SheetsSyncer.push: Sprint 3 wiring pending"],
+      errors: ["SheetsSyncer.push: not yet wired"],
     };
   }
 
@@ -38,7 +39,7 @@ export class SheetsSyncer implements ExternalSyncer {
       rowsPulled: 0,
       tablesTouched: [],
       conflicts: [],
-      errors: ["SheetsSyncer.pull: Sprint 3 wiring pending"],
+      errors: ["SheetsSyncer.pull: not yet wired"],
     };
   }
 
