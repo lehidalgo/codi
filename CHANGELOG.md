@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Package manager: pnpm → npm
+
+#### Changed
+
+- **Package manager: pnpm → npm.** codi's own toolchain now uses npm
+  exclusively (`package-lock.json` is the canonical lockfile,
+  `pnpm-lock.yaml` removed). CI, husky pre-push hook, scripts, and
+  contributor docs all updated. Rationale: codi is developed inside
+  restricted corporate environments where npm has the lowest IT-approval
+  friction. The earlier pnpm → npm flip in v2.x (CHANGELOG line 450) was
+  reversed for this reason.
+
+#### Removed
+
+- `package.json#pnpm.onlyBuiltDependencies` whitelist (npm runs
+  postinstall scripts by default for `better-sqlite3`, `esbuild`,
+  `playwright`). Security tradeoff: we lose the explicit allowlist;
+  compensated by code-review discipline on new dependencies.
+
+#### Added
+
+- `package.json#preinstall: "npx -y only-allow npm"` aborts any
+  `pnpm install` / `yarn install` with a clear error message.
+- `package.json#packageManager: "npm@10.9.0"` pins the npm version via
+  `corepack` for contributors.
+- Top-level `package.json#overrides` (replaces `pnpm.overrides`) carries
+  the `fast-uri >=3.1.2` supply-chain pin. The `scripts/guard-fast-uri.mjs`
+  guard now reads from this location (via `npm ls fast-uri --all --json`).
+- `tests/unit/scripts/guard-fast-uri.test.ts` locks the package.json
+  contract for the override location.
+
+#### Migration notes for users
+
+- Codi continues to RECOGNISE pnpm and yarn in *user projects* — the
+  classifier, lockfile detection, and multi-PM rebuild hints in
+  `codi doctor` are unchanged. Only codi's own development toolchain
+  switched.
+- The templates that codi generates into user projects (skills, hooks,
+  scripts under `src/templates/`) still reference pnpm in some places.
+  A follow-up migration (deferred Task 12 in the migration plan) will
+  redesign those templates to auto-detect the user's lockfile.
+
 ### Phase 16E-H — prefs system, lifecycle hygiene, contribution lint, agent harness
 
 #### Added
