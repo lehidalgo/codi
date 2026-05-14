@@ -95,6 +95,7 @@ if [[ -z "${PROJECT_ID}" ]]; then
 
   if [[ -n "${EXISTING_PROJECTS}" ]]; then
     echo "ℹ Existing codi-sheets projects detected (you can pass --project-id <id> to reuse one):"
+    # shellcheck disable=SC2001  # sed is clearer than parameter expansion here
     echo "${EXISTING_PROJECTS}" | sed 's/^/    /'
     echo "→ Creating a new project anyway (no --project-id given)…"
   fi
