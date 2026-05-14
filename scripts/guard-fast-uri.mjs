@@ -3,13 +3,13 @@
  * ISSUE-011 supply-chain guard.
  *
  * Asserts that every hoisted version of `fast-uri` resolves to >=3.1.2.
- * The package.json `pnpm.overrides` already pins it, but lockfile
+ * The package.json top-level `overrides` already pins it, but lockfile
  * regenerations under future dep bumps could silently regress; this
  * guard fails CI in that case.
  *
  * Invoked from `.github/workflows/ci.yml`. Returns exit 0 on success,
  * exit 1 with a diagnostic if a stale version is found, exit 2 if
- * `pnpm why` cannot be parsed.
+ * `npm ls` cannot be parsed.
  */
 import { execFileSync } from "node:child_process";
 
@@ -25,10 +25,13 @@ function compare(version) {
   return patch - MIN.patch;
 }
 
-// `pnpm why --json` returns either an array of project entries or a single
-// project entry. Each entry has `dependencies` / `devDependencies` keyed by
-// package name; each value has `version`, `path`, and a nested
-// `dependencies` map. We walk the tree and pull every `fast-uri` version.
+// `npm ls fast-uri --all --json` returns a project entry whose
+// `dependencies` map is keyed by package name; each value has `version`
+// and an optional nested `dependencies` map. We walk the tree and pull
+// every `fast-uri` version. `npm ls` exits non-zero when the requested
+// package is absent or when there are extraneous packages; we accept
+// non-zero exits and parse stdout regardless — JSON.parse will fail if
+// the output is genuinely malformed.
 function collectVersions(node, found, name) {
   if (!node) return;
   if (Array.isArray(node)) {
@@ -52,13 +55,20 @@ function collectVersions(node, found, name) {
 
 let raw;
 try {
-  raw = execFileSync("pnpm", ["why", "fast-uri", "--json"], {
+  raw = execFileSync("npm", ["ls", "fast-uri", "--all", "--json"], {
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
+    stdio: ["ignore", "pipe", "pipe"],
   });
 } catch (err) {
-  console.error(`[guard-fast-uri] pnpm why failed: ${err instanceof Error ? err.message : err}`);
-  process.exit(2);
+  // `npm ls` exits non-zero when `fast-uri` is absent or when there are
+  // extraneous packages; the JSON payload on stdout is still valid in
+  // those cases. Recover stdout from the error object and continue.
+  if (err && typeof err === "object" && "stdout" in err && typeof err.stdout === "string") {
+    raw = err.stdout;
+  } else {
+    console.error(`[guard-fast-uri] npm ls failed: ${err instanceof Error ? err.message : err}`);
+    process.exit(2);
+  }
 }
 
 let parsed;
@@ -66,7 +76,7 @@ try {
   parsed = JSON.parse(raw);
 } catch (err) {
   console.error(
-    `[guard-fast-uri] could not parse pnpm output: ${err instanceof Error ? err.message : err}`,
+    `[guard-fast-uri] could not parse npm output: ${err instanceof Error ? err.message : err}`,
   );
   process.exit(2);
 }
@@ -86,7 +96,7 @@ const violators = list.filter((v) => compare(v) < 0);
 if (violators.length > 0) {
   console.error(
     `[guard-fast-uri] FAIL — versions below required >=3.1.2: ${violators.join(", ")}\n` +
-      `Fix: add/update \`pnpm.overrides.fast-uri\` in package.json and regenerate the lockfile.`,
+      `Fix: add/update \`overrides.fast-uri\` (top-level) in package.json and regenerate the lockfile.`,
   );
   process.exit(1);
 }
