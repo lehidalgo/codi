@@ -7,22 +7,22 @@ Thank you for your interest in contributing to Codi. This guide covers developme
 ```bash
 git clone https://github.com/lehidalgo/codi.git
 cd codi
-pnpm install
-pnpm build
-pnpm test
+npm install
+npm run build
+npm test
 ```
 
 **Requirements**:
 
 - **Node.js**: minimum `>=20.19.0` (matches the published `engines.node`). The `.nvmrc` pins to Node 24 for development convenience and CI parity, but Node 20.19+ is fully supported. If your system Node is older than 20.19, the [curl installer](https://lehidalgo.github.io/codi/install.sh) sets up nvm + Node 24 (latest LTS) for you.
-- **pnpm**: this repo uses pnpm exclusively (`pnpm-lock.yaml` is the canonical lockfile). The `prepare` hook runs `husky` and writes `.husky/pre-push` from `scripts/setup-husky-hooks.mjs` on every install — that's the local coverage gate. Don't `npm install`; the lockfile won't survive.
+- **npm**: this repo uses npm exclusively (`package-lock.json` is the canonical lockfile). The `prepare` hook runs `husky` and writes `.husky/pre-push` from `scripts/setup-husky-hooks.mjs` on every install — that's the local coverage gate. A `preinstall` guard aborts `pnpm install` / `yarn install` with a clear error; if you see it, switch to `npm install`.
 
 ### Quality gates active in this repo
 
 | Stage                            | Runs                                                                                              | Blocks?                              |
 | -------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | pre-commit (`.husky/pre-commit`) | codi-managed structural checks (~5 hooks) + ESLint/Prettier/Ruff/Bandit/ShellCheck where relevant | yes — `--no-verify` is **forbidden** |
-| pre-push (`.husky/pre-push`)     | `pnpm lint && pnpm test:coverage` (≈25-30s)                                                       | yes                                  |
+| pre-push (`.husky/pre-push`)     | `npm run lint && npm run test:coverage` (≈25-30s)                                                 | yes                                  |
 | CI `test` job                    | same as pre-push, plus build + Codecov upload                                                     | yes (branch protection)              |
 
 See [`docs/20260430_155234_[TECH]_quality-gates-policy.md`](docs/20260430_155234_%5BTECH%5D_quality-gates-policy.md) for the full enforcement model and threshold rationale.
@@ -189,7 +189,7 @@ src/
    - Register in `STATIC_DIR_MAP` in `src/core/scaffolder/skill-template-loader.ts`
 5. If adding evals, create `evals/evals.json` with at least 5 cases (3 positive, 2 negative). See `src/templates/skills/dev-skill-creator/references/schemas.md` for the schema.
 6. Add tests
-7. Run `pnpm test`
+7. Run `npm test`
 
 ### Adding an Agent Template
 
