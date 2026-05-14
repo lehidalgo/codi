@@ -62,7 +62,7 @@ function resolveBrainUiRunner(): { runner: string; script: string } {
   const tsxBin = resolve(repoRoot, "node_modules", ".bin", "tsx");
   if (!existsSync(tsxBin)) {
     throw new Error(
-      `Brain UI runner unavailable: dist sibling not found at ${distSibling} and tsx not installed at ${tsxBin}. Run \`pnpm build\` or \`pnpm install\`.`,
+      `Brain UI runner unavailable: dist sibling not found at ${distSibling} and tsx not installed at ${tsxBin}. Run \`npm run build\` or \`npm install\`.`,
     );
   }
   return { runner: tsxBin, script: srcScript };
@@ -162,7 +162,7 @@ export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult
           {
             code: "E_BRAIN_UI_FOREGROUND_SPAWN_FAILED",
             message: `Brain UI failed to start within ${FG_READY_DEADLINE_MS / 1000}s. See child output above for the underlying error.`,
-            hint: `Run \`${PROJECT_CLI} doctor\` to diagnose. Most common cause: missing better-sqlite3 native binding (run \`pnpm rebuild better-sqlite3\` or equivalent).`,
+            hint: `Run \`${PROJECT_CLI} doctor\` to diagnose. Most common cause: missing better-sqlite3 native binding (run \`npm rebuild better-sqlite3\` or equivalent).`,
             severity: "error",
             context: { port },
           },
@@ -210,7 +210,7 @@ export async function brainUiHandler(flags: BrainUiFlags): Promise<CommandResult
           message: `Brain UI failed to start within ${SPAWN_DEADLINE_MS / 1000}s.${
             stderrTail.length > 0 ? `\n\nChild stderr:\n${stderrTail}` : ""
           }`,
-          hint: `Run \`${PROJECT_CLI} doctor\` to diagnose. Most common cause: missing better-sqlite3 native binding (run \`pnpm rebuild better-sqlite3\` or equivalent).`,
+          hint: `Run \`${PROJECT_CLI} doctor\` to diagnose. Most common cause: missing better-sqlite3 native binding (run \`npm rebuild better-sqlite3\` or equivalent).`,
           severity: "error",
           context: { port },
         },

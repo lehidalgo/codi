@@ -357,12 +357,12 @@ grep through scripts.
 
    ## Install
    \`\`\`bash
-   # e.g. pnpm install / uv sync / go mod download
+   # e.g. npm install / uv sync / go mod download
    \`\`\`
 
    ## Development
    \`\`\`bash
-   # e.g. pnpm dev / python manage.py runserver
+   # e.g. npm run dev / python manage.py runserver
    \`\`\`
 
    ## Testing / Build / Lint & Format — same pattern, omit if empty

@@ -136,10 +136,10 @@ export interface BrainHandle {
 /**
  * Thrown when better-sqlite3's native binding cannot be loaded — typically
  * because the consumer's package manager skipped the postinstall build step
- * (pnpm v10+ does this by default unless the package is in the
- * onlyBuiltDependencies allowlist). Carries an actionable fix command for
- * each major package manager so the user does not have to interpret the
- * raw node-gyp / bindings stack trace.
+ * (npm runs postinstall scripts by default; pnpm requires whitelist in
+ * pnpm.onlyBuiltDependencies). Carries an actionable fix command for each
+ * major package manager so the user does not have to interpret the raw
+ * node-gyp / bindings stack trace.
  */
 export class BrainBindingsError extends Error {
   constructor(cause: Error) {

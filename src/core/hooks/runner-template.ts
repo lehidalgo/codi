@@ -24,7 +24,7 @@ const hooks = {{HOOKS_JSON}};
 // tampered .git/hooks/pre-commit (or a malicious local override) could
 // smuggle shell metacharacters here. Reject obviously dangerous shapes:
 // chained commands, command substitution, and redirection. The legitimate
-// hook commands (e.g. \`prettier --write\`, \`pnpm test\`) all clear this
+// hook commands (e.g. \`prettier --write\`, \`npm test\`) all clear this
 // filter. Allowlist mode would require an exhaustive enumeration of every
 // flag combination a tool can take, so denylist + timeout is the realistic
 // balance.

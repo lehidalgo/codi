@@ -132,7 +132,7 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         verdict: "fail",
         summary: "No validation_run event recorded yet.",
         suggested_action:
-          "Run `pnpm run validate` (or your project's equivalent) and capture the result via a `validation_run` event.",
+          "Run `npm run validate` (or your project's equivalent) and capture the result via a `validation_run` event.",
       };
     }
     const payload = latest.payload as { command?: string; exit_code?: number };

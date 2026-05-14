@@ -433,7 +433,7 @@ Diagnostic order — follow these steps before assuming which layer is broken:
             Add: export const staticDir = resolveStaticDir("<skill>", import.meta.url);
          b. The skill is not registered in STATIC_DIR_MAP inside
             src/core/scaffolder/skill-template-loader.ts.
-         c. Stale install — run codi init (or pnpm build + clean + reinstall + generate).
+         c. Stale install — run codi init (or npm run build + clean + reinstall + generate).
      - If the file does NOT exist in source, add it there (or drop the reference).
 
   3. IF SOURCE CIRCUIT: the source template references a file that is genuinely missing.

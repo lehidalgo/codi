@@ -53,10 +53,10 @@ export async function doctorHandler(
 
   // Native bindings probe — opens a throwaway brain to confirm
   // better-sqlite3's native binding loads. Cheap (no migrations, no schema)
-  // and catches the most common production failure on fresh installs (pnpm
-  // v10 default-skips build scripts → bindings missing → every brain
-  // operation crashes with a node-gyp stack trace). See BrainBindingsError
-  // for the actionable fix message.
+  // and catches the most common production failure on fresh installs (npm
+  // postinstall failures → bindings missing → every brain operation crashes
+  // with a node-gyp stack trace). See BrainBindingsError for the actionable
+  // fix message.
   const bindingsResult = await checkNativeBindings();
   if (reportResult.ok) {
     reportResult.data.results.push(bindingsResult);

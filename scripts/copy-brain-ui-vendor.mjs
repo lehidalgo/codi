@@ -23,7 +23,7 @@ mkdirSync(DEST_DIR, { recursive: true });
 let copied = 0;
 for (const f of FILES) {
   if (!existsSync(f.from)) {
-    console.error(`ERROR: ${f.from} not found — did pnpm install run?`);
+    console.error(`ERROR: ${f.from} not found — did npm install run?`);
     process.exit(1);
   }
   const dst = join(DEST_DIR, f.to);

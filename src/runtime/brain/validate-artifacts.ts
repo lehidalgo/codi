@@ -303,7 +303,7 @@ function checkPhaseRefDrift(
     issues.push({
       check: 7,
       severity: "error",
-      message: `phase-ref drift inside auto-generated block (run pnpm regen:phase-refs:force to repair)`,
+      message: `phase-ref drift inside auto-generated block (run npm run regen:phase-refs -- --force to repair)`,
       location: d.path,
     });
   }

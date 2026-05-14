@@ -107,14 +107,14 @@ export async function runPrefsInit(cwd: string): Promise<CodiPreferences | null>
 
   const testCommandRaw = await p.text({
     message: "Test command? (leave empty for auto-detect)",
-    placeholder: "e.g. pnpm vitest run",
+    placeholder: "e.g. npm test",
     defaultValue: "",
   });
   if (p.isCancel(testCommandRaw)) return null;
 
   const validateCommandRaw = await p.text({
     message: "Validate command? (leave empty for auto-detect)",
-    placeholder: "e.g. pnpm lint && pnpm test",
+    placeholder: "e.g. npm run lint && npm test",
     defaultValue: "",
   });
   if (p.isCancel(validateCommandRaw)) return null;

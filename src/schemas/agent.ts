@@ -103,7 +103,7 @@ export const AgentFrontmatterSchema = z.object({
     .min(1)
     .optional()
     .describe(
-      "GitHub identifiers responsible for this agent. Validated against .github/CODEOWNERS by `pnpm codi codeowners check` (ISSUE-056). Format: '@user', '@org/team', or 'email@host'.",
+      "GitHub identifiers responsible for this agent. Validated against .github/CODEOWNERS by `node scripts/check-maintainers.mjs` (ISSUE-056). Format: '@user', '@org/team', or 'email@host'.",
     ),
 });
 

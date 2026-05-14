@@ -114,7 +114,7 @@ console.error(`FAIL: ${errors.length} violation(s)`);
 for (const e of errors) console.error(`  • ${e}`);
 console.error(
   `\nFix:\n  1. Add the maintainer(s) to ${codeowners?.path ?? ".github/CODEOWNERS"}.\n` +
-    `  2. Run \`pnpm build && pnpm test\`.\n` +
+    `  2. Run \`npm run build && npm test\`.\n` +
     `  3. Re-run \`node scripts/check-maintainers.mjs\`.`,
 );
 process.exit(1);
