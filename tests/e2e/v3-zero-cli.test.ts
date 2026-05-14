@@ -35,7 +35,7 @@ interface CliResult {
 
 function ensureBuilt(): void {
   if (!existsSync(CLI)) {
-    execFileSync("pnpm", ["build"], { cwd: REPO, stdio: "inherit" });
+    execFileSync("npm", ["run", "build"], { cwd: REPO, stdio: "inherit" });
   }
   if (!existsSync(CLI)) throw new Error(`dist/cli.js missing at ${CLI}`);
 }

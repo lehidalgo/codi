@@ -20,7 +20,7 @@ const sid = (n: string): string => `e2e-task31-${n}-${RUN_SUFFIX}`;
 describe("hooks-as-artifacts E2E — security-reminder PreToolUse", () => {
   beforeAll(() => {
     if (!existsSync(CLI)) {
-      throw new Error(`dist/cli.js missing — run 'pnpm build' before E2E. Looked at: ${CLI}`);
+      throw new Error(`dist/cli.js missing — run 'npm run build' before E2E. Looked at: ${CLI}`);
     }
   });
 

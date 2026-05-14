@@ -45,7 +45,7 @@ Migrations remain in this directory for at least 24 months after the version the
 4. Add a sample to `schemas/sample-events.json`.
 5. If the event affects existing reducer logic, add migration script.
 6. Update consuming code: hooks, gates, CLI, reducer.
-7. Run `pnpm run validate` — must pass.
+7. Run `npm run validate` — must pass.
 
 ## Removing or renaming an event type
 

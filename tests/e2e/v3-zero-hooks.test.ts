@@ -78,7 +78,7 @@ function runHook(scriptName: string, payload: unknown): HookResult {
   const cli = distCli();
   if (!existsSync(cli)) {
     throw new Error(
-      `dist/cli.js missing — run \`pnpm build\` before this test suite (invoked path: ${cli}).`,
+      `dist/cli.js missing — run \`npm run build\` before this test suite (invoked path: ${cli}).`,
     );
   }
   const sub = legacyToSubcommand(scriptName);

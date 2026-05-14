@@ -393,7 +393,7 @@ describe("S6 — gate checks against real evidence", { retry: SUITE_RETRY }, () 
     append(
       createEvent({
         eventType: "validation_run",
-        payload: { command: "pnpm test", exit_code: 1, duration_ms: 100 },
+        payload: { command: "npm test", exit_code: 1, duration_ms: 100 },
         author: { type: "system", id: "ci" },
         parentEventId: null,
       }),
@@ -403,7 +403,7 @@ describe("S6 — gate checks against real evidence", { retry: SUITE_RETRY }, () 
     append(
       createEvent({
         eventType: "validation_run",
-        payload: { command: "pnpm test", exit_code: 0, duration_ms: 100 },
+        payload: { command: "npm test", exit_code: 0, duration_ms: 100 },
         author: { type: "system", id: "ci" },
         parentEventId: null,
       }),

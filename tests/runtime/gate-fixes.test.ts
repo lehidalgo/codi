@@ -146,7 +146,7 @@ describe("validation_passes (F8)", () => {
     appendEvent(
       createEvent({
         eventType: "validation_run",
-        payload: { command: "pnpm run test", exit_code: 0, duration_ms: 1234 },
+        payload: { command: "npm run test", exit_code: 0, duration_ms: 1234 },
         author: { type: "system", id: "ci" },
         parentEventId: null,
       }),
@@ -154,14 +154,14 @@ describe("validation_passes (F8)", () => {
     const outcome = runDeterministicCheck(validationPasses, buildCtx(dir));
     expect(outcome.result.verdict).toBe("pass");
     expect(outcome.result.summary).toContain("exit 0");
-    expect(outcome.result.summary).toContain("pnpm run test");
+    expect(outcome.result.summary).toContain("npm run test");
   });
 
   it("fails when the latest validation_run has non-zero exit", () => {
     appendEvent(
       createEvent({
         eventType: "validation_run",
-        payload: { command: "pnpm run test", exit_code: 1, duration_ms: 1234 },
+        payload: { command: "npm run test", exit_code: 1, duration_ms: 1234 },
         author: { type: "system", id: "ci" },
         parentEventId: null,
       }),

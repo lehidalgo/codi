@@ -214,7 +214,7 @@ describe("HookDefinitionSchema", () => {
   it("accepts valid hook", () => {
     const result = HookDefinitionSchema.safeParse({
       name: "lint-check",
-      command: "pnpm lint",
+      command: "npm run lint",
       condition: "always",
     });
     expect(result.success).toBe(true);
@@ -223,7 +223,7 @@ describe("HookDefinitionSchema", () => {
   it("rejects hook with invalid name", () => {
     const result = HookDefinitionSchema.safeParse({
       name: "Lint Check",
-      command: "pnpm lint",
+      command: "npm run lint",
       condition: "always",
     });
     expect(result.success).toBe(false);
@@ -241,7 +241,7 @@ describe("HooksConfigSchema", () => {
           lint: [
             {
               name: "eslint",
-              command: "pnpm lint",
+              command: "npm run lint",
               condition: "always",
             },
           ],

@@ -212,7 +212,7 @@
     "author": { "type": "system", "id": "codi" },
     "parent_event_id": null,
     "commitable": false,
-    "payload": { "command": "pnpm run validate", "exit_code": 0, "duration_ms": 12500 }
+    "payload": { "command": "npm run validate", "exit_code": 0, "duration_ms": 12500 }
   },
   {
     "event_id": "00000000-0000-4000-8000-000000000018",

@@ -44,7 +44,7 @@ export async function runHarness(opts: HarnessOptions): Promise<HarnessResult> {
     Anthropic = mod.default;
   } catch {
     throw new Error(
-      "Optional dep '@anthropic-ai/sdk' missing — run `pnpm add -D @anthropic-ai/sdk` to enable.",
+      "Optional dep '@anthropic-ai/sdk' missing — run `npm install --save-dev @anthropic-ai/sdk` to enable.",
     );
   }
   const client = new Anthropic({ apiKey });
