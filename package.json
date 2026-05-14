@@ -22,6 +22,7 @@
     "dist"
   ],
   "scripts": {
+    "preinstall": "npx -y only-allow npm",
     "build": "tsup",
     "regen:phase-refs": "tsx scripts/regenerate-phase-refs.mjs",
     "regen:phase-refs:force": "tsx scripts/regenerate-phase-refs.mjs --force",
@@ -51,8 +52,10 @@
     "docs:check": "astro check",
     "docs:preview": "node preview-server.mjs"
   },
+  "packageManager": "npm@10.9.0",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
   },
   "repository": {
     "type": "git",
@@ -121,14 +124,7 @@
     "typescript-eslint": "^8.57.2",
     "vitest": "^4.1.0"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild",
-      "playwright"
-    ],
-    "overrides": {
-      "fast-uri": ">=3.1.2"
-    }
+  "overrides": {
+    "fast-uri": ">=3.1.2"
   }
 }
