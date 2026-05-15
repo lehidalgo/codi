@@ -24,7 +24,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | Orden | ID | Issue | Nivel | Prioridad | Estado | Depende de | Desbloquea | Effort |
 |---|---|---|---|---|---|---|---|---|
 | 1 | CORE-001 | Reducer schema validation guard | F | P0 | **Validado ✅** | — | CORE-009, CORE-005 | 4h |
-| 2 | CORE-002 | Atomic generator commit + state lock | F | P0 | Pendiente | — | CORE-011 | 1d |
+| 2 | CORE-002 | Atomic generator commit + state lock | F | P0 | **Validado ✅** | — | CORE-011 | 1d |
 | 3 | CORE-003 | Logger DI + de-singletonize | F | P0 | Pendiente | — | CORE-007 | 0.5d |
 | 4 | CORE-004 | Single-source Zod → JSON Schema | F | P1 | Pendiente | — | CORE-005 (tighter) | 2d |
 | 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | Pendiente | (CORE-004) | — | 1d |
@@ -152,14 +152,15 @@ Sintetizadas de 3 subagentes paralelos:
 
 ---
 
-## CORE-002 — Atomic generator commit + state lock
+## CORE-002 — Atomic generator commit + state lock **[RESUELTO]**
 
 - **Nivel:** F
 - **Prioridad:** P0
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** ninguno
-- **Desbloquea:** CORE-011 (UNIQUE constraints aprovecha state coherente), parallel-generate test
-- **Effort:** ~1 día
+- **Desbloquea:** CORE-011 (UNIQUE constraints aprovecha state coherente), CORE-012 (BrainEventLog migra a proper-lockfile)
+- **Effort:** ~1 día (actual: ~3h implementación + 0.5h verificación = 3.5h)
+- **Commits:** `87aad58d` (atomicMutate + lock), `4b6e774e` (apply fused mutation), `650b8510` (p-limit)
 
 **Descripción:** El pipeline `applyConfiguration` en `src/core/generator/apply.ts:144-156` escribe archivos en `Promise.all` (sin bound), luego detecta orphans, los borra, y finalmente escribe `state.json` vía `updateAgentsBatch`. Si el state write falla, los orphans están eliminados de disco pero state aún los lista. El comentario en `:152` admite incompletitud. Adicionalmente, `state.ts` usa temp-file + rename sin lock cross-process; dos `codi generate` paralelos hacen lose-last-writer.
 
@@ -191,9 +192,50 @@ Sintetizadas de 3 subagentes paralelos:
 - Existing `tests/integration/adapter-generation.test.ts` (258 LOC) — must pass.
 - New parallel test + crash-recovery test.
 
----
+**Notas de decisión:**
 
-## CORE-003 — Logger DI + de-singletonize
+Sintetizadas de 3 subagentes paralelos + revisión propia durante implementación:
+
+1. **`proper-lockfile` en lugar de hand-rolled PID lock** — kernel-mediated via `mkdir(O_CREAT|O_EXCL)`. Subagent 1+2+3 convergieron aquí. Inherits stale-detection vía mtime + heartbeat refresh.
+
+2. **`StateManager.atomicMutate(mutator)` API simple** — no `commitTransaction(plan)` (Subagent 1's más sofisticado). El mutator es pura función `state => state`; FS side effects quedan fuera del lock window. Simpler blast radius.
+
+3. **Step order preserved: delete-then-commit, NO commit-then-delete** — divergencia importante con Subagent 3's intent original. Discovered during implementation: el reorder a "commit-state-first" ROMPE la ENOENT-recovery path existente en `state.detectOrphans:308-310`. Documentado en commit `4b6e774e`. La fix correcta es fusionar `removeAgents` + `updateAgentsBatch` en UNA atomicMutate call (cierra la única window de inatomicidad).
+
+4. **`p-limit(32)` con env override** `CODI_FILE_IO_CONCURRENCY`. Justificación: 12% de macOS RLIMIT_NOFILE default = 32. Subagents convergieron.
+
+5. **Plain TS guards en lugar de Zod schemas para state.json validation** — defer to CORE-004.
+
+**Resultado final:**
+
+- ✅ **Race-of-last-writer-wins eliminada**: 3 `codi generate` paralelos contra el mismo `.codi/` → 3 exit `[OK]`, state.json válido, agents map correcto. Pre-fix esto producía silent state loss.
+- ✅ **State mutation atómica**: removeAgents + updateAgentsBatch fusionados en una sola atomicMutate transaction (crash entre ellas ya no deja state half-mutated).
+- ✅ **EMFILE prevention**: pLimit(32) wrapping de 3 waves de FS I/O en generator.ts.
+- ✅ ENOENT-recovery preserved: state-references-missing-file → next run self-heals.
+- ✅ Lint clean: 6 guards + tsc --noEmit.
+- ✅ Test suite: 3750 baseline → **3763 passing** (+13), 6 skipped, 0 failed.
+- ✅ Build clean: ESM + DTS.
+
+**Archivos modificados:**
+- `package.json` + `package-lock.json` — añadidas `proper-lockfile`, `p-limit`, `@types/proper-lockfile`
+- `src/core/config/state.ts` (+~110 / −30) — `atomicMutate` method + refactor de `updateAgent`/`updateAgentsBatch`/`removeAgents`
+- `src/core/generator/apply.ts` (+~25 / −15) — fused state mutation
+- `src/core/generator/generator.ts` (+~30 / −20) — pLimit wrapping
+- `tests/unit/config/state-atomic-mutate.test.ts` (new, ~150 LOC) — 6 tests
+- `tests/unit/core/generator/apply-atomic-state.test.ts` (new, ~165 LOC) — 4 tests
+- `tests/unit/core/generator/generator-concurrency.test.ts` (new, ~90 LOC) — 3 tests
+
+**Tests ejecutados:**
+- `npx vitest run tests/unit/config/state-atomic-mutate.test.ts` → 6/6 pass
+- `npx vitest run tests/unit/core/generator/apply-atomic-state.test.ts` → 4/4 pass
+- `npx vitest run tests/unit/core/generator/generator-concurrency.test.ts` → 3/3 pass
+- `npm run lint && npm test` → 3763 pass / 6 skipped / 0 failed
+- End-to-end parallel race en `/tmp/core-002-repro` sandbox → 3/3 procesos `[OK]`, state.json válido
+
+**Riesgos restantes:**
+- Windows compat no verificada en CI (no hay matrix Windows). `proper-lockfile` debería funcionar pero defer validation. NFS edge cases mitigados por `realpath: false`.
+- `updateHooks`, `updatePresetArtifacts`, `updateSelectedHooks` no se refactorizan en este PR (Subagent 1 sugerencia opcional). Out of scope; potential CORE-002b si se materializa.
+- `FILE_IO_CONCURRENCY` se captura at module-load — `CODI_FILE_IO_CONCURRENCY` se debe setear ANTES de importar el módulo. Tests mid-run mutating env no afectan al limit (documented inline).
 
 - **Nivel:** F
 - **Prioridad:** P0
