@@ -9,7 +9,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 
 // ─── 9 capture / observability tables ───────────────────────────────────────
 
@@ -20,6 +20,11 @@ export const projects = sqliteTable("projects", {
   name: text("name").notNull(),
   firstSeen: integer("first_seen").notNull(),
   lastSeen: integer("last_seen").notNull(),
+  // v7 — git identity + host context columns (ALTER TABLE in migrate.ts:257-260).
+  gitUserName: text("git_user_name"),
+  gitUserEmail: text("git_user_email"),
+  hostUser: text("host_user"),
+  hostMachine: text("host_machine"),
 });
 
 export const sessions = sqliteTable(
@@ -38,6 +43,19 @@ export const sessions = sqliteTable(
     workflowId: text("workflow_id"),
     totalTurns: integer("total_turns").default(0),
     totalCaptureCount: integer("total_capture_count").default(0),
+    // v4 — session-level token accounting (ALTER TABLE migrate.ts:215-222).
+    tokensInput: integer("tokens_input"),
+    tokensOutput: integer("tokens_output"),
+    tokensCacheCreate: integer("tokens_cache_create"),
+    tokensCacheRead: integer("tokens_cache_read"),
+    tokensPreloaded: integer("tokens_preloaded"),
+    costUsd: real("cost_usd"),
+    contextWindow: integer("context_window"),
+    tokensEstimated: integer("tokens_estimated"),
+    // v5 — workflow context-rebuild ceiling (migrate.ts:236).
+    tokensMaxPrefix: integer("tokens_max_prefix"),
+    // v6 — Claude Code messages count delta (migrate.ts:247).
+    tokensMessagesCount: integer("tokens_messages_count"),
     // ISSUE-053 — cross-team aggregation key (ADR-005). NULL = solo / untagged.
     teamId: text("team_id"),
   },
@@ -59,6 +77,11 @@ export const prompts = sqliteTable(
   },
   (t) => ({
     idxSessionTurn: index("idx_prompts_session_turn").on(t.sessionId, t.turnNo),
+    // BOOTSTRAP at migrate.ts:138 — DESC ordering encoded in raw SQL but
+    // not modelled here (drizzle-orm/sqlite-core has no `.desc()` builder
+    // on index columns prior to v0.50). PRAGMA index_info reports column
+    // ordinals only, so the alignment guard accepts equal column lists.
+    idxSessionPidDesc: index("idx_prompts_session_pid_desc").on(t.sessionId, t.promptId),
   }),
 );
 
@@ -70,6 +93,11 @@ export const turns = sqliteTable("turns", {
   agentText: text("agent_text"), // populated only when trace_level=full
   durationMs: integer("duration_ms"),
   promptId: integer("prompt_id").notNull(),
+  // v4 — per-turn token attribution (ALTER TABLE migrate.ts:223-226).
+  tokensInput: integer("tokens_input"),
+  tokensOutput: integer("tokens_output"),
+  tokensCacheCreate: integer("tokens_cache_create"),
+  tokensCacheRead: integer("tokens_cache_read"),
 });
 
 export const captures = sqliteTable(
@@ -95,6 +123,9 @@ export const captures = sqliteTable(
     idxSessionTs: index("idx_captures_session_ts").on(t.sessionId, t.ts),
     idxDeletedAt: index("idx_captures_deleted_at").on(t.deletedAt),
     idxTeamTs: index("idx_captures_team_ts").on(t.teamId, t.ts),
+    // BOOTSTRAP migrate.ts:136 — speeds up the (turn_id, raw_marker)
+    // dedupe at marker persist time (persist.ts:46-52).
+    idxTurnMarker: index("idx_captures_turn_marker").on(t.turnId, t.rawMarker),
   }),
 );
 
@@ -117,20 +148,32 @@ export const toolCalls = sqliteTable(
   }),
 );
 
-export const corrections = sqliteTable("corrections", {
-  correctionId: integer("correction_id").primaryKey({ autoIncrement: true }),
-  sessionId: text("session_id").notNull(),
-  ts: integer("ts").notNull(),
-  filePath: text("file_path").notNull(),
-  diffSummary: text("diff_summary").notNull(),
-  sourceTurnId: integer("source_turn_id"),
-  detectedVia: text("detected_via").notNull(),
-  // ISSUE-049 — JSON-encoded string[] of artifact_name snapshot at the
-  // exact turn this correction was captured. Populated by
-  // recordCorrectionFromMarker at write-time so attribution is causal,
-  // not temporal-overlap inferred via a VIEW.
-  linkedArtifacts: text("linked_artifacts"),
-});
+export const corrections = sqliteTable(
+  "corrections",
+  {
+    correctionId: integer("correction_id").primaryKey({ autoIncrement: true }),
+    sessionId: text("session_id").notNull(),
+    ts: integer("ts").notNull(),
+    filePath: text("file_path").notNull(),
+    diffSummary: text("diff_summary").notNull(),
+    sourceTurnId: integer("source_turn_id"),
+    detectedVia: text("detected_via").notNull(),
+    // ISSUE-049 — JSON-encoded string[] of artifact_name snapshot at the
+    // exact turn this correction was captured. Populated by
+    // recordCorrectionFromMarker at write-time so attribution is causal,
+    // not temporal-overlap inferred via a VIEW.
+    linkedArtifacts: text("linked_artifacts"),
+    // ISSUE-052 / v14 — actor identity for cross-team aggregation
+    // (ALTER TABLE migrate.ts:406).
+    actorId: text("actor_id"),
+  },
+  (t) => ({
+    // v12 — session+turn lookup for the captures-side dedupe queries.
+    idxSessionTurn: index("idx_corrections_session_turn").on(t.sessionId, t.sourceTurnId),
+    // v14 — actor leaderboard / per-team aggregation.
+    idxActor: index("idx_corrections_actor").on(t.actorId),
+  }),
+);
 
 export const artifactsUsed = sqliteTable(
   "artifacts_used",
@@ -181,16 +224,14 @@ export const evalRuns = sqliteTable(
   }),
 );
 
-export const codiSchemaVersion = sqliteTable(
-  "_codi_schema_version",
-  {
-    version: integer("version").notNull(),
-    appliedAt: integer("applied_at").notNull(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.version] }),
-  }),
-);
+export const codiSchemaVersion = sqliteTable("_codi_schema_version", {
+  // INTEGER PRIMARY KEY (inline, not composite) so the column becomes
+  // a rowid alias — matches the BOOTSTRAP form at migrate.ts:107.
+  // Composite primaryKey() would mark the column NOT NULL and lose the
+  // rowid alias semantics.
+  version: integer("version").primaryKey(),
+  appliedAt: integer("applied_at").notNull(),
+});
 
 // ─── 2 workflow runtime tables ──────────────────────────────────────────────
 
@@ -211,6 +252,9 @@ export const workflowRuns = sqliteTable(
   (t) => ({
     idxProjectStatus: index("idx_workflow_runs_project_status").on(t.projectId, t.status),
     idxTeamStatus: index("idx_workflow_runs_team_status").on(t.teamId, t.status),
+    // BOOTSTRAP migrate.ts:137 — accelerates "active workflows newest-first"
+    // queries used by `codi workflow status` and brain-UI.
+    idxStatusStarted: index("idx_workflow_runs_status_started").on(t.status, t.startedAt),
   }),
 );
 
@@ -247,6 +291,20 @@ export const workflowDefinitions = sqliteTable(
     idxManagedBy: index("idx_workflow_definitions_managed_by").on(t.managedBy),
   }),
 );
+
+/**
+ * CORE-005 — Drizzle model for the `runtime_state` KV table created by v11
+ * ALTER (`migrate.ts:314-317`). Previously this table lived only in raw SQL,
+ * causing schema drift the alignment guard now catches.
+ *
+ * Backing for `getCodiSession() / setCodiSession()` and other singleton
+ * KV-shaped persistence inside the brain. Per ISSUE-037, this is the
+ * post-v11 home for what used to live as a special row in `workflow_runs`.
+ */
+export const runtimeState = sqliteTable("runtime_state", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
 
 // Raw SQL for FTS5 + vec0 virtual tables — drizzle does not generate these.
 // Applied by migrate.ts after the structural migration runs.
