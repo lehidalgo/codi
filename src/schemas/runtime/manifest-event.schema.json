@@ -47,7 +47,7 @@
     },
     "workflowType": {
       "type": "string",
-      "enum": ["feature", "bug-fix", "refactor", "migration", "project", "quick"]
+      "enum": ["feature", "bug-fix", "refactor", "migration", "project", "quick", "team-consolidation"]
     },
     "scopeCategory": {
       "type": "string",

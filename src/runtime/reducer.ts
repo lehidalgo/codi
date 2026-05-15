@@ -369,6 +369,14 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
     case "artifact_linked":
     case "design_doc_authored":
     case "decision_recorded":
+    // CORE-004: sheet sync events flow through the event log but the
+    // reducer derives no state from them — they're consumed by the
+    // dev-sheets-sync skill, not by the workflow state machine.
+    case "sheet_row_upserted":
+    case "sheet_row_appended":
+    case "sheet_sync_queued":
+    case "sheet_sync_failed":
+    case "sheet_reconciled":
       break;
 
     default: {
