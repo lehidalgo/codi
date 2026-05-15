@@ -5,6 +5,7 @@ import type { GeneratedFile, GenerateOptions } from "#src/types/agent.js";
 import type { NormalizedConfig } from "#src/types/config.js";
 import type { Result } from "#src/types/result.js";
 import { ok, err } from "#src/types/result.js";
+import { Logger } from "#src/core/output/logger.js";
 import { getAdapter } from "./adapter-registry.js";
 
 /**
@@ -217,6 +218,7 @@ export async function generate(
         force: options.force,
         keepCurrent: options.keepCurrent,
         unionMerge: options.unionMerge,
+        log: Logger.getInstance(),
       });
 
       await Promise.all(

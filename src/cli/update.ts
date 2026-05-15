@@ -175,6 +175,7 @@ async function refreshManagedArtifacts(
       force: opts.force,
       keepCurrent: opts.keepCurrent,
       unionMerge: opts.unionMerge,
+      log: opts.log,
     });
 
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
@@ -350,7 +351,7 @@ async function pullFromSource(
   }
 
   if (conflicts.length > 0) {
-    const resolution = await resolveConflicts(conflicts, options);
+    const resolution = await resolveConflicts(conflicts, { ...options, log });
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
       await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
       log.info(`Pulled: ${entry.label}`);

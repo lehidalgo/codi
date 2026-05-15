@@ -10,7 +10,8 @@ import {
   buildConflictMarkers,
   extractConflictHunks,
 } from "./diff.js";
-import { Logger } from "../core/output/logger.js";
+import type { Logger } from "#src/types/logger.js";
+import { NULL_LOGGER } from "#src/types/logger.js";
 
 export interface ConflictEntry {
   /** Display label shown in diffs and prompts (e.g. "rules/my-rule"). */
@@ -36,6 +37,12 @@ export interface ConflictOptions {
    * wrapped in <<<<<<< / ======= / >>>>>>> so the user can resolve in-editor.
    */
   unionMerge?: boolean;
+  /**
+   * Injected logger (CORE-003). Defaults to `NULL_LOGGER` — the composition
+   * root (CLI handlers, generator pipeline) passes `Logger.getInstance()`
+   * here. Tests can pass a capturing logger to assert on warn/info calls.
+   */
+  log?: Logger;
 }
 
 export interface ConflictResolution {
@@ -174,7 +181,11 @@ const GUI_EDITORS = new Set([
 ]);
 
 /** Opens content in the user's editor and returns the saved result. */
-async function openInEditor(content: string, label: string): Promise<string | null> {
+async function openInEditor(
+  content: string,
+  label: string,
+  log: Logger,
+): Promise<string | null> {
   const { command, args } = resolveEditor();
   const safeName = label.replace(/[^a-z0-9._-]/gi, "-");
   const tmpFile = path.join(os.tmpdir(), `${safeName}-conflict-${Date.now()}.md`);
@@ -193,7 +204,7 @@ async function openInEditor(content: string, label: string): Promise<string | nu
         child.on("close", resolve);
       }).catch((err: Error) => {
         s.stop(`Editor failed`);
-        Logger.getInstance().warn(
+        log.warn(
           `Could not open editor "${command}": ${err.message}. Set $EDITOR to your preferred editor.`,
         );
         return "error" as const;
@@ -206,7 +217,7 @@ async function openInEditor(content: string, label: string): Promise<string | nu
         stdio: "inherit",
       });
       if (result.error) {
-        Logger.getInstance().warn(
+        log.warn(
           `Could not open editor "${command}": ${result.error.message}. Set $EDITOR to your preferred editor.`,
         );
         return null;
@@ -314,6 +325,7 @@ export async function resolveConflicts(
   conflicts: ConflictEntry[],
   options: ConflictOptions = {},
 ): Promise<ConflictResolution> {
+  const log = options.log ?? NULL_LOGGER;
   if (conflicts.length === 0) {
     return { accepted: [], skipped: [], merged: [] };
   }
@@ -376,9 +388,7 @@ export async function resolveConflicts(
     }
 
     if (mergedEntries.length > 0) {
-      Logger.getInstance().info(
-        `${mergedEntries.length} file(s) auto-merged in non-interactive mode`,
-      );
+      log.info(`${mergedEntries.length} file(s) auto-merged in non-interactive mode`);
     }
 
     // failed entries go into skipped — callers inspect process.exitCode === 2
@@ -386,7 +396,6 @@ export async function resolveConflicts(
     return { accepted: [], skipped: failed, merged: mergedEntries };
   }
 
-  const log = Logger.getInstance();
   log.warn(`${conflicts.length} file(s) conflict with your local versions`);
 
   const accepted: ConflictEntry[] = [];
@@ -479,7 +488,7 @@ export async function resolveConflicts(
           conflict.currentContent,
           conflict.incomingContent,
         );
-        const edited = await openInEditor(markerContent, conflict.label);
+        const edited = await openInEditor(markerContent, conflict.label, log);
         if (edited === null) {
           // Editor failed — re-prompt
           continue;
@@ -513,7 +522,7 @@ export async function resolveConflicts(
           );
           const markerDiff = renderColoredDiff(conflict.currentContent, content, conflict.label);
           p.note(markerDiff, `${conflict.label} — conflicts to resolve manually`);
-          const edited = await openInEditor(content, conflict.label);
+          const edited = await openInEditor(content, conflict.label, log);
           if (edited === null) {
             continue;
           }

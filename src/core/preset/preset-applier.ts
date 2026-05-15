@@ -4,6 +4,7 @@ import { stringify as stringifyYaml } from "yaml";
 import { countChanges } from "#src/utils/diff.js";
 import { hashContent } from "#src/utils/hash.js";
 import { resolveConflicts, type ConflictEntry } from "#src/utils/conflict-resolver.js";
+import { Logger } from "../output/logger.js";
 import { StateManager } from "../config/state.js";
 import type { ArtifactFileState } from "../config/state.js";
 import type { LoadedPreset } from "./preset-loader.js";
@@ -306,7 +307,10 @@ export async function applyPresetArtifacts(
     removals: c.removals,
   }));
 
-  const resolution = await resolveConflicts(conflictEntries, options);
+  const resolution = await resolveConflicts(conflictEntries, {
+    ...options,
+    log: Logger.getInstance(),
+  });
 
   for (const entry of [...resolution.accepted, ...resolution.merged]) {
     await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");

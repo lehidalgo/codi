@@ -102,6 +102,7 @@ export async function teamJoinHandler(
     const resolution = await resolveConflicts(conflicts, {
       force: Boolean(flags.force),
       keepCurrent: Boolean(flags.keepCurrent),
+      log,
     });
     // Persist accepted + merged entries.
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
