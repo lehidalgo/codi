@@ -41,11 +41,13 @@ Migrations remain in this directory for at least 24 months after the version the
 
 1. Open an ADR in `docs/adr/` titled `NNNN-add-event-<event_type>.md` covering: motivation, payload shape, commitable status, alternatives considered.
 2. Bump schema version with minor bump.
-3. Add the new variant to `manifest-event.schema.json` `oneOf`.
-4. Add a sample to `schemas/sample-events.json`.
-5. If the event affects existing reducer logic, add migration script.
-6. Update consuming code: hooks, gates, CLI, reducer.
-7. Run `npm run validate` — must pass.
+3. Add the new entry to `EVENT_TYPES` in `src/runtime/types.ts` (the canonical TS source); if `commitable: true`, also add to `COMMITABLE_EVENT_TYPES`.
+4. Add the new variant to `src/schemas/runtime/manifest-event.ts` Zod source once CORE-004b lands (today: `manifest-event.schema.json` `oneOf` directly).
+5. Run `npm run schemas:generate` to regenerate the JSON Schema from Zod sources (CORE-004) — the CI `schemas:check` step will fail otherwise.
+6. Add a sample to `src/schemas/runtime/sample-events.json`.
+7. If the event affects existing reducer logic, add migration script + reducer case in `src/runtime/reducer.ts`.
+8. Update consuming code: hooks, gates, CLI, reducer.
+9. Run `npm test` — full suite green; the schemas-coverage test enforces parity between `EVENT_TYPES` and the schema `oneOf`.
 
 ## Removing or renaming an event type
 
