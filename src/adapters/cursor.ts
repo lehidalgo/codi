@@ -1,7 +1,4 @@
-import { access } from "node:fs/promises";
-import { join } from "node:path";
 import type {
-  AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
@@ -29,15 +26,8 @@ import {
   MCP_FILENAME,
   PROJECT_NAME,
 } from "../constants.js";
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { defineAdapter } from "./base.js";
+import { buildCursorHooks } from "./cursor-hooks.js";
 
 function buildMdcFrontmatter(rule: NormalizedRule): string {
   const lines = ["---"];
@@ -57,7 +47,7 @@ function buildMdcFrontmatter(rule: NormalizedRule): string {
  * Generates `.cursorrules` (primary instruction file), `.cursor/rules/*.mdc`,
  * and `.cursor/mcp.json` (MCP server config).
  */
-export const cursorAdapter: AgentAdapter = {
+export const cursorAdapter = defineAdapter({
   id: "cursor",
   name: "Cursor",
 
@@ -80,11 +70,7 @@ export const cursorAdapter: AgentAdapter = {
     maxContextTokens: CONTEXT_TOKENS_SMALL,
   } satisfies AgentCapabilities,
 
-  async detect(projectRoot: string): Promise<boolean> {
-    const hasDir = await exists(join(projectRoot, ".cursor"));
-    const hasFile = await exists(join(projectRoot, ".cursorrules"));
-    return hasDir || hasFile;
-  },
+  detect: { markers: [".cursor", ".cursorrules"] },
 
   async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const files: GeneratedFile[] = [];
@@ -205,35 +191,5 @@ export const cursorAdapter: AgentAdapter = {
 
     return files;
   },
-};
+});
 
-interface CursorHook {
-  command: string;
-  args?: string[];
-}
-
-interface CursorHooks {
-  beforeShellExecution?: CursorHook[];
-}
-
-function buildCursorHooks(config: NormalizedConfig): CursorHooks | null {
-  const flagValue = (key: string): unknown => config.flags[key]?.value;
-  const denyPatterns: string[] = [];
-
-  if (flagValue("allow_force_push") === false) {
-    denyPatterns.push("git push --force", "git push -f");
-  }
-  if (flagValue("allow_file_deletion") === false) {
-    denyPatterns.push("rm -rf", "rm -r");
-  }
-
-  if (denyPatterns.length === 0) return null;
-
-  // Build inline shell command that checks stdin JSON for denied patterns
-  const patternsArg = denyPatterns.join("|");
-  const script = `read input; cmd=$(echo "$input" | grep -o '"command":"[^"]*"' | head -1 | sed 's/"command":"//;s/"//'); if echo "$cmd" | grep -qE '${patternsArg}'; then echo '{"permission":"deny"}'; else echo '{}'; fi`;
-
-  return {
-    beforeShellExecution: [{ command: "bash", args: ["-c", script] }],
-  };
-}

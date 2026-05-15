@@ -57,6 +57,20 @@ const FORBIDDEN_SYMBOL_IMPORTS = [
     pattern: /^\s*import\s+(?!type\b)\{[^}]*\bLogger\b[^}]*\}\s+from\s+["'][^"']*core\/output\/logger/,
     message: "adapters/ may only import `type { Logger }` — pass via GenerateOptions.log",
   },
+  {
+    // CORE-006 — leaf adapter files must not value-import heartbeat-hooks
+    // directly. The single allowed importer is `heartbeat-emission.ts`,
+    // which wraps tracker/observer/launcher emission behind a stable
+    // `buildHeartbeatArtifacts()` API. `claude-settings.ts` is the one
+    // exception that still needs the filename constants for its hook
+    // command builder; it stays on the allowlist explicitly.
+    from: "src/adapters",
+    pattern: /^\s*import\s+(?!type\b)[^;]*from\s+["'][^"']*core\/hooks\/heartbeat-hooks/,
+    message:
+      "adapters/ leaf adapters must not import heartbeat-hooks directly — " +
+      "use buildHeartbeatArtifacts() from ./heartbeat-emission.js (CORE-006)",
+    allowFiles: ["heartbeat-emission.ts", "claude-settings.ts"],
+  },
 ];
 
 async function walk(dir, out) {
@@ -121,10 +135,12 @@ async function findOffenders() {
     }
   }
 
-  // CORE-003: symbol-level checks. Scan each consumer root for the
-  // specific forbidden import patterns and report each match as an
-  // offender alongside the layer offenders.
-  for (const { from, pattern, message } of FORBIDDEN_SYMBOL_IMPORTS) {
+  // CORE-003 / CORE-006: symbol-level checks. Scan each consumer root for
+  // the specific forbidden import patterns and report each match as an
+  // offender alongside the layer offenders. Rules may declare an
+  // `allowFiles` array of basenames that are exempt (e.g. the single
+  // central helper that consolidates an otherwise-banned import).
+  for (const { from, pattern, message, allowFiles } of FORBIDDEN_SYMBOL_IMPORTS) {
     const root = join(REPO, from);
     const files = [];
     try {
@@ -134,6 +150,8 @@ async function findOffenders() {
       process.exit(2);
     }
     for (const abs of files) {
+      const basename = abs.split("/").pop() ?? "";
+      if (allowFiles && allowFiles.includes(basename)) continue;
       let src;
       try {
         src = await readFile(abs, "utf8");
@@ -152,7 +170,7 @@ async function findOffenders() {
         offenders.push({
           path: relative(REPO, abs),
           from,
-          to: "core/output/logger (value import)",
+          to: "forbidden symbol import",
           hits,
           symbolMessage: message,
         });

@@ -1,8 +1,4 @@
-import { access } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import type {
-  AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
@@ -31,43 +27,10 @@ import {
   MCP_FILENAME,
   PROJECT_CLI,
   PROJECT_NAME_DISPLAY,
-  PROJECT_DIR,
 } from "../constants.js";
-import {
-  buildSkillObserverScript,
-  buildLauncherFile,
-  launcherCommand,
-  HOOKS_SUBDIR,
-  LAUNCHER_FILENAME,
-  SKILL_OBSERVER_FILENAME,
-} from "../core/hooks/heartbeat-hooks.js";
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function readEnabledRuntimeHookNames(projectRoot: string | undefined): string[] | null {
-  if (!projectRoot) return null;
-  try {
-    const stateFile = join(projectRoot, PROJECT_DIR, "state", "state.json");
-    if (!existsSync(stateFile)) return null;
-    const parsed = JSON.parse(readFileSync(stateFile, "utf8")) as {
-      selectedHooks?: { runtime?: string[] };
-    };
-    return parsed.selectedHooks?.runtime ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function isHeartbeatEnabled(selected: string[] | null, name: string): boolean {
-  if (selected === null) return true;
-  return selected.includes(name);
-}
+import { buildHeartbeatArtifacts, launcherCommand } from "./heartbeat-emission.js";
+import { readEnabledRuntimeHookNames, isHeartbeatEnabled } from "./heartbeat-state.js";
+import { defineAdapter } from "./base.js";
 
 function toTomlBasicString(value: string): string {
   return JSON.stringify(value);
@@ -79,7 +42,7 @@ function toTomlBasicString(value: string): string {
  * Detects presence of `AGENTS.md` or a `.agents/` directory.
  * Generates `AGENTS.md` (primary instruction file) and `.codex/agents/`.
  */
-export const codexAdapter: AgentAdapter = {
+export const codexAdapter = defineAdapter({
   id: "codex",
   name: "Codex",
 
@@ -102,11 +65,7 @@ export const codexAdapter: AgentAdapter = {
     maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
-  async detect(projectRoot: string): Promise<boolean> {
-    const hasFile = await exists(join(projectRoot, "AGENTS.md"));
-    const hasDir = await exists(join(projectRoot, ".agents"));
-    return hasFile || hasDir;
-  },
+  detect: { markers: ["AGENTS.md", ".agents"] },
 
   async generate(config: NormalizedConfig, options: GenerateOptions): Promise<GeneratedFile[]> {
     const log = options.log ?? NULL_LOGGER;
@@ -315,26 +274,11 @@ export const codexAdapter: AgentAdapter = {
     const enabledRuntime = readEnabledRuntimeHookNames(options.projectRoot);
     const observerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-observer");
 
-    if (observerEnabled) {
-      const observerScript = buildSkillObserverScript();
-      const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
-      files.push({
-        path: observerPath,
-        content: observerScript,
-        sources: [MANIFEST_FILENAME],
-        hash: hashContent(observerScript),
-      });
-    }
-
-    // Ship the node-resolver launcher next to the observer (see Claude Code
-    // adapter for rationale).
-    const launcher = buildLauncherFile();
-    files.push({
-      path: launcher.path,
-      content: launcher.content,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(launcher.content),
+    const heartbeat = buildHeartbeatArtifacts({
+      emitTracker: false,
+      emitObserver: observerEnabled,
     });
+    files.push(...heartbeat.files);
 
     // Codex injects no project-dir env variable (see codex-rs/hooks/src/engine/command_runner.rs),
     // and the docs explicitly recommend resolving via `git rev-parse --show-toplevel` because
@@ -342,8 +286,8 @@ export const codexAdapter: AgentAdapter = {
     // behavior when git is unavailable so there is no regression. Codex disables hooks on
     // Windows, so POSIX command substitution is safe here.
     const codexProjectRootRef = '"$(git rev-parse --show-toplevel 2>/dev/null || echo .)"';
-    const launcherRef = `${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${LAUNCHER_FILENAME}`;
-    const observerRef = `${codexProjectRootRef}/${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
+    const launcherRef = `${codexProjectRootRef}/${heartbeat.launcherPath}`;
+    const observerRef = `${codexProjectRootRef}/${heartbeat.observerPath}`;
     // F6/F7 hook command builder for Codex — same pattern as the Claude
     // Code adapter, but resolves project root via git toplevel because
     // Codex injects no project-dir env. `cd` so the brain resolver
@@ -428,7 +372,7 @@ export const codexAdapter: AgentAdapter = {
 
     return files;
   },
-};
+});
 
 /** Build native Codex config.toml settings from flags. */
 function buildCodexNativeSettings(flags: NormalizedConfig["flags"]): string[] | null {
