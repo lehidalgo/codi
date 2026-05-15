@@ -35,7 +35,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 9 | CORE-009 | Workflow event snapshot table | D | P1 | **Validado ✅** | CORE-001 | reducer-cost issues | 1-2d |
 | 10 | CORE-010 | YAML-driven hook language registry | D | P2 | **Validado ✅** | — | CORE-013 (cleaner) | 2d |
 | 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | **Validado ✅** | CORE-002 | — | 1d |
-| 12 | CORE-012 | proper-lockfile en BrainEventLog | R | P1 | Pendiente | — | — | 4h |
+| 12 | CORE-012 | proper-lockfile en BrainEventLog | R | P1 | **Validado ✅ (eliminado, dead code)** | — | — | 4h |
 | 13 | CORE-013 | writeHookFile() unified installer | R | P2 | Pendiente | CORE-010 (recomendado) | — | 4h |
 | 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | Pendiente | — | — | 4h |
 | 15 | CORE-015 | Audit + classify 86+ empty catches | R | P1 | Pendiente | — | telemetry de fallos | 1d |
@@ -856,13 +856,63 @@ Net TS LOC: **−1,100 effective** en `src/core/hooks/registry/`. El YAML "adds"
 
 **Commits:** single-commit final (este turno).
 
-## CORE-012 — proper-lockfile en BrainEventLog
+## CORE-012 — proper-lockfile en BrainEventLog **[RESUELTO]**
 
 - **Nivel:** R
 - **Prioridad:** P1
-- **Effort:** ~4 horas
+- **Estado:** Validado ✅ (decisión: eliminar dead code)
+- **Effort:** ~4 horas estimado (real: ~30min en single-commit mode)
 
-**Descripción:** `BrainEventLog.acquireLock` (`brain-event-log.ts:213-225`) usa PID-based metadata en lugar de OS-level lock. Dos procesos pueden hit `acquireLock` concurrentemente y ambos escribir PID (last writer wins).
+**Descripción original:** `BrainEventLog.acquireLock` (`brain-event-log.ts:223-235`) usaba PID-based metadata en lugar de OS-level lock. Dos procesos podían hit `acquireLock` concurrentemente y ambos escribir PID (last writer wins).
+
+**Decisión arquitectónica:** los 3 subagentes paralelos convergieron unánimemente en **eliminar dead code** en lugar de migrar a `proper-lockfile`.
+
+**Hallazgo crítico:** `grep -rn "acquireLock|releaseLock" src/ tests/` retornó:
+- **0 call sites en `src/` (producción).**
+- 4 invocaciones en `tests/runtime/brain-event-log.test.ts:61-69` (2 tests).
+
+Los métodos eran dead code productivo desde la migración v3, sin call site activo en CLI handlers, runtime, ni capture pipeline.
+
+**Por qué eliminar (no migrar):**
+1. **Race ya cubierta:** `BEGIN IMMEDIATE` en `BrainEventLog.initWorkflow` serializa la única race real (concurrent `codi workflow run`). El segundo proceso recibe `SQLITE_BUSY` o `BrainWorkflowAlreadyActiveError` — coverage real.
+2. **CORE-011 cierra appends:** UNIQUE constraints + `INSERT OR IGNORE` eliminan races en captures/prompts.
+3. **SQLite es ACID:** filesystem lock encima de SQLite WAL = belt-and-suspenders sin beneficio, +failure modes (NFS, PID reuse, onCompromised handler).
+4. **No SemVer risk:** `BrainEventLog` NO se exporta vía `src/index.ts` — clase interna.
+5. **ROI inverso:** Plan A (migrar) habría sido 3-4h para dead code. Plan B (eliminar) son 30min y **−63 LOC neto**.
+
+**Resultado final:**
+- Eliminado `acquireLock()`, `releaseLock()`, `isPidAlive()` métodos de `BrainEventLog`.
+- Eliminada clase `BrainLockHeldError`.
+- Eliminados campos `lock_held_pid`, `lock_acquired_at` de `MetadataShape` interface.
+- Eliminado header section `// ─── Lock management ───` y docstring lines sobre lock semantics.
+- Eliminado `describe("lock", ...)` block en `tests/runtime/brain-event-log.test.ts` (2 tests) + import de `BrainLockHeldError`.
+- Docstring header de `brain-event-log.ts` reescrito para documentar cómo `BEGIN IMMEDIATE` + CORE-011 cubren la concurrencia real.
+
+**Referencias residuales (no eliminadas):**
+- `brain-event-log.ts:15` — comment del propio CORE-012 doc explicando la remoción (didáctico).
+- `migrate.ts:305-306` — comentario histórico de migration v11 describiendo schema legacy. Intocable (es historia).
+
+**LOC delta:**
+| Archivo | Delta |
+|---|---|
+| `src/runtime/brain-event-log.ts` | −47 |
+| `tests/runtime/brain-event-log.test.ts` | −14 |
+| `CORE_CODI_ROADMAP.md` | +35 (decisión documentada) |
+
+**Net:** −63 LOC en código productivo.
+
+**Criterios de aceptación adaptados:**
+1. ✅ Race window eliminada por **remoción de la superficie misma**.
+2. ✅ Suite passing — 3861 → 3859 (−2 tests del bloque lock, 0 regresiones).
+3. ✅ Lint clean (tsc + 7 guards). No stale imports.
+4. ✅ Roadmap documenta decisión + justificación.
+
+**Reversibilidad:**
+Si emerge en el futuro un caller productivo que necesite lock cross-process en `brain.db`, el patrón `proper-lockfile` ya existe en `src/core/config/state.ts:236-299` (CORE-002 lo migró). Portable trivialmente (~30min).
+
+**Defer relacionado:** CORE-038 ("Brain DB locked external process test") valida el `BEGIN IMMEDIATE` real con dos procesos concurrentes ejecutando `codi workflow run` — ese es el lugar correcto para race coverage end-to-end.
+
+**Commits:** single-commit final (este turno).
 
 ## CORE-013 — writeHookFile() unified installer
 

@@ -5,9 +5,15 @@
  * `workflow_runs` + `workflow_events` tables. The previous filesystem
  * archive layout was retired in F5 of the v3 zero closure.
  *
- * Lock semantics: single-process exclusion via a row in
- * `workflow_runs.metadata` keyed `lock_held_pid`. A lock is "held" when
- * the row exists for a PID that is alive; `releaseLock` clears the key.
+ * Cross-process exclusion is handled at the SQL layer: `initWorkflow`
+ * runs inside `BEGIN IMMEDIATE` so two concurrent `codi workflow run`
+ * processes serialise through SQLite's reserved write-lock — the loser
+ * sees `SQLITE_BUSY` or `BrainWorkflowAlreadyActiveError`. CORE-011
+ * added UNIQUE constraints on `captures(turn_id, raw_marker)` and
+ * `prompts(session_id, turn_no)` to close the remaining append-time
+ * race window. CORE-012 removed the older PID-metadata pseudo-lock
+ * (`acquireLock`/`releaseLock`) that had no production callers and
+ * whose check-then-write pattern had its own race window.
  */
 
 import type Database from "better-sqlite3";
@@ -83,17 +89,8 @@ export class BrainNoActiveWorkflowError extends Error {
   }
 }
 
-export class BrainLockHeldError extends Error {
-  constructor() {
-    super("Lock is held by another codi process.");
-    this.name = "BrainLockHeldError";
-  }
-}
-
 interface MetadataShape {
   active_id?: string;
-  lock_held_pid?: number;
-  lock_acquired_at?: number;
   [key: string]: unknown;
 }
 
@@ -216,38 +213,6 @@ export class BrainEventLog {
     const meta = readMetadata(this.handle.raw);
     delete meta.active_id;
     writeMetadata(this.handle.raw, meta);
-  }
-
-  // ─── Lock management ─────────────────────────────────────────────────
-
-  acquireLock(): void {
-    const meta = readMetadata(this.handle.raw);
-    if (typeof meta.lock_held_pid === "number") {
-      // Stale lock → reclaim if PID is dead. Mirrors what `flock` would do
-      // automatically when the holder process exits.
-      if (this.isPidAlive(meta.lock_held_pid)) {
-        throw new BrainLockHeldError();
-      }
-    }
-    meta.lock_held_pid = process.pid;
-    meta.lock_acquired_at = Date.now();
-    writeMetadata(this.handle.raw, meta);
-  }
-
-  releaseLock(): void {
-    const meta = readMetadata(this.handle.raw);
-    delete meta.lock_held_pid;
-    delete meta.lock_acquired_at;
-    writeMetadata(this.handle.raw, meta);
-  }
-
-  private isPidAlive(pid: number): boolean {
-    try {
-      process.kill(pid, 0);
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   // ─── Initialize a new workflow ───────────────────────────────────────

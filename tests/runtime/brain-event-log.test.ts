@@ -13,7 +13,6 @@ import { tmpdir } from "node:os";
 import {
   BrainEventLog,
   BrainWorkflowAlreadyActiveError,
-  BrainLockHeldError,
 } from "#src/runtime/brain-event-log.js";
 import type { ManifestEvent } from "#src/runtime/types.js";
 
@@ -53,20 +52,6 @@ describe("active workflow ID", () => {
     expect(log.getActiveWorkflowId()).toBe("wf-42");
     log.clearActiveWorkflowId();
     expect(log.getActiveWorkflowId()).toBeNull();
-  });
-});
-
-describe("lock", () => {
-  it("acquire then release works", () => {
-    log.acquireLock();
-    log.releaseLock();
-    log.acquireLock();
-    log.releaseLock();
-  });
-
-  it("acquireLock throws when already held by a live PID", () => {
-    log.acquireLock();
-    expect(() => log.acquireLock()).toThrow(BrainLockHeldError);
   });
 });
 
