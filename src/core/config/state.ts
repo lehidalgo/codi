@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { existsSync, mkdirSync, renameSync } from "node:fs";
 import path from "node:path";
+import lockfile from "proper-lockfile";
 import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
@@ -212,28 +213,109 @@ export class StateManager {
     }
   }
 
+  /**
+   * Read-modify-write `state.json` atomically across processes (CORE-002).
+   *
+   * Acquires a cross-process lock on `state.json.lock` (proper-lockfile,
+   * `mkdir`-based, kernel-mediated), reads the current state, hands it to
+   * `mutator`, and writes the result back via the existing temp+rename
+   * path. The lock is released in `finally`, even on mutator throw.
+   *
+   * Use this — not `read` + `write` directly — whenever a mutation
+   * depends on the current state to avoid lost-update races when two
+   * `codi generate` runs land at the same time.
+   *
+   * Stale locks (held by a dead PID) are reclaimed after 10s automatically
+   * (proper-lockfile's mtime-based stale detection, refreshed every 5s by
+   * the library's heartbeat).
+   *
+   * @param mutator Receives current state, returns next state. May throw —
+   *                the error is captured and returned as `err`.
+   * @param options.lockTimeoutMs Max wait for lock acquisition; default 10s.
+   */
+  async atomicMutate(
+    mutator: (state: StateData) => StateData | Promise<StateData>,
+    options: { lockTimeoutMs?: number } = {},
+  ): Promise<Result<void>> {
+    // Ensure the state file exists before locking — proper-lockfile requires
+    // the target file to exist. Touch with current contents (or empty state
+    // on first run) before acquiring the lock.
+    try {
+      await fs.mkdir(path.dirname(this.statePath), { recursive: true });
+      if (!existsSync(this.statePath)) {
+        await fs.writeFile(this.statePath, JSON.stringify(EMPTY_STATE, null, 2), "utf8");
+      }
+    } catch (cause) {
+      return err([
+        createError("E_CONFIG_PARSE_FAILED", { file: this.statePath }, cause as Error),
+      ]);
+    }
+
+    const timeoutMs = options.lockTimeoutMs ?? 10_000;
+    const retryCount = Math.max(1, Math.floor(timeoutMs / 100));
+    let release: (() => Promise<void>) | undefined;
+    try {
+      release = await lockfile.lock(this.statePath, {
+        stale: 10_000,
+        realpath: false,
+        retries: {
+          retries: retryCount,
+          minTimeout: 100,
+          maxTimeout: 200,
+          factor: 1,
+        },
+      });
+    } catch (cause) {
+      return err([
+        createError(
+          "E_CONFIG_PARSE_FAILED",
+          { file: this.statePath, message: "state.json lock acquisition failed" },
+          cause as Error,
+        ),
+      ]);
+    }
+
+    try {
+      const current = await this.read();
+      if (!current.ok) return current;
+      let next: StateData;
+      try {
+        next = await mutator(current.data);
+      } catch (cause) {
+        return err([
+          createError(
+            "E_CONFIG_PARSE_FAILED",
+            { file: this.statePath, message: "atomicMutate mutator threw" },
+            cause as Error,
+          ),
+        ]);
+      }
+      return await this.write(next);
+    } finally {
+      await release().catch(() => {
+        /* release is best-effort: proper-lockfile cleans up stale locks anyway */
+      });
+    }
+  }
+
   /** Updates the generated file records for a single agent. */
   async updateAgent(agentId: string, files: GeneratedFileState[]): Promise<Result<void>> {
-    const stateResult = await this.read();
-    if (!stateResult.ok) return stateResult;
-
-    const state = stateResult.data;
-    state.agents[agentId] = files;
-    state.lastGenerated = new Date().toISOString();
-    return this.write(state);
+    return this.atomicMutate((state) => {
+      state.agents[agentId] = files;
+      state.lastGenerated = new Date().toISOString();
+      return state;
+    });
   }
 
   /** Updates the generated file records for multiple agents in a single write. */
   async updateAgentsBatch(updates: Record<string, GeneratedFileState[]>): Promise<Result<void>> {
-    const stateResult = await this.read();
-    if (!stateResult.ok) return stateResult;
-
-    const state = stateResult.data;
-    for (const [agentId, files] of Object.entries(updates)) {
-      state.agents[agentId] = files;
-    }
-    state.lastGenerated = new Date().toISOString();
-    return this.write(state);
+    return this.atomicMutate((state) => {
+      for (const [agentId, files] of Object.entries(updates)) {
+        state.agents[agentId] = files;
+      }
+      state.lastGenerated = new Date().toISOString();
+      return state;
+    });
   }
 
   /**
@@ -243,19 +325,17 @@ export class StateManager {
    */
   async removeAgents(agentIds: readonly string[]): Promise<Result<void>> {
     if (agentIds.length === 0) return ok(undefined);
-    const stateResult = await this.read();
-    if (!stateResult.ok) return stateResult;
-    const state = stateResult.data;
-    let changed = false;
-    for (const id of agentIds) {
-      if (id in state.agents) {
-        delete state.agents[id];
-        changed = true;
+    return this.atomicMutate((state) => {
+      let changed = false;
+      for (const id of agentIds) {
+        if (id in state.agents) {
+          delete state.agents[id];
+          changed = true;
+        }
       }
-    }
-    if (!changed) return ok(undefined);
-    state.lastGenerated = new Date().toISOString();
-    return this.write(state);
+      if (changed) state.lastGenerated = new Date().toISOString();
+      return state;
+    });
   }
 
   /**
