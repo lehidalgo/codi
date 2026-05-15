@@ -28,7 +28,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 3 | CORE-003 | Logger DI + de-singletonize | F | P0 | **Validado ✅** | — | CORE-007 | 0.5d |
 | 4 | CORE-004 | Single-source Zod → JSON Schema (infrastructure) | F | P1 | **Validado ✅** | — | CORE-005 (tighter) | 2d |
 | 4b | CORE-004b | Port manifest-event.schema.json (1031 LOC) a Zod | F | P2 | Pendiente | CORE-004 | confianza completa schemas | 0.5d |
-| 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | Pendiente | (CORE-004) | — | 1d |
+| 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | **Validado ✅** | (CORE-004) | — | 1d |
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | Pendiente | CORE-003 | CORE-013, CORE-024 | 3-4d |
 | 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | Pendiente | CORE-003 | — | 1d |
 | 8 | CORE-008 | DecisionKind union extraction | D | P1 | Pendiente | — | gate-runner refactor | 4h |
@@ -419,14 +419,57 @@ Sintetizadas de 3 subagentes paralelos + ajuste de scope mid-implementation:
 
 ---
 
-## CORE-005 — Brain DB schema alignment CI guard
+## CORE-005 — Brain DB schema alignment CI guard **[RESUELTO]**
 
 - **Nivel:** F
 - **Prioridad:** P0
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** ninguno (refuerza si CORE-004 también landó)
-- **Desbloquea:** Confianza en brain DB evolution
-- **Effort:** ~1 día
+- **Desbloquea:** Confianza en brain DB evolution; Sprint 3+ drizzle-kit migration
+- **Effort:** ~1 día estimado (actual: ~1h)
+- **Commits:** `51632a5c` (alignment guard + drift reconciliation in 1 atomic commit)
+
+**Notas de decisión:**
+
+Sintetizadas de 3 subagentes paralelos + scope ajustado durante implementación:
+
+1. **Option C: 2 in-memory DBs + PRAGMA diff** (no drizzle-kit, no canonical flip).
+2. **Drizzle DDL via `getTableConfig` from `drizzle-orm/sqlite-core/utils.js`** — public stable API. Hand-roll ~80 LOC `synthesizeCreateTable()` helper.
+3. **Coverage:** `PRAGMA table_info` + `index_list` + `index_info`. Skip CHECK (zero declared), FK (codi runs with FK off, zero `.references()`), FTS5/triggers (Drizzle doesn't model).
+4. **User chose Option A (fix all drift now) over Option B (ratchet)** durante mid-implementation cuando descubrí magnitud del drift acumulado por 15 versioned migrations.
+
+**Resultado final:**
+
+- ✅ **Drift acumulado por 15 versioned migrations RECONCILIADO** — 12+ columnas + 4 indexes + 1 PK fix + 1 missing table export añadidos a Drizzle.
+- ✅ **Guard infrastructure landed**: 5 sub-tests cubriendo column structure, index list, index column ordering, FTS5 existence.
+- ✅ Future drift entre Drizzle y BOOTSTRAP captured at CI time con mensaje actionable.
+- ✅ Test suite: 3770 baseline → **3775 passing** (+5), 6 skipped, 0 failed.
+- ✅ Lint clean, build clean.
+
+**Archivos modificados:**
+- `src/runtime/brain/schema.ts` (+~50 LOC, -1 import) — added missing columns to projects/sessions/turns/corrections, added `runtimeState` export, fixed `_codi_schema_version.version` PK form, added 4 missing indexes
+- `tests/runtime/brain/_schema-alignment-helpers.ts` (new, ~160 LOC) — synthesizeCreateTable, indexStmtsFor, normalizers
+- `tests/runtime/brain/schema-alignment.test.ts` (new, ~200 LOC) — 5 sub-tests
+
+**Drift cerrado por tabla:**
+- `projects`: +4 cols (git_user_name, git_user_email, host_user, host_machine) v7
+- `sessions`: +10 cols (tokens_*, cost_usd, context_window, tokens_max_prefix, tokens_messages_count, tokens_preloaded) v4-v6
+- `turns`: +4 cols (tokens_input/output/cache_create/cache_read) v4
+- `corrections`: +1 col (actor_id) v14 + 2 indexes
+- `prompts`: +1 index (idx_prompts_session_pid_desc) v3
+- `captures`: +1 index (idx_captures_turn_marker) v3
+- `workflow_runs`: +1 index (idx_workflow_runs_status_started) v3
+- `_codi_schema_version`: composite PK → inline INTEGER PRIMARY KEY (matches BOOTSTRAP rowid-alias form)
+- `runtime_state`: new Drizzle export (v11 ALTER was previously unmodeled)
+
+**Tests ejecutados:**
+- `npx vitest run tests/runtime/brain/schema-alignment.test.ts` → 5/5 pass
+- `npm run lint && npm test` → 3775 / 6 skipped / 0 failed
+
+**Riesgos restantes:**
+- DESC index direction (idx_sessions_project_started, idx_prompts_session_pid_desc, idx_workflow_runs_status_started) NO se compara — drizzle-orm/sqlite-core <0.50 sin `.desc()` builder. PRAGMA index_info no reporta direction. Acceptable today; upgrade drizzle-orm cuando matters.
+- CHECK constraints + FKs sin coverage — none declared. Defer to text-diff sobre `sqlite_master.sql` cuando land primer caso.
+- Schema reflects current v15 baseline. Real production DBs con migrations older than v15 already-applied podrían tener orden de columnas distinto (PRAGMA cid order). Out of scope; CORE-038 podría cubrir.
 
 **Descripción:** `src/runtime/brain/schema.ts` (Drizzle definitions) y `src/runtime/brain/migrate.ts:21-` (raw SQL bootstrap) tienen 14 tablas duplicadas. Sin CI guard, una columna añadida a Drizzle pero no a migrate genera "no such column" en runtime.
 
