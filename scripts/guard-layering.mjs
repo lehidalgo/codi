@@ -35,6 +35,30 @@ const FORBIDDEN_LAYERS = [
 const ALIAS_IMPORT_RE = /from\s+"#src\/cli\//g;
 const RELATIVE_CLI_RE = /from\s+"(?:\.\.\/)+cli\//g;
 
+/**
+ * CORE-003 — symbol-level boundary rules.
+ *
+ * `utils/` and `adapters/` must NOT do a *value* import of `Logger` from
+ * `core/output/logger`. They may use `import type { Logger }` (stripped
+ * at compile, zero runtime dep) — utils/adapters thread loggers via DI
+ * options instead of calling `Logger.getInstance()` directly.
+ *
+ * Each rule: (consumer-root, regex matching the offending import line).
+ * The regex must NOT match `import type { ... }` (type-only imports).
+ */
+const FORBIDDEN_SYMBOL_IMPORTS = [
+  {
+    from: "src/utils",
+    pattern: /^\s*import\s+(?!type\b)\{[^}]*\bLogger\b[^}]*\}\s+from\s+["'][^"']*core\/output\/logger/,
+    message: "utils/ may only import `type { Logger }` — pass via DI options instead",
+  },
+  {
+    from: "src/adapters",
+    pattern: /^\s*import\s+(?!type\b)\{[^}]*\bLogger\b[^}]*\}\s+from\s+["'][^"']*core\/output\/logger/,
+    message: "adapters/ may only import `type { Logger }` — pass via GenerateOptions.log",
+  },
+];
+
 async function walk(dir, out) {
   let entries;
   try {
@@ -96,6 +120,46 @@ async function findOffenders() {
       });
     }
   }
+
+  // CORE-003: symbol-level checks. Scan each consumer root for the
+  // specific forbidden import patterns and report each match as an
+  // offender alongside the layer offenders.
+  for (const { from, pattern, message } of FORBIDDEN_SYMBOL_IMPORTS) {
+    const root = join(REPO, from);
+    const files = [];
+    try {
+      await walk(root, files);
+    } catch (err) {
+      console.error(`[guard-layering] walk failed for ${from}: ${err.message ?? err}`);
+      process.exit(2);
+    }
+    for (const abs of files) {
+      let src;
+      try {
+        src = await readFile(abs, "utf8");
+      } catch (err) {
+        console.error(`[guard-layering] cannot read ${relative(REPO, abs)}: ${err.message ?? err}`);
+        process.exit(2);
+      }
+      const lines = src.split(/\r?\n/);
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        if (pattern.test(lines[i])) {
+          hits.push({ line: i + 1, text: lines[i].trim() });
+        }
+      }
+      if (hits.length > 0) {
+        offenders.push({
+          path: relative(REPO, abs),
+          from,
+          to: "core/output/logger (value import)",
+          hits,
+          symbolMessage: message,
+        });
+      }
+    }
+  }
+
   return offenders;
 }
 
@@ -108,21 +172,27 @@ async function main() {
     process.exit(0);
   }
 
-  console.error("[guard-layering] FAIL — upward-layer imports detected:");
+  console.error("[guard-layering] FAIL — boundary violations detected:");
   for (const off of offenders) {
     console.error(`\n  ${off.path}  (${off.from} → ${off.to})`);
     for (const hit of off.hits) {
       console.error(`    line ${hit.line}: ${hit.text}`);
     }
+    if (off.symbolMessage) {
+      console.error(`    → ${off.symbolMessage}`);
+    }
   }
   console.error(
     "\nWhy: dependencies must flow inward — cli/ depends on core/, never the reverse.\n" +
+      "utils/ and adapters/ must not value-import core/output/logger — pass via DI.\n" +
       "Fix options (in order of preference):\n" +
-      "  1. Move the imported symbol DOWN a layer (cli/ → core/ or types/).\n" +
+      "  1. For Logger: switch to `import type { Logger } from \"#src/types/logger.js\"`\n" +
+      "     and read the injected logger from your function's options bag.\n" +
+      "  2. Move the imported symbol DOWN a layer (cli/ → core/ or types/).\n" +
       "     Pure data / types / errors almost always belong in core/.\n" +
-      "  2. Pass the cli-side symbol as a function parameter from the\n" +
+      "  3. Pass the cli-side symbol as a function parameter from the\n" +
       "     composition root (cli/) so core/ never imports it.\n" +
-      "  3. Last resort: define a port interface in core/ and implement it in cli/.\n" +
+      "  4. Last resort: define a port interface in core/ and implement it in cli/.\n" +
       "See src/templates/rules/architecture.md for the canonical rule.",
   );
   process.exit(1);
