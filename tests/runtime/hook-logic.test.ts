@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { evaluateToolCall, buildContext, type ToolCall } from "#src/runtime/hook-logic.js";
+import { evaluateToolCall, buildContext } from "#src/runtime/hook-logic.js";
 import { runWorkflow, proposeTransition, approveTransition } from "#src/runtime/cli-handlers.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { createEvent } from "#src/runtime/event-factory.js";

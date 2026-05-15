@@ -8,10 +8,14 @@
  */
 import type { WorkflowAdapter } from "../types.js";
 
-export interface QuickAdaptation {
-  // Placeholder: quick workflows do not adapt. Future fields land here
-  // (e.g. category) without changing the call-site shape.
-}
+/**
+ * Placeholder: quick workflows do not adapt. Future fields land here
+ * (e.g. category) without changing the call-site shape. CORE-016
+ * converted from `interface {}` to a `Record<string, never>` alias
+ * so `@typescript-eslint/no-empty-object-type` is satisfied while the
+ * extension contract (no required fields) is preserved verbatim.
+ */
+export type QuickAdaptation = Record<string, never>;
 
 export const QUICK_PHASE_ORDER = ["intent", "execute", "done"] as const;
 

@@ -39,7 +39,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 13 | CORE-013 | writeHookFile() unified installer | R | P2 | **Validado ✅** | CORE-010 (recomendado) | — | 4h |
 | 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | **Validado ✅** | — | — | 4h |
 | 15 | CORE-015 | Audit + classify 86+ empty catches | R | P1 | **Validado ✅** | — | telemetry de fallos | 1d |
-| 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | Pendiente | — | CORE-017 | 3-5d |
+| 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | **Validado ✅** | — | CORE-017 | 3-5d |
 | 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | Pendiente | CORE-016 | — | 3-5d |
 | 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | Pendiente | — | new artifact type cost | 1d |
 | 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | Pendiente | — | — | 4h |
@@ -1105,8 +1105,50 @@ El problema real **NO era migrar 122 catches** — era **prevenir regresión**: 
 
 # Issues de escalabilidad (E)
 
-## CORE-016 — src/runtime/ ESLint re-enable
-- Nivel: E, P2, ~3-5 días. Stale "Sprint 2" ignore en `eslint.config.js:19-22`. 17K LOC unlinted.
+## CORE-016 — src/runtime/ ESLint re-enable **[RESUELTO]**
+- Nivel: E, P2, ~3-5 días estimado (real: **~30 min**). Stale "Sprint 2" ignore en `eslint.config.js:19-22`. 17K LOC unlinted.
+
+**Hallazgo crítico tras audit real:**
+
+El roadmap estimaba 3-5 días asumiendo "17K LOC unlinted = mucho refactor". La realidad post-CORE-001..015: **solo 4 violations en `src/runtime/` + `tests/runtime/`** (17,741 + ~10K LOC). El "Sprint 2 refactor" implícito se completó orgánicamente vía los CORE-001..015 (Logger DI, Result types, schema alignment, etc.). El comment estaba stale.
+
+**Resultado final:**
+
+- **Removed 3 ignores stale** (`src/runtime/**`, `tests/runtime/**`, `scripts/runtime/**`) de `eslint.config.js`.
+- **Fixed 4 violations:**
+  - `src/runtime/workflows/quick/index.ts:11` — empty `interface QuickAdaptation {}` → `type QuickAdaptation = Record<string, never>` (placeholder preservado).
+  - `src/runtime/workflows/team-consolidation/index.ts:12` — idem.
+  - `tests/runtime/hook-logic.test.ts:5` — unused `type ToolCall` import removed.
+  - `tests/runtime/seed-workflows.test.ts:5` — unused `mkdirSync` import removed.
+- **Glob fix in eslint.config.js:** `src/templates/skills/*/scripts/*.cjs` → `src/templates/skills/*/scripts/**/*.cjs` para excluir CJS modules nested deep (content-factory routes/lib subdirs). Pre-fix había 112 errores de `@typescript-eslint/no-require-imports` en CJS files de skill templates legítimos.
+- **Fixed 5 unused imports stragglers:**
+  - `scripts/guard-no-internal-barrels.mjs:29` — unused `stat`.
+  - `tests/unit/adapters/codex.test.ts:1` — unused `vi`.
+  - `tests/unit/core/external-source/connectors.test.ts:1` — unused `vi`.
+  - `tests/unit/core/generator/apply-atomic-state.test.ts:13` — unused `writeFile`.
+  - `tests/unit/utils/conflict-resolver.test.ts:1` — unused `vi`.
+- **Wired `eslint .` en `npm run lint`** — antes el lint chain era `tsc + 8 guards` sin eslint. Ahora `tsc + eslint + 8 guards`.
+
+**LOC delta:**
+| Archivo | Delta |
+|---|---|
+| `eslint.config.js` | −4 / +6 (ignores + comment) |
+| `src/runtime/workflows/{quick,team-consolidation}/index.ts` | ±10 (interface → type alias + comment) |
+| 6 test files / 1 script | −7 (unused imports removed) |
+| `package.json` | +1 (lint chain) |
+
+**Net:** −5 LOC.
+
+**Criterios de aceptación:**
+1. ✅ `src/runtime/`, `tests/runtime/`, `scripts/runtime/` ya no ignored.
+2. ✅ `npx eslint .` retorna 0 errores.
+3. ✅ Suite passing — 3867/3867 (0 regresiones).
+4. ✅ Future drift bloqueado — `eslint .` ahora corre en CI vía `npm run lint`.
+
+**Por qué no dispatch los 3 subagentes:**
+Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia posible. El audit empírico (1 minuto) reveló que el roadmap framing era 100x conservativo. Single-commit ejecutivo basado en evidencia.
+
+**Commits:** single-commit final (este turno).
 
 ## CORE-017 — Runtime layer throws → Result
 - Nivel: E, P2, ~3-5 días, depende CORE-016. 171 throws en runtime/ vs Result discipline en core/.

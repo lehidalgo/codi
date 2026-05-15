@@ -9,11 +9,14 @@
  */
 import type { WorkflowAdapter } from "../types.js";
 
-export interface TeamConsolidationAdaptation {
-  // Placeholder. team-consolidation does not adapt yet — every cycle uses
-  // the same intent / collect / analyze / consolidate sequence. Future
-  // fields (e.g. `mode: 'sequential' | 'parallel'`) land here.
-}
+/**
+ * Placeholder. team-consolidation does not adapt yet — every cycle
+ * uses the same intent / collect / analyze / consolidate sequence.
+ * Future fields (e.g. `mode: 'sequential' | 'parallel'`) land here.
+ * CORE-016 converted from `interface {}` to a `Record<string, never>`
+ * alias so `@typescript-eslint/no-empty-object-type` is satisfied.
+ */
+export type TeamConsolidationAdaptation = Record<string, never>;
 
 export const TEAM_CONSOLIDATION_PHASE_ORDER = [
   "intent",

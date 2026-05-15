@@ -2,7 +2,7 @@
  * Seeder for workflow_definitions (F2 of v3 zero closure).
  */
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { openBrain } from "#src/runtime/brain/db.js";

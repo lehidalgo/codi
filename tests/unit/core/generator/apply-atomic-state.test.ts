@@ -10,7 +10,7 @@
  *     branch self-heals next run) is preserved.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { registerAdapter, clearAdapters } from "#src/core/generator/adapter-registry.js";

@@ -26,7 +26,7 @@
  *   2 — internal error walking the tree
  */
 
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 const REPO = process.cwd();
