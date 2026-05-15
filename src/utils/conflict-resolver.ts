@@ -48,10 +48,42 @@ export interface ConflictOptions {
 export interface ConflictResolution {
   /** Entries whose incoming content should be written to disk. */
   accepted: ConflictEntry[];
-  /** Entries whose existing content should be left untouched. */
+  /** Entries the user (or `--keep-current`) chose to leave untouched. */
   skipped: ConflictEntry[];
   /** Entries where incomingContent was replaced with user-merged content. */
   merged: ConflictEntry[];
+  /**
+   * CORE-007 — entries that could not be merged automatically in a
+   * non-interactive environment (CI, git hooks, piped stdin). The CLI
+   * caller emits {@link nonInteractivePayload} to stderr and exits with
+   * {@link EXIT_CODES.UNRESOLVABLE_CONFLICTS}. Before CORE-007 this
+   * condition was signalled by an in-function `process.exitCode = 2`
+   * assignment that was invisible to callers and tests.
+   */
+  unresolvable: ConflictEntry[];
+  /**
+   * Structured stderr payload the CLI emits when {@link unresolvable} is
+   * non-empty. Present only when the resolver detected a hard conflict
+   * in a non-TTY environment. CI consumers parse this JSON line to
+   * surface a usable diff to their UI.
+   */
+  nonInteractivePayload?: NonInteractivePayload;
+}
+
+/**
+ * Machine-readable payload describing the unresolvable conflicts to a
+ * non-interactive caller. Emitted by the CLI to stderr (one JSON line)
+ * so CI / wrapper scripts can parse and surface a diff without
+ * scraping human-readable output.
+ */
+export interface NonInteractivePayload {
+  type: "conflicts";
+  items: Array<{
+    label: string;
+    fullPath: string;
+    currentContent: string;
+    incomingContent: string;
+  }>;
 }
 
 /**
@@ -327,15 +359,15 @@ export async function resolveConflicts(
 ): Promise<ConflictResolution> {
   const log = options.log ?? NULL_LOGGER;
   if (conflicts.length === 0) {
-    return { accepted: [], skipped: [], merged: [] };
+    return { accepted: [], skipped: [], merged: [], unresolvable: [] };
   }
 
   if (options.force) {
-    return { accepted: conflicts, skipped: [], merged: [] };
+    return { accepted: conflicts, skipped: [], merged: [], unresolvable: [] };
   }
 
   if (options.keepCurrent) {
-    return { accepted: [], skipped: conflicts, merged: [] };
+    return { accepted: [], skipped: conflicts, merged: [], unresolvable: [] };
   }
 
   // Union merge: non-overlapping hunks applied, overlapping hunks keep both sides
@@ -347,17 +379,18 @@ export async function resolveConflicts(
         conflict.currentContent,
         conflict.incomingContent,
       );
-      conflict.incomingContent = content;
-      conflict.hasMarkers = hasConflicts;
-      merged.push(conflict);
+      // CORE-007: copy-on-write — do not mutate the input entry.
+      merged.push({ ...conflict, incomingContent: content, hasMarkers: hasConflicts });
     }
-    return { accepted: [], skipped: [], merged };
+    return { accepted: [], skipped: [], merged, unresolvable: [] };
   }
 
-  // Non-TTY: CI, git hooks, watch mode — auto-merge non-overlapping, fail on true conflicts
+  // Non-TTY: CI, git hooks, watch mode — auto-merge non-overlapping, surface
+  // hard conflicts via `unresolvable[]` + `nonInteractivePayload` for the CLI
+  // to translate into an exit code. Never sets `process.exitCode` directly.
   if (!process.stdout.isTTY) {
     const mergedEntries: ConflictEntry[] = [];
-    const failed: ConflictEntry[] = [];
+    const unresolvable: ConflictEntry[] = [];
 
     for (const conflict of conflicts) {
       const { content, hasConflicts } = buildConflictMarkers(
@@ -365,35 +398,35 @@ export async function resolveConflicts(
         conflict.incomingContent,
       );
       if (!hasConflicts) {
-        conflict.incomingContent = content;
-        mergedEntries.push(conflict);
+        // CORE-007: copy-on-write — do not mutate the input entry.
+        mergedEntries.push({ ...conflict, incomingContent: content });
       } else {
-        failed.push(conflict);
+        unresolvable.push(conflict);
       }
-    }
-
-    if (failed.length > 0) {
-      process.stderr.write(
-        JSON.stringify({
-          type: "conflicts",
-          items: failed.map((f) => ({
-            label: f.label,
-            fullPath: f.fullPath,
-            currentContent: f.currentContent,
-            incomingContent: f.incomingContent,
-          })),
-        }) + "\n",
-      );
-      process.exitCode = 2;
     }
 
     if (mergedEntries.length > 0) {
       log.info(`${mergedEntries.length} file(s) auto-merged in non-interactive mode`);
     }
 
-    // failed entries go into skipped — callers inspect process.exitCode === 2
-    // to know unresolvable conflicts were found.
-    return { accepted: [], skipped: failed, merged: mergedEntries };
+    const resolution: ConflictResolution = {
+      accepted: [],
+      skipped: [],
+      merged: mergedEntries,
+      unresolvable,
+    };
+    if (unresolvable.length > 0) {
+      resolution.nonInteractivePayload = {
+        type: "conflicts",
+        items: unresolvable.map((f) => ({
+          label: f.label,
+          fullPath: f.fullPath,
+          currentContent: f.currentContent,
+          incomingContent: f.incomingContent,
+        })),
+      };
+    }
+    return resolution;
   }
 
   log.warn(`${conflicts.length} file(s) conflict with your local versions`);
@@ -480,8 +513,8 @@ export async function resolveConflicts(
           // User cancelled mid-hunk — re-prompt file-level choice
           continue;
         }
-        conflict.incomingContent = result;
-        merged.push(conflict);
+        // CORE-007: copy-on-write — do not mutate the input entry.
+        merged.push({ ...conflict, incomingContent: result });
         resolved = true;
       } else if (choice === "edit") {
         const { content: markerContent } = buildConflictMarkers(
@@ -503,8 +536,8 @@ export async function resolveConflicts(
           );
           continue;
         }
-        conflict.incomingContent = edited;
-        merged.push(conflict);
+        // CORE-007: copy-on-write — do not mutate the input entry.
+        merged.push({ ...conflict, incomingContent: edited });
         resolved = true;
       } else {
         // auto_merge
@@ -513,8 +546,8 @@ export async function resolveConflicts(
           conflict.incomingContent,
         );
         if (!hasConflicts) {
-          conflict.incomingContent = content;
-          merged.push(conflict);
+          // CORE-007: copy-on-write — do not mutate the input entry.
+          merged.push({ ...conflict, incomingContent: content });
           resolved = true;
         } else {
           p.log.info(
@@ -536,13 +569,13 @@ export async function resolveConflicts(
             );
             continue;
           }
-          conflict.incomingContent = edited;
-          merged.push(conflict);
+          // CORE-007: copy-on-write — do not mutate the input entry.
+          merged.push({ ...conflict, incomingContent: edited });
           resolved = true;
         }
       }
     }
   }
 
-  return { accepted, skipped, merged };
+  return { accepted, skipped, merged, unresolvable: [] };
 }

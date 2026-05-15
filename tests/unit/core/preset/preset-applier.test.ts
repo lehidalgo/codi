@@ -167,7 +167,7 @@ describe("applyPresetArtifacts", () => {
     expect(content).toContain("New content from preset");
   });
 
-  it("with json option, skips conflicting files without prompting", async () => {
+  it("with non-interactive mode, surfaces unresolvable conflicts without prompting (CORE-007)", async () => {
     const rulesDir = path.join(configDir, "rules");
     await fs.mkdir(rulesDir, { recursive: true });
     await fs.writeFile(
@@ -184,7 +184,12 @@ describe("applyPresetArtifacts", () => {
       json: true,
     });
 
-    expect(result.skipped).toContain("rules/conflict-rule");
+    // CORE-007: hard conflicts in non-TTY are now distinct from user-skipped
+    // entries (`result.skipped`). They surface on `result.unresolvable` so
+    // the CLI can map them to a dedicated exit code instead of the legacy
+    // in-resolver `process.exitCode = 2` side effect.
+    expect(result.unresolvable).toContain("rules/conflict-rule");
+    expect(result.skipped).not.toContain("rules/conflict-rule");
     expect(result.conflicts).toContain("rules/conflict-rule");
     expect(p.select).not.toHaveBeenCalled();
 

@@ -13,6 +13,12 @@ export const EXIT_CODES = {
   AGENT_NOT_FOUND: 11,
   VERIFY_MISMATCH: 12,
   PRESET_ERROR: 13,
+  // CORE-007 — signals that one or more files had hunk-level overlaps the
+  // resolver could not auto-merge in a non-interactive environment.
+  // Numerically equal to CONFIG_INVALID (=2) to preserve the legacy CI
+  // contract that callers relied on (`process.exitCode = 2` set inside
+  // the resolver). Future code should use this named constant.
+  UNRESOLVABLE_CONFLICTS: 2,
 } as const;
 
 export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];

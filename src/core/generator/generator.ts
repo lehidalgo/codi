@@ -46,6 +46,15 @@ export interface GenerationResult {
   filesByAgent: Record<string, GeneratedFile[]>;
   /** Relative paths of files kept as-is due to conflict resolution. */
   skipped: string[];
+  /**
+   * CORE-007 — labels (relative paths) of files whose hunk-level
+   * conflicts could not be merged automatically in a non-interactive
+   * environment. When non-empty, the CLI maps the run to
+   * `EXIT_CODES.UNRESOLVABLE_CONFLICTS`. Before CORE-007 this state
+   * was signalled by an in-resolver `process.exitCode = 2` assignment
+   * invisible to callers. Files in this list are NOT written to disk.
+   */
+  unresolvable: string[];
 }
 
 interface AgentOutput {
@@ -153,6 +162,7 @@ export async function generate(
 
   // Phase 2: write files (with conflict detection unless dry-run)
   const skipped: string[] = [];
+  const unresolvable: string[] = [];
 
   if (!options.dryRun) {
     const directWrites: GeneratedFile[] = [];
@@ -238,6 +248,17 @@ export async function generate(
       );
 
       skipped.push(...resolution.skipped.map((e) => e.label));
+
+      // CORE-007: the resolver no longer sets `process.exitCode = 2` as a
+      // hidden side effect. It returns `unresolvable[]` plus a
+      // machine-readable `nonInteractivePayload`; we forward the payload
+      // to stderr here (the composition root that owns I/O) and propagate
+      // the label list up to the CLI, which maps it to
+      // `EXIT_CODES.UNRESOLVABLE_CONFLICTS`.
+      if (resolution.unresolvable.length > 0 && resolution.nonInteractivePayload) {
+        process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+      }
+      unresolvable.push(...resolution.unresolvable.map((e) => e.label));
     }
   }
 
@@ -252,5 +273,5 @@ export async function generate(
     filesByAgent[agentId] = generated;
   }
 
-  return ok({ files, agents, filesByAgent, skipped });
+  return ok({ files, agents, filesByAgent, skipped, unresolvable });
 }

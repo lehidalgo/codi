@@ -244,6 +244,33 @@ export async function generateHandler(
     }
   }
 
+  // CORE-007: a non-empty `unresolvable[]` means the resolver could not
+  // auto-merge one or more files in a non-interactive environment. The
+  // structured JSON payload has already been written to stderr by the
+  // generator; here we surface the failure via `exitCode` so the CLI
+  // entry point can propagate it.
+  if (generation.unresolvable.length > 0) {
+    return createCommandResult({
+      success: false,
+      command: "generate",
+      data: {
+        agents: generation.agents,
+        filesGenerated: generation.files.length,
+        files: generation.files.map((f) => f.path),
+      },
+      errors: [
+        {
+          code: "E_UNRESOLVABLE_CONFLICTS",
+          message: `${generation.unresolvable.length} file(s) have unresolvable conflicts in non-interactive mode.`,
+          hint: "Run interactively to resolve, or use --on-conflict keep-incoming / keep-current.",
+          severity: "error",
+          context: { files: generation.unresolvable },
+        },
+      ],
+      exitCode: EXIT_CODES.UNRESOLVABLE_CONFLICTS,
+    });
+  }
+
   return createCommandResult({
     success: true,
     command: "generate",

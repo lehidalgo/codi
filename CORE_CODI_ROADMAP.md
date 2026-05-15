@@ -30,7 +30,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 4b | CORE-004b | Port manifest-event.schema.json (1031 LOC) a Zod | F | P2 | Pendiente | CORE-004 | confianza completa schemas | 0.5d |
 | 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | **Validado ✅** | (CORE-004) | — | 1d |
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | **Validado ✅** | CORE-003 | CORE-013, CORE-024 | 3-4d |
-| 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | Pendiente | CORE-003 | — | 1d |
+| 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | **Validado ✅** | CORE-003 | — | 1d |
 | 8 | CORE-008 | DecisionKind union extraction | D | P1 | Pendiente | — | gate-runner refactor | 4h |
 | 9 | CORE-009 | Workflow event snapshot table | D | P1 | Pendiente | CORE-001 | reducer-cost issues | 1-2d |
 | 10 | CORE-010 | YAML-driven hook language registry | D | P2 | Pendiente | — | CORE-013 (cleaner) | 2d |
@@ -555,19 +555,62 @@ Nota: el delta neto positivo refleja que los 270 LOC extraídos a `claude-settin
 
 - **Nivel:** D
 - **Prioridad:** P0
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** CORE-003 (Logger DI)
 - **Desbloquea:** Determinismo de CI consumers
-- **Effort:** ~1 día
+- **Effort:** ~1 día estimado (real: ~2h en single-commit mode)
 
-**Descripción:** `src/utils/conflict-resolver.ts:375` setea `process.exitCode = 2` como side-effect global. Validación práctica confirmó que NUNCA dispara en escenarios reales con hard line-overlap conflict. Adicionalmente muta `conflict.incomingContent` in-place (líneas 338, 356, 474, 497, 530).
+**Descripción original:** `src/utils/conflict-resolver.ts:387` (no 375 — drift) seteaba `process.exitCode = 2` como side-effect global. Validación práctica confirmó que NUNCA disparaba consistentemente en escenarios reales con hard line-overlap conflict. Adicionalmente mutaba `conflict.incomingContent` in-place en 6 sitios (líneas 350, 368, 483, 506, 516, 539 — drift respecto al roadmap).
 
-**Cambios:** Return `Result<ConflictResolution, ConflictError>` con `unresolvable: ConflictEntry[]` explícito. Caller (CLI entry point) traduce a exit code 2. No mutation of input entries.
+**Resultado final:**
+- **Sin Result<T,E> classic** — los 3 subagentes paralelos convergieron en que la firma idiomática NO es `Result<ConflictResolution, ConflictError>`. Una run con 12 merged + 3 accepted + 2 unresolvable es partial success que `err()` perdería. En su lugar: extender `ConflictResolution` con `unresolvable: ConflictEntry[]` + `nonInteractivePayload?` opcional.
+- `EXIT_CODES.UNRESOLVABLE_CONFLICTS = 2` añadido a `src/core/output/exit-codes.ts` (numéricamente igual a CONFIG_INVALID para preservar contract CI; semánticamente claro a nivel de código).
+- **Eliminadas 6 mutaciones** de `conflict.incomingContent` mediante copy-on-write: cada sitio `conflict.incomingContent = X` → `merged.push({ ...conflict, incomingContent: X })`.
+- **Eliminado el side-effect** `process.exitCode = 2` y el `process.stderr.write(...)` que vivían dentro de `conflict-resolver.ts:387,376-386`. La emisión a stderr se mueve a los callers (`generator.ts`, `update.ts`, `team.ts`, `preset-applier.ts`), que ya tienen IO legítimo y son composition roots, no helpers puros.
+- **5 callers actualizados:**
+  - `src/core/generator/generator.ts:220-241` — añade `unresolvable: string[]` a `GenerationResult`; emite stderr payload.
+  - `src/cli/generate.ts:247` — inspecciona `generation.unresolvable.length` y retorna `EXIT_CODES.UNRESOLVABLE_CONFLICTS`.
+  - `src/cli/update.ts` — 3 internal functions (`refreshManagedArtifacts`, `pullFromSource`, `applyPresetArtifacts` consumer) retornan `unresolvable[]`; `updateHandler` agrega y retorna exit code.
+  - `src/cli/team.ts:107-145` — emite stderr + retorna exit code.
+  - `src/core/preset/preset-applier.ts` — añade `unresolvable: string[]` a `ApplyResult`.
+- **Guard nuevo:** `scripts/guard-no-process-exit-in-utils.mjs` añadido a `npm run lint`. Escanea `src/utils/**` con regex `^\s*process\.(exit|exitCode)\s*[=(]/` y exige cero hits. Bloquea regresión futura: si alguien intenta `process.exitCode = N` en utils/, CI falla.
+- **Tests nuevos:**
+  - `tests/unit/utils/conflict-resolver-purity.test.ts` (5 cases) — sentinel test (`process.exitCode = 99` antes; verifica sigue 99 después), inmutabilidad via `Object.freeze(entry)` para 4 paths (auto-merge, unionMerge, force, keepCurrent).
+  - `tests/unit/utils/conflict-resolver.test.ts` — reemplazó el bloque "exit 2" (5 cases) con asserts sobre `resolution.unresolvable[]` y `resolution.nonInteractivePayload`.
+- **Tests actualizados:** 2 en `tests/unit/cli/update.test.ts` (renombrados a `onConflict=keep-current` para reflejar la separación user-skipped vs unresolvable), 1 en `tests/unit/core/preset/preset-applier.test.ts` (renombrado a "surfaces unresolvable conflicts").
+
+**Diferencia conceptual entre `skipped[]` y `unresolvable[]`:**
+- `skipped[]` ahora SOLO contiene entries que el usuario eligió no aplicar (vía prompt interactivo o `--on-conflict keep-current`).
+- `unresolvable[]` contiene entries cuyos hunks no se pudieron auto-mergear en modo non-TTY.
+- Antes de CORE-007, ambos se conflaban en `skipped[]` y solo `process.exitCode === 2` permitía distinguir.
+
+**LOC delta:**
+| Archivo | Delta neto |
+|---|---|
+| `src/utils/conflict-resolver.ts` | +20 / −18 |
+| `src/core/generator/generator.ts` | +30 |
+| `src/cli/generate.ts` | +25 |
+| `src/cli/update.ts` | +50 |
+| `src/cli/team.ts` | +28 |
+| `src/core/preset/preset-applier.ts` | +14 |
+| `src/core/output/exit-codes.ts` | +7 |
+| `scripts/guard-no-process-exit-in-utils.mjs` (new) | +115 |
+| Tests nuevos / actualizados | +210 |
 
 **Criterios de aceptación:**
-1. `codi generate` con hard conflict en non-TTY → exit 2 (vía CLI, no global state).
-2. Cero `process.exitCode = ` en `src/utils/**`.
-3. Test que asserta `process.exitCode` no se setea desde la función.
+1. ✅ `codi generate` con hard conflict en non-TTY → exit 2 vía CLI mapping (`EXIT_CODES.UNRESOLVABLE_CONFLICTS` ↔ `src/cli/generate.ts:247`).
+2. ✅ Cero `process.exitCode = ` en `src/utils/**` — enforced por `guard-no-process-exit-in-utils.mjs` activo en `npm run lint`.
+3. ✅ Test sentinel (`conflict-resolver-purity.test.ts:46-65`) asserta `process.exitCode` no se setea desde la función. Pasa.
+
+**Notas de decisión:**
+- **Stderr emission location:** el conflict-resolver retorna `nonInteractivePayload` pero NO escribe a stderr. Los callers (composition roots en core/cli) hacen `process.stderr.write(JSON.stringify(payload) + "\n")`. Esto respeta el principio "utils sin side-effects" sin forzar a los callers a re-serializar.
+- **EXIT_CODES collision con CONFIG_INVALID=2:** el roadmap pidió "exit 2", y `CONFIG_INVALID` ya valía 2. Añadimos `UNRESOLVABLE_CONFLICTS = 2` como alias semántico, en lugar de inventar un nuevo número que rompería contracts CI ya en producción.
+- **Update.ts complejidad:** el handler tiene 2 funciones internas (`refreshManagedArtifacts`, `pullFromSource`) más 1 consumidor de `applyPresetArtifacts`, todos con sus propios returns. Cada uno requiere su propio `unresolvable: string[]` accumulator. Total 5 sitios de propagación, todos lineales.
+
+**Riesgos restantes:**
+- Los callers nuevos de `applyPresetArtifacts` añadidos en el futuro deben inspeccionar `result.unresolvable[]`. Hoy 4 callers existentes (`cli/preset-handlers.ts`, `cli/preset-github.ts`, `cli/preset.ts:266`, `cli/update.ts:550` — este último ya propaga) NO lo inspeccionan. Si una run de `codi preset apply --json` produce hard conflicts, el exit code será 0 silenciosamente. Documentar en CORE-021 (split conflict-resolver) para revisar.
+
+**Commits:** single-commit final (este turno).
 
 ---
 

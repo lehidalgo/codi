@@ -31,6 +31,12 @@ export interface ApplyResult {
   conflicts: string[];
   conflictDetails: ConflictDetail[];
   resourcesCopied: number;
+  /**
+   * CORE-007 — files whose hunk-level conflicts could not be merged
+   * automatically in a non-interactive environment. CLI callers map
+   * this to `EXIT_CODES.UNRESOLVABLE_CONFLICTS`.
+   */
+  unresolvable: string[];
 }
 
 interface ConflictFile {
@@ -228,6 +234,7 @@ export async function applyPresetArtifacts(
     conflicts: [],
     conflictDetails: [],
     resourcesCopied: 0,
+    unresolvable: [],
   };
 
   const conflicts: ConflictFile[] = [];
@@ -318,6 +325,13 @@ export async function applyPresetArtifacts(
   }
   for (const entry of resolution.skipped) {
     result.skipped.push(entry.label);
+  }
+  // CORE-007: forward unresolvable conflicts + stderr payload upstream.
+  if (resolution.unresolvable.length > 0 && resolution.nonInteractivePayload) {
+    process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+  }
+  for (const entry of resolution.unresolvable) {
+    result.unresolvable.push(entry.label);
   }
 
   // Record artifact hashes for drift tracking

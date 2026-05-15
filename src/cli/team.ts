@@ -109,6 +109,33 @@ export async function teamJoinHandler(
       await mkdir(dirname(entry.fullPath), { recursive: true });
       await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
     }
+    // CORE-007: surface unresolvable conflicts via exit code instead of the
+    // legacy in-resolver `process.exitCode = 2` side effect.
+    if (resolution.unresolvable.length > 0) {
+      if (resolution.nonInteractivePayload) {
+        process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+      }
+      return createCommandResult({
+        success: false,
+        command: "team join",
+        data: {
+          source: sourceSpec,
+          accepted: resolution.accepted.length,
+          skipped: resolution.skipped.length,
+          merged: resolution.merged.length,
+        },
+        errors: [
+          {
+            code: "E_UNRESOLVABLE_CONFLICTS",
+            message: `${resolution.unresolvable.length} file(s) have unresolvable conflicts in non-interactive mode.`,
+            hint: "Run interactively to resolve, or use --force / --keep-current.",
+            severity: "error",
+            context: { files: resolution.unresolvable.map((e) => e.label) },
+          },
+        ],
+        exitCode: EXIT_CODES.UNRESOLVABLE_CONFLICTS,
+      });
+    }
     return createCommandResult({
       success: true,
       command: "team join",
