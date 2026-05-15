@@ -25,7 +25,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 |---|---|---|---|---|---|---|---|---|
 | 1 | CORE-001 | Reducer schema validation guard | F | P0 | **Validado ✅** | — | CORE-009, CORE-005 | 4h |
 | 2 | CORE-002 | Atomic generator commit + state lock | F | P0 | **Validado ✅** | — | CORE-011 | 1d |
-| 3 | CORE-003 | Logger DI + de-singletonize | F | P0 | Pendiente | — | CORE-007 | 0.5d |
+| 3 | CORE-003 | Logger DI + de-singletonize | F | P0 | **Validado ✅** | — | CORE-007 | 0.5d |
 | 4 | CORE-004 | Single-source Zod → JSON Schema | F | P1 | Pendiente | — | CORE-005 (tighter) | 2d |
 | 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | Pendiente | (CORE-004) | — | 1d |
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | Pendiente | CORE-003 | CORE-013, CORE-024 | 3-4d |
