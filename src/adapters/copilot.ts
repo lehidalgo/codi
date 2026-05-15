@@ -26,7 +26,7 @@ import {
   buildMcpEnvExample,
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
-import { Logger } from "../core/output/logger.js";
+import { NULL_LOGGER } from "../types/logger.js";
 import {
   CONTEXT_TOKENS_LARGE,
   MANIFEST_FILENAME,
@@ -266,7 +266,8 @@ export const copilotAdapter: AgentAdapter = {
     return hasInstructions || hasPrompts || hasAgents || hasSkills;
   },
 
-  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+  async generate(config: NormalizedConfig, options: GenerateOptions): Promise<GeneratedFile[]> {
+    const log = options.log ?? NULL_LOGGER;
     const files: GeneratedFile[] = [];
 
     // --- 1. Main instruction file: .github/copilot-instructions.md ---
@@ -371,7 +372,7 @@ export const copilotAdapter: AgentAdapter = {
       ...(await generateSkillFiles(
         regularSkills,
         COPILOT_PATHS.skills,
-        _options.projectRoot,
+        options.projectRoot,
         "",
         "copilot",
       )),
@@ -395,7 +396,7 @@ export const copilotAdapter: AgentAdapter = {
       for (const [serverName, server] of Object.entries(enabledMcp.servers)) {
         for (const [key, val] of Object.entries(server.env ?? {})) {
           if (typeof val === "string" && !/^\$\{[A-Z_]+\}$/.test(val) && val.length > 20) {
-            Logger.getInstance().warn(
+            log.warn(
               `MCP server "${serverName}" env.${key} looks like a raw secret. Use \${VAR_NAME} placeholders.`,
             );
           }

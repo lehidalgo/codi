@@ -13,7 +13,7 @@ import { hashContent } from "../utils/hash.js";
 import { sanitizeNameForPath } from "../utils/path-guard.js";
 import { buildFlagInstructions } from "./flag-instructions.js";
 import { addGeneratedFooter } from "./generated-header.js";
-import { Logger } from "../core/output/logger.js";
+import { NULL_LOGGER } from "../types/logger.js";
 import { partitionBrandSkills } from "./brand-filter.js";
 import { generateSkillFiles } from "./skill-generator.js";
 import {
@@ -108,7 +108,8 @@ export const codexAdapter: AgentAdapter = {
     return hasFile || hasDir;
   },
 
-  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+  async generate(config: NormalizedConfig, options: GenerateOptions): Promise<GeneratedFile[]> {
+    const log = options.log ?? NULL_LOGGER;
     const files: GeneratedFile[] = [];
     const flagText = buildFlagInstructions(config.flags);
 
@@ -167,7 +168,7 @@ export const codexAdapter: AgentAdapter = {
       ...(await generateSkillFiles(
         regularSkills,
         ".agents/skills",
-        _options.projectRoot,
+        options.projectRoot,
         "",
         "codex",
       )),
@@ -215,7 +216,7 @@ export const codexAdapter: AgentAdapter = {
       }
     }
     if (skippedHttpServers.length > 0) {
-      Logger.getInstance().warn(
+      log.warn(
         `Codex adapter: skipping ${skippedHttpServers.length} HTTP/SSE MCP server(s) ` +
           `(${skippedHttpServers.join(", ")}) — Codex supports stdio transport only. ` +
           `These servers remain available for agents that support HTTP MCP (Claude Code, Cursor).`,
@@ -311,7 +312,7 @@ export const codexAdapter: AgentAdapter = {
     // Codex has no InstructionsLoaded — only the Stop observer is needed.
     // Skip emission entirely when state.selectedHooks.runtime explicitly
     // excludes skill-observer.
-    const enabledRuntime = readEnabledRuntimeHookNames(_options.projectRoot);
+    const enabledRuntime = readEnabledRuntimeHookNames(options.projectRoot);
     const observerEnabled = isHeartbeatEnabled(enabledRuntime, "skill-observer");
 
     if (observerEnabled) {

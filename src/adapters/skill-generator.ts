@@ -5,7 +5,8 @@ import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
 import { hashBuffer, hashContent } from "../utils/hash.js";
 import { sanitizeNameForPath } from "../utils/path-guard.js";
-import { Logger } from "../core/output/logger.js";
+import type { Logger } from "../types/logger.js";
+import { NULL_LOGGER } from "../types/logger.js";
 import { fmStr } from "../utils/yaml-serialize.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import {
@@ -116,7 +117,11 @@ function flattenDescription(desc: string): string {
  * strip ${CLAUDE_SKILL_DIR} prefix so paths stay relative to the skill directory.
  * Inner whitespace is normalized in both cases: [[ /path ]] → [[/path]] or /path.
  */
-function warnStrippedFields(skill: NormalizedSkill, platformId: PlatformId): void {
+function warnStrippedFields(
+  skill: NormalizedSkill,
+  platformId: PlatformId,
+  log: Logger,
+): void {
   const allowed = PLATFORM_SKILL_FIELDS[platformId];
   const lossy = (
     [
@@ -136,7 +141,7 @@ function warnStrippedFields(skill: NormalizedSkill, platformId: PlatformId): voi
   ).filter((f): f is string => typeof f === "string" && !allowed.has(f));
 
   if (lossy.length > 0) {
-    Logger.getInstance().warn(
+    log.warn(
       `Skill "${skill.name}" (${platformId}): stripping unsupported fields: ${lossy.join(", ")}`,
     );
   }
@@ -155,9 +160,10 @@ export function buildSkillMd(
   skill: NormalizedSkill,
   descriptionPrefix = "",
   platformId: PlatformId = "claude-code",
+  log: Logger = NULL_LOGGER,
 ): string {
   const allowed = PLATFORM_SKILL_FIELDS[platformId];
-  warnStrippedFields(skill, platformId);
+  warnStrippedFields(skill, platformId, log);
   const frontmatter: string[] = ["---"];
 
   // name and description are required on all platforms
@@ -247,6 +253,7 @@ export async function generateSkillFiles(
   projectRoot?: string,
   descriptionPrefix = "",
   platformId: PlatformId = "claude-code",
+  log: Logger = NULL_LOGGER,
 ): Promise<GeneratedFile[]> {
   const files: GeneratedFile[] = [];
   for (const skill of skills) {
@@ -254,7 +261,7 @@ export async function generateSkillFiles(
     const skillBasePath = `${basePath}/${dirName}`;
 
     // 1. Generate SKILL.md — filtered to platform-supported fields
-    const raw = buildSkillMd(skill, descriptionPrefix, platformId);
+    const raw = buildSkillMd(skill, descriptionPrefix, platformId, log);
     const content = addGeneratedFooter(raw);
     files.push({
       path: `${skillBasePath}/${SKILL_OUTPUT_FILENAME}`,
@@ -290,7 +297,7 @@ export async function generateSkillFiles(
     // 3. Scan skill directory for user-added supporting files
     if (projectRoot) {
       const projectSkillDir = join(projectRoot, PROJECT_DIR, "skills", dirName);
-      const supporting = await collectSupportingFiles(projectSkillDir);
+      const supporting = await collectSupportingFiles(projectSkillDir, log);
       for (const sf of supporting) {
         files.push({
           path: `${skillBasePath}/${sf.relativePath}`,
@@ -318,12 +325,15 @@ interface SupportingFile {
 }
 
 /** Scan a skill directory for supporting files to propagate. */
-async function collectSupportingFiles(skillDir: string): Promise<SupportingFile[]> {
+async function collectSupportingFiles(
+  skillDir: string,
+  log: Logger = NULL_LOGGER,
+): Promise<SupportingFile[]> {
   const results: SupportingFile[] = [];
   try {
     await access(skillDir);
   } catch (cause) {
-    Logger.getInstance().debug("Skill directory not accessible", cause);
+    log.debug("Skill directory not accessible", cause);
     return results;
   }
 

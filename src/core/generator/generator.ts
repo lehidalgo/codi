@@ -112,9 +112,13 @@ export async function generate(
   const verifyData = buildVerificationData(config);
   const verifySection = buildVerificationSection(verifyData);
 
+  // CORE-003: thread the singleton logger into every adapter so adapter-side
+  // warn/info calls (codex HTTP MCP skip, copilot raw-secret heuristic,
+  // skill-generator lossy-field strips) reach the user.
+  const log = Logger.getInstance();
   const agentOutputs: AgentOutput[] = await Promise.all(
     adapters.map(async ({ agentId, adapter }) => {
-      const generated = await adapter!.generate(config, { ...options, projectRoot });
+      const generated = await adapter!.generate(config, { ...options, projectRoot, log });
 
       for (const file of generated) {
         if (file.path !== adapter!.paths.instructionFile) continue;
@@ -218,7 +222,7 @@ export async function generate(
         force: options.force,
         keepCurrent: options.keepCurrent,
         unionMerge: options.unionMerge,
-        log: Logger.getInstance(),
+        log,
       });
 
       await Promise.all(

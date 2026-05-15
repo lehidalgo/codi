@@ -333,8 +333,17 @@ describe("codex adapter", () => {
   });
 
   it("skips HTTP MCP servers (codex is stdio-only) and warns", async () => {
-    const { Logger } = await import("#src/core/output/logger.js");
-    const warnSpy = vi.spyOn(Logger.getInstance(), "warn").mockImplementation(() => {});
+    // CORE-003: adapters now receive `log` via DI rather than calling
+    // Logger.getInstance(). Inject a capturing logger and assert against
+    // its calls directly.
+    const warnCalls: { msg: string; args: unknown[] }[] = [];
+    const log = {
+      debug: () => {},
+      info: () => {},
+      warn: (msg: string, ...args: unknown[]) => warnCalls.push({ msg, args }),
+      error: () => {},
+      fatal: () => {},
+    };
     const config = createMockConfig({
       mcp: {
         servers: {
@@ -351,7 +360,7 @@ describe("codex adapter", () => {
         },
       },
     });
-    const files = await codexAdapter.generate(config, {});
+    const files = await codexAdapter.generate(config, { log });
 
     const configFile = files.find((f) => f.path === ".codex/config.toml");
     expect(configFile).toBeDefined();
@@ -363,10 +372,9 @@ describe("codex adapter", () => {
     expect(configFile!.content).toContain("[mcp_servers.stdio-mcp]");
     expect(configFile!.content).toContain('command = "npx"');
     // User-facing warning names the skipped server.
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toContain("http-mcp");
-    expect(warnSpy.mock.calls[0][0]).toMatch(/stdio/i);
-    warnSpy.mockRestore();
+    expect(warnCalls).toHaveLength(1);
+    expect(warnCalls[0]!.msg).toContain("http-mcp");
+    expect(warnCalls[0]!.msg).toMatch(/stdio/i);
   });
 
   it("excludes disabled MCP servers from config.toml", async () => {
