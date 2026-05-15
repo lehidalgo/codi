@@ -1,0 +1,74 @@
+schema_version: 1
+hooks:
+  - bucket: git
+    name: golangci-lint
+    description: Aggregator linter for Go
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: true
+    category: lint
+    language: go
+    files: "**/*.go"
+    stages:
+      - pre-commit
+    shell:
+      command: golangci-lint run
+      passFiles: false
+      modifiesFiles: false
+      toolBinary: golangci-lint
+    preCommit:
+      kind: local
+      entry: golangci-lint run
+      language: system
+      passFilenames: false
+    installHint:
+      command: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      url: https://golangci-lint.run/usage/install/
+  - bucket: git
+    name: gofmt
+    description: Standard Go formatter
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: true
+    category: format
+    language: go
+    files: "**/*.go"
+    stages:
+      - pre-commit
+    shell:
+      command: gofmt -w
+      passFiles: true
+      modifiesFiles: true
+      toolBinary: gofmt
+    preCommit:
+      kind: local
+      entry: gofmt -w
+      language: system
+    installHint:
+      command: Install Go from https://go.dev (gofmt is included)
+  - bucket: git
+    name: gosec
+    description: Go security analyser
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: true
+    category: security
+    language: go
+    files: "**/*.go"
+    stages:
+      - pre-commit
+    shell:
+      command: gosec
+      passFiles: false
+      modifiesFiles: false
+      toolBinary: gosec
+    preCommit:
+      kind: local
+      entry: gosec
+      language: system
+      passFilenames: false
+    installHint:
+      command: go install github.com/securego/gosec/v2/cmd/gosec@latest

@@ -1,0 +1,158 @@
+schema_version: 1
+hooks:
+  - bucket: git
+    name: ruff-check
+    description: Fast Python linter (ruff)
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: true
+    category: lint
+    language: python
+    files: "**/*.py"
+    stages:
+      - pre-commit
+    shell:
+      command: ruff check --fix
+      passFiles: true
+      modifiesFiles: true
+      toolBinary: ruff
+    preCommit:
+      kind: upstream
+      repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.15.12
+      id: ruff-check
+      args:
+        - --fix
+    installHint:
+      command: pip install ruff
+      url: https://docs.astral.sh/ruff
+  - bucket: git
+    name: ruff-format
+    description: Fast Python formatter (ruff)
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: false
+    default: true
+    category: format
+    language: python
+    files: "**/*.py"
+    stages:
+      - pre-commit
+    shell:
+      command: ruff format
+      passFiles: true
+      modifiesFiles: true
+      toolBinary: ruff
+    preCommit:
+      kind: upstream
+      repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.15.12
+      id: ruff-format
+    installHint:
+      command: pip install ruff
+  - bucket: git
+    name: basedpyright
+    description: Strict Python type checker (basedpyright)
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: true
+    category: type-check
+    language: python
+    files: "**/*.py"
+    stages:
+      - pre-push
+    shell:
+      command: basedpyright
+      passFiles: false
+      modifiesFiles: false
+      toolBinary: basedpyright
+    preCommit:
+      kind: local
+      entry: basedpyright
+      language: python
+      additionalDependencies:
+        - basedpyright
+      passFilenames: false
+    installHint:
+      command: pip install basedpyright
+  - bucket: git
+    name: mypy
+    description: Python type checker (mypy)
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: false
+    category: type-check
+    language: python
+    files: "**/*.py"
+    stages:
+      - pre-push
+    shell:
+      command: mypy
+      passFiles: false
+      modifiesFiles: false
+      toolBinary: mypy
+    preCommit:
+      kind: upstream
+      repo: https://github.com/pre-commit/mirrors-mypy
+      rev: v1.13.0
+      id: mypy
+      passFilenames: false
+    installHint:
+      command: pip install mypy
+  - bucket: git
+    name: pyright
+    description: Python type checker (pyright)
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: false
+    category: type-check
+    language: python
+    files: "**/*.py"
+    stages:
+      - pre-push
+    shell:
+      command: npx pyright
+      passFiles: false
+      modifiesFiles: false
+      toolBinary: pyright
+    preCommit:
+      kind: local
+      entry: npx pyright
+      language: system
+      passFilenames: false
+    installHint:
+      command: npm install -D pyright
+  - bucket: git
+    name: bandit
+    description: Python security linter
+    version: "1"
+    managed_by: ${PROJECT_CLI}
+    required: true
+    default: true
+    category: security
+    language: python
+    files: "**/*.py"
+    stages:
+      - pre-commit
+    shell:
+      command: bandit -c pyproject.toml -lll -r
+      passFiles: true
+      modifiesFiles: false
+      toolBinary: bandit
+    preCommit:
+      kind: upstream
+      repo: https://github.com/PyCQA/bandit
+      rev: 1.8.0
+      id: bandit
+      args:
+        - -c
+        - pyproject.toml
+        - -lll
+      additionalDependencies:
+        - bandit[toml]
+    installHint:
+      command: pip install "bandit[toml]"

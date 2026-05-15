@@ -20,5 +20,6 @@ export default defineConfig({
   banner: {
     js: "#!/usr/bin/env node",
   },
-  onSuccess: "node scripts/copy-skill-assets.mjs && node scripts/copy-brain-ui-vendor.mjs",
+  onSuccess:
+    "node scripts/copy-skill-assets.mjs && node scripts/copy-brain-ui-vendor.mjs && node scripts/copy-hook-yaml.mjs",
 });

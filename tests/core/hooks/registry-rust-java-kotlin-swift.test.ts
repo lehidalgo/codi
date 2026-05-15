@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { RUST_HOOKS } from "#src/core/hooks/registry/rust.js";
-import { JAVA_HOOKS } from "#src/core/hooks/registry/java.js";
-import { KOTLIN_HOOKS } from "#src/core/hooks/registry/kotlin.js";
-import { SWIFT_HOOKS } from "#src/core/hooks/registry/swift.js";
+import { loadLanguageHooks } from "#src/core/hooks/registry/loader.js";
 import { isGitHook } from "#src/core/hooks/hook-artifact.js";
+
+const RUST_HOOKS = loadLanguageHooks("rust");
+const JAVA_HOOKS = loadLanguageHooks("java");
+const KOTLIN_HOOKS = loadLanguageHooks("kotlin");
+const SWIFT_HOOKS = loadLanguageHooks("swift");
 
 const allRegistries = [
   { name: "rust", arr: RUST_HOOKS },

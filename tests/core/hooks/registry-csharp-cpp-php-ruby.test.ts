@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { CSHARP_HOOKS } from "#src/core/hooks/registry/csharp.js";
-import { CPP_HOOKS } from "#src/core/hooks/registry/cpp.js";
-import { PHP_HOOKS } from "#src/core/hooks/registry/php.js";
-import { RUBY_HOOKS } from "#src/core/hooks/registry/ruby.js";
+import { loadLanguageHooks } from "#src/core/hooks/registry/loader.js";
 import { isGitHook } from "#src/core/hooks/hook-artifact.js";
+
+const CSHARP_HOOKS = loadLanguageHooks("csharp");
+const CPP_HOOKS = loadLanguageHooks("cpp");
+const PHP_HOOKS = loadLanguageHooks("php");
+const RUBY_HOOKS = loadLanguageHooks("ruby");
 
 const allRegistries = [
   { name: "csharp", arr: CSHARP_HOOKS },

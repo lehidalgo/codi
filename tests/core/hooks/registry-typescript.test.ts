@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { TYPESCRIPT_HOOKS } from "#src/core/hooks/registry/typescript.js";
+import { loadLanguageHooks } from "#src/core/hooks/registry/loader.js";
 import { isGitHook } from "#src/core/hooks/hook-artifact.js";
+
+const TYPESCRIPT_HOOKS = loadLanguageHooks("typescript");
 
 describe("TYPESCRIPT_HOOKS as GitHookArtifact", () => {
   it("each entry has bucket 'git'", () => {

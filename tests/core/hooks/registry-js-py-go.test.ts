@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { JAVASCRIPT_HOOKS } from "#src/core/hooks/registry/javascript.js";
-import { PYTHON_HOOKS } from "#src/core/hooks/registry/python.js";
-import { GO_HOOKS } from "#src/core/hooks/registry/go.js";
+import { loadLanguageHooks } from "#src/core/hooks/registry/loader.js";
 import { isGitHook } from "#src/core/hooks/hook-artifact.js";
+
+const JAVASCRIPT_HOOKS = loadLanguageHooks("javascript");
+const PYTHON_HOOKS = loadLanguageHooks("python");
+const GO_HOOKS = loadLanguageHooks("go");
 
 const allRegistries = [
   { name: "javascript", arr: JAVASCRIPT_HOOKS },

@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { DART_HOOKS } from "#src/core/hooks/registry/dart.js";
-import { SHELL_HOOKS } from "#src/core/hooks/registry/shell.js";
-import { GLOBAL_HOOKS } from "#src/core/hooks/registry/global.js";
+import { loadGlobalHooks, loadLanguageHooks } from "#src/core/hooks/registry/loader.js";
 import { isGitHook } from "#src/core/hooks/hook-artifact.js";
+
+const DART_HOOKS = loadLanguageHooks("dart");
+const SHELL_HOOKS = loadLanguageHooks("shell");
+const GLOBAL_HOOKS = loadGlobalHooks();
 
 const allRegistries = [
   { name: "dart", arr: DART_HOOKS },
