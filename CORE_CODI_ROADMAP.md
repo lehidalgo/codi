@@ -31,7 +31,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | **Validado ✅** | (CORE-004) | — | 1d |
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | **Validado ✅** | CORE-003 | CORE-013, CORE-024 | 3-4d |
 | 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | **Validado ✅** | CORE-003 | — | 1d |
-| 8 | CORE-008 | DecisionKind union extraction | D | P1 | Pendiente | — | gate-runner refactor | 4h |
+| 8 | CORE-008 | DecisionKind union extraction | D | P1 | **Validado ✅** | — | gate-runner refactor | 4h |
 | 9 | CORE-009 | Workflow event snapshot table | D | P1 | Pendiente | CORE-001 | reducer-cost issues | 1-2d |
 | 10 | CORE-010 | YAML-driven hook language registry | D | P2 | Pendiente | — | CORE-013 (cleaner) | 2d |
 | 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | Pendiente | CORE-002 | — | 1d |
@@ -614,26 +614,60 @@ Nota: el delta neto positivo refleja que los 270 LOC extraídos a `claude-settin
 
 ---
 
-## CORE-008 — DecisionKind union extraction
+## CORE-008 — DecisionKind union extraction **[RESUELTO]**
 
 - **Nivel:** D
 - **Prioridad:** P1
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** ninguno
 - **Desbloquea:** gate-runner refactor (CORE-019 indirect)
-- **Effort:** ~4 horas
+- **Effort:** ~4 horas estimado (real: ~1h en single-commit mode)
 
-**Descripción:** Los 8 `decision_recorded.kind` string literals (`reproducer_built`, `regression_test_added`, `baseline_captured`, `behavior_unchanged`, `migration_metrics_captured`, `brains_enumerated`, `dev_layout_validated`, `dev_findings`) están spread across `gate-runner.ts:219-531` (8 sitios), agent templates, y reducer. Sin union, un typo silently rompe gates.
+**Descripción original:** Los 8 `decision_recorded.kind` string literals (`reproducer_built`, `regression_test_added`, `baseline_captured`, `behavior_unchanged`, `migration_metrics_captured`, `brains_enumerated`, `dev_layout_validated`, `dev_findings`) estaban spread across `gate-runner.ts:219-531` (8 sitios), agent templates, y reducer. Sin union, un typo silently rompía gates en runtime.
 
-**Archivos afectados:**
-- `src/runtime/decision-kinds.ts` (new) — exports `DecisionKind` union + `findDecisionByKind(events, kind)` helper.
-- `src/runtime/gate-runner.ts:219-531` — replace inline `payload as { kind?: string }` casts.
-- Agent templates en `src/templates/agents/` que mencionan estos literales.
+**Resultado final:**
+- Nuevo módulo `src/runtime/decision-kinds.ts` (~95 LOC) exporta:
+  - `DECISION_KINDS = [...] as const` — array iterable runtime.
+  - `type DecisionKind = (typeof DECISION_KINDS)[number]` — union type compile-time.
+  - `isDecisionKind(value): value is DecisionKind` — runtime type guard.
+  - `findDecisionByKind(events, kind)` — primer match o undefined.
+  - `filterDecisionsByKind(events, kind)` — todos los matches.
+  - `hasDecisionKind(events, kind)` — boolean shortcut.
+- **8 sitios migrados** en `src/runtime/gate-runner.ts` (líneas reales: 222, 264, 287, 326, 403, 480, 496, 525-535). Cada `events.find(e => e.event_type === "decision_recorded" && (e.payload as { kind?: string }).kind === "...")` colapsa a un call a `findDecisionByKind(events, "...")` o `filterDecisionsByKind` cuando se cuenta.
+- **Reducer (`src/runtime/reducer.ts:371`) NO modificado** — solo matchea por `event_type`, nunca inspecciona `payload.kind`. Decisión deliberada.
+- **Templates NO modificados** — el agente 3 erró al claim que `src/templates/skills/migration-workflow/template.ts` etc. contenían literales kind. Verificado por grep: no hay matches. Los YAML workflows en `src/templates/workflows/` mencionan **gate IDs** (check_id values), no DecisionKinds. La convención `check_id === DecisionKind` está documentada en el header de `decision-kinds.ts`.
+- **Guard nuevo:** `scripts/guard-decision-kinds.mjs` añadido a `npm run lint`. Regex `\bas\s*\{\s*kind\?:\s*string\s*[;,}]/` específica para el cast pattern problemático (no captura el patrón distinto `refactor_adaptation?: { kind?: string }` en init payload, que es property-syntax, no cast-syntax). Allowlist: `decision-kinds.ts`.
+- **Tests nuevos:** `tests/runtime/decision-kinds.test.ts` con **14 cases** cubriendo:
+  - Sentinel: `DECISION_KINDS` equals exact 8-tuple in roadmap order.
+  - Sin duplicados en el array.
+  - `isDecisionKind` true para los 8, false para typos (`"reproducer_buil"`), case-mismatch (`"REPRODUCER_BUILT"`), non-string (undefined/null/number/object).
+  - `findDecisionByKind`: first match, undefined sin match, skip event_type wrong, skip payload.kind missing/non-string (fail-closed para stale on-disk events), empty array.
+  - `filterDecisionsByKind`: matches en orden, empty array sin match.
+  - `hasDecisionKind`: boolean shortcut.
+
+**LOC delta:**
+| Archivo | Delta |
+|---|---|
+| `src/runtime/decision-kinds.ts` (new) | +95 |
+| `src/runtime/gate-runner.ts` | +9 / −31 (net −22, simplifica) |
+| `tests/runtime/decision-kinds.test.ts` (new) | +148 |
+| `scripts/guard-decision-kinds.mjs` (new) | +110 |
+| `package.json` (lint script) | +1 |
 
 **Criterios de aceptación:**
-1. Cero `kind?: string` casts en gate-runner.
-2. Typo en `DecisionKind` causa compile error.
-3. Suite passing.
+1. ✅ **Cero `kind?: string` casts en gate-runner.** Verificado: `grep "as { kind?:" src/runtime/gate-runner.ts` retorna 0 matches del cast pattern. El único `kind?: string` restante es `refactor_adaptation?: { kind?: string }` (init payload, namespace distinto). Guard previene regresión.
+2. ✅ **Typo en `DecisionKind` causa compile error.** El union es derivado de `as const` array; pasar `"reproducer_buil"` a `findDecisionByKind` falla en `tsc --noEmit`.
+3. ✅ **Suite passing.** 3801 → 3815 (+14 nuevos, 0 regresiones). Lint clean (tsc + 7 guards incluyendo el nuevo).
+
+**Notas de decisión:**
+- **NO zod enum** — los 3 subagentes convergieron en plain TS union. zod entraría con CORE-004b (manifest-event canonical), donde `DecisionKindSchema = z.enum(DECISION_KINDS)` re-usará el array sin duplicación.
+- **NO modificar gate-runner.ts:317** (`refactor_adaptation?.kind === "deadcode"`) — pertenece al `init` event payload, NO a `decision_recorded`. Es un namespace distinto que coexiste sin conflicto.
+- **NO comentarios sentinel en templates** — verificación reveló que los skill templates no contienen los literales kind. El header doc en `decision-kinds.ts` documenta la convención `check_id === DecisionKind` y los workflows YAML referencian solo gate IDs.
+
+**Riesgos restantes:**
+- Si CORE-004b añade un kind al `z.enum`, el array `DECISION_KINDS` debe sync. Mitigación: el reducer aún acepta cualquier string (porque `payload: Record<string, unknown>`); un nuevo kind no migrado sobrevive en disk pero no matchea ningún gate hasta registrarse. Convención: 1 PR añade ambos (array + zod enum + gate checker).
+
+**Commits:** single-commit final (este turno).
 
 ---
 

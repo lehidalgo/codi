@@ -12,6 +12,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { CheckOutcome, GateCheck, GateDefinition, GateRunResult } from "./gate-types.js";
 import type { ManifestEvent } from "./types.js";
+import { findDecisionByKind, filterDecisionsByKind } from "./decision-kinds.js";
 import { git } from "./git-utils.js";
 import {
   getGate,
@@ -216,12 +217,13 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         summary: "Reproducer declared in adaptive intake (reproducer_exists=true).",
       };
     }
-    const reproducerEvent = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      const p = e.payload as { kind?: string; content?: string };
-      if (p.kind === "reproducer_built") return true;
-      return typeof p.content === "string" && /reproducer/i.test(p.content);
-    });
+    const reproducerEvent =
+      findDecisionByKind(ctx.events ?? [], "reproducer_built") ??
+      (ctx.events ?? []).find((e) => {
+        if (e.event_type !== "decision_recorded") return false;
+        const content = (e.payload as { content?: unknown }).content;
+        return typeof content === "string" && /reproducer/i.test(content);
+      });
     if (reproducerEvent !== undefined) {
       return {
         check_id: "reproducer_event_exists",
@@ -258,11 +260,7 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         summary: "Adaptive intake skipped TDD discipline (reproducer + root cause both declared).",
       };
     }
-    const testEvent = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      const p = e.payload as { kind?: string; content?: string };
-      return p.kind === "regression_test_added";
-    });
+    const testEvent = findDecisionByKind(ctx.events ?? [], "regression_test_added");
     if (testEvent !== undefined) {
       return {
         check_id: "tdd_first_test_exists",
@@ -285,11 +283,7 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
    * `summary` field referencing the test command + result.
    */
   baseline_captured: (ctx) => {
-    const found = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      const p = e.payload as { kind?: string };
-      return p.kind === "baseline_captured";
-    });
+    const found = findDecisionByKind(ctx.events ?? [], "baseline_captured");
     if (found !== undefined) {
       return {
         check_id: "baseline_captured",
@@ -323,11 +317,7 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
         summary: "Refactor kind=deadcode — no behaviour to preserve.",
       };
     }
-    const found = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      const p = e.payload as { kind?: string };
-      return p.kind === "behavior_unchanged";
-    });
+    const found = findDecisionByKind(ctx.events ?? [], "behavior_unchanged");
     if (found !== undefined) {
       return {
         check_id: "behavior_unchanged",
@@ -401,11 +391,14 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
    * `pre` and `post` row-count fields.
    */
   migration_metrics_captured: (ctx) => {
-    const found = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      const p = e.payload as { kind?: string; pre?: unknown; post?: unknown };
-      return p.kind === "migration_metrics_captured" && p.pre !== undefined && p.post !== undefined;
-    });
+    const candidate = findDecisionByKind(ctx.events ?? [], "migration_metrics_captured");
+    const candidatePayload = candidate?.payload as { pre?: unknown; post?: unknown } | undefined;
+    const found =
+      candidate !== undefined &&
+      candidatePayload?.pre !== undefined &&
+      candidatePayload.post !== undefined
+        ? candidate
+        : undefined;
     if (found !== undefined) {
       return {
         check_id: "migration_metrics_captured",
@@ -478,10 +471,7 @@ const TEAM_CONSOLIDATION_CHECKERS: Record<string, DeterministicChecker> = {
     };
   },
   brains_listed: (ctx) => {
-    const ev = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      return (e.payload as { kind?: string }).kind === "brains_enumerated";
-    });
+    const ev = findDecisionByKind(ctx.events ?? [], "brains_enumerated");
     const brains = (ev?.payload as { brains?: unknown[] } | undefined)?.brains;
     const count = Array.isArray(brains) ? brains.length : 0;
     return {
@@ -494,10 +484,7 @@ const TEAM_CONSOLIDATION_CHECKERS: Record<string, DeterministicChecker> = {
     };
   },
   dev_layout_validated: (ctx) => {
-    const ev = (ctx.events ?? []).find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      return (e.payload as { kind?: string }).kind === "dev_layout_validated";
-    });
+    const ev = findDecisionByKind(ctx.events ?? [], "dev_layout_validated");
     if (ev === undefined) {
       return {
         check_id: "dev_layout_validated",
@@ -524,16 +511,10 @@ const TEAM_CONSOLIDATION_CHECKERS: Record<string, DeterministicChecker> = {
   },
   per_dev_findings_done: (ctx) => {
     const events = ctx.events ?? [];
-    const enumerated = events.find((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      return (e.payload as { kind?: string }).kind === "brains_enumerated";
-    });
+    const enumerated = findDecisionByKind(events, "brains_enumerated");
     const brains = (enumerated?.payload as { brains?: unknown[] } | undefined)?.brains;
     const expected = Array.isArray(brains) ? brains.length : 0;
-    const found = events.filter((e) => {
-      if (e.event_type !== "decision_recorded") return false;
-      return (e.payload as { kind?: string }).kind === "dev_findings";
-    }).length;
+    const found = filterDecisionsByKind(events, "dev_findings").length;
     const ok = expected > 0 && found >= expected;
     return {
       check_id: "per_dev_findings_done",
