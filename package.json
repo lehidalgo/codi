@@ -26,6 +26,8 @@
     "build": "tsup",
     "regen:phase-refs": "tsx scripts/regenerate-phase-refs.mjs",
     "regen:phase-refs:force": "tsx scripts/regenerate-phase-refs.mjs --force",
+    "schemas:generate": "tsx scripts/generate-json-schemas.mjs",
+    "schemas:check": "tsx scripts/generate-json-schemas.mjs --check",
     "validate:codi": "tsx scripts/validate-codi-artifacts.mjs",
     "test:agent-harness": "CODI_AGENT_TESTS=1 vitest run tests/agent-harness",
     "test": "vitest run",

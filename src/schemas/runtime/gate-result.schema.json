@@ -1,20 +1,43 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://codi.dev/schemas/gate-result/v1.0.0",
-  "title": "Gate Result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
   "description": "Structured verdict produced by a gate check. Returned by both deterministic and agent (subagent) checks.",
-  "type": "object",
   "properties": {
-    "verdict": { "enum": ["pass", "fail"] },
-    "check_id": { "type": "string", "minLength": 1 },
-    "summary": { "type": "string" },
-    "evidence": {
-      "type": "object",
-      "additionalProperties": true
+    "check_id": {
+      "minLength": 1,
+      "type": "string"
     },
-    "suggested_action": { "type": "string" },
-    "tokens_consumed": { "type": "integer", "minimum": 0 }
+    "evidence": {
+      "additionalProperties": {},
+      "propertyNames": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "suggested_action": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "tokens_consumed": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "type": "string"
+    }
   },
-  "required": ["verdict", "check_id"],
-  "additionalProperties": false
+  "required": [
+    "verdict",
+    "check_id"
+  ],
+  "title": "Gate Result",
+  "type": "object"
 }
