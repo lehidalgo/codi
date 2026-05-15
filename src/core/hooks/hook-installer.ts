@@ -220,32 +220,90 @@ async function installStandalone(
   _flags: ResolvedFlags,
   options: InstallOptions,
 ): Promise<Result<HookFileResult>> {
-  const hookDir = path.join(projectRoot, ".git", "hooks");
-  try {
-    await fs.mkdir(hookDir, { recursive: true });
-  } catch {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "pre-commit",
-        reason: `Cannot create .git/hooks directory at ${hookDir}`,
-      }),
-    ]);
-  }
-
   const script = buildRunnerScript(hooks);
-  const hookPath = path.join(hookDir, "pre-commit");
+  const result = await writeHookFile({
+    projectRoot,
+    runner: "standalone",
+    kind: "pre-commit",
+    content: script,
+  });
+  if (!result.ok) return result;
+
+  // Auxiliary scripts (secret-scan, file-size-check, …) live alongside
+  // the pre-commit runner in `.git/hooks/`. CORE-014 will table-drive
+  // this; for now the orchestration stays here.
+  const hookDir = path.join(projectRoot, ".git", "hooks");
+  const auxFiles = await writeAuxiliaryScripts(hookDir, options);
+  return ok({ files: [...result.data.files, ...auxFiles] });
+}
+
+/**
+ * CORE-013 — unified hook file writer.
+ *
+ * Pre-CORE-013, four sibling helpers (`installStandalone`,
+ * `installHusky`, `installCommitMsgHook`, `installPrePushHook`)
+ * duplicated the same `mkdir + writeFile mode 0o755 + try/catch +
+ * Result<HookFileResult>` skeleton. Differences were target path
+ * (`.git/hooks/<kind>` vs `.husky/<kind>`), an optional husky banner
+ * prefix, and the husky pre-commit read-modify-write strip-and-append.
+ * This single function captures the variants.
+ *
+ * `runner === "husky"` writes to `.husky/<kind>` and never `mkdir`s
+ * (husky-init owns the directory). Everything else writes to
+ * `.git/hooks/<kind>` with `mkdir -p`. The `huskyHeader` flag prepends
+ * `# ${PROJECT_NAME_DISPLAY} hooks\n` — required by the commit-msg
+ * husky variant and by the husky pre-commit append; intentionally
+ * absent from husky pre-push (preserves the existing inconsistency
+ * so byte-equal tests stay green). `stripPriorGenerated` is the
+ * read-modify-write knob for the husky pre-commit case: read existing
+ * file, strip any prior block matching the banner, then append the
+ * new block separated by a blank line.
+ */
+async function writeHookFile(opts: {
+  projectRoot: string;
+  runner: "standalone" | "husky" | "lefthook" | "pre-commit";
+  kind: "pre-commit" | "commit-msg" | "pre-push";
+  content: string;
+  huskyHeader?: boolean;
+  stripPriorGenerated?: boolean;
+}): Promise<Result<HookFileResult>> {
+  const targetDir =
+    opts.runner === "husky"
+      ? path.join(opts.projectRoot, ".husky")
+      : path.join(opts.projectRoot, ".git", "hooks");
+  const hookPath = path.join(targetDir, opts.kind);
 
   try {
-    await fs.writeFile(hookPath, script, { encoding: "utf-8", mode: 0o755 });
-    const files: string[] = [path.relative(projectRoot, hookPath)];
-    const auxFiles = await writeAuxiliaryScripts(hookDir, options);
-    files.push(...auxFiles);
-    return ok({ files });
+    if (opts.runner !== "husky") {
+      await fs.mkdir(targetDir, { recursive: true });
+    }
+
+    let payload = opts.content;
+    if (opts.stripPriorGenerated) {
+      let existing = "";
+      try {
+        existing = await fs.readFile(hookPath, "utf-8");
+      } catch {
+        // file doesn't exist yet
+      }
+      const cleaned = stripGeneratedSection(existing);
+      // The husky pre-commit case feeds the block content (commands)
+      // and lets writeHookFile compose the banner + leading newline.
+      const block = opts.huskyHeader
+        ? `\n# ${PROJECT_NAME_DISPLAY} hooks\n${opts.content}\n`
+        : `\n${opts.content}\n`;
+      payload = cleaned + block;
+    } else if (opts.huskyHeader) {
+      payload = `# ${PROJECT_NAME_DISPLAY} hooks\n${opts.content}`;
+    }
+
+    await fs.writeFile(hookPath, payload, { encoding: "utf-8", mode: 0o755 });
+    return ok({ files: [path.relative(opts.projectRoot, hookPath)] });
   } catch (cause) {
     return err([
       createError("E_HOOK_FAILED", {
-        hook: "pre-commit",
-        reason: `Failed to write hook: ${(cause as Error).message}`,
+        hook: opts.kind,
+        reason: `Failed to write ${opts.kind} hook: ${(cause as Error).message}`,
       }),
     ]);
   }
@@ -397,34 +455,19 @@ async function installHusky(
   projectRoot: string,
   hooks: HookEntry[],
 ): Promise<Result<HookFileResult>> {
-  const huskyFile = path.join(projectRoot, ".husky", "pre-commit");
-
   const commands = renderShellHooks(hooks, "husky");
-  const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n${commands}\n`;
-
-  try {
-    let existing = "";
-    try {
-      existing = await fs.readFile(huskyFile, "utf-8");
-    } catch {
-      // file doesn't exist yet
-    }
-
-    // Remove any existing generated section before appending to prevent duplicates
-    const cleaned = stripGeneratedSection(existing);
-    await fs.writeFile(huskyFile, cleaned + block, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    return ok({ files: [path.relative(projectRoot, huskyFile)] });
-  } catch (cause) {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "husky",
-        reason: `Failed to write husky hook: ${(cause as Error).message}`,
-      }),
-    ]);
-  }
+  // writeHookFile composes the banner + leading newline when both
+  // `huskyHeader` and `stripPriorGenerated` are set — passing the raw
+  // command body keeps byte-equal with the legacy `cleaned + "\n# X\n
+  // <commands>\n"` shape.
+  return writeHookFile({
+    projectRoot,
+    runner: "husky",
+    kind: "pre-commit",
+    content: commands,
+    huskyHeader: true,
+    stripPriorGenerated: true,
+  });
 }
 
 async function installCommitMsgHook(
@@ -432,40 +475,21 @@ async function installCommitMsgHook(
   runner: string,
 ): Promise<Result<HookFileResult>> {
   if (runner === "none" || runner === "lefthook") {
-    const hookDir = path.join(projectRoot, ".git", "hooks");
-    try {
-      await fs.mkdir(hookDir, { recursive: true });
-      const hookPath = path.join(hookDir, "commit-msg");
-      await fs.writeFile(hookPath, COMMIT_MSG_TEMPLATE, {
-        encoding: "utf-8",
-        mode: 0o755,
-      });
-      return ok({ files: [path.relative(projectRoot, hookPath)] });
-    } catch (cause) {
-      return err([
-        createError("E_HOOK_FAILED", {
-          hook: "commit-msg",
-          reason: `Failed to write commit-msg hook: ${(cause as Error).message}`,
-        }),
-      ]);
-    }
+    return writeHookFile({
+      projectRoot,
+      runner: "standalone",
+      kind: "commit-msg",
+      content: COMMIT_MSG_TEMPLATE,
+    });
   }
   if (runner === "husky") {
-    const huskyFile = path.join(projectRoot, ".husky", "commit-msg");
-    try {
-      await fs.writeFile(huskyFile, `# ${PROJECT_NAME_DISPLAY} hooks\n${COMMIT_MSG_TEMPLATE}`, {
-        encoding: "utf-8",
-        mode: 0o755,
-      });
-      return ok({ files: [path.relative(projectRoot, huskyFile)] });
-    } catch (cause) {
-      return err([
-        createError("E_HOOK_FAILED", {
-          hook: "commit-msg",
-          reason: `Failed to write husky commit-msg: ${(cause as Error).message}`,
-        }),
-      ]);
-    }
+    return writeHookFile({
+      projectRoot,
+      runner: "husky",
+      kind: "commit-msg",
+      content: COMMIT_MSG_TEMPLATE,
+      huskyHeader: true,
+    });
   }
   return ok({ files: [] });
 }
@@ -479,37 +503,12 @@ async function installPrePushHook(
     "{{PROTECTED_BRANCHES}}",
     protectedBranches.join(" "),
   );
-
-  if (runner === "husky") {
-    const huskyFile = path.join(projectRoot, ".husky", "pre-push");
-    try {
-      await fs.writeFile(huskyFile, script, { encoding: "utf-8", mode: 0o755 });
-      return ok({ files: [path.relative(projectRoot, huskyFile)] });
-    } catch (cause) {
-      return err([
-        createError("E_HOOK_FAILED", {
-          hook: "pre-push",
-          reason: `Failed to write husky pre-push: ${(cause as Error).message}`,
-        }),
-      ]);
-    }
-  }
-
-  // standalone, lefthook, pre-commit framework: write directly to .git/hooks/pre-push
-  const hookDir = path.join(projectRoot, ".git", "hooks");
-  try {
-    await fs.mkdir(hookDir, { recursive: true });
-    const hookPath = path.join(hookDir, "pre-push");
-    await fs.writeFile(hookPath, script, { encoding: "utf-8", mode: 0o755 });
-    return ok({ files: [path.relative(projectRoot, hookPath)] });
-  } catch (cause) {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "pre-push",
-        reason: `Failed to write pre-push hook: ${(cause as Error).message}`,
-      }),
-    ]);
-  }
+  return writeHookFile({
+    projectRoot,
+    runner: runner === "husky" ? "husky" : "standalone",
+    kind: "pre-push",
+    content: script,
+  });
 }
 
 async function cleanStaleHooksFromOtherRunner(

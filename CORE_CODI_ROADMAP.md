@@ -36,7 +36,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 10 | CORE-010 | YAML-driven hook language registry | D | P2 | **Validado ✅** | — | CORE-013 (cleaner) | 2d |
 | 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | **Validado ✅** | CORE-002 | — | 1d |
 | 12 | CORE-012 | proper-lockfile en BrainEventLog | R | P1 | **Validado ✅ (eliminado, dead code)** | — | — | 4h |
-| 13 | CORE-013 | writeHookFile() unified installer | R | P2 | Pendiente | CORE-010 (recomendado) | — | 4h |
+| 13 | CORE-013 | writeHookFile() unified installer | R | P2 | **Validado ✅** | CORE-010 (recomendado) | — | 4h |
 | 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | Pendiente | — | — | 4h |
 | 15 | CORE-015 | Audit + classify 86+ empty catches | R | P1 | Pendiente | — | telemetry de fallos | 1d |
 | 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | Pendiente | — | CORE-017 | 3-5d |
@@ -914,14 +914,68 @@ Si emerge en el futuro un caller productivo que necesite lock cross-process en `
 
 **Commits:** single-commit final (este turno).
 
-## CORE-013 — writeHookFile() unified installer
+## CORE-013 — writeHookFile() unified installer **[RESUELTO]**
 
 - **Nivel:** R
 - **Prioridad:** P2
+- **Estado:** Validado ✅
 - **Depende de:** CORE-010 recomendado (registries simpler)
-- **Effort:** ~4 horas
+- **Effort:** ~4 horas estimado (real: ~45min en single-commit mode)
 
-**Descripción:** 4 sibling functions (`installCommitMsgHook`, `installPrePushHook`, etc.) en `hook-installer.ts:217-513` con estructura idéntica (mkdir + writeFile + try/catch). Replace por `writeHookFile(projectRoot, runner, kind, content)`.
+**Descripción original:** 4 sibling functions en `hook-installer.ts:217-513` con estructura idéntica (mkdir + writeFile + try/catch). Replace por `writeHookFile(projectRoot, runner, kind, content)`.
+
+**Resultado final:**
+Nueva función `writeHookFile()` (internal, ~70 LOC) en `src/core/hooks/hook-installer.ts` unifica los 4 sitios:
+
+```ts
+async function writeHookFile(opts: {
+  projectRoot: string;
+  runner: "standalone" | "husky" | "lefthook" | "pre-commit";
+  kind: "pre-commit" | "commit-msg" | "pre-push";
+  content: string;
+  huskyHeader?: boolean;          // opt-in `# ${PROJECT_NAME_DISPLAY} hooks\n` prefix
+  stripPriorGenerated?: boolean;  // husky pre-commit read-modify-write
+}): Promise<Result<HookFileResult>>
+```
+
+**4 sitios migrados:**
+- `installCommitMsgHook` (line 430-471) — 30 LOC → 22 LOC (2 calls a writeHookFile, una con `huskyHeader: true`).
+- `installPrePushHook` (line 473-513) — 41 LOC → 13 LOC (template substitution + 1 call).
+- `installStandalone` (line 217-252) — 35 LOC → 19 LOC (1 call + delega auxiliary scripts a writeAuxiliaryScripts existente).
+- `installHusky` (line 396-428) — 33 LOC → 16 LOC (1 call con `huskyHeader: true, stripPriorGenerated: true`).
+
+**Comportamiento preservado byte-equal:**
+- `runner === "husky"` → escribe a `.husky/<kind>` sin mkdir.
+- Else → escribe a `.git/hooks/<kind>` con mkdir recursive.
+- `huskyHeader: true` + `stripPriorGenerated: true` → composes `cleaned + "\n# <name> hooks\n<content>\n"` (husky pre-commit read-modify-write).
+- `huskyHeader: true` solo → composes `"# <name> hooks\n<content>"` (commit-msg husky).
+- Sin flags → raw content.
+- Mode 0o755 siempre. Error `hook` field normalizado al `kind` (era `"husky"` para installHusky pre-CORE-013; ahora `"pre-commit"` — minor improvement de telemetría).
+
+**Tests:**
+- `tests/unit/hooks/hook-installer.test.ts` (573 LOC, ~45 cases) testea via `installHooks()` public API. **0 test changes requeridos** — refactor interno transparente.
+- Tests verdes: 344/344 tests del directorio hooks, 3859/3859 suite total. Lint clean.
+
+**LOC delta:**
+| Archivo | Delta |
+|---|---|
+| `src/core/hooks/hook-installer.ts` | +70 helper / −71 callers = ~net 0 LOC (pero 4 duplicaciones → 1 audit point) |
+
+**Net:** El verdadero win es **eliminación de 4 duplicaciones try/catch + 4 sitios de mkdir + writeFile + path.relative + createError**. La consolidación es el valor real, no la LOC reduction (~0 net).
+
+**Decisiones clave:**
+- **Helper internal**, no exportado — preserva surface pública (zero risk SemVer).
+- **`writeAuxiliaryScripts` queda fuera del scope** — CORE-014 lo cubrirá. `installStandalone` sigue orquestando esa llamada.
+- **Husky inconsistencia preservada** — husky pre-push NO lleva header (vs commit-msg y pre-commit que sí). Mantener para byte-equal de tests existentes.
+- **Error `hook` field = kind** — pre-CORE-013 era inconsistente (`"husky"` vs `"pre-commit"`); ahora siempre `kind` para telemetría coherente.
+
+**Criterios de aceptación:**
+1. ✅ Las 4 funciones unificadas via `writeHookFile`.
+2. ✅ Tests existentes verdes — 0 regresiones (3859/3859).
+3. ✅ Lint clean (tsc + 7 guards).
+4. ✅ Byte-equal preserved en producción — tests existentes via `installHooks()` son el oracle.
+
+**Commits:** single-commit final (este turno).
 
 ## CORE-014 — writeAuxiliaryScripts table-driven
 
