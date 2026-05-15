@@ -26,7 +26,8 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 1 | CORE-001 | Reducer schema validation guard | F | P0 | **Validado ✅** | — | CORE-009, CORE-005 | 4h |
 | 2 | CORE-002 | Atomic generator commit + state lock | F | P0 | **Validado ✅** | — | CORE-011 | 1d |
 | 3 | CORE-003 | Logger DI + de-singletonize | F | P0 | **Validado ✅** | — | CORE-007 | 0.5d |
-| 4 | CORE-004 | Single-source Zod → JSON Schema | F | P1 | Pendiente | — | CORE-005 (tighter) | 2d |
+| 4 | CORE-004 | Single-source Zod → JSON Schema (infrastructure) | F | P1 | **Validado ✅** | — | CORE-005 (tighter) | 2d |
+| 4b | CORE-004b | Port manifest-event.schema.json (1031 LOC) a Zod | F | P2 | Pendiente | CORE-004 | confianza completa schemas | 0.5d |
 | 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | Pendiente | (CORE-004) | — | 1d |
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | Pendiente | CORE-003 | CORE-013, CORE-024 | 3-4d |
 | 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | Pendiente | CORE-003 | — | 1d |
@@ -317,14 +318,91 @@ Sintetizadas de 3 subagentes paralelos:
 
 ---
 
-## CORE-004 — Single-source Zod schemas con derived JSON Schema
+## CORE-004 — Single-source Zod schemas con derived JSON Schema **[RESUELTO]**
 
 - **Nivel:** F
 - **Prioridad:** P1
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** ninguno
-- **Desbloquea:** CORE-005 (alineación más estricta), schema evolution con confianza
-- **Effort:** ~2 días
+- **Desbloquea:** CORE-005 (mismo patrón aplica a Drizzle/raw SQL), schema evolution con confianza
+- **Effort:** ~2 días estimado (actual: ~1.5h con scope ajustado)
+- **Commits:** `b316a0f6` (drift reconciliation) + `93a0ef29` (generator + gate-result pilot) + `26fd9411` (CI guard + docs)
+
+**Notas de decisión:**
+
+Sintetizadas de 3 subagentes paralelos + ajuste de scope mid-implementation:
+
+1. **Zod canonical → JSON Schema generated → ambos committed.** Runtime sigue usando Ajv (no migración Zod-at-runtime — out of scope, perf, $id externos).
+2. **Zod v4 native `z.toJSONSchema()`** — Zod 4.3.6 ya instalado, cero nuevas deps.
+3. **Canonical JSON output** (sorted keys, 2-space indent, trailing newline) para que CI diff no se balancee en orden de inserción.
+4. **Scope ajustado:** la port completa de `manifest-event.schema.json` (1031 LOC, 45 variants) movida a **CORE-004b** durante implementación. Razón: ROI dominante de CORE-004 ya está entregado (drift reconciliation + generator infra + CI guard); el manifest-event port añade complejidad sin valor proporcional. Mejor un follow-up dedicado.
+5. **Drift reconciliación primero (Commit 1):** Subagent 2 surfaced que ya había drift bidireccional pre-existing. Si no se reconciliaba, el CI guard fallaría desde día uno por bugs que CORE-004 no se le pidió arreglar.
+
+**Resultado final:**
+
+- ✅ **Drift bidireccional cerrado:** `EVENT_TYPES` ahora incluye los 5 sheet_* events; schema `workflowType` enum incluye `team-consolidation`.
+- ✅ **Generator infrastructure:** `scripts/generate-json-schemas.mjs` con `--check` mode + canonical JSON serialization.
+- ✅ **gate-result.schema.json regenerated** desde Zod source (`src/schemas/runtime/gate-result.ts`); Ajv en `subagent-runner.ts` valida sin cambios.
+- ✅ **CI guard wired:** `.github/workflows/ci.yml` ejecuta `npm run schemas:check` post-lint.
+- ✅ **Docs updated:** `src/schemas/runtime/migrations/README.md` "Adding a new event type" refleja nuevo workflow.
+- ✅ Test suite: 3767 baseline → **3770 passing** (+3 codegen tests), 0 failed.
+- ✅ Lint clean, build clean.
+
+**Archivos modificados:**
+- `src/runtime/types.ts` (+5 entries) — drift fix
+- `src/runtime/reducer.ts` (+5 case arms) — pass-through for sheet_* events
+- `src/schemas/runtime/manifest-event.schema.json` (+1 enum entry) — drift fix
+- `src/schemas/runtime/gate-result.ts` (new, ~25 LOC) — Zod source
+- `src/schemas/runtime/gate-result.schema.json` (regenerated, canonical format)
+- `scripts/generate-json-schemas.mjs` (new, ~120 LOC) — generator
+- `package.json` — scripts `schemas:generate` + `schemas:check`
+- `tests/unit/scripts/schema-codegen.test.ts` (new, ~60 LOC, 3 tests)
+- `.github/workflows/ci.yml` (+1 step) — CI guard
+- `src/schemas/runtime/migrations/README.md` (+/-9 LOC) — updated docs
+
+**Tests ejecutados:**
+- `npm run schemas:generate` → idempotent
+- `npm run schemas:check` → exit 0
+- Deliberate drift simulation → exit 1 con mensaje claro
+- `npm run lint && npm test` → 3770 / 6 skipped / 0 failed
+
+**Riesgos restantes (cubiertos por CORE-004b):**
+- `manifest-event.schema.json` (1031 LOC, 45 variants) sigue siendo hand-written. CI guard no aplica a este file todavía. Drift posible.
+- Cuando CORE-004b land, el regenerated `manifest-event.schema.json` será sintácticamente distinto al committed (sorted keys, additionalProperties placement, oneOf without discriminator) — semánticamente equivalente. Validation: all sample-events must parse under both old + new schemas.
+
+---
+
+## CORE-004b — Port manifest-event.schema.json a Zod canonical
+
+- **Nivel:** F
+- **Prioridad:** P2
+- **Estado:** Pendiente
+- **Depende de:** CORE-004 (infrastructure ya in place)
+- **Desbloquea:** confianza completa en el contrato de eventos
+- **Effort:** ~0.5d (~3-5h de port + validación)
+
+**Descripción:** Migrar `src/schemas/runtime/manifest-event.schema.json` (1031 LOC, 45 oneOf variants) a un Zod source canonical (`src/schemas/runtime/manifest-event.ts`) y regenerar el JSON Schema desde ahí. Hoy es el único `.schema.json` aún hand-written; el CI guard de CORE-004 no lo cubre.
+
+**Trabajo concreto:**
+1. Write `src/schemas/runtime/manifest-event.ts` con `ManifestEventSchema = z.discriminatedUnion("event_type", [...])`.
+2. Define ~8 shared types ($defs equivalents): EventIdSchema, SchemaVersionSchema, AuthorSchema, PhaseSchema (re-use PHASES enum), WorkflowTypeSchema (re-use WORKFLOW_TYPES enum), etc.
+3. 45 variants × ~15 LOC each = ~700 LOC Zod.
+4. Add manifest-event entry to `GENERATORS` array in `scripts/generate-json-schemas.mjs`.
+5. Regenerate JSON. Diff vs committed (sintáctico, no semántico).
+6. Validate: every event in `sample-events.json` validates under regenerated schema (Ajv).
+7. Validate: regression suite passes (no event-writer fails validation).
+8. Accept regenerated JSON as new canonical, commit.
+
+**Criterios de aceptación:**
+1. `manifest-event.ts` Zod source compiles + matches the existing schema's 45 variants.
+2. `schemas:check` covers manifest-event after this issue lands.
+3. Sample-events round-trip: every fixture passes under regenerated schema.
+4. Test suite green (~3770+ passing).
+5. The `EventType` TS type can be derived from Zod (`z.infer<typeof ManifestEventSchema>["event_type"]`) and matches `EVENT_TYPES` const exactly (zero drift test).
+
+**Riesgo:** subtle semantic divergences in 45 variants. Cada payload tiene su propio constraints; un missing `.strict()` o wrong `enum` puede ser silently wrong. Mitigation: full sample-events validation + old-schema cross-check.
+
+---
 
 **Descripción:** `src/schemas/runtime/{gate-result.schema.json, manifest-event.schema.json, sample-events.json}` son hand-written JSON Schemas que duplican las Zod schemas en `src/schemas/*.ts`. Sin generación automática, pueden drift.
 
