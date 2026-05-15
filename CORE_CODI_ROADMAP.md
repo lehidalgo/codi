@@ -37,7 +37,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | **Validado ✅** | CORE-002 | — | 1d |
 | 12 | CORE-012 | proper-lockfile en BrainEventLog | R | P1 | **Validado ✅ (eliminado, dead code)** | — | — | 4h |
 | 13 | CORE-013 | writeHookFile() unified installer | R | P2 | **Validado ✅** | CORE-010 (recomendado) | — | 4h |
-| 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | Pendiente | — | — | 4h |
+| 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | **Validado ✅** | — | — | 4h |
 | 15 | CORE-015 | Audit + classify 86+ empty catches | R | P1 | Pendiente | — | telemetry de fallos | 1d |
 | 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | Pendiente | — | CORE-017 | 3-5d |
 | 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | Pendiente | CORE-016 | — | 3-5d |
@@ -977,13 +977,57 @@ async function writeHookFile(opts: {
 
 **Commits:** single-commit final (este turno).
 
-## CORE-014 — writeAuxiliaryScripts table-driven
+## CORE-014 — writeAuxiliaryScripts table-driven **[RESUELTO]**
 
 - **Nivel:** R
 - **Prioridad:** P2
-- **Effort:** ~4 horas
+- **Estado:** Validado ✅
+- **Effort:** ~4 horas estimado (real: ~10min en single-commit mode)
 
-**Descripción:** `hook-installer.ts:87-215` tiene 14 if-blocks idénticos. Replace por `AUX_HOOKS: [{key, slug, body}, ...]` array + single iterator.
+**Descripción original:** `hook-installer.ts:87-215` tenía 14 if-blocks idénticos (real: **15**, el roadmap miscontó). Replace por `AUX_HOOKS: [{key, slug, body}, ...]` array + single iterator.
+
+**Resultado final:**
+
+Nueva tabla declarativa `AUX_HOOKS` (~50 LOC) + loop iterador (~10 LOC) reemplazan 15 if-blocks (129 LOC). Cada entry:
+
+```ts
+{ flag: keyof InstallOptions; slug: string; body: () => string }
+```
+
+`body` es thunk para soportar constantes template + builder funcs uniformemente (`body: () => CONST_TEMPLATE` o `body: buildXScript`).
+
+**Los 15 sitios consolidados:**
+secretScan, fileSizeCheck, versionCheck, templateWiringCheck, docNamingCheck, artifactValidation, importDepthCheck, skillYamlValidation, skillResourceCheck, skillPathWrapCheck, stagedJunkCheck, conflictMarkerCheck, versionBump, versionVerify, brandSkillValidation.
+
+**Orden preservado** — la iteración del array `AUX_HOOKS` mantiene exactamente el orden de los if-blocks originales. Crítico para byte-equal en tests existentes.
+
+**Byte-equal preservation:**
+- Slugs idénticos.
+- Bodies idénticos (templates const = referencia directa, builder funcs = misma llamada lazy).
+- Mode 0o755 preservado.
+- Path resolution `${PROJECT_NAME}-${slug}.mjs` preservado.
+- Orden de iteración preservado.
+
+**LOC delta:**
+| Region | Pre | Post |
+|---|---|---|
+| `writeAuxiliaryScripts` body | 129 LOC | 10 LOC |
+| `AUX_HOOKS` table | 0 | 50 LOC |
+| **Net** | **129** | **60** |
+
+**Reducción real:** −69 LOC en file (635 → 581 LOC total). Más importante: **15 duplicaciones → 1 single iterator**, audit point único, "adding aux-hook #N" es 1 row de tabla.
+
+**Tests:**
+- `tests/unit/hooks/hook-installer.test.ts` testea via `installHooks()` public API. **0 test changes**.
+- 344/344 hook tests passing. 3859/3859 suite total. Lint clean.
+
+**Criterios de aceptación:**
+1. ✅ 15 if-blocks → 1 iterator + 15-row table.
+2. ✅ Byte-equal: archivos generados idénticos pre/post.
+3. ✅ LOC reduction: ~69 LOC net (~90 menos lógica duplicada).
+4. ✅ Suite passing — 3859/3859, 0 regresiones.
+
+**Commits:** single-commit final (este turno).
 
 ## CORE-015 — Audit + classify 86+ empty catches
 

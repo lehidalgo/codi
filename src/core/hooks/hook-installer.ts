@@ -79,137 +79,83 @@ export interface InstallOptions {
 }
 
 /**
- * Build the standalone .git/hooks/pre-commit script body. Hooks are
- * pre-filtered to those that declare `stages.includes("pre-commit")` so
- * pre-push and commit-msg specs do not leak into the pre-commit runner.
- * (The runner also filters at runtime as defense-in-depth.)
+ * CORE-014 — declarative table of auxiliary hook scripts written
+ * alongside the standalone pre-commit runner. Pre-CORE-014 each entry
+ * here was a hand-rolled `if (options.flag) { … writeFile … push … }`
+ * block in `writeAuxiliaryScripts`; the table consolidates the 15
+ * blocks into a single iterator below.
+ *
+ * `body` is a thunk so constant templates and `buildXScript()` factory
+ * calls coexist on the same surface. Adding aux-hook #N is now a
+ * single row here plus the matching `InstallOptions` flag.
+ *
+ * Order MUST stay stable — the order of `writeFile` calls is part of
+ * the byte-equal contract that the existing installer tests rely on.
+ */
+const AUX_HOOKS: ReadonlyArray<{
+  readonly flag: keyof InstallOptions;
+  readonly slug: string;
+  readonly body: () => string;
+}> = [
+  { flag: "secretScan", slug: "secret-scan", body: buildSecretScanScript },
+  {
+    flag: "fileSizeCheck",
+    slug: "file-size-check",
+    body: () => buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES),
+  },
+  { flag: "versionCheck", slug: "version-check", body: () => VERSION_CHECK_TEMPLATE },
+  { flag: "templateWiringCheck", slug: "template-wiring-check", body: buildTemplateWiringScript },
+  { flag: "docNamingCheck", slug: "doc-naming-check", body: () => DOC_NAMING_CHECK_TEMPLATE },
+  { flag: "artifactValidation", slug: "artifact-validate", body: buildArtifactValidateScript },
+  {
+    flag: "importDepthCheck",
+    slug: "import-depth-check",
+    body: () => IMPORT_DEPTH_CHECK_TEMPLATE,
+  },
+  {
+    flag: "skillYamlValidation",
+    slug: "skill-yaml-validate",
+    body: () => SKILL_YAML_VALIDATE_TEMPLATE,
+  },
+  {
+    flag: "skillResourceCheck",
+    slug: "skill-resource-check",
+    body: () => SKILL_RESOURCE_CHECK_TEMPLATE,
+  },
+  {
+    flag: "skillPathWrapCheck",
+    slug: "skill-path-wrap-check",
+    body: () => SKILL_PATH_WRAP_CHECK_TEMPLATE,
+  },
+  { flag: "stagedJunkCheck", slug: "staged-junk-check", body: buildStagedJunkCheckScript },
+  {
+    flag: "conflictMarkerCheck",
+    slug: "conflict-marker-check",
+    body: () => CONFLICT_MARKER_CHECK_TEMPLATE,
+  },
+  { flag: "versionBump", slug: "version-bump", body: buildVersionBumpScript },
+  { flag: "versionVerify", slug: "version-verify", body: () => VERSION_VERIFY_PRE_PUSH_TEMPLATE },
+  {
+    flag: "brandSkillValidation",
+    slug: "brand-skill-validate",
+    body: () => BRAND_SKILL_VALIDATE_TEMPLATE,
+  },
+];
+
+/**
+ * Write every auxiliary script whose `InstallOptions` flag is enabled.
+ * Pre-CORE-014 this function was 129 LOC of hand-rolled if-blocks
+ * with the same shape (mkdir was not needed; only writeFile + push);
+ * the table-driven loop below collapses them to ~10 LOC of logic
+ * while preserving order and byte-equal output.
  */
 async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
   const files: string[] = [];
-  if (options.secretScan) {
-    const secretPath = path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`);
-    const secretScript = buildSecretScanScript();
-    await fs.writeFile(secretPath, secretScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, secretPath));
-  }
-  if (options.fileSizeCheck) {
-    const sizePath = path.join(hookDir, `${PROJECT_NAME}-file-size-check.mjs`);
-    const sizeScript = buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES);
-    await fs.writeFile(sizePath, sizeScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, sizePath));
-  }
-  if (options.versionCheck) {
-    const versionPath = path.join(hookDir, `${PROJECT_NAME}-version-check.mjs`);
-    await fs.writeFile(versionPath, VERSION_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, versionPath));
-  }
-  if (options.templateWiringCheck) {
-    const wiringPath = path.join(hookDir, `${PROJECT_NAME}-template-wiring-check.mjs`);
-    const wiringScript = buildTemplateWiringScript();
-    await fs.writeFile(wiringPath, wiringScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, wiringPath));
-  }
-  if (options.docNamingCheck) {
-    const docNamingPath = path.join(hookDir, `${PROJECT_NAME}-doc-naming-check.mjs`);
-    await fs.writeFile(docNamingPath, DOC_NAMING_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, docNamingPath));
-  }
-  if (options.artifactValidation) {
-    const artifactPath = path.join(hookDir, `${PROJECT_NAME}-artifact-validate.mjs`);
-    const artifactScript = buildArtifactValidateScript();
-    await fs.writeFile(artifactPath, artifactScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, artifactPath));
-  }
-  if (options.importDepthCheck) {
-    const importDepthPath = path.join(hookDir, `${PROJECT_NAME}-import-depth-check.mjs`);
-    await fs.writeFile(importDepthPath, IMPORT_DEPTH_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, importDepthPath));
-  }
-  if (options.skillYamlValidation) {
-    const skillYamlPath = path.join(hookDir, `${PROJECT_NAME}-skill-yaml-validate.mjs`);
-    await fs.writeFile(skillYamlPath, SKILL_YAML_VALIDATE_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, skillYamlPath));
-  }
-  if (options.skillResourceCheck) {
-    const resourceCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-resource-check.mjs`);
-    await fs.writeFile(resourceCheckPath, SKILL_RESOURCE_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, resourceCheckPath));
-  }
-  if (options.skillPathWrapCheck) {
-    const pathWrapCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-path-wrap-check.mjs`);
-    await fs.writeFile(pathWrapCheckPath, SKILL_PATH_WRAP_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, pathWrapCheckPath));
-  }
-  if (options.stagedJunkCheck) {
-    const junkCheckPath = path.join(hookDir, `${PROJECT_NAME}-staged-junk-check.mjs`);
-    await fs.writeFile(junkCheckPath, buildStagedJunkCheckScript(), {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, junkCheckPath));
-  }
-  if (options.conflictMarkerCheck) {
-    const cmPath = path.join(hookDir, `${PROJECT_NAME}-conflict-marker-check.mjs`);
-    await fs.writeFile(cmPath, CONFLICT_MARKER_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, cmPath));
-  }
-  if (options.versionBump) {
-    const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);
-    const versionBumpScript = buildVersionBumpScript();
-    await fs.writeFile(versionBumpPath, versionBumpScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, versionBumpPath));
-  }
-  if (options.versionVerify) {
-    const versionVerifyPath = path.join(hookDir, `${PROJECT_NAME}-version-verify.mjs`);
-    await fs.writeFile(versionVerifyPath, VERSION_VERIFY_PRE_PUSH_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, versionVerifyPath));
-  }
-  if (options.brandSkillValidation) {
-    const brandSkillPath = path.join(hookDir, `${PROJECT_NAME}-brand-skill-validate.mjs`);
-    await fs.writeFile(brandSkillPath, BRAND_SKILL_VALIDATE_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, brandSkillPath));
+  for (const { flag, slug, body } of AUX_HOOKS) {
+    if (!options[flag]) continue;
+    const filePath = path.join(hookDir, `${PROJECT_NAME}-${slug}.mjs`);
+    await fs.writeFile(filePath, body(), { encoding: "utf-8", mode: 0o755 });
+    files.push(path.relative(options.projectRoot, filePath));
   }
   return files;
 }
