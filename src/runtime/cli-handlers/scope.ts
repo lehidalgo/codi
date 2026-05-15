@@ -11,7 +11,6 @@ import {
   BrainNoActiveWorkflowError as NoActiveWorkflowError,
 } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
-import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
 
@@ -42,7 +41,7 @@ export function proposeScopeExpansion(
     const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
-    const state = reduce(log.loadEvents(workflowId));
+    const state = log.getReducedState(workflowId);
     if (state.scope.files_in_plan.includes(opts.filePath)) {
       throw new Error(`File '${opts.filePath}' is already in scope.`);
     }

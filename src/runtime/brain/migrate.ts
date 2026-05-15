@@ -183,7 +183,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 15;
+export const CURRENT_SCHEMA_VERSION = 16;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -422,6 +422,27 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `CREATE INDEX IF NOT EXISTS idx_sessions_team_started ON sessions(team_id, started_at)`,
       `CREATE INDEX IF NOT EXISTS idx_captures_team_ts ON captures(team_id, ts)`,
       `CREATE INDEX IF NOT EXISTS idx_workflow_runs_team_status ON workflow_runs(team_id, status)`,
+    ],
+  ],
+  [
+    16,
+    [
+      // CORE-009 — workflow_snapshots caches the reduced state of each
+      // workflow so callers do not pay an O(N) replay on every read.
+      // No data backfill: projects existing at v15 cold-start on first
+      // read and write a fresh snapshot at that point. See the Drizzle
+      // model in `src/runtime/brain/schema.ts` for column rationale.
+      `CREATE TABLE IF NOT EXISTS workflow_snapshots (
+        workflow_id TEXT PRIMARY KEY,
+        last_event_id INTEGER NOT NULL,
+        reduced_state_json TEXT NOT NULL,
+        events_applied INTEGER NOT NULL,
+        reducer_version INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_workflow_snapshots_last_event ON workflow_snapshots(workflow_id, last_event_id)`,
+      // Index-driven seek for `loadEventsSince(workflowId, eventId)`.
+      `CREATE INDEX IF NOT EXISTS idx_workflow_events_wf_eid ON workflow_events(workflow_id, event_id)`,
     ],
   ],
 ];

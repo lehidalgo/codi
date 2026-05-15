@@ -11,7 +11,6 @@ import {
   BrainNoActiveWorkflowError as NoActiveWorkflowError,
 } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
-import { reduce } from "../reducer.js";
 import type { Author, ManifestEvent, Phase, WorkflowType } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
 
@@ -39,7 +38,7 @@ export function proposeElevation(opts: ProposeElevationOptions): ProposeElevatio
     const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
-    const state = reduce(log.loadEvents(workflowId));
+    const state = log.getReducedState(workflowId);
     if (state.status !== "active") {
       throw new Error(`Cannot elevate from a ${state.status} workflow.`);
     }
@@ -88,7 +87,7 @@ export function approveElevation(opts: ApproveElevationOptions): ApproveElevatio
 
     const childId = `${parentId}-child-${payload.suggested_workflow_type}-${Date.now()}`;
     const childBranch = `codi/${parentId}/${payload.suggested_workflow_type}`;
-    const state = reduce(events);
+    const state = log.getReducedState(parentId);
 
     log.append(
       parentId,

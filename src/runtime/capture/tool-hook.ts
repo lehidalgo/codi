@@ -17,7 +17,6 @@
  */
 
 import type { BrainHandle } from "../brain/db.js";
-import { reduce } from "../reducer.js";
 import { BrainEventLog } from "../brain-event-log.js";
 import {
   ensureProject,
@@ -192,9 +191,8 @@ function readActiveWorkflowContext(handle: BrainHandle): {
     const log = BrainEventLog.wrap(handle);
     const id = log.getActiveWorkflowId();
     if (!id) return {};
-    const events = log.loadEvents(id);
-    if (events.length === 0) return { workflowId: id };
-    return { workflowId: id, phase: reduce(events).current_phase };
+    if (!log.hasWorkflow(id)) return { workflowId: id };
+    return { workflowId: id, phase: log.getReducedState(id).current_phase };
   } catch {
     return {};
   }

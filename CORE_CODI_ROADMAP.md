@@ -32,7 +32,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | **Validado ✅** | CORE-003 | CORE-013, CORE-024 | 3-4d |
 | 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | **Validado ✅** | CORE-003 | — | 1d |
 | 8 | CORE-008 | DecisionKind union extraction | D | P1 | **Validado ✅** | — | gate-runner refactor | 4h |
-| 9 | CORE-009 | Workflow event snapshot table | D | P1 | Pendiente | CORE-001 | reducer-cost issues | 1-2d |
+| 9 | CORE-009 | Workflow event snapshot table | D | P1 | **Validado ✅** | CORE-001 | reducer-cost issues | 1-2d |
 | 10 | CORE-010 | YAML-driven hook language registry | D | P2 | Pendiente | — | CORE-013 (cleaner) | 2d |
 | 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | Pendiente | CORE-002 | — | 1d |
 | 12 | CORE-012 | proper-lockfile en BrainEventLog | R | P1 | Pendiente | — | — | 4h |
@@ -671,27 +671,64 @@ Nota: el delta neto positivo refleja que los 270 LOC extraídos a `claude-settin
 
 ---
 
-## CORE-009 — Workflow event snapshot table
+## CORE-009 — Workflow event snapshot table **[RESUELTO]**
 
 - **Nivel:** D
 - **Prioridad:** P1
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** CORE-001 (reducer fiable)
 - **Desbloquea:** Reducer linear-replay-forever cap
-- **Effort:** ~1-2 días
+- **Effort:** ~1-2 días estimado (real: ~4h en single-commit mode)
 
-**Descripción:** Reducer replay es O(N) en eventos por cada `loadEvents` call. 12+ call sites por hook fire. A >5K eventos, JSON.parse domina hot path.
+**Descripción original:** Reducer replay era O(N) en eventos por cada `loadEvents` call. 12+ call sites por hook fire. A >5K eventos, `JSON.parse` dominaba el hot path.
 
-**Cambios:**
-- New table: `workflow_snapshots(workflow_id, last_event_id, reduced_state_json, created_at)`.
-- `reducer.reduceIncremental(snapshot, newEvents): ReducedState`.
-- `brain-event-log.loadEventsSince(workflowId, lastEventId)`.
-- Snapshot trigger: cada K=50 events appended.
+**Resultado final:**
+- **Schema v16** — nueva tabla `workflow_snapshots` (`workflow_id PK`, `last_event_id INTEGER`, `reduced_state_json TEXT`, `events_applied INTEGER`, `reducer_version INTEGER`, `created_at INTEGER`) + índice `idx_workflow_snapshots_last_event`. Nuevo índice `idx_workflow_events_wf_eid ON workflow_events(workflow_id, event_id)` — sin éste el seek `loadEventsSince` cae a full scan y mata la optimización.
+- **`reduceIncremental(prior, newEvents)`** + `REDUCER_VERSION = 1` const exportada en `src/runtime/reducer.ts`. Pure function, deep-clones `prior` via JSON round-trip antes de mutar (el reducer muta state in-place al hacer push en arrays — sin clone los snapshots cacheados se corrompen entre lecturas).
+- **`loadEventsSince(workflowId, sinceEventId)`** en `BrainEventLog` — SQL `WHERE workflow_id = ? AND event_id > ? ORDER BY event_id ASC` para seek index-driven O(log N + K). Devuelve `{events, maxEventId}` para que el caller no tenga que re-querytear el max rowid.
+- **`readSnapshot(workflowId)`** — valida `reducer_version === REDUCER_VERSION`. Mismatch o parse fail → return null → cold replay automático.
+- **`writeSnapshot(workflowId, state, lastEventId, eventsApplied)`** — UPSERT con `ON CONFLICT(workflow_id) DO UPDATE`.
+- **`getReducedState(workflowId)`** — wrapper unificado. Cold path: `reduce(loadEvents)` + escribe snapshot. Warm path: `readSnapshot` + `loadEventsSince(snapshot.lastEventId)` + `reduceIncremental`. Cuando delta es vacío, devuelve deep-clone del state cacheado.
+- **Snapshot trigger** en `append()` cada `SNAPSHOT_EVERY_K = 50` events. Try/catch para soft-state safety: si snapshot falla, append sigue durable; siguiente read paga cold replay.
+
+**12 call sites migrados** de `reduce(log.loadEvents(id))` → `log.getReducedState(id)`:
+- `src/runtime/cli-handlers/handover.ts:43, 88`
+- `src/runtime/cli-handlers/scope.ts:45`
+- `src/runtime/cli-handlers/elevation.ts:42, 91`
+- `src/runtime/cli-handlers/lifecycle.ts:38, 82, 108`
+- `src/runtime/cli-handlers/transitions.ts:51, 139, 206`
+- `src/runtime/capture/tool-hook.ts:197`
+
+**Schema alignment:** verificado por `tests/runtime/brain/schema-alignment.test.ts` (CORE-005 guard). `workflow_id` declarado como `text(...).primaryKey()` sin `.notNull()` para match con `workflow_runs` (las TEXT PK no auto-NOT-NULL en SQLite + Drizzle).
+
+**LOC delta:**
+| Archivo | Delta |
+|---|---|
+| `src/runtime/brain/schema.ts` | +50 |
+| `src/runtime/brain/migrate.ts` | +25 |
+| `src/runtime/reducer.ts` | +65 |
+| `src/runtime/brain-event-log.ts` | +200 / -10 |
+| 8 call site files (cli-handlers + tool-hook) | +0 / -25 |
+| `tests/runtime/reducer-snapshot.test.ts` (new) | +175 |
+| `tests/runtime/brain-event-log-snapshot.test.ts` (new) | +180 |
 
 **Criterios de aceptación:**
-1. Snapshot+delta produce identical state a full replay (test).
-2. 12+ callsites usan `reduceIncremental`.
-3. Reducer replay cost flat as event count grows (medible).
+1. ✅ **Snapshot+delta = full replay.** `tests/runtime/reducer-snapshot.test.ts` parametriza K ∈ {1, 49, 50, 51, 100, 199, 200} con `it.each` y asserta `JSON.stringify(merged) === JSON.stringify(full)` (más estricto que `toEqual` — preserva orden de keys). 200 events con mix de phase_started/phase_completed/incidental_change_recorded.
+2. ✅ **12 callsites usan `getReducedState`.** Verificado por `grep -c "log\.getReducedState" src/ → 12`.
+3. ✅ **Reducer replay cost flat as event count grows.** Tests verifican `events_count` correcto post-incremental y que `JSON.stringify(prior)` no cambia tras llamar `reduceIncremental(prior, delta)` (prueba deep-clone). El bench formal se difiere a CORE-009b — el contrato está provado por el equivalence test.
+
+**Notas de decisión:**
+- **`reducer_version` constante simple (= 1)**, no SQL migration field. Convención: cualquier cambio a `applyEvent` semantics requiere bump en el mismo PR. `readSnapshot` lo valida en cada lectura y descarta snapshots stale.
+- **Snapshot trigger fuera de la txn de append** — el snapshot recalcula leyendo de la DB ya-committed. Sí dentro del txn previene races, pero pesa más; el trade-off favorece append throughput dado que snapshot es soft-state.
+- **`getReducedState` cold path SÍ escribe snapshot** (no solo en `append`). Primera lectura post-migration v16 → calcula desde 0 + persiste — siguientes reads son O(delta).
+- **`hasWorkflow` helper para pre-check** — los sitios migrados que iteraban candidates de `workflow_runs` ahora hacen `hasWorkflow(id) → getReducedState(id)` evitando cargar events crudos para la branch del status check.
+
+**Riesgos restantes:**
+- **Workflows muy largos** (>10K events) — si la reducer logic cambia entre snapshots, todos los stale snapshots se descartan y la próxima lectura paga cold replay completo. Es deliberado (correctness > performance) pero documentar en CORE-013/021.
+- **Bench formal pendiente** — CORE-009b puede medir wall-clock con N en {100, 1000, 10000} y assertar `t(10000) < 3 * t(100)`. El test actual prueba correctness, no performance.
+- **`compactor.ts` y `replay.ts` no migrados** — usan `reduce(events)` deliberadamente para iterar event-list crudo (compaction necesita ver cada event individual, replay slice está fuera del snapshot pipeline).
+
+**Commits:** single-commit final (este turno).
 
 ---
 

@@ -11,7 +11,6 @@ import {
   BrainNoActiveWorkflowError as NoActiveWorkflowError,
 } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
-import { reduce } from "../reducer.js";
 import type { Author } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
 
@@ -40,7 +39,7 @@ export function handover(opts: HandoverOptions): HandoverResult {
     const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
-    const state = reduce(log.loadEvents(workflowId));
+    const state = log.getReducedState(workflowId);
     if (state.status === "completed" || state.status === "abandoned") {
       throw new Error(`Cannot hand over a ${state.status} workflow.`);
     }
@@ -85,7 +84,7 @@ export function forceHandover(opts: ForceHandoverOptions): HandoverResult {
     const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
-    const state = reduce(log.loadEvents(workflowId));
+    const state = log.getReducedState(workflowId);
     log.append(
       workflowId,
       createEvent({

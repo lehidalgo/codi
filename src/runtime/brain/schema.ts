@@ -269,6 +269,11 @@ export const workflowEvents = sqliteTable(
   },
   (t) => ({
     idxWfTs: index("idx_workflow_events_wf_ts").on(t.workflowId, t.ts),
+    // CORE-009: index-driven seek for `loadEventsSince(workflowId, eventId)`.
+    // Without this, the post-snapshot delta read falls back to a full scan
+    // over `workflow_events` filtered by `workflow_id + event_id > ?`,
+    // negating the entire snapshot optimisation.
+    idxWfEventId: index("idx_workflow_events_wf_eid").on(t.workflowId, t.eventId),
   }),
 );
 
@@ -305,6 +310,45 @@ export const runtimeState = sqliteTable("runtime_state", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
+
+/**
+ * CORE-009 — per-workflow reduced-state snapshot.
+ *
+ * Cuts the O(N) replay cost from `reduce(loadEvents(workflowId))` to
+ * O(K) where K = events appended since the last snapshot (default 50,
+ * see SNAPSHOT_EVERY_K in brain-event-log.ts). Snapshot is overwritten
+ * in-place — at most one row per workflow_id, no history.
+ *
+ * `last_event_id` is the integer rowid from `workflow_events.event_id`,
+ * NOT the UUID `ManifestEvent.event_id` carried in the JSON payload.
+ * The rowid is monotonic and gap-free per insertion order, so
+ * `loadEventsSince` can do an index-driven seek (see
+ * `idx_workflow_events_wf_eid` above).
+ *
+ * `reducer_version` is bumped manually in `reducer.ts` (`REDUCER_VERSION`)
+ * whenever `applyEvent` semantics change. On read, if the persisted
+ * value doesn't match the current `REDUCER_VERSION`, the snapshot is
+ * discarded and a fresh cold replay is performed. This is the only
+ * cross-version invalidation mechanism — no SQL migration needed for
+ * reducer logic changes.
+ */
+export const workflowSnapshots = sqliteTable(
+  "workflow_snapshots",
+  {
+    workflowId: text("workflow_id").primaryKey(),
+    lastEventId: integer("last_event_id").notNull(),
+    reducedStateJson: text("reduced_state_json").notNull(),
+    eventsApplied: integer("events_applied").notNull(),
+    reducerVersion: integer("reducer_version").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => ({
+    idxLastEvent: index("idx_workflow_snapshots_last_event").on(
+      t.workflowId,
+      t.lastEventId,
+    ),
+  }),
+);
 
 // Raw SQL for FTS5 + vec0 virtual tables — drizzle does not generate these.
 // Applied by migrate.ts after the structural migration runs.

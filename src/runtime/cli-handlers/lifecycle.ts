@@ -11,7 +11,6 @@
 
 import { BrainEventLog, BrainNoActiveWorkflowError } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
-import { reduce } from "../reducer.js";
 import type { Author, Phase } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
 
@@ -35,7 +34,7 @@ export function abandonWorkflow(opts: AbandonOptions): AbandonResult {
     const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new BrainNoActiveWorkflowError();
 
-    const state = reduce(log.loadEvents(workflowId));
+    const state = log.getReducedState(workflowId);
     if (state.status !== "active" && state.status !== "paused") {
       throw new Error(`Cannot abandon workflow in status ${state.status}.`);
     }
@@ -77,9 +76,8 @@ export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
     // Already pointing at something? Verify it's still non-terminal.
     const currentActive = log.getActiveWorkflowId();
     if (currentActive !== null) {
-      const events = log.loadEvents(currentActive);
-      if (events.length > 0) {
-        const state = reduce(events);
+      if (log.hasWorkflow(currentActive)) {
+        const state = log.getReducedState(currentActive);
         if (state.status === "active" || state.status === "paused") {
           return {
             recovered: false,
@@ -103,9 +101,8 @@ export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
       .all() as { workflow_id: string }[];
 
     for (const c of candidates) {
-      const events = log.loadEvents(c.workflow_id);
-      if (events.length === 0) continue;
-      const state = reduce(events);
+      if (!log.hasWorkflow(c.workflow_id)) continue;
+      const state = log.getReducedState(c.workflow_id);
       if (state.status === "active" || state.status === "paused") {
         log.setActiveWorkflowId(c.workflow_id);
         return {

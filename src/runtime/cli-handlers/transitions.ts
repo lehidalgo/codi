@@ -47,8 +47,7 @@ export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransi
     const workflowId = resolveActiveWorkflowId(log, opts);
     if (!workflowId) throw new NoActiveWorkflowError();
 
-    const events = log.loadEvents(workflowId);
-    const state = reduce(events);
+    const state = log.getReducedState(workflowId);
     const fromPhase = state.current_phase;
 
     if (fromPhase === opts.toPhase) {
@@ -137,7 +136,7 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
       throw new Error("No pending transition proposal.");
     }
 
-    const state = reduce(events);
+    const state = log.getReducedState(workflowId);
     const fromPhase = proposalPayload.from_phase;
 
     // Advisory gate run — fires the deterministic checkers configured for
@@ -203,7 +202,7 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
       // workflow_completed event automatically and a phase_completed for the
       // terminal phase so reduce() reports status: "completed".
       if (proposalPayload.to_phase === "done") {
-        const stateNow = reduce(log.loadEvents(workflowId));
+        const stateNow = log.getReducedState(workflowId);
         const doneRecord = stateNow.phase_history.at(-1);
         const doneStartedAtMs = doneRecord ? new Date(doneRecord.started_at).getTime() : Date.now();
         const doneDurationMs = Math.max(0, Date.now() - doneStartedAtMs);

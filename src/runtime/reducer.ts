@@ -189,6 +189,68 @@ export function reduce(events: ManifestEvent[]): ReducedState {
   return state;
 }
 
+/**
+ * CORE-009 — version stamp written into every persisted snapshot. Bump
+ * this constant whenever `applyEvent` (below) changes semantics so that
+ * stored snapshots written under the old logic are auto-invalidated on
+ * the next read. `BrainEventLog.readSnapshot` compares the stored value
+ * to this constant and discards mismatched rows.
+ *
+ * Cross-version invalidation is the only mechanism — there is no SQL
+ * migration for reducer logic changes. A reviewer encountering an edit
+ * to any `case` below should bump this number in the same commit.
+ */
+export const REDUCER_VERSION = 1;
+
+/**
+ * CORE-009 — incremental replay on top of a previously-reduced snapshot.
+ *
+ * `reduce(events)` is O(N) in events; `reduceIncremental(prior, delta)`
+ * is O(|delta|) when `prior` is non-null, which keeps reducer cost flat
+ * as the event count of long-running workflows grows.
+ *
+ * Pure function — no I/O. Deep-clones `prior` before mutating so a
+ * cached snapshot held by another reader is not corrupted: the inner
+ * `applyEvent` mutates the state object in place, and arrays like
+ * `phase_history`, `child_workflows`, `files_in_plan` are pushed onto.
+ *
+ * `prior == null`: behaves identically to `reduce(newEvents)` — used
+ * by the cold-start path the first time a workflow is read after the
+ * v16 migration (no snapshot row yet).
+ *
+ * The integer rowid tracking is the caller's responsibility — the
+ * snapshot writer reads it from the `workflow_events.event_id` column
+ * alongside the JSON payload. This function only knows the UUID
+ * `ManifestEvent.event_id` field carried inside the payload, which is
+ * unsuitable for SQL-driven `WHERE event_id > ?` seeks.
+ */
+export function reduceIncremental(
+  prior: ReducedState | null,
+  newEvents: ManifestEvent[],
+): ReducedState {
+  if (prior === null) {
+    if (newEvents.length === 0) {
+      throw new ReducerError("Cannot reduce empty event list.");
+    }
+    return reduce(newEvents);
+  }
+
+  // Deep clone via JSON round-trip — ReducedState is JSON-serialisable
+  // by construction (it's persisted as TEXT in workflow_snapshots) so
+  // this preserves every field including ordered arrays. Structured
+  // clone would be cheaper but is not in the LTS Node target.
+  const state = JSON.parse(JSON.stringify(prior)) as ReducedState;
+
+  for (const event of newEvents) {
+    applyEvent(state, event);
+    state.last_event_id = event.event_id;
+    state.last_event_timestamp = event.timestamp;
+    state.events_count += 1;
+  }
+
+  return state;
+}
+
 function applyEvent(state: ReducedState, event: ManifestEvent): void {
   switch (event.event_type) {
     case "init":
