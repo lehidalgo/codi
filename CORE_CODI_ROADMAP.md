@@ -237,12 +237,15 @@ Sintetizadas de 3 subagentes paralelos + revisión propia durante implementació
 - `updateHooks`, `updatePresetArtifacts`, `updateSelectedHooks` no se refactorizan en este PR (Subagent 1 sugerencia opcional). Out of scope; potential CORE-002b si se materializa.
 - `FILE_IO_CONCURRENCY` se captura at module-load — `CODI_FILE_IO_CONCURRENCY` se debe setear ANTES de importar el módulo. Tests mid-run mutating env no afectan al limit (documented inline).
 
+## CORE-003 — Logger DI + de-singletonize **[RESUELTO]**
+
 - **Nivel:** F
 - **Prioridad:** P0
-- **Estado:** Pendiente
+- **Estado:** Validado ✅
 - **Depende de:** ninguno
 - **Desbloquea:** CORE-007 (conflict-resolver), eliminación cycle utils→core→adapters→core
-- **Effort:** ~0.5 día
+- **Effort:** ~0.5 día (actual: ~2h implementación + verificación)
+- **Commits:** `538f3a24` (Logger interface + NULL_LOGGER), `c242c309` (conflict-resolver DI), `679b9edc` (adapters DI), `3a66ad21` (layering guard)
 
 **Descripción:** `Logger.getInstance()` (singleton service locator) se llama 12+ veces desde `src/utils/conflict-resolver.ts:196,209,379,389`, `src/adapters/codex.ts:218`, `src/adapters/copilot.ts:398`, `src/adapters/skill-generator.ts:139,326`. Causa la violación de capas `utils → core/output/logger.js` y `adapters → core/output/logger.js`. El singleton oculta la dependencia y rompe testabilidad.
 
@@ -265,6 +268,52 @@ Sintetizadas de 3 subagentes paralelos + revisión propia durante implementació
 1. Cero `Logger.getInstance()` en `src/utils/**` y `src/adapters/**`.
 2. Cero imports `from "../core/output/logger"` o `from "#src/core/output/logger"` desde utils/adapters.
 3. Suite 3736+ passing.
+
+**Notas de decisión:**
+
+Sintetizadas de 3 subagentes paralelos:
+
+1. **`Logger` class queda en `core/output/logger.ts`** — no se mueve. 80+ callsites legítimos en cli/core/runtime usan el singleton.
+2. **Interface mínimo extraída a `src/types/logger.ts`** — utils/ y adapters/ importan SOLO el tipo desde ahí (zero runtime dep).
+3. **DI vía direct named param** (`log: Logger` o `options.log?: Logger`) — matches el precedente `hook-dep-installer.ts:134`.
+4. **`NULL_LOGGER` default** — NO `Logger.getInstance()` fallback. El composition root (generator.ts, preset-applier.ts) inyecta `Logger.getInstance()` explícitamente.
+5. **Scope: 8 boundary violation callsites** — el resto de los 80+ `Logger.getInstance()` en cli/core/runtime queda intocado.
+
+**Resultado final:**
+
+- ✅ Cero `Logger.getInstance()` en `src/utils/` y `src/adapters/` (verificado por grep).
+- ✅ Cero `import { Logger }` value imports desde utils/adapters (solo `import type`).
+- ✅ Guard de layering extendido con `FORBIDDEN_SYMBOL_IMPORTS` previene regresión — verificado contra inyección deliberada que dispara mensaje de remediation claro.
+- ✅ Test suite: 3767 baseline → **3767 passing** (zero regresiones).
+- ✅ Lint clean (6 guards + tsc).
+- ✅ Build clean.
+
+**Archivos modificados:**
+- `src/types/logger.ts` (new, ~30 LOC) — Logger interface + NULL_LOGGER
+- `src/types/agent.ts` (~+8 LOC) — GenerateOptions gana `log?: Logger`
+- `src/core/output/logger.ts` (~+5 LOC) — `Logger implements LoggerInterface`
+- `src/utils/conflict-resolver.ts` (~+5 / -3 LOC) — `import type`, log via options
+- `src/adapters/codex.ts` (~+2 LOC) — `_options → options`, log from options
+- `src/adapters/copilot.ts` (~+2 LOC) — same
+- `src/adapters/skill-generator.ts` (~+12 LOC) — log threaded through 3 functions
+- `src/core/generator/generator.ts` (~+5 LOC) — composition root injects log
+- `src/core/preset/preset-applier.ts` (~+3 LOC) — passes log to resolveConflicts
+- `src/cli/team.ts`, `src/cli/update.ts` (~+3 LOC) — pass log
+- `scripts/guard-layering.mjs` (~+74 LOC) — FORBIDDEN_SYMBOL_IMPORTS rule
+- `tests/unit/types/logger.test.ts` (new, ~50 LOC) — interface + NULL_LOGGER contract
+- `tests/unit/adapters/codex.test.ts` (~+5 / -3 LOC) — replaced `spyOn(Logger.getInstance())` con capturing logger via DI
+
+**Tests ejecutados:**
+- `npx vitest run tests/unit/types/logger.test.ts` → 4/4 pass
+- `npx vitest run tests/unit/adapters/codex.test.ts` → 32/32 pass
+- `npm run lint && npm test` → 3767 pass / 6 skipped / 0 failed
+- Guard regression: deliberate violation → guard fires con remediation message clara
+
+**Riesgos restantes:**
+- `scan-prompt.test.ts:124,138` aún usa `vi.spyOn(Logger.getInstance(), "warn")` — funciona porque `scan-prompt.ts` está en `core/security/`, fuera del scope CORE-003. Está OK.
+- `templates/rules/code-style.ts:84` propaga `Logger.getInstance()` antipattern a user projects — out of scope, flagged para follow-up.
+- 80+ `Logger.getInstance()` callsites en cli/core/runtime intactos — intencional. CORE-003 cerró solo la boundary violation. Full DI migration sería un esfuerzo mucho mayor (potencial CORE-017+ scope).
+- Adapter unit tests que llamen directamente a `codex.generate(...)` sin pasar `log` reciben `NULL_LOGGER` — warns silenciados. Sólo el codex test re-instrumentado captura warns. Otros tests no asertaban contenido de warn de todas formas.
 
 ---
 
