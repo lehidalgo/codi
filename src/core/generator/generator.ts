@@ -1,10 +1,24 @@
 import { chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import pLimit from "p-limit";
 import type { GeneratedFile, GenerateOptions } from "#src/types/agent.js";
 import type { NormalizedConfig } from "#src/types/config.js";
 import type { Result } from "#src/types/result.js";
 import { ok, err } from "#src/types/result.js";
 import { getAdapter } from "./adapter-registry.js";
+
+/**
+ * CORE-002: cap concurrent file I/O so a large skill catalog × multiple
+ * adapters can't exhaust file descriptors. macOS default RLIMIT_NOFILE is
+ * 256; Linux is 1024. With ~150-900 files across 6 adapters and 3 sequential
+ * I/O waves (read-classify, direct-write, conflict-write), a peak of 32
+ * in-flight operations leaves ample headroom even on the tightest default
+ * (~12% of macOS). Override via `CODI_FILE_IO_CONCURRENCY` env var.
+ */
+const FILE_IO_CONCURRENCY = Math.max(
+  1,
+  Number.parseInt(process.env["CODI_FILE_IO_CONCURRENCY"] ?? "", 10) || 32,
+);
 import { buildVerificationData } from "../verify/token.js";
 import { buildVerificationSection } from "../verify/section-builder.js";
 import { hashContent } from "#src/utils/hash.js";
@@ -140,37 +154,39 @@ export async function generate(
     const potentialConflicts: ConflictEntry[] = [];
 
     // Classification pass: read every existing file in parallel, then
-    // sort into directWrites vs potentialConflicts. The previous nested
-    // `for await` serialised hundreds of disk reads per generate run.
-    // File count is bounded (typically 150-900 across all adapters), so
-    // unbounded `Promise.all` is safe on default macOS / Linux fd limits
-    // — no `p-limit` dependency required at this scale.
+    // sort into directWrites vs potentialConflicts. CORE-002 bounds each
+    // I/O wave with `FILE_IO_CONCURRENCY` so the fan-out can't exhaust
+    // file descriptors on tight ulimit environments (macOS default 256).
     type Classified =
       | { kind: "direct"; file: GeneratedFile }
       | { kind: "conflict"; entry: ConflictEntry };
 
+    const ioLimit = pLimit(FILE_IO_CONCURRENCY);
+
     const classified: Classified[] = await Promise.all(
       agentOutputs.flatMap(({ generated }) =>
-        generated.map(async (file): Promise<Classified> => {
-          // Binary files are always copied without conflict checking.
-          if (file.binarySrc) return { kind: "direct", file };
+        generated.map((file) =>
+          ioLimit(async (): Promise<Classified> => {
+            // Binary files are always copied without conflict checking.
+            if (file.binarySrc) return { kind: "direct", file };
 
-          const fullPath = join(projectRoot, file.path);
-          let existing: string | null = null;
-          try {
-            existing = await readFile(fullPath, "utf-8");
-          } catch {
-            // File does not exist yet — falls through to direct write.
-          }
+            const fullPath = join(projectRoot, file.path);
+            let existing: string | null = null;
+            try {
+              existing = await readFile(fullPath, "utf-8");
+            } catch {
+              // File does not exist yet — falls through to direct write.
+            }
 
-          if (existing === null || existing.trim() === file.content.trim()) {
-            return { kind: "direct", file };
-          }
-          return {
-            kind: "conflict",
-            entry: makeConflictEntry(file.path, fullPath, existing, file.content),
-          };
-        }),
+            if (existing === null || existing.trim() === file.content.trim()) {
+              return { kind: "direct", file };
+            }
+            return {
+              kind: "conflict",
+              entry: makeConflictEntry(file.path, fullPath, existing, file.content),
+            };
+          }),
+        ),
       ),
     );
 
@@ -180,18 +196,20 @@ export async function generate(
     }
 
     await Promise.all(
-      directWrites.map(async (file) => {
-        const fullPath = join(projectRoot, file.path);
-        await mkdir(dirname(fullPath), { recursive: true });
-        if (file.binarySrc) {
-          await copyFile(file.binarySrc, fullPath);
-        } else {
-          await writeFile(fullPath, file.content, "utf-8");
-          if (fullPath.endsWith(".cjs") || fullPath.endsWith(".sh")) {
-            await chmod(fullPath, 0o755);
+      directWrites.map((file) =>
+        ioLimit(async () => {
+          const fullPath = join(projectRoot, file.path);
+          await mkdir(dirname(fullPath), { recursive: true });
+          if (file.binarySrc) {
+            await copyFile(file.binarySrc, fullPath);
+          } else {
+            await writeFile(fullPath, file.content, "utf-8");
+            if (fullPath.endsWith(".cjs") || fullPath.endsWith(".sh")) {
+              await chmod(fullPath, 0o755);
+            }
           }
-        }
-      }),
+        }),
+      ),
     );
 
     if (potentialConflicts.length > 0) {
@@ -202,13 +220,15 @@ export async function generate(
       });
 
       await Promise.all(
-        [...resolution.accepted, ...resolution.merged].map(async (entry) => {
-          await mkdir(dirname(entry.fullPath), { recursive: true });
-          await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
-          if (entry.fullPath.endsWith(".cjs") || entry.fullPath.endsWith(".sh")) {
-            await chmod(entry.fullPath, 0o755);
-          }
-        }),
+        [...resolution.accepted, ...resolution.merged].map((entry) =>
+          ioLimit(async () => {
+            await mkdir(dirname(entry.fullPath), { recursive: true });
+            await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
+            if (entry.fullPath.endsWith(".cjs") || entry.fullPath.endsWith(".sh")) {
+              await chmod(entry.fullPath, 0o755);
+            }
+          }),
+        ),
       );
 
       skipped.push(...resolution.skipped.map((e) => e.label));
