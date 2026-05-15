@@ -262,4 +262,72 @@ describe("integration with brain-ui /workflows", () => {
       log2.dispose();
     }
   });
+
+  /**
+   * CORE-001 — storage-layer defensive read.
+   *
+   * One corrupt `workflow_events.payload` row used to crash every
+   * caller of `loadEvents` (and therefore `codi workflow status`,
+   * `codi workflow scope`, every Stop hook, etc.) with a raw
+   * `SyntaxError: Unexpected token`. We now skip rows that don't
+   * parse to a valid event envelope and continue with the rest.
+   * Shape-level corruption (parsable but wrong fields) still surfaces
+   * via `ReducerError` downstream — see tests/runtime/reducer.test.ts.
+   */
+  describe("loadEvents tolerates malformed rows (CORE-001)", () => {
+    function rawInsertBadRow(
+      dbPath: string,
+      workflowId: string,
+      eventId: number,
+      payload: string,
+    ): void {
+      // Reach the raw DB to inject a deliberately-corrupt row. The
+      // BrainEventLog API can't produce these because `append()` validates.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const Database = require("better-sqlite3") as typeof import("better-sqlite3");
+      const raw = new Database(dbPath);
+      try {
+        raw
+          .prepare(
+            `INSERT INTO workflow_events
+               (workflow_id, event_id, event_type, ts, payload)
+             VALUES (?, ?, ?, ?, ?)`,
+          )
+          .run(workflowId, eventId, "phase_started", new Date().toISOString(), payload);
+      } finally {
+        raw.close();
+      }
+    }
+
+    it("skips row with non-JSON payload, keeps the rest", () => {
+      log.initWorkflow("wf-corrupt", { ...initEvent(), workflow_id: "wf-corrupt" });
+      // Inject one bad row sandwiched between the valid init event and nothing.
+      rawInsertBadRow(join(dir, "brain.db"), "wf-corrupt", 999, "{this is not json");
+      const events = log.loadEvents("wf-corrupt");
+      // The bad row is filtered; the init event survives.
+      expect(events).toHaveLength(1);
+      expect(events[0]!.event_type).toBe("init");
+    });
+
+    it("skips row whose JSON parses but lacks event_type", () => {
+      log.initWorkflow("wf-shape", { ...initEvent(), workflow_id: "wf-shape" });
+      rawInsertBadRow(
+        join(dir, "brain.db"),
+        "wf-shape",
+        999,
+        JSON.stringify({ payload: { foo: "bar" } }), // no event_type
+      );
+      const events = log.loadEvents("wf-shape");
+      expect(events).toHaveLength(1);
+    });
+
+    it("returns active workflow id even when one event row is malformed", () => {
+      log.initWorkflow("wf-active", { ...initEvent(), workflow_id: "wf-active" });
+      rawInsertBadRow(join(dir, "brain.db"), "wf-active", 999, "{broken");
+      // getActiveWorkflowId reads from workflow_runs, not events; should not crash.
+      expect(log.getActiveWorkflowId()).toBe("wf-active");
+      // And the corrupt row doesn't crash the events read either.
+      expect(log.loadEvents("wf-active")).toHaveLength(1);
+    });
+  });
 });

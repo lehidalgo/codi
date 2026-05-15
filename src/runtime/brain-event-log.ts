@@ -395,11 +395,41 @@ export class BrainEventLog {
 
   // ─── Read events ────────────────────────────────────────────────────
 
+  /**
+   * Load all events for a workflow, ordered by event_id ASC.
+   *
+   * Storage-layer durability (CORE-001): rows whose `payload` column is
+   * not valid JSON, or whose parsed shape is not a manifest event
+   * envelope, are silently filtered out. Disk-level corruption (e.g.
+   * a partial write or a hand-edited row) thus produces a degraded but
+   * non-crashing read. Shape-level corruption (a payload that parses
+   * but doesn't match the expected fields) propagates to the reducer,
+   * which throws `ReducerError` with `eventId` for actionable diagnosis.
+   */
   loadEvents(workflowId: string): ManifestEvent[] {
     const rows = this.handle.raw
-      .prepare(`SELECT payload FROM workflow_events WHERE workflow_id = ? ORDER BY event_id ASC`)
-      .all(workflowId) as { payload: string }[];
-    return rows.map((r) => JSON.parse(r.payload) as ManifestEvent);
+      .prepare(
+        `SELECT event_id, payload FROM workflow_events WHERE workflow_id = ? ORDER BY event_id ASC`,
+      )
+      .all(workflowId) as { event_id: number; payload: string }[];
+    const out: ManifestEvent[] = [];
+    for (const r of rows) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(r.payload);
+      } catch {
+        continue;
+      }
+      if (
+        parsed !== null &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed) &&
+        typeof (parsed as Record<string, unknown>).event_type === "string"
+      ) {
+        out.push(parsed as ManifestEvent);
+      }
+    }
+    return out;
   }
 
   /**
