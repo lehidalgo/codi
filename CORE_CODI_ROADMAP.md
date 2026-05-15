@@ -34,7 +34,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 8 | CORE-008 | DecisionKind union extraction | D | P1 | **Validado ✅** | — | gate-runner refactor | 4h |
 | 9 | CORE-009 | Workflow event snapshot table | D | P1 | **Validado ✅** | CORE-001 | reducer-cost issues | 1-2d |
 | 10 | CORE-010 | YAML-driven hook language registry | D | P2 | **Validado ✅** | — | CORE-013 (cleaner) | 2d |
-| 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | Pendiente | CORE-002 | — | 1d |
+| 11 | CORE-011 | UNIQUE constraints en captures + prompts | R | P1 | **Validado ✅** | CORE-002 | — | 1d |
 | 12 | CORE-012 | proper-lockfile en BrainEventLog | R | P1 | Pendiente | — | — | 4h |
 | 13 | CORE-013 | writeHookFile() unified installer | R | P2 | Pendiente | CORE-010 (recomendado) | — | 4h |
 | 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | Pendiente | — | — | 4h |
@@ -799,14 +799,62 @@ Net TS LOC: **−1,100 effective** en `src/core/hooks/registry/`. El YAML "adds"
 
 # Issues de robustez core (R)
 
-## CORE-011 — UNIQUE constraints en captures + prompts
+## CORE-011 — UNIQUE constraints en captures + prompts **[RESUELTO]**
 
 - **Nivel:** R
 - **Prioridad:** P1
-- **Effort:** ~1 día
+- **Estado:** Validado ✅
+- **Effort:** ~1 día estimado (real: ~1h en single-commit mode)
 - **Depende de:** CORE-002 (atomic apply para state coherente)
 
-**Descripción:** `captures` table necesita `UNIQUE(turn_id, raw_marker)`; `prompts` necesita `UNIQUE(session_id, turn_no)`. Hoy depende de SELECT-then-INSERT inside DEFERRED transaction, que tiene race window en parallel hooks.
+**Descripción original:** `captures` table necesitaba `UNIQUE(turn_id, raw_marker)`; `prompts` necesitaba `UNIQUE(session_id, turn_no)`. Antes dependía de SELECT-then-INSERT inside DEFERRED transaction → race window en parallel hooks.
+
+**Resultado final:**
+- **Schema v17:** `idx_captures_turn_marker` y `idx_prompts_session_turn` ahora son `UNIQUE`. Drizzle `.unique()` flag + `uniqueIndex(...)` builder. Schema-alignment guard (CORE-005) valida `PRAGMA index_list.unique = 1`.
+- **Migration v17 con backfill:** orden cuidadoso (`turns.prompt_id` repointing ANTES de borrar prompts, `DELETE` mantiene `MIN(id)` por grupo, `DROP INDEX` → `CREATE UNIQUE INDEX`). Idempotente (probado correr 2x).
+- **`persistMarkers` (persist.ts):** `INSERT OR IGNORE` + selective SELECT post-conflict. Race-safe (single atomic statement). Happy path: 1 query. Conflict path: 2 queries (INSERT + SELECT).
+- **`agent-memory.ts persistAgentMemory`:** mismo patrón `INSERT OR IGNORE` + SELECT post-conflict.
+- **`agent-memory.ts ingestMemoryFile` NO modificado** — retroactive CLI scanner sin race risk; dedupe cross-turn vía SELECT `WHERE raw_marker = ?` (sin turn_id filter), comportamiento intencional preservado.
+- **`recordPrompt` (session.ts):** `INSERT INTO prompts ... SELECT MAX(turn_no)+1 ... RETURNING prompt_id, turn_no` (atómico bajo write lock). Retry-once on `SQLITE_CONSTRAINT_UNIQUE` para serializar carreras inter-proceso.
+
+**Decisiones clave:**
+- **`INSERT OR IGNORE` sobre `ON CONFLICT DO UPDATE pk=pk RETURNING`** — el no-op UPDATE cuenta como row touched en `changes()` y un fresh `ts` no distingue insert from conflict bajo sub-millisecond races. `INSERT OR IGNORE` sets `changes === 0` deterministicamente.
+- **No partial UNIQUE index para soft-deletes** — full UNIQUE constraint. Re-emit de soft-deleted marker → conflict, caller obtiene id existing soft-deleted row.
+- **FTS5 triggers safe:** `AFTER INSERT` NO se dispara en `INSERT OR IGNORE` conflict path. Verificado en test "does not double FTS5 indexing on conflict".
+
+**LOC delta:**
+| Archivo | Delta |
+|---|---|
+| `src/runtime/brain/schema.ts` | +14 / -2 |
+| `src/runtime/brain/migrate.ts` | +50 / -2 |
+| `src/runtime/capture/persist.ts` | +40 / -20 |
+| `src/runtime/capture/agent-memory.ts` | +12 / -22 |
+| `src/runtime/capture/session.ts` | +50 / -13 |
+| `tests/runtime/capture/dedupe-unique.test.ts` (new) | +205 |
+
+**Tests nuevos (11 cases):**
+- Schema constraints (4): version 17, UNIQUE flag en ambos index, raw duplicate INSERT throws.
+- `persistMarkers` (2): dedupe sin throw, no double FTS5 indexing.
+- `recordPrompt` (2): sequential calls distinct turn_no, per-session isolation.
+- v17 backfill (2): idempotent migration, captures cleanup MIN(id) survives.
+
+**Criterios de aceptación:**
+1. ✅ `UNIQUE(turn_id, raw_marker)` en captures via `idx_captures_turn_marker UNIQUE`.
+2. ✅ `UNIQUE(session_id, turn_no)` en prompts via `idx_prompts_session_turn UNIQUE`.
+3. ✅ `INSERT OR IGNORE` reemplaza SELECT-then-INSERT en 3 sitios (persist.ts, agent-memory.ts persistAgentMemory).
+4. ✅ Schema alignment guard verde.
+5. ✅ Suite passing — 3850 → 3861 (+11 nuevos, 0 regresiones). Lint clean.
+
+**Notas:**
+- **`recordPrompt` retry-once:** si dos procesos colisionan en mismo `(session_id, turn_no)`, el primero gana, el segundo retry recalcula MAX y se inserta como turn_no+1. Doble colisión en row signala bug real (propaga).
+- **Migration v17 produce dataloss controlado** — duplicates existing en producción se borran preservando MIN(id). Test del backfill confirma row más antiguo sobrevive.
+- **`captures_fts_ad` trigger** corre durante backfill DELETE → FTS queda coherente (verificado por test "no double FTS5").
+
+**Riesgos restantes:**
+- Cleanup pesado en DBs grandes con muchos duplicates (`NOT IN (SELECT MIN GROUP BY)` es O(N log N)). Aceptable hasta ~1M rows; documentar en release notes.
+- Re-emit de soft-deleted marker conflicta — comportamiento intencional pero podría sorprender. Documentar en CONTRIBUTING.
+
+**Commits:** single-commit final (este turno).
 
 ## CORE-012 — proper-lockfile en BrainEventLog
 

@@ -194,21 +194,69 @@ export interface RecordPromptResult {
 }
 
 /**
- * Insert a row in `prompts`. The next turn_no is derived as
- * `MAX(turn_no) + 1` for the session — starting at 1.
+ * Insert a row in `prompts`. The next turn_no is `MAX(turn_no) + 1`
+ * for the session — starting at 1.
+ *
+ * CORE-011 — race-safe via UNIQUE(session_id, turn_no) +
+ * INSERT...SELECT MAX+1 RETURNING (atomic under SQLite's write lock).
+ * Pre-v17 the pattern was `SELECT MAX(turn_no) → INSERT` in two
+ * statements; under a DEFERRED transaction two parallel hook fires
+ * (UserPromptSubmit interleaved with PostToolUse) could both read
+ * MAX, both compute the same `next_turn`, and both INSERT, producing
+ * two prompt rows with identical (session_id, turn_no).
+ *
+ * The single INSERT...SELECT serializes through the same lock that
+ * guards the underlying B-tree write. Should two writers still
+ * collide (e.g. two processes hitting the file lock at WAL commit),
+ * the UNIQUE constraint raises SQLITE_CONSTRAINT_UNIQUE; we retry
+ * once which re-reads MAX under the new write lock and succeeds.
+ * Two collisions in a row signals a real bug — propagate the error.
  */
 export function recordPrompt(raw: Database.Database, input: RecordPromptInput): RecordPromptResult {
-  const row = raw
-    .prepare(`SELECT COALESCE(MAX(turn_no), 0) + 1 AS next_turn FROM prompts WHERE session_id = ?`)
-    .get(input.sessionId) as { next_turn: number };
-  const turnNo = row.next_turn;
-  const result = raw
-    .prepare(
-      `INSERT INTO prompts(session_id, turn_no, ts, text, char_count)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(input.sessionId, turnNo, Date.now(), input.text, input.text.length);
-  return { promptId: Number(result.lastInsertRowid), turnNo };
+  const stmt = raw.prepare(
+    `INSERT INTO prompts(session_id, turn_no, ts, text, char_count)
+     SELECT ?, COALESCE(MAX(turn_no), 0) + 1, ?, ?, ?
+       FROM prompts WHERE session_id = ?
+     RETURNING prompt_id, turn_no`,
+  );
+  const now = Date.now();
+  const charCount = input.text.length;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const row = stmt.get(input.sessionId, now, input.text, charCount, input.sessionId) as
+        | { prompt_id: number; turn_no: number }
+        | undefined;
+      if (!row) {
+        // SELECT inside the INSERT yielded zero rows. SQLite still
+        // performs the INSERT with the literal columns (MAX over
+        // empty set is 0 → turn_no = 1) on most engines, but in case
+        // of a pathological no-row state, fall back to an explicit
+        // first-row INSERT.
+        const fallback = raw
+          .prepare(
+            `INSERT INTO prompts(session_id, turn_no, ts, text, char_count)
+             VALUES (?, 1, ?, ?, ?) RETURNING prompt_id, turn_no`,
+          )
+          .get(input.sessionId, now, input.text, charCount) as {
+          prompt_id: number;
+          turn_no: number;
+        };
+        return { promptId: fallback.prompt_id, turnNo: fallback.turn_no };
+      }
+      return { promptId: row.prompt_id, turnNo: row.turn_no };
+    } catch (cause) {
+      const message = (cause as Error & { code?: string }).message ?? String(cause);
+      if (attempt === 0 && /UNIQUE constraint failed: prompts/.test(message)) {
+        // Concurrent writer won the race for the same turn_no; retry
+        // once with a fresh MAX read under the new write lock.
+        continue;
+      }
+      throw cause;
+    }
+  }
+  // Unreachable: the loop either returns or throws on attempt #2.
+  throw new Error("recordPrompt: unique constraint retried twice — refusing to loop");
 }
 
 export interface OpenTurnInput {

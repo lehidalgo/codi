@@ -128,12 +128,14 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_sessions_project_started   ON sessions(project_id, started_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_captures_type_session      ON captures(type, session_id)`,
   `CREATE INDEX IF NOT EXISTS idx_captures_session_ts        ON captures(session_id, ts)`,
-  `CREATE INDEX IF NOT EXISTS idx_prompts_session_turn       ON prompts(session_id, turn_no)`,
+  // CORE-011: UNIQUE on (session_id, turn_no) — see schema.ts for rationale.
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_prompts_session_turn ON prompts(session_id, turn_no)`,
   `CREATE INDEX IF NOT EXISTS idx_tool_calls_session_turn    ON tool_calls(session_id, turn_id)`,
   `CREATE INDEX IF NOT EXISTS idx_artifacts_used_name_outcome ON artifacts_used(artifact_name, outcome)`,
   `CREATE INDEX IF NOT EXISTS idx_workflow_runs_project_status ON workflow_runs(project_id, status)`,
   `CREATE INDEX IF NOT EXISTS idx_workflow_events_wf_ts      ON workflow_events(workflow_id, ts)`,
-  `CREATE INDEX IF NOT EXISTS idx_captures_turn_marker       ON captures(turn_id, raw_marker)`,
+  // CORE-011: UNIQUE on (turn_id, raw_marker) — see schema.ts for rationale.
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_captures_turn_marker ON captures(turn_id, raw_marker)`,
   `CREATE INDEX IF NOT EXISTS idx_workflow_runs_status_started ON workflow_runs(status, started_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_prompts_session_pid_desc   ON prompts(session_id, prompt_id DESC)`,
   `CREATE VIRTUAL TABLE IF NOT EXISTS captures_fts USING fts5(
@@ -183,7 +185,7 @@ const BOOTSTRAP_STATEMENTS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_workflow_definitions_managed_by ON workflow_definitions(managed_by)`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 16;
+export const CURRENT_SCHEMA_VERSION = 17;
 
 /**
  * Per-version ALTER statements applied on top of BOOTSTRAP_STATEMENTS for
@@ -443,6 +445,50 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
       `CREATE INDEX IF NOT EXISTS idx_workflow_snapshots_last_event ON workflow_snapshots(workflow_id, last_event_id)`,
       // Index-driven seek for `loadEventsSince(workflowId, eventId)`.
       `CREATE INDEX IF NOT EXISTS idx_workflow_events_wf_eid ON workflow_events(workflow_id, event_id)`,
+    ],
+  ],
+  [
+    17,
+    [
+      // CORE-011 — UNIQUE(turn_id, raw_marker) on captures and
+      // UNIQUE(session_id, turn_no) on prompts.
+      //
+      // The pre-v17 layout had non-unique indexes on the same columns
+      // and relied on a SELECT-then-INSERT pattern under DEFERRED
+      // transactions to dedupe. That left a race window where two
+      // parallel hook fires (Claude double-fires Stop on
+      // interrupt+resume; UserPromptSubmit can interleave with
+      // PostToolUse) both read the SELECT as a miss and both INSERT,
+      // producing duplicate rows + duplicate FTS5 entries.
+      //
+      // Backfill order matters:
+      //   1. Repoint turns.prompt_id to the survivor BEFORE we delete
+      //      non-MIN prompt rows, or every turn referencing a dropped
+      //      prompt_id loses its anchor.
+      //   2. Delete duplicates (keep MIN id per group).
+      //   3. DROP non-unique indexes.
+      //   4. CREATE UNIQUE indexes.
+      //
+      // After this migration, `persistMarkers` / `agent-memory` /
+      // `recordPrompt` switch to INSERT ... ON CONFLICT ... RETURNING
+      // (see persist.ts, agent-memory.ts, session.ts).
+      `UPDATE turns SET prompt_id = (
+         SELECT MIN(prompt_id) FROM prompts p
+         WHERE p.session_id = turns.session_id AND p.turn_no = turns.turn_no
+       )
+       WHERE prompt_id NOT IN (
+         SELECT MIN(prompt_id) FROM prompts GROUP BY session_id, turn_no
+       )`,
+      `DELETE FROM captures WHERE capture_id NOT IN (
+         SELECT MIN(capture_id) FROM captures GROUP BY turn_id, raw_marker
+       )`,
+      `DELETE FROM prompts WHERE prompt_id NOT IN (
+         SELECT MIN(prompt_id) FROM prompts GROUP BY session_id, turn_no
+       )`,
+      `DROP INDEX IF EXISTS idx_captures_turn_marker`,
+      `DROP INDEX IF EXISTS idx_prompts_session_turn`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_captures_turn_marker ON captures(turn_id, raw_marker)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_prompts_session_turn ON prompts(session_id, turn_no)`,
     ],
   ],
 ];

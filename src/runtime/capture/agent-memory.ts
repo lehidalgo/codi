@@ -287,21 +287,12 @@ export function ingestAgentMemory(
   const hash = createHash("sha256").update(content).digest("hex").slice(0, 16);
   const rawMarker = `${provider.agentType}-memory://${filePath as string}:${hash}`;
 
-  const existing = raw
-    .prepare(`SELECT capture_id FROM captures WHERE turn_id = ? AND raw_marker = ?`)
-    .get(input.turnId, rawMarker) as { capture_id?: number } | undefined;
-  if (existing?.capture_id !== undefined) {
-    return {
-      ingested: false,
-      captureId: existing.capture_id,
-      providerAgentType: provider.agentType,
-      skippedReason: "duplicate",
-    };
-  }
-
+  // CORE-011 — race-safe insert via UNIQUE(turn_id, raw_marker) +
+  // INSERT OR IGNORE. See persist.ts for the rationale; the conflict
+  // path pays one extra SELECT to recover the survivor's capture_id.
   const result = raw
     .prepare(
-      `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase, team_id)
+      `INSERT OR IGNORE INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase, team_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
@@ -317,6 +308,17 @@ export function ingestAgentMemory(
       input.phase ?? null,
       resolveTeamId(),
     );
+  if (result.changes === 0) {
+    const existing = raw
+      .prepare(`SELECT capture_id FROM captures WHERE turn_id = ? AND raw_marker = ?`)
+      .get(input.turnId, rawMarker) as { capture_id: number };
+    return {
+      ingested: false,
+      captureId: existing.capture_id,
+      providerAgentType: provider.agentType,
+      skippedReason: "duplicate",
+    };
+  }
 
   return {
     ingested: true,

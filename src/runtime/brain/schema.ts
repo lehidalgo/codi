@@ -9,7 +9,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ─── 9 capture / observability tables ───────────────────────────────────────
 
@@ -76,7 +76,14 @@ export const prompts = sqliteTable(
     charCount: integer("char_count").notNull(),
   },
   (t) => ({
-    idxSessionTurn: index("idx_prompts_session_turn").on(t.sessionId, t.turnNo),
+    // CORE-011: UNIQUE constraint on (session_id, turn_no). Closes the
+    // race window in `recordPrompt`: pre-v17 a SELECT MAX(turn_no)+1
+    // INSERT pattern allowed two concurrent hook fires to compute the
+    // same `next_turn`, producing two rows with identical
+    // (session_id, turn_no). The UNIQUE index is what the
+    // INSERT...SELECT MAX+1 RETURNING flow in session.ts relies on
+    // for the SQLITE_CONSTRAINT_UNIQUE → retry signal under contention.
+    idxSessionTurn: uniqueIndex("idx_prompts_session_turn").on(t.sessionId, t.turnNo),
     // BOOTSTRAP at migrate.ts:138 — DESC ordering encoded in raw SQL but
     // not modelled here (drizzle-orm/sqlite-core has no `.desc()` builder
     // on index columns prior to v0.50). PRAGMA index_info reports column
@@ -123,9 +130,18 @@ export const captures = sqliteTable(
     idxSessionTs: index("idx_captures_session_ts").on(t.sessionId, t.ts),
     idxDeletedAt: index("idx_captures_deleted_at").on(t.deletedAt),
     idxTeamTs: index("idx_captures_team_ts").on(t.teamId, t.ts),
-    // BOOTSTRAP migrate.ts:136 — speeds up the (turn_id, raw_marker)
-    // dedupe at marker persist time (persist.ts:46-52).
-    idxTurnMarker: index("idx_captures_turn_marker").on(t.turnId, t.rawMarker),
+    // CORE-011 — UNIQUE constraint on (turn_id, raw_marker). Closes
+    // the race window in `persistMarkers` and `agent-memory.ts`:
+    // pre-v17 a SELECT-then-INSERT under DEFERRED transactions let
+    // two parallel hook fires both miss the SELECT and both INSERT,
+    // producing duplicate capture rows + duplicate FTS5 entries.
+    // The post-v17 path uses INSERT ... ON CONFLICT DO UPDATE
+    // capture_id=capture_id RETURNING capture_id — the no-op UPDATE
+    // forces RETURNING to surface either the new or existing rowid
+    // without firing the FTS5 AFTER INSERT/UPDATE triggers
+    // (no-content-change). See migrate.ts:v17 for the backfill query
+    // that runs before this UNIQUE index is created on existing DBs.
+    idxTurnMarker: uniqueIndex("idx_captures_turn_marker").on(t.turnId, t.rawMarker),
   }),
 );
 

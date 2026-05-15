@@ -43,12 +43,28 @@ export function persistMarkers(
   const ids: number[] = [];
   let skipped = 0;
 
-  const exists = raw.prepare(
-    "SELECT capture_id FROM captures WHERE turn_id = ? AND raw_marker = ?",
-  );
-  const insert = raw.prepare(
-    `INSERT INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase)
+  // CORE-011 — the pre-v17 dedupe used a SELECT-then-INSERT pair which
+  // left a race window when two hooks fired in parallel (Claude
+  // double-fires Stop on interrupt+resume, UserPromptSubmit can
+  // interleave with PostToolUse). Migration v17 added a UNIQUE
+  // constraint on (turn_id, raw_marker); the new flow is a single
+  // atomic `INSERT OR IGNORE` (race-safe because it is one statement,
+  // not two). The conflict path needs a follow-up SELECT to surface
+  // the surviving rowid — pay the extra query only on conflict, the
+  // happy path remains a single INSERT.
+  //
+  // We did consider `INSERT ... ON CONFLICT DO UPDATE pk=pk RETURNING
+  // capture_id`. SQLite reports the no-op UPDATE as a row touched in
+  // `changes()` and a fresh `ts` cannot reliably distinguish insert
+  // from conflict under sub-millisecond races. `INSERT OR IGNORE`
+  // sets `changes === 0` deterministically on conflict, so the
+  // dispatch is unambiguous.
+  const insertOrIgnore = raw.prepare(
+    `INSERT OR IGNORE INTO captures(session_id, prompt_id, turn_id, ts, type, content, raw_marker, file_paths, workflow_id, phase)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const findExisting = raw.prepare(
+    `SELECT capture_id FROM captures WHERE turn_id = ? AND raw_marker = ?`,
   );
 
   const now = Date.now();
@@ -56,12 +72,6 @@ export function persistMarkers(
     ctx.filePaths && ctx.filePaths.length > 0 ? JSON.stringify(ctx.filePaths) : null;
 
   for (const m of markers) {
-    const dup = exists.get(ctx.turnId, m.rawMarker) as { capture_id?: number } | undefined;
-    if (dup?.capture_id !== undefined) {
-      skipped++;
-      ids.push(dup.capture_id);
-      continue;
-    }
     // Per-marker auto-extraction: each marker gets the paths it actually
     // names. The caller can override with ctx.filePaths when they have
     // explicit ground truth (e.g. tool-driven capture).
@@ -70,7 +80,7 @@ export function persistMarkers(
       const extracted = extractFilePaths(m.content);
       filePathsJson = extracted.length > 0 ? JSON.stringify(extracted) : null;
     }
-    const result = insert.run(
+    const result = insertOrIgnore.run(
       ctx.sessionId,
       ctx.promptId,
       ctx.turnId,
@@ -82,6 +92,14 @@ export function persistMarkers(
       ctx.workflowId ?? null,
       ctx.phase ?? null,
     );
+    if (result.changes === 0) {
+      const existing = findExisting.get(ctx.turnId, m.rawMarker) as {
+        capture_id: number;
+      };
+      ids.push(existing.capture_id);
+      skipped++;
+      continue;
+    }
     ids.push(Number(result.lastInsertRowid));
 
     // ISSUE-049 — write-time correction attribution. Every CORRECTION
