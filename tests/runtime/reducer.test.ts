@@ -277,3 +277,184 @@ describe("reduce", () => {
     expect(state.status).toBe("abandoned");
   });
 });
+
+/**
+ * CORE-001 — malformed payload regression suite.
+ *
+ * Confirmed real bug: a single corrupt `workflow_events.payload` row crashed
+ * the reducer with `TypeError: Cannot read properties of undefined`. The
+ * guards in reducer.ts now throw `ReducerError(message, eventId, field)`
+ * with actionable diagnostics for the operator.
+ *
+ * Type assertions use `as ManifestEvent` after cast-through-unknown so the
+ * test harness can construct deliberately-malformed events without the
+ * factory helpers (which validate on append).
+ */
+describe("reduce with malformed payloads", () => {
+  function bad(
+    eventType: string,
+    payload: unknown,
+    eventId = "evt-bad-1",
+  ): import("#src/runtime/types.js").ManifestEvent {
+    return {
+      event_id: eventId,
+      event_type: eventType,
+      timestamp: "2026-05-15T00:00:00.000Z",
+      author: sysAuthor,
+      payload,
+      parent_event_id: null,
+      schema_version: 1,
+      commitable: false,
+    } as unknown as import("#src/runtime/types.js").ManifestEvent;
+  }
+
+  it("rejects init event with non-object payload", () => {
+    const i = bad("init", "not-an-object", "evt-init-bad");
+    expect(() => reduce([i])).toThrowError(ReducerError);
+    expect(() => reduce([i])).toThrow(/payload must be an object/);
+  });
+
+  it("rejects init event missing workflow_id", () => {
+    const i = bad(
+      "init",
+      { workflow_type: "feature", task: "x" },
+      "evt-init-no-wid",
+    );
+    try {
+      reduce([i]);
+      throw new Error("expected ReducerError");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ReducerError);
+      const re = err as ReducerError;
+      expect(re.eventId).toBe("evt-init-no-wid");
+      expect(re.field).toBe("workflow_id");
+    }
+  });
+
+  it("rejects init event with invalid workflow_type", () => {
+    const i = bad(
+      "init",
+      { workflow_id: "feat-1", workflow_type: "not-a-type", task: "x" },
+      "evt-init-bad-type",
+    );
+    expect(() => reduce([i])).toThrow(/workflow_type must be one of/);
+  });
+
+  it("rejects phase_started missing required phase field", () => {
+    const events = [
+      init("feat-1", "Task"),
+      bad("phase_started", { duration_ms: 100 }, "evt-phase-no-phase"),
+    ];
+    try {
+      reduce(events);
+      throw new Error("expected ReducerError");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ReducerError);
+      const re = err as ReducerError;
+      expect(re.field).toBe("phase");
+      expect(re.eventId).toBe("evt-phase-no-phase");
+    }
+  });
+
+  it("rejects phase_started with phase value not in PHASES enum", () => {
+    const events = [
+      init("feat-1", "Task"),
+      bad("phase_started", { phase: "Plan" }, "evt-bad-enum"), // wrong case
+    ];
+    expect(() => reduce(events)).toThrow(/phase must be one of/);
+  });
+
+  it("rejects scope_expansion_approved with added_to_scope not array", () => {
+    const events = [
+      init("feat-1", "Task"),
+      bad(
+        "scope_expansion_approved",
+        { added_to_scope: "src/a.ts" },
+        "evt-scope-bad",
+      ),
+    ];
+    expect(() => reduce(events)).toThrow(/added_to_scope must be an array of strings/);
+  });
+
+  it("rejects subagent_completed with tokens_consumed not a number", () => {
+    const events = [
+      init("feat-1", "Task"),
+      bad(
+        "subagent_completed",
+        { tokens_consumed: "1500" },
+        "evt-sub-bad",
+      ),
+    ];
+    try {
+      reduce(events);
+      throw new Error("expected ReducerError");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ReducerError);
+      const re = err as ReducerError;
+      expect(re.field).toBe("tokens_consumed");
+    }
+  });
+
+  it("rejects child_workflow_initiated with empty payload", () => {
+    const events = [
+      init("feat-1", "Task"),
+      bad("child_workflow_initiated", {}, "evt-child-empty"),
+    ];
+    expect(() => reduce(events)).toThrow(ReducerError);
+  });
+
+  it("rejects child_workflow_resolved with invalid status value", () => {
+    const events = [
+      init("feat-1", "Task"),
+      bad(
+        "child_workflow_resolved",
+        { child_workflow_id: "c1", status: "succeeded" }, // not a valid status
+        "evt-child-bad-status",
+      ),
+    ];
+    expect(() => reduce(events)).toThrow(/status must be 'completed' or 'abandoned'/);
+  });
+
+  it("preserves idempotency on the happy path under validation", () => {
+    // Validation must not introduce non-determinism. Same events → same state.
+    const events = [
+      init("feat-1", "Task"),
+      createEvent({
+        eventType: "phase_started",
+        payload: { phase: "plan" },
+        author: sysAuthor,
+        parentEventId: null,
+      }),
+      createEvent({
+        eventType: "phase_completed",
+        payload: { phase: "plan", duration_ms: 100, gate_passed: true },
+        author: sysAuthor,
+        parentEventId: null,
+      }),
+      createEvent({
+        eventType: "scope_expansion_approved",
+        payload: { file_path: "x.ts", added_to_scope: ["x.ts"] },
+        author,
+        parentEventId: null,
+      }),
+    ];
+    const stateA = reduce(events);
+    const stateB = reduce(events);
+    expect(JSON.stringify(stateA)).toBe(JSON.stringify(stateB));
+  });
+
+  it("ignores extra unknown fields in payload (forward-compat)", () => {
+    // A future writer may add fields the current reducer doesn't know about.
+    // Replay must tolerate these — only required fields are validated.
+    const events = [
+      init("feat-1", "Task"),
+      bad(
+        "phase_started",
+        { phase: "plan", future_field_v2: "ignored", another: 42 },
+        "evt-extra",
+      ),
+    ];
+    const state = reduce(events);
+    expect(state.current_phase).toBe("plan");
+  });
+});

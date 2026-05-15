@@ -3,9 +3,18 @@
  * current ReducedState. Determinism is the contract — same events in, same
  * state out.
  *
- * The reducer is intentionally tolerant: unknown event types or malformed
- * payloads cause an explicit error, not silent skip. Validation of inputs
- * happens at append time; the reducer assumes events are well-formed.
+ * Per CORE-001, payload guards validate every field the reducer reads. A
+ * malformed payload (wrong shape, missing required field, invalid enum
+ * value) throws `ReducerError` with `eventId` + `field` so the caller can
+ * diagnose. Replay halts at the first bad event — never continue with
+ * degraded state, because subsequent events can causally depend on the
+ * corrupt one.
+ *
+ * The `loadEvents` source upstream (brain-event-log.ts) also tolerates
+ * rows whose `payload` column is not valid JSON; those rows are silently
+ * filtered. Storage-layer corruption (disk rot, partial writes) vs
+ * shape-level corruption (typed bugs in a writer) thus surface at two
+ * different layers.
  */
 
 import type {
@@ -16,15 +25,109 @@ import type {
   ReducedState,
   WorkflowType,
 } from "./types.js";
+import { PHASES, WORKFLOW_TYPES } from "./types.js";
 
 export class ReducerError extends Error {
   constructor(
     message: string,
     public readonly eventId?: string,
+    public readonly field?: string,
   ) {
-    super(eventId ? `${message} (event ${eventId})` : message);
+    const detail = [eventId ? `event ${eventId}` : null, field ? `field ${field}` : null]
+      .filter(Boolean)
+      .join(", ");
+    super(detail ? `${message} (${detail})` : message);
     this.name = "ReducerError";
   }
+}
+
+// ─── Payload guard helpers ───────────────────────────────────────────────────
+// CORE-001: composable validators that replace the previous `event.payload as
+// {…}` casts. Each helper throws `ReducerError` with `eventId` + `field` so
+// callers get actionable diagnostics. Plain TS (not Zod) keeps this change
+// scoped — CORE-004 will lift the contract into Zod schemas later.
+
+function isObj(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function getStr(p: Record<string, unknown>, k: string, eventId: string): string {
+  const v = p[k];
+  if (typeof v !== "string" || v.length === 0) {
+    throw new ReducerError(`payload.${k} must be a non-empty string`, eventId, k);
+  }
+  return v;
+}
+
+function getNum(p: Record<string, unknown>, k: string, eventId: string): number {
+  const v = p[k];
+  if (typeof v !== "number" || !Number.isFinite(v)) {
+    throw new ReducerError(`payload.${k} must be a finite number`, eventId, k);
+  }
+  return v;
+}
+
+function getBool(p: Record<string, unknown>, k: string, eventId: string): boolean {
+  const v = p[k];
+  if (typeof v !== "boolean") {
+    throw new ReducerError(`payload.${k} must be a boolean`, eventId, k);
+  }
+  return v;
+}
+
+function getStrArr(p: Record<string, unknown>, k: string, eventId: string): string[] {
+  const v = p[k];
+  if (!Array.isArray(v) || !v.every((x) => typeof x === "string")) {
+    throw new ReducerError(`payload.${k} must be an array of strings`, eventId, k);
+  }
+  return v;
+}
+
+function getPhase(p: Record<string, unknown>, k: string, eventId: string): Phase {
+  const v = p[k];
+  if (typeof v !== "string" || !(PHASES as readonly string[]).includes(v)) {
+    throw new ReducerError(
+      `payload.${k} must be one of: ${PHASES.join(", ")}`,
+      eventId,
+      k,
+    );
+  }
+  return v as Phase;
+}
+
+function getWorkflowType(p: Record<string, unknown>, k: string, eventId: string): WorkflowType {
+  const v = p[k];
+  if (typeof v !== "string" || !(WORKFLOW_TYPES as readonly string[]).includes(v)) {
+    throw new ReducerError(
+      `payload.${k} must be one of: ${WORKFLOW_TYPES.join(", ")}`,
+      eventId,
+      k,
+    );
+  }
+  return v as WorkflowType;
+}
+
+function getChildStatus(
+  p: Record<string, unknown>,
+  k: string,
+  eventId: string,
+): "completed" | "abandoned" {
+  const v = p[k];
+  if (v !== "completed" && v !== "abandoned") {
+    throw new ReducerError(
+      `payload.${k} must be 'completed' or 'abandoned'`,
+      eventId,
+      k,
+    );
+  }
+  return v;
+}
+
+function requireObj(payload: unknown, eventId: string): Record<string, unknown> {
+  if (!isObj(payload)) {
+    throw new ReducerError("payload must be an object", eventId);
+  }
+  return payload;
 }
 
 export function reduce(events: ManifestEvent[]): ReducedState {
@@ -35,16 +138,15 @@ export function reduce(events: ManifestEvent[]): ReducedState {
   if (!init || init.event_type !== "init") {
     throw new ReducerError("First event must be of type 'init'.");
   }
-  const initPayload = init.payload as {
-    workflow_id: string;
-    workflow_type: WorkflowType;
-    task: string;
-  };
+  const initPayload = requireObj(init.payload, init.event_id);
+  const workflow_id = getStr(initPayload, "workflow_id", init.event_id);
+  const workflow_type = getWorkflowType(initPayload, "workflow_type", init.event_id);
+  const task = getStr(initPayload, "task", init.event_id);
 
   const state: ReducedState = {
-    workflow_id: initPayload.workflow_id,
-    workflow_type: initPayload.workflow_type,
-    task: initPayload.task,
+    workflow_id,
+    workflow_type,
+    task,
     status: "active",
     current_phase: "intent",
     // phase_history is populated by phase_started events, not by init.
@@ -102,7 +204,8 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
       break;
 
     case "phase_started": {
-      const phase = (event.payload as { phase: Phase }).phase;
+      const payload = requireObj(event.payload, event.event_id);
+      const phase = getPhase(payload, "phase", event.event_id);
       const last = state.phase_history.at(-1);
       if (last && !last.completed_at) {
         last.completed_at = event.timestamp;
@@ -113,23 +216,22 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
     }
 
     case "phase_completed": {
-      const payload = event.payload as {
-        phase: Phase;
-        duration_ms: number;
-        gate_passed: boolean;
-      };
+      const payload = requireObj(event.payload, event.event_id);
+      const phase = getPhase(payload, "phase", event.event_id);
+      const duration_ms = getNum(payload, "duration_ms", event.event_id);
+      const gate_passed = getBool(payload, "gate_passed", event.event_id);
       const last = state.phase_history.at(-1);
-      if (last && last.phase === payload.phase) {
+      if (last && last.phase === phase) {
         last.completed_at = event.timestamp;
-        last.duration_ms = payload.duration_ms;
-        last.gate_passed = payload.gate_passed;
+        last.duration_ms = duration_ms;
+        last.gate_passed = gate_passed;
       } else {
         const record: PhaseRecord = {
-          phase: payload.phase,
+          phase,
           started_at: event.timestamp,
           completed_at: event.timestamp,
-          duration_ms: payload.duration_ms,
-          gate_passed: payload.gate_passed,
+          duration_ms,
+          gate_passed,
         };
         state.phase_history.push(record);
       }
@@ -137,14 +239,16 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
     }
 
     case "phase_transition_approved": {
-      const payload = event.payload as { from_phase: Phase; to_phase: Phase };
-      state.current_phase = payload.to_phase;
+      const payload = requireObj(event.payload, event.event_id);
+      const to_phase = getPhase(payload, "to_phase", event.event_id);
+      state.current_phase = to_phase;
       break;
     }
 
     case "scope_expansion_approved": {
-      const payload = event.payload as { added_to_scope: string[] };
-      for (const file of payload.added_to_scope) {
+      const payload = requireObj(event.payload, event.event_id);
+      const added_to_scope = getStrArr(payload, "added_to_scope", event.event_id);
+      for (const file of added_to_scope) {
         if (!state.scope.files_in_plan.includes(file)) {
           state.scope.files_in_plan.push(file);
         }
@@ -166,9 +270,10 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
       break;
 
     case "subagent_completed": {
-      const payload = event.payload as { tokens_consumed: number };
+      const payload = requireObj(event.payload, event.event_id);
+      const tokens_consumed = getNum(payload, "tokens_consumed", event.event_id);
       state.subagent_stats.total_completed += 1;
-      state.subagent_stats.total_tokens_consumed += payload.tokens_consumed;
+      state.subagent_stats.total_tokens_consumed += tokens_consumed;
       break;
     }
 
@@ -177,15 +282,14 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
       break;
 
     case "child_workflow_initiated": {
-      const payload = event.payload as {
-        child_workflow_id: string;
-        child_workflow_type: WorkflowType;
-        child_branch: string;
-      };
+      const payload = requireObj(event.payload, event.event_id);
+      const child_workflow_id = getStr(payload, "child_workflow_id", event.event_id);
+      const child_workflow_type = getWorkflowType(payload, "child_workflow_type", event.event_id);
+      const child_branch = getStr(payload, "child_branch", event.event_id);
       state.child_workflows.push({
-        id: payload.child_workflow_id,
-        type: payload.child_workflow_type,
-        branch: payload.child_branch,
+        id: child_workflow_id,
+        type: child_workflow_type,
+        branch: child_branch,
         status: "active",
         initiated_at: event.timestamp,
       });
@@ -193,52 +297,56 @@ function applyEvent(state: ReducedState, event: ManifestEvent): void {
     }
 
     case "child_workflow_resolved": {
-      const payload = event.payload as {
-        child_workflow_id: string;
-        status: "completed" | "abandoned";
-      };
+      const payload = requireObj(event.payload, event.event_id);
+      const child_workflow_id = getStr(payload, "child_workflow_id", event.event_id);
+      const childStatus = getChildStatus(payload, "status", event.event_id);
       const child = state.child_workflows.find(
-        (c: ChildWorkflowRef) => c.id === payload.child_workflow_id,
+        (c: ChildWorkflowRef) => c.id === child_workflow_id,
       );
-      if (child) child.status = payload.status;
+      if (child) child.status = childStatus;
       break;
     }
 
     case "workflow_paused_for_child": {
-      const payload = event.payload as { child_workflow_id: string };
+      const payload = requireObj(event.payload, event.event_id);
+      const child_workflow_id = getStr(payload, "child_workflow_id", event.event_id);
       state.status = "paused";
-      state.paused_for_child_id = payload.child_workflow_id;
+      state.paused_for_child_id = child_workflow_id;
       break;
     }
 
     case "workflow_resumed_after_child": {
-      const payload = event.payload as { resumed_in_phase: Phase };
+      const payload = requireObj(event.payload, event.event_id);
+      const resumed_in_phase = getPhase(payload, "resumed_in_phase", event.event_id);
       state.status = "active";
       state.paused_for_child_id = null;
-      state.current_phase = payload.resumed_in_phase;
+      state.current_phase = resumed_in_phase;
       break;
     }
 
     case "context_term_added": {
-      const payload = event.payload as { term: string };
-      if (!state.knowledge.context_terms_added.includes(payload.term)) {
-        state.knowledge.context_terms_added.push(payload.term);
+      const payload = requireObj(event.payload, event.event_id);
+      const term = getStr(payload, "term", event.event_id);
+      if (!state.knowledge.context_terms_added.includes(term)) {
+        state.knowledge.context_terms_added.push(term);
       }
       break;
     }
 
     case "adr_approved": {
-      const payload = event.payload as { adr_number: number };
-      if (!state.knowledge.adrs_approved.includes(payload.adr_number)) {
-        state.knowledge.adrs_approved.push(payload.adr_number);
+      const payload = requireObj(event.payload, event.event_id);
+      const adr_number = getNum(payload, "adr_number", event.event_id);
+      if (!state.knowledge.adrs_approved.includes(adr_number)) {
+        state.knowledge.adrs_approved.push(adr_number);
       }
       break;
     }
 
     case "workflow_handover":
     case "workflow_force_handover": {
-      const payload = event.payload as { to_dev_id: string };
-      state.current_owner = payload.to_dev_id;
+      const payload = requireObj(event.payload, event.event_id);
+      const to_dev_id = getStr(payload, "to_dev_id", event.event_id);
+      state.current_owner = to_dev_id;
       break;
     }
 
