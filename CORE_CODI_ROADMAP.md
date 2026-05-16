@@ -56,7 +56,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 30 | CORE-030 | State.json corruption recovery test | S | P2 | **Validado ✅** | — | — | 30min |
 | 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | **Validado ✅** | — | onboarding | 1d |
 | 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | **Validado ✅** | — | — | 2h |
-| 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | Pendiente | — | — | 30min |
+| 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | **Validado ✅** | — | — | 30min |
 | 34 | CORE-034 | Semantic snapshot assertions | S | P3 | Pendiente | — | — | 3h |
 | 35 | CORE-035 | msw network-boundary tests | S | P3 | Pendiente | — | — | 1-2d |
 | 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | Pendiente | CORE-024 | aislamiento verificable | 4h |
@@ -1500,8 +1500,17 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
   - Una tabla en el README con qué decide cada ADR.
 - **Git history preservado**: `git mv` mantiene el blame trail; los timestamps + paths originales viven en la historia.
 
-## CORE-033 — CONTRIBUTING: Adding-Hook + Adding-Workflow
+## CORE-033 — CONTRIBUTING: Adding-Hook + Adding-Workflow **[RESUELTO]**
 - Nivel: S, P3, ~30min.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~15min.
+- **Añadidas 2 secciones nuevas a `CONTRIBUTING.md`** (después de "Adding a New Adapter"):
+  - **`### Adding a Hook`** — cubre AMBAS hook surfaces:
+    - **A) Pre-commit hook**: paso-a-paso desde el template (hook-templates.ts o YAML language registry CORE-010), wiring en hook-config-generator, flag declaration con `hook:`, dep checker, tests.
+    - **B) Runtime agent hook**: predicate factory en `src/core/hooks/registry/runtime/`, registration en `index.ts`, brain write rules (BrainEventLog only), I/O layer invariant.
+  - **`### Adding a Workflow`** — 9-step recipe para adaptive workflows: WorkflowType union extension, YAML definition, per-workflow directory (types/profiles/resolver/cli-flags/skip-rules/index/interactive), `WORKFLOW_BUILDERS` registration (CORE-019), CLI options, phase-ref skills, tests.
+- **Net delta:** `CONTRIBUTING.md` 311 → 386 LOC (+75).
+- **Lint:** 12 guards verdes. Zero código tocado.
 
 ## CORE-034 — Semantic snapshot assertions
 - Nivel: S, P3, ~3h. Replace 2 opaque .snap files con inline assertions.

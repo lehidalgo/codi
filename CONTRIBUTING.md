@@ -233,6 +233,92 @@ src/
 5. Add integration tests
 6. Run `npm test`
 
+### Adding a Hook
+
+Codi has two hook surfaces — pick the one your hook belongs to.
+
+**A) Pre-commit hook** (runs at `git commit`, installed by `codi init`)
+
+1. Author the hook script as a string in `src/core/hooks/hook-templates.ts`
+   (or, for language-specific hooks, add a YAML entry under
+   `src/core/hooks/registry/yaml/<lang>.yaml` — CORE-010 made the
+   language registry data-driven).
+2. Wire it into the hook configuration generator at
+   `src/core/hooks/hook-config-generator.ts` so it's emitted when the
+   triggering flag is on.
+3. Add the corresponding flag in `src/core/flags/flag-catalog.ts`
+   (see "Adding a New Flag" above) with `hook: '<hook-name>'`.
+4. If the hook needs a dependency, declare it in
+   `src/core/hooks/hook-dependency-checker.ts` so `installMissingDeps`
+   surfaces a clean install prompt.
+5. Add tests under `tests/unit/core/hooks/` covering: hook is emitted
+   when flag is on, omitted when flag is off, and the dependency
+   declaration round-trips.
+
+**B) Runtime agent hook** (runs at every `PreToolUse` / `PostToolUse` /
+`Stop` / `SessionStart` fire from the agent)
+
+1. Add a hook-logic predicate under
+   `src/core/hooks/registry/runtime/<your-hook>.ts` exporting the
+   `runtimeHook` factory (see neighbouring files for the shape).
+2. Register it in `src/core/hooks/registry/runtime/index.ts`.
+3. Decide whether your predicate writes to the brain (most do — Iron
+   Law enforcer, capture markers, skill observer) or just emits an
+   advisory. Brain writes go through `BrainEventLog` only; never open
+   a second handle.
+4. Add tests under `tests/runtime/registry/` covering happy path +
+   each branch your predicate emits.
+5. **Layer invariant**: keep the predicate pure where possible; I/O
+   (file reads, process spawn) belongs in `src/runtime/cli-handlers/`
+   not in the hook itself.
+
+### Adding a Workflow
+
+A "workflow" is one of the adaptive types (`bug-fix`, `feature`,
+`refactor`, `migration`, `project`, plus the non-adaptive `quick`
+and `team-consolidation`). Adding a new adaptive workflow type:
+
+1. Pick a `WorkflowType` slug (`hotfix`, `data-migration`, etc.). Add
+   it to the `WorkflowType` union in `src/runtime/types.ts`.
+2. Create `src/templates/workflows/<slug>.yaml` defining `phases`,
+   `gates` per phase, and any `chains` (skills to invoke at each
+   phase). `seed-workflows.ts` will load it into the brain DB on
+   `applyMigrations`.
+3. Create `src/runtime/workflows/<slug>/` with:
+   - `types.ts` — your `<Slug>Adaptation` interface
+     (`profile`, `executeMode`, `scope`, …).
+   - `profiles.ts` — `VALID_<SLUG>_PROFILES` const + their defaults.
+   - `resolver.ts` — `resolve<Slug>Adaptation(input)` merges partial
+     input against profile defaults; returns the full adaptation.
+   - `cli-flags.ts` — `build<Slug>Adaptation(flags)` that returns
+     `<Slug>Adaptation | Error | undefined` (Error for invalid
+     flags, undefined when no adaptive flags were supplied).
+   - `skip-rules.ts` — `compute<Slug>SkipPhases(adaptation)` and
+     `compute<Slug>NextPhase(currentPhase, adaptation)` — pure
+     functions over the adaptation shape.
+   - `index.ts` — re-exports + the `WorkflowAdapter<Adaptation>`
+     instance.
+4. Register the adapter in `src/runtime/workflows/registry.ts` and
+   add it to `WORKFLOW_BUILDERS` in `src/cli/workflow.ts` (CORE-019
+   dispatch map — one entry per adaptive type).
+5. If your workflow takes interactive intake (rare — only `bug-fix`
+   does), add a `src/runtime/workflows/<slug>/interactive.ts`
+   exporting `run<Slug>InteractiveIntake()` using `@clack/prompts`.
+   The CLI `workflow run` action detects this via
+   `--interactive` + non-JSON output.
+6. Add CLI options to `src/cli/workflow.ts` under the `run` command
+   for each new flag your `cli-flags.ts` reads.
+7. Tests:
+   - `tests/runtime/workflows/<slug>-adaptation.test.ts` — covers
+     resolver / cli-flags / skip-rules.
+   - Add the slug to the lifecycle tests in
+     `tests/runtime/cli-handlers.test.ts` so `runWorkflow` happy
+     path is exercised end-to-end.
+8. Update phase-ref skills under `src/templates/skills/<slug>-workflow/`
+   with `phase-<n>.md` reference files (the agent reads these via
+   `codi workflow phase-ref`).
+9. Run `npm test && npm run lint`.
+
 ## Testing
 
 Codi uses [Vitest](https://vitest.dev/) for testing.
