@@ -58,11 +58,6 @@ import { buildFeatureAdaptation } from "../runtime/workflows/feature/cli-flags.j
 import { buildRefactorAdaptation } from "../runtime/workflows/refactor/cli-flags.js";
 import { buildMigrationAdaptation } from "../runtime/workflows/migration/cli-flags.js";
 import { buildProjectAdaptation } from "../runtime/workflows/project/cli-flags.js";
-import type { BugFixAdaptation } from "../runtime/workflows/bug-fix/index.js";
-import type { FeatureAdaptation } from "../runtime/workflows/feature/index.js";
-import type { RefactorAdaptation } from "../runtime/workflows/refactor/index.js";
-import type { MigrationAdaptation } from "../runtime/workflows/migration/index.js";
-import type { ProjectAdaptation } from "../runtime/workflows/project/index.js";
 import { QUICK_CATEGORIES, type QuickCategory } from "../runtime/types.js";
 import type { Author, Phase, WorkflowType } from "../runtime/types.js";
 import type { CommandResult, ProjectError } from "../core/output/types.js";
@@ -258,6 +253,65 @@ function isPhase(s: string): s is Phase {
   return (VALID_PHASES as readonly string[]).includes(s);
 }
 
+// ─── CORE-019 — WORKFLOW_BUILDERS dispatcher ────────────────────────────────
+//
+// Each adaptive workflow type (bug-fix / feature / refactor / migration /
+// project) ships a `buildXAdaptation(flags) → XAdaptation | Error | undefined`
+// CLI-flag parser plus a known payload-key under `RunOptions` (the
+// `convertWorkflow` forward shape uses the same keys). Before CORE-019 this
+// dispatch was hand-rolled in two places (`workflow run` lines 339-394 +
+// `workflow convert` lines 535-576) — five `else if` branches each, total
+// ~120 LOC of mechanical duplication. The map below is the single source of
+// truth; adding a new adaptive workflow type means one new entry here +
+// updating `VALID_WORKFLOW_TYPES`, and the type-system catches every miss.
+//
+// `quick` and `team-consolidation` workflow types intentionally have no
+// entry — neither accepts adaptive flags. `runWithAdaptation` returns
+// `{ ok: true, adaptation: undefined }` for those types so callers proceed
+// without a payload field.
+
+type AdaptiveWorkflowType = Extract<
+  WorkflowType,
+  "bug-fix" | "feature" | "refactor" | "migration" | "project"
+>;
+
+interface WorkflowBuilder<A> {
+  readonly build: (flags: RunFlags) => A | Error | undefined;
+  readonly payloadKey: string;
+}
+
+const WORKFLOW_BUILDERS: Record<AdaptiveWorkflowType, WorkflowBuilder<unknown>> = {
+  "bug-fix": { build: buildBugFixAdaptation, payloadKey: "bugFixAdaptation" },
+  feature: { build: buildFeatureAdaptation, payloadKey: "featureAdaptation" },
+  refactor: { build: buildRefactorAdaptation, payloadKey: "refactorAdaptation" },
+  migration: { build: buildMigrationAdaptation, payloadKey: "migrationAdaptation" },
+  project: { build: buildProjectAdaptation, payloadKey: "projectAdaptation" },
+} as const;
+
+function isAdaptiveWorkflowType(type: WorkflowType): type is AdaptiveWorkflowType {
+  return type in WORKFLOW_BUILDERS;
+}
+
+/**
+ * Build the adaptation for a workflow type using its registered builder.
+ * Returns a discriminated union so callers can either forward the
+ * adaptation payload (success) or surface the validation message (error)
+ * without re-implementing the 5-branch dispatch.
+ */
+type BuildAdaptationResult =
+  | { ok: true; adaptation: unknown | undefined; payloadKey: string | null }
+  | { ok: false; message: string };
+
+function buildAdaptationForType(type: WorkflowType, flags: RunFlags): BuildAdaptationResult {
+  if (!isAdaptiveWorkflowType(type)) {
+    return { ok: true, adaptation: undefined, payloadKey: null };
+  }
+  const builder = WORKFLOW_BUILDERS[type];
+  const built = builder.build(flags);
+  if (built instanceof Error) return { ok: false, message: built.message };
+  return { ok: true, adaptation: built, payloadKey: builder.payloadKey };
+}
+
 export function registerQuickAlias(program: Command): void {
   program
     .command("quick <task>")
@@ -336,62 +390,27 @@ export function registerWorkflowCommand(program: Command): void {
         handleOutput(result, globalOpts);
         process.exit(result.exitCode);
       }
-      let bugFixAdaptation: BugFixAdaptation | undefined;
-      let featureAdaptation: FeatureAdaptation | undefined;
-      if (type === "bug-fix") {
-        if (opts.interactive === true && !globalOpts.json) {
-          const intake = await runBugFixInteractiveIntake();
-          if (intake.cancelled || intake.adaptation === null) {
-            const result = fail("workflow run", "interactive intake cancelled");
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          bugFixAdaptation = intake.adaptation;
-        } else {
-          const built = buildBugFixAdaptation(opts);
-          if (built instanceof Error) {
-            const result = fail("workflow run", built.message);
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          bugFixAdaptation = built;
+      // bug-fix has a unique interactive-intake path; every other adaptive
+      // workflow type runs through the shared WORKFLOW_BUILDERS dispatch.
+      const adaptationOverrides: Record<string, unknown> = {};
+      if (type === "bug-fix" && opts.interactive === true && !globalOpts.json) {
+        const intake = await runBugFixInteractiveIntake();
+        if (intake.cancelled || intake.adaptation === null) {
+          const result = fail("workflow run", "interactive intake cancelled");
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
         }
-      } else if (type === "feature") {
-        const built = buildFeatureAdaptation(opts);
-        if (built instanceof Error) {
+        adaptationOverrides["bugFixAdaptation"] = intake.adaptation;
+      } else {
+        const built = buildAdaptationForType(type, opts);
+        if (!built.ok) {
           const result = fail("workflow run", built.message);
           handleOutput(result, globalOpts);
           process.exit(result.exitCode);
         }
-        featureAdaptation = built;
-      }
-      let refactorAdaptation: RefactorAdaptation | undefined;
-      let migrationAdaptation: MigrationAdaptation | undefined;
-      let projectAdaptation: ProjectAdaptation | undefined;
-      if (type === "refactor") {
-        const built = buildRefactorAdaptation(opts);
-        if (built instanceof Error) {
-          const result = fail("workflow run", built.message);
-          handleOutput(result, globalOpts);
-          process.exit(result.exitCode);
+        if (built.adaptation !== undefined && built.payloadKey !== null) {
+          adaptationOverrides[built.payloadKey] = built.adaptation;
         }
-        refactorAdaptation = built;
-      } else if (type === "migration") {
-        const built = buildMigrationAdaptation(opts);
-        if (built instanceof Error) {
-          const result = fail("workflow run", built.message);
-          handleOutput(result, globalOpts);
-          process.exit(result.exitCode);
-        }
-        migrationAdaptation = built;
-      } else if (type === "project") {
-        const built = buildProjectAdaptation(opts);
-        if (built instanceof Error) {
-          const result = fail("workflow run", built.message);
-          handleOutput(result, globalOpts);
-          process.exit(result.exitCode);
-        }
-        projectAdaptation = built;
       }
       const result = tryRun("workflow run", () =>
         runWorkflow({
@@ -399,11 +418,7 @@ export function registerWorkflowCommand(program: Command): void {
           task,
           author: resolveAuthor(opts.asAgent),
           ...(opts.fromStory !== undefined ? { fromStoryId: opts.fromStory } : {}),
-          ...(bugFixAdaptation !== undefined ? { bugFixAdaptation } : {}),
-          ...(featureAdaptation !== undefined ? { featureAdaptation } : {}),
-          ...(refactorAdaptation !== undefined ? { refactorAdaptation } : {}),
-          ...(migrationAdaptation !== undefined ? { migrationAdaptation } : {}),
-          ...(projectAdaptation !== undefined ? { projectAdaptation } : {}),
+          ...adaptationOverrides,
           ...(opts.carryoverFrom !== undefined ? { carryoverFrom: opts.carryoverFrom } : {}),
         }),
       );
@@ -530,49 +545,17 @@ export function registerWorkflowCommand(program: Command): void {
         }
         const author = resolveAuthor(opts.asAgent);
         // Build per-target adaptation when --profile is supplied. Re-uses
-        // the same adapter helpers as `workflow run`.
+        // the same adapter helpers as `workflow run` via WORKFLOW_BUILDERS.
         const flags: RunFlags = { profile: opts.profile, asAgent: opts.asAgent };
         const forward: Record<string, unknown> = {};
-        if (type === "bug-fix") {
-          const built = buildBugFixAdaptation(flags);
-          if (built instanceof Error) {
-            const result = fail("workflow convert", built.message);
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          if (built !== undefined) forward["bugFixAdaptation"] = built;
-        } else if (type === "feature") {
-          const built = buildFeatureAdaptation(flags);
-          if (built instanceof Error) {
-            const result = fail("workflow convert", built.message);
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          if (built !== undefined) forward["featureAdaptation"] = built;
-        } else if (type === "refactor") {
-          const built = buildRefactorAdaptation(flags);
-          if (built instanceof Error) {
-            const result = fail("workflow convert", built.message);
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          if (built !== undefined) forward["refactorAdaptation"] = built;
-        } else if (type === "migration") {
-          const built = buildMigrationAdaptation(flags);
-          if (built instanceof Error) {
-            const result = fail("workflow convert", built.message);
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          if (built !== undefined) forward["migrationAdaptation"] = built;
-        } else if (type === "project") {
-          const built = buildProjectAdaptation(flags);
-          if (built instanceof Error) {
-            const result = fail("workflow convert", built.message);
-            handleOutput(result, globalOpts);
-            process.exit(result.exitCode);
-          }
-          if (built !== undefined) forward["projectAdaptation"] = built;
+        const built = buildAdaptationForType(type, flags);
+        if (!built.ok) {
+          const result = fail("workflow convert", built.message);
+          handleOutput(result, globalOpts);
+          process.exit(result.exitCode);
+        }
+        if (built.adaptation !== undefined && built.payloadKey !== null) {
+          forward[built.payloadKey] = built.adaptation;
         }
         const result = tryRun("workflow convert", () =>
           convertWorkflow({

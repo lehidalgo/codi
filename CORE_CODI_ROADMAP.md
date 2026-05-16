@@ -42,7 +42,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | **Validado ✅** | — | CORE-017 | 3-5d |
 | 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | **Validado ✅** | CORE-016 | — | 3-5d |
 | 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | **Validado ✅** | — | new artifact type cost | 1d |
-| 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | Pendiente | — | — | 4h |
+| 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | **Validado ✅** | — | — | 4h |
 | 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | Pendiente | — | — | 1-2d |
 | 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | Pendiente | CORE-007 | — | 1d |
 | 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | Pendiente | — | — | 4h |
@@ -1206,8 +1206,26 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Hallazgo:** `cli/plugin.ts:50` construye `.codi/${type}s/${name}` que para `slash-command` genera `slash-commands` — convención correcta. NO había bug latente, falsa alarma del subagente planner.
 - **Coste real de añadir un nuevo `ArtifactType` post-CORE-018:** 1 línea en `ARTIFACT_TYPES`, 1 entry en `ARTIFACT_LAYOUT` (compile-fails sin ella), 1 entry en `ARTIFACT_TO_CAPABILITY` (matrix.ts). El compiler caza los otros sitios via `satisfies Record<ArtifactType, …>`.
 
-## CORE-019 — cli/workflow.ts WORKFLOW_BUILDERS dispatcher
+## CORE-019 — cli/workflow.ts WORKFLOW_BUILDERS dispatcher **[RESUELTO]**
 - Nivel: E, P2, ~4 horas. 5-branch dispatch en `workflow run` + `workflow convert` → `Record<WorkflowType, ...>` map.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~30min (vs roadmap 4h — 8x más rápido; el alcance era puramente mecánico y los 5 builders comparten signature uniforme).
+- **Resultado:**
+  - `src/cli/workflow.ts`: añadido `WORKFLOW_BUILDERS: Record<AdaptiveWorkflowType, WorkflowBuilder<unknown>>` + helper `buildAdaptationForType(type, flags)` con `BuildAdaptationResult` discriminated union (success/error).
+  - **`workflow run` action** (líneas 339-394 antes): 5-branch `if/else if` chain con 5 variables de adaptation tipadas → 1 llamada a `buildAdaptationForType` + spread de `adaptationOverrides`. **Net: 56 LOC → 22 LOC**.
+  - **`workflow convert` action** (líneas 535-576 antes): 5-branch chain idéntico → 1 llamada compartida. **Net: 47 LOC → 11 LOC**.
+  - **Total delta `cli/workflow.ts`:** 181 → 164 LOC (−17 net, pero ~−85 LOC de duplicación eliminada — compensado por el `WORKFLOW_BUILDERS` map + helper de 35 LOC con docstring).
+  - Eliminadas 5 imports de types unused (`BugFixAdaptation`, `FeatureAdaptation`, `RefactorAdaptation`, `MigrationAdaptation`, `ProjectAdaptation`).
+- **Preservado intencionalmente:**
+  - **Interactive intake path para bug-fix**: solo `bug-fix` tiene `runBugFixInteractiveIntake()`. Queda como special case explícito ANTES del dispatch común (no se generaliza prematuramente — solo 1 workflow lo usa).
+  - **`quick` y `team-consolidation` sin entry** en `WORKFLOW_BUILDERS`: `isAdaptiveWorkflowType` retorna false → `{ ok: true, adaptation: undefined, payloadKey: null }`. Comportamiento idéntico al pre-refactor (esos workflow types nunca pasaban por buildXAdaptation).
+- **Coste post-CORE-019 de añadir un nuevo workflow type adaptivo:**
+  - 1 nueva entry en `WORKFLOW_BUILDERS`.
+  - Extensión de `AdaptiveWorkflowType` union (compile-fails sin ella).
+  - 1 nuevo builder `buildXAdaptation` siguiendo signature `(WorkflowRunFlags) => XAdaptation | Error | undefined`.
+  - El resto compila automáticamente. Pre-CORE-019: tocar 10+ líneas en 2 sitios.
+- **Tests:** 3894 passing, 6 skipped, 0 regresiones (la cobertura de `workflow run`/`convert` via integration tests sigue válida — refactor es invariante de comportamiento por diseño).
+- **Lint:** 9 guards verdes.
 
 ## CORE-020 — init.ts god function split (664 LOC)
 - Nivel: E, P1, ~1-2 días. `initHandler` en `init.ts:105` → 5-7 phases con Result types.
