@@ -82,8 +82,14 @@ export const COMMITABLE_EVENT_TYPES: ReadonlySet<EventType> = new Set([
   "adr_approved",
   "adr_superseded",
   "decision_recorded",
+  "design_doc_authored",
   "workflow_handover",
   "workflow_force_handover",
+  // Cross-tool integration: sheet_reconciled is the materialization
+  // moment that pinned a sheet row to a brain event — commitable so
+  // PR summaries can show "synced to sheet" lineage. Mirrors the
+  // `commitable: const: true` flag in manifest-event.schema.json.
+  "sheet_reconciled",
 ]);
 
 export const PHASES = [
