@@ -23,6 +23,7 @@ import { openBrain } from "#src/runtime/brain/db.js";
 import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import type { Author } from "#src/runtime/types.js";
+import { unwrap } from "../_brain-helper.js";
 
 const HUMAN: Author = { type: "human", id: "tester" };
 
@@ -43,14 +44,16 @@ describe("ISSUE-048 — Stop hook concurrent with approveTransition", () => {
     dbPath = join(tmpDir, "brain.db");
     prevBrainDb = process.env["CODI_BRAIN_DB"];
     process.env["CODI_BRAIN_DB"] = dbPath;
-    const r = runWorkflow({
-      workflowType: "feature",
-      task: "race scenario",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "race scenario",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
     workflowId = r.workflowId;
-    proposeTransition({ toPhase: "plan", author: HUMAN, cwd: tmpDir });
+    unwrap(proposeTransition({ toPhase: "plan", author: HUMAN, cwd: tmpDir }));
   });
 
   afterEach(() => {

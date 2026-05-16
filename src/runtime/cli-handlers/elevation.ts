@@ -4,15 +4,21 @@
  * parent back to phase plan per the constitutional rule).
  *
  * Brain-backed: persistence goes through BrainEventLog directly.
+ *
+ * CORE-017: handlers return `Result<T, ProjectError[]>`.
  */
 
 import {
   BrainEventLog,
-  BrainNoActiveWorkflowError as NoActiveWorkflowError,
+  BrainNoActiveWorkflowError,
 } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
 import type { Author, ManifestEvent, Phase, WorkflowType } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
+import { fromCaughtError } from "./result-errors.js";
 
 const SYSTEM_AUTHOR: Author = { type: "system", id: "codi" };
 
@@ -29,18 +35,20 @@ export interface ProposeElevationResult {
   proposedEventId: string;
 }
 
-export function proposeElevation(opts: ProposeElevationOptions): ProposeElevationResult {
+export function proposeElevation(
+  opts: ProposeElevationOptions,
+): Result<ProposeElevationResult, ProjectError[]> {
   if (!opts.reason || opts.reason.trim().length === 0) {
-    throw new Error("propose-elevation requires --reason '<text>'");
+    return err([createError("E_REASON_REQUIRED", { command: "propose-elevation" })]);
   }
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const state = log.getReducedState(workflowId);
     if (state.status !== "active") {
-      throw new Error(`Cannot elevate from a ${state.status} workflow.`);
+      return err([createError("E_WORKFLOW_CANNOT_ELEVATE", { status: state.status })]);
     }
 
     const proposed = createEvent({
@@ -54,7 +62,12 @@ export function proposeElevation(opts: ProposeElevationOptions): ProposeElevatio
       parentEventId: state.last_event_id,
     });
     log.append(workflowId, proposed);
-    return { workflowId, proposedEventId: proposed.event_id };
+    return ok({ workflowId, proposedEventId: proposed.event_id });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -71,15 +84,19 @@ export interface ApproveElevationResult {
   childBranch: string;
 }
 
-export function approveElevation(opts: ApproveElevationOptions): ApproveElevationResult {
+export function approveElevation(
+  opts: ApproveElevationOptions,
+): Result<ApproveElevationResult, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     const parentId = resolveActiveWorkflowId(log, opts);
-    if (!parentId) throw new NoActiveWorkflowError();
+    if (!parentId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const events = log.loadEvents(parentId);
     const lastProposal = findLatestUnresolvedElevation(events);
-    if (!lastProposal) throw new Error("No pending elevation proposal.");
+    if (!lastProposal) {
+      return err([createError("E_PROPOSAL_NOT_PENDING", { kind: "elevation" })]);
+    }
     const payload = lastProposal.payload as {
       suggested_workflow_type: WorkflowType;
       reason: string;
@@ -124,7 +141,12 @@ export function approveElevation(opts: ApproveElevationOptions): ApproveElevatio
       }),
     );
 
-    return { parentWorkflowId: parentId, childWorkflowId: childId, childBranch };
+    return ok({ parentWorkflowId: parentId, childWorkflowId: childId, childBranch });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -136,18 +158,22 @@ export interface RejectElevationOptions {
   cwd?: string;
 }
 
-export function rejectElevation(opts: RejectElevationOptions): { workflowId: string } {
+export function rejectElevation(
+  opts: RejectElevationOptions,
+): Result<{ workflowId: string }, ProjectError[]> {
   if (!opts.reason || opts.reason.trim().length === 0) {
-    throw new Error("Reject elevation requires --reason '<text>'");
+    return err([createError("E_REASON_REQUIRED", { command: "Reject elevation" })]);
   }
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const events = log.loadEvents(workflowId);
     const lastProposal = findLatestUnresolvedElevation(events);
-    if (!lastProposal) throw new Error("No pending elevation proposal.");
+    if (!lastProposal) {
+      return err([createError("E_PROPOSAL_NOT_PENDING", { kind: "elevation" })]);
+    }
 
     log.append(
       workflowId,
@@ -158,7 +184,12 @@ export function rejectElevation(opts: RejectElevationOptions): { workflowId: str
         parentEventId: lastProposal.event_id,
       }),
     );
-    return { workflowId };
+    return ok({ workflowId });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -176,14 +207,13 @@ export interface ResolveChildOptions {
  * Records that a child workflow has resolved. Forces parent back to phase
  * plan because the codebase state has changed and the plan needs review.
  */
-export function resolveChild(opts: ResolveChildOptions): {
-  parentWorkflowId: string;
-  resumedInPhase: Phase;
-} {
+export function resolveChild(
+  opts: ResolveChildOptions,
+): Result<{ parentWorkflowId: string; resumedInPhase: Phase }, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     const parentId = resolveActiveWorkflowId(log, opts);
-    if (!parentId) throw new NoActiveWorkflowError();
+    if (!parentId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const summaryPayload = opts.summary !== undefined ? { summary: opts.summary } : {};
     log.append(
@@ -210,7 +240,12 @@ export function resolveChild(opts: ResolveChildOptions): {
         parentEventId: null,
       }),
     );
-    return { parentWorkflowId: parentId, resumedInPhase: "plan" };
+    return ok({ parentWorkflowId: parentId, resumedInPhase: "plan" });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }

@@ -13,11 +13,18 @@
  *      stays the same.
  *
  * Brain-backed: persistence goes through BrainEventLog directly.
+ *
+ * CORE-017: handlers return `Result<T, ProjectError[]>`. The inner
+ * `assertLegalTransition` STILL throws — its typed errors
+ * (`UnknownWorkflowTypeError`) are caught locally and degrade gracefully
+ * to skip enforcement. ReducerError from `getReducedState` is intentionally
+ * propagated up via the outer catch as `E_GENERAL` (corrupt event log =
+ * loud failure, per CORE-001).
  */
 
 import {
   BrainEventLog,
-  BrainNoActiveWorkflowError as NoActiveWorkflowError,
+  BrainNoActiveWorkflowError,
 } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
 import { reduce } from "../reducer.js";
@@ -25,6 +32,10 @@ import type { Author, Phase, ReducedState } from "../types.js";
 import { assertLegalTransition, UnknownWorkflowTypeError } from "../workflow-graph.js";
 import { runPhaseGates, formatGateAdvisory } from "../gate-runner-bridge.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
+import { fromCaughtError } from "./result-errors.js";
 
 const SYSTEM_AUTHOR: Author = { type: "system", id: "codi" };
 
@@ -41,20 +52,22 @@ export interface ProposeTransitionResult {
   proposedEventId: string;
 }
 
-export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransitionResult {
+export function proposeTransition(
+  opts: ProposeTransitionOptions,
+): Result<ProposeTransitionResult, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const state = log.getReducedState(workflowId);
     const fromPhase = state.current_phase;
 
     if (fromPhase === opts.toPhase) {
-      throw new Error(`Already in phase ${opts.toPhase}.`);
+      return err([createError("E_WORKFLOW_ALREADY_IN_PHASE", { phase: opts.toPhase })]);
     }
     if (state.status !== "active") {
-      throw new Error(`Workflow is not active (status: ${state.status}).`);
+      return err([createError("E_WORKFLOW_NOT_ACTIVE", { status: state.status })]);
     }
 
     // F4 — phase graph enforcement. Read workflow_definitions[type].phases[from].next
@@ -71,7 +84,8 @@ export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransi
       } else if (e instanceof Error && /no such table: workflow_definitions/.test(e.message)) {
         // Brain DB present but pre-v2 (table missing) — skip enforcement.
       } else {
-        throw e;
+        // IllegalPhaseTransitionError or other — map to ProjectError and bail.
+        return err([fromCaughtError(e)]);
       }
     }
 
@@ -83,12 +97,17 @@ export function proposeTransition(opts: ProposeTransitionOptions): ProposeTransi
     });
     log.append(workflowId, proposed);
 
-    return {
+    return ok({
       workflowId,
       fromPhase,
       toPhase: opts.toPhase,
       proposedEventId: proposed.event_id,
-    };
+    });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -105,11 +124,13 @@ export interface ApproveTransitionResult {
   toPhase: Phase;
 }
 
-export function approveTransition(opts: ApproveTransitionOptions): ApproveTransitionResult {
+export function approveTransition(
+  opts: ApproveTransitionOptions,
+): Result<ApproveTransitionResult, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const events = log.loadEvents(workflowId);
     const lastProposed = events
@@ -117,7 +138,7 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
       .reverse()
       .find((e) => e.event_type === "phase_transition_proposed");
     if (!lastProposed) {
-      throw new Error("No pending transition proposal.");
+      return err([createError("E_PROPOSAL_NOT_PENDING", { kind: "transition" })]);
     }
     const proposalPayload = lastProposed.payload as { from_phase: Phase; to_phase: Phase };
     // Reject any newer event of the same proposal type that came after a
@@ -133,7 +154,7 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
           e.event_type === "phase_transition_rejected",
       );
     if (!lastTransitionEvent || lastTransitionEvent.event_id !== lastProposed.event_id) {
-      throw new Error("No pending transition proposal.");
+      return err([createError("E_PROPOSAL_NOT_PENDING", { kind: "transition" })]);
     }
 
     const state = log.getReducedState(workflowId);
@@ -242,11 +263,16 @@ export function approveTransition(opts: ApproveTransitionOptions): ApproveTransi
       }
     })();
 
-    return {
+    return ok({
       workflowId,
       fromPhase: proposalPayload.from_phase,
       toPhase: proposalPayload.to_phase,
-    };
+    });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -264,14 +290,16 @@ export interface RejectTransitionResult {
   rejectedToPhase: Phase;
 }
 
-export function rejectTransition(opts: RejectTransitionOptions): RejectTransitionResult {
+export function rejectTransition(
+  opts: RejectTransitionOptions,
+): Result<RejectTransitionResult, ProjectError[]> {
   if (!opts.reason || opts.reason.trim().length === 0) {
-    throw new Error("Reject requires --reason '<text>'.");
+    return err([createError("E_REASON_REQUIRED", { command: "Reject" })]);
   }
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const events = log.loadEvents(workflowId);
     const lastProposed = events
@@ -279,7 +307,7 @@ export function rejectTransition(opts: RejectTransitionOptions): RejectTransitio
       .reverse()
       .find((e) => e.event_type === "phase_transition_proposed");
     if (!lastProposed) {
-      throw new Error("No pending transition proposal.");
+      return err([createError("E_PROPOSAL_NOT_PENDING", { kind: "transition" })]);
     }
     const lastTransitionEvent = events
       .slice()
@@ -291,7 +319,7 @@ export function rejectTransition(opts: RejectTransitionOptions): RejectTransitio
           e.event_type === "phase_transition_rejected",
       );
     if (!lastTransitionEvent || lastTransitionEvent.event_id !== lastProposed.event_id) {
-      throw new Error("No pending transition proposal.");
+      return err([createError("E_PROPOSAL_NOT_PENDING", { kind: "transition" })]);
     }
     const proposalPayload = lastProposed.payload as { from_phase: Phase; to_phase: Phase };
 
@@ -305,11 +333,16 @@ export function rejectTransition(opts: RejectTransitionOptions): RejectTransitio
       }),
     );
 
-    return {
+    return ok({
       workflowId,
       fromPhase: proposalPayload.from_phase,
       rejectedToPhase: proposalPayload.to_phase,
-    };
+    });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -359,26 +392,19 @@ export interface AdvanceResult {
  * the init payload, computes the next non-skipped phase via the adapter,
  * proposes the transition, and (when `autoApprove` is true) immediately
  * approves it.
- *
- * Errors:
- *  - no active workflow → NoActiveWorkflowError (re-thrown)
- *  - terminal phase     → Error("workflow already at terminal phase")
- *  - explicit toPhase ∧ adaptation skip says otherwise → still honoured
- *    (the dev's override wins; the adapter is advisory only here)
  */
-export function advanceWorkflow(opts: AdvanceOptions): AdvanceResult {
+export function advanceWorkflow(opts: AdvanceOptions): Result<AdvanceResult, ProjectError[]> {
   const log = BrainEventLog.open();
   let derivedFromAdaptation = false;
   let skippedPhases: readonly string[] = [];
   let target: Phase | undefined = opts.toPhase;
-  let workflowId: string;
   let fromPhase: Phase;
 
   try {
-    workflowId = resolveActiveWorkflowId(log, opts) ?? "";
-    if (!workflowId) throw new NoActiveWorkflowError();
+    const resolved = resolveActiveWorkflowId(log, opts);
+    if (!resolved) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
-    const events = log.loadEvents(workflowId);
+    const events = log.loadEvents(resolved);
     const state = reduce(events);
     fromPhase = state.current_phase;
 
@@ -403,10 +429,13 @@ export function advanceWorkflow(opts: AdvanceOptions): AdvanceResult {
     }
 
     if (target === undefined) {
-      throw new Error(
-        `Cannot derive next phase from '${fromPhase}'. Pass --to <phase> explicitly or use 'workflow transition'.`,
-      );
+      return err([createError("E_PHASE_ADVANCE_DERIVATION_FAILED", { fromPhase })]);
     }
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -416,6 +445,7 @@ export function advanceWorkflow(opts: AdvanceOptions): AdvanceResult {
     author: opts.author,
     ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
   });
+  if (!proposed.ok) return proposed;
 
   let approvedEventId: string | null = null;
   if (opts.autoApprove === true) {
@@ -423,21 +453,22 @@ export function advanceWorkflow(opts: AdvanceOptions): AdvanceResult {
       author: opts.author,
       ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
     });
+    if (!approved.ok) return approved;
     // approveTransition does not return the event id directly; surface the
     // proposal id paired with a synthetic marker so callers can detect that
     // approval ran. The brain log carries the real approved event regardless.
-    approvedEventId = `${approved.workflowId}:${approved.toPhase}`;
+    approvedEventId = `${approved.data.workflowId}:${approved.data.toPhase}`;
   }
 
-  return {
-    workflowId: proposed.workflowId,
-    fromPhase: proposed.fromPhase,
-    toPhase: proposed.toPhase,
-    proposedEventId: proposed.proposedEventId,
+  return ok({
+    workflowId: proposed.data.workflowId,
+    fromPhase: proposed.data.fromPhase,
+    toPhase: proposed.data.toPhase,
+    proposedEventId: proposed.data.proposedEventId,
     approvedEventId,
     derivedFromAdaptation,
     skippedPhases,
-  };
+  });
 }
 
 const ADAPTATION_KEY: Partial<Record<string, string>> = {

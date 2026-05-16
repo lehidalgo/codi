@@ -6,6 +6,7 @@ import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { approveTransition, proposeTransition } from "#src/runtime/cli-handlers/transitions.js";
 import { runWorkflow } from "#src/runtime/cli-handlers/workflow.js";
 import type { Author } from "#src/runtime/types.js";
+import { unwrap } from "../_brain-helper.js";
 
 const AGENT_AUTHOR: Author = { type: "agent", id: "test" };
 
@@ -30,16 +31,18 @@ describe("approveTransition runs phase gates as advisory", () => {
   });
 
   it("plan→decompose with empty scope persists gate_check_failed but still approves", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Test gate firing",
-      author: AGENT_AUTHOR,
-      cwd: scratch,
-    });
-    proposeTransition({ toPhase: "plan", author: AGENT_AUTHOR, cwd: scratch });
-    approveTransition({ author: AGENT_AUTHOR, cwd: scratch });
-    proposeTransition({ toPhase: "decompose", author: AGENT_AUTHOR, cwd: scratch });
-    const result = approveTransition({ author: AGENT_AUTHOR, cwd: scratch });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Test gate firing",
+        author: AGENT_AUTHOR,
+        cwd: scratch,
+      }),
+    );
+    unwrap(proposeTransition({ toPhase: "plan", author: AGENT_AUTHOR, cwd: scratch }));
+    unwrap(approveTransition({ author: AGENT_AUTHOR, cwd: scratch }));
+    unwrap(proposeTransition({ toPhase: "decompose", author: AGENT_AUTHOR, cwd: scratch }));
+    const result = unwrap(approveTransition({ author: AGENT_AUTHOR, cwd: scratch }));
     expect(result.fromPhase).toBe("plan");
     expect(result.toPhase).toBe("decompose");
     const log = BrainEventLog.open();
@@ -55,14 +58,16 @@ describe("approveTransition runs phase gates as advisory", () => {
   });
 
   it("intent→plan with task set passes task_described and emits gate_check_passed", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Real task",
-      author: AGENT_AUTHOR,
-      cwd: scratch,
-    });
-    proposeTransition({ toPhase: "plan", author: AGENT_AUTHOR, cwd: scratch });
-    const result = approveTransition({ author: AGENT_AUTHOR, cwd: scratch });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Real task",
+        author: AGENT_AUTHOR,
+        cwd: scratch,
+      }),
+    );
+    unwrap(proposeTransition({ toPhase: "plan", author: AGENT_AUTHOR, cwd: scratch }));
+    const result = unwrap(approveTransition({ author: AGENT_AUTHOR, cwd: scratch }));
     const log = BrainEventLog.open();
     const events = log.loadEvents(result.workflowId);
     const passed = events.filter(

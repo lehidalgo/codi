@@ -388,8 +388,9 @@ describe("validateArtifacts — repository smoke run", () => {
   it("runs cleanly against the real repo (no errors)", async () => {
     const { readBuiltinDefinitions } = await import("#src/runtime/brain/seed-workflows.js");
     const { resolve } = await import("node:path");
+    const { unwrap } = await import("./_brain-helper.js");
     const skillsRoot = resolve(process.cwd(), "src", "templates", "skills");
-    const workflows = readBuiltinDefinitions();
+    const workflows = unwrap(readBuiltinDefinitions());
     const r = validateArtifacts({ skillsRoot, workflows, repoRoot: process.cwd() });
     if (r.errors.length > 0) {
       console.error(r.errors);

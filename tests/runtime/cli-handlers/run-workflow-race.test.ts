@@ -25,6 +25,7 @@ import { applyMigrations } from "#src/runtime/brain/migrate.js";
 import { createEvent } from "#src/runtime/event-factory.js";
 import { reduce } from "#src/runtime/reducer.js";
 import type { Author } from "#src/runtime/types.js";
+import { unwrap } from "../_brain-helper.js";
 
 const HUMAN: Author = { type: "human", id: "tester" };
 
@@ -52,22 +53,24 @@ describe("ISSUE-004 — runWorkflow singleton race", () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("a second runWorkflow throws BrainWorkflowAlreadyActiveError instead of corrupting state", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "first race winner",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
-
-    expect(() =>
+  it("a second runWorkflow surfaces BrainWorkflowAlreadyActiveError as E_GENERAL instead of corrupting state", () => {
+    unwrap(
       runWorkflow({
         workflowType: "feature",
-        task: "loser",
+        task: "first race winner",
         author: HUMAN,
         cwd: tmpDir,
       }),
-    ).toThrow(/already active|already initialized/i);
+    );
+
+    const r = runWorkflow({
+      workflowType: "feature",
+      task: "loser",
+      author: HUMAN,
+      cwd: tmpDir,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.message).toMatch(/already active|already initialized/i);
 
     const handle = openBrain({ dbPath });
     try {
@@ -114,12 +117,14 @@ describe("ISSUE-004 — runWorkflow singleton race", () => {
       }
     }
 
-    const result = runWorkflow({
-      workflowType: "feature",
-      task: "after stale",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
+    const result = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "after stale",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
     expect(result.workflowId).not.toBe("wf-prior");
 
     const handle = openBrain({ dbPath });
@@ -163,12 +168,14 @@ describe("ISSUE-004 — runWorkflow singleton race", () => {
   });
 
   it("reduce() of a freshly-created workflow remains queryable through the fix", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "happy path",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "happy path",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
     const log = BrainEventLog.open({ dbPath });
     try {
       const id = log.getActiveWorkflowId()!;

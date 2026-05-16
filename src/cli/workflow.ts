@@ -65,7 +65,8 @@ import type { MigrationAdaptation } from "../runtime/workflows/migration/index.j
 import type { ProjectAdaptation } from "../runtime/workflows/project/index.js";
 import { QUICK_CATEGORIES, type QuickCategory } from "../runtime/types.js";
 import type { Author, Phase, WorkflowType } from "../runtime/types.js";
-import type { CommandResult } from "../core/output/types.js";
+import type { CommandResult, ProjectError } from "../core/output/types.js";
+import type { Result } from "../types/result.js";
 import { initFromOptions, handleOutput, type GlobalOptions } from "./shared.js";
 import { runBugFixInteractiveIntake } from "../runtime/workflows/bug-fix/interactive.js";
 
@@ -113,12 +114,44 @@ function fail(command: string, message: string): CommandResult<{ message: string
   });
 }
 
+function failWithErrors(
+  command: string,
+  errors: ProjectError[],
+): CommandResult<{ message: string }> {
+  const first = errors[0];
+  return createCommandResult({
+    success: false,
+    command,
+    data: { message: first ? first.message : "Handler returned no errors." },
+    errors,
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+  });
+}
+
+/**
+ * CORE-017: runtime handlers now return `Result<T, ProjectError[]>`. tryRun
+ * accepts both shapes — Result-returning fns flow into `failWithErrors` so
+ * the structured error codes survive into `CommandResult.errors[]`; plain
+ * thrown errors degrade to the legacy `fail` path for back-compat with
+ * non-runtime handlers (e.g. `computeWorkflowStats`).
+ */
 function tryRun<T>(
   command: string,
-  fn: () => T,
+  fn: () => T | Result<T, ProjectError[]>,
 ): CommandResult<T> | CommandResult<{ message: string }> {
   try {
-    return ok(command, fn());
+    const out = fn();
+    if (
+      out !== null &&
+      typeof out === "object" &&
+      "ok" in (out as object) &&
+      typeof (out as { ok: unknown }).ok === "boolean"
+    ) {
+      const r = out as Result<T, ProjectError[]>;
+      if (r.ok) return ok(command, r.data);
+      return failWithErrors(command, r.errors);
+    }
+    return ok(command, out as T);
   } catch (e) {
     return fail(command, e instanceof Error ? e.message : String(e));
   }

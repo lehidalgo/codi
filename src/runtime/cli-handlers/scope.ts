@@ -4,15 +4,21 @@
  * that the classifier marks as incidental).
  *
  * Brain-backed: persistence goes through BrainEventLog directly.
+ *
+ * CORE-017: handlers return `Result<T, ProjectError[]>`.
  */
 
 import {
   BrainEventLog,
-  BrainNoActiveWorkflowError as NoActiveWorkflowError,
+  BrainNoActiveWorkflowError,
 } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
 import type { Author, ManifestEvent } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
+import { fromCaughtError } from "./result-errors.js";
 
 export interface ProposeScopeExpansionOptions {
   filePath: string;
@@ -29,21 +35,21 @@ export interface ProposeScopeExpansionResult {
 
 export function proposeScopeExpansion(
   opts: ProposeScopeExpansionOptions,
-): ProposeScopeExpansionResult {
+): Result<ProposeScopeExpansionResult, ProjectError[]> {
   if (!opts.filePath || opts.filePath.trim().length === 0) {
-    throw new Error("propose-expansion requires --file <path>");
+    return err([createError("E_SCOPE_FILE_REQUIRED")]);
   }
   if (!opts.reason || opts.reason.trim().length === 0) {
-    throw new Error("propose-expansion requires --reason '<text>'");
+    return err([createError("E_REASON_REQUIRED", { command: "propose-expansion" })]);
   }
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const state = log.getReducedState(workflowId);
     if (state.scope.files_in_plan.includes(opts.filePath)) {
-      throw new Error(`File '${opts.filePath}' is already in scope.`);
+      return err([createError("E_SCOPE_FILE_ALREADY_IN", { filePath: opts.filePath })]);
     }
 
     const proposed = createEvent({
@@ -53,7 +59,12 @@ export function proposeScopeExpansion(
       parentEventId: state.last_event_id,
     });
     log.append(workflowId, proposed);
-    return { workflowId, filePath: opts.filePath, proposedEventId: proposed.event_id };
+    return ok({ workflowId, filePath: opts.filePath, proposedEventId: proposed.event_id });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -76,20 +87,20 @@ export interface ApproveScopeExpansionResult {
  */
 export function approveScopeExpansion(
   opts: ApproveScopeExpansionOptions,
-): ApproveScopeExpansionResult {
+): Result<ApproveScopeExpansionResult, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const events = log.loadEvents(workflowId);
     const proposal = findLatestUnresolvedScopeProposal(events, opts.filePath);
     if (!proposal) {
-      throw new Error(
-        opts.filePath
-          ? `No pending scope expansion proposal for ${opts.filePath}.`
-          : "No pending scope expansion proposal.",
-      );
+      return err([
+        createError("E_PROPOSAL_NOT_PENDING", {
+          kind: opts.filePath ? `scope expansion (file: ${opts.filePath})` : "scope expansion",
+        }),
+      ]);
     }
     const payload = proposal.payload as { file_path: string };
 
@@ -102,7 +113,12 @@ export function approveScopeExpansion(
         parentEventId: proposal.event_id,
       }),
     );
-    return { workflowId, filePath: payload.file_path };
+    return ok({ workflowId, filePath: payload.file_path });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -122,23 +138,23 @@ export interface RejectScopeExpansionResult {
 
 export function rejectScopeExpansion(
   opts: RejectScopeExpansionOptions,
-): RejectScopeExpansionResult {
+): Result<RejectScopeExpansionResult, ProjectError[]> {
   if (!opts.reason || opts.reason.trim().length === 0) {
-    throw new Error("Reject requires --reason '<text>'.");
+    return err([createError("E_REASON_REQUIRED", { command: "Reject" })]);
   }
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const events = log.loadEvents(workflowId);
     const proposal = findLatestUnresolvedScopeProposal(events, opts.filePath);
     if (!proposal) {
-      throw new Error(
-        opts.filePath
-          ? `No pending scope expansion proposal for ${opts.filePath}.`
-          : "No pending scope expansion proposal.",
-      );
+      return err([
+        createError("E_PROPOSAL_NOT_PENDING", {
+          kind: opts.filePath ? `scope expansion (file: ${opts.filePath})` : "scope expansion",
+        }),
+      ]);
     }
     const payload = proposal.payload as { file_path: string };
 
@@ -151,7 +167,12 @@ export function rejectScopeExpansion(
         parentEventId: proposal.event_id,
       }),
     );
-    return { workflowId, filePath: payload.file_path };
+    return ok({ workflowId, filePath: payload.file_path });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -191,11 +212,11 @@ export function recordIncidentalChange(opts: {
   classifierReason: string;
   author: Author;
   cwd?: string;
-}): { workflowId: string } {
+}): Result<{ workflowId: string }, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new NoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     log.append(
       workflowId,
@@ -210,7 +231,12 @@ export function recordIncidentalChange(opts: {
         parentEventId: null,
       }),
     );
-    return { workflowId };
+    return ok({ workflowId });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }

@@ -11,6 +11,8 @@ import {
   seedWorkflowDefinitions,
   readBuiltinDefinitions,
 } from "#src/runtime/brain/seed-workflows.js";
+import { unwrap } from "./_brain-helper.js";
+
 function tmpBrain() {
   const dir = mkdtempSync(join(tmpdir(), "codi-seed-wf-"));
   const handle = openBrain({ dbPath: join(dir, "brain.db") });
@@ -37,9 +39,18 @@ function tmpYamls(yamls: Record<string, string>): { dir: string; cleanup: () => 
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
+function expectInvalidDefinition(dir: string, pattern: RegExp): void {
+  const r = readBuiltinDefinitions(dir);
+  expect(r.ok).toBe(false);
+  if (!r.ok) {
+    expect(r.errors[0]?.code).toBe("E_WORKFLOW_DEFINITION_INVALID");
+    expect(r.errors[0]?.message).toMatch(pattern);
+  }
+}
+
 describe("readBuiltinDefinitions", () => {
   it("loads all 7 builtin workflow YAMLs", () => {
-    const defs = readBuiltinDefinitions();
+    const defs = unwrap(readBuiltinDefinitions());
     const ids = defs.map((d) => d.id).sort();
     expect(ids).toEqual([
       "bug-fix",
@@ -53,7 +64,7 @@ describe("readBuiltinDefinitions", () => {
   });
 
   it("each definition has required fields", () => {
-    const defs = readBuiltinDefinitions();
+    const defs = unwrap(readBuiltinDefinitions());
     for (const d of defs) {
       expect(d.id).toBeTruthy();
       expect(d.name).toBeTruthy();
@@ -67,7 +78,7 @@ describe("readBuiltinDefinitions", () => {
   it("rejects malformed YAML with a clear error", () => {
     const t = tmpYamls({ "bad.yaml": "not: a workflow\n" });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/missing or invalid 'id'/);
+      expectInvalidDefinition(t.dir, /missing or invalid 'id'/);
     } finally {
       t.cleanup();
     }
@@ -89,7 +100,8 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).not.toThrow();
+      const r = readBuiltinDefinitions(t.dir);
+      expect(r.ok).toBe(true);
     } finally {
       t.cleanup();
     }
@@ -106,7 +118,8 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).not.toThrow();
+      const r = readBuiltinDefinitions(t.dir);
+      expect(r.ok).toBe(true);
     } finally {
       t.cleanup();
     }
@@ -125,7 +138,8 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).not.toThrow();
+      const r = readBuiltinDefinitions(t.dir);
+      expect(r.ok).toBe(true);
     } finally {
       t.cleanup();
     }
@@ -142,7 +156,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/'role' must be one of/);
+      expectInvalidDefinition(t.dir, /'role' must be one of/);
     } finally {
       t.cleanup();
     }
@@ -159,9 +173,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(
-        /role 'alt-entry' requires a 'hint' string/,
-      );
+      expectInvalidDefinition(t.dir, /role 'alt-entry' requires a 'hint' string/);
     } finally {
       t.cleanup();
     }
@@ -178,9 +190,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(
-        /role 'optional' requires a 'hint' string/,
-      );
+      expectInvalidDefinition(t.dir, /role 'optional' requires a 'hint' string/);
     } finally {
       t.cleanup();
     }
@@ -197,7 +207,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/'skill' must be a non-empty string/);
+      expectInvalidDefinition(t.dir, /'skill' must be a non-empty string/);
     } finally {
       t.cleanup();
     }
@@ -213,7 +223,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/chains must be an array/);
+      expectInvalidDefinition(t.dir, /chains must be an array/);
     } finally {
       t.cleanup();
     }
@@ -230,7 +240,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/'hint' must be a string when present/);
+      expectInvalidDefinition(t.dir, /'hint' must be a string when present/);
     } finally {
       t.cleanup();
     }
@@ -248,7 +258,7 @@ phases:
 `,
     });
     try {
-      expect(() => readBuiltinDefinitions(t.dir)).toThrow(/phase 'plan' chains\[1\]/);
+      expectInvalidDefinition(t.dir, /phase 'plan' chains\[1\]/);
     } finally {
       t.cleanup();
     }
@@ -259,8 +269,8 @@ describe("seedWorkflowDefinitions", () => {
   it("inserts 7 codi-managed rows on a fresh brain", () => {
     const t = tmpBrain();
     try {
-      const r = seedWorkflowDefinitions(t.handle.raw);
-      expect(r.inserted.sort()).toEqual([
+      const r = unwrap(seedWorkflowDefinitions(t.handle.raw));
+      expect(r.inserted.slice().sort()).toEqual([
         "bug-fix",
         "feature",
         "migration",
@@ -285,10 +295,10 @@ describe("seedWorkflowDefinitions", () => {
   it("re-running upserts codi-managed rows (no duplicates, updated)", () => {
     const t = tmpBrain();
     try {
-      seedWorkflowDefinitions(t.handle.raw);
-      const r2 = seedWorkflowDefinitions(t.handle.raw);
+      unwrap(seedWorkflowDefinitions(t.handle.raw));
+      const r2 = unwrap(seedWorkflowDefinitions(t.handle.raw));
       expect(r2.inserted).toEqual([]);
-      expect(r2.updated.sort()).toEqual([
+      expect(r2.updated.slice().sort()).toEqual([
         "bug-fix",
         "feature",
         "migration",
@@ -316,9 +326,9 @@ describe("seedWorkflowDefinitions", () => {
         )
         .run("feature", "Custom Feature", "user override", 99, "{}", now, now);
 
-      const r = seedWorkflowDefinitions(t.handle.raw);
+      const r = unwrap(seedWorkflowDefinitions(t.handle.raw));
       expect(r.skipped).toContain("feature");
-      expect(r.inserted.sort()).toEqual([
+      expect(r.inserted.slice().sort()).toEqual([
         "bug-fix",
         "migration",
         "project",
@@ -340,7 +350,7 @@ describe("seedWorkflowDefinitions", () => {
   it("definition column round-trips JSON shape", () => {
     const t = tmpBrain();
     try {
-      seedWorkflowDefinitions(t.handle.raw);
+      unwrap(seedWorkflowDefinitions(t.handle.raw));
       const row = t.handle.raw
         .prepare(`SELECT definition FROM workflow_definitions WHERE id = 'feature'`)
         .get() as { definition: string };

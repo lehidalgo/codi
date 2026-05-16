@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runWorkflow, abandonWorkflow } from "#src/runtime/cli-handlers.js";
+import { unwrap } from "../_brain-helper.js";
 import { useTmpBrain, withBrain, human } from "./_setup.js";
 
 const h = useTmpBrain();
@@ -80,13 +81,15 @@ describe("feature adaptive intake (Q11)", () => {
 
   it("runWorkflow stores feature_adaptation in init payload", async () => {
     const { resolveFeatureAdaptation } = await import("#src/runtime/workflows/index.js");
-    const r = runWorkflow({
-      workflowType: "feature",
-      task: "add dark mode",
-      author: human,
-      cwd: tmpDir(),
-      featureAdaptation: resolveFeatureAdaptation({ profile: "deep" }),
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "add dark mode",
+        author: human,
+        cwd: tmpDir(),
+        featureAdaptation: resolveFeatureAdaptation({ profile: "deep" }),
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");

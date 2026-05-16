@@ -8,6 +8,12 @@
  *
  * Schema (per F1): one row per workflow type with the JSON definition
  * blob. F1 shape: { id, name, description, version, phases, flags }.
+ *
+ * CORE-017: public API surface (`readBuiltinDefinitions`,
+ * `seedWorkflowDefinitions`) returns `Result<…, ProjectError[]>`. Inner
+ * `validateShape`/`validatePhaseChains`/`validateChainEntry` keep their
+ * `asserts` type-narrowing semantics by throwing; the throws are caught
+ * at the module boundary and mapped to `E_WORKFLOW_DEFINITION_INVALID`.
  */
 
 import type Database from "better-sqlite3";
@@ -15,6 +21,9 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -68,9 +77,11 @@ function workflowsDir(override?: string): string {
   return resolve(HERE, "..", "..", "..", "src", "templates", "workflows");
 }
 
-export function readBuiltinDefinitions(override?: string): readonly WorkflowDefinitionShape[] {
+export function readBuiltinDefinitions(
+  override?: string,
+): Result<readonly WorkflowDefinitionShape[], ProjectError[]> {
   const dir = workflowsDir(override);
-  if (!existsSync(dir)) return [];
+  if (!existsSync(dir)) return ok([]);
   const out: WorkflowDefinitionShape[] = [];
   for (const entry of readdirSync(dir)) {
     if (!entry.endsWith(".yaml")) continue;
@@ -78,12 +89,20 @@ export function readBuiltinDefinitions(override?: string): readonly WorkflowDefi
     if (!statSync(full).isFile()) continue;
     const text = readFileSync(full, "utf8");
     const parsed = parseYaml(text) as WorkflowDefinitionShape;
-    validateShape(parsed, entry);
+    try {
+      validateShape(parsed, entry);
+    } catch (e) {
+      const message = e instanceof Error ? e.message.replace(/^workflow definition [^:]+:\s*/, "") : String(e);
+      return err([createError("E_WORKFLOW_DEFINITION_INVALID", { source: entry, message })]);
+    }
     out.push(parsed);
   }
-  return out;
+  return ok(out);
 }
 
+// Internal throwing assertion: `asserts d is …` requires throw semantics.
+// CORE-017 — these throws are caught at the public API boundary
+// (`readBuiltinDefinitions`) and mapped to `E_WORKFLOW_DEFINITION_INVALID`.
 function validateShape(d: unknown, source: string): asserts d is WorkflowDefinitionShape {
   if (typeof d !== "object" || d === null) {
     throw new Error(`workflow definition ${source}: not an object`);
@@ -157,8 +176,10 @@ function validateChainEntry(
 export function seedWorkflowDefinitions(
   raw: Database.Database,
   opts: { sourceDir?: string } = {},
-): SeedResult {
-  const definitions = readBuiltinDefinitions(opts.sourceDir);
+): Result<SeedResult, ProjectError[]> {
+  const definitionsResult = readBuiltinDefinitions(opts.sourceDir);
+  if (!definitionsResult.ok) return definitionsResult;
+  const definitions = definitionsResult.data;
   const inserted: string[] = [];
   const updated: string[] = [];
   const skipped: string[] = [];
@@ -197,5 +218,5 @@ export function seedWorkflowDefinitions(
   });
   txn();
 
-  return { inserted, updated, skipped };
+  return ok({ inserted, updated, skipped });
 }

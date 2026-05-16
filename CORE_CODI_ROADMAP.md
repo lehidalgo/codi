@@ -40,7 +40,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 14 | CORE-014 | writeAuxiliaryScripts table-driven | R | P2 | **Validado ✅** | — | — | 4h |
 | 15 | CORE-015 | Audit + classify 86+ empty catches | R | P1 | **Validado ✅** | — | telemetry de fallos | 1d |
 | 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | **Validado ✅** | — | CORE-017 | 3-5d |
-| 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | Pendiente | CORE-016 | — | 3-5d |
+| 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | **Validado ✅** | CORE-016 | — | 3-5d |
 | 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | Pendiente | — | new artifact type cost | 1d |
 | 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | Pendiente | — | — | 4h |
 | 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | Pendiente | — | — | 1-2d |
@@ -1150,8 +1150,41 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 
 **Commits:** single-commit final (este turno).
 
-## CORE-017 — Runtime layer throws → Result
-- Nivel: E, P2, ~3-5 días, depende CORE-016. 171 throws en runtime/ vs Result discipline en core/.
+## CORE-017 — Runtime layer throws → Result **[RESUELTO]**
+- Nivel: E, P2, ~3-5 días, depende CORE-016. 96 throws en runtime/ vs Result discipline en core/.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~3h (vs roadmap 3-5d — el groundwork CORE-001..016 + Result helpers en core/ habían preparado el terreno).
+- **Scope migrado (~61 throws, 9 archivos):**
+  - `cli-handlers/lifecycle.ts` (4): `abandonWorkflow`, `recoverWorkflow`, `convertWorkflow` → `Result<T, ProjectError[]>`.
+  - `cli-handlers/scope.ts` (10): `propose/approve/reject ScopeExpansion`, `recordIncidentalChange`.
+  - `cli-handlers/elevation.ts` (9): `propose/approve/reject Elevation`, `resolveChild`.
+  - `cli-handlers/handover.ts` (6): `handover`, `forceHandover`.
+  - `cli-handlers/transitions.ts` (13): `propose/approve/reject Transition`, `advanceWorkflow` (con chain interno).
+  - `cli-handlers/workflow.ts` (~5): `runWorkflow`, `runQuick`, `getPhaseRef`. Eliminó `KnowledgeBaseMissingError` class (sustituida por `E_KNOWLEDGE_BASE_MISSING` con mensaje agent-instructions preservado en `ProjectError.hint`).
+  - `brain/seed-workflows.ts` (11 públicos): `readBuiltinDefinitions`, `seedWorkflowDefinitions` → Result. Validators internos (`validateShape`/`validatePhaseChains`/`validateChainEntry`) mantienen throws (`asserts` narrowing); throws capturados en boundary y mapeados a `E_WORKFLOW_DEFINITION_INVALID`.
+  - `replay.ts` (2): `replay()` → Result.
+  - `brain-ui/cli-server.ts` (1): `parseArgs` → Result; entrypoint script captura err y `process.exit(1)`.
+- **Scope KEEP (~35 throws, documentado en file headers):**
+  - `reducer.ts` (13): event-sourcing panic semantics (CORE-001 contract — corrupt log MUST halt replay).
+  - `workflow-graph.ts` (3): `UnknownWorkflowTypeError`/`IllegalPhaseTransitionError` usados con `instanceof` en `transitions.ts:69` para graceful-degrade.
+  - `event-factory.ts` (3): writer-bug guards (`asserts`).
+  - `brain-event-log.ts` (3 invariantes restantes): SQL ordering preconditions; `BrainNoActiveWorkflowError` typed class mapeada en handlers vía `instanceof`.
+  - `brain/db.ts` (2): `BrainBindingsError` (fatal infra).
+  - `capture/session.ts` (2): control-flow signals del retry loop (CORE-011 `INSERT OR IGNORE` semantics — migración naive causaría infinite retry).
+  - `workflow-id.ts` (1), `render-chains.ts` (1), `subagent-runner.ts` (2): boundary invariants.
+- **Nuevos artefactos:**
+  - `src/runtime/cli-handlers/result-errors.ts` (new): `fromCaughtError(e)` mapea typed runtime errors a `ProjectError`.
+  - `tests/runtime/_brain-helper.ts`: `unwrap<T>(r)` test helper para happy-path concise.
+  - 22 nuevos `ProjectError` codes en `src/core/output/error-catalog.ts`: `E_NO_ACTIVE_WORKFLOW`, `E_WORKFLOW_NOT_ACTIVE`, `E_WORKFLOW_ALREADY_IN_PHASE`, `E_PROPOSAL_NOT_PENDING`, `E_REASON_REQUIRED`, `E_SCOPE_FILE_REQUIRED`, `E_SCOPE_FILE_ALREADY_IN`, `E_WORKFLOW_CANNOT_ABANDON`, `E_WORKFLOW_CANNOT_ELEVATE`, `E_WORKFLOW_CANNOT_HANDOVER`, `E_HANDOVER_TO_REQUIRED`, `E_FORCE_HANDOVER_ARGS_REQUIRED`, `E_FROM_STORY_INVALID`, `E_KNOWLEDGE_BASE_MISSING`, `E_QUICK_CATEGORY_INVALID`, `E_PHASE_REF_MAPPING_MISSING`, `E_PHASE_REF_NOT_FOUND`, `E_PHASE_ADVANCE_DERIVATION_FAILED`, `E_EVENT_REPLAY_EMPTY`, `E_EVENT_NOT_FOUND`, `E_BRAIN_UI_PORT_INVALID`, `E_WORKFLOW_DEFINITION_INVALID`.
+  - `scripts/guard-no-runtime-throws.mjs` (new, 9º guard): banea `throw new …` en `src/runtime/cli-handlers/**` y `src/runtime/replay.ts`; allowlist por archivo + permite re-throws en catch blocks + asserts-functions.
+  - `src/cli/workflow.ts:tryRun` adaptado: acepta fns que retornan `T | Result<T, ProjectError[]>` (polymórfico). Si Result, propaga `errors[]` al `CommandResult.errors[]`; si throw, fallback al path legacy.
+- **Tests migrados:** ~16 archivos de tests, ~73 callsites `.toThrow(...)` → patrón `expect(r.ok).toBe(false); if (!r.ok) expect(r.errors[0]?.code).toBe("E_…")`. Helpers consumidos vía `unwrap(handler({...}))` para happy-paths.
+- **Resultados:**
+  - `npm run lint` ✅ (9 guards verdes, tsc + eslint).
+  - `npm test` ✅ 3867 passing, 6 skipped, 0 regresiones.
+- **Riesgos restantes:**
+  - Snapshot trigger en `brain-event-log.append` sigue intacto (KEEP scope) — invariante preservado.
+  - El runtime conserva 35 throws documentados; futuras issues (CORE-021 conflict-resolver split) podrían reevaluar algunos.
 
 ## CORE-018 — ARTIFACT_LAYOUT consolidación
 - Nivel: E, P1, ~1 día. Consolidar `CapabilityType`, `LedgerEntryType`, `CapturedArtifactType` con `ArtifactType`.

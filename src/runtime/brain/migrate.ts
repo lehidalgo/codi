@@ -591,6 +591,8 @@ export function applyMigrations(raw: Database.Database): { applied: number[] } {
   // YAML lookup may fail in a test harness without `src/templates/` on
   // disk — swallow and continue.
   try {
+    // CORE-017: seedWorkflowDefinitions returns Result; YAML validation errors
+    // surface as err() — swallow per the best-effort contract documented above.
     seedWorkflowDefinitions(raw);
   } catch {
     /* best-effort seed — never block migration */

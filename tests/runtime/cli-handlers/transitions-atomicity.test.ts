@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { runWorkflow, proposeTransition, approveTransition } from "#src/runtime/cli-handlers.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import type { Author, ManifestEvent } from "#src/runtime/types.js";
+import { unwrap } from "../_brain-helper.js";
 
 const HUMAN: Author = { type: "human", id: "tester" };
 
@@ -32,13 +33,15 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
     bootstrap(tmpDir);
     prevBrainDb = process.env["CODI_BRAIN_DB"];
     process.env["CODI_BRAIN_DB"] = join(tmpDir, "brain.db");
-    runWorkflow({
-      workflowType: "feature",
-      task: "atomicity regression",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
-    proposeTransition({ toPhase: "plan", author: HUMAN, cwd: tmpDir });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "atomicity regression",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
+    unwrap(proposeTransition({ toPhase: "plan", author: HUMAN, cwd: tmpDir }));
   });
 
   afterEach(() => {
@@ -73,7 +76,7 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
   }
 
   it("writes the full event chain on success (phase_completed + approved + phase_started)", () => {
-    approveTransition({ author: HUMAN, cwd: tmpDir });
+    unwrap(approveTransition({ author: HUMAN, cwd: tmpDir }));
     const events = loadEvents();
     const types = events.map((e) => e.event_type);
     expect(types).toContain("phase_completed");
@@ -112,9 +115,9 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
       return original.call(this, workflowId, ev);
     });
 
-    expect(() => approveTransition({ author: HUMAN, cwd: tmpDir })).toThrow(
-      /simulated mid-txn crash/,
-    );
+    const r = approveTransition({ author: HUMAN, cwd: tmpDir });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.message).toMatch(/simulated mid-txn crash/);
     spy.mockRestore();
 
     const eventsAfter = loadEvents();
@@ -149,9 +152,11 @@ describe("ISSUE-003 — approveTransition atomicity", () => {
       return original.call(this, workflowId, ev);
     });
 
-    expect(() => approveTransition({ author: HUMAN, cwd: tmpDir })).toThrow(/transient crash/);
+    const r = approveTransition({ author: HUMAN, cwd: tmpDir });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.message).toMatch(/transient crash/);
     // Retry — proposal still pending; second call must succeed cleanly.
-    approveTransition({ author: HUMAN, cwd: tmpDir });
+    unwrap(approveTransition({ author: HUMAN, cwd: tmpDir }));
 
     const events = loadEvents();
     const completed = events.filter(

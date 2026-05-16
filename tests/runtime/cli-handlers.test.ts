@@ -10,11 +10,11 @@ import {
   rejectTransition,
   abandonWorkflow,
   recoverWorkflow,
-  KnowledgeBaseMissingError,
 } from "#src/runtime/cli-handlers.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { createEvent } from "#src/runtime/event-factory.js";
 import type { Author } from "#src/runtime/types.js";
+import { unwrap } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 
@@ -58,14 +58,14 @@ describe("codi CLI handlers", () => {
     it("blocks runWorkflow when docs/CONTEXT.md is missing", () => {
       const noKbDir = mkdtempSync(join(tmpdir(), "codi-no-kb-"));
       try {
-        expect(() =>
-          runWorkflow({
-            workflowType: "feature",
-            task: "Test task",
-            author: human,
-            cwd: noKbDir,
-          }),
-        ).toThrow(KnowledgeBaseMissingError);
+        const r = runWorkflow({
+          workflowType: "feature",
+          task: "Test task",
+          author: human,
+          cwd: noKbDir,
+        });
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.errors[0]?.code).toBe("E_KNOWLEDGE_BASE_MISSING");
       } finally {
         rmSync(noKbDir, { recursive: true, force: true });
       }
@@ -74,18 +74,14 @@ describe("codi CLI handlers", () => {
     it("error message instructs invoking init-knowledge-base", () => {
       const noKbDir = mkdtempSync(join(tmpdir(), "codi-no-kb-"));
       try {
-        try {
-          runWorkflow({
-            workflowType: "feature",
-            task: "Test",
-            author: human,
-            cwd: noKbDir,
-          });
-        } catch (err) {
-          expect((err as Error).message).toContain("init-knowledge-base");
-          return;
-        }
-        throw new Error("expected throw");
+        const r = runWorkflow({
+          workflowType: "feature",
+          task: "Test",
+          author: human,
+          cwd: noKbDir,
+        });
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.errors[0]?.message).toContain("init-knowledge-base");
       } finally {
         rmSync(noKbDir, { recursive: true, force: true });
       }
@@ -93,25 +89,26 @@ describe("codi CLI handlers", () => {
 
     it("proceeds when docs/CONTEXT.md exists", () => {
       // tmpDir has CONTEXT.md from beforeEach
-      expect(() =>
-        runWorkflow({
-          workflowType: "feature",
-          task: "Test",
-          author: human,
-          cwd: tmpDir,
-        }),
-      ).not.toThrow();
+      const r = runWorkflow({
+        workflowType: "feature",
+        task: "Test",
+        author: human,
+        cwd: tmpDir,
+      });
+      expect(r.ok).toBe(true);
     });
   });
 
   describe("runWorkflow", () => {
     it("creates a workflow with init + phase_started", () => {
-      const result = runWorkflow({
-        workflowType: "feature",
-        task: "Add dark mode",
-        author: human,
-        cwd: tmpDir,
-      });
+      const result = unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Add dark mode",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       expect(result.workflowId).toMatch(/^feat-add-dark-mode-\d{8}$/);
 
       const status = getStatus({ cwd: tmpDir });
@@ -122,20 +119,24 @@ describe("codi CLI handlers", () => {
     });
 
     it("disambiguates duplicate IDs on the same day", () => {
-      const r1 = runWorkflow({
-        workflowType: "feature",
-        task: "Same task",
-        author: human,
-        cwd: tmpDir,
-      });
+      const r1 = unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Same task",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       // Abandon to free the active slot
-      abandonWorkflow({ reason: "test", author: human, cwd: tmpDir });
-      const r2 = runWorkflow({
-        workflowType: "feature",
-        task: "Same task",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(abandonWorkflow({ reason: "test", author: human, cwd: tmpDir }));
+      const r2 = unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Same task",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       expect(r1.workflowId).not.toBe(r2.workflowId);
       expect(r2.workflowId).toMatch(/-2$/);
     });
@@ -149,12 +150,14 @@ describe("codi CLI handlers", () => {
     });
 
     it("returns reduced state when active", () => {
-      runWorkflow({
-        workflowType: "bug-fix",
-        task: "Fix login",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "bug-fix",
+          task: "Fix login",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       const status = getStatus({ cwd: tmpDir });
       expect(status.state?.workflow_type).toBe("bug-fix");
     });
@@ -163,13 +166,15 @@ describe("codi CLI handlers", () => {
   describe("advanceWorkflow (O1 — single-command transition)", () => {
     it("derives next phase from adapter when no toPhase given", async () => {
       const { advanceWorkflow } = await import("#src/runtime/cli-handlers.js");
-      runWorkflow({
-        workflowType: "feature",
-        task: "test advance",
-        author: human,
-        cwd: tmpDir,
-      });
-      const r = advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: true });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "test advance",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
+      const r = unwrap(advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: true }));
       expect(r.fromPhase).toBe("intent");
       expect(r.toPhase).toBe("plan");
       expect(r.derivedFromAdaptation).toBe(false);
@@ -179,14 +184,16 @@ describe("codi CLI handlers", () => {
     it("respects adaptation skip rules when computing next phase", async () => {
       const { advanceWorkflow } = await import("#src/runtime/cli-handlers.js");
       const { resolveBugFixAdaptation } = await import("#src/runtime/workflows/index.js");
-      runWorkflow({
-        workflowType: "bug-fix",
-        task: "skip reproduce",
-        author: human,
-        cwd: tmpDir,
-        bugFixAdaptation: resolveBugFixAdaptation({ profile: "quick" }),
-      });
-      const r = advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: true });
+      unwrap(
+        runWorkflow({
+          workflowType: "bug-fix",
+          task: "skip reproduce",
+          author: human,
+          cwd: tmpDir,
+          bugFixAdaptation: resolveBugFixAdaptation({ profile: "quick" }),
+        }),
+      );
+      const r = unwrap(advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: true }));
       expect(r.derivedFromAdaptation).toBe(true);
       expect(r.skippedPhases).toContain("reproduce");
       expect(r.toPhase).toBe("execute");
@@ -194,13 +201,15 @@ describe("codi CLI handlers", () => {
 
     it("propose-only when autoApprove is false", async () => {
       const { advanceWorkflow } = await import("#src/runtime/cli-handlers.js");
-      runWorkflow({
-        workflowType: "feature",
-        task: "propose only",
-        author: human,
-        cwd: tmpDir,
-      });
-      const r = advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: false });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "propose only",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
+      const r = unwrap(advanceWorkflow({ author: human, cwd: tmpDir, autoApprove: false }));
       expect(r.proposedEventId).toBeTruthy();
       expect(r.approvedEventId).toBeNull();
     });
@@ -210,13 +219,15 @@ describe("codi CLI handlers", () => {
     it("returns adaptation + skipped_phases + next_phase + progress", async () => {
       const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
       const { resolveFeatureAdaptation } = await import("#src/runtime/workflows/index.js");
-      runWorkflow({
-        workflowType: "feature",
-        task: "enriched status",
-        author: human,
-        cwd: tmpDir,
-        featureAdaptation: resolveFeatureAdaptation({ profile: "prototype" }),
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "enriched status",
+          author: human,
+          cwd: tmpDir,
+          featureAdaptation: resolveFeatureAdaptation({ profile: "prototype" }),
+        }),
+      );
       const slim = getSlimStatus({ cwd: tmpDir });
       expect(slim.active).toBe(true);
       expect(slim.adaptation?.profile).toBe("prototype");
@@ -228,12 +239,14 @@ describe("codi CLI handlers", () => {
 
     it("returns null adaptation for runs without intake metadata", async () => {
       const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
-      runWorkflow({
-        workflowType: "feature",
-        task: "no adaptation",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "no adaptation",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       const slim = getSlimStatus({ cwd: tmpDir });
       expect(slim.adaptation).toBeNull();
       expect(slim.skipped_phases).toEqual([]);
@@ -244,19 +257,23 @@ describe("codi CLI handlers", () => {
   describe("convertWorkflow (O5 — cross-workflow conversion)", () => {
     it("abandons current + starts new with carryover", async () => {
       const { convertWorkflow } = await import("#src/runtime/cli-handlers.js");
-      const prior = runWorkflow({
-        workflowType: "feature",
-        task: "looks like a feature",
-        author: human,
-        cwd: tmpDir,
-      });
-      const r = convertWorkflow({
-        toType: "bug-fix",
-        task: "actually a bug",
-        author: human,
-        cwd: tmpDir,
-        forward: {},
-      });
+      const prior = unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "looks like a feature",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
+      const r = unwrap(
+        convertWorkflow({
+          toType: "bug-fix",
+          task: "actually a bug",
+          author: human,
+          cwd: tmpDir,
+          forward: {},
+        }),
+      );
       expect(r.abandonedWorkflowId).toBe(prior.workflowId);
       expect(r.newWorkflowId).toMatch(/^fix-/);
       expect(r.carryoverFrom).toBe(prior.workflowId);
@@ -273,16 +290,18 @@ describe("codi CLI handlers", () => {
     it("returns phase-ref markdown with adaptation header for active workflow", async () => {
       const { getPhaseRef } = await import("#src/runtime/cli-handlers.js");
       const { resolveBugFixAdaptation } = await import("#src/runtime/workflows/index.js");
-      runWorkflow({
-        workflowType: "bug-fix",
-        task: "phase-ref test",
-        author: human,
-        cwd: tmpDir,
-        bugFixAdaptation: resolveBugFixAdaptation({ profile: "deep" }),
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "bug-fix",
+          task: "phase-ref test",
+          author: human,
+          cwd: tmpDir,
+          bugFixAdaptation: resolveBugFixAdaptation({ profile: "deep" }),
+        }),
+      );
       // Tests run from the codi repo root, so the fallback to
       // src/templates/skills/<workflow>/references/ resolves cleanly.
-      const r = getPhaseRef({ cwd: process.cwd(), workflowCwd: tmpDir });
+      const r = unwrap(getPhaseRef({ cwd: process.cwd(), workflowCwd: tmpDir }));
       expect(r.workflowType).toBe("bug-fix");
       expect(r.phase).toBe("intent");
       expect(r.markdown).toContain("BEGIN active-adaptation");
@@ -290,33 +309,37 @@ describe("codi CLI handlers", () => {
       expect(r.markdown).toContain("BEGIN auto-generated chain");
     });
 
-    it("throws when no active workflow", async () => {
+    it("errors when no active workflow", async () => {
       const { getPhaseRef } = await import("#src/runtime/cli-handlers.js");
-      expect(() => getPhaseRef({ cwd: tmpDir })).toThrow(/No active workflow/);
+      const r = getPhaseRef({ cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_NO_ACTIVE_WORKFLOW");
     });
   });
 
   describe("runQuick (Q7 — trivial-edit audit trail)", () => {
     it("rejects an unknown category with a clear error", async () => {
       const { runQuick } = await import("#src/runtime/cli-handlers.js");
-      expect(() =>
-        runQuick({
-          task: "fix typo",
-          category: "INVALID" as never,
-          author: human,
-          cwd: tmpDir,
-        }),
-      ).toThrow(/unknown quick category/);
+      const r = runQuick({
+        task: "fix typo",
+        category: "INVALID" as never,
+        author: human,
+        cwd: tmpDir,
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_QUICK_CATEGORY_INVALID");
     });
 
     it("creates a workflow_run with type='quick' and category in init payload", async () => {
       const { runQuick } = await import("#src/runtime/cli-handlers.js");
-      const r = runQuick({
-        task: "fix typo in README",
-        category: "typo",
-        author: human,
-        cwd: tmpDir,
-      });
+      const r = unwrap(
+        runQuick({
+          task: "fix typo in README",
+          category: "typo",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       expect(r.workflowId).toMatch(/^quick-/);
       withBrain(tmpDir, (log) => {
         const events = log.loadEvents(r.workflowId);
@@ -329,12 +352,14 @@ describe("codi CLI handlers", () => {
 
     it("auto-completes by emitting workflow_completed", async () => {
       const { runQuick } = await import("#src/runtime/cli-handlers.js");
-      const r = runQuick({
-        task: "bump dep",
-        category: "dep-bump",
-        author: human,
-        cwd: tmpDir,
-      });
+      const r = unwrap(
+        runQuick({
+          task: "bump dep",
+          category: "dep-bump",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       withBrain(tmpDir, (log) => {
         const events = log.loadEvents(r.workflowId);
         const completed = events.find((e) => e.event_type === "workflow_completed");
@@ -345,20 +370,24 @@ describe("codi CLI handlers", () => {
 
     it("clears the active-workflow pointer so the next quick run is unblocked", async () => {
       const { runQuick, getSlimStatus } = await import("#src/runtime/cli-handlers.js");
-      runQuick({
-        task: "first",
-        category: "format",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runQuick({
+          task: "first",
+          category: "format",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       const slim = getSlimStatus({ cwd: tmpDir });
       expect(slim.active).toBe(false);
-      const r2 = runQuick({
-        task: "second",
-        category: "comment",
-        author: human,
-        cwd: tmpDir,
-      });
+      const r2 = unwrap(
+        runQuick({
+          task: "second",
+          category: "comment",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       expect(r2.workflowId).toMatch(/^quick-/);
     });
 
@@ -366,12 +395,14 @@ describe("codi CLI handlers", () => {
       const { runQuick } = await import("#src/runtime/cli-handlers.js");
       const { QUICK_CATEGORIES } = await import("#src/runtime/types.js");
       for (const cat of QUICK_CATEGORIES) {
-        const r = runQuick({
-          task: `task for ${cat}`,
-          category: cat,
-          author: human,
-          cwd: tmpDir,
-        });
+        const r = unwrap(
+          runQuick({
+            task: `task for ${cat}`,
+            category: cat,
+            author: human,
+            cwd: tmpDir,
+          }),
+        );
         expect(r.workflowId).toMatch(/^quick-/);
       }
     });
@@ -397,12 +428,14 @@ describe("codi CLI handlers", () => {
 
     it("returns slim shape with id/type/phase/task when active", async () => {
       const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
-      runWorkflow({
-        workflowType: "bug-fix",
-        task: "Fix login",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "bug-fix",
+          task: "Fix login",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       const slim = getSlimStatus({ cwd: tmpDir });
       expect(slim.active).toBe(true);
       expect(slim.workflow_type).toBe("bug-fix");
@@ -414,12 +447,14 @@ describe("codi CLI handlers", () => {
 
     it("slim payload is strictly smaller than full reduced state", async () => {
       const { getSlimStatus } = await import("#src/runtime/cli-handlers.js");
-      runWorkflow({
-        workflowType: "feature",
-        task: "Add dark mode",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Add dark mode",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       const full = getStatus({ cwd: tmpDir });
       const slim = getSlimStatus({ cwd: tmpDir });
       const fullKeyCount = Object.keys(full.state ?? {}).length;
@@ -433,20 +468,22 @@ describe("codi CLI handlers", () => {
 
   describe("transition lifecycle", () => {
     beforeEach(() => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Test feature",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Test feature",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
     });
 
     it("propose then approve advances phase", () => {
-      const proposed = proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir });
+      const proposed = unwrap(proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir }));
       expect(proposed.fromPhase).toBe("intent");
       expect(proposed.toPhase).toBe("plan");
 
-      const approved = approveTransition({ author: human, cwd: tmpDir });
+      const approved = unwrap(approveTransition({ author: human, cwd: tmpDir }));
       expect(approved.fromPhase).toBe("intent");
       expect(approved.toPhase).toBe("plan");
 
@@ -455,12 +492,14 @@ describe("codi CLI handlers", () => {
     });
 
     it("propose then reject keeps current phase", () => {
-      proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir });
-      const rejected = rejectTransition({
-        reason: "Plan incomplete",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir }));
+      const rejected = unwrap(
+        rejectTransition({
+          reason: "Plan incomplete",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       expect(rejected.fromPhase).toBe("intent");
       expect(rejected.rejectedToPhase).toBe("plan");
 
@@ -469,37 +508,37 @@ describe("codi CLI handlers", () => {
     });
 
     it("rejects approve when no proposal pending", () => {
-      expect(() => approveTransition({ author: human, cwd: tmpDir })).toThrow(
-        "No pending transition proposal",
-      );
+      const r = approveTransition({ author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_PROPOSAL_NOT_PENDING");
     });
 
     it("rejects approve when last proposal already resolved", () => {
-      proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir });
-      approveTransition({ author: human, cwd: tmpDir });
-      expect(() => approveTransition({ author: human, cwd: tmpDir })).toThrow(
-        "No pending transition proposal",
-      );
+      unwrap(proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir }));
+      unwrap(approveTransition({ author: human, cwd: tmpDir }));
+      const r = approveTransition({ author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_PROPOSAL_NOT_PENDING");
     });
 
     it("rejects reject without reason", () => {
-      proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir });
-      expect(() => rejectTransition({ reason: "", author: human, cwd: tmpDir })).toThrow(
-        "Reject requires",
-      );
+      unwrap(proposeTransition({ toPhase: "plan", author: human, cwd: tmpDir }));
+      const r = rejectTransition({ reason: "", author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_REASON_REQUIRED");
     });
 
     it("rejects propose to current phase", () => {
-      expect(() => proposeTransition({ toPhase: "intent", author: human, cwd: tmpDir })).toThrow(
-        "Already in phase",
-      );
+      const r = proposeTransition({ toPhase: "intent", author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_WORKFLOW_ALREADY_IN_PHASE");
     });
 
     it("walks through full lifecycle: intent → plan → execute → verify → done", () => {
       const path = ["plan", "execute", "verify", "done"] as const;
       for (const phase of path) {
-        proposeTransition({ toPhase: phase, author: human, cwd: tmpDir });
-        approveTransition({ author: human, cwd: tmpDir });
+        unwrap(proposeTransition({ toPhase: phase, author: human, cwd: tmpDir }));
+        unwrap(approveTransition({ author: human, cwd: tmpDir }));
       }
       const status = getStatus({ cwd: tmpDir });
       expect(status.state?.current_phase).toBe("done");
@@ -509,17 +548,21 @@ describe("codi CLI handlers", () => {
 
   describe("abandon", () => {
     it("marks workflow as abandoned and clears active ID", () => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Test",
-        author: human,
-        cwd: tmpDir,
-      });
-      const result = abandonWorkflow({
-        reason: "Out of scope",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Test",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
+      const result = unwrap(
+        abandonWorkflow({
+          reason: "Out of scope",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       expect(result.abandonedInPhase).toBe("intent");
 
       withBrain(tmpDir, (log) => {
@@ -528,28 +571,34 @@ describe("codi CLI handlers", () => {
     });
 
     it("rejects empty reason", () => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Test",
-        author: human,
-        cwd: tmpDir,
-      });
-      expect(() => abandonWorkflow({ reason: "", author: human, cwd: tmpDir })).toThrow(
-        "Abandon requires",
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Test",
+          author: human,
+          cwd: tmpDir,
+        }),
       );
+      const r = abandonWorkflow({ reason: "", author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_REASON_REQUIRED");
     });
 
     it("rejects when no active workflow", () => {
-      expect(() => abandonWorkflow({ reason: "test", author: human, cwd: tmpDir })).toThrow();
+      const r = abandonWorkflow({ reason: "test", author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_NO_ACTIVE_WORKFLOW");
     });
 
     it("rejects abandoning a completed workflow", () => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Test",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Test",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       withBrain(tmpDir, (log) => {
         const wId = log.getActiveWorkflowId();
         if (!wId) throw new Error("expected active workflow");
@@ -563,30 +612,35 @@ describe("codi CLI handlers", () => {
           }),
         );
       });
-      expect(() => abandonWorkflow({ reason: "x", author: human, cwd: tmpDir })).toThrow();
+      const r = abandonWorkflow({ reason: "x", author: human, cwd: tmpDir });
+      expect(r.ok).toBe(false);
     });
   });
 
   describe("recover", () => {
     it("returns no-op when active is already valid", () => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Test",
-        author: human,
-        cwd: tmpDir,
-      });
-      const result = recoverWorkflow({ cwd: tmpDir });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Test",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
+      const result = unwrap(recoverWorkflow({ cwd: tmpDir }));
       expect(result.recovered).toBe(false);
       expect(result.workflowId).toBeTruthy();
     });
 
     it("recovers when active ID file is missing but archive has non-terminal workflow", () => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Test recover",
-        author: human,
-        cwd: tmpDir,
-      });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Test recover",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
       const wId = withBrain(tmpDir, (log) => {
         const id = log.getActiveWorkflowId();
         log.clearActiveWorkflowId();
@@ -594,7 +648,7 @@ describe("codi CLI handlers", () => {
         return id;
       });
 
-      const result = recoverWorkflow({ cwd: tmpDir });
+      const result = unwrap(recoverWorkflow({ cwd: tmpDir }));
       expect(result.recovered).toBe(true);
       expect(result.workflowId).toBe(wId);
       withBrain(tmpDir, (log) => {
@@ -603,20 +657,22 @@ describe("codi CLI handlers", () => {
     });
 
     it("does not recover terminal workflows", () => {
-      runWorkflow({
-        workflowType: "feature",
-        task: "Done",
-        author: human,
-        cwd: tmpDir,
-      });
-      abandonWorkflow({ reason: "test", author: human, cwd: tmpDir });
+      unwrap(
+        runWorkflow({
+          workflowType: "feature",
+          task: "Done",
+          author: human,
+          cwd: tmpDir,
+        }),
+      );
+      unwrap(abandonWorkflow({ reason: "test", author: human, cwd: tmpDir }));
 
-      const result = recoverWorkflow({ cwd: tmpDir });
+      const result = unwrap(recoverWorkflow({ cwd: tmpDir }));
       expect(result.recovered).toBe(false);
     });
 
     it("returns no-op when no archives exist", () => {
-      const result = recoverWorkflow({ cwd: tmpDir });
+      const result = unwrap(recoverWorkflow({ cwd: tmpDir }));
       expect(result.recovered).toBe(false);
       expect(result.workflowId).toBeNull();
     });
@@ -641,15 +697,17 @@ describe("phase done auto-completion", () => {
   });
 
   it("emits workflow_completed when transitioning to done", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Test done",
-      author: human,
-      cwd: tmpDir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Test done",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
     for (const phase of ["plan", "execute", "verify", "done"] as const) {
-      proposeTransition({ toPhase: phase, author: human, cwd: tmpDir });
-      approveTransition({ author: human, cwd: tmpDir });
+      unwrap(proposeTransition({ toPhase: phase, author: human, cwd: tmpDir }));
+      unwrap(approveTransition({ author: human, cwd: tmpDir }));
     }
     const status = getStatus({ cwd: tmpDir });
     expect(status.state?.current_phase).toBe("done");
@@ -657,15 +715,17 @@ describe("phase done auto-completion", () => {
   });
 
   it("phase_history records done as completed (not in-progress)", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Test done history",
-      author: human,
-      cwd: tmpDir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Test done history",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
     for (const phase of ["plan", "execute", "verify", "done"] as const) {
-      proposeTransition({ toPhase: phase, author: human, cwd: tmpDir });
-      approveTransition({ author: human, cwd: tmpDir });
+      unwrap(proposeTransition({ toPhase: phase, author: human, cwd: tmpDir }));
+      unwrap(approveTransition({ author: human, cwd: tmpDir }));
     }
     const status = getStatus({ cwd: tmpDir });
     const doneRecord = status.state?.phase_history.find((p) => p.phase === "done");
@@ -673,12 +733,14 @@ describe("phase done auto-completion", () => {
   });
 
   it("phase_history does not duplicate the initial intent entry", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "no-dup",
-      author: human,
-      cwd: tmpDir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "no-dup",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
     const status = getStatus({ cwd: tmpDir });
     const intentEntries = status.state?.phase_history.filter((p) => p.phase === "intent");
     expect(intentEntries?.length).toBe(1);
@@ -704,27 +766,31 @@ describe("runWorkflow — terminal-status pointer migration (BUG-OPEN-3)", () =>
 
   it("auto-migrates a completed prior workflow when starting a new one", () => {
     // First workflow → drive to phase done.
-    const first = runWorkflow({
-      workflowType: "feature",
-      task: "first feature",
-      author: human,
-      cwd: tmpDir,
-    });
+    const first = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "first feature",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
     for (const phase of ["plan", "execute", "verify", "done"] as const) {
-      proposeTransition({ toPhase: phase, author: human, cwd: tmpDir });
-      approveTransition({ author: human, cwd: tmpDir });
+      unwrap(proposeTransition({ toPhase: phase, author: human, cwd: tmpDir }));
+      unwrap(approveTransition({ author: human, cwd: tmpDir }));
     }
     const firstStatus = getStatus({ cwd: tmpDir });
     expect(firstStatus.state?.status).toBe("completed");
 
     // Starting a NEW workflow used to throw WorkflowAlreadyActiveError.
     // After the fix, runWorkflow auto-migrates the stale terminal pointer.
-    const second = runWorkflow({
-      workflowType: "bug-fix",
-      task: "second bug fix",
-      author: human,
-      cwd: tmpDir,
-    });
+    const second = unwrap(
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "second bug fix",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
     expect(second.workflowId).not.toBe(first.workflowId);
 
     const secondStatus = getStatus({ cwd: tmpDir });
@@ -736,43 +802,52 @@ describe("runWorkflow — terminal-status pointer migration (BUG-OPEN-3)", () =>
     // Drive a workflow to abandoned, then re-set the pointer (abandonWorkflow
     // clears it; we simulate a stale pointer that survives a manual mistake
     // or a future code path that skips the clear).
-    const abandoned = runWorkflow({
-      workflowType: "feature",
-      task: "doomed",
-      author: human,
-      cwd: tmpDir,
-    });
-    abandonWorkflow({ reason: "test abandon", author: human, cwd: tmpDir });
+    const abandoned = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "doomed",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
+    unwrap(abandonWorkflow({ reason: "test abandon", author: human, cwd: tmpDir }));
 
     withBrain(tmpDir, (log) => {
       log.setActiveWorkflowId(abandoned.workflowId); // stale pointer
     });
 
-    const next = runWorkflow({
-      workflowType: "refactor",
-      task: "next refactor",
-      author: human,
-      cwd: tmpDir,
-    });
+    const next = unwrap(
+      runWorkflow({
+        workflowType: "refactor",
+        task: "next refactor",
+        author: human,
+        cwd: tmpDir,
+      }),
+    );
     expect(next.workflowId).not.toBe(abandoned.workflowId);
     expect(getStatus({ cwd: tmpDir }).state?.current_phase).toBe("intent");
   });
 
   it("still blocks when prior workflow is active (non-terminal)", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "in-flight",
-      author: human,
-      cwd: tmpDir,
-    });
-    // Don't transition — leave it active in phase intent.
-    expect(() =>
+    unwrap(
       runWorkflow({
-        workflowType: "bug-fix",
-        task: "should not start",
+        workflowType: "feature",
+        task: "in-flight",
         author: human,
         cwd: tmpDir,
       }),
-    ).toThrow(/already active/);
+    );
+    // Don't transition — leave it active in phase intent.
+    // The blocker still throws (BrainWorkflowAlreadyActiveError from the
+    // brain-event-log layer, KEEP-scope of CORE-017), so runWorkflow
+    // catches and surfaces it as E_GENERAL with the original message.
+    const r = runWorkflow({
+      workflowType: "bug-fix",
+      task: "should not start",
+      author: human,
+      cwd: tmpDir,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.message).toMatch(/already active/);
   });
 });

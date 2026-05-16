@@ -23,6 +23,7 @@ import {
 } from "#src/runtime/cli-handlers.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import type { Author } from "#src/runtime/types.js";
+import { unwrap } from "../_brain-helper.js";
 
 const HUMAN: Author = { type: "human", id: "tester" };
 
@@ -43,26 +44,32 @@ describe("ISSUE-048 — concurrent scope expansion approvals", () => {
     dbPath = join(tmpDir, "brain.db");
     prevBrainDb = process.env["CODI_BRAIN_DB"];
     process.env["CODI_BRAIN_DB"] = dbPath;
-    const r = runWorkflow({
-      workflowType: "feature",
-      task: "scope race",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "scope race",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
     workflowId = r.workflowId;
     // Propose two distinct file expansions, then approve in parallel.
-    proposeScopeExpansion({
-      filePath: "src/a.ts",
-      reason: "first file",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
-    proposeScopeExpansion({
-      filePath: "src/b.ts",
-      reason: "second file",
-      author: HUMAN,
-      cwd: tmpDir,
-    });
+    unwrap(
+      proposeScopeExpansion({
+        filePath: "src/a.ts",
+        reason: "first file",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
+    unwrap(
+      proposeScopeExpansion({
+        filePath: "src/b.ts",
+        reason: "second file",
+        author: HUMAN,
+        cwd: tmpDir,
+      }),
+    );
   });
 
   afterEach(() => {

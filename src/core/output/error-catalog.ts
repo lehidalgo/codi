@@ -200,6 +200,119 @@ export const ERROR_CATALOG = {
     severity: "error" as const,
     hintTemplate: "{message}",
   },
+  // CORE-017 — runtime CLI-handler boundary error codes. Each corresponds to a
+  // user-actionable failure surfaced by `codi workflow …` subcommands. Hints
+  // include the offending argument so the user can re-run with a fix.
+  E_NO_ACTIVE_WORKFLOW: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "No active workflow. Start one with `codi workflow run` first.",
+  },
+  E_WORKFLOW_NOT_ACTIVE: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Workflow is not active (status: {status}).",
+  },
+  E_WORKFLOW_ALREADY_IN_PHASE: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Already in phase {phase}.",
+  },
+  E_PROPOSAL_NOT_PENDING: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "No pending {kind} proposal.",
+  },
+  E_REASON_REQUIRED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "{command} requires --reason '<text>'.",
+  },
+  E_SCOPE_FILE_REQUIRED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "propose-expansion requires --file <path>.",
+  },
+  E_SCOPE_FILE_ALREADY_IN: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "File '{filePath}' is already in scope.",
+  },
+  E_WORKFLOW_CANNOT_ABANDON: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Cannot abandon workflow in status {status}.",
+  },
+  E_WORKFLOW_CANNOT_ELEVATE: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Cannot elevate from a {status} workflow.",
+  },
+  E_WORKFLOW_CANNOT_HANDOVER: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Cannot hand over a {status} workflow.",
+  },
+  E_HANDOVER_TO_REQUIRED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "handover requires --to <dev-id>.",
+  },
+  E_FORCE_HANDOVER_ARGS_REQUIRED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "force-handover requires --to <dev-id> --maintainer <id> --reason '<text>'.",
+  },
+  E_FROM_STORY_INVALID: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "--from-story must match pattern US-NNN (got '{value}').",
+  },
+  E_KNOWLEDGE_BASE_MISSING: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Knowledge base missing: {path} does not exist. Run `codi:init-knowledge-base` skill first.",
+  },
+  E_QUICK_CATEGORY_INVALID: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "unknown quick category '{category}'. Valid: {valid}.",
+  },
+  E_PHASE_REF_MAPPING_MISSING: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "No phase-ref directory mapping for workflow type '{workflowType}'.",
+  },
+  E_PHASE_REF_NOT_FOUND: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "phase-ref for '{workflowType}.{phase}' not found. Searched:\n  {candidates}",
+  },
+  E_PHASE_ADVANCE_DERIVATION_FAILED: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Cannot derive next phase from '{fromPhase}'. Pass --to <phase> explicitly or use 'workflow transition'.",
+  },
+  E_EVENT_REPLAY_EMPTY: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Cannot replay empty event list.",
+  },
+  E_EVENT_NOT_FOUND: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Event id {eventId} not found in archive.",
+  },
+  E_BRAIN_UI_PORT_INVALID: {
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+    severity: "error" as const,
+    hintTemplate: "Invalid --port: {port}.",
+  },
+  E_WORKFLOW_DEFINITION_INVALID: {
+    exitCode: EXIT_CODES.CONFIG_INVALID,
+    severity: "error" as const,
+    hintTemplate: "workflow definition {source}: {message}",
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;

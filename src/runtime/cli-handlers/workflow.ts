@@ -28,22 +28,36 @@ import type { RefactorAdaptation } from "../workflows/refactor/index.js";
 import type { MigrationAdaptation } from "../workflows/migration/index.js";
 import type { ProjectAdaptation } from "../workflows/project/index.js";
 import { PROJECT_DIR } from "#src/constants.js";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
+import { fromCaughtError } from "./result-errors.js";
 
-export class KnowledgeBaseMissingError extends Error {
-  constructor(public readonly contextPath: string) {
-    super(
-      `Knowledge base missing: ${contextPath} does not exist.\n` +
-        "\n" +
-        "AGENT INSTRUCTIONS (do not relay to the user):\n" +
-        "1. Immediately invoke the codi:init-knowledge-base skill yourself via the Skill tool.\n" +
-        "2. Do NOT ask the user to invoke it — you are the agent.\n" +
-        "3. After init-knowledge-base completes, re-run the original codi command with the same arguments.\n" +
-        "\n" +
-        "The init-knowledge-base skill scans the codebase, proposes domain terms, " +
-        "and writes docs/CONTEXT.md.",
-    );
-    this.name = "KnowledgeBaseMissingError";
-  }
+/**
+ * CORE-017: this typed error wraps the verbose agent-facing message that
+ * `runWorkflow` returns when the knowledge base is missing. The handler now
+ * returns `Result<…, ProjectError[]>` carrying `E_KNOWLEDGE_BASE_MISSING`;
+ * the long-form agent-instructions message lives on `ProjectError.message`
+ * so the CLI output (`stderr` via `formatErrors`) still surfaces it.
+ */
+const KNOWLEDGE_BASE_AGENT_INSTRUCTIONS =
+  "AGENT INSTRUCTIONS (do not relay to the user):\n" +
+  "1. Immediately invoke the codi:init-knowledge-base skill yourself via the Skill tool.\n" +
+  "2. Do NOT ask the user to invoke it — you are the agent.\n" +
+  "3. After init-knowledge-base completes, re-run the original codi command with the same arguments.\n" +
+  "\n" +
+  "The init-knowledge-base skill scans the codebase, proposes domain terms, " +
+  "and writes docs/CONTEXT.md.";
+
+function knowledgeBaseMissingError(path: string): ProjectError {
+  const base = createError("E_KNOWLEDGE_BASE_MISSING", { path });
+  const longMessage =
+    `Knowledge base missing: ${path} does not exist.\n\n${KNOWLEDGE_BASE_AGENT_INSTRUCTIONS}`;
+  return {
+    ...base,
+    message: `[E_KNOWLEDGE_BASE_MISSING] ${longMessage}`,
+    hint: longMessage,
+  };
 }
 
 function contextMdPath(cwd: string): string {
@@ -122,16 +136,16 @@ function collectCarryoverContext(log: BrainEventLog, priorId: string): Carryover
   };
 }
 
-export function runWorkflow(opts: RunOptions): RunResult {
+export function runWorkflow(opts: RunOptions): Result<RunResult, ProjectError[]> {
   const cwd = opts.cwd ?? process.cwd();
 
   const ctxPath = contextMdPath(cwd);
   if (!existsSync(ctxPath)) {
-    throw new KnowledgeBaseMissingError(ctxPath);
+    return err([knowledgeBaseMissingError(ctxPath)]);
   }
 
   if (opts.fromStoryId !== undefined && !/^US-\d{3,}$/.test(opts.fromStoryId)) {
-    throw new Error(`--from-story must match pattern US-NNN (got '${opts.fromStoryId}')`);
+    return err([createError("E_FROM_STORY_INVALID", { value: opts.fromStoryId })]);
   }
 
   const log = BrainEventLog.open();
@@ -201,7 +215,9 @@ export function runWorkflow(opts: RunOptions): RunResult {
 
       return { workflowId, initEventId: initEvent.event_id };
     });
-    return txn.immediate();
+    return ok(txn.immediate());
+  } catch (e) {
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -226,18 +242,21 @@ export interface QuickRunResult {
  * `workflow_completed` event. No phase machine, no chain skills, no transition
  * gates — but a manifest row exists so the audit trail is complete.
  */
-export function runQuick(opts: QuickRunOptions): QuickRunResult {
+export function runQuick(opts: QuickRunOptions): Result<QuickRunResult, ProjectError[]> {
   const cwd = opts.cwd ?? process.cwd();
 
   if (!QUICK_CATEGORIES.includes(opts.category)) {
-    throw new Error(
-      `unknown quick category '${opts.category}'. Valid: ${QUICK_CATEGORIES.join(", ")}`,
-    );
+    return err([
+      createError("E_QUICK_CATEGORY_INVALID", {
+        category: opts.category,
+        valid: QUICK_CATEGORIES.join(", "),
+      }),
+    ]);
   }
 
   const ctxPath = contextMdPath(cwd);
   if (!existsSync(ctxPath)) {
-    throw new KnowledgeBaseMissingError(ctxPath);
+    return err([knowledgeBaseMissingError(ctxPath)]);
   }
 
   const log = BrainEventLog.open();
@@ -299,7 +318,9 @@ export function runQuick(opts: QuickRunOptions): QuickRunResult {
         completedEventId: completedEvent.event_id,
       };
     });
-    return txn.immediate();
+    return ok(txn.immediate());
+  } catch (e) {
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -511,16 +532,20 @@ export interface PhaseRefResult {
  *
  * Throws when no workflow is active or the phase-ref does not exist.
  */
-export function getPhaseRef(opts: PhaseRefOptions = {}): PhaseRefResult {
+export function getPhaseRef(
+  opts: PhaseRefOptions = {},
+): Result<PhaseRefResult, ProjectError[]> {
   const statusCwd = opts.workflowCwd ?? opts.cwd ?? process.cwd();
   const slim = getSlimStatus({ cwd: statusCwd });
   if (!slim.active || slim.workflow_id === null || slim.workflow_type === null) {
-    throw new Error("No active workflow — start one with `codi workflow run` first.");
+    return err([createError("E_NO_ACTIVE_WORKFLOW")]);
   }
   const phase = opts.phase ?? slim.current_phase ?? "intent";
   const skillDir = SKILL_DIR_BY_TYPE[slim.workflow_type];
   if (!skillDir) {
-    throw new Error(`No phase-ref directory mapping for workflow type '${slim.workflow_type}'.`);
+    return err([
+      createError("E_PHASE_REF_MAPPING_MISSING", { workflowType: slim.workflow_type }),
+    ]);
   }
   const cwd = opts.cwd ?? process.cwd();
   const candidates = [
@@ -530,19 +555,23 @@ export function getPhaseRef(opts: PhaseRefOptions = {}): PhaseRefResult {
   ];
   const path = candidates.find((p) => existsSync(p));
   if (!path) {
-    throw new Error(
-      `phase-ref for '${slim.workflow_type}.${phase}' not found. Searched:\n  ${candidates.join("\n  ")}`,
-    );
+    return err([
+      createError("E_PHASE_REF_NOT_FOUND", {
+        workflowType: slim.workflow_type,
+        phase,
+        candidates: candidates.join("\n  "),
+      }),
+    ]);
   }
   const raw = readFileSync(path, "utf8");
   const header = renderActiveAdaptationBlock(slim);
-  return {
+  return ok({
     workflowId: slim.workflow_id,
     workflowType: slim.workflow_type,
     phase,
     path,
     markdown: `${header}\n\n${raw}`,
-  };
+  });
 }
 
 function renderActiveAdaptationBlock(slim: SlimStatus): string {

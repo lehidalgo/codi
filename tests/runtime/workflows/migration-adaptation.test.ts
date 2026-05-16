@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runWorkflow, abandonWorkflow } from "#src/runtime/cli-handlers.js";
+import { unwrap } from "../_brain-helper.js";
 import { useTmpBrain, withBrain, human } from "./_setup.js";
 
 const h = useTmpBrain();
@@ -26,13 +27,15 @@ describe("migration adaptive intake (Q13)", () => {
 
   it("runWorkflow stores migration_adaptation in init payload", async () => {
     const { resolveMigrationAdaptation } = await import("#src/runtime/workflows/index.js");
-    const r = runWorkflow({
-      workflowType: "migration",
-      task: "add index",
-      author: human,
-      cwd: tmpDir(),
-      migrationAdaptation: resolveMigrationAdaptation({ profile: "schema" }),
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "migration",
+        task: "add index",
+        author: human,
+        cwd: tmpDir(),
+        migrationAdaptation: resolveMigrationAdaptation({ profile: "schema" }),
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");

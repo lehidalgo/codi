@@ -16,11 +16,28 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Result } from "#src/types/result.js";
+import type { ProjectError } from "#src/core/output/types.js";
 
 export interface IsolatedBrain {
   readonly dir: string;
   readonly dbPath: string;
   dispose(): void;
+}
+
+/**
+ * Unwrap a runtime-handler `Result` for happy-path tests. CORE-017 migrated
+ * runtime CLI handlers to return `Result<T, ProjectError[]>`; tests that
+ * only care about the success branch use this helper to keep the diff
+ * small. Failure tests should NOT use this — assert on `result.ok` instead.
+ */
+export function unwrap<T>(r: Result<T, ProjectError[]>): T {
+  if (!r.ok) {
+    const codes = r.errors.map((e) => e.code).join(", ");
+    const messages = r.errors.map((e) => e.message).join(" | ");
+    throw new Error(`unexpected Result.err [${codes}]: ${messages}`);
+  }
+  return r.data;
 }
 
 /**

@@ -6,7 +6,7 @@
  * pointing at "../lib/cli-handlers.js"; nothing else needs to change.
  *
  * Files:
- *   - workflow.ts   : runWorkflow, getStatus, KnowledgeBaseMissingError
+ *   - workflow.ts   : runWorkflow, getStatus, getPhaseRef
  *   - transitions.ts: proposeTransition, approveTransition, rejectTransition
  *   - lifecycle.ts  : abandonWorkflow, recoverWorkflow
  *   - scope.ts      : propose/approve/reject scope, recordIncidentalChange
@@ -16,7 +16,6 @@
  */
 
 export {
-  KnowledgeBaseMissingError,
   runWorkflow,
   runQuick,
   getStatus,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { runWorkflow, abandonWorkflow } from "#src/runtime/cli-handlers.js";
 import { useTmpBrain, withBrain, human } from "./_setup.js";
+import { unwrap } from "../_brain-helper.js";
 
 const h = useTmpBrain();
 const tmpDir = (): string => h.tmpDir();
@@ -55,13 +56,15 @@ describe("bug-fix adaptive intake (Q7)", () => {
 
   it("runWorkflow stores bug_fix_adaptation in the init event payload", async () => {
     const { resolveBugFixAdaptation } = await import("#src/runtime/workflows/index.js");
-    const r = runWorkflow({
-      workflowType: "bug-fix",
-      task: "intermittent flaky test",
-      author: human,
-      cwd: tmpDir(),
-      bugFixAdaptation: resolveBugFixAdaptation({ profile: "deep", severity: "P0" }),
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "intermittent flaky test",
+        author: human,
+        cwd: tmpDir(),
+        bugFixAdaptation: resolveBugFixAdaptation({ profile: "deep", severity: "P0" }),
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");
@@ -83,13 +86,15 @@ describe("bug-fix adaptive intake (Q7)", () => {
 
   it("runWorkflow stores carryover_from in the init event payload", async () => {
     const { runWorkflow } = await import("#src/runtime/cli-handlers.js");
-    const r = runWorkflow({
-      workflowType: "bug-fix",
-      task: "now a bug",
-      author: human,
-      cwd: tmpDir(),
-      carryoverFrom: "feat-original-task-20260101",
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "now a bug",
+        author: human,
+        cwd: tmpDir(),
+        carryoverFrom: "feat-original-task-20260101",
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");
@@ -156,21 +161,25 @@ describe("bug-fix adaptive intake (Q7)", () => {
   it("carryover_from materializes carryover_context from prior workflow", async () => {
     const { runWorkflow, abandonWorkflow } = await import("#src/runtime/cli-handlers.js");
     // Run a prior workflow first
-    const prior = runWorkflow({
-      workflowType: "feature",
-      task: "original feature",
-      author: human,
-      cwd: tmpDir(),
-    });
-    abandonWorkflow({ reason: "reclassified to bug-fix", author: human, cwd: tmpDir() });
+    const prior = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "original feature",
+        author: human,
+        cwd: tmpDir(),
+      }),
+    );
+    unwrap(abandonWorkflow({ reason: "reclassified to bug-fix", author: human, cwd: tmpDir() }));
     // Now run a bug-fix that carries over from it
-    const next = runWorkflow({
-      workflowType: "bug-fix",
-      task: "follow-up bug",
-      author: human,
-      cwd: tmpDir(),
-      carryoverFrom: prior.workflowId,
-    });
+    const next = unwrap(
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "follow-up bug",
+        author: human,
+        cwd: tmpDir(),
+        carryoverFrom: prior.workflowId,
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(next.workflowId);
       const init = events.find((e) => e.event_type === "init");
@@ -187,13 +196,15 @@ describe("bug-fix adaptive intake (Q7)", () => {
 
   it("carryover_from with unknown id leaves carryover_context absent", async () => {
     const { runWorkflow } = await import("#src/runtime/cli-handlers.js");
-    const r = runWorkflow({
-      workflowType: "bug-fix",
-      task: "x",
-      author: human,
-      cwd: tmpDir(),
-      carryoverFrom: "ghost-workflow-id-99999999",
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "bug-fix",
+        task: "x",
+        author: human,
+        cwd: tmpDir(),
+        carryoverFrom: "ghost-workflow-id-99999999",
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");
@@ -208,13 +219,15 @@ describe("bug-fix adaptive intake (Q7)", () => {
 
   it("non-bug-fix workflows do NOT carry bug_fix_adaptation even if passed", async () => {
     const { resolveBugFixAdaptation } = await import("#src/runtime/workflows/index.js");
-    const r = runWorkflow({
-      workflowType: "feature",
-      task: "add x",
-      author: human,
-      cwd: tmpDir(),
-      bugFixAdaptation: resolveBugFixAdaptation({ profile: "quick" }),
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "add x",
+        author: human,
+        cwd: tmpDir(),
+        bugFixAdaptation: resolveBugFixAdaptation({ profile: "quick" }),
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");

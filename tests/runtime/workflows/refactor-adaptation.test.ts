@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runWorkflow, abandonWorkflow } from "#src/runtime/cli-handlers.js";
+import { unwrap } from "../_brain-helper.js";
 import { useTmpBrain, withBrain, human } from "./_setup.js";
 
 const h = useTmpBrain();
@@ -33,13 +34,15 @@ describe("refactor adaptive intake (Q12)", () => {
 
   it("runWorkflow stores refactor_adaptation in init payload", async () => {
     const { resolveRefactorAdaptation } = await import("#src/runtime/workflows/index.js");
-    const r = runWorkflow({
-      workflowType: "refactor",
-      task: "extract module x",
-      author: human,
-      cwd: tmpDir(),
-      refactorAdaptation: resolveRefactorAdaptation({ profile: "deep" }),
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "refactor",
+        task: "extract module x",
+        author: human,
+        cwd: tmpDir(),
+        refactorAdaptation: resolveRefactorAdaptation({ profile: "deep" }),
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");

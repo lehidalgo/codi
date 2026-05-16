@@ -7,12 +7,23 @@
  *
  * Brain-backed: both handlers go through BrainEventLog directly. The legacy
  * file-based EventLog is gone (F5 of v3 zero closure).
+ *
+ * CORE-017: handlers return `Result<T, ProjectError[]>`. Internal calls to
+ * BrainEventLog still throw (typed `BrainNoActiveWorkflowError`, SQL errors
+ * from `log.append`); those are caught at the handler boundary and mapped
+ * to ProjectError codes. Reducer corruption (`ReducerError` from
+ * `getReducedState`) propagates as `E_GENERAL` — see CORE-001 for why
+ * reducer keeps panic semantics.
  */
 
 import { BrainEventLog, BrainNoActiveWorkflowError } from "../brain-event-log.js";
 import { createEvent } from "../event-factory.js";
 import type { Author, Phase } from "../types.js";
 import { resolveActiveWorkflowId } from "./active-workflow.js";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
+import { fromCaughtError } from "./result-errors.js";
 
 export interface AbandonOptions {
   reason: string;
@@ -25,18 +36,18 @@ export interface AbandonResult {
   abandonedInPhase: Phase;
 }
 
-export function abandonWorkflow(opts: AbandonOptions): AbandonResult {
+export function abandonWorkflow(opts: AbandonOptions): Result<AbandonResult, ProjectError[]> {
   if (!opts.reason || opts.reason.trim().length === 0) {
-    throw new Error("Abandon requires --reason '<text>'.");
+    return err([createError("E_REASON_REQUIRED", { command: "Abandon" })]);
   }
   const log = BrainEventLog.open();
   try {
     const workflowId = resolveActiveWorkflowId(log, opts);
-    if (!workflowId) throw new BrainNoActiveWorkflowError();
+    if (!workflowId) return err([createError("E_NO_ACTIVE_WORKFLOW")]);
 
     const state = log.getReducedState(workflowId);
     if (state.status !== "active" && state.status !== "paused") {
-      throw new Error(`Cannot abandon workflow in status ${state.status}.`);
+      return err([createError("E_WORKFLOW_CANNOT_ABANDON", { status: state.status })]);
     }
 
     log.append(
@@ -50,7 +61,12 @@ export function abandonWorkflow(opts: AbandonOptions): AbandonResult {
     );
     log.clearActiveWorkflowId();
 
-    return { workflowId, abandonedInPhase: state.current_phase };
+    return ok({ workflowId, abandonedInPhase: state.current_phase });
+  } catch (e) {
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -70,7 +86,9 @@ export interface RecoverResult {
  * Recovers the active workflow ID from the most recent non-terminal row in
  * `workflow_runs`. SQL-driven now (was filesystem walk under legacy backend).
  */
-export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
+export function recoverWorkflow(
+  _opts: RecoverOptions = {},
+): Result<RecoverResult, ProjectError[]> {
   const log = BrainEventLog.open();
   try {
     // Already pointing at something? Verify it's still non-terminal.
@@ -79,11 +97,11 @@ export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
       if (log.hasWorkflow(currentActive)) {
         const state = log.getReducedState(currentActive);
         if (state.status === "active" || state.status === "paused") {
-          return {
+          return ok({
             recovered: false,
             workflowId: currentActive,
             reason: "Active workflow ID is already set and valid.",
-          };
+          });
         }
       }
     }
@@ -105,19 +123,21 @@ export function recoverWorkflow(_opts: RecoverOptions = {}): RecoverResult {
       const state = log.getReducedState(c.workflow_id);
       if (state.status === "active" || state.status === "paused") {
         log.setActiveWorkflowId(c.workflow_id);
-        return {
+        return ok({
           recovered: true,
           workflowId: c.workflow_id,
           reason: `Recovered active workflow from brain (status: ${state.status}).`,
-        };
+        });
       }
     }
 
-    return {
+    return ok({
       recovered: false,
       workflowId: null,
       reason: "No non-terminal workflow found to recover.",
-    };
+    });
+  } catch (e) {
+    return err([fromCaughtError(e)]);
   } finally {
     log.dispose();
   }
@@ -156,26 +176,32 @@ export interface ConvertResult {
  * the given reason, then starts a new workflow of `toType` whose init
  * payload preserves a compact carryover_context summary of the source run
  * (task, scope_files, decisions_count, knowledge_terms).
- *
- * Errors:
- *  - no active workflow → BrainNoActiveWorkflowError (re-thrown from abandon)
- *  - knowledge base missing for target → KnowledgeBaseMissingError (from runWorkflow)
  */
-export function convertWorkflow(opts: ConvertOptions): ConvertResult {
+export function convertWorkflow(opts: ConvertOptions): Result<ConvertResult, ProjectError[]> {
   const log = BrainEventLog.open();
   let priorId: string;
   try {
-    priorId = resolveActiveWorkflowId(log, opts) ?? "";
-    if (!priorId) throw new BrainNoActiveWorkflowError();
-  } finally {
+    const resolved = resolveActiveWorkflowId(log, opts);
+    if (!resolved) {
+      log.dispose();
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    priorId = resolved;
+  } catch (e) {
     log.dispose();
+    if (e instanceof BrainNoActiveWorkflowError) {
+      return err([createError("E_NO_ACTIVE_WORKFLOW")]);
+    }
+    return err([fromCaughtError(e)]);
   }
+  log.dispose();
 
-  abandonWorkflow({
+  const abandoned = abandonWorkflow({
     reason: opts.reason ?? `converted to ${opts.toType}`,
     author: opts.author,
     ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
   });
+  if (!abandoned.ok) return abandoned;
 
   const result = runWorkflow({
     workflowType: opts.toType,
@@ -185,10 +211,11 @@ export function convertWorkflow(opts: ConvertOptions): ConvertResult {
     ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
     ...opts.forward,
   });
+  if (!result.ok) return result;
 
-  return {
+  return ok({
     abandonedWorkflowId: priorId,
-    newWorkflowId: result.workflowId,
+    newWorkflowId: result.data.workflowId,
     carryoverFrom: priorId,
-  };
+  });
 }

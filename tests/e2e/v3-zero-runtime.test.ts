@@ -155,12 +155,13 @@ describe("S3 — phase graph enforcement", { retry: SUITE_RETRY }, () => {
     runWorkflow({ workflowType: "feature", task: "x", author: human, cwd: dir });
 
     // intent → verify is illegal (must go through plan/decompose/execute first).
-    expect(() => proposeTransition({ toPhase: "verify", author: human, cwd: dir })).toThrow(
-      /Illegal transition/,
-    );
+    const illegal = proposeTransition({ toPhase: "verify", author: human, cwd: dir });
+    expect(illegal.ok).toBe(false);
+    if (!illegal.ok) expect(illegal.errors[0]?.message).toMatch(/Illegal transition/);
 
     // intent → plan is legal.
-    expect(() => proposeTransition({ toPhase: "plan", author: human, cwd: dir })).not.toThrow();
+    const legal = proposeTransition({ toPhase: "plan", author: human, cwd: dir });
+    expect(legal.ok).toBe(true);
 
     // After propose, status flips to pending_approval (Iron Law 4 wiring).
     withHandle((h) => {
@@ -553,8 +554,11 @@ describe("CROSS — full user flow via runtime handlers", { retry: SUITE_RETRY }
     });
 
     const recovered = recoverWorkflow({});
-    expect(recovered.recovered).toBe(true);
-    expect(recovered.workflowId).toMatch(/^feat-recoverable-/);
+    expect(recovered.ok).toBe(true);
+    if (recovered.ok) {
+      expect(recovered.data.recovered).toBe(true);
+      expect(recovered.data.workflowId).toMatch(/^feat-recoverable-/);
+    }
   });
 });
 

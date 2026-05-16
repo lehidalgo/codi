@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { runWorkflow, recordIncidentalChange, abandonWorkflow } from "#src/runtime/cli-handlers.js";
+import { unwrap } from "./_brain-helper.js";
 import { BrainEventLog } from "#src/runtime/brain-event-log.js";
 import { buildPrSummary, extractHashFromBlock } from "#src/runtime/pr-summary.js";
 import { replay } from "#src/runtime/replay.js";
@@ -47,12 +48,14 @@ describe("PR summary generation", () => {
   });
 
   it("emits a workflow summary block with hash", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Test PR summary",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Test PR summary",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const log = BrainEventLog.open();
     try {
       const wId = log.getActiveWorkflowId();
@@ -70,12 +73,14 @@ describe("PR summary generation", () => {
   });
 
   it("hash is deterministic — same events produce same hash", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Determinism test",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Determinism test",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const log = BrainEventLog.open();
     try {
       const wId = log.getActiveWorkflowId();
@@ -90,12 +95,14 @@ describe("PR summary generation", () => {
   });
 
   it("hash ignores non-commitable events (incidentals)", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Test",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Test",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const log = BrainEventLog.open();
     try {
       const wId = log.getActiveWorkflowId();
@@ -103,13 +110,15 @@ describe("PR summary generation", () => {
       const eventsBefore = log.loadEvents(wId);
       const r1 = buildPrSummary(eventsBefore);
 
-      recordIncidentalChange({
-        filePath: "src/x.ts",
-        linesChanged: 1,
-        classifierReason: "imports",
-        author: { type: "system", id: "h" },
-        cwd: dir,
-      });
+      unwrap(
+        recordIncidentalChange({
+          filePath: "src/x.ts",
+          linesChanged: 1,
+          classifierReason: "imports",
+          author: { type: "system", id: "h" },
+          cwd: dir,
+        }),
+      );
       const eventsAfter = log.loadEvents(wId);
       const r2 = buildPrSummary(eventsAfter);
       // Incidentals are non-commitable; hash should not change.
@@ -148,8 +157,8 @@ describe("compactor (F11 — brain-backed)", () => {
     const { compactWorkflows } = await import("#src/runtime/compactor.js");
     const { openBrain } = await import("#src/runtime/brain/db.js");
     const { applyMigrations } = await import("#src/runtime/brain/migrate.js");
-    runWorkflow({ workflowType: "feature", task: "Recent", author: human, cwd: cdir });
-    abandonWorkflow({ reason: "test", author: human, cwd: cdir });
+    unwrap(runWorkflow({ workflowType: "feature", task: "Recent", author: human, cwd: cdir }));
+    unwrap(abandonWorkflow({ reason: "test", author: human, cwd: cdir }));
 
     const handle = openBrain();
     try {
@@ -221,8 +230,8 @@ describe("compactor (F11 — brain-backed)", () => {
     const { compactWorkflows } = await import("#src/runtime/compactor.js");
     const { openBrain } = await import("#src/runtime/brain/db.js");
     const { applyMigrations } = await import("#src/runtime/brain/migrate.js");
-    runWorkflow({ workflowType: "feature", task: "DryOld", author: human, cwd: cdir });
-    abandonWorkflow({ reason: "test", author: human, cwd: cdir });
+    unwrap(runWorkflow({ workflowType: "feature", task: "DryOld", author: human, cwd: cdir }));
+    unwrap(abandonWorkflow({ reason: "test", author: human, cwd: cdir }));
 
     const handle = openBrain();
     try {
@@ -267,18 +276,20 @@ describe("replay", () => {
   });
 
   it("replays the entire log when no until is given", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Replay test",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Replay test",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const log = BrainEventLog.open();
     try {
       const wId = log.getActiveWorkflowId();
       if (!wId) throw new Error("expected workflow");
       const events = log.loadArchivedEvents(wId);
-      const result = replay(events);
+      const result = unwrap(replay(events));
       expect(result.events.length).toBe(events.length);
       expect(result.stoppedAt).toBeNull();
     } finally {
@@ -287,12 +298,14 @@ describe("replay", () => {
   });
 
   it("replays up to a specific event id", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "Replay test",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Replay test",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const log = BrainEventLog.open();
     try {
       const wId = log.getActiveWorkflowId();
@@ -300,7 +313,7 @@ describe("replay", () => {
       const events = log.loadEvents(wId);
       const firstEventId = events[0]?.event_id;
       if (!firstEventId) throw new Error("expected init event");
-      const result = replay(events, { untilEventId: firstEventId });
+      const result = unwrap(replay(events, { untilEventId: firstEventId }));
       expect(result.events.length).toBe(1);
       expect(result.stoppedAt).toBe(firstEventId);
     } finally {
@@ -308,27 +321,31 @@ describe("replay", () => {
     }
   });
 
-  it("throws when until points to non-existent event", () => {
-    runWorkflow({
-      workflowType: "feature",
-      task: "x",
-      author: human,
-      cwd: dir,
-    });
+  it("errors when until points to non-existent event", () => {
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "x",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const log = BrainEventLog.open();
     try {
       const wId = log.getActiveWorkflowId();
       if (!wId) throw new Error("expected workflow");
       const events = log.loadEvents(wId);
-      expect(() =>
-        replay(events, { untilEventId: "00000000-0000-4000-8000-000000000000" }),
-      ).toThrow("not found");
+      const r = replay(events, { untilEventId: "00000000-0000-4000-8000-000000000000" });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("E_EVENT_NOT_FOUND");
     } finally {
       log.dispose();
     }
   });
 
-  it("throws on empty event list", () => {
-    expect(() => replay([])).toThrow("Cannot replay empty");
+  it("errors on empty event list", () => {
+    const r = replay([]);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("E_EVENT_REPLAY_EMPTY");
   });
 });

@@ -8,7 +8,7 @@ import {
   getStatus,
 } from "#src/runtime/cli-handlers.js";
 import type { Author } from "#src/runtime/types.js";
-import { createIsolatedBrain, type IsolatedBrain } from "./_brain-helper.js";
+import { createIsolatedBrain, unwrap, type IsolatedBrain } from "./_brain-helper.js";
 
 const human: Author = { type: "human", id: "tester" };
 const agent: Author = { type: "agent", id: "claude-code" };
@@ -20,12 +20,14 @@ describe("elevation handlers", () => {
   beforeEach(() => {
     scope = createIsolatedBrain("codi-elevation-");
     dir = scope.dir;
-    runWorkflow({
-      workflowType: "feature",
-      task: "Test",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      runWorkflow({
+        workflowType: "feature",
+        task: "Test",
+        author: human,
+        cwd: dir,
+      }),
+    );
   });
 
   afterEach(() => {
@@ -33,37 +35,41 @@ describe("elevation handlers", () => {
   });
 
   it("proposes an elevation", () => {
-    const result = proposeElevation({
-      childWorkflowType: "refactor",
-      trigger: "public_interface_change_in_multiple_files",
-      reason: "decoupling needed",
-      author: agent,
-      cwd: dir,
-    });
+    const result = unwrap(
+      proposeElevation({
+        childWorkflowType: "refactor",
+        trigger: "public_interface_change_in_multiple_files",
+        reason: "decoupling needed",
+        author: agent,
+        cwd: dir,
+      }),
+    );
     expect(result.proposedEventId).toBeTruthy();
   });
 
   it("rejects empty reason", () => {
-    expect(() =>
-      proposeElevation({
-        childWorkflowType: "refactor",
-        trigger: "x",
-        reason: "",
-        author: agent,
-        cwd: dir,
-      }),
-    ).toThrow("requires --reason");
-  });
-
-  it("approves elevation, pauses parent, creates child reference", () => {
-    proposeElevation({
+    const r = proposeElevation({
       childWorkflowType: "refactor",
-      trigger: "public_interface_change",
-      reason: "decoupling",
+      trigger: "x",
+      reason: "",
       author: agent,
       cwd: dir,
     });
-    const result = approveElevation({ author: human, cwd: dir });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("E_REASON_REQUIRED");
+  });
+
+  it("approves elevation, pauses parent, creates child reference", () => {
+    unwrap(
+      proposeElevation({
+        childWorkflowType: "refactor",
+        trigger: "public_interface_change",
+        reason: "decoupling",
+        author: agent,
+        cwd: dir,
+      }),
+    );
+    const result = unwrap(approveElevation({ author: human, cwd: dir }));
     expect(result.childWorkflowId).toContain("child-refactor");
     expect(result.childBranch).toMatch(/^codi\//);
 
@@ -75,41 +81,47 @@ describe("elevation handlers", () => {
   });
 
   it("rejects elevation without proposal", () => {
-    expect(() => approveElevation({ author: human, cwd: dir })).toThrow(
-      "No pending elevation proposal",
-    );
+    const r = approveElevation({ author: human, cwd: dir });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("E_PROPOSAL_NOT_PENDING");
   });
 
   it("rejected elevation does not pause parent", () => {
-    proposeElevation({
-      childWorkflowType: "refactor",
-      trigger: "x",
-      reason: "x",
-      author: agent,
-      cwd: dir,
-    });
-    rejectElevation({ reason: "too risky", author: human, cwd: dir });
+    unwrap(
+      proposeElevation({
+        childWorkflowType: "refactor",
+        trigger: "x",
+        reason: "x",
+        author: agent,
+        cwd: dir,
+      }),
+    );
+    unwrap(rejectElevation({ reason: "too risky", author: human, cwd: dir }));
 
     const status = getStatus({ cwd: dir });
     expect(status.state?.status).toBe("active");
   });
 
   it("resolveChild forces parent back to phase plan", () => {
-    proposeElevation({
-      childWorkflowType: "refactor",
-      trigger: "x",
-      reason: "x",
-      author: agent,
-      cwd: dir,
-    });
-    const elevated = approveElevation({ author: human, cwd: dir });
-    const result = resolveChild({
-      childWorkflowId: elevated.childWorkflowId,
-      status: "completed",
-      summary: "decoupled",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      proposeElevation({
+        childWorkflowType: "refactor",
+        trigger: "x",
+        reason: "x",
+        author: agent,
+        cwd: dir,
+      }),
+    );
+    const elevated = unwrap(approveElevation({ author: human, cwd: dir }));
+    const result = unwrap(
+      resolveChild({
+        childWorkflowId: elevated.childWorkflowId,
+        status: "completed",
+        summary: "decoupled",
+        author: human,
+        cwd: dir,
+      }),
+    );
     expect(result.resumedInPhase).toBe("plan");
 
     const status = getStatus({ cwd: dir });
@@ -120,20 +132,24 @@ describe("elevation handlers", () => {
   });
 
   it("resolveChild handles abandoned status", () => {
-    proposeElevation({
-      childWorkflowType: "refactor",
-      trigger: "x",
-      reason: "x",
-      author: agent,
-      cwd: dir,
-    });
-    const elevated = approveElevation({ author: human, cwd: dir });
-    resolveChild({
-      childWorkflowId: elevated.childWorkflowId,
-      status: "abandoned",
-      author: human,
-      cwd: dir,
-    });
+    unwrap(
+      proposeElevation({
+        childWorkflowType: "refactor",
+        trigger: "x",
+        reason: "x",
+        author: agent,
+        cwd: dir,
+      }),
+    );
+    const elevated = unwrap(approveElevation({ author: human, cwd: dir }));
+    unwrap(
+      resolveChild({
+        childWorkflowId: elevated.childWorkflowId,
+        status: "abandoned",
+        author: human,
+        cwd: dir,
+      }),
+    );
     const status = getStatus({ cwd: dir });
     expect(status.state?.child_workflows[0]?.status).toBe("abandoned");
   });

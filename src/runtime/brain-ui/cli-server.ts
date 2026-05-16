@@ -14,6 +14,9 @@ import { serve } from "@hono/node-server";
 import { buildApp } from "./server.js";
 import { resolveDefaultBrainUiPort, writePidfile, clearPidfile } from "./lifecycle.js";
 import { Logger } from "#src/core/output/logger.js";
+import { err, ok, type Result } from "#src/types/result.js";
+import { createError } from "#src/core/output/errors.js";
+import type { ProjectError } from "#src/core/output/types.js";
 
 interface ParsedArgs {
   port: number;
@@ -21,7 +24,7 @@ interface ParsedArgs {
   foreground: boolean;
 }
 
-function parseArgs(argv: readonly string[]): ParsedArgs {
+function parseArgs(argv: readonly string[]): Result<ParsedArgs, ProjectError[]> {
   // ISSUE-084 — env override has lower precedence than explicit --port.
   const args: ParsedArgs = {
     port: resolveDefaultBrainUiPort(),
@@ -39,13 +42,18 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     }
   }
   if (!Number.isFinite(args.port) || args.port <= 0) {
-    throw new Error(`Invalid --port: ${args.port}`);
+    return err([createError("E_BRAIN_UI_PORT_INVALID", { port: args.port })]);
   }
-  return args;
+  return ok(args);
 }
 
 function main(): void {
-  const args = parseArgs(process.argv.slice(2));
+  const parsed = parseArgs(process.argv.slice(2));
+  if (!parsed.ok) {
+    Logger.getInstance().error(parsed.errors[0]?.message ?? "Failed to parse brain-ui args.");
+    process.exit(1);
+  }
+  const args = parsed.data;
   const handle = buildApp({ brainPath: args.brainPath });
   const hostname = process.env["CODI_BRAIN_UI_BIND"] ?? "127.0.0.1";
   const server = serve({ fetch: handle.app.fetch, port: args.port, hostname });

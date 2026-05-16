@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runWorkflow, abandonWorkflow } from "#src/runtime/cli-handlers.js";
+import { unwrap } from "../_brain-helper.js";
 import { useTmpBrain, withBrain, human } from "./_setup.js";
 
 const h = useTmpBrain();
@@ -25,13 +26,15 @@ describe("project adaptive intake (Q14)", () => {
 
   it("runWorkflow stores project_adaptation in init payload", async () => {
     const { resolveProjectAdaptation } = await import("#src/runtime/workflows/index.js");
-    const r = runWorkflow({
-      workflowType: "project",
-      task: "bootstrap saas v2",
-      author: human,
-      cwd: tmpDir(),
-      projectAdaptation: resolveProjectAdaptation({ profile: "no-sheet" }),
-    });
+    const r = unwrap(
+      runWorkflow({
+        workflowType: "project",
+        task: "bootstrap saas v2",
+        author: human,
+        cwd: tmpDir(),
+        projectAdaptation: resolveProjectAdaptation({ profile: "no-sheet" }),
+      }),
+    );
     withBrain(tmpDir(), (log) => {
       const events = log.loadEvents(r.workflowId);
       const init = events.find((e) => e.event_type === "init");

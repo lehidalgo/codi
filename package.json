@@ -40,7 +40,7 @@
     "test:pre-push": "vitest run tests/release",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsc --noEmit && eslint . && node scripts/guard-no-internal-barrels.mjs && node scripts/guard-layering.mjs && node scripts/guard-agent-identity.mjs && node scripts/guard-project-literals.mjs && node scripts/guard-console-usage.mjs && node scripts/guard-no-process-exit-in-utils.mjs && node scripts/guard-decision-kinds.mjs && node scripts/guard-empty-catches.mjs",
+    "lint": "tsc --noEmit && eslint . && node scripts/guard-no-internal-barrels.mjs && node scripts/guard-layering.mjs && node scripts/guard-agent-identity.mjs && node scripts/guard-project-literals.mjs && node scripts/guard-console-usage.mjs && node scripts/guard-no-process-exit-in-utils.mjs && node scripts/guard-decision-kinds.mjs && node scripts/guard-empty-catches.mjs && node scripts/guard-no-runtime-throws.mjs",
     "dev": "tsup --watch",
     "prepare": "husky && node scripts/setup-husky-hooks.mjs",
     "preversion": "npm run lint && npm run build && npm run test",
