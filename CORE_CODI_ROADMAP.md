@@ -53,7 +53,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 27 | CORE-027 | Cache findProjectBrainPath per-process | S | P3 | **Validado ✅** | — | — | 1h |
 | 28 | CORE-028 | Collapse git status loop en gate-runner | S | P3 | **Validado ✅** | — | — | 1h |
 | 29 | CORE-029 | Backfill src/utils/** branches → ≥95% | S | P2 | **Validado ✅** | — | CI stability | 2h |
-| 30 | CORE-030 | State.json corruption recovery test | S | P2 | Pendiente | — | — | 30min |
+| 30 | CORE-030 | State.json corruption recovery test | S | P2 | **Validado ✅** | — | — | 30min |
 | 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | Pendiente | — | onboarding | 1d |
 | 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | Pendiente | — | — | 2h |
 | 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | Pendiente | — | — | 30min |
@@ -1435,8 +1435,21 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Lint:** 12 guards verdes.
 - **Coverage `src/utils/**`:** branches **78.43% → 94.35%** (+15.92pts).
 
-## CORE-030 — State.json corruption recovery test
+## CORE-030 — State.json corruption recovery test **[RESUELTO]**
 - Nivel: S, P2, ~30min. `tests/unit/config/state.test.ts`.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~15min.
+- **Resultado:** 7 nuevos tests en `tests/unit/config/state.test.ts` describiendo el contract de corrupción:
+  - Malformed JSON → `E_CONFIG_PARSE_FAILED`.
+  - Empty file → `E_CONFIG_PARSE_FAILED`.
+  - Truncated JSON (interrupted mid-write crash) → `E_CONFIG_PARSE_FAILED`.
+  - **Non-destructive read**: corrupt file content preserved tras `read()` (NO silent overwrite).
+  - **Operator-driven recovery**: tras corrupción, `write(freshState)` restaura usable state.
+  - **Error context**: `r.errors[0].context.file` apunta al path del statefile (operator-findable).
+  - **Cause propagation**: el SyntaxError underlying se propaga como `r.errors[0].cause` para debug.
+- **Contract explícito**: el resolver **NO recupera silenciosamente** — corrupt state es señal de algo malo (crash mid-write, edit manual, disk error). El caller decide. CLI imprime error + bails; operator puede recover via `write()`.
+- **Tests:** 3937 → 3944 passing (+7), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
 
 ## CORE-031 — docs/INDEX.md + per-layer READMEs
 - Nivel: S, P3, ~1 día. 5 READMEs en `src/{cli,core,adapters,utils,schemas}/`.
