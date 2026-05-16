@@ -45,7 +45,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | **Validado ✅** | — | — | 4h |
 | 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | **Validado ✅** | — | — | 1-2d |
 | 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | **Validado ✅** | CORE-007 | — | 1d |
-| 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | Pendiente | — | — | 4h |
+| 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | **Validado ✅** | — | — | 4h |
 | 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | Pendiente | — | preserves unsafeMode invariant | 2h |
 | 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | Pendiente | CORE-006 | "remove non-core" smoke | 0.5d |
 | 25 | CORE-025 | exists() helper extraction (fs-helpers) | S | P3 | **Validado ✅ (closed by CORE-006)** | CORE-006 | — | 1h |
@@ -1299,8 +1299,32 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
   - 1 nueva fn con signature `(StrategyContext) => Promise<ConflictResolution>`.
   - Opcionalmente: extender `selectStrategy` si la nueva strategy requiere flag.
 
-## CORE-022 — guard-file-size.mjs advisory
+## CORE-022 — guard-file-size.mjs advisory **[RESUELTO]**
 - Nivel: E, P2, ~4 horas. Warn (no block) en cli/core/ files >700 LOC.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~20min (vs roadmap 4h — 12x más rápido).
+- **Resultado:**
+  - **`scripts/guard-file-size.mjs` (new, 120 LOC)**: 10º guard, ADVISORY (siempre `exit 0`). Walks `src/cli/**` + `src/core/**`, cuenta LOC, reporta dos thresholds: WARN (>700 LOC) + STRONG (>1200 LOC).
+  - **Allowlist con justificación**: `src/cli/init-helpers.ts` (1397 LOC) — phase library co-localizada por CORE-020; documentado en el script.
+  - **Excluye automáticamente**: `.d.ts`, `*.test.ts`, paths fuera de `src/cli/` y `src/core/`.
+  - **`tests/unit/scripts/guard-file-size.test.ts` (new, 8 tests)**: smoke tests via `execFile` contra tmp repos sintéticos — verifica exit 0 invariante, threshold detection, STRONG tag, sort order descendente, exclusions, y real-repo run.
+  - **Wired en `npm run lint`** como 10º guard. Output actual:
+    - `src/cli/update.ts: 868 LOC — warn`
+    - `src/cli/workflow.ts: 815 LOC — warn`
+    - `src/cli/init-wizard-paths.ts: 755 LOC — warn`
+    - `src/cli/contribute.ts: 727 LOC — warn`
+    - `src/core/hooks/hook-templates.ts: 716 LOC — warn`
+- **Implementación clave:**
+  - Threshold `WARN_THRESHOLD = 700` + `STRONG_THRESHOLD = 1200`.
+  - `ALLOWLIST: Set<string>` con justificación inline.
+  - Line counting via `readline` stream (no carga todo en memoria; safe para archivos enormes).
+  - Sort descendente por LOC para que los top offenders aparezcan primero.
+- **Decisiones explícitas:**
+  - **ADVISORY, no blocking** — `exit 0` siempre, incluso con offenders. La señal es informativa: file >700 LOC = candidato a refactor, no a fail.
+  - **Mensaje educativo** en stderr explica: "Files past 700 LOC are good refactor candidates; files past 1200 LOC are top of the queue."
+  - **Allowlist con docstring inline** — cada entry justifica por qué la excepción es defensible.
+- **Tests:** 3894 → 3902 (+8 nuevos en guard-file-size.test.ts), 6 skipped, 0 regresiones.
+- **Lint:** 10 guards verdes (9 previos + nuevo guard-file-size).
 
 ## CORE-023 — ESLint rule no template-literal SQL
 - Nivel: E, P1, ~2 horas. Banear `${var}` en `raw.prepare`/`raw.exec` calls. Preserva `unsafeMode(true)` invariant.
