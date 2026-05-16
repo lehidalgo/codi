@@ -57,7 +57,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | **Validado ✅** | — | onboarding | 1d |
 | 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | **Validado ✅** | — | — | 2h |
 | 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | **Validado ✅** | — | — | 30min |
-| 34 | CORE-034 | Semantic snapshot assertions | S | P3 | Pendiente | — | — | 3h |
+| 34 | CORE-034 | Semantic snapshot assertions | S | P3 | **Validado ✅** | — | — | 3h |
 | 35 | CORE-035 | msw network-boundary tests | S | P3 | Pendiente | — | — | 1-2d |
 | 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | Pendiente | CORE-024 | aislamiento verificable | 4h |
 | 37 | CORE-037 | Hook installer mixed-runner test | S | P3 | Pendiente | — | — | 4h |
@@ -1512,8 +1512,24 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Net delta:** `CONTRIBUTING.md` 311 → 386 LOC (+75).
 - **Lint:** 12 guards verdes. Zero código tocado.
 
-## CORE-034 — Semantic snapshot assertions
+## CORE-034 — Semantic snapshot assertions **[RESUELTO]**
 - Nivel: S, P3, ~3h. Replace 2 opaque .snap files con inline assertions.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~30min.
+- **2 opacas `.snap` files reemplazadas** con assertions semánticas + DELETED:
+  - **`tests/unit/hooks/__snapshots__/shell-renderer.test.ts.snap`** (39 LOC) — golden text del shell hook script. Reemplazado con 11 assertions `.toContain` / `.toMatch` semánticas en `shell-renderer.test.ts` que documentan QUÉ debe emitir el script: STAGED collection, section dividers en orden (ts → py → global), per-hook commands con extension matchers, BLOCKING dep-check guards para ruff+bandit, gitleaks, `npx codi doctor --ci`, re-staging `git add`, exclusión de `commitlint`. Mantiene la otra parity test (renderShellHooks === buildHuskyCommands) que cubre whitespace exacto.
+  - **`tests/unit/adapters/__snapshots__/output-snapshots.test.ts.snap`** (291 LOC, 6 adapters × ~50 LOC) — golden text de la instruction-file completa por adapter. Reemplazado con **`ADAPTER_EXPECTATIONS` data table** (4 booleans por adapter: `restrictions` / `skillRouting` / `inlineRule` / `inlineSkill`) + un único `it()` que itera los 6 adapters validando:
+    - Common sections (Project Overview, project name, Managed-by, Workflow + 3 sub-headings, Development Notes, force-push warning, Generated header).
+    - Adapter-specific switches: RESTRICTIONS block, Skill Routing table, inline rule content, inline skill content.
+- **Beneficio:** una pequeña edición a un section template ya NO produce un mar de diffs en los `.snap`. Solo falla cuando cambia el contract intencional (e.g. añadir un nuevo Workflow sub-heading).
+- **Adding a new adapter:** una entry nueva en `ADAPTER_EXPECTATIONS` (4 booleans) en lugar de 50 LOC de golden text.
+- **Net delta:**
+  - `tests/unit/hooks/shell-renderer.test.ts`: +35 LOC (test semántico) / `__snapshots__/shell-renderer.test.ts.snap`: −39 LOC = **net −4 LOC**.
+  - `tests/unit/adapters/output-snapshots.test.ts`: +85 LOC (data-driven semantic shape test) / `__snapshots__/output-snapshots.test.ts.snap`: −291 LOC = **net −206 LOC**.
+  - **Total:** −210 LOC de tests, +0 cobertura perdida.
+- **Tests:** 3944 passing, 6 skipped, 0 regresiones (mismo count — los snapshot tests reemplazados 1:1 con sus equivalentes semánticos).
+- **Lint:** 12 guards verdes.
+- **Snapshots conservadas (intencional):** `version-verify-pre-push-template.test.ts.snap` + `version-bump-template.test.ts.snap` — son hook script bodies cuyo texto exacto IMPORTA para quien instala el hook; golden text es el contract correcto.
 
 ## CORE-035 — msw network-boundary tests
 - Nivel: S, P3, ~1-2 días. Restore coverage para 30 network-exempt files.
