@@ -17,12 +17,19 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { defaultBrainPath, findProjectBrainPath } from "#src/runtime/brain/db.js";
+import {
+  defaultBrainPath,
+  findProjectBrainPath,
+  __resetBrainPathCacheForTests,
+} from "#src/runtime/brain/db.js";
 
 let tmp: string;
 let savedEnv: string | undefined;
 
 beforeEach(() => {
+  // CORE-027: clear the per-process cache so each test sees the
+  // filesystem afresh (tests mutate `.codi/` state between calls).
+  __resetBrainPathCacheForTests();
   tmp = mkdtempSync(join(tmpdir(), "codi-brain-resolver-"));
   savedEnv = process.env["CODI_BRAIN_DB"];
   delete process.env["CODI_BRAIN_DB"];
@@ -63,6 +70,20 @@ describe("findProjectBrainPath", () => {
     const path = findProjectBrainPath(tmp);
     expect(path).toBe(join(tmp, ".codi", "state", "brain.db"));
     // The file does NOT need to exist — the resolver is structural.
+  });
+
+  it("caches results per-process (CORE-027) — second call with same start hits cache", () => {
+    // Verify the cache by:
+    //   1. Call once with no .codi/ → null (and cached).
+    //   2. Create .codi/ afterwards.
+    //   3. Call again with same start: returns the CACHED null, not the
+    //      now-existing path. Proves the cache short-circuits the walk.
+    expect(findProjectBrainPath(tmp)).toBe(null);
+    mkdirSync(join(tmp, ".codi"));
+    expect(findProjectBrainPath(tmp)).toBe(null);
+    // After explicit reset, the walk re-runs and surfaces the new state.
+    __resetBrainPathCacheForTests();
+    expect(findProjectBrainPath(tmp)).toBe(join(tmp, ".codi", "state", "brain.db"));
   });
 });
 

@@ -50,7 +50,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | **Validado ✅** | CORE-006 | "remove non-core" smoke | 0.5d |
 | 25 | CORE-025 | exists() helper extraction (fs-helpers) | S | P3 | **Validado ✅ (closed by CORE-006)** | CORE-006 | — | 1h |
 | 26 | CORE-026 | EMPTY_STATE.lastGenerated lazy | S | P3 | **Validado ✅** | — | — | 5min |
-| 27 | CORE-027 | Cache findProjectBrainPath per-process | S | P3 | Pendiente | — | — | 1h |
+| 27 | CORE-027 | Cache findProjectBrainPath per-process | S | P3 | **Validado ✅** | — | — | 1h |
 | 28 | CORE-028 | Collapse git status loop en gate-runner | S | P3 | Pendiente | — | — | 1h |
 | 29 | CORE-029 | Backfill src/utils/** branches → ≥95% | S | P2 | Pendiente | — | CI stability | 2h |
 | 30 | CORE-030 | State.json corruption recovery test | S | P2 | Pendiente | — | — | 30min |
@@ -1393,8 +1393,15 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Tests:** 3924 → 3925 passing (+1), 6 skipped, 0 regresiones.
 - **Lint:** 12 guards verdes.
 
-## CORE-027 — Cache findProjectBrainPath per-process
+## CORE-027 — Cache findProjectBrainPath per-process **[RESUELTO]**
 - Nivel: S, P3, ~1h. `brain/db.ts:47`.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~10min.
+- **Fix:** añadido `Map<string, string | null>` module-level cache keyed por resolved `start` path. La walk de hasta 64 niveles con `existsSync`/`statSync` per call ahora se ejecuta UNA vez por unique cwd; subsequent calls son cache hits.
+- **Test helper:** `__resetBrainPathCacheForTests()` (export con prefix `__…ForTests` para no contaminar production API). El `beforeEach` de `brain-resolver.test.ts` lo invoca para garantizar reads frescos cuando los tests mutan `.codi/` state entre calls.
+- **Test añadido:** regression sentinel verifica que después de un primer call con no `.codi/`, crear `.codi/` y re-llamar SIGUE devolviendo `null` (cache hit). Solo después de `__resetBrainPathCacheForTests()` el resultado se actualiza.
+- **Tests:** 3925 → 3926 passing (+1), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
 
 ## CORE-028 — Collapse git status loop en gate-runner
 - Nivel: S, P3, ~1h. `gate-runner.ts:170-183` — single `git status --porcelain` + map lookup.

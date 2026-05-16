@@ -44,8 +44,24 @@ export type BrainDb = BetterSQLite3Database<typeof schema>;
  */
 export const BRAIN_PATH_WALK_MAX = 64;
 
+/**
+ * Per-process cache for {@link findProjectBrainPath}. Keyed by the
+ * resolved `start` path. The walk is expensive — up to 64 `existsSync`
+ * + `statSync` syscalls — and the result is stable across a single
+ * process's lifetime (a project's `.codi/` directory does not appear
+ * or disappear mid-process under normal use). Tests can clear the
+ * cache via {@link __resetBrainPathCacheForTests}.
+ *
+ * CORE-027.
+ */
+const brainPathCache = new Map<string, string | null>();
+
 export function findProjectBrainPath(start: string): string | null {
-  let current = resolve(start);
+  const cacheKey = resolve(start);
+  const cached = brainPathCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  let current = cacheKey;
   // Bound the walk: stop at the filesystem root or at BRAIN_PATH_WALK_MAX.
   for (let i = 0; i < BRAIN_PATH_WALK_MAX; i += 1) {
     const codiDir = join(current, PROJECT_DIR);
@@ -55,6 +71,7 @@ export function findProjectBrainPath(start: string): string | null {
           const stateBrain = join(codiDir, STATE_DIR, BRAIN_DB_FILENAME);
           const legacyBrain = join(codiDir, BRAIN_DB_FILENAME);
           migrateLegacyBrainDb(legacyBrain, stateBrain);
+          brainPathCache.set(cacheKey, stateBrain);
           return stateBrain;
         }
       } catch {
@@ -62,10 +79,27 @@ export function findProjectBrainPath(start: string): string | null {
       }
     }
     const parent = dirname(current);
-    if (parent === current) return null;
+    if (parent === current) {
+      brainPathCache.set(cacheKey, null);
+      return null;
+    }
     current = parent;
   }
+  brainPathCache.set(cacheKey, null);
   return null;
+}
+
+/**
+ * Test-only: clear the per-process brain-path cache. Vitest workers
+ * reuse module state across test files; tests that mutate `.codi/`
+ * directory state between calls must clear the cache to avoid stale
+ * lookups. The export is intentionally namespaced (`__…ForTests`) so
+ * production code never depends on it.
+ *
+ * CORE-027.
+ */
+export function __resetBrainPathCacheForTests(): void {
+  brainPathCache.clear();
 }
 
 /**
