@@ -51,7 +51,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 25 | CORE-025 | exists() helper extraction (fs-helpers) | S | P3 | **Validado ✅ (closed by CORE-006)** | CORE-006 | — | 1h |
 | 26 | CORE-026 | EMPTY_STATE.lastGenerated lazy | S | P3 | **Validado ✅** | — | — | 5min |
 | 27 | CORE-027 | Cache findProjectBrainPath per-process | S | P3 | **Validado ✅** | — | — | 1h |
-| 28 | CORE-028 | Collapse git status loop en gate-runner | S | P3 | Pendiente | — | — | 1h |
+| 28 | CORE-028 | Collapse git status loop en gate-runner | S | P3 | **Validado ✅** | — | — | 1h |
 | 29 | CORE-029 | Backfill src/utils/** branches → ≥95% | S | P2 | Pendiente | — | CI stability | 2h |
 | 30 | CORE-030 | State.json corruption recovery test | S | P2 | Pendiente | — | — | 30min |
 | 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | Pendiente | — | onboarding | 1d |
@@ -1403,8 +1403,21 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Tests:** 3925 → 3926 passing (+1), 6 skipped, 0 regresiones.
 - **Lint:** 12 guards verdes.
 
-## CORE-028 — Collapse git status loop en gate-runner
+## CORE-028 — Collapse git status loop en gate-runner **[RESUELTO]**
 - Nivel: S, P3, ~1h. `gate-runner.ts:170-183` — single `git status --porcelain` + map lookup.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~10min.
+- **Resultado:**
+  - **Antes:** loop sobre `files_in_plan` invocando `git(["status", "--porcelain", "--", file], ctx.cwd)` UNA VEZ POR ARCHIVO. Para N archivos = N subprocess spawns + N `existsSync`+`statSync` calls.
+  - **Ahora:** una sola llamada `git(["status", "--porcelain", "--", ...files], ctx.cwd)` con multiple pathspecs. Output parseado en una `Set<string>` con `parsePorcelainPaths` helper.
+  - **Reducción**: O(N) syscalls → O(1) syscall. Para workflows con 10+ archivos in plan = 10x speedup.
+- **`parsePorcelainPaths(stdout): Set<string>` exportado** — parser explícito que maneja:
+  - Líneas vacías (skip).
+  - Formato porcelain v1: `XY<space>filename` → `line.substring(3)`.
+  - Renames `R  old -> new`: captura AMBOS lados (any match counts as "touched").
+- **6 nuevos tests** en `gate-runner.test.ts` validando el parser: empty input, blank lines, single modified, mixed statuses, rename arrow handling, mixed normal+rename.
+- **Tests:** 3926 → 3932 passing (+6 nuevos), 6 skipped, 0 regresiones. Los tests de `all_planned_files_modified` (gate-fixes.test.ts + v3-zero-runtime.test.ts) siguen verdes byte-equal.
+- **Lint:** 12 guards verdes.
 
 ## CORE-029 — Backfill src/utils/** branches → ≥95%
 - Nivel: S, P2, ~2h. Vitest threshold actual 92.7% vs target 92.0% — solo 0.7pts de headroom.

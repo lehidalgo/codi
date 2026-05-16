@@ -167,21 +167,22 @@ const DETERMINISTIC_CHECKERS: Record<string, DeterministicChecker> = {
           "Add at least one file to the plan via `codi workflow scope propose-expansion --file <path>`.",
       };
     }
-    const unchanged: string[] = [];
-    for (const file of files) {
-      const result = git(["status", "--porcelain", "--", file], ctx.cwd);
-      if (!result.ok) {
-        // Git failed (not a repo, etc.) — skip the check rather than fail-pass.
-        return {
-          check_id: "all_planned_files_modified",
-          verdict: "fail",
-          summary: `git status failed for ${file}: ${result.stderr.trim() || "unknown error"}`,
-          suggested_action:
-            "Verify the workflow is running inside a git repository and the file path is correct.",
-        };
-      }
-      if (result.stdout.trim().length === 0) unchanged.push(file);
+    // CORE-028: single `git status --porcelain -- <files...>` instead of
+    // N spawns. Git accepts multiple pathspecs and only outputs lines for
+    // files with working-tree changes; planned files absent from the
+    // output are unchanged.
+    const result = git(["status", "--porcelain", "--", ...files], ctx.cwd);
+    if (!result.ok) {
+      return {
+        check_id: "all_planned_files_modified",
+        verdict: "fail",
+        summary: `git status failed: ${result.stderr.trim() || "unknown error"}`,
+        suggested_action:
+          "Verify the workflow is running inside a git repository and every planned file path is valid.",
+      };
     }
+    const changed = parsePorcelainPaths(result.stdout);
+    const unchanged: string[] = files.filter((f) => !changed.has(f));
     if (unchanged.length === 0) {
       return {
         check_id: "all_planned_files_modified",
@@ -572,6 +573,32 @@ for (const [id, checker] of Object.entries(TEAM_CONSOLIDATION_CHECKERS)) {
     checker,
     requiredWorkflowTypes: ["team-consolidation"],
   });
+}
+
+/**
+ * Parse `git status --porcelain` v1 output into a Set of file paths with
+ * working-tree changes. Each non-empty line carries the shape
+ * `XY<space>filename` where `XY` is a 2-char status. Rename entries use
+ * `R  old -> new`; both sides count as "touched" because either path
+ * appearing in the plan should pass the check.
+ *
+ * CORE-028 — exported so the gate-runner test suite can assert the
+ * parser directly without going through `git status`.
+ */
+export function parsePorcelainPaths(stdout: string): Set<string> {
+  const out = new Set<string>();
+  for (const raw of stdout.split("\n")) {
+    if (raw.length < 4) continue;
+    const rest = raw.substring(3);
+    const arrow = rest.indexOf(" -> ");
+    if (arrow >= 0) {
+      out.add(rest.substring(0, arrow));
+      out.add(rest.substring(arrow + 4));
+    } else {
+      out.add(rest);
+    }
+  }
+  return out;
 }
 
 export function isAgentCheck(check: GateCheck): boolean {

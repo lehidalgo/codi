@@ -6,6 +6,7 @@ import {
   aggregateOutcomes,
   isAgentCheck,
   loadGateDefinition,
+  parsePorcelainPaths,
   runDeterministicCheck,
   type DeterministicCheckContext,
 } from "#src/runtime/gate-runner.js";
@@ -59,6 +60,40 @@ function setup(): string {
   });
   return dir;
 }
+
+describe("parsePorcelainPaths (CORE-028)", () => {
+  it("returns an empty set for empty input", () => {
+    expect(parsePorcelainPaths("")).toEqual(new Set());
+  });
+
+  it("ignores blank lines and lines shorter than 4 chars", () => {
+    expect(parsePorcelainPaths("\n\n   \nM\n")).toEqual(new Set());
+  });
+
+  it("parses a single modified file", () => {
+    expect(parsePorcelainPaths(" M src/foo.ts\n")).toEqual(new Set(["src/foo.ts"]));
+  });
+
+  it("parses multiple lines of mixed statuses", () => {
+    const stdout = ["M  src/a.ts", " M src/b.ts", "?? src/c.ts", "A  src/d.ts"].join("\n");
+    expect(parsePorcelainPaths(stdout)).toEqual(
+      new Set(["src/a.ts", "src/b.ts", "src/c.ts", "src/d.ts"]),
+    );
+  });
+
+  it("captures BOTH sides of a rename entry (old + new)", () => {
+    expect(parsePorcelainPaths("R  src/old.ts -> src/new.ts\n")).toEqual(
+      new Set(["src/old.ts", "src/new.ts"]),
+    );
+  });
+
+  it("handles mixed renames and normal entries", () => {
+    const stdout = [" M src/a.ts", "R  src/old.ts -> src/new.ts", "?? src/c.ts"].join("\n");
+    expect(parsePorcelainPaths(stdout)).toEqual(
+      new Set(["src/a.ts", "src/old.ts", "src/new.ts", "src/c.ts"]),
+    );
+  });
+});
 
 describe("isAgentCheck", () => {
   it("identifies agent checks", () => {
