@@ -59,7 +59,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | **Validado ✅** | — | — | 30min |
 | 34 | CORE-034 | Semantic snapshot assertions | S | P3 | **Validado ✅** | — | — | 3h |
 | 35 | CORE-035 | msw network-boundary tests | S | P3 | **Validado ✅** | — | — | 1-2d |
-| 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | Pendiente | CORE-024 | aislamiento verificable | 4h |
+| 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | **Validado ✅** | CORE-024 | aislamiento verificable | 4h |
 | 37 | CORE-037 | Hook installer mixed-runner test | S | P3 | Pendiente | — | — | 4h |
 | 38 | CORE-038 | Brain DB locked external process test | S | P3 | Pendiente | — | — | 4h |
 
@@ -1552,8 +1552,19 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **NO dep nueva**: ni msw ni nada. La cobertura adicional usa el harness existente.
 - **Decisión defendida en commit**: la falta de msw es FEATURE, no bug — el codebase tiene 1 archivo con surface HTTP testeable, y la complejidad de msw (service-worker overhead, request matching DSL, lifecycle hooks) supera el beneficio.
 
-## CORE-036 — Non-core artifact removal smoke test
+## CORE-036 — Non-core artifact removal smoke test **[RESUELTO]**
 - Nivel: S, P2, depende CORE-024, ~4h. Verifica aislamiento.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~15min.
+- **Contract verificado:** codi's core commands (read-side path: `buildInstalledArtifactInventory`) walk `.codi/skills/` **genéricamente** — nunca hardcodean "codi-foo must exist". El usuario puede `rm -rf .codi/skills/codi-*` (los meta-skills instalados) sin romper subsequent `codi` calls.
+- **4 nuevos tests** en `tests/unit/cli/installed-artifact-inventory.test.ts` bajo `describe("non-core artifact removal smoke (CORE-036)")`:
+  1. **Empty `.codi/skills/`** — directory existe pero vacío (usuario rm-rf'd everything) → `inventory.selections.skills === []`, no crash.
+  2. **Missing `.codi/skills/`** — directorio NO existe (fresh project pre-init) → mismo handling, retorna empty shape.
+  3. **Solo user/custom skills, ZERO meta-skills** — usuario removió todos los `codi-*` + `dev-*` → inventory surface los `my-team-*` genéricamente; **0 entries** con prefix codi-/dev-.
+  4. **Mixed state (meta-skill bundled pero NO instalado)** — meta-skill como template bundled en `src/templates/skills/codi-skill-creator/` pero no instalado en `.codi/skills/` → inventory lo reporta como `builtin-new` (available to install), no crash, no false-positive como `installed: true`.
+- **Tests:** 3957 → 3961 passing (+4), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
+- **Aislamiento verificable**: ahora hay regression sentinels para el contract de CORE-024 — si alguien introduce un hardcoded `.codi/skills/codi-foo/` path en core code, estos tests lo cazan.
 
 ## CORE-037 — Hook installer mixed-runner test
 - Nivel: S, P3, ~4h. lefthook + pre-commit + husky simultáneos.
