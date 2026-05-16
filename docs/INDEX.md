@@ -41,8 +41,9 @@ adapters/ ───────► core/output (Logger DI only)
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** — contribution flow,
   branch naming, commit conventions, "Adding-Hook" / "Adding-Workflow"
   recipes (CORE-033).
-- **[docs/adr/](./adr/)** — architecture decision records (resolved
-  in CORE-032).
+- **[docs/adr/](./adr/README.md)** — 10 architecture decision records
+  for the v3-baseline (CORE-032 moved them from the timestamp-named
+  archive into canonical `NNNN-<kebab>.md` files).
 
 ## Test layout
 

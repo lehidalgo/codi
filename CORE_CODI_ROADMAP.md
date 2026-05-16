@@ -55,7 +55,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 29 | CORE-029 | Backfill src/utils/** branches → ≥95% | S | P2 | **Validado ✅** | — | CI stability | 2h |
 | 30 | CORE-030 | State.json corruption recovery test | S | P2 | **Validado ✅** | — | — | 30min |
 | 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | **Validado ✅** | — | onboarding | 1d |
-| 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | Pendiente | — | — | 2h |
+| 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | **Validado ✅** | — | — | 2h |
 | 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | Pendiente | — | — | 30min |
 | 34 | CORE-034 | Semantic snapshot assertions | S | P3 | Pendiente | — | — | 3h |
 | 35 | CORE-035 | msw network-boundary tests | S | P3 | Pendiente | — | — | 1-2d |
@@ -1475,8 +1475,30 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Lint:** 12 guards verdes.
 - **Onboarding ROI:** un dev nuevo ahora puede leer `docs/INDEX.md` + el README del layer relevante y entender la arquitectura sin grep-hunt. Cada README documenta CONVENTIONS + ADDING-A-NEW-X recipes específicos del layer.
 
-## CORE-032 — docs/adr/ paradox resolution
+## CORE-032 — docs/adr/ paradox resolution **[RESUELTO]**
 - Nivel: S, P3, ~2h. Move/symlink las 10 ADRs reales al directory.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~15min.
+- **Paradox:** `docs/adr/README.md` ya documentaba el naming scheme `NNNN-<kebab>.md` pero el directory estaba vacío; las 10 ADRs reales vivían en `docs/` con nombres timestamp-prefixed `20260508_140923_[ARCHITECTURE]_adr-v3ed0-001-rebrand-in-place.md`. Ningún reader descubría las ADRs.
+- **Fix:**
+  - **10 `git mv`** moviendo cada ADR a `docs/adr/NNNN-<kebab>.md`:
+    - `0001-rebrand-in-place.md`
+    - `0002-devloop-copy-adapt.md`
+    - `0003-tiered-capabilities.md`
+    - `0004-workflows-as-artifacts.md`
+    - `0005-sqlite-canonical-external-syncer.md`
+    - `0006-catalog-77-artifacts.md`
+    - `0007-architectural-features.md`
+    - `0008-ddd-internal-layout.md`
+    - `0009-plugin-distribution-dual-track.md`
+    - `0010-install-modes.md`
+  - **`docs/adr/README.md` reescrito** con: triple test (cuándo escribir uno), naming convention, **tabla-índice de los 10 ADRs** con título + subject, y recipe step-by-step para escribir uno nuevo.
+  - **`docs/INDEX.md` actualizado** — link a `./adr/README.md` ahora cita los 10 ADRs reales.
+- **Resultado:** un dev nuevo entra a `docs/adr/` y ve directamente:
+  - El README explicando convenciones.
+  - 10 archivos `NNNN-*.md` discoverables.
+  - Una tabla en el README con qué decide cada ADR.
+- **Git history preservado**: `git mv` mantiene el blame trail; los timestamps + paths originales viven en la historia.
 
 ## CORE-033 — CONTRIBUTING: Adding-Hook + Adding-Workflow
 - Nivel: S, P3, ~30min.
