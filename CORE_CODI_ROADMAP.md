@@ -60,7 +60,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 34 | CORE-034 | Semantic snapshot assertions | S | P3 | **Validado ✅** | — | — | 3h |
 | 35 | CORE-035 | msw network-boundary tests | S | P3 | **Validado ✅** | — | — | 1-2d |
 | 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | **Validado ✅** | CORE-024 | aislamiento verificable | 4h |
-| 37 | CORE-037 | Hook installer mixed-runner test | S | P3 | Pendiente | — | — | 4h |
+| 37 | CORE-037 | Hook installer mixed-runner test | S | P3 | **Validado ✅** | — | — | 4h |
 | 38 | CORE-038 | Brain DB locked external process test | S | P3 | Pendiente | — | — | 4h |
 
 **Total estimado:** ~35-45 días de trabajo enfocado, distribuibles en ~10 semanas si se ejecuta serial. Paralelizable parcialmente: F1-F5 son secuenciales en valor, D6-D10 pueden solaparse, R/E/S admiten paralelismo.
@@ -1566,8 +1566,20 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Lint:** 12 guards verdes.
 - **Aislamiento verificable**: ahora hay regression sentinels para el contract de CORE-024 — si alguien introduce un hardcoded `.codi/skills/codi-foo/` path en core code, estos tests lo cazan.
 
-## CORE-037 — Hook installer mixed-runner test
+## CORE-037 — Hook installer mixed-runner test **[RESUELTO]**
 - Nivel: S, P3, ~4h. lefthook + pre-commit + husky simultáneos.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~15min.
+- **6 nuevos tests** en `tests/unit/hooks/hook-detector.test.ts` bajo `describe("mixed-runner precedence (CORE-037)")` cubriendo el `DETECTION_RULES` walk order (husky → pre-commit → lefthook → none):
+  1. **husky + lefthook** → husky wins.
+  2. **pre-commit + lefthook** (no husky) → pre-commit wins.
+  3. **All 3 simultaneously** → husky wins, others ignored sin crash.
+  4. **Husky version probe en mixed scenario** → version 9.1.7 lee correctamente desde `node_modules/husky/package.json` aunque coexistan otros runners.
+  5. **`.lefthook.yml` precedence over `lefthook.yml`** — dotfile wins, alternate fallback.
+  6. **Unrelated file present (e.g. `package.json` without husky dep)** → falls through to `runner: "none"`.
+- **Contract pinned:** futuro re-orden de `DETECTION_RULES` se caza por estos sentinels.
+- **Tests:** 3961 → 3967 passing (+6), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
 
 ## CORE-038 — Brain DB locked external process test
 - Nivel: S, P3, ~4h. sqlite-browser scenario.
