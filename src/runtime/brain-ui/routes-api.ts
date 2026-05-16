@@ -216,6 +216,9 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       return c.json({ error: { code: "no_fields" } }, 400);
     }
     params.push(id);
+    // codi-sql-allow: `updates` is a string[] of hardcoded `column = ?`
+    // fragments built immediately above; column identifiers cannot be
+    // SQLite-bound, but the VALUES still use `?` placeholders.
     const result = brain.raw
       .prepare(`UPDATE captures SET ${updates.join(", ")} WHERE capture_id = ?`)
       .run(...params);

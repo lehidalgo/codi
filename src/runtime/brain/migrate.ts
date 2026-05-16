@@ -494,6 +494,9 @@ const VERSIONED_MIGRATIONS: ReadonlyArray<readonly [number, readonly string[]]> 
 ];
 
 function columnExists(raw: Database.Database, table: string, column: string): boolean {
+  // codi-sql-allow: SQLite PRAGMA does not accept bind parameters for the
+  // table identifier; `table` is an internal hardcoded migration step input,
+  // never user-controlled.
   const rows = raw.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   return rows.some((r) => r.name === column);
 }

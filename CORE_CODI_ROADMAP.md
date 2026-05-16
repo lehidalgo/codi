@@ -46,7 +46,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | **Validado ✅** | — | — | 1-2d |
 | 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | **Validado ✅** | CORE-007 | — | 1d |
 | 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | **Validado ✅** | — | — | 4h |
-| 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | Pendiente | — | preserves unsafeMode invariant | 2h |
+| 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | **Validado ✅** | — | preserves unsafeMode invariant | 2h |
 | 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | Pendiente | CORE-006 | "remove non-core" smoke | 0.5d |
 | 25 | CORE-025 | exists() helper extraction (fs-helpers) | S | P3 | **Validado ✅ (closed by CORE-006)** | CORE-006 | — | 1h |
 | 26 | CORE-026 | EMPTY_STATE.lastGenerated lazy | S | P3 | Pendiente | — | — | 5min |
@@ -1326,8 +1326,25 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Tests:** 3894 → 3902 (+8 nuevos en guard-file-size.test.ts), 6 skipped, 0 regresiones.
 - **Lint:** 10 guards verdes (9 previos + nuevo guard-file-size).
 
-## CORE-023 — ESLint rule no template-literal SQL
+## CORE-023 — ESLint rule no template-literal SQL **[RESUELTO]**
 - Nivel: E, P1, ~2 horas. Banear `${var}` en `raw.prepare`/`raw.exec` calls. Preserva `unsafeMode(true)` invariant.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~20min (vs roadmap 2h — 6x más rápido).
+- **Implementación:**
+  - **`scripts/guard-template-literal-sql.mjs` (new, 130 LOC)**: 11º guard. Regex-based scan de `src/runtime/**` + `src/core/**` que busca `\.(prepare|exec)\(\s*\`[^\`]*\$\{` (interpolación en backtick-wrapped SQL).
+  - **Allow-marker pattern**: `// codi-sql-allow: <reason>` en misma línea o hasta 5 líneas arriba. La ventana de 5 líneas acomoda block comments multi-línea explicando excepciones.
+  - **Tests** (`tests/unit/scripts/guard-template-literal-sql.test.ts`, 11 tests): fail on offenders, pass on `?` bind params, pass on plain strings, honour allow-marker (same line / 1 line above / 5 lines above), reject when marker está demasiado lejos (>5 lines), ignore .test.ts/.d.ts/out-of-scope dirs, real-repo regression sentinel.
+  - **Allowlisted 2 sitios legítimos preexistentes con docstring justification:**
+    - `src/runtime/brain/migrate.ts:500` — `PRAGMA table_info(${table})` — SQLite PRAGMA no acepta bind params para identificadores; `table` es input hardcoded de migration step.
+    - `src/runtime/brain-ui/routes-api.ts:223` — `UPDATE captures SET ${updates.join(",")} WHERE capture_id = ?` — column-name list de fragments `column = ?` hardcoded; los VALUES siguen siendo `?` placeholders.
+  - **Wired en `npm run lint`** entre `guard-no-runtime-throws` y `guard-file-size`.
+- **Invariant que protege (per `src/runtime/brain/db.ts:204` docstring):**
+  > Safety: every SQL statement on this handle is a static `raw.prepare("...")` parameterised query — no `raw.exec(<dynamic>)`, no template-literal SQL composition. The defensive flag protects against SQL injection that this codebase already prevents at the application layer.
+  
+  El brain DB corre permanentemente con `unsafeMode(true)` (requerido por FTS5 contentless-sync triggers), así que TypeScript+SQLite no caza interpolaciones a runtime. Este guard cierra el gap a CI.
+- **Tests:** 3902 → 3913 passing (+11 nuevos), 6 skipped, 0 regresiones.
+- **Lint:** 11 guards verdes (10 previos + nuevo guard-template-literal-sql).
+- **Decisión explícita:** guard-mjs en lugar de ESLint custom rule. Pros: consistente con los otros 10 guards, no requiere `@typescript-eslint` AST plugin setup, regex es suficientemente preciso para el dominio acotado (.prepare/.exec en runtime). Contras: no AST-aware (puede tener falsos negativos si alguien hace `const fn = raw.prepare; fn(\`...\${...}\`)` — patrón inverosímil en el codebase).
 
 ## CORE-024 — Meta-skill isolation + import-rule guard
 - Nivel: E, P2, depende CORE-006, ~0.5 día. Tag `codi-*` + `dev-*` skills; añadir guard preventing imports from core.
