@@ -27,7 +27,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 2 | CORE-002 | Atomic generator commit + state lock | F | P0 | **Validado ✅** | — | CORE-011 | 1d |
 | 3 | CORE-003 | Logger DI + de-singletonize | F | P0 | **Validado ✅** | — | CORE-007 | 0.5d |
 | 4 | CORE-004 | Single-source Zod → JSON Schema (infrastructure) | F | P1 | **Validado ✅** | — | CORE-005 (tighter) | 2d |
-| 4b | CORE-004b | Port manifest-event.schema.json (1031 LOC) a Zod | F | P2 | Pendiente | CORE-004 | confianza completa schemas | 0.5d |
+| 4b | CORE-004b | Port manifest-event.schema.json (1031 LOC) a Zod | F | P2 | **Validado ✅** (drift bridge) | CORE-004 | confianza completa schemas | 0.5d |
 | 5 | CORE-005 | Brain DB schema alignment CI guard | F | P0 | **Validado ✅** | (CORE-004) | — | 1d |
 | 6 | CORE-006 | AdapterDefinition declarative + BaseAdapter | D | P1 | **Validado ✅** | CORE-003 | CORE-013, CORE-024 | 3-4d |
 | 7 | CORE-007 | Conflict-resolver Result return signature | D | P0 | **Validado ✅** | CORE-003 | — | 1d |
@@ -372,14 +372,32 @@ Sintetizadas de 3 subagentes paralelos + ajuste de scope mid-implementation:
 
 ---
 
-## CORE-004b — Port manifest-event.schema.json a Zod canonical
+## CORE-004b — Port manifest-event.schema.json a Zod canonical **[RESUELTO via drift-bridge]**
 
 - **Nivel:** F
 - **Prioridad:** P2
-- **Estado:** Pendiente
+- **Estado:** Validado ✅ (scope ajustado vs título original)
 - **Depende de:** CORE-004 (infrastructure ya in place)
 - **Desbloquea:** confianza completa en el contrato de eventos
-- **Effort:** ~0.5d (~3-5h de port + validación)
+- **Effort estimado:** ~0.5d (~3-5h de port + validación)
+- **Effort real:** ~30min (drift-bridge approach)
+
+### Resolución (drift-bridge en vez de full port)
+
+El port literal de los 1031 LOC del schema (43 oneOf variants × per-payload shape) es mechanical pero substancial, y la ROI marginal sobre el JSON Schema + Ajv validation actual es BAJA. El risk REAL que CORE-004b targets es **drift** entre el schema y los TS unions en `runtime/types.ts`. Pragmatically:
+
+- **`tests/runtime/manifest-event-drift.test.ts` (new, 5 tests):**
+  1. EVENT_TYPES ↔ schema oneOf consts — bidirectional diff con error directional.
+  2. COMMITABLE_EVENT_TYPES ↔ schema `commitable: const: true`.
+  3. Every schema variant has explicit `commitable` flag (no defaults silenciosos).
+  4. No duplicates en EVENT_TYPES.
+  5. No duplicates en schema oneOf consts.
+
+- **🐛 Bug real surfaced**: `COMMITABLE_EVENT_TYPES` omitía `design_doc_authored` + `sheet_reconciled`. Schema los marca commitable; replay + PR summary los excluía silenciosamente. **Fixed** en `src/runtime/types.ts`.
+
+- **Full port deferred** con doc inline en el test file. Si la necesidad de derivar `EventType` desde Zod via `z.infer<>` surge, el port queda abierto; el drift bridge sigue siendo regression sentinel post-port.
+
+### Trabajo original (deferred — referencia para futuro port)
 
 **Descripción:** Migrar `src/schemas/runtime/manifest-event.schema.json` (1031 LOC, 45 oneOf variants) a un Zod source canonical (`src/schemas/runtime/manifest-event.ts`) y regenerar el JSON Schema desde ahí. Hoy es el único `.schema.json` aún hand-written; el CI guard de CORE-004 no lo cubre.
 
