@@ -11,6 +11,7 @@ import type { CommandResult } from "../core/output/types.js";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { PROJECT_DIR } from "#src/constants.js";
+import { isCapabilityType } from "#src/core/artifact-types.js";
 
 interface PublishData {
   readonly track: PublishTrack;
@@ -38,17 +39,8 @@ function loadArtifactsFromManifest(repoRoot: string): PluginArtifact[] {
   };
   const out: PluginArtifact[] = [];
   for (const [name, meta] of Object.entries(manifest.artifacts ?? {})) {
-    const type = meta.type;
-    if (
-      type === "rule" ||
-      type === "skill" ||
-      type === "agent" ||
-      type === "hook" ||
-      type === "slash-command" ||
-      type === "mcp-server"
-    ) {
-      out.push({ name, type, path: `.codi/${type}s/${name}` });
-    }
+    if (!isCapabilityType(meta.type)) continue;
+    out.push({ name, type: meta.type, path: `.codi/${meta.type}s/${name}` });
   }
   return out;
 }

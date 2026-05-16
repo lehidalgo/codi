@@ -41,7 +41,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 15 | CORE-015 | Audit + classify 86+ empty catches | R | P1 | **Validado ✅** | — | telemetry de fallos | 1d |
 | 16 | CORE-016 | src/runtime/ ESLint re-enable | E | P2 | **Validado ✅** | — | CORE-017 | 3-5d |
 | 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | **Validado ✅** | CORE-016 | — | 3-5d |
-| 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | Pendiente | — | new artifact type cost | 1d |
+| 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | **Validado ✅** | — | new artifact type cost | 1d |
 | 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | Pendiente | — | — | 4h |
 | 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | Pendiente | — | — | 1-2d |
 | 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | Pendiente | CORE-007 | — | 1d |
@@ -1186,8 +1186,25 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
   - Snapshot trigger en `brain-event-log.append` sigue intacto (KEEP scope) — invariante preservado.
   - El runtime conserva 35 throws documentados; futuras issues (CORE-021 conflict-resolver split) podrían reevaluar algunos.
 
-## CORE-018 — ARTIFACT_LAYOUT consolidación
+## CORE-018 — ARTIFACT_LAYOUT consolidación **[RESUELTO]**
 - Nivel: E, P1, ~1 día. Consolidar `CapabilityType`, `LedgerEntryType`, `CapturedArtifactType` con `ArtifactType`.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~45min (vs roadmap 1d — el archivo ya estaba co-localizado, solo faltaban los tuples + type guards + exhaustive dispatch).
+- **Resultado:**
+  - `src/core/artifact-types.ts`: añadidos 3 tuples (`CAPABILITY_TYPES`, `LEDGER_ENTRY_TYPES`, `CAPTURED_ARTIFACT_TYPES`) con `as const satisfies readonly X[]` para exhaustividad compile-time. Añadidos 4 type-guards (`isArtifactType`, `isCapabilityType`, `isLedgerEntryType`, `isCapturedArtifactType`) derivados de los tuples — eliminan la necesidad de chains `=== "rule" || === "skill" || …`.
+  - `src/cli/plugin.ts`: 6-arm chained-if → `isCapabilityType(meta.type)` guard. Reduce 9 LOC → 4 LOC.
+  - `src/core/capabilities/plugin-manifest.ts`: 6-arm chained-if + 6-field `capabilitiesUsed` object literal → exhaustive `Record<CapabilityType, keyof PluginManifest["capabilitiesUsed"]>` map (`CAPABILITY_TO_FLAG`) + loop derivado de `CAPABILITY_TYPES`. Build falla si añades un nuevo `CapabilityType` sin extender el map.
+  - `tests/unit/core/artifact-types.test.ts` (new, 165 LOC, 27 tests): cubre tuples ↔ unions con `expectTypeOf`, type-guard truth tables, `artifactRelativePath` table-driven.
+- **Decisiones explícitas (qué NO se hizo):**
+  - **NO** se añadió `CAPABILITY_LAYOUT` ni `capabilityRelativePath` — hooks/slash-commands no viven en `.codi/<dir>/` con shape uniforme; sería premature abstraction.
+  - **NO** se migró el brain DB (`artifacts_used.artifact_type`). El column no tiene CHECK constraint y solo `tool-hook.ts` escribe (skill|agent) — `CapturedArtifactType` keeps `"command"` legacy literal para forward-compat. Documentado en file header.
+  - **NO** se unificaron `CapabilityType` y `LedgerEntryType` — dominios ortogonales (publish vs audit).
+  - **NO** se añadió `guard-artifact-literals.mjs` — el `satisfies Record<X, …>` ya garantiza exhaustividad a compile-time.
+  - **NO** se tocaron los `LedgerActivePreset.artifactSelection` / `ArtifactManifest.installed` plural records — son wire format persistido en disco; cambiar shape rompería backward compat.
+- **Tests:** 3867 → 3894 passing (+27 nuevos en artifact-types.test.ts), 6 skipped, 0 regresiones.
+- **Lint:** 9 guards verdes (sin nuevo guard — type-system es suficiente).
+- **Hallazgo:** `cli/plugin.ts:50` construye `.codi/${type}s/${name}` que para `slash-command` genera `slash-commands` — convención correcta. NO había bug latente, falsa alarma del subagente planner.
+- **Coste real de añadir un nuevo `ArtifactType` post-CORE-018:** 1 línea en `ARTIFACT_TYPES`, 1 entry en `ARTIFACT_LAYOUT` (compile-fails sin ella), 1 entry en `ARTIFACT_TO_CAPABILITY` (matrix.ts). El compiler caza los otros sitios via `satisfies Record<ArtifactType, …>`.
 
 ## CORE-019 — cli/workflow.ts WORKFLOW_BUILDERS dispatcher
 - Nivel: E, P2, ~4 horas. 5-branch dispatch en `workflow run` + `workflow convert` → `Record<WorkflowType, ...>` map.

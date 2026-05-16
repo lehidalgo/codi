@@ -34,6 +34,20 @@ export const ARTIFACT_DIR_NAMES = ["rules", "skills", "agents", "mcp-servers"] a
 export type CapabilityType = ArtifactType | "hook" | "slash-command";
 
 /**
+ * Tuple form for runtime iteration. `satisfies` enforces exhaustive coverage
+ * at compile time: adding a new `CapabilityType` member without extending
+ * this tuple fails the build.
+ */
+export const CAPABILITY_TYPES = [
+  "rule",
+  "skill",
+  "agent",
+  "mcp-server",
+  "hook",
+  "slash-command",
+] as const satisfies readonly CapabilityType[];
+
+/**
  * Operations-ledger entry types — what kinds of files Codi tracks for audit.
  * Adds `instruction` (CLAUDE.md / AGENTS.md) and `settings` (.claude/settings.json).
  * Used by `core/audit/operations-ledger.ts`. Fixes the legacy `mcp` literal
@@ -41,14 +55,62 @@ export type CapabilityType = ArtifactType | "hook" | "slash-command";
  */
 export type LedgerEntryType = ArtifactType | "instruction" | "settings";
 
+/** Tuple form for runtime iteration. Compile-time exhaustive. */
+export const LEDGER_ENTRY_TYPES = [
+  "rule",
+  "skill",
+  "agent",
+  "mcp-server",
+  "instruction",
+  "settings",
+] as const satisfies readonly LedgerEntryType[];
+
 /**
  * Captured artifact-usage types — values persisted in
  * `artifacts_used.artifact_type` in the brain DB. Diverges from
  * `CapabilityType` because historical rows use `command` (not
  * `slash-command`); renaming would break existing brain DBs.
  * Used by `runtime/capture/session.ts`.
+ *
+ * CORE-018: the column has no CHECK constraint at the SQLite level
+ * (`runtime/brain/schema.ts:artifacts_used.artifact_type` is plain TEXT);
+ * the type narrative is enforced only by TypeScript. The current sole
+ * producer (`runtime/capture/tool-hook.ts`) only writes `"skill"` and
+ * `"agent"`, so the broader union exists for forward-compat with future
+ * capture sources.
  */
 export type CapturedArtifactType = "rule" | "skill" | "agent" | "command";
+
+/** Tuple form for runtime iteration. Compile-time exhaustive. */
+export const CAPTURED_ARTIFACT_TYPES = [
+  "rule",
+  "skill",
+  "agent",
+  "command",
+] as const satisfies readonly CapturedArtifactType[];
+
+// ─── Type guards ─────────────────────────────────────────────────────────────
+// CORE-018 — replace inline `=== "rule" || === "skill" || …` chains with
+// derivation from the canonical tuples. Adding a new member to the union
+// extends the guard automatically — no parallel update required.
+
+export function isArtifactType(value: unknown): value is ArtifactType {
+  return typeof value === "string" && (ARTIFACT_TYPES as readonly string[]).includes(value);
+}
+
+export function isCapabilityType(value: unknown): value is CapabilityType {
+  return typeof value === "string" && (CAPABILITY_TYPES as readonly string[]).includes(value);
+}
+
+export function isLedgerEntryType(value: unknown): value is LedgerEntryType {
+  return typeof value === "string" && (LEDGER_ENTRY_TYPES as readonly string[]).includes(value);
+}
+
+export function isCapturedArtifactType(value: unknown): value is CapturedArtifactType {
+  return (
+    typeof value === "string" && (CAPTURED_ARTIFACT_TYPES as readonly string[]).includes(value)
+  );
+}
 
 /**
  * Per-kind on-disk layout descriptor.
