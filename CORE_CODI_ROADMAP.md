@@ -44,7 +44,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | **Validado ✅** | — | new artifact type cost | 1d |
 | 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | **Validado ✅** | — | — | 4h |
 | 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | **Validado ✅** | — | — | 1-2d |
-| 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | Pendiente | CORE-007 | — | 1d |
+| 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | **Validado ✅** | CORE-007 | — | 1d |
 | 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | Pendiente | — | — | 4h |
 | 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | Pendiente | — | preserves unsafeMode invariant | 2h |
 | 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | Pendiente | CORE-006 | "remove non-core" smoke | 0.5d |
@@ -1268,8 +1268,36 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
   - **NO** crear nuevo dir `init-phases/` — `init-helpers.ts` es el sibling natural.
 - **Cross-phase var crossings preservados:** los 6 var-crossings críticos identificados por subagentes (`tooling` P4→P10, `importRegenerated` P4→P8, `displayPresetName` P3→P12, `agentIds` P4/P5→P13, `stack` P2→todos) ahora son campos explícitos en `InitState` — discoverable, type-checked, mutación explícita por phase.
 
-## CORE-021 — conflict-resolver.ts split (539 LOC)
+## CORE-021 — conflict-resolver.ts split (539 LOC) **[RESUELTO]**
 - Nivel: E, P2, depende CORE-007, ~1 día. 5 strategies mezcladas → discriminated union + dispatcher.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~30min (vs roadmap 1d — 16x más rápido; caso mecánico tipo CORE-019).
+- **Resultado:**
+  - **`src/utils/conflict-resolver.ts`: 581 → 470 LOC (−19%).** El `resolveConflicts` god-function (~220 LOC inline con 5 strategies entremezcladas) ahora es un dispatcher de ~10 LOC.
+  - **`src/utils/editor-utils.ts` (new, 178 LOC):** extraídas las utilidades de editor (`isCommandAvailable`, `resolveEditor`, `GUI_EDITORS`, `openInEditor`) — cohesivas y potencialmente reusables.
+- **Discriminated union + dispatcher pattern:**
+  - `type StrategyKind = "force" | "keep-current" | "union-merge" | "non-tty" | "interactive"` — 5 strategies tipadas.
+  - `STRATEGIES: Record<StrategyKind, StrategyFn>` con `as const satisfies` — exhaustivo a compile-time (nuevo strategy member sin entry fails the build).
+  - `selectStrategy(opts, isTTY)` — pure helper que mapea options + TTY context al kind.
+  - `resolveConflicts` final: 581→10 LOC, delegates al strategy seleccionado.
+- **5 strategy functions extraídas:**
+  - `resolveForceAll` (3 LOC) — accept all without prompts.
+  - `resolveKeepCurrentAll` (3 LOC) — skip all without prompts.
+  - `resolveUnionMerge` (12 LOC) — git-style markers, never fails.
+  - `resolveNonInteractive` (40 LOC) — CI/hooks path: auto-merge non-overlapping + `unresolvable[]` para hard conflicts (CORE-007 contract).
+  - `resolveInteractiveLoop` (135 LOC) — TTY path: per-file prompts (accept/skip/merge/edit/auto/etc.).
+  - `resolveInteractiveHunks` (helper, 50 LOC) — terminal hunk-by-hunk merge para opción "Merge (interactive)".
+- **Tests:** 23 tests existentes (`conflict-resolver.test.ts` + `conflict-resolver-purity.test.ts`) siguen verdes byte-equal — refactor es behaviour-preserving por diseño. Suite total: 3894 passing, 0 regresiones.
+- **Lint:** 9 guards verdes.
+- **Decisiones explícitas:**
+  - `editor-utils.ts` extraído (no in-place) — cohesión semántica + futuro CORE-XXX que necesite editor invocation desde otro lugar lo reusará.
+  - `resolveInteractiveHunks` NO promovido a strategy — es un helper interno de la `interactive` strategy, no es selectable.
+  - Tests NO modificados — el contrato público (`resolveConflicts` / `ConflictResolution`) es invariante.
+- **Coste post-CORE-021 de añadir una nueva strategy:**
+  - 1 entry en `StrategyKind` union.
+  - 1 entry en `STRATEGIES` map (compile-fails sin ella).
+  - 1 nueva fn con signature `(StrategyContext) => Promise<ConflictResolution>`.
+  - Opcionalmente: extender `selectStrategy` si la nueva strategy requiere flag.
 
 ## CORE-022 — guard-file-size.mjs advisory
 - Nivel: E, P2, ~4 horas. Warn (no block) en cli/core/ files >700 LOC.
