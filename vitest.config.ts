@@ -113,6 +113,13 @@ export default defineConfig({
         // resolveConflicts loop needs a prompt-mock harness we don't yet
         // have. Tracked as test-debt; remove from this list once mocks land.
         "src/utils/conflict-resolver.ts",
+        // CORE-021 extracted the editor invocation helpers from
+        // conflict-resolver.ts. `openInEditor` spawns the user's $EDITOR
+        // and waits for save — same prompt-mock harness gap as the
+        // conflict-resolver loop. The pure parts (`isCommandAvailable`,
+        // `resolveEditor`) are exercised through editor-utils.test.ts.
+        // Tracked as test-debt with the same removal trigger.
+        "src/utils/editor-utils.ts",
         "src/templates/skills/**/scripts/**", // standalone skill runtime scripts with external deps
         "src/templates/skills/**/generators/**", // content-factory frontend (browser/worker) JS — not server-side code
         "src/templates/skills/**/static-dir.ts", // skill packaging helper (build-time)
@@ -150,7 +157,14 @@ export default defineConfig({
         },
         "src/utils/**": {
           statements: 95,
-          branches: 92,
+          // CORE-029 — bumped 92 → 94 after backfill. The remaining
+          // headroom (94.35% measured, 94% threshold) lives in
+          // defensive `?? ""` / `typeof x === "string"` fallbacks
+          // across exec.ts, frontmatter.ts, yaml-serialize.ts, and
+          // codi-dir-diff.ts — branches that are unreachable from any
+          // real input shape. Removing them is a separate cleanup; the
+          // 94 threshold catches future regressions of testable code.
+          branches: 94,
           functions: 100,
         },
       },
