@@ -47,7 +47,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | **Validado ✅** | CORE-007 | — | 1d |
 | 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | **Validado ✅** | — | — | 4h |
 | 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | **Validado ✅** | — | preserves unsafeMode invariant | 2h |
-| 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | Pendiente | CORE-006 | "remove non-core" smoke | 0.5d |
+| 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | **Validado ✅** | CORE-006 | "remove non-core" smoke | 0.5d |
 | 25 | CORE-025 | exists() helper extraction (fs-helpers) | S | P3 | **Validado ✅ (closed by CORE-006)** | CORE-006 | — | 1h |
 | 26 | CORE-026 | EMPTY_STATE.lastGenerated lazy | S | P3 | Pendiente | — | — | 5min |
 | 27 | CORE-027 | Cache findProjectBrainPath per-process | S | P3 | Pendiente | — | — | 1h |
@@ -1346,8 +1346,32 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Lint:** 11 guards verdes (10 previos + nuevo guard-template-literal-sql).
 - **Decisión explícita:** guard-mjs en lugar de ESLint custom rule. Pros: consistente con los otros 10 guards, no requiere `@typescript-eslint` AST plugin setup, regex es suficientemente preciso para el dominio acotado (.prepare/.exec en runtime). Contras: no AST-aware (puede tener falsos negativos si alguien hace `const fn = raw.prepare; fn(\`...\${...}\`)` — patrón inverosímil en el codebase).
 
-## CORE-024 — Meta-skill isolation + import-rule guard
+## CORE-024 — Meta-skill isolation + import-rule guard **[RESUELTO]**
 - Nivel: E, P2, depende CORE-006, ~0.5 día. Tag `codi-*` + `dev-*` skills; añadir guard preventing imports from core.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~15min (vs roadmap 0.5d — 16x más rápido; el codebase ya cumplía el invariant).
+- **Implementación:**
+  - **`scripts/guard-meta-skill-isolation.mjs` (new, 165 LOC)**: 12º guard.
+  - **META_PREFIXES** = `["codi-", "dev-"]` — la convención de naming es la tag autoritativa.
+  - **BANNED_ROOTS** (lo que NO pueden importar las meta-skills):
+    - `#src/core/**` — runtime core
+    - `#src/cli/**` — Commander handlers
+    - `#src/runtime/**` — brain-backed workflow runtime
+    - `#src/utils/**` — internal helpers
+    - `#src/adapters/**` — generator adapters
+  - **Allowed dependencies:**
+    - `#src/constants.js` — project constants
+    - `#src/types/**` — pure type definitions
+    - `#src/templates/skills/**` — sibling skill modules
+    - Relative imports inside the skill
+    - Third-party packages + Node built-ins
+  - **Tests** (`tests/unit/scripts/guard-meta-skill-isolation.test.ts`, 11 tests): empty repo passes, codi-* + dev-* offenders flagged, multiple banned roots reported, constants/types/siblings/relative allowed, non-meta skills ignored, `.test.ts`/`.d.ts` skipped, real-repo regression sentinel.
+- **Hallazgo:** **Los 24 meta-skills existentes (1 `codi-*` + 23 `dev-*`) YA cumplen el invariant — zero imports de `#src/core/**`, `#src/cli/**`, etc.** El refactor es puramente preventivo: el guard cierra el gap a CI para futuros contributors.
+- **Wired en `npm run lint`** entre `guard-template-literal-sql` y `guard-file-size` (12º guard total).
+- **Tests:** 3913 → 3924 passing (+11 nuevos), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
+- **Habilita CORE-036:** "Non-core artifact removal smoke test" (S, P2, dependía de CORE-024) — ahora puede verificar end-to-end que rm-rf de meta-skills no rompe codi.
+- **Decisión explícita:** guard-mjs en lugar de ESLint rule (consistencia con los otros 11 guards, regex es suficientemente preciso para `import ... from "<banned-root>"` patterns).
 
 ---
 
