@@ -67,7 +67,9 @@ export default defineConfig({
         "src/cli/skill.ts", // top-level command — logic in skill-evolve-handler.ts
         "src/cli/prefs.ts", // top-level command — logic in src/runtime/preferences.ts
         "src/cli/workflow.ts", // top-level command — logic in src/runtime/cli-handlers/*
-        "src/cli/init.ts", // top-level interactive init wizard — Commander + @clack
+        // CORE-020 — src/cli/init.ts is now the slim orchestrator; phase
+        // logic moved to init-helpers.ts (already covered). The orchestrator
+        // is exercised by tests/unit/cli/init.test.ts + the e2e suite.
         "src/cli/brain.ts", // top-level CLI — spawns brain-ui via child_process
         "src/cli/agent-hooks.ts", // hook orchestrator wrapping stdin + brain handle
         "src/runtime/cli-handlers.ts", // barrel re-export (no runtime code)

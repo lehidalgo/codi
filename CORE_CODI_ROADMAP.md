@@ -43,7 +43,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 17 | CORE-017 | Runtime layer: throws → Result | E | P2 | **Validado ✅** | CORE-016 | — | 3-5d |
 | 18 | CORE-018 | ARTIFACT_LAYOUT consolidación | E | P1 | **Validado ✅** | — | new artifact type cost | 1d |
 | 19 | CORE-019 | cli/workflow.ts WORKFLOW_BUILDERS dispatcher | E | P2 | **Validado ✅** | — | — | 4h |
-| 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | Pendiente | — | — | 1-2d |
+| 20 | CORE-020 | init.ts god function split (664 LOC) | E | P1 | **Validado ✅** | — | — | 1-2d |
 | 21 | CORE-021 | conflict-resolver.ts split (539 LOC) | E | P2 | Pendiente | CORE-007 | — | 1d |
 | 22 | CORE-022 | guard-file-size.mjs advisory | E | P2 | Pendiente | — | — | 4h |
 | 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | Pendiente | — | preserves unsafeMode invariant | 2h |
@@ -1227,8 +1227,46 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Tests:** 3894 passing, 6 skipped, 0 regresiones (la cobertura de `workflow run`/`convert` via integration tests sigue válida — refactor es invariante de comportamiento por diseño).
 - **Lint:** 9 guards verdes.
 
-## CORE-020 — init.ts god function split (664 LOC)
+## CORE-020 — init.ts god function split (664 LOC) **[RESUELTO]**
 - Nivel: E, P1, ~1-2 días. `initHandler` en `init.ts:105` → 5-7 phases con Result types.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~1.5h (vs roadmap 1-2d — 8-16x más rápido).
+- **Resultado:**
+  - **`src/cli/init.ts`: 799 → 137 LOC (−83%).** `initHandler` pasa de 665 LOC mutando 14+ variables a un orchestrator de ~50 LOC con 12 phase calls explícitas + early-exit checks.
+  - **`src/cli/init-helpers.ts`: 578 → 1397 LOC (+819).** Añadidas 12 phase functions + types + helpers.
+- **Types añadidos (en `init-helpers.ts`, re-exportados desde `init.ts`):**
+  - `InitContext` — inputs immutables (projectRoot, configDir, options, log).
+  - `InitState` — accumulator mutable (15 campos, isUpdate / stack / agentIds / presetName / ruleTemplates / etc.).
+  - `PhaseResult` — discriminated union `{ok:true} | {ok:false, earlyExit}`.
+  - `InitOptions`, `InitData` — re-localizados aquí (back-compat re-exports en init.ts).
+- **12 phases extraídas (todas exportadas):**
+  - P1 `detectExistingInstall` — `fs.access` + `buildInstalledArtifactInventory` + `OperationsLedgerManager.read`.
+  - P2 `detectStackAndAdapters` — `detectStack` + `registerAllAdapters`.
+  - P3 `initialPresetState` — resolve `--preset` flag + defaults.
+  - P4 `runInteractiveIntake` — wizard branch (175 LOC fn): `runInitWizard` + tooling prompt + import sources + saveAsPreset.
+  - P5 `runNonInteractiveIntake` — non-interactive branch: validate preset + agents.
+  - P6 `scaffoldArtifacts` — 4 additive loops (rules/skills/agents/mcp-servers) con subtract de existingSelections.
+  - P7 `syncPresetAndManifest` — `recordPresetArtifactStates` + `syncManifestOnInit` + `recordPresetLock` (3 best-effort blocks).
+  - P8 `applyConfigAndBackup` — `resolveConfig` + `applyConfigurationWithBackup` (carries backup-cancelled early exit).
+  - P9 `ensureDocsStampIfEnabled` — `ensureDocProjectDir` + `writeStamp` gated por `require_documentation` flag.
+  - P10 `installPreCommitHooks` — `detectHookSetup` + `installHooks` + `installMissingDeps`.
+  - P11 `injectDocsSections` — `injectSections` (best-effort).
+  - P12 `writeOperationsLedger` — `OperationsLedgerManager.set*` + addConfigFiles/addHookFiles.
+- **Helpers consolidados:**
+  - `buildInitSuccess(state)` — construye `CommandResult<InitData>` para success path.
+  - `buildInitFailure(ctx, state, errors)` — consolida los 3 boilerplate blocks de early-exit (~40 LOC dedup).
+  - `withConfigDir(result, configDir)` — utility para attach configDir al payload.
+  - `createInitContext`/`createInitState` — factories.
+  - `isInteractiveInit`/`hasArtifactSelections` — guards.
+- **Coverage:** `vitest.config.ts:70` exclusión de `src/cli/init.ts` REMOVIDA (los phase helpers están en init-helpers.ts que sí mide coverage; el orchestrator es ahora delgado y testeable a través de los 21 tests existentes).
+- **Tests:** 3894 passing, 6 skipped, 0 regresiones. Los 21 tests de `tests/unit/cli/init.test.ts` siguen verdes byte-equal — refactor es behaviour-preserving por diseño.
+- **Lint:** 9 guards verdes.
+- **Decisiones explícitas (qué NO se hizo per síntesis aprobada):**
+  - **NO** golden master byte-equal — los 75+ integration tests existentes ya cubren el contract.
+  - **NO** add-tests-first defensive — overkill para refactor invariante.
+  - **NO** mover phases a `core/` — eso sería CORE-020b (orthogonal).
+  - **NO** crear nuevo dir `init-phases/` — `init-helpers.ts` es el sibling natural.
+- **Cross-phase var crossings preservados:** los 6 var-crossings críticos identificados por subagentes (`tooling` P4→P10, `importRegenerated` P4→P8, `displayPresetName` P3→P12, `agentIds` P4/P5→P13, `stack` P2→todos) ahora son campos explícitos en `InitState` — discoverable, type-checked, mutación explícita por phase.
 
 ## CORE-021 — conflict-resolver.ts split (539 LOC)
 - Nivel: E, P2, depende CORE-007, ~1 día. 5 strategies mezcladas → discriminated union + dispatcher.

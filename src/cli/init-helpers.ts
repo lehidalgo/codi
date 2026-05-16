@@ -576,3 +576,822 @@ export async function postInitBindingsProbe(log: Logger): Promise<void> {
     log.debug("Native bindings probe skipped (non-critical)", cause);
   }
 }
+
+// ─── CORE-020 — init phase helpers ───────────────────────────────────────────
+//
+// `initHandler` orchestrates 12 sequential phases. Before CORE-020 the body
+// was a 665-LOC blob mutating 14+ shared variables. The split here threads
+// state through small typed phase functions; the orchestrator (in init.ts)
+// is now ~120 LOC of explicit phase calls with early-exit checks.
+//
+// Cross-file note: imports for the heavy phases (P4 wizard, P8 config
+// apply, P10 hooks install) are co-located here next to their helper to
+// keep init.ts focused on orchestration. The types InitContext / InitState
+// / PhaseResult are also defined here so init.ts can import them.
+
+import { resolveProjectDir } from "../utils/paths.js";
+import { registerAllAdapters } from "../adapters/index.js";
+import { detectAdapters, getAllAdapters } from "../core/generator/adapter-registry.js";
+import { getPresetNames } from "../core/flags/flag-presets.js";
+import {
+  DEFAULT_PRESET as PHASES_DEFAULT_PRESET,
+  PROJECT_DIR,
+  resolveArtifactName,
+} from "../constants.js";
+import { getBuiltinPresetNames } from "../templates/presets/index.js";
+import { resolveConfig } from "../core/config/resolver.js";
+import { createRule } from "../core/scaffolder/rule-scaffolder.js";
+import { createSkill } from "../core/scaffolder/skill-scaffolder.js";
+import { createAgent } from "../core/scaffolder/agent-scaffolder.js";
+import { createMcpServer } from "../core/scaffolder/mcp-scaffolder.js";
+import { createCommandResult } from "../core/output/formatter.js";
+import { EXIT_CODES } from "../core/output/exit-codes.js";
+import type { CommandResult } from "../core/output/types.js";
+import { runInitWizard } from "./init-wizard.js";
+import type { ExistingInstallContext } from "./init-wizard.js";
+import { createError } from "../core/output/errors.js";
+import { detectHookSetup } from "../core/hooks/hook-detector.js";
+import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
+import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
+import { installHooks } from "../core/hooks/hook-installer.js";
+import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
+import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
+import { detectStack } from "../core/hooks/stack-detector.js";
+import { promptToolingDefaults } from "./wizard-summary.js";
+import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import { buildInstalledArtifactInventory } from "./installed-artifact-inventory.js";
+import type { GlobalOptions } from "./shared.js";
+
+/**
+ * `codi init` CLI options. Mirrors the flags accepted by
+ * `registerInitCommand`. Lives here so phase helpers can be typed
+ * without circular imports back to init.ts.
+ */
+export interface InitOptions extends GlobalOptions {
+  force?: boolean;
+  agents?: string[];
+  preset?: string;
+  onConflict?: "keep-current" | "keep-incoming";
+  /**
+   * Skip the wizard's "Modify vs Fresh" prompt and go straight to the
+   * modify submenu. Only meaningful when .codi/ already exists.
+   */
+  customize?: boolean;
+}
+
+/** Final command-output payload — what the JSON serializer emits. */
+export interface InitData {
+  configDir: string;
+  agents: string[];
+  stack: string[];
+  generated: boolean;
+  preset?: string;
+  rules: string[];
+  hooksInstalled?: boolean;
+  /** Timestamp of the pre-init backup, when one was taken. */
+  backup?: string;
+  /**
+   * Populated when `.codi/` was scaffolded but `resolveConfig` rejected the
+   * resulting state. Each entry carries the validator's error code, message,
+   * and remediation hint. When non-empty, `generated` is `false` and
+   * `hooksInstalled` is `false`.
+   */
+  validationErrors?: Array<{ code: string; message: string; hint: string }>;
+}
+
+/** Immutable inputs available to every phase. */
+export interface InitContext {
+  readonly projectRoot: string;
+  readonly configDir: string;
+  readonly options: InitOptions;
+  readonly log: Logger;
+}
+
+/**
+ * Accumulator state threaded through phases. Mutated in place by each
+ * phase function; the orchestrator never reads/writes a field outside
+ * of `buildInitData`. Optional fields stay `undefined` until the phase
+ * that produces them runs.
+ */
+export interface InitState {
+  isUpdate: boolean;
+  existingSelections?: ExistingSelections;
+  existingInstall?: ExistingInstallContext;
+  stack: string[];
+  agentIds: string[];
+  presetName: string;
+  artifactPresetName?: string;
+  displayPresetName?: string;
+  ruleTemplates: string[];
+  skillTemplates: string[];
+  agentTemplates: string[];
+  mcpServerTemplates: string[];
+  tooling: ToolingPromptResult | null;
+  importRegenerated: boolean;
+  generated: boolean;
+  validationErrors?: InitData["validationErrors"];
+  backupTimestamp?: string;
+  hooksInstalled: boolean;
+  hookFiles: string[];
+}
+
+/**
+ * Discriminated union for phases that can short-circuit init with a
+ * concrete CommandResult (wizard cancelled, unknown preset, backup
+ * cancelled). `ok: true` carries no value — phases mutate `InitState`
+ * directly to keep the orchestrator readable.
+ */
+export type PhaseResult =
+  | { ok: true }
+  | { ok: false; earlyExit: CommandResult<InitData> };
+
+export function isInteractiveInit(options: InitOptions): boolean {
+  return !options.json && !options.quiet && !options.agents;
+}
+
+export function hasArtifactSelections(selections: ExistingSelections): boolean {
+  return (
+    selections.rules.length > 0 ||
+    selections.skills.length > 0 ||
+    selections.agents.length > 0 ||
+    selections.mcpServers.length > 0
+  );
+}
+
+/**
+ * Build the `CommandResult<InitData>` for the success path. Centralises
+ * the field plumbing so the orchestrator's final return is a one-liner.
+ */
+export function buildInitSuccess(state: InitState): CommandResult<InitData> {
+  const data: InitData = {
+    configDir: "", // overwritten below
+    agents: state.agentIds,
+    stack: state.stack,
+    generated: state.generated,
+    preset: state.displayPresetName,
+    rules: state.ruleTemplates,
+    hooksInstalled: state.hooksInstalled,
+    ...(state.backupTimestamp ? { backup: state.backupTimestamp } : {}),
+    ...(state.validationErrors && state.validationErrors.length > 0
+      ? { validationErrors: state.validationErrors }
+      : {}),
+  };
+  return createCommandResult({
+    success: true,
+    command: "init",
+    data,
+    exitCode: EXIT_CODES.SUCCESS,
+  });
+}
+
+/**
+ * Build the `CommandResult<InitData>` for an early-exit failure path.
+ * Pre-CORE-020 this shape was duplicated three times across `initHandler`
+ * with hand-written `agents/stack/preset/rules/configDir` boilerplate.
+ */
+export function buildInitFailure(
+  ctx: InitContext,
+  state: Partial<InitState>,
+  errors: CommandResult<InitData>["errors"],
+): CommandResult<InitData> {
+  return createCommandResult({
+    success: false,
+    command: "init",
+    data: {
+      configDir: ctx.configDir,
+      agents: state.agentIds ?? [],
+      stack: state.stack ?? [],
+      generated: false,
+      preset: state.displayPresetName ?? state.presetName,
+      rules: state.ruleTemplates ?? [],
+      ...(state.hooksInstalled !== undefined ? { hooksInstalled: state.hooksInstalled } : {}),
+    },
+    errors,
+    exitCode: EXIT_CODES.GENERAL_ERROR,
+  });
+}
+
+// ─── P1: detect existing install ─────────────────────────────────────────────
+export async function detectExistingInstall(
+  ctx: InitContext,
+  state: InitState,
+): Promise<void> {
+  try {
+    await fs.access(ctx.configDir);
+    if (ctx.options.force) return;
+    state.isUpdate = true;
+    const inventory = await buildInstalledArtifactInventory(ctx.configDir);
+    state.existingSelections = inventory.selections;
+    if (!hasArtifactSelections(state.existingSelections)) {
+      const ledger = new OperationsLedgerManager(ctx.configDir);
+      const ledgerResult = await ledger.read();
+      const activePreset = ledgerResult.ok ? ledgerResult.data.activePreset : null;
+      if (activePreset?.artifactSelection) {
+        state.existingSelections = {
+          preset: activePreset.name,
+          rules: activePreset.artifactSelection.rules,
+          skills: activePreset.artifactSelection.skills,
+          agents: activePreset.artifactSelection.agents,
+          mcpServers: activePreset.artifactSelection.mcpServers ?? [],
+        };
+      }
+    }
+    state.existingInstall = {
+      selections: state.existingSelections,
+      inventory: inventory.entries,
+    };
+  } catch {
+    // Directory does not exist — fresh install. isUpdate stays false.
+  }
+}
+
+// ─── P2: detect stack + register adapters ────────────────────────────────────
+export async function detectStackAndAdapters(
+  ctx: InitContext,
+  state: InitState,
+): Promise<void> {
+  state.stack = await detectStack(ctx.projectRoot);
+  if (!isInteractiveInit(ctx.options)) {
+    ctx.log.info(`Detected stack: ${state.stack.length > 0 ? state.stack.join(", ") : "none"}`);
+  }
+  registerAllAdapters();
+}
+
+// ─── P3: initial preset defaults ─────────────────────────────────────────────
+export function initialPresetState(state: InitState, options: InitOptions): void {
+  const rawPreset = options.preset as string | undefined;
+  const resolved =
+    (rawPreset
+      ? (resolveArtifactName(rawPreset, getPresetNames() as string[]) ?? rawPreset)
+      : undefined) ?? PHASES_DEFAULT_PRESET;
+  state.presetName = resolved;
+  state.displayPresetName = resolved;
+}
+
+// ─── P4: interactive intake (wizard branch) ──────────────────────────────────
+export async function runInteractiveIntake(
+  ctx: InitContext,
+  state: InitState,
+): Promise<PhaseResult> {
+  const detectedAdapters = await detectAdapters(ctx.projectRoot);
+  const detectedAgentIds = detectedAdapters.map((a) => a.id);
+  const allAgentIds = getAllAdapters().map((a) => a.id);
+
+  const wizardResult = await runInitWizard(
+    state.stack,
+    detectedAgentIds,
+    allAgentIds,
+    state.existingInstall,
+    { forceModify: ctx.options.customize === true && state.existingInstall !== undefined },
+  );
+  if (!wizardResult) {
+    return {
+      ok: false,
+      earlyExit: buildInitFailure(ctx, state, [
+        {
+          code: "E_CONFIG_INVALID",
+          message: "Setup cancelled.",
+          hint: "",
+          severity: "error",
+          context: {},
+        },
+      ]),
+    };
+  }
+
+  state.agentIds = wizardResult.agents;
+  // Artifact preset: only set when a named preset was selected (not custom).
+  state.artifactPresetName = wizardResult.preset;
+  // Flag preset: used for flags.yaml configuration.
+  state.presetName =
+    wizardResult.selectedPresetName ??
+    wizardResult.flagPreset ??
+    wizardResult.preset ??
+    state.presetName;
+  state.displayPresetName =
+    wizardResult.saveAsPreset ??
+    wizardResult.selectedPresetName ??
+    state.artifactPresetName ??
+    (wizardResult.configMode === "custom" ? "custom" : undefined);
+  // Use wizard language selection for hooks (overrides auto-detection).
+  state.stack = wizardResult.languages;
+
+  // Tooling defaults summary — single shot after language selection.
+  try {
+    state.tooling = await promptToolingDefaults(ctx.projectRoot);
+  } catch {
+    // Non-interactive environment or prompt cancelled — fall back to auto.
+    state.tooling = null;
+  }
+
+  const isImportMode =
+    wizardResult.configMode === "zip" ||
+    wizardResult.configMode === "github" ||
+    wizardResult.configMode === "local";
+  if (!isImportMode) {
+    // Preset or custom: wizard always returns the full artifact selections.
+    state.ruleTemplates = wizardResult.rules;
+    state.skillTemplates = wizardResult.skills;
+    state.agentTemplates = wizardResult.agentTemplates;
+    state.mcpServerTemplates = wizardResult.mcpServers;
+  }
+
+  if (state.isUpdate) {
+    await ensureProjectDirs(ctx.configDir);
+    await persistManifest(ctx.configDir, {
+      agents: state.agentIds,
+      versionPin: wizardResult.versionPin,
+    });
+    await persistFlags(ctx.configDir, resolveFlagsForPreset(state.presetName, wizardResult.flags));
+  } else {
+    await createProjectStructure(
+      ctx.configDir,
+      state.agentIds,
+      state.presetName,
+      wizardResult.versionPin,
+      wizardResult.flags,
+    );
+  }
+
+  if (wizardResult.gitHooks || wizardResult.runtimeHooks) {
+    const { StateManager: SM } = await import("../core/config/state.js");
+    const stateManager = new SM(ctx.configDir, ctx.projectRoot);
+    const selection: { git?: string[]; runtime?: string[] } = {};
+    if (wizardResult.gitHooks) selection.git = wizardResult.gitHooks;
+    if (wizardResult.runtimeHooks) selection.runtime = wizardResult.runtimeHooks;
+    await stateManager.updateSelectedHooks(selection);
+  }
+
+  // Handle import sources (ZIP / GitHub / local). presetInstallUnifiedHandler
+  // calls regenerateConfigs internally, so we track success to skip the
+  // duplicate generate() call later via importRegenerated.
+  if (wizardResult.importSource) {
+    if (wizardResult.configMode === "local") {
+      ctx.log.info("Importing artifacts from local directory...");
+      await runArtifactSelectionFallback(ctx.configDir, "local", wizardResult.importSource);
+      state.importRegenerated = true;
+    } else {
+      const { presetInstallUnifiedHandler } = await import("./preset-handlers.js");
+      const installResult = await presetInstallUnifiedHandler(
+        ctx.projectRoot,
+        wizardResult.importSource,
+      );
+      if (!installResult.success) {
+        ctx.log.warn(
+          `Preset import failed: ${installResult.errors[0]?.message ?? "unknown error"}`,
+        );
+        if (wizardResult.configMode === "zip" || wizardResult.configMode === "github") {
+          ctx.log.info("Trying artifact-selection fallback (source has no preset.yaml)...");
+          await runArtifactSelectionFallback(
+            ctx.configDir,
+            wizardResult.configMode,
+            wizardResult.importSource,
+          );
+          state.importRegenerated = true;
+        }
+      } else {
+        state.importRegenerated = true;
+        if (installResult.data?.name) {
+          state.presetName = installResult.data.name;
+          state.displayPresetName = installResult.data.name;
+        }
+      }
+    }
+  }
+
+  // Save custom selection as preset if requested.
+  if (wizardResult.saveAsPreset) {
+    const presetDir = path.join(ctx.configDir, "presets", wizardResult.saveAsPreset);
+    await fs.mkdir(presetDir, { recursive: true });
+    await fs.writeFile(
+      path.join(presetDir, "preset.yaml"),
+      stringifyYaml({
+        name: wizardResult.saveAsPreset,
+        version: "1.0.0",
+        artifacts: {
+          rules: wizardResult.rules,
+          skills: wizardResult.skills,
+          agents: wizardResult.agentTemplates,
+          mcpServers: wizardResult.mcpServers,
+        },
+      }),
+      "utf8",
+    );
+    ctx.log.info(`Saved custom selection as preset "${wizardResult.saveAsPreset}"`);
+  }
+
+  return { ok: true };
+}
+
+// ─── P5: non-interactive intake ──────────────────────────────────────────────
+export async function runNonInteractiveIntake(
+  ctx: InitContext,
+  state: InitState,
+): Promise<PhaseResult> {
+  const knownPresets = getBuiltinPresetNames();
+  if (!knownPresets.includes(state.presetName)) {
+    return {
+      ok: false,
+      earlyExit: buildInitFailure(ctx, state, [
+        {
+          code: "E_CONFIG_INVALID",
+          message: `Unknown preset: "${state.presetName}". Known: ${knownPresets.join(", ")}`,
+          hint: `Available presets: ${knownPresets.join(", ")}`,
+          severity: "error",
+          context: { unknownPreset: state.presetName },
+        },
+      ]),
+    };
+  }
+
+  if (ctx.options.agents && ctx.options.agents.length > 0) {
+    const knownIds = new Set(getAllAdapters().map((a) => a.id));
+    const unknownAgents = ctx.options.agents.filter((id) => !knownIds.has(id));
+    if (unknownAgents.length > 0) {
+      return {
+        ok: false,
+        earlyExit: buildInitFailure(ctx, state, [
+          {
+            code: "E_CONFIG_INVALID",
+            message: `Unknown agent(s): ${unknownAgents.join(", ")}. Known: ${[...knownIds].join(", ")}`,
+            hint: `Available agents: ${[...knownIds].join(", ")}`,
+            severity: "error",
+            context: { unknownAgents },
+          },
+        ]),
+      };
+    }
+    state.agentIds = ctx.options.agents;
+  } else {
+    const detectedAdapters = await detectAdapters(ctx.projectRoot);
+    state.agentIds = detectedAdapters.map((a) => a.id);
+  }
+
+  ctx.log.info(`Using agents: ${state.agentIds.join(", ")}`);
+  // Non-interactive always uses a named artifact preset.
+  state.artifactPresetName = state.presetName;
+  if (state.isUpdate) {
+    await ensureProjectDirs(ctx.configDir);
+    await persistManifest(ctx.configDir, { agents: state.agentIds });
+    await persistFlags(ctx.configDir, resolveFlagsForPreset(state.presetName));
+  } else {
+    await createProjectStructure(ctx.configDir, state.agentIds, state.presetName, false);
+  }
+
+  const presetDef = getBuiltinPresetDefinition(state.presetName);
+  if (presetDef) {
+    state.ruleTemplates = [...presetDef.rules];
+    state.skillTemplates = [...presetDef.skills];
+    state.agentTemplates = [...presetDef.agents];
+  }
+  return { ok: true };
+}
+
+// ─── P6: scaffold artifacts (additive over existing selections) ──────────────
+export async function scaffoldArtifacts(
+  ctx: InitContext,
+  state: InitState,
+): Promise<void> {
+  const forceArtifacts = ctx.options.force || ctx.options.onConflict === "keep-incoming";
+  const subtract = (next: string[], prev: string[] | undefined): string[] =>
+    prev && prev.length > 0 ? next.filter((n) => !prev.includes(n)) : next;
+  const additiveRules = forceArtifacts
+    ? state.ruleTemplates
+    : subtract(state.ruleTemplates, state.existingSelections?.rules);
+  const additiveSkills = forceArtifacts
+    ? state.skillTemplates
+    : subtract(state.skillTemplates, state.existingSelections?.skills);
+  const additiveAgents = forceArtifacts
+    ? state.agentTemplates
+    : subtract(state.agentTemplates, state.existingSelections?.agents);
+  const additiveMcps = forceArtifacts
+    ? state.mcpServerTemplates
+    : subtract(state.mcpServerTemplates, state.existingSelections?.mcpServers);
+
+  for (const template of additiveRules) {
+    const r = await createRule({ name: template, configDir: ctx.configDir, template, force: forceArtifacts });
+    if (!r.ok) {
+      ctx.log.warn(`Failed to create rule "${template}": ${r.errors[0]?.message ?? "unknown error"}`);
+    }
+  }
+  const projectName = path.basename(ctx.projectRoot);
+  for (const template of additiveSkills) {
+    const r = await createSkill({
+      name: template,
+      configDir: ctx.configDir,
+      template,
+      copyrightHolder: projectName,
+      force: forceArtifacts,
+    });
+    if (!r.ok) {
+      ctx.log.warn(`Failed to create skill "${template}": ${r.errors[0]?.message ?? "unknown error"}`);
+    }
+  }
+  for (const template of additiveAgents) {
+    const r = await createAgent({ name: template, configDir: ctx.configDir, template, force: forceArtifacts });
+    if (!r.ok) {
+      ctx.log.warn(`Failed to create agent "${template}": ${r.errors[0]?.message ?? "unknown error"}`);
+    }
+  }
+  for (const template of additiveMcps) {
+    const r = await createMcpServer({ name: template, configDir: ctx.configDir, template, force: forceArtifacts });
+    if (!r.ok) {
+      ctx.log.warn(`Failed to create MCP server "${template}": ${r.errors[0]?.message ?? "unknown error"}`);
+    }
+  }
+}
+
+// ─── P7: record preset state + sync manifest + lock file ─────────────────────
+export async function syncPresetAndManifest(
+  ctx: InitContext,
+  state: InitState,
+): Promise<void> {
+  if (state.artifactPresetName) {
+    try {
+      await recordPresetArtifactStates(
+        ctx.configDir,
+        ctx.projectRoot,
+        state.artifactPresetName,
+        state.ruleTemplates,
+        state.skillTemplates,
+        state.agentTemplates,
+      );
+    } catch {
+      ctx.log.warn("Preset artifact state tracking failed; this is non-critical.");
+    }
+  }
+
+  await syncManifestOnInit(
+    ctx.configDir,
+    state.ruleTemplates,
+    state.skillTemplates,
+    state.agentTemplates,
+    state.mcpServerTemplates,
+    state.isUpdate ? state.existingSelections : undefined,
+  ).catch(() => ctx.log.warn("Artifact manifest sync failed; this is non-critical."));
+
+  if (state.artifactPresetName) {
+    await recordPresetLock(
+      ctx.configDir,
+      state.artifactPresetName,
+      state.displayPresetName ?? state.artifactPresetName,
+    ).catch(() => ctx.log.warn("Failed to write preset lock file; this is non-critical."));
+  }
+}
+
+// ─── P8: validate + apply configuration with optional backup ─────────────────
+export interface ConfigApplyOutput {
+  configResult: Awaited<ReturnType<typeof resolveConfig>>;
+}
+
+export async function applyConfigAndBackup(
+  ctx: InitContext,
+  state: InitState,
+): Promise<{ phase: PhaseResult; output: ConfigApplyOutput }> {
+  state.generated = state.importRegenerated;
+  const configResult = await resolveConfig(ctx.projectRoot);
+  if (!configResult.ok) {
+    state.validationErrors = configResult.errors.map((e) => ({
+      code: e.code,
+      message: e.message,
+      hint: e.hint,
+    }));
+    ctx.log.error(
+      `Configuration validation failed; ${PROJECT_CLI} cannot generate agent files until the listed errors are fixed.`,
+    );
+    for (const e of configResult.errors) {
+      ctx.log.error(`  ${e.code}: ${e.message}`);
+      if (e.hint && e.hint !== e.message) ctx.log.info(`    -> ${e.hint}`);
+    }
+    ctx.log.info(
+      `Fix the listed errors, then run \`${PROJECT_CLI} generate\` to finish initialization.`,
+    );
+    return { phase: { ok: true }, output: { configResult } };
+  }
+  if (state.importRegenerated) {
+    return { phase: { ok: true }, output: { configResult } };
+  }
+  const outcome = await applyConfigurationWithBackup(
+    ctx.projectRoot,
+    ctx.configDir,
+    configResult.data,
+    {
+      force: ctx.options.force || ctx.options.onConflict === "keep-incoming",
+      keepCurrent: ctx.options.onConflict === "keep-current",
+      forceDeleteDriftedOrphans: ctx.options.force || ctx.options.onConflict === "keep-incoming",
+    },
+    state.isUpdate,
+  );
+  if (outcome.cancelled) {
+    return {
+      phase: {
+        ok: false,
+        earlyExit: buildInitFailure(ctx, state, [
+          createError("E_BACKUP_CANCELLED", { message: RETENTION_CANCELLED_ERROR }),
+        ]),
+      },
+      output: { configResult },
+    };
+  }
+  state.generated = outcome.generated;
+  state.backupTimestamp = outcome.backupTimestamp;
+  return { phase: { ok: true }, output: { configResult } };
+}
+
+// ─── P9: docs stamp when require_documentation is enabled ────────────────────
+export async function ensureDocsStampIfEnabled(
+  ctx: InitContext,
+  configResult: ConfigApplyOutput["configResult"],
+): Promise<void> {
+  if (!configResult.ok) return;
+  const requireDoc = configResult.data.flags["require_documentation"];
+  const docCheckEnabled = requireDoc?.mode !== "disabled" && requireDoc?.value === true;
+  if (!docCheckEnabled) return;
+  try {
+    const { ensureDocProjectDir, writeStamp } = await import("../core/docs/doc-stamp.js");
+    await ensureDocProjectDir(ctx.projectRoot);
+    const stampPath = `docs/project/.doc-stamp`;
+    const stampExists = await fs
+      .access(`${ctx.projectRoot}/${stampPath}`)
+      .then(() => true)
+      .catch(() => false);
+    if (!stampExists) {
+      await writeStamp(ctx.projectRoot, "human");
+      ctx.log.info(`Documentation checkpoint initialised: ${stampPath}`);
+    }
+  } catch {
+    ctx.log.warn("Documentation directory setup skipped (not a git repository?).");
+  }
+}
+
+// ─── P10: install pre-commit hooks ───────────────────────────────────────────
+export async function installPreCommitHooks(
+  ctx: InitContext,
+  state: InitState,
+  configResult: ConfigApplyOutput["configResult"],
+): Promise<void> {
+  if (!configResult.ok) return;
+  try {
+    const hookSetup = await detectHookSetup(ctx.projectRoot);
+    const resolvedFlags = configResult.data.flags;
+    if (state.tooling) applyToolingPicks(resolvedFlags, state.tooling);
+    if (state.tooling?.skipped) {
+      ctx.log.info("Skipped pre-commit hook installation per user request");
+    }
+    const flagsForHooks = await resolveAutoFlags(ctx.projectRoot, resolvedFlags);
+    const hooksConfig = generateHooksConfig(flagsForHooks, state.stack);
+    if (state.tooling?.skipped) return;
+    if (hooksConfig.hooks.length === 0 && !hooksConfig.docCheck) return;
+
+    const hookResult = await installHooks({
+      projectRoot: ctx.projectRoot,
+      runner: hookSetup.runner,
+      hooks: hooksConfig.hooks,
+      flags: resolvedFlags,
+      commitMsgValidation: hooksConfig.commitMsgValidation,
+      secretScan: hooksConfig.secretScan,
+      fileSizeCheck: hooksConfig.fileSizeCheck,
+      versionCheck: hooksConfig.versionCheck,
+      templateWiringCheck: hooksConfig.templateWiringCheck,
+      docNamingCheck: hooksConfig.docNamingCheck,
+      versionBump: hooksConfig.versionBump,
+      versionVerify: hooksConfig.versionVerify,
+      artifactValidation: hooksConfig.artifactValidation,
+      importDepthCheck: hooksConfig.importDepthCheck,
+      skillYamlValidation: hooksConfig.skillYamlValidation,
+      skillResourceCheck: hooksConfig.skillResourceCheck,
+      skillPathWrapCheck: hooksConfig.skillPathWrapCheck,
+      stagedJunkCheck: hooksConfig.stagedJunkCheck,
+      conflictMarkerCheck: hooksConfig.conflictMarkerCheck,
+      brandSkillValidation: hooksConfig.brandSkillValidation,
+      docCheck: hooksConfig.docCheck,
+      docProtectedBranches: hooksConfig.docProtectedBranches,
+    });
+    state.hooksInstalled = hookResult.ok;
+    if (hookResult.ok) {
+      state.hookFiles = hookResult.data.files;
+      ctx.log.info(
+        `Pre-commit hooks installed (${hookSetup.runner === "none" ? "standalone" : hookSetup.runner})`,
+      );
+      const missingDeps = filterMissing(
+        await checkHookDependencies(hooksConfig.hooks, ctx.projectRoot),
+      );
+      if (missingDeps.length > 0) {
+        await installMissingDeps(missingDeps, ctx.projectRoot, ctx.log, isInteractiveInit(ctx.options));
+      }
+    } else {
+      ctx.log.warn("Hook installation failed; you can set up hooks manually.");
+    }
+  } catch {
+    ctx.log.warn("Hook detection failed; skipping hook installation.");
+  }
+}
+
+// ─── P11: inject code-driven documentation sections ──────────────────────────
+export async function injectDocsSections(ctx: InitContext): Promise<void> {
+  try {
+    const { injectSections } = await import("../core/docs/docs-generator.js");
+    const result = await injectSections(ctx.projectRoot);
+    if (result.ok && result.data.updated.length > 0) {
+      ctx.log.info(`Documentation sections updated: ${result.data.updated.join(", ")}`);
+    }
+  } catch {
+    ctx.log.warn("Documentation section generation skipped.");
+  }
+}
+
+// ─── P12: write operations ledger ────────────────────────────────────────────
+export async function writeOperationsLedger(
+  ctx: InitContext,
+  state: InitState,
+): Promise<void> {
+  try {
+    const ledger = new OperationsLedgerManager(ctx.configDir);
+    const now = new Date().toISOString();
+    await ledger.setInitialization({
+      timestamp: now,
+      preset: state.displayPresetName ?? state.presetName,
+      agents: state.agentIds,
+      stack: state.stack,
+      codiVersion: VERSION,
+    });
+    const hasAnyArtifact =
+      state.ruleTemplates.length > 0 ||
+      state.skillTemplates.length > 0 ||
+      state.agentTemplates.length > 0 ||
+      state.mcpServerTemplates.length > 0;
+    if (hasAnyArtifact) {
+      await ledger.setActivePreset({
+        name: state.displayPresetName ?? state.presetName,
+        installedAt: now,
+        artifactSelection: {
+          rules: state.ruleTemplates,
+          skills: state.skillTemplates,
+          agents: state.agentTemplates,
+          mcpServers: state.mcpServerTemplates,
+        },
+      });
+    }
+    await ledger.addConfigFiles([
+      { path: `${PROJECT_DIR}/${MANIFEST_FILENAME}`, type: "manifest", createdAt: now },
+      { path: `${PROJECT_DIR}/flags.yaml`, type: "flags", createdAt: now },
+      { path: `${PROJECT_DIR}/operations.json`, type: "ledger", createdAt: now },
+    ]);
+    if (state.hookFiles.length > 0) {
+      const hookSetup = await detectHookSetup(ctx.projectRoot);
+      await ledger.addHookFiles(
+        state.hookFiles.map((f) => ({
+          path: f,
+          framework:
+            hookSetup.runner === "none"
+              ? ("standalone" as const)
+              : (hookSetup.runner as "husky" | "pre-commit" | "lefthook"),
+          type: inferHookType(f),
+          createdAt: now,
+        })),
+      );
+    }
+  } catch {
+    ctx.log.warn("Operations ledger write failed; this is non-critical.");
+  }
+}
+
+/** Initial empty state — every field starts at its zero value. */
+export function createInitState(): InitState {
+  return {
+    isUpdate: false,
+    stack: [],
+    agentIds: [],
+    presetName: PHASES_DEFAULT_PRESET,
+    ruleTemplates: [],
+    skillTemplates: [],
+    agentTemplates: [],
+    mcpServerTemplates: [],
+    tooling: null,
+    importRegenerated: false,
+    generated: false,
+    hooksInstalled: false,
+    hookFiles: [],
+  };
+}
+
+/** Build the InitContext from raw inputs. */
+export function createInitContext(projectRoot: string, options: InitOptions): InitContext {
+  return {
+    projectRoot,
+    configDir: resolveProjectDir(projectRoot),
+    options,
+    log: Logger.getInstance(),
+  };
+}
+
+/**
+ * Helper used by the orchestrator to attach `configDir` to the success
+ * payload. Kept here so init.ts has zero data-shaping logic.
+ */
+export function withConfigDir(
+  result: CommandResult<InitData>,
+  configDir: string,
+): CommandResult<InitData> {
+  return { ...result, data: { ...result.data, configDir } };
+}
