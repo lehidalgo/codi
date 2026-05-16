@@ -54,7 +54,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 28 | CORE-028 | Collapse git status loop en gate-runner | S | P3 | **Validado ✅** | — | — | 1h |
 | 29 | CORE-029 | Backfill src/utils/** branches → ≥95% | S | P2 | **Validado ✅** | — | CI stability | 2h |
 | 30 | CORE-030 | State.json corruption recovery test | S | P2 | **Validado ✅** | — | — | 30min |
-| 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | Pendiente | — | onboarding | 1d |
+| 31 | CORE-031 | docs/INDEX.md + per-layer READMEs | S | P3 | **Validado ✅** | — | onboarding | 1d |
 | 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | Pendiente | — | — | 2h |
 | 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | Pendiente | — | — | 30min |
 | 34 | CORE-034 | Semantic snapshot assertions | S | P3 | Pendiente | — | — | 3h |
@@ -1451,8 +1451,29 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Tests:** 3937 → 3944 passing (+7), 6 skipped, 0 regresiones.
 - **Lint:** 12 guards verdes.
 
-## CORE-031 — docs/INDEX.md + per-layer READMEs
+## CORE-031 — docs/INDEX.md + per-layer READMEs **[RESUELTO]**
 - Nivel: S, P3, ~1 día. 5 READMEs en `src/{cli,core,adapters,utils,schemas}/`.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~45min (vs roadmap 1d — 10x más rápido; usé `src/runtime/README.md` como template y aproveché el conocimiento acumulado de CORE-001..030).
+- **Resultado:**
+  - **5 nuevos READMEs** (uno por layer):
+    - `src/cli/README.md` — Commander entry points + `*-handlers.ts`/`*-wizard.ts` convention + adding-a-command recipe.
+    - `src/core/README.md` — pure domain logic, layered breakdown (artifact-types, config, generator, hooks, preset, audit, output, …), invariants.
+    - `src/adapters/README.md` — declarative `defineAdapter` pattern (CORE-006), shared helpers (fs/heartbeat/section/permission/skill builders), adding-an-agent recipe.
+    - `src/utils/README.md` — side-effect-free helpers (paths/fs/hash/semver/diff/conflict-resolver/editor-utils), coverage threshold rationale.
+    - `src/schemas/README.md` — Zod canonical → JSON Schema pipeline (CORE-004), conventions, pending CORE-004b note.
+  - **`docs/INDEX.md` (new)** — top-level index linking:
+    - 6 layer READMEs (5 new + `src/runtime/README.md` pre-existing).
+    - Layering invariants diagram (ASCII flow).
+    - Operational docs (roadmap, CONTRIBUTING, ADRs).
+    - Test layout (unit/integration/e2e/runtime).
+    - Schema regen commands.
+    - **12-guard lint chain** detallado con propósito y CORE-XXX origin de cada uno.
+    - CI gate sequence (`npm run preversion`).
+- **Net delta:** +6 files, ~600 LOC de docs.
+- **Tests:** 3944 passing, 6 skipped, 0 regresiones (zero código tocado).
+- **Lint:** 12 guards verdes.
+- **Onboarding ROI:** un dev nuevo ahora puede leer `docs/INDEX.md` + el README del layer relevante y entender la arquitectura sin grep-hunt. Cada README documenta CONVENTIONS + ADDING-A-NEW-X recipes específicos del layer.
 
 ## CORE-032 — docs/adr/ paradox resolution
 - Nivel: S, P3, ~2h. Move/symlink las 10 ADRs reales al directory.
