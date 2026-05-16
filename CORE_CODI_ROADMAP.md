@@ -49,7 +49,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 23 | CORE-023 | ESLint rule: no template-literal SQL | E | P1 | **Validado ✅** | — | preserves unsafeMode invariant | 2h |
 | 24 | CORE-024 | Meta-skill isolation + import-rule guard | E | P2 | **Validado ✅** | CORE-006 | "remove non-core" smoke | 0.5d |
 | 25 | CORE-025 | exists() helper extraction (fs-helpers) | S | P3 | **Validado ✅ (closed by CORE-006)** | CORE-006 | — | 1h |
-| 26 | CORE-026 | EMPTY_STATE.lastGenerated lazy | S | P3 | Pendiente | — | — | 5min |
+| 26 | CORE-026 | EMPTY_STATE.lastGenerated lazy | S | P3 | **Validado ✅** | — | — | 5min |
 | 27 | CORE-027 | Cache findProjectBrainPath per-process | S | P3 | Pendiente | — | — | 1h |
 | 28 | CORE-028 | Collapse git status loop en gate-runner | S | P3 | Pendiente | — | — | 1h |
 | 29 | CORE-029 | Backfill src/utils/** branches → ≥95% | S | P2 | Pendiente | — | CI stability | 2h |
@@ -1382,8 +1382,16 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Estado:** Validado ✅ (cerrado como side-effect de CORE-006).
 - **Resultado:** `src/adapters/fs-helpers.ts` con `exists()`, `existsAny()`, `readJsonIfExists()`. Las 6 duplicaciones byte-idénticas en cada leaf adapter fueron eliminadas. Tests: `tests/unit/adapters/fs-helpers.test.ts` (9 casos).
 
-## CORE-026 — EMPTY_STATE.lastGenerated lazy
+## CORE-026 — EMPTY_STATE.lastGenerated lazy **[RESUELTO]**
 - Nivel: S, P3, ~5min. `state.ts:128`.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~10min (incluye regression test).
+- **Bug:** `const EMPTY_STATE: StateData = { ..., lastGenerated: new Date().toISOString() }` se ejecutaba a module-load time → `lastGenerated` quedaba congelado al boot del proceso. Long-running watchers (watch mode, brain UI server) que leyeran state después de un delete surface el timestamp del boot, no del read real.
+- **Fix:** reemplazar el const por `function makeEmptyState(): StateData`. Las 2 referencias (`read()` ENOENT branch + `touch()` bootstrap) usan el factory ahora.
+- **Test añadido:** `tests/unit/config/state.test.ts:32` — regression sentinel que hace 2 reads consecutivos con 5ms de delay y verifica `r2.data.lastGenerated > r1.data.lastGenerated`.
+- **Net delta:** `src/core/config/state.ts` +15 LOC (factory + docstring), -1 LOC (eliminated const). `tests/unit/config/state.test.ts` +18 LOC (regression test).
+- **Tests:** 3924 → 3925 passing (+1), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
 
 ## CORE-027 — Cache findProjectBrainPath per-process
 - Nivel: S, P3, ~1h. `brain/db.ts:47`.

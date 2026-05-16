@@ -124,12 +124,26 @@ export interface DriftReport {
   files: DriftFile[];
 }
 
-const EMPTY_STATE: StateData = {
-  version: "1",
-  lastGenerated: new Date().toISOString(),
-  agents: {},
-  hooks: [],
-};
+/**
+ * Build an empty `StateData` with `lastGenerated` set to **now**. Returned
+ * by `read()` when no state file exists and by `touch()` when bootstrapping
+ * the file on first run.
+ *
+ * CORE-026 — must be a factory, not a module-level const. Before this fix,
+ * `EMPTY_STATE.lastGenerated` was frozen to the moment `state.ts` was
+ * first imported (process boot time). Long-running processes (watch mode,
+ * brain UI server) that read state after deletion would surface the
+ * boot-time timestamp instead of the actual read time — a silent
+ * staleness bug that drift detection would propagate.
+ */
+function makeEmptyState(): StateData {
+  return {
+    version: "1",
+    lastGenerated: new Date().toISOString(),
+    agents: {},
+    hooks: [],
+  };
+}
 
 /**
  * Manages the Codi state file at `.codi/state.json`.
@@ -177,7 +191,7 @@ export class StateManager {
       return ok(parsed);
     } catch (cause) {
       if (isNodeError(cause) && cause.code === "ENOENT") {
-        return ok(structuredClone(EMPTY_STATE));
+        return ok(makeEmptyState());
       }
       return err([
         createError(
@@ -243,7 +257,7 @@ export class StateManager {
     try {
       await fs.mkdir(path.dirname(this.statePath), { recursive: true });
       if (!existsSync(this.statePath)) {
-        await fs.writeFile(this.statePath, JSON.stringify(EMPTY_STATE, null, 2), "utf8");
+        await fs.writeFile(this.statePath, JSON.stringify(makeEmptyState(), null, 2), "utf8");
       }
     } catch (cause) {
       return err([

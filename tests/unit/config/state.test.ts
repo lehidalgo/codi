@@ -28,6 +28,24 @@ describe("StateManager", () => {
     expect(result.data.agents).toEqual({});
   });
 
+  it("returns a FRESH lastGenerated for each read of a missing state.json (CORE-026)", async () => {
+    // Regression: before CORE-026, EMPTY_STATE was a module-level const and
+    // its `lastGenerated` froze to process boot time. Long-running watchers
+    // would surface the boot-time timestamp instead of the actual read time.
+    const mgr = new StateManager(tmpDir);
+    const before = new Date().toISOString();
+    // Wait 5ms so timestamps must differ if the factory really regenerates.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const r1 = await mgr.read();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const r2 = await mgr.read();
+    expect(r1.ok && r2.ok).toBe(true);
+    if (!r1.ok || !r2.ok) return;
+    expect(r1.data.lastGenerated >= before).toBe(true);
+    // The second read must produce a strictly later timestamp than the first.
+    expect(r2.data.lastGenerated > r1.data.lastGenerated).toBe(true);
+  });
+
   it("writes and reads state", async () => {
     const mgr = new StateManager(tmpDir);
     const state: StateData = {
