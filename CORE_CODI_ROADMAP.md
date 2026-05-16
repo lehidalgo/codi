@@ -61,7 +61,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 35 | CORE-035 | msw network-boundary tests | S | P3 | **Validado ✅** | — | — | 1-2d |
 | 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | **Validado ✅** | CORE-024 | aislamiento verificable | 4h |
 | 37 | CORE-037 | Hook installer mixed-runner test | S | P3 | **Validado ✅** | — | — | 4h |
-| 38 | CORE-038 | Brain DB locked external process test | S | P3 | Pendiente | — | — | 4h |
+| 38 | CORE-038 | Brain DB locked external process test | S | P3 | **Validado ✅** | — | — | 4h |
 
 **Total estimado:** ~35-45 días de trabajo enfocado, distribuibles en ~10 semanas si se ejecuta serial. Paralelizable parcialmente: F1-F5 son secuenciales en valor, D6-D10 pueden solaparse, R/E/S admiten paralelismo.
 
@@ -1581,8 +1581,19 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Tests:** 3961 → 3967 passing (+6), 6 skipped, 0 regresiones.
 - **Lint:** 12 guards verdes.
 
-## CORE-038 — Brain DB locked external process test
+## CORE-038 — Brain DB locked external process test **[RESUELTO]**
 - Nivel: S, P3, ~4h. sqlite-browser scenario.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~25min.
+- **Scenario cubierto:** usuario abre la brain DB en una GUI tipo DB Browser for SQLite, TablePlus, datagrip — y mantiene una write txn abierta. Mientras tanto codi intenta escribir.
+- **`tests/runtime/brain-locked-external.test.ts` (new, 3 tests):**
+  1. **Locked second connection → SQLITE_BUSY tras busy_timeout** — abre conn A con `BEGIN IMMEDIATE`, configura conn B (codi-side) con `busy_timeout=200ms`, verifica que `connB.exec("BEGIN IMMEDIATE")` falla con error `/database is locked|SQLITE_BUSY/i` después de waiting ≥150ms (proves retry mechanism + timeout path).
+  2. **WAL reader vs external writer** — external conn mantiene `BEGIN IMMEDIATE`; codi opens un read-only `BrainEventLog.open()` que SUCCEEDS sin bloquear. Valida el contract WAL: brain-ui server keeps serving HTTP requests while transitions write.
+  3. **Post-release write succeeds** — external conn locks → rollback → close. Subsequent `runWorkflow` + `proposeTransition` complete sin manual recovery (no stale lock-file rescue).
+- **Limitación documentada:** la 4ª prueba ideal — "external lock released mid-write → codi waits + succeeds" — NO es single-process testable. `better-sqlite3` es fully synchronous y bloquea el event loop, así que un `setTimeout(release, 150)` en el mismo proceso nunca dispara mientras codi está dentro de `busy_timeout`. Requiere subprocess fixture; documented inline en el test file como test-debt para futuro work.
+- **Tests:** 3967 → 3970 passing (+3), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
+- **Contract validado E2E:** lock contention surfaces como SQLITE_BUSY, WAL readers proceed concurrentemente, post-release writes son clean (no poison).
 
 ---
 
