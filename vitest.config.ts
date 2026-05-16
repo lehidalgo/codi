@@ -99,11 +99,20 @@ export default defineConfig({
         "src/cli/hub-handlers.ts", // interactive hub menu actions
         "src/cli/preset-wizard.ts", // interactive preset selection wizard
         // ─── Network / git boundary ─────────────────────────────────────
-        // Need msw + git-fixture infrastructure to test meaningfully.
-        // Tracked as test-debt; remove from this list when fixtures land.
+        // Need git-fixture / gh-CLI subprocess mocks (HTTP mocking isn't
+        // enough — these files shell out to git / gh, not fetch).
+        // Tracked as test-debt; remove when subprocess-fixture infra lands.
         "src/cli/contribute-git.ts", // hits real git remotes
         "src/cli/preset-github.ts", // hits GitHub API + git clone
-        "src/cli/update-check.ts", // queries npm registry
+        // CORE-035 — update-check.ts: pure helpers `isNewer` and
+        // `installCommand` are covered by tests/unit/cli/update-check.test.ts.
+        // The `checkForUpdate` orchestrator stays excluded because it
+        // gates on `isTTY`, runs a `@clack/prompts` confirm loop, and
+        // spawns the package manager — three layers that need the same
+        // prompt-mock harness conflict-resolver waits on. The file's
+        // single network call (fetch REGISTRY_URL) lives inside that
+        // orchestrator, so no separate HTTP mock is required.
+        "src/cli/update-check.ts",
 
         "src/core/preset/preset-zip.ts", // requires zip/unzip binary
         "src/core/preset/preset-source.ts", // type-only file

@@ -18,7 +18,7 @@ interface UpdateCache {
   latest: string;
 }
 
-type PackageManager = "pnpm" | "yarn" | "bun" | "npm";
+export type PackageManager = "pnpm" | "yarn" | "bun" | "npm";
 
 async function readCache(): Promise<UpdateCache | null> {
   try {
@@ -47,7 +47,14 @@ async function writeCache(cache: UpdateCache): Promise<void> {
   }
 }
 
-function isNewer(latest: string, current: string): boolean {
+/**
+ * Compares two semver-ish strings and returns true when `latest` is
+ * strictly newer than `current`. Tolerates a `v` prefix and strips
+ * prerelease tags before comparing the numeric triple.
+ *
+ * Exported for CORE-035 test coverage of update-check's pure helpers.
+ */
+export function isNewer(latest: string, current: string): boolean {
   const parse = (v: string): [number, number, number] => {
     const base = v.replace(/^v/, "").split("-")[0] ?? "";
     const parts = base.split(".");
@@ -87,7 +94,13 @@ function detectPackageManager(): PackageManager {
   return "npm";
 }
 
-function installCommand(pm: PackageManager): { cmd: string; args: string[] } {
+/**
+ * Maps a detected package manager to the global-install invocation
+ * codi runs when the user accepts the update prompt.
+ *
+ * Exported for CORE-035 test coverage.
+ */
+export function installCommand(pm: PackageManager): { cmd: string; args: string[] } {
   const target = `${PACKAGE_NAME}@latest`;
   switch (pm) {
     case "pnpm":

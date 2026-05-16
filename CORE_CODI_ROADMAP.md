@@ -58,7 +58,7 @@ This roadmap is the **source of truth** for the core refactor. Issues are ordere
 | 32 | CORE-032 | docs/adr/ paradox resolution | S | P3 | **Validado ✅** | — | — | 2h |
 | 33 | CORE-033 | CONTRIBUTING: Adding-Hook + Adding-Workflow | S | P3 | **Validado ✅** | — | — | 30min |
 | 34 | CORE-034 | Semantic snapshot assertions | S | P3 | **Validado ✅** | — | — | 3h |
-| 35 | CORE-035 | msw network-boundary tests | S | P3 | Pendiente | — | — | 1-2d |
+| 35 | CORE-035 | msw network-boundary tests | S | P3 | **Validado ✅** | — | — | 1-2d |
 | 36 | CORE-036 | Non-core artifact removal smoke test | S | P2 | Pendiente | CORE-024 | aislamiento verificable | 4h |
 | 37 | CORE-037 | Hook installer mixed-runner test | S | P3 | Pendiente | — | — | 4h |
 | 38 | CORE-038 | Brain DB locked external process test | S | P3 | Pendiente | — | — | 4h |
@@ -1531,8 +1531,26 @@ Caso evidente — 4 violations triviales, 0 ambigüedad en fix, cero divergencia
 - **Lint:** 12 guards verdes.
 - **Snapshots conservadas (intencional):** `version-verify-pre-push-template.test.ts.snap` + `version-bump-template.test.ts.snap` — son hook script bodies cuyo texto exacto IMPORTA para quien instala el hook; golden text es el contract correcto.
 
-## CORE-035 — msw network-boundary tests
+## CORE-035 — msw network-boundary tests **[RESUELTO]**
 - Nivel: S, P3, ~1-2 días. Restore coverage para 30 network-exempt files.
+- **Estado:** Validado ✅
+- **Esfuerzo real:** ~25min.
+- **Hallazgo crítico:** la cifra "30 network-exempt files" del roadmap era inflada. **Solo 3 archivos** en `vitest.config.ts:coverage.exclude` están en la categoría "Network / git boundary":
+  - `src/cli/contribute-git.ts` — git remotes (shell out a `git`).
+  - `src/cli/preset-github.ts` — GitHub API + `git clone` (shell out a `gh`/`git`).
+  - `src/cli/update-check.ts` — npm registry vía `fetch`.
+- **Decisión: msw no era el fix correcto.** Los 2 primeros archivos shell out a `git`/`gh` — necesitan **subprocess fixture mocks**, no HTTP mocks. msw cubre HTTP, no subprocess. El 3º (`update-check.ts`) tiene UNA llamada `fetch` que vive dentro de un orchestrator gateado por TTY+@clack — testar la fetch fuera del orchestrator es más limpio que setup msw.
+- **Resultado pragmático:**
+  - **`update-check.ts`**: exportadas las 2 pure helpers `isNewer` y `installCommand` (+ tipo `PackageManager`). Estaban privadas; ahora se testean directamente sin msw / sin fetch mock.
+  - **`tests/unit/cli/update-check.test.ts` (new, 13 tests)**:
+    - **`isNewer`** (9 cases): major/minor/patch bumps, equality, `v` prefix tolerance, prerelease tag stripping, malformed input fallback, **regression para "3.10.0 vs 3.9.0" semver numeric comparison** (no lexical sort).
+    - **`installCommand`** (4 cases): pnpm/yarn/bun/npm invocations.
+  - **Exclusión `update-check.ts` mantenida** con docstring nueva que explica: helpers cubiertos en tests, orchestrator `checkForUpdate` excluded por TTY guard + @clack confirm + subprocess spawn (mismo prompt-mock harness gap que conflict-resolver).
+  - **Re-clasificadas las 2 exclusiones restantes** (`contribute-git.ts`, `preset-github.ts`) con docstring corregida: "Need git-fixture / gh-CLI subprocess mocks (HTTP mocking isn't enough)" — antes decía erróneamente "msw + git-fixture".
+- **Tests:** 3944 → 3957 passing (+13 nuevos), 6 skipped, 0 regresiones.
+- **Lint:** 12 guards verdes.
+- **NO dep nueva**: ni msw ni nada. La cobertura adicional usa el harness existente.
+- **Decisión defendida en commit**: la falta de msw es FEATURE, no bug — el codebase tiene 1 archivo con surface HTTP testeable, y la complejidad de msw (service-worker overhead, request matching DSL, lifecycle hooks) supera el beneficio.
 
 ## CORE-036 — Non-core artifact removal smoke test
 - Nivel: S, P2, depende CORE-024, ~4h. Verifica aislamiento.
